@@ -1,5 +1,41 @@
-import { mapRepassesSessionStatus } from "./crm-whatsapp-mapping.mjs";
+import {
+  buildLeadCrmSessionIndex,
+  buildLeadPhoneIndex,
+  mapRepassesSessionStatus,
+  resolveLegacyLeadLink,
+} from "./crm-whatsapp-mapping.mjs";
 import { json, nullableString } from "./common.mjs";
+
+export async function assertWhatsappLeadCoverage(tx, data, groups, ids) {
+  const existingLeadIds = new Set(
+    (await tx`SELECT id FROM leads WHERE store_id=${ids.store}`).map(
+      (lead) => lead.id,
+    ),
+  );
+  const crmSessionIndex = buildLeadCrmSessionIndex(data.leads);
+  const phoneIndex = buildLeadPhoneIndex(data.leads);
+  const knownLegacyIds = new Set(data.leads.map((lead) => lead.id));
+  const missingLegacyIds = new Set();
+
+  for (const group of groups) {
+    const link = resolveLegacyLeadLink(
+      group,
+      crmSessionIndex,
+      phoneIndex,
+      knownLegacyIds,
+    );
+    if (!link.leadId) continue;
+    const targetLeadId = ids.leads.get(link.leadId);
+    if (!targetLeadId || !existingLeadIds.has(targetLeadId))
+      missingLegacyIds.add(link.leadId);
+  }
+
+  if (missingLegacyIds.size)
+    throw new Error(
+      `${missingLegacyIds.size} V1 lead(s) linked to WhatsApp are missing in V2. ` +
+        "Include the leads module in this run or migrate leads before WhatsApp.",
+    );
+}
 
 export function sessionRow(
   tx,

@@ -1,4 +1,5 @@
 import { json, nullableString } from "./common.mjs";
+import { decimalToCents } from "./money.mjs";
 
 const CORE_FEATURES = ["analytics", "automation", "compliance", "subdomain"];
 
@@ -67,7 +68,10 @@ export function resolveLegacyPlan(store, customPlan) {
       features,
       isPaid: true,
       legacyCode,
-      monthlyPriceCents: decimalToCents(customPlan.monthly_price),
+      monthlyPriceCents: decimalToCents(
+        customPlan.monthly_price,
+        `CustomPlan ${legacyCode} monthly_price`,
+      ),
     };
   }
   const combo = COMBOS[legacyCode];
@@ -185,11 +189,12 @@ export function mapLegacyCustomer(store) {
 
 export function mapLegacyPayment(row) {
   return {
-    amountCents: decimalToCents(row.amount),
+    amountCents: decimalToCents(row.amount, `Payment ${row.id} amount`),
     createdAt: nullableDate(row.createdAt),
     dueAt: nullableDate(row.dueDate),
     invoiceUrl: nullableString(row.invoiceUrl),
     legacy: {
+      amount: String(row.amount),
       billingCycle: nullableString(row.billingCycle, 40),
       description: nullableString(row.description, 500),
       id: row.id,
@@ -229,14 +234,4 @@ export function nullableDate(value) {
 export function endedAt(addon, now) {
   const end = nullableDate(addon.planEndDate);
   return end && end < now ? end : now;
-}
-
-function decimalToCents(value) {
-  const text = String(value ?? "0").trim();
-  if (!/^-?\d+(?:\.\d{1,2})?$/.test(text))
-    throw new Error(`Invalid V1 billing amount: ${value}`);
-  const negative = text.startsWith("-");
-  const [whole, fraction = ""] = text.replace("-", "").split(".");
-  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-  return negative ? -cents : cents;
 }

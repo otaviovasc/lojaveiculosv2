@@ -1,5 +1,20 @@
 import { createCipheriv, randomBytes } from "node:crypto";
 import { json } from "./common.mjs";
+import { log } from "./log.mjs";
+
+const DEFAULT_REQUEST_ATTEMPTS = 3;
+const RETRYABLE_HTTP_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const RETRYABLE_NETWORK_CODES = new Set([
+  "ECONNRESET",
+  "EAI_AGAIN",
+  "ENETDOWN",
+  "ENETUNREACH",
+  "ENOTFOUND",
+  "ETIMEDOUT",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_SOCKET",
+]);
 
 export async function listSpedyInvoices(env, companyApiKey, collection) {
   const rows = [];
@@ -36,23 +51,57 @@ export async function ensureSpedyWebhook(env) {
 }
 
 export async function spedyRequest(env, apiKey, path, options = {}) {
-  const response = await fetch(toUrl(env.SPEDY_API_URL, path), {
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      "X-Api-Key": apiKey,
-    },
-    method: options.method ?? "GET",
-    signal: AbortSignal.timeout(30_000),
-  });
-  const text = await response.text();
-  const payload = text ? parseJson(text) : {};
-  if (!response.ok) {
-    throw new Error(
-      `Spedy migration request failed (${response.status}) for ${path.split("?")[0]}.`,
-    );
+  const attempts = options.attempts ?? DEFAULT_REQUEST_ATTEMPTS;
+  const requestPath = path.split("?")[0];
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(toUrl(env.SPEDY_API_URL, path), {
+        body: options.body ? JSON.stringify(options.body) : undefined,
+        headers: {
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
+          "X-Api-Key": apiKey,
+        },
+        method: options.method ?? "GET",
+        signal: AbortSignal.timeout(options.timeoutMs ?? 15_000),
+      });
+      const text = await response.text();
+      const payload = text ? parseJson(text) : {};
+      if (response.ok) return payload;
+
+      const error = providerRequestError(
+        `Spedy migration request failed (${response.status}) for ${requestPath}.`,
+        `spedy_http_${response.status}`,
+        RETRYABLE_HTTP_STATUSES.has(response.status),
+      );
+      if (!error.retryable || attempt === attempts) throw error;
+      await waitBeforeRetry(
+        requestPath,
+        error.code,
+        attempt,
+        attempts,
+        options,
+      );
+    } catch (error) {
+      const normalized = normalizeProviderError(error, requestPath);
+      if (!normalized.retryable || attempt === attempts) throw normalized;
+      await waitBeforeRetry(
+        requestPath,
+        normalized.code,
+        attempt,
+        attempts,
+        options,
+      );
+    }
   }
-  return payload;
+  throw providerRequestError(
+    `Spedy migration request exhausted all attempts for ${requestPath}.`,
+    "spedy_provider_unavailable",
+    true,
+  );
+}
+
+export function isTransientSpedyError(error) {
+  return error?.retryable === true;
 }
 
 export function encryptSpedyCredential(value, encodedKey) {
@@ -141,4 +190,53 @@ function parseJson(value) {
 
 function toUrl(base, path) {
   return new URL(path, base.endsWith("/") ? base : `${base}/`).href;
+}
+
+function normalizeProviderError(error, requestPath) {
+  if (typeof error?.retryable === "boolean") return error;
+  const networkCode = errorCode(error);
+  const code = mapNetworkErrorCode(networkCode);
+  return providerRequestError(
+    `Spedy is unavailable for ${requestPath} (${networkCode || "network_error"}).`,
+    code,
+    RETRYABLE_NETWORK_CODES.has(networkCode),
+    error,
+  );
+}
+
+function errorCode(error) {
+  return String(error?.code ?? error?.cause?.code ?? "")
+    .trim()
+    .toUpperCase();
+}
+
+function mapNetworkErrorCode(code) {
+  if (["EAI_AGAIN", "ENOTFOUND"].includes(code)) return "spedy_dns_unavailable";
+  if (
+    [
+      "ETIMEDOUT",
+      "UND_ERR_CONNECT_TIMEOUT",
+      "UND_ERR_HEADERS_TIMEOUT",
+    ].includes(code)
+  )
+    return "spedy_timeout";
+  if (["ECONNRESET", "UND_ERR_SOCKET"].includes(code))
+    return "spedy_connection_reset";
+  return "spedy_provider_unavailable";
+}
+
+function providerRequestError(message, code, retryable, cause) {
+  return Object.assign(new Error(message, cause ? { cause } : undefined), {
+    code,
+    retryable,
+  });
+}
+
+async function waitBeforeRetry(requestPath, code, attempt, attempts, options) {
+  const delayMs =
+    options.retryDelayMs ?? Math.min(250 * 2 ** (attempt - 1), 1_000);
+  log(
+    `  Fiscal: Spedy ${requestPath} attempt ${attempt}/${attempts} failed (${code}); retrying in ${(delayMs / 1_000).toFixed(1)}s...`,
+  );
+  if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
 }

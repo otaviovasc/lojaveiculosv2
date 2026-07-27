@@ -150,6 +150,35 @@ test("maps every V1 payment status without synthetic success", () => {
   assert.throws(() => mapLegacyPaymentStatus("UNKNOWN"), /Unsupported/);
 });
 
+test("maps high-scale V1 Decimal payment amounts to exact cents", () => {
+  const billing = prepareLegacyBillingMigration(
+    data({
+      billingPayments: [
+        {
+          amount: "149.000000000000000000000000000000",
+          id: 92,
+          status: "PENDING",
+        },
+        {
+          amount: "1.005000000000000000000000000000",
+          id: 93,
+          status: "PENDING",
+        },
+      ],
+    }),
+    NOW,
+  );
+
+  assert.deepEqual(
+    billing.payments.map((payment) => payment.amountCents),
+    [14900, 101],
+  );
+  assert.equal(
+    billing.payments[0].legacy.amount,
+    "149.000000000000000000000000000000",
+  );
+});
+
 function data(overrides = {}) {
   return {
     addons: [],

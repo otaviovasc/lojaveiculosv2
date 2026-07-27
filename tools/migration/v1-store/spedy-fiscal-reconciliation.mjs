@@ -72,6 +72,28 @@ export function reconcileSpedyFiscalDocuments(
   return reconciled;
 }
 
+export function preserveLegacyFiscalDocuments(legacyRows, config) {
+  return legacyRows.map((legacy) => {
+    const normalizedStatus = safeLegacyStatus(legacy.status);
+    return {
+      accessKey: legacy.accessKey || null,
+      createdAt: legacy.createdAt,
+      documentKind: normalizeFiscalKind(legacy.docType),
+      id: targetId(config.legacyStoreId, "FiscalDocument", legacy.id),
+      issuedAt: legacy.issuedAt || null,
+      legacy,
+      metadata: {
+        legacyStatus: String(legacy.status ?? ""),
+        providerSourceOfTruth: false,
+        reconciliationStatus: "provider_unavailable",
+      },
+      providerDocumentId: legacy.invoiceId || null,
+      status: normalizedStatus,
+      updatedAt: legacy.updatedAt,
+    };
+  });
+}
+
 export function normalizeFiscalKind(value) {
   const kind = String(value ?? "").toLowerCase();
   if (kind === "nfe" || kind === "nfse") return kind;
@@ -101,6 +123,14 @@ function mapStatus(value) {
   throw new Error(
     `Unsupported Spedy fiscal status during migration: ${status}`,
   );
+}
+
+function safeLegacyStatus(value) {
+  try {
+    return mapStatus(value);
+  } catch {
+    return "error";
+  }
 }
 
 function stringValue(value) {

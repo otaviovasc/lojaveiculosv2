@@ -1,9 +1,39 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  assertWhatsappLeadCoverage,
   buildAgentUserMap,
   findAssignedUserId,
 } from "./target-crm-whatsapp-support.mjs";
+import { groupWhatsappSessions } from "./crm-whatsapp-mapping.mjs";
+
+test("rejects missing linked V2 leads before replacing WhatsApp history", async () => {
+  const tx = () => Promise.resolve([]);
+  await assert.rejects(
+    () =>
+      assertWhatsappLeadCoverage(
+        tx,
+        {
+          leads: [{ crm_session_id: 44, id: 10, phone: null }],
+        },
+        groupWhatsappSessions([
+          {
+            buyer_chat_lid: null,
+            buyer_phone: "5544999990000",
+            created_at: "2026-01-01T00:00:00Z",
+            id: 44,
+            last_message_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+          },
+        ]),
+        {
+          leads: new Map([[10, "00000000-0000-4000-8000-000000000010"]]),
+          store: "00000000-0000-4000-8000-000000000001",
+        },
+      ),
+    /Include the leads module.*before WhatsApp/,
+  );
+});
 
 test("maps Repasses agents by Clerk id and prompted access email", () => {
   const agents = [

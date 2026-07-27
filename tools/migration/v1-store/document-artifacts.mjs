@@ -1,5 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { legacyMetadata, targetId } from "./common.mjs";
@@ -9,32 +7,6 @@ import {
   generatedStorageKey,
   planMigratedDocument,
 } from "./document-preview-data.mjs";
-
-// Loads R2_* variables from the nearest .env without overriding variables the
-// user already exported. DATABASE_URL is intentionally not touched: the
-// migration keeps requiring it explicitly in the environment.
-export function loadR2Env(startDirectory = process.cwd()) {
-  let current = startDirectory;
-  for (let depth = 0; depth < 5; depth += 1) {
-    const envPath = join(current, ".env");
-    if (existsSync(envPath)) {
-      for (const line of readFileSync(envPath, "utf8").split("\n")) {
-        const separator = line.indexOf("=");
-        if (separator === -1) continue;
-        const key = line.slice(0, separator).trim();
-        if (!key.startsWith("R2_") || process.env[key] !== undefined) continue;
-        process.env[key] = line
-          .slice(separator + 1)
-          .trim()
-          .replace(/^["']|["']$/g, "");
-      }
-      return;
-    }
-    const parent = dirname(current);
-    if (parent === current) return;
-    current = parent;
-  }
-}
 
 export function createArtifactUploader() {
   const bucketName = process.env.R2_BUCKET_NAME;
