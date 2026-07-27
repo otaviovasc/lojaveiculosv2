@@ -72,8 +72,18 @@ export async function loadStoreData(sql, storeId) {
   const many = (query) => sql.unsafe(query, [storeId]);
   const store = await one('SELECT * FROM "Loja" WHERE id = $1');
   if (!store) throw new Error(`V1 Loja ${storeId} does not exist.`);
+  const addons = await many(
+    'SELECT * FROM "LojaAddon" WHERE "lojaId"=$1 ORDER BY id',
+  );
   const data = {
     store,
+    addons,
+    billingPayments: await many(
+      'SELECT * FROM "Payment" WHERE "lojaId"=$1 ORDER BY "createdAt",id',
+    ),
+    customPlan: await one(
+      'SELECT cp.* FROM "Loja" l JOIN "CustomPlan" cp ON cp.plan_name=l.custom_plan_name WHERE l.id=$1',
+    ),
     settings: await one('SELECT * FROM "Settings" WHERE "lojaId" = $1'),
     accesses: await many(
       'SELECT a.*, row_to_json(u.*) AS profile FROM "LojaAccess" a LEFT JOIN "UserProfile" u ON u."clerkUserId"=a."clerkUserId" WHERE a."lojaId"=$1 ORDER BY a.id',
@@ -126,9 +136,10 @@ export async function loadStoreData(sql, storeId) {
     fiscalDocuments: await many(
       'SELECT * FROM "FiscalDocument" WHERE "lojaId"=$1 ORDER BY id',
     ),
-    fiscalAddon: await one(
-      'SELECT * FROM "LojaAddon" WHERE "lojaId"=$1 AND "addonType"=\'SPEDY_NFE\' ORDER BY id DESC LIMIT 1',
-    ),
+    fiscalAddon:
+      addons.find(
+        (addon) => String(addon.addonType).toUpperCase() === "SPEDY_NFE",
+      ) ?? null,
   };
   await assertUnsupportedTablesEmpty(sql, storeId);
   return data;

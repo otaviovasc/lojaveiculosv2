@@ -11,15 +11,22 @@ export async function collectParity(tx, storeId, ids) {
     "sale_payments",
     "finance_entries",
     "fiscal_documents",
+    "payments",
+    "store_entitlements",
+    "subscription_items",
+    "subscriptions",
+    "billing_customers",
     "crm_whatsapp_sessions",
     "crm_whatsapp_messages",
   ];
   const counts = {};
   for (const table of tables) {
     const scope =
-      table === "users"
-        ? "tenant_id=(SELECT tenant_id FROM stores WHERE id=$1)"
-        : "store_id=$1";
+      table === "store_entitlements"
+        ? "store_id=$1 AND metadata->>'migrationSelected'='true'"
+        : ["billing_customers", "subscriptions", "users"].includes(table)
+          ? "tenant_id=(SELECT tenant_id FROM stores WHERE id=$1)"
+          : "store_id=$1";
     const [row] = await tx.unsafe(
       `SELECT count(*)::int AS count FROM ${table} WHERE ${scope}`,
       [storeId],
@@ -55,6 +62,14 @@ export async function collectParity(tx, storeId, ids) {
 
 export function assertParity(data, parity, modules) {
   const expected = { users: data.accesses.length };
+  if (data.billing)
+    Object.assign(expected, {
+      billing_customers: 1,
+      payments: data.billing.payments.length,
+      store_entitlements: data.billing.entitlements.length,
+      subscription_items: data.billing.products.length,
+      subscriptions: 1,
+    });
   if (modules.has("vehicles"))
     Object.assign(expected, {
       vehicle_listings: data.vehicles.length,

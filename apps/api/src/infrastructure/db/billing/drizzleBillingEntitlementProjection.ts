@@ -67,10 +67,21 @@ export async function projectSelectedEntitlements(
   }
   for (const featureKey of selected) {
     const entitlement = current.find((item) => item.featureKey === featureKey);
-    if (entitlement && entitlement.source !== "billing_catalog") continue;
+    if (entitlement && shouldPreserveExternalEntitlement(entitlement, now))
+      continue;
     if (entitlement?.status === "active" && !entitlement.endsAt) continue;
     await writeEntitlement(db, input, featureKey, "active", now);
   }
+}
+
+export function shouldPreserveExternalEntitlement(
+  entitlement: Pick<typeof storeEntitlements.$inferSelect, "endsAt" | "source">,
+  now: Date,
+) {
+  return (
+    entitlement.source !== "billing_catalog" &&
+    (!entitlement.endsAt || entitlement.endsAt > now)
+  );
 }
 
 async function writeEntitlement(

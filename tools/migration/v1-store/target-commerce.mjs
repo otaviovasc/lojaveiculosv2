@@ -1,5 +1,5 @@
 import { cents, legacyMetadata, targetId } from "./common.mjs";
-import { addLegacyMap } from "./target-foundation.mjs";
+import { addLegacyMap } from "./target-support.mjs";
 import { seedMigratedDocument } from "./document-artifacts.mjs";
 import { log, progress } from "./log.mjs";
 import {

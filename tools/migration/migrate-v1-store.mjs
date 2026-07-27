@@ -16,20 +16,6 @@ import {
 import { loadStoreData, withV1Archive } from "./v1-store/source.mjs";
 import { MIGRATION_MODULES, migrateToV2 } from "./v1-store/target.mjs";
 
-const DEFAULT_ENTITLEMENTS = [
-  "analytics",
-  "automation",
-  "compliance",
-  "crm",
-  "custom_domain",
-  "external_api",
-  "marketplace",
-  "fiscal",
-  "plate_lookup",
-  "simulations",
-  "subdomain",
-];
-
 const MODULE_DESCRIPTIONS = {
   attachments: "finance attachment references",
   documents: "documents and fiscal records",
@@ -59,7 +45,7 @@ const result = await withV1Archive(config.archivePath, async (source) => {
     );
   }
   process.stdout.write(
-    `Loaded V1 store ${config.legacyStoreId}: ${data.vehicles.length} vehicles, ${data.leads.length} leads, ${data.sales.length} sales.\n`,
+    `Loaded V1 store ${config.legacyStoreId}: ${data.vehicles.length} vehicles, ${data.leads.length} leads, ${data.sales.length} sales, ${data.addons.length} add-ons, ${data.billingPayments.length} billing payments.\n`,
   );
   process.stdout.write(`Modules: foundation + ${[...modules].join(", ")}\n`);
   config.accessEmails = await promptForMissingAccessEmails(data, config);
@@ -148,7 +134,6 @@ async function promptConfig(cliModules) {
       ]
         .filter(Boolean)
         .join(":"),
-      entitlements: DEFAULT_ENTITLEMENTS,
       legacyStoreId,
       modules,
       ownerClerkUserId,

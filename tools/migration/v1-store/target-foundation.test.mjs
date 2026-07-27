@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { prepareLegacyBillingMigration } from "./billing-mapping.mjs";
 import { seedFoundation } from "./target-foundation.mjs";
 
-test("foundation seeds a billing customer and trialing subscription", async () => {
+test("foundation seeds the mapped V1 billing contract", async () => {
   const { queries, tx } = createFakeTx();
   const data = {
     accesses: [
@@ -16,20 +17,40 @@ test("foundation seeds a billing customer and trialing subscription", async () =
       },
     ],
     settings: {},
+    addons: [
+      {
+        active: true,
+        addonType: "CRM_WHATSAPP",
+        id: 41,
+        planEndDate: "2026-08-01T00:00:00Z",
+        subscriptionStatus: "ACTIVE",
+      },
+    ],
+    billingPayments: [],
+    customPlan: null,
     store: {
+      asaas_customer_id: "cus_v1",
+      asaas_subscription_id: "sub_v1",
       customization: { contact: { email: "contato@loja.com.br" } },
       data_criacao: "2024-01-01T00:00:00Z",
       dominio_customizado: null,
       id: 7,
       nome_da_loja: "Loja Teste",
       ownerClerkId: "clerk_owner",
+      plan_end_date: "2026-08-01T00:00:00Z",
+      plano: "PRO",
+      status_assinatura: "ATIVA",
+      subscription_start_date: "2026-07-01T00:00:00Z",
       subdominio: "loja-teste",
       user: { email: "dono@loja.com.br" },
     },
   };
+  data.billing = prepareLegacyBillingMigration(
+    data,
+    new Date("2026-07-27T00:00:00Z"),
+  );
   const config = {
     accessEmails: new Map(),
-    entitlements: ["crm"],
     legacyStoreId: 7,
     ownerClerkUserId: "clerk_v2_owner",
     ownerEmail: "dono@loja.com.br",
@@ -59,11 +80,17 @@ test("foundation seeds a billing customer and trialing subscription", async () =
     query.includes("INSERT INTO subscriptions"),
   );
   assert.ok(subscriptionInsert, "expected a subscriptions insert");
-  assert.match(subscriptionInsert, /'trialing'/);
-  assert.match(subscriptionInsert, /interval '14 days'/);
-  assert.match(
-    subscriptionInsert,
-    /WHERE NOT EXISTS \(SELECT 1 FROM subscriptions WHERE tenant_id/,
+  assert.match(subscriptionInsert, /provider_subscription_id/);
+  assert.match(subscriptionInsert, /ON CONFLICT \(id\) DO UPDATE/);
+
+  const itemInserts = queries.filter((query) =>
+    query.includes("INSERT INTO subscription_items"),
+  );
+  assert.equal(itemInserts.length, data.billing.products.length);
+  assert.ok(
+    queries.some((query) =>
+      query.includes("INSERT INTO store_entitlement_events"),
+    ),
   );
 });
 
@@ -84,6 +111,24 @@ function createFakeTx() {
     }
     if (text.includes("INSERT INTO billing_customers")) {
       return Promise.resolve([{ id: "billing_customer_1" }]);
+    }
+    if (text.includes("INSERT INTO subscriptions")) {
+      return Promise.resolve([{ id: "subscription_1" }]);
+    }
+    if (text.includes("FROM plans")) {
+      return Promise.resolve([{ code: "growth", id: "plan_growth" }]);
+    }
+    if (text.includes("FROM addons")) {
+      return Promise.resolve([
+        { code: "crm_whatsapp_instance", id: "addon_crm" },
+        { code: "fiscal_spedy", id: "addon_fiscal" },
+        { code: "marketplace_connectors", id: "addon_marketplace" },
+        { code: "public_api_access", id: "addon_api" },
+        { code: "simulations_pro", id: "addon_simulations" },
+      ]);
+    }
+    if (text.includes("INSERT INTO store_entitlements")) {
+      return Promise.resolve([{ id: "entitlement_1" }]);
     }
     return Promise.resolve([]);
   };

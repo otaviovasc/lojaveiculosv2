@@ -133,6 +133,22 @@ catalog allowance. Neither is duplicated as an add-on.
 - Every entitlement change must record `store_entitlement_events` and an audit
   event.
 
+### Staging operator exception
+
+For time-limited integration testing in staging, an operator may grant every
+feature in the active server-owned catalog to all stores reachable through one
+user's active store or tenant memberships:
+
+```bash
+pnpm billing:grant-all -- <userId> --reason="Integration QA" --apply
+```
+
+Without `--apply`, the command is a dry run. Applied grants require
+`APP_ENV=staging`, `DATABASE_URL`, and `AUDIT_DATABASE_URL`, expire one calendar
+month after execution, write `store_entitlement_events`, and fail if the
+required audit database record cannot be persisted. They do not create payment
+or provider-success records.
+
 ## Provider Integration
 
 - Asaas is the default billing provider.
