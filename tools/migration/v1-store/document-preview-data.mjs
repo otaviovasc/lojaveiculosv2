@@ -1,7 +1,16 @@
 import { mapDocumentKind } from "./common.mjs";
 
-// Renderer key understood by apps/api documentRegeneration.ts.
+// Renderer keys understood by apps/api documentRegeneration.ts.
 export const MIGRATION_RENDERER = "metadata-summary-pdf";
+export const WORKFLOW_MIGRATION_RENDERER = "react-pdf";
+
+const workflowDocumentKinds = new Set([
+  "delivery_term",
+  "power_of_attorney",
+  "reservation_receipt",
+  "sale_contract",
+  "sale_receipt",
+]);
 
 const templateTitles = {
   DELIVERY_TERM: "Termo de entrega",
@@ -33,7 +42,7 @@ export function mapDocumentStatus(status) {
 //   migration renders a PDF and stores the structured data V2 needs to
 //   preview/regenerate it.
 // - "unavailable": no file and no structured data; kept as archived stub.
-export function planMigratedDocument(document, scope) {
+export function planMigratedDocument(document, scope, migrationContext = {}) {
   const fileName = `${document.title || document.type}-${document.id}.pdf`;
   const kind = mapDocumentKind(document.type);
   const status = mapDocumentStatus(document.status);
@@ -55,7 +64,7 @@ export function planMigratedDocument(document, scope) {
     };
   }
 
-  const preview = extractPreviewData(document);
+  const preview = extractPreviewData(document, migrationContext);
   if (preview) {
     return {
       ...base,
@@ -63,7 +72,9 @@ export function planMigratedDocument(document, scope) {
       metadataExtra: {
         artifactAvailable: true,
         legacyPublicUrl: null,
-        renderer: MIGRATION_RENDERER,
+        renderer: workflowDocumentKinds.has(kind)
+          ? WORKFLOW_MIGRATION_RENDERER
+          : MIGRATION_RENDERER,
         ...preview,
       },
       storageKey: generatedStorageKey(scope, fileName),
@@ -107,7 +118,7 @@ function sanitizeSegment(value) {
 
 // Mirrors the metadata contract read by apps/api documentPreview.ts:
 // buyer, vehicle, finance, templateTitle, templateClauses.
-export function extractPreviewData(document) {
+export function extractPreviewData(document, migrationContext = {}) {
   const pdfData = document.pdfData;
   if (!pdfData || typeof pdfData !== "object" || Array.isArray(pdfData))
     return null;
@@ -117,9 +128,19 @@ export function extractPreviewData(document) {
     String(document.type);
 
   if (pdfData.saleRecord)
-    return { templateTitle, ...fromSaleRecord(pdfData.saleRecord) };
+    return {
+      templateTitle,
+      ...fromSaleRecord(pdfData.saleRecord),
+      generatedAt: document.occurredAt ?? document.createdAt,
+      store: storeSnapshot(migrationContext),
+    };
   if (pdfData.reservationRecord)
-    return { templateTitle, ...fromReservation(pdfData.reservationRecord) };
+    return {
+      templateTitle,
+      ...fromReservation(pdfData.reservationRecord),
+      generatedAt: document.occurredAt ?? document.createdAt,
+      store: storeSnapshot(migrationContext),
+    };
   if (pdfData.driver) return { templateTitle, ...fromTestDrive(pdfData) };
   if (pdfData.customerName || pdfData.simulationUuid)
     return { templateTitle, ...fromSimulation(pdfData) };
@@ -133,12 +154,23 @@ function fromSaleRecord(record) {
   ];
   return {
     buyer: {
+      address: textOrNull(record.buyerAddress),
+      cep: textOrNull(record.buyerCep),
+      city: textOrNull(record.buyerCity),
       document: textOrNull(record.buyerCpf),
+      documentType: textOrNull(record.buyerDocumentType),
       email: textOrNull(record.buyerEmail),
+      maritalStatus: textOrNull(record.buyerEstadoCivil),
       name: textOrNull(record.buyerName),
+      nationality: textOrNull(record.buyerNacionalidade),
       phone: textOrNull(record.buyerPhone1),
+      phone2: textOrNull(record.buyerPhone2),
+      phone3: textOrNull(record.buyerPhone3),
+      profession: textOrNull(record.buyerProfissao),
+      state: textOrNull(record.buyerState),
     },
     finance: {
+      discountCents: toCents(record.discount),
       paidAmountCents: toCents(
         payments.reduce(
           (total, payment) => total + Number(payment?.value || 0),
@@ -146,11 +178,30 @@ function fromSaleRecord(record) {
         ),
       ),
       paymentMethod: methods.length ? methods.join(", ") : null,
+      payments: payments.map((payment) => ({
+        amountCents: toCents(payment?.value),
+        description: textOrNull(payment?.description),
+        method: textOrNull(payment?.method),
+        paidAt: payment?.date ?? null,
+        tradeInVehicle: payment?.metadata?.tradeInVehicle ?? null,
+      })),
+      salePriceCents: toCents(record.salePrice),
       signalAmountCents: null,
+      tablePriceCents: toCents(record.tablePrice),
       totalAmountCents: toCents(record.salePrice),
     },
-    templateClauses: textOrNull(record.notes) ? [String(record.notes)] : [],
+    notes: textOrNull(record.notes),
+    saleCode: textOrNull(record.id),
+    sellerName: textOrNull(record.sellerName),
+    templateClauses: [],
+    transfer: {
+      crvCpf: textOrNull(record.crvCpf),
+      crvName: textOrNull(record.crvName),
+      status: textOrNull(record.transferStatus),
+      valueCents: toCents(record.transferValue),
+    },
     vehicle: vehicleSnapshot(record.vehicleSnapshot),
+    witnesses: [record.witness1Name, record.witness2Name].filter(Boolean),
   };
 }
 
@@ -221,10 +272,62 @@ function vehicleSnapshot(snapshot) {
         .join(" "),
     );
   return {
+    brand: textOrNull(snapshot.marca),
+    color: textOrNull(snapshot.cor),
+    fuelType: textOrNull(snapshot.combustivel),
+    km: numberOrNull(snapshot.km),
+    laudo: textOrNull(snapshot.laudo),
+    manufactureYear: numberOrNull(snapshot.ano_fabricacao),
+    model: textOrNull(snapshot.modelo),
+    modelYear: numberOrNull(snapshot.ano_modelo),
     plate: textOrNull(snapshot.placa_final ?? snapshot.placa),
+    renavam: textOrNull(snapshot.renavam),
     title,
+    trimName: textOrNull(snapshot.versao),
     vin: textOrNull(snapshot.chassi),
   };
+}
+
+function storeSnapshot({ store, settings } = {}) {
+  const customization = objectOrEmpty(store?.customization);
+  const footer = objectOrEmpty(customization.footer);
+  const contact = objectOrEmpty(customization.contact);
+  const contactExtras = objectOrEmpty(customization.contact_extras);
+  const owner = objectOrEmpty(store?.user);
+  const ownerAddress = objectOrEmpty(owner.address);
+  const address =
+    textOrNull(contactExtras.address_full) ??
+    textOrNull(
+      [
+        ownerAddress.street ?? ownerAddress.address,
+        ownerAddress.number,
+        ownerAddress.city ?? settings?.cidade,
+        ownerAddress.state ?? settings?.estado,
+      ]
+        .filter(Boolean)
+        .join(", "),
+    );
+  return {
+    address,
+    city: textOrNull(ownerAddress.city ?? settings?.cidade),
+    document: textOrNull(footer.cnpj ?? owner.cpfCnpj),
+    instagram: textOrNull(settings?.instagram_url),
+    logoUrl: textOrNull(customization.logo_url),
+    name: textOrNull(store?.nome_da_loja ?? settings?.profile_name),
+    phone: textOrNull(
+      settings?.whatsapp_number ??
+        contact.whatsapp ??
+        contact.phone ??
+        owner.phone,
+    ),
+    state: textOrNull(ownerAddress.state ?? settings?.estado),
+  };
+}
+
+function objectOrEmpty(value) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : {};
 }
 
 function textOrNull(value) {
@@ -237,4 +340,10 @@ function toCents(value) {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : null;
+}
+
+function numberOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }

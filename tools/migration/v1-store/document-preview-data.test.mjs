@@ -41,17 +41,32 @@ const saleRecordDocument = {
 test("extractPreviewData maps saleRecord payload to the V2 preview contract", () => {
   const preview = extractPreviewData(saleRecordDocument);
   assert.equal(preview.templateTitle, "Certificado de garantia");
-  assert.deepEqual(preview.buyer, {
-    document: "014.980.549-78",
-    email: "buyer@example.com",
-    name: "Jessica Denig",
-    phone: "(44) 99999-0000",
-  });
-  assert.deepEqual(preview.vehicle, {
-    plate: "AWR0667",
-    title: "Chevrolet Zafira Confort",
-    vin: "9BGTS75COBC124520",
-  });
+  assert.deepEqual(
+    {
+      document: preview.buyer.document,
+      email: preview.buyer.email,
+      name: preview.buyer.name,
+      phone: preview.buyer.phone,
+    },
+    {
+      document: "014.980.549-78",
+      email: "buyer@example.com",
+      name: "Jessica Denig",
+      phone: "(44) 99999-0000",
+    },
+  );
+  assert.deepEqual(
+    {
+      plate: preview.vehicle.plate,
+      title: preview.vehicle.title,
+      vin: preview.vehicle.vin,
+    },
+    {
+      plate: "AWR0667",
+      title: "Chevrolet Zafira Confort",
+      vin: "9BGTS75COBC124520",
+    },
+  );
   assert.equal(preview.finance.totalAmountCents, 2750000);
   assert.equal(preview.finance.paidAmountCents, 2750000);
   assert.equal(preview.finance.paymentMethod, "TROCA, CARTAO_CREDITO");
@@ -149,6 +164,23 @@ test("planMigratedDocument renders generated documents with renderer metadata", 
     plan.storageKey,
     "tenants/tenant-1/stores/store-1/documents/doc-1/versions/migrated-v1-certificado-de-garantia-jessica-denig-42.pdf",
   );
+});
+
+test("planMigratedDocument selects the V1-style workflow renderer for sale documents", () => {
+  const plan = planMigratedDocument(
+    { ...saleRecordDocument, type: "SALE_CONTRACT" },
+    scope,
+    {
+      settings: { cidade: "Maringá", estado: "PR" },
+      store: { nome_da_loja: "MB Auto Store" },
+    },
+  );
+
+  assert.equal(plan.metadataExtra.renderer, "react-pdf");
+  assert.equal(plan.metadataExtra.store.name, "MB Auto Store");
+  assert.equal(plan.metadataExtra.store.city, "Maringá");
+  assert.equal(plan.metadataExtra.saleCode, null);
+  assert.equal(plan.metadataExtra.finance.payments.length, 2);
 });
 
 test("planMigratedDocument archives documents without file or payload", () => {

@@ -79,10 +79,11 @@ export async function seedMigratedDocument(
   config,
   ids,
   uploader,
+  migrationContext = {},
 ) {
   const documentId = targetId(config.legacyStoreId, "Document", document.id);
   const scope = { documentId, storeId: ids.store, tenantId: ids.tenant };
-  const plan = planMigratedDocument(document, scope);
+  const plan = planMigratedDocument(document, scope, migrationContext);
   let mimeType = "application/pdf";
   let fileSizeBytes = null;
 
@@ -199,6 +200,27 @@ export async function renderMigratedDocumentPdf({
   status,
   title,
 }) {
+  if (metadata.renderer === "react-pdf") {
+    const { renderWorkflowDocumentPdf } =
+      await import("../../../apps/api/src/domains/vehicle/documents/vehicleWorkflowPdf.ts");
+    return renderWorkflowDocumentPdf({
+      createdByUserId: null,
+      fileName: `${title}.pdf`,
+      fileSizeBytes: null,
+      kind,
+      linkRole: kind,
+      metadata,
+      mimeType: "application/pdf",
+      status,
+      storageKey: "",
+      storeId: null,
+      targetId: documentId,
+      targetType: "vehicle_unit",
+      tenantId: null,
+      title,
+    });
+  }
+
   const sections = [
     {
       heading: "Documento",
