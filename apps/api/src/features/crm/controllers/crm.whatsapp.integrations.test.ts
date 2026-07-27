@@ -9,6 +9,10 @@ import {
   createTestApp,
   expectApiError,
 } from "./crm.whatsapp.controller.testSupport.js";
+import {
+  configureBot,
+  jsonPost,
+} from "./crm.whatsapp.botIntegration.testSupport.js";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
 const storeId = "store_1" as StoreId;
@@ -191,34 +195,6 @@ describe("CRM WhatsApp integrations", () => {
     expect(sendText).not.toHaveBeenCalled();
   });
 });
-
-async function configureBot(app: ReturnType<typeof createTestApp>) {
-  const response = await app.request(
-    "/api/v1/crm/whatsapp/integrations/bot",
-    jsonPost(
-      {
-        enabled: true,
-        webhookSecret: "bot-secret-value",
-        webhookUrl: "https://bot.example.test/webhook",
-      },
-      undefined,
-      "PATCH",
-    ),
-  );
-  expect(response.status).toBe(200);
-}
-
-function jsonPost(
-  body: Record<string, unknown>,
-  headers: Record<string, string> = {},
-  method = "POST",
-) {
-  return {
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json", ...headers },
-    method,
-  };
-}
 
 function createZapiConnection(): CrmConnection {
   return {

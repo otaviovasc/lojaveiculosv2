@@ -3,12 +3,19 @@ import {
   createFipeVehicleCatalogProvider,
   parseFipePriceCents,
 } from "./fipeVehicleCatalogProvider.js";
+import { parseFipeModelYear } from "./fipeVehicleCatalogMapping.js";
 
 describe("FIPE vehicle catalog provider", () => {
   it("parses FIPE BRL values into cents", () => {
     expect(parseFipePriceCents("R$ 72.900,00")).toBe(7290000);
     expect(parseFipePriceCents("R$ 1.234.567,89")).toBe(123456789);
     expect(parseFipePriceCents("")).toBeNull();
+  });
+
+  it("maps the FIPE zero-km year sentinel without inventing year 3200", () => {
+    expect(parseFipeModelYear("32000-1")).toBeNull();
+    expect(parseFipeModelYear("2027-1")).toBe(2027);
+    expect(parseFipeModelYear("invalid")).toBeNull();
   });
 
   it("retries rate limited FIPE requests before returning data", async () => {

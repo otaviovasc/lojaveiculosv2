@@ -18,6 +18,7 @@ export type ModuleSurface =
   | "reports"
   | "sales"
   | "settings"
+  | "simulations"
   | "storefront-design"
   | "storefront-pages";
 
@@ -41,7 +42,7 @@ export const moduleSurfaceById = {
   reports: "reports",
   sales: "sales",
   settings: "settings",
-  simulations: "placeholder",
+  simulations: "simulations",
 } satisfies Record<ModuleId, ModuleSurface>;
 
 export function isPlaceholderModule(moduleId: ModuleId) {

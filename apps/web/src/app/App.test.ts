@@ -52,7 +52,7 @@ describe("App module navigation", () => {
     expect(isPlaceholderModule("public-site")).toBe(false);
     expect(isPlaceholderModule("custom-pages")).toBe(false);
     expect(isPlaceholderModule("auto-entries")).toBe(false);
-    expect(isPlaceholderModule("simulations")).toBe(true);
+    expect(isPlaceholderModule("simulations")).toBe(false);
   });
 
   it("parses hash module state without a router dependency", () => {

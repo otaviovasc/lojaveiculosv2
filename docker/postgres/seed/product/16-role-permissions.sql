@@ -68,6 +68,9 @@ VALUES
   ('22222222-2222-4222-8222-222222222222', 'finance.create'),
   ('22222222-2222-4222-8222-222222222222', 'finance.read'),
   ('22222222-2222-4222-8222-222222222222', 'finance.update'),
+  ('22222222-2222-4222-8222-222222222222', 'financing.connection.manage'),
+  ('22222222-2222-4222-8222-222222222222', 'financing.simulation.create'),
+  ('22222222-2222-4222-8222-222222222222', 'financing.simulation.read'),
   ('22222222-2222-4222-8222-222222222222', 'fiscal.manage'),
   ('22222222-2222-4222-8222-222222222222', 'inventory.catalog_sync'),
   ('22222222-2222-4222-8222-222222222222', 'inventory.checklist_read'),
@@ -152,6 +155,9 @@ VALUES
   ('11111111-1111-4111-8111-111111111111', 'finance.create'),
   ('11111111-1111-4111-8111-111111111111', 'finance.read'),
   ('11111111-1111-4111-8111-111111111111', 'finance.update'),
+  ('11111111-1111-4111-8111-111111111111', 'financing.connection.manage'),
+  ('11111111-1111-4111-8111-111111111111', 'financing.simulation.create'),
+  ('11111111-1111-4111-8111-111111111111', 'financing.simulation.read'),
   ('11111111-1111-4111-8111-111111111111', 'fiscal.manage'),
   ('11111111-1111-4111-8111-111111111111', 'inventory.checklist_read'),
   ('11111111-1111-4111-8111-111111111111', 'inventory.checklist_update'),
@@ -234,6 +240,9 @@ VALUES
   ('55555555-5555-4555-8555-555555555555', 'finance.create'),
   ('55555555-5555-4555-8555-555555555555', 'finance.read'),
   ('55555555-5555-4555-8555-555555555555', 'finance.update'),
+  ('55555555-5555-4555-8555-555555555555', 'financing.connection.manage'),
+  ('55555555-5555-4555-8555-555555555555', 'financing.simulation.create'),
+  ('55555555-5555-4555-8555-555555555555', 'financing.simulation.read'),
   ('55555555-5555-4555-8555-555555555555', 'fiscal.manage'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.catalog_sync'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.checklist_read'),
@@ -316,6 +325,8 @@ VALUES
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'finance.create'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'finance.read'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'finance.update'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'financing.simulation.create'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'financing.simulation.read'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'inventory.checklist_read'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'inventory.checklist_update'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'inventory.create'),
@@ -365,6 +376,8 @@ VALUES
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'documents.upload'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'finance.create'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'finance.read'),
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'financing.simulation.create'),
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'financing.simulation.read'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.checklist_read'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.checklist_update'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.create'),
@@ -388,6 +401,7 @@ VALUES
   ('eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee', 'documents.download'),
   ('eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee', 'documents.preview'),
   ('eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee', 'finance.read'),
+  ('eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee', 'financing.simulation.read'),
   ('eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee', 'inventory.checklist_read'),
   ('eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee', 'inventory.read'),
   ('eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee', 'crm.whatsapp.list'),
@@ -429,4 +443,4 @@ VALUES
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.update_video')
 ON CONFLICT (role_template_id, permission_key) DO NOTHING;
 
--- Expected permission counts at generation time: {"agency":94,"admin":88,"owner":94,"investor":13,"salesman":44,"supervisor":72}
+-- Expected permission counts at generation time: {"agency":97,"admin":91,"owner":97,"investor":14,"salesman":46,"supervisor":74}

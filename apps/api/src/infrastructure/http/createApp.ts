@@ -8,6 +8,7 @@ import { createMarketplaceFeature } from "../../features/marketplaces/controller
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createCrmFeature } from "../../features/crm/controllers/crm.controller.js";
 import { createFinanceFeature } from "../../features/finance/controllers/finance.controller.js";
+import { installCredereFinancingRoutes } from "../../features/financing/controllers/installCredereFinancingRoutes.js";
 import { createFiscalFeature } from "../../features/fiscal/controllers/fiscal.controller.js";
 import { createAgencyFeature } from "../../features/agency/controllers/agency.controller.js";
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
@@ -20,8 +21,8 @@ import { createSettingsFeature } from "../../features/settings/controllers/setti
 import { createSalesFeature } from "../../features/sales/controllers/sales.controller.js";
 import { createRolesFeature } from "../../features/identity/controllers/roles.controller.js";
 import type { CreateAppOptions } from "./createAppOptions.js";
-import { createHttpAccountContext } from "./createHttpAccountContext.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
+import { createAgencyAccountContextFactory } from "./createAgencyAccountContextFactory.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
 import { installHealthRoutes } from "./installHealthRoutes.js";
@@ -129,30 +130,28 @@ export function createApp(options: CreateAppOptions = {}) {
       ...(options.billingServices ? { services: options.billingServices } : {}),
     }),
   );
-  const accountProvisioningServices = options.accountProvisioningServices;
-  if (accountProvisioningServices) {
+  const agencyAccountContextFactory = createAgencyAccountContextFactory(
+    options,
+    options.accountProvisioningServices,
+  );
+  if (options.accountProvisioningServices) {
     app.route(
       "/api/v1/agency",
       createAgencyFeature({
-        accountContextFactory: (context, scope) =>
-          createHttpAccountContext(context, {
-            ...(options.audit ? { audit: options.audit } : {}),
-            ...(options.identityVerifier
-              ? { identityVerifier: options.identityVerifier }
-              : {}),
-            ...(options.clerkUserProfileProvider
-              ? { profileProvider: options.clerkUserProfileProvider }
-              : {}),
-            repository:
-              accountProvisioningServices.accountProvisioningRepository,
-            tenantId: scope.tenantId,
-          }),
+        accountContextFactory: agencyAccountContextFactory,
         ...(options.billingServices
           ? { services: options.billingServices }
           : {}),
       }),
     );
   }
+  installCredereFinancingRoutes(app, {
+    accountContextFactory: agencyAccountContextFactory,
+    contextFactory,
+    ...(options.financingServices
+      ? { services: options.financingServices }
+      : {}),
+  });
   app.route(
     "/api/v1/fiscal",
     createFiscalFeature({
@@ -218,6 +217,7 @@ export function createApp(options: CreateAppOptions = {}) {
         options.crmFinancialProductTransactionRunner,
       financeServices: options.financeServices,
       realtimeBroker: options.crmRealtimeBroker,
+      resolveBotEntitlements: options.resolveCrmBotEntitlements,
       webhookContextFactory: createCrmWebhookContextFactory(options.audit),
       ...(options.crmServices ? { services: options.crmServices } : {}),
     }),

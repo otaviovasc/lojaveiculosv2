@@ -3,8 +3,10 @@ import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { expect, vi } from "vitest";
 import type { CrmBotIntegrationRepository } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
+import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import type { CrmBotWebhookDispatcher } from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { CrmFinancingBotActions } from "../../../domains/crm/ports/crmFinancingBotActions.js";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
@@ -64,8 +66,10 @@ export function createTestApp(
     crmWhatsappMediaStorage?: ObjectStorage;
     crmWhatsappRepository?: CrmWhatsappRepository;
     entitlements?: EntitlementKey[];
+    financingBotActions?: CrmFinancingBotActions;
     logger?: ServiceLogger;
     permissions?: PermissionKey[];
+    resolveBotEntitlements?: ResolveCrmBotEntitlements;
     transaction?: CrmServicePorts["transaction"];
     vehicleInventory?: CrmServicePorts["vehicleInventory"];
   } = {},
@@ -137,11 +141,17 @@ export function createTestApp(
           ...(options.crmWhatsappMediaStorage
             ? { crmWhatsappMediaStorage: options.crmWhatsappMediaStorage }
             : {}),
+          ...(options.financingBotActions
+            ? { financingBotActions: options.financingBotActions }
+            : {}),
           ...(options.vehicleInventory
             ? { vehicleInventory: options.vehicleInventory }
             : {}),
         },
       }),
+      resolveBotEntitlements:
+        options.resolveBotEntitlements ??
+        (async () => options.entitlements ?? ["crm"]),
       ...(options.crmRealtimeBroker
         ? { realtimeBroker: options.crmRealtimeBroker }
         : {}),

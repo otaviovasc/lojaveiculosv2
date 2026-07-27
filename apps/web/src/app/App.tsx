@@ -11,6 +11,7 @@ import { adminRoutePaths } from "./adminRoutePaths";
 import {
   AgencyBillingPage,
   AgencyCreateStorePage,
+  AgencyCrederePage,
   AgencyDashboardPage,
   AgencyLayout,
   AgencyStatsPage,
@@ -73,6 +74,7 @@ export function App() {
           <Route index element={<AgencyDashboardPage />} />
           <Route path="stats" element={<AgencyStatsPage />} />
           <Route path="unified-billing" element={<AgencyBillingPage />} />
+          <Route path="credere" element={<AgencyCrederePage />} />
           <Route path="create-store" element={<AgencyCreateStorePage />} />
         </Route>
         {adminRoutePaths.map((path) => (

@@ -62,6 +62,7 @@ export const stores = pgTable(
   },
   (table) => [
     index("stores_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("stores_id_tenant_unique").on(table.id, table.tenantId),
     uniqueIndex("stores_public_slug_unique").on(table.publicSlug),
   ],
 );

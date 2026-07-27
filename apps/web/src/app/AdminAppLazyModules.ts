@@ -70,6 +70,11 @@ export const SettingsModule = lazy(() =>
     default: module.SettingsModule,
   })),
 );
+export const SimulationsPage = lazy(() =>
+  import("../features/simulations/SimulationsPage").then((module) => ({
+    default: module.SimulationsPage,
+  })),
+);
 export const StorefrontCustomizationModule = lazy(() =>
   import("../features/publicSite/StorefrontCustomizationModule").then(
     (module) => ({ default: module.StorefrontCustomizationModule }),
