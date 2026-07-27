@@ -189,17 +189,20 @@ Credere financing uses tenant-owned OAuth connections: agencies connect once
 for affiliated stores, while direct owner-operated stores can connect their own
 Credere account. Do not commit real client credentials or encryption keys.
 
-| Name                                | Required | Environments               | Secret | Notes                                                                                                                     |
-| ----------------------------------- | -------- | -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `CREDERE_CLIENT_ID`                 | Deployed | staging, production        | Yes    | OAuth client id issued by Credere. Runtime fails closed outside local/test when missing.                                  |
-| `CREDERE_CLIENT_SECRET`             | Deployed | staging, production        | Yes    | OAuth client secret issued by Credere.                                                                                    |
-| `CREDERE_REDIRECT_URI`              | Deployed | staging, production        | No     | Public API OAuth callback URI registered with Credere.                                                                    |
-| `CREDERE_CREDENTIAL_ENCRYPTION_KEY` | Deployed | staging, production        | Yes    | Key material for persisted provider credentials. Runtime fails closed outside local/test when missing.                    |
-| `CREDERE_BANK_POLICY_CODES`         | No       | local, staging, production | No     | Optional comma-separated FEBRABAN allowlist. When unset, runtime uses all Credere active/okay banks for the mapped store. |
+| Name                                | Required     | Environments               | Secret | Notes                                                                                                                     |
+| ----------------------------------- | ------------ | -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `CREDERE_CLIENT_ID`                 | When enabled | staging, production        | Yes    | OAuth client id issued by Credere. All four core values must be configured together.                                      |
+| `CREDERE_CLIENT_SECRET`             | When enabled | staging, production        | Yes    | OAuth client secret issued by Credere.                                                                                    |
+| `CREDERE_REDIRECT_URI`              | When enabled | staging, production        | No     | Public API OAuth callback URI registered with Credere.                                                                    |
+| `CREDERE_CREDENTIAL_ENCRYPTION_KEY` | When enabled | staging, production        | Yes    | Key material for persisted provider credentials.                                                                          |
+| `CREDERE_BANK_POLICY_CODES`         | No           | local, staging, production | No     | Optional comma-separated FEBRABAN allowlist. When unset, runtime uses all Credere active/okay banks for the mapped store. |
 
 Store simulation routes require the `simulations` entitlement and explicit
 customer consent. Provider errors must be returned as stable JSON API errors
 without raw provider payloads, tokens, CPF/CNPJ, email, or phone details.
+When all Credere values are absent, the API remains healthy and these routes
+return `CREDERE_FINANCING_UNAVAILABLE` without claiming an official provider
+operation. A partial configuration fails closed during startup.
 
 R2 browser uploads require a bucket-level CORS policy in addition to these
 runtime variables. Use `docs/ops/r2-cors-lojaveiculosv2.json` for the
