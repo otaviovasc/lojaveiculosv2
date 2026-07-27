@@ -2,6 +2,7 @@ node_modules/
 .claude/
 .pnpm-store/
 .worktrees/
+.codebase-memory/
 /reports/
 .terraform/
 dist/
