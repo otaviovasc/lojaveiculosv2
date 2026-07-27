@@ -8,7 +8,7 @@ import {
   slugify,
   targetId,
 } from "./common.mjs";
-import { addLegacyMap } from "./target-foundation.mjs";
+import { addLegacyMap } from "./target-support.mjs";
 import { log, progress } from "./log.mjs";
 
 export async function seedInventory(tx, data, config, ids) {

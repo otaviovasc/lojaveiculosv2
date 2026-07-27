@@ -1,6 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertParity } from "./target-parity.mjs";
+import { assertParity, collectParity } from "./target-parity.mjs";
+
+test("billing entitlement parity ignores stale migration projections", async () => {
+  const queries = [];
+  const tx = {
+    unsafe(query) {
+      queries.push(query);
+      if (query.includes("AS legacy"))
+        return Promise.resolve([{ attachments: 0, legacy: 0 }]);
+      return Promise.resolve([{ count: 0 }]);
+    },
+  };
+
+  await collectParity(tx, "00000000-0000-4000-8000-000000000001", {
+    crmConnections: new Map(),
+  });
+
+  assert.ok(
+    queries.some((query) =>
+      query.includes("metadata->>'migrationSelected'='true'"),
+    ),
+  );
+});
 
 test("WhatsApp parity uses normalized target sessions and media URL counts", () => {
   const data = {
@@ -81,6 +103,31 @@ test("lead parity includes deterministic WhatsApp-only coverage leads", () => {
         users: 0,
       },
       new Set(["leads", "whatsapp"]),
+    ),
+  );
+});
+
+test("foundation parity includes billing contract records", () => {
+  const data = {
+    accesses: [{ id: 1 }],
+    billing: {
+      entitlements: [{ featureKey: "analytics" }, { featureKey: "crm" }],
+      payments: [{ legacy: { id: 1 } }],
+      products: [{ key: "plan:growth" }, { key: "addon:crm" }],
+    },
+  };
+  assert.doesNotThrow(() =>
+    assertParity(
+      data,
+      {
+        billing_customers: 1,
+        payments: 1,
+        store_entitlements: 2,
+        subscription_items: 2,
+        subscriptions: 1,
+        users: 1,
+      },
+      new Set(),
     ),
   );
 });

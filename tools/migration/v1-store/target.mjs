@@ -14,6 +14,7 @@ import {
 import { seedFinanceAttachments } from "./target-attachments.mjs";
 import { seedCrmWhatsapp } from "./target-crm-whatsapp.mjs";
 import { assertParity, collectParity } from "./target-parity.mjs";
+import { prepareLegacyBillingMigration } from "./billing-mapping.mjs";
 import {
   prepareSpedyFiscalMigration,
   seedSpedyFiscalConnection,
@@ -61,6 +62,7 @@ export async function migrateToV2(data, config) {
   try {
     await assertTargetSchema(sql);
     log("Target schema OK");
+    data.billing = prepareLegacyBillingMigration(data);
     data.spedyFiscal = await prepareSpedyFiscalMigration(data, config);
     await sql.begin(async (tx) => {
       await tx`INSERT INTO migration_runs (id, dump_label, metadata, started_at, status, created_at, updated_at)
@@ -103,7 +105,22 @@ export async function migrateToV2(data, config) {
         collectParity(tx, ids.store, ids),
       );
       assertParity(data, parity, modules);
-      await tx`UPDATE migration_runs SET status='succeeded', completed_at=now(), metadata=metadata || ${tx.json({ parity, preservedStoreConfiguration: { customModels: data.customModels, saleSources: data.saleSources, settings: data.settings } })}, updated_at=now() WHERE id=${ids.run}`;
+      await tx`UPDATE migration_runs SET status='succeeded', completed_at=now(), metadata=metadata || ${tx.json(
+        {
+          billing: {
+            addonTypes: data.billing.addons.map((addon) => addon.addonType),
+            legacyPlan: data.billing.legacyPlan,
+            paymentCount: data.billing.payments.length,
+            subscriptionStatus: data.billing.subscription.status,
+          },
+          parity,
+          preservedStoreConfiguration: {
+            customModels: data.customModels,
+            saleSources: data.saleSources,
+            settings: data.settings,
+          },
+        },
+      )}, updated_at=now() WHERE id=${ids.run}`;
       if (!config.apply)
         throw new DryRunRollback("Dry run completed and rolled back.");
     });
@@ -192,8 +209,6 @@ function enforceTargetSafety(config) {
       "CONFIRM_STORE_SLUG must exactly match STORE_SLUG when APPLY=true.",
     );
   }
-  if (!config.entitlements.length)
-    throw new Error("TARGET_ENTITLEMENTS must be an explicit non-empty list.");
 }
 
 async function assertTargetSchema(sql) {

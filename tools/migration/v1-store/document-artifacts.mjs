@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { legacyMetadata, targetId } from "./common.mjs";
-import { addLegacyMap } from "./target-foundation.mjs";
+import { addLegacyMap } from "./target-support.mjs";
 import { log } from "./log.mjs";
 import {
   generatedStorageKey,
