@@ -45,6 +45,12 @@ export default defineRailway((context) => {
       CLERK_SECRET_KEY: context.shared.CLERK_SECRET_KEY,
       CLERK_SIGN_IN_URL: context.shared.CLERK_SIGN_IN_URL,
       CLERK_SIGN_UP_URL: context.shared.CLERK_SIGN_UP_URL,
+      CREDERE_BANK_POLICY_CODES: context.shared.CREDERE_BANK_POLICY_CODES,
+      CREDERE_CLIENT_ID: context.shared.CREDERE_CLIENT_ID,
+      CREDERE_CLIENT_SECRET: context.shared.CREDERE_CLIENT_SECRET,
+      CREDERE_CREDENTIAL_ENCRYPTION_KEY:
+        context.shared.CREDERE_CREDENTIAL_ENCRYPTION_KEY,
+      CREDERE_REDIRECT_URI: context.shared.CREDERE_REDIRECT_URI,
       CRM_ZAPI_API_BASE_URL: context.shared.CRM_ZAPI_API_BASE_URL,
       CRM_ZAPI_CLIENT_TOKEN: context.shared.CRM_ZAPI_CLIENT_TOKEN,
       CRM_ZAPI_WEBHOOK_TOKEN: context.shared.CRM_ZAPI_WEBHOOK_TOKEN,

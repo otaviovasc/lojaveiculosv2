@@ -1,20 +1,33 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClerkAuthProvider } from "../features/account/ClerkAuthProvider";
 import { App } from "./App";
 
+vi.mock("../features/account/AuthPages", () => {
+  const route = ({ children }: { children: ReactNode }) => <>{children}</>;
+  return {
+    ProtectedRoute: route,
+    SessionBootstrapPage: () => null,
+    SignInPage: () => null,
+    SignUpPage: () => null,
+  };
+});
+
 vi.mock("./AppLazyRoutes", async () => {
+  const { Outlet } = await import("react-router-dom");
   const { LandingPage } = await import("../features/marketing/LandingPage");
   const emptyRoute = () => null;
   return {
     AdminApp: emptyRoute,
     AgencyBillingPage: emptyRoute,
+    AgencyCrederePage: () => <div>Credere agency route</div>,
     AgencyCreateStorePage: emptyRoute,
     AgencyDashboardPage: emptyRoute,
-    AgencyLayout: emptyRoute,
+    AgencyLayout: () => <Outlet />,
     AgencyStatsPage: emptyRoute,
     LandingPage,
     OwnerOnboardingPage: emptyRoute,
@@ -64,5 +77,17 @@ describe("App routes", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("404")).toBeInTheDocument();
+  });
+
+  it("registers the agency Credere management route inside the agency layout", async () => {
+    render(
+      <MemoryRouter initialEntries={["/agency/admin/credere"]}>
+        <ClerkAuthProvider>
+          <App />
+        </ClerkAuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Credere agency route")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,5 @@
 import type { Context, Hono } from "hono";
+import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   whatsappMessageParamSchema,
@@ -37,6 +38,7 @@ import type { CrmServices } from "./crmServices.js";
 export type RegisterCrmWhatsappApiRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
   createWebhookContext?: (context: Context) => Promise<ServiceContext>;
+  resolveBotEntitlements?: ResolveCrmBotEntitlements;
   services: CrmServices;
 };
 
@@ -45,6 +47,7 @@ export function registerCrmWhatsappApiRoutes(
   {
     createContext,
     createWebhookContext = createContext,
+    resolveBotEntitlements,
     services,
   }: RegisterCrmWhatsappApiRoutesOptions,
 ) {
@@ -196,6 +199,7 @@ export function registerCrmWhatsappApiRoutes(
   registerCrmWhatsappIntegrationRoutes(crmFeature, {
     createContext,
     createWebhookContext,
+    ...(resolveBotEntitlements ? { resolveBotEntitlements } : {}),
     services,
   });
   registerCrmWhatsappExtrasRoutes(crmFeature, { createContext, services });

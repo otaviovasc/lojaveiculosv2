@@ -1,9 +1,4 @@
-import {
-  createFinanceServices,
-  type FinanceServices,
-} from "../../features/finance/controllers/financeServices.js";
 import type { BillingServicePorts } from "../../domains/billing/services/BillingService/serviceSupport.js";
-import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import {
   createInternalMonitoringServices,
   type InternalMonitoringServices,
@@ -44,7 +39,6 @@ import {
   type DrizzleAuditSinkClient,
 } from "./audit/drizzleAuditSink.js";
 import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternalMonitoringRepository.js";
-import type { DrizzleFinanceClient } from "./finance/drizzleFinanceRepository.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
 import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
 import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
@@ -82,8 +76,11 @@ import { createRuntimeInventoryServices } from "./runtimeInventoryServices.js";
 import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
 import { createRuntimeAutomationServices } from "./runtimeAutomationServices.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
+import { createRuntimeFinanceServices } from "./runtimeFinanceServices.js";
 import { createRuntimeSalesServices } from "./runtimeSalesServices.js";
 import type { RuntimeHttpAppOptionsInput } from "./runtimeAppOptionsTypes.js";
+import { createRuntimeCredereFinancingServices } from "../financing/runtimeCredereFinancingServices.js";
+import { createDrizzleCrmBotEntitlementResolver } from "./crm/resolveCrmBotEntitlements.js";
 
 export function createRuntimeHttpAppOptions({
   auditDb,
@@ -98,6 +95,7 @@ export function createRuntimeHttpAppOptions({
     ? createDrizzleAuditSink(auditDb as unknown as DrizzleAuditSinkClient)
     : null;
   const runtimeObjectStorage = objectStorage ?? createRuntimeObjectStorage(env);
+  const financingServices = createRuntimeCredereFinancingServices(db, env);
   return {
     analyticsServices: createRuntimeAnalyticsServices(
       db as RuntimeAnalyticsClient,
@@ -127,11 +125,15 @@ export function createRuntimeHttpAppOptions({
         runtimeObjectStorage,
       ),
     crmRealtimeBroker,
+    resolveCrmBotEntitlements: createDrizzleCrmBotEntitlementResolver(
+      db as DrizzleCrmClient,
+    ),
     crmServices: createRuntimeCrmServices(
       db,
       env,
       crmRealtimeBroker,
       runtimeObjectStorage,
+      financingServices,
     ),
     documentServices: createRuntimeDocumentServices(
       db,
@@ -143,6 +145,7 @@ export function createRuntimeHttpAppOptions({
     ),
     externalApiServices: createRuntimeExternalApiServices(db),
     financeServices: createRuntimeFinanceServices(db, runtimeObjectStorage),
+    ...(financingServices ? { financingServices } : {}),
     fiscalServices: createRuntimeFiscalServices(db, env),
     ...(identityVerifier ? { identityVerifier } : {}),
     ...(clerkAccountProviders.clerkUserProfileProvider
@@ -236,14 +239,4 @@ function createRuntimeRoleServices(db: unknown): RoleServices {
       db as unknown as DrizzleRoleManagementClient,
     ),
   );
-}
-
-function createRuntimeFinanceServices(
-  db: unknown,
-  objectStorage: ObjectStorage | null,
-): FinanceServices {
-  return createFinanceServices({
-    drizzleClient: db as DrizzleFinanceClient,
-    ...(objectStorage ? { objectStorage } : {}),
-  });
 }

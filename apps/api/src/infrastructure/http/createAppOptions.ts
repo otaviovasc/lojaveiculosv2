@@ -4,11 +4,13 @@ import type { AutomationServices } from "../../features/automation/controllers/a
 import type { BillingServices } from "../../features/billing/controllers/billingServices.js";
 import type { ComplianceServices } from "../../features/compliance/controllers/complianceServices.js";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
+import type { ResolveCrmBotEntitlements } from "../../domains/crm/ports/crmBotEntitlementResolver.js";
 import type { CrmServices } from "../../features/crm/controllers/crmServices.js";
 import type { CrmFinancialProductTransactionRunner } from "../../features/crm/controllers/crmFinancialProducts.js";
 import type { DocumentServices } from "../../features/documents/controllers/documentServices.js";
 import type { ExternalApiServices } from "../../features/externalApi/controllers/externalApiServices.js";
 import type { FinanceServices } from "../../features/finance/controllers/financeServices.js";
+import type { CredereFinancingServices } from "../../features/financing/controllers/credereFinancingServices.js";
 import type { FiscalServices } from "../../features/fiscal/controllers/fiscalServices.js";
 import type { AccountProvisioningServices } from "../../features/identity/controllers/accountProvisioningServices.js";
 import type { RoleServices } from "../../features/identity/controllers/roleServices.js";
@@ -37,11 +39,13 @@ export type CreateAppOptions = {
   complianceServices?: ComplianceServices;
   crmRealtimeBroker?: CrmRealtimeBroker;
   crmFinancialProductTransactionRunner?: CrmFinancialProductTransactionRunner;
+  resolveCrmBotEntitlements?: ResolveCrmBotEntitlements;
   crmServices?: CrmServices;
   documentServices?: DocumentServices;
   externalApiRepository?: ExternalApiRepository;
   externalApiServices?: ExternalApiServices;
   financeServices?: FinanceServices;
+  financingServices?: CredereFinancingServices;
   fiscalServices?: FiscalServices;
   identityVerifier?: HttpIdentityVerifier;
   clerkUserProfileProvider?: ClerkUserProfileProvider;

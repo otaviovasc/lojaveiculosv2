@@ -28,6 +28,7 @@
     "db:migrate:deploy": "pnpm --filter @lojaveiculosv2/db db:migrate && pnpm --filter @lojaveiculosv2/audit-db db:migrate",
     "db:push:local": "DATABASE_URL=postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2 AUDIT_DATABASE_URL=postgresql://lojaveiculosv2_audit:lojaveiculosv2_audit_dev@localhost:54322/lojaveiculosv2_audit pnpm --filter @lojaveiculosv2/db db:push:force && AUDIT_DATABASE_URL=postgresql://lojaveiculosv2_audit:lojaveiculosv2_audit_dev@localhost:54322/lojaveiculosv2_audit pnpm --filter @lojaveiculosv2/audit-db db:push:force",
     "db:seed": "pnpm run db:seed:local",
+    "db:seed:fipe:local": "DATABASE_URL=postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2 node tools/db/ensure-local-database-url.mjs DATABASE_URL && APP_ENV=local DATABASE_URL=postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2 pnpm --filter @lojaveiculosv2/api catalog:import-csv",
     "db:seed:sql:local": "node tools/db/ensure-local-database-url.mjs DATABASE_URL && COMPOSE_DISABLE_ENV_FILE=1 docker compose exec -T lojaveiculosv2-postgres psql -U lojaveiculosv2 -d lojaveiculosv2 -v ON_ERROR_STOP=1 -f /seed/vehicle-catalog.sql -f /seed/product-test-user.sql",
     "db:seed:artifacts:local": "pnpm run r2:seed:documents -- --apply --skip-missing-env && pnpm run r2:repair:seed-media -- --apply --skip-missing-env --fail-on-missing",
     "db:seed:local": "pnpm run db:seed:sql:local && pnpm run db:seed:artifacts:local && pnpm run qa:seed:local",

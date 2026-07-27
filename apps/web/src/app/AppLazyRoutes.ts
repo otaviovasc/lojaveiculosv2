@@ -13,6 +13,11 @@ export const AgencyBillingPage = lazy(() =>
     default: module.AgencyBillingPage,
   })),
 );
+export const AgencyCrederePage = lazy(() =>
+  import("../features/agency/pages/AgencyCrederePage").then((module) => ({
+    default: module.AgencyCrederePage,
+  })),
+);
 export const AgencyCreateStorePage = lazy(() =>
   import("../features/agency/pages/AgencyCreateStorePage").then((module) => ({
     default: module.AgencyCreateStorePage,

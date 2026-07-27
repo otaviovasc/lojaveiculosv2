@@ -5,6 +5,7 @@ import {
   BarChart3,
   CreditCard,
   Plus,
+  PlugZap,
   Sun,
   Moon,
   Menu,
@@ -72,6 +73,11 @@ export function AgencyLayout() {
       path: "/agency/admin/unified-billing",
       label: "Cobrança Unificada",
       icon: CreditCard,
+    },
+    {
+      path: "/agency/admin/credere",
+      label: "Credere",
+      icon: PlugZap,
     },
     {
       path: "/agency/admin/create-store",

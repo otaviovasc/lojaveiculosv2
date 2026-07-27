@@ -58,7 +58,57 @@ describe("resolveStoreContext", () => {
     );
   });
 
-  it("removes owner billing permission when an agency manages the billing", async () => {
+  it("adds Credere connection management only for direct store owners", async () => {
+    const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
+      entitlements: ["crm"],
+      overrides: [],
+      role: "owner",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+      userId: "user_1" as never,
+    };
+
+    const context = await resolveStoreContext({
+      actor: { id: "user_1", kind: "user" },
+      audit: { record: vi.fn(async () => undefined) },
+      clerkUserId: "clerk_1",
+      logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+      repository: { findByClerkUserAndStoreSlug: vi.fn(async () => access) },
+      requestId: "req_1",
+      storeSlug: "demo",
+    });
+
+    expect(context.permissions).toContain("financing.connection.manage");
+  });
+
+  it("honors an explicit Credere connection permission denial for direct owners", async () => {
+    const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
+      entitlements: ["crm"],
+      overrides: [
+        { allowed: false, permission: "financing.connection.manage" },
+      ],
+      role: "owner",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+      userId: "user_1" as never,
+    };
+
+    const context = await resolveStoreContext({
+      actor: { id: "user_1", kind: "user" },
+      audit: { record: vi.fn(async () => undefined) },
+      clerkUserId: "clerk_1",
+      logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+      repository: { findByClerkUserAndStoreSlug: vi.fn(async () => access) },
+      requestId: "req_1",
+      storeSlug: "demo",
+    });
+
+    expect(context.permissions).not.toContain("financing.connection.manage");
+  });
+
+  it("removes owner billing and Credere connection permissions when an agency manages the billing", async () => {
     const access: StoreAccessRecord = {
       billingManagedBy: "agency",
       entitlements: ["crm"],
@@ -81,6 +131,7 @@ describe("resolveStoreContext", () => {
 
     expect(context.billingManagedBy).toBe("agency");
     expect(context.permissions).not.toContain("billing.manage");
+    expect(context.permissions).not.toContain("financing.connection.manage");
   });
 
   it("fails with a typed error when user cannot access store", async () => {

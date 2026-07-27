@@ -16,6 +16,7 @@ import {
   externalApiOpenApiDocument,
 } from "./externalApiDocs.js";
 import { financePaths, financeSchemas } from "./financeOpenApi.js";
+import { financingPaths, financingSchemas } from "./financingOpenApi.js";
 import { fiscalPaths, fiscalSchemas } from "./fiscalOpenApi.js";
 import { identityPaths, identitySchemas } from "./identityOpenApi.js";
 import {
@@ -84,6 +85,7 @@ export const openApiDocument = {
     ...identityProvisioningPaths,
     ...billingPaths,
     ...financePaths,
+    ...financingPaths,
     ...fiscalPaths,
     ...analyticsPaths,
     ...automationPaths,
@@ -103,6 +105,7 @@ export const openApiDocument = {
       ...inventorySchemas,
       ...billingSchemas,
       ...financeSchemas,
+      ...financingSchemas,
       ...fiscalSchemas,
       ...analyticsSchemas,
       ...automationSchemas,
