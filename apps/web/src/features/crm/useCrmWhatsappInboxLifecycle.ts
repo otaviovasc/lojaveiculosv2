@@ -22,7 +22,7 @@ type UseCrmWhatsappInboxLifecycleInput = {
   refreshSessions: (options?: {
     preserveLocalOnly?: boolean;
   }) => Promise<unknown>;
-  search: string;
+  search: string | null;
   setSessions: (value: SetStateAction<CrmWhatsappSession[]>) => void;
   setError: (error: Error | null) => void;
   setIsLoadingSessions: (value: SetStateAction<boolean>) => void;
@@ -51,6 +51,7 @@ export function useCrmWhatsappInboxLifecycle({
   }, [activeSession, autoReadSessionIdsRef, markSessionReadOnce]);
 
   useEffect(() => {
+    if (search === null) return;
     if (connections.isLoading) return;
     if (connections.error || !connectionId || !permissions.canList) {
       setSessions([]);

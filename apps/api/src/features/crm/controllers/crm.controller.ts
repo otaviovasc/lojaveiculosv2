@@ -10,6 +10,7 @@ import { createPassthroughTransactionRunner } from "../../../shared/transaction.
 import {
   cleanCreateActivityInput,
   cleanCreateLeadInput,
+  cleanListLeadBoardInput,
   cleanListLeadsInput,
   cleanUpdateLeadInput,
 } from "./crm.controller.cleaners.js";
@@ -18,6 +19,7 @@ import {
   createLeadFinancialProductSchema,
   createLeadSchema,
   listActivitiesQuerySchema,
+  listLeadBoardQuerySchema,
   listLeadsQuerySchema,
   updateLeadSchema,
 } from "./crm.controller.schemas.js";
@@ -36,6 +38,7 @@ import {
 } from "./crm.controller.errors.js";
 import { crmServices, type CrmServices } from "./crmServices.js";
 import { registerCrmWhatsappRoutes } from "./crm.whatsapp.controller.js";
+import { encodeCrmLeadCursor } from "./crm.leadCursor.js";
 
 export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
@@ -65,6 +68,28 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
   const createContext = (context: Context) =>
     createProtectedServiceContext(context, contextFactory);
 
+  crmFeature.get("/leads/board", async (context) =>
+    handleCrm(context, async () => {
+      const parsed = listLeadBoardQuerySchema.safeParse(context.req.query());
+      if (!parsed.success) {
+        throw new CrmRequestValidationError("Request query is invalid.");
+      }
+      const serviceContext = await createContext(context);
+      const stages = await services.listLeadBoard(
+        serviceContext,
+        cleanListLeadBoardInput(parsed.data),
+      );
+      return context.json({
+        stages: stages.map((stage) => ({
+          leads: stage.items,
+          nextCursor: encodeCrmLeadCursor(stage.nextCursor),
+          pipelineStageId: stage.pipelineStageId,
+          total: stage.total,
+        })),
+      });
+    }),
+  );
+
   crmFeature.get("/leads", async (context) =>
     handleCrm(context, async () => {
       const parsed = listLeadsQuerySchema.safeParse(context.req.query());
@@ -72,11 +97,15 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
         throw new CrmRequestValidationError("Request query is invalid.");
       }
       const serviceContext = await createContext(context);
-      const leads = await services.listLeads(
+      const page = await services.listLeads(
         serviceContext,
         cleanListLeadsInput(parsed.data),
       );
-      return context.json({ leads });
+      return context.json({
+        leads: page.items,
+        nextCursor: encodeCrmLeadCursor(page.nextCursor),
+        total: page.total,
+      });
     }),
   );
 

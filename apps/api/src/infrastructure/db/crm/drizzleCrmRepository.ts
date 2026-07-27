@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   leadActivities,
@@ -17,12 +17,15 @@ import {
   countLeadsByPipeline,
   countLeadsByPipelineStages,
 } from "./drizzleCrmLeadReferenceCounts.js";
-import { findLeadIdsByVehicleTitle } from "./drizzleCrmLeadSearch.js";
 import { toActivity, toLead } from "./drizzleCrmMappers.js";
 import { createIdempotentCrmActivity } from "./drizzleCrmActivityWrites.js";
 import {
+  countCrmLeads,
+  listCrmLeadBoard,
+  listCrmLeads,
+} from "./drizzleCrmLeadList.js";
+import {
   findLeadVehicleReference,
-  findLeadVehicleReferences,
   findVehicleTitle,
 } from "./drizzleCrmVehicleReferences.js";
 
@@ -118,6 +121,7 @@ export function createDrizzleCrmRepository(
     countLeadsByPipeline: (input) => countLeadsByPipeline(db, input),
     countLeadsByPipelineStages: (input) =>
       countLeadsByPipelineStages(db, input),
+    countLeads: (input) => countCrmLeads(db, input),
     async listActivities(input) {
       const rows = await db
         .select()
@@ -134,66 +138,8 @@ export function createDrizzleCrmRepository(
 
       return rows.map(toActivity);
     },
-    async listLeads(input) {
-      const filters = [
-        eq(leads.storeId, input.storeId),
-        eq(leads.tenantId, input.tenantId),
-        eq(leads.isDeleted, false),
-      ];
-      if (input.listingId) {
-        const linkedRows = await db
-          .select({ leadId: leadVehicleInterests.leadId })
-          .from(leadVehicleInterests)
-          .where(
-            and(
-              eq(leadVehicleInterests.listingId, input.listingId),
-              eq(leadVehicleInterests.storeId, input.storeId),
-              eq(leadVehicleInterests.tenantId, input.tenantId),
-            ),
-          );
-        if (!linkedRows.length) return [];
-        filters.push(
-          inArray(
-            leads.id,
-            linkedRows.map((row) => row.leadId),
-          ),
-        );
-      }
-      if (input.source) filters.push(eq(leads.source, input.source));
-      if (input.status) filters.push(eq(leads.status, input.status));
-      const vehicleLeadIds = input.search
-        ? await findLeadIdsByVehicleTitle(db, {
-            search: input.search,
-            storeId: input.storeId,
-            tenantId: input.tenantId,
-          })
-        : [];
-      const searchFilter = input.search
-        ? or(
-            ilike(leads.buyerName, `%${input.search}%`),
-            ilike(leads.buyerPhone, `%${input.search}%`),
-            ilike(leads.buyerEmail, `%${input.search}%`),
-            ...(vehicleLeadIds.length
-              ? [inArray(leads.id, vehicleLeadIds)]
-              : []),
-          )
-        : undefined;
-
-      const rows = await db
-        .select()
-        .from(leads)
-        .where(and(...filters, ...(searchFilter ? [searchFilter] : [])))
-        .orderBy(desc(leads.updatedAt))
-        .offset(input.offset ?? 0)
-        .limit(input.limit);
-
-      const references = await findLeadVehicleReferences(db, {
-        leadIds: rows.map((row) => row.id),
-        storeId: input.storeId,
-        tenantId: input.tenantId,
-      });
-      return rows.map((row) => toLead(row, references.get(row.id)));
-    },
+    listLeadBoard: (input) => listCrmLeadBoard(db, input),
+    listLeads: (input) => listCrmLeads(db, input),
     async updateLead(input) {
       const [row] = await db
         .update(leads)

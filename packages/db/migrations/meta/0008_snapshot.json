@@ -1,6 +1,6 @@
 {
-  "id": "6d3ba0fa-a060-45b3-aa3c-2e0fb7a0d706",
-  "prevId": "df4a2760-4bca-44d5-8746-54a32eaee8b0",
+  "id": "e5e79bcd-9d9b-4971-ab63-1ee6f4447ef7",
+  "prevId": "c815a689-8ae3-4170-91af-12b88ec8429b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -15571,6 +15571,39 @@
           "method": "btree",
           "with": {}
         },
+        "lead_activities_scoped_history_idx": {
+          "name": "lead_activities_scoped_history_idx",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "store_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "lead_activities_store_occurred_at_idx": {
           "name": "lead_activities_store_occurred_at_idx",
           "columns": [
@@ -16160,6 +16193,57 @@
               "expression": "assigned_user_id",
               "isExpression": false,
               "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "leads_board_page_idx": {
+          "name": "leads_board_page_idx",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "store_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pipeline_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pipeline_stage_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_deleted",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
               "nulls": "last"
             }
           ],

@@ -224,6 +224,7 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids, uploader) {
       config,
       ids,
       uploader,
+      { settings: data.settings, store: data.store },
     );
     if (plan.artifact === "generated") artifactCounts.generated += 1;
     else if (plan.artifact === "legacy-file") artifactCounts.legacyFile += 1;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import { useRemoteSearch } from "../../../lib/useRemoteSearch";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import {
   createInventoryApiOptions,
@@ -35,6 +36,7 @@ export function useInventoryList(api?: InventoryApi) {
   const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
     api ?? null,
   );
+  const hasUnfilteredSummaryRef = useRef(false);
   const [screenMode, setScreenMode] = useState<"list" | "create" | "detail">(
     routeStateRef.current.screenMode,
   );
@@ -46,6 +48,7 @@ export function useInventoryList(api?: InventoryApi) {
     [],
   );
   const [search, setSearch] = useState("");
+  const remoteSearch = useRemoteSearch(search);
   const [status, setStatus] = useState<InventoryListStatusFilter>("");
   const [appliedQuery, setAppliedQuery] = useState<InventoryListQueryInput>({
     search: "",
@@ -139,12 +142,14 @@ export function useInventoryList(api?: InventoryApi) {
         if (mode !== "append") {
           if (!input.search && !input.status) {
             setUnfilteredSummary(summarizeInventoryList(result));
-          } else {
+            hasUnfilteredSummaryRef.current = true;
+          } else if (!hasUnfilteredSummaryRef.current) {
             try {
               const unfiltered = await runtimeApi.listListings(
                 createListQuery({ search: "", status: "" }),
               );
               setUnfilteredSummary(summarizeInventoryList(unfiltered));
+              hasUnfilteredSummaryRef.current = true;
             } catch (err) {
               console.error("Failed to load unfiltered summary", err);
             }
@@ -176,27 +181,26 @@ export function useInventoryList(api?: InventoryApi) {
 
   useEffect(() => {
     if (!runtimeApi) return;
+    if (remoteSearch === null && status === lastQueryRef.current.status) {
+      return;
+    }
+    const nextSearch = remoteSearch ?? "";
     if (!isMountedRef.current) {
       isMountedRef.current = true;
-      setAppliedQuery({ search, status });
-      void loadListings({ search, status });
+      lastQueryRef.current = { search: nextSearch, status };
+      setAppliedQuery({ search: nextSearch, status });
+      void loadListings({ search: nextSearch, status });
       return;
     }
-    if (status !== lastQueryRef.current.status) {
-      lastQueryRef.current = { search, status };
-      setAppliedQuery({ search, status });
-      void loadListings({ search, status });
-      return;
+    if (
+      nextSearch !== lastQueryRef.current.search ||
+      status !== lastQueryRef.current.status
+    ) {
+      lastQueryRef.current = { search: nextSearch, status };
+      setAppliedQuery({ search: nextSearch, status });
+      void loadListings({ search: nextSearch, status });
     }
-    const delayDebounceFn = setTimeout(() => {
-      if (search !== lastQueryRef.current.search) {
-        lastQueryRef.current = { search, status };
-        setAppliedQuery({ search, status });
-        void loadListings({ search, status });
-      }
-    }, 300);
-    return () => clearTimeout(delayDebounceFn);
-  }, [search, status, loadListings, runtimeApi]);
+  }, [remoteSearch, status, loadListings, runtimeApi]);
 
   useEffect(() => {
     if (detail && screenMode === "list") setScreenMode("detail");
@@ -211,8 +215,7 @@ export function useInventoryList(api?: InventoryApi) {
   });
 
   const refreshListings = () => {
-    setAppliedQuery({ search, status });
-    void loadListings({ search, status });
+    void loadListings(appliedQuery);
   };
 
   const applyStatusFilter = (nextStatus: InventoryListStatusFilter) =>

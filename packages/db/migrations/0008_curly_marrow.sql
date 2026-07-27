@@ -1,14 +1,41 @@
+CREATE TYPE "public"."financing_customer_consent_status" AS ENUM('granted', 'revoked', 'expired');--> statement-breakpoint
 CREATE TYPE "public"."financing_inquiry_event_kind" AS ENUM('created', 'submitted', 'provider_result', 'condition_recorded', 'failed', 'consent_linked');--> statement-breakpoint
 CREATE TYPE "public"."financing_operation_request_status" AS ENUM('queued', 'submitted', 'succeeded', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."financing_operation_request_type" AS ENUM('simulation', 'proposal', 'status_sync', 'callback_sync');--> statement-breakpoint
-CREATE TYPE "public"."financing_customer_consent_status" AS ENUM('granted', 'revoked', 'expired');--> statement-breakpoint
 CREATE TYPE "public"."financing_provider" AS ENUM('credere');--> statement-breakpoint
 CREATE TYPE "public"."financing_provider_account_status" AS ENUM('pending', 'active', 'paused', 'disconnected', 'error', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."financing_provider_bank_status" AS ENUM('unknown', 'okay', 'restricted', 'error', 'inactive');--> statement-breakpoint
 CREATE TYPE "public"."financing_provider_environment" AS ENUM('sandbox', 'production');--> statement-breakpoint
-CREATE TYPE "public"."financing_provider_store_mapping_status" AS ENUM('active', 'inactive', 'error', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."financing_provider_token_kind" AS ENUM('access_token', 'refresh_token', 'id_token');--> statement-breakpoint
 CREATE TYPE "public"."provider_oauth_transaction_status" AS ENUM('pending', 'consumed', 'expired', 'cancelled', 'failed');--> statement-breakpoint
+CREATE TYPE "public"."financing_provider_bank_status" AS ENUM('unknown', 'okay', 'restricted', 'error', 'inactive');--> statement-breakpoint
+CREATE TYPE "public"."financing_provider_store_mapping_status" AS ENUM('active', 'inactive', 'error', 'archived');--> statement-breakpoint
+CREATE TABLE "financing_customer_consents" (
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"applicant_document_hash" varchar(64) NOT NULL,
+	"applicant_document_last4" varchar(4) NOT NULL,
+	"consent_version" varchar(80) NOT NULL,
+	"evidence_ref" varchar(191),
+	"expires_at" timestamp with time zone,
+	"granted_at" timestamp with time zone NOT NULL,
+	"granted_by_user_id" uuid,
+	"lead_id" uuid,
+	"purpose" varchar(120) NOT NULL,
+	"revoked_at" timestamp with time zone,
+	"status" "financing_customer_consent_status" DEFAULT 'granted' NOT NULL,
+	"store_id" uuid NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	CONSTRAINT "financing_customer_consents_document_hash_sha256" CHECK ("financing_customer_consents"."applicant_document_hash" ~ '^[0-9a-f]{64}$'),
+	CONSTRAINT "financing_customer_consents_document_last4_valid" CHECK ("financing_customer_consents"."applicant_document_last4" ~ '^[0-9]{4}$'),
+	CONSTRAINT "financing_customer_consents_expiry_valid" CHECK ("financing_customer_consents"."expires_at" IS NULL OR "financing_customer_consents"."expires_at" > "financing_customer_consents"."granted_at"),
+	CONSTRAINT "financing_customer_consents_revocation_consistent" CHECK ((
+        ("financing_customer_consents"."status" = 'revoked' AND "financing_customer_consents"."revoked_at" IS NOT NULL)
+        OR
+        ("financing_customer_consents"."status" <> 'revoked' AND "financing_customer_consents"."revoked_at" IS NULL)
+      ))
+);
+--> statement-breakpoint
 CREATE TABLE "financing_inquiry_events" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -52,33 +79,6 @@ CREATE TABLE "financing_operation_requests" (
 	CONSTRAINT "financing_operation_requests_attempt_count_non_negative" CHECK ("financing_operation_requests"."attempt_count" >= 0)
 );
 --> statement-breakpoint
-CREATE TABLE "financing_customer_consents" (
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"applicant_document_hash" varchar(64) NOT NULL,
-	"applicant_document_last4" varchar(4) NOT NULL,
-	"consent_version" varchar(80) NOT NULL,
-	"evidence_ref" varchar(191),
-	"expires_at" timestamp with time zone,
-	"granted_at" timestamp with time zone NOT NULL,
-	"granted_by_user_id" uuid,
-	"lead_id" uuid,
-	"purpose" varchar(120) NOT NULL,
-	"revoked_at" timestamp with time zone,
-	"status" "financing_customer_consent_status" DEFAULT 'granted' NOT NULL,
-	"store_id" uuid NOT NULL,
-	"tenant_id" uuid NOT NULL,
-	CONSTRAINT "financing_customer_consents_document_hash_sha256" CHECK ("financing_customer_consents"."applicant_document_hash" ~ '^[0-9a-f]{64}$'),
-	CONSTRAINT "financing_customer_consents_document_last4_valid" CHECK ("financing_customer_consents"."applicant_document_last4" ~ '^[0-9]{4}$'),
-	CONSTRAINT "financing_customer_consents_expiry_valid" CHECK ("financing_customer_consents"."expires_at" IS NULL OR "financing_customer_consents"."expires_at" > "financing_customer_consents"."granted_at"),
-	CONSTRAINT "financing_customer_consents_revocation_consistent" CHECK ((
-        ("financing_customer_consents"."status" = 'revoked' AND "financing_customer_consents"."revoked_at" IS NOT NULL)
-        OR
-        ("financing_customer_consents"."status" <> 'revoked' AND "financing_customer_consents"."revoked_at" IS NULL)
-      ))
-);
---> statement-breakpoint
 CREATE TABLE "financing_provider_accounts" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -94,38 +94,6 @@ CREATE TABLE "financing_provider_accounts" (
 	"status" "financing_provider_account_status" DEFAULT 'pending' NOT NULL,
 	"tenant_id" uuid NOT NULL,
 	CONSTRAINT "financing_provider_accounts_connection_dates_valid" CHECK ("financing_provider_accounts"."disconnected_at" IS NULL OR "financing_provider_accounts"."connected_at" IS NULL OR "financing_provider_accounts"."disconnected_at" >= "financing_provider_accounts"."connected_at")
-);
---> statement-breakpoint
-CREATE TABLE "financing_provider_store_banks" (
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"account_id" uuid NOT NULL,
-	"bank_febraban_code" varchar(16) NOT NULL,
-	"bank_name" varchar(120),
-	"credential_status" "financing_provider_bank_status" DEFAULT 'unknown' NOT NULL,
-	"external_bank_id" varchar(191),
-	"is_active" boolean DEFAULT true NOT NULL,
-	"last_checked_at" timestamp with time zone,
-	"mapping_id" uuid NOT NULL,
-	"metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
-	"store_id" uuid NOT NULL,
-	"tenant_id" uuid NOT NULL,
-	CONSTRAINT "financing_provider_store_banks_code_present" CHECK (length(trim("financing_provider_store_banks"."bank_febraban_code")) > 0)
-);
---> statement-breakpoint
-CREATE TABLE "financing_provider_store_mappings" (
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"account_id" uuid NOT NULL,
-	"external_store_id" varchar(191) NOT NULL,
-	"last_validated_at" timestamp with time zone,
-	"metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
-	"status" "financing_provider_store_mapping_status" DEFAULT 'active' NOT NULL,
-	"store_id" uuid NOT NULL,
-	"tenant_id" uuid NOT NULL,
-	CONSTRAINT "financing_provider_store_mappings_external_store_present" CHECK (length(trim("financing_provider_store_mappings"."external_store_id")) > 0)
 );
 --> statement-breakpoint
 CREATE TABLE "financing_provider_tokens" (
@@ -180,13 +148,47 @@ CREATE TABLE "provider_oauth_transactions" (
 	CONSTRAINT "provider_oauth_transactions_ttl_valid" CHECK ("provider_oauth_transactions"."expires_at" > "provider_oauth_transactions"."created_at")
 );
 --> statement-breakpoint
+CREATE TABLE "financing_provider_store_banks" (
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"account_id" uuid NOT NULL,
+	"bank_febraban_code" varchar(16) NOT NULL,
+	"bank_name" varchar(120),
+	"credential_status" "financing_provider_bank_status" DEFAULT 'unknown' NOT NULL,
+	"external_bank_id" varchar(191),
+	"is_active" boolean DEFAULT true NOT NULL,
+	"last_checked_at" timestamp with time zone,
+	"mapping_id" uuid NOT NULL,
+	"metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"store_id" uuid NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	CONSTRAINT "financing_provider_store_banks_code_present" CHECK (length(trim("financing_provider_store_banks"."bank_febraban_code")) > 0)
+);
+--> statement-breakpoint
+CREATE TABLE "financing_provider_store_mappings" (
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"account_id" uuid NOT NULL,
+	"external_store_id" varchar(191) NOT NULL,
+	"last_validated_at" timestamp with time zone,
+	"metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"status" "financing_provider_store_mapping_status" DEFAULT 'active' NOT NULL,
+	"store_id" uuid NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	CONSTRAINT "financing_provider_store_mappings_external_store_present" CHECK (length(trim("financing_provider_store_mappings"."external_store_id")) > 0)
+);
+--> statement-breakpoint
 CREATE UNIQUE INDEX "stores_id_tenant_unique" ON "stores" USING btree ("id","tenant_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_provider_accounts_id_tenant_unique" ON "financing_provider_accounts" USING btree ("id","tenant_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_provider_store_mappings_id_scope_unique" ON "financing_provider_store_mappings" USING btree ("id","account_id","tenant_id","store_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_customer_consents_id_scope_unique" ON "financing_customer_consents" USING btree ("id","tenant_id","store_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_operation_requests_id_scope_unique" ON "financing_operation_requests" USING btree ("id","tenant_id","store_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "financing_inquiries_id_scope_unique" ON "financing_inquiries" USING btree ("id","tenant_id","store_id");--> statement-breakpoint
 ALTER TABLE "financing_conditions" DROP CONSTRAINT "financing_conditions_inquiry_id_financing_inquiries_id_fk";
 --> statement-breakpoint
+ALTER TABLE "financing_inquiries" ALTER COLUMN "listing_id" DROP NOT NULL;--> statement-breakpoint
 UPDATE "financing_inquiries"
 SET
 	"metadata" = coalesce("metadata", '{}'::jsonb) || jsonb_build_object(
@@ -238,7 +240,10 @@ ALTER TABLE "financing_inquiries" ADD COLUMN "provider_result_summary" jsonb DEF
 ALTER TABLE "financing_inquiries" ADD COLUMN "requested_by_user_id" uuid;--> statement-breakpoint
 ALTER TABLE "financing_inquiries" ADD COLUMN "store_mapping_id" uuid;--> statement-breakpoint
 ALTER TABLE "financing_inquiries" ADD COLUMN "submitted_at" timestamp with time zone;--> statement-breakpoint
-CREATE UNIQUE INDEX "financing_inquiries_id_scope_unique" ON "financing_inquiries" USING btree ("id","tenant_id","store_id");--> statement-breakpoint
+ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_granted_by_user_id_users_id_fk" FOREIGN KEY ("granted_by_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_lead_id_leads_id_fk" FOREIGN KEY ("lead_id") REFERENCES "public"."leads"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_store_scope_fk" FOREIGN KEY ("store_id","tenant_id") REFERENCES "public"."stores"("id","tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_inquiry_events" ADD CONSTRAINT "financing_inquiry_events_actor_user_id_users_id_fk" FOREIGN KEY ("actor_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_inquiry_events" ADD CONSTRAINT "financing_inquiry_events_store_id_stores_id_fk" FOREIGN KEY ("store_id") REFERENCES "public"."stores"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_inquiry_events" ADD CONSTRAINT "financing_inquiry_events_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -251,39 +256,35 @@ ALTER TABLE "financing_operation_requests" ADD CONSTRAINT "financing_operation_r
 ALTER TABLE "financing_operation_requests" ADD CONSTRAINT "financing_operation_requests_mapping_scope_fk" FOREIGN KEY ("mapping_id","account_id","tenant_id","store_id") REFERENCES "public"."financing_provider_store_mappings"("id","account_id","tenant_id","store_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_operation_requests" ADD CONSTRAINT "financing_operation_requests_consent_scope_fk" FOREIGN KEY ("consent_id","tenant_id","store_id") REFERENCES "public"."financing_customer_consents"("id","tenant_id","store_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_operation_requests" ADD CONSTRAINT "financing_operation_requests_inquiry_scope_fk" FOREIGN KEY ("inquiry_id","tenant_id","store_id") REFERENCES "public"."financing_inquiries"("id","tenant_id","store_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_granted_by_user_id_users_id_fk" FOREIGN KEY ("granted_by_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_lead_id_leads_id_fk" FOREIGN KEY ("lead_id") REFERENCES "public"."leads"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_customer_consents" ADD CONSTRAINT "financing_customer_consents_store_scope_fk" FOREIGN KEY ("store_id","tenant_id") REFERENCES "public"."stores"("id","tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_provider_accounts" ADD CONSTRAINT "financing_provider_accounts_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_provider_store_banks" ADD CONSTRAINT "financing_provider_store_banks_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_provider_store_banks" ADD CONSTRAINT "financing_provider_store_banks_mapping_scope_fk" FOREIGN KEY ("mapping_id","account_id","tenant_id","store_id") REFERENCES "public"."financing_provider_store_mappings"("id","account_id","tenant_id","store_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_provider_store_mappings" ADD CONSTRAINT "financing_provider_store_mappings_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_provider_store_mappings" ADD CONSTRAINT "financing_provider_store_mappings_account_scope_fk" FOREIGN KEY ("account_id","tenant_id") REFERENCES "public"."financing_provider_accounts"("id","tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "financing_provider_store_mappings" ADD CONSTRAINT "financing_provider_store_mappings_store_scope_fk" FOREIGN KEY ("store_id","tenant_id") REFERENCES "public"."stores"("id","tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_provider_tokens" ADD CONSTRAINT "financing_provider_tokens_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_provider_tokens" ADD CONSTRAINT "financing_provider_tokens_account_scope_fk" FOREIGN KEY ("account_id","tenant_id") REFERENCES "public"."financing_provider_accounts"("id","tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "provider_oauth_transactions" ADD CONSTRAINT "provider_oauth_transactions_consumed_by_user_id_users_id_fk" FOREIGN KEY ("consumed_by_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "provider_oauth_transactions" ADD CONSTRAINT "provider_oauth_transactions_requested_by_user_id_users_id_fk" FOREIGN KEY ("requested_by_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "provider_oauth_transactions" ADD CONSTRAINT "provider_oauth_transactions_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "provider_oauth_transactions" ADD CONSTRAINT "provider_oauth_transactions_account_scope_fk" FOREIGN KEY ("account_id","tenant_id") REFERENCES "public"."financing_provider_accounts"("id","tenant_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_provider_store_banks" ADD CONSTRAINT "financing_provider_store_banks_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_provider_store_banks" ADD CONSTRAINT "financing_provider_store_banks_mapping_scope_fk" FOREIGN KEY ("mapping_id","account_id","tenant_id","store_id") REFERENCES "public"."financing_provider_store_mappings"("id","account_id","tenant_id","store_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_provider_store_mappings" ADD CONSTRAINT "financing_provider_store_mappings_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_provider_store_mappings" ADD CONSTRAINT "financing_provider_store_mappings_account_scope_fk" FOREIGN KEY ("account_id","tenant_id") REFERENCES "public"."financing_provider_accounts"("id","tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "financing_provider_store_mappings" ADD CONSTRAINT "financing_provider_store_mappings_store_scope_fk" FOREIGN KEY ("store_id","tenant_id") REFERENCES "public"."stores"("id","tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "financing_customer_consents_document_idx" ON "financing_customer_consents" USING btree ("tenant_id","store_id","applicant_document_hash");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_inquiry_events_event_key_unique" ON "financing_inquiry_events" USING btree ("event_key");--> statement-breakpoint
 CREATE INDEX "financing_inquiry_events_inquiry_created_idx" ON "financing_inquiry_events" USING btree ("inquiry_id","created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_operation_requests_idempotency_unique" ON "financing_operation_requests" USING btree ("tenant_id","store_id","provider","idempotency_key");--> statement-breakpoint
 CREATE INDEX "financing_operation_requests_status_idx" ON "financing_operation_requests" USING btree ("status","submitted_at");--> statement-breakpoint
 CREATE INDEX "financing_operation_requests_inquiry_idx" ON "financing_operation_requests" USING btree ("inquiry_id");--> statement-breakpoint
-CREATE INDEX "financing_customer_consents_document_idx" ON "financing_customer_consents" USING btree ("tenant_id","store_id","applicant_document_hash");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_provider_accounts_tenant_provider_env_unique" ON "financing_provider_accounts" USING btree ("tenant_id","provider","environment");--> statement-breakpoint
 CREATE INDEX "financing_provider_accounts_tenant_status_idx" ON "financing_provider_accounts" USING btree ("tenant_id","status");--> statement-breakpoint
+CREATE INDEX "financing_provider_tokens_account_kind_idx" ON "financing_provider_tokens" USING btree ("account_id","kind");--> statement-breakpoint
+CREATE UNIQUE INDEX "financing_provider_tokens_fingerprint_unique" ON "financing_provider_tokens" USING btree ("fingerprint");--> statement-breakpoint
+CREATE UNIQUE INDEX "provider_oauth_transactions_state_hash_unique" ON "provider_oauth_transactions" USING btree ("state_hash");--> statement-breakpoint
+CREATE INDEX "provider_oauth_transactions_tenant_status_idx" ON "provider_oauth_transactions" USING btree ("tenant_id","status","expires_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_provider_store_banks_mapping_code_unique" ON "financing_provider_store_banks" USING btree ("mapping_id","bank_febraban_code");--> statement-breakpoint
 CREATE INDEX "financing_provider_store_banks_store_status_idx" ON "financing_provider_store_banks" USING btree ("store_id","is_active","credential_status");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_provider_store_mappings_local_unique" ON "financing_provider_store_mappings" USING btree ("account_id","store_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "financing_provider_store_mappings_external_unique" ON "financing_provider_store_mappings" USING btree ("account_id","external_store_id");--> statement-breakpoint
 CREATE INDEX "financing_provider_store_mappings_store_status_idx" ON "financing_provider_store_mappings" USING btree ("store_id","status");--> statement-breakpoint
-CREATE INDEX "financing_provider_tokens_account_kind_idx" ON "financing_provider_tokens" USING btree ("account_id","kind");--> statement-breakpoint
-CREATE UNIQUE INDEX "financing_provider_tokens_fingerprint_unique" ON "financing_provider_tokens" USING btree ("fingerprint");--> statement-breakpoint
-CREATE UNIQUE INDEX "provider_oauth_transactions_state_hash_unique" ON "provider_oauth_transactions" USING btree ("state_hash");--> statement-breakpoint
-CREATE INDEX "provider_oauth_transactions_tenant_status_idx" ON "provider_oauth_transactions" USING btree ("tenant_id","status","expires_at");--> statement-breakpoint
 ALTER TABLE "financing_conditions" ADD CONSTRAINT "financing_conditions_store_id_stores_id_fk" FOREIGN KEY ("store_id") REFERENCES "public"."stores"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_conditions" ADD CONSTRAINT "financing_conditions_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "financing_conditions" ADD CONSTRAINT "financing_conditions_inquiry_scope_fk" FOREIGN KEY ("inquiry_id","tenant_id","store_id") REFERENCES "public"."financing_inquiries"("id","tenant_id","store_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

@@ -13,13 +13,17 @@ const pipelineLoads = new WeakMap<
   Map<string, Promise<Pipeline[]>>
 >();
 
-export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
+export function useCrmPipelines(
+  storeId: string,
+  api: ProductCrmApi,
+  enabled = true,
+) {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [activePipelineId, setActivePipelineIdState] = useState<string>(() =>
     getActivePipelineId(storeId),
   );
   const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
 
   const activePipeline = useMemo(
     () =>
@@ -39,6 +43,10 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
   );
 
   const loadPipelines = useCallback(async () => {
+    if (!enabled) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -56,7 +64,7 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
     } finally {
       setIsLoading(false);
     }
-  }, [api, setActivePipelineId, storeId]);
+  }, [api, enabled, setActivePipelineId, storeId]);
 
   useEffect(() => {
     void loadPipelines();
@@ -136,6 +144,8 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
     setActivePipelineId,
   };
 }
+
+export type CrmPipelinesState = ReturnType<typeof useCrmPipelines>;
 
 function loadOrCreateDefaultPipeline(
   storeId: string,

@@ -37,7 +37,7 @@ export function registerExternalLeadRoutes(
       const limit = query.limit;
       const offset = query.offset ?? (query.page - 1) * limit;
       const leadSearch = query.search ?? query.q ?? query.phone;
-      const leads = await input.crm.listLeads(serviceContext, {
+      const leadPage = await input.crm.listLeads(serviceContext, {
         limit,
         offset,
         ...(query.listingId ? { listingId: query.listingId } : {}),
@@ -46,8 +46,13 @@ export function registerExternalLeadRoutes(
         ...(query.status ? { status: query.status } : {}),
       });
       return context.json({
-        data: leads.map(toExternalLead),
-        pagination: createPagination(query.page, limit, offset, leads.length),
+        data: leadPage.items.map(toExternalLead),
+        pagination: createPagination(
+          query.page,
+          limit,
+          offset,
+          leadPage.items.length,
+        ),
       });
     }),
   );

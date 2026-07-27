@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useOptionalAccountSession } from "../account/accountSession";
+import { useRemoteSearch } from "../../lib/useRemoteSearch";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import {
   buildStorefrontUrl,
@@ -46,6 +47,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     null,
   );
   const [search, setSearch] = useState("");
+  const remoteSearch = useRemoteSearch(search);
   const [statusFilter, setStatusFilter] = useState<CrmWhatsappStatus | "">("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [sessions, setSessions] = useState<CrmWhatsappSession[]>([]);
@@ -74,8 +76,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   );
   const autoReadSessionIdsRef = useRef(new Set<CrmWhatsappSessionId>());
   const markingReadRef = useRef(new Set<CrmWhatsappSessionId>());
-  const searchRef = useRef(search);
-  searchRef.current = search;
+  const searchRef = useRef(remoteSearch ?? "");
+  searchRef.current = remoteSearch ?? "";
   const tagState = useCrmWhatsappTags({
     api,
     canRead: permissions.canRead,
@@ -258,7 +260,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     markSessionReadOnce,
     permissions,
     refreshSessions,
-    search,
+    search: remoteSearch,
     setError,
     setSessions,
     setIsLoadingSessions,
