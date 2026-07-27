@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../../styles/crm-module.css";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
@@ -7,26 +7,18 @@ import { CrmPipelineView } from "./CrmPipelineView";
 import {
   createNoteActivityInput,
   createTaskActivityInput,
-  filterLeads,
   type CrmViewMode,
   type LeadContactPatch,
   type LeadCreateDraft,
   type LeadFilters,
 } from "./crmPipelineModels";
 import { createRuntimeProductCrmApi } from "./runtimeApi";
-import type {
-  CreateProductCrmActivityInput,
-  ProductCrmLead,
-} from "./productCrmTypes";
+import type { CreateProductCrmActivityInput } from "./productCrmTypes";
 import type {
   LeadActivitiesById,
   LeadVehicleOption,
 } from "./CrmPipelineViewTypes";
-import {
-  createLeadVehicleOption,
-  listAllMatchingLeads,
-  loadActivitiesByLeadId,
-} from "./crmModuleData";
+import { createLeadVehicleOption } from "./crmModuleData";
 import { createLeadWithInitialStage } from "./crmLeadCreation";
 import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
 import {
@@ -35,6 +27,8 @@ import {
   readCrmSurfaceFromHash,
   type CrmSurface,
 } from "./crmRouteState";
+import { useCrmPipelines } from "./useCrmPipelines";
+import { useCrmLeadBoard } from "./useCrmLeadBoard";
 
 export function CrmModule({
   api,
@@ -52,58 +46,55 @@ export function CrmModule({
   const [activeLeadId, setActiveLeadId] = useState<string | null>(() =>
     readInitialLeadId(),
   );
-  const [error, setError] = useState<Error | null>(null);
   const [filters, setFilters] = useState<LeadFilters>({
     search: "",
     source: "all",
     status: "all",
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [leads, setLeads] = useState<ProductCrmLead[]>([]);
   const [vehicleOptions, setVehicleOptions] = useState<LeadVehicleOption[]>([]);
   const [viewMode, setViewMode] = useState<CrmViewMode>("kanban");
   const canLoadPipeline = activeSurface !== "whatsapp";
+  const pipelinesState = useCrmPipelines("crm", crmApi, canLoadPipeline);
+  const board = useCrmLeadBoard(
+    crmApi,
+    pipelinesState.activePipeline,
+    filters,
+    canLoadPipeline,
+  );
+  const leads = board.leads;
   const activeActivities = activeLeadId
     ? (activitiesByLeadId[activeLeadId] ?? [])
     : [];
-  const statActivities = Object.values(activitiesByLeadId).flat();
-
-  const refreshLeads = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const nextLeads = await listAllMatchingLeads(crmApi, {
-        limit: 100,
-        ...(filters.search ? { search: filters.search } : {}),
-        ...(filters.source !== "all" ? { source: filters.source } : {}),
-        ...(filters.status !== "all" ? { status: filters.status } : {}),
-      });
-      const nextActivities = await loadActivitiesByLeadId(crmApi, nextLeads);
-      setLeads(nextLeads);
-      setActivitiesByLeadId(nextActivities);
-      setActiveLeadId((current) => {
-        if (nextLeads.some((lead) => lead.id === current)) return current;
-        const leadId = readInitialLeadId();
-        return nextLeads.some((lead) => lead.id === leadId) ? leadId : null;
-      });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught : new Error(String(caught)));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [crmApi, filters.search, filters.source, filters.status]);
-
-  useEffect(() => {
-    if (!canLoadPipeline) {
-      setIsLoading(false);
-      return;
-    }
-    void refreshLeads();
-  }, [canLoadPipeline, refreshLeads]);
 
   useEffect(() => {
     if (routeSurface) setActiveSurface(routeSurface);
   }, [routeSurface]);
+
+  useEffect(() => {
+    if (!activeLeadId || activitiesByLeadId[activeLeadId]) return undefined;
+    let isActive = true;
+    void crmApi.listActivities(activeLeadId).then(
+      (activities) => {
+        if (isActive) {
+          setActivitiesByLeadId((current) => ({
+            ...current,
+            [activeLeadId]: activities,
+          }));
+        }
+      },
+      () => {
+        if (isActive) {
+          setActivitiesByLeadId((current) => ({
+            ...current,
+            [activeLeadId]: [],
+          }));
+        }
+      },
+    );
+    return () => {
+      isActive = false;
+    };
+  }, [activeLeadId, activitiesByLeadId, crmApi]);
 
   useEffect(() => {
     if (!canLoadPipeline) return undefined;
@@ -132,8 +123,6 @@ export function CrmModule({
 
   const createLead = async (input: LeadCreateDraft) => {
     const lead = await createLeadWithInitialStage(crmApi, input);
-    setLeads((current) => [lead, ...current]);
-    setActiveLeadId(lead.id);
 
     if (input.initialNote) {
       await createActivity(lead.id, createNoteActivityInput(input.initialNote));
@@ -144,25 +133,23 @@ export function CrmModule({
         createTaskActivityInput(input.taskTitle, input.taskDueAt),
       );
     }
+    await board.refresh();
+    setActiveLeadId(lead.id);
   };
 
   const moveLeadPipelineStage = async (
     leadId: string,
     pipelineStageId: string,
   ) => {
-    const lead = await crmApi.moveLeadPipelineStage(leadId, {
+    await crmApi.moveLeadPipelineStage(leadId, {
       pipelineStageId,
     });
-    setLeads((current) =>
-      current.map((item) => (item.id === lead.id ? lead : item)),
-    );
+    await board.refresh();
   };
 
   const updateLeadContact = async (leadId: string, input: LeadContactPatch) => {
-    const lead = await crmApi.updateLead(leadId, input);
-    setLeads((current) =>
-      current.map((item) => (item.id === lead.id ? lead : item)),
-    );
+    await crmApi.updateLead(leadId, input);
+    await board.refresh();
   };
 
   const createActivity = async (
@@ -174,13 +161,7 @@ export function CrmModule({
       ...current,
       [leadId]: [activity, ...(current[leadId] ?? [])],
     }));
-    setLeads((current) =>
-      current.map((lead) =>
-        lead.id === leadId
-          ? { ...lead, lastInteractionAt: activity.occurredAt }
-          : lead,
-      ),
-    );
+    await board.refresh();
   };
 
   const changeSurface = (surface: CrmSurface) => {
@@ -198,22 +179,23 @@ export function CrmModule({
     <CrmPipelineView
       activities={activeActivities}
       activeLeadId={activeLeadId}
-      allActivities={statActivities}
-      error={error}
+      error={board.error}
       filters={filters}
-      isLoading={isLoading}
+      isLoading={board.isLoading}
       leads={leads}
+      loadingStageIds={board.loadingStageIds}
       onChangeFilters={setFilters}
       onChangeViewMode={setViewMode}
       onCreateActivity={createActivity}
       onCreateLead={createLead}
+      onLoadMoreStage={board.loadMoreStage}
       onMoveLeadPipelineStage={moveLeadPipelineStage}
-      onRefresh={refreshLeads}
       onSelectLead={setActiveLeadId}
       onUpdateLead={updateLeadContact}
-      pipelineApi={crmApi}
+      pipelinesState={pipelinesState}
+      stageTotals={board.stageTotals}
       vehicleOptions={vehicleOptions}
-      viewLeads={filterLeads(leads, filters)}
+      viewLeads={leads}
       viewMode={viewMode}
     />
   );

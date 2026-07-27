@@ -12,7 +12,10 @@ import {
 import { sourceLabels } from "./crmPipelineConfig";
 
 export function CrmListView({
+  isLoadingMore,
   leads,
+  onLoadMore,
+  remaining,
   stages,
   vehicleOptions,
   onSelectLead,
@@ -300,6 +303,16 @@ export function CrmListView({
           </tbody>
         </table>
       </div>
+      {remaining > 0 ? (
+        <button
+          className="w-full rounded-lg border border-dashed border-line/60 py-2 text-xs font-black uppercase text-muted transition-colors hover:text-accent disabled:cursor-wait disabled:opacity-60"
+          disabled={isLoadingMore}
+          onClick={() => void onLoadMore()}
+          type="button"
+        >
+          {isLoadingMore ? "Carregando..." : `Mostrar mais (${remaining})`}
+        </button>
+      ) : null}
     </div>
   );
 }

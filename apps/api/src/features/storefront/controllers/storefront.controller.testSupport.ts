@@ -139,9 +139,11 @@ export function createCrmRepository(): CrmRepository {
     })),
     countLeadsByPipeline: vi.fn(async () => 0),
     countLeadsByPipelineStages: vi.fn(async () => 0),
+    countLeads: vi.fn(async () => 0),
     findLeadById: vi.fn(async () => null),
     findLeadByPhone: vi.fn(async () => null),
     listActivities: vi.fn(async () => []),
+    listLeadBoard: vi.fn(async () => []),
     listLeads: vi.fn(async () => []),
     updateLead: vi.fn(async () => {
       throw new Error("Unexpected lead update");

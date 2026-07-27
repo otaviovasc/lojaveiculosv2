@@ -76,6 +76,15 @@ export const leads = pgTable(
   },
   (table) => [
     index("leads_assigned_user_id_idx").on(table.assignedUserId),
+    index("leads_board_page_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.pipelineId,
+      table.pipelineStageId,
+      table.isDeleted,
+      table.updatedAt.desc(),
+      table.id.desc(),
+    ),
     index("leads_pipeline_id_idx").on(table.pipelineId),
     index("leads_pipeline_stage_id_idx").on(table.pipelineStageId),
     index("leads_source_idx").on(table.source),
@@ -112,6 +121,12 @@ export const leadActivities = pgTable(
   },
   (table) => [
     index("lead_activities_lead_id_idx").on(table.leadId),
+    index("lead_activities_scoped_history_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.leadId,
+      table.occurredAt.desc(),
+    ),
     index("lead_activities_store_occurred_at_idx").on(
       table.storeId,
       table.occurredAt,

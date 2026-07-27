@@ -18,9 +18,10 @@ type Props = {
   onSimulateClick: (lead: ProductCrmLead) => void;
   onAddStage: () => void;
   onEditStage?: (stage: PipelineStage) => void;
+  onLoadMoreStage: (stageId: string) => Promise<void>;
+  loadingStageIds: Set<string>;
+  stageTotals: Record<string, number>;
 };
-
-const COLUMN_PAGE_SIZE = 30;
 
 export function CrmKanbanBoard({
   stages,
@@ -33,6 +34,9 @@ export function CrmKanbanBoard({
   onSimulateClick,
   onAddStage,
   onEditStage,
+  onLoadMoreStage,
+  loadingStageIds,
+  stageTotals,
 }: Props) {
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
@@ -42,16 +46,6 @@ export function CrmKanbanBoard({
   const [activeMenuStageId, setActiveMenuStageId] = useState<string | null>(
     null,
   );
-  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>(
-    {},
-  );
-
-  const showMoreLeads = (stageId: string) =>
-    setVisibleCounts((prev) => ({
-      ...prev,
-      [stageId]: (prev[stageId] ?? COLUMN_PAGE_SIZE) + COLUMN_PAGE_SIZE,
-    }));
-
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -115,9 +109,8 @@ export function CrmKanbanBoard({
         .filter((s) => visibleStages[s.id] !== false)
         .map((stage) => {
           const stageLeads = getLeadsForStage(stage.id, stage.status);
-          const visibleCount = visibleCounts[stage.id] ?? COLUMN_PAGE_SIZE;
-          const visibleLeads = stageLeads.slice(0, visibleCount);
-          const hiddenCount = stageLeads.length - visibleLeads.length;
+          const stageTotal = stageTotals[stage.id] ?? stageLeads.length;
+          const hiddenCount = Math.max(0, stageTotal - stageLeads.length);
           const isCollapsed = collapsedStages[stage.id] === true;
           const isOver = dragOverStageId === stage.id;
           const stageBadgeTextColor = getTextColorForBackground(stage.color);
@@ -157,7 +150,7 @@ export function CrmKanbanBoard({
                   </span>
                 </div>
                 <div className="size-5 rounded-full bg-line/25 border border-line/40 text-muted text-xs font-black flex items-center justify-center shrink-0">
-                  {stageLeads.length}
+                  {stageTotal}
                 </div>
               </div>
             );
@@ -196,7 +189,7 @@ export function CrmKanbanBoard({
                       className="text-xs font-black leading-none rounded-full px-1.5 py-0.5 shrink-0"
                       style={{ backgroundColor: `${stageBadgeTextColor}26` }}
                     >
-                      {stageLeads.length}
+                      {stageTotal}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -253,7 +246,7 @@ export function CrmKanbanBoard({
 
               {/* Card List */}
               <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5 min-h-[440px]">
-                {visibleLeads.map((lead) => (
+                {stageLeads.map((lead) => (
                   <CrmLeadCard
                     key={lead.id}
                     lead={lead}
@@ -270,8 +263,9 @@ export function CrmKanbanBoard({
                 )}
                 {hiddenCount > 0 && (
                   <KanbanLoadMore
+                    isLoading={loadingStageIds.has(stage.id)}
                     remaining={hiddenCount}
-                    onLoadMore={() => showMoreLeads(stage.id)}
+                    onLoadMore={() => void onLoadMoreStage(stage.id)}
                   />
                 )}
               </div>
@@ -318,9 +312,11 @@ export function CrmKanbanBoard({
 }
 
 function KanbanLoadMore({
+  isLoading,
   remaining,
   onLoadMore,
 }: {
+  isLoading: boolean;
   remaining: number;
   onLoadMore: () => void;
 }) {
@@ -347,10 +343,11 @@ function KanbanLoadMore({
     <div className="shrink-0" ref={sentinelRef}>
       <button
         className="w-full py-1.5 text-xs font-black uppercase text-muted hover:text-accent border border-dashed border-line/40 rounded-lg transition-colors cursor-pointer"
+        disabled={isLoading}
         onClick={onLoadMore}
         type="button"
       >
-        Mostrar mais ({remaining})
+        {isLoading ? "Carregando..." : `Mostrar mais (${remaining})`}
       </button>
     </div>
   );
