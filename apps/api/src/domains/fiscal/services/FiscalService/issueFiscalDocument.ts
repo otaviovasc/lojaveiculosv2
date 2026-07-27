@@ -142,7 +142,7 @@ export async function issueFiscalDocument(
           : {}),
         ...(template
           ? {
-              renderedDescription: preview?.renderedDescription ?? null,
+              renderedDescription: preview!.renderedDescription,
               template: {
                 cityServiceCode: template.cityServiceCode,
                 defaultServiceLocation: template.defaultServiceLocation,
