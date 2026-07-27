@@ -143,7 +143,17 @@ export async function seedCrm(tx, data, config, ids) {
       VALUES (${leadId}, ${ids.users.get(lead.crm_agent_clerk_user_id) || null}, ${nullableString(lead.email, 254)}, ${nullableString(lead.name, 191)},
         ${nullableString(lead.phone, 40)}, ${tx.json(legacyMetadata("Lead", lead))}, ${pipelineId}, ${ids.stages.get(lead.columnId) || null},
         ${mapLeadSource(lead.source)}, ${status}, ${ids.store}, ${ids.tenant}, ${lead.createdAt}, ${lead.updatedAt})
-      ON CONFLICT (id) DO UPDATE SET metadata=excluded.metadata, status=excluded.status, updated_at=excluded.updated_at`;
+      ON CONFLICT (id) DO UPDATE SET
+        assigned_user_id=excluded.assigned_user_id,
+        buyer_email=excluded.buyer_email,
+        buyer_name=excluded.buyer_name,
+        buyer_phone=excluded.buyer_phone,
+        metadata=excluded.metadata,
+        pipeline_id=excluded.pipeline_id,
+        pipeline_stage_id=excluded.pipeline_stage_id,
+        source=excluded.source,
+        status=excluded.status,
+        updated_at=excluded.updated_at`;
     await addLegacyMap(tx, ids.run, "Lead", lead.id, "leads", leadId);
   }
   log(`  CRM: ${data.interactions.length} interaction(s)...`);

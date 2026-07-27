@@ -146,4 +146,16 @@ export function assertConfigured(config) {
     throw new Error(
       "Fill TARGET_STORE_SLUG at the top of the migration script.",
     );
+  if (config.modules?.has("whatsapp") && !config.repassesArchivePath)
+    throw new Error(
+      "A Repasses CRM archive path is required for the whatsapp module.",
+    );
+  if (
+    config.apply &&
+    config.activateWhatsappConnections &&
+    !process.env.CRM_ZAPI_CLIENT_TOKEN
+  )
+    throw new Error(
+      "CRM_ZAPI_CLIENT_TOKEN is required to activate imported Z-API connections.",
+    );
 }

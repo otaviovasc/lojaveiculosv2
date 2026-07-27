@@ -1,157 +1,197 @@
+import type { FiscalConnectionRepository } from "../../domains/fiscal/ports/fiscalConnectionRepository.js";
 import type {
+  FiscalProviderDocumentKind,
   FiscalProviderGateway,
   FiscalProviderStatus,
 } from "../../domains/fiscal/ports/fiscalProviderGateway.js";
+import {
+  SpedyGatewayConfigurationError,
+  SpedyGatewayHttpError,
+} from "./spedyErrors.js";
+import { buildSpedyIssuePayload } from "./spedyFiscalPayload.js";
 import { toIssueResult, toStatusResult } from "./spedyHttpFiscalResponse.js";
 
 type Fetcher = typeof fetch;
 
 type SpedyGatewayOptions = {
+  connectionRepository: FiscalConnectionRepository;
   env: Record<string, string | undefined>;
   fetcher?: Fetcher;
 };
 
-const requiredSpedyKeys = [
+const requiredRuntimeKeys = [
   "SPEDY_RUNTIME_IMPLEMENTATION",
   "SPEDY_API_URL",
-  "SPEDY_API_TOKEN",
+  "SPEDY_OWNER_API_KEY",
+  "FISCAL_CREDENTIAL_ENCRYPTION_KEY",
+  "SPEDY_WEBHOOK_URL",
 ] as const;
 
-export class SpedyGatewayConfigurationError extends Error {
-  constructor(missingConfiguration: readonly string[]) {
-    super(
-      `SPEDY fiscal gateway is not configured: ${missingConfiguration.join(", ")}`,
-    );
-    this.name = "SpedyGatewayConfigurationError";
-  }
-}
-
-export class SpedyGatewayHttpError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-    this.name = "SpedyGatewayHttpError";
-  }
-}
+export { SpedyGatewayConfigurationError, SpedyGatewayHttpError };
 
 export function createSpedyHttpFiscalProviderGateway({
+  connectionRepository,
   env,
   fetcher = fetch,
 }: SpedyGatewayOptions): FiscalProviderGateway {
-  const status = getSpedyProviderStatus(env);
-
   return {
     async cancelDocument(input) {
-      assertConfigured(status);
-      const path = requireEnv(env, "SPEDY_CANCEL_PATH").replace(
-        "{providerDocumentId}",
-        encodeURIComponent(input.providerDocumentId),
+      await requireReadyConnection(connectionRepository, env, input);
+      const apiKey = await requireCompanyApiKey(connectionRepository, input);
+      const payload = await request(
+        fetcher,
+        env,
+        apiKey,
+        "DELETE",
+        documentPath(input.documentKind, input.providerDocumentId),
+        { justification: input.reason },
       );
-      return toStatusResult(
-        await request(fetcher, env, path, {
-          providerDocumentId: input.providerDocumentId,
-          reason: input.reason,
-          storeId: input.storeId,
-          tenantId: input.tenantId,
-        }),
-        input.providerDocumentId,
-      );
+      return toStatusResult(payload, input.providerDocumentId);
     },
-    async getProviderStatus() {
-      return status;
+    async getProviderStatus(input) {
+      return getSpedyProviderStatus(env, connectionRepository, input);
     },
     async issueDocument(input) {
-      assertConfigured(status);
+      const connection = await requireReadyConnection(
+        connectionRepository,
+        env,
+        input,
+      );
+      const apiKey = await requireCompanyApiKey(connectionRepository, input);
       return toIssueResult(
         await request(
           fetcher,
           env,
-          selectIssuePath(env, input.documentKind),
-          input,
+          apiKey,
+          "POST",
+          collectionPath(input.documentKind),
+          buildSpedyIssuePayload(input, connection.taxDefaults),
         ),
       );
     },
     async syncDocumentStatus(input) {
-      assertConfigured(status);
-      const path = requireEnv(env, "SPEDY_STATUS_PATH").replace(
-        "{providerDocumentId}",
-        encodeURIComponent(input.providerDocumentId),
+      await requireConnected(connectionRepository, env, input);
+      const apiKey = await requireCompanyApiKey(connectionRepository, input);
+      const payload = await request(
+        fetcher,
+        env,
+        apiKey,
+        "GET",
+        documentPath(input.documentKind, input.providerDocumentId),
       );
-      return toStatusResult(
-        await request(fetcher, env, path, {
-          providerDocumentId: input.providerDocumentId,
-          storeId: input.storeId,
-          tenantId: input.tenantId,
-        }),
-        input.providerDocumentId,
-      );
+      return toStatusResult(payload, input.providerDocumentId);
     },
   };
 }
 
-export function getSpedyProviderStatus(
+async function requireConnected(
+  repository: FiscalConnectionRepository,
   env: Record<string, string | undefined>,
-): FiscalProviderStatus {
-  const missingConfiguration = [
-    ...requiredSpedyKeys.filter((key) => !env[key]),
-    ...(env.SPEDY_RUNTIME_IMPLEMENTATION &&
-    env.SPEDY_RUNTIME_IMPLEMENTATION !== "http"
-      ? ["SPEDY_RUNTIME_IMPLEMENTATION=http"]
-      : []),
-    ...(env.SPEDY_WEBHOOK_SECRET ? [] : ["SPEDY_WEBHOOK_SECRET"]),
-    ...(hasIssuePath(env)
+  input: { storeId: string; tenantId: string },
+) {
+  const missing = [
+    ...requiredRuntimeKeys
+      .filter((key) => key !== "SPEDY_WEBHOOK_URL")
+      .filter((key) => !env[key]),
+    ...(env.SPEDY_RUNTIME_IMPLEMENTATION === "http"
       ? []
-      : ["SPEDY_ISSUE_PATH or SPEDY_NFE_ISSUE_PATH/SPEDY_NFSE_ISSUE_PATH"]),
-    ...(env.SPEDY_CANCEL_PATH ? [] : ["SPEDY_CANCEL_PATH"]),
-    ...(env.SPEDY_STATUS_PATH ? [] : ["SPEDY_STATUS_PATH"]),
+      : ["SPEDY_RUNTIME_IMPLEMENTATION=http"]),
   ];
+  if (missing.length) throw new SpedyGatewayConfigurationError(missing);
+  await requireCompanyApiKey(repository, input);
+}
 
+export async function getSpedyProviderStatus(
+  env: Record<string, string | undefined>,
+  connectionRepository: FiscalConnectionRepository,
+  input: { storeId: string; tenantId: string },
+): Promise<FiscalProviderStatus> {
+  const connection = await connectionRepository.get(input);
+  const apiKey = await connectionRepository.getCompanyApiKey(input);
+  const missingConfiguration = [
+    ...requiredRuntimeKeys.filter((key) => !env[key]),
+    ...(env.SPEDY_RUNTIME_IMPLEMENTATION === "http"
+      ? []
+      : ["SPEDY_RUNTIME_IMPLEMENTATION=http"]),
+    ...(connection?.companyId ? [] : ["fiscal.companyId"]),
+    ...(apiKey ? [] : ["fiscal.companyApiKey"]),
+    ...(connection?.defaultsStatus === "confirmed"
+      ? []
+      : ["fiscal.taxDefaultsConfirmation"]),
+    ...(connection?.status === "ready" ? [] : ["fiscal.connectionReady"]),
+  ];
   return {
     configured: missingConfiguration.length === 0,
     missingConfiguration,
     provider: "spedy",
-    webhookConfigured: Boolean(env.SPEDY_WEBHOOK_SECRET),
+    webhookConfigured: Boolean(
+      env.SPEDY_WEBHOOK_URL && connection?.webhookRegisteredAt,
+    ),
   };
+}
+
+async function requireReadyConnection(
+  repository: FiscalConnectionRepository,
+  env: Record<string, string | undefined>,
+  input: { storeId: string; tenantId: string },
+) {
+  const status = await getSpedyProviderStatus(env, repository, input);
+  if (!status.configured) {
+    throw new SpedyGatewayConfigurationError(status.missingConfiguration);
+  }
+  const connection = await repository.get(input);
+  if (!connection)
+    throw new SpedyGatewayConfigurationError(["fiscal.connection"]);
+  return connection;
+}
+
+async function requireCompanyApiKey(
+  repository: FiscalConnectionRepository,
+  input: { storeId: string; tenantId: string },
+) {
+  const apiKey = await repository.getCompanyApiKey(input);
+  if (!apiKey) {
+    throw new SpedyGatewayConfigurationError(["fiscal.companyApiKey"]);
+  }
+  return apiKey;
 }
 
 async function request(
   fetcher: Fetcher,
   env: Record<string, string | undefined>,
+  apiKey: string,
+  method: "DELETE" | "GET" | "POST",
   path: string,
-  body: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
+  body?: Record<string, unknown>,
+) {
   const response = await fetcher(
     toUrl(requireEnv(env, "SPEDY_API_URL"), path),
     {
-      body: JSON.stringify(body),
-      headers: createHeaders(env),
-      method: "POST",
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      headers: {
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        "X-Api-Key": apiKey,
+      },
+      method,
+      signal: AbortSignal.timeout(30_000),
     },
   );
   const payload = await readPayload(response);
-
   if (!response.ok) {
     throw new SpedyGatewayHttpError(
-      typeof payload.message === "string"
-        ? payload.message
-        : `SPEDY request failed with HTTP ${response.status}`,
+      readErrorMessage(payload, response),
       response.status,
     );
   }
-
   return payload;
 }
 
-function createHeaders(env: Record<string, string | undefined>) {
-  const headerName = env.SPEDY_AUTH_HEADER || "Authorization";
-  const authScheme = env.SPEDY_AUTH_SCHEME ?? "Bearer";
-  const token = requireEnv(env, "SPEDY_API_TOKEN");
-  return {
-    "Content-Type": "application/json",
-    [headerName]: authScheme ? `${authScheme} ${token}` : token,
-  };
+function collectionPath(kind: FiscalProviderDocumentKind) {
+  return kind === "nfe" ? "product-invoices" : "service-invoices";
+}
+
+function documentPath(kind: FiscalProviderDocumentKind, id: string) {
+  return `${collectionPath(kind)}/${encodeURIComponent(id)}`;
 }
 
 async function readPayload(
@@ -159,7 +199,6 @@ async function readPayload(
 ): Promise<Record<string, unknown>> {
   const text = await response.text();
   if (!text) return {};
-
   try {
     const value: unknown = JSON.parse(text);
     return value && typeof value === "object" && !Array.isArray(value)
@@ -170,39 +209,26 @@ async function readPayload(
   }
 }
 
-function assertConfigured(status: FiscalProviderStatus) {
-  if (!status.configured) {
-    throw new SpedyGatewayConfigurationError(status.missingConfiguration);
-  }
+function readErrorMessage(
+  payload: Record<string, unknown>,
+  response: Response,
+) {
+  const errors = Array.isArray(payload.errors) ? payload.errors : [];
+  const firstError =
+    errors[0] && typeof errors[0] === "object"
+      ? (errors[0] as Record<string, unknown>)
+      : {};
+  return typeof firstError.message === "string"
+    ? firstError.message
+    : typeof payload.message === "string"
+      ? payload.message
+      : `Spedy request failed with HTTP ${response.status}`;
 }
 
 function requireEnv(env: Record<string, string | undefined>, key: string) {
   const value = env[key];
   if (!value) throw new SpedyGatewayConfigurationError([key]);
   return value;
-}
-
-function hasIssuePath(env: Record<string, string | undefined>) {
-  return Boolean(
-    env.SPEDY_ISSUE_PATH ||
-    (env.SPEDY_NFE_ISSUE_PATH && env.SPEDY_NFSE_ISSUE_PATH),
-  );
-}
-
-function selectIssuePath(
-  env: Record<string, string | undefined>,
-  documentKind: "nfe" | "nfse",
-) {
-  const kindPath =
-    documentKind === "nfe"
-      ? env.SPEDY_NFE_ISSUE_PATH
-      : env.SPEDY_NFSE_ISSUE_PATH;
-  const path = kindPath ?? env.SPEDY_ISSUE_PATH;
-  if (path) return path;
-  throw new SpedyGatewayConfigurationError([
-    documentKind === "nfe" ? "SPEDY_NFE_ISSUE_PATH" : "SPEDY_NFSE_ISSUE_PATH",
-    "SPEDY_ISSUE_PATH",
-  ]);
 }
 
 function toUrl(baseUrl: string, path: string) {

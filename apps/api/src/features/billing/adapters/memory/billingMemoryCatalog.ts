@@ -18,7 +18,7 @@ export const memoryBillingPlans: readonly BillingPlan[] = [
       feature("external_api", false, false),
       feature("marketplace", false, false),
       feature("custom_domain", true, false),
-      feature("nfe", false, false),
+      feature("fiscal", false, false),
       feature("simulations", false, false),
     ],
     id: "plan_growth",
@@ -47,7 +47,7 @@ export const memoryBillingAddons: readonly BillingAddon[] = [
     14990,
     "Marketplaces",
   ),
-  addon("addon_nfe", "nfe_spedy", "nfe", 19990, "NF-e integrada"),
+  addon("addon_fiscal", "fiscal_spedy", "fiscal", 19990, "Fiscal NF-e + NFS-e"),
   addon(
     "addon_public_api",
     "public_api_access",

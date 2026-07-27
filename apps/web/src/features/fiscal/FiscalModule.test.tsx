@@ -9,8 +9,9 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FiscalApi } from "./apiClient";
+import { createConnection } from "./fiscalConnectionFixtures";
 import { FiscalModule } from "./FiscalModule";
-import type { FiscalDocument } from "./types";
+import type { FiscalConnection, FiscalDocument } from "./types";
 
 vi.mock("../../components/ui/AnimatedContent", () => ({
   default: ({ children }: { children: unknown }) => children,
@@ -28,7 +29,7 @@ vi.stubGlobal(
 describe("FiscalModule", () => {
   afterEach(cleanup);
 
-  it("uses semantic labels and keeps emission unavailable while configuration is missing", async () => {
+  it("uses semantic labels and blocks emission while the connection is not ready", async () => {
     const api = createApi();
     render(<FiscalModule api={api} />);
 
@@ -43,17 +44,19 @@ describe("FiscalModule", () => {
     expect(screen.queryByText("spedy_private_123")).not.toBeInTheDocument();
     expect(api.issueDocument).not.toHaveBeenCalled();
 
-    // The composer stays behind the "Emitir" tab, even via the header action.
+    // The composer stays blocked until the connection is ready.
+    screen.getByRole("button", { name: "Emitir documento" }).click();
+    expect(
+      await screen.findByRole("heading", { name: "Emissão bloqueada" }),
+    ).toBeVisible();
     expect(
       screen.queryByLabelText("Referência externa"),
     ).not.toBeInTheDocument();
-    screen.getByRole("button", { name: "Emitir documento" }).click();
-    expect(await screen.findByLabelText("Referência externa")).toBeVisible();
     expect(api.issueDocument).not.toHaveBeenCalled();
   });
 
-  it("shows the fiscal composer on the Emitir tab when the provider is configured", async () => {
-    const api = createApi(true);
+  it("shows the fiscal composer on the Emitir tab when the connection is ready", async () => {
+    const api = createApi({ configured: true, connectionStatus: "ready" });
     render(<FiscalModule api={api} />);
 
     expect(
@@ -74,8 +77,35 @@ describe("FiscalModule", () => {
     expect(screen.getByRole("button", { name: "Avançar" })).toBeVisible();
   });
 
+  it("renders the connection tab with status, checklist and setup sections", async () => {
+    const api = createApi();
+    render(<FiscalModule api={api} />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Notas fiscais", level: 1 }),
+    ).toBeVisible();
+    screen.getByRole("tab", { name: "Conexão" }).click();
+
+    expect(await screen.findByText("Não configurada")).toBeVisible();
+    expect(screen.getByText("Empresa emissora criada")).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Empresa emissora" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Certificado digital A1" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Padrões fiscais da loja" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Nenhum padrão fiscal importado ainda. Salve os dados da empresa e sincronize com o provedor para importar os valores.",
+      ),
+    ).toBeVisible();
+  });
+
   it("lists documents on the Notas tab and filters by KPI status", async () => {
-    const api = createApi(true);
+    const api = createApi({ configured: true });
     render(<FiscalModule api={api} />);
 
     // Desktop table + mobile cards both render in jsdom.
@@ -122,13 +152,36 @@ function createDocument(
   };
 }
 
-function createApi(configured = false): FiscalApi {
+function createApi({
+  configured = false,
+  connectionStatus = "not_configured",
+}: {
+  configured?: boolean;
+  connectionStatus?: FiscalConnection["status"];
+} = {}): FiscalApi {
+  const connection = createConnection(
+    connectionStatus === "ready"
+      ? {
+          capabilities: { nfe: true, requiresDigitalCertificate: true },
+          certificateExpiresAt: "2027-01-10T00:00:00.000Z",
+          companyId: "spedy_company_1",
+          defaultsConfirmedAt: "2026-07-10T12:00:00.000Z",
+          defaultsStatus: "confirmed",
+          lastSyncedAt: "2026-07-10T12:00:00.000Z",
+          status: "ready",
+          taxDefaults: { cfop: "5.102" },
+          webhookRegisteredAt: "2026-07-10T12:00:00.000Z",
+        }
+      : {},
+  );
   return {
     archiveRecipient: vi.fn(),
     archiveTemplate: vi.fn(),
     cancelDocument: vi.fn(),
+    confirmDefaults: vi.fn(async () => connection),
     createRecipient: vi.fn(),
     createTemplate: vi.fn(),
+    getConnection: vi.fn(async () => connection),
     getOverview: vi.fn(async () => ({
       documents: [
         createDocument({
@@ -164,6 +217,9 @@ function createApi(configured = false): FiscalApi {
     listTemplates: vi.fn(async () => []),
     previewTemplate: vi.fn(),
     repeatDocument: vi.fn(),
+    setupConnection: vi.fn(async () => connection),
+    syncConnection: vi.fn(async () => connection),
     syncDocumentStatus: vi.fn(),
+    uploadCertificate: vi.fn(async () => connection),
   };
 }

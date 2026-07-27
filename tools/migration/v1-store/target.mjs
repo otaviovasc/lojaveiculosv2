@@ -12,6 +12,12 @@ import {
   seedSalesAndFinance,
 } from "./target-commerce.mjs";
 import { seedFinanceAttachments } from "./target-attachments.mjs";
+import { seedCrmWhatsapp } from "./target-crm-whatsapp.mjs";
+import { assertParity, collectParity } from "./target-parity.mjs";
+import {
+  prepareSpedyFiscalMigration,
+  seedSpedyFiscalConnection,
+} from "./spedy-fiscal.mjs";
 
 class DryRunRollback extends Error {}
 
@@ -21,6 +27,7 @@ export const MIGRATION_MODULES = [
   "sales",
   "documents",
   "attachments",
+  "whatsapp",
 ];
 
 export async function migrateToV2(data, config) {
@@ -54,14 +61,18 @@ export async function migrateToV2(data, config) {
   try {
     await assertTargetSchema(sql);
     log("Target schema OK");
+    data.spedyFiscal = await prepareSpedyFiscalMigration(data, config);
     await sql.begin(async (tx) => {
       await tx`INSERT INTO migration_runs (id, dump_label, metadata, started_at, status, created_at, updated_at)
-        VALUES (${ids.run}, ${config.dumpLabel}, ${tx.json({ legacyStoreId: config.legacyStoreId, modules: [...modules], source: "v1-directory-archive" })}, now(), 'running', now(), now())
+        VALUES (${ids.run}, ${config.dumpLabel}, ${tx.json({ legacyStoreId: config.legacyStoreId, modules: [...modules], replaceWhatsappHistory: config.replaceWhatsappHistory, source: "v1-directory-archive" })}, now(), 'running', now(), now())
         ON CONFLICT (id) DO UPDATE SET status='running', metadata=excluded.metadata, started_at=now(), completed_at=null, updated_at=now()`;
       log(`Migration run id: ${ids.run}`);
       await withTimer(
         "Foundation (tenant, store, users, entitlements, billing)",
         () => seedFoundation(tx, data, config, ids),
+      );
+      await withTimer("Fiscal provider connection", () =>
+        seedSpedyFiscalConnection(tx, data.spedyFiscal, ids),
       );
       if (modules.has("vehicles"))
         await withTimer("Inventory (vehicles, media, checklists)", () =>
@@ -70,6 +81,11 @@ export async function migrateToV2(data, config) {
       if (modules.has("leads"))
         await withTimer("CRM (leads, activities, interests)", () =>
           seedCrm(tx, data, config, ids),
+        );
+      if (modules.has("whatsapp"))
+        await withTimer(
+          "CRM WhatsApp (connections, sessions, messages, media URLs)",
+          () => seedCrmWhatsapp(tx, data, config, ids),
         );
       if (modules.has("sales"))
         await withTimer("Sales & finance", () =>
@@ -84,7 +100,7 @@ export async function migrateToV2(data, config) {
           seedFinanceAttachments(tx, data, config, ids),
         );
       const parity = await withTimer("Parity check", () =>
-        collectParity(tx, ids.store),
+        collectParity(tx, ids.store, ids),
       );
       assertParity(data, parity, modules);
       await tx`UPDATE migration_runs SET status='succeeded', completed_at=now(), metadata=metadata || ${tx.json({ parity, preservedStoreConfiguration: { customModels: data.customModels, saleSources: data.saleSources, settings: data.settings } })}, updated_at=now() WHERE id=${ids.run}`;
@@ -121,6 +137,7 @@ function createIds(config) {
     entries: new Map(),
     recipients: new Map(),
     fiscal: new Map(),
+    crmConnections: new Map(),
   };
 }
 
@@ -192,74 +209,4 @@ async function assertTargetSchema(sql) {
   for (const kind of ["consignment_contract", "warranty_certificate"])
     if (!labels.has(kind))
       throw new Error(`V2 document_kind is missing ${kind}; run db:push.`);
-}
-
-async function collectParity(tx, storeId) {
-  const tables = [
-    "users",
-    "vehicle_listings",
-    "vehicle_media",
-    "leads",
-    "lead_activities",
-    "sales",
-    "sale_payments",
-    "finance_entries",
-    "fiscal_documents",
-  ];
-  const counts = {};
-  for (const table of tables) {
-    const scope =
-      table === "users"
-        ? "tenant_id=(SELECT tenant_id FROM stores WHERE id=$1)"
-        : "store_id=$1";
-    const [row] = await tx.unsafe(
-      `SELECT count(*)::int AS count FROM ${table} WHERE ${scope}`,
-      [storeId],
-    );
-    counts[table] = row.count;
-  }
-  const [documents] = await tx.unsafe(
-    `SELECT count(*) FILTER (WHERE kind <> 'invoice')::int AS legacy,
-            count(*) FILTER (WHERE kind = 'invoice')::int AS attachments
-     FROM documents WHERE store_id=$1`,
-    [storeId],
-  );
-  counts.documents = documents.legacy;
-  counts.documents_attachments = documents.attachments;
-  return counts;
-}
-
-function assertParity(data, parity, modules) {
-  const expected = {};
-  if (modules.has("vehicles")) {
-    expected.vehicle_listings = data.vehicles.length;
-    expected.vehicle_media = data.photos.length;
-  }
-  if (modules.has("leads")) {
-    expected.leads = data.leads.length;
-    expected.lead_activities = data.interactions.length + data.tasks.length;
-  }
-  if (modules.has("sales")) {
-    expected.sales = data.sales.length;
-    expected.sale_payments = data.salePayments.length;
-    expected.finance_entries = data.entries.length;
-  }
-  if (modules.has("documents")) {
-    expected.documents = data.documents.length;
-    expected.fiscal_documents = data.fiscalDocuments.length;
-  }
-  if (modules.has("attachments")) {
-    expected.documents_attachments = data.entries.filter(
-      (entry) => entry.attachmentUrl || entry.attachmentR2Key,
-    ).length;
-  }
-  // Foundation (users) always runs.
-  expected.users = data.accesses.length;
-  const mismatches = Object.entries(expected).filter(
-    ([table, count]) => parity[table] !== count,
-  );
-  if (mismatches.length)
-    throw new Error(
-      `Parity failed: ${mismatches.map(([table, count]) => `${table} expected=${count} actual=${parity[table]}`).join(", ")}`,
-    );
 }

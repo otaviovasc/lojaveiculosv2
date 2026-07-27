@@ -9,6 +9,7 @@ import type {
   CreateFiscalDocumentInput,
   CreateFiscalSnapshotInput,
   UpdateFiscalDocumentStatusInput,
+  UpsertProviderFiscalDocumentInput,
 } from "../../../domains/fiscal/ports/fiscalRepository.js";
 import type { DrizzleFiscalClient } from "./drizzleFiscalRepository.js";
 import {
@@ -118,6 +119,44 @@ export async function updateDocumentStatus(
     },
   );
   return toDocument(row);
+}
+
+export async function upsertProviderDocument(
+  db: DrizzleFiscalClient,
+  input: UpsertProviderFiscalDocumentInput,
+) {
+  const [existing] = await db
+    .select()
+    .from(fiscalDocuments)
+    .where(
+      and(
+        scopedDocuments(input),
+        eq(fiscalDocuments.provider, "spedy"),
+        eq(fiscalDocuments.providerDocumentId, input.providerDocumentId),
+      ),
+    )
+    .limit(1);
+  if (existing) {
+    return updateDocumentStatus(db, {
+      documentId: existing.id,
+      providerDocumentId: input.providerDocumentId,
+      status: input.status,
+      storeId: input.storeId,
+      tenantId: input.tenantId,
+      ...(input.accessKey !== undefined ? { accessKey: input.accessKey } : {}),
+      ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+    });
+  }
+  return createDocument(db, {
+    documentKind: input.documentKind,
+    documentType: input.documentType,
+    providerDocumentId: input.providerDocumentId,
+    status: input.status,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+    ...(input.accessKey !== undefined ? { accessKey: input.accessKey } : {}),
+    ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+  });
 }
 
 function toInsert(input: CreateFiscalDocumentInput) {

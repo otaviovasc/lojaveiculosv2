@@ -29,8 +29,10 @@ export function createRuntimeFiscalApi(): FiscalApi {
       (await api()).archiveTemplate(templateId),
     cancelDocument: async (documentId, input) =>
       (await api()).cancelDocument(documentId, input),
+    confirmDefaults: async (input) => (await api()).confirmDefaults(input),
     createRecipient: async (input) => (await api()).createRecipient(input),
     createTemplate: async (input) => (await api()).createTemplate(input),
+    getConnection: async () => (await api()).getConnection(),
     getOverview: async () => (await api()).getOverview(),
     issueDocument: async (input) => (await api()).issueDocument(input),
     listRecipients: async () => (await api()).listRecipients(),
@@ -39,8 +41,11 @@ export function createRuntimeFiscalApi(): FiscalApi {
     previewTemplate: async (input) => (await api()).previewTemplate(input),
     repeatDocument: async (documentId) =>
       (await api()).repeatDocument(documentId),
+    setupConnection: async (input) => (await api()).setupConnection(input),
+    syncConnection: async () => (await api()).syncConnection(),
     syncDocumentStatus: async (documentId, input) =>
       (await api()).syncDocumentStatus(documentId, input),
+    uploadCertificate: async (input) => (await api()).uploadCertificate(input),
   };
 }
 

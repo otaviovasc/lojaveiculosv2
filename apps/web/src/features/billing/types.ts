@@ -11,8 +11,8 @@ export type EntitlementKey =
   | "crm"
   | "custom_domain"
   | "external_api"
+  | "fiscal"
   | "marketplace"
-  | "nfe"
   | "plate_lookup"
   | "simulations"
   | "subdomain";

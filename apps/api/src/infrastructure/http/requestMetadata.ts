@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Context } from "hono";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 
 export const requestIdContextKey = "requestId";
 
@@ -22,7 +23,7 @@ export function readHttpRequestHeaders(context: Context) {
   return {
     correlationId,
     method: context.req.method,
-    path: context.req.path,
+    path: sanitizeHttpPath(context.req.path),
     requestId,
     ...(idempotencyKey ? { idempotencyKey } : {}),
     ...(ipAddress ? { ipAddress } : {}),

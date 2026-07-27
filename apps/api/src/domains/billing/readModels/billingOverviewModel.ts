@@ -26,7 +26,7 @@ export const billingFeatureOrder = [
   "marketplace",
   "plate_lookup",
   "simulations",
-  "nfe",
+  "fiscal",
 ] satisfies EntitlementKey[];
 
 export function createBillingOverview(input: {

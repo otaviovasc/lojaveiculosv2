@@ -37,7 +37,7 @@ export const updateEntitlementSchema = z.object({
     "custom_domain",
     "external_api",
     "marketplace",
-    "nfe",
+    "fiscal",
     "plate_lookup",
     "simulations",
     "subdomain",

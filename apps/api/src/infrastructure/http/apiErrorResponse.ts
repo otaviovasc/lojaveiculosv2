@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { readHttpRequestId } from "./requestMetadata.js";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 
 export const httpErrorMetadataContextKey = "httpErrorMetadata";
 
@@ -85,7 +86,7 @@ function logInternalApiError(
       event: "request.internal_error",
       code: input.code,
       method: context.req.method,
-      path: context.req.path,
+      path: sanitizeHttpPath(context.req.path),
       requestId,
       status: input.status,
       errorName: error.name,

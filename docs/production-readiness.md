@@ -130,13 +130,8 @@ Fiscal:
 
 - `SPEDY_RUNTIME_IMPLEMENTATION=http`
 - `SPEDY_API_URL`
-- `SPEDY_API_TOKEN`
-- `SPEDY_AUTH_HEADER`
-- `SPEDY_AUTH_SCHEME`
-- `SPEDY_WEBHOOK_SECRET`
-- `SPEDY_ISSUE_PATH`
-- `SPEDY_CANCEL_PATH`
-- `SPEDY_STATUS_PATH`
+- `SPEDY_OWNER_API_KEY`
+- `FISCAL_CREDENTIAL_ENCRYPTION_KEY`
 - `SPEDY_WEBHOOK_URL`
 
 Public routing:
@@ -181,11 +176,10 @@ Asaas:
 
 SPEDY:
 
-- Set `SPEDY_RUNTIME_IMPLEMENTATION=http` only after the provider contract is
-  confirmed.
-- `SPEDY_ISSUE_PATH`, `SPEDY_CANCEL_PATH`, and `SPEDY_STATUS_PATH` are
-  configurable. Use `{providerDocumentId}` in cancel/status paths when the
-  provider requires the document id in the URL.
+- Set `SPEDY_RUNTIME_IMPLEMENTATION=http` only after the owner key, credential
+  encryption key, public webhook URL, and per-store setup flow are ready.
+- Spedy v1 resource paths and `X-Api-Key` authentication are fixed in the
+  adapter. The owner key is never used to issue a store's document.
 - Fiscal issue/cancel/status-sync fail with `503` if the HTTP gateway is
   enabled but incomplete.
 

@@ -152,3 +152,72 @@ export type PreviewTemplateResult = {
   usedVariables: readonly string[];
   version: number;
 };
+
+export type FiscalConnectionStatus =
+  "error" | "not_configured" | "pending_review" | "ready";
+
+export type FiscalDefaultsStatus = "confirmed" | "missing" | "unconfirmed";
+
+/**
+ * Mirrors the `GET /fiscal/connection` payload serialized from
+ * `apps/api/src/domains/fiscal/ports/fiscalConnectionRepository.ts`.
+ * Dates arrive as ISO strings and secrets never leave the API.
+ */
+export type FiscalConnection = {
+  capabilities: Record<string, unknown>;
+  certificateExpiresAt: string | null;
+  companyId: string | null;
+  defaultsConfirmedAt: string | null;
+  defaultsConfirmedBy: string | null;
+  defaultsStatus: FiscalDefaultsStatus;
+  issuerProfile: Record<string, unknown>;
+  lastErrorCode: string | null;
+  lastSyncedAt: string | null;
+  provider: "spedy";
+  status: FiscalConnectionStatus;
+  taxDefaults: Record<string, unknown>;
+  webhookRegisteredAt: string | null;
+};
+
+export type FiscalEconomicActivity = {
+  code: string;
+  type: "main" | "secondary";
+};
+
+export type FiscalIssuerAddress = {
+  additionalInformation?: string;
+  city: { code: number; name: string; state: string };
+  district: string;
+  number: string;
+  postalCode: string;
+  street: string;
+};
+
+export type FiscalIssuerProfileInput = {
+  address: FiscalIssuerAddress;
+  cityTaxNumber?: string;
+  economicActivities?: FiscalEconomicActivity[];
+  email?: string;
+  federalTaxNumber: string;
+  legalName: string;
+  name: string;
+  phone?: string;
+  simplesNacionalTaxRegime?: string;
+  specialTaxRegime?: string;
+  stateTaxNumber?: string;
+  taxRegime?: string;
+};
+
+export type SetupFiscalConnectionInput = {
+  issuerProfile: FiscalIssuerProfileInput;
+  taxDefaults?: Record<string, unknown>;
+};
+
+export type ConfirmFiscalDefaultsInput = {
+  taxDefaults: Record<string, unknown>;
+};
+
+export type UploadFiscalCertificateInput = {
+  certificate: Blob;
+  password: string;
+};

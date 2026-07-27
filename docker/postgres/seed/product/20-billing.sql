@@ -36,7 +36,7 @@ VALUES
   ('custom_domain', 1, false, null, '12121212-1212-4212-8212-121212121212'),
   ('external_api', 0, false, null, '12121212-1212-4212-8212-121212121212'),
   ('marketplace', 0, false, null, '12121212-1212-4212-8212-121212121212'),
-  ('nfe', 0, false, null, '12121212-1212-4212-8212-121212121212'),
+  ('fiscal', 0, false, null, '12121212-1212-4212-8212-121212121212'),
   ('plate_lookup', 1, false, 300, '12121212-1212-4212-8212-121212121212'),
   ('simulations', 0, false, null, '12121212-1212-4212-8212-121212121212'),
   ('subdomain', 1, true, null, '12121212-1212-4212-8212-121212121212')
@@ -62,7 +62,7 @@ VALUES
   ),
   (
     '15151515-1515-4515-8515-151515151517', '2026-07-v1',
-    'nfe_spedy', 'nfe', false, 19990, 'NF-e integrada', 'active'
+    'fiscal_spedy', 'fiscal', false, 19990, 'Fiscal NF-e + NFS-e', 'active'
   ),
   (
     '15151515-1515-4515-8515-151515151518', '2026-07-v1',
@@ -227,7 +227,7 @@ VALUES
   ('marketplace', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_product_test_capability","billingBound":false,"providers":["olx","mercado_livre"],"officialOperation":false}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('external_api', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_product_test_capability","billingBound":false,"rateLimitPerMinute":120}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('custom_domain', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_product_test_capability","billingBound":false,"domain":"seminovos.local.test"}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('nfe', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_homologation_capability","billingBound":false,"provider":"spedy","environment":"homologation","officialOperation":false}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+  ('fiscal', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_homologation_capability","billingBound":false,"provider":"spedy","environment":"homologation","officialOperation":false}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
 ON CONFLICT (store_id, feature_key) DO UPDATE SET
   ends_at = EXCLUDED.ends_at,
   metadata = EXCLUDED.metadata,
@@ -283,7 +283,7 @@ INSERT INTO store_entitlement_events (
 )
 VALUES
   ('61000000-0000-4000-8000-000000000001', 'local_seed', 'external_api', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","billingBound":false}'::jsonb, 'active', 'inactive', 'Local product-test override; no external operation occurred', 'local_seed_override', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('61000000-0000-4000-8000-000000000002', 'local_seed', 'nfe', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","officialOperation":false,"provider":"spedy"}'::jsonb, 'active', 'inactive', 'Local homologation override; no fiscal document was issued', 'local_seed_override', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('61000000-0000-4000-8000-000000000002', 'local_seed', 'fiscal', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","officialOperation":false,"provider":"spedy"}'::jsonb, 'active', 'inactive', 'Local homologation override; no fiscal document was issued', 'local_seed_override', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('61000000-0000-4000-8000-000000000003', 'local_seed', 'custom_domain', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","billingBound":false}'::jsonb, 'active', 'inactive', 'Local product-test override for domain workflows', 'local_seed_override', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('61000000-0000-4000-8000-000000000004', 'local_seed', 'analytics', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","billingBound":false}'::jsonb, 'active', 'inactive', 'Local product-test override for analytics workflows', 'local_seed_override', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('61000000-0000-4000-8000-000000000005', 'local_seed', 'marketplace', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","officialOperation":false}'::jsonb, 'active', 'inactive', 'Local preview override; no marketplace operation occurred', 'local_seed_override', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')

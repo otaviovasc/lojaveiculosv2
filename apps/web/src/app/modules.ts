@@ -95,7 +95,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Receipt, id: "billing", label: "Assinatura" },
       { icon: Receipt, id: "expenses", label: "Gastos" },
       {
-        entitlementKey: "nfe",
+        entitlementKey: "fiscal",
         icon: FileText,
         id: "fiscal",
         label: "NF-e",

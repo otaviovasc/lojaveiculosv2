@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "99bfa717d5fb0aa779ef442d974f5f0177ae420a",
+    "indexed_at": "2026-07-27T19:50:57Z",
+    "project": "lojaveiculosv2-spedy-fiscal-v2",
+    "nodes": 17639,
+    "edges": 63018,
+    "original_size": 55246848,
+    "compressed_size": 9817750,
+    "compression_level": 3
+}

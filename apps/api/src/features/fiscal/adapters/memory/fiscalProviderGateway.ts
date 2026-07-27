@@ -49,8 +49,9 @@ function providerStatus(configured: boolean): FiscalProviderStatus {
       : [
           "SPEDY_HTTP_GATEWAY",
           "SPEDY_API_URL",
-          "SPEDY_API_TOKEN",
-          "SPEDY_WEBHOOK_SECRET",
+          "SPEDY_OWNER_API_KEY",
+          "FISCAL_CREDENTIAL_ENCRYPTION_KEY",
+          "SPEDY_WEBHOOK_URL",
         ],
     provider: "spedy",
     webhookConfigured: configured,

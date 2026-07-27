@@ -16,6 +16,7 @@ export type FiscalIssueInput = {
   documentKind: FiscalProviderDocumentKind;
   documentType: string;
   externalReference: string;
+  integrationId: string;
   metadata: Record<string, unknown>;
   recipientId?: string | null;
   storeId: string;
@@ -32,6 +33,7 @@ export type FiscalIssueResult = {
 };
 
 export type FiscalCancelInput = {
+  documentKind: FiscalProviderDocumentKind;
   providerDocumentId: string;
   reason: string;
   storeId: string;
@@ -47,9 +49,13 @@ export type FiscalStatusResult = {
 
 export type FiscalProviderGateway = {
   cancelDocument: (input: FiscalCancelInput) => Promise<FiscalStatusResult>;
-  getProviderStatus: () => Promise<FiscalProviderStatus>;
+  getProviderStatus: (input: {
+    storeId: string;
+    tenantId: string;
+  }) => Promise<FiscalProviderStatus>;
   issueDocument: (input: FiscalIssueInput) => Promise<FiscalIssueResult>;
   syncDocumentStatus: (input: {
+    documentKind: FiscalProviderDocumentKind;
     providerDocumentId: string;
     storeId: string;
     tenantId: string;

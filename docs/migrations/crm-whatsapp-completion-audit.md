@@ -58,9 +58,12 @@ These are operational launch gates, not missing product implementation:
    instances, scheduled-message backlog, campaign failures, Redis health, and
    media-mirror failures.
 
-Historical Repasses data import remains migration-deferred by product decision.
-If launch requires old conversations or campaign history, it needs a separate
-mapping, rehearsal, parity report, rollback owner, and retention review.
+Historical Repasses core conversation import is now implemented for
+connections, assignments, sessions, messages, lead links, and existing media
+URLs. It still requires a store rehearsal, parity report, cutover owner, and
+retention review before production use. See
+`docs/migrations/v1-crm-whatsapp-import.md`. Campaign, quick-message, tag, and
+schedule history remain outside this importer.
 
 ## Verification Layers
 

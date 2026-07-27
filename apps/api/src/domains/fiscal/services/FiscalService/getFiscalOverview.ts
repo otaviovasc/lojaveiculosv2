@@ -25,7 +25,10 @@ export async function getFiscalOverview(
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
-  const provider = await ports.fiscalProviderGateway.getProviderStatus();
+  const provider = await ports.fiscalProviderGateway.getProviderStatus({
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
 
   await context.audit.record({
     action: "fiscal.overview.read",

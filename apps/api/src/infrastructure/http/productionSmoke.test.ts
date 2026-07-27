@@ -9,6 +9,9 @@ import { createMemoryBillingRepository } from "../../features/billing/adapters/m
 import { createFiscalFeature } from "../../features/fiscal/controllers/fiscal.controller.js";
 import { createFiscalServices } from "../../features/fiscal/controllers/fiscalServices.js";
 import { createMemoryFiscalRepository } from "../../features/fiscal/adapters/memory/fiscalRepository.js";
+import { createMemoryFiscalConnectionRepository } from "../../features/fiscal/adapters/memory/fiscalConnectionRepository.js";
+import { createMemoryFiscalProviderAdminGateway } from "../../features/fiscal/adapters/memory/fiscalProviderAdminGateway.js";
+import { createMemoryFiscalWebhookRepository } from "../../features/fiscal/adapters/memory/fiscalWebhookRepository.js";
 import { createInventoryTestApp } from "../../features/inventory/controllers/vehicle.controller.testSupport.js";
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
 import {
@@ -61,6 +64,7 @@ describe("production smoke contracts", () => {
   });
 
   it("fails fiscal issue requests when the HTTP provider is enabled but incomplete", async () => {
+    const connectionRepository = createMemoryFiscalConnectionRepository();
     const app = new Hono();
     app.route(
       "/api/v1/fiscal",
@@ -69,13 +73,17 @@ describe("production smoke contracts", () => {
           createUserContext(
             ["fiscal.manage", "fiscal.document.issue"],
             undefined,
-            ["nfe"],
+            ["fiscal"],
           ),
         services: createFiscalServices({
+          fiscalConnectionRepository: connectionRepository,
+          fiscalProviderAdminGateway: createMemoryFiscalProviderAdminGateway(),
           fiscalProviderGateway: createSpedyHttpFiscalProviderGateway({
+            connectionRepository,
             env: { SPEDY_RUNTIME_IMPLEMENTATION: "http" },
           }),
           fiscalRepository: createMemoryFiscalRepository(),
+          fiscalWebhookRepository: createMemoryFiscalWebhookRepository(),
         }),
       }),
     );
@@ -88,16 +96,16 @@ describe("production smoke contracts", () => {
       method: "POST",
     });
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(409);
     const body = (await response.json()) as {
       code?: string;
       message?: string;
       requestId?: unknown;
     };
     expect(body).toMatchObject({
-      code: "FISCAL_PROVIDER_UNAVAILABLE",
+      code: "FISCAL_CONNECTION_NOT_READY",
       message:
-        "SPEDY fiscal gateway is not configured: SPEDY_API_URL, SPEDY_API_TOKEN, SPEDY_WEBHOOK_SECRET, SPEDY_ISSUE_PATH or SPEDY_NFE_ISSUE_PATH/SPEDY_NFSE_ISSUE_PATH, SPEDY_CANCEL_PATH, SPEDY_STATUS_PATH",
+        "Fiscal provider is not ready: SPEDY_API_URL, SPEDY_OWNER_API_KEY, FISCAL_CREDENTIAL_ENCRYPTION_KEY, SPEDY_WEBHOOK_URL, fiscal.companyId, fiscal.companyApiKey, fiscal.taxDefaultsConfirmation, fiscal.connectionReady",
     });
     expect(typeof body.requestId).toBe("string");
   });

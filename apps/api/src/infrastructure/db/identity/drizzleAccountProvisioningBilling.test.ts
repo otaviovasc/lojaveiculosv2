@@ -65,11 +65,11 @@ describe("account provisioning billing defaults", () => {
 
     expect(migration).toContain("'crm_whatsapp_instance'");
     expect(migration).toContain("'marketplace_connectors'");
-    expect(migration).toContain("'nfe_spedy'");
+    expect(migration).toContain("'fiscal_spedy'");
     expect(migration).toContain("'public_api_access'");
     expect(migration).toContain("'simulations_pro'");
     expect(migration).toContain("24999, 'CRM WhatsApp'");
-    expect(migration).toContain("19990, 'NF-e integrada'");
+    expect(migration).toContain("19990, 'Fiscal NF-e + NFS-e'");
     expect(migration).not.toContain("true,");
   });
 });

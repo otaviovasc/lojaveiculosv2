@@ -6,6 +6,7 @@ import {
   type ServiceContext,
 } from "../../shared/serviceContext.js";
 import { createConsoleServiceLogger } from "../../shared/serviceLogger.js";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 
 export function createPlaceholderServiceContext(
   context: Context,
@@ -29,7 +30,7 @@ export function createPlaceholderServiceContext(
     request: {
       correlationId,
       method: context.req.method,
-      path: context.req.path,
+      path: sanitizeHttpPath(context.req.path),
       requestId,
       ...(ipAddress ? { ipAddress } : {}),
       ...(userAgent ? { userAgent } : {}),

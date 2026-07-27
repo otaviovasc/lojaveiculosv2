@@ -158,16 +158,16 @@ describe("module permissions", () => {
   });
 
   it("keeps entitlement filtering for operational roles", () => {
-    const withoutNfe = sessionForRole("manager", ["fiscal.manage"], []);
-    const withNfe = sessionForRole("manager", ["fiscal.manage"], ["nfe"]);
+    const withoutFiscal = sessionForRole("manager", ["fiscal.manage"], []);
+    const withFiscal = sessionForRole("manager", ["fiscal.manage"], ["fiscal"]);
 
     expect(
-      filterNavigationGroups(navigationGroups, withoutNfe)
+      filterNavigationGroups(navigationGroups, withoutFiscal)
         .flatMap((group) => group.items)
         .some((item) => item.id === "fiscal"),
     ).toBe(false);
     expect(
-      filterNavigationGroups(navigationGroups, withNfe)
+      filterNavigationGroups(navigationGroups, withFiscal)
         .flatMap((group) => group.items)
         .some((item) => item.id === "fiscal"),
     ).toBe(true);
@@ -177,7 +177,7 @@ describe("module permissions", () => {
     const locked = sessionForRole("owner", [], []);
 
     expect(getModuleEntitlement("crm", locked).featureKey).toBe("crm");
-    expect(getModuleEntitlement("fiscal", locked).featureKey).toBe("nfe");
+    expect(getModuleEntitlement("fiscal", locked).featureKey).toBe("fiscal");
     expect(getModuleEntitlement("marketplaces", locked).featureKey).toBe(
       "marketplace",
     );

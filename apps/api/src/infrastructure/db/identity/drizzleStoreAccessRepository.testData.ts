@@ -24,7 +24,7 @@ export function createStoreAccessRows(overrides: Partial<StoredRows> = {}) {
       },
       {
         endsAt: null,
-        featureKey: "nfe",
+        featureKey: "fiscal",
         startsAt: null,
         status: "inactive",
         storeId,

@@ -14,6 +14,7 @@ import {
   type FiscalServicePorts,
 } from "./serviceSupport.js";
 import { syncFiscalDocumentStatus } from "./syncFiscalDocumentStatus.js";
+import { createFiscalTestAuxiliaryPorts } from "../../testSupport.js";
 
 describe("syncFiscalDocumentStatus", () => {
   it.each([
@@ -42,6 +43,7 @@ describe("syncFiscalDocumentStatus", () => {
         tenantId: "tenant_1",
       });
       expect(harness.syncDocumentStatus).toHaveBeenCalledWith({
+        documentKind: "nfe",
         providerDocumentId: "persisted_provider_document",
         storeId: "store_1",
         tenantId: "tenant_1",
@@ -143,7 +145,7 @@ function createContext(
       storeId: "store_1",
       tenantId: "tenant_1",
     }),
-    { entitlements: ["nfe"] },
+    { entitlements: ["fiscal"] },
   );
 }
 
@@ -174,6 +176,7 @@ function createHarness(
     }),
   );
   const ports: FiscalServicePorts = {
+    ...createFiscalTestAuxiliaryPorts(),
     fiscalProviderGateway: {
       cancelDocument: unused("cancelDocument"),
       getProviderStatus: unused("getProviderStatus"),
@@ -193,6 +196,7 @@ function createHarness(
       listRecipients: unused("listRecipients"),
       listTemplates: unused("listTemplates"),
       updateDocumentStatus,
+      upsertProviderDocument: unused("upsertProviderDocument"),
       updateRecipient: unused("updateRecipient"),
       updateTemplate: unused("updateTemplate"),
     },

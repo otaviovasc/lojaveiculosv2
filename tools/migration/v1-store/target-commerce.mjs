@@ -152,8 +152,10 @@ async function seedCommissionRules(tx, data, config, ids) {
 }
 
 export async function seedDocumentsAndFiscal(tx, data, config, ids, uploader) {
+  const fiscalDocuments =
+    data.spedyFiscal?.fiscalDocuments ?? data.fiscalDocuments;
   log(
-    `  Documents & fiscal: ${data.recipients.length} recipient(s), ${data.fiscalDocuments.length} fiscal doc(s), ${data.documents.length} doc(s)...`,
+    `  Documents & fiscal: ${data.recipients.length} recipient(s), ${fiscalDocuments.length} fiscal doc(s), ${data.documents.length} doc(s)...`,
   );
   for (const recipient of data.recipients) {
     const recipientId = targetId(
@@ -187,26 +189,29 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids, uploader) {
         ${recipient.name}, ${recipient.municipalRegistration || null}, ${recipient.notes || null}, ${recipient.phone || null}, ${ids.store}, ${ids.tenant}, ${recipient.createdAt}, ${recipient.updatedAt})
       ON CONFLICT (id) DO UPDATE SET address=excluded.address, notes=excluded.notes, updated_at=excluded.updated_at`;
   }
-  log(
-    `  Documents & fiscal: ${data.fiscalDocuments.length} fiscal document(s)...`,
-  );
-  for (const [index, fiscal] of data.fiscalDocuments.entries()) {
-    if (index % 10 === 0 || index === data.fiscalDocuments.length - 1) {
-      progress("  Fiscal documents", index + 1, data.fiscalDocuments.length);
+  log(`  Documents & fiscal: ${fiscalDocuments.length} fiscal document(s)...`);
+  for (const [index, fiscal] of fiscalDocuments.entries()) {
+    if (index % 10 === 0 || index === fiscalDocuments.length - 1) {
+      progress("  Fiscal documents", index + 1, fiscalDocuments.length);
     }
-    const fiscalId = targetId(
-      config.legacyStoreId,
-      "FiscalDocument",
-      fiscal.id,
-    );
-    ids.fiscal.set(fiscal.id, fiscalId);
+    const legacy = fiscal.legacy ?? fiscal;
+    const fiscalId =
+      fiscal.id ?? targetId(config.legacyStoreId, "FiscalDocument", legacy.id);
+    if (legacy.id !== undefined) ids.fiscal.set(legacy.id, fiscalId);
+    const documentKind =
+      fiscal.documentKind ?? String(legacy.docType).toLowerCase();
+    const metadata = data.spedyFiscal
+      ? legacyMetadata("FiscalDocument", legacy, fiscal.metadata)
+      : legacyMetadata("FiscalDocument", legacy);
     await tx`INSERT INTO fiscal_documents
       (id, access_key, document_kind, document_type, issued_at, metadata, provider, provider_document_id, recipient_id, status, store_id, tenant_id, created_at, updated_at)
-      VALUES (${fiscalId}, ${fiscal.accessKey || null}, ${String(fiscal.docType).toLowerCase()}, ${String(fiscal.docType).toLowerCase()}, ${fiscal.issuedAt || null},
-        ${tx.json(legacyMetadata("FiscalDocument", fiscal))}, 'spedy', ${fiscal.invoiceId || null}, ${ids.recipients.get(fiscal.serviceRecipientId) || null},
+      VALUES (${fiscalId}, ${fiscal.accessKey || null}, ${documentKind}, ${documentKind}, ${fiscal.issuedAt || null},
+        ${tx.json(metadata)}, 'spedy', ${fiscal.providerDocumentId ?? legacy.invoiceId ?? null}, ${ids.recipients.get(legacy.serviceRecipientId) || null},
         ${String(fiscal.status).toLowerCase()}, ${ids.store}, ${ids.tenant}, ${fiscal.createdAt}, ${fiscal.updatedAt})
-      ON CONFLICT (id) DO UPDATE SET metadata=excluded.metadata, status=excluded.status, updated_at=excluded.updated_at`;
-    await seedFiscalLinks(tx, fiscal, fiscalId, config, ids);
+      ON CONFLICT (id) DO UPDATE SET access_key=excluded.access_key, issued_at=excluded.issued_at,
+        metadata=excluded.metadata, provider_document_id=excluded.provider_document_id,
+        status=excluded.status, updated_at=excluded.updated_at`;
+    await seedFiscalLinks(tx, legacy, fiscalId, config, ids);
   }
   const testDrives = new Map(data.testDrives.map((row) => [row.id, row]));
   log(`  Documents & fiscal: ${data.documents.length} document(s)...`);

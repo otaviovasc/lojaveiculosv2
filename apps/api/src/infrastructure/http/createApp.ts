@@ -8,7 +8,6 @@ import { createMarketplaceFeature } from "../../features/marketplaces/controller
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createCrmFeature } from "../../features/crm/controllers/crm.controller.js";
 import { createFinanceFeature } from "../../features/finance/controllers/finance.controller.js";
-import { createFiscalFeature } from "../../features/fiscal/controllers/fiscal.controller.js";
 import { createAgencyFeature } from "../../features/agency/controllers/agency.controller.js";
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
@@ -30,6 +29,7 @@ import { installAutomationRoutes } from "./installAutomationRoutes.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
 import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
 import { createBillingWebhookContextFactory } from "./billingWebhookContextFactory.js";
+import { installFiscalRoutes } from "./installFiscalRoutes.js";
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
@@ -153,13 +153,7 @@ export function createApp(options: CreateAppOptions = {}) {
       }),
     );
   }
-  app.route(
-    "/api/v1/fiscal",
-    createFiscalFeature({
-      contextFactory,
-      ...(options.fiscalServices ? { services: options.fiscalServices } : {}),
-    }),
-  );
+  installFiscalRoutes(app, options, contextFactory);
   app.route(
     "/api/v1/analytics",
     createAnalyticsFeature({

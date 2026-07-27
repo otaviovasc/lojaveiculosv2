@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { readHttpErrorMetadata } from "./apiErrorResponse.js";
 import { readHttpRequestId } from "./requestMetadata.js";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 
 export function createLocalHttpLogger(): MiddlewareHandler {
   return async (context, next) => {
@@ -58,7 +59,7 @@ function logHttpRequest({
     component: "http",
     event: failed ? "request.failed" : "request.completed",
     method: context.req.method,
-    path: context.req.path,
+    path: sanitizeHttpPath(context.req.path),
     requestId,
     status,
     tookMs: Math.round(performance.now() - startedAt),

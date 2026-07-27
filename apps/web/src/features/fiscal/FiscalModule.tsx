@@ -2,6 +2,7 @@ import {
   Clock,
   FilePlus2,
   FileText,
+  PlugZap,
   RefreshCcw,
   ShieldAlert,
   Users,
@@ -26,6 +27,7 @@ import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { FiscalApi } from "./apiClient";
 import { FiscalCatalogPanels } from "./FiscalCatalogPanels";
+import { FiscalConnectionTab } from "./FiscalConnectionTab";
 import { FiscalCorrectionPanel } from "./FiscalCorrectionPanel";
 import { FiscalDocumentList } from "./FiscalDocumentList";
 import { FiscalIssueComposer } from "./FiscalIssueComposer";
@@ -34,9 +36,9 @@ import { createRuntimeFiscalApi } from "./runtimeApi";
 import { createIssueDraftFromDocument } from "./fiscalDocumentPrefill";
 import type { FiscalStatusFilter } from "./fiscalDocumentDisplay";
 import type { FiscalIssueDraft } from "./fiscalIssueModel";
-import type { FiscalDocument, FiscalOverview } from "./types";
+import type { FiscalConnection, FiscalDocument, FiscalOverview } from "./types";
 
-type FiscalTab = "catalogo" | "emitir" | "notas";
+type FiscalTab = "catalogo" | "conexao" | "emitir" | "notas";
 
 type LoadStatus =
   { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };
@@ -48,12 +50,14 @@ const tabOptions: ReadonlyArray<{
 }> = [
   { icon: FileText, label: "Notas", value: "notas" },
   { icon: FilePlus2, label: "Emitir", value: "emitir" },
+  { icon: PlugZap, label: "Conexão", value: "conexao" },
   { icon: Users, label: "Tomadores e modelos", value: "catalogo" },
 ];
 
 export function FiscalModule({ api }: { api?: FiscalApi }) {
   const fiscalApi = useMemo(() => api ?? createRuntimeFiscalApi(), [api]);
   const [overview, setOverview] = useState<FiscalOverview | null>(null);
+  const [connection, setConnection] = useState<FiscalConnection | null>(null);
   const [status, setStatus] = useState<LoadStatus>({ kind: "loading" });
   const [tab, setTab] = useState<FiscalTab>("notas");
   const [statusFilter, setStatusFilter] = useState<FiscalStatusFilter>("all");
@@ -66,7 +70,12 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
     async (options?: { silent?: boolean }) => {
       if (!options?.silent) setStatus({ kind: "loading" });
       try {
-        setOverview(await fiscalApi.getOverview());
+        const [nextOverview, nextConnection] = await Promise.all([
+          fiscalApi.getOverview(),
+          fiscalApi.getConnection(),
+        ]);
+        setOverview(nextOverview);
+        setConnection(nextConnection);
         setStatus({ kind: "ready" });
       } catch (error) {
         setStatus({ kind: "error", message: errorMessage(error) });
@@ -99,7 +108,7 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
   const toggleStatusFilter = (filter: FiscalStatusFilter) =>
     setStatusFilter((current) => (current === filter ? "all" : filter));
 
-  const emissionDisabled = !overview?.provider.configured;
+  const emissionReady = connection?.status === "ready";
 
   return (
     <FeaturePageShell mainClassName="feature-shell">
@@ -130,10 +139,28 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
         <FeatureAlert>{status.message}</FeatureAlert>
       ) : null}
 
-      {overview ? (
+      {overview && connection ? (
         <>
           {!overview.provider.configured ? (
             <FiscalProviderPanel overview={overview} />
+          ) : null}
+
+          {!emissionReady ? (
+            <FeatureAlert
+              action={
+                <FeatureActionButton
+                  icon={PlugZap}
+                  label="Abrir conexão fiscal"
+                  onClick={() => setTab("conexao")}
+                  title="Abrir a configuração da conexão fiscal"
+                />
+              }
+              tone="warning"
+            >
+              A emissão está bloqueada porque a conexão fiscal ainda não está
+              pronta. Conclua a configuração da empresa, do certificado e dos
+              padrões fiscais.
+            </FeatureAlert>
           ) : null}
 
           <FeatureTabs<FiscalTab>
@@ -197,21 +224,48 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
 
           {tab === "emitir" ? (
             <div className="grid gap-4">
-              {correction ? (
-                <FiscalCorrectionPanel
-                  document={correction.document}
-                  draft={correction.draft}
-                  onDismiss={() => setCorrection(null)}
+              {emissionReady ? (
+                <>
+                  {correction ? (
+                    <FiscalCorrectionPanel
+                      document={correction.document}
+                      draft={correction.draft}
+                      onDismiss={() => setCorrection(null)}
+                    />
+                  ) : null}
+                  <FiscalIssueComposer
+                    api={fiscalApi}
+                    disabled={false}
+                    initialDraft={correction?.draft ?? null}
+                    onError={reportError}
+                    onIssued={handleIssued}
+                  />
+                </>
+              ) : (
+                <FeatureEmptyState
+                  action={
+                    <FeatureActionButton
+                      icon={PlugZap}
+                      label="Configurar conexão fiscal"
+                      onClick={() => setTab("conexao")}
+                      title="Ir para a configuração da conexão fiscal"
+                      variant="primary"
+                    />
+                  }
+                  body="A emissão de notas só é liberada quando a conexão com o provedor estiver pronta: empresa criada, certificado válido e padrões fiscais confirmados. Nenhuma emissão foi iniciada."
+                  icon={ShieldAlert}
+                  title="Emissão bloqueada"
                 />
-              ) : null}
-              <FiscalIssueComposer
-                api={fiscalApi}
-                disabled={emissionDisabled}
-                initialDraft={correction?.draft ?? null}
-                onError={reportError}
-                onIssued={handleIssued}
-              />
+              )}
             </div>
+          ) : null}
+
+          {tab === "conexao" ? (
+            <FiscalConnectionTab
+              api={fiscalApi}
+              connection={connection}
+              onConnectionChange={setConnection}
+            />
           ) : null}
 
           {tab === "catalogo" ? (

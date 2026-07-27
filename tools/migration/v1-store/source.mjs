@@ -35,7 +35,7 @@ export async function withV1Archive(archivePath, callback) {
       CONTAINER_NAME,
       "sh",
       "-lc",
-      "until pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done",
+      'until [ "$(cat /proc/1/comm)" = "postgres" ] && pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done',
     );
     docker("exec", CONTAINER_NAME, "createdb", "-U", "postgres", "v1_import");
     docker(
@@ -125,6 +125,9 @@ export async function loadStoreData(sql, storeId) {
     ),
     fiscalDocuments: await many(
       'SELECT * FROM "FiscalDocument" WHERE "lojaId"=$1 ORDER BY id',
+    ),
+    fiscalAddon: await one(
+      'SELECT * FROM "LojaAddon" WHERE "lojaId"=$1 AND "addonType"=\'SPEDY_NFE\' ORDER BY id DESC LIMIT 1',
     ),
   };
   await assertUnsupportedTablesEmpty(sql, storeId);

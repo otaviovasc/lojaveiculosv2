@@ -2,8 +2,17 @@
 import { basename } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import {
+  formatModuleMenu,
+  parseInteractiveModuleSelection,
+  parseModuleArgs,
+} from "./v1-store/cli.mjs";
 import { assertConfigured, json, nullableString } from "./v1-store/common.mjs";
 import { loadR2Env } from "./v1-store/document-artifacts.mjs";
+import {
+  loadRepassesCrmData,
+  withRepassesArchive,
+} from "./v1-store/repasses-source.mjs";
 import { loadStoreData, withV1Archive } from "./v1-store/source.mjs";
 import { MIGRATION_MODULES, migrateToV2 } from "./v1-store/target.mjs";
 
@@ -15,20 +24,40 @@ const DEFAULT_ENTITLEMENTS = [
   "custom_domain",
   "external_api",
   "marketplace",
-  "nfe",
+  "fiscal",
   "plate_lookup",
   "simulations",
   "subdomain",
 ];
 
-const modules = parseModuleArgs(process.argv.slice(2));
+const MODULE_DESCRIPTIONS = {
+  attachments: "finance attachment references",
+  documents: "documents and fiscal records",
+  leads: "pipeline, leads, activities, and interests",
+  sales: "sales, payments, and finance entries",
+  vehicles: "inventory, photos, and checklists",
+  whatsapp: "connections, assignments, sessions, messages, and media URLs",
+};
+
+const moduleOptions = parseModuleArgs(process.argv.slice(2), MIGRATION_MODULES);
+if (moduleOptions.help) {
+  printHelp();
+  process.exit(0);
+}
 loadR2Env();
-const config = await promptConfig();
-config.modules = modules;
+const config = await promptConfig(moduleOptions.modules);
+const { modules } = config;
 
 assertConfigured(config);
 const result = await withV1Archive(config.archivePath, async (source) => {
   const data = await loadStoreData(source, config.legacyStoreId);
+  if (modules.has("whatsapp")) {
+    data.whatsapp = await withRepassesArchive(
+      config.repassesArchivePath,
+      (repassesSource) =>
+        loadRepassesCrmData(repassesSource, config.legacyStoreId),
+    );
+  }
   process.stdout.write(
     `Loaded V1 store ${config.legacyStoreId}: ${data.vehicles.length} vehicles, ${data.leads.length} leads, ${data.sales.length} sales.\n`,
   );
@@ -42,62 +71,41 @@ process.stdout.write(
     : "Dry run succeeded; all V2 writes were rolled back.\n",
 );
 
-// Module selection: --only=documents,leads runs just those modules;
-// --skip=attachments runs everything except the listed ones. Foundation
-// (tenant, store, users, billing) always runs. Skipped modules keep their
-// previously migrated rows; links still resolve because target ids are
-// deterministic.
-function parseModuleArgs(argv) {
-  let only = null;
-  let skip = null;
-  for (const arg of argv) {
-    if (arg.startsWith("--only=")) only = arg.slice("--only=".length);
-    else if (arg.startsWith("--skip=")) skip = arg.slice("--skip=".length);
-    else if (arg === "--help" || arg === "-h") {
-      process.stdout.write(
-        `Usage: node tools/migration/migrate-v1-store.mjs [--only=${MIGRATION_MODULES.join("|")},...] [--skip=...]\n`,
-      );
-      process.exit(0);
-    } else throw new Error(`Unknown argument: ${arg}`);
-  }
-  if (only !== null && skip !== null)
-    throw new Error("Use either --only or --skip, not both.");
-  const parseList = (value) =>
-    value
-      .split(",")
-      .map((name) => name.trim())
-      .filter(Boolean);
-  const assertValid = (names) => {
-    for (const name of names)
-      if (!MIGRATION_MODULES.includes(name))
-        throw new Error(
-          `Unknown module "${name}". Valid modules: ${MIGRATION_MODULES.join(", ")}`,
-        );
-  };
-  let names;
-  if (only !== null) {
-    names = parseList(only);
-    assertValid(names);
-  } else if (skip !== null) {
-    const skipped = parseList(skip);
-    assertValid(skipped);
-    names = MIGRATION_MODULES.filter((module) => !skipped.includes(module));
-  } else {
-    names = MIGRATION_MODULES;
-  }
-  const selected = new Set(names);
-  if (!selected.size) throw new Error("Module selection is empty.");
-  return selected;
-}
-
-async function promptConfig() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("Set DATABASE_URL in the environment before running.");
-  }
-
+async function promptConfig(cliModules) {
   const terminal = createInterface({ input: stdin, output: stdout });
   try {
+    const modules = cliModules ?? (await askModules(terminal));
+    if (!process.env.DATABASE_URL) {
+      throw new Error("Set DATABASE_URL in the environment before running.");
+    }
     const archivePath = await ask(terminal, "V1 archive path");
+    const repassesArchivePath = modules.has("whatsapp")
+      ? await ask(terminal, "Repasses CRM archive path")
+      : null;
+    const activateWhatsappConnections = modules.has("whatsapp")
+      ? (
+          await ask(
+            terminal,
+            "Activate imported Z-API connections at cutover? (y/n)",
+            "n",
+          )
+        )
+          .trim()
+          .toLowerCase()
+          .startsWith("y")
+      : false;
+    const replaceWhatsappHistory = modules.has("whatsapp")
+      ? (
+          await ask(
+            terminal,
+            "Replace existing V2 WhatsApp sessions, messages, and campaign history for this store? (y/n)",
+            "y",
+          )
+        )
+          .trim()
+          .toLowerCase()
+          .startsWith("y")
+      : false;
     const legacyStoreId = Number(await ask(terminal, "V1 store ID", "200"));
     const ownerClerkUserId = await ask(terminal, "Owner Clerk user id");
     const ownerEmail = await ask(terminal, "Owner email");
@@ -118,23 +126,35 @@ async function promptConfig() {
       .trim()
       .toLowerCase()
       .startsWith("y");
-    const availableVehicleSalePolicy = await ask(
-      terminal,
-      "Policy for available vehicle with a V1 sale",
-      "cancelled",
-    );
+    const availableVehicleSalePolicy = modules.has("sales")
+      ? await ask(
+          terminal,
+          "Policy for available vehicle with a V1 sale",
+          "cancelled",
+        )
+      : "cancelled";
 
     return {
       allowRemoteTarget,
       apply,
+      activateWhatsappConnections,
       archivePath,
       availableVehicleSalePolicy,
       confirmStoreSlug,
-      dumpLabel: `${new Date().toISOString().slice(0, 16)}:${basename(archivePath)}`,
+      dumpLabel: [
+        new Date().toISOString().slice(0, 16),
+        basename(archivePath),
+        repassesArchivePath ? basename(repassesArchivePath) : null,
+      ]
+        .filter(Boolean)
+        .join(":"),
       entitlements: DEFAULT_ENTITLEMENTS,
       legacyStoreId,
+      modules,
       ownerClerkUserId,
       ownerEmail,
+      repassesArchivePath,
+      replaceWhatsappHistory,
       storeLegalName,
       storeSlug,
       storeTradingName,
@@ -143,6 +163,18 @@ async function promptConfig() {
     };
   } finally {
     terminal.close();
+  }
+}
+
+async function askModules(terminal) {
+  stdout.write(`${formatModuleMenu(MIGRATION_MODULES, MODULE_DESCRIPTIONS)}\n`);
+  while (true) {
+    const answer = await ask(terminal, "Modules", "all");
+    try {
+      return parseInteractiveModuleSelection(answer, MIGRATION_MODULES);
+    } catch (error) {
+      stdout.write(`${error.message}\n`);
+    }
   }
 }
 
@@ -209,4 +241,17 @@ async function promptForMissingAccessEmails(data, migrationConfig) {
 
 function isEmail(value) {
   return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function printHelp() {
+  process.stdout.write(
+    [
+      "Usage: node tools/migration/migrate-v1-store.mjs",
+      `       [--only=${MIGRATION_MODULES.join("|")},...] [--skip=...]`,
+      "",
+      "Without --only/--skip, the script starts with an interactive multi-selection.",
+      "Foundation (tenant, store, users, billing) always runs.",
+      "",
+    ].join("\n"),
+  );
 }

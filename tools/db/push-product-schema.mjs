@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import postgres from "postgres";
 import { assertKnownLocalDatabaseUrl } from "./local-database-safety.mjs";
 import { installFinanceAutoEntryParity } from "./install-finance-auto-entry-parity.mjs";
+import { installFiscalCatalogParity } from "./install-fiscal-catalog-parity.mjs";
 
 assertKnownLocalDatabaseUrl("DATABASE_URL");
 
@@ -24,6 +25,7 @@ try {
 
   runDrizzlePush({ bootstrap: true });
   await installFinanceAutoEntryParity(sql);
+  await installFiscalCatalogParity(sql);
   await verifyBootstrapState();
   await installScopeForeignKeys();
   await verifyFinalState();

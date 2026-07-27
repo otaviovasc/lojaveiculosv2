@@ -44,6 +44,7 @@ export async function cancelFiscalDocument(
   });
 
   const providerResult = await ports.fiscalProviderGateway.cancelDocument({
+    documentKind: persistedDocument.documentKind,
     providerDocumentId: persistedDocument.providerDocumentId,
     reason: input.reason,
     storeId: scope.storeId,

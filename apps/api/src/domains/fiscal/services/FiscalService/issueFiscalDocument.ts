@@ -4,12 +4,7 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type {
-  FiscalDocument,
-  FiscalDocumentKind,
-  FiscalServiceInvoiceTemplate,
-} from "../../ports/fiscalRepository.js";
-import { FiscalTemplateNotFoundError } from "../../domain/fiscalErrors.js";
+import type { FiscalDocument } from "../../ports/fiscalRepository.js";
 import { readNfeVehiclePayload } from "../../documents/nfeVehiclePayload.js";
 import {
   createIssueMetadata,
@@ -23,19 +18,20 @@ import {
   previewFiscalTemplate,
 } from "./manageFiscalTemplates.js";
 import {
+  FiscalProviderNotReadyError,
+  isFailureStatus,
+  type IssueFiscalDocumentInput,
+  readTemplateIfPresent,
+} from "../../fiscalIssuanceSupport.js";
+import {
   requireFiscalScope,
   type FiscalServicePorts,
 } from "./serviceSupport.js";
 
-export type IssueFiscalDocumentInput = {
-  documentKind?: FiscalDocumentKind;
-  documentType: string;
-  externalReference: string;
-  metadata?: Record<string, unknown>;
-  recipientId?: string | null;
-  templateId?: string | null;
-  templateVariables?: Record<string, unknown>;
-};
+export {
+  FiscalProviderNotReadyError,
+  type IssueFiscalDocumentInput,
+} from "../../fiscalIssuanceSupport.js";
 
 export async function issueFiscalDocument(
   context: ServiceContext,
@@ -47,6 +43,13 @@ export async function issueFiscalDocument(
   const scope = requireFiscalScope(context);
   const documentKind =
     input.documentKind ?? inferDocumentKind(input.documentType);
+  const providerStatus = await ports.fiscalProviderGateway.getProviderStatus({
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
+  if (!providerStatus.configured) {
+    throw new FiscalProviderNotReadyError(providerStatus.missingConfiguration);
+  }
   const template = await readTemplateIfPresent(context, input, ports);
   const preview = template
     ? await previewFiscalTemplate(
@@ -58,7 +61,14 @@ export async function issueFiscalDocument(
   if (preview) assertTemplatePreviewResolved(preview);
   const nfeVehiclePayload =
     documentKind === "nfe" ? readNfeVehiclePayload(input.metadata) : null;
-
+  const recipientId = input.recipientId ?? template?.recipientId ?? null;
+  const recipient = recipientId
+    ? await ports.fiscalRepository.getRecipient({
+        id: recipientId,
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+      })
+    : null;
   context.logger.info(
     "fiscal.document.issue.started",
     createServiceLogMetadata(context, {
@@ -88,7 +98,7 @@ export async function issueFiscalDocument(
       preview?.renderedDescription,
       nfeVehiclePayload,
     ),
-    recipientId: input.recipientId ?? template?.recipientId ?? null,
+    recipientId,
     status: "queued",
     storeId: scope.storeId,
     templateId: template?.id ?? input.templateId ?? null,
@@ -116,8 +126,35 @@ export async function issueFiscalDocument(
       documentKind,
       documentType: input.documentType,
       externalReference: input.externalReference,
-      metadata: createProviderMetadata(input, nfeVehiclePayload),
-      recipientId: input.recipientId ?? template?.recipientId ?? null,
+      integrationId: document.id,
+      metadata: {
+        ...createProviderMetadata(input, nfeVehiclePayload),
+        ...(recipient
+          ? {
+              recipient: {
+                address: recipient.address,
+                documentNumber: recipient.documentNumber,
+                email: recipient.email,
+                legalName: recipient.legalName,
+                phone: recipient.phone,
+              },
+            }
+          : {}),
+        ...(template
+          ? {
+              renderedDescription: preview?.renderedDescription ?? null,
+              template: {
+                cityServiceCode: template.cityServiceCode,
+                defaultServiceLocation: template.defaultServiceLocation,
+                defaultTaxationType: template.defaultTaxationType,
+                retentionConfig: template.retentionConfig,
+                serviceMunicipalCode: template.serviceMunicipalCode,
+                serviceNationalCode: template.serviceNationalCode,
+              },
+            }
+          : {}),
+      },
+      recipientId,
       storeId: scope.storeId,
       templateId: template?.id ?? input.templateId ?? null,
       templateVersion: template?.version ?? null,
@@ -180,26 +217,6 @@ export async function issueFiscalDocument(
     });
     throw error;
   }
-}
-
-function isFailureStatus(status: FiscalDocument["status"]) {
-  return status === "error" || status === "failed" || status === "rejected";
-}
-
-async function readTemplateIfPresent(
-  context: ServiceContext,
-  input: IssueFiscalDocumentInput,
-  ports: FiscalServicePorts,
-): Promise<FiscalServiceInvoiceTemplate | null> {
-  if (!input.templateId) return null;
-  const scope = requireFiscalScope(context);
-  const template = await ports.fiscalRepository.getTemplate({
-    id: input.templateId,
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
-  });
-  if (!template) throw new FiscalTemplateNotFoundError(input.templateId);
-  return template;
 }
 
 async function auditIssue(

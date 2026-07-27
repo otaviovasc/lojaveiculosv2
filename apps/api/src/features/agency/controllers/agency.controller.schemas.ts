@@ -14,7 +14,7 @@ export const agencyStoreEntitlementParamsSchema =
       "custom_domain",
       "external_api",
       "marketplace",
-      "nfe",
+      "fiscal",
       "plate_lookup",
       "subdomain",
     ]),

@@ -44,10 +44,11 @@ corresponding capability is enabled:
 - Asaas sandbox: `ASAAS_API_KEY`, `ASAAS_WEBHOOK_SECRET`, and
   `ASAAS_RUNTIME_IMPLEMENTATION`. Set the implementation to `http` only after
   the other values are real.
-- SPEDY: `SPEDY_API_URL`, `SPEDY_API_TOKEN`, `SPEDY_ISSUE_PATH`,
-  `SPEDY_CANCEL_PATH`, `SPEDY_STATUS_PATH`, `SPEDY_WEBHOOK_SECRET`, and
-  `SPEDY_RUNTIME_IMPLEMENTATION`. Set the implementation to `http` only after
-  the authorized integrator contract is complete.
+- SPEDY: `SPEDY_API_URL`, `SPEDY_OWNER_API_KEY`,
+  `FISCAL_CREDENTIAL_ENCRYPTION_KEY`, `SPEDY_WEBHOOK_URL`, and
+  `SPEDY_RUNTIME_IMPLEMENTATION`. The owner key manages company subaccounts;
+  store API keys are encrypted in the product database. Set the implementation
+  to `http` only after every value is real and the callback is reachable.
 - Deferred storefront DNS: `PUBLIC_STOREFRONT_ROOT_DOMAIN` and
   `PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET`.
 

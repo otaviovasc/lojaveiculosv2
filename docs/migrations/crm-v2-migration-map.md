@@ -63,8 +63,9 @@ Still incomplete for production sign-off:
 
 - Railway scheduled-message cron provisioning and verification.
 - Live Z-API, R2, and Redis smoke/load/recovery evidence.
-- Historical Repasses import only if the product reverses its current
-  migration-deferred decision.
+- Historical Repasses import rehearsal and cutover acceptance. The implemented
+  mapping and operator boundary live in
+  `docs/migrations/v1-crm-whatsapp-import.md`.
 
 ## Slice Map
 

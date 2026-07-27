@@ -34,7 +34,7 @@ CROSS JOIN (
     ('crm', 0, false, null::integer),
     ('external_api', 0, false, null::integer),
     ('marketplace', 0, false, null::integer),
-    ('nfe', 0, false, null::integer),
+    ('fiscal', 0, false, null::integer),
     ('simulations', 0, false, null::integer)
 ) AS feature(feature_key, included, included_in_trial, limit_value)
 WHERE plan.code = 'growth' AND plan.catalog_version = '2026-07-v1'
@@ -58,8 +58,8 @@ VALUES
     14990, 'Marketplaces', 'active'
   ),
   (
-    'nfe_spedy', '2026-07-v1', 'nfe', false,
-    19990, 'NF-e integrada', 'active'
+    'fiscal_spedy', '2026-07-v1', 'fiscal', false,
+    19990, 'Fiscal NF-e + NFS-e', 'active'
   ),
   (
     'public_api_access', '2026-07-v1', 'external_api', false,

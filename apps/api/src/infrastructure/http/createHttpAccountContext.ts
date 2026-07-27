@@ -22,6 +22,7 @@ import {
   HttpContextRequestPolicyError,
 } from "./httpContextErrors.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 import { readHttpRequestId } from "./requestMetadata.js";
 
 export type HttpAccountContext = {
@@ -210,7 +211,7 @@ function readRequestHeaders(context: Context) {
   return {
     correlationId,
     method: context.req.method,
-    path: context.req.path,
+    path: sanitizeHttpPath(context.req.path),
     requestId,
   };
 }

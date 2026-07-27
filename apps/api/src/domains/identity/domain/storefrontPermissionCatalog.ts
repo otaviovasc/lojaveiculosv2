@@ -123,6 +123,24 @@ export const platformPermissionGroup: PermissionGroup = {
       "high",
     ),
     permission(
+      "fiscal.provider.configure",
+      "Configurar integração fiscal",
+      "Criar e sincronizar a empresa da loja no provedor fiscal.",
+      "high",
+    ),
+    permission(
+      "fiscal.certificate.manage",
+      "Gerenciar certificado fiscal",
+      "Enviar ou substituir o certificado A1 usado pelo provedor fiscal.",
+      "high",
+    ),
+    permission(
+      "fiscal.defaults.confirm",
+      "Confirmar padrões fiscais",
+      "Revisar e confirmar os padrões tributários usados nas emissões.",
+      "high",
+    ),
+    permission(
       "fiscal.recipient.manage",
       "Gerenciar tomadores fiscais",
       "Cadastrar e atualizar financeiras, bancos e tomadores de serviço.",

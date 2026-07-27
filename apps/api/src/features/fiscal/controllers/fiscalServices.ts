@@ -32,10 +32,27 @@ import type {
   FiscalServiceRecipient,
 } from "../../../domains/fiscal/ports/fiscalRepository.js";
 import type { FiscalServicePorts } from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
+import {
+  confirmFiscalDefaults,
+  getFiscalConnection,
+  setupFiscalConnection,
+  syncFiscalConnection,
+  uploadFiscalCertificate,
+} from "../../../domains/fiscal/services/FiscalService/manageFiscalConnection.js";
 import { createMemoryFiscalProviderGateway } from "../adapters/memory/fiscalProviderGateway.js";
 import { createMemoryFiscalRepository } from "../adapters/memory/fiscalRepository.js";
+import { createMemoryFiscalConnectionRepository } from "../adapters/memory/fiscalConnectionRepository.js";
+import { createMemoryFiscalProviderAdminGateway } from "../adapters/memory/fiscalProviderAdminGateway.js";
+import type { FiscalIssuerProfileInput } from "../../../domains/fiscal/ports/fiscalProviderAdminGateway.js";
+import type { FiscalConnection } from "../../../domains/fiscal/ports/fiscalConnectionRepository.js";
+import { processSpedyWebhook } from "../../../domains/fiscal/services/FiscalService/processSpedyWebhook.js";
+import { createMemoryFiscalWebhookRepository } from "../adapters/memory/fiscalWebhookRepository.js";
 
 export type FiscalServices = {
+  confirmDefaults: (
+    context: ServiceContext,
+    input: { taxDefaults: Record<string, unknown> },
+  ) => Promise<FiscalConnection>;
   archiveRecipient: (
     context: ServiceContext,
     input: { id: string },
@@ -57,6 +74,7 @@ export type FiscalServices = {
     input: UpsertFiscalTemplateInput,
   ) => Promise<FiscalServiceInvoiceTemplate>;
   getOverview: (context: ServiceContext) => Promise<FiscalOverview>;
+  getConnection: (context: ServiceContext) => Promise<FiscalConnection>;
   issueDocument: (
     context: ServiceContext,
     input: IssueFiscalDocumentInput,
@@ -72,6 +90,13 @@ export type FiscalServices = {
     context: ServiceContext,
     input: { templateId: string; variables: Record<string, unknown> },
   ) => Promise<Awaited<ReturnType<typeof previewFiscalTemplate>>>;
+  processWebhook: (
+    context: ServiceContext,
+    input: { payload: Record<string, unknown>; token: string },
+  ) => Promise<
+    | { documentId: string; status: "processed" }
+    | { status: "duplicate" | "ignored" }
+  >;
   repeatDocument: (
     context: ServiceContext,
     input: RepeatFiscalDocumentInput,
@@ -80,6 +105,14 @@ export type FiscalServices = {
     context: ServiceContext,
     input: SyncFiscalDocumentStatusInput,
   ) => Promise<FiscalDocument>;
+  setupConnection: (
+    context: ServiceContext,
+    input: {
+      issuerProfile: FiscalIssuerProfileInput;
+      taxDefaults?: Record<string, unknown>;
+    },
+  ) => Promise<FiscalConnection>;
+  syncConnection: (context: ServiceContext) => Promise<FiscalConnection>;
   updateRecipient: (
     context: ServiceContext,
     input: UpdateFiscalRecipientCommand,
@@ -88,15 +121,24 @@ export type FiscalServices = {
     context: ServiceContext,
     input: UpdateFiscalTemplateCommand,
   ) => Promise<FiscalServiceInvoiceTemplate>;
+  uploadCertificate: (
+    context: ServiceContext,
+    input: { certificate: Blob; password: string },
+  ) => Promise<FiscalConnection>;
 };
 
 export function createFiscalServices(
   ports: FiscalServicePorts = {
+    fiscalConnectionRepository: createMemoryFiscalConnectionRepository(),
+    fiscalProviderAdminGateway: createMemoryFiscalProviderAdminGateway(),
     fiscalProviderGateway: createMemoryFiscalProviderGateway(),
     fiscalRepository: createMemoryFiscalRepository(),
+    fiscalWebhookRepository: createMemoryFiscalWebhookRepository(),
   },
 ): FiscalServices {
   return {
+    confirmDefaults: (context, input) =>
+      confirmFiscalDefaults(context, input, ports),
     archiveRecipient: (context, input) =>
       archiveFiscalRecipient(context, input, ports),
     archiveTemplate: (context, input) =>
@@ -108,6 +150,7 @@ export function createFiscalServices(
     createTemplate: (context, input) =>
       createFiscalTemplate(context, input, ports),
     getOverview: (context) => getFiscalOverview(context, ports),
+    getConnection: (context) => getFiscalConnection(context, ports),
     issueDocument: (context, input) =>
       issueFiscalDocument(context, input, ports),
     listRecipients: (context) => listFiscalRecipients(context, ports),
@@ -115,14 +158,21 @@ export function createFiscalServices(
       listFiscalTemplates(context, input, ports),
     previewTemplate: (context, input) =>
       previewFiscalTemplate(context, input, ports),
+    processWebhook: (context, input) =>
+      processSpedyWebhook(context, input, ports),
     repeatDocument: (context, input) =>
       repeatFiscalDocument(context, input, ports),
     syncDocumentStatus: (context, input) =>
       syncFiscalDocumentStatus(context, input, ports),
+    setupConnection: (context, input) =>
+      setupFiscalConnection(context, input, ports),
+    syncConnection: (context) => syncFiscalConnection(context, ports),
     updateRecipient: (context, input) =>
       updateFiscalRecipient(context, input, ports),
     updateTemplate: (context, input) =>
       updateFiscalTemplate(context, input, ports),
+    uploadCertificate: (context, input) =>
+      uploadFiscalCertificate(context, input, ports),
   };
 }
 

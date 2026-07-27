@@ -144,17 +144,23 @@ function createServices() {
     archiveRecipient: unused("archiveRecipient"),
     archiveTemplate: unused("archiveTemplate"),
     cancelDocument,
+    confirmDefaults: unused("confirmDefaults"),
     createRecipient: unused("createRecipient"),
     createTemplate: unused("createTemplate"),
+    getConnection: unused("getConnection"),
     getOverview: unused("getOverview"),
     issueDocument: unused("issueDocument"),
     listRecipients: unused("listRecipients"),
     listTemplates: unused("listTemplates"),
     previewTemplate: unused("previewTemplate"),
+    processWebhook: unused("processWebhook"),
     repeatDocument: unused("repeatDocument"),
+    setupConnection: unused("setupConnection"),
+    syncConnection: unused("syncConnection"),
     syncDocumentStatus,
     updateRecipient: unused("updateRecipient"),
     updateTemplate: unused("updateTemplate"),
+    uploadCertificate: unused("uploadCertificate"),
   };
   return { cancelDocument, syncDocumentStatus, value };
 }

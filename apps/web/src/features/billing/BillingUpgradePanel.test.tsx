@@ -30,7 +30,7 @@ describe("BillingUpgradePanel", () => {
   it("keeps agency-managed billing authority explicit", () => {
     render(
       <BillingUpgradePanel
-        featureKey="nfe"
+        featureKey="fiscal"
         managedByAgency
         module={moduleDefinitions.fiscal}
         onOpenBilling={vi.fn()}

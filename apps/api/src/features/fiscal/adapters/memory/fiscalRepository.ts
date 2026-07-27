@@ -63,6 +63,23 @@ export function createMemoryFiscalRepository(): FiscalRepository {
             item.recipientId === input.recipientId),
       );
     },
+    async upsertProviderDocument(input) {
+      const existing = documents.find(
+        (document) =>
+          document.storeId === input.storeId &&
+          document.tenantId === input.tenantId &&
+          document.providerDocumentId === input.providerDocumentId,
+      );
+      if (existing) {
+        existing.accessKey = input.accessKey ?? existing.accessKey;
+        existing.metadata = { ...existing.metadata, ...(input.metadata ?? {}) };
+        existing.status = input.status;
+        return existing;
+      }
+      const document = toDocument(input);
+      documents.unshift(document);
+      return document;
+    },
     async updateDocumentStatus(input) {
       const document = findScoped(documents, input.documentId, input);
       if (!document) throw new FiscalDocumentNotFoundError(input.documentId);

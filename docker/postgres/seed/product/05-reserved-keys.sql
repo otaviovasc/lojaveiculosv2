@@ -73,7 +73,7 @@ BEGIN
     INNER JOIN (VALUES
       ('15151515-1515-4515-8515-151515151515'::uuid, 'crm_whatsapp_instance'),
       ('15151515-1515-4515-8515-151515151516'::uuid, 'marketplace_connectors'),
-      ('15151515-1515-4515-8515-151515151517'::uuid, 'nfe_spedy'),
+      ('15151515-1515-4515-8515-151515151517'::uuid, 'fiscal_spedy'),
       ('15151515-1515-4515-8515-151515151518'::uuid, 'public_api_access'),
       ('15151515-1515-4515-8515-151515151519'::uuid, 'simulations_pro')
     ) AS seed_addon(id, code)

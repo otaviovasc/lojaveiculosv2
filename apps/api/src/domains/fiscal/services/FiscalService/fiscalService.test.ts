@@ -224,6 +224,6 @@ function createFiscalContext() {
       storeId: "store_1",
       tenantId: "tenant_1",
     }),
-    entitlements: ["nfe"],
+    entitlements: ["fiscal"],
   };
 }

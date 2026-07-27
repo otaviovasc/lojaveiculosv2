@@ -41,6 +41,70 @@ export const fiscalLinkTarget = pgEnum("fiscal_link_target", [
   "store_event",
 ]);
 
+export const fiscalConnectionStatus = pgEnum("fiscal_connection_status", [
+  "not_configured",
+  "pending_review",
+  "ready",
+  "error",
+]);
+
+export const fiscalDefaultsStatus = pgEnum("fiscal_defaults_status", [
+  "missing",
+  "unconfirmed",
+  "confirmed",
+]);
+
+export const fiscalProviderConnections = pgTable(
+  "fiscal_provider_connections",
+  {
+    ...lifecycleColumns,
+    capabilities: jsonb("capabilities").notNull().default({}),
+    certificateExpiresAt: timestamp("certificate_expires_at", {
+      withTimezone: true,
+    }),
+    companyId: varchar("company_id", { length: 191 }),
+    credentialCiphertext: text("credential_ciphertext"),
+    defaultsConfirmedAt: timestamp("defaults_confirmed_at", {
+      withTimezone: true,
+    }),
+    defaultsConfirmedBy: varchar("defaults_confirmed_by", { length: 191 }),
+    defaultsStatus: fiscalDefaultsStatus("defaults_status")
+      .notNull()
+      .default("missing"),
+    issuerProfile: jsonb("issuer_profile").notNull().default({}),
+    lastErrorCode: varchar("last_error_code", { length: 120 }),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    provider: varchar("provider", { length: 80 }).notNull().default("spedy"),
+    status: fiscalConnectionStatus("status")
+      .notNull()
+      .default("not_configured"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    taxDefaults: jsonb("tax_defaults").notNull().default({}),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    webhookRegisteredAt: timestamp("webhook_registered_at", {
+      withTimezone: true,
+    }),
+  },
+  (table) => [
+    uniqueIndex("fiscal_provider_connections_store_provider_unique").on(
+      table.storeId,
+      table.provider,
+    ),
+    uniqueIndex("fiscal_provider_connections_company_provider_unique").on(
+      table.companyId,
+      table.provider,
+    ),
+    index("fiscal_provider_connections_tenant_store_idx").on(
+      table.tenantId,
+      table.storeId,
+    ),
+  ],
+);
+
 export const fiscalDocuments = pgTable(
   "fiscal_documents",
   {
@@ -70,6 +134,7 @@ export const fiscalDocuments = pgTable(
   (table) => [
     index("fiscal_documents_store_status_idx").on(table.storeId, table.status),
     uniqueIndex("fiscal_documents_provider_document_unique").on(
+      table.storeId,
       table.provider,
       table.providerDocumentId,
     ),
