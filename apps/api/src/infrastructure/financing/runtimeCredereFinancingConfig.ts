@@ -17,6 +17,16 @@ export type RuntimeCredereFinancingConfig = {
 export function resolveRuntimeCredereFinancingConfig(
   env: Record<string, string | undefined>,
 ): RuntimeCredereFinancingConfig | null {
+  const configuredValues = [
+    env.CREDERE_BANK_POLICY_CODES,
+    env.CREDERE_CLIENT_ID,
+    env.CREDERE_CLIENT_SECRET,
+    env.CREDERE_CREDENTIAL_ENCRYPTION_KEY,
+    env.CREDERE_REDIRECT_URI,
+  ].filter((value) => value?.trim() && !value.trim().startsWith("${{"));
+
+  if (configuredValues.length === 0) return null;
+
   const config = {
     bankPolicyCodes: parseBankPolicyCodes(env.CREDERE_BANK_POLICY_CODES),
     clientId: env.CREDERE_CLIENT_ID?.trim() ?? "",

@@ -40,6 +40,23 @@ describe("runtime Credere financing config", () => {
     ).toThrow(RuntimeDatabaseConfigError);
   });
 
+  it("keeps the deployed API available when Credere is entirely unconfigured", () => {
+    expect(
+      resolveRuntimeCredereFinancingConfig({
+        APP_ENV: "staging",
+      }),
+    ).toBeNull();
+  });
+
+  it("fails closed when only the bank policy is configured", () => {
+    expect(() =>
+      resolveRuntimeCredereFinancingConfig({
+        APP_ENV: "staging",
+        CREDERE_BANK_POLICY_CODES: "655,623",
+      }),
+    ).toThrow(RuntimeDatabaseConfigError);
+  });
+
   it("allows local/test runtime to omit Credere credentials", () => {
     expect(
       resolveRuntimeCredereFinancingConfig({
