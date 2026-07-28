@@ -1,8 +1,9 @@
 import { json, targetId } from "./common.mjs";
-import { log } from "./log.mjs";
+import { log, migrationErrorSummary } from "./log.mjs";
 import {
   encryptSpedyCredential,
   ensureSpedyWebhook,
+  isTransientSpedyError,
   latestCertificateExpiration,
   listSpedyInvoices,
   requireSpedyEnvironment,
@@ -10,10 +11,14 @@ import {
   spedyRequest,
 } from "./spedy-fiscal-client.mjs";
 import {
-  normalizeFiscalKind,
   reconcileSpedyFiscalDocuments,
   requiredString,
 } from "./spedy-fiscal-reconciliation.mjs";
+import {
+  degradedFiscalMigration,
+  migratedTaxDefaults,
+  providerErrorCode,
+} from "./spedy-fiscal-preparation-support.mjs";
 
 export { encryptSpedyCredential } from "./spedy-fiscal-client.mjs";
 export { reconcileSpedyFiscalDocuments } from "./spedy-fiscal-reconciliation.mjs";
@@ -34,25 +39,63 @@ export async function prepareSpedyFiscalMigration(data, config) {
   ]);
 
   log("  Fiscal: reading company settings and emissions from Spedy...");
-  const [productInvoices, serviceInvoices, company, settings, certificates] =
-    await Promise.all([
-      listSpedyInvoices(env, companyApiKey, "product-invoices"),
-      listSpedyInvoices(env, companyApiKey, "service-invoices"),
-      spedyRequest(env, env.SPEDY_OWNER_API_KEY, `companies/${companyId}`),
-      spedyRequest(
-        env,
-        env.SPEDY_OWNER_API_KEY,
-        `companies/${companyId}/settings`,
-      ).catch(() => ({})),
-      spedyRequest(
-        env,
-        env.SPEDY_OWNER_API_KEY,
-        `companies/${companyId}/certificates`,
-      ).catch(() => ({})),
-    ]);
-  const webhookRegistered = config.apply
-    ? await ensureSpedyWebhook(env)
-    : false;
+  let company;
+  let productInvoices;
+  let serviceInvoices;
+  let settings;
+  let certificates;
+  try {
+    company = await spedyRequest(
+      env,
+      env.SPEDY_OWNER_API_KEY,
+      `companies/${companyId}`,
+    );
+    [productInvoices, serviceInvoices, settings, certificates] =
+      await Promise.all([
+        listSpedyInvoices(env, companyApiKey, "product-invoices"),
+        listSpedyInvoices(env, companyApiKey, "service-invoices"),
+        spedyRequest(
+          env,
+          env.SPEDY_OWNER_API_KEY,
+          `companies/${companyId}/settings`,
+        ).catch(() => ({})),
+        spedyRequest(
+          env,
+          env.SPEDY_OWNER_API_KEY,
+          `companies/${companyId}/certificates`,
+        ).catch(() => ({})),
+      ]);
+  } catch (error) {
+    if (!isTransientSpedyError(error)) throw error;
+    log(
+      `  ⚠ Fiscal: Spedy unavailable after retries (${migrationErrorSummary(error)}).`,
+    );
+    log(
+      "  ⚠ Fiscal: continuing with encrypted V1 credentials and unverified legacy fiscal data; V2 connection will require provider review.",
+    );
+    return degradedFiscalMigration(
+      data,
+      config,
+      legacy,
+      companyId,
+      companyApiKey,
+      env,
+      error.code,
+      migratedTaxDefaults(legacy, data.fiscalDocuments),
+    );
+  }
+  let webhookRegistered = false;
+  let lastErrorCode = null;
+  if (config.apply) {
+    try {
+      webhookRegistered = await ensureSpedyWebhook(env);
+    } catch (error) {
+      lastErrorCode = providerErrorCode(error, "spedy_webhook_unavailable");
+      log(
+        `  ⚠ Fiscal: webhook registration deferred (${migrationErrorSummary(error)}); migration will continue with the connection pending review.`,
+      );
+    }
+  }
   const companyAddress = json(json(company).address);
   const companyCity = json(companyAddress.city);
   const cityCode =
@@ -81,6 +124,7 @@ export async function prepareSpedyFiscalMigration(data, config) {
       nfse: {
         providerOptions: legacyProviderOptions,
       },
+      providerSync: { status: "synced" },
       supportedDocuments: ["nfe", "nfse"],
     },
     certificateExpiresAt: latestCertificateExpiration(certificates, legacy),
@@ -98,6 +142,9 @@ export async function prepareSpedyFiscalMigration(data, config) {
     issuerProfile: sanitizeProviderObject(
       Object.keys(json(company)).length ? company : legacy.companyInfo,
     ),
+    lastErrorCode,
+    lastSyncedAt: new Date(),
+    providerSync: { errorCode: null, status: "synced" },
     settings: sanitizeProviderObject(settings),
     taxDefaults: migratedTaxDefaults(legacy, data.fiscalDocuments),
     webhookRegistered,
@@ -113,7 +160,7 @@ export async function seedSpedyFiscalConnection(tx, prepared, ids) {
       : "missing";
   await tx`INSERT INTO fiscal_provider_connections
     (id, capabilities, certificate_expires_at, company_id,
-     credential_ciphertext, defaults_status, issuer_profile, last_synced_at,
+     credential_ciphertext, defaults_status, issuer_profile, last_error_code, last_synced_at,
      provider, status, store_id, tax_defaults, tenant_id,
      webhook_registered_at, created_at, updated_at)
     VALUES (
@@ -124,7 +171,8 @@ export async function seedSpedyFiscalConnection(tx, prepared, ids) {
       ${prepared.credentialCiphertext},
       ${defaultsStatus},
       ${tx.json(prepared.issuerProfile)},
-      now(),
+      ${prepared.lastErrorCode},
+      ${prepared.lastSyncedAt},
       ${PROVIDER},
       'pending_review',
       ${ids.store},
@@ -145,8 +193,11 @@ export async function seedSpedyFiscalConnection(tx, prepared, ids) {
         ELSE excluded.defaults_status
       END,
       issuer_profile=excluded.issuer_profile,
-      last_error_code=null,
-      last_synced_at=excluded.last_synced_at,
+      last_error_code=excluded.last_error_code,
+      last_synced_at=COALESCE(
+        excluded.last_synced_at,
+        fiscal_provider_connections.last_synced_at
+      ),
       status=CASE
         WHEN fiscal_provider_connections.defaults_status='confirmed'
           THEN fiscal_provider_connections.status
@@ -162,44 +213,4 @@ export async function seedSpedyFiscalConnection(tx, prepared, ids) {
         fiscal_provider_connections.webhook_registered_at
       ),
       updated_at=now()`;
-}
-
-function migratedTaxDefaults(legacy, fiscalDocuments) {
-  const reference = [...fiscalDocuments]
-    .filter(
-      (row) =>
-        normalizeFiscalKind(row.docType) === "nfe" &&
-        String(row.status).toLowerCase() === "authorized",
-    )
-    .sort(
-      (left, right) =>
-        new Date(right.issuedAt ?? right.updatedAt).getTime() -
-        new Date(left.issuedAt ?? left.updatedAt).getTime(),
-    )
-    .find((row) => {
-      const metadata = json(row.metadata);
-      return metadata.operationNature || metadata.operationType;
-    });
-  const referenceMetadata = json(reference?.metadata);
-  const nfse = json(legacy.nfseConfig);
-  return {
-    nfe: {
-      ...json(legacy.nfeTaxDefaults),
-      ...(referenceMetadata.operationNature
-        ? { operationNature: referenceMetadata.operationNature }
-        : {}),
-      ...(referenceMetadata.operationType
-        ? { operationType: referenceMetadata.operationType }
-        : {}),
-      ...(referenceMetadata.purposeType
-        ? { purposeType: referenceMetadata.purposeType }
-        : {}),
-      referenceInvoiceId: reference?.invoiceId ?? null,
-    },
-    nfse: {
-      ...nfse,
-      taxLocation: nfse.defaultTaxLocation ?? null,
-      taxationType: nfse.defaultTaxationType ?? null,
-    },
-  };
 }

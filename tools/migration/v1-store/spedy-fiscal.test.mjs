@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   encryptSpedyCredential,
+  prepareSpedyFiscalMigration,
   reconcileSpedyFiscalDocuments,
 } from "./spedy-fiscal.mjs";
 
@@ -41,6 +42,69 @@ describe("Spedy V1 fiscal migration", () => {
 
     assert.match(encrypted, /^fiscal:v1\./);
     assert.equal(encrypted.includes("company-secret"), false);
+  });
+
+  it("preserves V1 fiscal data when Spedy DNS is unavailable", async () => {
+    const originalFetch = globalThis.fetch;
+    const originalEnvironment = {
+      FISCAL_CREDENTIAL_ENCRYPTION_KEY:
+        process.env.FISCAL_CREDENTIAL_ENCRYPTION_KEY,
+      SPEDY_API_URL: process.env.SPEDY_API_URL,
+      SPEDY_OWNER_API_KEY: process.env.SPEDY_OWNER_API_KEY,
+      SPEDY_WEBHOOK_URL: process.env.SPEDY_WEBHOOK_URL,
+    };
+    process.env.FISCAL_CREDENTIAL_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString(
+      "base64",
+    );
+    process.env.SPEDY_API_URL = "https://api.spedy.invalid/v1/";
+    process.env.SPEDY_OWNER_API_KEY = "owner-key";
+    process.env.SPEDY_WEBHOOK_URL = "https://example.test/webhooks/spedy";
+    globalThis.fetch = async () => {
+      const error = new TypeError("fetch failed");
+      error.cause = Object.assign(new Error("DNS lookup failed"), {
+        code: "ENOTFOUND",
+      });
+      throw error;
+    };
+
+    try {
+      const prepared = await prepareSpedyFiscalMigration(
+        {
+          fiscalAddon: {
+            active: true,
+            config: {
+              apiKey: "company-secret",
+              companyId: "company_1",
+              companyInfo: { legalName: "Legacy issuer" },
+            },
+          },
+          fiscalDocuments: [legacyDocument(1, "provider_1", "AUTHORIZED")],
+        },
+        { apply: false, legacyStoreId: 200 },
+      );
+
+      assert.equal(prepared.providerSync.status, "unavailable");
+      assert.equal(prepared.providerSync.errorCode, "spedy_dns_unavailable");
+      assert.equal(prepared.webhookRegistered, false);
+      assert.equal(prepared.issuerProfile.legalName, "Legacy issuer");
+      assert.match(prepared.credentialCiphertext, /^fiscal:v1\./);
+      assert.equal(
+        prepared.credentialCiphertext.includes("company-secret"),
+        false,
+      );
+      assert.equal(prepared.fiscalDocuments.length, 1);
+      assert.equal(
+        prepared.fiscalDocuments[0].metadata.reconciliationStatus,
+        "provider_unavailable",
+      );
+      assert.equal(prepared.fiscalDocuments[0].status, "authorized");
+    } finally {
+      globalThis.fetch = originalFetch;
+      for (const [name, value] of Object.entries(originalEnvironment)) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
   });
 });
 

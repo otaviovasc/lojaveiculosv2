@@ -6,10 +6,11 @@ import {
   resolveLegacyLeadLink,
 } from "./crm-whatsapp-mapping.mjs";
 import { nullableString, targetId } from "./common.mjs";
-import { log } from "./log.mjs";
+import { log, progress } from "./log.mjs";
 import { seedWhatsappConnections } from "./target-crm-whatsapp-connections.mjs";
 import { replaceStoreWhatsappHistory } from "./target-crm-whatsapp-replace.mjs";
 import {
+  assertWhatsappLeadCoverage,
   buildAgentUserMap,
   countMessagesBySession,
   findAssignedUserId,
@@ -29,10 +30,15 @@ export async function seedCrmWhatsapp(tx, data, config, ids) {
     `  CRM WhatsApp: ${source.connections.length} connection(s), ${source.sessions.length} session(s), ${source.messages.length} message(s)...`,
   );
 
+  const groups = groupWhatsappSessions(source.sessions);
+  log("  CRM WhatsApp: checking linked V2 lead coverage...");
+  await assertWhatsappLeadCoverage(tx, data, groups, ids);
+  log("  CRM WhatsApp: linked lead coverage OK");
   if (config.replaceWhatsappHistory)
     await replaceStoreWhatsappHistory(tx, ids.store);
+  log("  CRM WhatsApp: importing connections...");
   await seedWhatsappConnections(tx, source, config, ids);
-  const groups = groupWhatsappSessions(source.sessions);
+  log("  CRM WhatsApp: connections imported");
   const sessionIds = await seedSessions(tx, data, source, groups, config, ids);
   await seedWhatsappMessages(
     tx,
@@ -118,6 +124,8 @@ async function seedSessions(tx, data, source, groups, config, ids) {
     rows.push(
       sessionRow(tx, group, id, leadId, assignedUserId, messageCounts, ids),
     );
+    if (rows.length % 25 === 0 || rows.length === groups.length)
+      progress("  CRM WhatsApp session planning", rows.length, groups.length);
   }
   source.generatedLeadCount = leadLinks.generated;
 
@@ -178,6 +186,11 @@ async function seedSessions(tx, data, source, groups, config, ids) {
         source=excluded.source,
         status=excluded.status,
         updated_at=excluded.updated_at`;
+    progress(
+      "  CRM WhatsApp sessions",
+      Math.min(offset + batch.length, rows.length),
+      rows.length,
+    );
   }
   log(
     `  CRM WhatsApp lead links: ${rows.length}/${rows.length} total ` +

@@ -8,7 +8,7 @@ import {
   parseModuleArgs,
 } from "./v1-store/cli.mjs";
 import { assertConfigured, json, nullableString } from "./v1-store/common.mjs";
-import { loadR2Env } from "./v1-store/document-artifacts.mjs";
+import { loadMigrationEnv } from "./v1-store/migration-env.mjs";
 import {
   loadRepassesCrmData,
   withRepassesArchive,
@@ -30,7 +30,7 @@ if (moduleOptions.help) {
   printHelp();
   process.exit(0);
 }
-loadR2Env();
+loadMigrationEnv();
 const config = await promptConfig(moduleOptions.modules);
 const { modules } = config;
 
