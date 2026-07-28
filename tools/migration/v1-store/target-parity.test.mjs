@@ -22,6 +22,24 @@ test("billing entitlement parity ignores stale migration projections", async () 
       query.includes("metadata->>'migrationSelected'='true'"),
     ),
   );
+  assert.ok(
+    queries.some((query) =>
+      query.includes("metadata->'legacyV1'->>'sourceTable'='FotosVeiculo'"),
+    ),
+  );
+  assert.ok(
+    queries.some((query) =>
+      query.includes(
+        "metadata->'migrationReconciliation'->>'removedFromSource'",
+      ),
+    ),
+  );
+  assert.ok(
+    queries.some(
+      (query) =>
+        query.includes("FROM documents") && query.includes("is_deleted=false"),
+    ),
+  );
 });
 
 test("WhatsApp parity uses normalized target sessions and media URL counts", () => {

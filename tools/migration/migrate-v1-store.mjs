@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { basename } from "node:path";
+import { basename, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import {
@@ -103,6 +103,18 @@ async function promptConfig(cliModules) {
       .trim()
       .toLowerCase()
       .startsWith("y");
+    const resumeCompletedStages = apply
+      ? (
+          await ask(
+            terminal,
+            "Resume matching stages already committed by a previous attempt? (y/n)",
+            "y",
+          )
+        )
+          .trim()
+          .toLowerCase()
+          .startsWith("y")
+      : false;
     const confirmStoreSlug = apply
       ? await ask(terminal, "Confirm store slug (type exact slug)")
       : "";
@@ -140,6 +152,13 @@ async function promptConfig(cliModules) {
       ownerEmail,
       repassesArchivePath,
       replaceWhatsappHistory,
+      resumeCompletedStages,
+      resumeKey: [
+        resolve(archivePath),
+        repassesArchivePath ? resolve(repassesArchivePath) : null,
+      ]
+        .filter(Boolean)
+        .join("\u0000"),
       storeLegalName,
       storeSlug,
       storeTradingName,

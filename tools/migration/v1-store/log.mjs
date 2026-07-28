@@ -23,7 +23,7 @@ export async function withTimer(label, fn) {
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     log(`✘ ${label} failed after ${elapsed}s: ${migrationErrorSummary(error)}`);
     log(
-      "  Waiting for the PostgreSQL transaction rollback; large migrations can take several minutes.",
+      "  Waiting for the current PostgreSQL transaction rollback; previously committed stage checkpoints remain available.",
     );
     throw error;
   }

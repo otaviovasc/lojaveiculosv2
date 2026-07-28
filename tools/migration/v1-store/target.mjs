@@ -4,23 +4,15 @@ import {
   countDocumentsNeedingUpload,
   createArtifactUploader,
 } from "./document-artifacts.mjs";
-import { log, withTimer } from "./log.mjs";
-import { seedFoundation } from "./target-foundation.mjs";
-import { seedCrm, seedInventory } from "./target-inventory-crm.mjs";
-import {
-  seedDocumentsAndFiscal,
-  seedSalesAndFinance,
-} from "./target-commerce.mjs";
-import { seedFinanceAttachments } from "./target-attachments.mjs";
-import { seedCrmWhatsapp } from "./target-crm-whatsapp.mjs";
-import { assertParity, collectParity } from "./target-parity.mjs";
+import { log } from "./log.mjs";
 import { prepareLegacyBillingMigration } from "./billing-mapping.mjs";
+import { validateMigrationData } from "./preflight.mjs";
+import { prepareSpedyFiscalMigration } from "./spedy-fiscal.mjs";
+import { createMigrationFingerprint } from "./target-checkpoints.mjs";
 import {
-  prepareSpedyFiscalMigration,
-  seedSpedyFiscalConnection,
-} from "./spedy-fiscal.mjs";
-
-class DryRunRollback extends Error {}
+  runAppliedMigration,
+  runDryRunMigration,
+} from "./target-execution.mjs";
 
 export const MIGRATION_MODULES = [
   "vehicles",
@@ -34,11 +26,14 @@ export const MIGRATION_MODULES = [
 export async function migrateToV2(data, config) {
   enforceTargetSafety(config);
   const modules = config.modules ?? new Set(MIGRATION_MODULES);
+  validateMigrationData(data, config, modules);
+  data.billing = prepareLegacyBillingMigration(data);
   const targetUrl = new URL(config.targetUrl);
   const isLocal = ["127.0.0.1", "localhost", "::1"].includes(
     targetUrl.hostname,
   );
   const sql = postgres(config.targetUrl, {
+    connect_timeout: 15,
     max: 1,
     prepare: false,
     ssl: isLocal ? false : { rejectUnauthorized: false },
@@ -62,75 +57,23 @@ export async function migrateToV2(data, config) {
   try {
     await assertTargetSchema(sql);
     log("Target schema OK");
-    data.billing = prepareLegacyBillingMigration(data);
+    const fingerprint = createMigrationFingerprint(data, config, modules);
     data.spedyFiscal = await prepareSpedyFiscalMigration(data, config);
-    await sql.begin(async (tx) => {
-      await tx`INSERT INTO migration_runs (id, dump_label, metadata, started_at, status, created_at, updated_at)
-        VALUES (${ids.run}, ${config.dumpLabel}, ${tx.json({ legacyStoreId: config.legacyStoreId, modules: [...modules], replaceWhatsappHistory: config.replaceWhatsappHistory, source: "v1-directory-archive" })}, now(), 'running', now(), now())
-        ON CONFLICT (id) DO UPDATE SET status='running', metadata=excluded.metadata, started_at=now(), completed_at=null, updated_at=now()`;
-      log(`Migration run id: ${ids.run}`);
-      await withTimer(
-        "Foundation (tenant, store, users, entitlements, billing)",
-        () => seedFoundation(tx, data, config, ids),
-      );
-      await withTimer("Fiscal provider connection", () =>
-        seedSpedyFiscalConnection(tx, data.spedyFiscal, ids),
-      );
-      if (modules.has("vehicles"))
-        await withTimer("Inventory (vehicles, media, checklists)", () =>
-          seedInventory(tx, data, config, ids),
-        );
-      if (modules.has("leads"))
-        await withTimer("CRM (leads, activities, interests)", () =>
-          seedCrm(tx, data, config, ids),
-        );
-      if (modules.has("whatsapp"))
-        await withTimer(
-          "CRM WhatsApp (connections, sessions, messages, media URLs)",
-          () => seedCrmWhatsapp(tx, data, config, ids),
-        );
-      if (modules.has("sales"))
-        await withTimer("Sales & finance", () =>
-          seedSalesAndFinance(tx, data, config, ids),
-        );
-      if (modules.has("documents"))
-        await withTimer("Documents & fiscal", () =>
-          seedDocumentsAndFiscal(tx, data, config, ids, uploader),
-        );
-      if (modules.has("attachments"))
-        await withTimer("Finance attachments", () =>
-          seedFinanceAttachments(tx, data, config, ids),
-        );
-      const parity = await withTimer("Parity check", () =>
-        collectParity(tx, ids.store, ids),
-      );
-      assertParity(data, parity, modules);
-      await tx`UPDATE migration_runs SET status='succeeded', completed_at=now(), metadata=metadata || ${tx.json(
-        {
-          billing: {
-            addonTypes: data.billing.addons.map((addon) => addon.addonType),
-            legacyPlan: data.billing.legacyPlan,
-            paymentCount: data.billing.payments.length,
-            subscriptionStatus: data.billing.subscription.status,
-          },
-          parity,
-          preservedStoreConfiguration: {
-            customModels: data.customModels,
-            saleSources: data.saleSources,
-            settings: data.settings,
-          },
-        },
-      )}, updated_at=now() WHERE id=${ids.run}`;
-      if (!config.apply)
-        throw new DryRunRollback("Dry run completed and rolled back.");
-    });
-    return { applied: true, ids };
-  } catch (error) {
-    if (error instanceof DryRunRollback) return { applied: false, ids };
-    throw error;
+    const input = {
+      config,
+      data,
+      fingerprint,
+      ids,
+      modules,
+      sql,
+      uploader,
+    };
+    if (config.apply) await runAppliedMigration(input);
+    else await runDryRunMigration(input);
+    return { applied: config.apply, ids };
   } finally {
     uploader?.destroy();
-    await sql.end();
+    await sql.end({ timeout: 5 });
   }
 }
 
@@ -138,7 +81,7 @@ function createIds(config) {
   return {
     run: deterministicUuid(
       "migration-run",
-      config.dumpLabel,
+      config.resumeKey ?? config.dumpLabel,
       config.legacyStoreId,
     ),
     tenant: targetId(config.legacyStoreId, "Tenant", config.legacyStoreId),
@@ -221,7 +164,11 @@ async function assertTargetSchema(sql) {
   const kinds =
     await sql`SELECT enumlabel FROM pg_enum JOIN pg_type ON pg_type.oid=pg_enum.enumtypid WHERE typname='document_kind'`;
   const labels = new Set(kinds.map((row) => row.enumlabel));
-  for (const kind of ["consignment_contract", "warranty_certificate"])
+  for (const kind of [
+    "buyer_acknowledgment",
+    "consignment_contract",
+    "warranty_certificate",
+  ])
     if (!labels.has(kind))
       throw new Error(`V2 document_kind is missing ${kind}; run db:push.`);
 }

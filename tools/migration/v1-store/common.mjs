@@ -74,6 +74,7 @@ export function mapDocumentKind(kind) {
     OTHER: "other",
     POWER_OF_ATTORNEY: "power_of_attorney",
     PROOF_OF_RESIDENCE: "buyer_document",
+    RECEIVING_TERM: "buyer_acknowledgment",
     RESERVATION_RECEIPT: "reservation_receipt",
     SALE_CONTRACT: "sale_contract",
     SALE_CONTRACT_NO_ESTADO: "sale_contract",

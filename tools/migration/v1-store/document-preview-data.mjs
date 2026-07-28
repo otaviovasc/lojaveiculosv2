@@ -5,6 +5,7 @@ export const MIGRATION_RENDERER = "metadata-summary-pdf";
 export const WORKFLOW_MIGRATION_RENDERER = "react-pdf";
 
 const workflowDocumentKinds = new Set([
+  "buyer_acknowledgment",
   "delivery_term",
   "power_of_attorney",
   "reservation_receipt",
@@ -13,6 +14,7 @@ const workflowDocumentKinds = new Set([
 ]);
 
 const templateTitles = {
+  RECEIVING_TERM: "Termo de recebimento de documentos e itens",
   DELIVERY_TERM: "Termo de entrega",
   FINANCING_SIMULATION: "Simulação de financiamento",
   POWER_OF_ATTORNEY: "Procuração",
@@ -34,6 +36,19 @@ const documentStatuses = {
 
 export function mapDocumentStatus(status) {
   return documentStatuses[String(status ?? "").toUpperCase()] ?? "issued";
+}
+
+export function pdfSafeImageUrl(value) {
+  const candidate = textOrNull(value);
+  if (!candidate) return null;
+  if (/^data:image\/(?:png|jpe?g);base64,/i.test(candidate)) return candidate;
+  try {
+    const url = new URL(candidate);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    return /\.(?:png|jpe?g)$/i.test(url.pathname) ? candidate : null;
+  } catch {
+    return null;
+  }
 }
 
 // Decides how a V1 document becomes a V2 artifact:
@@ -312,7 +327,7 @@ function storeSnapshot({ store, settings } = {}) {
     city: textOrNull(ownerAddress.city ?? settings?.cidade),
     document: textOrNull(footer.cnpj ?? owner.cpfCnpj),
     instagram: textOrNull(settings?.instagram_url),
-    logoUrl: textOrNull(customization.logo_url),
+    logoUrl: pdfSafeImageUrl(customization.logo_url),
     name: textOrNull(store?.nome_da_loja ?? settings?.profile_name),
     phone: textOrNull(
       settings?.whatsapp_number ??

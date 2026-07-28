@@ -7,6 +7,7 @@ import {
   mapEntryType,
   mapSalePaymentMethod,
 } from "./sale-mapping.mjs";
+import { pdfSafeImageUrl } from "./document-preview-data.mjs";
 import {
   buyerSnapshot,
   listingSnapshot,
@@ -66,7 +67,17 @@ export async function seedSalesAndFinance(tx, data, config, ids) {
         (id, amount_cents, due_at, installments, metadata, method, paid_at, principal_cents, sale_id, status, store_id, tenant_id, created_at, updated_at)
         VALUES (${paymentId}, ${cents(payment.value)}, ${payment.date}, ${paymentDetails.installments}, ${tx.json(paymentDetails.metadata)}, ${mapSalePaymentMethod(payment.method)},
           ${payment.date}, ${cents(payment.value)}, ${saleId}, 'paid', ${ids.store}, ${ids.tenant}, ${payment.date}, ${payment.date})
-        ON CONFLICT (id) DO UPDATE SET installments=excluded.installments, metadata=excluded.metadata, method=excluded.method, updated_at=excluded.updated_at`;
+        ON CONFLICT (id) DO UPDATE SET
+          amount_cents=excluded.amount_cents,
+          due_at=excluded.due_at,
+          installments=excluded.installments,
+          metadata=excluded.metadata,
+          method=excluded.method,
+          paid_at=excluded.paid_at,
+          principal_cents=excluded.principal_cents,
+          sale_id=excluded.sale_id,
+          status=excluded.status,
+          updated_at=excluded.updated_at`;
       await addLegacyMap(
         tx,
         ids.run,
@@ -88,7 +99,17 @@ export async function seedSalesAndFinance(tx, data, config, ids) {
         ${recurring.dayOfMonth || null}, ${String(recurring.frequency).toLowerCase()}, ${tx.json(legacyMetadata("RecurringEntry", recurring))}, ${recurring.name},
         ${recurring.startDate}, null, ${recurring.isActive ? "pending" : "cancelled"}, ${ids.store}, ${ids.tenant}, ${mapEntryType(recurring.type)},
         ${recurring.createdAt}, ${recurring.updatedAt})
-      ON CONFLICT (id) DO UPDATE SET metadata=excluded.metadata, updated_at=excluded.updated_at`;
+      ON CONFLICT (id) DO UPDATE SET
+        amount_cents=excluded.amount_cents,
+        category=excluded.category,
+        day_of_month=excluded.day_of_month,
+        frequency=excluded.frequency,
+        metadata=excluded.metadata,
+        name=excluded.name,
+        next_due_at=excluded.next_due_at,
+        status=excluded.status,
+        type=excluded.type,
+        updated_at=excluded.updated_at`;
   }
 
   log(`  Sales & finance: ${data.entries.length} finance entry(s)...`);
@@ -214,6 +235,11 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids, uploader) {
     await seedFiscalLinks(tx, legacy, fiscalId, config, ids);
   }
   const testDrives = new Map(data.testDrives.map((row) => [row.id, row]));
+  const logoUrl = data.store?.customization?.logo_url;
+  if (logoUrl && !pdfSafeImageUrl(logoUrl))
+    log(
+      "  Documents: skipped the store logo in PDFs because its image format is unsupported (PNG/JPEG required).",
+    );
   log(`  Documents & fiscal: ${data.documents.length} document(s)...`);
   const artifactCounts = { generated: 0, legacyFile: 0, unavailable: 0 };
   for (const [index, document] of data.documents.entries()) {

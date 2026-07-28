@@ -79,13 +79,15 @@ local Postgres container. This avoids importing the unrelated Repasses schema
 or requiring its pgvector extension.
 
 The WhatsApp replacement prompt defaults to `yes`. Inside the same migration
-transaction it removes the target store's sessions, messages, session-tag
+stage transaction it removes the target store's sessions, messages, session-tag
 links, scheduled messages, campaigns/recipients, and previously generated
-WhatsApp-only leads before recreating source history. It does not delete V2
-quick-message templates, tag definitions, or connection integrations. The
-source connection reuses an existing V2 connection when its external id,
-instance id, display name, or the unambiguous single-Z-API fallback matches;
-otherwise the importer creates its deterministic connection id.
+WhatsApp-only leads before recreating source history. Replacement and recreation
+commit together. A later stage failure does not erase the committed WhatsApp
+stage, and a matching rerun skips it. It does not delete V2 quick-message
+templates, tag definitions, or connection integrations. The source connection
+reuses an existing V2 connection when its external id, instance id, display
+name, or the unambiguous single-Z-API fallback matches; otherwise the importer
+creates its deterministic connection id.
 
 For cutover:
 
@@ -103,8 +105,16 @@ For cutover:
    rehearsed backups after correcting the mapping or configuration.
 
 For the planned MB Auto Store staging rerun, keep the default replacement
-answer. The deletion, import, and parity checks commit together only when
-`Apply writes?` is confirmed; dry runs exercise the same replacement and roll
-it all back. Deterministic ids and upserts make a repeated import safe for the
-same source records, but the operator still owns the write-freeze boundary and
-acceptance.
+answer. Applied runs commit Foundation, Fiscal, Inventory, CRM, Sales,
+Documents, Attachments, and WhatsApp as separate atomic checkpoints, with
+WhatsApp deferred until the other selected business stages finish. On rerun,
+accept the default checkpoint-resume prompt to skip stages whose source/config
+fingerprint and mapping version still match. Answer `no` to rebuild every
+selected stage. Dry runs exercise the complete import in one transaction and
+roll it all back. Deterministic ids and upserts make repeated imports safe, but
+the operator still owns the write-freeze boundary and acceptance.
+
+Every applied attempt starts with a reconciliation checkpoint. A newer V1 dump
+is authoritative for migration-owned current-state rows: records removed from
+the dump are deactivated without deleting native V2 data or historical
+relationships, and parity is scoped to the active V1 projection.

@@ -4,6 +4,7 @@ import {
   extractPreviewData,
   generatedStorageKey,
   mapDocumentStatus,
+  pdfSafeImageUrl,
   planMigratedDocument,
 } from "./document-preview-data.mjs";
 
@@ -181,6 +182,13 @@ test("planMigratedDocument selects the V1-style workflow renderer for sale docum
   assert.equal(plan.metadataExtra.store.city, "Maringá");
   assert.equal(plan.metadataExtra.saleCode, null);
   assert.equal(plan.metadataExtra.finance.payments.length, 2);
+
+  const receivingTerm = planMigratedDocument(
+    { ...saleRecordDocument, type: "RECEIVING_TERM" },
+    scope,
+  );
+  assert.equal(receivingTerm.kind, "buyer_acknowledgment");
+  assert.equal(receivingTerm.metadataExtra.renderer, "react-pdf");
 });
 
 test("planMigratedDocument archives documents without file or payload", () => {
@@ -217,4 +225,25 @@ test("generatedStorageKey is deterministic and sanitized", () => {
     generatedStorageKey(scope, "Contrato João & Maria.pdf"),
     /^tenants\/tenant-1\/stores\/store-1\/documents\/doc-1\/versions\/migrated-v1-[\w.-]+$/,
   );
+});
+
+test("PDF previews omit logo formats unsupported by react-pdf", () => {
+  assert.equal(
+    pdfSafeImageUrl("https://cdn.example/logo.png?version=2"),
+    "https://cdn.example/logo.png?version=2",
+  );
+  assert.equal(pdfSafeImageUrl("https://cdn.example/logo.webp"), null);
+  assert.equal(pdfSafeImageUrl("https://cdn.example/logo"), null);
+
+  const plan = planMigratedDocument(
+    { ...saleRecordDocument, type: "SALE_CONTRACT" },
+    scope,
+    {
+      store: {
+        customization: { logo_url: "https://cdn.example/logo.webp" },
+        nome_da_loja: "MB Auto Store",
+      },
+    },
+  );
+  assert.equal(plan.metadataExtra.store.logoUrl, null);
 });

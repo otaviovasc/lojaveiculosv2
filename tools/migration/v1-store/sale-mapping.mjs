@@ -2,6 +2,7 @@ import { mapDocumentKind } from "./common.mjs";
 
 export function documentKindsForSale(documents, saleId) {
   const supported = new Set([
+    "buyer_acknowledgment",
     "delivery_term",
     "power_of_attorney",
     "sale_contract",

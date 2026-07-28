@@ -32,6 +32,17 @@ visible. Table counts alone are insufficient.
 - V1 data remains the source of truth until a cutover decision is made.
 - Migration tooling must run on local dumps or sanitized backups. Do not connect
   migration scripts directly to production.
+- Applied store imports use durable, atomic stage checkpoints. A failure rolls
+  back only the current stage; a rerun may skip earlier stages only when the
+  source/config fingerprint and mapping version still match. Dry runs remain
+  one atomic transaction and roll back every target write.
+- Applied attempts first reconcile the existing migration-owned projection.
+  Rows absent from the current dump are soft-deleted or cancelled according to
+  the target domain; native V2 rows and historical links are preserved. Final
+  parity counts only active V1-owned projections, not unrelated V2 records.
+- A partially applied run is not cutover-ready. The store remains under V1
+  source-of-truth rules until all selected stages and the final parity check
+  succeed.
 - Banking is schema-only in this migration. Do not move money, custody flows, or
   payment-link execution into V2 during the V1 cutover.
 
@@ -165,7 +176,9 @@ flow before cutover.
    schema-only banking placeholders.
 4. Write source-to-target mappings for each bounded context.
 5. Build idempotent migration scripts with deterministic legacy id maps.
-6. Rehearse migration on a sanitized backup or local dump restore.
+6. Rehearse migration on a sanitized backup or local dump restore. Applied
+   rehearsals may resume fingerprint-matching committed stages; choose not to
+   resume when intentionally rebuilding all target projections.
 7. Run parity checks for counts, totals, listing/unit states, 0km stock, billing
    state, entitlements, permissions, leads, documents, and CRM external
    references.

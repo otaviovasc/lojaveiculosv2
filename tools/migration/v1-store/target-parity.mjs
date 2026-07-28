@@ -3,13 +3,6 @@ import { countTargetWhatsappSessions } from "./target-crm-whatsapp.mjs";
 export async function collectParity(tx, storeId, ids) {
   const tables = [
     "users",
-    "vehicle_listings",
-    "vehicle_media",
-    "leads",
-    "lead_activities",
-    "sales",
-    "sale_payments",
-    "finance_entries",
     "fiscal_documents",
     "payments",
     "store_entitlements",
@@ -33,20 +26,24 @@ export async function collectParity(tx, storeId, ids) {
     );
     counts[table] = row.count;
   }
-  const connectionIds = [...(ids?.crmConnections?.values() ?? [])];
-  const [connections] = connectionIds.length
-    ? await tx.unsafe(
-        `SELECT count(*)::int AS count
-           FROM crm_connections
-          WHERE store_id=$1 AND id=ANY($2::uuid[])`,
-        [storeId, connectionIds],
-      )
-    : [{ count: 0 }];
+  Object.assign(counts, await collectMigrationProjectionCounts(tx, storeId));
+  const [connections] = await tx.unsafe(
+    `SELECT count(*)::int AS count
+       FROM crm_connections
+      WHERE store_id=$1
+        AND metadata->'legacyRepasses'->>'sourceTable'='connections'`,
+    [storeId],
+  );
   counts.crm_connections = connections.count;
   const [documents] = await tx.unsafe(
-    `SELECT count(*) FILTER (WHERE kind <> 'invoice')::int AS legacy,
-            count(*) FILTER (WHERE kind = 'invoice')::int AS attachments
-       FROM documents WHERE store_id=$1`,
+    `SELECT count(*) FILTER (
+              WHERE metadata->'legacyV1'->>'sourceTable'='Document'
+            )::int AS legacy,
+            count(*) FILTER (
+              WHERE metadata->'legacyV1'->>'sourceTable'='Entry.attachment'
+            )::int AS attachments
+       FROM documents
+      WHERE store_id=$1 AND is_deleted=false AND deleted_at IS NULL`,
     [storeId],
   );
   counts.documents = documents.legacy;
@@ -57,6 +54,42 @@ export async function collectParity(tx, storeId, ids) {
     [storeId],
   );
   counts.crm_whatsapp_media_messages = whatsappMedia.count;
+  return counts;
+}
+
+async function collectMigrationProjectionCounts(tx, storeId) {
+  const scopes = {
+    finance_entries:
+      "metadata->'legacyV1'->>'sourceTable'='Entry' AND " +
+      "COALESCE((metadata->'migrationReconciliation'->>'removedFromSource')::boolean, false)=false",
+    lead_activities:
+      "metadata->'legacyV1'->>'sourceTable' IN ('LeadInteraction', 'LeadTask')",
+    leads:
+      "is_deleted=false AND deleted_at IS NULL AND " +
+      "(metadata->'legacyV1'->>'sourceTable'='Lead' OR " +
+      "COALESCE((metadata->'migration'->>'generatedForWhatsappCoverage')::boolean, false)=true)",
+    sale_payments:
+      "metadata->'legacyV1'->>'sourceTable'='SalePayment' AND " +
+      "COALESCE((metadata->'migrationReconciliation'->>'removedFromSource')::boolean, false)=false",
+    sales:
+      "is_deleted=false AND deleted_at IS NULL AND " +
+      "buyer_snapshot->'legacyV1'->>'sourceTable'='Sale.buyer'",
+    vehicle_listings:
+      "is_deleted=false AND deleted_at IS NULL AND " +
+      "metadata->'legacyV1'->>'sourceTable'='Veiculo'",
+    vehicle_media:
+      "is_deleted=false AND deleted_at IS NULL AND " +
+      "metadata->'legacyV1'->>'sourceTable'='FotosVeiculo'",
+  };
+  const counts = {};
+  for (const [table, scope] of Object.entries(scopes)) {
+    const [row] = await tx.unsafe(
+      `SELECT count(*)::int AS count FROM ${table}
+        WHERE store_id=$1 AND ${scope}`,
+      [storeId],
+    );
+    counts[table] = row.count;
+  }
   return counts;
 }
 
