@@ -4,7 +4,10 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmWhatsappConnectionAdmin } from "./CrmWhatsappConnectionAdmin";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
+import type {
+  CrmWhatsappProvider,
+  CrmWhatsappProviderConnection,
+} from "./crmWhatsappTypes";
 
 describe("CrmWhatsappConnectionAdmin", () => {
   afterEach(() => cleanup());
@@ -23,6 +26,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
     );
 
     expect(screen.getByText("Online")).toBeVisible();
+    expect(screen.getByText("Z-API")).toBeVisible();
     expect(
       screen.queryByText("Configure somente a instância usada pelo CRM."),
     ).not.toBeInTheDocument();
@@ -56,13 +60,13 @@ describe("CrmWhatsappConnectionAdmin", () => {
         },
       }),
     );
-    // Saving credentials auto-registers the ZAPI webhooks.
+    // Saving credentials auto-registers the Z-API webhooks.
     await waitFor(() =>
       expect(onConfigureWebhooks).toHaveBeenCalledWith("connection_1"),
     );
   });
 
-  it("registers ZAPI webhooks on demand and reports the result", async () => {
+  it("registers Z-API webhooks on demand and reports the result", async () => {
     const user = userEvent.setup();
     const onConfigureWebhooks = vi.fn(async () => webhookConfigResult());
     render(
@@ -77,14 +81,14 @@ describe("CrmWhatsappConnectionAdmin", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: /Configurar webhooks na ZAPI/i }),
+      screen.getByRole("button", { name: /Configurar webhooks na Z-API/i }),
     );
 
     await waitFor(() =>
       expect(onConfigureWebhooks).toHaveBeenCalledWith("connection_1"),
     );
     expect(
-      await screen.findByText(/webhooks registrados na ZAPI automaticamente/i),
+      await screen.findByText(/webhooks registrados na Z-API automaticamente/i),
     ).toBeInTheDocument();
   });
 
@@ -142,6 +146,45 @@ describe("CrmWhatsappConnectionAdmin", () => {
     expect(screen.getByRole("button", { name: /Credenciais/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /Verificar/i })).toBeDisabled();
   });
+
+  it.each([
+    ["composio_whatsapp", "WhatsApp oficial (Composio)", false],
+    ["composio_instagram", "Instagram (Composio)", true],
+  ] as const)(
+    "shows %s as provider-managed without Z-API configuration controls",
+    (provider, providerLabel, connected) => {
+      const onConfigureWebhooks = vi.fn(async () => webhookConfigResult());
+      const onUpdate = vi.fn(async () => true);
+      render(
+        <CrmWhatsappConnectionAdmin
+          connections={[createOfficialConnection(provider, connected)]}
+          onConfigureWebhooks={onConfigureWebhooks}
+          onRefresh={vi.fn(async () => undefined)}
+          onUpdate={onUpdate}
+        />,
+      );
+
+      expect(screen.getByText(providerLabel)).toBeVisible();
+      expect(
+        screen.getByRole("heading", {
+          name: `${providerLabel} gerenciado`,
+        }),
+      ).toBeVisible();
+      expect(
+        screen.queryByLabelText("ID da instancia"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", {
+          name: /Configurar webhooks na Z-API/i,
+        }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /Salvar instancia/i }),
+      ).not.toBeInTheDocument();
+      expect(onConfigureWebhooks).not.toHaveBeenCalled();
+      expect(onUpdate).not.toHaveBeenCalled();
+    },
+  );
 });
 
 function createConnectedConnection(): CrmWhatsappProviderConnection {
@@ -185,6 +228,52 @@ function createDisconnectedConnection({
       smartphoneConnected: false,
     },
     status: "disconnected",
+  };
+}
+
+function createOfficialConnection(
+  provider: Exclude<CrmWhatsappProvider, "zapi">,
+  connected: boolean,
+): CrmWhatsappProviderConnection {
+  return {
+    ...createConnectedConnection(),
+    credentials: {
+      ...credentials(false),
+      apiKeyEnv: "COMPOSIO_API_KEY",
+      composioConnectedAccountConfigured: true,
+      mode: "composio",
+    },
+    displayName:
+      provider === "composio_instagram"
+        ? "Instagram oficial"
+        : "WhatsApp oficial",
+    externalConnectionId:
+      provider === "composio_instagram"
+        ? "instagram-business-account"
+        : "whatsapp-phone-number",
+    externalInstanceId: null,
+    id: `connection_${provider}`,
+    live: connected
+      ? {
+          checkedAt: "2026-07-27T12:00:00.000Z",
+          connected: true,
+          connectedPhone:
+            provider === "composio_whatsapp" ? "5511940231407" : null,
+          providerStatus: "connected",
+          smartphoneConnected: null,
+        }
+      : {
+          checkedAt: "2026-07-27T12:00:00.000Z",
+          connected: false,
+          connectedPhone: null,
+          providerStatus: "disconnected",
+          smartphoneConnected: null,
+        },
+    phone: provider === "composio_whatsapp" ? "5511940231407" : null,
+    provider,
+    status: connected ? "active" : "disconnected",
+    webhookEndpoints: [],
+    webhookTokenRequired: true,
   };
 }
 

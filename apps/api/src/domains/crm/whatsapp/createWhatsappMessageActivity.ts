@@ -1,4 +1,5 @@
 import type { CrmLead } from "../ports/crmRepository.js";
+import type { CrmConnectionProvider } from "../ports/crmConnectionRepository.js";
 import {
   getCrmRepository,
   type CrmServicePorts,
@@ -13,6 +14,7 @@ export async function createWhatsappMessageActivity(
     leadId: string;
     messageExternalId: string;
     occurredAt: Date;
+    provider: CrmConnectionProvider;
     sessionId: string;
     storeId: CrmLead["storeId"];
     tenantId: CrmLead["tenantId"];
@@ -30,7 +32,7 @@ export async function createWhatsappMessageActivity(
         messageExternalId: input.messageExternalId,
         sessionId: input.sessionId,
       },
-      provider: "zapi",
+      provider: input.provider,
     },
     occurredAt: input.occurredAt,
     storeId: input.storeId,

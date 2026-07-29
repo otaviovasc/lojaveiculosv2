@@ -126,7 +126,18 @@ export function registerCrmWhatsappApiRoutes(
         connectionId: input.connectionId,
         ...(input.leadId ? { leadId: input.leadId } : {}),
         ...(input.phone ? { phone: input.phone } : {}),
-        text: input.text,
+        ...(input.template
+          ? {
+              template: {
+                ...(input.template.components
+                  ? { components: input.template.components }
+                  : {}),
+                languageCode: input.template.languageCode,
+                name: input.template.name,
+              },
+            }
+          : {}),
+        ...(input.text ? { text: input.text } : {}),
       });
       return context.json(result, 201);
     }),

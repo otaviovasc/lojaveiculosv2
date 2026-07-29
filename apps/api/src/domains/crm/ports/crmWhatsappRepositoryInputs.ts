@@ -30,6 +30,7 @@ export type ListCrmWhatsappSessionsInput = CountCrmWhatsappSessionsInput & {
 };
 
 export type ListCrmWhatsappMessagesInput = {
+  direction?: CrmWhatsappMessageDirection;
   limit: number;
   offset: number;
   sessionId: string;
@@ -42,6 +43,8 @@ export type IngestCrmWhatsappMessageInput = {
   buyerName?: string;
   buyerPhone: string;
   channel: CrmWhatsappChannel;
+  channelExternalId?: string;
+  channelMessageId?: string;
   connectionId: string;
   content: string;
   direction: CrmWhatsappMessageDirection;
@@ -65,6 +68,7 @@ export type UpsertCrmWhatsappSessionContextInput = {
   buyerName?: string;
   buyerPhone: string;
   channel: CrmWhatsappChannel;
+  channelExternalId?: string;
   connectionId: string;
   storeId: StoreId;
   tenantId: TenantId;

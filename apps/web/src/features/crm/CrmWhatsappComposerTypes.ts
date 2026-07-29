@@ -14,10 +14,12 @@ import type {
   CrmWhatsappQuickMessage,
   CrmWhatsappSendMediaType,
 } from "./crmWhatsappTypes";
+import type { CrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
 
 export type ComposerDialog = "catalog" | "location" | "quick" | "vehicle";
 
 export type MessageComposerProps = {
+  capabilities?: CrmWhatsappProviderCapabilities;
   catalogUrl?: string | null | undefined;
   defaultLocationName?: string;
   disabled?: boolean;

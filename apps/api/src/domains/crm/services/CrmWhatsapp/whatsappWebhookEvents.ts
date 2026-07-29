@@ -69,7 +69,6 @@ export async function listWhatsappWebhookEventIssues(
   const repository = getCrmWebhookEventRepository(ports);
   const scopeFilter = {
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
-    provider: "zapi",
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   } as const;
@@ -83,6 +82,7 @@ export async function listWhatsappWebhookEventIssues(
       ...scopeFilter,
       eventType: "crm.whatsapp.zapi.received",
       limit: pageEnd,
+      provider: "zapi",
       status: "ignored",
     }),
   ]);

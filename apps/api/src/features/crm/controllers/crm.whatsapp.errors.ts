@@ -1,6 +1,9 @@
 import type { Context } from "hono";
 import { CrmLeadNotFoundError } from "../../../domains/crm/services/CrmService/serviceSupport.js";
-import { CrmWhatsappGatewayError } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import {
+  CrmWhatsappCapabilityError,
+  CrmWhatsappGatewayError,
+} from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import {
   WhatsappBotActionError,
   WhatsappBotIntegrationIncompleteError,
@@ -70,6 +73,14 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: error.status,
+      });
+    }
+    if (error instanceof CrmWhatsappCapabilityError) {
+      return jsonApiError(context, {
+        code: "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE",
+        error,
+        message: error.message,
+        status: 409,
       });
     }
     if (error instanceof CrmWhatsappGatewayError) {

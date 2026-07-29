@@ -1,4 +1,5 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { CrmConnectionProvider } from "./crmConnectionRepository.js";
 
 export type CrmBotWebhookEvent =
   | "connection_status_changed"
@@ -23,7 +24,7 @@ export type CrmBotWebhookPayload = {
   connection: {
     id: string;
     phone: string | null;
-    provider: "zapi";
+    provider: CrmConnectionProvider;
     status: string;
     uuid: string;
   };

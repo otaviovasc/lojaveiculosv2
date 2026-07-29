@@ -23,6 +23,8 @@ export const crmSyncStatus = pgEnum("crm_sync_status", [
 
 export const crmConnectionProvider = pgEnum("crm_connection_provider", [
   "zapi",
+  "composio_whatsapp",
+  "composio_instagram",
 ]);
 
 export const crmConnectionStatus = pgEnum("crm_connection_status", [

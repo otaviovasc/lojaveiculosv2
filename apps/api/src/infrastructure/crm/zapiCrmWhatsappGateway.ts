@@ -1,5 +1,6 @@
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmWhatsappGateway } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmWhatsappCapabilityError } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import {
   listZapiCatalogProducts,
   sendZapiCatalog,
@@ -66,6 +67,11 @@ export function createZapiCrmWhatsappGateway(
     },
     async sendText(connection, input) {
       return sendZapiText(credentialsFor(connection), fetchImpl, input);
+    },
+    async sendTemplate() {
+      throw new CrmWhatsappCapabilityError(
+        "Z-API does not use the official WhatsApp template send contract.",
+      );
     },
   };
 }

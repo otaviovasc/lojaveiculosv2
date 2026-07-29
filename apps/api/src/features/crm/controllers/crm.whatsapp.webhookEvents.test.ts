@@ -77,6 +77,48 @@ describe("CRM WhatsApp provider event retry", () => {
     });
   });
 
+  it("lists official provider failures without marking them retryable", async () => {
+    const webhookEvents = createMemoryCrmWebhookEventRepository();
+    const recorded = await webhookEvents.recordReceived({
+      connectionId,
+      environment: "test",
+      eventType: "meta.message",
+      payload: {
+        externalMessageId: "wamid.failed-1",
+        kind: "message",
+      },
+      provider: "composio_whatsapp",
+      providerEventId: "composio_whatsapp:message:wamid.failed-1",
+      storeId,
+      tenantId,
+    });
+    await webhookEvents.updateStatus({
+      errorMessage: "Inbound persistence failed",
+      eventId: recorded.event.id,
+      status: "failed",
+    });
+    const app = createTestApp({
+      crmWebhookEventRepository: webhookEvents,
+    });
+
+    const response = await app.request(
+      "/api/v1/crm/whatsapp/provider-events/issues",
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      events: [
+        {
+          attentionReason: "processing_failed",
+          eventType: "meta.message",
+          provider: "composio_whatsapp",
+          retryable: false,
+          webhookType: null,
+        },
+      ],
+    });
+  });
+
   it("lists ignored received messages as retryable parser issues", async () => {
     const connections = createMemoryCrmConnectionRepository([
       createZapiConnection({ status: "active" }),

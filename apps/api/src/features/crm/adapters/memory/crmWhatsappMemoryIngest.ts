@@ -56,7 +56,7 @@ export function createMemorySessionContext(
     buyerName: input.buyerName ?? null,
     buyerPhone: input.buyerPhone,
     channel: input.channel,
-    channelExternalId: null,
+    channelExternalId: input.channelExternalId ?? null,
     channelMetadata: {},
     connectionId: input.connectionId,
     createdAt: now,
@@ -91,7 +91,7 @@ export function createMemoryMessage(
 ): CrmWhatsappMessage {
   return {
     channel: input.channel,
-    channelMessageId: null,
+    channelMessageId: input.channelMessageId ?? null,
     connectionId: input.connectionId,
     content: input.content,
     createdAt: now,
@@ -136,6 +136,8 @@ export function upsertMemorySessionContext(
     }
     session.buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
     session.buyerName = session.buyerName ?? input.buyerName ?? null;
+    session.channelExternalId =
+      session.channelExternalId ?? input.channelExternalId ?? null;
     session.updatedAt = new Date();
   }
   return session;
@@ -213,6 +215,8 @@ export function updateMemorySessionPreview(
   }
   session.buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
   session.buyerName = session.buyerName ?? input.buyerName ?? null;
+  session.channelExternalId =
+    session.channelExternalId ?? input.channelExternalId ?? null;
   if (input.direction === "INBOUND") {
     session.freshLeadAt =
       session.freshLeadAt ?? input.freshLeadAt ?? input.providerTimestamp;

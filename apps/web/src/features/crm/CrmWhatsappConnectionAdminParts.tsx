@@ -14,6 +14,7 @@ import type {
   CrmWhatsappProviderConnection,
   CrmWhatsappWebhookEndpoint,
 } from "./crmWhatsappTypes";
+import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
 
 export type ConnectionWebhookAutoConfigState = {
   disabled?: boolean;
@@ -76,7 +77,7 @@ export function ConnectionStatusCard({
         )}
       </span>
       <div>
-        <span>WhatsApp (ZAPI)</span>
+        <span>{readCrmWhatsappProviderLabel(connection.provider)}</span>
         <strong>{readProviderStatus(connection)}</strong>
         <small>{readConnectionStatusDetail(connection)}</small>
       </div>
@@ -118,7 +119,7 @@ export function ConnectionWebhookAutoConfig({
         <Zap aria-hidden="true" />
         {isConfiguring
           ? "Configurando webhooks"
-          : "Configurar webhooks na ZAPI"}
+          : "Configurar webhooks na Z-API"}
       </button>
       {result ? (
         <div
@@ -129,7 +130,7 @@ export function ConnectionWebhookAutoConfig({
           {failed.length === 0 ? (
             <p className="crm-whatsapp-webhook-autoconfig-ok">
               <Check aria-hidden="true" />
-              {succeeded.length} webhooks registrados na ZAPI automaticamente
+              {succeeded.length} webhooks registrados na Z-API automaticamente
               {result.tokenApplied ? " com token." : "."}
             </p>
           ) : (
@@ -152,7 +153,7 @@ export function ConnectionWebhookAutoConfig({
         </div>
       ) : (
         <p className="crm-whatsapp-connection-webhook-note">
-          Registra as URLs abaixo direto na ZAPI usando o token do backend.
+          Registra as URLs abaixo direto na Z-API usando o token do backend.
         </p>
       )}
     </div>
@@ -176,7 +177,7 @@ export function ConnectionWebhookList({
 }) {
   const description = tokenRequired
     ? "Token obrigatorio via header x-crm-webhook-token ou query token."
-    : "URLs geradas pelo backend para configurar na ZAPI.";
+    : "URLs geradas pelo backend para configurar na Z-API.";
   const content = (
     <>
       {embedded ? (
@@ -228,8 +229,10 @@ export function ConnectionWebhookList({
 }
 
 export function readProviderStatus(connection: CrmWhatsappProviderConnection) {
-  if (connection.live.providerStatus === "error") return "Erro na ZAPI";
-  if (connection.live.providerStatus === "connected") return "ZAPI conectada";
+  const provider = readCrmWhatsappProviderLabel(connection.provider);
+  if (connection.live.providerStatus === "error") return `${provider}: erro`;
+  if (connection.live.providerStatus === "connected")
+    return `${provider}: online`;
   if (connection.live.providerStatus === "disconnected") return "Desconectada";
   return "Status desconhecido";
 }
@@ -250,19 +253,33 @@ function readProviderStatusTone(connection: CrmWhatsappProviderConnection) {
 
 function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
   if (connection.live.providerStatus === "error") {
-    return connection.live.errorMessage;
+    return connection.provider === "zapi"
+      ? connection.live.errorMessage
+      : `${connection.live.errorMessage} Nenhuma operacao oficial foi confirmada.`;
   }
   if (connection.live.providerStatus === "connected") {
+    if (connection.provider === "composio_instagram") {
+      return "Conta profissional conectada pelo Composio";
+    }
     const phone =
       connection.live.connectedPhone ??
       connection.metadata?.connectedPhone ??
       connection.phone;
-    return phone ? `Conectado - ${phone}` : "Conectado sem telefone informado";
+    if (phone) return `Conectado - ${phone}`;
+    return connection.provider === "composio_whatsapp"
+      ? "Conta oficial conectada pelo Composio"
+      : "Conectado sem telefone informado";
   }
   if (connection.live.providerStatus === "disconnected") {
+    if (connection.provider !== "zapi") {
+      return "Canal oficial desconectado. Nenhuma operacao oficial esta disponivel.";
+    }
     return connection.externalInstanceId
-      ? "Instancia configurada. Conecte o WhatsApp pelo QR Code da ZAPI."
-      : "Informe o ID e o token da instancia ZAPI.";
+      ? "Instancia configurada. Conecte o WhatsApp pelo QR Code da Z-API."
+      : "Informe o ID e o token da instancia Z-API.";
+  }
+  if (connection.provider !== "zapi") {
+    return "Status oficial ainda nao verificado. Nenhuma operacao oficial foi confirmada.";
   }
   return (
     connection.live.connectedPhone ??

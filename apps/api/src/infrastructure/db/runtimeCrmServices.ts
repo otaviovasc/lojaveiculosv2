@@ -1,5 +1,6 @@
-import { createZapiCrmWhatsappGateway } from "../crm/zapiCrmWhatsappGateway.js";
+import { createRuntimeCrmWhatsappProviderGateway } from "../crm/crmWhatsappProviderRouter.js";
 import { createHttpCrmBotWebhookDispatcher } from "../crm/httpCrmBotWebhookDispatcher.js";
+import { createSafeCrmRemoteMediaFetcher } from "../crm/safeCrmRemoteMediaFetcher.js";
 import {
   createCrmServices,
   type CrmServices,
@@ -25,7 +26,8 @@ export function createRuntimeCrmServices(
       ...(realtimePublisher ? { crmRealtimePublisher: realtimePublisher } : {}),
       ...(objectStorage ? { crmWhatsappMediaStorage: objectStorage } : {}),
       crmBotWebhookDispatcher: createHttpCrmBotWebhookDispatcher(env),
-      crmWhatsappGateway: createZapiCrmWhatsappGateway(env),
+      crmWhatsappMediaFetcher: createSafeCrmRemoteMediaFetcher(),
+      crmWhatsappGateway: createRuntimeCrmWhatsappProviderGateway(env),
       ...(financingServices
         ? { financingBotActions: createFinancingBotActions(financingServices) }
         : {}),

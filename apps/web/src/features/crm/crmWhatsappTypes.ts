@@ -1,4 +1,7 @@
-export type CrmWhatsappChannel = "OLX_CHAT" | "WEB_CHAT" | "WHATSAPP";
+export type CrmWhatsappChannel =
+  "INSTAGRAM" | "OLX_CHAT" | "WEB_CHAT" | "WHATSAPP";
+export type CrmWhatsappProvider =
+  "composio_instagram" | "composio_whatsapp" | "zapi";
 export type CrmWhatsappConnectionId = number | string;
 export type CrmWhatsappSessionId = number | string;
 
@@ -52,7 +55,7 @@ export type CrmWhatsappProviderConnection = {
   live: CrmWhatsappConnectionLiveStatus;
   metadata?: CrmWhatsappConnectionMetadata;
   phone: string | null;
-  provider: "zapi";
+  provider: CrmWhatsappProvider;
   status: CrmWhatsappConnectionConfiguredStatus;
   webhookEndpoints?: CrmWhatsappWebhookEndpoint[];
   webhookTokenRequired?: boolean;
@@ -64,7 +67,9 @@ export type CrmWhatsappConnectionConfiguredStatus =
 
 export type CrmWhatsappConnectionCredentialRefs = {
   apiBaseUrlEnv: string | null;
+  apiKeyEnv?: string | null;
   clientTokenEnv: string | null;
+  composioConnectedAccountConfigured?: boolean;
   instanceIdEnv: string | null;
   instanceTokenEnv: string | null;
   mode: string | null;

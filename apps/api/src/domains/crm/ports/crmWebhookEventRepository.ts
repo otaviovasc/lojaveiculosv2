@@ -1,7 +1,10 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { CrmConnectionProvider } from "./crmConnectionRepository.js";
 
 export type CrmProviderWebhookEventStatus =
   "failed" | "ignored" | "processed" | "received";
+
+export type CrmProviderWebhookEventProvider = CrmConnectionProvider;
 
 export type CrmProviderWebhookEvent = {
   connectionId: string | null;
@@ -12,7 +15,7 @@ export type CrmProviderWebhookEvent = {
   id: string;
   payload: Record<string, unknown>;
   processedAt: Date | null;
-  provider: "zapi";
+  provider: CrmProviderWebhookEventProvider;
   providerEventId: string;
   status: CrmProviderWebhookEventStatus;
   storeId: StoreId | null;
@@ -25,7 +28,7 @@ export type RecordCrmProviderWebhookEventInput = {
   environment: string;
   eventType: string;
   payload: Record<string, unknown>;
-  provider: "zapi";
+  provider: CrmProviderWebhookEventProvider;
   providerEventId: string;
   storeId?: StoreId | null;
   tenantId?: TenantId | null;
@@ -36,7 +39,7 @@ export type ListCrmProviderWebhookEventsInput = {
   eventType?: string;
   limit?: number;
   offset?: number;
-  provider?: "zapi";
+  provider?: CrmProviderWebhookEventProvider;
   status?: CrmProviderWebhookEventStatus;
   storeId: StoreId;
   tenantId: TenantId;

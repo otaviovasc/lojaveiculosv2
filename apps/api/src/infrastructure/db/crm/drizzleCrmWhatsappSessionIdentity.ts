@@ -47,6 +47,8 @@ export async function updateWhatsappSessionIdentity(
         : {}),
       buyerChatLid: session.buyerChatLid ?? input.buyerChatLid ?? null,
       buyerName: session.buyerName ?? input.buyerName ?? null,
+      channelExternalId:
+        session.channelExternalId ?? input.channelExternalId ?? null,
       updatedAt: new Date(),
     })
     .where(

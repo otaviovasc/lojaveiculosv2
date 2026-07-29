@@ -5,6 +5,7 @@ import {
   ConnectionDashboard,
   ConnectionSetupFlow,
 } from "./CrmWhatsappConnectionViews";
+import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
 import type {
   CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappProviderConnection,
@@ -60,11 +61,16 @@ export function CrmWhatsappConnectionAdmin({
   useEffect(() => {
     setLocalError(null);
     setDraft({
-      instanceId: selected?.externalInstanceId ?? "",
+      instanceId:
+        selected?.provider === "zapi"
+          ? (selected.externalInstanceId ?? "")
+          : "",
       instanceToken: "",
     });
     setWebhookConfigResult(null);
-    setSetupStep(selected && hasCredentials(selected) ? 1 : 0);
+    setSetupStep(
+      selected?.provider === "zapi" && hasCredentials(selected) ? 1 : 0,
+    );
   }, [selected]);
 
   useEffect(() => {
@@ -94,13 +100,13 @@ export function CrmWhatsappConnectionAdmin({
   };
 
   const configureWebhooks = async () => {
-    if (!selected) return;
+    if (!selected || selected.provider !== "zapi") return;
     setIsConfiguringWebhooks(true);
     try {
       const result = await onConfigureWebhooks(selected.id);
       setWebhookConfigResult(result);
       if (!result) {
-        setLocalError("Nao foi possivel configurar os webhooks na ZAPI.");
+        setLocalError("Nao foi possivel configurar os webhooks na Z-API.");
       }
     } finally {
       setIsConfiguringWebhooks(false);
@@ -108,11 +114,11 @@ export function CrmWhatsappConnectionAdmin({
   };
 
   const saveInstance = async () => {
-    if (!selected) return false;
+    if (!selected || selected.provider !== "zapi") return false;
     const instanceId = draft.instanceId.trim();
     const instanceToken = draft.instanceToken.trim();
     if (!instanceId || !instanceToken) {
-      setLocalError("Informe o ID e o token da instancia ZAPI.");
+      setLocalError("Informe o ID e o token da instancia Z-API.");
       return false;
     }
     setIsSaving(true);
@@ -123,9 +129,9 @@ export function CrmWhatsappConnectionAdmin({
       });
       if (saved) {
         setDraft({ instanceId, instanceToken: "" });
-        // Auto-register the ZAPI webhooks as soon as credentials are stored.
+        // Auto-register the Z-API webhooks as soon as credentials are stored.
         void configureWebhooks();
-      } else setLocalError("Nao foi possivel salvar a instancia ZAPI.");
+      } else setLocalError("Nao foi possivel salvar a instancia Z-API.");
       return saved;
     } finally {
       setIsSaving(false);
@@ -134,6 +140,10 @@ export function CrmWhatsappConnectionAdmin({
 
   const advanceSetup = async () => {
     if (!selected) return;
+    if (selected.provider !== "zapi") {
+      await refresh();
+      return;
+    }
     if (setupStep === 0) {
       const unchanged =
         hasCredentials(selected) &&
@@ -168,12 +178,12 @@ export function CrmWhatsappConnectionAdmin({
         <>
           {connections.length > 1 ? (
             <label className="crm-whatsapp-connection-selector">
-              Instancia
+              Canal
               <CrmSelect
                 className="crm-whatsapp-select"
                 onChange={setSelectedId}
                 options={connections.map((connection) => ({
-                  label: connection.displayName,
+                  label: `${connection.displayName} · ${readCrmWhatsappProviderLabel(connection.provider)}`,
                   value: String(connection.id),
                 }))}
                 value={String(selected.id)}
@@ -227,7 +237,7 @@ export function CrmWhatsappConnectionAdmin({
         </>
       ) : (
         <p className="crm-whatsapp-connection-empty">
-          Nenhuma conexao ZAPI configurada para esta loja.
+          Nenhuma conexao de mensagens configurada para esta loja.
         </p>
       )}
     </section>
@@ -235,6 +245,9 @@ export function CrmWhatsappConnectionAdmin({
 }
 
 function hasCredentials(connection: CrmWhatsappProviderConnection) {
+  if (connection.provider !== "zapi") {
+    return Boolean(connection.credentials?.composioConnectedAccountConfigured);
+  }
   return Boolean(
     connection.credentials?.storedInstanceConfigured ||
     (connection.credentials?.instanceIdEnv &&
@@ -253,6 +266,7 @@ function readNextDisabled({
   draft: { instanceId: string; instanceToken: string };
   setupStep: number;
 }) {
+  if (connection.provider !== "zapi") return false;
   if (setupStep === 1) return !(connection.webhookEndpoints?.length ?? 0);
   if (setupStep === 2) return false;
   const unchanged =

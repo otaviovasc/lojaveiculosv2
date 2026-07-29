@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 
-export type CrmConnectionProvider = "zapi";
+export type CrmConnectionProvider =
+  "zapi" | "composio_whatsapp" | "composio_instagram";
 
 export type CrmConnectionConfiguredStatus =
   "sandbox" | "active" | "paused" | "disconnected" | "error" | "archived";
@@ -26,6 +27,11 @@ export type ListCrmConnectionsInput = {
   tenantId: TenantId;
 };
 
+export type FindCrmConnectionByExternalIdInput = {
+  externalConnectionId: string;
+  providers: readonly CrmConnectionProvider[];
+};
+
 export type UpdateCrmConnectionInput = {
   connectionId: string;
   credentialsRef?: Record<string, unknown>;
@@ -41,6 +47,9 @@ export type UpdateCrmConnectionInput = {
 };
 
 export type CrmConnectionRepository = {
+  findConnectionByExternalId: (
+    input: FindCrmConnectionByExternalIdInput,
+  ) => Promise<CrmConnection | null>;
   findConnectionById: (connectionId: string) => Promise<CrmConnection | null>;
   listConnections: (
     input: ListCrmConnectionsInput,

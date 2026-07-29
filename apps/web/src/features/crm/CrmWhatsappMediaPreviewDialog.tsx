@@ -16,6 +16,10 @@ import {
 
 export function CrmWhatsappMediaPreviewDialog({
   activeIndex,
+  allowAudio = true,
+  allowCaption = true,
+  allowDocuments = true,
+  allowVideo = true,
   caption,
   disabled,
   files,
@@ -30,6 +34,10 @@ export function CrmWhatsappMediaPreviewDialog({
   previewUrls,
 }: {
   activeIndex: number;
+  allowAudio?: boolean;
+  allowCaption?: boolean;
+  allowDocuments?: boolean;
+  allowVideo?: boolean;
   caption: string;
   disabled?: boolean;
   files: File[];
@@ -117,36 +125,42 @@ export function CrmWhatsappMediaPreviewDialog({
             ))}
             <div className="crm-whatsapp-media-dialog-add">
               <button
-                aria-label="Adicionar foto ou video"
+                aria-label={
+                  allowVideo ? "Adicionar foto ou video" : "Adicionar foto"
+                }
                 onClick={onPickImages}
-                title="Foto ou video"
+                title={allowVideo ? "Foto ou video" : "Foto"}
                 type="button"
               >
                 <ImageIcon />
               </button>
-              <button
-                aria-label="Adicionar documento"
-                onClick={onPickDocuments}
-                title="Documento"
-                type="button"
-              >
-                <FileText />
-              </button>
-              <button
-                aria-label="Adicionar audio"
-                onClick={onPickAudio}
-                title="Audio"
-                type="button"
-              >
-                <Music />
-              </button>
+              {allowDocuments ? (
+                <button
+                  aria-label="Adicionar documento"
+                  onClick={onPickDocuments}
+                  title="Documento"
+                  type="button"
+                >
+                  <FileText />
+                </button>
+              ) : null}
+              {allowAudio ? (
+                <button
+                  aria-label="Adicionar audio"
+                  onClick={onPickAudio}
+                  title="Audio"
+                  type="button"
+                >
+                  <Music />
+                </button>
+              ) : null}
             </div>
           </div>
 
           <div className="crm-whatsapp-media-caption-row">
             <textarea
               aria-label="Legenda da midia"
-              disabled={disabled}
+              disabled={disabled || !allowCaption}
               onChange={(event) => onCaptionChange(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
@@ -154,9 +168,13 @@ export function CrmWhatsappMediaPreviewDialog({
                   onSend();
                 }
               }}
-              placeholder="Adicionar legenda..."
+              placeholder={
+                allowCaption
+                  ? "Adicionar legenda..."
+                  : "Envie o texto separadamente da imagem."
+              }
               rows={1}
-              value={caption}
+              value={allowCaption ? caption : ""}
             />
             <button
               aria-label="Enviar mensagem"

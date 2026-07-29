@@ -1,4 +1,8 @@
-import type { CrmLead, CrmRepository } from "../ports/crmRepository.js";
+import type {
+  CrmLead,
+  CrmRepository,
+  LeadSource,
+} from "../ports/crmRepository.js";
 import { shouldBackfillWhatsappPhone } from "./whatsappContactIdentity.js";
 import {
   getCrmRepository,
@@ -12,6 +16,7 @@ export type FindOrCreateWhatsappLeadInput = {
   direction: "INBOUND" | "OUTBOUND";
   externalId: string;
   preferredLeadId?: string | null;
+  source?: LeadSource;
   storeId: CrmLead["storeId"];
   tenantId: CrmLead["tenantId"];
 };
@@ -42,7 +47,7 @@ export async function findOrCreateWhatsappLead(
     ...(input.buyerName?.trim() ? { buyerName: input.buyerName.trim() } : {}),
     buyerPhone: input.buyerPhone,
     metadata: createWhatsappLeadMetadata(input),
-    source: "whatsapp",
+    source: input.source ?? "whatsapp",
     storeId: input.storeId,
     tenantId: input.tenantId,
   });

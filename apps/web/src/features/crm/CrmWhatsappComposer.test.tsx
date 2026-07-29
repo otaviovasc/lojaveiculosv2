@@ -4,6 +4,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanupTest, renderComposer } from "./CrmWhatsappComposer.testSupport";
+import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
 
 describe("CrmWhatsappComposer", () => {
   afterEach(cleanupTest);
@@ -185,6 +186,60 @@ describe("CrmWhatsappComposer", () => {
     await user.click(screen.getByRole("button", { name: "Cancelar resposta" }));
 
     expect(onCancelReply).toHaveBeenCalled();
+  });
+
+  it("limits Instagram to image attachments without captions or audio", async () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:crm-instagram-preview"),
+      revokeObjectURL: vi.fn(),
+    });
+    const user = userEvent.setup();
+    const { callbacks, container } = renderComposer({
+      capabilities: readCrmWhatsappProviderCapabilities("composio_instagram"),
+    });
+
+    expect(
+      screen.queryByRole("button", { name: "Gravar audio" }),
+    ).not.toBeInTheDocument();
+    await user.type(
+      screen.getByPlaceholderText("Digite uma mensagem..."),
+      "Texto separado",
+    );
+    await user.click(screen.getByRole("button", { name: "Anexos" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Documentos" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Audio" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Enviar catalogo" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Fotos" }));
+
+    const input = container.querySelector<HTMLInputElement>(
+      'input[accept="image/*"]',
+    );
+    const file = new File(["image"], "instagram.jpg", {
+      type: "image/jpeg",
+    });
+    await user.upload(input!, file);
+
+    expect(screen.getByLabelText("Legenda da midia")).toBeDisabled();
+    expect(screen.queryByLabelText("Adicionar audio")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Adicionar documento"),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Enviar mensagem" }));
+
+    expect(callbacks.onSendMedia).toHaveBeenCalledWith({
+      file,
+      mediaType: "image",
+    });
+    expect(screen.getByPlaceholderText("Digite uma mensagem...")).toHaveValue(
+      "Texto separado",
+    );
   });
 
   it("sends media quick messages directly from the slash picker", async () => {

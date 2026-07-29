@@ -20,6 +20,7 @@ export const crmWhatsappChannel = pgEnum("crm_whatsapp_channel", [
   "OLX_CHAT",
   "WEB_CHAT",
   "WHATSAPP",
+  "INSTAGRAM",
 ]);
 
 export const crmWhatsappSessionStatus = pgEnum("crm_whatsapp_session_status", [

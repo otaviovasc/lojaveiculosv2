@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { readWhatsappStatus } from "./crmWhatsappConnectionStatus";
+import {
+  readCrmWhatsappProviderLabel,
+  readWhatsappStatus,
+} from "./crmWhatsappConnectionStatus";
 
 describe("readWhatsappStatus", () => {
-  it("prioritizes the live connection state when ZAPI is connected", () => {
+  it("prioritizes the live connection state with a provider-neutral label", () => {
     expect(
       readWhatsappStatus({
         connectionError: new Error("previous failure"),
         hasConnection: true,
         isLoading: false,
       }),
-    ).toEqual({ label: "ZAPI conectado", tone: "online" });
+    ).toEqual({ label: "Canal conectado", tone: "online" });
   });
 
   it("describes loading, provider errors, and disconnected states", () => {
@@ -26,7 +29,7 @@ describe("readWhatsappStatus", () => {
         hasConnection: false,
         isLoading: false,
       }),
-    ).toEqual({ label: "ZAPI indisponivel", tone: "error" });
+    ).toEqual({ label: "Provedor indisponivel", tone: "error" });
     expect(
       readWhatsappStatus({
         connectionError: null,
@@ -34,5 +37,23 @@ describe("readWhatsappStatus", () => {
         isLoading: false,
       }),
     ).toEqual({ label: "Desconectado", tone: "offline" });
+  });
+
+  it("distinguishes Z-API, official WhatsApp, and Instagram providers", () => {
+    expect(readCrmWhatsappProviderLabel("zapi")).toBe("Z-API");
+    expect(readCrmWhatsappProviderLabel("composio_whatsapp")).toBe(
+      "WhatsApp oficial (Composio)",
+    );
+    expect(readCrmWhatsappProviderLabel("composio_instagram")).toBe(
+      "Instagram (Composio)",
+    );
+    expect(
+      readWhatsappStatus({
+        connectionError: null,
+        hasConnection: true,
+        isLoading: false,
+        provider: "composio_instagram",
+      }),
+    ).toEqual({ label: "Instagram (Composio): online", tone: "online" });
   });
 });

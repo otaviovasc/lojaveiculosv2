@@ -52,6 +52,18 @@ export const whatsappUpdateConnectionSchema = z
       })
       .strict()
       .optional(),
+    composioCredentials: z
+      .object({
+        apiKeyEnv: z.string().trim().min(1).max(120),
+        connectedAccountId: z.string().trim().min(1).max(191),
+        graphVersion: z
+          .string()
+          .trim()
+          .regex(/^v\d+\.\d+$/u)
+          .optional(),
+      })
+      .strict()
+      .optional(),
     displayName: z.string().trim().min(1).max(120).optional(),
     externalConnectionId: z.string().trim().max(191).nullable().optional(),
     externalInstanceId: z.string().trim().max(191).nullable().optional(),

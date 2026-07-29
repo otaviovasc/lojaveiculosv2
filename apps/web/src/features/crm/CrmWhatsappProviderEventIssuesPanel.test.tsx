@@ -20,7 +20,7 @@ describe("CrmWhatsappProviderEventIssuesPanel", () => {
 
     expect(
       await screen.findByRole("button", {
-        name: /1 evento ZAPI com atenção/i,
+        name: /1 evento de provedor com atenção/i,
       }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /1 evento/i }));
@@ -40,7 +40,7 @@ describe("CrmWhatsappProviderEventIssuesPanel", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: /1 evento ZAPI com atenção/i,
+        name: /1 evento de provedor com atenção/i,
       }),
     );
 
@@ -50,9 +50,35 @@ describe("CrmWhatsappProviderEventIssuesPanel", () => {
     ).not.toBeInTheDocument();
     expect(api.retryProviderEvent).not.toHaveBeenCalled();
   });
+
+  it("shows official provider failures without an unsafe replay action", async () => {
+    const user = userEvent.setup();
+    const api = createApi({
+      attentionReason: "processing_failed",
+      eventType: "meta.message",
+      provider: "composio_whatsapp",
+      retryable: false,
+      webhookType: null,
+    });
+
+    render(<CrmWhatsappProviderEventIssuesPanel api={api} canRetry={true} />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: /1 evento de provedor com atenção/i,
+      }),
+    );
+    expect(screen.getByText("WhatsApp oficial")).toBeVisible();
+    expect(screen.getByText("Mensagem recebida")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Reprocessar" }),
+    ).not.toBeInTheDocument();
+  });
 });
 
-function createApi(): CrmWhatsappApi {
+function createApi(
+  eventOverrides: Record<string, unknown> = {},
+): CrmWhatsappApi {
   return {
     listProviderEventIssues: vi
       .fn()
@@ -66,11 +92,13 @@ function createApi(): CrmWhatsappApi {
             eventType: "crm.whatsapp.zapi.connected",
             id: "event_1",
             processedAt: null,
+            provider: "zapi",
             providerEventId: "provider_1",
             retryable: true,
             status: "failed",
             updatedAt: "2026-07-03T00:00:00.000Z",
             webhookType: "connected",
+            ...eventOverrides,
           },
         ],
       })

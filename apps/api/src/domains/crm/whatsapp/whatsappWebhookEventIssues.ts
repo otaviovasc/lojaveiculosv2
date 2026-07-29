@@ -12,6 +12,7 @@ export type WhatsappWebhookEventSummary = {
   eventType: string;
   id: string;
   processedAt: string | null;
+  provider: CrmProviderWebhookEvent["provider"];
   providerEventId: string;
   retryable: boolean;
   status: CrmProviderWebhookEvent["status"];
@@ -31,6 +32,7 @@ export function toWebhookEventSummary(
     eventType: event.eventType,
     id: event.id,
     processedAt: event.processedAt?.toISOString() ?? null,
+    provider: event.provider,
     providerEventId: event.providerEventId,
     retryable: Boolean(attentionReason && readZapiWebhookType(event.eventType)),
     status: event.status,

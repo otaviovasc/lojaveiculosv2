@@ -55,6 +55,7 @@ export function WhatsappToolbar({
   statusFilter,
   statusLabel,
   statusTone,
+  startConversationUnavailableReason,
   unreadOnly,
   canStartConversation,
 }: {
@@ -90,6 +91,7 @@ export function WhatsappToolbar({
   statusFilter: CrmWhatsappStatus | "";
   statusLabel: string;
   statusTone: "error" | "loading" | "neutral" | "offline" | "online";
+  startConversationUnavailableReason?: string | null;
   unreadOnly: boolean;
 }) {
   const connectionValue = String(connectionFilterId ?? connectionId ?? "");
@@ -118,11 +120,11 @@ export function WhatsappToolbar({
             <Tags />
           </button>
           <button
-            aria-label="Gerenciar conexão ZAPI"
+            aria-label="Gerenciar conexões de mensagens"
             className="crm-icon-action"
             disabled={!canManageConnections}
             onClick={onManageConnections}
-            title="Gerenciar conexão ZAPI"
+            title="Gerenciar conexões de mensagens"
             type="button"
           >
             <Wrench />
@@ -225,7 +227,7 @@ export function WhatsappToolbar({
           className="crm-icon-action crm-whatsapp-new-session-action"
           disabled={!canStartConversation}
           onClick={onStartConversation}
-          title="Nova conversa"
+          title={startConversationUnavailableReason ?? "Nova conversa"}
           type="button"
         >
           <Plus aria-hidden="true" />

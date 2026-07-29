@@ -8,6 +8,13 @@ import type {
   CrmWhatsappStartConversationInput,
 } from "./crmWhatsappTypes";
 
+type StartConversationInputWithoutConnection =
+  CrmWhatsappStartConversationInput extends infer Input
+    ? Input extends { connectionId: CrmWhatsappConnectionId }
+      ? Omit<Input, "connectionId">
+      : never
+    : never;
+
 export function useCrmWhatsappStartConversation({
   api,
   canSend,
@@ -28,14 +35,21 @@ export function useCrmWhatsappStartConversation({
 }) {
   const [isStartingConversation, setIsStartingConversation] = useState(false);
   const startConversation = useCallback(
-    async (input: Omit<CrmWhatsappStartConversationInput, "connectionId">) => {
+    async (input: StartConversationInputWithoutConnection) => {
       if (!connectionId || !canSend) return false;
       setIsStartingConversation(true);
       try {
-        const result = await api.startConversation({
-          ...input,
-          connectionId,
-        });
+        const result = input.template
+          ? await api.startConversation({
+              ...input,
+              connectionId,
+              template: input.template,
+            })
+          : await api.startConversation({
+              ...input,
+              connectionId,
+              text: input.text,
+            });
         mergeSessions([result.session], { preserveLocalOnly: true });
         setActiveSessionId(result.session.id);
         setError(null);

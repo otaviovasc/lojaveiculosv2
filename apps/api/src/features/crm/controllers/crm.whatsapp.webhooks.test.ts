@@ -59,6 +59,13 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
     await expect(downgrade.json()).resolves.toMatchObject({
       processed: 0,
     });
+    const lateFailure = await postWebhook(app, "delivery", {
+      error: "late provider failure",
+      messageId: "zapi-out-1",
+    });
+    await expect(lateFailure.json()).resolves.toMatchObject({
+      processed: 0,
+    });
 
     const messages = await whatsappRepository.listMessages({
       limit: 10,
@@ -133,6 +140,24 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ status: "accepted" });
+  });
+
+  it("never processes a Z-API callback through an official connection id", async () => {
+    const connectionRepository = createMemoryCrmConnectionRepository([
+      createZapiConnection({ provider: "composio_whatsapp" }),
+    ]);
+    const { app } = await createWebhookTestApp({ connectionRepository });
+
+    const response = await postWebhook(app, "chat-presence", {
+      phone: "5511999999999",
+      status: "composing",
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      reason: "connection_not_found",
+      status: "ignored",
+    });
   });
 });
 

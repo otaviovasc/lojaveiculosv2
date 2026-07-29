@@ -183,6 +183,7 @@ function shouldApplyStatus(
   next: CrmWhatsappMessageStatus,
 ) {
   if (current === "FAILED" && next !== "FAILED") return false;
+  if (next === "FAILED") return current === "PENDING" || current === "SENT";
   return statusRank[next] >= statusRank[current];
 }
 

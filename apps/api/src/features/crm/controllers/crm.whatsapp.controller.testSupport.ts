@@ -9,6 +9,7 @@ import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConn
 import type { CrmFinancingBotActions } from "../../../domains/crm/ports/crmFinancingBotActions.js";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type { CrmRemoteMediaFetcher } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../../domains/crm/ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
@@ -63,6 +64,7 @@ export function createTestApp(
     crmVisitRepository?: CrmVisitRepository;
     crmWebhookEventRepository?: CrmWebhookEventRepository;
     crmWhatsappGateway?: Partial<CrmWhatsappGateway>;
+    crmWhatsappMediaFetcher?: CrmRemoteMediaFetcher;
     crmWhatsappMediaStorage?: ObjectStorage;
     crmWhatsappRepository?: CrmWhatsappRepository;
     entitlements?: EntitlementKey[];
@@ -141,6 +143,9 @@ export function createTestApp(
           ...(options.crmWhatsappMediaStorage
             ? { crmWhatsappMediaStorage: options.crmWhatsappMediaStorage }
             : {}),
+          ...(options.crmWhatsappMediaFetcher
+            ? { crmWhatsappMediaFetcher: options.crmWhatsappMediaFetcher }
+            : {}),
           ...(options.financingBotActions
             ? { financingBotActions: options.financingBotActions }
             : {}),
@@ -190,6 +195,7 @@ function createTestWhatsappGateway(
     removeReaction: send,
     sendReaction: send,
     sendText: send,
+    sendTemplate: send,
     ...overrides,
   };
 }

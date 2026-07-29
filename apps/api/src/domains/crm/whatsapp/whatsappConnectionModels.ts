@@ -34,7 +34,9 @@ export type WhatsappConnection = {
 
 export type WhatsappConnectionCredentialRefs = {
   apiBaseUrlEnv: string | null;
+  apiKeyEnv: string | null;
   clientTokenEnv: string | null;
+  composioConnectedAccountConfigured: boolean;
   instanceIdEnv: string | null;
   instanceTokenEnv: string | null;
   mode: string | null;
@@ -79,12 +81,25 @@ function readCredentialRefs(
 
   return {
     apiBaseUrlEnv: readString(env.apiBaseUrl),
+    apiKeyEnv: readString(env.apiKey),
     clientTokenEnv: readString(env.clientToken),
+    composioConnectedAccountConfigured:
+      hasComposioConnectedAccount(credentialsRef),
     instanceIdEnv: readString(env.instanceId),
     instanceTokenEnv: readString(env.instanceToken),
     mode: readString(credentialsRef.mode),
     storedInstanceConfigured: hasStoredInstanceCredentials(credentialsRef),
   };
+}
+
+function hasComposioConnectedAccount(credentialsRef: Record<string, unknown>) {
+  const composio =
+    credentialsRef.composio &&
+    typeof credentialsRef.composio === "object" &&
+    !Array.isArray(credentialsRef.composio)
+      ? (credentialsRef.composio as Record<string, unknown>)
+      : {};
+  return Boolean(readString(composio.connectedAccountId));
 }
 
 function hasStoredInstanceCredentials(credentialsRef: Record<string, unknown>) {

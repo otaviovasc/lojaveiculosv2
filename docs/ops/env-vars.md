@@ -114,33 +114,51 @@ service.
 - Permission QA: after `pnpm run db:clean:local` and `pnpm run dev:all:local`,
   run `pnpm run qa:permissions:local`.
 
-## CRM WhatsApp Development
+## CRM Messaging Development
 
 The seeded local database creates a sandbox `crm_connections` row for a ZAPI
 test connection; it stores only env var names in `credentials_ref`, not
 secrets.
 
-Redis is part of the complete CRM WhatsApp migration for ephemeral
+V2 recognizes three messaging providers:
+
+- `zapi`
+- `composio_whatsapp`
+- `composio_instagram`
+
+Official WhatsApp and Instagram sends use Composio's HTTP REST proxy. The API
+does not install the Composio TypeScript SDK because its current Node runtime
+requirement would remove this repository's supported Node 20 path. Official
+inbound messages and WhatsApp delivery statuses arrive directly from Meta at
+`/api/v1/crm/whatsapp/webhooks/meta` and require Meta challenge and signature
+verification.
+
+Redis is part of the complete CRM messaging migration for ephemeral
 coordination: ticketed SSE fanout, future rate limits, distributed locks, and
 queue scheduling. Postgres remains the durable source of truth for webhook
 payloads, leads, sessions, messages, activities, and idempotency through
 `provider_events`.
 
-| Name                                | Required | Environments               | Secret | Notes                                                                                                                                                   |
-| ----------------------------------- | -------- | -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `REDIS_URL`                         | Deployed | local, staging, production | Yes    | Local default is `redis://localhost:63790`; Railway API and CRM cron use `${{ lojaveiculosv2-redis.REDIS_URL }}`. In-process fallback is degraded mode. |
-| `CRM_ZAPI_API_BASE_URL`             | No       | local                      | No     | ZAPI base URL for the CRM test connection.                                                                                                              |
-| `CRM_ZAPI_TEST_INSTANCE_ID`         | No       | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                                             |
-| `CRM_ZAPI_TEST_INSTANCE_TOKEN`      | No       | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                                          |
-| `CRM_ZAPI_TEST_CLIENT_TOKEN`        | No       | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                                     |
-| `CRM_ZAPI_CLIENT_TOKEN`             | No       | staging, production        | Yes    | ZAPI client token fallback for stored CRM credentials. Prefer credentials refs per connection.                                                          |
-| `ZAPI_CLIENT_TOKEN`                 | No       | staging, production        | Yes    | Legacy ZAPI client-token alias. Prefer `CRM_ZAPI_CLIENT_TOKEN` for new environments.                                                                    |
-| `CRM_ZAPI_TEST_PAIR_PHONE`          | No       | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                                            |
-| `CRM_ZAPI_WEBHOOK_TOKEN`            | Yes      | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                                   |
-| `RUN_ZAPI_E2E`                      | No       | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                                             |
-| `CRM_WHATSAPP_SCHEDULE_BATCH_SIZE`  | No       | local, staging, production | No     | Scheduled-message worker send limit per store scope. Defaults to `25`.                                                                                  |
-| `CRM_WHATSAPP_SCHEDULE_SCOPE_LIMIT` | No       | local, staging, production | No     | Scheduled-message worker due store-scope discovery limit per run. Defaults to `100`.                                                                    |
-| `CRM_WHATSAPP_SCHEDULE_DUE_AT`      | No       | local                      | No     | Optional ISO datetime override for local/manual scheduled-message worker runs. Leave empty in deployed cron runs.                                       |
+| Name                                | Required              | Environments               | Secret | Notes                                                                                                                                                                       |
+| ----------------------------------- | --------------------- | -------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REDIS_URL`                         | Deployed              | local, staging, production | Yes    | Local default is `redis://localhost:63790`; Railway API and CRM cron use `${{ lojaveiculosv2-redis.REDIS_URL }}`. In-process fallback is degraded mode.                     |
+| `CRM_ZAPI_API_BASE_URL`             | No                    | local                      | No     | ZAPI base URL for the CRM test connection.                                                                                                                                  |
+| `CRM_ZAPI_TEST_INSTANCE_ID`         | No                    | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                                                                 |
+| `CRM_ZAPI_TEST_INSTANCE_TOKEN`      | No                    | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                                                              |
+| `CRM_ZAPI_TEST_CLIENT_TOKEN`        | No                    | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                                                         |
+| `CRM_ZAPI_CLIENT_TOKEN`             | No                    | staging, production        | Yes    | ZAPI client token fallback for stored CRM credentials. Prefer credentials refs per connection.                                                                              |
+| `ZAPI_CLIENT_TOKEN`                 | No                    | staging, production        | Yes    | Legacy ZAPI client-token alias. Prefer `CRM_ZAPI_CLIENT_TOKEN` for new environments.                                                                                        |
+| `CRM_ZAPI_TEST_PAIR_PHONE`          | No                    | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                                                                |
+| `CRM_ZAPI_WEBHOOK_TOKEN`            | Yes                   | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                                                       |
+| `RUN_ZAPI_E2E`                      | No                    | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                                                                 |
+| `COMPOSIO_API_KEY`                  | When official enabled | local, staging, production | Yes    | Conventional Composio API key variable. Each official connection stores only an env-var reference and may point to a different secret name; it never stores the key itself. |
+| `COMPOSIO_API_BASE_URL`             | No                    | local, staging, production | No     | Optional Composio REST base override. Defaults to `https://backend.composio.dev`; outbound proxy requests use `/api/v3.1/tools/execute/proxy`.                              |
+| `COMPOSIO_META_GRAPH_VERSION`       | When official enabled | local, staging, production | No     | Required `vN.N` Meta Graph version unless the connection stores an explicit `graphVersion` in non-secret metadata. The adapter fails closed if neither source is valid.     |
+| `CRM_META_WEBHOOK_VERIFY_TOKEN`     | When official enabled | local, staging, production | Yes    | Token used for Meta's GET webhook challenge at `/api/v1/crm/whatsapp/webhooks/meta`.                                                                                        |
+| `CRM_META_APP_SECRET`               | When official enabled | local, staging, production | Yes    | Meta app secret used to verify the POST webhook `X-Hub-Signature-256` over the raw request body.                                                                            |
+| `CRM_WHATSAPP_SCHEDULE_BATCH_SIZE`  | No                    | local, staging, production | No     | Scheduled-message worker send limit per store scope. Defaults to `25`.                                                                                                      |
+| `CRM_WHATSAPP_SCHEDULE_SCOPE_LIMIT` | No                    | local, staging, production | No     | Scheduled-message worker due store-scope discovery limit per run. Defaults to `100`.                                                                                        |
+| `CRM_WHATSAPP_SCHEDULE_DUE_AT`      | No                    | local                      | No     | Optional ISO datetime override for local/manual scheduled-message worker runs. Leave empty in deployed cron runs.                                                           |
 
 ZAPI callback URLs use the public API base URL plus the CRM connection id:
 
@@ -155,19 +173,38 @@ For local ngrok testing, use the ngrok HTTPS origin as the public API base URL.
 Outside `APP_ENV=local`, include `CRM_ZAPI_WEBHOOK_TOKEN` with the callback as
 `?token=...` or send it in the `x-crm-webhook-token` header.
 
-CRM WhatsApp scheduled messages are stored durably in Postgres. Run
+Official Meta providers use one shared callback:
+
+- Verification and events:
+  `/api/v1/crm/whatsapp/webhooks/meta`
+
+Configure the Meta app with `CRM_META_WEBHOOK_VERIFY_TOKEN`. Every POST must
+carry a valid `X-Hub-Signature-256` generated with `CRM_META_APP_SECRET`; there
+is no query-token bypass. The `crm_connections.external_connection_id` stores
+the native Meta phone-number id or Instagram professional-account id used to
+route the event. Composio connected-account ids and API-key env references live
+in `credentials_ref`; raw provider secrets must not be stored in connection
+metadata or returned by the API.
+
+Provider routing is fail-closed. A Composio/Meta failure never falls back to
+ZAPI because a second provider attempt could duplicate delivery. Only an
+explicit HTTP 429 is retried with bounded `Retry-After`; ambiguous timeouts and
+5xx responses are returned as provider failures without automatic replay.
+
+CRM messaging scheduled messages are stored durably in Postgres. Run
 `pnpm run crm:whatsapp:schedule:process` from a local shell or Railway cron
 worker to process due messages. The worker discovers due store scopes, then
 sends through the same scoped CRM service path used by authenticated requests.
 Railway runs the worker every five minutes in UTC. Because it composes the API
-runtime, it also needs the API's Clerk, R2, Z-API, product DB, audit DB, and
-Redis configuration. Do not set `CRM_WHATSAPP_SCHEDULE_DUE_AT` on Railway.
+runtime, it also needs the API's Clerk, R2, selected messaging-provider, product
+DB, audit DB, and Redis configuration. Do not set
+`CRM_WHATSAPP_SCHEDULE_DUE_AT` on Railway.
 
 ## Object Storage
 
 | Name                              | Required | Environments        | Secret | Notes                                                                                                               |
 | --------------------------------- | -------- | ------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
-| `R2_BUCKET_NAME`                  | Yes      | staging, production | No     | Application media bucket for inventory, documents, finance attachments, and CRM WhatsApp inbound media mirrors.     |
+| `R2_BUCKET_NAME`                  | Yes      | staging, production | No     | Application media bucket for inventory, documents, finance attachments, and ZAPI CRM inbound media mirrors.         |
 | `R2_ACCESS_KEY_ID`                | Yes      | staging, production | Yes    | Storage access key.                                                                                                 |
 | `R2_SECRET_ACCESS_KEY`            | Yes      | staging, production | Yes    | Storage secret key.                                                                                                 |
 | `R2_ENDPOINT`                     | Yes      | staging, production | No     | S3-compatible endpoint.                                                                                             |
@@ -177,11 +214,21 @@ Redis configuration. Do not set `CRM_WHATSAPP_SCHEDULE_DUE_AT` on Railway.
 | `R2_UPLOAD_URL_EXPIRES_SECONDS`   | Yes      | staging, production | No     | Presigned upload TTL.                                                                                               |
 | `R2_DOWNLOAD_URL_EXPIRES_SECONDS` | No       | staging, production | No     | Presigned download TTL for private/download flows. Defaults to `300`.                                               |
 
-CRM WhatsApp inbound media is mirrored best-effort through the shared object
-storage adapter. Successful mirrors store the public R2 URL on
+ZAPI CRM WhatsApp inbound media is mirrored best-effort through the shared
+object storage adapter. Successful mirrors store the public R2 URL on
 `crm_whatsapp_messages.media_url` and persist provider URL, storage key, content
 type, byte size, and mirror timestamp under `metadata.media`. Failed mirrors
-keep the provider URL and set `metadata.media.mirrorStatus=failed`.
+keep the provider URL and set `metadata.media.mirrorStatus=failed`. The
+downloader accepts only public HTTPS destinations, validates and pins DNS
+resolution, revalidates every bounded redirect, enforces per-media byte limits,
+and aborts slow requests after a hard timeout. URLs rejected by that safety
+policy are not persisted as displayable media or thumbnail URLs.
+
+Official Meta WhatsApp and Instagram inbound media is different: the webhook
+stores an opaque provider media reference and leaves
+`crm_whatsapp_messages.media_url` empty. It does not fetch or mirror a remote
+provider URL. A future authenticated media-resolution flow must be designed and
+verified before that reference can become displayable media.
 
 ## Credere Financing
 

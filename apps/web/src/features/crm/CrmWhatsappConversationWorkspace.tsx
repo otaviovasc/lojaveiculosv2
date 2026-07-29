@@ -12,6 +12,7 @@ import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 import type { CrmWhatsappScope } from "./CrmWhatsappScopedNav";
 import { readInitialSessionId } from "./crmWhatsappHookSupport";
+import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
 
 export function CrmWhatsappConversationWorkspace({
   inbox,
@@ -33,6 +34,9 @@ export function CrmWhatsappConversationWorkspace({
     useState<CrmWhatsappMessage | null>(null);
   const selectedCount = inbox.selectedSessions.length;
   const showSelectionMode = selectionMode || selectedCount > 0;
+  const providerCapabilities = readCrmWhatsappProviderCapabilities(
+    activeSession?.connection?.provider,
+  );
 
   useEffect(() => {
     setReplyToMessage(null);
@@ -47,7 +51,7 @@ export function CrmWhatsappConversationWorkspace({
           availableTags={inbox.availableTags}
           canManageConnections={inbox.permissions.canConnectionManage}
           canManageTags={inbox.permissions.canTagManage}
-          canStartConversation={inbox.canSendText}
+          canStartConversation={inbox.canStartConversation}
           connectionId={inbox.connectionId}
           connectionFilterId={inbox.connectionFilterId}
           connections={inbox.connections}
@@ -82,6 +86,9 @@ export function CrmWhatsappConversationWorkspace({
           statusFilter={inbox.statusFilter}
           statusLabel={status.label}
           statusTone={status.tone}
+          startConversationUnavailableReason={
+            inbox.startConversationUnavailableReason
+          }
           unreadOnly={inbox.unreadOnly}
         >
           <WhatsappBulkBar
@@ -130,8 +137,9 @@ export function CrmWhatsappConversationWorkspace({
               canCloseSession={inbox.permissions.canClose}
               canMarkRead={inbox.permissions.canRead}
               canScheduleMessages={
-                inbox.permissions.canScheduleCreate ||
-                inbox.permissions.canScheduleRead
+                providerCapabilities.allowScheduling &&
+                (inbox.permissions.canScheduleCreate ||
+                  inbox.permissions.canScheduleRead)
               }
               canTagSessions={inbox.permissions.canTagAssign}
               canToggleIntervention={inbox.permissions.canToggleIntervention}
@@ -178,45 +186,65 @@ export function CrmWhatsappConversationWorkspace({
               isLoading={inbox.isLoadingMessages}
               messages={inbox.messages}
               onDelete={
-                inbox.permissions.canSend ? inbox.deleteMessage : undefined
+                inbox.permissions.canSend && providerCapabilities.allowDelete
+                  ? inbox.deleteMessage
+                  : undefined
               }
               onReact={
-                inbox.permissions.canSend ? inbox.sendReaction : undefined
+                inbox.permissions.canSend && providerCapabilities.allowReactions
+                  ? inbox.sendReaction
+                  : undefined
               }
               onRemoveReaction={
-                inbox.permissions.canSend ? inbox.removeReaction : undefined
+                inbox.permissions.canSend && providerCapabilities.allowReactions
+                  ? inbox.removeReaction
+                  : undefined
               }
               onReply={
-                inbox.permissions.canSend ? setReplyToMessage : undefined
+                inbox.permissions.canSend && providerCapabilities.allowReply
+                  ? setReplyToMessage
+                  : undefined
               }
             />
             {inbox.canSendText ? (
-              <MessageComposer
-                catalogUrl={inbox.catalogUrl}
-                defaultLocationName={inbox.storeLocationName}
-                disabled={inbox.isSending}
-                onCancelReply={() => setReplyToMessage(null)}
-                onCreateQuickMessage={inbox.createQuickMessage}
-                onDeleteQuickMessage={inbox.deleteQuickMessage}
-                onLoadCatalogProducts={inbox.listCatalogProducts}
-                onLoadVehicles={inbox.listVehicles}
-                onSend={async (text) => {
-                  const accepted = await inbox.sendText(text, {
-                    replyToMessage,
-                  });
-                  if (accepted) setReplyToMessage(null);
-                  return accepted;
-                }}
-                onSendCatalog={inbox.sendCatalog}
-                onSendCatalogProduct={inbox.sendCatalogProduct}
-                onSendLocation={inbox.sendLocation}
-                onSendMedia={inbox.sendMedia}
-                onSendQuickMessage={inbox.sendQuickMessage}
-                onSendVehicle={inbox.sendVehicle}
-                onUpdateQuickMessage={inbox.updateQuickMessage}
-                quickMessages={inbox.quickMessages}
-                replyToMessage={replyToMessage}
-              />
+              <>
+                {providerCapabilities.officialWindowNotice ? (
+                  <p className="crm-whatsapp-composer-notice" role="note">
+                    {providerCapabilities.officialWindowNotice}
+                  </p>
+                ) : null}
+                <MessageComposer
+                  capabilities={providerCapabilities}
+                  catalogUrl={inbox.catalogUrl}
+                  defaultLocationName={inbox.storeLocationName}
+                  disabled={inbox.isSending}
+                  onCancelReply={() => setReplyToMessage(null)}
+                  onCreateQuickMessage={inbox.createQuickMessage}
+                  onDeleteQuickMessage={inbox.deleteQuickMessage}
+                  onLoadCatalogProducts={inbox.listCatalogProducts}
+                  onLoadVehicles={inbox.listVehicles}
+                  onSend={async (text) => {
+                    const accepted = await inbox.sendText(text, {
+                      replyToMessage: providerCapabilities.allowReply
+                        ? replyToMessage
+                        : null,
+                    });
+                    if (accepted) setReplyToMessage(null);
+                    return accepted;
+                  }}
+                  onSendCatalog={inbox.sendCatalog}
+                  onSendCatalogProduct={inbox.sendCatalogProduct}
+                  onSendLocation={inbox.sendLocation}
+                  onSendMedia={inbox.sendMedia}
+                  onSendQuickMessage={inbox.sendQuickMessage}
+                  onSendVehicle={inbox.sendVehicle}
+                  onUpdateQuickMessage={inbox.updateQuickMessage}
+                  quickMessages={inbox.quickMessages}
+                  replyToMessage={
+                    providerCapabilities.allowReply ? replyToMessage : null
+                  }
+                />
+              </>
             ) : (
               <CrmWhatsappReadOnlyComposer />
             )}
@@ -236,13 +264,18 @@ export function CrmWhatsappConversationWorkspace({
       </section>
       {newConversationOpen ? (
         <CrmWhatsappNewConversationDialog
-          disabled={inbox.isStartingConversation || !inbox.canSendText}
+          disabled={inbox.isStartingConversation || !inbox.canStartConversation}
           onClose={() => setNewConversationOpen(false)}
           onStart={async (input) => {
             const accepted = await inbox.startConversation(input);
             if (accepted) setMobilePane("chat");
             return accepted;
           }}
+          provider={
+            inbox.startConversationProvider === "composio_whatsapp"
+              ? "composio_whatsapp"
+              : "zapi"
+          }
         />
       ) : null}
     </section>

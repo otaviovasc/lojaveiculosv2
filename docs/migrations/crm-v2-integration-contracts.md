@@ -1,6 +1,6 @@
 # CRM V2 Integration Contracts
 
-Last updated: 2026-07-13
+Last updated: 2026-07-27
 
 This is the active worker-facing contract for the CRM migration. The older
 control dashboards remain useful context:
@@ -16,19 +16,43 @@ meaning in the active contract.
 
 ## Runtime Ownership
 
-- V2 owns the migrated WhatsApp runtime: sessions, messages, sends, ZAPI
-  webhooks, ticketed SSE, tags, quick messages, catalog sends, vehicle sends,
-  assignment, read/unread state, intervention state, scheduled one-off
-  messages, and failed provider-event retry.
+- V2 owns the migrated messaging runtime: sessions, messages, sends, ZAPI and
+  signed Meta webhooks, ticketed SSE, tags, quick messages, catalog sends,
+  vehicle sends, assignment, read/unread state, intervention state, scheduled
+  one-off messages, and failed provider-event retry.
 - Repasses repos are behavior references and future import sources only. Do not
   call Repasses at runtime for migrated WhatsApp paths.
 - Repasses public CRM APIs are numeric-id heavy; V2 slices expose V2 UUIDs.
-- ZAPI is the only WhatsApp provider in V2. Do not add Evolution, Meta Cloud
-  API, or generic provider switching.
+- V2 supports exactly three CRM messaging providers:
+  `zapi`, `composio_whatsapp`, and `composio_instagram`.
+- Provider selection belongs to the persisted connection. There is no automatic
+  fallback between official Meta providers and ZAPI; a provider failure must
+  remain visible rather than risk a duplicate send.
 - V2 `leads.id` is the CRM identity anchor for pipeline, visits, activities,
   WhatsApp linking, campaign recipients, and lead detail navigation.
 - Old CRM agents do not exist in V2. Use V2 users/store members and permission
   keys.
+
+## Messaging Provider Contract
+
+| Provider             | Outbound path                                                               | Inbound path                                                       | Current limits                                                                                                                                                                  |
+| -------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `zapi`               | Existing ZAPI HTTP adapter                                                  | Connection-specific ZAPI callbacks                                 | Existing broad WhatsApp behavior remains the regression baseline.                                                                                                               |
+| `composio_whatsapp`  | Composio REST proxy to the official Meta Graph messages endpoint            | Direct signed Meta webhook at `/api/v1/crm/whatsapp/webhooks/meta` | Free-form conversation start is blocked. New conversations use an approved template name and language; templates with variables can supply explicit components through the API. |
+| `composio_instagram` | Composio REST proxy to the Instagram professional-account messages endpoint | Direct signed Meta webhook at `/api/v1/crm/whatsapp/webhooks/meta` | Customer-initiated sessions only. Text and supported image sends are available; delivery/read receipt ingestion remains unsupported pending contract proof.                     |
+
+Official provider outbound execution uses
+`POST /api/v3.1/tools/execute/proxy` on the configured Composio base URL. V2
+uses the REST contract directly and does not install the Composio TypeScript
+SDK because doing so would remove the repository's supported Node 20 runtime
+path. Each connection stores only the Composio connected-account id and the
+name of the environment variable holding its API key; raw provider secrets are
+never persisted in connection metadata.
+
+The official adapters retry only explicit HTTP 429 responses with a bounded
+`Retry-After` delay. They do not automatically retry timeouts or 5xx responses
+whose delivery result may be ambiguous. Unsupported capabilities fail closed
+with a provider error and must never return synthetic success.
 
 ## API Routes
 
@@ -39,7 +63,7 @@ All routes are under `/api/v1/crm`.
 - `GET /crm/whatsapp/connections`
 - `PATCH /crm/whatsapp/connections/:connectionId`
 
-Connection responses include six generated ZAPI webhook endpoints:
+ZAPI connection responses include six generated webhook endpoints:
 
 - `received`
 - `delivery`
@@ -53,6 +77,13 @@ Credential values are write-only. Conexao may submit Repasses-style
 responses only expose credential reference names plus
 `credentials.storedInstanceConfigured`; stored tokens are never returned.
 Env-reference credentials remain supported for Railway/env-managed deployments.
+
+Official connections may submit `composioCredentials` with
+`connectedAccountId`, `apiKeyEnv`, and an optional connection-specific
+`graphVersion`. Responses expose only configuration status and reference names;
+they never expose the Composio API key or connected-account id. The connection
+`externalConnectionId` is the native Meta phone-number id for
+`composio_whatsapp` or professional-account id for `composio_instagram`.
 
 ### Conversations
 
@@ -79,6 +110,27 @@ Env-reference credentials remain supported for Railway/env-managed deployments.
 `connectionId`, `sessionId`, `leadId`, status, assignment buckets, tags,
 search, unread-only, limit, and offset. Lead detail screens must resolve
 existing WhatsApp sessions through `leadId` before creating a new conversation.
+
+`POST /crm/whatsapp/conversations/start` accepts exactly one of `text` or
+`template`. ZAPI starts with free-form text. Official WhatsApp starts with an
+approved template name, language, and optional Meta components; free-form start
+is rejected with HTTP 409. Official WhatsApp may continue with free-form text
+only within 24 hours of the latest inbound customer message. The same check is
+applied at dispatch time to media, quick messages, bot actions, and scheduled
+messages. The official-provider UI does not offer free-form scheduling until a
+template-capable scheduler exists. Instagram rejects conversation start because
+a professional-account customer must send the first message and allows only
+text or captionless image sends in the current verified adapter.
+
+Template components use a bounded, strict Meta parameter contract for text,
+currency, date/time, HTTPS media references, and supported buttons. This
+prevents arbitrary nested provider payloads, but a store-owned approved-template
+catalog remains a launch-readiness requirement.
+
+ZAPI automatic webhook configuration derives its callback origin only from the
+server-owned `API_BASE_URL`; request `Host` and forwarded-host values cannot
+redirect the shared webhook token. Non-local environments require a valid
+public HTTPS API base URL.
 
 ### Tags
 
@@ -146,6 +198,31 @@ old Repasses session JSON fields.
 
 Outside local/test, callbacks require `CRM_ZAPI_WEBHOOK_TOKEN` via
 `x-crm-webhook-token` or `?token=...`.
+
+### Official Meta Webhook
+
+- `GET /crm/whatsapp/webhooks/meta`
+- `POST /crm/whatsapp/webhooks/meta`
+
+The mounted public path is `/api/v1/crm/whatsapp/webhooks/meta`. The GET route
+performs Meta challenge verification with `CRM_META_WEBHOOK_VERIFY_TOKEN`. The
+POST route verifies `X-Hub-Signature-256` against the raw request body with
+`CRM_META_APP_SECRET` before parsing any event.
+
+WhatsApp messages and delivery statuses are normalized into the existing
+store-scoped CRM session/message model. Instagram messages use channel
+`INSTAGRAM`; Instagram receipts are intentionally ignored until a verified
+provider contract and monotonic status mapping are implemented. Provider event
+keys remain durable and idempotent across webhook retries.
+The provider-events panel lists failed ZAPI and official Meta events with their
+provider identity. Automated operator replay remains limited to the established
+ZAPI event types; official failures stay visible but non-retryable until a
+separately tested normalized-event replay contract exists.
+
+Official inbound media is persisted as an opaque provider reference with no
+mirrored remote URL. V2 does not fetch provider media URLs from the webhook, so
+`media_url` remains empty until a separately authenticated media-resolution
+contract is implemented.
 
 ### Ad-Initiated Conversations
 

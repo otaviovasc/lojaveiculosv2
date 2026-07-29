@@ -31,6 +31,41 @@ describe("CrmWhatsappNewConversationDialog", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("starts an official WhatsApp conversation with an approved template", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onStart = vi.fn(async () => true);
+    render(
+      <CrmWhatsappNewConversationDialog
+        onClose={onClose}
+        onStart={onStart}
+        provider="composio_whatsapp"
+      />,
+    );
+
+    expect(
+      screen.getByText(/exige um template previamente aprovado/i),
+    ).toBeVisible();
+    await user.type(screen.getByLabelText("Nome"), "Ana");
+    await user.type(screen.getByLabelText("WhatsApp"), "11999999999");
+    await user.type(
+      screen.getByLabelText("Template aprovado"),
+      "primeiro_contato",
+    );
+    await user.click(screen.getByRole("button", { name: "Iniciar conversa" }));
+
+    expect(onStart).toHaveBeenCalledWith({
+      buyerName: "Ana",
+      phone: "(11) 99999-9999",
+      template: {
+        languageCode: "pt_BR",
+        name: "primeiro_contato",
+      },
+    });
+    expect(screen.queryByLabelText("Mensagem")).not.toBeInTheDocument();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("shows localized field validation after invalid fields are visited", async () => {
     const user = userEvent.setup();
     render(

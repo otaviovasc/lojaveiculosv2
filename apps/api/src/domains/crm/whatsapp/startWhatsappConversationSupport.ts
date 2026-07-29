@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmLead } from "../ports/crmRepository.js";
+import type { CrmConnectionProvider } from "../ports/crmConnectionRepository.js";
 import type { WhatsappMessage, WhatsappSession } from "./whatsappModels.js";
 import { whatsappPhoneDigits } from "./whatsappPhone.js";
 import { WhatsappMessageActionError } from "./whatsappSendErrors.js";
@@ -91,6 +92,7 @@ export async function recordLeadInteraction(
     lead: CrmLead;
     messageExternalId: string;
     occurredAt: Date;
+    provider: CrmConnectionProvider;
     raw: unknown;
     sessionId: string;
   },
@@ -118,7 +120,7 @@ export async function recordLeadInteraction(
         messageExternalId: input.messageExternalId,
         sessionId: input.sessionId,
       },
-      provider: "zapi",
+      provider: input.provider,
       raw: input.raw,
     },
     occurredAt: input.occurredAt,

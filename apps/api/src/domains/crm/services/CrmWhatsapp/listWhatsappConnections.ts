@@ -1,9 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type {
-  CrmConnection,
-  CrmConnectionConfiguredStatus,
-} from "../../ports/crmConnectionRepository.js";
+import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
@@ -21,34 +18,18 @@ import {
   type WhatsappConnection,
   type WhatsappConnectionLiveStatus,
 } from "../../whatsapp/whatsappConnectionModels.js";
+import {
+  assertCredentialUpdateMatchesProvider,
+  buildUpdatedConnectionCredentialsRef,
+  buildUpdatedConnectionMetadata,
+  type UpdateWhatsappConnectionInput,
+} from "../../whatsapp/whatsappConnectionUpdates.js";
 
 export type { WhatsappConnection } from "../../whatsapp/whatsappConnectionModels.js";
+export type { UpdateWhatsappConnectionInput } from "../../whatsapp/whatsappConnectionUpdates.js";
 
 const readPermission = "crm.whatsapp.list";
 const updatePermission = "crm.whatsapp.connection.manage";
-
-export type UpdateWhatsappConnectionInput = {
-  catalogPhone?: string | null;
-  connectedPhone?: string | null;
-  connectionId: string;
-  credentialsEnv?: {
-    apiBaseUrl: string;
-    clientToken: string;
-    instanceId: string;
-    instanceToken: string;
-  };
-  displayName?: string;
-  externalConnectionId?: string | null;
-  externalInstanceId?: string | null;
-  instanceCredentials?: {
-    instanceId: string;
-    instanceToken: string;
-  };
-  phone?: string | null;
-  purpose?: string | null;
-  status?: CrmConnectionConfiguredStatus;
-  webhookUrl?: string | null;
-};
 
 export async function listWhatsappConnections(
   context: ServiceContext,
@@ -59,7 +40,7 @@ export async function listWhatsappConnections(
   const repository = getCrmConnectionRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.connections.list.started");
   const connections = await repository.listConnections({
-    providers: ["zapi"],
+    providers: ["zapi", "composio_whatsapp", "composio_instagram"],
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
@@ -106,7 +87,7 @@ export async function updateWhatsappConnection(
           .join(","),
       },
       permission: updatePermission,
-      summary: "Updated CRM WhatsApp ZAPI connection",
+      summary: "Updated CRM messaging connection",
     },
     async () => {
       const repository = getCrmConnectionRepository(ports);
@@ -118,8 +99,12 @@ export async function updateWhatsappConnection(
       ) {
         throw new WhatsappConnectionNotFoundError(input.connectionId);
       }
-      const metadata = buildUpdatedMetadata(current.metadata, input);
-      const credentialsRef = buildUpdatedCredentialsRef(input, current);
+      assertCredentialUpdateMatchesProvider(current, input);
+      const metadata = buildUpdatedConnectionMetadata(current.metadata, input);
+      const credentialsRef = buildUpdatedConnectionCredentialsRef(
+        input,
+        current,
+      );
       const updated = await repository.updateConnection({
         ...(credentialsRef ? { credentialsRef } : {}),
         ...(input.displayName ? { displayName: input.displayName } : {}),
@@ -166,69 +151,4 @@ async function readConnectionLiveStatus(
       providerStatus: "error",
       smartphoneConnected: null,
     }));
-}
-
-function buildUpdatedMetadata(
-  current: Record<string, unknown>,
-  input: UpdateWhatsappConnectionInput,
-) {
-  const next = { ...current };
-  let changed = false;
-  for (const key of ["catalogPhone", "connectedPhone", "purpose"] as const) {
-    if (input[key] !== undefined) {
-      next[key] = input[key];
-      changed = true;
-    }
-  }
-  return changed ? next : null;
-}
-
-function toCredentialsRef(
-  input: NonNullable<UpdateWhatsappConnectionInput["credentialsEnv"]>,
-) {
-  return {
-    env: {
-      apiBaseUrl: input.apiBaseUrl,
-      clientToken: input.clientToken,
-      instanceId: input.instanceId,
-      instanceToken: input.instanceToken,
-    },
-    mode: "env",
-  };
-}
-
-function buildUpdatedCredentialsRef(
-  input: UpdateWhatsappConnectionInput,
-  current: CrmConnection,
-) {
-  if (input.credentialsEnv) return toCredentialsRef(input.credentialsEnv);
-  if (!input.instanceCredentials) return null;
-  return toStoredCredentialsRef(input.instanceCredentials, current);
-}
-
-function toStoredCredentialsRef(
-  input: NonNullable<UpdateWhatsappConnectionInput["instanceCredentials"]>,
-  current: CrmConnection,
-) {
-  const currentEnv =
-    current.credentialsRef.env &&
-    typeof current.credentialsRef.env === "object" &&
-    !Array.isArray(current.credentialsRef.env)
-      ? (current.credentialsRef.env as Record<string, unknown>)
-      : {};
-  return {
-    env: {
-      ...(typeof currentEnv.apiBaseUrl === "string"
-        ? { apiBaseUrl: currentEnv.apiBaseUrl }
-        : {}),
-      ...(typeof currentEnv.clientToken === "string"
-        ? { clientToken: currentEnv.clientToken }
-        : {}),
-    },
-    mode: "stored",
-    stored: {
-      instanceId: input.instanceId,
-      instanceToken: input.instanceToken,
-    },
-  };
 }

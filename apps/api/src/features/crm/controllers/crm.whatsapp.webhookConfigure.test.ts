@@ -13,14 +13,18 @@ const tenantId = "tenant_1" as TenantId;
 const connectionId = "24000000-0000-4000-8000-000000000101";
 
 describe("CRM WhatsApp webhook auto-configuration", () => {
+  const originalApiBaseUrl = process.env.API_BASE_URL;
   const originalToken = process.env.CRM_ZAPI_WEBHOOK_TOKEN;
 
   afterEach(() => {
+    if (originalApiBaseUrl === undefined) delete process.env.API_BASE_URL;
+    else process.env.API_BASE_URL = originalApiBaseUrl;
     if (originalToken === undefined) delete process.env.CRM_ZAPI_WEBHOOK_TOKEN;
     else process.env.CRM_ZAPI_WEBHOOK_TOKEN = originalToken;
   });
 
   it("registers every ZAPI webhook with the env token appended", async () => {
+    process.env.API_BASE_URL = "https://api.trusted.test";
     process.env.CRM_ZAPI_WEBHOOK_TOKEN = "webhook-secret";
     const configureWebhooks = vi.fn(
       async (
@@ -48,7 +52,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
+      `https://attacker.example/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
       { method: "POST" },
     );
 
@@ -59,6 +63,10 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       };
     expect(body.tokenApplied).toBe(true);
     expect(body.results).toHaveLength(6);
+    for (const result of body.results) {
+      expect(result.url).not.toContain("webhook-secret");
+      expect(result.url).not.toContain("token=");
+    }
 
     expect(configureWebhooks).toHaveBeenCalledTimes(1);
     const input = configureWebhooks.mock.calls[0]?.[1];
@@ -71,6 +79,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       "chat-presence",
     ]);
     for (const webhook of input?.webhooks ?? []) {
+      expect(webhook.url.startsWith("https://api.trusted.test/")).toBe(true);
       expect(webhook.url).toContain(
         `/whatsapp/webhooks/zapi/${connectionId}/${webhook.type}`,
       );
@@ -79,6 +88,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
   });
 
   it("registers webhooks without a token when none is configured", async () => {
+    process.env.API_BASE_URL = "https://api.trusted.test";
     delete process.env.CRM_ZAPI_WEBHOOK_TOKEN;
     const configureWebhooks = vi.fn(
       async (
@@ -115,6 +125,39 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     for (const webhook of input?.webhooks ?? []) {
       expect(webhook.url).not.toContain("token=");
     }
+  });
+
+  it("rejects official connections and untrusted shared-token destinations", async () => {
+    process.env.API_BASE_URL = "https://api.trusted.test";
+    process.env.CRM_ZAPI_WEBHOOK_TOKEN = "webhook-secret";
+    const configureWebhooks = vi.fn();
+    const officialApp = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection({ provider: "composio_whatsapp" }),
+      ]),
+      crmWhatsappGateway: { configureWebhooks },
+    });
+    const untrustedApp = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection({
+          webhookUrl: "https://attacker.example/callbacks",
+        }),
+      ]),
+      crmWhatsappGateway: { configureWebhooks },
+    });
+
+    const official = await officialApp.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
+      { method: "POST" },
+    );
+    const untrusted = await untrustedApp.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
+      { method: "POST" },
+    );
+
+    expect(official.status).toBe(409);
+    expect(untrusted.status).toBe(409);
+    expect(configureWebhooks).not.toHaveBeenCalled();
   });
 });
 
