@@ -8,6 +8,7 @@ import {
   SpedyGatewayConfigurationError,
   SpedyGatewayHttpError,
 } from "./spedyErrors.js";
+import { readFiscalCompanyCredential } from "./fiscalCompanyCredential.js";
 import { buildSpedyIssuePayload } from "./spedyFiscalPayload.js";
 import { toIssueResult, toStatusResult } from "./spedyHttpFiscalResponse.js";
 
@@ -107,14 +108,21 @@ export async function getSpedyProviderStatus(
   input: { storeId: string; tenantId: string },
 ): Promise<FiscalProviderStatus> {
   const connection = await connectionRepository.get(input);
-  const apiKey = await connectionRepository.getCompanyApiKey(input);
+  const credential = await readFiscalCompanyCredential(
+    connectionRepository,
+    input,
+  );
   const missingConfiguration = [
     ...requiredRuntimeKeys.filter((key) => !env[key]),
     ...(env.SPEDY_RUNTIME_IMPLEMENTATION === "http"
       ? []
       : ["SPEDY_RUNTIME_IMPLEMENTATION=http"]),
     ...(connection?.companyId ? [] : ["fiscal.companyId"]),
-    ...(apiKey ? [] : ["fiscal.companyApiKey"]),
+    ...(credential.unreadable
+      ? ["fiscal.companyApiKeyUnreadable"]
+      : credential.value
+        ? []
+        : ["fiscal.companyApiKey"]),
     ...(connection?.defaultsStatus === "confirmed"
       ? []
       : ["fiscal.taxDefaultsConfirmation"]),
@@ -149,11 +157,15 @@ async function requireCompanyApiKey(
   repository: FiscalConnectionRepository,
   input: { storeId: string; tenantId: string },
 ) {
-  const apiKey = await repository.getCompanyApiKey(input);
-  if (!apiKey) {
-    throw new SpedyGatewayConfigurationError(["fiscal.companyApiKey"]);
+  const credential = await readFiscalCompanyCredential(repository, input);
+  if (!credential.value) {
+    throw new SpedyGatewayConfigurationError([
+      credential.unreadable
+        ? "fiscal.companyApiKeyUnreadable"
+        : "fiscal.companyApiKey",
+    ]);
   }
-  return apiKey;
+  return credential.value;
 }
 
 async function request(

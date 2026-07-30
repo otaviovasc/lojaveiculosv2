@@ -20,7 +20,10 @@ import {
   providerErrorCode,
 } from "./spedy-fiscal-preparation-support.mjs";
 
-export { encryptSpedyCredential } from "./spedy-fiscal-client.mjs";
+export {
+  decryptSpedyCredential,
+  encryptSpedyCredential,
+} from "./spedy-fiscal-client.mjs";
 export { reconcileSpedyFiscalDocuments } from "./spedy-fiscal-reconciliation.mjs";
 
 const PROVIDER = "spedy";

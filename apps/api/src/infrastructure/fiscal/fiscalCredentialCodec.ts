@@ -12,15 +12,27 @@ export type FiscalCredentialCodec = {
   encrypt: (plaintext: string) => string;
 };
 
+export class FiscalCredentialDecryptionError extends Error {
+  readonly code = "FISCAL_CREDENTIAL_DECRYPTION_FAILED";
+
+  constructor(cause?: unknown) {
+    super("Stored fiscal credential cannot be decrypted.", { cause });
+    this.name = "FiscalCredentialDecryptionError";
+  }
+}
+
 export function createFiscalCredentialCodec(
   env: Record<string, string | undefined>,
 ): FiscalCredentialCodec {
   return {
-    decrypt: (ciphertext) =>
-      decrypt(
-        ciphertext,
-        readEncryptionKey(env.FISCAL_CREDENTIAL_ENCRYPTION_KEY),
-      ),
+    decrypt: (ciphertext) => {
+      const key = readEncryptionKey(env.FISCAL_CREDENTIAL_ENCRYPTION_KEY);
+      try {
+        return decrypt(ciphertext, key);
+      } catch (error) {
+        throw new FiscalCredentialDecryptionError(error);
+      }
+    },
     encrypt: (plaintext) =>
       encrypt(
         plaintext,

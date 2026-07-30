@@ -54,7 +54,7 @@ export function MembrosSidebar({
 
   return (
     <FeatureCard
-      className="flex flex-col md:h-[calc(100dvh-10rem)] overflow-hidden"
+      className="flex flex-col max-h-[32rem] md:max-h-none md:h-[calc(100dvh-11rem)] overflow-hidden"
       padding="compact"
     >
       <FeatureCardHeader

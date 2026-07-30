@@ -202,7 +202,7 @@ export function RoleManagementPanel({
       />
       <FeatureSection
         actions={<RoleEditabilityBadge editable={editable} />}
-        className="flex flex-col md:h-[calc(100dvh-10rem)] overflow-hidden"
+        className="flex flex-col md:h-[calc(100dvh-11rem)] overflow-hidden"
         headerClassName="p-5 border-b border-line shrink-0 w-full flex items-center justify-between gap-4"
         icon={<ShieldCheck className="size-5 text-accent-strong" />}
         padding="none"

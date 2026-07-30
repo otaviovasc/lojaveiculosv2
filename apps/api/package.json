@@ -14,7 +14,7 @@
     "start": "node --import tsx src/main.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run && node ../../tools/migration/run-v1-store-tests.mjs",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
