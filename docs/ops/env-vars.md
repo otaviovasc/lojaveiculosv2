@@ -267,6 +267,11 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `HEDRA_REQUEST_TIMEOUT_MS`              | No       | staging, production | No     | Per-request timeout for Hedra create/status/download HTTP calls. Defaults to `60000`.         |
 | `HTTP_REQUEST_TIMEOUT_MS`               | No       | staging, production | No     | Node HTTP server inbound timeout. Defaults to `240000`; external gateways can enforce less.   |
 
+V1 migration commands require `FISCAL_CREDENTIAL_ENCRYPTION_KEY` to be
+explicitly exported. They never inherit it from the repository `.env`, which
+prevents a remote database target from being combined with a local encryption
+key.
+
 ## Vehicle Catalog Sync
 
 | Name                                   | Required | Environments               | Secret | Notes                                                                                                                    |

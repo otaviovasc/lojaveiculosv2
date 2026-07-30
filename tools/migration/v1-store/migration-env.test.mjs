@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { loadMigrationEnv } from "./migration-env.mjs";
 
-test("loads migration provider variables without replacing exported values", () => {
+test("does not inherit the fiscal encryption key from a repository .env", () => {
   const directory = mkdtempSync(join(tmpdir(), "v1-migration-env-"));
   const env = {
     DATABASE_URL: "postgresql://explicit-staging",
@@ -29,7 +29,7 @@ test("loads migration provider variables without replacing exported values", () 
     assert.equal(env.SPEDY_API_URL, "https://exported.example");
     assert.equal(env.SPEDY_OWNER_API_KEY, "owner-key");
     assert.equal(env.SPEDY_WEBHOOK_URL, "https://webhook.example");
-    assert.equal(env.FISCAL_CREDENTIAL_ENCRYPTION_KEY, "fiscal-key");
+    assert.equal(env.FISCAL_CREDENTIAL_ENCRYPTION_KEY, undefined);
   } finally {
     rmSync(directory, { force: true, recursive: true });
   }

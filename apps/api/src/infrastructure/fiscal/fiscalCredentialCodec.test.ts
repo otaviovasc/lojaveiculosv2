@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createFiscalCredentialCodec,
+  FiscalCredentialDecryptionError,
   verifyOpaqueWebhookToken,
 } from "./fiscalCredentialCodec.js";
 
@@ -24,6 +25,22 @@ describe("fiscalCredentialCodec", () => {
       });
       codec.encrypt("company-secret");
     }).toThrow(/32 bytes/);
+  });
+
+  it("wraps ciphertext authentication failures in a safe typed error", () => {
+    const writer = createFiscalCredentialCodec({
+      FISCAL_CREDENTIAL_ENCRYPTION_KEY: encryptionKey,
+    });
+    const reader = createFiscalCredentialCodec({
+      FISCAL_CREDENTIAL_ENCRYPTION_KEY: Buffer.alloc(32, 8).toString("base64"),
+    });
+
+    expect(() => reader.decrypt(writer.encrypt("company-secret"))).toThrow(
+      FiscalCredentialDecryptionError,
+    );
+    expect(() => reader.decrypt(writer.encrypt("company-secret"))).toThrow(
+      "Stored fiscal credential cannot be decrypted.",
+    );
   });
 
   it("compares the opaque webhook URL token", () => {

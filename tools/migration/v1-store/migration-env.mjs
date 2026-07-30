@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const MIGRATION_ENV_KEYS = new Set([
-  "FISCAL_CREDENTIAL_ENCRYPTION_KEY",
   "R2_ACCESS_KEY_ID",
   "R2_BUCKET_NAME",
   "R2_ENDPOINT",
@@ -12,6 +11,10 @@ const MIGRATION_ENV_KEYS = new Set([
   "SPEDY_OWNER_API_KEY",
   "SPEDY_WEBHOOK_URL",
 ]);
+
+// Never source the key that encrypts target-database credentials from the
+// repository .env. Remote migrations must receive the target runtime key
+// explicitly, otherwise valid ciphertext can be written under a local key.
 
 export function loadMigrationEnv(
   startDirectory = process.cwd(),

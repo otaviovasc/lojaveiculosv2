@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  decryptSpedyCredential,
   encryptSpedyCredential,
   prepareSpedyFiscalMigration,
   reconcileSpedyFiscalDocuments,
@@ -42,6 +43,23 @@ describe("Spedy V1 fiscal migration", () => {
 
     assert.match(encrypted, /^fiscal:v1\./);
     assert.equal(encrypted.includes("company-secret"), false);
+    assert.equal(decryptSpedyCredential(encrypted, key), "company-secret");
+  });
+
+  it("rejects a Spedy credential encrypted with a different key", () => {
+    const ciphertext = encryptSpedyCredential(
+      "company-secret",
+      Buffer.alloc(32, 9).toString("base64"),
+    );
+
+    assert.throws(
+      () =>
+        decryptSpedyCredential(
+          ciphertext,
+          Buffer.alloc(32, 8).toString("base64"),
+        ),
+      /cannot be decrypted/,
+    );
   });
 
   it("preserves V1 fiscal data when Spedy DNS is unavailable", async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryFiscalConnectionRepository } from "../../features/fiscal/adapters/memory/fiscalConnectionRepository.js";
+import { FiscalCredentialDecryptionError } from "./fiscalCredentialCodec.js";
 import { createSpedyHttpFiscalProviderGateway } from "./spedyHttpFiscalProviderGateway.js";
 
 const env = {
@@ -29,6 +30,24 @@ describe("spedyHttpFiscalProviderGateway", () => {
         "fiscal.taxDefaultsConfirmation",
         "fiscal.connectionReady",
       ],
+    });
+  });
+
+  it("reports an unreadable company key as degraded configuration", async () => {
+    const connectionRepository = await readyConnection();
+    connectionRepository.getCompanyApiKey = async () => {
+      throw new FiscalCredentialDecryptionError();
+    };
+    const gateway = createSpedyHttpFiscalProviderGateway({
+      connectionRepository,
+      env,
+    });
+
+    await expect(
+      gateway.getProviderStatus({ storeId: "store_1", tenantId: "tenant_1" }),
+    ).resolves.toMatchObject({
+      configured: false,
+      missingConfiguration: ["fiscal.companyApiKeyUnreadable"],
     });
   });
 
