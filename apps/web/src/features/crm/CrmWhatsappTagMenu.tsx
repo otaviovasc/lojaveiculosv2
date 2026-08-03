@@ -65,7 +65,13 @@ export function TagMenu({
                 disabled={disabled || isSaving}
                 key={tag.id}
                 onClick={() => {
-                  if (!assigned) void addTag(tag);
+                  if (!assigned) {
+                    void addTag({
+                      color: tag.color,
+                      emoji: tag.emoji,
+                      name: tag.name,
+                    });
+                  }
                 }}
                 type="button"
               >

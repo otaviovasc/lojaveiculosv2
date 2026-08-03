@@ -104,6 +104,11 @@ test.describe("documents center QA flow", () => {
     await expect(page.getByText("finance_receipt")).toHaveCount(0);
     await expect(page.getByText("issued")).toHaveCount(0);
     await saveQaScreenshot(page, testInfo, "document-detail-after");
+    await expect(
+      page
+        .locator(".artifact-viewer__stage canvas, .artifact-viewer__message")
+        .first(),
+    ).toBeVisible({ timeout: 15_000 });
 
     const downloadResponse = page.waitForResponse(
       (response) =>
@@ -111,10 +116,17 @@ test.describe("documents center QA flow", () => {
         response.url().includes("/download") &&
         response.status() === 200,
     );
-    await page.getByRole("button", { name: "Baixar" }).first().click();
+    await page
+      .getByLabel("Documento aberto")
+      .getByRole("button", { exact: true, name: "Baixar" })
+      .click();
     await downloadResponse;
 
-    await page.getByRole("button", { name: "Gerenciar vínculos" }).click();
+    await page
+      .getByLabel("Documento aberto")
+      .locator(".documents-detail-secondary")
+      .getByRole("button", { exact: true, name: "Vínculos" })
+      .click();
     await expect(
       page.getByRole("dialog", { name: "Gerenciar vínculos do documento" }),
     ).toBeVisible();
@@ -130,7 +142,10 @@ test.describe("documents center QA flow", () => {
       page.getByRole("heading", { name: "Blocos e cláusulas" }),
     ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "document-templates-after");
-    await page.getByRole("button", { name: "Documentos" }).click();
+    await page
+      .getByRole("navigation", { name: "Seções de documentos" })
+      .getByRole("button", { name: /^Documentos\b/ })
+      .click();
     await expect(page.getByRole("heading", { name: "Geral" })).toBeVisible();
 
     const uploadTitle = `QA documento ${Date.now()}`;
@@ -176,8 +191,13 @@ test.describe("documents center QA flow", () => {
       .first();
     await expect(uploadedRow).toBeVisible();
     await uploadedRow.click();
-    await page
-      .getByLabel("Documento aberto")
+    const uploadedDocumentDetail = page.getByLabel("Documento aberto");
+    await expect(
+      uploadedDocumentDetail
+        .locator(".artifact-viewer__stage canvas, .artifact-viewer__message")
+        .first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await uploadedDocumentDetail
       .getByRole("button", { exact: true, name: "Excluir" })
       .click();
     await expect(
@@ -185,7 +205,16 @@ test.describe("documents center QA flow", () => {
     ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "delete-dialog-after");
     await page.getByRole("button", { name: "Confirmar exclusão" }).click();
-    await expect(page.getByText("Cancelado").first()).toBeVisible();
+    await expect(
+      uploadedDocumentDetail.getByRole("button", {
+        exact: true,
+        name: "Excluir",
+      }),
+    ).toBeDisabled();
+    await uploadedDocumentDetail
+      .getByRole("button", { name: "Fechar detalhes" })
+      .click();
+    await expect(uploadedRow.getByText("Cancelado")).toBeVisible();
 
     await setQaViewport(page, "mobile");
     await page.goto("/documents");

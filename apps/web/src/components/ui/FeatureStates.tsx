@@ -158,7 +158,7 @@ function statusToneClass(tone: FeatureStatusTone) {
     return "border border-danger/30 bg-danger/10 text-danger";
   }
   if (tone === "blue") {
-    return "border border-blue-start/30 bg-blue-soft text-blue-start";
+    return "border border-blue-start/30 bg-blue-soft text-info-soft-foreground";
   }
   return "bg-panel text-muted border border-line";
 }

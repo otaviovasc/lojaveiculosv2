@@ -44,11 +44,14 @@ test("keeps document model authoring usable across viewports", async ({
     await saveQaScreenshot(page, testInfo, `documents-builder-${viewport}`);
     await expectViewportSafe(page);
 
-    const previewTab = page.getByRole("tab", { name: "Prévia" });
-    await previewTab.click();
-    await expect(previewTab).toHaveAttribute("aria-selected", "true");
+    const previewButton = page.getByRole("button", {
+      name: "Prévia PDF",
+    });
+    await previewButton.click();
     await expect(
-      page.getByRole("region", { name: "Prévia do documento" }),
+      page.getByRole("dialog", {
+        name: "Prévia do Documento em PDF",
+      }),
     ).toBeVisible();
     await saveQaScreenshot(
       page,
@@ -66,7 +69,12 @@ test("keeps document model authoring usable across viewports", async ({
       .getByRole("button", { name: /^Modelos\b/ })
       .click();
     await expectNoBlockingAxeViolations(page);
-    await page.getByRole("tab", { name: "Prévia" }).click();
+    await page.getByRole("button", { name: "Prévia PDF" }).click();
+    await expect(
+      page.getByRole("dialog", {
+        name: "Prévia do Documento em PDF",
+      }),
+    ).toBeVisible();
     await expectNoBlockingAxeViolations(page);
   }
 });

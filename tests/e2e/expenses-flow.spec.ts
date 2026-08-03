@@ -34,7 +34,9 @@ test.describe("expenses flow", () => {
     await saveQaScreenshot(page, testInfo, "expenses-desktop-default");
 
     await selectFilter(page, "Período", "Todos");
-    const audiRow = page.getByRole("row", { name: /Revis[aã]o Audi A4/ });
+    const audiRow = page.getByRole("row", {
+      name: /Custo de ve[ií]culo - Audi A4/,
+    });
     await expect(audiRow).toBeVisible();
     await expect(audiRow).toContainText("Preparação");
 
@@ -108,7 +110,7 @@ test.describe("expenses flow", () => {
 
     const editedRow = page.getByRole("row").filter({ hasText: editedName });
     await expect(editedRow).toBeVisible();
-    await editedRow.getByRole("button", { name: /Marcar como pago/i }).click();
+    await editedRow.getByRole("button", { name: /como pago/i }).click();
     await expect(editedRow.getByText("Pago", { exact: true })).toBeVisible();
 
     await editedRow.getByRole("button", { name: /Cancelar/i }).click();
@@ -173,7 +175,9 @@ test.describe("expenses flow", () => {
       page.getByRole("button", { name: /Novo lan[cç]amento/i }),
     ).toHaveCount(0);
     await selectFilter(page, "Período", "Todos");
-    const audiRow = page.getByRole("row", { name: /Revis[aã]o Audi A4/ });
+    const audiRow = page.getByRole("row", {
+      name: /Custo de ve[ií]culo - Audi A4/,
+    });
     await expect(audiRow).toBeVisible();
     await expect(
       audiRow.getByRole("button", { name: /Editar|Pagar|Cancelar|recibo/i }),
