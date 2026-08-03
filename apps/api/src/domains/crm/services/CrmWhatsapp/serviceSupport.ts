@@ -63,7 +63,7 @@ export async function readZapiConnection(
 ) {
   const connection =
     await getCrmConnectionRepository(ports).findConnectionById(connectionId);
-  if (!connection) return null;
+  if (!connection || connection.provider !== "zapi") return null;
   return connection;
 }
 

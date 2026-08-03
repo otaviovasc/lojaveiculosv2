@@ -31,6 +31,7 @@ export const leadSource = pgEnum("lead_source", [
   "external_api",
   "manual",
   "olx",
+  "instagram",
   "whatsapp",
   "other",
 ]);

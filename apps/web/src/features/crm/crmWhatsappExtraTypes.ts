@@ -1,6 +1,7 @@
 import type {
   CrmWhatsappConnectionId,
   CrmWhatsappMessage,
+  CrmWhatsappProvider,
   CrmWhatsappSession,
   CrmWhatsappSessionId,
 } from "./crmWhatsappTypes";
@@ -85,13 +86,32 @@ export type CrmWhatsappProcessDueScheduledMessagesResult = {
   sent: number;
 };
 
-export type CrmWhatsappStartConversationInput = {
+type CrmWhatsappStartConversationBase = {
   buyerName?: string;
   connectionId: CrmWhatsappConnectionId;
   leadId?: string;
   phone?: string;
-  text: string;
 };
+
+export type CrmWhatsappStartConversationInput =
+  CrmWhatsappStartConversationBase &
+    (
+      | {
+          template?: never;
+          text: string;
+        }
+      | {
+          template: {
+            components?: Array<{
+              parameters: Array<Record<string, unknown>>;
+              type: "body" | "button" | "header";
+            }>;
+            languageCode: string;
+            name: string;
+          };
+          text?: never;
+        }
+    );
 
 export type CrmWhatsappStartConversationResult = {
   lead: ProductCrmLead;
@@ -220,6 +240,7 @@ export type CrmWhatsappProviderEvent = {
   eventType: string;
   id: string;
   processedAt: string | null;
+  provider: CrmWhatsappProvider;
   providerEventId: string;
   retryable: boolean;
   status: "failed" | "ignored" | "processed" | "received";

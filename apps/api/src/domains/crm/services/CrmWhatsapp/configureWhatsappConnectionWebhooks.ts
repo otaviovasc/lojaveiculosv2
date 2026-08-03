@@ -5,7 +5,10 @@ import {
   buildWhatsappWebhookEndpoints,
   resolveWebhookBaseUrl,
 } from "../../whatsapp/whatsappWebhookEndpoints.js";
-import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
+import {
+  WhatsappConnectionNotFoundError,
+  WhatsappMessageActionError,
+} from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
@@ -21,8 +24,8 @@ const managePermission = "crm.whatsapp.connection.manage";
 
 export type ConfigureWhatsappConnectionWebhooksInput = {
   basePath: string;
+  canonicalApiOrigin: string;
   connectionId: string;
-  requestOrigin: string;
   webhookToken: string | null;
 };
 
@@ -71,10 +74,17 @@ export async function configureWhatsappConnectionWebhooks(
       ) {
         throw new WhatsappConnectionNotFoundError(input.connectionId);
       }
+      if (connection.provider !== "zapi") {
+        throw new WhatsappMessageActionError(
+          "Only Z-API connections support automatic webhook configuration.",
+          409,
+        );
+      }
+      assertSharedTokenDestinationIsTrusted(connection.webhookUrl, input);
 
       const baseUrl = resolveWebhookBaseUrl({
         basePath: input.basePath,
-        requestOrigin: input.requestOrigin,
+        requestOrigin: input.canonicalApiOrigin,
         webhookUrl: connection.webhookUrl,
       });
       const endpoints = buildWhatsappWebhookEndpoints({
@@ -105,9 +115,42 @@ export async function configureWhatsappConnectionWebhooks(
 
       return {
         connectionId: connection.id,
-        results,
+        results: results.map(redactWebhookResultUrl),
         tokenApplied: Boolean(input.webhookToken),
       };
     },
   );
+}
+
+function assertSharedTokenDestinationIsTrusted(
+  webhookUrl: string | null,
+  input: ConfigureWhatsappConnectionWebhooksInput,
+) {
+  if (!input.webhookToken || !webhookUrl) return;
+  try {
+    if (
+      new URL(webhookUrl).origin === new URL(input.canonicalApiOrigin).origin
+    ) {
+      return;
+    }
+  } catch {
+    // Invalid configured URLs already fall back to the request origin.
+    return;
+  }
+  throw new WhatsappMessageActionError(
+    "A custom webhook origin cannot receive the shared Z-API webhook token.",
+    409,
+  );
+}
+
+function redactWebhookResultUrl(
+  result: CrmWhatsappConfigureWebhooksResult["results"][number],
+) {
+  try {
+    const url = new URL(result.url);
+    url.searchParams.delete("token");
+    return { ...result, url: url.toString() };
+  } catch {
+    return { ...result, url: result.url.replace(/([?&])token=[^&]*/u, "$1") };
+  }
 }

@@ -98,6 +98,7 @@ async function findOrCreateSession(
       buyerName: input.buyerName ?? null,
       buyerPhone: input.buyerPhone,
       channel: input.channel,
+      channelExternalId: input.channelExternalId ?? null,
       connectionId: input.connectionId,
       firstHandledAt: input.firstHandledAt ?? null,
       freshLeadAt: input.freshLeadAt ?? null,
@@ -107,12 +108,7 @@ async function findOrCreateSession(
       storeId: input.storeId,
       tenantId: input.tenantId,
     })
-    .onConflictDoNothing({
-      target: [
-        crmWhatsappSessions.connectionId,
-        crmWhatsappSessions.buyerPhone,
-      ],
-    })
+    .onConflictDoNothing()
     .returning();
 
   if (inserted) return { ...inserted, created: true };
@@ -132,6 +128,7 @@ async function insertSessionContext(
       buyerName: input.buyerName ?? null,
       buyerPhone: input.buyerPhone,
       channel: input.channel,
+      channelExternalId: input.channelExternalId ?? null,
       connectionId: input.connectionId,
       storeId: input.storeId,
       tenantId: input.tenantId,
@@ -154,6 +151,7 @@ async function insertMessage(
     .insert(crmWhatsappMessages)
     .values({
       channel: input.channel,
+      channelMessageId: input.channelMessageId ?? null,
       connectionId: input.connectionId,
       content: input.content,
       direction: input.direction,

@@ -18,6 +18,7 @@ import type { CrmRepository } from "../../ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
+import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
 import type { CrmFinancingBotActions } from "../../ports/crmFinancingBotActions.js";
 import type {
@@ -36,6 +37,7 @@ export type CrmServicePorts = {
   crmVisitRepository?: CrmVisitRepository;
   crmWebhookEventRepository?: CrmWebhookEventRepository;
   crmWhatsappGateway?: CrmWhatsappGateway;
+  crmWhatsappMediaFetcher?: CrmRemoteMediaFetcher;
   crmWhatsappMediaStorage?: ObjectStorage;
   crmWhatsappRepository?: CrmWhatsappRepository;
   financingBotActions?: CrmFinancingBotActions;
@@ -187,6 +189,7 @@ export function getCrmConnectionRepository(
 ): CrmConnectionRepository {
   if (!ports.crmConnectionRepository) {
     return {
+      findConnectionByExternalId: async () => null,
       findConnectionById: async () => null,
       listConnections: async () => [],
       updateConnection: async () => null,

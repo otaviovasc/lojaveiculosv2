@@ -15,6 +15,7 @@ export type LeadSource =
   | "external_api"
   | "manual"
   | "olx"
+  | "instagram"
   | "whatsapp"
   | "other";
 

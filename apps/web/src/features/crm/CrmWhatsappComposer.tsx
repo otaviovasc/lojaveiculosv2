@@ -13,8 +13,10 @@ import type {
   MessageComposerProps,
 } from "./CrmWhatsappComposerTypes";
 import { useMessageComposerState } from "./CrmWhatsappComposerState";
+import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
 
 export function MessageComposer({
+  capabilities = readCrmWhatsappProviderCapabilities("zapi"),
   catalogUrl,
   defaultLocationName,
   disabled = false,
@@ -35,6 +37,8 @@ export function MessageComposer({
   onCancelReply,
 }: MessageComposerProps) {
   const composerState = useMessageComposerState({
+    allowMediaCaption: capabilities.allowImageCaption,
+    allowQuickMessages: capabilities.allowQuickMessages,
     disabled,
     onSend,
     onSendMedia,
@@ -84,7 +88,7 @@ export function MessageComposer({
       }}
     >
       <input
-        accept="image/*,video/*"
+        accept={capabilities.allowVideo ? "image/*,video/*" : "image/*"}
         hidden
         multiple
         onChange={(event) => {
@@ -120,6 +124,10 @@ export function MessageComposer({
       {files.length ? (
         <CrmWhatsappMediaPreviewDialog
           activeIndex={activeIndex}
+          allowAudio={capabilities.allowAudio}
+          allowCaption={capabilities.allowImageCaption}
+          allowDocuments={capabilities.allowDocuments}
+          allowVideo={capabilities.allowVideo}
           caption={text}
           disabled={effectiveDisabled}
           files={files}
@@ -134,7 +142,7 @@ export function MessageComposer({
           previewUrls={previewUrls}
         />
       ) : null}
-      {dialog === "catalog" ? (
+      {dialog === "catalog" && capabilities.allowCatalog ? (
         <CatalogDialog
           catalogUrl={catalogUrl}
           disabled={effectiveDisabled}
@@ -144,7 +152,7 @@ export function MessageComposer({
           onSendProduct={onSendCatalogProduct}
         />
       ) : null}
-      {dialog === "location" ? (
+      {dialog === "location" && capabilities.allowLocation ? (
         <LocationDialog
           {...(defaultLocationName ? { defaultName: defaultLocationName } : {})}
           disabled={effectiveDisabled}
@@ -152,7 +160,7 @@ export function MessageComposer({
           onSend={onSendLocation}
         />
       ) : null}
-      {dialog === "quick" ? (
+      {dialog === "quick" && capabilities.allowQuickMessages ? (
         <CrmWhatsappQuickMessageManager
           disabled={effectiveDisabled}
           messages={quickMessages}
@@ -162,7 +170,7 @@ export function MessageComposer({
           onUpdate={onUpdateQuickMessage}
         />
       ) : null}
-      {dialog === "vehicle" ? (
+      {dialog === "vehicle" && capabilities.allowVehicle ? (
         <VehicleDialog
           disabled={effectiveDisabled}
           onClose={() => setDialog(null)}
@@ -171,7 +179,7 @@ export function MessageComposer({
         />
       ) : null}
 
-      {replyToMessage ? (
+      {replyToMessage && capabilities.allowReply ? (
         <div className="crm-whatsapp-reply-draft">
           <Reply aria-hidden="true" />
           <span>
@@ -195,6 +203,7 @@ export function MessageComposer({
         className="crm-whatsapp-composer-row"
       >
         <CrmWhatsappAttachMenu
+          capabilities={capabilities}
           disabled={effectiveDisabled}
           onOpenAudio={() => {
             setMenuOpen(false);
@@ -245,13 +254,13 @@ export function MessageComposer({
           >
             {isSubmitting ? <Loader2 className="crm-spin" /> : <Send />}
           </button>
-        ) : (
+        ) : capabilities.allowAudio ? (
           <CrmWhatsappAudioRecorderButton
             disabled={effectiveDisabled}
             primary
             onRecorded={(file) => setFiles((current) => [...current, file])}
           />
-        )}
+        ) : null}
       </div>
     </form>
   );

@@ -9,8 +9,10 @@ import {
   Paperclip,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import type { CrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
 
 export function CrmWhatsappAttachMenu({
+  capabilities,
   disabled,
   onOpenAudio,
   onOpenCatalog,
@@ -22,6 +24,7 @@ export function CrmWhatsappAttachMenu({
   onToggle,
   open,
 }: {
+  capabilities: CrmWhatsappProviderCapabilities;
   disabled?: boolean;
   onOpenAudio: () => void;
   onOpenCatalog: () => void;
@@ -47,30 +50,44 @@ export function CrmWhatsappAttachMenu({
       </button>
       {open ? (
         <div className="crm-whatsapp-attach-menu">
-          <AttachMenuButton icon={<ImageIcon />} onClick={onOpenImages}>
-            Fotos e videos
-          </AttachMenuButton>
-          <AttachMenuButton icon={<FileText />} onClick={onOpenDocuments}>
-            Documentos
-          </AttachMenuButton>
-          <AttachMenuButton icon={<Music />} onClick={onOpenAudio}>
-            Audio
-          </AttachMenuButton>
-          <AttachMenuButton
-            icon={<MessageSquareText />}
-            onClick={onOpenQuickMessages}
-          >
-            Mensagens rapidas
-          </AttachMenuButton>
-          <AttachMenuButton icon={<BookOpen />} onClick={onOpenCatalog}>
-            Enviar catalogo
-          </AttachMenuButton>
-          <AttachMenuButton icon={<Car />} onClick={onOpenVehicle}>
-            Enviar veiculo
-          </AttachMenuButton>
-          <AttachMenuButton icon={<MapPin />} onClick={onOpenLocation}>
-            Localizacao
-          </AttachMenuButton>
+          {capabilities.allowImages ? (
+            <AttachMenuButton icon={<ImageIcon />} onClick={onOpenImages}>
+              {capabilities.allowVideo ? "Fotos e videos" : "Fotos"}
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowDocuments ? (
+            <AttachMenuButton icon={<FileText />} onClick={onOpenDocuments}>
+              Documentos
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowAudio ? (
+            <AttachMenuButton icon={<Music />} onClick={onOpenAudio}>
+              Audio
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowQuickMessages ? (
+            <AttachMenuButton
+              icon={<MessageSquareText />}
+              onClick={onOpenQuickMessages}
+            >
+              Mensagens rapidas
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowCatalog ? (
+            <AttachMenuButton icon={<BookOpen />} onClick={onOpenCatalog}>
+              Enviar catalogo
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowVehicle ? (
+            <AttachMenuButton icon={<Car />} onClick={onOpenVehicle}>
+              Enviar veiculo
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowLocation ? (
+            <AttachMenuButton icon={<MapPin />} onClick={onOpenLocation}>
+              Localizacao
+            </AttachMenuButton>
+          ) : null}
         </div>
       ) : null}
     </div>

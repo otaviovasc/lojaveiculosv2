@@ -25,48 +25,21 @@ export function createDrizzleCrmConnectionRepository(
   db: DrizzleCrmClient,
 ): CrmConnectionRepository {
   return {
+    async findConnectionByExternalId(input) {
+      const now = new Date();
+      const [row] = await activeCrmConnectionQuery(db, now)
+        .where(
+          and(
+            eq(crmConnections.externalConnectionId, input.externalConnectionId),
+            inArray(crmConnections.provider, [...input.providers]),
+          ),
+        )
+        .limit(1);
+      return row ? toCrmConnection(row) : null;
+    },
     async findConnectionById(connectionId) {
       const now = new Date();
-      const [row] = await db
-        .select(getTableColumns(crmConnections))
-        .from(crmConnections)
-        .innerJoin(
-          stores,
-          and(
-            eq(stores.id, crmConnections.storeId),
-            eq(stores.tenantId, crmConnections.tenantId),
-            eq(stores.isDeleted, false),
-            isNull(stores.deletedAt),
-          ),
-        )
-        .innerJoin(
-          tenants,
-          and(
-            eq(tenants.id, crmConnections.tenantId),
-            eq(tenants.isDeleted, false),
-            isNull(tenants.deletedAt),
-          ),
-        )
-        .innerJoin(
-          storeEntitlements,
-          and(
-            eq(storeEntitlements.storeId, crmConnections.storeId),
-            eq(storeEntitlements.tenantId, crmConnections.tenantId),
-            eq(storeEntitlements.featureKey, "crm"),
-            or(
-              eq(storeEntitlements.status, "active"),
-              eq(storeEntitlements.status, "trialing"),
-            ),
-            or(
-              isNull(storeEntitlements.startsAt),
-              lte(storeEntitlements.startsAt, now),
-            ),
-            or(
-              isNull(storeEntitlements.endsAt),
-              gt(storeEntitlements.endsAt, now),
-            ),
-          ),
-        )
+      const [row] = await activeCrmConnectionQuery(db, now)
         .where(eq(crmConnections.id, connectionId))
         .limit(1);
 
@@ -121,6 +94,46 @@ export function createDrizzleCrmConnectionRepository(
       return row ? toCrmConnection(row) : null;
     },
   };
+}
+
+function activeCrmConnectionQuery(db: DrizzleCrmClient, now: Date) {
+  return db
+    .select(getTableColumns(crmConnections))
+    .from(crmConnections)
+    .innerJoin(
+      stores,
+      and(
+        eq(stores.id, crmConnections.storeId),
+        eq(stores.tenantId, crmConnections.tenantId),
+        eq(stores.isDeleted, false),
+        isNull(stores.deletedAt),
+      ),
+    )
+    .innerJoin(
+      tenants,
+      and(
+        eq(tenants.id, crmConnections.tenantId),
+        eq(tenants.isDeleted, false),
+        isNull(tenants.deletedAt),
+      ),
+    )
+    .innerJoin(
+      storeEntitlements,
+      and(
+        eq(storeEntitlements.storeId, crmConnections.storeId),
+        eq(storeEntitlements.tenantId, crmConnections.tenantId),
+        eq(storeEntitlements.featureKey, "crm"),
+        or(
+          eq(storeEntitlements.status, "active"),
+          eq(storeEntitlements.status, "trialing"),
+        ),
+        or(
+          isNull(storeEntitlements.startsAt),
+          lte(storeEntitlements.startsAt, now),
+        ),
+        or(isNull(storeEntitlements.endsAt), gt(storeEntitlements.endsAt, now)),
+      ),
+    );
 }
 
 function toCrmConnection(

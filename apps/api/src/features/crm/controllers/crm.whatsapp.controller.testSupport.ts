@@ -8,7 +8,11 @@ import type { CrmBotWebhookDispatcher } from "../../../domains/crm/ports/crmBotW
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmFinancingBotActions } from "../../../domains/crm/ports/crmFinancingBotActions.js";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
-import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type {
+  CrmRealtimeBroker,
+  CrmRealtimePublisher,
+} from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type { CrmRemoteMediaFetcher } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../../domains/crm/ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
@@ -59,10 +63,12 @@ export function createTestApp(
     crmConnectionRepository?: CrmConnectionRepository;
     crmPipelineRepository?: CrmPipelineRepository;
     crmRealtimeBroker?: CrmRealtimeBroker;
+    crmRealtimePublisher?: CrmRealtimePublisher;
     crmRepository?: CrmRepository;
     crmVisitRepository?: CrmVisitRepository;
     crmWebhookEventRepository?: CrmWebhookEventRepository;
     crmWhatsappGateway?: Partial<CrmWhatsappGateway>;
+    crmWhatsappMediaFetcher?: CrmRemoteMediaFetcher;
     crmWhatsappMediaStorage?: ObjectStorage;
     crmWhatsappRepository?: CrmWhatsappRepository;
     entitlements?: EntitlementKey[];
@@ -118,6 +124,12 @@ export function createTestApp(
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
             : {}),
+          ...((options.crmRealtimePublisher ?? options.crmRealtimeBroker)
+            ? {
+                crmRealtimePublisher:
+                  options.crmRealtimePublisher ?? options.crmRealtimeBroker,
+              }
+            : {}),
           crmPipelineRepository:
             options.crmPipelineRepository ??
             createMemoryCrmPipelineRepository(),
@@ -140,6 +152,9 @@ export function createTestApp(
             : {}),
           ...(options.crmWhatsappMediaStorage
             ? { crmWhatsappMediaStorage: options.crmWhatsappMediaStorage }
+            : {}),
+          ...(options.crmWhatsappMediaFetcher
+            ? { crmWhatsappMediaFetcher: options.crmWhatsappMediaFetcher }
             : {}),
           ...(options.financingBotActions
             ? { financingBotActions: options.financingBotActions }
@@ -190,6 +205,7 @@ function createTestWhatsappGateway(
     removeReaction: send,
     sendReaction: send,
     sendText: send,
+    sendTemplate: send,
     ...overrides,
   };
 }

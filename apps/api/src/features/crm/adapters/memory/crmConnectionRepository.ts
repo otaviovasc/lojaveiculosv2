@@ -9,6 +9,15 @@ export function createMemoryCrmConnectionRepository(
   const connections = [...initialConnections];
 
   return {
+    async findConnectionByExternalId(input) {
+      return (
+        connections.find(
+          (connection) =>
+            connection.externalConnectionId === input.externalConnectionId &&
+            input.providers.includes(connection.provider),
+        ) ?? null
+      );
+    },
     async findConnectionById(connectionId) {
       return (
         connections.find((connection) => connection.id === connectionId) ?? null

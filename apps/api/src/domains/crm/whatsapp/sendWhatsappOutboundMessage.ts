@@ -1,4 +1,5 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { assertOfficialMessagingWindow } from "../messaging/assertOfficialMessagingWindow.js";
 import {
   getCrmConnectionRepository,
   getCrmRealtimePublisher,
@@ -25,6 +26,7 @@ import {
   WhatsappConnectionNotFoundError,
   WhatsappSessionNotFoundError,
 } from "./whatsappSendErrors.js";
+import { providerAddressForSession } from "../messaging/crmMessagingProvider.js";
 
 const terminalLeadStatuses = new Set(["archived", "lost", "won"]);
 
@@ -82,10 +84,12 @@ export async function sendWhatsappOutboundMessage(
   ) {
     throw new WhatsappConnectionNotFoundError(session.connectionId);
   }
+  await assertOfficialMessagingWindow(connection, session, whatsappRepository);
+  const providerAddress = providerAddressForSession(session);
   const prepared = await input.prepare({
     connection,
     gateway: getCrmWhatsappGateway(ports),
-    phone: session.buyerPhone,
+    phone: providerAddress,
     scope,
     session,
   });
@@ -94,7 +98,10 @@ export async function sendWhatsappOutboundMessage(
     ...(session.buyerChatLid ? { buyerChatLid: session.buyerChatLid } : {}),
     ...(session.buyerName ? { buyerName: session.buyerName } : {}),
     buyerPhone: session.buyerPhone,
-    channel: "WHATSAPP",
+    channel: session.channel,
+    ...(session.channelExternalId
+      ? { channelExternalId: session.channelExternalId }
+      : {}),
     connectionId: connection.id,
     content: prepared.content,
     direction: "OUTBOUND",

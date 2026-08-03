@@ -183,6 +183,7 @@ function createGatewaySpies(): CrmWhatsappGateway {
     sendMedia: vi.fn<CrmWhatsappGateway["sendMedia"]>(),
     sendProduct: vi.fn<CrmWhatsappGateway["sendProduct"]>(),
     sendReaction: vi.fn<CrmWhatsappGateway["sendReaction"]>(),
+    sendTemplate: vi.fn<CrmWhatsappGateway["sendTemplate"]>(),
     sendText: vi.fn<CrmWhatsappGateway["sendText"]>(),
   };
 }

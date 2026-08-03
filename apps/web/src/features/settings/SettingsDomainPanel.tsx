@@ -1,5 +1,5 @@
 import { Globe2, LoaderCircle, Save, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import {
   FeatureField,
@@ -24,8 +24,13 @@ export function SettingsDomainPanel({
   settings: StoreSettingsSnapshot;
 }) {
   const [draft, setDraft] = useState(() => createStoreSettingsDraft(settings));
+  const previousSettings = useRef(settings);
 
-  useEffect(() => setDraft(createStoreSettingsDraft(settings)), [settings]);
+  useEffect(() => {
+    if (previousSettings.current === settings) return;
+    previousSettings.current = settings;
+    setDraft(createStoreSettingsDraft(settings));
+  }, [settings]);
 
   const publicAddress =
     draft.identity.primaryDomain ??

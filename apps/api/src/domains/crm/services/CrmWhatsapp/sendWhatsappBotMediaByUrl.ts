@@ -29,6 +29,9 @@ import {
   recordBotMediaLeadActivity,
 } from "../../whatsapp/whatsappBotMediaByUrlResult.js";
 import type { SendWhatsappBotMediaByUrlInput } from "../../whatsapp/whatsappBotMediaByUrlTypes.js";
+import { assertOfficialMessagingWindow } from "../../messaging/assertOfficialMessagingWindow.js";
+import { channelForCrmProvider } from "../../messaging/crmMessagingProvider.js";
+import { WhatsappBotActionError } from "./whatsappBotIntegration.js";
 
 const permission = "crm.whatsapp.send";
 
@@ -40,6 +43,21 @@ export async function sendWhatsappBotMediaByUrl(
   assertPermission(context, permission);
   const target = await resolveBotMediaTarget(context, input, ports);
   assertBotMediaTargetIsAvailable(target.session);
+  const repository = getCrmWhatsappRepository(ports);
+  if (target.connection.provider !== "zapi") {
+    if (!target.session) {
+      throw new WhatsappBotActionError(
+        "Official channel media requires an existing customer conversation.",
+        "CRM_WHATSAPP_BOT_ACTION_BLOCKED",
+        409,
+      );
+    }
+    await assertOfficialMessagingWindow(
+      target.connection,
+      target.session,
+      repository,
+    );
+  }
   logWhatsappServiceEvent(context, "crm.whatsapp.bot.message.send_media_url", {
     connectionId: target.connection.id,
     mediaType: input.mediaType,
@@ -90,10 +108,13 @@ export async function sendWhatsappBotMediaByUrl(
             tenantId: scope.tenantId as never,
           })
         ).id;
-      const result = await getCrmWhatsappRepository(ports).ingestMessage({
+      const result = await repository.ingestMessage({
         ...(target.buyerName ? { buyerName: target.buyerName } : {}),
-        buyerPhone: target.phone,
-        channel: "WHATSAPP",
+        buyerPhone: target.session?.buyerPhone ?? target.phone,
+        channel: channelForCrmProvider(target.connection.provider),
+        ...(target.session?.channelExternalId
+          ? { channelExternalId: target.session.channelExternalId }
+          : {}),
         connectionId: target.connection.id,
         content: contentForMedia(input),
         direction: "OUTBOUND",

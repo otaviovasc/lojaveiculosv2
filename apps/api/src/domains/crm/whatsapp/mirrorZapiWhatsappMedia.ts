@@ -1,4 +1,8 @@
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
+import {
+  UnsafeCrmRemoteMediaUrlError,
+  type CrmRemoteMediaFetcher,
+} from "../ports/crmRemoteMediaFetcher.js";
 
 export type MirrorZapiWhatsappMediaInput = {
   connectionId: string;
@@ -6,6 +10,7 @@ export type MirrorZapiWhatsappMediaInput = {
   mediaType?: string;
   mediaUrl?: string;
   metadata: Record<string, unknown>;
+  remoteMediaFetcher?: CrmRemoteMediaFetcher | null;
   storage?: ObjectStorage | null;
   storeId: string;
   tenantId: string;
@@ -35,7 +40,7 @@ const maxBytesByMediaType: Record<string, number> = {
 export async function mirrorZapiWhatsappMedia(
   input: MirrorZapiWhatsappMediaInput,
 ): Promise<MirrorZapiWhatsappMediaResult> {
-  if (!input.mediaUrl || !input.mediaType || !input.storage) {
+  if (!input.mediaUrl || !input.mediaType) {
     return {
       metadata: withMediaMetadata(input.metadata, {
         ...(input.mediaUrl ? { providerUrl: input.mediaUrl } : {}),
@@ -44,18 +49,32 @@ export async function mirrorZapiWhatsappMedia(
     };
   }
 
+  if (!input.remoteMediaFetcher) {
+    return {
+      metadata: withSafeMediaMetadata(input.metadata, {
+        mirrorErrorName: "RemoteMediaValidationUnavailable",
+        mirrorStatus: "failed",
+      }),
+    };
+  }
+
   try {
-    const response = await fetch(input.mediaUrl);
-    if (!response.ok) throw new Error(`Media fetch failed: ${response.status}`);
-    const contentType = readContentType(response, input);
-    const maxBytes = maxBytesByMediaType[input.mediaType] ?? 25 * 1024 * 1024;
-    const contentLength = readHeaderNumber(response, "content-length");
-    if (contentLength && contentLength > maxBytes) {
-      throw new Error(`Media exceeds ${maxBytes} bytes`);
+    if (!input.storage) {
+      await input.remoteMediaFetcher.validateUrl({ url: input.mediaUrl });
+      return {
+        mediaUrl: input.mediaUrl,
+        metadata: withMediaMetadata(input.metadata, {
+          providerUrl: input.mediaUrl,
+        }),
+      };
     }
-    const body = await readLimitedBody(response, maxBytes);
-    if (body.byteLength === 0)
-      throw new Error("Media fetch returned empty body");
+    const maxBytes = maxBytesByMediaType[input.mediaType] ?? 25 * 1024 * 1024;
+    const remoteMedia = await input.remoteMediaFetcher.fetchMedia({
+      maxBytes,
+      url: input.mediaUrl,
+    });
+    const contentType = readContentType(remoteMedia.contentType, input);
+    const body = remoteMedia.body;
 
     const stored = await input.storage.putObject({
       body,
@@ -83,6 +102,15 @@ export async function mirrorZapiWhatsappMedia(
       }),
     };
   } catch (error) {
+    if (error instanceof UnsafeCrmRemoteMediaUrlError) {
+      return {
+        metadata: withSafeMediaMetadata(input.metadata, {
+          mirrorErrorName: error.name,
+          mirrorStatus: "failed",
+          unsafeUrlRejected: true,
+        }),
+      };
+    }
     return {
       mediaUrl: input.mediaUrl,
       metadata: withMediaMetadata(input.metadata, {
@@ -94,53 +122,29 @@ export async function mirrorZapiWhatsappMedia(
   }
 }
 
-async function readLimitedBody(response: Response, maxBytes: number) {
-  const reader = response.body?.getReader();
-  if (!reader) {
-    const fallbackBody = new Uint8Array(await response.arrayBuffer());
-    if (fallbackBody.byteLength > maxBytes) {
-      throw new Error(`Media exceeds ${maxBytes} bytes`);
-    }
-    return fallbackBody;
-  }
-
-  const chunks: Uint8Array[] = [];
-  let totalBytes = 0;
-  while (true) {
-    const chunk = await reader.read();
-    if (chunk.done) break;
-    totalBytes += chunk.value.byteLength;
-    if (totalBytes > maxBytes)
-      throw new Error(`Media exceeds ${maxBytes} bytes`);
-    chunks.push(chunk.value);
-  }
-
-  const body = new Uint8Array(totalBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return body;
+function withSafeMediaMetadata(
+  metadata: Record<string, unknown>,
+  mediaUpdates: Record<string, unknown>,
+) {
+  const media = { ...readRecord(metadata.media) };
+  delete media.providerUrl;
+  delete media.thumbnailUrl;
+  return {
+    ...metadata,
+    media: { ...media, ...mediaUpdates },
+  };
 }
 
 function readContentType(
-  response: Response,
+  responseContentType: string | null,
   input: MirrorZapiWhatsappMediaInput,
 ) {
   return (
-    response.headers.get("content-type")?.split(";")[0]?.trim() ||
+    responseContentType?.split(";")[0]?.trim() ||
     readString(readRecord(input.metadata.media).mimeType) ||
     fallbackContentTypes[input.mediaType ?? ""] ||
     "application/octet-stream"
   );
-}
-
-function readHeaderNumber(response: Response, name: string) {
-  const raw = response.headers.get(name);
-  if (!raw) return null;
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : null;
 }
 
 function readMediaFileName(

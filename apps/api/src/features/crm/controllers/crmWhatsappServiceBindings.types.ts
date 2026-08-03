@@ -1,17 +1,17 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmWhatsappCatalogProductsPage } from "../../../domains/crm/ports/crmWhatsappGateway.js";
-import type { CrmWhatsappScheduledMessage } from "../../../domains/crm/ports/crmWhatsappRepository.js";
-import type { CrmWhatsappScheduledMessageScope } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type {
+  CrmWhatsappScheduledMessage,
+  CrmWhatsappScheduledMessageScope,
+} from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { UpdateWhatsappConnectionInput } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
 import type { WhatsappConnection } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
-import type { ConfigureWhatsappConnectionWebhooksInput } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
-import type { ConfigureWhatsappConnectionWebhooksResult } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
-import type { UpdateWhatsappBotIntegrationInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { ExecuteWhatsappBotActionInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
-import type { AuthenticateWhatsappBotSecretInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
+import type {
+  AuthenticateWhatsappBotSecretInput,
+  UpdateWhatsappBotIntegrationInput,
+} from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { CrmBotIntegration } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
-import type { IngestZapiWhatsappWebhookInput } from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
-import type { IngestZapiWhatsappWebhookResult } from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
 import type { ListWhatsappMessagesInput } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappMessages.js";
 import type {
   CountWhatsappSessionsInput,
@@ -36,12 +36,6 @@ import type {
   RemoveWhatsappReactionInput,
   SendWhatsappReactionInput,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappMessageActions.js";
-import type {
-  ListWhatsappWebhookEventIssuesInput,
-  RetryWhatsappWebhookEventInput,
-  RetryWhatsappWebhookEventResult,
-  WhatsappWebhookEventSummary,
-} from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
 import type {
   CancelWhatsappScheduledMessageInput,
   CreateWhatsappScheduledMessageInput,
@@ -72,19 +66,16 @@ import type {
 } from "../../../domains/crm/whatsapp/whatsappModels.js";
 import type { CrmWhatsappCampaignServices } from "./crmWhatsappCampaignBindings.js";
 import type { CrmWhatsappQuickMessageServices } from "./crmWhatsappQuickMessageBindings.js";
+import type { CrmWhatsappWebhookServices } from "./crmWhatsappWebhookServiceTypes.js";
 
 type CrmContextService<Input, Output> = (
   context: ServiceContext,
   input: Input,
 ) => Promise<Output>;
 
-export type ZapiWebhookProcessor = CrmContextService<
-  IngestZapiWhatsappWebhookInput,
-  unknown
->;
-
 export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
-  CrmWhatsappCampaignServices & {
+  CrmWhatsappCampaignServices &
+  CrmWhatsappWebhookServices & {
     addWhatsappSessionTag: CrmContextService<
       AddWhatsappSessionTagInput,
       WhatsappSession
@@ -100,10 +91,6 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     closeWhatsappSession: CrmContextService<
       CloseWhatsappSessionInput,
       WhatsappSession
-    >;
-    configureWhatsappConnectionWebhooks: CrmContextService<
-      ConfigureWhatsappConnectionWebhooksInput,
-      ConfigureWhatsappConnectionWebhooksResult
     >;
     cancelWhatsappScheduledMessage: CrmContextService<
       CancelWhatsappScheduledMessageInput,
@@ -133,10 +120,6 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
       ExecuteWhatsappBotActionInput,
       unknown
     >;
-    ingestZapiWhatsappWebhook: CrmContextService<
-      IngestZapiWhatsappWebhookInput,
-      IngestZapiWhatsappWebhookResult
-    >;
     listWhatsappCatalogProducts: CrmContextService<
       ListWhatsappCatalogProductsInput,
       CrmWhatsappCatalogProductsPage & { catalogPhone: string }
@@ -154,10 +137,6 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     updateWhatsappConnection: CrmContextService<
       UpdateWhatsappConnectionInput,
       WhatsappConnection
-    >;
-    listWhatsappWebhookEventIssues: CrmContextService<
-      ListWhatsappWebhookEventIssuesInput,
-      readonly WhatsappWebhookEventSummary[]
     >;
     listWhatsappMessages: CrmContextService<
       ListWhatsappMessagesInput,
@@ -183,11 +162,6 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
       MarkWhatsappSessionReadInput,
       WhatsappSession
     >;
-    processZapiWhatsappChatPresenceWebhook: ZapiWebhookProcessor;
-    processZapiWhatsappConnectedWebhook: ZapiWebhookProcessor;
-    processZapiWhatsappDeliveryWebhook: ZapiWebhookProcessor;
-    processZapiWhatsappDisconnectedWebhook: ZapiWebhookProcessor;
-    processZapiWhatsappStatusWebhook: ZapiWebhookProcessor;
     processDueWhatsappScheduledMessages: CrmContextService<
       ProcessDueWhatsappScheduledMessagesInput,
       ProcessDueWhatsappScheduledMessagesResult
@@ -203,10 +177,6 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     reorderWhatsappTags: CrmContextService<
       ReorderWhatsappTagsInput,
       readonly WhatsappSessionTag[]
-    >;
-    retryWhatsappWebhookEvent: CrmContextService<
-      RetryWhatsappWebhookEventInput,
-      RetryWhatsappWebhookEventResult
     >;
     sendWhatsappCatalog: CrmContextService<
       SendWhatsappCatalogInput,

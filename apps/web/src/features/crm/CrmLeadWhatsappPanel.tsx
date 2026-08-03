@@ -5,7 +5,7 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { useOptionalAccountSession } from "../account/accountSession";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { createRuntimeCrmWhatsappApi } from "./runtimeApi";
-import { findConnectedConnection } from "./crmWhatsappConnectionSelection";
+import { findFreeTextStartConnection } from "./crmWhatsappConnectionSelection";
 import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
 import { crmWhatsappSessionHash } from "./crmRouteState";
 import type {
@@ -41,11 +41,13 @@ export function CrmLeadWhatsappPanel({ api, lead }: Props) {
   );
 
   const connection = useMemo(
-    () =>
-      findConnectedConnection(connections) ??
-      connections.find((item) => item.status !== "archived") ??
-      null,
+    () => findFreeTextStartConnection(connections),
     [connections],
+  );
+  const hasOfficialConnection = connections.some(
+    (item) =>
+      item.provider === "composio_whatsapp" ||
+      item.provider === "composio_instagram",
   );
   const linkedSession = linkedSessions[0] ?? null;
 
@@ -158,10 +160,17 @@ export function CrmLeadWhatsappPanel({ api, lead }: Props) {
         {error ? (
           <p className="text-xs font-bold text-danger">{error}</p>
         ) : null}
+        {!connection && hasOfficialConnection ? (
+          <p className="text-xs font-bold text-muted">
+            Para iniciar pela API oficial, use um template aprovado em Nova
+            conversa no CRM. No Instagram, o cliente envia a primeira mensagem.
+          </p>
+        ) : null}
         <textarea
           className="min-h-28 rounded-xl border border-line/35 bg-panel/20 p-3 text-sm font-medium text-app-text outline-none focus:border-primary/50"
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Mensagem inicial"
+          disabled={!connection}
           value={draft}
         />
         <div className="flex flex-wrap items-center gap-2">

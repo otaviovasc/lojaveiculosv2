@@ -6,6 +6,7 @@ import {
   CrmWhatsappWorkflowStepper,
 } from "./CrmWhatsappWorkflow";
 import {
+  ConnectionSectionCard,
   ConnectionStatusCard,
   ConnectionWebhookList,
 } from "./CrmWhatsappConnectionAdminParts";
@@ -18,10 +19,11 @@ import type {
   CrmWhatsappProviderConnection,
   CrmWhatsappWebhookEndpoint,
 } from "./crmWhatsappTypes";
+import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
 
 const setupSteps = [
   { label: "Credenciais", description: "Instancia protegida" },
-  { label: "Webhooks", description: "Eventos da ZAPI" },
+  { label: "Webhooks", description: "Eventos da Z-API" },
   { label: "Verificar", description: "Conexao em tempo real" },
 ] as const;
 
@@ -66,6 +68,10 @@ export function ConnectionSetupFlow({
   onNext: () => void;
   onStepChange: (step: number) => void;
 }) {
+  if (props.connection.provider !== "zapi") {
+    return <OfficialConnectionOverview {...props} />;
+  }
+
   return (
     <div className="crm-whatsapp-connection-setup crm-whatsapp-workflow">
       <CrmWhatsappWorkflowStepper
@@ -92,7 +98,7 @@ export function ConnectionSetupFlow({
       ) : null}
       {currentStep === 1 ? (
         <CrmWhatsappWorkflowPanel
-          description="Configure os webhooks na ZAPI automaticamente ou copie cada URL manualmente."
+          description="Configure os webhooks na Z-API automaticamente ou copie cada URL manualmente."
           title="Webhooks da conexao"
         >
           <ConnectionWebhookList
@@ -140,6 +146,10 @@ export function ConnectionSetupFlow({
 }
 
 export function ConnectionDashboard(props: SharedProps) {
+  if (props.connection.provider !== "zapi") {
+    return <OfficialConnectionOverview {...props} />;
+  }
+
   return (
     <div className="crm-whatsapp-connection-dashboard">
       <ConnectionStatusCard
@@ -178,6 +188,29 @@ export function ConnectionDashboard(props: SharedProps) {
           />
         </ConnectionDisclosure>
       </div>
+    </div>
+  );
+}
+
+function OfficialConnectionOverview(props: SharedProps) {
+  const providerLabel = readCrmWhatsappProviderLabel(props.connection.provider);
+  return (
+    <div className="crm-whatsapp-connection-dashboard">
+      <ConnectionStatusCard
+        connection={props.connection}
+        isRefreshing={props.isRefreshing}
+        onRefresh={props.onRefresh}
+      />
+      <ConnectionSectionCard
+        description="Credenciais, autorizacao e webhooks sao gerenciados pelo provedor."
+        icon={<KeyRound aria-hidden="true" />}
+        title={`${providerLabel} gerenciado`}
+      >
+        <p className="crm-whatsapp-connection-webhook-note">
+          Use Atualizar status para consultar novamente a conexao. Este painel
+          nao armazena nem exibe tokens do canal oficial.
+        </p>
+      </ConnectionSectionCard>
     </div>
   );
 }

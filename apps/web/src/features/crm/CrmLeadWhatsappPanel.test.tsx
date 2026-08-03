@@ -79,6 +79,28 @@ describe("CrmLeadWhatsappPanel", () => {
       "#/crm?surface=whatsapp&sessionId=session_2",
     );
   });
+
+  it("does not send unsupported free text through an official-only connection", async () => {
+    const startConversation = vi.fn();
+    const api = createWhatsappApi({
+      listConnections: vi.fn(async () => ({
+        connections: [createConnection("composio_whatsapp")],
+      })),
+      listSessions: vi.fn(async () => []),
+      startConversation,
+    });
+
+    renderPanel(api);
+
+    expect(
+      await screen.findByText(/template aprovado em Nova conversa/i),
+    ).toBeVisible();
+    expect(screen.getByPlaceholderText("Mensagem inicial")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /iniciar conversa/i }),
+    ).toBeDisabled();
+    expect(startConversation).not.toHaveBeenCalled();
+  });
 });
 
 const baseLead: ProductCrmLead = {
@@ -120,7 +142,9 @@ function createWhatsappApi(overrides: Partial<CrmWhatsappApi>): CrmWhatsappApi {
   }) as CrmWhatsappApi;
 }
 
-function createConnection(): CrmWhatsappProviderConnection {
+function createConnection(
+  provider: CrmWhatsappProviderConnection["provider"] = "zapi",
+): CrmWhatsappProviderConnection {
   return {
     credentials: {
       apiBaseUrlEnv: null,
@@ -129,7 +153,7 @@ function createConnection(): CrmWhatsappProviderConnection {
       instanceTokenEnv: null,
       mode: null,
     },
-    displayName: "ZAPI",
+    displayName: provider === "zapi" ? "ZAPI" : "WhatsApp oficial",
     externalConnectionId: null,
     externalInstanceId: null,
     id: "24000000-0000-4000-8000-000000000101",
@@ -147,7 +171,7 @@ function createConnection(): CrmWhatsappProviderConnection {
       purpose: null,
     },
     phone: null,
-    provider: "zapi",
+    provider,
     status: "sandbox",
     webhookUrl: null,
   };

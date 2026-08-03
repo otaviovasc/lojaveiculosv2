@@ -59,6 +59,20 @@ export function registerCrmWhatsappConnectionRoutes(
           ...(input.connectedPhone !== undefined
             ? { connectedPhone: input.connectedPhone }
             : {}),
+          ...(input.composioCredentials
+            ? {
+                composioCredentials: {
+                  apiKeyEnv: input.composioCredentials.apiKeyEnv,
+                  connectedAccountId:
+                    input.composioCredentials.connectedAccountId,
+                  ...(input.composioCredentials.graphVersion
+                    ? {
+                        graphVersion: input.composioCredentials.graphVersion,
+                      }
+                    : {}),
+                },
+              }
+            : {}),
           connectionId,
           ...(input.credentialsEnv
             ? { credentialsEnv: input.credentialsEnv }
@@ -98,13 +112,14 @@ export function registerCrmWhatsappConnectionRoutes(
           );
         }
         const serviceContext = await createContext(context);
-        const { basePath, requestOrigin } = readWebhookRequestBase(context);
+        const { basePath, canonicalApiOrigin } =
+          readWebhookRequestBase(context);
         const result = await services.configureWhatsappConnectionWebhooks(
           serviceContext,
           {
             basePath,
+            canonicalApiOrigin,
             connectionId,
-            requestOrigin,
             webhookToken: readWebhookToken(),
           },
         );
@@ -117,32 +132,70 @@ function withWebhookEndpoints(
   context: Context,
   connections: readonly WhatsappConnection[],
 ) {
-  const { basePath, requestOrigin } = readWebhookRequestBase(context);
+  const { basePath, canonicalApiOrigin } = readWebhookRequestBase(context);
   return connections.map((connection) => ({
     ...connection,
     // Displayed URLs intentionally omit the webhook token so it never reaches
     // the browser clipboard; the auto-configure flow appends it server-side.
-    webhookEndpoints: buildWhatsappWebhookEndpoints({
-      baseUrl: resolveWebhookBaseUrl({
-        basePath,
-        requestOrigin,
-        webhookUrl: connection.webhookUrl,
-      }),
-      connectionId: connection.id,
-    }),
-    webhookTokenRequired: Boolean(readWebhookToken()),
+    webhookEndpoints:
+      connection.provider === "zapi"
+        ? buildWhatsappWebhookEndpoints({
+            baseUrl: resolveWebhookBaseUrl({
+              basePath,
+              requestOrigin: canonicalApiOrigin,
+              webhookUrl: connection.webhookUrl,
+            }),
+            connectionId: connection.id,
+          })
+        : [],
+    webhookTokenRequired:
+      connection.provider === "zapi" && Boolean(readWebhookToken()),
   }));
 }
 
 function readWebhookRequestBase(context: Context): {
   basePath: string;
-  requestOrigin: string;
+  canonicalApiOrigin: string;
 } {
   const requestUrl = new URL(context.req.url);
   return {
     basePath: requestUrl.pathname.replace(/\/whatsapp\/connections.*$/, ""),
-    requestOrigin: requestUrl.origin,
+    canonicalApiOrigin: readCanonicalApiOrigin(requestUrl),
   };
+}
+
+function readCanonicalApiOrigin(requestUrl: URL): string {
+  const configuredBaseUrl = process.env.API_BASE_URL?.trim();
+  if (configuredBaseUrl) {
+    try {
+      const configuredUrl = new URL(configuredBaseUrl);
+      if (
+        configuredUrl.username ||
+        configuredUrl.password ||
+        (configuredUrl.protocol !== "https:" && !isLocalRuntime())
+      ) {
+        throw new Error("unsafe API base URL");
+      }
+      return configuredUrl.origin;
+    } catch {
+      throw new CrmWhatsappValidationError(
+        "API_BASE_URL must be a valid public HTTPS URL.",
+      );
+    }
+  }
+  if (isLocalRuntime()) return requestUrl.origin;
+  throw new CrmWhatsappValidationError(
+    "API_BASE_URL is required before configuring provider webhooks.",
+  );
+}
+
+function isLocalRuntime() {
+  const environment = (
+    process.env.APP_ENV ??
+    process.env.NODE_ENV ??
+    ""
+  ).toLowerCase();
+  return ["development", "local", "test"].includes(environment);
 }
 
 function readWebhookToken(): string | null {

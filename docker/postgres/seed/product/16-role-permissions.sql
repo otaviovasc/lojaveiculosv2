@@ -452,4 +452,4 @@ VALUES
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.update_video')
 ON CONFLICT (role_template_id, permission_key) DO NOTHING;
 
--- Expected permission counts at generation time: {"agency":97,"admin":91,"owner":97,"investor":14,"salesman":46,"supervisor":74}
+-- Expected permission counts at generation time: {"agency":100,"admin":94,"owner":100,"investor":14,"salesman":46,"supervisor":74}

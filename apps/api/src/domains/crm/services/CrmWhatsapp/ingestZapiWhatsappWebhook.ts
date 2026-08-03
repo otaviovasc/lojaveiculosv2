@@ -1,7 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
-  getCrmConnectionRepository,
   getCrmWhatsappMediaStorage,
   getCrmRealtimePublisher,
   getCrmWhatsappRepository,
@@ -27,6 +26,7 @@ import {
 } from "../../whatsapp/whatsappModels.js";
 import {
   logWhatsappServiceEvent,
+  readZapiConnection,
   recordWhatsappServiceMutation,
   type WhatsappServiceAuditInput,
 } from "./serviceSupport.js";
@@ -58,9 +58,7 @@ export async function ingestZapiWhatsappWebhook(
   logWhatsappServiceEvent(context, "crm.whatsapp.webhook.zapi.received", {
     connectionId: input.connectionId,
   });
-  const connection = await getCrmConnectionRepository(ports).findConnectionById(
-    input.connectionId,
-  );
+  const connection = await readZapiConnection(input.connectionId, ports);
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
 
   const detectedAt = new Date();
@@ -87,6 +85,7 @@ export async function ingestZapiWhatsappWebhook(
     ...(parsed.mediaType ? { mediaType: parsed.mediaType } : {}),
     ...(parsed.mediaUrl ? { mediaUrl: parsed.mediaUrl } : {}),
     metadata: parsed.metadata,
+    remoteMediaFetcher: ports.crmWhatsappMediaFetcher ?? null,
     storage: getCrmWhatsappMediaStorage(ports),
     storeId: connection.storeId,
     tenantId: connection.tenantId,
@@ -142,6 +141,7 @@ export async function ingestZapiWhatsappWebhook(
             leadId: lead.id,
             messageExternalId: parsed.externalId,
             occurredAt: parsed.providerTimestamp,
+            provider: connection.provider,
             sessionId: result.session.id,
             storeId: connection.storeId,
             tenantId: connection.tenantId,

@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import postgres from "postgres";
 import { assertKnownLocalDatabaseUrl } from "./local-database-safety.mjs";
+import { installCrmWhatsappSessionIdentityParity } from "./install-crm-whatsapp-session-identity-parity.mjs";
 import { installFinanceAutoEntryParity } from "./install-finance-auto-entry-parity.mjs";
 import { installFiscalCatalogParity } from "./install-fiscal-catalog-parity.mjs";
 
@@ -24,6 +25,7 @@ try {
   }
 
   runDrizzlePush({ bootstrap: true });
+  await installCrmWhatsappSessionIdentityParity(sql);
   await installFinanceAutoEntryParity(sql);
   await installFiscalCatalogParity(sql);
   await ensureFinancingScopeIndexes();

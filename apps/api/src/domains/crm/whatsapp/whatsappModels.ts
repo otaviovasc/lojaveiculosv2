@@ -9,7 +9,7 @@ export type WhatsappSession = {
   assignedMember: null;
   assignedUserId: string | null;
   buyerName: string | null;
-  buyerPhone: string;
+  buyerPhone: string | null;
   channel: string;
   connection: {
     id: string;
@@ -75,7 +75,7 @@ export function toWhatsappSession(
     assignedMember: null,
     assignedUserId: session.assignedUserId,
     buyerName: session.buyerName,
-    buyerPhone: session.buyerPhone,
+    buyerPhone: session.buyerPhone || null,
     channel: session.channel,
     connection: {
       id: connection.id,

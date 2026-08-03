@@ -146,6 +146,8 @@ function baseIssues(input: {
     issues.push("Telefone invalido.");
   if (!input.session)
     issues.push("Conversa V2 nao encontrada para este telefone.");
+  if (input.session && input.session.channel !== "WHATSAPP")
+    issues.push("Campanhas exigem uma conversa do WhatsApp.");
   if (!input.name.trim()) issues.push("Nome ausente; sera usado cliente.");
   return issues;
 }
@@ -159,7 +161,8 @@ function statusFromIssues(
         issue.includes("invalido") ||
         issue.includes("LID") ||
         issue.includes("Duplicado") ||
-        issue.includes("nao encontrada"),
+        issue.includes("nao encontrada") ||
+        issue.includes("Campanhas exigem"),
     )
   ) {
     return "blocked";

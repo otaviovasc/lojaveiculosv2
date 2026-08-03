@@ -40,6 +40,7 @@ describe("whatsappWebhookEventIssues", () => {
       eventType: "crm.whatsapp.zapi.received",
       id: "event-1",
       processedAt: null,
+      provider: "zapi",
       providerEventId: "provider-event-1",
       retryable: true,
       status: "ignored",

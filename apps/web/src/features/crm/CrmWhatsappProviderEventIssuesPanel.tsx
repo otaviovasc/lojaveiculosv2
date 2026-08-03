@@ -67,7 +67,7 @@ export function CrmWhatsappProviderEventIssuesPanel({
   if (isLoading && !error && events.length === 0) {
     return (
       <section
-        aria-label="Eventos ZAPI"
+        aria-label="Eventos dos provedores"
         className="crm-whatsapp-events-state"
         role="status"
       >
@@ -84,7 +84,7 @@ export function CrmWhatsappProviderEventIssuesPanel({
     if (!showHealthyState) return null;
     return (
       <section
-        aria-label="Eventos ZAPI"
+        aria-label="Eventos dos provedores"
         className="crm-whatsapp-events-state crm-whatsapp-events-state-success"
         role="status"
       >
@@ -96,7 +96,7 @@ export function CrmWhatsappProviderEventIssuesPanel({
           </p>
         </div>
         <button
-          aria-label="Atualizar eventos ZAPI"
+          aria-label="Atualizar eventos dos provedores"
           className="crm-icon-action"
           onClick={() => void refresh()}
           title="Atualizar eventos"
@@ -109,7 +109,10 @@ export function CrmWhatsappProviderEventIssuesPanel({
   }
 
   return (
-    <section className="crm-whatsapp-reliability" aria-label="Eventos ZAPI">
+    <section
+      className="crm-whatsapp-reliability"
+      aria-label="Eventos dos provedores"
+    >
       <div className="crm-whatsapp-reliability-header">
         <button
           aria-expanded={isExpanded}
@@ -120,13 +123,13 @@ export function CrmWhatsappProviderEventIssuesPanel({
         >
           <span>
             {events.length > 0
-              ? `${events.length} evento${events.length === 1 ? "" : "s"} ZAPI com atenção`
-              : "Falha ao verificar eventos ZAPI"}
+              ? `${events.length} evento${events.length === 1 ? "" : "s"} de provedor com atenção`
+              : "Falha ao verificar eventos dos provedores"}
           </span>
           <ChevronDown aria-hidden="true" size={16} />
         </button>
         <button
-          aria-label="Atualizar eventos ZAPI"
+          aria-label="Atualizar eventos dos provedores"
           className="crm-icon-action"
           disabled={isLoading}
           onClick={() => void refresh()}
@@ -146,7 +149,8 @@ export function CrmWhatsappProviderEventIssuesPanel({
           {events.map((event) => (
             <article className="crm-whatsapp-reliability-event" key={event.id}>
               <div>
-                <strong>{formatWebhookType(event.webhookType)}</strong>
+                <strong>{formatWebhookType(event)}</strong>
+                <span>{formatProvider(event.provider)}</span>
                 <span>{formatAttentionReason(event.attentionReason)}</span>
                 <span>{formatDate(event.updatedAt)}</span>
                 {event.errorMessage ? <p>{event.errorMessage}</p> : null}
@@ -176,10 +180,10 @@ function formatAttentionReason(
     processing_failed: "Falha no processamento",
     received_message_ignored: "Mensagem recebida ignorada",
   };
-  return reason ? (labels[reason] ?? "Evento com atenção") : "Evento ZAPI";
+  return reason ? (labels[reason] ?? "Evento com atenção") : "Evento";
 }
 
-function formatWebhookType(type: CrmWhatsappProviderEvent["webhookType"]) {
+function formatWebhookType(event: CrmWhatsappProviderEvent) {
   const labels: Record<string, string> = {
     chat_presence: "Presenca",
     connected: "Conexão",
@@ -188,7 +192,21 @@ function formatWebhookType(type: CrmWhatsappProviderEvent["webhookType"]) {
     received: "Mensagem recebida",
     status: "Status",
   };
-  return type ? (labels[type] ?? type) : "Evento ZAPI";
+  if (event.webhookType) {
+    return labels[event.webhookType] ?? event.webhookType;
+  }
+  if (event.eventType === "meta.message") return "Mensagem recebida";
+  if (event.eventType === "meta.status") return "Status";
+  return "Evento";
+}
+
+function formatProvider(provider: CrmWhatsappProviderEvent["provider"]) {
+  const labels: Record<CrmWhatsappProviderEvent["provider"], string> = {
+    composio_instagram: "Instagram oficial",
+    composio_whatsapp: "WhatsApp oficial",
+    zapi: "Z-API",
+  };
+  return labels[provider];
 }
 
 function formatDate(value: string) {

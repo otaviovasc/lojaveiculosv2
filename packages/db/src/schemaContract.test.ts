@@ -82,6 +82,21 @@ describe("product database schema contract", () => {
     });
   });
 
+  it("supports legacy and official CRM messaging providers and channels", () => {
+    expect(schema.crmConnectionProvider.enumValues).toEqual([
+      "zapi",
+      "composio_whatsapp",
+      "composio_instagram",
+    ]);
+    expect(schema.crmWhatsappChannel.enumValues).toEqual([
+      "OLX_CHAT",
+      "WEB_CHAT",
+      "WHATSAPP",
+      "INSTAGRAM",
+    ]);
+    expect(schema.leadSource.enumValues).toContain("instagram");
+  });
+
   it("keeps shared timestamp and external-reference builders canonical", () => {
     const updateSql = schema.tenants.updatedAt.onUpdateFn?.();
 

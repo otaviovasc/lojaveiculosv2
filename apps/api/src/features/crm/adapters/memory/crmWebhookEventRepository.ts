@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
+  CrmProviderWebhookEventProvider,
   CrmProviderWebhookEvent,
   CrmWebhookEventRepository,
 } from "../../../../domains/crm/ports/crmWebhookEventRepository.js";
@@ -78,7 +79,7 @@ function matchesList(
   input: {
     connectionId?: string | null;
     eventType?: string;
-    provider?: "zapi";
+    provider?: CrmProviderWebhookEventProvider;
     status?: string;
     storeId: string;
     tenantId: string;

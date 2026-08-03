@@ -11,6 +11,7 @@ import {
   requireHydratedSession,
   type MemoryWhatsappTagState,
 } from "./crmWhatsappMemoryTags.js";
+import { updateMemorySessionPreview } from "./crmWhatsappMemorySessionPreview.js";
 
 type WhatsappSessionIdentityInput =
   IngestCrmWhatsappMessageInput | UpsertCrmWhatsappSessionContextInput;
@@ -23,7 +24,15 @@ export function findMemorySession(
     (session) => session.connectionId === input.connectionId,
   );
   return (
-    scoped.find((session) => session.buyerPhone === input.buyerPhone) ??
+    scoped.find(
+      (session) =>
+        Boolean(input.channelExternalId) &&
+        session.channelExternalId === input.channelExternalId,
+    ) ??
+    scoped.find(
+      (session) =>
+        Boolean(input.buyerPhone) && session.buyerPhone === input.buyerPhone,
+    ) ??
     scoped.find(
       (session) =>
         Boolean(input.buyerChatLid) &&
@@ -56,7 +65,7 @@ export function createMemorySessionContext(
     buyerName: input.buyerName ?? null,
     buyerPhone: input.buyerPhone,
     channel: input.channel,
-    channelExternalId: null,
+    channelExternalId: input.channelExternalId ?? null,
     channelMetadata: {},
     connectionId: input.connectionId,
     createdAt: now,
@@ -91,7 +100,7 @@ export function createMemoryMessage(
 ): CrmWhatsappMessage {
   return {
     channel: input.channel,
-    channelMessageId: null,
+    channelMessageId: input.channelMessageId ?? null,
     connectionId: input.connectionId,
     content: input.content,
     createdAt: now,
@@ -136,6 +145,8 @@ export function upsertMemorySessionContext(
     }
     session.buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
     session.buyerName = session.buyerName ?? input.buyerName ?? null;
+    session.channelExternalId =
+      session.channelExternalId ?? input.channelExternalId ?? null;
     session.updatedAt = new Date();
   }
   return session;
@@ -193,49 +204,4 @@ function hydrate(
   tagState: MemoryWhatsappTagState,
 ) {
   return requireHydratedSession(withUnreadCount(session, messages), tagState);
-}
-
-export function updateMemorySessionPreview(
-  session: CrmWhatsappSession,
-  input: IngestCrmWhatsappMessageInput,
-) {
-  const matchedByChatLid = Boolean(
-    input.buyerChatLid && session.buyerChatLid === input.buyerChatLid,
-  );
-  if (
-    shouldBackfillWhatsappPhone(
-      session.buyerPhone,
-      input.buyerPhone,
-      matchedByChatLid,
-    )
-  ) {
-    session.buyerPhone = input.buyerPhone;
-  }
-  session.buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
-  session.buyerName = session.buyerName ?? input.buyerName ?? null;
-  if (input.direction === "INBOUND") {
-    session.freshLeadAt =
-      session.freshLeadAt ?? input.freshLeadAt ?? input.providerTimestamp;
-    if (session.status !== "HUMAN_TAKEOVER") {
-      session.humanTakeoverAt = null;
-      session.status = "ACTIVE";
-    }
-  } else if (input.senderType === "HUMAN") {
-    session.firstHandledAt = session.firstHandledAt ?? input.providerTimestamp;
-    session.humanTakeoverAt =
-      session.humanTakeoverAt ?? input.providerTimestamp;
-    session.status = "HUMAN_TAKEOVER";
-  } else {
-    session.firstHandledAt = session.firstHandledAt ?? input.providerTimestamp;
-  }
-  session.leadId = session.leadId ?? input.leadId ?? null;
-  if (
-    !session.lastMessageAt ||
-    input.providerTimestamp.getTime() > session.lastMessageAt.getTime()
-  ) {
-    session.lastMessageAt = input.providerTimestamp;
-    session.lastMessageContent = input.content;
-  }
-  session.messageCount += 1;
-  session.updatedAt = new Date();
 }

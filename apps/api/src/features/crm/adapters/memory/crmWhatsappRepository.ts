@@ -155,6 +155,10 @@ export function createMemoryCrmWhatsappRepository(
         .filter((message) => message.storeId === input.storeId)
         .filter((message) => message.tenantId === input.tenantId)
         .filter((message) => message.sessionId === input.sessionId)
+        .filter(
+          (message) =>
+            !input.direction || message.direction === input.direction,
+        )
         .sort(compareMessagesNewestFirst)
         .slice(input.offset, input.offset + input.limit);
     },

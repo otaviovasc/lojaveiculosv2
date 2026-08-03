@@ -10,6 +10,8 @@ import {
 import type { MessageComposerProps } from "./CrmWhatsappComposerTypes";
 
 type UseMessageComposerStateInput = {
+  allowMediaCaption?: boolean;
+  allowQuickMessages?: boolean;
   disabled?: boolean;
   onSend: MessageComposerProps["onSend"];
   onSendMedia: MessageComposerProps["onSendMedia"];
@@ -53,6 +55,8 @@ export type MessageComposerState = {
 };
 
 export function useMessageComposerState({
+  allowMediaCaption = true,
+  allowQuickMessages = true,
   disabled = false,
   onSend,
   onSendMedia,
@@ -76,7 +80,8 @@ export function useMessageComposerState({
   const canSend = Boolean(text.trim() || files.length);
   const effectiveDisabled = disabled || isSubmitting;
   const quickNeedle = readQuickNeedle(text);
-  const quickCommandActive = text.trimStart().startsWith("/");
+  const quickCommandActive =
+    allowQuickMessages && text.trimStart().startsWith("/");
   const quickMatches = quickCommandActive
     ? filterQuickMessages(quickMessages, quickNeedle)
     : [];
@@ -119,7 +124,7 @@ export function useMessageComposerState({
 
       for (const [index, file] of submittedFiles.entries()) {
         const accepted = await onSendMedia({
-          ...(index === 0 && caption ? { caption } : {}),
+          ...(allowMediaCaption && index === 0 && caption ? { caption } : {}),
           file,
           mediaType: readMediaType(file),
         });
@@ -130,6 +135,7 @@ export function useMessageComposerState({
           return;
         }
       }
+      if (!allowMediaCaption && caption) setText(caption);
     } finally {
       setIsSubmitting(false);
     }

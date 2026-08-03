@@ -5,6 +5,7 @@ import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import {
   buildStorefrontUrl,
   findConnectedConnection,
+  readConversationStartCapability,
 } from "./crmWhatsappConnectionSelection";
 import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
 import { mergeSessionsFromServer } from "./crmWhatsappModel";
@@ -69,6 +70,17 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       findConnectedConnection(connections.connections)?.id ??
       null,
     [connectionFilterId, connections.connections],
+  );
+  const activeConnection = useMemo(
+    () =>
+      connections.connections.find(
+        (connection) => String(connection.id) === String(connectionId),
+      ) ?? null,
+    [connectionId, connections.connections],
+  );
+  const conversationStartCapability = useMemo(
+    () => readConversationStartCapability(activeConnection),
+    [activeConnection],
   );
   const catalogUrl = useMemo(
     () => buildStorefrontUrl(accountSession?.defaultStore?.storeSlug),
@@ -224,7 +236,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   );
   const conversationState = useCrmWhatsappStartConversation({
     api,
-    canSend: canSendMessages,
+    canSend: canSendMessages && conversationStartCapability.canStart,
     connectionId,
     mergeSessions,
     setActiveSessionId: selectSession,
@@ -272,6 +284,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
     canAssignSessions: assignmentState.canAssignSessions,
+    canStartConversation:
+      canSendMessages && conversationStartCapability.canStart,
     canSendText: canSendMessages,
     catalogUrl,
     clearSelectedSessions: bulkSelection.clearSelectedSessions,
@@ -337,6 +351,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     statusFilter,
     storeLocationName: accountSession?.defaultStore?.storeName ?? "Loja",
     startConversation: conversationState.startConversation,
+    startConversationProvider: conversationStartCapability.provider,
+    startConversationUnavailableReason:
+      conversationStartCapability.unavailableReason,
     toggleSelectedSession: bulkSelection.toggleSelectedSession,
     toggleTagFilter: tagState.toggleTagFilter,
     unreadOnly,

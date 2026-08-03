@@ -37,6 +37,62 @@ export type CrmWhatsappSendMediaInput = {
 
 export type CrmWhatsappSendMediaResult = CrmWhatsappSendTextResult;
 
+export type CrmWhatsappTemplateParameter =
+  | {
+      currency: {
+        amount_1000: number;
+        code: string;
+        fallback_value: string;
+      };
+      type: "currency";
+    }
+  | {
+      date_time: {
+        calendar?: "GREGORIAN" | undefined;
+        day_of_month?: number | undefined;
+        day_of_week?: number | undefined;
+        fallback_value: string;
+        hour?: number | undefined;
+        minute?: number | undefined;
+        month?: number | undefined;
+        year?: number | undefined;
+      };
+      type: "date_time";
+    }
+  | {
+      document: { id: string } | { link: string };
+      type: "document";
+    }
+  | {
+      image: { id: string } | { link: string };
+      type: "image";
+    }
+  | { payload: string; type: "payload" }
+  | { text: string; type: "text" }
+  | {
+      type: "video";
+      video: { id: string } | { link: string };
+    };
+
+export type CrmWhatsappTemplateComponent =
+  | {
+      parameters: readonly CrmWhatsappTemplateParameter[];
+      type: "body" | "header";
+    }
+  | {
+      index: string;
+      parameters: readonly CrmWhatsappTemplateParameter[];
+      sub_type: "quick_reply" | "url";
+      type: "button";
+    };
+
+export type CrmWhatsappSendTemplateInput = {
+  components?: readonly CrmWhatsappTemplateComponent[];
+  languageCode: string;
+  name: string;
+  phone: string;
+};
+
 export type CrmWhatsappCatalogProduct = {
   availability: string | null;
   currency: string | null;
@@ -163,15 +219,26 @@ export type CrmWhatsappGateway = {
     connection: CrmConnection,
     input: CrmWhatsappSendTextInput,
   ) => Promise<CrmWhatsappSendTextResult>;
+  sendTemplate: (
+    connection: CrmConnection,
+    input: CrmWhatsappSendTemplateInput,
+  ) => Promise<CrmWhatsappSendTextResult>;
 };
 
 export class CrmWhatsappGatewayError extends Error {
   constructor(
     message: string,
-    public readonly status: 429 | 502 = 502,
+    public readonly status: 409 | 429 | 502 = 502,
     public readonly retryAfterSeconds?: number,
   ) {
     super(message);
     this.name = "CrmWhatsappGatewayError";
+  }
+}
+
+export class CrmWhatsappCapabilityError extends CrmWhatsappGatewayError {
+  constructor(message: string) {
+    super(message, 409);
+    this.name = "CrmWhatsappCapabilityError";
   }
 }

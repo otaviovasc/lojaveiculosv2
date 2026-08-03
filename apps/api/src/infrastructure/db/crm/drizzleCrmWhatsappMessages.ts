@@ -68,16 +68,18 @@ export async function listWhatsappMessages(
   db: DrizzleCrmClient,
   input: ListCrmWhatsappMessagesInput,
 ) {
+  const filters = [
+    eq(crmWhatsappMessages.storeId, input.storeId),
+    eq(crmWhatsappMessages.tenantId, input.tenantId),
+    eq(crmWhatsappMessages.sessionId, input.sessionId),
+  ];
+  if (input.direction) {
+    filters.push(eq(crmWhatsappMessages.direction, input.direction));
+  }
   const rows = await db
     .select()
     .from(crmWhatsappMessages)
-    .where(
-      and(
-        eq(crmWhatsappMessages.storeId, input.storeId),
-        eq(crmWhatsappMessages.tenantId, input.tenantId),
-        eq(crmWhatsappMessages.sessionId, input.sessionId),
-      ),
-    )
+    .where(and(...filters))
     .orderBy(
       desc(crmWhatsappMessages.providerTimestamp),
       desc(crmWhatsappMessages.createdAt),

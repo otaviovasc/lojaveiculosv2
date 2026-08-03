@@ -114,7 +114,7 @@ function toWebhookEvent(row: typeof providerEvents.$inferSelect) {
     id: row.id,
     payload: row.payload as Record<string, unknown>,
     processedAt: row.processedAt,
-    provider: row.provider as "zapi",
+    provider: row.provider as CrmProviderWebhookEvent["provider"],
     providerEventId: row.providerEventId,
     status: row.status,
     storeId: row.storeId as StoreId | null,
