@@ -11,7 +11,7 @@ import {
 
 export type FindOrCreateWhatsappLeadInput = {
   buyerName?: string | null;
-  buyerPhone: string;
+  buyerPhone?: string | null;
   connectionId: string;
   direction: "INBOUND" | "OUTBOUND";
   externalId: string;
@@ -36,16 +36,18 @@ export async function findOrCreateWhatsappLead(
   if (preferred) {
     return enrichExistingWhatsappLead(repository, preferred, input);
   }
-  const existing = await repository.findLeadByPhone({
-    buyerPhone: input.buyerPhone,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
+  const existing = input.buyerPhone
+    ? await repository.findLeadByPhone({
+        buyerPhone: input.buyerPhone,
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      })
+    : null;
   if (existing) return enrichExistingWhatsappLead(repository, existing, input);
 
   return repository.createLead({
     ...(input.buyerName?.trim() ? { buyerName: input.buyerName.trim() } : {}),
-    buyerPhone: input.buyerPhone,
+    ...(input.buyerPhone ? { buyerPhone: input.buyerPhone } : {}),
     metadata: createWhatsappLeadMetadata(input),
     source: input.source ?? "whatsapp",
     storeId: input.storeId,
@@ -59,13 +61,11 @@ async function enrichExistingWhatsappLead(
   input: FindOrCreateWhatsappLeadInput,
 ) {
   const buyerName = readEnrichedBuyerName(lead, input.buyerName);
-  const buyerPhone = shouldBackfillWhatsappPhone(
-    lead.buyerPhone,
-    input.buyerPhone,
-    true,
-  )
-    ? input.buyerPhone
-    : undefined;
+  const buyerPhone =
+    input.buyerPhone &&
+    shouldBackfillWhatsappPhone(lead.buyerPhone, input.buyerPhone, true)
+      ? input.buyerPhone
+      : undefined;
   const metadata = readEnrichedMetadata(lead.metadata, input);
   if (
     buyerName === undefined &&

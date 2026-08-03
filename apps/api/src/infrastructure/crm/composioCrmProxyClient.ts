@@ -66,7 +66,7 @@ async function makeProxyRequest(
   input: ComposioProxyInput,
   fetchImpl: typeof fetch,
 ): Promise<ProxyEnvelope> {
-  const response = await fetchComposio(
+  const { payload, response } = await fetchComposio(
     credentials,
     `${credentials.apiBaseUrl}/api/v3.1/tools/execute/proxy`,
     {
@@ -86,7 +86,6 @@ async function makeProxyRequest(
     fetchImpl,
   );
 
-  const payload = parseJson(await response.text());
   const upstreamStatus = readNumber(payload.status);
   return {
     data: readRecord(payload.data),
@@ -103,14 +102,19 @@ export async function fetchComposio(
   url: string,
   init: RequestInit,
   fetchImpl: typeof fetch,
-) {
+): Promise<{ payload: Record<string, unknown>; response: Response }> {
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),
     credentials.requestTimeoutMs,
   );
   try {
-    return await fetchImpl(url, { ...init, signal: controller.signal });
+    const response = await fetchImpl(url, {
+      ...init,
+      signal: controller.signal,
+    });
+    const payload = parseJson(await response.text());
+    return { payload, response };
   } catch {
     throw new CrmWhatsappGatewayError(
       "Composio request failed before receiving a response",

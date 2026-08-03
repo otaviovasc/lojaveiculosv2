@@ -1,100 +1,69 @@
 import { lookup as lookupDns } from "node:dns/promises";
 import { request } from "node:https";
-import { BlockList, isIP } from "node:net";
 import type { LookupAddress } from "node:dns";
 import type { IncomingHttpHeaders, IncomingMessage } from "node:http";
 import {
   UnsafeCrmRemoteMediaUrlError,
   type CrmRemoteMediaFetcher,
 } from "../../domains/crm/ports/crmRemoteMediaFetcher.js";
+import {
+  assertPublicRemoteAddress,
+  parsePublicHttpsUrl,
+} from "./safeCrmRemoteMediaAddress.js";
+export {
+  assertPublicRemoteAddress,
+  parsePublicHttpsUrl,
+} from "./safeCrmRemoteMediaAddress.js";
 
 const MAX_REDIRECTS = 3;
 const REQUEST_TIMEOUT_MS = 10_000;
 
-const blockedAddresses = new BlockList();
-for (const [network, prefix] of [
-  ["0.0.0.0", 8],
-  ["10.0.0.0", 8],
-  ["100.64.0.0", 10],
-  ["127.0.0.0", 8],
-  ["169.254.0.0", 16],
-  ["172.16.0.0", 12],
-  ["192.0.0.0", 24],
-  ["192.0.2.0", 24],
-  ["192.88.99.0", 24],
-  ["192.168.0.0", 16],
-  ["198.18.0.0", 15],
-  ["198.51.100.0", 24],
-  ["203.0.113.0", 24],
-  ["224.0.0.0", 4],
-  ["240.0.0.0", 4],
-] as const) {
-  blockedAddresses.addSubnet(network, prefix, "ipv4");
-}
-for (const [network, prefix] of [
-  ["::", 128],
-  ["::1", 128],
-  ["64:ff9b::", 96],
-  ["2001:db8::", 32],
-  ["fc00::", 7],
-  ["fe80::", 10],
-  ["ff00::", 8],
-] as const) {
-  blockedAddresses.addSubnet(network, prefix, "ipv6");
-}
-
 export function createSafeCrmRemoteMediaFetcher(): CrmRemoteMediaFetcher {
   return {
     fetchMedia: ({ maxBytes, url }) =>
-      fetchPublicHttpsMedia(url, maxBytes, MAX_REDIRECTS),
-    validateUrl: async ({ url }) => {
-      await resolvePublicHttpsTarget(url);
-    },
+      runWithCrmRemoteMediaTimeout((signal) =>
+        fetchPublicHttpsMedia(url, maxBytes, MAX_REDIRECTS, signal),
+      ),
+    validateUrl: ({ url }) =>
+      runWithCrmRemoteMediaTimeout(async (signal) => {
+        await resolvePublicHttpsTarget(url, signal);
+      }),
   };
 }
 
-export function assertPublicRemoteAddress(address: string): void {
-  const family = isIP(address);
-  if (!family) throw new UnsafeCrmRemoteMediaUrlError();
-  if (
-    blockedAddresses.check(address, family === 4 ? "ipv4" : "ipv6") ||
-    isBlockedMappedIpv4(address)
-  ) {
-    throw new UnsafeCrmRemoteMediaUrlError();
-  }
-}
-
-export function parsePublicHttpsUrl(value: string): URL {
-  let url: URL;
+export async function runWithCrmRemoteMediaTimeout<T>(
+  action: (signal: AbortSignal) => Promise<T>,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(new RemoteMediaTimeoutError()),
+    timeoutMs,
+  );
+  timeout.unref?.();
   try {
-    url = new URL(value);
-  } catch {
-    throw new UnsafeCrmRemoteMediaUrlError();
+    return await action(controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) throw new RemoteMediaTimeoutError();
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    !url.hostname
-  ) {
-    throw new UnsafeCrmRemoteMediaUrlError();
-  }
-  if (isIP(url.hostname)) assertPublicRemoteAddress(url.hostname);
-  return url;
 }
 
 async function fetchPublicHttpsMedia(
   value: string,
   maxBytes: number,
   redirectsRemaining: number,
+  signal: AbortSignal,
 ): Promise<{
   body: Uint8Array;
   contentType: string | null;
   finalUrl: string;
 }> {
-  const { addresses, url } = await resolvePublicHttpsTarget(value);
+  const { addresses, url } = await resolvePublicHttpsTarget(value, signal);
 
-  const response = await requestPinned(url, addresses[0]!);
+  const response = await requestPinned(url, addresses[0]!, signal);
   if (isRedirect(response.statusCode)) {
     if (!redirectsRemaining) throw new UnsafeCrmRemoteMediaUrlError();
     const location = firstHeader(response.headers.location);
@@ -103,6 +72,7 @@ async function fetchPublicHttpsMedia(
       new URL(location, url).toString(),
       maxBytes,
       redirectsRemaining - 1,
+      signal,
     );
   }
   if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -115,20 +85,23 @@ async function fetchPublicHttpsMedia(
     throw new RemoteMediaTooLargeError();
   }
   return {
-    body: await readLimitedBody(response.body, maxBytes),
+    body: await readLimitedBody(response.body, maxBytes, signal),
     contentType: firstHeader(response.headers["content-type"]) ?? null,
     finalUrl: url.toString(),
   };
 }
 
-async function resolvePublicHttpsTarget(value: string) {
+async function resolvePublicHttpsTarget(value: string, signal: AbortSignal) {
   const url = parsePublicHttpsUrl(value);
   let addresses: LookupAddress[];
   try {
-    addresses = await lookupDns(url.hostname, {
-      all: true,
-      verbatim: true,
-    });
+    addresses = await rejectWhenAborted(
+      lookupDns(url.hostname, {
+        all: true,
+        verbatim: true,
+      }),
+      signal,
+    );
   } catch {
     throw new UnsafeCrmRemoteMediaUrlError();
   }
@@ -140,6 +113,7 @@ async function resolvePublicHttpsTarget(value: string) {
 function requestPinned(
   url: URL,
   address: LookupAddress,
+  signal: AbortSignal,
 ): Promise<{
   body: IncomingMessage;
   headers: IncomingHttpHeaders;
@@ -153,7 +127,7 @@ function requestPinned(
         lookup: (_hostname, _options, callback) =>
           callback(null, address.address, address.family),
         method: "GET",
-        timeout: REQUEST_TIMEOUT_MS,
+        signal,
       },
       (response) => {
         const statusCode = response.statusCode ?? 0;
@@ -164,34 +138,52 @@ function requestPinned(
       },
     );
     pending.once("error", reject);
-    pending.once("timeout", () => {
-      pending.destroy(new RemoteMediaTimeoutError());
-    });
     pending.end();
+  });
+}
+
+function rejectWhenAborted<T>(promise: Promise<T>, signal: AbortSignal) {
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    signal.addEventListener("abort", abort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", abort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", abort);
+        reject(error);
+      },
+    );
   });
 }
 
 async function readLimitedBody(
   stream: IncomingMessage,
   maxBytes: number,
+  signal: AbortSignal,
 ): Promise<Uint8Array> {
   const chunks: Uint8Array[] = [];
   let totalBytes = 0;
-  for await (const rawChunk of stream) {
-    const chunk =
-      rawChunk instanceof Uint8Array ? rawChunk : Buffer.from(String(rawChunk));
-    totalBytes += chunk.byteLength;
-    if (totalBytes > maxBytes) throw new RemoteMediaTooLargeError();
-    chunks.push(chunk);
+  const abort = () => stream.destroy(signal.reason);
+  signal.addEventListener("abort", abort, { once: true });
+  try {
+    for await (const rawChunk of stream) {
+      const chunk =
+        rawChunk instanceof Uint8Array
+          ? rawChunk
+          : Buffer.from(String(rawChunk));
+      totalBytes += chunk.byteLength;
+      if (totalBytes > maxBytes) throw new RemoteMediaTooLargeError();
+      chunks.push(chunk);
+    }
+  } finally {
+    signal.removeEventListener("abort", abort);
   }
   if (!totalBytes) throw new RemoteMediaEmptyBodyError();
   return Buffer.concat(chunks, totalBytes);
-}
-
-function isBlockedMappedIpv4(address: string) {
-  const match = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address);
-  if (!match?.[1]) return false;
-  return blockedAddresses.check(match[1], "ipv4");
 }
 
 function isRedirect(statusCode: number) {
@@ -216,7 +208,7 @@ class RemoteMediaFetchError extends Error {
   }
 }
 
-class RemoteMediaTimeoutError extends Error {
+export class RemoteMediaTimeoutError extends Error {
   constructor() {
     super("Remote media fetch timed out.");
     this.name = "RemoteMediaTimeoutError";

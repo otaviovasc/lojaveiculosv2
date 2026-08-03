@@ -59,6 +59,31 @@ describe("Composio CRM gateway resilience", () => {
     ).rejects.toThrow("failed before receiving a response");
   });
 
+  it("keeps the timeout active while reading the provider body", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async (_url, request) => {
+      const signal = request?.signal;
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            signal?.addEventListener(
+              "abort",
+              () => controller.error(new DOMException("Aborted", "AbortError")),
+              { once: true },
+            );
+          },
+        }),
+      );
+    });
+    const gateway = createComposioCrmWhatsappGateway(
+      { ...env, COMPOSIO_REQUEST_TIMEOUT_MS: "5" },
+      fetchImpl,
+    );
+
+    await expect(
+      gateway.getConnectionStatus(createConnection()),
+    ).rejects.toThrow("failed before receiving a response");
+  });
+
   it.each(["clientToken", "client_secret", "refreshToken", "password"])(
     "rejects raw provider secret field %s",
     (field) => {

@@ -12,6 +12,7 @@ import type {
   BotMediaTarget,
   SendWhatsappBotMediaByUrlInput,
 } from "./whatsappBotMediaByUrlTypes.js";
+import { providerAddressForSession } from "../messaging/crmMessagingProvider.js";
 
 export async function resolveBotMediaTarget(
   context: ServiceContext,
@@ -36,7 +37,7 @@ export async function resolveBotMediaTarget(
         session.connectionId,
         ports,
       ),
-      phone: session.buyerPhone,
+      phone: providerAddressForSession(session),
       session,
     };
   }

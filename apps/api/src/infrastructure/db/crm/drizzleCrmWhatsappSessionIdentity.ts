@@ -14,12 +14,23 @@ export async function findWhatsappSessionByIdentity(
   db: DrizzleCrmClient,
   input: WhatsappSessionIdentityInput,
 ) {
-  const exact = await findScopedSession(
-    db,
-    input,
-    eq(crmWhatsappSessions.buyerPhone, input.buyerPhone),
-  );
-  if (exact || !input.buyerChatLid) return exact;
+  if (input.channelExternalId) {
+    const byChannelExternalId = await findScopedSession(
+      db,
+      input,
+      eq(crmWhatsappSessions.channelExternalId, input.channelExternalId),
+    );
+    if (byChannelExternalId) return byChannelExternalId;
+  }
+  if (input.buyerPhone) {
+    const byPhone = await findScopedSession(
+      db,
+      input,
+      eq(crmWhatsappSessions.buyerPhone, input.buyerPhone),
+    );
+    if (byPhone) return byPhone;
+  }
+  if (!input.buyerChatLid) return null;
   return findScopedSession(
     db,
     input,

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -107,10 +108,12 @@ export const crmWhatsappSessions = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
-    uniqueIndex("crm_whatsapp_sessions_connection_phone_unique").on(
-      table.connectionId,
-      table.buyerPhone,
-    ),
+    uniqueIndex("crm_whatsapp_sessions_connection_phone_unique")
+      .on(table.connectionId, table.buyerPhone)
+      .where(sql`${table.buyerPhone} <> ''`),
+    uniqueIndex("crm_whatsapp_sessions_connection_channel_external_unique")
+      .on(table.connectionId, table.channelExternalId)
+      .where(sql`${table.channelExternalId} IS NOT NULL`),
     index("crm_whatsapp_sessions_store_last_message_idx").on(
       table.storeId,
       table.lastMessageAt,

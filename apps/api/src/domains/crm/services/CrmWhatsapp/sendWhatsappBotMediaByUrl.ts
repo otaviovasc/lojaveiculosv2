@@ -110,8 +110,11 @@ export async function sendWhatsappBotMediaByUrl(
         ).id;
       const result = await repository.ingestMessage({
         ...(target.buyerName ? { buyerName: target.buyerName } : {}),
-        buyerPhone: target.phone,
+        buyerPhone: target.session?.buyerPhone ?? target.phone,
         channel: channelForCrmProvider(target.connection.provider),
+        ...(target.session?.channelExternalId
+          ? { channelExternalId: target.session.channelExternalId }
+          : {}),
         connectionId: target.connection.id,
         content: contentForMedia(input),
         direction: "OUTBOUND",

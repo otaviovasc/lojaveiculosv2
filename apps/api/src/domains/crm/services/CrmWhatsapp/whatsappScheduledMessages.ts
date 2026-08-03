@@ -100,6 +100,11 @@ export async function createWhatsappScheduledMessage(
     async () => {
       const scope = requireCrmWhatsappScope(context);
       const session = await findScopedSession(input.sessionId, scope, ports);
+      if (session.channel !== "WHATSAPP" || !session.buyerPhone) {
+        throw new WhatsappMessageActionError(
+          "Scheduled messages require a WhatsApp conversation with a valid phone.",
+        );
+      }
       return getCrmWhatsappRepository(ports).createScheduledMessage({
         connectionId: session.connectionId,
         createdByUserId: context.actor.id as never,

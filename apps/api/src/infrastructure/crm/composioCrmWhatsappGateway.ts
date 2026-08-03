@@ -36,7 +36,7 @@ export function createComposioCrmWhatsappGateway(
     },
     async getConnectionStatus(connection) {
       const credentials = credentialsFor(connection);
-      const response = await fetchComposio(
+      const { payload, response } = await fetchComposio(
         credentials,
         `${credentials.apiBaseUrl}/api/v3.1/connected_accounts/${encodeURIComponent(
           credentials.connectedAccountId,
@@ -50,7 +50,6 @@ export function createComposioCrmWhatsappGateway(
         },
         fetchImpl,
       );
-      const payload = parseJson(await response.text());
       if (!response.ok) {
         throw new CrmWhatsappGatewayError(
           `Composio connected-account status failed with HTTP ${response.status}`,
@@ -124,13 +123,4 @@ function toSendResult(payload: Record<string, unknown>) {
     providerTimestamp: new Date(),
     raw: payload,
   };
-}
-
-function parseJson(text: string): Record<string, unknown> {
-  if (!text.trim()) return {};
-  try {
-    return readRecord(JSON.parse(text));
-  } catch {
-    return {};
-  }
 }

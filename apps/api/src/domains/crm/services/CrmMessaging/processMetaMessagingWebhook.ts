@@ -6,7 +6,6 @@ import {
 } from "../../messaging/parseMetaWebhookEvents.js";
 import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import { createWhatsappMessageActivity } from "../../whatsapp/createWhatsappMessageActivity.js";
-import { findOrCreateWhatsappLead } from "../../whatsapp/whatsappLeadLinking.js";
 import { forwardWhatsappMessageToBot } from "../../whatsapp/whatsappBotWebhookForwarding.js";
 import {
   toWhatsappMessage,
@@ -17,10 +16,10 @@ import {
   getCrmEnvironment,
   getCrmRealtimePublisher,
   getCrmWebhookEventRepository,
-  getCrmWhatsappRepository,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
+import { resolveMetaMessageIdentity } from "../../messaging/resolveMetaMessageIdentity.js";
 import {
   auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
@@ -166,23 +165,12 @@ async function ingestMessage(
 ) {
   const timestamp = event.timestamp ?? new Date();
   const persisted = await runCrmTransaction(ports, async (transactionPorts) => {
-    const lead = await findOrCreateWhatsappLead(transactionPorts, {
-      buyerPhone: event.contactExternalId,
-      connectionId: connection.id,
-      direction: "INBOUND",
-      externalId: event.externalMessageId,
-      source:
-        event.provider === "composio_instagram" ? "instagram" : "whatsapp",
-      storeId: connection.storeId,
-      tenantId: connection.tenantId,
-    });
+    const { buyerPhone, channel, lead, repository } =
+      await resolveMetaMessageIdentity(transactionPorts, connection, event);
     const mediaType = event.media?.type ?? null;
-    const result = await getCrmWhatsappRepository(
-      transactionPorts,
-    ).ingestMessage({
-      buyerPhone: event.contactExternalId,
-      channel:
-        event.provider === "composio_instagram" ? "INSTAGRAM" : "WHATSAPP",
+    const result = await repository.ingestMessage({
+      buyerPhone,
+      channel,
       channelExternalId: event.contactExternalId,
       channelMessageId: event.externalMessageId,
       connectionId: connection.id,
@@ -220,7 +208,6 @@ async function ingestMessage(
     }
     return result;
   });
-  if (!persisted.createdMessage) return false;
 
   const message = toWhatsappMessage(persisted.message);
   const session = toWhatsappSession(persisted.session, connection);

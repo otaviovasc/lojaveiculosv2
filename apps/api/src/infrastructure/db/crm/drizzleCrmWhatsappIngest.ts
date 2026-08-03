@@ -108,12 +108,7 @@ async function findOrCreateSession(
       storeId: input.storeId,
       tenantId: input.tenantId,
     })
-    .onConflictDoNothing({
-      target: [
-        crmWhatsappSessions.connectionId,
-        crmWhatsappSessions.buyerPhone,
-      ],
-    })
+    .onConflictDoNothing()
     .returning();
 
   if (inserted) return { ...inserted, created: true };

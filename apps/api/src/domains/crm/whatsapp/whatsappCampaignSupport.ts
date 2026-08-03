@@ -65,6 +65,11 @@ export async function resolveCampaignSessions(
       tenantId: scope.tenantId as never,
     });
     if (!session) throw new WhatsappSessionNotFoundError(recipient.sessionId);
+    if (session.channel !== "WHATSAPP" || !session.buyerPhone) {
+      throw new WhatsappMessageActionError(
+        "Campaign recipients must use a WhatsApp conversation with a valid phone.",
+      );
+    }
     sessions.push(session);
   }
   return sessions;

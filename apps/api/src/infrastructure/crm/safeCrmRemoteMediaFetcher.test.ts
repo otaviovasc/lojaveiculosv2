@@ -3,6 +3,7 @@ import { UnsafeCrmRemoteMediaUrlError } from "../../domains/crm/ports/crmRemoteM
 import {
   assertPublicRemoteAddress,
   parsePublicHttpsUrl,
+  runWithCrmRemoteMediaTimeout,
 } from "./safeCrmRemoteMediaFetcher.js";
 
 describe("safeCrmRemoteMediaFetcher", () => {
@@ -18,6 +19,8 @@ describe("safeCrmRemoteMediaFetcher", () => {
     "fe80::1",
     "fc00::1",
     "::ffff:127.0.0.1",
+    "::7f00:1",
+    "2002:7f00:1::",
   ])("rejects non-public address %s", (address) => {
     expect(() => assertPublicRemoteAddress(address)).toThrow(
       UnsafeCrmRemoteMediaUrlError,
@@ -40,5 +43,21 @@ describe("safeCrmRemoteMediaFetcher", () => {
     expect(
       parsePublicHttpsUrl("https://media.example.com/file.jpg").toString(),
     ).toBe("https://media.example.com/file.jpg");
+  });
+
+  it("enforces one absolute deadline even while work remains active", async () => {
+    const startedAt = Date.now();
+    await expect(
+      runWithCrmRemoteMediaTimeout(
+        (signal) =>
+          new Promise<void>((_resolve, reject) => {
+            signal.addEventListener("abort", () => reject(signal.reason), {
+              once: true,
+            });
+          }),
+        20,
+      ),
+    ).rejects.toMatchObject({ name: "RemoteMediaTimeoutError" });
+    expect(Date.now() - startedAt).toBeLessThan(500);
   });
 });

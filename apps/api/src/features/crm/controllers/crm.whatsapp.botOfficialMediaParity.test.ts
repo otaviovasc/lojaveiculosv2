@@ -57,8 +57,9 @@ describe("CRM official bot media parity", () => {
     );
     const repository = createMemoryCrmWhatsappRepository();
     const inbound = await repository.ingestMessage({
-      buyerPhone: "ig-customer-1",
+      buyerPhone: "",
       channel: "INSTAGRAM",
+      channelExternalId: "ig-customer-1",
       connectionId: connection.id,
       content: "Quero ver o carro",
       direction: "INBOUND",
@@ -91,6 +92,10 @@ describe("CRM official bot media parity", () => {
     );
 
     expect(response.status).toBe(200);
+    expect(sendMedia).toHaveBeenCalledWith(
+      connection,
+      expect.objectContaining({ phone: "ig-customer-1" }),
+    );
     await expect(
       repository.findMessageByExternalId({
         connectionId: connection.id,

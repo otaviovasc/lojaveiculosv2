@@ -85,6 +85,13 @@
       "when": 1785198057113,
       "tag": "0011_unique_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785766422783,
+      "tag": "0012_brave_gauntlet",
+      "breakpoints": true
     }
   ]
 }
