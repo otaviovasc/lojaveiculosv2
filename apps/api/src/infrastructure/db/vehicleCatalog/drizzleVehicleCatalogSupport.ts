@@ -122,3 +122,10 @@ export function slugify(value: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
+
+export function preserveVehicleBrandLogoUrl(
+  incomingLogoUrl: string | null | undefined,
+  existingLogoUrl: string | null | undefined,
+): string | null {
+  return incomingLogoUrl ?? existingLogoUrl ?? null;
+}

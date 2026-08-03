@@ -1,7 +1,7 @@
 import { CarFront, FolderArchive, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
-  documentUnitFolderInfo,
+  filterDocumentsForFolder,
   type DocumentVehicleOption,
   type DocumentsFolderKey,
 } from "./documentDisplayModel";
@@ -185,9 +185,7 @@ function buildGroups(
     normalizedSearch.length === 0 ||
     haystack.toLocaleLowerCase("pt-BR").includes(normalizedSearch);
 
-  const generalCount = documents.filter(
-    (document) => !documentUnitFolderInfo(document),
-  ).length;
+  const generalCount = filterDocumentsForFolder(documents, "general").length;
   const generalRow: FolderRow = {
     count: generalCount,
     key: "general",
@@ -199,8 +197,9 @@ function buildGroups(
 
   const unitRows: FolderRow[] = vehicleOptions
     .map((vehicle) => {
-      const count = documents.filter(
-        (document) => documentUnitFolderInfo(document)?.id === vehicle.id,
+      const count = filterDocumentsForFolder(
+        documents,
+        `unit:${vehicle.id}`,
       ).length;
       return {
         count,

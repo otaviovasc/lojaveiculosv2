@@ -71,7 +71,7 @@ export function DocumentWorkspaceMobileList({
               "rounded-xl border bg-panel p-3 shadow-sm transition-colors " +
               (isChecked ? "border-accent bg-accent-soft" : "border-line")
             }
-            key={document.id}
+            key={`${document.id}:${document.context.targetType}:${document.context.targetId}`}
           >
             <div className="flex min-w-0 items-start gap-2.5">
               {onToggleSelect ? (

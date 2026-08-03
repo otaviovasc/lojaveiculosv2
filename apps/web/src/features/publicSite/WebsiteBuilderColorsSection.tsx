@@ -1,5 +1,6 @@
-import { Check } from "lucide-react";
+import { AlertTriangle, Check } from "lucide-react";
 import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
+import { contrastRatio, parseHexColor } from "@/lib/colors";
 import { cn } from "@/lib/utils";
 import { websiteBuilderColorPalettes } from "./WebsiteBuilderModel";
 import type { WebsiteBuilderConfig } from "./WebsiteBuilderTypes";
@@ -111,6 +112,60 @@ export function WebsiteBuilderColorsSection({
             />
           ))}
         </div>
+        <WebsiteBuilderContrastWarning config={config} />
+      </div>
+    </div>
+  );
+}
+
+function colorContrastRatio(a: string, b: string) {
+  const foreground = parseHexColor(a);
+  const background = parseHexColor(b);
+  return foreground && background
+    ? contrastRatio(foreground, background)
+    : null;
+}
+
+function WebsiteBuilderContrastWarning({
+  config,
+}: {
+  config: WebsiteBuilderConfig;
+}) {
+  const warnings: string[] = [];
+  const inkRatio = colorContrastRatio(
+    config.brandColor,
+    config.backgroundColor,
+  );
+  const accentRatio = colorContrastRatio(
+    config.accentColor,
+    config.backgroundColor,
+  );
+
+  if (inkRatio !== null && inkRatio < 4.5) {
+    warnings.push(
+      "A cor da marca tem pouco contraste com o fundo das seções; os textos podem ficar ilegíveis.",
+    );
+  }
+  if (accentRatio !== null && accentRatio < 3) {
+    warnings.push(
+      "A cor de destaque tem pouco contraste com o fundo; botões e links podem ficar difíceis de ler.",
+    );
+  }
+
+  if (!warnings.length) return null;
+
+  return (
+    <div className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3">
+      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning-strong" />
+      <div className="space-y-1">
+        {warnings.map((warning) => (
+          <p
+            className="text-xs leading-relaxed text-warning-strong"
+            key={warning}
+          >
+            {warning}
+          </p>
+        ))}
       </div>
     </div>
   );

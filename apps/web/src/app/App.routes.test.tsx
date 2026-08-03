@@ -50,7 +50,10 @@ describe("App routes", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Loja Veículos" }),
+      await screen.findByRole("heading", {
+        level: 1,
+        name: /o sistema que faz você vender até/i,
+      }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("landing-hero-shader")).toHaveAttribute(
       "data-shader-state",

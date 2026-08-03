@@ -6,11 +6,8 @@ import {
   ShieldCheck,
   MessageCircle,
 } from "lucide-react";
-import {
-  readString,
-  readTestimonials,
-  type VisibleStorefrontSection,
-} from "./publicStorefrontTheme";
+import { readString, readTestimonials } from "./publicStorefrontTheme";
+import type { SectionSpec } from "./config/types";
 import type {
   PublicStorefrontData,
   PublicStorefrontSettingsData,
@@ -24,7 +21,7 @@ export function AboutSection({
   const theme = data.settings.site.theme;
   const imageUrl = readString(theme.aboutImageUrl);
   return (
-    <section className="border-b border-line bg-panel">
+    <section className="border-b border-line bg-panel" id="sobre">
       <div className="public-storefront-shell grid gap-12 px-6 py-16 md:grid-cols-2 md:py-20 lg:py-24">
         <div className="flex min-w-0 flex-col justify-center">
           <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
@@ -179,18 +176,11 @@ export function BrandMark({
   );
 }
 
-export function createVisibleProofItems(
-  sections: readonly VisibleStorefrontSection[],
-) {
-  const types = new Set(sections.map((s) => s.type));
+export function createVisibleProofItems(sections: readonly SectionSpec[]) {
+  const types = new Set(sections.map((section) => section.type));
   return proofItems.filter((item) => {
-    if (item.key === "featured")
-      return (
-        types.has("featured") ||
-        types.has("all_properties") ||
-        types.has("search")
-      );
-    if (item.key === "financing") return types.has("contact");
+    if (item.key === "featured") return types.has("stock");
+    if (item.key === "financing") return types.has("lead");
     return true;
   });
 }

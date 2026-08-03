@@ -123,7 +123,9 @@ export async function insertStoreDefaults(
       .onConflictDoNothing(),
     db
       .insert(storePublicSiteSettings)
-      .values({ isPublished: false, storeId, tenantId })
+      // Stores ship with their storefront live by default; owners can
+      // unpublish from the customize page.
+      .values({ isPublished: true, storeId, tenantId })
       .onConflictDoNothing(),
     db
       .insert(storeEntitlements)

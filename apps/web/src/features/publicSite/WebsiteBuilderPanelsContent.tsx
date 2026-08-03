@@ -141,6 +141,67 @@ export function WebsiteBuilderContactPanel({
   );
 }
 
+export function WebsiteBuilderSeoPanel({
+  config,
+  updateConfig,
+}: {
+  config: WebsiteBuilderConfig;
+  updateConfig: UpdateConfig;
+}) {
+  return (
+    <div className="space-y-6">
+      <p className="text-xs text-muted-foreground">
+        Como o site aparece nos buscadores e ao ser compartilhado.
+      </p>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="seoMetaTitle">Título para buscadores</Label>
+          <Input
+            className="h-10"
+            id="seoMetaTitle"
+            maxLength={120}
+            onChange={(event) =>
+              updateConfig("seo", {
+                ...config.seo,
+                metaTitle: event.target.value,
+              })
+            }
+            placeholder="Ex: Loja Veículos Premium - Seminovos em São Paulo"
+            value={config.seo.metaTitle ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="seoMetaDescription">Descrição para buscadores</Label>
+          <Textarea
+            className="min-h-[90px] resize-y"
+            id="seoMetaDescription"
+            maxLength={300}
+            onChange={(event) =>
+              updateConfig("seo", {
+                ...config.seo,
+                metaDescription: event.target.value,
+              })
+            }
+            rows={3}
+            value={config.seo.metaDescription ?? ""}
+          />
+          <span className="text-xs text-muted-foreground">
+            Max. 300 caracteres
+          </span>
+        </div>
+      </div>
+      <WebsiteBuilderImageUrlField
+        imageClassName="h-32 w-full rounded-xl"
+        label="Imagem de compartilhamento"
+        onChange={(value) =>
+          updateConfig("seo", { ...config.seo, ogImageUrl: value })
+        }
+        value={config.seo.ogImageUrl ?? ""}
+      />
+    </div>
+  );
+}
+
 export function WebsiteBuilderTestimonialsPanel({
   config,
   updateConfig,

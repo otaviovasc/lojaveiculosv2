@@ -9,6 +9,7 @@ import {
   parseFipeModelYear,
   parseFipePriceCents,
 } from "../infrastructure/catalog/fipeVehicleCatalogMapping.js";
+import { resolveVehicleBrandLogoUrl } from "../infrastructure/catalog/vehicleBrandLogoResolver.js";
 import { loadLocalEnv } from "../infrastructure/config/loadLocalEnv.js";
 import { createDrizzleVehicleCatalogWrites } from "../infrastructure/db/vehicleCatalog/drizzleVehicleCatalogWrites.js";
 import { resolveFipeCsvPath } from "./fipeCsvImportConfig.js";
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
 
       const brand = await writes.upsertBrand({
         code: row.brandCode,
+        imageUrl: resolveVehicleBrandLogoUrl(row.brandValue),
         name: row.brandValue,
         vehicleType,
       });

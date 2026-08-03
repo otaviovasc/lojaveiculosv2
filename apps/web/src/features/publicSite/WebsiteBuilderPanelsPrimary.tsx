@@ -1,4 +1,6 @@
 import { Check } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +30,15 @@ export function WebsiteBuilderTemplatePanel({
   onChange: (templateId: WebsiteBuilderTemplateId) => void;
   templateId: WebsiteBuilderTemplateId;
 }) {
+  const [pendingTemplateId, setPendingTemplateId] =
+    useState<WebsiteBuilderTemplateId | null>(null);
+
+  const confirmSwitch = () => {
+    if (!pendingTemplateId) return;
+    onChange(pendingTemplateId);
+    setPendingTemplateId(null);
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
@@ -46,7 +57,9 @@ export function WebsiteBuilderTemplatePanel({
                   : "border-border/50 hover:border-line-strong",
               )}
               key={id}
-              onClick={() => onChange(id)}
+              onClick={() => {
+                if (!selected) setPendingTemplateId(id);
+              }}
               type="button"
             >
               <div
@@ -96,6 +109,30 @@ export function WebsiteBuilderTemplatePanel({
           );
         })}
       </div>
+      {pendingTemplateId ? (
+        <div className="space-y-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+          <p className="text-xs leading-relaxed text-warning-strong">
+            Trocar para o modelo{" "}
+            <strong>
+              {websiteBuilderTemplateInfo[pendingTemplateId].name}
+            </strong>{" "}
+            redefine cores, tipografia e seções. Seus textos são mantidos.
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={confirmSwitch} size="sm" type="button">
+              Trocar modelo
+            </Button>
+            <Button
+              onClick={() => setPendingTemplateId(null)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Manter atual
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -115,7 +152,7 @@ export function WebsiteBuilderBrandPanel({
         </h4>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="corretorName">Nome / Título da Marca</Label>
+            <Label htmlFor="corretorName">Nome de exibição</Label>
             <Input
               className="h-10"
               id="corretorName"
@@ -127,7 +164,9 @@ export function WebsiteBuilderBrandPanel({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="corretorCreci">Registro / Identificação</Label>
+            <Label htmlFor="corretorCreci">
+              Registro / identificação (opcional)
+            </Label>
             <Input
               className="h-10"
               id="corretorCreci"
@@ -144,13 +183,13 @@ export function WebsiteBuilderBrandPanel({
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <WebsiteBuilderImageUrlField
           imageClassName="h-24 w-24 rounded-full"
-          label="Sua Foto"
+          label="Foto do responsável (opcional)"
           onChange={(value) => updateConfig("corretorPhotoUrl", value)}
           value={config.corretorPhotoUrl ?? ""}
         />
         <WebsiteBuilderImageUrlField
           imageClassName="h-16 min-w-[120px] max-w-[140px] rounded-xl bg-card p-2"
-          label="Sua Logo"
+          label="Logo da loja"
           onChange={(value) => updateConfig("logoUrl", value)}
           value={config.logoUrl ?? ""}
         />

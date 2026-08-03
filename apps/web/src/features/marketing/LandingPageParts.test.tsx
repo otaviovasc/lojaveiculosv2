@@ -4,12 +4,14 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { HeroSection } from "./LandingHero";
+import { ProductSection } from "./LandingProduct";
 import {
   FeatureSection,
   FinalCta,
   LandingFooter,
-  OutcomeStrip,
+  MetricsSection,
   ProblemSection,
+  TestimonialsSection,
   WorkflowSection,
 } from "./LandingPageParts";
 
@@ -23,6 +25,10 @@ vi.mock("./LandingHeroShader", () => ({
   LandingHeroShader: () => <div data-testid="hero-shader" />,
 }));
 
+vi.mock("../../components/ui/AnimatedContent", () => ({
+  default: ({ children }: { children: unknown }) => children,
+}));
+
 describe("public landing copy", () => {
   afterEach(cleanup);
 
@@ -30,30 +36,31 @@ describe("public landing copy", () => {
     render(
       <MemoryRouter>
         <HeroSection />
-        <OutcomeStrip />
+        <MetricsSection />
         <ProblemSection />
         <WorkflowSection />
+        <ProductSection />
         <FeatureSection />
+        <TestimonialsSection />
         <FinalCta />
         <LandingFooter />
       </MemoryRouter>,
     );
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Loja Veículos" }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: "O sistema que faz você vender até 10 carros a mais por mês.",
+      }),
     ).toBeVisible();
     expect(screen.getByText("SaaS para lojas de veículos")).toBeVisible();
-    expect(screen.getByText("Operação auditada")).toBeVisible();
-    expect(
-      screen.getByText("Vitrine pública com domínio, páginas e SEO."),
-    ).toBeVisible();
+    expect(screen.getByText("Produtividade real")).toBeVisible();
     expect(screen.getByText("O status quo do mercado")).toBeVisible();
     expect(screen.getByText("Burocracia fiscal manual")).toBeVisible();
-    expect(
-      screen.getByText("Da entrada do pátio ao dinheiro no caixa."),
-    ).toBeVisible();
-    expect(screen.getByText("Inventário")).toBeVisible();
-    expect(screen.getByText("Gestão")).toBeVisible();
+    expect(screen.getByText("Como funciona o motor")).toBeVisible();
+    expect(screen.getByText("Estoque")).toBeVisible();
+    expect(screen.getByText("Auditoria e permissões")).toBeVisible();
+    expect(screen.getByText("Ofertas Sobre Rodas")).toBeVisible();
     expect(document.body).not.toHaveTextContent("Clerk");
     expect(document.body).not.toHaveTextContent("tenant");
   });
@@ -61,7 +68,7 @@ describe("public landing copy", () => {
   it("renders a product preview image instead of a background video", () => {
     const { container } = render(
       <MemoryRouter>
-        <HeroSection />
+        <ProductSection />
       </MemoryRouter>,
     );
 

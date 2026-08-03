@@ -17,11 +17,11 @@ export const websiteBuilderTemplateInfo: Record<
   { description: string; name: string }
 > = {
   aurora: {
-    description: "Elegante e refinado - ideal para veículos de alto padrão",
+    description: "Vitrine cinematográfica escura para alto padrão",
     name: "Aurora",
   },
   quadra: {
-    description: "Moderno e acolhedor - perfeito para sua marca pessoal",
+    description: "Grade clara e direta, foco em estoque",
     name: "Quadra",
   },
 };
@@ -172,7 +172,9 @@ export function createWebsiteConfigFromSettings(
         settings.profile.whatsappPhone ?? stringOrNull(socialLinks.whatsapp),
       youtube: stringOrNull(socialLinks.youtube),
     },
-    templateId: normalizeWebsiteTemplateId(settings.publicSite.layoutKey),
+    templateId: normalizeWebsiteTemplateId(
+      settings.publicSite.layoutKey ?? stringOrNull(theme.templateId),
+    ),
     testimonials: readTestimonials(theme.testimonials),
   };
 }
@@ -182,10 +184,10 @@ export function applyWebsiteConfigToSettings(
   config: WebsiteBuilderConfig,
   templateId: WebsiteBuilderTemplateId,
 ): StoreSettingsSnapshot {
+  const { templateId: _templateId, ...configTheme } = config;
   const nextTheme = {
     ...settings.publicSite.theme,
-    ...config,
-    templateId,
+    ...configTheme,
   };
   return {
     ...settings,
