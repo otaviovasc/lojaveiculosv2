@@ -106,6 +106,17 @@ export function parseSaleStartContext(): SaleStartContext {
   return context;
 }
 
+export function clearSaleStartContext(): void {
+  if (typeof window === "undefined") return;
+  const [path, query] = window.location.hash.split("?");
+  if (!query) return;
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}${path}`,
+  );
+}
+
 export function saleMissingFields(
   sale: SaleRecord,
   purpose: SaleReadinessPurpose = "close",

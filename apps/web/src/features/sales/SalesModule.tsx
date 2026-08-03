@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
+import { FeatureLoadingState } from "../../components/ui/FeatureStates";
 import { useOptionalAccountSession } from "../account/accountSession";
 import {
   createInventoryApi,
@@ -12,6 +13,7 @@ import { SalesList } from "./SalesList";
 import { SalesModuleOverview } from "./SalesModuleOverview";
 import { SaleWorkspace } from "./SaleWorkspace";
 import {
+  clearSaleStartContext,
   createDraftFromContext,
   parseSaleStartContext,
   toDraftInput,
@@ -46,7 +48,9 @@ export function SalesModule({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "workspace">("list");
   const [message, setMessage] = useState<string | null>(null);
+  const [isStartingSale, setIsStartingSale] = useState(false);
   const startContextUsed = useRef(false);
+  const initialListLoadRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     if (api) {
@@ -129,12 +133,12 @@ export function SalesModule({
   }, [message]);
 
   useEffect(() => {
-    void loadSales();
+    initialListLoadRef.current = loadSales();
   }, [loadSales]);
 
   const createDraft = useCallback(
     async (context = parseSaleStartContext()) => {
-      if (!runtimeApi) return;
+      if (!runtimeApi) return undefined;
       try {
         const sale = await runtimeApi.createDraft(
           createDraftFromContext(context),
@@ -143,8 +147,10 @@ export function SalesModule({
         setActiveId(sale.id);
         setViewMode("workspace");
         setMessage("Rascunho criado");
+        return sale;
       } catch (error) {
         setMessage(salesErrorMessage(error));
+        return undefined;
       }
     },
     [runtimeApi],
@@ -155,7 +161,14 @@ export function SalesModule({
     const context = parseSaleStartContext();
     if (!context.leadId && !context.unitId && !context.listingId) return;
     startContextUsed.current = true;
-    void createDraft(context);
+    setIsStartingSale(true);
+    void (initialListLoadRef.current ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => createDraft(context))
+      .then((sale) => {
+        if (sale) clearSaleStartContext();
+      })
+      .finally(() => setIsStartingSale(false));
   }, [createDraft, runtimeApi]);
 
   const selectedSale = useMemo(
@@ -242,7 +255,9 @@ export function SalesModule({
     <FeaturePageShell mainClassName="flex flex-col gap-6">
       <SalesModuleOverview message={message} sales={sales} />
 
-      {viewMode === "list" ? (
+      {isStartingSale ? (
+        <FeatureLoadingState title="Preparando a venda" />
+      ) : viewMode === "list" ? (
         <SalesList
           sales={sales}
           onEdit={(sale) => {
