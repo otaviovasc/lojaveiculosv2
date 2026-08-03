@@ -15,10 +15,15 @@ export function PublicStorefrontHeroMedia({
   heroImageUrl,
   listings,
   theme,
+  mediaClassName = "opacity-60",
+  emptyClassName = "bg-[var(--sf-chrome-bg)]",
 }: {
   heroImageUrl: string | null;
   listings: readonly PublicVehicleListing[];
   theme: Record<string, unknown>;
+  /** Fullscreen heroes dim the media under the scrim; split heroes stay vivid. */
+  mediaClassName?: string;
+  emptyClassName?: string;
 }) {
   const media = useMemo(
     () => resolvePublicStorefrontHeroMedia({ heroImageUrl, listings, theme }),
@@ -40,9 +45,7 @@ export function PublicStorefrontHeroMedia({
 
   const activeMedia = media[activeIndex % media.length];
   if (!activeMedia) {
-    return (
-      <div className="size-full bg-gradient-to-br from-zinc-900 to-zinc-950" />
-    );
+    return <div className={`size-full ${emptyClassName}`} />;
   }
 
   if (activeMedia.kind === "video") {
@@ -50,7 +53,7 @@ export function PublicStorefrontHeroMedia({
       <video
         aria-label={activeMedia.altText || "Video de destaque"}
         autoPlay
-        className="size-full object-cover opacity-60"
+        className={`size-full object-cover ${mediaClassName}`}
         loop
         muted
         playsInline
@@ -62,7 +65,7 @@ export function PublicStorefrontHeroMedia({
   return (
     <img
       alt={activeMedia.altText}
-      className="size-full scale-105 object-cover opacity-60 transition-transform duration-[4000ms] hover:scale-100"
+      className={`size-full scale-105 object-cover transition-transform duration-[4000ms] hover:scale-100 ${mediaClassName}`}
       key={activeMedia.url}
       src={activeMedia.url}
     />

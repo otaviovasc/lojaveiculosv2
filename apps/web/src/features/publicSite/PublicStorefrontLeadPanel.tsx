@@ -14,8 +14,8 @@ export function LeadPanel({
   const instagram = readString(socialLinks.instagram);
   return (
     <section className="bg-panel" id="contato">
-      <div className="public-storefront-shell px-6 py-16 md:py-20">
-        <div className="grid gap-8 rounded-2xl border border-line bg-app p-6 shadow-sm md:grid-cols-[0.95fr_1.05fr] md:p-10">
+      <div className="public-storefront-shell px-6 py-[var(--sf-section-pad)]">
+        <div className="grid gap-8 rounded-[var(--sf-radius)] border border-line bg-app p-6 shadow-sm md:grid-cols-[0.95fr_1.05fr] md:p-10">
           <div className="flex flex-col justify-center">
             <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
               INTERESSE RÁPIDO

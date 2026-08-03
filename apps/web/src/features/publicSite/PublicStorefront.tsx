@@ -1,25 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   PublicListingDetailPanel,
   type PublicListingDetailSnapshot,
 } from "./PublicListingDetailPanel";
+import { normalizeStorefrontConfig } from "./config/normalizeStorefrontConfig";
+import { resolveTokenVars } from "./config/resolveTokens";
 import {
-  AboutSection,
-  HeroSection,
-  StockSection,
-  TestimonialsSection,
-} from "./PublicStorefrontSections";
-import { LeadPanel } from "./PublicStorefrontLeadPanel";
-import {
-  createStorefrontTheme,
-  normalizeStorefrontTemplateKey,
-} from "./storefrontTemplates";
+  resolveSectionVariant,
+  storefrontSectionRegistry,
+} from "./sections/registry";
 import { StorefrontFontLinks } from "./storefrontFonts";
-import {
-  createStorefrontStyle,
-  createVisibleSections,
-  readThemeFonts,
-} from "./publicStorefrontTheme";
 import type {
   PublicStorefrontData,
   PublicStorefrontLeadInput,
@@ -47,25 +37,28 @@ export function PublicStorefront({
   onRetryListing,
   onSubmitListingInterest,
 }: PublicStorefrontProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const layoutKey = normalizeStorefrontTemplateKey(
-    data.settings.site.layoutKey,
+  const config = useMemo(
+    () =>
+      normalizeStorefrontConfig(
+        data.settings.site.theme,
+        data.settings.site.layoutKey,
+      ),
+    [data.settings.site.theme, data.settings.site.layoutKey],
   );
-  const rawTheme = data.settings.site.theme;
-  const theme = createStorefrontTheme(rawTheme, layoutKey);
-  const visibleSections = useMemo(
-    () => createVisibleSections(rawTheme.sections, theme.sections),
-    [rawTheme.sections, theme.sections],
-  );
-  const fonts = readThemeFonts(rawTheme);
-  const style = createStorefrontStyle(rawTheme, fonts);
+  const style = useMemo(() => resolveTokenVars(config.tokens), [config.tokens]);
+  const visibleSections = config.sections.filter((section) => section.visible);
 
   return (
     <>
-      <StorefrontFontLinks fonts={[fonts.body, fonts.heading]} />
-      <main
+      <StorefrontFontLinks
+        fonts={[config.tokens.type.bodyFont, config.tokens.type.headingFont]}
+      />
+      <div
         className="public-light-surface public-storefront min-h-screen w-full"
-        data-layout={layoutKey}
+        data-motion={config.tokens.motion.style}
+        data-preset={config.preset}
+        data-storefront
+        id="topo"
         style={style}
       >
         {detail.listingSlug ? (
@@ -78,52 +71,25 @@ export function PublicStorefront({
           />
         ) : (
           visibleSections.map((section) => {
-            if (section.type === "hero") {
-              return (
-                <HeroSection
-                  data={data}
-                  key={section.id}
-                  sections={visibleSections}
-                  theme={theme}
-                  onOpenListing={onOpenListing}
-                />
-              );
-            }
-            if (isStockSection(section.type)) {
-              return (
-                <StockSection
-                  key={section.id}
-                  listings={data.listings}
-                  onOpenListing={onOpenListing}
-                  query={searchQuery}
-                  sectionType={section.type}
-                  setQuery={setSearchQuery}
-                />
-              );
-            }
-            if (section.type === "about") {
-              return <AboutSection data={data} key={section.id} />;
-            }
-            if (section.type === "testimonials") {
-              return <TestimonialsSection key={section.id} theme={rawTheme} />;
-            }
-            if (section.type === "contact") {
-              return (
-                <LeadPanel
-                  ctaLabel={theme.ctaLabel}
-                  key={section.id}
-                  settings={data.settings}
-                />
-              );
-            }
-            return null;
+            const definition = storefrontSectionRegistry[section.type];
+            const StorefrontSection = definition.component;
+            return (
+              <StorefrontSection
+                copy={config.copy[section.type]}
+                data={data}
+                key={section.id}
+                onOpenListing={onOpenListing}
+                sections={visibleSections}
+                spec={{
+                  ...section,
+                  variant: resolveSectionVariant(definition, section.variant),
+                }}
+                tokens={config.tokens}
+              />
+            );
           })
         )}
-      </main>
+      </div>
     </>
   );
-}
-
-function isStockSection(type: string) {
-  return type === "featured" || type === "search" || type === "all_properties";
 }

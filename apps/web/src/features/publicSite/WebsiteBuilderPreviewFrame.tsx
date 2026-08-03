@@ -169,14 +169,28 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
         </div>
       </div>
 
-      <div className="flex flex-1 items-start justify-center overflow-auto p-3 md:p-5">
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 justify-center overflow-auto",
+          viewportMode === "desktop"
+            ? "items-stretch"
+            : "items-start p-3 md:p-5",
+        )}
+      >
         <div
-          className="relative overflow-hidden rounded-xl bg-card shadow-lg ring-1 ring-border/30 transition-all duration-300"
+          className={cn(
+            "relative overflow-hidden bg-card transition-all duration-300",
+            viewportMode === "desktop"
+              ? "h-full w-full"
+              : "rounded-xl shadow-lg ring-1 ring-border/30",
+          )}
           style={{
-            height: viewportMode === "desktop" ? "100%" : undefined,
             maxWidth: "100%",
             minHeight: viewportMode !== "desktop" ? "80vh" : undefined,
-            width: viewportWidths[viewportMode],
+            width:
+              viewportMode === "desktop"
+                ? "100%"
+                : viewportWidths[viewportMode],
           }}
         >
           {iframeReady ? null : (
@@ -206,7 +220,7 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
               src={iframeSrc}
               style={{
                 height: viewportMode === "desktop" ? "100%" : "80vh",
-                minHeight: "600px",
+                minHeight: viewportMode === "desktop" ? undefined : "600px",
               }}
               title="Pré-visualização"
             />

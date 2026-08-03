@@ -72,6 +72,7 @@
   display: grid;
   gap: 0.25rem;
   min-height: 0;
+  overscroll-behavior: contain;
   overflow-x: hidden;
   overflow-y: auto;
 }

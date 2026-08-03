@@ -74,7 +74,7 @@
   /* Soft utility overrides */
   --color-accent-soft: color-mix(
     in oklab,
-    var(--color-accent, #e11f26) 10%,
+    var(--color-accent) 10%,
     transparent
   ) !important;
 
@@ -91,6 +91,69 @@
 .page-builder-renderer :where(a, button, input, textarea, select) {
   transition-duration: 260ms;
   transition-timing-function: var(--public-ease);
+}
+
+/* Storefront v1: resolved --sf-* tokens are the source of truth inside the
+   storefront scope. Page-builder custom pages keep the plain light surface. */
+.public-storefront[data-storefront] {
+  --color-app: var(--sf-surface) !important;
+  --color-app-elevated: var(--sf-surface) !important;
+  --color-panel: var(--sf-surface-raised) !important;
+  --color-text: var(--sf-ink) !important;
+  --color-app-text: var(--sf-ink) !important;
+  --color-muted: var(--sf-ink-muted) !important;
+  --color-muted-foreground: var(--sf-ink-muted) !important;
+  --color-accent: var(--sf-accent) !important;
+  --color-accent-soft: var(--sf-accent-soft) !important;
+  --color-accent-strong: var(--sf-accent-strong) !important;
+  --color-accent-contrast: var(--sf-inverse);
+  --color-inverse: var(--sf-inverse);
+  --public-storefront-heading-font: var(--sf-heading-font);
+  background: var(--sf-surface) !important;
+  color: var(--sf-ink) !important;
+  font-family: var(--sf-body-font);
+}
+
+.public-storefront[data-storefront] .public-storefront-stock {
+  gap: var(--sf-card-gap);
+}
+
+/* Grid-compact (Quadra): denser grid with smaller cards. */
+.public-storefront[data-storefront] .public-storefront-stock--compact {
+  gap: var(--sf-card-gap);
+}
+
+/* Hover micro-interactions follow the motion profile (120 ms). */
+.public-storefront[data-storefront] :where(a, button, input, textarea, select) {
+  transition-duration: var(--sf-motion-micro, 120ms);
+}
+
+/* Aurora hero ambience: continuous Ken-Burns on the full-bleed media.
+   Entrance timing stays within --sf-motion-hero via the Anime.js reveal. */
+@media (prefers-reduced-motion: no-preference) {
+  .public-storefront[data-storefront][data-motion="dynamic"]
+    .sf-hero-media
+    :where(img, video) {
+    animation: sf-ken-burns 22s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes sf-ken-burns {
+  from {
+    transform: scale(1.02);
+  }
+
+  to {
+    transform: scale(1.12) translate(1%, -1%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-storefront[data-storefront] {
+    --sf-motion-hero: 0ms;
+    --sf-motion-micro: 0ms;
+    --sf-motion-section: 0ms;
+  }
 }
 
 .public-media-thumb {
@@ -268,16 +331,6 @@
   }
 }
 
-main[data-layout="classic"] .public-storefront-hero,
-main[data-layout="quadra"] .public-storefront-hero {
-  gap: 1.5rem;
-}
-
-main[data-layout="classic"] .public-storefront-stock,
-main[data-layout="quadra"] .public-storefront-stock {
-  gap: 1.5rem;
-}
-
 @media (min-width: 768px) {
   .page-builder-two-column {
     grid-template-columns: var(--page-builder-two-column-template);
@@ -291,6 +344,10 @@ main[data-layout="quadra"] .public-storefront-stock {
   .public-storefront-stock {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .public-storefront-stock--compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1024px) {
@@ -302,8 +359,7 @@ main[data-layout="quadra"] .public-storefront-stock {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  main[data-layout="classic"] .public-storefront-hero,
-  main[data-layout="quadra"] .public-storefront-hero {
-    grid-template-columns: 1fr;
+  .public-storefront-stock--compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

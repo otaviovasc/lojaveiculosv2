@@ -1,3 +1,48 @@
+/* Aurora marketing identity: cinematic dark surfaces derived from the LV
+   accent. The landing is always dark, so semantic tokens are re-scoped here
+   instead of following the app theme. The warm-black base is the brand
+   carvão (#151515, approved palette) deepened with color-mix. */
+.landing-page {
+  --color-app: color-mix(in srgb, var(--color-accent) 5%, #151515);
+  --color-app-elevated: color-mix(in srgb, var(--color-accent) 9%, #2a2424);
+  --color-panel: color-mix(in srgb, var(--color-accent) 6%, #2a2424);
+  --color-text: #f4efee;
+  --color-muted: #a09898;
+  /* @theme aliases resolve var() where declared, so re-declare the ones the
+     landing utilities use to keep them on the dark palette. */
+  --color-app-text: var(--color-text);
+  --color-muted-foreground: var(--color-muted);
+  --color-caption: var(--color-muted);
+  --color-line: color-mix(in srgb, var(--color-warm-white) 14%, transparent);
+  --color-line-strong: color-mix(
+    in srgb,
+    var(--color-warm-white) 32%,
+    transparent
+  );
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  background-color: var(--color-app);
+  color: var(--color-text);
+}
+
+.landing-glass {
+  backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--color-warm-white) 6%, transparent);
+  border: 1px solid var(--color-line);
+}
+
+.landing-hero-scrim {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-app) 24%, transparent) 0%,
+    color-mix(in srgb, var(--color-app) 62%, transparent) 52%,
+    var(--color-app) 100%
+  );
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: -5;
+}
+
 .landing-hero-shader {
   background:
     radial-gradient(

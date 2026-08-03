@@ -226,7 +226,6 @@ function CatalogCombobox({
           ? createPortal(
               <div
                 className="custom-select-menu"
-                role="listbox"
                 style={{
                   left: menuPosition.left,
                   maxHeight: menuPosition.maxHeight,
@@ -237,31 +236,37 @@ function CatalogCombobox({
                 }}
                 ref={menuRef}
               >
-                {filtered.map((option) => {
-                  const isSelected = option.code === value;
-                  return (
-                    <button
-                      aria-selected={isSelected}
-                      className="custom-select-option"
-                      data-selected={isSelected ? "true" : undefined}
-                      key={option.code}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => {
-                        onChange(option.code);
-                        setQuery(option.name);
-                        setOpen(false);
-                      }}
-                      role="option"
-                      type="button"
-                    >
-                      {kind === "brand" ? (
-                        <BrandOptionLabel option={option} />
-                      ) : (
-                        <span className="truncate">{option.name}</span>
-                      )}
-                    </button>
-                  );
-                })}
+                <div
+                  aria-label={`${label}: opções`}
+                  className="custom-select-options"
+                  role="listbox"
+                >
+                  {filtered.map((option) => {
+                    const isSelected = option.code === value;
+                    return (
+                      <button
+                        aria-selected={isSelected}
+                        className="custom-select-option"
+                        data-selected={isSelected ? "true" : undefined}
+                        key={option.code}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          onChange(option.code);
+                          setQuery(option.name);
+                          setOpen(false);
+                        }}
+                        role="option"
+                        type="button"
+                      >
+                        {kind === "brand" ? (
+                          <BrandOptionLabel option={option} />
+                        ) : (
+                          <span className="truncate">{option.name}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>,
               document.body,
             )
@@ -272,6 +277,7 @@ function CatalogCombobox({
 }
 
 function BrandOptionLabel({ option }: { option: InventoryCatalogOption }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const initials = option.name
     .split(/\s+/)
     .filter(Boolean)
@@ -282,10 +288,11 @@ function BrandOptionLabel({ option }: { option: InventoryCatalogOption }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
       <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-line bg-app-elevated text-xs font-black text-muted">
-        {option.imageUrl ? (
+        {option.imageUrl && !imageFailed ? (
           <img
             alt=""
             className="size-full object-contain"
+            onError={() => setImageFailed(true)}
             src={option.imageUrl}
           />
         ) : (

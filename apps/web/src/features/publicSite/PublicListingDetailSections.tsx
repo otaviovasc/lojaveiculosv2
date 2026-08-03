@@ -140,14 +140,14 @@ export function VehicleLeadCard({
   return (
     <aside className="lg:sticky lg:top-20">
       <div className="overflow-hidden rounded-xl border border-line bg-panel shadow-xl">
-        <div className="border-b-4 border-accent bg-zinc-950 p-6 text-white">
-          <span className="text-xs font-black uppercase tracking-[0.22em] text-white/45">
+        <div className="border-b-4 border-accent bg-[var(--sf-chrome-bg)] p-6 text-[var(--sf-chrome-ink)]">
+          <span className="text-xs font-black uppercase tracking-[0.22em] text-[var(--sf-chrome-ink-muted)]">
             Oferta da loja
           </span>
           <p className="mt-2 text-4xl font-black tracking-tight">
             {formatPublicVehiclePrice(detail.listing.priceCents)}
           </p>
-          <p className="mt-2 text-xs font-bold leading-relaxed text-white/65">
+          <p className="mt-2 text-xs font-bold leading-relaxed text-[var(--sf-chrome-ink-muted)]">
             Confirme disponibilidade, histórico e condições finais diretamente
             com a equipe.
           </p>

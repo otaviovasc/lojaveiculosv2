@@ -111,7 +111,7 @@ export function DocumentsTable({
                     "group cursor-pointer hover:bg-line/20 transition-all duration-150 " +
                     (isChecked ? "bg-accent-soft" : "")
                   }
-                  key={document.id}
+                  key={`${document.id}:${document.context.targetType}:${document.context.targetId}`}
                   onClick={() => onSelect(document)}
                 >
                   {showSelect ? (

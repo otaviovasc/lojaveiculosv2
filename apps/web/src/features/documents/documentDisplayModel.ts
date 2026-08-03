@@ -140,13 +140,28 @@ export function filterDocumentsForFolder(
   folderKey: DocumentsFolderKey | null,
 ) {
   if (!folderKey) return [];
-  if (folderKey === "general") {
-    return documents.filter((document) => !documentUnitFolderInfo(document));
-  }
-  const unitId = folderKey.replace("unit:", "");
-  return documents.filter(
-    (document) => documentUnitFolderInfo(document)?.id === unitId,
-  );
+  const matches =
+    folderKey === "general"
+      ? documents.filter((document) => !documentUnitFolderInfo(document))
+      : documents.filter(
+          (document) =>
+            documentUnitFolderInfo(document)?.id ===
+            folderKey.replace("unit:", ""),
+        );
+  // The list API returns one row per document link, so a document linked to
+  // several targets shows up multiple times with the same id. A folder view
+  // must list each document at most once — duplicate ids also break React
+  // row reconciliation (stale rows until the table remounts).
+  return dedupeDocumentsById(matches);
+}
+
+function dedupeDocumentsById(documents: readonly WorkspaceDocument[]) {
+  const seen = new Set<string>();
+  return documents.filter((document) => {
+    if (seen.has(document.id)) return false;
+    seen.add(document.id);
+    return true;
+  });
 }
 
 export type DocumentsFolderKey = "general" | `unit:${string}`;
