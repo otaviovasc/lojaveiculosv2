@@ -8,6 +8,7 @@ import {
 import type { UpdateBillingSelectionInput } from "../../../domains/billing/ports/billingRepository.js";
 import { BillingSelectionError } from "../../../domains/billing/services/BillingService/updateBillingSelection.js";
 import { ensureTenantBillingAccount } from "./drizzleBillingAccount.js";
+import { toStorePlanContractItem } from "./drizzleBillingPlanContract.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
 export async function updateStoreSubscriptionSelection(
@@ -93,16 +94,15 @@ export async function updateStoreSubscriptionSelection(
       (item) => item.itemType === "plan" && item.planId === plan.id,
     )
   ) {
-    await db.insert(subscriptionItems).values({
-      itemType: "plan",
-      planId: plan.id,
-      quantity: 1,
-      startsAt: now,
-      storeId: input.storeId,
-      subscriptionId: subscription.id,
-      tenantId: input.tenantId,
-      unitAmountCents: plan.monthlyPriceCents,
-    });
+    await db.insert(subscriptionItems).values(
+      toStorePlanContractItem({
+        plan,
+        startsAt: now,
+        storeId: input.storeId,
+        subscription,
+        tenantId: input.tenantId,
+      }),
+    );
   }
   for (const addon of selectedAddons) {
     if (

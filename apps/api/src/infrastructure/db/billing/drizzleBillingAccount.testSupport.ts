@@ -1,6 +1,7 @@
 import {
   addons,
   billingCustomers,
+  planFeatures,
   plans,
   subscriptionItems,
   subscriptions,
@@ -13,6 +14,7 @@ type Row = Record<string, unknown>;
 type FakeBillingRows = {
   addons: readonly Row[];
   billingCustomers: readonly Row[];
+  planFeatures: readonly Row[];
   plans: readonly Row[];
   subscriptionItems: readonly Row[];
   subscriptions: readonly Row[];
@@ -25,6 +27,7 @@ export function createFakeBillingAccountDb(
   const tables = new Map<unknown, Row[]>([
     [addons, [...(overrides.addons ?? [])]],
     [billingCustomers, [...(overrides.billingCustomers ?? [])]],
+    [planFeatures, [...(overrides.planFeatures ?? [])]],
     [plans, [...(overrides.plans ?? [])]],
     [subscriptionItems, [...(overrides.subscriptionItems ?? [])]],
     [subscriptions, [...(overrides.subscriptions ?? [])]],
