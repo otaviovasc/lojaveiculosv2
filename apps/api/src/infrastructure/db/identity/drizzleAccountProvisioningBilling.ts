@@ -3,6 +3,7 @@ import {
   addons,
   planFeatures,
   plans,
+  subscriptionItems,
   type stores,
   type subscriptions,
   type tenants,
@@ -15,6 +16,7 @@ import {
   ensureSubscription,
   lockBillingAccount,
 } from "../billing/drizzleBillingAccount.js";
+import { toStorePlanContractItem } from "../billing/drizzleBillingPlanContract.js";
 
 export class BillingCatalogUnavailableError extends Error {
   constructor() {
@@ -36,6 +38,15 @@ export async function insertBillingDefaults(
   assertProvisionableSubscription(subscription);
   const startsAt = subscription.currentPeriodStart ?? new Date();
   const trialing = subscription.status === "trialing";
+  await db.insert(subscriptionItems).values(
+    toStorePlanContractItem({
+      plan,
+      startsAt,
+      storeId: store.id,
+      subscription,
+      tenantId: tenant.id,
+    }),
+  );
   return {
     catalogVersion: plan.catalogVersion,
     entitlements: trialing ? trialEntitlements : [],

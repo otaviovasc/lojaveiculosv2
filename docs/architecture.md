@@ -157,6 +157,21 @@ dealer-facing analytics domain.
 The metric and event definitions live in
 `docs/strategy/product-operating-model.md`.
 
+## Billing Contract Direction
+
+A trial is a billing phase of a selected store plan, not the absence of a
+billing contract. Every active or trialing store subscription must have an
+effective store-scoped `subscription_items` plan row. Quota guards resolve
+limits from that immutable catalog selection, while subscription status and
+period dates decide whether access is effective and whether provider billing
+may occur.
+
+Trial-safe `store_entitlements` remain a separate projection. They determine
+which optional capabilities are available during the trial; deleting paid
+entitlements must not delete the underlying plan selection needed by core
+vehicle and user quotas. New provisioning and migration backfills must preserve
+this invariant for every store in the tenant.
+
 ## RENAVE And Fiscal Reconciliation Direction
 
 Loja Veiculos is a dealership-management-system provider. Under CONTRAN
