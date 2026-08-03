@@ -7,10 +7,14 @@ import { SaleWorkspace } from "./SaleWorkspace";
 import type { SaleRecord } from "./types";
 
 describe("SaleWorkspace", () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it("runs lifecycle transitions with the saved sale returned by the API", async () => {
     const user = userEvent.setup();
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
     const clientSignalPayment = {
       ...payment("client-payment"),
       amountCents: 100000,
@@ -56,12 +60,15 @@ describe("SaleWorkspace", () => {
     });
     expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeDisabled();
     expect(reserveButton).toBeEnabled();
+    const clearTimeoutCallsBeforeReserve = clearTimeoutSpy.mock.calls.length;
     await user.click(reserveButton);
 
     await waitFor(() => expect(onReserve).toHaveBeenCalledOnce());
     expect(onSave).toHaveBeenCalledOnce();
     expect(onReserve.mock.calls[0]?.[0].payments[0]?.id).toBe("server-payment");
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(clearTimeoutSpy.mock.calls.length).toBeGreaterThan(
+      clearTimeoutCallsBeforeReserve,
+    );
     expect(onSave).toHaveBeenCalledOnce();
   });
 

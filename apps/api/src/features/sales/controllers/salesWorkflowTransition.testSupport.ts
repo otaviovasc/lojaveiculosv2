@@ -1,11 +1,11 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import { expect } from "vitest";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
-import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import {
   createTestFinanceAutoEntryRepository,
   type TestFinanceAutoEntryRepository,
 } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
+import type { VehicleSaleDocumentKind } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import type { VehicleUnit } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import {
   createInMemoryVehiclePorts,
@@ -19,6 +19,13 @@ import { createSalesServices, type SalesServices } from "./salesServices.js";
 
 const storeId = "store_1";
 const tenantId = "tenant_1";
+const minimalSaleDocumentKinds = [
+  "sale_contract",
+] as const satisfies readonly VehicleSaleDocumentKind[];
+
+interface CompleteDraftOptions {
+  selectedDocumentKinds?: readonly VehicleSaleDocumentKind[];
+}
 
 export function createHarness(
   status: "available" | "reserved",
@@ -49,7 +56,9 @@ export function createHarness(
   return { financeAutoEntryRepository, services, vehiclePorts };
 }
 
-export function completeDraft() {
+export function completeDraft({
+  selectedDocumentKinds = minimalSaleDocumentKinds,
+}: CompleteDraftOptions = {}) {
   return {
     buyerSnapshot: {
       address: "Rua Um, 100",
@@ -61,7 +70,7 @@ export function completeDraft() {
     documentPolicySnapshot: {},
     leadId: "lead_1",
     salePriceCents: 5000000,
-    selectedDocumentKinds: [...vehicleSaleDocumentKinds],
+    selectedDocumentKinds: [...selectedDocumentKinds],
     sellerUserId: "seller_1",
     unitId: "unit_1",
   };

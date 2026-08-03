@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent } from "../../../components/ui/dialog";
 import type { InventoryApi } from "../api/apiClient";
@@ -188,6 +187,7 @@ export default function ImageTemplateModal({
     setDownloadingZip(true);
     setDownloadMessage(null);
     try {
+      const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       const baseName = getImageTemplateDownloadBaseName(listing.title);
       for (let index = 0; index < photos.length; index += 1) {

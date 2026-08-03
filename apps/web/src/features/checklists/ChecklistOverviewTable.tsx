@@ -249,7 +249,7 @@ function ChecklistRow(props: RowProps) {
               {item.metrics.failedItemCount} reprovados
             </span>
             <div
-              className="max-w-[200px] truncate text-xs font-semibold text-danger/80"
+              className="max-w-[200px] truncate text-xs font-semibold text-danger-soft-foreground"
               title={getFailedItemsList(item)?.join(", ")}
             >
               {getFailedItemsList(item)?.slice(0, 2).join(", ")}
@@ -325,7 +325,7 @@ function ChecklistCard(props: RowProps) {
           <span className="font-extrabold block mb-0.5">
             Pendências críticas:
           </span>
-          <span className="text-danger/80">
+          <span className="text-danger-soft-foreground">
             {failedList.slice(0, 3).join(" · ")}
             {failedList.length > 3 ? "..." : ""}
           </span>

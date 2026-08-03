@@ -569,7 +569,17 @@
 }
 
 .auto-entry-rule-card__header .auto-entry-rule-card__meta {
-  color: color-mix(in srgb, var(--tone-on) 80%, transparent);
+  color: var(--tone-on);
+}
+
+.auto-entry-rule-card__header .auto-entry-rule-card__status {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--tone-on) 36%, transparent);
+  color: var(--tone-on);
+}
+
+.auto-entry-rule-card__header .auto-entry-rule-card__status > span {
+  background: currentcolor;
 }
 
 .auto-entry-rule-card__body {

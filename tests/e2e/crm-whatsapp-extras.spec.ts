@@ -37,7 +37,7 @@ test.describe("CRM WhatsApp extras", () => {
     await installLocalOwnerSession(page);
     await page.goto("/crm#/crm?surface=whatsapp");
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")
@@ -190,7 +190,7 @@ test.describe("CRM WhatsApp extras", () => {
       page.getByRole("button", { name: /evento ZAPI/i }),
     ).toBeHidden();
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")

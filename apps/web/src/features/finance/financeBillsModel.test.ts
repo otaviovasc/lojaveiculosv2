@@ -11,7 +11,11 @@ import {
   toEntryInput,
   toRecurringInput,
 } from "./financeBillsModel";
-import { formatFinanceCategory } from "./financeBillsFormat";
+import {
+  formatCurrency,
+  formatDate,
+  formatFinanceCategory,
+} from "./financeBillsFormat";
 import type { FinanceEntry, FinanceRecurringEntry } from "./types";
 
 describe("finance bills model", () => {
@@ -22,6 +26,12 @@ describe("finance bills model", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("preserves localized currency and date output", () => {
+    expect(formatCurrency(123_456)).toBe("R$\u00a01.234,56");
+    expect(formatDate("2026-06-22T12:00:00.000Z")).toBe("22/06/2026");
+    expect(formatDate(null)).toBe("Sem vencimento");
   });
 
   it("maps a paid draft to the V2 create entry flow payload", () => {

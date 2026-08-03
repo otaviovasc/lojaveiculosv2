@@ -110,7 +110,10 @@ export function AutoEntryRuleList({
           >
             <FeatureCardHeader
               actions={
-                <FeatureStatusBadge tone={isActive ? "success" : "neutral"}>
+                <FeatureStatusBadge
+                  className="auto-entry-rule-card__status"
+                  tone={isActive ? "success" : "neutral"}
+                >
                   {isActive ? "Ativa" : "Pausada"}
                 </FeatureStatusBadge>
               }

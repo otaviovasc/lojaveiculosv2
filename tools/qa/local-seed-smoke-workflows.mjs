@@ -26,6 +26,7 @@ async function assertBilling(db) {
   const expected = new Map([
     [seedIds.primaryStore, [2, 54899]],
     [seedIds.branchStore, [2, 54899]],
+    [seedIds.foreignStore, [1, 29900]],
   ]);
   for (const row of rows) {
     const values = expected.get(row.storeId);
@@ -35,7 +36,7 @@ async function assertBilling(db) {
       `Billing allocation mismatch for ${row.storeId}.`,
     );
   }
-  assertCount({ count: rows.length }, "count", 2, "Billing allocations");
+  assertCount({ count: rows.length }, "count", 3, "Billing allocations");
 
   const [states] = await db`
     select

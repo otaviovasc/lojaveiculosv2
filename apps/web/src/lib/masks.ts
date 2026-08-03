@@ -2,6 +2,11 @@ import { formatBrazilianCnpj } from "@lojaveiculosv2/shared";
 
 export { formatBrazilianCnpj };
 
+const currencyValueFormatter = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 /** Parse raw input into a numeric string with 2 decimals (e.g. "1500000.00") */
 export function parseCurrencyInput(input: string): string {
   const digits = input.replace(/\D/g, "");
@@ -15,10 +20,7 @@ export function formatCurrencyValue(value: string | number): string {
   if (typeof value === "string" && value.trim() === "") return "";
   const num = typeof value === "string" ? Number(value) : value;
   if (!Number.isFinite(num)) return "";
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
+  return currencyValueFormatter.format(num);
 }
 
 export function formatBrazilianDocument(value: string): string {
