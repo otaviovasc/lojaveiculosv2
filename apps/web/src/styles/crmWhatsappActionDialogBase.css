@@ -84,6 +84,55 @@
   margin: 0;
 }
 
+.crm-whatsapp-template-parameters {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.625rem;
+  padding: 0.75rem;
+}
+
+.crm-whatsapp-template-parameters > div:first-child,
+.crm-whatsapp-template-parameter-row {
+  align-items: center;
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.crm-whatsapp-template-parameters span {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 1.1);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-template-parameters p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.crm-whatsapp-template-parameters button {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.crm-whatsapp-template-parameters button svg {
+  height: 1rem;
+  width: 1rem;
+}
+
 .crm-whatsapp-action-fields label {
   color: var(--color-muted);
   display: grid;

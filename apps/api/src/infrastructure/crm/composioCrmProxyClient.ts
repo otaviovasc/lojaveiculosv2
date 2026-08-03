@@ -66,30 +66,25 @@ async function makeProxyRequest(
   input: ComposioProxyInput,
   fetchImpl: typeof fetch,
 ): Promise<ProxyEnvelope> {
-  let response: Response;
-  try {
-    response = await fetchImpl(
-      `${credentials.apiBaseUrl}/api/v3.1/tools/execute/proxy`,
-      {
-        body: JSON.stringify({
-          body: input.body,
-          connected_account_id: credentials.connectedAccountId,
-          endpoint: input.endpoint,
-          method: "POST",
-        }),
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "x-api-key": credentials.apiKey,
-        },
+  const response = await fetchComposio(
+    credentials,
+    `${credentials.apiBaseUrl}/api/v3.1/tools/execute/proxy`,
+    {
+      body: JSON.stringify({
+        body: input.body,
+        connected_account_id: credentials.connectedAccountId,
+        endpoint: input.endpoint,
         method: "POST",
+      }),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "x-api-key": credentials.apiKey,
       },
-    );
-  } catch {
-    throw new CrmWhatsappGatewayError(
-      "Composio proxy request failed before receiving a response",
-    );
-  }
+      method: "POST",
+    },
+    fetchImpl,
+  );
 
   const payload = parseJson(await response.text());
   const upstreamStatus = readNumber(payload.status);
@@ -101,6 +96,28 @@ async function makeProxyRequest(
         : readRecord(payload.headers),
     status: upstreamStatus ?? response.status,
   };
+}
+
+export async function fetchComposio(
+  credentials: ComposioCrmCredentials,
+  url: string,
+  init: RequestInit,
+  fetchImpl: typeof fetch,
+) {
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    credentials.requestTimeoutMs,
+  );
+  try {
+    return await fetchImpl(url, { ...init, signal: controller.signal });
+  } catch {
+    throw new CrmWhatsappGatewayError(
+      "Composio request failed before receiving a response",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function assertSuccessfulProxyResponse(

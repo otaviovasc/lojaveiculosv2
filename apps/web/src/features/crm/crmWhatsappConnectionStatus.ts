@@ -37,8 +37,8 @@ export function readCrmWhatsappProviderLabel(provider: CrmWhatsappProvider) {
     case "zapi":
       return "Z-API";
     case "composio_whatsapp":
-      return "WhatsApp oficial (Composio)";
+      return "WhatsApp oficial";
     case "composio_instagram":
-      return "Instagram (Composio)";
+      return "Instagram";
   }
 }

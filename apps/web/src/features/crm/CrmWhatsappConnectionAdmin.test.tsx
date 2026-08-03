@@ -148,8 +148,8 @@ describe("CrmWhatsappConnectionAdmin", () => {
   });
 
   it.each([
-    ["composio_whatsapp", "WhatsApp oficial (Composio)", false],
-    ["composio_instagram", "Instagram (Composio)", true],
+    ["composio_whatsapp", "WhatsApp oficial", false],
+    ["composio_instagram", "Instagram", true],
   ] as const)(
     "shows %s as provider-managed without Z-API configuration controls",
     (provider, providerLabel, connected) => {

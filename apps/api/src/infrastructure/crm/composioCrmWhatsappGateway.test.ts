@@ -7,7 +7,7 @@ import { executeComposioProxy } from "./composioCrmProxyClient.js";
 import { resolveComposioCrmCredentials } from "./composioCrmWhatsappGatewaySupport.js";
 
 const env = {
-  CRM_COMPOSIO_API_KEY: "secret-api-key",
+  COMPOSIO_API_KEY: "secret-api-key",
   COMPOSIO_API_BASE_URL: "https://composio.test/",
 };
 
@@ -222,7 +222,7 @@ function createConnection(
   return {
     credentialsRef: {
       composio: { connectedAccountId: "ca_official_1" },
-      env: { apiKey: "CRM_COMPOSIO_API_KEY" },
+      env: { apiKey: "COMPOSIO_API_KEY" },
       mode: "composio",
     },
     displayName: "Official messaging",

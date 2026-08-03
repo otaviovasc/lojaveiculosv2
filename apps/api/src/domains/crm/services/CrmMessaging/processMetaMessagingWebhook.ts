@@ -59,13 +59,17 @@ export async function processMetaMessagingWebhook(
   logWhatsappServiceEvent(context, "crm.messaging.webhook.meta.received", {
     eventCount: events.length,
   });
-
+  let firstError: unknown;
   for (const event of events) {
-    await processEvent(context, event, ports, result);
+    try {
+      await processEvent(context, event, ports, result);
+    } catch (error) {
+      firstError ??= error;
+    }
   }
+  if (firstError) throw firstError;
   return result;
 }
-
 async function processEvent(
   context: ServiceContext,
   event: ParsedMetaWebhookEvent,
@@ -108,7 +112,6 @@ async function processEvent(
     result.ignored += 1;
     return;
   }
-
   try {
     const outcome =
       event.kind === "message"

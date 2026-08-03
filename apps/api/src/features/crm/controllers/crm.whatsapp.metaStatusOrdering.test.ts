@@ -80,6 +80,13 @@ describe("CRM Meta status ordering", () => {
       tenantId,
     });
     expect(message?.status).toBe("READ");
+    expect(message?.providerTimestamp).toEqual(
+      new Date("2026-07-27T20:00:00.000Z"),
+    );
+    expect(message?.metadata).toMatchObject({
+      providerStatus: "READ",
+      providerStatusAt: new Date(1785182460 * 1_000).toISOString(),
+    });
     const [processedEvent] = await webhookEvents.list({
       limit: 10,
       offset: 0,

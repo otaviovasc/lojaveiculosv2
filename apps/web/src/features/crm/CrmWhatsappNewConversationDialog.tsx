@@ -1,4 +1,4 @@
-import { MessageSquarePlus } from "lucide-react";
+import { MessageSquarePlus, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { formatBrazilianPhone } from "../../lib/masks";
 import { ActionDialog } from "./CrmWhatsappActionDialogFrame";
@@ -21,6 +21,10 @@ export type StartConversationDraft =
       buyerName?: string;
       phone: string;
       template: {
+        components?: Array<{
+          parameters: Array<{ text: string; type: "text" }>;
+          type: "body";
+        }>;
         languageCode: string;
         name: string;
       };
@@ -43,6 +47,7 @@ export function CrmWhatsappNewConversationDialog({
   const [text, setText] = useState("");
   const [templateName, setTemplateName] = useState("");
   const [templateLanguage, setTemplateLanguage] = useState("pt_BR");
+  const [templateParameters, setTemplateParameters] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [textTouched, setTextTouched] = useState(false);
@@ -53,7 +58,8 @@ export function CrmWhatsappNewConversationDialog({
   const messageIsValid = text.trim().length > 0;
   const templateIsValid =
     /^[a-z0-9_]+$/u.test(templateName.trim()) &&
-    templateLanguage.trim().length >= 2;
+    templateLanguage.trim().length >= 2 &&
+    templateParameters.every((parameter) => parameter.trim().length > 0);
   const canSubmit =
     phoneIsValid && (usesTemplate ? templateIsValid : messageIsValid);
   return (
@@ -75,6 +81,21 @@ export function CrmWhatsappNewConversationDialog({
               ? {
                   ...common,
                   template: {
+                    ...(templateParameters.length
+                      ? {
+                          components: [
+                            {
+                              parameters: templateParameters.map(
+                                (parameter) => ({
+                                  text: parameter.trim(),
+                                  type: "text" as const,
+                                }),
+                              ),
+                              type: "body" as const,
+                            },
+                          ],
+                        }
+                      : {}),
                     languageCode: templateLanguage.trim(),
                     name: templateName.trim(),
                   },
@@ -188,6 +209,60 @@ export function CrmWhatsappNewConversationDialog({
               value={templateLanguage}
             />
           </label>
+          <div className="crm-whatsapp-template-parameters">
+            <div>
+              <span>Parâmetros do corpo</span>
+              <button
+                aria-label="Adicionar parâmetro do template"
+                disabled={disabled || isSaving}
+                onClick={() =>
+                  setTemplateParameters((current) => [...current, ""])
+                }
+                title="Adicionar parâmetro"
+                type="button"
+              >
+                <Plus aria-hidden="true" />
+              </button>
+            </div>
+            <p>
+              Adicione os valores na mesma ordem dos marcadores do template
+              aprovado.
+            </p>
+            {templateParameters.map((parameter, index) => (
+              <div className="crm-whatsapp-template-parameter-row" key={index}>
+                <label>
+                  Parâmetro {index + 1}
+                  <input
+                    autoComplete="off"
+                    disabled={disabled || isSaving}
+                    onChange={(event) =>
+                      setTemplateParameters((current) =>
+                        current.map((value, itemIndex) =>
+                          itemIndex === index ? event.target.value : value,
+                        ),
+                      )
+                    }
+                    value={parameter}
+                  />
+                </label>
+                <button
+                  aria-label={`Remover parâmetro ${index + 1}`}
+                  disabled={disabled || isSaving}
+                  onClick={() =>
+                    setTemplateParameters((current) =>
+                      current.filter(
+                        (_value, itemIndex) => itemIndex !== index,
+                      ),
+                    )
+                  }
+                  title={`Remover parâmetro ${index + 1}`}
+                  type="button"
+                >
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+            ))}
+          </div>
           {!templateIsValid && templateTouched ? (
             <CrmFieldError id="crm-new-conversation-template-error">
               Use o nome exato aprovado, com letras minúsculas, números e

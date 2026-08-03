@@ -42,10 +42,10 @@ describe("readWhatsappStatus", () => {
   it("distinguishes Z-API, official WhatsApp, and Instagram providers", () => {
     expect(readCrmWhatsappProviderLabel("zapi")).toBe("Z-API");
     expect(readCrmWhatsappProviderLabel("composio_whatsapp")).toBe(
-      "WhatsApp oficial (Composio)",
+      "WhatsApp oficial",
     );
     expect(readCrmWhatsappProviderLabel("composio_instagram")).toBe(
-      "Instagram (Composio)",
+      "Instagram",
     );
     expect(
       readWhatsappStatus({
@@ -54,6 +54,6 @@ describe("readWhatsappStatus", () => {
         isLoading: false,
         provider: "composio_instagram",
       }),
-    ).toEqual({ label: "Instagram (Composio): online", tone: "online" });
+    ).toEqual({ label: "Instagram: online", tone: "online" });
   });
 });

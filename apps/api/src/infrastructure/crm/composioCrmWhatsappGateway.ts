@@ -5,7 +5,11 @@ import {
   createComposioTemplateRequest,
   createComposioTextRequest,
 } from "./composioCrmMessagePayload.js";
-import { executeComposioProxy } from "./composioCrmProxyClient.js";
+import {
+  executeComposioProxy,
+  fetchComposio,
+} from "./composioCrmProxyClient.js";
+import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import {
   readCanonicalMessageId,
   readRecord,
@@ -32,8 +36,9 @@ export function createComposioCrmWhatsappGateway(
     },
     async getConnectionStatus(connection) {
       const credentials = credentialsFor(connection);
-      const response = await fetchImpl(
-        `${credentials.apiBaseUrl}/api/v3/connected_accounts/${encodeURIComponent(
+      const response = await fetchComposio(
+        credentials,
+        `${credentials.apiBaseUrl}/api/v3.1/connected_accounts/${encodeURIComponent(
           credentials.connectedAccountId,
         )}`,
         {
@@ -43,16 +48,15 @@ export function createComposioCrmWhatsappGateway(
           },
           method: "GET",
         },
+        fetchImpl,
       );
       const payload = parseJson(await response.text());
       if (!response.ok) {
-        return {
-          checkedAt: new Date(),
-          connected: false,
-          connectedPhone: connection.phone,
-          providerStatus: "unknown",
-          smartphoneConnected: null,
-        };
+        throw new CrmWhatsappGatewayError(
+          `Composio connected-account status failed with HTTP ${response.status}`,
+          response.status === 429 ? 429 : 502,
+          response.status === 429 ? 1 : undefined,
+        );
       }
 
       const status = readString(payload.status)?.toLowerCase() ?? null;

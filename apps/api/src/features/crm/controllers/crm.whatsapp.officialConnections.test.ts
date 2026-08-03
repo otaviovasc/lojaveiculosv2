@@ -2,7 +2,10 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import {
+  createTestApp,
+  expectApiError,
+} from "./crm.whatsapp.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -135,6 +138,35 @@ describe("CRM official messaging connections", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
       message: "Z-API credentials can only be configured on Z-API connections.",
+    });
+  });
+
+  it("requires integration-management permission for credential references", async () => {
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createConnection("composio_whatsapp", whatsappId),
+      ]),
+      permissions: ["crm.whatsapp.connection.manage"],
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/connections/${whatsappId}`,
+      {
+        body: JSON.stringify({
+          composioCredentials: {
+            apiKeyEnv: "COMPOSIO_API_KEY",
+            connectedAccountId: "ca_private",
+          },
+        }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    expect(response.status).toBe(403);
+    await expectApiError(response, {
+      code: "AUTHORIZATION_DENIED",
+      message: "Missing permission: crm.whatsapp.integrations.manage",
     });
   });
 });

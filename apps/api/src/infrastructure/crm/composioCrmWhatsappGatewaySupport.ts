@@ -12,11 +12,15 @@ export type ComposioCrmCredentials = {
   connectedAccountId: string;
   graphVersion: string;
   provider: ComposioCrmProvider;
+  requestTimeoutMs: number;
   senderId: string;
 };
 
 export const DEFAULT_COMPOSIO_API_BASE_URL = "https://backend.composio.dev";
 export const META_GRAPH_API_BASE_URL = "https://graph.facebook.com";
+const COMPOSIO_API_KEY_ENV = "COMPOSIO_API_KEY";
+const DEFAULT_COMPOSIO_REQUEST_TIMEOUT_MS = 10_000;
+const MAX_COMPOSIO_REQUEST_TIMEOUT_MS = 60_000;
 
 export function resolveComposioCrmCredentials(
   connection: CrmConnection,
@@ -28,15 +32,13 @@ export function resolveComposioCrmCredentials(
 
   const envRefs = readRecord(connection.credentialsRef.env);
   const apiKeyEnv = readString(envRefs.apiKey);
-  if (!apiKeyEnv) {
-    throw configurationError("Composio API key env reference is missing");
+  if (apiKeyEnv !== COMPOSIO_API_KEY_ENV) {
+    throw configurationError("Composio API key env reference is invalid");
   }
 
   const apiKey = env[apiKeyEnv]?.trim();
   if (!apiKey) {
-    throw configurationError(
-      `Composio API key env var is not configured: ${apiKeyEnv}`,
-    );
+    throw configurationError("Composio API key env var is not configured");
   }
 
   const composio = readRecord(connection.credentialsRef.composio);
@@ -68,6 +70,7 @@ export function resolveComposioCrmCredentials(
     connectedAccountId,
     graphVersion,
     provider,
+    requestTimeoutMs: readRequestTimeoutMs(env.COMPOSIO_REQUEST_TIMEOUT_MS),
     senderId,
   };
 }
@@ -130,10 +133,8 @@ function assertComposioProvider(provider: string): ComposioCrmProvider {
 function assertNoRawCredentials(value: Record<string, unknown>) {
   for (const [key, entry] of Object.entries(value)) {
     if (key === "env") continue;
-    if (
-      typeof entry === "string" &&
-      /^(access_?token|api_?key|token)$/i.test(key)
-    ) {
+    const normalizedKey = key.replace(/[^a-z0-9]/giu, "").toLowerCase();
+    if (typeof entry === "string" && isCredentialKey(normalizedKey)) {
       throw configurationError(
         "Raw provider credentials must not be stored in CRM connections",
       );
@@ -142,6 +143,25 @@ function assertNoRawCredentials(value: Record<string, unknown>) {
       assertNoRawCredentials(entry as Record<string, unknown>);
     }
   }
+}
+
+function isCredentialKey(key: string) {
+  return (
+    key.includes("password") ||
+    key.includes("secret") ||
+    key.endsWith("apikey") ||
+    key.endsWith("clientkey") ||
+    key.endsWith("privatekey") ||
+    key.endsWith("token")
+  );
+}
+
+function readRequestTimeoutMs(value: string | undefined) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return DEFAULT_COMPOSIO_REQUEST_TIMEOUT_MS;
+  }
+  return Math.min(parsed, MAX_COMPOSIO_REQUEST_TIMEOUT_MS);
 }
 
 function configurationError(message: string) {

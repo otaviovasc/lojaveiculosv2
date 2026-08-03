@@ -6,10 +6,17 @@ import type {
 export function findConnectedConnection(
   connections: CrmWhatsappProviderConnection[],
 ) {
-  return connections.find(
+  const connected = connections.filter(
     (connection) =>
       connection.live.providerStatus === "connected" ||
       connection.live.connected === true,
+  );
+  return (
+    connected.find((connection) => connection.provider === "zapi") ??
+    connected.find(
+      (connection) => connection.provider === "composio_whatsapp",
+    ) ??
+    connected[0]
   );
 }
 

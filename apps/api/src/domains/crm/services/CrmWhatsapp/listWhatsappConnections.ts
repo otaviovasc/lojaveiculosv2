@@ -30,6 +30,7 @@ export type { UpdateWhatsappConnectionInput } from "../../whatsapp/whatsappConne
 
 const readPermission = "crm.whatsapp.list";
 const updatePermission = "crm.whatsapp.connection.manage";
+const credentialUpdatePermission = "crm.whatsapp.integrations.manage";
 
 export async function listWhatsappConnections(
   context: ServiceContext,
@@ -69,6 +70,13 @@ export async function updateWhatsappConnection(
   ports: CrmServicePorts,
 ): Promise<WhatsappConnection> {
   assertPermission(context, updatePermission);
+  if (
+    input.composioCredentials ||
+    input.credentialsEnv ||
+    input.instanceCredentials
+  ) {
+    assertPermission(context, credentialUpdatePermission);
+  }
   const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.connection.update.started", {
     connectionId: input.connectionId,

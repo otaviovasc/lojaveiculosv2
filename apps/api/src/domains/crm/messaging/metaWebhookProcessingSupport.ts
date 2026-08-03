@@ -41,9 +41,11 @@ export async function applyMetaMessageStatus(
     metadata: {
       ...message.metadata,
       providerEventId: event.providerEventKey,
+      ...(event.timestamp
+        ? { providerStatusAt: event.timestamp.toISOString() }
+        : {}),
       providerStatus: event.status,
     },
-    ...(event.timestamp ? { providerTimestamp: event.timestamp } : {}),
     status: event.status,
     storeId: connection.storeId,
     tenantId: connection.tenantId,

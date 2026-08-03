@@ -54,7 +54,7 @@ export const whatsappUpdateConnectionSchema = z
       .optional(),
     composioCredentials: z
       .object({
-        apiKeyEnv: z.string().trim().min(1).max(120),
+        apiKeyEnv: z.literal("COMPOSIO_API_KEY"),
         connectedAccountId: z.string().trim().min(1).max(191),
         graphVersion: z
           .string()

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  findConnectedConnection,
   findFreeTextStartConnection,
   readConversationStartCapability,
 } from "./crmWhatsappConnectionSelection";
@@ -9,6 +10,13 @@ import type {
 } from "./crmWhatsappTypes";
 
 describe("CRM messaging connection selection", () => {
+  it("prefers a connected conversation-start channel over Instagram", () => {
+    const instagram = createConnection("composio_instagram", "instagram");
+    const official = createConnection("composio_whatsapp", "official");
+
+    expect(findConnectedConnection([instagram, official])).toBe(official);
+  });
+
   it("keeps lead free-text initiation on Z-API when official channels coexist", () => {
     const official = createConnection("composio_whatsapp", "official");
     const zapi = createConnection("zapi", "zapi");
