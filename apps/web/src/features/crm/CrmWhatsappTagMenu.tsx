@@ -67,8 +67,8 @@ export function TagMenu({
                 onClick={() => {
                   if (!assigned) {
                     void addTag({
-                      color: tag.color,
-                      emoji: tag.emoji,
+                      ...(tag.color === undefined ? {} : { color: tag.color }),
+                      ...(tag.emoji === undefined ? {} : { emoji: tag.emoji }),
                       name: tag.name,
                     });
                   }
