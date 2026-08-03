@@ -2,6 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import { SalesModule } from "./SalesModule";
 import type { SalesApi } from "./apiClient";
 import {
@@ -80,6 +81,38 @@ describe("SalesModule start context", () => {
     await waitFor(() => expect(api.list).toHaveBeenCalled());
     expect(api.createDraft).not.toHaveBeenCalled();
     expect(screen.queryByText("Preparando a venda")).not.toBeInTheDocument();
+  });
+
+  it("resumes the existing sale when the unit already has a current sale", async () => {
+    window.location.hash = "#/sales?listingId=listing_1&unitId=unit_1";
+    const existing = saleRecord({
+      id: "sale_existing",
+      listingId: "listing_1",
+      unitId: "unit_1",
+    });
+    const api = salesApi({
+      createDraft: vi.fn(async () => {
+        throw new AppApiError({
+          code: "SALE_UNIT_CONFLICT",
+          message: "Vehicle unit already has a current sale.",
+          status: 409,
+        });
+      }),
+      list: vi.fn(async () => [existing]),
+    });
+
+    render(<SalesModule api={api} />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Fechar Venda" }),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByText("Nenhuma venda selecionada"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/venda em andamento/)).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/sales");
   });
 });
 
