@@ -31,18 +31,21 @@ const financeCategoryLabels: Record<string, string> = {
   vehicle_transport: "Transporte do veículo",
 };
 
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  currency: "BRL",
+  style: "currency",
+});
+const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "short",
+});
+
 export function formatCurrency(valueCents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
-    style: "currency",
-  }).format(valueCents / 100);
+  return currencyFormatter.format(valueCents / 100);
 }
 
 export function formatDate(value: string | null) {
   if (!value) return "Sem vencimento";
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(
-    new Date(value),
-  );
+  return dateFormatter.format(new Date(value));
 }
 
 export function recurrenceLabel(entry: FinanceRecurringEntry) {

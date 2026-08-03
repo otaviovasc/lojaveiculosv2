@@ -24,19 +24,17 @@ test.describe("billing plan and packages UX", () => {
     await page.goto("/billing");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     if (!isBaselineCapture()) {
+      await expect(page.getByText("Sem plano", { exact: true })).toBeVisible();
       await expect(
-        page.getByText("Nenhum plano ou pacote foi contratado"),
+        page.getByRole("heading", { name: "Escolha seu plano" }),
       ).toBeVisible();
-      await expect(page.getByLabel("Plano após o teste")).toBeVisible();
-      await expect(page.getByLabel("Plano após o teste")).toHaveText(
-        "Escolha um plano",
-      );
-      await page.getByLabel("Plano após o teste").click();
-      await page.getByRole("option", { name: /Growth/ }).click();
+      await expect(
+        page.getByRole("radiogroup", { name: "Planos disponíveis" }),
+      ).toBeVisible();
+      await page.getByRole("radio", { name: /Growth/ }).click();
       const paidPackageLabels = page.getByText("Fora do teste gratuito");
       await expect(paidPackageLabels).toHaveCount(5);
       await expect(paidPackageLabels.first()).toBeVisible();
-      await expectCommercialPlan(page);
       await expect(
         page.getByRole("heading", { name: "Marketplaces" }),
       ).toBeVisible();
@@ -49,19 +47,22 @@ test.describe("billing plan and packages UX", () => {
       await expect(
         page.getByRole("heading", { name: "Simulações Pro" }),
       ).toBeVisible();
-      await page.getByRole("tab", { name: "Cobrança" }).click();
       await expect(
-        page.getByRole("button", { name: "Ativar meu plano" }),
-      ).not.toBeVisible();
-      await expect(
-        page.getByRole("button", { name: "Ir para pagamento Asaas" }),
+        page
+          .getByLabel("Resumo mensal")
+          .getByRole("button", { name: "Assinar agora" }),
       ).toBeVisible();
-      await expect(page.getByText("Primeira cobrança mensal")).toBeVisible();
+      const monthlySummary = page.getByLabel("Resumo mensal");
+      await expect(
+        monthlySummary.getByText("Investimento mensal"),
+      ).toBeVisible();
+      await expect(
+        monthlySummary.getByText(/Checkout seguro pelo Asaas/),
+      ).toBeVisible();
       await page.screenshot({
         fullPage: true,
         path: "/tmp/billing-owner-checkout-candidate-desktop.png",
       });
-      await page.getByRole("tab", { name: "Plano e pacotes" }).click();
     }
     await expectViewportSafe(page);
     await expectAccessible(page);
@@ -134,12 +135,13 @@ async function waitForBillingContent(page: Page, expectPlan = true) {
     return;
   }
   if (!expectPlan) {
+    await expect(page.getByText("Sem plano", { exact: true })).toBeVisible();
     await expect(
-      page.getByText("Nenhum plano ou pacote foi contratado"),
+      page.getByRole("heading", { name: "Escolha seu plano" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Plano após o teste")).toHaveText(
-      "Escolha um plano",
-    );
+    await expect(
+      page.getByRole("radiogroup", { name: "Planos disponíveis" }),
+    ).toBeVisible();
     return;
   }
   await expectCommercialPlan(page);

@@ -145,8 +145,17 @@ BEGIN
     FROM subscription_items
     WHERE subscription_id = '25000000-0000-4000-8000-000000000003'
       AND ends_at IS NULL
-  ) <> 0 THEN
-    RAISE EXCEPTION 'seed invariant: trial must not contain contracted items';
+  ) <> 1 OR NOT EXISTS (
+    SELECT 1
+    FROM subscription_items
+    WHERE subscription_id = '25000000-0000-4000-8000-000000000003'
+      AND store_id = '66666666-6666-4666-8666-666666666668'
+      AND tenant_id = '77777777-7777-4777-8777-777777777778'
+      AND item_type = 'plan'
+      AND plan_id = '12121212-1212-4212-8212-121212121212'
+      AND ends_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'seed invariant: trial must contain exactly one selected plan contract';
   END IF;
 
   IF EXISTS (

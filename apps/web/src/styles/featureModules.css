@@ -290,7 +290,7 @@
 
 .feature-alert--info {
   --feature-alert-tone: var(--color-blue-start);
-  --feature-alert-tone-strong: var(--color-blue-start);
+  --feature-alert-tone-strong: var(--color-info-soft-foreground);
 }
 
 .feature-alert__icon {

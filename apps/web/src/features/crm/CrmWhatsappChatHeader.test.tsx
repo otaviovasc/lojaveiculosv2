@@ -96,7 +96,6 @@ describe("CrmWhatsappChatHeader", () => {
 
     expect(onAddTag).toHaveBeenCalledWith({
       color: "var(--color-blue-start)",
-      id: "tag-replied",
       name: "Respondeu",
     });
   });

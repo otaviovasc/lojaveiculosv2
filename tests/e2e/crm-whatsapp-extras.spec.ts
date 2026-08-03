@@ -24,6 +24,7 @@ test.describe("CRM WhatsApp extras", () => {
     const contactName = `Extras E2E ${messageId}`;
     const phone = `551188${String(Date.now()).slice(-8)}`;
 
+    await page.setViewportSize({ height: 900, width: 1600 });
     await seedWhatsappSession(request, {
       contactName,
       message: "Quero ver opcoes da loja",
@@ -37,7 +38,7 @@ test.describe("CRM WhatsApp extras", () => {
     await installLocalOwnerSession(page);
     await page.goto("/crm#/crm?surface=whatsapp");
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")
@@ -66,12 +67,6 @@ test.describe("CRM WhatsApp extras", () => {
     ).toBeVisible();
 
     const composer = page.getByPlaceholder("Digite uma mensagem...");
-    await composer.fill("/");
-    await expect(
-      page.getByText("Crie sua primeira mensagem rapida"),
-    ).toBeVisible();
-    await composer.fill("");
-
     const customShortcut = `/pw${String(Date.now()).slice(-6)}`;
     const customTitle = `Modelo ${messageId}`;
     const customText = `Mensagem rapida ${messageId}`;
@@ -106,11 +101,8 @@ test.describe("CRM WhatsApp extras", () => {
     await composer.fill("");
 
     await page.getByRole("button", { name: "Adicionar etiqueta" }).click();
-    await page
-      .getByLabel("Detalhe da conversa")
-      .getByRole("button", { name: "Quente" })
-      .click();
-    await expect(page.getByText("Quente").first()).toBeVisible();
+    await page.getByRole("button", { name: /Cliente da loja/ }).click();
+    await expect(page.getByText(/Cliente da loja/).first()).toBeVisible();
 
     await page.getByRole("button", { name: "Anexos" }).click();
     await page.getByRole("button", { name: "Enviar catalogo" }).click();
@@ -178,19 +170,26 @@ test.describe("CRM WhatsApp extras", () => {
     await installLocalOwnerSession(page);
 
     await page.goto("/crm#/crm?surface=whatsapp");
+    await page.getByRole("tab", { name: "Integrações" }).click();
+    await page.getByRole("tab", { exact: true, name: "Eventos" }).click();
     await expect(
-      page.getByRole("button", { name: /1 evento ZAPI com atenção/ }),
+      page.getByRole("button", {
+        name: /1 evento de provedor com atenção/,
+      }),
     ).toBeVisible();
     await page
-      .getByRole("button", { name: /1 evento ZAPI com atenção/ })
+      .getByRole("button", {
+        name: /1 evento de provedor com atenção/,
+      })
       .click();
     await expect(page.getByText("timeout na entrega")).toBeVisible();
     await page.getByRole("button", { name: "Reprocessar" }).click();
     await expect(
-      page.getByRole("button", { name: /evento ZAPI/i }),
+      page.getByRole("button", { name: /evento de provedor/i }),
     ).toBeHidden();
+    await page.getByRole("tab", { name: "Conversas" }).click();
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")

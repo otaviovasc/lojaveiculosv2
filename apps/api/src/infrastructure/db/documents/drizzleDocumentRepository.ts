@@ -69,38 +69,14 @@ export function createDrizzleDocumentRepository(
       return rows.map((row) => toLinkedDocument(row.document, row.link));
     },
     async listByTarget(input) {
-      const linkRows = await db
-        .select()
+      const rows = await db
+        .select({ document: documents, link: documentLinks })
         .from(documentLinks)
-        .where(
-          and(
-            eq(documentLinks.storeId, input.storeId),
-            eq(documentLinks.targetId, input.targetId),
-            eq(documentLinks.targetType, input.targetType),
-            eq(documentLinks.tenantId, input.tenantId),
-          ),
-        );
+        .innerJoin(documents, eq(documents.id, documentLinks.documentId))
+        .where(and(...listDocumentFilters(input)))
+        .orderBy(desc(documents.uploadedAt));
 
-      if (!linkRows.length) return [];
-
-      const rows = await Promise.all(
-        linkRows.map(async (link) => {
-          const [documentRow] = await db
-            .select()
-            .from(documents)
-            .where(
-              and(
-                eq(documents.id, link.documentId),
-                eq(documents.storeId, input.storeId),
-                eq(documents.tenantId, input.tenantId),
-                eq(documents.isDeleted, false),
-              ),
-            );
-          return documentRow ? toLinkedDocument(documentRow, link) : null;
-        }),
-      );
-
-      return rows.filter((row): row is LinkedDocument => Boolean(row));
+      return rows.map((row) => toLinkedDocument(row.document, row.link));
     },
     async update(input) {
       await db

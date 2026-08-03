@@ -74,7 +74,7 @@ test.describe("CRM WhatsApp media", () => {
     await installLocalOwnerSession(page);
     await page.goto("/crm#/crm?surface=whatsapp");
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")
@@ -168,7 +168,7 @@ test.describe("CRM WhatsApp media", () => {
     await installLocalOwnerSession(page);
     await page.goto("/crm#/crm?surface=whatsapp");
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")
@@ -189,7 +189,7 @@ test.describe("CRM WhatsApp media", () => {
     await expect(page.getByText(caption).last()).toBeVisible();
   });
 
-  test("renders inbound image media from the webhook pipeline", async ({
+  test("rejects unsafe inbound media URLs while preserving the caption", async ({
     page,
     request,
   }, testInfo) => {
@@ -222,14 +222,14 @@ test.describe("CRM WhatsApp media", () => {
       await installLocalOwnerSession(page);
       await page.goto("/crm#/crm?surface=whatsapp");
       await page
-        .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+        .getByPlaceholder("Pesquisar por nome ou telefone")
         .fill(contactName);
       await page
         .getByLabel("Conversas do WhatsApp")
         .getByText(contactName)
         .click();
 
-      await expect(page.getByAltText(caption)).toBeVisible();
+      await expect(page.getByAltText(caption)).toHaveCount(0);
       await expect(page.getByText(caption).last()).toBeVisible();
       await capture(page, testInfo, "crm-whatsapp-media");
     } finally {

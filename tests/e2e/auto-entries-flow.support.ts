@@ -59,7 +59,7 @@ export async function createRuleThroughDialog(
   await dialog.getByLabel("Prioridade").fill(String(input.priority ?? 60));
 
   if (input.percentage) {
-    await selectOption(page, dialog, "Modelo de cálculo", "Percentual");
+    await selectSegmentedOption(dialog, "Modelo de cálculo", "Percentual");
     await dialog.getByLabel("Percentual (%)").fill(input.percentage);
     await expect(dialog.getByText(eventBases[input.event])).toBeVisible();
     await expect(
@@ -76,7 +76,7 @@ export async function createRuleThroughDialog(
         : input.timing.kind === "day_of_month"
           ? "Dia do mês"
           : "Dia do próximo mês";
-    await selectOption(page, dialog, "Momento do lançamento", timingLabel);
+    await selectTiming(dialog, timingLabel);
     const value =
       input.timing.kind === "days_after" ? input.timing.days : input.timing.day;
     await dialog
@@ -109,6 +109,21 @@ export async function selectOption(
 ) {
   await container.getByRole("button", { name: label }).click();
   await page.getByRole("option", { exact: true, name: option }).click();
+}
+
+export async function selectTiming(container: Locator, option: string) {
+  await selectSegmentedOption(container, "Momento do lançamento", option);
+}
+
+export async function selectSegmentedOption(
+  container: Locator,
+  group: string,
+  option: string,
+) {
+  await container
+    .getByRole("group", { name: group })
+    .getByRole("button", { exact: true, name: option })
+    .click();
 }
 
 export async function createRuleViaApi(

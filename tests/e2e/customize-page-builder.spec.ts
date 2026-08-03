@@ -40,7 +40,7 @@ test.describe("customize and page builder QA lane", () => {
       await expect(
         page.getByRole("heading", { name: "Personalizar" }),
       ).toBeVisible();
-      await page.getByRole("button", { name: /Capa do Site/ }).click();
+      await page.getByRole("button", { name: /^4 Capa$/ }).click();
       await page.getByLabel("Título de Impacto").fill(headline);
       await page.getByRole("button", { name: /^Salvar/ }).click();
       await expect(page.getByText("Salvo com sucesso!")).toBeVisible();

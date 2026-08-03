@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SalesRepository } from "../../../domains/sales/ports/salesRepository.js";
+import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import {
   completeDraft,
@@ -56,7 +57,7 @@ describe("sales workflow transition", () => {
   it("closes a sales draft through the canonical vehicle workflow", async () => {
     const { services, vehiclePorts } = createHarness("reserved");
     const draft = await services.createDraft(context(["sale.draft"]), {
-      ...completeDraft(),
+      ...completeDraft({ selectedDocumentKinds: vehicleSaleDocumentKinds }),
       payments: [
         {
           amountCents: 5000000,
@@ -76,7 +77,9 @@ describe("sales workflow transition", () => {
     expect(sale.status).toBe("closed");
     expect(vehiclePorts.listings.get("listing_1")?.status).toBe("sold_out");
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
-    expect(vehiclePorts.documents.size).toBe(5);
+    expect(
+      [...vehiclePorts.documents.values()].map(({ kind }) => kind),
+    ).toEqual([...vehicleSaleDocumentKinds]);
     expect(vehiclePorts.financeRepository.entries).toHaveLength(1);
     expect(vehiclePorts.financeRepository.entries[0]?.amountCents).toBe(
       5000000,

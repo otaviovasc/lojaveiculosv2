@@ -62,11 +62,12 @@ test.describe("clients feature flow", () => {
     await page.getByLabel("Nome do contato").fill(leadName);
     await page.getByLabel("Telefone").fill("(11) 98888-4444");
     await page.getByLabel("E-mail").fill("cliente.qa@example.com");
-    const vehicleSelect = page.getByLabel("Veículos de Interesse");
-    await vehicleSelect.selectOption({ index: 1 });
+    const vehicleSelect = page.getByLabel("Veículo de interesse");
+    await vehicleSelect.click();
+    const vehicleOption = page.getByRole("option").nth(1);
     const selectedVehicleLabel =
-      (await vehicleSelect.locator("option:checked").textContent())?.trim() ??
-      "";
+      (await vehicleOption.textContent())?.trim() ?? "";
+    await vehicleOption.click();
     const selectedVehiclePrefix = selectedVehicleLabel
       .split(/\s+/)
       .slice(0, 4)

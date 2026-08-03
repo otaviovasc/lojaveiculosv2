@@ -238,7 +238,7 @@ test.describe("CRM WhatsApp conversations", () => {
       "true",
     );
     await expect(page.getByLabel("Conexao")).toContainText(
-      "Nenhuma conexao ZAPI configurada para esta loja.",
+      "Nenhuma conexao de mensagens configurada para esta loja.",
     );
   });
 });

@@ -19,21 +19,27 @@ test.describe("CRM WhatsApp connection", () => {
     await page.goto("/crm#/crm?surface=whatsapp");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
-    await expect(page.getByText("WhatsApp (ZAPI)")).toBeVisible();
-    await expect(page.getByText("Online")).toBeVisible();
-    await expect(page.getByText("ZAPI conectada")).toBeVisible();
-    await expect(page.getByText("Credenciais protegidas")).toBeVisible();
-    await expect(page.getByText("Webhooks da integracao")).toBeVisible();
-    await expect(page.getByLabel("ID da instancia")).toBeHidden();
+    const connection = page.getByRole("region", { name: "Conexao" });
+    await expect(connection.getByText("Z-API", { exact: true })).toBeVisible();
+    await expect(
+      connection.getByText("Z-API: online", { exact: true }),
+    ).toBeVisible();
+    await expect(connection.getByText("Online", { exact: true })).toBeVisible();
+    await expect(connection.getByText(/^Conectado - \d+$/)).toBeVisible();
+    await expect(connection.getByText("Credenciais protegidas")).toBeVisible();
+    await expect(connection.getByText("Webhooks da integracao")).toBeVisible();
+    await expect(connection.getByLabel("ID da instancia")).toBeHidden();
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-connection");
 
-    await page.getByText("Credenciais protegidas").click();
-    await expect(page.getByLabel("ID da instancia")).toBeVisible();
-    await expect(page.getByLabel("Token da instancia")).toBeVisible();
-    await page.getByText("Webhooks da integracao").click();
-    await expect(page.getByRole("textbox", { name: /received/ })).toBeVisible();
+    await connection.getByText("Credenciais protegidas").click();
+    await expect(connection.getByLabel("ID da instancia")).toBeVisible();
+    await expect(connection.getByLabel("Token da instancia")).toBeVisible();
+    await connection.getByText("Webhooks da integracao").click();
     await expect(
-      page.getByRole("textbox", { name: /chat-presence/ }),
+      connection.getByRole("textbox", { name: /received/ }),
+    ).toBeVisible();
+    await expect(
+      connection.getByRole("textbox", { name: /chat-presence/ }),
     ).toBeVisible();
   });
 });

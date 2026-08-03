@@ -4,7 +4,7 @@ import {
   createRuleThroughDialog,
   createRuleViaApi,
   ruleCard,
-  selectOption,
+  selectTiming,
 } from "./auto-entries-flow.support";
 import { runAutoEntryOptionMatrix } from "./auto-entries-flow.matrix";
 import { saveQaScreenshot } from "./support/artifacts";
@@ -51,12 +51,7 @@ test.describe("automatic finance entries", () => {
         name: "Editar regra automática",
       });
       await editDialog.getByLabel("Nome da regra").fill(editedName);
-      await selectOption(
-        page,
-        editDialog,
-        "Momento do lançamento",
-        "Dia do próximo mês",
-      );
+      await selectTiming(editDialog, "Próx. mês");
       await editDialog.getByLabel("Dia").fill("12");
       const updateResponse = page.waitForResponse(
         (response) =>

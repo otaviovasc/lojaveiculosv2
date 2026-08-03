@@ -26,6 +26,7 @@ async function assertBilling(db) {
   const expected = new Map([
     [seedIds.primaryStore, [2, 54899]],
     [seedIds.branchStore, [2, 54899]],
+    [seedIds.foreignStore, [1, 29900]],
   ]);
   for (const row of rows) {
     const values = expected.get(row.storeId);
@@ -35,7 +36,7 @@ async function assertBilling(db) {
       `Billing allocation mismatch for ${row.storeId}.`,
     );
   }
-  assertCount({ count: rows.length }, "count", 2, "Billing allocations");
+  assertCount({ count: rows.length }, "count", 3, "Billing allocations");
 
   const [states] = await db`
     select
@@ -220,6 +221,9 @@ async function assertStorefront(db) {
       (select count(*)::int from store_profiles where tenant_id in ${db(seededTenantIds)}) as profiles,
       (select count(*)::int from store_public_site_settings
        where tenant_id in ${db(seededTenantIds)}) as sites,
+      (select count(*)::int from store_public_site_settings
+       where tenant_id in ${db(seededTenantIds)}
+         and theme ? 'tone') as "legacyThemes",
       (select count(*)::int from store_custom_pages where tenant_id = ${seedIds.primaryTenant}) as pages,
       (select count(*)::int from storefront_media_assets
        where tenant_id = ${seedIds.primaryTenant} and is_deleted = false) as assets,
@@ -233,6 +237,7 @@ async function assertStorefront(db) {
   );
   assertCount(row, "pages", 2, "Primary custom pages");
   assertCount(row, "assets", 2, "Storefront media library");
+  assertCount(row, "legacyThemes", 0, "Legacy storefront theme payloads");
   assertCount(row, "templates", 5, "Document templates");
   assert(row.documents >= 9, "Document workflows are incomplete.");
   return row;

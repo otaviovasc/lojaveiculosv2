@@ -76,6 +76,9 @@ export function createCoverageConfig(workspaceName) {
       expect: {
         requireAssertions: true,
       },
+      // Vitest applies VITEST_MAX_WORKERS after config resolution, so callers
+      // can lower this portable default further for constrained environments.
+      maxWorkers: "75%",
       coverage: {
         exclude: excludedPatterns,
         include: sourcePatterns,

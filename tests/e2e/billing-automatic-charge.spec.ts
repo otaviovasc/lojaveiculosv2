@@ -15,7 +15,7 @@ test.describe("billing automatic monthly charge", () => {
     });
     await installBillingRoutes(page);
     await page.goto("/billing");
-    await page.getByRole("tab", { name: "Cobrança" }).click();
+    await page.getByRole("tab", { name: "Detalhes" }).click();
     await expect(
       page.getByRole("heading", { name: "Como seu investimento se divide" }),
     ).toBeVisible();
@@ -43,7 +43,7 @@ test.describe("billing automatic monthly charge", () => {
     await saveQaScreenshot(page, testInfo, "billing-automatic-desktop");
     await setQaViewport(page, "mobile");
     await page.reload();
-    await page.getByRole("tab", { name: "Cobrança" }).click();
+    await page.getByRole("tab", { name: "Detalhes" }).click();
     await expect(
       page.getByRole("heading", { name: "Como seu investimento se divide" }),
     ).toBeVisible();

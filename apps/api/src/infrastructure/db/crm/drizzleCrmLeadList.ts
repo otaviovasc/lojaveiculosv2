@@ -3,6 +3,7 @@ import {
   count,
   desc,
   eq,
+  getTableColumns,
   ilike,
   inArray,
   lte,
@@ -79,7 +80,7 @@ export async function listCrmLeadBoard(
 
   const ranked = db
     .select({
-      lead: leads,
+      ...getTableColumns(leads),
       stageRank: sql<number>`row_number() over (
           partition by ${leads.pipelineStageId}
           order by ${leads.updatedAt} desc, ${leads.id} desc
@@ -97,7 +98,7 @@ export async function listCrmLeadBoard(
     .from(ranked)
     .where(lte(ranked.stageRank, input.stageLimit));
   const references = await findLeadVehicleReferences(db, {
-    leadIds: rows.map((row) => row.lead.id),
+    leadIds: rows.map((row) => row.id),
     storeId: input.storeId,
     tenantId: input.tenantId,
   });
@@ -106,13 +107,13 @@ export async function listCrmLeadBoard(
     { items: ReturnType<typeof toLead>[]; total: number }
   >();
   for (const row of rows) {
-    const pipelineStageId = row.lead.pipelineStageId;
+    const pipelineStageId = row.pipelineStageId;
     if (!pipelineStageId) continue;
     const stage = stages.get(pipelineStageId) ?? {
       items: [],
       total: Number(row.stageTotal),
     };
-    stage.items.push(toLead(row.lead, references.get(row.lead.id)));
+    stage.items.push(toLead(row, references.get(row.id)));
     stages.set(pipelineStageId, stage);
   }
   return [...stages.entries()].map(([pipelineStageId, stage]) => ({
