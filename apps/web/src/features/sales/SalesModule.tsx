@@ -25,10 +25,12 @@ import {
 } from "./saleContextOptions";
 import {
   contextMessage,
+  findCurrentSaleForContext,
+  isSaleUnitConflict,
   replaceSale,
   salesErrorMessage,
 } from "./salesModuleSupport";
-import type { SaleRecord } from "./types";
+import type { SaleRecord, SaleStartContext } from "./types";
 
 export function SalesModule({
   api,
@@ -123,6 +125,7 @@ export function SalesModule({
       message === "Rascunho criado" ||
       message === "Venda atualizada" ||
       message?.includes("Correção criada") ||
+      message?.includes("venda em andamento") ||
       message?.includes("excluída")
     ) {
       timer = setTimeout(() => setMessage(null), 3000);
@@ -135,6 +138,35 @@ export function SalesModule({
   useEffect(() => {
     initialListLoadRef.current = loadSales();
   }, [loadSales]);
+
+  const resumeExistingSale = useCallback(
+    async (context: SaleStartContext) => {
+      if (!runtimeApi) return undefined;
+      try {
+        const result = await runtimeApi.list({
+          status: "all",
+          ...(context.unitId ? { unitId: context.unitId } : {}),
+        });
+        const existing = findCurrentSaleForContext(result, context);
+        if (!existing) return undefined;
+        setSales((current) => {
+          const missing = result.filter(
+            (sale) => !current.some((item) => item.id === sale.id),
+          );
+          return [...missing, ...current];
+        });
+        setActiveId(existing.id);
+        setViewMode("workspace");
+        setMessage(
+          "Este veículo já tem uma venda em andamento. Abrimos a venda existente.",
+        );
+        return existing;
+      } catch {
+        return undefined;
+      }
+    },
+    [runtimeApi],
+  );
 
   const createDraft = useCallback(
     async (context = parseSaleStartContext()) => {
@@ -149,11 +181,15 @@ export function SalesModule({
         setMessage("Rascunho criado");
         return sale;
       } catch (error) {
+        if (isSaleUnitConflict(error)) {
+          const resumed = await resumeExistingSale(context);
+          if (resumed) return resumed;
+        }
         setMessage(salesErrorMessage(error));
         return undefined;
       }
     },
-    [runtimeApi],
+    [resumeExistingSale, runtimeApi],
   );
 
   useEffect(() => {
