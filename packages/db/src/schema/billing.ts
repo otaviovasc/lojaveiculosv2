@@ -78,6 +78,7 @@ export const planFeatures = pgTable(
     planId: uuid("plan_id")
       .notNull()
       .references(() => plans.id),
+    trialLimitValue: integer("trial_limit_value"),
   },
   (table) => [
     uniqueIndex("plan_features_plan_feature_unique").on(

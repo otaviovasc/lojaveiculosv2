@@ -14,7 +14,7 @@ export const memoryBillingPlans: readonly BillingPlan[] = [
       feature("automation", true, true),
       feature("analytics", true, true),
       feature("compliance", true, true),
-      feature("plate_lookup", true, false, 300),
+      feature("plate_lookup", true, true, 300, 10),
       feature("external_api", false, false),
       feature("marketplace", false, false),
       feature("custom_domain", true, false),
@@ -69,6 +69,7 @@ export const memoryTrialEntitlements: readonly StoreEntitlement[] = [
   trial("automation"),
   trial("analytics"),
   trial("compliance"),
+  trial("plate_lookup"),
 ];
 
 function feature(
@@ -76,8 +77,15 @@ function feature(
   included: boolean,
   includedInTrial: boolean,
   limitValue: number | null = null,
+  trialLimitValue: number | null = null,
 ) {
-  return { featureKey, included, includedInTrial, limitValue };
+  return {
+    featureKey,
+    included,
+    includedInTrial,
+    limitValue,
+    trialLimitValue,
+  };
 }
 
 function addon(

@@ -7,66 +7,77 @@ const plan = {
       included: true,
       includedInTrial: true,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "crm",
       included: false,
       includedInTrial: false,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "plate_lookup",
       included: true,
-      includedInTrial: false,
+      includedInTrial: true,
       limitValue: 300,
+      trialLimitValue: 10,
     },
     {
       featureKey: "automation",
       included: true,
       includedInTrial: true,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "analytics",
       included: true,
       includedInTrial: true,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "compliance",
       included: true,
       includedInTrial: true,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "custom_domain",
       included: true,
       includedInTrial: false,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "nfe",
       included: false,
       includedInTrial: false,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "external_api",
       included: false,
       includedInTrial: false,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "marketplace",
       included: false,
       includedInTrial: false,
       limitValue: null,
+      trialLimitValue: null,
     },
     {
       featureKey: "simulations",
       included: false,
       includedInTrial: false,
       limitValue: null,
+      trialLimitValue: null,
     },
   ],
   id: "plan_growth",
@@ -206,6 +217,7 @@ function trialOverviewForStore(selectedStore: (typeof stores)[number]) {
     "analytics",
     "automation",
     "compliance",
+    "plate_lookup",
     "subdomain",
   ] as const;
   const trialMatrix = plan.features.map((feature) =>
@@ -217,7 +229,7 @@ function trialOverviewForStore(selectedStore: (typeof stores)[number]) {
       )
         ? "trialing"
         : "inactive",
-      feature.limitValue,
+      feature.trialLimitValue ?? feature.limitValue,
     ),
   );
   return {
@@ -239,7 +251,10 @@ function trialOverviewForStore(selectedStore: (typeof stores)[number]) {
     entitlements: safeTrialKeys.map((featureKey) => ({
       endsAt: trialEndsAt,
       featureKey,
-      metadata: { sourceDetail: "safe_trial_catalog" },
+      metadata:
+        featureKey === "plate_lookup"
+          ? { limitValue: 10, sourceDetail: "safe_trial_catalog" }
+          : { sourceDetail: "safe_trial_catalog" },
       source: "billing_catalog",
       startsAt: "2026-07-15T00:00:00.000Z",
       status: "trialing",

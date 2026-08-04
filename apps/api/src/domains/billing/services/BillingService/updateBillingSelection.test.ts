@@ -87,6 +87,7 @@ describe("updateBillingSelection", () => {
           included: true,
           includedInTrial: false,
           limitValue: null,
+          trialLimitValue: null,
         },
       ],
     });

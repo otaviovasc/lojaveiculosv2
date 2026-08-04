@@ -138,7 +138,9 @@ export type InviteStoreMemberInput = {
 };
 
 export type IdentityInvitationView = {
+  acceptUrl: string | null;
   email: string;
+  emailDeliveryStatus: "failed" | "requested";
   id: string;
   role: RoleKey;
   status:

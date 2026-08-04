@@ -4,6 +4,26 @@ import {
   createBillingOverview,
 } from "./billingOverviewModel.js";
 import { createChargeableItem } from "./billingChargePreviewModel.js";
+import type { BillingPlan } from "../ports/billingRepository.js";
+
+const trialPlan: BillingPlan = {
+  catalogVersion: "2026-07-v1",
+  code: "growth",
+  features: [
+    {
+      featureKey: "plate_lookup",
+      included: true,
+      includedInTrial: true,
+      limitValue: 300,
+      trialLimitValue: 10,
+    },
+  ],
+  id: "plan_growth",
+  limits: { sellerLimit: 8, vehicleLimit: 300 },
+  monthlyPriceCents: 29900,
+  name: "Growth",
+  status: "active",
+};
 
 describe("createBillingOverview", () => {
   it("builds agency billing matrix and financial summary defaults", () => {
@@ -93,6 +113,38 @@ describe("createBillingOverview", () => {
       overview.entitlementMatrix.find((row) => row.featureKey === "crm")
         ?.status,
     ).toBe("inactive");
+  });
+
+  it("shows the trial-specific plate lookup limit", () => {
+    const overview = createBillingOverview({
+      entitlements: [
+        {
+          endsAt: new Date("2026-07-15T00:00:00.000Z"),
+          featureKey: "plate_lookup",
+          metadata: {},
+          source: "billing_catalog",
+          startsAt: new Date("2026-07-01T00:00:00.000Z"),
+          status: "trialing",
+        },
+      ],
+      now: new Date("2026-07-05T00:00:00.000Z"),
+      plans: [trialPlan],
+      storeId: "store_1" as never,
+      subscription: {
+        currentPeriodEnd: new Date("2026-07-15T00:00:00.000Z"),
+        currentPeriodStart: new Date("2026-07-01T00:00:00.000Z"),
+        id: "subscription_1",
+        plan: trialPlan,
+        status: "trialing",
+      },
+      tenantId: "tenant_1" as never,
+    });
+
+    expect(
+      overview.entitlementMatrix.find(
+        (row) => row.featureKey === "plate_lookup",
+      )?.limitValue,
+    ).toBe(10);
   });
 
   it("calculates charge preview from real subscription chargeables", () => {

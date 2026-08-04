@@ -1,6 +1,11 @@
-import type { RoleKey, RoleManagementView, RoleMemberView } from "../types";
+import type {
+  IdentityInvitationView,
+  RoleKey,
+  RoleManagementView,
+  RoleMemberView,
+} from "../types";
 import { getRoleVisual, type CustomRolePreset } from "./RoleHelpers";
-import { Send, UserCog, UserPlus } from "lucide-react";
+import { CheckCircle2, Copy, Send, UserCog, UserPlus } from "lucide-react";
 import { useState } from "react";
 import {
   FeatureCard,
@@ -13,6 +18,7 @@ import {
 import { FeatureAlert } from "../../../components/ui/FeatureStates";
 import { cx } from "../../../components/ui/featureShared";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import { copyInvitationAcceptUrl } from "./invitationClipboard";
 
 export function MembrosSidebar({
   roles,
@@ -33,22 +39,45 @@ export function MembrosSidebar({
   roleLabel: (role: RoleKey, roles: RoleManagementView) => string;
   canInvite: boolean;
   onInviteClick: () => void;
-  onSendInvitation: (invitationId: string) => Promise<unknown>;
+  onSendInvitation: (invitationId: string) => Promise<IdentityInvitationView>;
 }) {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [sendReceipt, setSendReceipt] = useState<{
+    acceptUrl: string | null;
+    invitationId: string;
+  } | null>(null);
+  const [copiedInvitationId, setCopiedInvitationId] = useState<string | null>(
+    null,
+  );
 
   const sendInvitation = async (invitationId: string) => {
     setSendingId(invitationId);
     setSendError(null);
+    setSendReceipt(null);
+    setCopiedInvitationId(null);
     try {
-      await onSendInvitation(invitationId);
+      const result = await onSendInvitation(invitationId);
+      setSendReceipt({
+        acceptUrl: result.acceptUrl,
+        invitationId: result.id,
+      });
     } catch (error) {
       setSendError(
         formatApiErrorDisplay(error, "Não foi possível enviar o convite."),
       );
     } finally {
       setSendingId(null);
+    }
+  };
+
+  const copyAcceptUrl = async (invitationId: string, acceptUrl: string) => {
+    setSendError(null);
+    try {
+      await copyInvitationAcceptUrl(acceptUrl);
+      setCopiedInvitationId(invitationId);
+    } catch {
+      setSendError("Não foi possível copiar o link de acesso neste navegador.");
     }
   };
 
@@ -139,6 +168,9 @@ export function MembrosSidebar({
         ) : null}
         {roles.pendingInvitations.map((invitation) => {
           const inviteVisual = getRoleVisual(invitation.role);
+          const invitationReceipt =
+            sendReceipt?.invitationId === invitation.id ? sendReceipt : null;
+          const acceptUrl = invitationReceipt?.acceptUrl;
           return (
             <div
               key={invitation.id}
@@ -170,19 +202,46 @@ export function MembrosSidebar({
                   </span>
                 ) : null}
                 {canInvite ? (
-                  <button
-                    className="mt-1 inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-line bg-panel px-2.5 text-xs font-black text-app-text transition-colors hover:border-accent hover:text-accent-text"
-                    disabled={sendingId !== null}
-                    onClick={() => void sendInvitation(invitation.id)}
-                    type="button"
-                  >
-                    <Send className="size-3.5" />
-                    {sendingId === invitation.id
-                      ? "Enviando..."
-                      : invitation.status === "sent"
-                        ? "Reenviar convite"
-                        : "Enviar convite"}
-                  </button>
+                  <>
+                    <button
+                      className="mt-1 inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-line bg-panel px-2.5 text-xs font-black text-app-text transition-colors hover:border-accent hover:text-accent-text"
+                      disabled={sendingId !== null}
+                      onClick={() => void sendInvitation(invitation.id)}
+                      type="button"
+                    >
+                      <Send className="size-3.5" />
+                      {sendingId === invitation.id
+                        ? "Enviando..."
+                        : invitation.status === "sent"
+                          ? "Reenviar convite"
+                          : "Enviar convite"}
+                    </button>
+                    {invitationReceipt ? (
+                      <div className="mt-1.5 flex flex-col gap-1.5">
+                        <span
+                          className="inline-flex items-center gap-1 text-xs font-bold text-emerald-500"
+                          role="status"
+                        >
+                          <CheckCircle2 className="size-3.5" />
+                          Envio solicitado ao Clerk.
+                        </span>
+                        {acceptUrl ? (
+                          <button
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-line bg-panel px-2.5 text-xs font-black text-app-text transition-colors hover:border-accent hover:text-accent-text"
+                            onClick={() =>
+                              void copyAcceptUrl(invitation.id, acceptUrl)
+                            }
+                            type="button"
+                          >
+                            <Copy className="size-3.5" />
+                            {copiedInvitationId === invitation.id
+                              ? "Link copiado"
+                              : "Copiar link de acesso"}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             </div>

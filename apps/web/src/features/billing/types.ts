@@ -28,6 +28,7 @@ export type BillingPlan = {
     included: boolean;
     includedInTrial: boolean;
     limitValue: number | null;
+    trialLimitValue: number | null;
   }[];
   id: string;
   limits: {

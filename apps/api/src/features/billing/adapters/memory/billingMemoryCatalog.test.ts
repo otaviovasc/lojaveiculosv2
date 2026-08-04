@@ -22,7 +22,7 @@ describe("billing memory catalog contracts", () => {
     );
   });
 
-  it("keeps costly add-ons and custom domain outside the trial", () => {
+  it("keeps provider-backed add-ons and custom domain outside the trial", () => {
     const trialFeatures = memoryTrialEntitlements.map(
       (entitlement) => entitlement.featureKey,
     );
@@ -32,8 +32,18 @@ describe("billing memory catalog contracts", () => {
       "automation",
       "analytics",
       "compliance",
+      "plate_lookup",
     ]);
     expect(trialFeatures).not.toContain("custom_domain");
+    expect(
+      memoryBillingPlans[0]?.features.find(
+        (feature) => feature.featureKey === "plate_lookup",
+      ),
+    ).toMatchObject({
+      includedInTrial: true,
+      limitValue: 300,
+      trialLimitValue: 10,
+    });
     for (const addon of memoryBillingAddons) {
       expect(addon.includedInTrial).toBe(false);
       expect(trialFeatures).not.toContain(addon.featureKey);

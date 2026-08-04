@@ -109,7 +109,9 @@ export function createEntitlementMatrix(input: {
       includedInPlan: planFeature?.included ?? false,
       limitValue: entitlementLimit(
         entitlement,
-        planFeature?.limitValue ?? null,
+        input.subscription?.status === "trialing"
+          ? (planFeature?.trialLimitValue ?? planFeature?.limitValue ?? null)
+          : (planFeature?.limitValue ?? null),
       ),
       source: entitlement?.source ?? null,
       startsAt: entitlement?.startsAt ?? null,

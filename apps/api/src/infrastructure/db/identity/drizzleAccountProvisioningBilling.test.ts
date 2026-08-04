@@ -23,6 +23,7 @@ describe("account provisioning billing defaults", () => {
           featureKey: "analytics",
           includedInTrial: true,
           planId: "plan_1",
+          trialLimitValue: null,
         },
       ],
       plans: [
@@ -86,6 +87,25 @@ describe("account provisioning billing defaults", () => {
     expect(contractRepair).toContain('"item_type"');
     expect(contractRepair).toContain("'plan'");
     expect(contractRepair).toContain("NOT EXISTS");
+  });
+
+  it("repairs active trial entitlements, plan contracts, and plate quota", () => {
+    const migration = readFileSync(
+      new URL(
+        "../../../../../../packages/db/migrations/0013_trial_plate_lookup_repair.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(migration).toContain('"trial_limit_value"');
+    expect(migration).toContain("('plate_lookup', 1, true, 300, 10)");
+    expect(migration).toContain("'limitValue', 10");
+    expect(migration).toContain("'safe_trial_catalog'");
+    expect(migration).toContain('INSERT INTO "subscription_items"');
+    expect(migration).toContain('INSERT INTO "store_entitlements"');
+    expect(migration).toContain("subscription.current_period_end > now()");
+    expect(migration).not.toContain("interval '14 days'");
   });
 
   it("selects a versioned catalog without mutating catalog tables", () => {

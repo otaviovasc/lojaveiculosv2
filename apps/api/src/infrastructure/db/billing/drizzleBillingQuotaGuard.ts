@@ -65,6 +65,7 @@ async function findEffectiveContract(
       limits: plans.limits,
       periodStart: subscriptions.currentPeriodStart,
       planId: plans.id,
+      subscriptionStatus: subscriptions.status,
     })
     .from(subscriptionItems)
     .innerJoin(
@@ -100,14 +101,22 @@ async function findEffectiveContract(
 
 async function resolveLimit(
   db: DrizzleBillingQuotaClient,
-  contract: { limits: unknown; planId: string },
+  contract: {
+    limits: unknown;
+    planId: string;
+    subscriptionStatus:
+      "active" | "cancelled" | "expired" | "past_due" | "trialing";
+  },
   quotaKey: BillingQuotaKey,
 ): Promise<number | null> {
   if (quotaKey === "seller") return readLimit(contract.limits, "seller_limit");
   if (quotaKey === "vehicle")
     return readLimit(contract.limits, "vehicle_limit");
   const [feature] = await db
-    .select({ limit: planFeatures.limitValue })
+    .select({
+      limit: planFeatures.limitValue,
+      trialLimit: planFeatures.trialLimitValue,
+    })
     .from(planFeatures)
     .where(
       and(
@@ -117,7 +126,18 @@ async function resolveLimit(
       ),
     )
     .limit(1);
-  return feature?.limit ?? null;
+  return resolveFeatureLimit(contract.subscriptionStatus, feature);
+}
+
+export function resolveFeatureLimit(
+  subscriptionStatus:
+    "active" | "cancelled" | "expired" | "past_due" | "trialing",
+  feature: { limit: number | null; trialLimit: number | null } | undefined,
+): number | null {
+  if (!feature) return null;
+  return subscriptionStatus === "trialing"
+    ? (feature.trialLimit ?? feature.limit)
+    : feature.limit;
 }
 
 async function countUsage(
