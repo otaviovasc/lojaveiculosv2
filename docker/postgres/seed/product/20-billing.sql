@@ -26,24 +26,26 @@ ON CONFLICT (code, catalog_version) DO UPDATE SET
   updated_at = now();
 
 INSERT INTO plan_features (
-  feature_key, included, included_in_trial, limit_value, plan_id
+  feature_key, included, included_in_trial, limit_value, plan_id,
+  trial_limit_value
 )
 VALUES
-  ('analytics', 1, true, null, '12121212-1212-4212-8212-121212121212'),
-  ('automation', 1, true, null, '12121212-1212-4212-8212-121212121212'),
-  ('compliance', 1, true, null, '12121212-1212-4212-8212-121212121212'),
-  ('crm', 0, false, null, '12121212-1212-4212-8212-121212121212'),
-  ('custom_domain', 1, false, null, '12121212-1212-4212-8212-121212121212'),
-  ('external_api', 0, false, null, '12121212-1212-4212-8212-121212121212'),
-  ('marketplace', 0, false, null, '12121212-1212-4212-8212-121212121212'),
-  ('fiscal', 0, false, null, '12121212-1212-4212-8212-121212121212'),
-  ('plate_lookup', 1, false, 300, '12121212-1212-4212-8212-121212121212'),
-  ('simulations', 0, false, null, '12121212-1212-4212-8212-121212121212'),
-  ('subdomain', 1, true, null, '12121212-1212-4212-8212-121212121212')
+  ('analytics', 1, true, null, '12121212-1212-4212-8212-121212121212', null),
+  ('automation', 1, true, null, '12121212-1212-4212-8212-121212121212', null),
+  ('compliance', 1, true, null, '12121212-1212-4212-8212-121212121212', null),
+  ('crm', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
+  ('custom_domain', 1, false, null, '12121212-1212-4212-8212-121212121212', null),
+  ('external_api', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
+  ('marketplace', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
+  ('fiscal', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
+  ('plate_lookup', 1, true, 300, '12121212-1212-4212-8212-121212121212', 10),
+  ('simulations', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
+  ('subdomain', 1, true, null, '12121212-1212-4212-8212-121212121212', null)
 ON CONFLICT (plan_id, feature_key) DO UPDATE SET
   included = EXCLUDED.included,
   included_in_trial = EXCLUDED.included_in_trial,
   limit_value = EXCLUDED.limit_value,
+  trial_limit_value = EXCLUDED.trial_limit_value,
   updated_at = now();
 
 INSERT INTO addons (

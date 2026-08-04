@@ -19,6 +19,7 @@ export type BillingPlanFeature = {
   included: boolean;
   includedInTrial: boolean;
   limitValue: number | null;
+  trialLimitValue: number | null;
 };
 
 export type BillingPlan = {

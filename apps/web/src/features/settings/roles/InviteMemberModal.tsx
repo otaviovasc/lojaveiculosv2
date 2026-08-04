@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Copy } from "lucide-react";
 import {
   FeatureInput,
   FeatureSelect,
@@ -12,6 +12,7 @@ import {
 import { FeatureAlert } from "../../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { IdentityInvitationView, InviteStoreMemberInput } from "../types";
+import { copyInvitationAcceptUrl } from "./invitationClipboard";
 
 export function InviteMemberModal({
   isOpen,
@@ -35,6 +36,9 @@ export function InviteMemberModal({
   const [failedInvitationId, setFailedInvitationId] = useState<string | null>(
     null,
   );
+  const [successInvitation, setSuccessInvitation] =
+    useState<IdentityInvitationView | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -44,14 +48,16 @@ export function InviteMemberModal({
       setStatus("idle");
       setError(null);
       setFailedInvitationId(null);
+      setSuccessInvitation(null);
+      setLinkCopied(false);
     }
   }, [isOpen]);
 
   useEffect(() => {
-    if (status !== "success") return;
-    const timeout = window.setTimeout(onClose, 1400);
+    if (status !== "success" || successInvitation?.acceptUrl) return;
+    const timeout = window.setTimeout(onClose, 2500);
     return () => window.clearTimeout(timeout);
-  }, [onClose, status]);
+  }, [onClose, status, successInvitation?.acceptUrl]);
 
   if (!isOpen) return null;
 
@@ -66,6 +72,8 @@ export function InviteMemberModal({
     setStatus("saving");
     setError(null);
     setFailedInvitationId(null);
+    setSuccessInvitation(null);
+    setLinkCopied(false);
     try {
       const invitation = await onInvite({
         email,
@@ -78,6 +86,7 @@ export function InviteMemberModal({
         setStatus("idle");
         return;
       }
+      setSuccessInvitation(invitation);
       setStatus("success");
     } catch (err) {
       setError(formatApiErrorDisplay(err, "Não foi possível criar o convite."));
@@ -97,6 +106,7 @@ export function InviteMemberModal({
         setStatus("idle");
         return;
       }
+      setSuccessInvitation(invitation);
       setStatus("success");
     } catch (err) {
       setError(
@@ -106,10 +116,32 @@ export function InviteMemberModal({
     }
   };
 
+  const handleCopyAcceptUrl = async () => {
+    const acceptUrl = successInvitation?.acceptUrl;
+    if (!acceptUrl) return;
+    setError(null);
+    try {
+      await copyInvitationAcceptUrl(acceptUrl);
+      setLinkCopied(true);
+    } catch {
+      setError(
+        "Não foi possível copiar o link. Tente novamente em um navegador com acesso à área de transferência.",
+      );
+    }
+  };
+
   return (
     <FeatureDialog
       footer={
-        status === "success" ? null : (
+        status === "success" && successInvitation?.acceptUrl ? (
+          <FeatureDialogActions
+            cancelLabel="Fechar"
+            confirmIcon={<Copy className="size-4" />}
+            confirmLabel={linkCopied ? "Link copiado" : "Copiar link de acesso"}
+            onCancel={handleClose}
+            onConfirm={() => void handleCopyAcceptUrl()}
+          />
+        ) : status === "success" ? null : (
           <FeatureDialogActions
             cancelDisabled={isSaving}
             confirmDisabled={!failedInvitationId && availableRoles.length === 0}
@@ -129,15 +161,21 @@ export function InviteMemberModal({
       }
       isOpen={isOpen}
       onClose={handleClose}
-      title={status === "success" ? "Convite enviado" : "Convidar novo membro"}
+      title={status === "success" ? "Convite criado" : "Convidar novo membro"}
     >
       {status === "success" ? (
         <div className="flex flex-col items-center justify-center py-6 text-center">
           <CheckCircle2 className="size-12 text-emerald-500" />
           <p className="mt-3 max-w-xs text-sm font-bold text-muted">
-            O convite de acesso foi enviado com sucesso para{" "}
+            O Clerk aceitou a solicitação de envio para{" "}
             <strong className="text-app-text">{email}</strong>.
           </p>
+          <p className="mt-2 max-w-sm text-xs font-semibold text-muted">
+            Isso não confirma a entrega na caixa de entrada. Se o e-mail não
+            chegar, copie o link de acesso e envie somente ao destinatário; ele
+            concede acesso ao cadastro convidado.
+          </p>
+          {error ? <FeatureAlert className="mt-3">{error}</FeatureAlert> : null}
         </div>
       ) : (
         <form

@@ -69,7 +69,9 @@ export type InvitationStatus =
   "accepted" | "expired" | "pending" | "revoked" | "send_failed" | "sent";
 
 export type IdentityInvitation = {
+  acceptUrl: string | null;
   email: string;
+  emailDeliveryStatus: "failed" | "requested";
   id: string;
   role: string;
   status: InvitationStatus;

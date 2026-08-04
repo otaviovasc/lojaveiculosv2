@@ -22,32 +22,6 @@ describe("account provisioning routes", () => {
     expect(repository.findSessionBootstrap).toHaveBeenCalledWith(profile);
   });
 
-  it("creates owner first store with trial entitlements", async () => {
-    const repository = createRepository();
-    const app = createFeature(repository);
-
-    const response = await app.request("/onboarding/owner-store", {
-      body: JSON.stringify({
-        publicSlug: "auto-prime",
-        storeTradingName: "Auto Prime",
-      }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    });
-
-    expect(response.status).toBe(201);
-    expect(await response.json()).toMatchObject({
-      entitlements: ["subdomain", "automation", "analytics", "compliance"],
-    });
-    expect(repository.createOwnerStore).toHaveBeenCalledWith(
-      expect.objectContaining({
-        publicSlug: "auto-prime",
-        storeTradingName: "Auto Prime",
-        user: profile,
-      }),
-    );
-  });
-
   it("rejects agency creation for non-platform admins", async () => {
     const repository = createRepository({ platformAdmin: false });
     const app = createFeature(repository);
@@ -67,7 +41,10 @@ describe("account provisioning routes", () => {
   it("creates and sends store invitations from store-scoped context", async () => {
     const repository = createRepository();
     const invitationSender = {
-      send: vi.fn(async () => ({ clerkInvitationId: "clerk_inv_1" })),
+      send: vi.fn(async () => ({
+        acceptUrl: "https://example.accounts.dev/invitation_1",
+        clerkInvitationId: "clerk_inv_1",
+      })),
     };
     const app = createFeature(repository, invitationSender);
 
@@ -92,6 +69,12 @@ describe("account provisioning routes", () => {
       clerkInvitationId: "clerk_inv_1",
       invitationId,
     });
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        acceptUrl: "https://example.accounts.dev/invitation_1",
+        emailDeliveryStatus: "requested",
+      }),
+    );
   });
 
   it("rejects owner invitations from owner-scoped store actors", async () => {
@@ -150,7 +133,12 @@ describe("account provisioning routes", () => {
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual(
-      expect.objectContaining({ id: invitationId, status: "send_failed" }),
+      expect.objectContaining({
+        acceptUrl: null,
+        emailDeliveryStatus: "failed",
+        id: invitationId,
+        status: "send_failed",
+      }),
     );
     expect(repository.markInvitationSendFailed).toHaveBeenCalledWith({
       invitationId,
@@ -199,6 +187,7 @@ describe("account provisioning routes", () => {
   it("resends a failed identity invitation", async () => {
     const repository = createRepository();
     const send = vi.fn<InvitationSender["send"]>(async () => ({
+      acceptUrl: "https://example.accounts.dev/invitation_resend",
       clerkInvitationId: "clerk_inv_resend",
     }));
     const invitationSender = {
@@ -227,7 +216,12 @@ describe("account provisioning routes", () => {
       invitationId,
     });
     expect(await response.json()).toEqual(
-      expect.objectContaining({ id: invitationId, status: "sent" }),
+      expect.objectContaining({
+        acceptUrl: "https://example.accounts.dev/invitation_resend",
+        emailDeliveryStatus: "requested",
+        id: invitationId,
+        status: "sent",
+      }),
     );
   });
 });

@@ -238,6 +238,16 @@ VALUES
     '77777777-7777-4777-8777-777777777778'
   ),
   (
+    'plate_lookup',
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","sourceDetail":"safe_trial_catalog","limitValue":10}'::jsonb,
+    'billing_catalog',
+    date_trunc('day', now()),
+    date_trunc('day', now()) + interval '14 days',
+    'trialing',
+    '66666666-6666-4666-8666-666666666668',
+    '77777777-7777-4777-8777-777777777778'
+  ),
+  (
     'marketplace',
     '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","scenario":"growth_trial","reason":"not_in_catalog_selection","billingBound":false}'::jsonb,
     'local_seed_override',

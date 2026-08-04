@@ -50,7 +50,7 @@ export async function resendInvitation(
     }),
   );
 
-  let sent: { clerkInvitationId?: string | null };
+  let sent: Awaited<ReturnType<typeof ports.invitationSender.send>>;
   try {
     sent = await ports.invitationSender.send({
       email: invitation.email,
@@ -93,6 +93,16 @@ export async function resendInvitation(
     );
   }
 
+  context.logger.info(
+    "identity.invitation.resend.delivery_requested",
+    createServiceLogMetadata(context, {
+      invitationId: invitation.id,
+      provider: "clerk",
+      providerInvitationId: sent.clerkInvitationId ?? null,
+      storeId: invitation.storeId,
+      tenantId: invitation.tenantId,
+    }),
+  );
   await context.audit.record({
     action: "identity.invitation.resend",
     actor: { ...context.actor, id: actor.id },
@@ -101,6 +111,7 @@ export async function resendInvitation(
     entityId: invitation.id,
     entityType: "identity_invitation",
     metadata: {
+      emailDeliveryStatus: "requested",
       provider: "clerk",
       role: invitation.role,
       storeId: invitation.storeId,
@@ -108,12 +119,14 @@ export async function resendInvitation(
     outcome: "succeeded",
     requestId: context.requestId,
     storeId: invitation.storeId,
-    summary: "Resent identity invitation through Clerk",
+    summary: "Requested identity invitation email delivery through Clerk",
     tenantId: invitation.tenantId,
   });
 
   return {
     ...invitation,
+    acceptUrl: sent.acceptUrl ?? null,
+    emailDeliveryStatus: "requested" as const,
     status: "sent" as const,
   };
 }

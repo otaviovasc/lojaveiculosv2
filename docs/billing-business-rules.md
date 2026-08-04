@@ -13,8 +13,12 @@ The base commercial contract is now enforced by the runtime:
 - Growth and the expansion add-ons are separate chargeable products in catalog
   version `2026-07-v1`; add-ons are not included in the trial or base plan;
 - a fresh store receives a 14-day trial with only the catalog features explicitly
-  marked `included_in_trial`; custom domain and cost-bearing or critical
-  integrations are excluded;
+  marked `included_in_trial`: analytics, automation, compliance, plate lookup,
+  and the platform storefront subdomain; custom domain and other cost-bearing
+  or critical integrations are excluded;
+- trial stores retain an effective Growth plan subscription item so plan quotas
+  and core stock operations, including vehicle creation, work throughout the
+  original trial period;
 - trial grants inherit the subscription start and end, expired grants are
   excluded from authenticated and external-API access, and billing reads expose
   an elapsed trial as `expired`;
@@ -63,6 +67,8 @@ Target billing and product metrics are documented in
   - 8 active/pending team seats per store;
   - 300 non-deleted vehicle listings per store;
   - 300 paid plate lookups per billing period.
+- Trial stores may perform 10 plate lookups during the trial. Activating the
+  paid Growth plan changes the plate-lookup allowance to 300 per billing period.
 - CRM WhatsApp has lower gross margin because the Z-API instance cost is about
   R$100/month; keep that cost visible when changing price.
 
@@ -81,8 +87,9 @@ changed only through a new catalog version.
 | Simulations Pro | Compare commercial scenarios before closing               | Simulations completed before proposal | `simulations`  | Sales workflow owner      | Simulation unavailable; no financing approval is implied            |
 
 Custom domain is excluded from the trial but included in the paid Growth plan.
-Plate lookup is also excluded from the trial and included in Growth with its
-catalog allowance. Neither is duplicated as an add-on.
+The platform storefront subdomain and 10 plate lookups are included in the
+trial. Plate lookup remains part of Growth with its paid catalog allowance;
+neither custom domain nor plate lookup is duplicated as an add-on.
 
 ## Charge Calculation
 

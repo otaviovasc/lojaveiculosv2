@@ -78,6 +78,15 @@ JWT/audience settings, webhooks, invitations, and rollout testing isolated.
   hosted auth copy in Portuguese before production. The invitation email must
   clearly say that access is granted only after accepting the invite and landing
   back on `/auth/session`.
+- Treat a successful Clerk invitation response as a delivery request, not proof
+  that the recipient mailbox accepted the message. The authorized create/resend
+  responses expose the sensitive Clerk acceptance URL so the manager can copy it
+  as a fallback; never log, audit, or persist that URL outside Clerk.
+- Development instances send from `@accounts.dev` and Clerk limits its delivery
+  allowance. Use a production instance with authenticated sending-domain setup
+  for customer delivery. When a production recipient is suppressed, inspect
+  Clerk Email Logs, resolve the bounce/block cause, remove the suppression only
+  when safe, and then request a new send.
 - Treat `CLERK_WEBHOOK_SECRET` as future-required only when Clerk webhook sync is
   implemented.
 
