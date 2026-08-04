@@ -21,7 +21,9 @@ export function ClerkAuthProvider({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider
       publishableKey={config.publishableKey}
+      signInForceRedirectUrl={config.sessionPath}
       signInUrl={config.signInPath}
+      signUpForceRedirectUrl={config.sessionPath}
       signUpUrl={config.signUpPath}
     >
       {content}

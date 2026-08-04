@@ -19,6 +19,7 @@ import { createRuntimeAccountApi } from "./runtimeApi";
 import { resolveSessionDestination } from "./sessionRedirect";
 import { useClerkAuthConfiguration } from "./ClerkAuthProvider";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
+import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
 import {
   LocalDevAuthPage,
   LocalDevProtectedRoute,
@@ -62,8 +63,8 @@ function ConfiguredProtectedRoute({
   if (!auth.isSignedIn) {
     return (
       <RedirectToSignIn
-        signInFallbackRedirectUrl={config.sessionPath}
-        signUpFallbackRedirectUrl={config.sessionPath}
+        signInForceRedirectUrl={config.sessionPath}
+        signUpForceRedirectUrl={config.sessionPath}
       />
     );
   }
@@ -91,9 +92,10 @@ export function SignInPage() {
   return (
     <AuthEntryShell eyebrow="Acesso seguro" title="Entrar na Loja Veículos">
       <SignIn
-        fallbackRedirectUrl={config.sessionPath}
+        forceRedirectUrl={config.sessionPath}
         path={config.signInPath}
         routing="path"
+        signUpForceRedirectUrl={config.sessionPath}
         signUpUrl={config.signUpPath}
       />
     </AuthEntryShell>
@@ -108,9 +110,10 @@ export function SignUpPage() {
   return (
     <AuthEntryShell eyebrow="Criar acesso" title="Começar no Loja Veículos">
       <SignUp
-        fallbackRedirectUrl={config.sessionPath}
+        forceRedirectUrl={config.sessionPath}
         path={config.signUpPath}
         routing="path"
+        signInForceRedirectUrl={config.sessionPath}
         signInUrl={config.signInPath}
       />
     </AuthEntryShell>
@@ -128,6 +131,7 @@ function ConfiguredSessionBootstrapPage() {
   const navigate = useNavigate();
   const auth = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [accessUnavailable, setAccessUnavailable] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const { getToken, isLoaded, isSignedIn, userId } = auth;
   const getTokenRef = useRef(getToken);
@@ -141,6 +145,7 @@ function ConfiguredSessionBootstrapPage() {
 
     let cancelled = false;
     setError(null);
+    setAccessUnavailable(false);
 
     async function bootstrapSession() {
       try {
@@ -153,7 +158,12 @@ function ConfiguredSessionBootstrapPage() {
           clearCurrentStoreSlug(userId);
         }
         const destination = resolveSessionDestination(bootstrap);
-        if (!cancelled) void navigate(destination, { replace: true });
+        if (cancelled) return;
+        if (destination) {
+          void navigate(destination, { replace: true });
+        } else {
+          setAccessUnavailable(true);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -172,6 +182,13 @@ function ConfiguredSessionBootstrapPage() {
 
   if (!isLoaded) return <AuthLoadingPage title="Preparando autenticação" />;
   if (!isSignedIn) return <SessionSignInRedirect />;
+  if (accessUnavailable) {
+    return (
+      <AccountAccessUnavailable
+        onRetry={() => setAttempt((current) => current + 1)}
+      />
+    );
+  }
 
   return (
     <FeaturePageShell
@@ -204,8 +221,8 @@ function SessionSignInRedirect() {
   const config = useClerkAuthConfiguration();
   return (
     <RedirectToSignIn
-      signInFallbackRedirectUrl={config.sessionPath}
-      signUpFallbackRedirectUrl={config.sessionPath}
+      signInForceRedirectUrl={config.sessionPath}
+      signUpForceRedirectUrl={config.sessionPath}
     />
   );
 }
