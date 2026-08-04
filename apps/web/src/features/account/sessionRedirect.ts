@@ -5,14 +5,17 @@ export type SessionDestination =
 
 export function resolveSessionDestination(
   bootstrap: SessionBootstrap,
-): SessionDestination {
+): SessionDestination | null {
   if (bootstrap.needsOnboarding) return "/onboarding";
   if (bootstrap.platformAdmin) return "/platform/observability";
   if (bootstrap.defaultStore) return "/dashboard";
   if (hasActiveAgencyMembership(bootstrap)) {
     return "/agency/admin";
   }
-  return "/onboarding";
+  if (bootstrap.stores.some((store) => store.status === "active")) {
+    return "/dashboard";
+  }
+  return null;
 }
 
 export function hasActiveAgencyMembership(bootstrap: SessionBootstrap) {

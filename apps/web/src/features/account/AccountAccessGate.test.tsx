@@ -13,6 +13,10 @@ vi.mock("./runtimeApi", () => ({
   createRuntimeAccountApi: () => createRuntimeAccountApi(),
 }));
 
+vi.mock("./UserAccountButton", () => ({
+  UserAccountButton: () => null,
+}));
+
 describe("AccountAccessGate", () => {
   afterEach(() => {
     cleanup();
@@ -52,6 +56,20 @@ describe("AccountAccessGate", () => {
     );
 
     expect(await screen.findByText("Onboarding pronto")).toBeInTheDocument();
+  });
+
+  it("shows an actionable state instead of loading forever when no access is active", async () => {
+    bootstrap.mockResolvedValue(sessionWithInvitedStore());
+
+    renderGate(
+      vi.fn(async () => "token-1"),
+      "onboarding",
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Acesso à loja pendente" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Carregando sua conta")).not.toBeInTheDocument();
   });
 });
 
@@ -115,6 +133,33 @@ function sessionWithManagedStore(): SessionBootstrap {
       email: "agency@example.com",
       id: "identity_user_1",
       name: "Agency",
+    },
+  };
+}
+
+function sessionWithInvitedStore(): SessionBootstrap {
+  return {
+    defaultStore: null,
+    needsOnboarding: false,
+    platformAdmin: false,
+    stores: [
+      {
+        effectivePermissions: [],
+        role: "salesman",
+        status: "invited",
+        storeId: "store_1",
+        storeName: "Loja Teste",
+        storeSlug: "test-store",
+        tenantId: "tenant_1",
+        tenantName: "Loja Teste",
+      },
+    ],
+    tenantMemberships: [],
+    user: {
+      clerkUserId: "user_1",
+      email: "user@example.com",
+      id: "identity_user_1",
+      name: "User",
     },
   };
 }

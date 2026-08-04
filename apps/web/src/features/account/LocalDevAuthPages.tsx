@@ -11,6 +11,7 @@ import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
+import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
 import {
   clearLocalDevAccount,
@@ -48,6 +49,7 @@ export function LocalDevSessionBootstrapPage() {
   const navigate = useNavigate();
   const account = readLocalDevAccount();
   const [error, setError] = useState<string | null>(null);
+  const [accessUnavailable, setAccessUnavailable] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export function LocalDevSessionBootstrapPage() {
     let cancelled = false;
     const localAccount = account;
     setError(null);
+    setAccessUnavailable(false);
 
     async function bootstrapSession() {
       try {
@@ -70,7 +73,12 @@ export function LocalDevSessionBootstrapPage() {
           clearCurrentStoreSlug(localAccount.userId);
         }
         const destination = resolveSessionDestination(bootstrap);
-        if (!cancelled) void navigate(destination, { replace: true });
+        if (cancelled) return;
+        if (destination) {
+          void navigate(destination, { replace: true });
+        } else {
+          setAccessUnavailable(true);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -91,6 +99,13 @@ export function LocalDevSessionBootstrapPage() {
   }, [account, attempt, navigate]);
 
   if (!account) return <LocalDevAuthPage />;
+  if (accessUnavailable) {
+    return (
+      <AccountAccessUnavailable
+        onRetry={() => setAttempt((current) => current + 1)}
+      />
+    );
+  }
 
   return (
     <FeaturePageShell

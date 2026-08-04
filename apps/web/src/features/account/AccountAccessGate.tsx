@@ -20,6 +20,7 @@ import {
   resolveSessionDestination,
 } from "./sessionRedirect";
 import { AccountSessionProvider } from "./accountSession";
+import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
 
 export type AccountAccess = "agency" | "onboarding" | "platform" | "store";
 
@@ -81,7 +82,8 @@ export function AccountAccessGate({
 
   useEffect(() => {
     if (!bootstrap || isAllowed(access, bootstrap)) return;
-    void navigate(resolveSessionDestination(bootstrap), { replace: true });
+    const destination = resolveSessionDestination(bootstrap);
+    if (destination) void navigate(destination, { replace: true });
   }, [access, bootstrap, navigate]);
 
   if (error) {
@@ -100,6 +102,18 @@ export function AccountAccessGate({
           variant="primary"
         />
       </FeaturePageShell>
+    );
+  }
+
+  if (
+    bootstrap &&
+    !isAllowed(access, bootstrap) &&
+    resolveSessionDestination(bootstrap) === null
+  ) {
+    return (
+      <AccountAccessUnavailable
+        onRetry={() => setAttempt((current) => current + 1)}
+      />
     );
   }
 
