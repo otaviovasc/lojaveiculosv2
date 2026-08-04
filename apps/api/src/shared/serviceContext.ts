@@ -66,6 +66,7 @@ export type CreateServiceContextInput = {
   actor?: ServiceActor;
   audit?: AuditSink;
   auditFailureTier?: AuditFailureTier;
+  entitlements?: readonly EntitlementKey[];
   logger?: ServiceLogger;
   billingManagedBy?: BillingManagedBy;
   membershipRole?: RoleKey;
@@ -134,6 +135,7 @@ export function createServiceContext(
     ...(input.billingManagedBy
       ? { billingManagedBy: input.billingManagedBy }
       : {}),
+    ...(input.entitlements ? { entitlements: [...input.entitlements] } : {}),
     ...(input.membershipRole ? { membershipRole: input.membershipRole } : {}),
     permissions: [...(input.permissions ?? [])],
     request,

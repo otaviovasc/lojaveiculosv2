@@ -127,6 +127,7 @@ export async function createHttpServiceContext(
     ...(resolved.billingManagedBy
       ? { billingManagedBy: resolved.billingManagedBy }
       : {}),
+    entitlements: resolved.entitlements,
     logger,
     ...(resolved.membershipRole
       ? { membershipRole: resolved.membershipRole }

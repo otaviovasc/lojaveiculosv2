@@ -76,7 +76,6 @@ describe("createHttpServiceContext", () => {
         },
       }),
     );
-
     const serviceContext = await createHttpServiceContext(context, {
       audit,
       repository,
@@ -88,6 +87,7 @@ describe("createHttpServiceContext", () => {
       kind: "user",
     });
     expect(serviceContext.permissions).toContain("inventory.update_price");
+    expect(serviceContext).toMatchObject({ entitlements: ["crm"] });
     expect(serviceContext.storeId).toBe("store_1");
     expect(repository.findByClerkUserAndStoreSlug).toHaveBeenCalledWith({
       clerkUserId: "clerk_1",
