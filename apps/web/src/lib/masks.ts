@@ -1,6 +1,9 @@
-import { formatBrazilianCnpj } from "@lojaveiculosv2/shared";
+import {
+  formatBrazilianCnpj,
+  normalizeBrazilianPhoneDigits,
+} from "@lojaveiculosv2/shared";
 
-export { formatBrazilianCnpj };
+export { formatBrazilianCnpj, normalizeBrazilianPhoneDigits };
 
 const currencyValueFormatter = new Intl.NumberFormat("pt-BR", {
   minimumFractionDigits: 2,
@@ -41,13 +44,6 @@ export function formatBrazilianCpf(value: string): string {
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-}
-
-export function normalizeBrazilianPhoneDigits(value: string): string {
-  const digits = onlyDigits(value);
-  const hasCountryCode =
-    /^\s*\+55/.test(value) || (digits.length > 11 && digits.startsWith("55"));
-  return (hasCountryCode ? digits.slice(2) : digits).slice(0, 11);
 }
 
 export function formatBrazilianPhone(value: string): string {

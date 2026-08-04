@@ -217,6 +217,33 @@ describe("Financing simulation lifecycle", () => {
         }),
       ),
     ).rejects.toThrow("Credere vehicle model is not available");
+
+    await expect(
+      createCredereSimulation(
+        createStoreContext(["financing.simulation.create"]),
+        simulationInput({
+          idempotencyKey: "idem_inactive_selected_model",
+          vehicle: {
+            ...simulationInput().vehicle,
+            credereVehicleModelId: "model_1",
+          },
+        }),
+        createPorts(repository, {
+          createSimulation,
+          lookupVehicleModel: async () => ({
+            active: false,
+            brand: "VW",
+            fipeCode: null,
+            id: "model_1",
+            molicarCode: "01906108-0",
+            name: "Gol",
+            version: null,
+            yearEnd: null,
+            yearStart: null,
+          }),
+        }),
+      ),
+    ).rejects.toThrow("Credere vehicle model is not available");
     expect(createSimulation).not.toHaveBeenCalled();
   });
 });

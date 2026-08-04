@@ -33,7 +33,7 @@ export function SimulationApplicantFields({
 }: {
   cpfCnpj: string;
   email: string;
-  income: number;
+  income: number | null;
   name: string;
   onCpfCnpjChange: (value: string) => void;
   onEmailChange: (value: string) => void;
@@ -83,7 +83,7 @@ export function SimulationApplicantFields({
         <FeatureInput
           inputMode="decimal"
           onChange={onIncomeChange}
-          value={formatCurrencyValue(income)}
+          value={income === null ? "" : formatCurrencyValue(income)}
         />
       </FeatureField>
     </FeatureFieldGroup>
@@ -98,12 +98,12 @@ export function SimulationTermsFields({
   onVehicleValueChange,
   vehicleValue,
 }: {
-  downPayment: number;
+  downPayment: number | null;
   installments: string;
   onDownPaymentChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onInstallmentsChange: (value: string) => void;
   onVehicleValueChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  vehicleValue: number;
+  vehicleValue: number | null;
 }) {
   return (
     <FeatureFieldGroup>
@@ -111,14 +111,14 @@ export function SimulationTermsFields({
         <FeatureInput
           inputMode="decimal"
           onChange={onVehicleValueChange}
-          value={formatCurrencyValue(vehicleValue)}
+          value={vehicleValue === null ? "" : formatCurrencyValue(vehicleValue)}
         />
       </FeatureField>
       <FeatureField label="Entrada (R$)">
         <FeatureInput
           inputMode="decimal"
           onChange={onDownPaymentChange}
-          value={formatCurrencyValue(downPayment)}
+          value={downPayment === null ? "" : formatCurrencyValue(downPayment)}
         />
       </FeatureField>
       <FeatureField label="Parcelas">

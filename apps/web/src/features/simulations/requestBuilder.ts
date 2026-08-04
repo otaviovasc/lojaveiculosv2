@@ -35,6 +35,7 @@ export type CredereSimulationBody = {
   };
   unitId?: string;
   vehicle: {
+    credereVehicleModelId?: string;
     priceCents: number;
     manufactureYear: number;
     modelYear: number;
@@ -50,21 +51,25 @@ export function buildCreateSimulationBody(
 ): CredereSimulationBody {
   assertNoScopeFields(draft);
   const consent = assertConsent(draft.consent);
+  const monthlyIncomeCents = positiveOptionalCents(
+    draft.applicant.monthlyIncomeCents,
+  );
   const applicant = {
     name: requiredText(draft.applicant.name, "nome do proponente"),
     document: requiredDigits(draft.applicant.cpfCnpj, "CPF/CNPJ do proponente"),
-    phone: requiredDigits(draft.applicant.phone, "telefone do proponente"),
+    phone: requiredPhoneDigits(draft.applicant.phone),
     ...(draft.applicant.email?.trim()
       ? { email: draft.applicant.email.trim() }
       : {}),
     ...(draft.applicant.birthDate?.trim()
       ? { birthDate: draft.applicant.birthDate.trim() }
       : {}),
-    ...(typeof draft.applicant.monthlyIncomeCents === "number"
-      ? { monthlyIncomeCents: draft.applicant.monthlyIncomeCents }
-      : {}),
+    ...(monthlyIncomeCents ? { monthlyIncomeCents } : {}),
   };
   const vehicle = {
+    ...(draft.vehicle.credereVehicleModelId?.trim()
+      ? { credereVehicleModelId: draft.vehicle.credereVehicleModelId.trim() }
+      : {}),
     priceCents: positiveCents(draft.vehicle.priceCents, "valor do veículo"),
     manufactureYear: requiredYear(draft.vehicle.manufactureYear),
     modelYear: requiredYear(draft.vehicle.modelYear),
@@ -170,9 +175,32 @@ function requiredDigits(value: string, label: string) {
   return digits;
 }
 
+function requiredPhoneDigits(value: string) {
+  const digits = normalizeSimulationPhoneDigits(value);
+  if (digits.length < 10 || digits.length > 11) {
+    throw new Error("Informe o telefone do proponente.");
+  }
+  return digits;
+}
+
+function normalizeSimulationPhoneDigits(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (/^\s*\+55/.test(value)) return digits.slice(2);
+  if (digits.length === 13 && digits.startsWith("55")) return digits.slice(2);
+  return digits;
+}
+
 function positiveCents(value: number, label: string) {
   if (!Number.isInteger(value) || value <= 0) {
     throw new Error(`Informe o ${label}.`);
+  }
+  return value;
+}
+
+function positiveOptionalCents(value: number | undefined) {
+  if (value === undefined || value === 0) return undefined;
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error("Informe uma renda mensal válida.");
   }
   return value;
 }

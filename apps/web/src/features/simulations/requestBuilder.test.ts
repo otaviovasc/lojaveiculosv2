@@ -51,7 +51,7 @@ describe("buildCreateSimulationBody", () => {
         email: "ana@example.com",
         monthlyIncomeCents: 850_000,
         name: "Ana Souza",
-        phone: "5511987654321",
+        phone: "11987654321",
       },
       consent: {
         creditSimulation: true,
@@ -109,6 +109,52 @@ describe("buildCreateSimulationBody", () => {
     expect(body).not.toHaveProperty("requestedBankCodes");
   });
 
+  it("omits zero-valued optional numeric fields", () => {
+    const body = buildCreateSimulationBody({
+      ...draft,
+      applicant: { ...draft.applicant, monthlyIncomeCents: 0 },
+    });
+
+    expect(body.applicant).not.toHaveProperty("monthlyIncomeCents");
+  });
+
+  it.each([-1, 12.5])(
+    "rejects invalid provided monthly income %j",
+    (monthlyIncomeCents) => {
+      expect(() =>
+        buildCreateSimulationBody({
+          ...draft,
+          applicant: { ...draft.applicant, monthlyIncomeCents },
+        }),
+      ).toThrowError(/renda mensal/);
+    },
+  );
+
+  it.each(["119876543219999", "+55 (11) 98765-4321 9999", "559876543219"])(
+    "rejects overlength phone %j instead of truncating it",
+    (phone) => {
+      expect(() =>
+        buildCreateSimulationBody({
+          ...draft,
+          applicant: { ...draft.applicant, phone },
+        }),
+      ).toThrowError(/telefone/);
+    },
+  );
+
+  it.each([
+    ["+55 (55) 98765-4321", "55987654321"],
+    ["5511987654321", "11987654321"],
+    ["55987654321", "55987654321"],
+  ])("normalizes valid simulation phone %j", (phone, expected) => {
+    const body = buildCreateSimulationBody({
+      ...draft,
+      applicant: { ...draft.applicant, phone },
+    });
+
+    expect(body.applicant.phone).toBe(expected);
+  });
+
   it("requires explicit consent evidence", () => {
     expect(() =>
       buildCreateSimulationBody({
@@ -145,6 +191,22 @@ describe("buildCreateSimulationBody", () => {
         vehicle: { ...draft.vehicle, licensingUf: "" },
       }),
     ).toThrowError(/UF/);
+  });
+
+  it("keeps a selected Credere vehicle model id with the Molicar code", () => {
+    const body = buildCreateSimulationBody({
+      ...draft,
+      vehicle: {
+        ...draft.vehicle,
+        credereVehicleModelId: " credere_model_1 ",
+        molicarCode: "01906108-0",
+      },
+    });
+
+    expect(body.vehicle).toMatchObject({
+      credereVehicleModelId: "credere_model_1",
+      molicarCode: "01906108-0",
+    });
   });
 });
 

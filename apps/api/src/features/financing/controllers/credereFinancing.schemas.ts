@@ -65,6 +65,7 @@ export const createSimulationSchema = z
     unitId: idString.optional(),
     vehicle: z
       .object({
+        credereVehicleModelId: idString.optional(),
         licensingCity: nonEmptyString,
         licensingUf: z
           .string()
