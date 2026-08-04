@@ -53,7 +53,7 @@ function createDefaultSettings(): StoreSettingsSnapshot {
       customDomain: null,
       customDomainStatus: "not_configured",
       heroImageUrl: null,
-      isPublished: false,
+      isPublished: true,
       lastDnsCheckAt: null,
       layoutKey: "default",
       seoDescription: null,

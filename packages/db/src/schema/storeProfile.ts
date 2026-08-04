@@ -64,7 +64,7 @@ export const storePublicSiteSettings = pgTable(
       .notNull()
       .default("not_configured"),
     heroImageUrl: text("hero_image_url"),
-    isPublished: boolean("is_published").notNull().default(false),
+    isPublished: boolean("is_published").notNull().default(true),
     layoutKey: varchar("layout_key", { length: 80 })
       .notNull()
       .default("default"),

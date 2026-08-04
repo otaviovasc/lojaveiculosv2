@@ -9,6 +9,7 @@
     "catalog:sync": "tsx src/jobs/syncVehicleCatalog.ts",
     "catalog:import-csv": "tsx src/jobs/importFipeCsv.ts",
     "catalog:backfill-brand-logos": "tsx src/jobs/backfillVehicleBrandLogos.ts",
+    "ops:reset-environment": "tsx src/jobs/resetEnvironment.ts",
     "billing:asaas:sync-smoke": "tsx src/jobs/syncBillingProviderSubscription.ts",
     "crm:whatsapp:schedule:process": "tsx src/jobs/processCrmWhatsappScheduledMessages.ts",
     "build": "tsc --noEmit",
