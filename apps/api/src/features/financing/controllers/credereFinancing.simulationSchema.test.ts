@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createServices,
   createStoreApp,
@@ -70,6 +70,28 @@ describe("Credere financing simulation schema", () => {
 
     expect(response.status).toBe(400);
     expect(services.store.createSimulation).not.toHaveBeenCalled();
+  });
+
+  it("accepts a store-selected Credere vehicle model id", async () => {
+    const createSimulation = vi.fn(
+      async (_context: unknown, input: { payload: unknown }) => {
+        expect(input.payload).toMatchObject({
+          vehicle: {
+            credereVehicleModelId: "credere_model_1",
+            molicarCode: "01906108-0",
+          },
+        });
+        return { inquiryId: "inquiry_1", status: "approved" };
+      },
+    );
+    const services = createServices({ store: { createSimulation } });
+    const body = validSimulationBody();
+    Object.assign(body.vehicle, { credereVehicleModelId: "credere_model_1" });
+
+    const response = await postSimulation(services, body);
+
+    expect(response.status).toBe(201);
+    expect(createSimulation).toHaveBeenCalledOnce();
   });
 
   it.each([

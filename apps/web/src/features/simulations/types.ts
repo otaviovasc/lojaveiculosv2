@@ -94,6 +94,7 @@ export type CredereApplicantInput = {
 };
 
 export type CredereVehicleInput = {
+  credereVehicleModelId?: string | undefined;
   priceCents: number;
   manufactureYear: number;
   modelYear: number;

@@ -33,6 +33,7 @@ export function SimulationsReadyWorkspace({
   status: CredereStoreStatus;
   submitError: string | null;
 }) {
+  const formKey = prefill ? createPrefillIdentity(prefill) : "manual";
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <FeatureSection
@@ -48,6 +49,7 @@ export function SimulationsReadyWorkspace({
           <SimulationForm
             banks={status.usableBanks}
             isSubmitting={isSubmitting}
+            key={formKey}
             onSubmit={onSubmit}
             {...(prefill ? { prefill } : {})}
             submitError={submitError}
@@ -70,5 +72,13 @@ export function SimulationsReadyWorkspace({
         />
       </div>
     </div>
+  );
+}
+
+export function createPrefillIdentity(prefill: SimulationPrefill) {
+  return JSON.stringify(
+    Object.keys(prefill)
+      .sort()
+      .map((key) => [key, prefill[key as keyof SimulationPrefill] ?? null]),
   );
 }

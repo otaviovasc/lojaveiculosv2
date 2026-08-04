@@ -62,7 +62,9 @@ export function SimulationsPage({
   const pollAttemptsRef = useRef(0);
   const currentId = current?.id;
   const loadStatus = useCallback(async () => {
-    setStatusState({ kind: "loading" });
+    setStatusState((previous) =>
+      previous.kind === "ready" ? previous : { kind: "loading" },
+    );
     try {
       const api = await apiPromise;
       const status = await api.getStatus();

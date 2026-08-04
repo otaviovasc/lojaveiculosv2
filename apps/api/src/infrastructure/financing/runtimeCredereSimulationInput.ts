@@ -13,6 +13,8 @@ export function toCredereSimulationInput(
 
   const leadId = readString(record.leadId);
   const unitId = readString(record.unitId);
+  const credereVehicleModelId = readString(vehicle.credereVehicleModelId);
+  const monthlyIncomeCents = readPositiveNumber(applicant.monthlyIncomeCents);
   const priceCents = requirePositiveNumber(
     vehicle.priceCents,
     "vehicle.priceCents",
@@ -56,9 +58,7 @@ export function toCredereSimulationInput(
       ...(typeof applicant.email === "string"
         ? { email: applicant.email }
         : {}),
-      ...(typeof applicant.monthlyIncomeCents === "number"
-        ? { monthlyIncomeCents: applicant.monthlyIncomeCents }
-        : {}),
+      ...(monthlyIncomeCents ? { monthlyIncomeCents } : {}),
     },
     downPaymentCents,
     idempotencyKey,
@@ -71,6 +71,7 @@ export function toCredereSimulationInput(
     ...(unitId ? { unitId } : {}),
     vehicle: {
       assetValueCents: priceCents,
+      ...(credereVehicleModelId ? { credereVehicleModelId } : {}),
       licensingCity: requireString(
         vehicle.licensingCity,
         "vehicle.licensingCity",

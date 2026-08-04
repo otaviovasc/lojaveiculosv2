@@ -7,6 +7,7 @@ describe("runtime Credere simulation input", () => {
 
     expect(result.amountCents).toBe(4_000_000);
     expect(result.vehicle).toMatchObject({
+      credereVehicleModelId: "model_1",
       licensingUf: "SP",
       vehicleMolicarCode: "01906108-0",
     });
@@ -41,6 +42,7 @@ function simulationPayload() {
     vehicle: {
       licensingCity: "Sao Paulo",
       licensingUf: "SP",
+      credereVehicleModelId: "model_1",
       manufactureYear: 2022,
       modelYear: 2023,
       molicarCode: "01906108-0",

@@ -37,8 +37,6 @@ export async function resolveCredereVehicle(
   ports: FinancingServicePorts,
 ): Promise<FinancingSimulationInput["vehicle"]> {
   validateProviderRequiredFields(input);
-  if (input.vehicle.credereVehicleModelId) return input.vehicle;
-
   const query = input.vehicle.vehicleMolicarCode?.trim();
   if (!query) {
     throw new FinancingValidationError(
@@ -57,9 +55,10 @@ export async function resolveCredereVehicle(
       "Credere vehicle model is not available.",
     );
   }
+  validateSelectedVehicleModel(input, model);
   return {
     ...input.vehicle,
-    credereVehicleModelId: model.id,
+    credereVehicleModelId: input.vehicle.credereVehicleModelId ?? model.id,
     ...(input.vehicle.vehicleMolicarCode || !model.molicarCode
       ? {}
       : { vehicleMolicarCode: model.molicarCode }),
@@ -70,6 +69,31 @@ function isUsableVehicleModel(
   model: FinancingVehicleModel | null,
 ): model is FinancingVehicleModel {
   return Boolean(model?.active && model.id);
+}
+
+function validateSelectedVehicleModel(
+  input: CreateCredereSimulationInput,
+  model: FinancingVehicleModel,
+) {
+  const selectedModelId = input.vehicle.credereVehicleModelId?.trim();
+  if (selectedModelId && selectedModelId !== model.id) {
+    throw new FinancingValidationError(
+      "Credere vehicle model selection does not match the submitted Molicar code.",
+    );
+  }
+  const submittedMolicarCode = normalizeMolicarCode(
+    input.vehicle.vehicleMolicarCode,
+  );
+  const resolvedMolicarCode = normalizeMolicarCode(model.molicarCode);
+  if (resolvedMolicarCode && submittedMolicarCode !== resolvedMolicarCode) {
+    throw new FinancingValidationError(
+      "Credere vehicle model selection does not match the submitted Molicar code.",
+    );
+  }
+}
+
+function normalizeMolicarCode(value: string | null | undefined) {
+  return value?.replace(/\D/g, "") ?? "";
 }
 
 function validateProviderRequiredFields(

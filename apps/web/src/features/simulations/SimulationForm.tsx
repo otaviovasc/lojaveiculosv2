@@ -17,13 +17,20 @@ import type { CredereSimulationDraft, CredereUsableBank } from "./types";
 export type SimulationPrefill = {
   applicantName?: string;
   channel?: string;
+  credereVehicleModelId?: string;
   cpfCnpj?: string;
   email?: string;
   leadId?: string;
   listingId?: string;
+  licensingCity?: string;
+  licensingUf?: string;
+  manufactureYear?: number;
+  modelYear?: number;
+  molicarCode?: string;
   phone?: string;
   unitId?: string;
   vehicleValueCents?: number;
+  zeroKm?: boolean;
 };
 
 type SimulationFormProps = {
@@ -49,26 +56,32 @@ export function SimulationForm({
     formatBrazilianPhone(prefill?.phone ?? ""),
   );
   const [email, setEmail] = useState(prefill?.email ?? "");
-  const [income, setIncome] = useState(0);
-  const [vehicleValue, setVehicleValue] = useState(
-    (prefill?.vehicleValueCents ?? 0) / 100,
+  const [income, setIncome] = useState<number | null>(null);
+  const [vehicleValue, setVehicleValue] = useState<number | null>(
+    prefill?.vehicleValueCents ? prefill.vehicleValueCents / 100 : null,
   );
-  const [downPayment, setDownPayment] = useState(0);
+  const [downPayment, setDownPayment] = useState<number | null>(null);
   const [installments, setInstallments] = useState("48");
-  const [manufactureYear, setManufactureYear] = useState("");
-  const [modelYear, setModelYear] = useState("");
-  const [molicarCode, setMolicarCode] = useState("");
-  const [licensingCity, setLicensingCity] = useState("");
-  const [licensingUf, setLicensingUf] = useState("");
-  const [zeroKm, setZeroKm] = useState(false);
+  const [manufactureYear, setManufactureYear] = useState(
+    prefill?.manufactureYear ? String(prefill.manufactureYear) : "",
+  );
+  const [modelYear, setModelYear] = useState(
+    prefill?.modelYear ? String(prefill.modelYear) : "",
+  );
+  const [molicarCode, setMolicarCode] = useState(prefill?.molicarCode ?? "");
+  const [licensingCity, setLicensingCity] = useState(
+    prefill?.licensingCity ?? "",
+  );
+  const [licensingUf, setLicensingUf] = useState(prefill?.licensingUf ?? "");
+  const [zeroKm, setZeroKm] = useState(prefill?.zeroKm ?? false);
   const [bankCodes, setBankCodes] = useState<readonly string[]>([]);
   const [consent, setConsent] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const vehicleValueCents = Math.round(vehicleValue * 100);
-    const downPaymentCents = Math.round(downPayment * 100);
+    const vehicleValueCents = Math.round((vehicleValue ?? 0) * 100);
+    const downPaymentCents = Math.round((downPayment ?? 0) * 100);
     const manYear = Number(manufactureYear);
     const modYear = Number(modelYear);
     const fail = (message: string) => setValidationError(message);
@@ -101,7 +114,9 @@ export function SimulationForm({
         cpfCnpj,
         phone,
         ...(email.trim() ? { email } : {}),
-        ...(income > 0 ? { monthlyIncomeCents: Math.round(income * 100) } : {}),
+        ...(income && income > 0
+          ? { monthlyIncomeCents: Math.round(income * 100) }
+          : {}),
       },
       consent: {
         acceptedTerms: true,
@@ -116,6 +131,9 @@ export function SimulationForm({
       ...(prefill?.unitId ? { unitId: prefill.unitId } : {}),
       ...(bankCodes.length ? { requestedBankCodes: [...bankCodes] } : {}),
       vehicle: {
+        ...(prefill?.credereVehicleModelId?.trim()
+          ? { credereVehicleModelId: prefill.credereVehicleModelId.trim() }
+          : {}),
         priceCents: vehicleValueCents,
         manufactureYear: manYear,
         modelYear: modYear,
@@ -128,9 +146,11 @@ export function SimulationForm({
   };
 
   const currencyChange =
-    (setter: (value: number) => void) =>
-    (event: ChangeEvent<HTMLInputElement>) =>
-      setter(Number(parseCurrencyInput(event.target.value) || 0));
+    (setter: (value: number | null) => void) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const parsed = parseCurrencyInput(event.target.value);
+      setter(parsed ? Number(parsed) : null);
+    };
 
   const toggleBank = (code: string) =>
     setBankCodes((previous) =>

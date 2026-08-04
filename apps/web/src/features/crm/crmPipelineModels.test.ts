@@ -62,6 +62,15 @@ describe("CRM pipeline models", () => {
     ).toEqual({ buyerPhone: null });
   });
 
+  it("keeps CRM phone comparison capped to the prior public lead canonical form", () => {
+    expect(
+      buildLeadContactPatch(
+        { buyerPhone: "11999990000" },
+        { buyerName: "Ana", buyerPhone: "1199999000099" },
+      ),
+    ).toEqual({ buyerName: "Ana" });
+  });
+
   it("filters leads by search, source, and status", () => {
     const wonLead: ProductCrmLead = {
       ...lead,
