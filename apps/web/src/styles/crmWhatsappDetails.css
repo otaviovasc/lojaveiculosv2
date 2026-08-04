@@ -2,8 +2,8 @@
   background: var(--color-panel);
   border-left: 1px solid var(--color-line);
   bottom: 0;
-  box-shadow: -0.75rem 0 2rem
-    color-mix(in srgb, var(--color-line) 44%, transparent);
+  box-shadow: -0.75rem 0 2.5rem
+    color-mix(in srgb, var(--color-text) 12%, transparent);
   display: grid;
   gap: 1rem;
   grid-auto-rows: min-content;

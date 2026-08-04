@@ -7,6 +7,7 @@ import {
   SignUpPage,
 } from "../features/account/AuthPages";
 import { AppBootScreen } from "../components/ui";
+import { DelayedFallback } from "../components/ui/DelayedFallback";
 import { adminRoutePaths } from "./adminRoutePaths";
 import {
   AgencyBillingPage,
@@ -27,7 +28,13 @@ import { NotFoundPage } from "../features/system/NotFoundPage";
 
 export function App() {
   return (
-    <Suspense fallback={<AppBootScreen title="Carregando experiência" />}>
+    <Suspense
+      fallback={
+        <DelayedFallback>
+          <AppBootScreen title="Carregando experiência" />
+        </DelayedFallback>
+      }
+    >
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/sign-in/*" element={<SignInPage />} />

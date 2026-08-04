@@ -46,14 +46,14 @@
 }
 
 .crm-whatsapp-smart-filter-active {
-  background: var(--color-solid-deep-foreground);
-  border-color: var(--color-solid-deep-foreground);
-  color: var(--color-solid-light-foreground);
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  color: var(--color-accent-strong);
 }
 
 .crm-whatsapp-smart-filter-active > span {
-  background: var(--color-inverse-soft);
-  color: var(--color-solid-light-foreground);
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
 }
 
 .crm-whatsapp-smart-filter-unread.crm-whatsapp-smart-filter-active {
@@ -84,9 +84,9 @@
 }
 
 .crm-whatsapp-search-row > .crm-whatsapp-selection-action-active {
-  background: var(--color-solid-deep-foreground);
-  border-color: var(--color-solid-deep-foreground);
-  color: var(--color-solid-light-foreground);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-foreground);
 }
 
 .crm-whatsapp-search-row > .crm-whatsapp-new-session-action {
@@ -110,7 +110,7 @@
   min-width: 0;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
-  padding-bottom: 0.1875rem;
+  padding: 0.25rem 0.125rem;
   scrollbar-width: thin;
 }
 

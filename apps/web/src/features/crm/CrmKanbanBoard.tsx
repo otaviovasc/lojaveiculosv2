@@ -102,7 +102,7 @@ export function CrmKanbanBoard({
 
   return (
     <section
-      className="flex gap-4 overflow-x-auto pb-4 select-none min-h-[500px] items-start"
+      className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 select-none min-h-[500px] items-start"
       aria-label="CRM Kanban Board"
     >
       {stages
@@ -245,7 +245,7 @@ export function CrmKanbanBoard({
               </header>
 
               {/* Card List */}
-              <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5 min-h-[440px]">
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 min-h-[440px]">
                 {stageLeads.map((lead) => (
                   <CrmLeadCard
                     key={lead.id}

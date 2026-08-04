@@ -188,7 +188,7 @@ export function WebsiteBuilderDesign({
 
       {showMobilePreview ? (
         <div className="fixed inset-0 z-50 flex flex-col bg-background md:hidden">
-          <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border/50 bg-card px-4 py-3">
             <span className="text-sm font-semibold">Preview</span>
             <Button
               aria-label="Fechar preview"
@@ -216,7 +216,7 @@ export function WebsiteBuilderDesign({
       <div className="flex flex-1 overflow-hidden">
         <div
           className={cn(
-            "flex w-full flex-col overflow-y-auto border-r border-border/50 bg-card/50 md:flex md:w-[380px] lg:w-[420px]",
+            "flex w-full flex-col overflow-y-auto border-r border-border/50 bg-card md:flex md:w-[380px] lg:w-[420px]",
             mobileTab === "edit" ? "flex" : "hidden",
           )}
         >
@@ -304,7 +304,7 @@ function WebsiteBuilderMobileTabs({
   onChange: (tab: "edit" | "preview") => void;
 }) {
   return (
-    <div className="flex shrink-0 border-b border-border/50 md:hidden">
+    <div className="flex shrink-0 border-b border-border/50 bg-card/80 backdrop-blur-sm md:hidden">
       {[
         { icon: Palette, label: "Editar", value: "edit" },
         { icon: Eye, label: "Preview", value: "preview" },

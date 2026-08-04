@@ -116,10 +116,10 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
       )}
 
       {/* Stages List */}
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2.5 w-full min-w-0">
         {stages.map((stage, idx) => (
           <div
-            className="border border-line/25 bg-panel/30 rounded-xl p-3.5 flex items-center gap-4 transition-all"
+            className="border border-line/25 bg-panel/30 rounded-xl p-3 sm:p-3.5 flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 transition-all w-full min-w-0"
             key={stage.id}
           >
             {/* Grab handle and move actions */}
@@ -148,7 +148,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
             </div>
 
             {/* Color indicator pill */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-app border border-line text-xs font-bold text-app-text select-all">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-app border border-line text-xs font-bold text-app-text select-all shrink-0">
               <span
                 className="size-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: stage.color }}
@@ -159,7 +159,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
             </div>
 
             {/* Stage Name Input */}
-            <div className="flex-grow min-w-0">
+            <div className="flex-grow min-w-[140px] w-full sm:w-auto">
               <FeatureInput
                 className="min-h-9 border-none bg-transparent hover:bg-line/10 focus:bg-app text-xs font-bold w-full"
                 onChange={(e) =>

@@ -9,6 +9,36 @@ import {
   type CrmLeadBoardPages,
 } from "./crmLeadBoardData";
 
+// Last successfully loaded board pages per pipeline + filters, so remounts
+// (e.g. module tab switches) can render immediately and refresh in the
+// background. Pipeline ids are server-scoped, so tenant/store isolation is
+// preserved by the key.
+const leadBoardCache = new WeakMap<
+  ProductCrmApi,
+  Map<string, CrmLeadBoardPages>
+>();
+
+function leadBoardCacheKey(pipeline: Pipeline, filters: LeadFilters) {
+  return `${pipeline.id}:${filters.search}:${filters.source}:${filters.status}`;
+}
+
+function readLeadBoardCache(api: ProductCrmApi, key: string) {
+  return leadBoardCache.get(api)?.get(key);
+}
+
+function writeLeadBoardCache(
+  api: ProductCrmApi,
+  key: string,
+  pages: CrmLeadBoardPages,
+) {
+  let byKey = leadBoardCache.get(api);
+  if (!byKey) {
+    byKey = new Map<string, CrmLeadBoardPages>();
+    leadBoardCache.set(api, byKey);
+  }
+  byKey.set(key, pages);
+}
+
 export function useCrmLeadBoard(
   api: ProductCrmApi,
   pipeline: Pipeline | null,
@@ -16,9 +46,18 @@ export function useCrmLeadBoard(
   enabled: boolean,
 ) {
   const deferredFilters = useDeferredSearchFilters(filters);
-  const [pages, setPages] = useState<CrmLeadBoardPages>({});
+  const [pages, setPages] = useState<CrmLeadBoardPages>(() =>
+    pipeline && deferredFilters
+      ? (readLeadBoardCache(
+          api,
+          leadBoardCacheKey(pipeline, deferredFilters),
+        ) ?? {})
+      : {},
+  );
   const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState(enabled);
+  const [isLoading, setIsLoading] = useState(
+    () => enabled && Object.keys(pages).length === 0,
+  );
   const [loadingStageIds, setLoadingStageIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -37,9 +76,16 @@ export function useCrmLeadBoard(
       return;
     }
     setError(null);
-    setIsLoading(true);
+    const cacheKey = leadBoardCacheKey(pipeline, deferredFilters);
+    const cachedPages = readLeadBoardCache(api, cacheKey);
+    if (cachedPages) {
+      setPages(cachedPages);
+    } else {
+      setIsLoading(true);
+    }
     try {
       const nextPages = await loadCrmLeadBoard(api, pipeline, deferredFilters);
+      writeLeadBoardCache(api, cacheKey, nextPages);
       if (refreshSequence.current === sequence) setPages(nextPages);
     } catch (caught) {
       if (refreshSequence.current === sequence) {

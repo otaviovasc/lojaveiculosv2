@@ -163,14 +163,14 @@ export function CrmLeadDetailsFinanciamento({
               </span>
             </div>
 
-            <div className="flex justify-between items-end py-1">
-              <div className="flex flex-col">
+            <div className="flex flex-wrap justify-between items-end gap-2 py-1 min-w-0">
+              <div className="flex flex-col shrink-0">
                 <span className="text-xs font-black text-app-text">
                   Parcela Estimada:
                 </span>
                 <span className="text-xs font-bold text-muted">Price</span>
               </div>
-              <span className="text-2xl font-black text-accent-strong leading-none">
+              <span className="text-lg sm:text-xl md:text-2xl font-black text-accent-strong leading-tight break-words min-w-0">
                 {months}x de {formatBrl(payment)}
               </span>
             </div>

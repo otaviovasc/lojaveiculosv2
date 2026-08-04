@@ -41,6 +41,15 @@
   flex: 0 0 auto;
   height: 3.25rem;
   width: 3.25rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.18s ease;
 }
 
 .crm-whatsapp-audio-action,
@@ -49,28 +58,69 @@
   border-color: var(--color-line);
   color: var(--color-text);
   opacity: 1;
+  box-shadow: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
 }
 
 .crm-whatsapp-audio-action:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-app) 72%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-text) 22%, var(--color-line));
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-line));
   color: var(--color-text);
+  transform: scale(1.04);
+  box-shadow: none;
+}
+
+.crm-whatsapp-audio-action:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .crm-whatsapp-send-action:not(.crm-whatsapp-audio-action) {
   background: var(--color-green-start);
   border-color: var(--color-green-start);
-  color: var(--color-inverse);
+  color: var(--color-inverse, #ffffff);
+  box-shadow: none;
+}
+
+.crm-whatsapp-send-action:not(.crm-whatsapp-audio-action) svg {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-whatsapp-send-action:not(.crm-whatsapp-audio-action):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-green-start) 88%, #ffffff);
+  border-color: color-mix(in srgb, var(--color-green-start) 88%, #ffffff);
+  transform: scale(1.04);
+  box-shadow: none;
+}
+
+.crm-whatsapp-send-action:not(.crm-whatsapp-audio-action):hover:not(:disabled)
+  svg {
+  transform: translate(1px, -1px) scale(1.08);
+}
+
+.crm-whatsapp-send-action:not(.crm-whatsapp-audio-action):active:not(
+    :disabled
+  ) {
+  transform: scale(0.95);
+  box-shadow: none;
 }
 
 .crm-whatsapp-send-action:not(.crm-whatsapp-audio-action):disabled {
-  opacity: 0.6;
+  opacity: 0.45;
+  filter: none;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .crm-whatsapp-composer-row > .crm-whatsapp-recording {
   flex: 0 0 auto;
   position: static;
   transform: none;
+  transition: all 0.22s ease;
 }
 
 .crm-whatsapp-composer-row > .crm-whatsapp-recording-error {
@@ -80,6 +130,14 @@
 .crm-whatsapp-composer-row > .crm-whatsapp-attach > .crm-icon-action {
   height: 3.25rem;
   width: 3.25rem;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-whatsapp-composer-row > .crm-whatsapp-attach > .crm-icon-action:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-app));
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  color: var(--color-text);
+  transform: translateY(-2px);
 }
 
 .crm-whatsapp-disconnected {

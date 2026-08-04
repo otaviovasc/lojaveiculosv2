@@ -15,6 +15,10 @@
   outline: none;
   padding: 0.75rem;
   width: 100%;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .crm-textarea {
@@ -24,7 +28,7 @@
 
 .crm-input:focus {
   border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
 .crm-stage {
@@ -34,6 +38,14 @@
   min-height: 10rem;
   min-width: 0;
   padding: 0.75rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.crm-stage:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 25%, var(--color-line));
 }
 
 .crm-stage-title,
@@ -59,12 +71,14 @@
 .crm-stage-title strong,
 .crm-chip-active {
   background: var(--color-accent-soft);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-soft-foreground);
 }
 
 .crm-stage-title strong {
   border-radius: 999px;
   padding: 0.25rem 0.5rem;
+  font-variant-numeric: tabular-nums;
+  transition: all 0.2s ease;
 }
 
 .crm-lead-card {
@@ -77,6 +91,17 @@
   padding: 0.75rem;
   text-align: left;
   width: 100%;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-lead-card:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-line));
+  transform: translateY(-2px);
+}
+
+.crm-lead-card:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .crm-lead-card small {
@@ -90,7 +115,10 @@
 
 .crm-lead-card-active {
   border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-accent) 30%, transparent),
+    0 6px 20px -4px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-app));
 }
 
 .crm-lead-card strong,
@@ -167,6 +195,11 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   padding: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.crm-info-row:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 25%, var(--color-line));
 }
 
 .crm-info-row span {
@@ -181,6 +214,7 @@
   margin-left: auto;
   overflow-wrap: anywhere;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .crm-status-actions {
@@ -196,6 +230,19 @@
   font-weight: 900;
   min-height: 2.25rem;
   padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-chip:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-app));
+  border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-chip-active:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-soft-foreground);
 }
 
 .crm-activity-row {
@@ -205,6 +252,11 @@
   border-radius: var(--radius-md);
   flex-direction: column;
   padding: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.crm-activity-row:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 25%, var(--color-line));
 }
 
 .crm-activity-row strong,

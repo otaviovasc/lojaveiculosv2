@@ -1,11 +1,4 @@
-import {
-  CalendarClock,
-  ExternalLink,
-  Phone,
-  Tag,
-  UserRound,
-  X,
-} from "lucide-react";
+import { CalendarClock, ExternalLink, Tag, UserRound, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { CrmWhatsappAdAttribution } from "./CrmWhatsappAdAttribution";
 import { formatSessionName } from "./crmWhatsappModel";
@@ -41,7 +34,9 @@ export function CrmWhatsappSessionDetailsPanel({
         </span>
         <span className="min-w-0">
           <strong>{name}</strong>
-          <small>{session.buyerPhone ?? "Telefone nao informado"}</small>
+          {session.buyerPhone && session.buyerPhone !== name ? (
+            <small>{session.buyerPhone}</small>
+          ) : null}
         </span>
         <button
           aria-label="Fechar detalhes"
@@ -53,11 +48,6 @@ export function CrmWhatsappSessionDetailsPanel({
         </button>
       </header>
       <div className="crm-whatsapp-details-grid">
-        <DetailRow
-          icon={<Phone />}
-          label="Telefone"
-          value={session.buyerPhone ?? null}
-        />
         <DetailRow
           icon={<UserRound />}
           label="Atendente"

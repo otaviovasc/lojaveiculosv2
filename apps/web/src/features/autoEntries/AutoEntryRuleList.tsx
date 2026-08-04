@@ -21,6 +21,7 @@ import {
   FeatureRowAction,
   FeatureRowActions,
 } from "../../components/ui/FeatureTable";
+import { FeatureToneIcon } from "../../components/ui/FeatureToneIcon";
 import { cx } from "../../components/ui/featureShared";
 import { Switch } from "../../components/ui/switch";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
@@ -118,14 +119,7 @@ export function AutoEntryRuleList({
                 </FeatureStatusBadge>
               }
               className="auto-entry-rule-card__header"
-              icon={
-                <span
-                  aria-hidden="true"
-                  className="auto-entry-rule-card__badge"
-                >
-                  <Icon className="size-4" />
-                </span>
-              }
+              icon={<FeatureToneIcon icon={Icon} size="lg" />}
             >
               <FeatureCardTitle className="auto-entry-rule-card__title">
                 {rule.name}

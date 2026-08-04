@@ -12,6 +12,7 @@ export type CrmWhatsappSchedulesPageProps = {
   canRead: boolean;
   connectionId: string | null;
   error: Error | null;
+  initialMessages?: CrmWhatsappScheduledMessage[];
   onCancel: (scheduledMessageId: string) => Promise<boolean>;
   onList: (
     input?: CrmWhatsappListScheduledMessagesInput,

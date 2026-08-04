@@ -1,5 +1,6 @@
 import { Mic, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 
 export function CrmWhatsappAudioRecorderButton({
   disabled,
@@ -98,7 +99,9 @@ export function CrmWhatsappAudioRecorderButton({
           title="Parar gravacao"
           type="button"
         >
-          <Square />
+          <AnimatedIconSwap stateKey={isRecording} variant="pop">
+            <Square />
+          </AnimatedIconSwap>
         </button>
       </span>
     );
@@ -118,7 +121,9 @@ export function CrmWhatsappAudioRecorderButton({
         title={supported ? "Gravar audio" : "Gravacao indisponivel"}
         type="button"
       >
-        <Mic />
+        <AnimatedIconSwap stateKey={isRecording} variant="pop">
+          <Mic />
+        </AnimatedIconSwap>
       </button>
       {error ? (
         <small className="crm-whatsapp-recording-error">{error}</small>

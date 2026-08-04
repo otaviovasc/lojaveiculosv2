@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarCheck, Plus, RefreshCw } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmWhatsappVehicleOption } from "./crmWhatsappExtraTypes";
 import type { CrmLeadVisit, LeadVisitStatus } from "./crmVisitsApi";
 import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
+import {
+  peekWhatsappScopedCache,
+  WHATSAPP_VISITS_CACHE_KEY,
+  writeWhatsappScopedCache,
+} from "./crmWhatsappScopedCache";
 import {
   isVisitScheduleValid,
   visitCreationSteps,
@@ -31,9 +36,16 @@ export function CrmWhatsappVisitsPage({
   listVehicles,
 }: CrmWhatsappVisitsPageProps) {
   const visitsApi = useMemo(() => api ?? createRuntimeCrmVisitsApi(), [api]);
+  const [initialVisits] = useState(() =>
+    peekWhatsappScopedCache<CrmLeadVisit[]>(
+      visitsApi,
+      WHATSAPP_VISITS_CACHE_KEY,
+    ),
+  );
   const [activeView, setActiveView] = useState<VisitView>("today");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const hasVisitsDataRef = useRef(initialVisits !== undefined);
+  const [isLoading, setIsLoading] = useState(initialVisits === undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [mode, setMode] = useState<"create" | "list">("list");
@@ -41,7 +53,7 @@ export function CrmWhatsappVisitsPage({
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedListingId, setSelectedListingId] = useState("");
   const [step, setStep] = useState(0);
-  const [visits, setVisits] = useState<CrmLeadVisit[]>([]);
+  const [visits, setVisits] = useState<CrmLeadVisit[]>(initialVisits ?? []);
   const [vehicleOptions, setVehicleOptions] = useState<
     readonly CrmWhatsappVehicleOption[]
   >([]);
@@ -52,10 +64,17 @@ export function CrmWhatsappVisitsPage({
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    if (!hasVisitsDataRef.current) setIsLoading(true);
     setError(null);
     try {
-      setVisits(await visitsApi.listVisits({ limit: 100 }));
+      const nextVisits = await visitsApi.listVisits({ limit: 100 });
+      hasVisitsDataRef.current = true;
+      writeWhatsappScopedCache(
+        visitsApi,
+        WHATSAPP_VISITS_CACHE_KEY,
+        nextVisits,
+      );
+      setVisits(nextVisits);
     } catch (caught) {
       setError(
         formatApiErrorDisplay(caught, "Nao foi possivel carregar visitas."),

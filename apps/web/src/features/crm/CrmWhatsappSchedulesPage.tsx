@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CrmWhatsappScheduleWorkflow } from "./CrmWhatsappScheduleWorkflow";
 import {
   createScheduleStatusCounts,
@@ -21,13 +21,17 @@ export function CrmWhatsappSchedulesPage({
   canRead,
   connectionId,
   error,
+  initialMessages,
   onCancel,
   onList,
   onProcessDue,
   onSchedule,
   sessions,
 }: CrmWhatsappSchedulesPageProps) {
-  const [messages, setMessages] = useState<CrmWhatsappScheduledMessage[]>([]);
+  const [messages, setMessages] = useState<CrmWhatsappScheduledMessage[]>(
+    initialMessages ?? [],
+  );
+  const hasMessagesDataRef = useRef(initialMessages !== undefined);
   const [mode, setMode] = useState<"create" | "queue">("queue");
   const [currentStep, setCurrentStep] = useState(0);
   const [statusFilter, setStatusFilter] = useState<ScheduleStatusFilter>("all");
@@ -60,10 +64,12 @@ export function CrmWhatsappSchedulesPage({
 
   const loadMessages = useCallback(async () => {
     if (!canRead) return;
-    setIsLoading(true);
+    if (!hasMessagesDataRef.current) setIsLoading(true);
     setLocalError(null);
     try {
-      setMessages(await onList(query));
+      const nextMessages = await onList(query);
+      hasMessagesDataRef.current = true;
+      setMessages(nextMessages);
     } finally {
       setIsLoading(false);
     }

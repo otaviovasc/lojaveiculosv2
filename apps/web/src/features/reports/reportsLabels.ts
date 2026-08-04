@@ -18,20 +18,11 @@ const sourceLabels: Record<string, string> = {
   whatsapp: "WhatsApp",
 };
 
-const kpiLabels: Record<string, string> = {
-  Disponiveis: "Disponíveis",
-  "GMV fechado": "Vendas fechadas",
-  Leads: "Leads",
-  Recebiveis: "Recebíveis",
-  "Recebiveis abertos": "Recebíveis em aberto",
-};
-
-const deltaLabels: Record<string, string> = {
-  "em aberto": "em aberto",
-  "estoque total": "do estoque total",
-  "funil ativo": "no funil ativo",
-  "periodo atual": "período atual",
-  "período atual": "período atual",
+const ageBucketLabels: Record<string, string> = {
+  days0to30: "0–30 dias",
+  days31to60: "31–60 dias",
+  days61to90: "61–90 dias",
+  over90: "Mais de 90 dias",
 };
 
 export function getReportFunnelLabel(key: string) {
@@ -42,10 +33,6 @@ export function getReportSourceLabel(key: string) {
   return sourceLabels[key] ?? "Outra origem";
 }
 
-export function getReportKpiLabel(label: string) {
-  return kpiLabels[label] ?? "Indicador comercial";
-}
-
-export function getReportDeltaLabel(label: string) {
-  return deltaLabels[label] ?? "período informado";
+export function getReportAgeBucketLabel(key: string) {
+  return ageBucketLabels[key] ?? "Idade desconhecida";
 }

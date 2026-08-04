@@ -46,10 +46,10 @@ export function FinanceCashFlowInsights({
             categories.map((item) => (
               <div className="finance-insight-bar-row" key={item.label}>
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="min-w-0 truncate text-xs font-black text-app-text">
+                  <span className="min-w-0 truncate text-xs font-semibold text-app-text">
                     {item.label}
                   </span>
-                  <strong className="shrink-0 text-xs font-black text-app-text tabular-nums">
+                  <strong className="shrink-0 text-xs font-semibold text-app-text tabular-nums">
                     {formatCurrency(item.amountCents)}
                   </strong>
                 </div>
@@ -95,10 +95,10 @@ export function FinanceCashFlowInsights({
                     className="rounded-lg border border-line bg-surface-subtle p-3 flex flex-col gap-1 finance-origin-stat-block"
                     key={source.source}
                   >
-                    <span className="text-xs font-black uppercase tracking-wider text-muted finance-origin-stat-label">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted finance-origin-stat-label">
                       {sourceLabel(source.source)}
                     </span>
-                    <strong className="text-sm font-black text-app-text tabular-nums finance-origin-stat-amount">
+                    <strong className="text-sm font-semibold text-app-text tabular-nums finance-origin-stat-amount">
                       {formatCurrency(source.amountCents)}
                     </strong>
                   </div>
@@ -119,10 +119,10 @@ export function FinanceCashFlowInsights({
         >
           <div className="mt-3 grid gap-3">
             <div className="rounded-lg border border-line bg-surface-subtle p-3 flex items-center justify-between gap-3 finance-recurrent-commissions-block">
-              <span className="text-xs font-black uppercase tracking-wider text-muted">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Comissões a pagar
               </span>
-              <strong className="text-sm font-black text-app-text tabular-nums">
+              <strong className="text-sm font-semibold text-app-text tabular-nums">
                 {formatCurrency(sumEntries(pendingCommissions))}
               </strong>
             </div>

@@ -13,6 +13,7 @@ export type CrmWhatsappCampaignsPageProps = {
   canCancel: boolean;
   canCreate: boolean;
   canRead: boolean;
+  initialCampaigns?: CrmWhatsappCampaign[];
   onCancelCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign | null>;
   onCreateCampaign: (
     input: CrmWhatsappCreateCampaignInput,

@@ -16,9 +16,25 @@ export type AnalyticsBreakdown = {
   value: number;
 };
 
+export type AnalyticsPeriod = {
+  from: string;
+  to: string;
+};
+
 export type AnalyticsDashboard = {
+  attention: {
+    overdueReceivablesCents: number;
+    overdueReceivablesCount: number;
+    pendingChecklistsCount: number;
+  };
   generatedAt: Date;
   inventory: {
+    ageBuckets: {
+      days0to30: number;
+      days31to60: number;
+      days61to90: number;
+      over90: number;
+    };
     averagePriceCents: number;
     availableListings: number;
     reservedListings: number;
@@ -28,11 +44,17 @@ export type AnalyticsDashboard = {
   kpis: readonly AnalyticsKpi[];
   leadFunnel: readonly AnalyticsFunnelStep[];
   leadSources: readonly AnalyticsBreakdown[];
+  period: AnalyticsPeriod;
   revenue: {
     closedSalesCents: number;
-    grossMarginCents: number;
     openReceivablesCents: number;
     paidReceiptsCents: number;
+  };
+  sales: {
+    avgTicketCents: number;
+    closedCount: number;
+    grossMarginCents: number;
+    revenueCents: number;
   };
   storeId: string;
   tenantId: string;
@@ -40,6 +62,7 @@ export type AnalyticsDashboard = {
 
 export type AnalyticsRepository = {
   getDashboard: (input: {
+    period: AnalyticsPeriod;
     storeId: string;
     tenantId: string;
   }) => Promise<AnalyticsDashboard>;

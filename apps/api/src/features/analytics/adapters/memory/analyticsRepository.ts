@@ -7,8 +7,19 @@ export function createMemoryAnalyticsRepository(): AnalyticsRepository {
   return {
     async getDashboard(input): Promise<AnalyticsDashboard> {
       return {
+        attention: {
+          overdueReceivablesCents: 1230000,
+          overdueReceivablesCount: 3,
+          pendingChecklistsCount: 6,
+        },
         generatedAt: new Date(),
         inventory: {
+          ageBuckets: {
+            days0to30: 9,
+            days31to60: 5,
+            days61to90: 3,
+            over90: 1,
+          },
           averagePriceCents: 9850000,
           availableListings: 18,
           reservedListings: 3,
@@ -42,11 +53,17 @@ export function createMemoryAnalyticsRepository(): AnalyticsRepository {
           { key: "olx", label: "OLX", value: 11 },
           { key: "manual", label: "Manual", value: 8 },
         ],
+        period: input.period,
         revenue: {
           closedSalesCents: 74200000,
-          grossMarginCents: 9340000,
           openReceivablesCents: 8650000,
           paidReceiptsCents: 31100000,
+        },
+        sales: {
+          avgTicketCents: 10600000,
+          closedCount: 7,
+          grossMarginCents: 9340000,
+          revenueCents: 74200000,
         },
         storeId: input.storeId,
         tenantId: input.tenantId,

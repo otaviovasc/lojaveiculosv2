@@ -18,4 +18,5 @@ export { Logo, LogoWithText, LogoWithVariant, type LogoVariant } from "./logo";
 export { PageHeader, type PageHeaderProps } from "./page-header";
 export { StatCard, type StatCardProps } from "./stat-card";
 export { Textarea, type TextareaProps } from "./textarea";
+export { FeatureToneIcon, type FeatureToneIconSize } from "./FeatureToneIcon";
 export { TextureBackground } from "./TextureBackground";

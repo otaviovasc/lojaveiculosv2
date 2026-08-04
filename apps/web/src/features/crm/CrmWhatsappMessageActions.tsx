@@ -1,5 +1,6 @@
 import { Reply, SmilePlus, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 
 export type MessageActionHandlers = {
@@ -55,7 +56,9 @@ export function MessageActions({
             title="Reagir"
             type="button"
           >
-            <SmilePlus />
+            <AnimatedIconSwap stateKey={reactionOpen} variant="pop">
+              <SmilePlus />
+            </AnimatedIconSwap>
           </button>
           {reactionOpen ? (
             <ReactionPalette
@@ -84,7 +87,9 @@ export function MessageActions({
             title="Apagar"
             type="button"
           >
-            <Trash2 />
+            <AnimatedIconSwap stateKey={deleteOpen} variant="pop">
+              <Trash2 />
+            </AnimatedIconSwap>
           </button>
           {deleteOpen ? (
             <DeleteMessageConfirm

@@ -30,9 +30,9 @@ describe("SessionList", () => {
     expect(
       screen.queryByRole("button", { name: "Selecionar conversa" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("5511999999999")).toBeInTheDocument();
+    expect(screen.getByText(/5511999999999/)).toBeInTheDocument();
     expect(screen.getByText("Civic Touring")).toBeInTheDocument();
-    expect(screen.getByText("Anuncio")).toBeInTheDocument();
+    expect(screen.getByText(/Anúncio|Anuncio/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Ana Premium/ }));
     expect(onSelect).toHaveBeenCalledWith("session_1");

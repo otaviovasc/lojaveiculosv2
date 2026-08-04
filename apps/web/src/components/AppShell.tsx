@@ -31,6 +31,12 @@ import { Logo } from "./ui/logo";
 import { TextureBackground } from "./ui/TextureBackground";
 import { WorkspaceCommandPalette } from "./ui/WorkspaceCommandPalette";
 
+const FULL_WIDTH_MODULES: ReadonlySet<ModuleId> = new Set([
+  "crm",
+  "public-site",
+  "custom-pages",
+]);
+
 type AppShellProps = {
   activeModule: ModuleDefinition;
   children: ReactNode;
@@ -90,6 +96,12 @@ export function AppShell({
     onNavigate(moduleId);
     setIsMobileNavOpen(false);
   };
+
+  useEffect(() => {
+    if (FULL_WIDTH_MODULES.has(activeModule.id)) {
+      setIsSidebarCollapsed(true);
+    }
+  }, [activeModule.id]);
 
   const toggleTheme = () => {
     setTheme((currentTheme) => {

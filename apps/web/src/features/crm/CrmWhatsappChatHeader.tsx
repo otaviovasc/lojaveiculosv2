@@ -105,7 +105,12 @@ export function ChatHeader({
             <span className="min-w-0">
               <h3>{formatSessionName(session)}</h3>
               <p>
-                {session.vehicle?.title ?? session.buyerPhone ?? "Negociacao"}
+                {session.vehicle?.title ??
+                  (session.buyerPhone &&
+                  session.buyerPhone !== formatSessionName(session)
+                    ? session.buyerPhone
+                    : null) ??
+                  "Negociacao"}
               </p>
             </span>
           </button>

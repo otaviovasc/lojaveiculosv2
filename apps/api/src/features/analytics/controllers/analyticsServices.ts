@@ -1,11 +1,17 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import type { AnalyticsDashboard } from "../../../domains/analytics/ports/analyticsRepository.js";
+import type {
+  AnalyticsDashboard,
+  AnalyticsPeriod,
+} from "../../../domains/analytics/ports/analyticsRepository.js";
 import { getAnalyticsDashboard } from "../../../domains/analytics/services/AnalyticsService/getAnalyticsDashboard.js";
 import type { AnalyticsServicePorts } from "../../../domains/analytics/services/AnalyticsService/serviceSupport.js";
 import { createMemoryAnalyticsRepository } from "../adapters/memory/analyticsRepository.js";
 
 export type AnalyticsServices = {
-  getDashboard: (context: ServiceContext) => Promise<AnalyticsDashboard>;
+  getDashboard: (
+    context: ServiceContext,
+    input: { period: AnalyticsPeriod },
+  ) => Promise<AnalyticsDashboard>;
 };
 
 export function createAnalyticsServices(
@@ -14,7 +20,8 @@ export function createAnalyticsServices(
   },
 ): AnalyticsServices {
   return {
-    getDashboard: (context) => getAnalyticsDashboard(context, ports),
+    getDashboard: (context, input) =>
+      getAnalyticsDashboard(context, ports, input),
   };
 }
 

@@ -3,7 +3,10 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type { AnalyticsDashboard } from "../../ports/analyticsRepository.js";
+import type {
+  AnalyticsDashboard,
+  AnalyticsPeriod,
+} from "../../ports/analyticsRepository.js";
 import {
   requireAnalyticsScope,
   type AnalyticsServicePorts,
@@ -12,6 +15,7 @@ import {
 export async function getAnalyticsDashboard(
   context: ServiceContext,
   ports: AnalyticsServicePorts,
+  input: { period: AnalyticsPeriod },
 ): Promise<AnalyticsDashboard> {
   assertPermission(context, "analytics.read");
   const scope = requireAnalyticsScope(context);
@@ -21,7 +25,11 @@ export async function getAnalyticsDashboard(
     createServiceLogMetadata(context),
   );
 
-  const dashboard = await ports.analyticsRepository.getDashboard(scope);
+  const dashboard = await ports.analyticsRepository.getDashboard({
+    period: input.period,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
 
   await context.audit.record({
     action: "analytics.dashboard.read",

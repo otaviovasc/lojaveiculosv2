@@ -1,20 +1,23 @@
 .crm-whatsapp-visits-page {
-  background: var(--color-panel);
+  background: color-mix(in srgb, var(--color-panel) 92%, transparent);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--surface-radius-xl, var(--radius-md));
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.06);
   display: grid;
   margin: 0 auto;
   max-width: 76rem;
   overflow: hidden;
+  transition: all 0.25s ease;
 }
 
 .crm-whatsapp-visits-page > .crm-whatsapp-visits-board {
-  background: var(--color-panel);
+  background: transparent;
   box-shadow: none;
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem;
   min-width: 0;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
 .crm-whatsapp-visit-workflow-main {
@@ -29,36 +32,43 @@
 
 .crm-whatsapp-visit-contact {
   align-items: center;
-  background: var(--color-panel);
+  background: color-mix(in srgb, var(--color-app) 80%, var(--color-panel));
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
   display: grid;
-  gap: 0.875rem;
+  gap: 1rem;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  padding: 1rem;
+  padding: 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-whatsapp-visit-contact:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
 }
 
 .crm-whatsapp-visit-contact > span {
   align-items: center;
-  background: var(--color-green-soft);
-  border: 1px solid var(--color-success-strong);
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
   border-radius: 50%;
-  color: var(--color-success-strong);
+  color: var(--color-success-strong, var(--color-success));
   display: inline-flex;
-  height: 2.75rem;
+  height: 3rem;
   justify-content: center;
-  width: 2.75rem;
+  width: 3rem;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-success) 20%, transparent);
 }
 
 .crm-whatsapp-visit-contact > span svg,
 .crm-whatsapp-visit-contact-links svg {
-  height: 1rem;
-  width: 1rem;
+  height: 1.15rem;
+  width: 1.15rem;
 }
 
 .crm-whatsapp-visit-contact > div:not(.crm-whatsapp-visit-contact-links) {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.25rem;
   min-width: 0;
 }
 
@@ -66,12 +76,14 @@
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 950;
+  letter-spacing: -0.01em;
 }
 
 .crm-whatsapp-visit-contact small {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 800;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
 }
 
 .crm-whatsapp-visit-contact-links {
@@ -84,41 +96,52 @@
 
 .crm-whatsapp-visit-contact-links a {
   align-items: center;
+  background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-text);
   display: inline-flex;
   font-size: var(--font-size-xs);
   font-weight: 900;
-  gap: 0.35rem;
-  min-height: 2.25rem;
-  padding: 0 0.65rem;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0 0.75rem;
   text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-whatsapp-visit-contact-links a:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  color: var(--color-text);
+  transform: translateY(-1px);
 }
 
 .crm-whatsapp-visit-create-grid {
   display: grid;
-  gap: 1rem;
-  max-width: 44rem;
+  gap: 1.15rem;
+  max-width: 46rem;
 }
 
 .crm-whatsapp-visit-create-empty {
   align-items: center;
-  background: var(--color-panel);
-  border: 1px dashed var(--color-line);
-  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-app) 70%, var(--color-panel));
+  border: 1px dashed color-mix(in srgb, var(--color-line) 80%, transparent);
+  border-radius: var(--radius-md);
   color: var(--color-muted);
   display: grid;
-  gap: 0.4rem;
+  gap: 0.5rem;
   justify-items: center;
-  min-height: 12rem;
-  padding: 1.5rem;
+  min-height: 13rem;
+  padding: 1.75rem;
   text-align: center;
 }
 
 .crm-whatsapp-visit-create-empty svg {
-  height: 1.5rem;
-  width: 1.5rem;
+  height: 1.75rem;
+  width: 1.75rem;
+  color: var(--color-accent-strong);
+  opacity: 0.8;
 }
 
 .crm-whatsapp-visit-create-empty strong,
@@ -129,6 +152,7 @@
 .crm-whatsapp-visit-create-empty strong {
   color: var(--color-text);
   font-size: var(--font-size-sm);
+  font-weight: 950;
 }
 
 .crm-whatsapp-visit-create-empty p {
@@ -138,9 +162,10 @@
 
 .crm-whatsapp-visit-review {
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   display: grid;
   overflow: hidden;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
 }
 
 .crm-whatsapp-visit-review > div {
@@ -148,9 +173,9 @@
   background: var(--color-panel);
   border-top: 1px solid var(--color-line);
   display: grid;
-  gap: 0.35rem;
-  grid-template-columns: minmax(8rem, 0.35fr) minmax(0, 1fr);
-  padding: 0.875rem;
+  gap: 0.4rem;
+  grid-template-columns: minmax(9rem, 0.35fr) minmax(0, 1fr);
+  padding: 1rem;
 }
 
 .crm-whatsapp-visit-review > div:first-child {
@@ -161,39 +186,47 @@
   align-items: center;
   color: var(--color-muted);
   display: inline-flex;
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  gap: 0.35rem;
+  font-size: calc(var(--font-size-xs) * 0.92);
+  font-weight: 950;
+  gap: 0.4rem;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .crm-whatsapp-visit-review span svg {
-  height: 0.9rem;
-  width: 0.9rem;
+  height: 0.95rem;
+  width: 0.95rem;
 }
 
 .crm-whatsapp-visit-review strong {
   color: var(--color-text);
   font-size: var(--font-size-sm);
-  font-weight: 900;
+  font-weight: 950;
   overflow-wrap: anywhere;
 }
 
 .crm-whatsapp-visits-error {
-  background: var(--color-accent-soft);
-  border: 1px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
   border-radius: var(--radius-sm);
   color: var(--color-accent-strong);
-  font-size: calc(var(--font-size-xs) * 1.15);
+  font-size: var(--font-size-xs);
   font-weight: 850;
   margin: 1rem 1.25rem 0;
-  padding: 0.65rem 0.75rem;
+  padding: 0.75rem 0.9rem;
 }
 
 .crm-whatsapp-visits-filters {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
+  padding: 0.35rem 0.25rem;
+  scrollbar-width: none;
+}
+
+.crm-whatsapp-visits-filters::-webkit-scrollbar {
+  display: none;
 }
 
 .crm-whatsapp-visits-filter {
@@ -206,24 +239,42 @@
   flex: 0 0 auto;
   font-size: var(--font-size-xs);
   font-weight: 950;
-  gap: 0.5rem;
-  min-height: 2.25rem;
-  padding: 0 0.625rem;
+  gap: 0.55rem;
+  min-height: 2.35rem;
+  padding: 0 0.75rem;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-whatsapp-visits-filter:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-app));
+  color: var(--color-text);
+  transform: translateY(-1px);
 }
 
 .crm-whatsapp-visits-filter-active {
-  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-line));
   color: var(--color-text);
 }
 
 .crm-whatsapp-visits-filter span {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
   min-width: 1.5rem;
-  padding: 0.125rem 0.375rem;
+  padding: 0.1rem 0.45rem;
   text-align: center;
+  font-size: calc(var(--font-size-xs) * 0.92);
+}
+
+.crm-whatsapp-visits-filter-active span {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-foreground);
 }
 
 @media (max-width: 640px) {
