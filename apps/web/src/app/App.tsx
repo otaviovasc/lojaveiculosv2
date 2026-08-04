@@ -6,7 +6,7 @@ import {
   SignInPage,
   SignUpPage,
 } from "../features/account/AuthPages";
-import { FeatureLoadingState } from "../components/ui/FeatureStates";
+import { AppBootScreen } from "../components/ui";
 import { adminRoutePaths } from "./adminRoutePaths";
 import {
   AgencyBillingPage,
@@ -27,14 +27,7 @@ import { NotFoundPage } from "../features/system/NotFoundPage";
 
 export function App() {
   return (
-    <Suspense
-      fallback={
-        <FeatureLoadingState
-          className="min-h-screen"
-          title="Carregando experiência"
-        />
-      }
-    >
+    <Suspense fallback={<AppBootScreen title="Carregando experiência" />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/sign-in/*" element={<SignInPage />} />

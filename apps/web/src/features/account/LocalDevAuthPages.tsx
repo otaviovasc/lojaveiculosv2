@@ -1,15 +1,13 @@
-import { LogIn, LogOut, Loader2, RefreshCcw } from "lucide-react";
+import { LogIn, LogOut, RefreshCcw } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { AppBootScreen } from "../../components/ui";
 import {
   FeatureActionButton,
   FeaturePageHeader,
   FeaturePageShell,
 } from "../../components/ui/FeatureLayout";
-import {
-  FeatureAlert,
-  FeatureLoadingState,
-} from "../../components/ui/FeatureStates";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
@@ -112,9 +110,10 @@ export function LocalDevSessionBootstrapPage() {
           />
         </>
       ) : (
-        <FeatureLoadingState icon={Loader2} title="Sincronizando conta local">
-          <span className="sr-only">Aguarde</span>
-        </FeatureLoadingState>
+        <AppBootScreen
+          description="Estamos preparando seu acesso à loja."
+          title="Sincronizando conta local"
+        />
       )}
     </FeaturePageShell>
   );

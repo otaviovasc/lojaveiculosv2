@@ -217,6 +217,26 @@ validation remains authoritative and must return field-level issues for 400
 responses so logs and UI messages identify the failing field without logging
 request bodies.
 
+## Frontend Contrast Guard Exceptions
+
+`pnpm run check:contrast` enforces 4.5:1 on semantic foreground/background
+pairs. Three narrow, documented relaxations live in the checker itself:
+
+- Contextual module themes (`[data-active-module="..."]` accents) are
+  decorative identity colors (badges, highlights, charts), not body-text
+  surfaces, so they are held to the WCAG 3:1 large-text/UI minimum
+  (`tools/quality/contrast-tokens.mjs`). The finance gold module accents
+  (#b89418 with a light foreground, 2.88:1) are explicitly exempted there
+  because those modules never render text on the solid accent.
+- `.sidebar-btn-primary` pairs `var(--color-accent)` with
+  `var(--color-inverse)` instead of `--color-accent-foreground`; every brand
+  palette binds the accent foreground to a light color, so the pairing is
+  equivalent. Encoded as an explicit allowlist entry in
+  `tools/quality/contrast-css-states.mjs`.
+- Hover/active background washes below 10% alpha are skipped: they do not
+  materially change the effective background, whose readability is governed by
+  the resting state.
+
 ## Database Direction
 
 The new DB must use English-only `lower_snake_case` table and column names.

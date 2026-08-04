@@ -18,7 +18,7 @@ export function MetricsSection() {
       <div className="mx-auto grid max-w-7xl gap-px px-5 sm:grid-cols-3 sm:gap-0 sm:px-8 lg:px-10">
         {landingMetrics.map(({ metric, label, text }, index) => (
           <AnimatedContent delay={0.08 * index} key={label}>
-            <div className="flex h-full flex-col items-center gap-3 px-4 py-10 text-center sm:border-l sm:border-line sm:first:border-l-0">
+            <div className="flex flex-col items-center gap-3 px-4 py-10 text-center sm:border-l sm:border-line sm:first:border-l-0">
               <span className="font-display text-5xl font-black tracking-tight text-app-text sm:text-6xl">
                 {metric}
               </span>
@@ -52,14 +52,14 @@ export function ProblemSection() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {landingPains.map(({ title, pain, solution }, index) => (
             <AnimatedContent delay={0.06 * index} key={title}>
-              <article className="flex h-full flex-col rounded-lg border border-line bg-panel p-5">
+              <article className="flex flex-col rounded-lg border border-line bg-panel p-5">
                 <span className="text-xs font-black uppercase tracking-[0.22em] text-accent">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-3 text-base font-black uppercase tracking-wide text-app-text">
                   {title}
                 </h3>
-                <p className="mt-2 flex-1 text-sm font-semibold leading-6 text-muted">
+                <p className="mt-2 text-sm font-semibold leading-6 text-muted">
                   {pain}
                 </p>
                 <p className="mt-4 border-t border-line pt-3 text-sm font-bold leading-6 text-app-text">
@@ -96,7 +96,7 @@ export function WorkflowSection() {
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           {landingSteps.map(({ title, text }, index) => (
             <AnimatedContent delay={0.08 * index} key={title}>
-              <article className="group h-full rounded-lg border border-line bg-app p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40">
+              <article className="group rounded-lg border border-line bg-app p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40">
                 <span className="flex size-10 items-center justify-center rounded-md bg-accent-soft text-sm font-black text-accent">
                   {String(index + 1).padStart(2, "0")}
                 </span>
@@ -135,7 +135,7 @@ export function FeatureSection() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {landingFeatures.map(({ icon: Icon, label, text }, index) => (
             <AnimatedContent delay={0.05 * index} key={label}>
-              <article className="group h-full rounded-lg border border-line bg-panel p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40">
+              <article className="group rounded-lg border border-line bg-panel p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40">
                 <Icon className="size-6 text-accent" />
                 <h3 className="mt-4 text-lg font-black text-app-text">
                   {label}
@@ -173,9 +173,9 @@ export function TestimonialsSection() {
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           {landingTestimonials.map(({ name, location, quote }, index) => (
             <AnimatedContent delay={0.08 * index} key={name}>
-              <figure className="flex h-full flex-col rounded-lg border border-line bg-app p-6">
+              <figure className="flex flex-col rounded-lg border border-line bg-app p-6">
                 <Quote className="size-5 text-accent" />
-                <blockquote className="mt-4 flex-1 text-sm font-semibold leading-6 text-app-text">
+                <blockquote className="mt-4 text-sm font-semibold leading-6 text-app-text">
                   “{quote}”
                 </blockquote>
                 <figcaption className="mt-5 border-t border-line pt-4">

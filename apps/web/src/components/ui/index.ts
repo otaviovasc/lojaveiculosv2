@@ -1,4 +1,5 @@
 export { Alert, AlertDescription, AlertTitle } from "./alert";
+export { AppBootScreen, type AppBootScreenProps } from "./AppBootScreen";
 export { Badge, badgeVariants, type BadgeProps } from "./badge";
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export {

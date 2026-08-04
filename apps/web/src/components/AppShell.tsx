@@ -113,29 +113,46 @@ export function AppShell({
       >
         <span className="sr-only">Preparando a área da loja</span>
         <aside aria-hidden="true" className="app-shell__loading-sidebar">
-          <div className="h-12 animate-pulse rounded-lg bg-app-elevated" />
-          <div className="mt-8 grid gap-3">
+          <div className="app-shell__loading-brand">
+            <Logo
+              alt=""
+              className="h-8 w-auto select-none"
+              variant={theme === "dark" ? "full-white" : "full"}
+            />
+          </div>
+          <div className="app-shell__loading-nav">
             {Array.from({ length: 7 }, (_, index) => (
               <div
-                className="h-11 animate-pulse rounded-lg bg-app-elevated"
+                className="app-shell__skeleton app-shell__loading-nav-item"
                 key={index}
-              />
+              >
+                <span className="app-shell__loading-nav-icon" />
+                <span className="app-shell__loading-nav-label" />
+              </div>
             ))}
+          </div>
+          <div className="app-shell__skeleton app-shell__loading-account">
+            <span className="app-shell__loading-avatar" />
+            <span className="app-shell__loading-nav-label" />
           </div>
         </aside>
         <div aria-hidden="true" className="app-shell__loading-content">
-          <div className="h-16 border-b border-line bg-panel lg:hidden" />
+          <div className="app-shell__loading-mobile-bar lg:hidden">
+            <span className="app-shell__skeleton app-shell__loading-mobile-control" />
+            <span className="app-shell__skeleton app-shell__loading-mobile-title" />
+            <span className="app-shell__skeleton app-shell__loading-mobile-control" />
+          </div>
           <main className="content-frame">
-            <div className="h-24 animate-pulse rounded-lg bg-panel" />
+            <div className="app-shell__skeleton app-shell__skeleton--panel h-24 rounded-lg" />
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }, (_, index) => (
                 <div
-                  className="h-28 animate-pulse rounded-lg bg-panel"
+                  className="app-shell__skeleton app-shell__skeleton--panel h-28 rounded-lg"
                   key={index}
                 />
               ))}
             </div>
-            <div className="h-80 animate-pulse rounded-lg bg-panel" />
+            <div className="app-shell__skeleton app-shell__skeleton--panel h-80 rounded-lg" />
           </main>
         </div>
       </div>

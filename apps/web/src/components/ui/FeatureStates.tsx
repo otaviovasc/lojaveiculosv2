@@ -108,7 +108,7 @@ export function FeatureLoadingState({
       role="status"
     >
       {IconComponent ? (
-        <IconComponent aria-hidden="true" className="size-5" />
+        <IconComponent aria-hidden="true" className="size-5 animate-spin" />
       ) : null}
       {title ? <strong>{title}</strong> : null}
       {children}
