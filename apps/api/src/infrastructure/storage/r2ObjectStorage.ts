@@ -4,7 +4,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import {
@@ -17,11 +16,32 @@ import {
   createR2StorageKey,
   sanitizeR2FileName,
 } from "./r2ObjectStorageKeys.js";
+import {
+  assertR2StorageKeyEnvironment,
+  resolveR2EnvironmentPrefix,
+  type R2EnvironmentPrefix,
+} from "./r2EnvironmentPrefix.js";
+import {
+  defaultR2ObjectDeleter,
+  defaultR2ObjectWriter,
+  defaultR2Signer,
+} from "./r2ObjectStorageCommands.js";
+import {
+  assertR2Option,
+  parseR2ExpiresSeconds,
+  requireR2Env,
+  validateR2ObjectStorageEnv,
+} from "./r2ObjectStorageConfig.js";
+export {
+  R2ObjectStorageConfigError,
+  validateR2ObjectStorageEnv,
+} from "./r2ObjectStorageConfig.js";
 
 export type R2ObjectStorageOptions = {
   accessKeyId: string;
   bucketName: string;
   endpoint: string;
+  environmentPrefix: R2EnvironmentPrefix;
   objectReader?: R2ObjectReader;
   objectWriter?: R2ObjectWriter;
   publicBaseUrl: string;
@@ -52,29 +72,27 @@ export type R2ObjectDeleter = (
   command: DeleteObjectCommand,
 ) => Promise<void>;
 
-export class R2ObjectStorageConfigError extends Error {
-  constructor(fieldName: string) {
-    super(`Cloudflare R2 object storage is missing ${fieldName}`);
-    this.name = "R2ObjectStorageConfigError";
-  }
-}
-
 export function createR2ObjectStorage(
   options: R2ObjectStorageOptions,
 ): ObjectStorage {
-  assertRequired(options, "accessKeyId");
-  assertRequired(options, "bucketName");
-  assertRequired(options, "endpoint");
-  assertRequired(options, "publicBaseUrl");
-  assertRequired(options, "secretAccessKey");
+  for (const fieldName of [
+    "accessKeyId",
+    "bucketName",
+    "endpoint",
+    "environmentPrefix",
+    "publicBaseUrl",
+    "secretAccessKey",
+  ]) {
+    assertR2Option(options, fieldName);
+  }
 
   const downloadExpiresIn = options.downloadUrlExpiresSeconds ?? 300;
-  const objectDeleter = options.objectDeleter ?? defaultObjectDeleter;
+  const objectDeleter = options.objectDeleter ?? defaultR2ObjectDeleter;
   const objectReader = options.objectReader ?? defaultObjectReader;
   const uploadExpiresIn = options.uploadUrlExpiresSeconds ?? 900;
-  const objectWriter = options.objectWriter ?? defaultObjectWriter;
+  const objectWriter = options.objectWriter ?? defaultR2ObjectWriter;
   const publicBaseUrl = options.publicBaseUrl.replace(/\/+$/, "");
-  const signer = options.signer ?? defaultSigner;
+  const signer = options.signer ?? defaultR2Signer;
   const uniqueId = options.uniqueId ?? randomUUID;
   const client = new S3Client({
     credentials: {
@@ -89,7 +107,11 @@ export function createR2ObjectStorage(
   return {
     close: () => client.destroy(),
     async createUpload(input) {
-      const storageKey = createR2StorageKey(input, uniqueId());
+      const storageKey = createR2StorageKey(
+        input,
+        uniqueId(),
+        options.environmentPrefix,
+      );
       const command = new PutObjectCommand({
         Bucket: options.bucketName,
         ContentType: input.contentType,
@@ -107,6 +129,10 @@ export function createR2ObjectStorage(
       };
     },
     async createDownload(input) {
+      assertR2StorageKeyEnvironment(
+        input.storageKey,
+        options.environmentPrefix,
+      );
       await assertR2ObjectExists(
         objectReader,
         client,
@@ -127,6 +153,10 @@ export function createR2ObjectStorage(
       };
     },
     async deleteObject(input) {
+      assertR2StorageKeyEnvironment(
+        input.storageKey,
+        options.environmentPrefix,
+      );
       await objectDeleter(
         client,
         new DeleteObjectCommand({
@@ -136,10 +166,15 @@ export function createR2ObjectStorage(
       );
     },
     getPublicUrl(storageKey) {
+      assertR2StorageKeyEnvironment(storageKey, options.environmentPrefix);
       return createR2PublicUrl(publicBaseUrl, storageKey);
     },
     async putObject(input) {
-      const storageKey = createR2StorageKey(input, uniqueId());
+      const storageKey = createR2StorageKey(
+        input,
+        uniqueId(),
+        options.environmentPrefix,
+      );
       const command = new PutObjectCommand({
         Body: input.body,
         Bucket: options.bucketName,
@@ -161,89 +196,19 @@ export function createR2ObjectStorageFromEnv(
   if (!validateR2ObjectStorageEnv(env)) return null;
 
   return createR2ObjectStorage({
-    accessKeyId: requireEnv(env, "R2_ACCESS_KEY_ID"),
-    bucketName: requireEnv(env, "R2_BUCKET_NAME"),
-    endpoint: requireEnv(env, "R2_ENDPOINT"),
-    publicBaseUrl: requireEnv(env, "R2_PUBLIC_BASE_URL"),
+    accessKeyId: requireR2Env(env, "R2_ACCESS_KEY_ID"),
+    bucketName: requireR2Env(env, "R2_BUCKET_NAME"),
+    endpoint: requireR2Env(env, "R2_ENDPOINT"),
+    environmentPrefix: resolveR2EnvironmentPrefix(env),
+    publicBaseUrl: requireR2Env(env, "R2_PUBLIC_BASE_URL"),
     region: env.R2_REGION ?? "auto",
-    secretAccessKey: requireEnv(env, "R2_SECRET_ACCESS_KEY"),
-    uploadUrlExpiresSeconds: parseExpiresSeconds(
+    secretAccessKey: requireR2Env(env, "R2_SECRET_ACCESS_KEY"),
+    uploadUrlExpiresSeconds: parseR2ExpiresSeconds(
       env.R2_UPLOAD_URL_EXPIRES_SECONDS,
     ),
-    downloadUrlExpiresSeconds: parseExpiresSeconds(
+    downloadUrlExpiresSeconds: parseR2ExpiresSeconds(
       env.R2_DOWNLOAD_URL_EXPIRES_SECONDS,
       300,
     ),
   });
-}
-
-export function validateR2ObjectStorageEnv(
-  env: Record<string, string | undefined>,
-): boolean {
-  const hasAnyConfig = [
-    "R2_ACCESS_KEY_ID",
-    "R2_BUCKET_NAME",
-    "R2_ENDPOINT",
-    "R2_PUBLIC_BASE_URL",
-    "R2_SECRET_ACCESS_KEY",
-  ].some((key) => Boolean(env[key]));
-  if (!hasAnyConfig) return false;
-
-  requireEnv(env, "R2_ACCESS_KEY_ID");
-  requireEnv(env, "R2_BUCKET_NAME");
-  requireEnv(env, "R2_ENDPOINT");
-  requireEnv(env, "R2_PUBLIC_BASE_URL");
-  requireEnv(env, "R2_SECRET_ACCESS_KEY");
-  return true;
-}
-
-function assertRequired(
-  options: R2ObjectStorageOptions,
-  fieldName: keyof R2ObjectStorageOptions,
-) {
-  if (!options[fieldName]) {
-    throw new R2ObjectStorageConfigError(String(fieldName));
-  }
-}
-
-function requireEnv(
-  env: Record<string, string | undefined>,
-  fieldName: string,
-): string {
-  const value = env[fieldName];
-  if (!value || value.startsWith("${{")) {
-    throw new R2ObjectStorageConfigError(fieldName);
-  }
-  return value;
-}
-
-function parseExpiresSeconds(
-  value: string | undefined,
-  fallback = 900,
-): number {
-  if (!value) return fallback;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-async function defaultSigner(
-  client: S3Client,
-  command: GetObjectCommand | PutObjectCommand,
-  expiresIn: number,
-): Promise<string> {
-  return getSignedUrl(client, command, { expiresIn });
-}
-
-async function defaultObjectWriter(
-  client: S3Client,
-  command: PutObjectCommand,
-): Promise<void> {
-  await client.send(command);
-}
-
-async function defaultObjectDeleter(
-  client: S3Client,
-  command: DeleteObjectCommand,
-): Promise<void> {
-  await client.send(command);
 }

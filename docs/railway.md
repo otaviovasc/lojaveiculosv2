@@ -108,6 +108,8 @@ separate because audit isolation is a product invariant, not optional capacity.
   `docs/runbooks/v1-to-v2-basic-migration.md`
 - Incident runbook: `docs/runbooks/incidents.md`
 - Rollback runbook: `docs/runbooks/rollback.md`
+- Non-production reset runbook:
+  `docs/runbooks/reset-non-production-environment.md`
 - Variables: `docs/ops/env-vars.md`
 
 ## MCP

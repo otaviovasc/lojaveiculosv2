@@ -12,7 +12,7 @@ environment variables for public smoke-test URLs.
 | Name                                 | Required | Environments               | Secret | Notes                                                                                                    |
 | ------------------------------------ | -------- | -------------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
 | `NODE_ENV`                           | Yes      | staging, production        | No     | Use `production` in deployed environments.                                                               |
-| `APP_ENV`                            | Yes      | local, staging, production | No     | Runtime environment classifier.                                                                          |
+| `APP_ENV`                            | Yes      | local, staging, production | No     | Runtime environment classifier. Also selects the mandatory R2 key prefix: `l/`, `s/`, or `p/`.           |
 | `PORT`                               | Yes      | staging, production        | No     | Railway injects this for services.                                                                       |
 | `PUBLIC_APP_URL`                     | Yes      | staging, production        | No     | Public web URL.                                                                                          |
 | `API_BASE_URL`                       | Yes      | staging, production        | No     | Public API URL consumed by the web app.                                                                  |
@@ -27,6 +27,12 @@ environment variables for public smoke-test URLs.
 | `EXTERNAL_API_RATE_LIMIT_PER_MINUTE` | Yes      | staging, production        | No     | Per-minute external API rate limit.                                                                      |
 | `LOG_LEVEL`                          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                                                            |
 | `LOG_HTTP_REQUESTS`                  | No       | local, staging, production | No     | Structured HTTP request logs default on outside tests; set `false` only for an approved noise reduction. |
+
+Railway injects `RAILWAY_PROJECT_ID`, `RAILWAY_ENVIRONMENT_ID`, and
+`RAILWAY_ENVIRONMENT_NAME`; some runtime surfaces also expose
+`RAILWAY_ENVIRONMENT` as a name or opaque identifier. Do not configure these
+manually. The non-production reset command uses them only as additional
+fail-closed environment signals.
 
 `DRIZZLE_AUTOMATION_BOOTSTRAP` is an internal, local-only schema tooling flag.
 The product DB push wrapper sets it automatically during the first phase that
@@ -226,6 +232,12 @@ DB, audit DB, and Redis configuration. Do not set
 | `R2_SEED_WRITE_BUCKET`            | No       | local               | No     | Exact dedicated test bucket name that opts `db:seed`/`db:reset` into R2 writes. Never set in staging or production. |
 | `R2_UPLOAD_URL_EXPIRES_SECONDS`   | Yes      | staging, production | No     | Presigned upload TTL.                                                                                               |
 | `R2_DOWNLOAD_URL_EXPIRES_SECONDS` | No       | staging, production | No     | Presigned download TTL for private/download flows. Defaults to `300`.                                               |
+
+Every runtime R2 key is namespaced from `APP_ENV`: local/development/test uses
+`l/`, staging uses `s/`, and production uses `p/`. The API refuses to read,
+publish, or delete a key outside its own prefix. This lets staging and
+production share one bucket without sharing objects. Do not include the prefix
+in feature-level `scopeSegments`; the R2 adapter owns it.
 
 ZAPI CRM WhatsApp inbound media is mirrored best-effort through the shared
 object storage adapter. Successful mirrors store the public R2 URL on
