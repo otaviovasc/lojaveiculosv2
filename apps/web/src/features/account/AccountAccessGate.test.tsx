@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { AccountAccessGate } from "./AccountAccessGate";
 import type { SessionBootstrap } from "./apiClient";
+import { SessionBootstrapHandoffProvider } from "./sessionBootstrapHandoff";
+import { SESSION_BOOTSTRAP_TIMEOUT_MS } from "./sessionBootstrapLoader";
 
 const bootstrap = vi.fn();
 const createRuntimeAccountApi = vi.fn(async () => ({ bootstrap }));
@@ -22,6 +24,7 @@ describe("AccountAccessGate", () => {
     cleanup();
     bootstrap.mockReset();
     createRuntimeAccountApi.mockClear();
+    vi.useRealTimers();
   });
 
   it("does not refetch bootstrap only because Clerk getToken identity changed", async () => {
@@ -34,13 +37,15 @@ describe("AccountAccessGate", () => {
 
     rerender(
       <MemoryRouter>
-        <AccountAccessGate
-          access="onboarding"
-          getToken={vi.fn(async () => "token-2")}
-          userId="user_1"
-        >
-          <div>Onboarding pronto</div>
-        </AccountAccessGate>
+        <SessionBootstrapHandoffProvider>
+          <AccountAccessGate
+            access="onboarding"
+            getToken={vi.fn(async () => "token-2")}
+            userId="user_1"
+          >
+            <div>Onboarding pronto</div>
+          </AccountAccessGate>
+        </SessionBootstrapHandoffProvider>
       </MemoryRouter>,
     );
 
@@ -71,6 +76,22 @@ describe("AccountAccessGate", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText("Carregando sua conta")).not.toBeInTheDocument();
   });
+
+  it("replaces a stalled bootstrap with an actionable timeout", async () => {
+    vi.useFakeTimers();
+    bootstrap.mockImplementation(() => new Promise(() => undefined));
+
+    renderGate(vi.fn(async () => "token-1"));
+    await act(() => vi.advanceTimersByTimeAsync(SESSION_BOOTSTRAP_TIMEOUT_MS));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Não foi possível carregar sua conta",
+    );
+    expect(
+      screen.getByRole("button", { name: "Tentar novamente" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Carregando sua conta")).not.toBeInTheDocument();
+  });
 });
 
 function renderGate(
@@ -79,9 +100,11 @@ function renderGate(
 ) {
   return render(
     <MemoryRouter>
-      <AccountAccessGate access={access} getToken={getToken} userId="user_1">
-        <div>Onboarding pronto</div>
-      </AccountAccessGate>
+      <SessionBootstrapHandoffProvider>
+        <AccountAccessGate access={access} getToken={getToken} userId="user_1">
+          <div>Onboarding pronto</div>
+        </AccountAccessGate>
+      </SessionBootstrapHandoffProvider>
     </MemoryRouter>,
   );
 }

@@ -4,6 +4,8 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionBootstrap } from "./apiClient";
+import { OwnerOnboardingPage } from "./OwnerOnboardingPage";
+import { SessionBootstrapHandoffProvider } from "./sessionBootstrapHandoff";
 
 const clerk = vi.hoisted(() => ({
   signIn: vi.fn((_props: Record<string, unknown>) => null),
@@ -42,7 +44,12 @@ vi.mock("./UserAccountButton", () => ({
   UserAccountButton: () => null,
 }));
 
-import { SessionBootstrapPage, SignInPage, SignUpPage } from "./AuthPages";
+import {
+  ProtectedRoute,
+  SessionBootstrapPage,
+  SignInPage,
+  SignUpPage,
+} from "./AuthPages";
 
 describe("Clerk auth page redirects", () => {
   afterEach(() => {
@@ -82,6 +89,26 @@ describe("Clerk auth page redirects", () => {
     expect(await screen.findByText("Dashboard pronto")).toBeInTheDocument();
   });
 
+  it("renders onboarding after bootstrap without requiring a second request", async () => {
+    bootstrap
+      .mockResolvedValueOnce(sessionNeedingOnboarding())
+      .mockImplementation(() => new Promise(() => undefined));
+
+    renderNewAccountFlow("/auth/session");
+
+    expect(await screen.findByLabelText("Nome comercial")).toBeInTheDocument();
+    expect(bootstrap).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads bootstrap normally when onboarding is opened directly", async () => {
+    bootstrap.mockResolvedValue(sessionNeedingOnboarding());
+
+    renderNewAccountFlow("/onboarding");
+
+    expect(await screen.findByLabelText("Nome comercial")).toBeInTheDocument();
+    expect(bootstrap).toHaveBeenCalledTimes(1);
+  });
+
   it("stops on an actionable state when the authenticated account has only pending access", async () => {
     bootstrap.mockResolvedValue(sessionWithStore("invited"));
 
@@ -96,12 +123,50 @@ describe("Clerk auth page redirects", () => {
 function renderSessionBootstrap() {
   return render(
     <MemoryRouter initialEntries={["/auth/session"]}>
-      <Routes>
-        <Route path="/auth/session" element={<SessionBootstrapPage />} />
-        <Route path="/dashboard" element={<div>Dashboard pronto</div>} />
-      </Routes>
+      <SessionBootstrapHandoffProvider>
+        <Routes>
+          <Route path="/auth/session" element={<SessionBootstrapPage />} />
+          <Route path="/dashboard" element={<div>Dashboard pronto</div>} />
+        </Routes>
+      </SessionBootstrapHandoffProvider>
     </MemoryRouter>,
   );
+}
+
+function renderNewAccountFlow(initialEntry: "/auth/session" | "/onboarding") {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <SessionBootstrapHandoffProvider>
+        <Routes>
+          <Route path="/auth/session" element={<SessionBootstrapPage />} />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute access="onboarding">
+                <OwnerOnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </SessionBootstrapHandoffProvider>
+    </MemoryRouter>,
+  );
+}
+
+function sessionNeedingOnboarding(): SessionBootstrap {
+  return {
+    defaultStore: null,
+    needsOnboarding: true,
+    platformAdmin: false,
+    stores: [],
+    tenantMemberships: [],
+    user: {
+      clerkUserId: "user_1",
+      email: "user@example.com",
+      id: "identity_user_1",
+      name: "User",
+    },
+  };
 }
 
 function sessionWithStore(status: "active" | "invited"): SessionBootstrap {

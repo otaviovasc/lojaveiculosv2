@@ -15,8 +15,9 @@ import {
 import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
-import { createRuntimeAccountApi } from "./runtimeApi";
 import { resolveSessionDestination } from "./sessionRedirect";
+import { useSessionBootstrapHandoff } from "./sessionBootstrapHandoff";
+import { loadRuntimeSessionBootstrap } from "./sessionBootstrapLoader";
 import { useClerkAuthConfiguration } from "./ClerkAuthProvider";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
 import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
@@ -130,6 +131,7 @@ export function SessionBootstrapPage() {
 function ConfiguredSessionBootstrapPage() {
   const navigate = useNavigate();
   const auth = useAuth();
+  const bootstrapHandoff = useSessionBootstrapHandoff();
   const [error, setError] = useState<string | null>(null);
   const [accessUnavailable, setAccessUnavailable] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -149,9 +151,9 @@ function ConfiguredSessionBootstrapPage() {
 
     async function bootstrapSession() {
       try {
-        const accessToken = await getTokenRef.current();
-        const api = await createRuntimeAccountApi({ accessToken });
-        const bootstrap = await api.bootstrap();
+        const bootstrap = await loadRuntimeSessionBootstrap(
+          getTokenRef.current,
+        );
         if (bootstrap.defaultStore) {
           persistCurrentStoreSlug(bootstrap.defaultStore.storeSlug, userId);
         } else {
@@ -160,6 +162,7 @@ function ConfiguredSessionBootstrapPage() {
         const destination = resolveSessionDestination(bootstrap);
         if (cancelled) return;
         if (destination) {
+          if (userId) bootstrapHandoff.store(userId, bootstrap);
           void navigate(destination, { replace: true });
         } else {
           setAccessUnavailable(true);
@@ -178,7 +181,7 @@ function ConfiguredSessionBootstrapPage() {
     return () => {
       cancelled = true;
     };
-  }, [attempt, isLoaded, isSignedIn, navigate, userId]);
+  }, [attempt, bootstrapHandoff, isLoaded, isSignedIn, navigate, userId]);
 
   if (!isLoaded) return <AuthLoadingPage title="Preparando autenticação" />;
   if (!isSignedIn) return <SessionSignInRedirect />;
