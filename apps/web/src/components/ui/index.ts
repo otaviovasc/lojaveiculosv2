@@ -1,4 +1,5 @@
 export { Alert, AlertDescription, AlertTitle } from "./alert";
+export { AppBootScreen, type AppBootScreenProps } from "./AppBootScreen";
 export { Badge, badgeVariants, type BadgeProps } from "./badge";
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export {
@@ -17,4 +18,5 @@ export { Logo, LogoWithText, LogoWithVariant, type LogoVariant } from "./logo";
 export { PageHeader, type PageHeaderProps } from "./page-header";
 export { StatCard, type StatCardProps } from "./stat-card";
 export { Textarea, type TextareaProps } from "./textarea";
+export { FeatureToneIcon, type FeatureToneIconSize } from "./FeatureToneIcon";
 export { TextureBackground } from "./TextureBackground";

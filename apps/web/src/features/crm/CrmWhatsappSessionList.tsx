@@ -10,6 +10,7 @@ import {
   UserPlus,
   UsersRound,
 } from "lucide-react";
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import {
   formatRelativeSessionTime,
   formatSessionName,
@@ -83,7 +84,11 @@ export function SessionList({
                 title={selected ? "Remover seleção" : "Selecionar conversa"}
                 type="button"
               >
-                {selected ? <Check /> : null}
+                {selected ? (
+                  <AnimatedIconSwap stateKey={selected} variant="pop">
+                    <Check />
+                  </AnimatedIconSwap>
+                ) : null}
               </button>
             ) : null}
             <button
@@ -106,24 +111,33 @@ export function SessionList({
                 <span className="crm-whatsapp-session-top">
                   <span className="crm-whatsapp-session-heading">
                     <strong>{formatSessionName(session)}</strong>
-                    {session.buyerPhone ? (
-                      <small className="crm-whatsapp-session-phone">
-                        {session.buyerPhone}
-                      </small>
-                    ) : null}
                   </span>
                   <small className="crm-whatsapp-session-time">
                     {formatRelativeSessionTime(session.lastMessageAt)}
                   </small>
                 </span>
-                <span className="crm-whatsapp-session-preview">
-                  {formatSessionPreview(session)}
+                <span className="crm-whatsapp-session-preview-row">
+                  <span className="crm-whatsapp-session-preview">
+                    {session.buyerPhone &&
+                    session.buyerPhone !== formatSessionName(session) ? (
+                      <span className="crm-whatsapp-session-phone-inline">
+                        {session.buyerPhone} •{" "}
+                      </span>
+                    ) : null}
+                    {formatSessionPreview(session)}
+                  </span>
+                  {(session.unreadCount ?? 0) > 0 ? (
+                    <span className="crm-unread">{session.unreadCount}</span>
+                  ) : null}
                 </span>
-                <span className="crm-whatsapp-session-tags">
+                <span className="crm-whatsapp-session-meta">
                   <SessionStatusBadge status={session.status} />
                   {session.sessionTags?.length
                     ? session.sessionTags.slice(0, 2).map((tag) => (
-                        <span key={tag.id}>
+                        <span
+                          key={tag.id}
+                          className="crm-whatsapp-session-tag-chip"
+                        >
                           <i
                             aria-hidden="true"
                             style={{
@@ -136,17 +150,11 @@ export function SessionList({
                       ))
                     : null}
                   {(session.sessionTags?.length ?? 0) > 2 ? (
-                    <span>+{(session.sessionTags?.length ?? 0) - 2}</span>
-                  ) : null}
-                </span>
-                <span className="crm-whatsapp-session-meta">
-                  <ChannelBadge channel={session.channel} />
-                  {connectionName ? (
-                    <span className="crm-whatsapp-session-chip">
-                      <Radio aria-hidden="true" />
-                      {connectionName}
+                    <span className="crm-whatsapp-session-tag-chip">
+                      +{(session.sessionTags?.length ?? 0) - 2}
                     </span>
                   ) : null}
+                  <ChannelBadge channel={session.channel} />
                   {session.vehicle?.title ? (
                     <span className="crm-whatsapp-session-chip crm-whatsapp-session-chip-wide">
                       <Car aria-hidden="true" />
@@ -156,7 +164,7 @@ export function SessionList({
                   {adTitle ? (
                     <span className="crm-whatsapp-session-chip" title={adTitle}>
                       <Megaphone aria-hidden="true" />
-                      Anuncio
+                      Anúncio
                     </span>
                   ) : null}
                   <span className="crm-whatsapp-session-chip">
@@ -165,9 +173,6 @@ export function SessionList({
                   </span>
                 </span>
               </span>
-              {(session.unreadCount ?? 0) > 0 ? (
-                <span className="crm-unread">{session.unreadCount}</span>
-              ) : null}
             </button>
           </div>
         );

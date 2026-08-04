@@ -14,7 +14,8 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   border-top-left-radius: var(--radius-sm);
-  box-shadow: 0 0.25rem 0.75rem rgb(21 34 45 / 0.06);
+  box-shadow: 0 0.25rem 0.75rem
+    color-mix(in srgb, var(--color-text) 6%, transparent);
   color: var(--color-text);
   max-width: min(34rem, 84%);
   overflow-wrap: anywhere;
@@ -26,27 +27,34 @@
   align-self: flex-end;
   background: color-mix(
     in srgb,
-    var(--color-panel) 86%,
-    var(--color-accent) 14%
+    var(--color-panel) 84%,
+    var(--color-green-start) 16%
   );
-  border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 28%,
+    var(--color-line)
+  );
   border-top-left-radius: var(--radius-md);
   border-top-right-radius: var(--radius-sm);
-  box-shadow: 0 0.375rem 1rem rgb(21 34 45 / 0.08);
+  box-shadow: 0 0.375rem 1rem
+    color-mix(in srgb, var(--color-text) 8%, transparent);
   color: var(--color-text);
 }
 
 .crm-whatsapp-bubble strong {
+  color: var(--color-text);
   display: block;
   font-size: calc(var(--font-size-xs) * 1.1);
   font-weight: 900;
   margin-bottom: 0.25rem;
-  opacity: 0.78;
+  opacity: 0.88;
 }
 
 .crm-whatsapp-bubble p {
-  font-size: calc(var(--font-size-xs) * 1.4);
-  font-weight: 700;
+  font-size: calc(var(--font-size-xs) * 1.35);
+  font-weight: 600;
+  line-height: 1.45;
   margin: 0;
   white-space: pre-wrap;
 }
@@ -157,10 +165,10 @@
 
 .crm-whatsapp-attachment {
   align-items: center;
-  background: rgb(21 34 45 / 0.06);
-  border: 1px solid rgb(21 34 45 / 0.1);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent);
   border-radius: var(--radius-sm);
-  color: inherit;
+  color: var(--color-text);
   display: flex;
   gap: 0.625rem;
   min-width: min(18rem, 100%);
@@ -169,20 +177,17 @@
 }
 
 .crm-whatsapp-bubble-out .crm-whatsapp-attachment {
-  background: color-mix(
-    in srgb,
-    var(--color-panel) 92%,
-    var(--color-accent) 8%
-  );
-  border-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-line));
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-text) 16%, transparent);
+  color: var(--color-text);
 }
 
 .crm-whatsapp-rich-card {
   align-items: center;
-  background: rgb(21 34 45 / 0.06);
-  border: 1px solid rgb(21 34 45 / 0.1);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent);
   border-radius: var(--radius-sm);
-  color: inherit;
+  color: var(--color-text);
   display: grid;
   gap: 0.625rem;
   grid-template-columns: 4.25rem minmax(0, 1fr);
@@ -192,12 +197,9 @@
 }
 
 .crm-whatsapp-bubble-out .crm-whatsapp-rich-card {
-  background: color-mix(
-    in srgb,
-    var(--color-panel) 92%,
-    var(--color-accent) 8%
-  );
-  border-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-line));
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-text) 16%, transparent);
+  color: var(--color-text);
 }
 
 .crm-whatsapp-rich-card-icon,
@@ -232,17 +234,19 @@
 }
 
 .crm-whatsapp-rich-card strong {
+  color: var(--color-text);
   font-size: calc(var(--font-size-xs) * 1.3);
   font-weight: 950;
   white-space: nowrap;
 }
 
 .crm-whatsapp-rich-card small {
+  color: var(--color-muted);
   display: -webkit-box;
   font-size: calc(var(--font-size-xs) * 1.1);
   font-weight: 800;
   line-height: 1.25;
-  opacity: 0.76;
+  opacity: 0.88;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -260,19 +264,26 @@
   white-space: nowrap;
 }
 
+.crm-whatsapp-attachment strong {
+  color: var(--color-text);
+  font-size: calc(var(--font-size-xs) * 1.25);
+  font-weight: 900;
+}
+
 .crm-whatsapp-attachment small {
+  color: var(--color-muted);
   font-size: calc(var(--font-size-xs) * 1.1);
   font-weight: 800;
-  opacity: 0.72;
+  opacity: 0.85;
 }
 
 .crm-whatsapp-bubble footer {
   align-items: center;
+  color: color-mix(in srgb, var(--color-text) 65%, transparent);
   display: flex;
   font-size: calc(var(--font-size-xs) * 1.1);
-  font-weight: 900;
+  font-weight: 800;
   gap: 0.25rem;
   justify-content: flex-end;
   margin-top: 0.375rem;
-  opacity: 0.74;
 }

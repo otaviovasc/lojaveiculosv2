@@ -1,4 +1,5 @@
 import { useRef, type KeyboardEvent } from "react";
+import { FeatureToneIcon } from "../../components/ui/FeatureToneIcon";
 import { cx } from "../../components/ui/featureShared";
 import { autoEntryTabsMeta } from "./domainMeta";
 import type { AutoEntryRule, AutoEntryWorkspaceTab } from "./types";
@@ -64,9 +65,7 @@ export function AutoEntriesTabs({
             tabIndex={active || (activeIndex < 0 && index === 0) ? 0 : -1}
             type="button"
           >
-            <span aria-hidden="true" className="ae-tab__icon">
-              <Icon className="size-4" />
-            </span>
+            <FeatureToneIcon icon={Icon} size="sm" />
             <span className="ae-tab__label">{meta.tab}</span>
             <span aria-hidden="true" className="ae-tab__count">
               {count}

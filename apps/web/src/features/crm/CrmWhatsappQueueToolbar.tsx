@@ -53,8 +53,6 @@ export function WhatsappToolbar({
   sessionCounts,
   sessionCount,
   statusFilter,
-  statusLabel,
-  statusTone,
   startConversationUnavailableReason,
   unreadOnly,
   canStartConversation,
@@ -89,8 +87,6 @@ export function WhatsappToolbar({
   sessionCounts: CrmWhatsappSessionCounts;
   sessionCount: number;
   statusFilter: CrmWhatsappStatus | "";
-  statusLabel: string;
-  statusTone: "error" | "loading" | "neutral" | "offline" | "online";
   startConversationUnavailableReason?: string | null;
   unreadOnly: boolean;
 }) {
@@ -103,12 +99,6 @@ export function WhatsappToolbar({
           <p>{sessionCount} conversas</p>
         </div>
         <div className="crm-whatsapp-toolbar-actions">
-          <span
-            className={`crm-whatsapp-status crm-whatsapp-status-${statusTone}`}
-          >
-            <span aria-hidden="true" />
-            {statusLabel}
-          </span>
           <button
             aria-label="Gerenciar etiquetas"
             className="crm-icon-action"

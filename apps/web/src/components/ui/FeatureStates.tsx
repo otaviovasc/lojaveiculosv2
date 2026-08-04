@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { animate } from "animejs";
 import { cx, type FeatureIcon } from "./featureShared";
 
 export type FeatureStatusTone =
@@ -87,9 +88,16 @@ export function FeatureAlert({
   );
 }
 
+/**
+ * Branded loading surface. The default density renders the premium panel
+ * (watermark, progress-ring chip, indeterminate track) used by the module
+ * Suspense fallback; a caller-provided `className` or `density="compact"`
+ * keeps the small inline variant for nested panels. Entry motion is a short
+ * Anime.js fade/slide, skipped under reduced motion.
+ */
 export function FeatureLoadingState({
   children,
-  className = "feature-empty",
+  className,
   density = "default",
   icon: IconComponent,
   title,
@@ -100,20 +108,88 @@ export function FeatureLoadingState({
   icon?: FeatureIcon;
   title?: ReactNode;
 }) {
+  const rootRef = useFeatureLoadingMotion<HTMLElement>();
+  const inline = density === "compact" || className !== undefined;
+
+  if (inline) {
+    return (
+      <section
+        aria-busy="true"
+        aria-live="polite"
+        className={cx(
+          "feature-loading-inline",
+          density === "compact" && "p-6",
+          className ?? "feature-empty",
+        )}
+        ref={rootRef}
+        role="status"
+      >
+        {IconComponent ? (
+          <IconComponent aria-hidden="true" className="size-5 animate-spin" />
+        ) : (
+          <span aria-hidden="true" className="feature-loading-inline__ring" />
+        )}
+        {title ? <strong>{title}</strong> : null}
+        {children}
+      </section>
+    );
+  }
+
   return (
     <section
       aria-busy="true"
       aria-live="polite"
-      className={cx(density === "compact" && "p-6", className)}
+      className="feature-loading-state glass-panel-branded"
+      ref={rootRef}
       role="status"
     >
-      {IconComponent ? (
-        <IconComponent aria-hidden="true" className="size-5" />
+      <span aria-hidden="true" className="feature-empty-state__watermark" />
+      <span className="feature-loading-state__chip" data-loading-motion>
+        {IconComponent ? (
+          <IconComponent aria-hidden="true" className="size-7" />
+        ) : (
+          <span aria-hidden="true" className="feature-loading-state__ring" />
+        )}
+      </span>
+      {title ? (
+        <strong className="feature-loading-state__title" data-loading-motion>
+          {title}
+        </strong>
       ) : null}
-      {title ? <strong>{title}</strong> : null}
-      {children}
+      {children ? (
+        <div className="feature-loading-state__body" data-loading-motion>
+          {children}
+        </div>
+      ) : null}
+      <span
+        aria-hidden="true"
+        className="feature-loading-state__track"
+        data-loading-motion
+      />
     </section>
   );
+}
+
+function useFeatureLoadingMotion<T extends HTMLElement>() {
+  const rootRef = useRef<T>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof window.matchMedia !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const animation = animate(root, {
+      duration: 240,
+      ease: "out(4)",
+      opacity: { from: 0 },
+      y: { from: 8 },
+    });
+    return () => {
+      animation.revert();
+    };
+  }, []);
+
+  return rootRef;
 }
 
 export function FeatureStatusBadge({

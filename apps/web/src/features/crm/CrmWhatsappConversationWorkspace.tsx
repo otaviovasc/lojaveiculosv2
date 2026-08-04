@@ -7,7 +7,6 @@ import { WhatsappBulkBar } from "./CrmWhatsappBulkBar";
 import { CrmWhatsappReadOnlyComposer } from "./CrmWhatsappReadOnlyComposer";
 import { CrmWhatsappNewConversationDialog } from "./CrmWhatsappNewConversationDialog";
 import { CrmWhatsappSessionDetailsPanel } from "./CrmWhatsappSessionDetailsPanel";
-import type { readWhatsappStatus } from "./crmWhatsappConnectionStatus";
 import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 import type { CrmWhatsappScope } from "./CrmWhatsappScopedNav";
@@ -17,11 +16,9 @@ import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabi
 export function CrmWhatsappConversationWorkspace({
   inbox,
   onScopeChange,
-  status,
 }: {
   inbox: ReturnType<typeof useCrmWhatsappInbox>;
   onScopeChange: (scope: CrmWhatsappScope) => void;
-  status: ReturnType<typeof readWhatsappStatus>;
 }) {
   const activeSession = inbox.activeSession;
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -84,8 +81,6 @@ export function CrmWhatsappConversationWorkspace({
           sessionCounts={inbox.sessionCounts}
           sessionCount={inbox.sessions.length}
           statusFilter={inbox.statusFilter}
-          statusLabel={status.label}
-          statusTone={status.tone}
           startConversationUnavailableReason={
             inbox.startConversationUnavailableReason
           }

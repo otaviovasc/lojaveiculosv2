@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanupTest, renderComposer } from "./CrmWhatsappComposer.testSupport";
@@ -26,11 +26,11 @@ describe("CrmWhatsappComposer", () => {
     );
 
     expect(
-      screen.queryByRole("button", { name: "Gravar audio" }),
-    ).not.toBeInTheDocument();
-    expect(
       screen.getByRole("button", { name: "Enviar mensagem" }),
     ).toBeVisible();
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole("button", { name: "Gravar audio" }),
+    );
   });
 
   it("previews selected image media and sends it with a caption", async () => {

@@ -1,7 +1,8 @@
 import { RedirectToSignIn, SignIn, SignUp, useAuth } from "@clerk/react";
-import { AlertTriangle, Loader2, RefreshCcw } from "lucide-react";
+import { AlertTriangle, RefreshCcw } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { AppBootScreen } from "../../components/ui";
 import {
   FeatureActionButton,
   FeaturePageHeader,
@@ -10,7 +11,6 @@ import {
 import {
   FeatureAlert,
   FeatureEmptyState,
-  FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
@@ -191,9 +191,10 @@ function ConfiguredSessionBootstrapPage() {
           />
         </>
       ) : (
-        <FeatureLoadingState icon={Loader2} title="Sincronizando sua conta">
-          <span className="sr-only">Aguarde</span>
-        </FeatureLoadingState>
+        <AppBootScreen
+          description="Estamos preparando seu acesso à loja."
+          title="Sincronizando sua conta"
+        />
       )}
     </FeaturePageShell>
   );
@@ -251,14 +252,5 @@ function AuthConfigurationMissingPage() {
 }
 
 function AuthLoadingPage({ title }: { title: string }) {
-  return (
-    <FeaturePageShell
-      className="min-h-screen max-w-xl justify-center"
-      variant="plain"
-    >
-      <FeatureLoadingState icon={Loader2} title={title}>
-        <span className="sr-only">Aguarde</span>
-      </FeatureLoadingState>
-    </FeaturePageShell>
-  );
+  return <AppBootScreen title={title} />;
 }

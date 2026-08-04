@@ -134,7 +134,7 @@ export function StickySaleSummary({
         <span className="text-xs font-bold text-muted uppercase tracking-wider mb-1">
           Requisitos de Fechamento
         </span>
-        <div className="flex flex-col gap-2 bg-app-elevated/40 p-3 rounded-xl border border-line/40">
+        <div className="flex flex-col gap-2">
           {checks.map((check) => (
             <div key={check.label} className="flex items-start gap-2 text-xs">
               {check.ok ? (

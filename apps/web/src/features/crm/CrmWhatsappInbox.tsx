@@ -6,6 +6,14 @@ import {
   createRuntimeCrmWhatsappApi,
   createRuntimeProductCrmApi,
 } from "./runtimeApi";
+import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
+import {
+  prefetchWhatsappScopedData,
+  WHATSAPP_BOT_INTEGRATION_CACHE_KEY,
+  WHATSAPP_CAMPAIGNS_CACHE_KEY,
+  WHATSAPP_VISITS_CACHE_KEY,
+  whatsappScheduledMessagesCacheKey,
+} from "./crmWhatsappScopedCache";
 import { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import { WhatsappNotice } from "./CrmWhatsappNotice";
 import { CrmWhatsappConnectionAdmin } from "./CrmWhatsappConnectionAdmin";
@@ -40,9 +48,13 @@ export function CrmWhatsappInbox({
     () => productApi ?? createRuntimeProductCrmApi(),
     [productApi],
   );
+  const visitsApi = useMemo(() => createRuntimeCrmVisitsApi(), []);
   const inbox = useCrmWhatsappInbox(whatsappApi);
   const [activeScope, setActiveScope] =
     useState<CrmWhatsappScope>("conversations");
+  const [visitedScopes, setVisitedScopes] = useState<
+    ReadonlySet<CrmWhatsappScope>
+  >(() => new Set<CrmWhatsappScope>(["conversations"]));
   const originalTitleRef = useRef(
     typeof document === "undefined" ? "CRM" : document.title,
   );
@@ -54,10 +66,60 @@ export function CrmWhatsappInbox({
   });
 
   useEffect(() => {
+    setVisitedScopes((current) =>
+      current.has(activeScope) ? current : new Set(current).add(activeScope),
+    );
+  }, [activeScope]);
+
+  useEffect(() => {
     document.title = unreadCount
       ? `(${unreadCount}) Nova mensagem - CRM`
       : originalTitleRef.current;
   }, [unreadCount]);
+
+  // Warm the other scopes' list data shortly after the primary inbox load, so
+  // the first visit to each tab renders cached content instead of a loading
+  // state. Sections still refetch on mount and update in the background.
+  const { connectionId, isLoading: inboxIsLoading, permissions } = inbox;
+  useEffect(() => {
+    if (inboxIsLoading || !permissions.canList) return undefined;
+    const timer = setTimeout(() => {
+      if (permissions.canCampaignRead) {
+        prefetchWhatsappScopedData(
+          whatsappApi,
+          WHATSAPP_CAMPAIGNS_CACHE_KEY,
+          () => whatsappApi.listCampaigns({ limit: 50 }),
+        );
+      }
+      if (permissions.canScheduleRead) {
+        prefetchWhatsappScopedData(
+          whatsappApi,
+          whatsappScheduledMessagesCacheKey(connectionId),
+          () =>
+            whatsappApi.listScheduledMessages({
+              limit: 100,
+              ...(connectionId ? { connectionId } : {}),
+            }),
+        );
+      }
+      if (permissions.canIntegrationsManage) {
+        prefetchWhatsappScopedData(
+          whatsappApi,
+          WHATSAPP_BOT_INTEGRATION_CACHE_KEY,
+          async () => (await whatsappApi.getBotIntegration()).integration,
+        );
+      }
+      if (permissions.canVisitsRead) {
+        prefetchWhatsappScopedData(visitsApi, WHATSAPP_VISITS_CACHE_KEY, () =>
+          visitsApi.listVisits({ limit: 100 }),
+        );
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [connectionId, inboxIsLoading, permissions, visitsApi, whatsappApi]);
+
+  const scopePanelClassName = (scope: CrmWhatsappScope) =>
+    activeScope === scope ? "flex-1 flex flex-col min-h-0" : "hidden";
 
   return (
     <main className="crm-whatsapp-page">
@@ -82,73 +144,98 @@ export function CrmWhatsappInbox({
             tagCount={inbox.availableTags.length}
             unreadCount={unreadCount}
           />
-          {activeScope === "conversations" ? (
-            inbox.hasConnection === false ? (
-              <WhatsappDisconnectedState
-                canManage={inbox.permissions.canConnectionManage}
-                onConnect={() => setActiveScope("connection")}
-              />
-            ) : (
-              <CrmWhatsappConversationWorkspace
-                inbox={inbox}
-                onScopeChange={setActiveScope}
-                status={status}
-              />
-            )
-          ) : null}
-          {activeScope === "connection" ? (
-            <section className="crm-whatsapp-section">
-              <CrmWhatsappConnectionAdmin
-                connections={inbox.connections}
-                disabled={!inbox.permissions.canConnectionManage}
-                embedded
-                onClose={() => setActiveScope("conversations")}
-                onConfigureWebhooks={inbox.configureConnectionWebhooks}
-                onRefresh={inbox.refreshConnections}
-                onUpdate={inbox.updateConnection}
-              />
-            </section>
-          ) : null}
-          {activeScope === "campaigns" ? (
-            <WhatsappCampaignsSection
-              api={whatsappApi}
-              inbox={inbox}
-              leadApi={leadApi}
-            />
-          ) : null}
-          {activeScope === "schedules" ? (
-            <WhatsappSchedulesSection inbox={inbox} />
-          ) : null}
-          {activeScope === "integrations" ? (
-            <WhatsappIntegrationsSection
-              api={whatsappApi}
-              canManage={inbox.permissions.canIntegrationsManage}
-              canRead={inbox.permissions.canRead}
-              canRetry={inbox.permissions.canSend}
-            />
-          ) : null}
-          {activeScope === "tags" ? (
-            <section className="crm-whatsapp-section">
-              <CrmWhatsappTagManager
-                disabled={!inbox.permissions.canTagManage}
-                embedded
-                onClose={() => setActiveScope("conversations")}
-                onCreate={inbox.createTag}
-                onDelete={inbox.deleteTag}
-                onReorder={inbox.reorderTags}
-                onUpdate={inbox.updateTag}
-                tags={inbox.availableTags}
-              />
-            </section>
-          ) : null}
-          {activeScope === "visits" ? (
-            <CrmWhatsappVisitsPage
-              activeSession={inbox.activeSession}
-              canManage={inbox.permissions.canVisitsManage}
-              canRead={inbox.permissions.canVisitsRead}
-              listVehicles={inbox.listVehicles}
-            />
-          ) : null}
+          <div className="crm-tab-panel flex-1 flex flex-col min-h-0">
+            {visitedScopes.has("conversations") ? (
+              <div
+                className={scopePanelClassName("conversations")}
+                key="conversations"
+              >
+                {inbox.hasConnection === false ? (
+                  <WhatsappDisconnectedState
+                    canManage={inbox.permissions.canConnectionManage}
+                    onConnect={() => setActiveScope("connection")}
+                  />
+                ) : (
+                  <CrmWhatsappConversationWorkspace
+                    inbox={inbox}
+                    onScopeChange={setActiveScope}
+                  />
+                )}
+              </div>
+            ) : null}
+            {visitedScopes.has("connection") ? (
+              <div
+                className={scopePanelClassName("connection")}
+                key="connection"
+              >
+                <section className="crm-whatsapp-section">
+                  <CrmWhatsappConnectionAdmin
+                    connections={inbox.connections}
+                    disabled={!inbox.permissions.canConnectionManage}
+                    embedded
+                    onClose={() => setActiveScope("conversations")}
+                    onConfigureWebhooks={inbox.configureConnectionWebhooks}
+                    onRefresh={inbox.refreshConnections}
+                    onUpdate={inbox.updateConnection}
+                  />
+                </section>
+              </div>
+            ) : null}
+            {visitedScopes.has("campaigns") ? (
+              <div className={scopePanelClassName("campaigns")} key="campaigns">
+                <WhatsappCampaignsSection
+                  api={whatsappApi}
+                  inbox={inbox}
+                  leadApi={leadApi}
+                />
+              </div>
+            ) : null}
+            {visitedScopes.has("schedules") ? (
+              <div className={scopePanelClassName("schedules")} key="schedules">
+                <WhatsappSchedulesSection api={whatsappApi} inbox={inbox} />
+              </div>
+            ) : null}
+            {visitedScopes.has("integrations") ? (
+              <div
+                className={scopePanelClassName("integrations")}
+                key="integrations"
+              >
+                <WhatsappIntegrationsSection
+                  api={whatsappApi}
+                  canManage={inbox.permissions.canIntegrationsManage}
+                  canRead={inbox.permissions.canRead}
+                  canRetry={inbox.permissions.canSend}
+                />
+              </div>
+            ) : null}
+            {visitedScopes.has("tags") ? (
+              <div className={scopePanelClassName("tags")} key="tags">
+                <section className="crm-whatsapp-section">
+                  <CrmWhatsappTagManager
+                    disabled={!inbox.permissions.canTagManage}
+                    embedded
+                    onClose={() => setActiveScope("conversations")}
+                    onCreate={inbox.createTag}
+                    onDelete={inbox.deleteTag}
+                    onReorder={inbox.reorderTags}
+                    onUpdate={inbox.updateTag}
+                    tags={inbox.availableTags}
+                  />
+                </section>
+              </div>
+            ) : null}
+            {visitedScopes.has("visits") ? (
+              <div className={scopePanelClassName("visits")} key="visits">
+                <CrmWhatsappVisitsPage
+                  activeSession={inbox.activeSession}
+                  api={visitsApi}
+                  canManage={inbox.permissions.canVisitsManage}
+                  canRead={inbox.permissions.canVisitsRead}
+                  listVehicles={inbox.listVehicles}
+                />
+              </div>
+            ) : null}
+          </div>
         </>
       ) : null}
     </main>

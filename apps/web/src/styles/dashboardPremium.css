@@ -88,26 +88,6 @@
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-.kpi-card-premium::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0.03) 50%,
-    rgba(255, 255, 255, 0.15) 100%
-  );
-  -webkit-mask:
-    linear-gradient(var(--color-inverse) 0 0) content-box,
-    linear-gradient(var(--color-inverse) 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -140,32 +120,16 @@
 }
 
 .neon-progress-green {
-  background: linear-gradient(
-    90deg,
-    var(--color-green-start) 0%,
-    var(--color-green-start) 100%
-  );
+  background: var(--color-green-start);
 }
 .neon-progress-blue {
-  background: linear-gradient(
-    90deg,
-    var(--color-blue-start) 0%,
-    var(--color-blue-start) 100%
-  );
+  background: var(--color-blue-start);
 }
 .neon-progress-violet {
-  background: linear-gradient(
-    90deg,
-    var(--color-warning) 0%,
-    var(--color-warning) 100%
-  );
+  background: var(--color-warning);
 }
 .neon-progress-pink {
-  background: linear-gradient(
-    90deg,
-    var(--color-accent) 0%,
-    var(--color-accent) 100%
-  );
+  background: var(--color-accent);
 }
 
 .hover-scale-subtle {

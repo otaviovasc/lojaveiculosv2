@@ -8,7 +8,7 @@ import type { FinanceEntry } from "./types";
 describe("FinanceCashFlowOverview", () => {
   afterEach(() => cleanup());
 
-  it("keeps the tinted commission hierarchy and exposes ledger shortcuts", () => {
+  it("renders the cash-flow summary cards and exposes ledger shortcuts", () => {
     const onShowOverdue = vi.fn();
     const onShowPending = vi.fn();
     const { container } = render(

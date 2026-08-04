@@ -107,6 +107,7 @@ export function TagAdminRow({
     pendingAction?.kind === "move" && pendingAction.tagId === tag.id;
   const isDeleting =
     pendingAction?.kind === "delete" && pendingAction.tagId === tag.id;
+  const tagColor = tag.color ?? "var(--color-muted)";
 
   return (
     <article
@@ -116,8 +117,17 @@ export function TagAdminRow({
       <span className="crm-whatsapp-tag-admin-label">
         <strong
           className="crm-whatsapp-tag-admin-pill"
-          style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
+          style={{
+            backgroundColor: `color-mix(in srgb, ${tagColor} 20%, var(--color-panel))`,
+            borderColor: `color-mix(in srgb, ${tagColor} 45%, var(--color-line))`,
+            color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
+          }}
         >
+          <span
+            aria-hidden="true"
+            className="crm-whatsapp-tag-dot"
+            style={{ backgroundColor: tagColor }}
+          />
           {tag.emoji ? `${tag.emoji} ` : ""}
           {tag.name}
         </strong>

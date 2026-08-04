@@ -20,9 +20,9 @@ export function FinanceCashFlowOverview({
 }) {
   const summary = summarizeCashFlow(entries);
   const plannedBalanceTone =
-    summary.plannedBalanceCents >= 0 ? "green" : "danger";
+    summary.plannedBalanceCents >= 0 ? "neutral" : "danger";
   const realizedBalanceTone =
-    summary.realizedBalanceCents >= 0 ? "blue" : "danger";
+    summary.realizedBalanceCents >= 0 ? "neutral" : "danger";
 
   return (
     <section
@@ -33,25 +33,20 @@ export function FinanceCashFlowOverview({
         Fluxo de caixa
       </h2>
       <FeatureStatCard
-        appearance="tinted"
         className="finance-cash-flow-card"
         hint={`Recebido ${formatCurrency(summary.paidRevenueCents)}`}
         icon={ArrowUpCircle}
         label="Entradas"
-        tone="green"
         value={formatCurrency(summary.revenueCents)}
       />
       <FeatureStatCard
-        appearance="tinted"
         className="finance-cash-flow-card"
         hint={`Pago ${formatCurrency(summary.paidOutflowCents)}`}
         icon={ArrowDownCircle}
         label="Saídas"
-        tone="danger"
         value={formatCurrency(summary.outflowCents)}
       />
       <FeatureStatCard
-        appearance="tinted"
         ariaLabel="Mostrar lançamentos em aberto"
         className="finance-cash-flow-card"
         hint={`Em aberto ${formatCurrency(summary.pendingCents)}`}
@@ -62,7 +57,6 @@ export function FinanceCashFlowOverview({
         value={formatCurrency(summary.plannedBalanceCents)}
       />
       <FeatureStatCard
-        appearance="tinted"
         ariaLabel="Mostrar lançamentos vencidos"
         className="finance-cash-flow-card"
         hint={`Vencido ${formatCurrency(summary.overdueCents)}`}

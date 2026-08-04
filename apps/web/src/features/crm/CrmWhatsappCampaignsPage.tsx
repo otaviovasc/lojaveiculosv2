@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CrmWhatsappCampaignBuilder } from "./CrmWhatsappCampaignBuilder";
 import { CampaignModeBar } from "./CrmWhatsappCampaignModeBar";
 import { CrmWhatsappCampaignOverview } from "./CrmWhatsappCampaignOverview";
@@ -18,6 +18,7 @@ export function CrmWhatsappCampaignsPage({
   canCancel,
   canCreate,
   canRead,
+  initialCampaigns,
   onCancelCampaign,
   onCreateCampaign,
   onGetCampaign,
@@ -30,7 +31,10 @@ export function CrmWhatsappCampaignsPage({
   tags,
 }: CrmWhatsappCampaignsPageProps) {
   const [csvInput, setCsvInput] = useState("");
-  const [campaigns, setCampaigns] = useState<CrmWhatsappCampaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CrmWhatsappCampaign[]>(
+    initialCampaigns ?? [],
+  );
+  const hasCampaignsDataRef = useRef(initialCampaigns !== undefined);
   const [mode, setMode] = useState<"create" | "overview">("overview");
   const [campaignDetail, setCampaignDetail] =
     useState<CrmWhatsappCampaignDetail | null>(null);
@@ -71,9 +75,10 @@ export function CrmWhatsappCampaignsPage({
 
   const loadCampaigns = useCallback(async () => {
     if (!canRead) return;
-    setIsLoading(true);
+    if (!hasCampaignsDataRef.current) setIsLoading(true);
     try {
       const nextCampaigns = await onListCampaigns();
+      hasCampaignsDataRef.current = true;
       setCampaigns(nextCampaigns);
       setSelectedCampaignId(
         (current) => current ?? nextCampaigns[0]?.id ?? null,

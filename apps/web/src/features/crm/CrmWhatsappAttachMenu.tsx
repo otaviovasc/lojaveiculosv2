@@ -8,6 +8,7 @@ import {
   Music,
   Paperclip,
 } from "lucide-react";
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type { ReactNode } from "react";
 import type { CrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
 
@@ -46,7 +47,11 @@ export function CrmWhatsappAttachMenu({
         title="Anexos"
         type="button"
       >
-        <Paperclip />
+        <AnimatedIconSwap stateKey={open} variant="rotate-spin">
+          <Paperclip
+            className={`transition-transform duration-200 ${open ? "rotate-45" : ""}`}
+          />
+        </AnimatedIconSwap>
       </button>
       {open ? (
         <div className="crm-whatsapp-attach-menu">

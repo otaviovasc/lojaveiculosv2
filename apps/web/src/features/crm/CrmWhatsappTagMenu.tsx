@@ -1,4 +1,4 @@
-import { Check, Plus, Search } from "lucide-react";
+import { Check, Plus, Search, X } from "lucide-react";
 import { useState } from "react";
 import type {
   CrmWhatsappAddSessionTagInput,
@@ -6,8 +6,8 @@ import type {
 } from "./crmWhatsappTypes";
 
 const DEFAULT_TAG_OPTIONS: CrmWhatsappAddSessionTagInput[] = [
-  { name: "Quente" },
-  { name: "Retorno" },
+  { emoji: "🔥", name: "Quente" },
+  { emoji: "📞", name: "Retorno" },
 ];
 
 export function TagMenu({
@@ -52,6 +52,16 @@ export function TagMenu({
           placeholder="Buscar etiqueta"
           value={search}
         />
+        {search ? (
+          <button
+            aria-label="Limpar busca de etiqueta"
+            className="crm-whatsapp-tag-search-clear"
+            onClick={() => setSearch("")}
+            type="button"
+          >
+            <X aria-hidden="true" />
+          </button>
+        ) : null}
       </label>
       {filteredTags.length ? (
         <div className="crm-whatsapp-tag-list" aria-label="Etiquetas">
@@ -59,6 +69,7 @@ export function TagMenu({
             const assigned =
               activeTagIds.has(tag.id) ||
               assignedNames.has(tag.name.toLocaleLowerCase("pt-BR"));
+            const tagColor = tag.color ?? "var(--color-muted)";
             return (
               <button
                 aria-pressed={assigned}
@@ -83,9 +94,9 @@ export function TagMenu({
                       : "crm-whatsapp-tag-check"
                   }
                 >
-                  {assigned ? <Check /> : null}
+                  {assigned ? <Check aria-hidden="true" /> : null}
                 </span>
-                <i aria-hidden="true" style={{ backgroundColor: tag.color }} />
+                <i aria-hidden="true" style={{ backgroundColor: tagColor }} />
                 <span>
                   {tag.emoji ? `${tag.emoji} ` : ""}
                   {tag.name}
@@ -107,6 +118,7 @@ export function TagMenu({
                 aria-hidden="true"
                 style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
               />
+              {tag.emoji ? `${tag.emoji} ` : ""}
               {tag.name}
             </button>
           ))}
@@ -135,7 +147,7 @@ export function TagMenu({
           disabled={disabled || isSaving || !customName.trim()}
           type="submit"
         >
-          <Plus />
+          <Plus aria-hidden="true" />
         </button>
       </form>
     </div>

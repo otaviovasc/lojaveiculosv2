@@ -4,7 +4,6 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ClerkAuthProvider } from "../features/account/ClerkAuthProvider";
 import { App } from "./App";
 
 vi.mock("../features/account/AuthPages", () => {
@@ -22,6 +21,7 @@ vi.mock("./AppLazyRoutes", async () => {
   const { LandingPage } = await import("../features/marketing/LandingPage");
   const emptyRoute = () => null;
   return {
+    AuthenticatedRoutes: () => <div>Authenticated route</div>,
     AdminApp: emptyRoute,
     AgencyBillingPage: emptyRoute,
     AgencyCrederePage: () => <div>Credere agency route</div>,
@@ -44,9 +44,7 @@ describe("App routes", () => {
   it("serves the root path as a public landing page", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
-        <ClerkAuthProvider>
-          <App />
-        </ClerkAuthProvider>
+        <App />
       </MemoryRouter>,
     );
 
@@ -68,9 +66,7 @@ describe("App routes", () => {
   it("serves a friendly 404 page for unknown paths instead of booting the admin app", async () => {
     render(
       <MemoryRouter initialEntries={["/nao-existe/nada"]}>
-        <ClerkAuthProvider>
-          <App />
-        </ClerkAuthProvider>
+        <App />
       </MemoryRouter>,
     );
 
@@ -86,24 +82,20 @@ describe("App routes", () => {
   it("registers the agency Credere management route inside the agency layout", async () => {
     render(
       <MemoryRouter initialEntries={["/agency/admin/credere"]}>
-        <ClerkAuthProvider>
-          <App />
-        </ClerkAuthProvider>
+        <App />
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Credere agency route")).toBeInTheDocument();
+    expect(await screen.findByText("Authenticated route")).toBeInTheDocument();
   });
 
   it("registers the platform observability command center route", async () => {
     render(
       <MemoryRouter initialEntries={["/platform/observability"]}>
-        <ClerkAuthProvider>
-          <App />
-        </ClerkAuthProvider>
+        <App />
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Observability route")).toBeInTheDocument();
+    expect(await screen.findByText("Authenticated route")).toBeInTheDocument();
   });
 });

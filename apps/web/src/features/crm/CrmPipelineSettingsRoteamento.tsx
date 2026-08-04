@@ -102,9 +102,9 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
           </button>
         </div>
       ) : (
-        <div className="border border-line/20 bg-panel/30 rounded-xl overflow-hidden mt-2">
+        <div className="border border-line/20 bg-panel/30 rounded-xl overflow-hidden mt-2 w-full min-w-0">
           {/* Table Header */}
-          <div className="grid grid-cols-[140px_1fr_50px] items-center px-5 py-3 border-b border-line/15 text-xs font-black uppercase tracking-wider text-muted">
+          <div className="grid grid-cols-[minmax(90px,140px)_1fr_auto] gap-3 items-center px-3 sm:px-5 py-3 border-b border-line/15 text-xs font-black uppercase tracking-wider text-muted">
             <span>Origem</span>
             <span>Loja</span>
             <span className="text-right"></span>
@@ -121,7 +121,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
 
               return (
                 <div
-                  className="grid grid-cols-[140px_1fr_50px] items-center px-5 py-3 text-xs font-bold"
+                  className="grid grid-cols-[minmax(90px,140px)_1fr_auto] gap-3 items-center px-3 sm:px-5 py-3 text-xs font-bold"
                   key={rule.id}
                 >
                   {/* Origin Badges */}

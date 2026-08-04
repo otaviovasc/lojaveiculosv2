@@ -1,3 +1,4 @@
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { useState } from "react";
 import { Car, User, SendHorizontal, Phone, Mail } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
@@ -225,12 +226,17 @@ export function CrmLeadDetailsSidebar({
             <div className="flex items-center justify-between border-t border-line/10 pt-2">
               <button
                 aria-label="Enviar comentário"
-                className="flex size-7 cursor-pointer items-center justify-center rounded-full bg-blue-start text-inverse transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex size-7 cursor-pointer items-center justify-center rounded-full bg-blue-start text-inverse transition-transform duration-150 hover:scale-110 active:scale-90 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!commentText.trim()}
                 onClick={() => void handlePostComment()}
                 type="button"
               >
-                <SendHorizontal aria-hidden="true" className="size-3.5" />
+                <AnimatedIconSwap
+                  stateKey={Boolean(commentText.trim())}
+                  variant="pop"
+                >
+                  <SendHorizontal aria-hidden="true" className="size-3.5" />
+                </AnimatedIconSwap>
               </button>
             </div>
           </div>

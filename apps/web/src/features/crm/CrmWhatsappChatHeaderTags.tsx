@@ -13,27 +13,42 @@ export function SessionTagRow({
   if (!tags.length) return null;
   return (
     <div className="crm-whatsapp-tag-row" aria-label="Etiquetas da conversa">
-      {tags.slice(0, 4).map((tag) => (
-        <span className="crm-whatsapp-tag-chip" key={tag.id}>
+      {tags.slice(0, 4).map((tag) => {
+        const tagColor = tag.color ?? "var(--color-muted)";
+        return (
           <span
-            aria-hidden="true"
-            style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
-          />
-          {tag.name}
-          <button
-            aria-label={`Remover etiqueta ${tag.name}`}
-            disabled={disabled}
-            onClick={(event) => {
-              event.stopPropagation();
-              void onRemoveTag(tag.id);
+            className="crm-whatsapp-tag-chip"
+            key={tag.id}
+            style={{
+              backgroundColor: `color-mix(in srgb, ${tagColor} 16%, var(--color-panel))`,
+              borderColor: `color-mix(in srgb, ${tagColor} 35%, var(--color-line))`,
+              color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
             }}
-            title="Remover etiqueta"
-            type="button"
           >
-            <X />
-          </button>
-        </span>
-      ))}
+            <span
+              aria-hidden="true"
+              className="crm-whatsapp-tag-dot"
+              style={{ backgroundColor: tagColor }}
+            />
+            <span className="crm-whatsapp-tag-chip-name">
+              {tag.emoji ? `${tag.emoji} ` : ""}
+              {tag.name}
+            </span>
+            <button
+              aria-label={`Remover etiqueta ${tag.name}`}
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                void onRemoveTag(tag.id);
+              }}
+              title="Remover etiqueta"
+              type="button"
+            >
+              <X aria-hidden="true" />
+            </button>
+          </span>
+        );
+      })}
       {tags.length > 4 ? (
         <span className="crm-whatsapp-tag-chip crm-whatsapp-tag-chip-muted">
           +{tags.length - 4}

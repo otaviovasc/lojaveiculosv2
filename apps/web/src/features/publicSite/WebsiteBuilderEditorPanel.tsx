@@ -26,7 +26,7 @@ export function WebsiteBuilderEditorPanel({
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   return (
-    <div className="space-y-3 p-4 pb-36 sm:p-5">
+    <div className="space-y-4 p-4 pb-36 sm:p-6">
       {groups.checklist.map((item, index) => (
         <WebsiteBuilderAccordionCard
           isOpen={openId === item.id}
@@ -37,10 +37,10 @@ export function WebsiteBuilderEditorPanel({
         />
       ))}
 
-      <div className="border-t border-dashed border-border/70 pt-4">
+      <div className="border-t border-dashed border-border/70 pt-5">
         <button
           aria-expanded={advancedOpen}
-          className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-left transition-colors hover:bg-muted/30 active:bg-muted/40"
+          className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-muted/40 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted/70"
           onClick={() => setAdvancedOpen((current) => !current)}
           type="button"
         >
@@ -59,7 +59,7 @@ export function WebsiteBuilderEditorPanel({
         </button>
 
         {advancedOpen ? (
-          <div className="mt-3 space-y-3">
+          <div className="mt-4 space-y-4">
             {groups.advanced.map((item) => (
               <WebsiteBuilderAccordionCard
                 isOpen={openId === item.id}
@@ -89,14 +89,14 @@ function WebsiteBuilderAccordionCard({
   return (
     <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-all">
       <button
-        className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-muted/30 active:bg-muted/40"
+        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-muted/30 active:bg-muted/40"
         onClick={onToggle}
         type="button"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3.5">
           <div
             className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors",
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors",
               isOpen
                 ? "bg-primary/15 text-primary"
                 : "bg-muted/50 text-muted-foreground",
@@ -140,7 +140,7 @@ function WebsiteBuilderAccordionCard({
         )}
       >
         {isOpen ? (
-          <div className="border-t border-border/40 bg-muted/5 p-5">
+          <div className="border-t border-border/40 bg-muted/15 p-5 sm:p-6">
             {item.children}
           </div>
         ) : null}

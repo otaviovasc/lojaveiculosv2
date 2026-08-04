@@ -62,7 +62,7 @@ export function CrmLeadCard({
       onDragStart={handleDragStart}
     >
       {/* Defined card header */}
-      <header className="-mx-4 -mt-4 flex items-center gap-2 border-b border-line/50 bg-line/10 px-4 py-2.5">
+      <header className="-mx-4 -mt-4 rounded-t-[7px] flex items-center gap-2 border-b border-line/50 bg-line/10 px-4 py-2.5">
         <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line/50 bg-app-elevated text-xs font-black text-app-text">
           {leadInitials}
         </span>

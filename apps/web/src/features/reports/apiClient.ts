@@ -1,8 +1,8 @@
 import { readApiJson } from "../../lib/apiErrors";
-import type { ReportsAuth, ReportsDashboard } from "./types";
+import type { ReportsAuth, ReportsDashboard, ReportsPeriod } from "./types";
 
 export type ReportsApi = {
-  getDashboard: () => Promise<ReportsDashboard>;
+  getDashboard: (period: ReportsPeriod) => Promise<ReportsDashboard>;
 };
 
 export type CreateReportsApiOptions = {
@@ -17,10 +17,16 @@ export function createReportsApi({
   fetch,
 }: CreateReportsApiOptions): ReportsApi {
   return {
-    getDashboard: () =>
-      fetch(createEndpoint("/analytics/dashboard", baseUrl), {
-        headers: createHeaders(auth),
-      }).then(readJson<ReportsDashboard>),
+    getDashboard: (period) =>
+      fetch(
+        createEndpoint(
+          `/analytics/dashboard?from=${period.from}&to=${period.to}`,
+          baseUrl,
+        ),
+        {
+          headers: createHeaders(auth),
+        },
+      ).then(readJson<ReportsDashboard>),
   };
 }
 

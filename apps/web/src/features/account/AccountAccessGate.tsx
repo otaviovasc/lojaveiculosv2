@@ -1,14 +1,12 @@
-import { Loader2, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { AppBootScreen } from "../../components/ui";
 import {
   FeatureActionButton,
   FeaturePageShell,
 } from "../../components/ui/FeatureLayout";
-import {
-  FeatureAlert,
-  FeatureLoadingState,
-} from "../../components/ui/FeatureStates";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SessionBootstrap } from "./apiClient";
 import {
@@ -107,14 +105,10 @@ export function AccountAccessGate({
 
   if (!bootstrap || !isAllowed(access, bootstrap)) {
     return (
-      <FeaturePageShell
-        className="min-h-screen max-w-xl justify-center"
-        variant="plain"
-      >
-        <FeatureLoadingState icon={Loader2} title="Carregando sua conta">
-          <span className="sr-only">Aguarde</span>
-        </FeatureLoadingState>
-      </FeaturePageShell>
+      <AppBootScreen
+        description="Estamos preparando seu acesso à loja."
+        title="Carregando sua conta"
+      />
     );
   }
 

@@ -1,17 +1,19 @@
 .crm-whatsapp-bot-docs {
-  background: var(--color-panel);
+  background: color-mix(in srgb, var(--color-panel) 90%, transparent);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--surface-radius-xl, var(--radius-md));
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.04);
   display: grid;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 1rem;
+  padding: 1.25rem;
 }
 
 .crm-whatsapp-bot-doc-panel summary > span {
   align-items: center;
-  background: var(--color-accent-soft);
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
   border: 1px solid
-    color-mix(in srgb, var(--color-accent) 28%, var(--color-line));
+    color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
   border-radius: var(--radius-sm);
   color: var(--color-accent-strong);
   display: inline-flex;
@@ -37,7 +39,7 @@
 
 .crm-whatsapp-bot-docs-grid {
   grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .crm-whatsapp-bot-action-list,
@@ -51,13 +53,18 @@
 }
 
 .crm-whatsapp-bot-docs-grid article {
-  background: var(--color-app);
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
-  padding: 1rem;
+  padding: 1.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  transition: border-color 0.2s ease;
+}
+
+.crm-whatsapp-bot-docs-grid article:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
 }
 
 .crm-whatsapp-bot-docs-grid h3 {
@@ -65,8 +72,9 @@
   color: var(--color-text);
   display: inline-flex;
   font-size: var(--font-size-sm);
-  font-weight: 800;
-  gap: 0.5rem;
+  font-weight: 950;
+  gap: 0.55rem;
+  letter-spacing: -0.01em;
 }
 
 .crm-whatsapp-bot-docs-grid h3 svg {
@@ -76,20 +84,20 @@
 }
 
 .crm-whatsapp-bot-docs-grid code {
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
+  background: color-mix(in srgb, var(--color-text) 6%, var(--color-app));
+  color: var(--color-text);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: var(--font-size-xs);
-  padding: 0.5rem;
+  padding: 0.6rem 0.75rem;
   overflow-x: auto;
 }
 
 .crm-whatsapp-bot-docs p {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 500;
+  font-weight: 750;
   line-height: 1.5;
   overflow-wrap: anywhere;
   margin: 0;
@@ -97,28 +105,35 @@
 
 .crm-whatsapp-bot-doc-panel {
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-panel);
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.03);
 }
 
 .crm-whatsapp-bot-doc-panel summary {
-  background: var(--color-app);
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
   cursor: pointer;
   list-style: none;
-  padding: 1rem 1.5rem;
+  padding: 1.15rem 1.35rem;
   display: grid;
   gap: 1rem;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   user-select: none;
+  transition: background 0.2s ease;
+}
+
+.crm-whatsapp-bot-doc-panel summary:hover {
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-panel));
 }
 
 .crm-whatsapp-bot-doc-chevron {
   color: var(--color-muted);
-  height: 1rem;
-  transition: transform var(--motion-duration-base) var(--motion-ease-standard);
-  width: 1rem;
+  height: 1.15rem;
+  transition: transform var(--motion-duration-base, 0.2s)
+    var(--motion-ease-standard, ease);
+  width: 1.15rem;
 }
 
 .crm-whatsapp-bot-doc-panel[open] .crm-whatsapp-bot-doc-chevron {
@@ -131,16 +146,17 @@
 
 .crm-whatsapp-bot-doc-panel summary h3 {
   color: var(--color-text);
-  font-size: var(--font-size-base);
-  font-weight: 800;
+  font-size: var(--font-size-sm);
+  font-weight: 950;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .crm-whatsapp-bot-doc-panel summary p {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 500;
-  margin: 0.25rem 0 0 0;
+  font-weight: 750;
+  margin: 0.2rem 0 0 0;
 }
 
 .crm-whatsapp-bot-doc-panel[open] summary {
@@ -150,16 +166,17 @@
 .crm-whatsapp-bot-doc-panel-body {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem;
+  gap: 1.25rem;
+  padding: 1.35rem;
   background: var(--color-panel);
 }
 
 .crm-whatsapp-bot-endpoint-card {
-  background: var(--color-blue-soft);
-  border: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
   border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
+  padding: 1.15rem 1.35rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -173,33 +190,34 @@
 }
 
 .crm-whatsapp-bot-method {
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-  color: var(--color-inverse);
-  background: var(--color-blue-start);
-  padding: 0.2rem 0.5rem;
+  font-size: calc(var(--font-size-xs) * 0.92);
+  font-weight: 950;
+  color: var(--color-accent-strong-foreground);
+  background: var(--color-accent-strong);
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-sm);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .crm-whatsapp-bot-path {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: var(--font-size-sm);
+  font-weight: 850;
   color: var(--color-text);
 }
 
 .crm-whatsapp-bot-endpoint-card span {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 500;
+  font-weight: 750;
 }
 
 .crm-whatsapp-bot-action-list div,
 .crm-whatsapp-bot-note-grid article {
-  background: var(--color-app);
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
+  padding: 1.15rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -208,12 +226,12 @@
 .crm-whatsapp-bot-action-list strong,
 .crm-whatsapp-bot-note-grid strong {
   font-size: var(--font-size-sm);
-  font-weight: 800;
+  font-weight: 950;
   color: var(--color-text);
 }
 
 .crm-whatsapp-bot-action-list span {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: var(--font-size-xs);
   color: var(--color-muted);
 }
@@ -240,7 +258,7 @@
 .crm-whatsapp-bot-examples h3,
 .crm-whatsapp-bot-events h3 {
   font-size: var(--font-size-sm);
-  font-weight: 800;
+  font-weight: 950;
   color: var(--color-text);
   margin: 0;
 }
@@ -253,13 +271,13 @@
 }
 
 .crm-whatsapp-bot-docs pre {
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
+  color: var(--color-text);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: var(--font-size-xs);
-  padding: 1rem;
+  padding: 1.15rem;
   overflow-x: auto;
   margin: 0;
 }
@@ -272,18 +290,19 @@
   color: var(--color-muted);
   cursor: pointer;
   display: inline-flex;
-  height: 2rem;
+  height: 2.15rem;
   justify-content: center;
-  width: 2rem;
+  width: 2.15rem;
   transition: all 0.2s ease;
 }
 
 .crm-whatsapp-bot-copy:hover {
-  background: var(--color-app-elevated);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-app));
   color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
 }
 
 .crm-whatsapp-bot-copy svg {
-  height: 0.95rem;
-  width: 0.95rem;
+  height: 1rem;
+  width: 1rem;
 }

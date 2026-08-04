@@ -1,5 +1,6 @@
 import { Pencil, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type {
   CrmWhatsappQuickMessage,
   CrmWhatsappQuickMessageKind,
@@ -18,13 +19,16 @@ export function KindButton({
   selected: CrmWhatsappQuickMessageKind;
   setKind: (kind: CrmWhatsappQuickMessageKind) => void;
 }) {
+  const isSelected = kind === selected;
   return (
     <button
-      className={kind === selected ? "active" : ""}
+      className={isSelected ? "active" : ""}
       onClick={() => setKind(kind)}
       type="button"
     >
-      {icon}
+      <AnimatedIconSwap stateKey={isSelected} variant="pop">
+        {icon}
+      </AnimatedIconSwap>
       {children}
     </button>
   );

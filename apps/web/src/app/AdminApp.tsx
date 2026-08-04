@@ -1,7 +1,8 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { DashboardHome } from "../components/DashboardHome";
 import { AppShell } from "../components/AppShell";
 import { ModulePlaceholder } from "../components/ModulePlaceholder";
+import { DelayedFallback } from "../components/ui/DelayedFallback";
 import { FeatureLoadingState } from "../components/ui/FeatureStates";
 import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { useOptionalAccountSession } from "../features/account/accountSession";
@@ -24,6 +25,7 @@ import {
   SimulationsPage,
   StorefrontCustomizationModule,
 } from "./AdminAppLazyModules";
+import { prefetchAdminModules } from "./AdminAppLazyModules";
 import { moduleDefinitions } from "./moduleDefinitions";
 import {
   getModuleEntitlement,
@@ -49,76 +51,95 @@ export function AdminApp() {
   const owner = isActiveStoreOwner(accountSession);
   const managedByAgency = isActiveStoreAgencyManaged(accountSession);
 
+  useEffect(() => {
+    const schedule =
+      typeof window !== "undefined" && "requestIdleCallback" in window
+        ? window.requestIdleCallback
+        : (callback: () => void) => window.setTimeout(callback, 2000);
+    schedule(() => prefetchAdminModules());
+  }, []);
+
   return (
     <AppShell activeModule={activeModule} onNavigate={navigate}>
       <AppErrorBoundary layout="fill">
-        <Suspense fallback={<FeatureLoadingState title="Carregando módulo" />}>
-          {owner &&
-          !moduleEntitlement.canUse &&
-          moduleEntitlement.featureKey ? (
-            <BillingUpgradePanel
-              featureKey={moduleEntitlement.featureKey}
-              managedByAgency={managedByAgency}
-              module={activeModule}
-              onOpenBilling={() => navigate("billing")}
-            />
-          ) : !modulePermission.canView ? (
-            <PermissionRestrictedPanel
-              title={modulePermission.title}
-              {...(modulePermission.description
-                ? { description: modulePermission.description }
-                : {})}
-            />
-          ) : activeSurface === "dashboard" ? (
-            <DashboardHome onNavigate={navigate} />
-          ) : activeSurface === "inventory" ? (
-            <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
-          ) : activeSurface === "checklists" ? (
-            <ChecklistModule />
-          ) : activeSurface === "finance-auto-entries" ? (
-            <AutoEntriesWorkspace />
-          ) : activeSurface === "crm-leads" ? (
-            <CrmModule routeSurface="leads" />
-          ) : activeSurface === "sales" ? (
-            <SalesModule />
-          ) : activeSurface === "crm-whatsapp" ? (
-            <CrmModule routeSurface="whatsapp" />
-          ) : activeSurface === "billing" ? (
-            <BillingModule />
-          ) : activeSurface === "documents" ? (
-            <DocumentsModule />
-          ) : activeSurface === "reports" ? (
-            <ReportsModule />
-          ) : activeSurface === "finance-expenses" ? (
-            <FinanceModule defaultActiveType="expense" onNavigate={navigate} />
-          ) : activeSurface === "finance-commissions" ? (
-            <FinanceModule
-              defaultActiveType="commission"
-              onNavigate={navigate}
-            />
-          ) : activeSurface === "storefront-design" ? (
-            <StorefrontCustomizationModule
-              key="customize"
-              initialTab="design"
-            />
-          ) : activeSurface === "storefront-pages" ? (
-            <StorefrontCustomizationModule
-              key="custom-pages"
-              initialTab="pages"
-            />
-          ) : activeSurface === "public-api" ? (
-            <PublicApiModule />
-          ) : activeSurface === "marketplaces" ? (
-            <MarketplaceModule />
-          ) : activeSurface === "fiscal" ? (
-            <FiscalModule />
-          ) : activeSurface === "settings" ? (
-            <SettingsModule key="settings" />
-          ) : activeSurface === "simulations" ? (
-            <SimulationsPage />
-          ) : (
-            <ModulePlaceholder module={activeModule} />
-          )}
+        <Suspense
+          fallback={
+            <DelayedFallback>
+              <FeatureLoadingState title={`Carregando ${activeModule.title}`} />
+            </DelayedFallback>
+          }
+        >
+          <div className="module-content-enter" key={activeModuleId}>
+            {owner &&
+            !moduleEntitlement.canUse &&
+            moduleEntitlement.featureKey ? (
+              <BillingUpgradePanel
+                featureKey={moduleEntitlement.featureKey}
+                managedByAgency={managedByAgency}
+                module={activeModule}
+                onOpenBilling={() => navigate("billing")}
+              />
+            ) : !modulePermission.canView ? (
+              <PermissionRestrictedPanel
+                title={modulePermission.title}
+                {...(modulePermission.description
+                  ? { description: modulePermission.description }
+                  : {})}
+              />
+            ) : activeSurface === "dashboard" ? (
+              <DashboardHome onNavigate={navigate} />
+            ) : activeSurface === "inventory" ? (
+              <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
+            ) : activeSurface === "checklists" ? (
+              <ChecklistModule />
+            ) : activeSurface === "finance-auto-entries" ? (
+              <AutoEntriesWorkspace />
+            ) : activeSurface === "crm-leads" ? (
+              <CrmModule routeSurface="leads" />
+            ) : activeSurface === "sales" ? (
+              <SalesModule />
+            ) : activeSurface === "crm-whatsapp" ? (
+              <CrmModule routeSurface="whatsapp" />
+            ) : activeSurface === "billing" ? (
+              <BillingModule />
+            ) : activeSurface === "documents" ? (
+              <DocumentsModule />
+            ) : activeSurface === "reports" ? (
+              <ReportsModule />
+            ) : activeSurface === "finance-expenses" ? (
+              <FinanceModule
+                defaultActiveType="expense"
+                onNavigate={navigate}
+              />
+            ) : activeSurface === "finance-commissions" ? (
+              <FinanceModule
+                defaultActiveType="commission"
+                onNavigate={navigate}
+              />
+            ) : activeSurface === "storefront-design" ? (
+              <StorefrontCustomizationModule
+                key="customize"
+                initialTab="design"
+              />
+            ) : activeSurface === "storefront-pages" ? (
+              <StorefrontCustomizationModule
+                key="custom-pages"
+                initialTab="pages"
+              />
+            ) : activeSurface === "public-api" ? (
+              <PublicApiModule />
+            ) : activeSurface === "marketplaces" ? (
+              <MarketplaceModule />
+            ) : activeSurface === "fiscal" ? (
+              <FiscalModule />
+            ) : activeSurface === "settings" ? (
+              <SettingsModule key="settings" />
+            ) : activeSurface === "simulations" ? (
+              <SimulationsPage />
+            ) : (
+              <ModulePlaceholder module={activeModule} />
+            )}
+          </div>
         </Suspense>
       </AppErrorBoundary>
     </AppShell>

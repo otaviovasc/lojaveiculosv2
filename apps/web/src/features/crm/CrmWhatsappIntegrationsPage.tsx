@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen, Bot, Loader2, TriangleAlert } from "lucide-react";
 import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
@@ -8,6 +8,11 @@ import type {
   CrmWhatsappBotIntegration,
   CrmWhatsappIntegrationView,
 } from "./crmWhatsappIntegrationTypes";
+import {
+  peekWhatsappScopedCache,
+  WHATSAPP_BOT_INTEGRATION_CACHE_KEY,
+  writeWhatsappScopedCache,
+} from "./crmWhatsappScopedCache";
 import {
   BotIntegrationForm,
   type CrmWhatsappIntegrationsPageProps,
@@ -28,14 +33,23 @@ export function CrmWhatsappIntegrationsPage({
 }: CrmWhatsappIntegrationsPageProps) {
   const [activeView, setActiveView] =
     useState<CrmWhatsappIntegrationView>("configuration");
-  const [enabled, setEnabled] = useState(false);
+  const [initialIntegration] = useState(() =>
+    peekWhatsappScopedCache<CrmWhatsappBotIntegration>(
+      api,
+      WHATSAPP_BOT_INTEGRATION_CACHE_KEY,
+    ),
+  );
+  const [enabled, setEnabled] = useState(initialIntegration?.enabled ?? false);
   const [error, setError] = useState<string | null>(null);
   const [integration, setIntegration] =
-    useState<CrmWhatsappBotIntegration | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+    useState<CrmWhatsappBotIntegration | null>(initialIntegration ?? null);
+  const hasIntegrationDataRef = useRef(initialIntegration !== undefined);
+  const [isLoading, setIsLoading] = useState(initialIntegration === undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [secretDraft, setSecretDraft] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState(
+    initialIntegration?.webhookUrl ?? "",
+  );
 
   const applyIntegration = useCallback((next: CrmWhatsappBotIntegration) => {
     setEnabled(next.enabled);
@@ -48,10 +62,16 @@ export function CrmWhatsappIntegrationsPage({
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    if (!hasIntegrationDataRef.current) setIsLoading(true);
     setError(null);
     try {
       const response = await api.getBotIntegration();
+      hasIntegrationDataRef.current = true;
+      writeWhatsappScopedCache(
+        api,
+        WHATSAPP_BOT_INTEGRATION_CACHE_KEY,
+        response.integration,
+      );
       applyIntegration(response.integration);
     } catch (caught) {
       setError(formatApiErrorDisplay(caught, "Nao foi possivel carregar bot."));

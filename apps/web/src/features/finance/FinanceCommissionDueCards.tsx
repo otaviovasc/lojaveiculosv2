@@ -24,7 +24,6 @@ export function FinanceCommissionDueCards({
         }
         icon={Clock}
         label="Comissões a pagar — esta semana"
-        tone="warning"
         value={formatCurrency(summary.weekCents)}
       />
       <FeatureStatCard
@@ -35,7 +34,6 @@ export function FinanceCommissionDueCards({
         }
         icon={CalendarDays}
         label="Comissões a pagar — este mês"
-        tone="accent"
         value={formatCurrency(summary.monthCents)}
       />
     </section>

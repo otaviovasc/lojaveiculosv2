@@ -2,9 +2,10 @@
    ---------------------------------------------------------------------------
    The layout leans on a small set of "tone" tokens so every origin (venda,
    financiamento, documentação, seguro, consórcio) carries a consistent colour
-   identity across the navigator, the coverage summary, the domain headers and
-   the rule cards. Tones map onto the per-module accents defined in tokens.css
-   so the whole surface stays theme-aware in light and dark mode. */
+   accent in icon chips, status dots and eyebrows, while surfaces (tabs, domain
+   and rule card headers, stat tiles) stay on neutral panel colours. Tones map
+   onto the per-module accents defined in tokens.css so the whole surface stays
+   theme-aware in light and dark mode. */
 
 .ae-tone {
   --tone: var(--color-line-strong);
@@ -140,23 +141,10 @@
   outline: none;
 }
 
-.ae-tab__icon {
-  align-items: center;
-  background: color-mix(in srgb, var(--tone-soft) 70%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, var(--tone) 26%, transparent);
-  border-radius: var(--radius-md);
-  color: var(--tone-strong);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 1.75rem;
-  justify-content: center;
-  width: 1.75rem;
-}
-
 .ae-tab__label {
   flex: 1 1 100%;
   font-size: var(--font-size-xs);
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.15;
   min-width: 0;
@@ -172,7 +160,7 @@
   display: inline-flex;
   flex: 0 0 auto;
   font-size: var(--font-size-xs);
-  font-weight: 900;
+  font-weight: 700;
   height: 1.25rem;
   justify-content: center;
   margin-inline-start: auto;
@@ -192,33 +180,16 @@
   background: var(--color-green-start);
 }
 
-/* The active tab mirrors the domain-card header: a full band painted in the
-   origin tone with the icon, count and dot rendered on-tone, instead of a
-   plain panel background where only the icon chip carried the colour. */
+/* The active tab stays on the neutral panel surface; the origin tone shows up
+   only as a small icon tint and the status dot, keeping the tab row calm. */
 .ae-tab.is-active {
-  background: var(--tone);
-  border-color: transparent;
-  color: var(--tone-on);
-}
-
-.ae-tab.is-active .ae-tab__icon {
-  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
-  border-color: color-mix(in srgb, var(--tone-on) 28%, transparent);
-  color: var(--tone-on);
-}
-
-.ae-tab.is-active .ae-tab__count {
-  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
-  border-color: color-mix(in srgb, var(--tone-on) 28%, transparent);
-  color: var(--tone-on);
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, var(--tone) 45%, var(--color-line));
+  color: var(--color-text);
 }
 
 .ae-tab.is-active .ae-tab__dot {
-  background: color-mix(in srgb, var(--tone-on) 55%, transparent);
-}
-
-.ae-tab.is-active .ae-tab__dot.is-ready {
-  background: var(--tone-on);
+  background: var(--tone);
 }
 
 @media (min-width: 64rem) {
@@ -231,11 +202,6 @@
     gap: var(--app-space-xs);
     justify-content: center;
     padding: var(--app-space-sm);
-  }
-
-  .ae-tab__icon {
-    height: 2rem;
-    width: 2rem;
   }
 
   .ae-tab__label {
@@ -282,11 +248,7 @@
 }
 
 .ae-summary__bar-fill {
-  background: linear-gradient(
-    90deg,
-    var(--color-accent),
-    var(--color-accent-strong)
-  );
+  background: var(--color-accent);
   border-radius: inherit;
   display: block;
   height: 100%;
@@ -295,7 +257,7 @@
 .ae-summary__stats {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -315,23 +277,10 @@
   min-width: 0;
 }
 
-.auto-entries-domain__icon {
-  align-items: center;
-  background: color-mix(in srgb, var(--tone-soft) 70%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, var(--tone) 30%, transparent);
-  border-radius: var(--radius-md);
-  color: var(--tone-strong);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 2.75rem;
-  justify-content: center;
-  width: 2.75rem;
-}
-
 .auto-entries-domain__eyebrow {
   color: var(--tone-strong);
   font-size: var(--font-size-xs);
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -339,7 +288,7 @@
 .auto-entries-domain__title {
   color: var(--color-text);
   font-size: var(--font-size-lg);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.1;
   margin-top: 0.125rem;
 }
@@ -355,9 +304,9 @@
 /* Domain cards                                                                */
 /* -------------------------------------------------------------------------- */
 
-/* The header mirrors the CRM kanban column header: a full-width band painted
-   in the domain tone, with the icon, title and description rendered on-tone
-   instead of the old tinted icon + plain text under a tone border-top.
+/* Flat section header: hairline below, origin identity carried only by the
+   solid tone icon chip (Linear/Notion-style category marker). No painted
+   bands, no rails, no nested tiles inside the card body.
    The card is a full-height flex column so paired cards in a panel grid end
    at the same position, with the save action pinned to the bottom. */
 .auto-entry-domain-card {
@@ -369,8 +318,9 @@
 }
 
 .auto-entry-domain-card__header {
-  background: var(--tone);
-  color: var(--tone-on);
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
   padding: var(--app-space-md) var(--app-space-lg);
 }
 
@@ -378,27 +328,14 @@
   flex: 1 1 auto;
 }
 
-.auto-entry-domain-card__icon {
-  align-items: center;
-  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tone-on) 28%, transparent);
-  border-radius: var(--radius-md);
-  color: var(--tone-on);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 2.5rem;
-  justify-content: center;
-  width: 2.5rem;
-}
-
 .auto-entry-domain-card__header .auto-entry-domain-card__title {
-  color: var(--tone-on);
+  color: var(--color-text);
   font-size: var(--font-size-lg);
   line-height: 1.15;
 }
 
 .auto-entry-domain-card__header .auto-entry-domain-card__description {
-  color: color-mix(in srgb, var(--tone-on) 84%, transparent);
+  color: var(--color-muted);
 }
 
 .auto-entry-domain-card__content {
@@ -420,42 +357,17 @@
 /* Tone-tinted tile for read-only values inside domain cards. Tone fallbacks
    keep the tile neutral when it renders outside an origin context, such as
    inside dialogs portaled to the document root. */
+/* Flat stat: icon chip + label/value with no enclosing tile, so card bodies
+   read as open sections instead of cards nested inside cards. */
 .ae-stat {
   align-items: center;
-  background: color-mix(
-    in srgb,
-    var(--tone-soft, var(--color-app-elevated)) 45%,
-    var(--color-panel)
-  );
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--tone, var(--color-line-strong)) 18%,
-      var(--color-line)
-    );
-  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
+  border-radius: 0;
   display: flex;
   gap: var(--app-space-sm);
   min-width: 0;
-  padding: var(--app-space-sm) var(--app-space-md);
-}
-
-.ae-stat__icon {
-  align-items: center;
-  background: color-mix(
-    in srgb,
-    var(--tone, var(--color-muted)) 12%,
-    var(--color-panel)
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--tone, var(--color-muted)) 24%, transparent);
-  border-radius: var(--radius-md);
-  color: var(--tone-strong, var(--color-muted));
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 2.25rem;
-  justify-content: center;
-  width: 2.25rem;
+  padding: var(--app-space-xs) 0;
 }
 
 .ae-stat__body {
@@ -466,7 +378,7 @@
   color: var(--color-muted);
   display: block;
   font-size: var(--font-size-xs);
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.06em;
   line-height: 1.2;
   text-transform: uppercase;
@@ -476,7 +388,7 @@
   color: var(--color-text);
   display: block;
   font-size: var(--font-size-sm);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.3;
   margin-top: 0.125rem;
   overflow-wrap: anywhere;
@@ -506,23 +418,19 @@
   margin-top: 0.125rem;
 }
 
-/* Tinted row used by the rules overview, saved extra commissions and the
-   documentation tier editor. */
+/* Flat row used by the rules overview, saved extra commissions and the
+   documentation tier editor: hairline separators instead of nested tiles. */
 .ae-rule-item {
-  background: color-mix(
-    in srgb,
-    var(--tone-soft, var(--color-app-elevated)) 35%,
-    var(--color-panel)
-  );
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--tone, var(--color-line-strong)) 16%,
-      var(--color-line)
-    );
-  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-line);
+  border-radius: 0;
   min-width: 0;
-  padding: var(--app-space-md);
+  padding: var(--app-space-sm) 0;
+}
+
+.ae-rule-item:last-child {
+  border-bottom: none;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -537,7 +445,7 @@
 }
 
 .auto-entry-rule-card:hover {
-  border-color: var(--tone);
+  border-color: var(--color-line-strong);
   box-shadow: var(--shadow-raised);
 }
 
@@ -546,36 +454,24 @@
 }
 
 .auto-entry-rule-card__header {
-  background: var(--tone);
-  color: var(--tone-on);
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
   padding: var(--app-space-sm) var(--app-space-md);
 }
 
-.auto-entry-rule-card__badge {
-  align-items: center;
-  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tone-on) 28%, transparent);
-  border-radius: var(--radius-md);
-  color: var(--tone-on);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 2.25rem;
-  justify-content: center;
-  width: 2.25rem;
-}
-
 .auto-entry-rule-card__header .auto-entry-rule-card__title {
-  color: var(--tone-on);
+  color: var(--color-text);
 }
 
 .auto-entry-rule-card__header .auto-entry-rule-card__meta {
-  color: var(--tone-on);
+  color: var(--color-muted);
 }
 
 .auto-entry-rule-card__header .auto-entry-rule-card__status {
   background: transparent;
-  border-color: color-mix(in srgb, var(--tone-on) 36%, transparent);
-  color: var(--tone-on);
+  border-color: var(--color-line);
+  color: var(--color-muted);
 }
 
 .auto-entry-rule-card__header .auto-entry-rule-card__status > span {

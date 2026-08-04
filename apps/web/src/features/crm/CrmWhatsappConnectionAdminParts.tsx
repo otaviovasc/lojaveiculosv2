@@ -9,6 +9,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type {
   CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappProviderConnection,
@@ -68,13 +69,15 @@ export function ConnectionStatusCard({
       data-status={statusTone}
     >
       <span className="crm-whatsapp-connection-status-icon">
-        {statusTone === "connected" ? (
-          <Wifi aria-hidden="true" />
-        ) : statusTone === "error" ? (
-          <AlertTriangle aria-hidden="true" />
-        ) : (
-          <WifiOff aria-hidden="true" />
-        )}
+        <AnimatedIconSwap stateKey={statusTone} variant="scale-fade">
+          {statusTone === "connected" ? (
+            <Wifi aria-hidden="true" />
+          ) : statusTone === "error" ? (
+            <AlertTriangle aria-hidden="true" />
+          ) : (
+            <WifiOff aria-hidden="true" />
+          )}
+        </AnimatedIconSwap>
       </span>
       <div>
         <span>{readCrmWhatsappProviderLabel(connection.provider)}</span>
@@ -93,7 +96,12 @@ export function ConnectionStatusCard({
           title="Atualizar status"
           type="button"
         >
-          <RefreshCw aria-hidden="true" />
+          <AnimatedIconSwap stateKey={isRefreshing} variant="rotate-spin">
+            <RefreshCw
+              aria-hidden="true"
+              className={isRefreshing ? "animate-spin" : ""}
+            />
+          </AnimatedIconSwap>
         </button>
       ) : null}
     </section>

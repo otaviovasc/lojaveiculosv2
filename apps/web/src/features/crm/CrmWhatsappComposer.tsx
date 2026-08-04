@@ -1,3 +1,4 @@
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { Loader2, Reply, Send, X } from "lucide-react";
 import { CrmWhatsappAttachMenu } from "./CrmWhatsappAttachMenu";
 import { CrmWhatsappAudioRecorderButton } from "./CrmWhatsappAudioRecorderButton";
@@ -244,23 +245,33 @@ export function MessageComposer({
             value={text}
           />
         </div>
-        {isSubmitting || canSend ? (
-          <button
-            aria-label="Enviar mensagem"
-            className="crm-icon-action crm-icon-action-active crm-whatsapp-send-action"
-            disabled={effectiveDisabled || !canSend}
-            title="Enviar"
-            type="submit"
-          >
-            {isSubmitting ? <Loader2 className="crm-spin" /> : <Send />}
-          </button>
-        ) : capabilities.allowAudio ? (
-          <CrmWhatsappAudioRecorderButton
-            disabled={effectiveDisabled}
-            primary
-            onRecorded={(file) => setFiles((current) => [...current, file])}
-          />
-        ) : null}
+        <AnimatedIconSwap
+          stateKey={isSubmitting ? "submitting" : canSend ? "send" : "audio"}
+          variant="pop"
+        >
+          {isSubmitting || canSend ? (
+            <button
+              aria-label="Enviar mensagem"
+              className="crm-icon-action crm-icon-action-active crm-whatsapp-send-action"
+              disabled={effectiveDisabled || !canSend}
+              title="Enviar"
+              type="submit"
+            >
+              <AnimatedIconSwap
+                stateKey={isSubmitting ? "loading" : "send"}
+                variant="rotate-spin"
+              >
+                {isSubmitting ? <Loader2 className="crm-spin" /> : <Send />}
+              </AnimatedIconSwap>
+            </button>
+          ) : capabilities.allowAudio ? (
+            <CrmWhatsappAudioRecorderButton
+              disabled={effectiveDisabled}
+              primary
+              onRecorded={(file) => setFiles((current) => [...current, file])}
+            />
+          ) : null}
+        </AnimatedIconSwap>
       </div>
     </form>
   );

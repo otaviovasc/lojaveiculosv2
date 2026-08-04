@@ -53,8 +53,6 @@ describe("WhatsappToolbar", () => {
         sessionCount={3}
         sessionCounts={createCounts()}
         statusFilter=""
-        statusLabel="ZAPI conectado"
-        statusTone="online"
         unreadOnly={false}
         {...callbacks}
       />,
@@ -62,7 +60,6 @@ describe("WhatsappToolbar", () => {
 
     expect(screen.getByRole("heading", { name: "CRM" })).toBeInTheDocument();
     expect(screen.getByText("3 conversas")).toBeInTheDocument();
-    expect(screen.getByText("ZAPI conectado")).toBeInTheDocument();
     expect(
       screen.queryByLabelText("Filtrar por status"),
     ).not.toBeInTheDocument();

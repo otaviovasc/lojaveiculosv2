@@ -13,6 +13,7 @@ import {
   analyticsServices,
   type AnalyticsServices,
 } from "./analyticsServices.js";
+import { parseDashboardPeriod } from "./dashboardPeriod.js";
 
 export type AnalyticsContextFactory = (
   context: Context,
@@ -33,8 +34,14 @@ export function createAnalyticsFeature(
 
   feature.get("/dashboard", async (context) =>
     handleAnalytics(context, async () => {
+      const period = parseDashboardPeriod({
+        from: context.req.query("from"),
+        to: context.req.query("to"),
+      });
       const serviceContext = await createUserContext(context, contextFactory);
-      return context.json(await services.getDashboard(serviceContext));
+      return context.json(
+        await services.getDashboard(serviceContext, { period }),
+      );
     }),
   );
 
