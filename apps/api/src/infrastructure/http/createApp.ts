@@ -21,6 +21,7 @@ import { createSalesFeature } from "../../features/sales/controllers/sales.contr
 import { createRolesFeature } from "../../features/identity/controllers/roles.controller.js";
 import type { CreateAppOptions } from "./createAppOptions.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
+import { createHttpAccountContextFactory } from "./createHttpAccountContextFactory.js";
 import { createAgencyAccountContextFactory } from "./createAgencyAccountContextFactory.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
@@ -51,6 +52,7 @@ export function createApp(options: CreateAppOptions = {}) {
     ...(options.storeAccessRepository
       ? { repository: options.storeAccessRepository }
       : {}),
+    ...(options.logger ? { logger: options.logger } : {}),
   };
   const storefrontOptions = options.publicStorefrontRepository
     ? {
@@ -65,6 +67,7 @@ export function createApp(options: CreateAppOptions = {}) {
       }
     : {};
   const contextFactory = (c: Context) => createHttpServiceContext(c, ctxConfig);
+  const accountContextFactory = createHttpAccountContextFactory(options);
   app.route("/", docsFeature);
   installHealthRoutes(app, options.readiness);
   installAccountProvisioningRoutes(app, options, contextFactory);
@@ -188,6 +191,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/internal",
     createInternalMonitoringFeature({
+      accountContextFactory,
       contextFactory,
       ...(options.internalMonitoringServices
         ? { services: options.internalMonitoringServices }

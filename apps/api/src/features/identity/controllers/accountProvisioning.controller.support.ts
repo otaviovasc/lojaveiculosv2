@@ -11,6 +11,7 @@ import {
 } from "../../../domains/identity/services/AccountProvisioningService/serviceSupport.js";
 import type { createOwnerStoreSchema } from "./accountProvisioning.controller.schemas.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
+import { observabilitySchemas } from "../../../shared/observabilityOntology.js";
 import {
   HttpContextAuthenticationError,
   HttpContextAuthorizationError,
@@ -206,11 +207,16 @@ function logValidationFailure(
   console.info(
     JSON.stringify({
       component: "http",
+      correlationId: context.req.header("x-correlation-id") ?? requestId,
       event: "request.validation_failed",
       issues: error.issues,
+      level: "warn",
       method: context.req.method,
       path: context.req.path,
       requestId,
+      schema: observabilitySchemas.httpLog,
+      service: "api",
+      timestamp: new Date().toISOString(),
     }),
   );
 }

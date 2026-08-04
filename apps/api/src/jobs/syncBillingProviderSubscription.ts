@@ -20,6 +20,11 @@ loadLocalEnv();
 const defaultStoreId = "66666666-6666-4666-8666-666666666666";
 const defaultTenantId = "77777777-7777-4777-8777-777777777777";
 const billingTypes = ["BOLETO", "CREDIT_CARD", "PIX", "UNDEFINED"] as const;
+const logger = createConsoleServiceLogger({
+  component: "job.billing-provider-subscription",
+  environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+  service: "api",
+});
 
 async function main(): Promise<void> {
   const sql = postgres(requireEnv("DATABASE_URL"), { max: 2 });
@@ -31,7 +36,7 @@ async function main(): Promise<void> {
     const result = await syncBillingProviderSubscription(
       createServiceContext({
         actor: { id: "billing_provider_sync_smoke", kind: "system" },
-        logger: createConsoleServiceLogger(),
+        logger,
         permissions: ["billing.manage"],
         request: { requestId: `billing_provider_sync_${Date.now()}` },
         source: { component: "billing-provider-sync-smoke", service: "api" },
@@ -51,22 +56,16 @@ async function main(): Promise<void> {
       },
     );
 
-    console.log(
-      JSON.stringify(
-        {
-          billingType: result.billingType,
-          chargeTotalCents: result.chargeTotalCents,
-          nextDueDate: result.nextDueDate,
-          provider: result.provider,
-          providerCustomerId: maskProviderId(result.providerCustomerId),
-          providerSubscriptionId: maskProviderId(result.providerSubscriptionId),
-          status: result.status,
-          subscriptionId: result.subscriptionId,
-        },
-        null,
-        2,
-      ),
-    );
+    logger.info("job.billing_provider_subscription.completed", {
+      billingType: result.billingType,
+      chargeTotalCents: result.chargeTotalCents,
+      nextDueDate: result.nextDueDate,
+      provider: result.provider,
+      providerCustomerId: maskProviderId(result.providerCustomerId),
+      providerSubscriptionId: maskProviderId(result.providerSubscriptionId),
+      status: result.status,
+      subscriptionId: result.subscriptionId,
+    });
   } finally {
     await sql.end();
   }
@@ -99,4 +98,10 @@ function requireEnv(name: string): string {
   return value;
 }
 
-void main();
+void main().catch((error) => {
+  logger.error("job.billing_provider_subscription.failed", {
+    errorMessage: error instanceof Error ? error.message : String(error),
+    errorName: error instanceof Error ? error.name : "Error",
+  });
+  process.exitCode = 1;
+});

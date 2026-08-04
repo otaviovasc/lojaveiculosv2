@@ -2,11 +2,8 @@ import type { Context } from "hono";
 import type { CreateAppOptions } from "./createAppOptions.js";
 import { createHttpAccountContext } from "./createHttpAccountContext.js";
 
-export function createAgencyAccountContextFactory(
-  options: CreateAppOptions,
-  accountProvisioningServices: CreateAppOptions["accountProvisioningServices"],
-) {
-  return (context: Context, scope: { tenantId: string }) =>
+export function createHttpAccountContextFactory(options: CreateAppOptions) {
+  return (context: Context) =>
     createHttpAccountContext(context, {
       ...(options.audit ? { audit: options.audit } : {}),
       ...(options.identityVerifier
@@ -16,12 +13,11 @@ export function createAgencyAccountContextFactory(
       ...(options.clerkUserProfileProvider
         ? { profileProvider: options.clerkUserProfileProvider }
         : {}),
-      ...(accountProvisioningServices
+      ...(options.accountProvisioningServices
         ? {
             repository:
-              accountProvisioningServices.accountProvisioningRepository,
+              options.accountProvisioningServices.accountProvisioningRepository,
           }
         : {}),
-      tenantId: scope.tenantId,
-    });
+    }).then((account) => account.serviceContext);
 }

@@ -32,6 +32,24 @@ describe("createLocalHttpLogger", () => {
     });
   });
 
+  it("keeps structured request logging enabled outside tests", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const app = new Hono();
+    app.use("*", createLocalHttpLogger());
+    app.get("/health", (context) => context.json({ ok: true }));
+
+    await app.request("/health", {
+      headers: { "x-request-id": "req_production" },
+    });
+
+    expect(readLogLine(info)).toMatchObject({
+      event: "request.completed",
+      requestId: "req_production",
+      status: 200,
+    });
+  });
+
   it("logs handled 4xx responses as failed warn events", async () => {
     vi.stubEnv("APP_ENV", "local");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

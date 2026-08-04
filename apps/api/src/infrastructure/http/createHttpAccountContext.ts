@@ -8,6 +8,7 @@ import type {
 import { AccountProvisioningProviderError } from "../../domains/identity/services/AccountProvisioningService/serviceSupport.js";
 import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import {
+  createContextualAuditSink,
   createNoopAuditSink,
   createPolicyAwareAuditSink,
 } from "../../shared/auditSink.js";
@@ -44,15 +45,29 @@ export async function createHttpAccountContext(
   options: CreateHttpAccountContextOptions = {},
 ): Promise<HttpAccountContext> {
   const request = readRequestHeaders(context);
-  const logger =
+  const baseLogger =
     options.logger ??
     createConsoleServiceLogger({
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    });
+  const logger =
+    baseLogger.child?.({
+      component: "http",
       correlationId: request.correlationId,
       requestId: request.requestId,
-    });
+    }) ?? baseLogger;
   const audit = createPolicyAwareAuditSink({
     logger,
-    sink: options.audit ?? createNoopAuditSink(),
+    sink: createContextualAuditSink({
+      request,
+      sink: options.audit ?? createNoopAuditSink(),
+      source: {
+        component: "http",
+        environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+        service: "api",
+      },
+    }),
   });
   const clerkUserId = await resolveClerkUserId(
     context,
@@ -81,7 +96,11 @@ export async function createHttpAccountContext(
       logger,
       permissions: accountAuth.permissions,
       request,
-      source: { component: "http", service: "api" },
+      source: {
+        component: "http",
+        environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+        service: "api",
+      },
       ...(options.tenantId ? { tenantId: options.tenantId } : {}),
     }),
   };
@@ -107,6 +126,7 @@ async function resolveAccountAuthorization(
     user.id,
   );
   if (isPlatformAdmin) {
+    permissions.add("audit.read");
     permissions.add("billing.manage");
     permissions.add("financing.connection.manage");
     permissions.add("tenant.manage");

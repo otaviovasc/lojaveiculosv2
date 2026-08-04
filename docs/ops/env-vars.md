@@ -9,23 +9,24 @@ environment variables for public smoke-test URLs.
 
 ## Core Runtime
 
-| Name                                 | Required | Environments               | Secret | Notes                                                                      |
-| ------------------------------------ | -------- | -------------------------- | ------ | -------------------------------------------------------------------------- |
-| `NODE_ENV`                           | Yes      | staging, production        | No     | Use `production` in deployed environments.                                 |
-| `APP_ENV`                            | Yes      | local, staging, production | No     | Runtime environment classifier.                                            |
-| `PORT`                               | Yes      | staging, production        | No     | Railway injects this for services.                                         |
-| `PUBLIC_APP_URL`                     | Yes      | staging, production        | No     | Public web URL.                                                            |
-| `API_BASE_URL`                       | Yes      | staging, production        | No     | Public API URL consumed by the web app.                                    |
-| `DATABASE_URL`                       | Yes      | staging, production        | Yes    | Product database URL. Prefer `${{ Postgres.DATABASE_URL }}` on Railway.    |
-| `AUDIT_DATABASE_URL`                 | Yes      | staging, production        | Yes    | Audit database URL. Prefer `${{ AuditPostgres.DATABASE_URL }}` on Railway. |
-| `DB_POOL_MAX`                        | Yes      | staging, production        | No     | Runtime DB pool limit.                                                     |
-| `AUDIT_DB_POOL_MAX`                  | No       | staging, production        | No     | Audit DB pool limit. Defaults to `DB_POOL_MAX`.                            |
-| `DB_CLOSE_TIMEOUT_SECONDS`           | Yes      | staging, production        | No     | Graceful database close timeout in seconds.                                |
-| `SHUTDOWN_TIMEOUT_MS`                | Yes      | staging, production        | No     | Overall graceful shutdown timeout in milliseconds.                         |
-| `READINESS_TIMEOUT_MS`               | No       | staging, production        | No     | Per-database readiness probe timeout. Defaults to `2000`.                  |
-| `WEB_DIST_DIR`                       | No       | local, staging, production | No     | Web static asset directory override. Defaults to `apps/web/dist`.          |
-| `EXTERNAL_API_RATE_LIMIT_PER_MINUTE` | Yes      | staging, production        | No     | Per-minute external API rate limit.                                        |
-| `LOG_LEVEL`                          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                              |
+| Name                                 | Required | Environments               | Secret | Notes                                                                                                    |
+| ------------------------------------ | -------- | -------------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                           | Yes      | staging, production        | No     | Use `production` in deployed environments.                                                               |
+| `APP_ENV`                            | Yes      | local, staging, production | No     | Runtime environment classifier.                                                                          |
+| `PORT`                               | Yes      | staging, production        | No     | Railway injects this for services.                                                                       |
+| `PUBLIC_APP_URL`                     | Yes      | staging, production        | No     | Public web URL.                                                                                          |
+| `API_BASE_URL`                       | Yes      | staging, production        | No     | Public API URL consumed by the web app.                                                                  |
+| `DATABASE_URL`                       | Yes      | staging, production        | Yes    | Product database URL. Prefer `${{ Postgres.DATABASE_URL }}` on Railway.                                  |
+| `AUDIT_DATABASE_URL`                 | Yes      | staging, production        | Yes    | Audit database URL. Prefer `${{ AuditPostgres.DATABASE_URL }}` on Railway.                               |
+| `DB_POOL_MAX`                        | Yes      | staging, production        | No     | Runtime DB pool limit.                                                                                   |
+| `AUDIT_DB_POOL_MAX`                  | No       | staging, production        | No     | Audit DB pool limit. Defaults to `DB_POOL_MAX`.                                                          |
+| `DB_CLOSE_TIMEOUT_SECONDS`           | Yes      | staging, production        | No     | Graceful database close timeout in seconds.                                                              |
+| `SHUTDOWN_TIMEOUT_MS`                | Yes      | staging, production        | No     | Overall graceful shutdown timeout in milliseconds.                                                       |
+| `READINESS_TIMEOUT_MS`               | No       | staging, production        | No     | Per-database readiness probe timeout. Defaults to `2000`.                                                |
+| `WEB_DIST_DIR`                       | No       | local, staging, production | No     | Web static asset directory override. Defaults to `apps/web/dist`.                                        |
+| `EXTERNAL_API_RATE_LIMIT_PER_MINUTE` | Yes      | staging, production        | No     | Per-minute external API rate limit.                                                                      |
+| `LOG_LEVEL`                          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                                                            |
+| `LOG_HTTP_REQUESTS`                  | No       | local, staging, production | No     | Structured HTTP request logs default on outside tests; set `false` only for an approved noise reduction. |
 
 `DRIZZLE_AUTOMATION_BOOTSTRAP` is an internal, local-only schema tooling flag.
 The product DB push wrapper sets it automatically during the first phase that

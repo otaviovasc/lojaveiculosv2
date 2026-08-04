@@ -29,13 +29,13 @@ describe("resolveSessionDestination", () => {
     ).toBe("/onboarding");
   });
 
-  it("sends platform admins to the internal admin area", () => {
+  it("sends platform admins to the observability command center", () => {
     expect(
       resolveSessionDestination({
         ...baseBootstrap,
         platformAdmin: true,
       }),
-    ).toBe("/platform/admin");
+    ).toBe("/platform/observability");
   });
 
   it("sends store users to the store app", () => {

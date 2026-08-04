@@ -12,6 +12,12 @@ import type { CrmServices } from "../features/crm/controllers/crmServices.js";
 
 loadLocalEnv();
 
+const logger = createConsoleServiceLogger({
+  component: "job.crm-whatsapp-schedule",
+  environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+  service: "api",
+});
+
 type DueScope = {
   storeId: string;
   tenantId: string;
@@ -19,7 +25,6 @@ type DueScope = {
 
 async function main(): Promise<void> {
   const runtime = createRuntimeAppDependencies();
-  const logger = createConsoleServiceLogger();
   try {
     const services = runtime.appOptions.crmServices;
     if (!services) {
@@ -146,6 +151,9 @@ function parseOptionalPositiveInt(name: string): number | undefined {
 }
 
 void main().catch((error) => {
-  console.error(error);
+  logger.error("job.crm_whatsapp_schedule.failed", {
+    errorMessage: error instanceof Error ? error.message : String(error),
+    errorName: error instanceof Error ? error.name : "Error",
+  });
   process.exitCode = 1;
 });

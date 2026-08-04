@@ -12,12 +12,18 @@ import {
 import { resolveVehicleBrandLogoUrl } from "../infrastructure/catalog/vehicleBrandLogoResolver.js";
 import { loadLocalEnv } from "../infrastructure/config/loadLocalEnv.js";
 import { createDrizzleVehicleCatalogWrites } from "../infrastructure/db/vehicleCatalog/drizzleVehicleCatalogWrites.js";
+import { createConsoleServiceLogger } from "../shared/serviceLogger.js";
 import { resolveFipeCsvPath } from "./fipeCsvImportConfig.js";
 import { assertFipeCsvHeader, parseFipeCsvRow } from "./fipeCsvImportParser.js";
 
 loadLocalEnv();
 
 const csvPath = resolveFipeCsvPath();
+const logger = createConsoleServiceLogger({
+  component: "job.import-fipe-csv",
+  environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+  service: "api",
+});
 
 const vehicleTypeByCode: Record<string, VehicleCatalogType> = {
   CAR: "cars",
@@ -119,24 +125,24 @@ async function main(): Promise<void> {
 
       counts.rows += 1;
       if (counts.rows % 5000 === 0) {
-        console.log(`progress: ${counts.rows} rows processed...`);
+        logger.info("job.fipe_import.progress", {
+          rowsProcessed: counts.rows,
+        });
       }
     }
     if (isHeader) {
       throw new Error("The FIPE CSV is empty.");
     }
 
-    console.log(
-      JSON.stringify({
-        status: "succeeded",
-        rowsProcessed: counts.rows,
-        rowsSkipped: counts.skipped,
-        brands: counts.brands.size,
-        modelFamilies: counts.families.size,
-        versions: counts.versions.size,
-        years: counts.years.size,
-      }),
-    );
+    logger.info("job.fipe_import.completed", {
+      brands: counts.brands.size,
+      modelFamilies: counts.families.size,
+      rowsProcessed: counts.rows,
+      rowsSkipped: counts.skipped,
+      status: "succeeded",
+      versions: counts.versions.size,
+      years: counts.years.size,
+    });
   } finally {
     await dbClient.end();
   }
@@ -150,4 +156,10 @@ function requireEnv(name: string): string {
   return value;
 }
 
-void main();
+void main().catch((error) => {
+  logger.error("job.fipe_import.failed", {
+    errorMessage: error instanceof Error ? error.message : String(error),
+    errorName: error instanceof Error ? error.name : "Error",
+  });
+  process.exitCode = 1;
+});

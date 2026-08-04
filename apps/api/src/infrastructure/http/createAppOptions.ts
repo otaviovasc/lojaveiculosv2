@@ -29,6 +29,7 @@ import type { StorefrontPageRepository } from "../../domains/storefront/ports/st
 import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 import type { ReadinessResult } from "../runtime/readiness.js";
+import type { ServiceLogger } from "../../shared/serviceLogger.js";
 
 export type CreateAppOptions = {
   analyticsServices?: AnalyticsServices;
@@ -58,6 +59,7 @@ export type CreateAppOptions = {
   storefrontMediaServices?: StorefrontMediaServices;
   publicStorefrontCrmRepository?: CrmRepository;
   readiness?: () => Promise<ReadinessResult>;
+  logger?: ServiceLogger;
   roleServices?: RoleServices;
   salesServices?: SalesServices;
   settingsServices?: SettingsServices;

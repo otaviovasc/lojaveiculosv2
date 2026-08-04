@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { observabilitySchemas } from "../../shared/observabilityOntology.js";
 import { readHttpRequestId } from "./requestMetadata.js";
 import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 
@@ -69,11 +70,10 @@ function normalizeError(error: unknown) {
   return new Error(error === undefined ? "Unknown error" : String(error));
 }
 
-// Internal (5xx) errors are otherwise invisible in staging/production: the
-// per-request HTTP logger only runs when APP_ENV === "local", so a 500 leaves no
-// server-side trace to pair with the requestId returned to the client. Log the
-// stack here (the single choke point for every formatted API error) so failures
-// are diagnosable from Railway logs. The client response is unchanged.
+// Internal (5xx) errors need a dedicated line because the request-completion
+// middleware can be disabled for noise control. Log the stack here (the single
+// choke point for every formatted API error) so failures remain diagnosable from
+// Railway logs. The client response is unchanged.
 function logInternalApiError(
   context: Context,
   input: ApiErrorResponseInput,
@@ -83,12 +83,17 @@ function logInternalApiError(
   console.error(
     JSON.stringify({
       component: "http",
+      correlationId: context.req.header("x-correlation-id") ?? requestId,
       event: "request.internal_error",
       code: input.code,
+      level: "error",
       method: context.req.method,
       path: sanitizeHttpPath(context.req.path),
       requestId,
+      schema: observabilitySchemas.httpLog,
+      service: "api",
       status: input.status,
+      timestamp: new Date().toISOString(),
       errorName: error.name,
       errorMessage: error.message,
       stack: error.stack ?? null,
