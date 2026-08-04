@@ -90,9 +90,18 @@ export async function createExternalApiServiceContext(input: {
       scopeCount: credential.scopes.length,
     },
     outcome: "succeeded",
+    request: input.request,
     requestId: input.request.requestId,
+    source: {
+      component: "external-api",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    },
     storeId: credential.storeId,
     tenantId: credential.tenantId,
+    ...(input.request.correlationId
+      ? { correlationId: input.request.correlationId }
+      : {}),
   });
 
   const serviceContext = createServiceContext({
@@ -108,6 +117,7 @@ export async function createExternalApiServiceContext(input: {
     request: input.request,
     source: {
       component: "external-api",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
       service: "api",
     },
     storeId: credential.storeId,

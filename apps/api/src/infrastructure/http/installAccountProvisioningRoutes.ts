@@ -2,7 +2,10 @@ import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { Context, Hono } from "hono";
 import { createAccountProvisioningFeature } from "../../features/identity/controllers/accountProvisioning.controller.js";
 import type { AccountProvisioningServices } from "../../features/identity/controllers/accountProvisioningServices.js";
-import type { ServiceContext } from "../../shared/serviceContext.js";
+import type {
+  ServiceContext,
+  ServiceLogger,
+} from "../../shared/serviceContext.js";
 import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import { createHttpAccountContext } from "./createHttpAccountContext.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
@@ -14,6 +17,7 @@ export function installAccountProvisioningRoutes(
     audit?: AuditSink;
     clerkUserProfileProvider?: ClerkUserProfileProvider;
     identityVerifier?: HttpIdentityVerifier;
+    logger?: ServiceLogger;
   },
   storeContextFactory: (context: Context) => Promise<ServiceContext>,
 ) {
@@ -28,6 +32,7 @@ export function installAccountProvisioningRoutes(
           ...(options.identityVerifier
             ? { identityVerifier: options.identityVerifier }
             : {}),
+          ...(options.logger ? { logger: options.logger } : {}),
           ...(options.clerkUserProfileProvider
             ? { profileProvider: options.clerkUserProfileProvider }
             : {}),

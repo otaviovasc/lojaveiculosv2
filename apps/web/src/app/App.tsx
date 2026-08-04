@@ -16,6 +16,7 @@ import {
   AgencyLayout,
   AgencyStatsPage,
   LandingPage,
+  ObservabilityPage,
   OwnerOnboardingPage,
   PlatformAdminPage,
   PublicCustomPageRoute,
@@ -52,6 +53,14 @@ export function App() {
           element={
             <ProtectedRoute access="onboarding">
               <OwnerOnboardingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/observability"
+          element={
+            <ProtectedRoute access="platform">
+              <ObservabilityPage />
             </ProtectedRoute>
           }
         />

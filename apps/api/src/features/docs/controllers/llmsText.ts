@@ -44,6 +44,7 @@ export const llmsText = `# Loja Veiculos API
 - External lead detail: GET /api/v1/external-api/leads/{leadId}
 - External lead update: PATCH /api/v1/external-api/leads/{leadId}
 - Admin observability snapshot: GET /api/v1/internal/health
+- Platform observability snapshot: GET /api/v1/internal/platform/health
 - List inventory units: GET /api/v1/inventory/units
 - List inventory listing groups: GET /api/v1/inventory/listings
 - Create listing: POST /api/v1/inventory/listings
@@ -242,7 +243,8 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/external-api/leads/{leadId}: returns one lead; requires lead.read and CRM entitlement.
 - PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and an Idempotency-Key deduplication key.
 ## Current internal monitoring endpoints
-- GET /api/v1/internal/health: returns scoped admin observability with audit events, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; requires audit.read.
+- GET /api/v1/internal/health: returns scoped admin observability with filterable audit events, safe diagnostic metadata, request/source context, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; supports limit, actorId, action, category, correlationId, criticality, entityId, entityType, outcome, providerName, requestId, severity, from, and to; requires audit.read.
+- GET /api/v1/internal/platform/health: returns the same safe, filterable observability projection across all stores and tenants; requires a platform administrator context and audit.read. Use requestId/correlationId/action/entity/provider filters to build an AI-ready incident context.
 
 ## Finance side effects
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.

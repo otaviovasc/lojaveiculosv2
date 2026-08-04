@@ -4,12 +4,14 @@ import type {
   ServiceLogMetadata,
   ServiceLogger,
 } from "../../shared/serviceContext.js";
+import { observabilitySchemas } from "../../shared/observabilityOntology.js";
 
 export function createPinoServiceLogger(input?: {
   baseMetadata?: ServiceLogMetadata;
   logger?: Logger;
 }): ServiceLogger {
-  const logger = input?.logger ?? pino();
+  const logger =
+    input?.logger ?? pino({ level: process.env.LOG_LEVEL ?? "info" });
   const baseMetadata = input?.baseMetadata ?? {};
 
   const write = (
@@ -17,7 +19,16 @@ export function createPinoServiceLogger(input?: {
     message: string,
     metadata: ServiceLogMetadata = {},
   ) => {
-    logger[level]({ ...baseMetadata, ...metadata }, message);
+    logger[level](
+      {
+        ...metadata,
+        ...baseMetadata,
+        event: message,
+        schema: observabilitySchemas.serviceLog,
+        timestamp: new Date().toISOString(),
+      },
+      message,
+    );
   };
 
   return {

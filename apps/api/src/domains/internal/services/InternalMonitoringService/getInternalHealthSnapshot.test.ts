@@ -6,8 +6,12 @@ import type {
   InternalHealthSnapshot,
   InternalMonitoringRepository,
 } from "../../ports/internalMonitoringRepository.js";
+import { getPlatformInternalHealthSnapshot } from "./getPlatformInternalHealthSnapshot.js";
 import { getInternalHealthSnapshot } from "./getInternalHealthSnapshot.js";
-import { InternalMonitoringScopeError } from "./serviceSupport.js";
+import {
+  InternalMonitoringPlatformScopeError,
+  InternalMonitoringScopeError,
+} from "./serviceSupport.js";
 
 describe("getInternalHealthSnapshot", () => {
   it("normalizes limit, reads scoped snapshot, and audits access", async () => {
@@ -22,7 +26,7 @@ describe("getInternalHealthSnapshot", () => {
 
     expect(result.status).toBe("warning");
     expect(repository.getHealthSnapshot).toHaveBeenCalledWith({
-      limit: 100,
+      query: { limit: 100 },
       storeId: "store_1",
       tenantId: "tenant_1",
     });
@@ -64,6 +68,42 @@ describe("getInternalHealthSnapshot", () => {
   });
 });
 
+describe("getPlatformInternalHealthSnapshot", () => {
+  it("reads the unscoped snapshot only from platform context", async () => {
+    const audit = { record: vi.fn(async () => undefined) };
+    const repository = createRepository();
+
+    const result = await getPlatformInternalHealthSnapshot(
+      createContext({ audit, storeId: null, tenantId: null }),
+      { limit: 250 },
+      { internalMonitoringRepository: repository },
+    );
+
+    expect(result).toBe(snapshot);
+    expect(repository.getPlatformHealthSnapshot).toHaveBeenCalledWith({
+      query: { limit: 100 },
+    });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "internal.platform_health.read",
+        entityId: "platform",
+        storeId: null,
+        tenantId: null,
+      }),
+    );
+  });
+
+  it("rejects store-scoped contexts", async () => {
+    await expect(
+      getPlatformInternalHealthSnapshot(
+        createContext({ tenantId: null }),
+        { limit: 40 },
+        { internalMonitoringRepository: createRepository() },
+      ),
+    ).rejects.toBeInstanceOf(InternalMonitoringPlatformScopeError);
+  });
+});
+
 function createContext(
   overrides: Partial<ServiceContext> & { audit?: AuditSink } = {},
 ): ServiceContext {
@@ -81,6 +121,7 @@ function createContext(
 function createRepository(): InternalMonitoringRepository {
   return {
     getHealthSnapshot: vi.fn(async () => snapshot),
+    getPlatformHealthSnapshot: vi.fn(async () => snapshot),
   };
 }
 

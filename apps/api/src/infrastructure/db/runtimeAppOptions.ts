@@ -39,6 +39,7 @@ import {
   type DrizzleAuditSinkClient,
 } from "./audit/drizzleAuditSink.js";
 import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternalMonitoringRepository.js";
+import { createPinoServiceLogger } from "../logging/createPinoServiceLogger.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
 import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
 import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
@@ -97,6 +98,12 @@ export function createRuntimeHttpAppOptions({
   const runtimeObjectStorage = objectStorage ?? createRuntimeObjectStorage(env);
   const financingServices = createRuntimeCredereFinancingServices(db, env);
   return {
+    logger: createPinoServiceLogger({
+      baseMetadata: {
+        environment: env.APP_ENV ?? "unknown",
+        service: "api",
+      },
+    }),
     analyticsServices: createRuntimeAnalyticsServices(
       db as RuntimeAnalyticsClient,
     ),

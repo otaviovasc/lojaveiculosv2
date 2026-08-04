@@ -1,4 +1,62 @@
 export const internalMonitoringSchemas = {
+  InternalAuditEvent: {
+    type: "object",
+    required: [
+      "action",
+      "actorId",
+      "actorKind",
+      "category",
+      "correlationId",
+      "criticality",
+      "entityId",
+      "entityType",
+      "failureTier",
+      "id",
+      "occurredAt",
+      "outcome",
+      "providerEventId",
+      "providerName",
+      "requestId",
+      "metadata",
+      "requestContext",
+      "severity",
+      "source",
+      "tags",
+    ],
+    properties: {
+      action: { type: "string" },
+      actorId: { type: "string" },
+      actorKind: { type: "string" },
+      category: { type: "string", nullable: true },
+      correlationId: { type: "string", nullable: true },
+      criticality: { type: "string" },
+      entityId: { type: "string" },
+      entityType: { type: "string" },
+      failureTier: { type: "string" },
+      id: { type: "string", format: "uuid" },
+      occurredAt: { type: "string", format: "date-time" },
+      outcome: { type: "string" },
+      providerEventId: { type: "string", nullable: true },
+      providerName: { type: "string", nullable: true },
+      metadata: { type: "object", additionalProperties: true },
+      requestContext: {
+        type: "object",
+        nullable: true,
+        additionalProperties: true,
+      },
+      requestId: { type: "string" },
+      severity: { type: "string" },
+      source: {
+        type: "object",
+        nullable: true,
+        additionalProperties: true,
+      },
+      storeId: { type: "string", nullable: true },
+      summary: { type: "string", nullable: true },
+      tags: { type: "array", items: { type: "string" } },
+      tenantId: { type: "string", nullable: true },
+    },
+  },
   InternalMetric: {
     type: "object",
     additionalProperties: true,
@@ -27,7 +85,10 @@ export const internalMonitoringSchemas = {
       actionMetrics: { type: "array", items: { type: "object" } },
       actorMetrics: { type: "array", items: { type: "object" } },
       alerts: { type: "array", items: { type: "object" } },
-      events: { type: "array", items: { type: "object" } },
+      events: {
+        type: "array",
+        items: { $ref: "#/components/schemas/InternalAuditEvent" },
+      },
       failures: { type: "array", items: { type: "object" } },
       generatedAt: { type: "string", format: "date-time" },
       outcomeMetrics: {
@@ -45,13 +106,13 @@ export const internalMonitoringSchemas = {
   },
 } as const;
 
-export const internalMonitoringPaths = {
+const internalMonitoringHealthPath = {
   "/api/v1/internal/health": {
     get: {
       tags: ["Internal Monitoring"],
       summary: "Read scoped admin observability snapshot",
       description:
-        "Returns scoped audit events, sink failures, computed health status, alerts, action metrics, actor activity, and severity/outcome breakdowns for the current store.",
+        "Returns scoped audit events with safe metadata and request/source diagnostics, sink failures, computed health status, alerts, action metrics, actor activity, and severity/outcome breakdowns for the current store. Filter by request/correlation, actor, action, entity, provider, outcome, criticality, severity, or time range.",
       operationId: "getInternalHealthSnapshot",
       security: [{ bearerAuth: ["audit.read"] }],
       parameters: [
@@ -60,6 +121,116 @@ export const internalMonitoringPaths = {
           name: "limit",
           required: false,
           schema: { type: "integer", minimum: 1, maximum: 100 },
+        },
+        {
+          in: "query",
+          name: "actorId",
+          required: false,
+          description: "Actor id.",
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "criticality",
+          required: false,
+          description: "Audit criticality.",
+          schema: {
+            type: "string",
+            enum: ["low", "medium", "high", "critical"],
+          },
+        },
+        {
+          in: "query",
+          name: "action",
+          required: false,
+          description: "Action name to match.",
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "category",
+          required: false,
+          description: "Audit category to match.",
+          schema: {
+            type: "string",
+            enum: [
+              "authentication",
+              "authorization",
+              "data_access",
+              "data_change",
+              "integration",
+              "system",
+            ],
+          },
+        },
+        {
+          in: "query",
+          name: "correlationId",
+          required: false,
+          description: "Request correlation id.",
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "entityId",
+          required: false,
+          description: "Entity id.",
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "entityType",
+          required: false,
+          description: "Entity type.",
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "outcome",
+          required: false,
+          description: "Audit outcome.",
+          schema: {
+            type: "string",
+            enum: ["attempted", "succeeded", "failed", "denied"],
+          },
+        },
+        {
+          in: "query",
+          name: "providerName",
+          required: false,
+          description: "Provider name.",
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "requestId",
+          required: false,
+          description: "Request id.",
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "severity",
+          required: false,
+          description: "Audit severity.",
+          schema: {
+            type: "string",
+            enum: ["debug", "info", "warning", "error", "critical"],
+          },
+        },
+        {
+          in: "query",
+          name: "from",
+          required: false,
+          description: "Inclusive ISO timestamp.",
+          schema: { type: "string", format: "date-time" },
+        },
+        {
+          in: "query",
+          name: "to",
+          required: false,
+          description: "Inclusive ISO timestamp.",
+          schema: { type: "string", format: "date-time" },
         },
       ],
       responses: {
@@ -74,4 +245,5 @@ export const internalMonitoringPaths = {
       },
     },
   },
-} as const;
+};
+export const internalMonitoringPaths = internalMonitoringHealthPath;

@@ -1,13 +1,13 @@
 import type { SessionBootstrap } from "./apiClient";
 
 export type SessionDestination =
-  "/dashboard" | "/agency/admin" | "/onboarding" | "/platform/admin";
+  "/dashboard" | "/agency/admin" | "/onboarding" | "/platform/observability";
 
 export function resolveSessionDestination(
   bootstrap: SessionBootstrap,
 ): SessionDestination {
   if (bootstrap.needsOnboarding) return "/onboarding";
-  if (bootstrap.platformAdmin) return "/platform/admin";
+  if (bootstrap.platformAdmin) return "/platform/observability";
   if (bootstrap.defaultStore) return "/dashboard";
   if (hasActiveAgencyMembership(bootstrap)) {
     return "/agency/admin";

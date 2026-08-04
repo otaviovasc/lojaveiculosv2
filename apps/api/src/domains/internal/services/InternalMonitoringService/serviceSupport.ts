@@ -21,9 +21,28 @@ export function requireInternalMonitoringScope(context: ServiceContext) {
   };
 }
 
+export function requirePlatformInternalMonitoringAccess(
+  context: ServiceContext,
+): void {
+  if (
+    context.actor.kind !== "user" ||
+    context.storeId !== null ||
+    context.tenantId !== null
+  ) {
+    throw new InternalMonitoringPlatformScopeError();
+  }
+}
+
 export class InternalMonitoringScopeError extends Error {
   constructor() {
     super("Internal monitoring requires store and tenant scope.");
     this.name = "InternalMonitoringScopeError";
+  }
+}
+
+export class InternalMonitoringPlatformScopeError extends Error {
+  constructor() {
+    super("Platform observability requires a platform administrator context.");
+    this.name = "InternalMonitoringPlatformScopeError";
   }
 }

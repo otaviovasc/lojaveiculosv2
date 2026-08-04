@@ -27,6 +27,7 @@ import {
   internalMonitoringPaths,
   internalMonitoringSchemas,
 } from "./internalMonitoringOpenApi.js";
+import { internalMonitoringPlatformPaths } from "./internalMonitoringPlatformOpenApi.js";
 import { inventoryPaths, inventorySchemas } from "./inventoryOpenApi.js";
 import { llmsText } from "./llmsText.js";
 import { marketplacePaths, marketplaceSchemas } from "./marketplaceOpenApi.js";
@@ -95,6 +96,7 @@ export const openApiDocument = {
     ...externalApiDocsPaths,
     ...externalApiPaths,
     ...internalMonitoringPaths,
+    ...internalMonitoringPlatformPaths,
     ...marketplacePaths,
     ...inventoryPaths,
     ...storefrontLeadPaths,

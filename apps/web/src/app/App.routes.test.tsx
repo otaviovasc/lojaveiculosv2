@@ -30,6 +30,7 @@ vi.mock("./AppLazyRoutes", async () => {
     AgencyLayout: () => <Outlet />,
     AgencyStatsPage: emptyRoute,
     LandingPage,
+    ObservabilityPage: () => <div>Observability route</div>,
     OwnerOnboardingPage: emptyRoute,
     PlatformAdminPage: emptyRoute,
     PublicCustomPageRoute: emptyRoute,
@@ -92,5 +93,17 @@ describe("App routes", () => {
     );
 
     expect(await screen.findByText("Credere agency route")).toBeInTheDocument();
+  });
+
+  it("registers the platform observability command center route", async () => {
+    render(
+      <MemoryRouter initialEntries={["/platform/observability"]}>
+        <ClerkAuthProvider>
+          <App />
+        </ClerkAuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Observability route")).toBeInTheDocument();
   });
 });

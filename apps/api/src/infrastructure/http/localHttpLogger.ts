@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from "hono";
+import { observabilitySchemas } from "../../shared/observabilityOntology.js";
 import { readHttpErrorMetadata } from "./apiErrorResponse.js";
 import { readHttpRequestId } from "./requestMetadata.js";
 import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
@@ -36,7 +37,9 @@ export function createLocalHttpLogger(): MiddlewareHandler {
 }
 
 function shouldLogHttpRequests(): boolean {
-  return process.env.APP_ENV === "local";
+  if (process.env.LOG_HTTP_REQUESTS === "false") return false;
+  if (process.env.LOG_HTTP_REQUESTS === "true") return true;
+  return process.env.APP_ENV !== "test";
 }
 
 function logHttpRequest({
@@ -55,13 +58,19 @@ function logHttpRequest({
   const metadata = readHttpErrorMetadata(context);
   const failed = status >= 400;
   const normalizedError = error ?? context.error;
+  const correlationId = context.req.header("x-correlation-id") ?? requestId;
   const payload = {
     component: "http",
+    correlationId,
     event: failed ? "request.failed" : "request.completed",
+    level: status >= 500 ? "error" : failed ? "warn" : "info",
     method: context.req.method,
     path: sanitizeHttpPath(context.req.path),
     requestId,
+    schema: observabilitySchemas.httpLog,
+    service: "api",
     status,
+    timestamp: new Date().toISOString(),
     tookMs: Math.round(performance.now() - startedAt),
     ...(failed ? { code: metadata?.code ?? `HTTP_${status}` } : {}),
     ...(metadata?.errorName ? { errorName: metadata.errorName } : {}),

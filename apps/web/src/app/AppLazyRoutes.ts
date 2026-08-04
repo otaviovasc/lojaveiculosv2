@@ -48,6 +48,11 @@ export const PlatformAdminPage = lazy(() =>
     default: module.PlatformAdminPage,
   })),
 );
+export const ObservabilityPage = lazy(() =>
+  import("../features/observability/ObservabilityPage").then((module) => ({
+    default: module.ObservabilityPage,
+  })),
+);
 export const PublicCustomPageRoute = lazy(() =>
   import("../features/publicSite/PublicCustomPageRoute").then((module) => ({
     default: module.PublicCustomPageRoute,
