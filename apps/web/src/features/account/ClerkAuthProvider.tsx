@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/react";
 import { createContext, useContext, type ReactNode } from "react";
 import { readClerkAuthConfig, type ClerkAuthConfig } from "./authConfig";
+import { SessionBootstrapHandoffProvider } from "./sessionBootstrapHandoff";
 
 const ClerkAuthConfigContext = createContext<ClerkAuthConfig>(
   readClerkAuthConfig(),
@@ -10,7 +11,9 @@ export function ClerkAuthProvider({ children }: { children: ReactNode }) {
   const config = readClerkAuthConfig();
   const content = (
     <ClerkAuthConfigContext.Provider value={config}>
-      {children}
+      <SessionBootstrapHandoffProvider>
+        {children}
+      </SessionBootstrapHandoffProvider>
     </ClerkAuthConfigContext.Provider>
   );
 

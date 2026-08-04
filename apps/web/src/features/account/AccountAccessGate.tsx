@@ -14,13 +14,14 @@ import {
   persistCurrentStoreSlug,
   readCurrentStoreSlug,
 } from "./currentStore";
-import { createRuntimeAccountApi } from "./runtimeApi";
 import {
   hasActiveAgencyMembership,
   resolveSessionDestination,
 } from "./sessionRedirect";
 import { AccountSessionProvider } from "./accountSession";
 import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
+import { useSessionBootstrapHandoff } from "./sessionBootstrapHandoff";
+import { loadRuntimeSessionBootstrap } from "./sessionBootstrapLoader";
 
 export type AccountAccess = "agency" | "onboarding" | "platform" | "store";
 
@@ -36,7 +37,10 @@ export function AccountAccessGate({
   userId?: string | null;
 }) {
   const navigate = useNavigate();
-  const [bootstrap, setBootstrap] = useState<SessionBootstrap | null>(null);
+  const bootstrapHandoff = useSessionBootstrapHandoff();
+  const [bootstrap, setBootstrap] = useState<SessionBootstrap | null>(() =>
+    bootstrapHandoff.peek(userId),
+  );
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const getTokenRef = useRef(getToken);
@@ -46,14 +50,18 @@ export function AccountAccessGate({
   }, [getToken]);
 
   useEffect(() => {
+    if (!bootstrap || !userId) return;
+    bootstrapHandoff.clear(userId, bootstrap);
+  }, [bootstrap, bootstrapHandoff, userId]);
+
+  useEffect(() => {
+    if (bootstrap) return;
     let cancelled = false;
     setError(null);
 
     async function loadBootstrap() {
       try {
-        const accessToken = await getTokenRef.current();
-        const api = await createRuntimeAccountApi({ accessToken });
-        const session = await api.bootstrap();
+        const session = await loadRuntimeSessionBootstrap(getTokenRef.current);
         if (session.defaultStore) {
           persistCurrentStoreSlug(session.defaultStore.storeSlug, userId);
         } else if (access === "store") {
@@ -78,7 +86,7 @@ export function AccountAccessGate({
     return () => {
       cancelled = true;
     };
-  }, [access, attempt, userId]);
+  }, [access, attempt, bootstrap, userId]);
 
   useEffect(() => {
     if (!bootstrap || isAllowed(access, bootstrap)) return;
