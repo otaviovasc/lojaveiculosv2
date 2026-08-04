@@ -25,17 +25,23 @@ export function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/sign-in/*" element={<AuthenticatedRoutes />} />
         <Route path="/sign-up/*" element={<AuthenticatedRoutes />} />
-        <Route path="/auth/session" element={<AuthenticatedRoutes />} />
-        <Route path="/onboarding" element={<AuthenticatedRoutes />} />
+        <Route path="/auth/session/*" element={<AuthenticatedRoutes />} />
+        <Route path="/onboarding/*" element={<AuthenticatedRoutes />} />
         <Route
-          path="/platform/observability"
+          path="/platform/observability/*"
           element={<AuthenticatedRoutes />}
         />
-        <Route path="/platform/admin" element={<AuthenticatedRoutes />} />
+        <Route path="/platform/admin/*" element={<AuthenticatedRoutes />} />
         <Route path="/agency/admin/*" element={<AuthenticatedRoutes />} />
-        {adminRoutePaths.map((path) => (
-          <Route element={<AuthenticatedRoutes />} key={path} path={path} />
-        ))}
+        {adminRoutePaths
+          .filter((path) => path !== "/")
+          .map((path) => (
+            <Route
+              element={<AuthenticatedRoutes />}
+              key={path}
+              path={`${path}/*`}
+            />
+          ))}
         <Route
           path="/:storeSlug/p/:pageSlug"
           element={

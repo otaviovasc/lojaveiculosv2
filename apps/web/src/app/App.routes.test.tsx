@@ -17,11 +17,15 @@ vi.mock("../features/account/AuthPages", () => {
 });
 
 vi.mock("./AppLazyRoutes", async () => {
-  const { Outlet } = await import("react-router-dom");
+  const { Outlet, Route, Routes } = await import("react-router-dom");
   const { LandingPage } = await import("../features/marketing/LandingPage");
   const emptyRoute = () => null;
   return {
-    AuthenticatedRoutes: () => <div>Authenticated route</div>,
+    AuthenticatedRoutes: () => (
+      <Routes>
+        <Route path="*" element={<div>Nested authenticated route</div>} />
+      </Routes>
+    ),
     AdminApp: emptyRoute,
     AgencyBillingPage: emptyRoute,
     AgencyCrederePage: () => <div>Credere agency route</div>,
@@ -86,7 +90,9 @@ describe("App routes", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Authenticated route")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Nested authenticated route"),
+    ).toBeInTheDocument();
   });
 
   it("registers the platform observability command center route", async () => {
@@ -96,6 +102,32 @@ describe("App routes", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Authenticated route")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Nested authenticated route"),
+    ).toBeInTheDocument();
   });
+
+  it.each([
+    ["/dashboard", "Nested authenticated route"],
+    ["/onboarding", "Nested authenticated route"],
+  ])(
+    "allows %s to render nested authenticated routes without a router warning",
+    async (path, routeLabel) => {
+      const consoleWarn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      expect(await screen.findByText(routeLabel)).toBeInTheDocument();
+      expect(consoleWarn).not.toHaveBeenCalledWith(
+        expect.stringContaining('parent route path has no trailing "*"'),
+      );
+      consoleWarn.mockRestore();
+    },
+  );
 });
