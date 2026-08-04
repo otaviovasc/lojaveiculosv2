@@ -1,5 +1,10 @@
 import { lazy } from "react";
 
+export const AuthenticatedRoutes = lazy(() =>
+  import("./AuthenticatedRoutes").then((module) => ({
+    default: module.AuthenticatedRoutes,
+  })),
+);
 export const AdminApp = lazy(() =>
   import("./AdminApp").then((module) => ({ default: module.AdminApp })),
 );

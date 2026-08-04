@@ -1,29 +1,15 @@
 import { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import {
-  ProtectedRoute,
-  SessionBootstrapPage,
-  SignInPage,
-  SignUpPage,
-} from "../features/account/AuthPages";
 import { AppBootScreen } from "../components/ui";
 import { DelayedFallback } from "../components/ui/DelayedFallback";
 import { adminRoutePaths } from "./adminRoutePaths";
 import {
-  AgencyBillingPage,
-  AgencyCreateStorePage,
-  AgencyCrederePage,
-  AgencyDashboardPage,
-  AgencyLayout,
-  AgencyStatsPage,
+  AuthenticatedRoutes,
   LandingPage,
-  OwnerOnboardingPage,
-  PlatformAdminPage,
   PublicCustomPageRoute,
   PublicStorefrontPage,
 } from "./AppLazyRoutes";
 import { PublicStorefrontSlugGuard } from "./PublicStorefrontSlugGuard";
-import { StoreAdminRoute } from "./StoreAdminRoute";
 import { NotFoundPage } from "../features/system/NotFoundPage";
 
 export function App() {
@@ -37,53 +23,21 @@ export function App() {
     >
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/sign-in/*" element={<SignInPage />} />
-        <Route path="/sign-up/*" element={<SignUpPage />} />
-        <Route
-          path="/auth/session"
-          element={
-            <ProtectedRoute access="signed-in">
-              <SessionBootstrapPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute access="onboarding">
-              <OwnerOnboardingPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/admin"
-          element={
-            <ProtectedRoute access="platform">
-              <PlatformAdminPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agency/admin"
-          element={
-            <ProtectedRoute access="agency">
-              <AgencyLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<AgencyDashboardPage />} />
-          <Route path="stats" element={<AgencyStatsPage />} />
-          <Route path="unified-billing" element={<AgencyBillingPage />} />
-          <Route path="credere" element={<AgencyCrederePage />} />
-          <Route path="create-store" element={<AgencyCreateStorePage />} />
-        </Route>
+        <Route path="/sign-in/*" element={<AuthenticatedRoutes />} />
+        <Route path="/sign-up/*" element={<AuthenticatedRoutes />} />
+        <Route path="/auth/session" element={<AuthenticatedRoutes />} />
+        <Route path="/onboarding" element={<AuthenticatedRoutes />} />
+        <Route path="/platform/admin" element={<AuthenticatedRoutes />} />
+        <Route path="/agency/admin/*" element={<AuthenticatedRoutes />} />
         {adminRoutePaths.map((path) => (
-          <Route element={<StoreAdminRoute />} key={path} path={path} />
+          <Route element={<AuthenticatedRoutes />} key={path} path={path} />
         ))}
         <Route
           path="/:storeSlug/p/:pageSlug"
           element={
-            <PublicStorefrontSlugGuard reservedFallback={<StoreAdminRoute />}>
+            <PublicStorefrontSlugGuard
+              reservedFallback={<AuthenticatedRoutes />}
+            >
               <PublicCustomPageRoute />
             </PublicStorefrontSlugGuard>
           }
@@ -91,7 +45,9 @@ export function App() {
         <Route
           path="/:storeSlug"
           element={
-            <PublicStorefrontSlugGuard reservedFallback={<StoreAdminRoute />}>
+            <PublicStorefrontSlugGuard
+              reservedFallback={<AuthenticatedRoutes />}
+            >
               <PublicStorefrontPage />
             </PublicStorefrontSlugGuard>
           }
