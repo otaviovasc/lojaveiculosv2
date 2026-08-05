@@ -1,4 +1,4 @@
-export function extractOpenAiResponseOutputText(payload: unknown) {
+export function extractOpenRouterResponseOutputText(payload: unknown) {
   const record = asRecord(payload);
   if (!record) return null;
   if (typeof record.output_text === "string") return record.output_text;

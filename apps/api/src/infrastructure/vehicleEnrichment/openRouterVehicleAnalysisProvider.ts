@@ -1,40 +1,40 @@
 import type {
   InventoryResaleAnalysisRequest,
   InventoryResaleAnalysisResponse,
-  InventoryResaleTopic,
 } from "../../domains/vehicle/ports/vehicleEnrichmentTypes.js";
-import { extractOpenAiResponseOutputText } from "../openAiResponses.js";
+import {
+  asRecord,
+  extractOpenRouterResponseOutputText,
+} from "../openRouterResponses.js";
 import { InventoryEnrichmentProviderError } from "./inventoryEnrichmentProviderError.js";
 import { createVehicleMarketContext } from "./vehicleMarketSignals.js";
 import type { VehicleResaleAnalysisProvider } from "../../domains/vehicle/ports/vehicleResaleAnalysisProvider.js";
+import { defaultOpenRouterModel } from "../openRouterConfig.js";
 
-const defaultModel = "gpt-5.4-mini";
-const responsesUrl = "https://api.openai.com/v1/responses";
+const responsesUrl = "https://openrouter.ai/api/v1/responses";
 
-export type OpenAiVehicleAnalysisProvider = VehicleResaleAnalysisProvider;
-
-export function createOpenAiVehicleAnalysisProvider({
+export function createOpenRouterVehicleAnalysisProvider({
   apiKey,
   fetch = globalThis.fetch,
-  model = defaultModel,
+  model = defaultOpenRouterModel,
 }: {
   apiKey?: string | undefined;
   fetch?: typeof globalThis.fetch;
   model?: string;
-} = {}): OpenAiVehicleAnalysisProvider {
+} = {}): VehicleResaleAnalysisProvider {
   return {
     model,
-    name: "openai",
+    name: "openrouter",
     async analyze(input) {
       if (!apiKey) {
         throw new InventoryEnrichmentProviderError(
-          "API_OPENAI_KEY is not configured.",
+          "OPENROUTER_API_KEY is not configured.",
           503,
         );
       }
 
       const response = await fetch(responsesUrl, {
-        body: JSON.stringify(createOpenAiRequest(model, input)),
+        body: JSON.stringify(createOpenRouterRequest(model, input)),
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
@@ -49,12 +49,18 @@ export function createOpenAiVehicleAnalysisProvider({
         );
       }
 
-      return parseAnalysisResponse(await response.json());
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } catch {
+        throw invalidResponseError();
+      }
+      return parseAnalysisResponse(payload);
     },
   };
 }
 
-function createOpenAiRequest(
+function createOpenRouterRequest(
   model: string,
   input: InventoryResaleAnalysisRequest,
 ) {
@@ -86,6 +92,7 @@ function createOpenAiRequest(
           },
         ],
         role: "system",
+        type: "message",
       },
       {
         content: [
@@ -101,10 +108,15 @@ function createOpenAiRequest(
           },
         ],
         role: "user",
+        type: "message",
       },
     ],
     max_output_tokens: 1200,
     model,
+    provider: {
+      data_collection: "deny",
+      require_parameters: true,
+    },
     text: {
       format: {
         name: "vehicle_resale_analysis",
@@ -151,7 +163,7 @@ const analysisSchema = {
 function parseAnalysisResponse(
   payload: unknown,
 ): InventoryResaleAnalysisResponse {
-  const outputText = extractOutputText(payload);
+  const outputText = extractOpenRouterResponseOutputText(payload);
   if (!outputText) {
     throw new InventoryEnrichmentProviderError(
       "AI resale analysis returned no text.",
@@ -159,41 +171,52 @@ function parseAnalysisResponse(
     );
   }
 
-  const parsed = JSON.parse(outputText) as InventoryResaleAnalysisResponse;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(outputText);
+  } catch {
+    throw invalidResponseError();
+  }
   if (!isAnalysisResponse(parsed)) {
-    throw new InventoryEnrichmentProviderError(
-      "AI resale analysis returned an invalid shape.",
-      502,
-    );
+    throw invalidResponseError();
   }
   return parsed;
 }
 
-function extractOutputText(payload: unknown): string | null {
-  return extractOpenAiResponseOutputText(payload);
-}
-
-function isAnalysisResponse(
-  value: InventoryResaleAnalysisResponse,
-): value is InventoryResaleAnalysisResponse {
-  return (
-    typeof value.summary === "string" &&
-    Number.isInteger(value.dealRiskScore) &&
-    value.dealRiskScore >= 0 &&
-    value.dealRiskScore <= 100 &&
-    ["low", "medium", "high"].includes(value.riskLevel) &&
-    Array.isArray(value.topics) &&
-    value.topics.every(isAnalysisTopic) &&
-    typeof value.suggestedDescription === "string"
+function invalidResponseError() {
+  return new InventoryEnrichmentProviderError(
+    "AI resale analysis returned an invalid response.",
+    502,
   );
 }
 
-function isAnalysisTopic(value: InventoryResaleTopic) {
+function isAnalysisResponse(
+  value: unknown,
+): value is InventoryResaleAnalysisResponse {
+  const record = asRecord(value);
+  const score = record?.dealRiskScore;
   return (
-    value &&
-    typeof value.message === "string" &&
-    typeof value.title === "string" &&
-    ["L", "N", "W"].includes(value.code) &&
-    ["negative", "neutral", "positive"].includes(value.type)
+    typeof record?.summary === "string" &&
+    typeof score === "number" &&
+    Number.isInteger(score) &&
+    score >= 0 &&
+    score <= 100 &&
+    typeof record.riskLevel === "string" &&
+    ["low", "medium", "high"].includes(record.riskLevel) &&
+    Array.isArray(record.topics) &&
+    record.topics.every(isAnalysisTopic) &&
+    typeof record.suggestedDescription === "string"
+  );
+}
+
+function isAnalysisTopic(value: unknown) {
+  const record = asRecord(value);
+  return (
+    typeof record?.message === "string" &&
+    typeof record.title === "string" &&
+    typeof record.code === "string" &&
+    ["L", "N", "W"].includes(record.code) &&
+    typeof record.type === "string" &&
+    ["negative", "neutral", "positive"].includes(record.type)
   );
 }

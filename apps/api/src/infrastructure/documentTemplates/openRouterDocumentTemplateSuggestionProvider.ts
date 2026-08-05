@@ -6,16 +6,16 @@ import type {
 import { createDocumentTemplateSuggestionDiff } from "../../domains/documents/documentTemplateSuggestionDiff.js";
 import {
   asRecord,
-  extractOpenAiResponseOutputText,
-} from "../openAiResponses.js";
+  extractOpenRouterResponseOutputText,
+} from "../openRouterResponses.js";
+import { defaultOpenRouterModel } from "../openRouterConfig.js";
 
-const defaultModel = "gpt-5.4-mini";
-const responsesUrl = "https://api.openai.com/v1/responses";
+const responsesUrl = "https://openrouter.ai/api/v1/responses";
 
-export function createOpenAiDocumentTemplateSuggestionProvider({
+export function createOpenRouterDocumentTemplateSuggestionProvider({
   apiKey,
   fetch = globalThis.fetch,
-  model = defaultModel,
+  model = defaultOpenRouterModel,
 }: {
   apiKey: string;
   fetch?: typeof globalThis.fetch;
@@ -34,7 +34,13 @@ export function createOpenAiDocumentTemplateSuggestionProvider({
       if (!response.ok) {
         throw new Error(`Document AI suggestion failed: ${response.status}`);
       }
-      return parseSuggestion(input, await response.json());
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } catch {
+        throw invalidSuggestionResponse();
+      }
+      return parseSuggestion(input, payload);
     },
   };
 }
@@ -54,6 +60,7 @@ function createRequest(model: string, input: DocumentTemplateSuggestionInput) {
           },
         ],
         role: "system",
+        type: "message",
       },
       {
         content: [
@@ -68,10 +75,15 @@ function createRequest(model: string, input: DocumentTemplateSuggestionInput) {
           },
         ],
         role: "user",
+        type: "message",
       },
     ],
     max_output_tokens: 1600,
     model,
+    provider: {
+      data_collection: "deny",
+      require_parameters: true,
+    },
     text: {
       format: {
         name: "document_template_suggestion",
@@ -98,13 +110,15 @@ function parseSuggestion(
   input: DocumentTemplateSuggestionInput,
   payload: unknown,
 ): DocumentTemplateSuggestion {
-  const text = extractOutputText(payload);
+  const text = extractOpenRouterResponseOutputText(payload);
   if (!text) throw new Error("Document AI suggestion returned no text.");
-  const parsed = JSON.parse(text) as {
-    clauses: string[];
-    summary: string;
-    title: string;
-  };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw invalidSuggestionResponse();
+  }
+  if (!isSuggestionResponse(parsed)) throw invalidSuggestionResponse();
   const clauses = parsed.clauses.filter((item) => item.trim());
   return {
     appliedBlocks: applyClausesToBlocks(input.blocks, clauses),
@@ -129,6 +143,18 @@ function applyClausesToBlocks(
   });
 }
 
-function extractOutputText(payload: unknown): string | null {
-  return extractOpenAiResponseOutputText(payload);
+function isSuggestionResponse(
+  value: unknown,
+): value is { clauses: string[]; summary: string; title: string } {
+  const record = asRecord(value);
+  return (
+    Array.isArray(record?.clauses) &&
+    record.clauses.every((clause) => typeof clause === "string") &&
+    typeof record.summary === "string" &&
+    typeof record.title === "string"
+  );
+}
+
+function invalidSuggestionResponse() {
+  return new Error("Document AI suggestion returned an invalid response.");
 }

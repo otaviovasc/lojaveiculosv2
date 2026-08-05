@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createOpenAiVehicleAnalysisProvider } from "./openAiVehicleAnalysisProvider.js";
+import { createOpenRouterVehicleAnalysisProvider } from "./openRouterVehicleAnalysisProvider.js";
 import {
   baseInput,
   createFetchMock,
@@ -8,13 +8,13 @@ import {
   systemPrompt,
   topicCodeEnum,
   userPayload,
-} from "./openAiVehicleAnalysisProvider.testSupport.js";
+} from "./openRouterVehicleAnalysisProvider.testSupport.js";
 import type { InventoryResaleAnalysisResponse } from "../../features/inventory/controllers/inventoryEnrichmentTypes.js";
 
-describe("OpenAI vehicle analysis provider", () => {
+describe("OpenRouter vehicle analysis provider", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", async () => {
-      throw new Error("OpenAI tests must not use global fetch.");
+      throw new Error("OpenRouter tests must not use global fetch.");
     });
   });
 
@@ -44,8 +44,8 @@ describe("OpenAI vehicle analysis provider", () => {
       ],
     } satisfies InventoryResaleAnalysisResponse;
     const { calls, fetchMock } = createFetchMock(analysis);
-    const provider = createOpenAiVehicleAnalysisProvider({
-      apiKey: "openai-key",
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
       fetch: fetchMock,
       model: "gpt-test",
     });
@@ -53,11 +53,17 @@ describe("OpenAI vehicle analysis provider", () => {
     const result = await provider.analyze(baseInput());
 
     expect(result).toEqual(analysis);
+    expect(calls[0]?.input).toBe("https://openrouter.ai/api/v1/responses");
     expect(calls[0]?.headers).toMatchObject({
-      Authorization: "Bearer openai-key",
+      Authorization: "Bearer openrouter-key",
     });
     expect(calls[0]?.body).toMatchObject({
+      input: [{ type: "message" }, { type: "message" }],
       model: "gpt-test",
+      provider: {
+        data_collection: "deny",
+        require_parameters: true,
+      },
       text: {
         format: {
           name: "vehicle_resale_analysis",
@@ -76,8 +82,8 @@ describe("OpenAI vehicle analysis provider", () => {
       new Response(
         JSON.stringify({ output_text: JSON.stringify(defaultAnalysis()) }),
       );
-    const provider = createOpenAiVehicleAnalysisProvider({
-      apiKey: "openai-key",
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
       fetch: fetchMock,
     });
 
@@ -86,10 +92,32 @@ describe("OpenAI vehicle analysis provider", () => {
     });
   });
 
+  it.each([
+    {
+      body: "not-json",
+      label: "a malformed HTTP response",
+    },
+    {
+      body: JSON.stringify({ output_text: "null" }),
+      label: "structured output with an invalid shape",
+    },
+  ])("rejects $label as a provider response error", async ({ body }) => {
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
+      fetch: async () => new Response(body),
+    });
+
+    await expect(provider.analyze(baseInput())).rejects.toMatchObject({
+      message: "AI resale analysis returned an invalid response.",
+      name: "InventoryEnrichmentProviderError",
+      statusCode: 502,
+    });
+  });
+
   it("adds Chinese 0km pressure for recent SUVs in the 150k-250k band", async () => {
     const { calls, fetchMock } = createFetchMock();
-    const provider = createOpenAiVehicleAnalysisProvider({
-      apiKey: "openai-key",
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
       fetch: fetchMock,
     });
 
@@ -122,8 +150,8 @@ describe("OpenAI vehicle analysis provider", () => {
 
   it("does not add Chinese 0km pressure to cheaper pickup inventory", async () => {
     const { calls, fetchMock } = createFetchMock();
-    const provider = createOpenAiVehicleAnalysisProvider({
-      apiKey: "openai-key",
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
       fetch: fetchMock,
     });
 
@@ -137,8 +165,8 @@ describe("OpenAI vehicle analysis provider", () => {
 
   it("flags explicit rental metadata without requiring the model to invent history", async () => {
     const { calls, fetchMock } = createFetchMock();
-    const provider = createOpenAiVehicleAnalysisProvider({
-      apiKey: "openai-key",
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
       fetch: fetchMock,
     });
 
@@ -164,8 +192,8 @@ describe("OpenAI vehicle analysis provider", () => {
 
   it("adds consignment strategy context when purchase risk is capital-heavy", async () => {
     const { calls, fetchMock } = createFetchMock();
-    const provider = createOpenAiVehicleAnalysisProvider({
-      apiKey: "openai-key",
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
       fetch: fetchMock,
     });
 
@@ -194,8 +222,8 @@ describe("OpenAI vehicle analysis provider", () => {
 
   it("keeps consignment context off clean low-ticket deals", async () => {
     const { calls, fetchMock } = createFetchMock();
-    const provider = createOpenAiVehicleAnalysisProvider({
-      apiKey: "openai-key",
+    const provider = createOpenRouterVehicleAnalysisProvider({
+      apiKey: "openrouter-key",
       fetch: fetchMock,
     });
 

@@ -1,5 +1,10 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { SafeAuditMetadata } from "@lojaveiculosv2/audit";
+import {
+  sanitizeDiagnosticString,
+  toSafeErrorMetadata,
+} from "../../shared/errors/errorDescriptor.js";
 import { observabilitySchemas } from "../../shared/observabilityOntology.js";
 import { readHttpRequestId } from "./requestMetadata.js";
 import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
@@ -18,6 +23,7 @@ export type ApiErrorResponseInput = {
 
 export type HttpErrorMetadata = {
   code: string;
+  diagnostics?: SafeAuditMetadata;
   errorName?: string;
   message: string;
   status: number;
@@ -26,9 +32,18 @@ export type HttpErrorMetadata = {
 export function jsonApiError(context: Context, input: ApiErrorResponseInput) {
   const requestId = readHttpRequestId(context) ?? crypto.randomUUID();
   const errorName = readErrorName(input.error);
+  const diagnostics =
+    input.error === undefined
+      ? undefined
+      : toSafeErrorMetadata(input.error, {
+          boundary: "http",
+          code: input.code,
+          httpStatus: input.status,
+        });
 
   context.set(httpErrorMetadataContextKey, {
     code: input.code,
+    ...(diagnostics ? { diagnostics } : {}),
     ...(errorName ? { errorName } : {}),
     message: input.message,
     status: input.status,
@@ -84,19 +99,32 @@ function logInternalApiError(
     JSON.stringify({
       component: "http",
       correlationId: context.req.header("x-correlation-id") ?? requestId,
+      ...(context.req.header("x-causation-id")
+        ? { causationId: context.req.header("x-causation-id") }
+        : {}),
       event: "request.internal_error",
       code: input.code,
+      ...(input.error === undefined
+        ? {}
+        : toSafeErrorMetadata(input.error, {
+            boundary: "http",
+            code: input.code,
+            httpStatus: input.status,
+          })),
       level: "error",
       method: context.req.method,
       path: sanitizeHttpPath(context.req.path),
       requestId,
+      ...(context.req.header("idempotency-key")
+        ? { idempotencyKey: context.req.header("idempotency-key") }
+        : {}),
       schema: observabilitySchemas.httpLog,
       service: "api",
       status: input.status,
       timestamp: new Date().toISOString(),
       errorName: error.name,
-      errorMessage: error.message,
-      stack: error.stack ?? null,
+      errorMessage: sanitizeDiagnosticString(error.message),
+      stack: error.stack ? sanitizeDiagnosticString(error.stack, 8_000) : null,
     }),
   );
 }

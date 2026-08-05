@@ -43,7 +43,8 @@ import { createDrizzleDocumentLinkTargetValidator } from "../../../infrastructur
 import { createDrizzleDocumentRepository } from "../../../infrastructure/db/documents/drizzleDocumentRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createMemoryDocumentRepository } from "../adapters/memoryDocumentRepository.js";
-import { createOpenAiDocumentTemplateSuggestionProvider } from "../../../infrastructure/documentTemplates/openAiDocumentTemplateSuggestionProvider.js";
+import { createOpenRouterDocumentTemplateSuggestionProvider } from "../../../infrastructure/documentTemplates/openRouterDocumentTemplateSuggestionProvider.js";
+import { resolveOpenRouterConfig } from "../../../infrastructure/openRouterConfig.js";
 import type { ObjectUpload } from "../../../shared/storage/objectStorage.js";
 import type { DocumentTemplateSuggestion } from "../../../domains/documents/ports/documentTemplateSuggestionProvider.js";
 import {
@@ -207,23 +208,20 @@ function createDrizzleDocumentPorts(
     linkTargetValidator:
       createDrizzleDocumentLinkTargetValidator(drizzleClient),
     ...(objectStorage ? { objectStorage } : {}),
-    ...createDocumentAiPorts(),
+    ...createDocumentOpenRouterPorts(),
   };
 }
 
 export const documentServices = createDocumentServices();
 
-function createDocumentAiPorts(): Partial<DocumentWorkspaceServicePorts> {
-  const apiKey = process.env.API_OPENAI_KEY;
+function createDocumentOpenRouterPorts(): Partial<DocumentWorkspaceServicePorts> {
+  const { apiKey, model } = resolveOpenRouterConfig(process.env, "documents");
   if (!apiKey) return {};
   return {
-    templateSuggestionProvider: createOpenAiDocumentTemplateSuggestionProvider({
-      apiKey,
-      model:
-        process.env.API_OPENAI_DOCUMENTS_MODEL ??
-        process.env.API_OPENAI_DEFAULT_MODEL ??
-        process.env.API_OPENAI_MODEL ??
-        "gpt-5.4-mini",
-    }),
+    templateSuggestionProvider:
+      createOpenRouterDocumentTemplateSuggestionProvider({
+        apiKey,
+        model,
+      }),
   };
 }

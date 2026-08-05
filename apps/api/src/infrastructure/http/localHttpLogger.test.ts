@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { IntegrationError } from "../../shared/errors/errorDescriptor.js";
 import { jsonApiError } from "./apiErrorResponse.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
 
@@ -109,6 +110,70 @@ describe("createLocalHttpLogger", () => {
       requestId: "req_500",
       status: 500,
     });
+  });
+
+  it("logs safe integration diagnostics and workflow identifiers", async () => {
+    vi.stubEnv("APP_ENV", "local");
+    const errorLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const app = new Hono();
+    app.use("*", createLocalHttpLogger());
+    app.get("/provider", (context) =>
+      jsonApiError(context, {
+        code: "INTEGRATION_NOT_CONFIGURED",
+        error: new IntegrationError("Bearer private-provider-token", {
+          attemptState: "not_attempted",
+          boundary: "provider_configuration",
+          code: "INTEGRATION_NOT_CONFIGURED",
+          httpStatus: 503,
+          kind: "configuration",
+          operation: "plate_lookup",
+          phase: "configuration",
+          provider: "apibrasil",
+          retryable: false,
+          safeDetails: {
+            apiKey: "must-not-appear",
+            missingConfiguration: ["API_PLACA_KEY"],
+          },
+        }),
+        message: "Integration is unavailable.",
+        status: 503,
+      }),
+    );
+
+    await app.request("/provider", {
+      headers: {
+        "idempotency-key": "idem_1",
+        "x-causation-id": "cause_1",
+        "x-correlation-id": "corr_1",
+        "x-request-id": "req_provider",
+      },
+    });
+
+    const line = readLogLine(errorLog, "request.failed");
+    expect(line).toMatchObject({
+      causationId: "cause_1",
+      code: "INTEGRATION_NOT_CONFIGURED",
+      correlationId: "corr_1",
+      errorBoundary: "provider_configuration",
+      errorDetails: {
+        apiKey: "[redacted]",
+        missingConfiguration: ["API_PLACA_KEY"],
+      },
+      idempotencyKey: "idem_1",
+      providerAttemptState: "not_attempted",
+      providerName: "apibrasil",
+      requestId: "req_provider",
+    });
+    expect(JSON.stringify(line)).not.toContain("private-provider-token");
+    expect(JSON.stringify(line)).not.toContain("must-not-appear");
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain(
+      "private-provider-token",
+    );
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain(
+      "must-not-appear",
+    );
   });
 });
 

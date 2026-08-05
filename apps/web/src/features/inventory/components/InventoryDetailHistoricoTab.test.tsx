@@ -17,7 +17,10 @@ describe("InventoryDetailHistoricoTab", () => {
         resaleAnalysis: {
           dealRiskScore: 32,
           generatedAt: "2026-02-04T10:00:00.000Z",
-          provider: { model: "gpt-5.4-mini", name: "openai" },
+          provider: {
+            model: "openai/gpt-5.4-mini",
+            name: "openrouter",
+          },
           riskLevel: "low",
           suggestedDescription: "Descrição sugerida",
           summary: "Boa liquidez com margem controlada.",
@@ -73,7 +76,7 @@ describe("InventoryDetailHistoricoTab", () => {
     expect(
       screen.getByText("Boa liquidez com margem controlada."),
     ).toBeVisible();
-    expect(screen.getByText(/openai.*gpt-5.4-mini/i)).toBeVisible();
+    expect(screen.getByText(/openrouter.*openai\/gpt-5.4-mini/i)).toBeVisible();
     expect(await screen.findByText("Dados do veículo alterados")).toBeVisible();
     expect(screen.getByText(/Operador user_123456/)).toBeVisible();
     expect(screen.queryByText(/Nenhuma análise.*foi gerada/i)).toBeNull();

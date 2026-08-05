@@ -237,7 +237,7 @@ function riskLabel(level: "high" | "low" | "medium") {
 }
 
 function providerLabel(name: string) {
-  return name.toLowerCase() === "openai" ? "OpenAI" : name;
+  return name.toLowerCase() === "openrouter" ? "OpenRouter" : name;
 }
 
 function actorLabel(event: InventoryAuditEvent) {
