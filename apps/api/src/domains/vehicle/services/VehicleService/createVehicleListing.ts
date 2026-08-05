@@ -18,6 +18,7 @@ import {
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
+import { publishCreatedVehicleListing } from "./publishVehicleListing.js";
 import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
 
 const permission = "inventory.create";
@@ -124,7 +125,9 @@ export async function createVehicleListing(
     tenantId: scope.tenantId,
   });
 
-  const listing = await getListingRepository(ports).create({
+  const shouldPublish =
+    input.status === undefined || input.status === "published";
+  const created = await getListingRepository(ports).create({
     catalog: input.catalog ?? null,
     commercialTags: input.commercialTags ?? [],
     description: input.description ?? null,
@@ -138,7 +141,9 @@ export async function createVehicleListing(
     modelYear: input.modelYear ?? input.catalog?.modelYear ?? null,
     plate: input.plate,
     priceCents: input.priceCents ?? null,
-    status: input.status ?? "draft",
+    // Start as draft so automatic publication records the real status
+    // transition and gets a generated, unique public slug.
+    status: shouldPublish ? "draft" : (input.status ?? "draft"),
     storeId: scope.storeId,
     tenantId: scope.tenantId,
     title: input.title,
@@ -146,6 +151,15 @@ export async function createVehicleListing(
     trimName: input.trimName ?? input.catalog?.modelName ?? null,
     videoUrl: input.videoUrl ?? null,
   });
+
+  const listing = shouldPublish
+    ? await publishCreatedVehicleListing(
+        context,
+        created,
+        { reason: "Automatically published when vehicle was created." },
+        ports,
+      )
+    : created;
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_listing.create",
