@@ -41,6 +41,8 @@ corresponding capability is enabled:
   `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`,
   `R2_PUBLIC_BASE_URL`, and `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY`.
 - CRM WhatsApp: `CRM_ZAPI_CLIENT_TOKEN` and `CRM_ZAPI_WEBHOOK_TOKEN`.
+- OpenRouter: `OPENROUTER_API_KEY`. AI document suggestions and inventory
+  resale analysis remain unavailable until this placeholder is replaced.
 - Asaas sandbox: `ASAAS_API_KEY`, `ASAAS_WEBHOOK_SECRET`, and
   `ASAAS_RUNTIME_IMPLEMENTATION`. Set the implementation to `http` only after
   the other values are real.

@@ -8,7 +8,8 @@ import {
   type StoreScopedServiceContext,
 } from "../../../shared/serviceContext.js";
 import { createApiBrasilVehiclePlateProvider } from "../../../infrastructure/vehicleEnrichment/apiBrasilVehiclePlateProvider.js";
-import { createOpenAiVehicleAnalysisProvider } from "../../../infrastructure/vehicleEnrichment/openAiVehicleAnalysisProvider.js";
+import { createOpenRouterVehicleAnalysisProvider } from "../../../infrastructure/vehicleEnrichment/openRouterVehicleAnalysisProvider.js";
+import { resolveOpenRouterConfig } from "../../../infrastructure/openRouterConfig.js";
 import type { VehiclePlateLookupRepository } from "../../../domains/vehicle/ports/vehicleEnrichmentRepository.js";
 import type { BillingQuotaGuard } from "../../../domains/billing/ports/billingQuotaGuard.js";
 import type {
@@ -194,14 +195,9 @@ async function lookupPlateWithCache({
 }
 
 function createDefaultAnalysisProvider(): VehicleAnalysisProvider {
-  return createOpenAiVehicleAnalysisProvider({
-    apiKey: process.env.API_OPENAI_KEY,
-    model:
-      process.env.API_OPENAI_INVENTORY_RESALE_MODEL ??
-      process.env.API_OPENAI_DEFAULT_MODEL ??
-      process.env.API_OPENAI_MODEL ??
-      "gpt-5.4-mini",
-  });
+  return createOpenRouterVehicleAnalysisProvider(
+    resolveOpenRouterConfig(process.env, "inventory_resale"),
+  );
 }
 
 function createDefaultPlateProvider(): VehiclePlateProvider {

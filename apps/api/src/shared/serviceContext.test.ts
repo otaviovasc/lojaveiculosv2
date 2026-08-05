@@ -46,7 +46,13 @@ describe("service context scaffolding", () => {
     const audit = createMemoryAuditSink();
     const context = createServiceContext({
       audit,
-      request: { correlationId: "corr_1", requestId: "req_1" },
+      request: {
+        causationId: "cause_1",
+        correlationId: "corr_1",
+        idempotencyKey: "idem_1",
+        requestId: "req_1",
+      },
+      source: { service: "api", version: "sha_1" },
     });
 
     await context.audit.record({
@@ -60,12 +66,18 @@ describe("service context scaffolding", () => {
     });
 
     expect(audit.events).toHaveLength(1);
-    expect(audit.events[0]).toEqual(
-      expect.objectContaining({
-        action: "vehicle.read",
-        requestId: "req_1",
-      }),
-    );
+    expect(audit.events[0]).toMatchObject({
+      action: "vehicle.read",
+      requestId: "req_1",
+    });
+    expect(audit.events[0]?.request).toMatchObject({
+      causationId: "cause_1",
+      idempotencyKey: "idem_1",
+    });
+    expect(audit.events[0]?.source).toMatchObject({
+      service: "api",
+      version: "sha_1",
+    });
   });
 
   it("logs audit records through the logging sink", async () => {
@@ -193,7 +205,9 @@ describe("service context scaffolding", () => {
       actorId: "public",
       actorKind: "public",
       billingManagedBy: null,
+      causationId: null,
       correlationId: "corr_1",
+      idempotencyKey: null,
       membershipRole: null,
       requestId: "req_1",
       requestMethod: null,

@@ -6,11 +6,16 @@ import type {
 export function createFetchMock(
   analysis: InventoryResaleAnalysisResponse = defaultAnalysis(),
 ) {
-  const calls: Array<{ body: unknown; headers: HeadersInit | undefined }> = [];
-  const fetchMock: typeof globalThis.fetch = async (_input, init) => {
+  const calls: Array<{
+    body: unknown;
+    headers: HeadersInit | undefined;
+    input: RequestInfo | URL;
+  }> = [];
+  const fetchMock: typeof globalThis.fetch = async (input, init) => {
     calls.push({
       body: JSON.parse(String(init?.body)),
       headers: init?.headers,
+      input,
     });
     return new Response(
       JSON.stringify({
@@ -95,7 +100,11 @@ export function requiredSchemaFields(body: unknown) {
 }
 
 type CapturedRequest = {
-  input: Array<{ content: Array<{ text: string }>; role: string }>;
+  input: Array<{
+    content: Array<{ text: string; type: "input_text" }>;
+    role: "system" | "user";
+    type: "message";
+  }>;
   text: {
     format: {
       schema: {

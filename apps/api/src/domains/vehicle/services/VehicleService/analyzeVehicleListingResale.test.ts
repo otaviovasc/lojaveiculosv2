@@ -43,8 +43,8 @@ describe("analyzeVehicleListingResale", () => {
     }));
     ports.resaleAnalysisProvider = {
       analyze,
-      model: "gpt-5.4-mini",
-      name: "openai",
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
     };
     const context = createContext(["inventory.resale_analysis_generate"]);
 
@@ -63,14 +63,17 @@ describe("analyzeVehicleListingResale", () => {
     );
     expect(updated.resaleAnalysis).toMatchObject({
       dealRiskScore: 28,
-      provider: { model: "gpt-5.4-mini", name: "openai" },
+      provider: {
+        model: "openai/gpt-5.4-mini",
+        name: "openrouter",
+      },
     });
     expect(context.audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "vehicle_listing.resale_analysis.generate",
         entityId: "listing_1",
         outcome: "succeeded",
-        provider: { name: "openai" },
+        provider: { name: "openrouter" },
       }),
     );
   });
@@ -80,8 +83,8 @@ describe("analyzeVehicleListingResale", () => {
     const analyze = vi.fn();
     ports.resaleAnalysisProvider = {
       analyze,
-      model: "gpt-5.4-mini",
-      name: "openai",
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
     };
 
     await expect(
@@ -99,8 +102,8 @@ describe("analyzeVehicleListingResale", () => {
     const analyze = vi.fn();
     ports.resaleAnalysisProvider = {
       analyze,
-      model: "gpt-5.4-mini",
-      name: "openai",
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
     };
     const context = createContext(["inventory.resale_analysis_generate"]);
     context.entitlements = [];
