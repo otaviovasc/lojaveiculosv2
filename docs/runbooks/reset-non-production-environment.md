@@ -31,7 +31,7 @@ It is a dry run by default and reports only counts and prefixes. If the output
 shows `environment=staging` and `prefix=s/`, apply it once:
 
 ```bash
-pnpm --filter @lojaveiculosv2/api ops:reset-environment -- --apply --confirm=staging
+pnpm --filter @lojaveiculosv2/api ops:reset-environment --apply --confirm=staging
 ```
 
 The job is idempotent. If a later phase fails after an earlier phase succeeds,
