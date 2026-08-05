@@ -5,6 +5,7 @@ import type { CreateFlowSubmitState } from "./InventoryCreateFlow";
 import { parsePriceCents } from "../model/formModel";
 import { inventoryStatusLabels } from "../model/listCatalogModel";
 import type { InventoryResaleAnalysisResponse } from "../model/enrichmentTypes";
+import type { InventoryResaleReadiness } from "../model/inventoryEnrichment";
 import { AnalysisPanel, type Loadable } from "./InventoryCreateEnrichmentParts";
 
 interface InventoryCreateSidebarProps {
@@ -15,6 +16,7 @@ interface InventoryCreateSidebarProps {
   onRetryMedia: () => void;
   isSubmitting: boolean;
   analysisState: Loadable<InventoryResaleAnalysisResponse>;
+  analysisReadiness: InventoryResaleReadiness;
   canAnalyze: boolean;
   onGenerateAnalysis: () => void;
 }
@@ -27,6 +29,7 @@ export function InventoryCreateSidebar({
   onRetryMedia,
   isSubmitting,
   analysisState,
+  analysisReadiness,
   canAnalyze,
   onGenerateAnalysis,
 }: InventoryCreateSidebarProps) {
@@ -92,6 +95,7 @@ export function InventoryCreateSidebar({
         {/* Analysis Content */}
         <div className="p-5 flex flex-col gap-4 bg-panel">
           <AnalysisPanel
+            readiness={analysisReadiness}
             canAnalyze={canAnalyze}
             onGenerate={onGenerateAnalysis}
             state={analysisState}

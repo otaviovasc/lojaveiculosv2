@@ -1,6 +1,15 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
+import { useOptionalAccountSession } from "../../account/accountSession";
 import { readRuntimeStoreSlug } from "../../account/currentStore";
+import { readSessionActiveStore } from "../../account/sessionPermissions";
+import type { SessionBootstrap } from "../../account/apiClient";
 import type { InventoryFormState } from "../model/formModel";
 
 export type InventoryCreateStoreOption = {
@@ -24,10 +33,21 @@ type BillingStoreAllocationDto = {
 export function useInventoryCreateStores(
   setForm: Dispatch<SetStateAction<InventoryFormState>>,
 ) {
-  const [stores, setStores] = useState<InventoryCreateStoreOption[]>([]);
+  const session = useOptionalAccountSession();
+  const sessionStores = useMemo(() => mapSessionStores(session), [session]);
+  const [stores, setStores] =
+    useState<InventoryCreateStoreOption[]>(sessionStores);
 
   useEffect(() => {
     let active = true;
+
+    if (sessionStores.length > 0) {
+      applyStores(sessionStores);
+      return () => {
+        active = false;
+      };
+    }
+
     async function loadStores() {
       try {
         const headers = await createInventoryRuntimeHeaders();
@@ -58,9 +78,31 @@ export function useInventoryCreateStores(
     return () => {
       active = false;
     };
-  }, [setForm]);
+  }, [sessionStores, setForm]);
 
   return stores;
+}
+
+function mapSessionStores(
+  session: SessionBootstrap | null,
+): InventoryCreateStoreOption[] {
+  const activeStore = readSessionActiveStore(session);
+  const activeStores =
+    session?.stores.filter((store) => store.status === "active") ?? [];
+  const stores = activeStore
+    ? [
+        activeStore,
+        ...activeStores.filter(
+          (store) => store.storeId !== activeStore.storeId,
+        ),
+      ]
+    : activeStores;
+
+  return stores.map((store) => ({
+    id: store.storeId,
+    name: store.storeName,
+    slug: store.storeSlug,
+  }));
 }
 
 function mapBillingStores(data: unknown) {

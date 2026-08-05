@@ -1,5 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
 import type {
   VehicleDocument,
   VehicleDocumentKind,
@@ -152,7 +153,11 @@ function assertStorageScope(
   }
 
   const prefix = `tenants/${context.tenantId}/stores/${context.storeId}/units/${unitId}/`;
-  if (!storageKey.startsWith(prefix)) {
+  const scopedStorageKey = stripStorageEnvironmentPrefix(
+    storageKey,
+    context.source?.environment,
+  );
+  if (!scopedStorageKey.startsWith(prefix)) {
     throw new VehicleDocumentStorageScopeError();
   }
 }

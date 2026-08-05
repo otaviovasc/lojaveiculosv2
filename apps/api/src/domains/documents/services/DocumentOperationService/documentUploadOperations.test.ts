@@ -88,6 +88,26 @@ describe("document upload operations", () => {
     ).rejects.toThrow("Document storage key is outside the requested scope.");
   });
 
+  it("accepts the environment prefix used by R2 signed uploads", async () => {
+    const repository = createTestDocumentRepository();
+
+    await expect(
+      createUploadedDocument(
+        createContext(),
+        {
+          fileName: "manual.pdf",
+          fileSizeBytes: 2048,
+          kind: "other",
+          mimeType: "application/pdf",
+          storageKey:
+            "s/tenants/tenant_1/stores/store_1/documents/store/store_1/manual.pdf",
+          title: "Documento manual",
+        },
+        { documentRepository: repository },
+      ),
+    ).resolves.toBeTruthy();
+  });
+
   it("requests and registers uploads for shared sale targets", async () => {
     const repository = createTestDocumentRepository();
     const objectStorage = createTestObjectStorage();

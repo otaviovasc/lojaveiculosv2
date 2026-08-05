@@ -19,6 +19,22 @@ import type {
   InventoryResaleAnalysisRequest,
 } from "./enrichmentTypes";
 
+export type InventoryResaleReadinessIssue = {
+  code:
+    | "acquisition_price"
+    | "catalog"
+    | "mileage"
+    | "model_year"
+    | "selling_price"
+    | "store";
+  label: string;
+};
+
+export type InventoryResaleReadiness = {
+  isReady: boolean;
+  missing: readonly InventoryResaleReadinessIssue[];
+};
+
 export function applyPlateLookupToForm(
   form: InventoryFormState,
   lookup: InventoryPlateLookupResponse,
@@ -84,7 +100,8 @@ export function createResaleAnalysisInput(
     manufactureYear: parseInteger(form.manufactureYear),
     marketContext: null,
     metadata: lookup?.metadata ?? [],
-    mileageKm: lookup?.vehicle.mileageKm ?? null,
+    mileageKm:
+      parseInteger(form.mileageKm) ?? lookup?.vehicle.mileageKm ?? null,
     model: form.catalog?.modelName ?? lookup?.vehicle.model ?? null,
     modelYear: parseInteger(form.modelYear),
     origin: lookup?.vehicle.origin ?? null,
@@ -104,8 +121,81 @@ export function hasEnoughDataForAnalysis(
   form: InventoryFormState,
   lookup: InventoryPlateLookupResponse | null,
 ) {
+  return getCreateResaleAnalysisReadiness(form, lookup).isReady;
+}
+
+export function getCreateResaleAnalysisReadiness(
+  form: InventoryFormState,
+  lookup: InventoryPlateLookupResponse | null,
+): InventoryResaleReadiness {
   const input = createResaleAnalysisInput(form, lookup);
-  return Boolean(input.brand && input.model && input.modelYear);
+  return getResaleAnalysisReadiness({
+    acquisitionPriceCents: input.acquisitionPriceCents,
+    catalog: form.catalog,
+    mileageKm: input.mileageKm,
+    modelYear: input.modelYear,
+    sellingPriceCents: input.sellingPriceCents,
+    storeId: form.storeId,
+  });
+}
+
+export function getResaleAnalysisReadiness({
+  acquisitionPriceCents,
+  catalog,
+  mileageKm,
+  modelYear,
+  sellingPriceCents,
+  storeId,
+}: {
+  acquisitionPriceCents: number | null | undefined;
+  catalog: InventoryCatalogSnapshot | null;
+  mileageKm: number | null | undefined;
+  modelYear: number | null | undefined;
+  sellingPriceCents: number | null | undefined;
+  storeId: string | null | undefined;
+}): InventoryResaleReadiness {
+  const missing: InventoryResaleReadinessIssue[] = [];
+  if (!storeId?.trim()) missing.push({ code: "store", label: "loja" });
+  if (!hasUsableCatalog(catalog)) {
+    missing.push({ code: "catalog", label: "marca e modelo do catálogo" });
+  }
+  if (!isYear(modelYear)) {
+    missing.push({ code: "model_year", label: "ano do modelo" });
+  }
+  if (!isMileage(mileageKm)) {
+    missing.push({ code: "mileage", label: "quilometragem" });
+  }
+  if (!isPositiveMoney(acquisitionPriceCents)) {
+    missing.push({
+      code: "acquisition_price",
+      label: "valor de aquisição",
+    });
+  }
+  if (!isPositiveMoney(sellingPriceCents)) {
+    missing.push({ code: "selling_price", label: "valor de venda" });
+  }
+  return { isReady: missing.length === 0, missing };
+}
+
+function hasUsableCatalog(catalog: InventoryCatalogSnapshot | null) {
+  return Boolean(catalog?.brandName?.trim() && catalog.modelName?.trim());
+}
+
+function isYear(value: number | null | undefined) {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 1886 &&
+    value <= 2100
+  );
+}
+
+function isMileage(value: number | null | undefined) {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function isPositiveMoney(value: number | null | undefined) {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
 function createCatalogFromLookup(
@@ -175,6 +265,7 @@ function shouldFillChassis(value: string | null): value is string {
 }
 
 function parseInteger(value: string) {
+  if (!value.trim()) return null;
   const number = Number(value);
   return Number.isInteger(number) ? number : null;
 }

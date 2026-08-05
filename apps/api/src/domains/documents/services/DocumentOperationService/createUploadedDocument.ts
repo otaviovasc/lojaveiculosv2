@@ -18,6 +18,8 @@ import {
   resolveDocumentTarget,
   validateDocumentTarget,
 } from "./requestDocumentUpload.js";
+import { DocumentOperationPolicyError } from "./serviceSupport.js";
+import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
 
 const permission = "documents.upload";
 
@@ -42,7 +44,12 @@ export async function createUploadedDocument(
   const repository = getDocumentRepository(ports);
   const target = resolveDocumentTarget(scope.storeId, input);
   await validateDocumentTarget(context, scope, target, ports);
-  assertStorageKeyInScope(input.storageKey, scope, target);
+  assertStorageKeyInScope(
+    input.storageKey,
+    scope,
+    target,
+    context.source?.environment,
+  );
 
   const document = await repository.create({
     createdByUserId: context.actor.kind === "user" ? context.actor.id : null,
@@ -106,9 +113,16 @@ function assertStorageKeyInScope(
   storageKey: string,
   scope: { storeId: string; tenantId: string },
   target: { targetId: string; targetType: DocumentLinkTarget },
+  environment?: string,
 ) {
   const expectedPrefix = `${createDocumentObjectScope(scope, target).join("/")}/`;
-  if (!storageKey.startsWith(expectedPrefix)) {
-    throw new Error("Document storage key is outside the requested scope.");
+  const scopedStorageKey = stripStorageEnvironmentPrefix(
+    storageKey,
+    environment,
+  );
+  if (!scopedStorageKey.startsWith(expectedPrefix)) {
+    throw new DocumentOperationPolicyError(
+      "Document storage key is outside the requested scope.",
+    );
   }
 }

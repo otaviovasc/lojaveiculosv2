@@ -52,6 +52,15 @@ export class VehicleUnitNotFoundError extends Error {
   }
 }
 
+export type VehicleUnitIdentifier = "plate" | "stockNumber" | "vin";
+
+export class VehicleUnitIdentifierConflictError extends Error {
+  constructor(readonly field: VehicleUnitIdentifier) {
+    super(`A vehicle unit with this ${field} already exists in the store.`);
+    this.name = "VehicleUnitIdentifierConflictError";
+  }
+}
+
 export class VehicleMediaNotFoundError extends Error {
   constructor(mediaId: string) {
     super(`Vehicle media not found: ${mediaId}`);

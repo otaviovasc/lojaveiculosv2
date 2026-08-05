@@ -12,6 +12,7 @@ import type {
   InventoryResaleAnalysisResponse,
   InventoryResaleTopic,
 } from "../model/enrichmentTypes";
+import type { InventoryResaleReadiness } from "../model/inventoryEnrichment";
 
 export type Loadable<T> =
   | { kind: "idle" }
@@ -86,10 +87,12 @@ export function LookupStatus({
 export function AnalysisPanel({
   canAnalyze,
   onGenerate,
+  readiness,
   state,
 }: {
   canAnalyze: boolean;
   onGenerate: () => void;
+  readiness: InventoryResaleReadiness;
   state: Loadable<InventoryResaleAnalysisResponse>;
 }) {
   const isLoading = state.kind === "loading";
@@ -121,34 +124,45 @@ export function AnalysisPanel({
           </span>
         </button>
       </div>
-      <AnalysisStatus state={state} canAnalyze={canAnalyze} />
+      <AnalysisStatus state={state} readiness={readiness} />
     </div>
   );
 }
 
 function AnalysisStatus({
   state,
-  canAnalyze,
+  readiness,
 }: {
   state: Loadable<InventoryResaleAnalysisResponse>;
-  canAnalyze: boolean;
+  readiness: InventoryResaleReadiness;
 }) {
-  if (state.kind === "idle") {
-    if (!canAnalyze)
-      return (
-        <div className="flex flex-col gap-2 rounded-xl border border-line bg-app p-4 text-xs font-bold text-muted transition-all">
-          <div className="flex items-center gap-2 text-warning">
-            <Info className="size-4 shrink-0" />
-            <span className="font-black uppercase tracking-wider text-xs">
-              Dados Insuficientes
-            </span>
-          </div>
-          <p className="leading-relaxed">
-            Preencha a placa ou insira os dados do veículo (Marca, Modelo e Ano)
-            para habilitar a análise de revenda por inteligência artificial.
-          </p>
+  if (!readiness.isReady && state.kind !== "loading")
+    return (
+      <div className="flex flex-col gap-2 rounded-xl border border-line bg-app p-4 text-xs font-bold text-muted transition-all">
+        <div className="flex items-center gap-2 text-warning">
+          <Info className="size-4 shrink-0" />
+          <span className="font-black uppercase tracking-wider text-xs">
+            Dados Insuficientes
+          </span>
         </div>
-      );
+        <p className="leading-relaxed">
+          Complete os dados abaixo para liberar uma análise confiável:
+        </p>
+        <ul className="grid gap-1" aria-label="Dados pendentes para análise">
+          {readiness.missing.map((issue) => (
+            <li className="flex items-center gap-2" key={issue.code}>
+              <span aria-hidden="true">•</span>
+              <span>{issue.label}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="leading-relaxed">
+          O Copilot só será chamado quando você clicar em{" "}
+          <strong>Gerar análise</strong>.
+        </p>
+      </div>
+    );
+  if (state.kind === "idle") {
     return (
       <div className="flex flex-col gap-2 rounded-xl border border-accent-soft/20 bg-accent-soft/5 p-4 text-xs font-bold text-app-text transition-all animate-pulse">
         <div className="flex items-center gap-2 text-accent-strong">

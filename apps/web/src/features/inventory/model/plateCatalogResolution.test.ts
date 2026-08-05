@@ -8,10 +8,10 @@ describe("plate catalog resolution", () => {
     const snapshot = {
       brandCode: "59",
       brandName: "Volvo",
-      fipeCode: "029089-2",
+      fipeCode: "029039-4",
       fuel: "Gasolina",
-      modelCode: "9001",
-      modelName: "XC60 2.0 T5",
+      modelCode: "2344",
+      modelName: "V40 T-4 2.0 Aut./Mec.",
       modelYear: 2013,
       priceCents: 6501900,
       referenceMonth: "agosto de 2026",
@@ -27,37 +27,48 @@ describe("plate catalog resolution", () => {
         { code: "59", name: "Volvo" },
       ]),
       listCatalogModels: vi.fn(async () => [
-        { code: "700", name: "XC40" },
-        { code: "900", name: "XC60" },
+        { code: "s40", name: "S40" },
+        { code: "v40", name: "V40" },
       ]),
       listCatalogVersions: vi.fn(async () => [
         {
-          code: "9000",
-          modelFamilyCode: "900",
-          modelFamilyName: "XC60",
-          name: "XC60 3.0 AWD",
+          code: "2342",
+          modelFamilyCode: "v40",
+          modelFamilyName: "V40",
+          name: "T-4",
         },
         {
-          code: "9001",
-          modelFamilyCode: "900",
-          modelFamilyName: "XC60",
-          name: "XC60 2.0 T5",
+          code: "2344",
+          modelFamilyCode: "v40",
+          modelFamilyName: "V40",
+          name: "T-4 2.0 Aut./Mec.",
+        },
+        {
+          code: "7364",
+          modelFamilyCode: "v40",
+          modelFamilyName: "V40",
+          name: "T-4 MOMENTUM 2.0 Aut.",
         },
       ]),
-      listCatalogYears: vi.fn(async () => [
-        {
-          code: "2014-1",
-          fuelCode: "1",
-          modelYear: 2014,
-          name: "2014 Gasolina",
-        },
-        {
-          code: "2013-1",
-          fuelCode: "1",
-          modelYear: 2013,
-          name: "2013 Gasolina",
-        },
-      ]),
+      listCatalogYears: vi.fn(async (_brandCode, versionCode) =>
+        versionCode === "2344"
+          ? [
+              {
+                code: "2013-1",
+                fuelCode: "1",
+                modelYear: 2013,
+                name: "2013 Gasolina",
+              },
+            ]
+          : [
+              {
+                code: "2000-1",
+                fuelCode: "1",
+                modelYear: 2000,
+                name: "2000 Gasolina",
+              },
+            ],
+      ),
     } as unknown as InventoryApi;
 
     await expect(
@@ -65,10 +76,11 @@ describe("plate catalog resolution", () => {
     ).resolves.toEqual(snapshot);
     expect(api.getCatalogSnapshot).toHaveBeenCalledWith({
       brandCode: "59",
-      modelCode: "9001",
+      modelCode: "2344",
       vehicleType: "cars",
       yearCode: "2013-1",
     });
+    expect(api.listCatalogYears).toHaveBeenCalledTimes(2);
   });
 
   it("fails open when the catalog cannot confidently match the plate", async () => {
@@ -88,7 +100,7 @@ function lookupPayload(): InventoryPlateLookupResponse {
       brandName: "Volvo",
       code: null,
       fuel: "Gasolina",
-      modelName: "XC60 2.0 T5",
+      modelName: "VOLVO V40 T4 DYNAMIC",
       modelYear: 2013,
       priceCents: null,
       priceLabel: null,
@@ -101,7 +113,7 @@ function lookupPayload(): InventoryPlateLookupResponse {
     vehicle: {
       aspiration: null,
       bodyType: null,
-      brand: "Volvo",
+      brand: "VOLVO I",
       chassis: null,
       city: null,
       color: null,
@@ -109,14 +121,14 @@ function lookupPayload(): InventoryPlateLookupResponse {
       fuel: "Gasolina",
       manufactureYear: 2013,
       mileageKm: null,
-      model: "XC60",
+      model: "VOLVO V40",
       modelYear: 2013,
       origin: null,
       power: null,
       state: null,
       transmission: "Aut./Mec.",
       vehicleType: "Automovel",
-      version: "2.0 T5",
+      version: "T4 DYNAMIC",
     },
   };
 }

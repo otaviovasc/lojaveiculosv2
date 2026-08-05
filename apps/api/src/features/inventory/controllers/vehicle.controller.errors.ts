@@ -20,6 +20,7 @@ import {
   VehicleListingNotFoundError,
   VehicleMediaNotFoundError,
   VehicleSupplierNotFoundError,
+  VehicleUnitIdentifierConflictError,
   VehicleUnitNotFoundError,
 } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
@@ -69,6 +70,16 @@ export function mapInventoryWorkflowError(
   if (error instanceof SaleUnitConflictError) {
     return jsonApiError(context, {
       code: "SALE_UNIT_CONFLICT",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+
+  if (error instanceof VehicleUnitIdentifierConflictError) {
+    return jsonApiError(context, {
+      code: "VEHICLE_UNIT_IDENTIFIER_CONFLICT",
+      details: { field: error.field },
       error,
       message: error.message,
       status: 409,

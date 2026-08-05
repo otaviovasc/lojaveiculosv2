@@ -33,28 +33,33 @@ export async function resolvePlateCatalogSnapshot(
       model.code,
       vehicleType,
     );
-    const version = findBestOption(versions, [
-      lookup.fipe?.modelName,
-      joinVehicleName(lookup),
-      lookup.vehicle.version,
-      lookup.vehicle.model,
-    ]);
-    if (!version) return null;
-
-    const years = await api.listCatalogYears(
-      brand.code,
-      version.code,
-      vehicleType,
+    const matchingVersions = findBestOptions(
+      versions,
+      [
+        lookup.fipe?.modelName,
+        joinVehicleName(lookup),
+        lookup.vehicle.version,
+        lookup.vehicle.model,
+      ],
+      true,
     );
-    const year = findBestYear(years, lookup);
-    if (!year) return null;
+    for (const version of matchingVersions) {
+      const years = await api.listCatalogYears(
+        brand.code,
+        version.code,
+        vehicleType,
+      );
+      const year = findBestYear(years, lookup);
+      if (!year) continue;
 
-    return await api.getCatalogSnapshot({
-      brandCode: brand.code,
-      modelCode: version.code,
-      vehicleType,
-      yearCode: year.code,
-    });
+      return await api.getCatalogSnapshot({
+        brandCode: brand.code,
+        modelCode: version.code,
+        vehicleType,
+        yearCode: year.code,
+      });
+    }
+    return null;
   } catch {
     return null;
   }
@@ -64,22 +69,32 @@ function findBestOption<T extends InventoryCatalogOption>(
   options: readonly T[],
   rawTargets: ReadonlyArray<string | null | undefined>,
 ): T | null {
+  return findBestOptions(options, rawTargets)[0] ?? null;
+}
+
+function findBestOptions<T extends InventoryCatalogOption>(
+  options: readonly T[],
+  rawTargets: ReadonlyArray<string | null | undefined>,
+  allowVariantBadge = false,
+): T[] {
   const targets = rawTargets
     .map(normalize)
     .filter((value): value is string => Boolean(value));
-  let best: { option: T; score: number } | null = null;
 
-  for (const option of options) {
-    const candidate = normalize(option.name);
-    if (!candidate) continue;
-    const score = Math.max(
-      0,
-      ...targets.map((target) => matchScore(candidate, target)),
-    );
-    if (!best || score > best.score) best = { option, score };
-  }
-
-  return best && best.score >= 60 ? best.option : null;
+  return options
+    .flatMap((option, index) => {
+      const candidate = normalize(option.name);
+      if (!candidate) return [];
+      const score = Math.max(
+        0,
+        ...targets.map((target) =>
+          matchScore(candidate, target, allowVariantBadge),
+        ),
+      );
+      return score >= 60 ? [{ index, option, score }] : [];
+    })
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ option }) => option);
 }
 
 function findBestYear(
@@ -99,14 +114,32 @@ function findBestYear(
   );
 }
 
-function matchScore(candidate: string, target: string) {
+function matchScore(
+  candidate: string,
+  target: string,
+  allowVariantBadge: boolean,
+) {
   if (candidate === target) return 100;
+  const compactCandidate = compact(candidate);
+  const compactTarget = compact(target);
+  if (compactCandidate === compactTarget) return 100;
   if (target.includes(candidate)) {
     return 80 + Math.round((candidate.length / target.length) * 10);
   }
   if (candidate.includes(target)) {
     return 70 + Math.round((target.length / candidate.length) * 10);
   }
+  if (compactTarget.includes(compactCandidate)) {
+    return (
+      80 + Math.round((compactCandidate.length / compactTarget.length) * 10)
+    );
+  }
+  if (compactCandidate.includes(compactTarget)) {
+    return (
+      70 + Math.round((compactTarget.length / compactCandidate.length) * 10)
+    );
+  }
+  if (allowVariantBadge && hasSharedVariantBadge(candidate, target)) return 65;
 
   const candidateTokens = new Set(candidate.split(" "));
   const targetTokens = new Set(target.split(" "));
@@ -116,6 +149,32 @@ function matchScore(candidate: string, target: string) {
   return Math.round(
     (overlap / Math.max(candidateTokens.size, targetTokens.size)) * 70,
   );
+}
+
+function compact(value: string) {
+  return value.replace(/\s+/g, "");
+}
+
+function hasSharedVariantBadge(candidate: string, target: string) {
+  const candidateBadges = extractVariantBadges(candidate);
+  return [...extractVariantBadges(target)].some((badge) =>
+    candidateBadges.has(badge),
+  );
+}
+
+function extractVariantBadges(value: string) {
+  const tokens = value.split(" ");
+  const badges = new Set(
+    tokens.filter((token) => /^[a-z]\d{1,2}$/.test(token)),
+  );
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    const letter = tokens[index];
+    const number = tokens[index + 1];
+    if (/^[a-z]$/.test(letter ?? "") && /^\d{1,2}$/.test(number ?? "")) {
+      badges.add(`${letter}${number}`);
+    }
+  }
+  return badges;
 }
 
 function joinVehicleName(lookup: InventoryPlateLookupResponse) {
