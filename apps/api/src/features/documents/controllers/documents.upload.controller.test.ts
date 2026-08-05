@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import type { LinkedDocument } from "../../../domains/documents/ports/documentRepository.js";
+import { DocumentOperationPolicyError } from "../../../domains/documents/services/DocumentOperationService/serviceSupport.js";
 import { createDocumentsFeature } from "./documents.controller.js";
 import type { DocumentServices } from "./documentServices.js";
 
@@ -82,6 +83,38 @@ describe("documents upload controller", () => {
       documentId: "document_1",
       reason: "Documento excluido pelo operador.",
     });
+  });
+
+  it("returns a stable policy error with the request id", async () => {
+    const services = createServices({
+      createUploaded: vi.fn(async () => {
+        throw new DocumentOperationPolicyError(
+          "Document storage key is outside the requested scope.",
+        );
+      }),
+    });
+    const app = createApp(services);
+
+    const response = await app.request("/api/v1/documents", {
+      body: JSON.stringify({
+        fileName: "document.pdf",
+        fileSizeBytes: 2048,
+        kind: "other",
+        mimeType: "application/pdf",
+        storageKey:
+          "x/tenants/tenant_1/stores/store_1/documents/store/store_1/document.pdf",
+        title: "Documento externo",
+      }),
+      method: "POST",
+    });
+
+    expect(response.status).toBe(409);
+    const responseForRequestId = response.clone();
+    expect(await response.json()).toMatchObject({
+      code: "DOCUMENT_POLICY_ERROR",
+      message: "Document storage key is outside the requested scope.",
+    });
+    expect(await responseForRequestId.json()).toHaveProperty("requestId");
   });
 });
 

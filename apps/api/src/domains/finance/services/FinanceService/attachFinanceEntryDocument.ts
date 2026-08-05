@@ -1,5 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
 import type {
   DocumentKind,
   LinkedDocument,
@@ -41,7 +42,12 @@ export async function attachFinanceEntryDocument(
     getFinanceRepository(ports),
     input.entryId,
   );
-  assertStorageScope(scope, bundle.entry.id, input.storageKey);
+  assertStorageScope(
+    scope,
+    bundle.entry.id,
+    input.storageKey,
+    context.source?.environment,
+  );
 
   logFinanceServiceEvent(context, "finance_document.attach.started", {
     entryId: bundle.entry.id,
@@ -91,9 +97,12 @@ function assertStorageScope(
   scope: { storeId: string; tenantId: string },
   entryId: string,
   storageKey: string,
+  environment?: string,
 ) {
   const prefix = `${financeEntryStoragePrefix(scope, entryId)}/`;
-  if (!storageKey.startsWith(prefix)) {
+  if (
+    !stripStorageEnvironmentPrefix(storageKey, environment).startsWith(prefix)
+  ) {
     throw new FinanceDocumentStorageScopeError();
   }
 }

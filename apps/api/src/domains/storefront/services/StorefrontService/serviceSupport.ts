@@ -3,6 +3,7 @@ import type { StorefrontMediaRepository } from "../../ports/storefrontMediaRepos
 import type { StorefrontPageRepository } from "../../ports/storefrontPageRepository.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
+import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
 
 export class PublicStorefrontRepositoryError extends Error {
   constructor() {
@@ -153,9 +154,12 @@ export function createStorefrontMediaScopeSegments(
 export function assertStorefrontMediaStorageKey(
   scope: StorefrontMediaScopeInput,
   storageKey: string,
+  environment?: string,
 ) {
   const prefix = `${createStorefrontMediaScopeSegments(scope).join("/")}/`;
-  if (!storageKey.startsWith(prefix)) {
+  if (
+    !stripStorageEnvironmentPrefix(storageKey, environment).startsWith(prefix)
+  ) {
     throw new StorefrontMediaValidationError(
       "Storefront media storage key does not belong to this store.",
     );

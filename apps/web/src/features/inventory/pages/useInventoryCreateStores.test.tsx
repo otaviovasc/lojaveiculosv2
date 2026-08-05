@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from "@testing-library/react";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AccountSessionProvider } from "../../account/accountSession";
+import type { SessionBootstrap } from "../../account/apiClient";
 import type { InventoryFormState } from "../model/formModel";
 import { useInventoryCreateStores } from "./useInventoryCreateStores";
 
@@ -56,6 +58,58 @@ describe("useInventoryCreateStores", () => {
 
     await waitFor(() => expect(setForm).toHaveBeenCalledOnce());
     expect(result.current).toEqual([]);
+  });
+
+  it("uses active session stores when billing has no allocations", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ allocations: [] })),
+    );
+    const setForm = vi.fn();
+
+    const { result } = renderHook(
+      () =>
+        useInventoryCreateStores(
+          setForm as Dispatch<SetStateAction<InventoryFormState>>,
+        ),
+      { wrapper: activeStoreSessionWrapper },
+    );
+
+    await waitFor(() =>
+      expect(result.current).toEqual([
+        { id: "store_current", name: "Loja Atual", slug: "loja-atual" },
+      ]),
+    );
+    const updater = setForm.mock.calls.at(-1)?.[0] as (
+      form: InventoryFormState,
+    ) => InventoryFormState;
+    expect(updater({ storeId: "" } as InventoryFormState).storeId).toBe(
+      "store_current",
+    );
+  });
+
+  it("uses active session stores when billing cannot be loaded", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("network");
+      }),
+    );
+    const setForm = vi.fn();
+
+    const { result } = renderHook(
+      () =>
+        useInventoryCreateStores(
+          setForm as Dispatch<SetStateAction<InventoryFormState>>,
+        ),
+      { wrapper: activeStoreSessionWrapper },
+    );
+
+    await waitFor(() =>
+      expect(result.current).toEqual([
+        { id: "store_current", name: "Loja Atual", slug: "loja-atual" },
+      ]),
+    );
   });
 
   it("ignores incomplete allocations instead of inventing store data", async () => {
@@ -152,3 +206,38 @@ describe("useInventoryCreateStores", () => {
     ).toBe("store_draft");
   });
 });
+
+const activeSession = activeStoreSession();
+
+function activeStoreSessionWrapper({ children }: { children: ReactNode }) {
+  return (
+    <AccountSessionProvider session={activeSession}>
+      {children}
+    </AccountSessionProvider>
+  );
+}
+
+function activeStoreSession(): SessionBootstrap {
+  const store = {
+    role: "owner",
+    status: "active" as const,
+    storeId: "store_current",
+    storeName: "Loja Atual",
+    storeSlug: "loja-atual",
+    tenantId: "tenant_1",
+    tenantName: "Loja Atual",
+  };
+  return {
+    defaultStore: store,
+    needsOnboarding: false,
+    platformAdmin: false,
+    stores: [store],
+    tenantMemberships: [],
+    user: {
+      clerkUserId: "user_1",
+      email: "owner@example.com",
+      id: "identity_user_1",
+      name: "Owner",
+    },
+  };
+}

@@ -3,6 +3,7 @@ import { createInitialInventoryForm } from "./formModel";
 import {
   applyPlateLookupToForm,
   createResaleAnalysisInput,
+  getCreateResaleAnalysisReadiness,
   hasEnoughDataForAnalysis,
 } from "./inventoryEnrichment";
 import type { InventoryPlateLookupResponse } from "./enrichmentTypes";
@@ -39,6 +40,7 @@ describe("inventory enrichment form helpers", () => {
       ...applyPlateLookupToForm(createInitialInventoryForm(), lookupPayload()),
       acquisitionPrice: "86.510,00",
       price: "102.335,00",
+      storeId: "store_1",
     };
 
     const input = createResaleAnalysisInput(form, lookupPayload());
@@ -57,8 +59,72 @@ describe("inventory enrichment form helpers", () => {
       sellingPriceCents: 10233500,
       state: "MG",
       vehicleType: "Automovel",
+      mileageKm: 60000,
     });
     expect(hasEnoughDataForAnalysis(form, lookupPayload())).toBe(true);
+  });
+
+  it("requires complete realistic data before enabling resale analysis", () => {
+    const form = createInitialInventoryForm();
+
+    const readiness = getCreateResaleAnalysisReadiness(form, null);
+
+    expect(readiness).toEqual({
+      isReady: false,
+      missing: [
+        { code: "store", label: "loja" },
+        { code: "catalog", label: "marca e modelo do catálogo" },
+        { code: "model_year", label: "ano do modelo" },
+        { code: "mileage", label: "quilometragem" },
+        { code: "acquisition_price", label: "valor de aquisição" },
+        { code: "selling_price", label: "valor de venda" },
+      ],
+    });
+  });
+
+  it("accepts zero-km vehicles and uses mileage entered in the form", () => {
+    const sparseMileageLookup = {
+      ...lookupPayload(),
+      vehicle: { ...lookupPayload().vehicle, mileageKm: null },
+    };
+    const form = {
+      ...applyPlateLookupToForm(
+        createInitialInventoryForm(),
+        sparseMileageLookup,
+      ),
+      acquisitionPrice: "86.510,00",
+      mileageKm: "0",
+      price: "102.335,00",
+      storeId: "store_1",
+    };
+
+    expect(createResaleAnalysisInput(form, sparseMileageLookup).mileageKm).toBe(
+      0,
+    );
+    expect(getCreateResaleAnalysisReadiness(form, sparseMileageLookup)).toEqual(
+      { isReady: true, missing: [] },
+    );
+  });
+
+  it.each([
+    ["modelYear", "1800", "model_year"],
+    ["mileageKm", "-1", "mileage"],
+    ["acquisitionPrice", "0", "acquisition_price"],
+    ["price", "0", "selling_price"],
+  ] as const)("rejects an unrealistic %s", (field, value, expectedCode) => {
+    const form = {
+      ...applyPlateLookupToForm(createInitialInventoryForm(), lookupPayload()),
+      acquisitionPrice: "86.510,00",
+      price: "102.335,00",
+      storeId: "store_1",
+      [field]: value,
+    };
+
+    expect(
+      getCreateResaleAnalysisReadiness(form, lookupPayload()).missing.map(
+        (issue) => issue.code,
+      ),
+    ).toContain(expectedCode);
   });
 
   it("uses FIPE data when the plate vehicle payload is sparse", () => {

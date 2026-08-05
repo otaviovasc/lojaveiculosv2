@@ -161,6 +161,12 @@ function friendlyMessage(input: {
       return "Muitas tentativas em sequencia. Aguarde um instante e tente novamente.";
     case "INTERNAL_SERVER_ERROR":
       return "Erro interno do servidor. Tente novamente em instantes.";
+    case "VEHICLE_UNIT_IDENTIFIER_CONFLICT":
+      return "Já existe um veículo nesta loja com a mesma placa, estoque ou chassi.";
+    case "DOCUMENT_POLICY_ERROR":
+      return "O documento não pôde ser vinculado a esta unidade. Atualize a tela e tente novamente.";
+    case "INVENTORY_STORAGE_SCOPE_ERROR":
+      return "O arquivo não pôde ser vinculado ao veículo. Atualize a tela e tente novamente.";
     case undefined:
     default:
       if (

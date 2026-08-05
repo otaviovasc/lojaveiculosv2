@@ -27,14 +27,17 @@ import {
   saveInventoryCreateDraft,
   type InventoryCreateDraft,
 } from "../model/inventoryCreateDraft";
-import { useInventoryCreateStores } from "./useInventoryCreateStores";
+import {
+  useInventoryCreateStores,
+  type InventoryCreateStoreOption,
+} from "./useInventoryCreateStores";
 import type {
   InventoryPlateLookupResponse,
   InventoryResaleAnalysisResponse,
 } from "../model/enrichmentTypes";
 import {
   createResaleAnalysisInput,
-  hasEnoughDataForAnalysis,
+  getCreateResaleAnalysisReadiness,
 } from "../model/inventoryEnrichment";
 import type { Loadable } from "../components/InventoryCreateEnrichmentParts";
 import { getApiErrorDisplay } from "../../../lib/apiErrors";
@@ -72,20 +75,15 @@ export function InventoryCreatePage({
       return;
     }
 
-    const selectedStore = stores.find((s) => s.id === form.storeId);
-    const storeSlug = selectedStore?.slug || undefined;
-
-    void createInventoryApiOptions().then((options) => {
-      setRuntimeApi(
-        createInventoryApi({
-          ...options,
-          auth: {
-            ...options.auth,
-            ...(storeSlug ? { storeSlug } : {}),
-          },
-        }),
-      );
-    });
+    let active = true;
+    void createInventoryCreateRuntimeApi(stores, form.storeId).then(
+      (nextApi) => {
+        if (active) setRuntimeApi(nextApi);
+      },
+    );
+    return () => {
+      active = false;
+    };
   }, [api, form.storeId, stores]);
 
   useEffect(() => {
@@ -151,7 +149,12 @@ export function InventoryCreatePage({
   );
 
   const handleGenerateAnalysis = useCallback(async () => {
-    if (!runtimeApi) return;
+    if (
+      !runtimeApi ||
+      !getCreateResaleAnalysisReadiness(form, lookup).isReady
+    ) {
+      return;
+    }
     setAnalysisState({ kind: "loading" });
     try {
       const value = await runtimeApi.analyzeResale(
@@ -177,18 +180,9 @@ export function InventoryCreatePage({
   }, []);
 
   const resolveInventoryApi = useCallback(async () => {
-    if (runtimeApi) return runtimeApi;
-    const selectedStore = stores.find((s) => s.id === form.storeId);
-    const storeSlug = selectedStore?.slug || undefined;
-    const options = await createInventoryApiOptions();
-    return createInventoryApi({
-      ...options,
-      auth: {
-        ...options.auth,
-        ...(storeSlug ? { storeSlug } : {}),
-      },
-    });
-  }, [runtimeApi, form.storeId, stores]);
+    if (api) return api;
+    return createInventoryCreateRuntimeApi(stores, form.storeId);
+  }, [api, form.storeId, stores]);
 
   const { handleRetryMedia, handleSubmit, submitState } =
     useInventoryCreateSubmit({
@@ -197,6 +191,7 @@ export function InventoryCreatePage({
       onCreated: handleCreated,
       resolveApi: resolveInventoryApi,
     });
+  const analysisReadiness = getCreateResaleAnalysisReadiness(form, lookup);
 
   return (
     <main className="content-frame animate-fade-in text-app-text">
@@ -255,14 +250,28 @@ export function InventoryCreatePage({
           onRetryMedia={() => void handleRetryMedia()}
           isSubmitting={submitState.kind === "submitting"}
           analysisState={analysisState}
-          canAnalyze={Boolean(
-            runtimeApi && hasEnoughDataForAnalysis(form, lookup),
-          )}
+          analysisReadiness={analysisReadiness}
+          canAnalyze={Boolean(runtimeApi && analysisReadiness.isReady)}
           onGenerateAnalysis={() => void handleGenerateAnalysis()}
         />
       </form>
     </main>
   );
+}
+
+export async function createInventoryCreateRuntimeApi(
+  stores: readonly InventoryCreateStoreOption[],
+  storeId: string,
+) {
+  const selectedStore = stores.find((store) => store.id === storeId);
+  const options = await createInventoryApiOptions();
+  return createInventoryApi({
+    ...options,
+    auth: {
+      ...options.auth,
+      ...(selectedStore ? { storeSlug: selectedStore.slug } : {}),
+    },
+  });
 }
 
 function createCatalogTitle(catalog: InventoryFormState["catalog"]) {
