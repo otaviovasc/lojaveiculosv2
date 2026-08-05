@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { createInitialInventoryForm } from "./formModel";
 import {
   applyPlateLookupToForm,
-  canAutoAnalyzePlateLookup,
   createResaleAnalysisInput,
   hasEnoughDataForAnalysis,
 } from "./inventoryEnrichment";
@@ -62,15 +61,25 @@ describe("inventory enrichment form helpers", () => {
     expect(hasEnoughDataForAnalysis(form, lookupPayload())).toBe(true);
   });
 
-  it("recognizes a plate lookup that can trigger AI before form state settles", () => {
-    expect(canAutoAnalyzePlateLookup(lookupPayload())).toBe(true);
-    expect(
-      canAutoAnalyzePlateLookup({
-        ...lookupPayload(),
-        fipe: null,
-        vehicle: { ...lookupPayload().vehicle, modelYear: null },
-      }),
-    ).toBe(false);
+  it("uses FIPE data when the plate vehicle payload is sparse", () => {
+    const lookup = {
+      ...lookupPayload(),
+      vehicle: {
+        ...lookupPayload().vehicle,
+        brand: null,
+        model: null,
+        modelYear: null,
+        version: null,
+      },
+    };
+
+    const result = applyPlateLookupToForm(createInitialInventoryForm(), lookup);
+
+    expect(result).toMatchObject({
+      modelYear: "2023",
+      title: "Fiat Strada Ranch 2023",
+      trimName: "Strada Ranch",
+    });
   });
 
   it.each([

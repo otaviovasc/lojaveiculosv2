@@ -42,13 +42,13 @@ export async function attachVehicleUnit(
   const unit = await getUnitRepository(ports).create({
     colorName: input.colorName ?? null,
     listingId: listing.id,
-    plate: input.plate ?? listing.plate,
+    plate: normalizeOptionalText(input.plate ?? listing.plate),
     status:
       listing.status === "in_preparation" ? "in_preparation" : "available",
-    stockNumber: input.stockNumber ?? null,
+    stockNumber: normalizeOptionalText(input.stockNumber),
     storeId: context.storeId,
     tenantId: context.tenantId,
-    vin: input.vin ?? null,
+    vin: normalizeOptionalText(input.vin),
   });
 
   await listingRepository.save({
@@ -73,4 +73,9 @@ export async function attachVehicleUnit(
   });
 
   return unit;
+}
+
+function normalizeOptionalText(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized || null;
 }

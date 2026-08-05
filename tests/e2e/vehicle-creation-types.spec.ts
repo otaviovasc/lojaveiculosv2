@@ -30,6 +30,7 @@ for (const scenario of scenarios) {
     const vin = `9BW${scenario.label[0]}${unique.slice(0, 13)}`;
     const title = `${scenario.brand} ${scenario.model} QA ${unique.slice(0, 8)}`;
     let listingId: string | null = null;
+    let analysisRequestCount = 0;
 
     await page.route("**/api/v1/inventory/enrichment/plate", async (route) => {
       const result = plateLookupResponse(plate, vin);
@@ -47,7 +48,8 @@ for (const scenario of scenarios) {
     });
     await page.route(
       "**/api/v1/inventory/enrichment/resale-analysis",
-      async (route) =>
+      async (route) => {
+        analysisRequestCount += 1;
         route.fulfill({
           body: JSON.stringify({
             dealRiskScore: 25,
@@ -58,7 +60,8 @@ for (const scenario of scenarios) {
           }),
           headers: { "content-type": "application/json" },
           status: 200,
-        }),
+        });
+      },
     );
 
     try {
@@ -70,9 +73,13 @@ for (const scenario of scenarios) {
         .fill(plate);
       await page.getByRole("button", { name: "Consultar placa" }).click();
       await expect(page.getByText("Dados encontrados")).toBeVisible();
+      expect(analysisRequestCount).toBe(0);
+      await expect(page.getByLabel("Descrição Comercial")).toHaveValue("");
+      await page.getByRole("button", { name: "Gerar análise" }).click();
       await expect(page.getByLabel("Descrição Comercial")).toHaveValue(
         new RegExp(`${scenario.label} revisada`, "i"),
       );
+      expect(analysisRequestCount).toBe(1);
       await page.getByLabel("Título de Anúncio").fill(title);
       await page
         .getByLabel("Número de Estoque")

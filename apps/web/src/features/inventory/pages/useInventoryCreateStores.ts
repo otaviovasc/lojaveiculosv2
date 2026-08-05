@@ -1,5 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
+import { readRuntimeStoreSlug } from "../../account/currentStore";
 import type { InventoryFormState } from "../model/formModel";
 
 export type InventoryCreateStoreOption = {
@@ -42,10 +43,14 @@ export function useInventoryCreateStores(
     }
 
     function applyStores(nextStores: InventoryCreateStoreOption[]) {
+      const currentStoreSlug = readRuntimeStoreSlug();
+      const currentStore = nextStores.find(
+        (store) => store.slug === currentStoreSlug,
+      );
       setStores(nextStores);
       setForm((current) => ({
         ...current,
-        storeId: current.storeId || nextStores[0]?.id || "",
+        storeId: current.storeId || currentStore?.id || nextStores[0]?.id || "",
       }));
     }
 

@@ -8,6 +8,9 @@ import { useInventoryCreateStores } from "./useInventoryCreateStores";
 vi.mock("../api/inventoryRuntimeApi", () => ({
   createInventoryRuntimeHeaders: vi.fn(async () => ({})),
 }));
+vi.mock("../../account/currentStore", () => ({
+  readRuntimeStoreSlug: vi.fn(() => "loja-atual"),
+}));
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -106,5 +109,46 @@ describe("useInventoryCreateStores", () => {
         { id: "store_real", name: "Loja Real", slug: "loja-real" },
       ]),
     );
+  });
+
+  it("defaults to the current store instead of the first billing allocation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          allocations: [
+            {
+              storeId: "store_other",
+              storeName: "Outra Loja",
+              storeSlug: "outra-loja",
+            },
+            {
+              storeId: "store_current",
+              storeName: "Loja Atual",
+              storeSlug: "loja-atual",
+            },
+          ],
+        }),
+      ),
+    );
+    const setForm = vi.fn();
+
+    renderHook(() =>
+      useInventoryCreateStores(
+        setForm as Dispatch<SetStateAction<InventoryFormState>>,
+      ),
+    );
+
+    await waitFor(() => expect(setForm).toHaveBeenCalledOnce());
+    const updater = setForm.mock.calls[0]?.[0] as (
+      form: InventoryFormState,
+    ) => InventoryFormState;
+
+    expect(updater({ storeId: "" } as InventoryFormState).storeId).toBe(
+      "store_current",
+    );
+    expect(
+      updater({ storeId: "store_draft" } as InventoryFormState).storeId,
+    ).toBe("store_draft");
   });
 });

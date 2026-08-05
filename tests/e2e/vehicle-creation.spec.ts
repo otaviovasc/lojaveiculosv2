@@ -15,7 +15,7 @@ const baseURL = process.env.QA_BASE_URL ?? "http://127.0.0.1:5173";
 test.use({ baseURL });
 
 test.describe("vehicle creation QA lane", () => {
-  test("covers vehicle types, plate and AI autofill, and persists a real draft", async ({
+  test("covers plate FIPE enrichment, explicit AI analysis, and persists a real draft", async ({
     page,
     request,
   }, testInfo) => {
@@ -30,6 +30,7 @@ test.describe("vehicle creation QA lane", () => {
     let createdListingId: string | null = null;
     let plateRequestBody: unknown = null;
     let analysisRequestBody: unknown = null;
+    let analysisRequestCount = 0;
 
     await page.route("**/api/v1/inventory/enrichment/plate", async (route) => {
       plateRequestBody = route.request().postDataJSON();
@@ -42,6 +43,7 @@ test.describe("vehicle creation QA lane", () => {
     await page.route(
       "**/api/v1/inventory/enrichment/resale-analysis",
       async (route) => {
+        analysisRequestCount += 1;
         analysisRequestBody = route.request().postDataJSON();
         await route.fulfill({
           body: JSON.stringify({
@@ -82,21 +84,12 @@ test.describe("vehicle creation QA lane", () => {
           response.request().method() === "POST",
         { timeout: 20_000 },
       );
-      const analysisResponsePromise = page.waitForResponse(
-        (response) =>
-          new URL(response.url()).pathname ===
-            "/api/v1/inventory/enrichment/resale-analysis" &&
-          response.request().method() === "POST",
-        { timeout: 20_000 },
-      );
-
       await page
         .getByRole("textbox", { name: "Ex: abc1d23" })
         .first()
         .fill(plate);
       await page.getByRole("button", { name: "Consultar placa" }).click();
       await expect((await plateResponsePromise).status()).toBe(200);
-      await expect((await analysisResponsePromise).status()).toBe(200);
 
       await expect(page.getByText("Dados encontrados")).toBeVisible();
       await expect(page.getByLabel("Placa")).toHaveValue(plate);
@@ -104,6 +97,22 @@ test.describe("vehicle creation QA lane", () => {
       await expect(page.getByLabel("Título de Anúncio")).toHaveValue(
         generatedTitle,
       );
+      await expect(page.getByLabel("Descrição Comercial")).toHaveValue("");
+      expect(analysisRequestCount).toBe(0);
+      await expect(
+        page.getByRole("button", { name: "Gerar análise" }),
+      ).toBeEnabled();
+
+      const analysisResponsePromise = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname ===
+            "/api/v1/inventory/enrichment/resale-analysis" &&
+          response.request().method() === "POST",
+        { timeout: 20_000 },
+      );
+      await page.getByRole("button", { name: "Gerar análise" }).click();
+      await expect((await analysisResponsePromise).status()).toBe(200);
+      expect(analysisRequestCount).toBe(1);
       await expect(page.getByLabel("Descrição Comercial")).toHaveValue(
         aiDescription,
       );
@@ -130,6 +139,21 @@ test.describe("vehicle creation QA lane", () => {
       await saveQaScreenshot(page, testInfo, "vehicle-create-ai-desktop");
 
       await setQaViewport(page, "mobile");
+      const sidebar = page.getByTestId("inventory-create-sidebar");
+      await expect
+        .poll(() =>
+          sidebar.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return `${style.overflowY}:${style.maxHeight}`;
+          }),
+        )
+        .toBe("visible:none");
+      await page
+        .getByText("Sugestão de Descrição por IA")
+        .scrollIntoViewIfNeeded();
+      await expect(
+        page.getByText("Sugestão de Descrição por IA"),
+      ).toBeInViewport();
       await expectViewportSafe(page);
       await expectAccessible(page);
       await saveQaScreenshot(page, testInfo, "vehicle-create-ai-mobile");
