@@ -61,7 +61,10 @@ export function InventoryCreateSidebar({
   const previewPhoto = media[0]?.previewUrl || null;
 
   return (
-    <aside className="custom-scrollbar xl:sticky xl:top-6 flex flex-col self-start w-full max-h-[calc(100dvh-3rem)] overflow-y-auto pr-1">
+    <aside
+      className="flex w-full min-w-0 flex-col self-start"
+      data-testid="inventory-create-sidebar"
+    >
       <div className="glass-panel-branded overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-panel)] flex flex-col divide-y divide-line/60">
         {/* Preview Content */}
         <PreviewCardContent

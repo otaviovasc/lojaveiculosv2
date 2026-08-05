@@ -33,7 +33,6 @@ import type {
   InventoryResaleAnalysisResponse,
 } from "../model/enrichmentTypes";
 import {
-  canAutoAnalyzePlateLookup,
   createResaleAnalysisInput,
   hasEnoughDataForAnalysis,
 } from "../model/inventoryEnrichment";
@@ -65,8 +64,6 @@ export function InventoryCreatePage({
   const [analysisState, setAnalysisState] = useState<
     Loadable<InventoryResaleAnalysisResponse>
   >({ kind: "idle" });
-  const [autoRunAnalysis, setAutoRunAnalysis] = useState(false);
-
   const stores = useInventoryCreateStores(setForm);
 
   useEffect(() => {
@@ -102,32 +99,6 @@ export function InventoryCreatePage({
       mediaFileNames: media.map((item) => item.file.name),
     });
   }, [form, media, savedDraft]);
-
-  useEffect(() => {
-    if (!autoRunAnalysis || !runtimeApi || !lookup) return;
-    if (!hasEnoughDataForAnalysis(form, lookup)) return;
-    setAutoRunAnalysis(false);
-    setAnalysisState({ kind: "loading" });
-    void runtimeApi
-      .analyzeResale(createResaleAnalysisInput(form, lookup))
-      .then((value) => {
-        setAnalysisState({ kind: "success", value });
-        setForm((current) =>
-          current.description.trim()
-            ? current
-            : { ...current, description: value.suggestedDescription },
-        );
-      })
-      .catch((error: unknown) => {
-        setAnalysisState({
-          kind: "error",
-          ...getApiErrorDisplay(
-            error,
-            "Nao foi possivel gerar a analise agora.",
-          ),
-        });
-      });
-  }, [autoRunAnalysis, form, lookup, runtimeApi, setForm]);
 
   useEffect(
     () => () => {
@@ -175,9 +146,6 @@ export function InventoryCreatePage({
     (result: InventoryPlateLookupResponse) => {
       setLookup(result);
       setAnalysisState({ kind: "idle" });
-      if (canAutoAnalyzePlateLookup(result)) {
-        setAutoRunAnalysis(true);
-      }
     },
     [],
   );

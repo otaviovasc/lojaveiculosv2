@@ -22,9 +22,11 @@ import type {
 export function applyPlateLookupToForm(
   form: InventoryFormState,
   lookup: InventoryPlateLookupResponse,
+  resolvedCatalog?: InventoryCatalogSnapshot | null,
 ): InventoryFormState {
   const vehicle = lookup.vehicle;
-  const catalog = createCatalogFromLookup(lookup) ?? form.catalog;
+  const catalog =
+    resolvedCatalog ?? createCatalogFromLookup(lookup) ?? form.catalog;
   const title = createTitleFromLookup(lookup) || form.title;
 
   return {
@@ -45,12 +47,21 @@ export function applyPlateLookupToForm(
     mileageKm:
       vehicle.mileageKm !== null ? String(vehicle.mileageKm) : form.mileageKm,
     modelYear:
-      vehicle.modelYear !== null ? String(vehicle.modelYear) : form.modelYear,
+      vehicle.modelYear !== null
+        ? String(vehicle.modelYear)
+        : lookup.fipe?.modelYear !== null &&
+            lookup.fipe?.modelYear !== undefined
+          ? String(lookup.fipe.modelYear)
+          : form.modelYear,
     plate: lookup.plate || form.plate,
     title,
     transmission:
       normalizeTransmission(vehicle.transmission) ?? form.transmission,
-    trimName: vehicle.version ?? vehicle.model ?? form.trimName,
+    trimName:
+      vehicle.version ??
+      vehicle.model ??
+      lookup.fipe?.modelName ??
+      form.trimName,
     vin: shouldFillChassis(vehicle.chassis) ? vehicle.chassis : form.vin,
   };
 }
@@ -95,16 +106,6 @@ export function hasEnoughDataForAnalysis(
 ) {
   const input = createResaleAnalysisInput(form, lookup);
   return Boolean(input.brand && input.model && input.modelYear);
-}
-
-export function canAutoAnalyzePlateLookup(
-  lookup: InventoryPlateLookupResponse,
-) {
-  return Boolean(
-    (lookup.vehicle.brand || lookup.fipe?.brandName) &&
-    (lookup.vehicle.model || lookup.fipe?.modelName) &&
-    (lookup.vehicle.modelYear || lookup.fipe?.modelYear),
-  );
 }
 
 function createCatalogFromLookup(
@@ -152,7 +153,10 @@ function normalizeCatalogVehicleType(
 }
 
 function createTitleFromLookup(lookup: InventoryPlateLookupResponse) {
-  const { brand, model, modelYear, version } = lookup.vehicle;
+  const brand = lookup.vehicle.brand ?? lookup.fipe?.brandName ?? null;
+  const model = lookup.vehicle.model ?? lookup.fipe?.modelName ?? null;
+  const modelYear = lookup.vehicle.modelYear ?? lookup.fipe?.modelYear ?? null;
+  const version = lookup.vehicle.version;
   return [brand, removeBrandPrefix(model, brand), version, modelYear]
     .filter((value): value is string | number => value !== null && value !== "")
     .filter((value, index, list) => list.indexOf(value) === index)

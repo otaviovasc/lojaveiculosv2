@@ -41,12 +41,12 @@ export function createDrizzleVehicleUnitRepository(
         .values({
           colorName: record.colorName ?? null,
           listingId: record.listingId,
-          plate: record.plate,
+          plate: normalizeOptionalText(record.plate),
           status: toDbUnitStatus(record.status),
-          stockNumber: record.stockNumber,
+          stockNumber: normalizeOptionalText(record.stockNumber),
           storeId: scope.storeId,
           tenantId: scope.tenantId,
-          vin: record.vin,
+          vin: normalizeOptionalText(record.vin),
         })
         .returning();
 
@@ -166,13 +166,18 @@ export function createDrizzleVehicleUnitRepository(
   };
 }
 
+function normalizeOptionalText(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized || null;
+}
+
 function toVehicleUnitUpdate(unit: VehicleUnit): Partial<InsertVehicleUnitRow> {
   return {
     colorName: unit.colorName,
-    plate: unit.plate,
+    plate: normalizeOptionalText(unit.plate),
     status: toDbUnitStatus(unit.status),
-    stockNumber: unit.stockNumber,
+    stockNumber: normalizeOptionalText(unit.stockNumber),
     updatedAt: unit.updatedAt,
-    vin: unit.vin,
+    vin: normalizeOptionalText(unit.vin),
   };
 }

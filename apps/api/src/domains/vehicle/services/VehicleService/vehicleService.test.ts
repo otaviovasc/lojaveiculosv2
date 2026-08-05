@@ -100,6 +100,23 @@ describe("VehicleService", () => {
     );
   });
 
+  it("stores optional unit identifiers as null when the form sends blanks", async () => {
+    const context = createContext(["inventory.create"]);
+    const ports = createInMemoryVehiclePorts([createListing()]);
+
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1", stockNumber: "   ", vin: "   " },
+      ports,
+    );
+
+    expect(unit).toMatchObject({
+      plate: "ABC1D23",
+      stockNumber: null,
+      vin: null,
+    });
+  });
+
   it("requests scoped media uploads and stores confirmed media records", async () => {
     const context = createContext(["inventory.create"]);
     const ports = createInMemoryVehiclePorts([createListing()]);
