@@ -1,4 +1,4 @@
-import { UserButton, useUser } from "@clerk/react";
+import { UserButton, useUser } from "@clerk/react-router";
 import { User } from "lucide-react";
 import { useClerkAuthConfiguration } from "./ClerkAuthProvider";
 import { readLocalDevAccount } from "./localDevAuth";

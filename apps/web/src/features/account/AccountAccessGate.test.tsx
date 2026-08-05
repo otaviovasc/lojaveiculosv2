@@ -5,7 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { AccountAccessGate } from "./AccountAccessGate";
 import type { SessionBootstrap } from "./apiClient";
-import { SessionBootstrapHandoffProvider } from "./sessionBootstrapHandoff";
+import {
+  SessionBootstrapHandoffProvider,
+  useSessionBootstrapHandoff,
+} from "./sessionBootstrapHandoff";
 import { SESSION_BOOTSTRAP_TIMEOUT_MS } from "./sessionBootstrapLoader";
 
 const bootstrap = vi.fn();
@@ -50,6 +53,36 @@ describe("AccountAccessGate", () => {
     );
 
     await waitFor(() => expect(bootstrap).toHaveBeenCalledTimes(1));
+  });
+
+  it("reacts when a completed bootstrap is handed off after the gate mounted", async () => {
+    bootstrap.mockImplementation(() => new Promise(() => undefined));
+    let handOff: ((session: SessionBootstrap) => void) | undefined;
+
+    render(
+      <MemoryRouter>
+        <SessionBootstrapHandoffProvider>
+          <HandoffProbe
+            register={(store) => {
+              handOff = store;
+            }}
+          />
+          <AccountAccessGate
+            access="onboarding"
+            getToken={vi.fn(async () => "token-1")}
+            userId="user_1"
+          >
+            <div>Onboarding pronto</div>
+          </AccountAccessGate>
+        </SessionBootstrapHandoffProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Carregando sua conta")).toBeInTheDocument();
+    act(() => {
+      handOff?.(sessionNeedingOnboarding());
+    });
+    expect(await screen.findByText("Onboarding pronto")).toBeInTheDocument();
   });
 
   it("allows store access from an active managed store when no default store exists", async () => {
@@ -107,6 +140,16 @@ function renderGate(
       </SessionBootstrapHandoffProvider>
     </MemoryRouter>,
   );
+}
+
+function HandoffProbe({
+  register,
+}: {
+  register: (store: (session: SessionBootstrap) => void) => void;
+}) {
+  const { store } = useSessionBootstrapHandoff();
+  register((session) => store("user_1", session));
+  return null;
 }
 
 function sessionNeedingOnboarding(): SessionBootstrap {

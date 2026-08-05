@@ -1,4 +1,4 @@
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/react";
+import { SignInButton, UserButton, useUser } from "@clerk/react-router";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useClerkAuthConfiguration } from "../account/ClerkAuthProvider";
@@ -136,12 +136,12 @@ function ConfiguredLandingAuthActions({
 
   return (
     <>
-      <SignUpButton fallbackRedirectUrl={sessionPath} mode="modal">
+      <SignInButton fallbackRedirectUrl={sessionPath} mode="modal" withSignUp>
         <button className={primaryClass} type="button">
           {primaryLabel}
           <ArrowRight className="size-4" />
         </button>
-      </SignUpButton>
+      </SignInButton>
       {!compact ? (
         <SignInButton fallbackRedirectUrl={sessionPath} mode="modal">
           <button className={secondaryClass} type="button">
