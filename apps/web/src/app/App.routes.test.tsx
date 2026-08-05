@@ -17,15 +17,51 @@ vi.mock("../features/account/AuthPages", () => {
 });
 
 vi.mock("./AppLazyRoutes", async () => {
-  const { Outlet, Route, Routes } = await import("react-router-dom");
+  const { useEffect } = await import("react");
+  const { Outlet, Route, Routes, useLocation, useNavigate } =
+    await import("react-router-dom");
   const { LandingPage } = await import("../features/marketing/LandingPage");
+  const { useSessionBootstrapHandoff } =
+    await import("../features/account/sessionBootstrapHandoff");
   const emptyRoute = () => null;
   return {
-    AuthenticatedRoutes: () => (
-      <Routes>
-        <Route path="*" element={<div>Nested authenticated route</div>} />
-      </Routes>
-    ),
+    AuthenticatedRoutes: () => {
+      const bootstrapHandoff = useSessionBootstrapHandoff();
+      const location = useLocation();
+      const navigate = useNavigate();
+
+      useEffect(() => {
+        if (location.pathname !== "/auth/session") return;
+        bootstrapHandoff.store("user_1", {
+          defaultStore: null,
+          needsOnboarding: true,
+          platformAdmin: false,
+          stores: [],
+          tenantMemberships: [],
+          user: {
+            clerkUserId: "user_1",
+            email: "user@example.com",
+            id: "identity_user_1",
+            name: "User",
+          },
+        });
+        void navigate("/onboarding", { replace: true });
+      }, [bootstrapHandoff, location.pathname, navigate]);
+
+      if (location.pathname === "/onboarding") {
+        return bootstrapHandoff.peek("user_1") ? (
+          <div>Onboarding handoff ready</div>
+        ) : (
+          <div>Onboarding handoff missing</div>
+        );
+      }
+
+      return (
+        <Routes>
+          <Route path="*" element={<div>Nested authenticated route</div>} />
+        </Routes>
+      );
+    },
     AdminApp: emptyRoute,
     AgencyBillingPage: emptyRoute,
     AgencyCrederePage: () => <div>Credere agency route</div>,
@@ -109,7 +145,7 @@ describe("App routes", () => {
 
   it.each([
     ["/dashboard", "Nested authenticated route"],
-    ["/onboarding", "Nested authenticated route"],
+    ["/onboarding", "Onboarding handoff missing"],
   ])(
     "allows %s to render nested authenticated routes without a router warning",
     async (path, routeLabel) => {
@@ -130,4 +166,19 @@ describe("App routes", () => {
       consoleWarn.mockRestore();
     },
   );
+
+  it("preserves the session bootstrap across the outer auth route transition", async () => {
+    render(
+      <MemoryRouter initialEntries={["/auth/session"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText("Onboarding handoff ready"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Onboarding handoff missing"),
+    ).not.toBeInTheDocument();
+  });
 });
