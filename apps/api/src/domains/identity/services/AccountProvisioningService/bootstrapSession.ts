@@ -70,5 +70,16 @@ export async function bootstrapSession(
     tenantId: null,
   });
 
+  context.logger.info(
+    "identity.session.bootstrap.completed",
+    createServiceLogMetadata(context, {
+      hasDefaultStore: Boolean(bootstrap.defaultStore),
+      needsOnboarding: bootstrap.needsOnboarding,
+      platformAdmin: bootstrap.platformAdmin,
+      storeCount: bootstrap.stores.length,
+      tenantMembershipCount: bootstrap.tenantMemberships.length,
+    }),
+  );
+
   return bootstrap;
 }

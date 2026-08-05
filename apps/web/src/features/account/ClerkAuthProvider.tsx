@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/react";
+import { ClerkProvider } from "@clerk/react-router";
 import { createContext, useContext, type ReactNode } from "react";
 import { readClerkAuthConfig, type ClerkAuthConfig } from "./authConfig";
 import { SessionBootstrapHandoffProvider } from "./sessionBootstrapHandoff";
@@ -24,10 +24,9 @@ export function ClerkAuthProvider({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider
       publishableKey={config.publishableKey}
-      signInForceRedirectUrl={config.sessionPath}
+      signInFallbackRedirectUrl={config.sessionPath}
       signInUrl={config.signInPath}
-      signUpForceRedirectUrl={config.sessionPath}
-      signUpUrl={config.signUpPath}
+      signUpFallbackRedirectUrl={config.sessionPath}
     >
       {content}
     </ClerkProvider>

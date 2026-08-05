@@ -8,21 +8,21 @@ import { OwnerOnboardingPage } from "./OwnerOnboardingPage";
 import { SessionBootstrapHandoffProvider } from "./sessionBootstrapHandoff";
 
 const clerk = vi.hoisted(() => ({
+  auth: {
+    getToken: vi.fn(async () => "token"),
+    isLoaded: true,
+    isSignedIn: true,
+    userId: "user_1" as string | null,
+  },
   signIn: vi.fn((_props: Record<string, unknown>) => null),
   signUp: vi.fn((_props: Record<string, unknown>) => null),
 }));
 const bootstrap = vi.hoisted(() => vi.fn<() => Promise<SessionBootstrap>>());
 
-vi.mock("@clerk/react", () => ({
-  RedirectToSignIn: () => null,
+vi.mock("@clerk/react-router", () => ({
   SignIn: clerk.signIn,
   SignUp: clerk.signUp,
-  useAuth: () => ({
-    getToken: vi.fn(async () => "token"),
-    isLoaded: true,
-    isSignedIn: true,
-    userId: "user_1",
-  }),
+  useAuth: () => clerk.auth,
 }));
 
 vi.mock("./ClerkAuthProvider", () => ({
@@ -56,29 +56,66 @@ describe("Clerk auth page redirects", () => {
     cleanup();
     clerk.signIn.mockClear();
     clerk.signUp.mockClear();
+    clerk.auth.isLoaded = true;
+    clerk.auth.isSignedIn = true;
+    clerk.auth.userId = "user_1";
     bootstrap.mockReset();
   });
 
-  it("forces sign-in and transferred sign-up attempts through session bootstrap", () => {
+  it("lets the provider own sign-in and transferred sign-up redirects", () => {
     render(<SignInPage />);
 
     expect(clerk.signIn.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
-        forceRedirectUrl: "/auth/session",
-        signUpForceRedirectUrl: "/auth/session",
+        path: "/sign-in",
+        routing: "path",
       }),
     );
+    expect(clerk.signIn.mock.calls[0]?.[0]).not.toHaveProperty(
+      "forceRedirectUrl",
+    );
+    expect(clerk.signIn.mock.calls[0]?.[0]).not.toHaveProperty(
+      "signUpForceRedirectUrl",
+    );
+    expect(clerk.signIn.mock.calls[0]?.[0]).not.toHaveProperty("signUpUrl");
   });
 
-  it("forces sign-up and transferred sign-in attempts through session bootstrap", () => {
-    render(<SignUpPage />);
-
-    expect(clerk.signUp.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({
-        forceRedirectUrl: "/auth/session",
-        signInForceRedirectUrl: "/auth/session",
-      }),
+  it("canonicalizes the legacy sign-up route to the single sign-in-or-up flow", async () => {
+    render(
+      <MemoryRouter initialEntries={["/sign-up"]}>
+        <Routes>
+          <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/sign-in" element={<div>Fluxo unificado</div>} />
+        </Routes>
+      </MemoryRouter>,
     );
+
+    expect(await screen.findByText("Fluxo unificado")).toBeInTheDocument();
+    expect(clerk.signUp).not.toHaveBeenCalled();
+  });
+
+  it("redirects signed-out protected routes to a clean sign-in URL", async () => {
+    clerk.auth.isSignedIn = false;
+    clerk.auth.userId = null;
+
+    render(
+      <MemoryRouter initialEntries={["/onboarding"]}>
+        <Routes>
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute access="onboarding">
+                <div>Onboarding protegido</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/sign-in" element={<div>Login limpo</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Login limpo")).toBeInTheDocument();
+    expect(screen.queryByText("Onboarding protegido")).not.toBeInTheDocument();
   });
 
   it("sends an existing active account to its dashboard after auth transfer", async () => {

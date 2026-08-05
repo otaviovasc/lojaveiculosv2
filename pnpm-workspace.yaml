@@ -10,6 +10,8 @@ onlyBuiltDependencies:
 minimumReleaseAgeExclude:
   - "@paper-design/shaders-react@0.0.77"
   - "@paper-design/shaders@0.0.77"
+  - "@clerk/react@6.12.11"
+  - "@clerk/shared@4.26.0"
 allowBuilds:
   "@clerk/shared": false
   esbuild: true

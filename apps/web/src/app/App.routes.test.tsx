@@ -18,8 +18,7 @@ vi.mock("../features/account/AuthPages", () => {
 
 vi.mock("./AppLazyRoutes", async () => {
   const { useEffect } = await import("react");
-  const { Outlet, Route, Routes, useLocation, useNavigate } =
-    await import("react-router-dom");
+  const { Outlet, useNavigate } = await import("react-router-dom");
   const { LandingPage } = await import("../features/marketing/LandingPage");
   const { ClerkAuthProvider } =
     await import("../features/account/ClerkAuthProvider");
@@ -27,14 +26,25 @@ vi.mock("./AppLazyRoutes", async () => {
     await import("../features/account/sessionBootstrapHandoff");
   const emptyRoute = () => null;
   return {
-    AuthenticatedRoutes: () => {
-      const bootstrapHandoff = useSessionBootstrapHandoff();
-      const location = useLocation();
+    AuthenticatedRoutes: ({
+      section,
+    }: {
+      section:
+        | "agency-admin"
+        | "onboarding"
+        | "platform-admin"
+        | "platform-observability"
+        | "session-bootstrap"
+        | "sign-in"
+        | "sign-up"
+        | "store-admin";
+    }) => {
+      const { peek, store } = useSessionBootstrapHandoff();
       const navigate = useNavigate();
 
       useEffect(() => {
-        if (location.pathname !== "/auth/session") return;
-        bootstrapHandoff.store("user_1", {
+        if (section !== "session-bootstrap") return;
+        store("user_1", {
           defaultStore: null,
           needsOnboarding: true,
           platformAdmin: false,
@@ -48,21 +58,17 @@ vi.mock("./AppLazyRoutes", async () => {
           },
         });
         void navigate("/onboarding", { replace: true });
-      }, [bootstrapHandoff, location.pathname, navigate]);
+      }, [navigate, section, store]);
 
-      if (location.pathname === "/onboarding") {
-        return bootstrapHandoff.peek("user_1") ? (
+      if (section === "onboarding") {
+        return peek("user_1") ? (
           <div>Onboarding handoff ready</div>
         ) : (
           <div>Onboarding handoff missing</div>
         );
       }
 
-      return (
-        <Routes>
-          <Route path="*" element={<div>Nested authenticated route</div>} />
-        </Routes>
-      );
+      return <div>Authenticated route: {section}</div>;
     },
     AdminApp: emptyRoute,
     ClerkAuthProvider,
@@ -130,7 +136,7 @@ describe("App routes", () => {
     );
 
     expect(
-      await screen.findByText("Nested authenticated route"),
+      await screen.findByText("Authenticated route: agency-admin"),
     ).toBeInTheDocument();
   });
 
@@ -142,12 +148,12 @@ describe("App routes", () => {
     );
 
     expect(
-      await screen.findByText("Nested authenticated route"),
+      await screen.findByText("Authenticated route: platform-observability"),
     ).toBeInTheDocument();
   });
 
   it.each([
-    ["/dashboard", "Nested authenticated route"],
+    ["/dashboard", "Authenticated route: store-admin"],
     ["/onboarding", "Onboarding handoff missing"],
   ])(
     "allows %s to render nested authenticated routes without a router warning",

@@ -25,21 +25,39 @@ export function App() {
       <ClerkAuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/sign-in/*" element={<AuthenticatedRoutes />} />
-          <Route path="/sign-up/*" element={<AuthenticatedRoutes />} />
-          <Route path="/auth/session/*" element={<AuthenticatedRoutes />} />
-          <Route path="/onboarding/*" element={<AuthenticatedRoutes />} />
+          <Route
+            path="/sign-in/*"
+            element={<AuthenticatedRoutes section="sign-in" />}
+          />
+          <Route
+            path="/sign-up/*"
+            element={<AuthenticatedRoutes section="sign-up" />}
+          />
+          <Route
+            path="/auth/session/*"
+            element={<AuthenticatedRoutes section="session-bootstrap" />}
+          />
+          <Route
+            path="/onboarding/*"
+            element={<AuthenticatedRoutes section="onboarding" />}
+          />
           <Route
             path="/platform/observability/*"
-            element={<AuthenticatedRoutes />}
+            element={<AuthenticatedRoutes section="platform-observability" />}
           />
-          <Route path="/platform/admin/*" element={<AuthenticatedRoutes />} />
-          <Route path="/agency/admin/*" element={<AuthenticatedRoutes />} />
+          <Route
+            path="/platform/admin/*"
+            element={<AuthenticatedRoutes section="platform-admin" />}
+          />
+          <Route
+            path="/agency/admin/*"
+            element={<AuthenticatedRoutes section="agency-admin" />}
+          />
           {adminRoutePaths
             .filter((path) => path !== "/")
             .map((path) => (
               <Route
-                element={<AuthenticatedRoutes />}
+                element={<AuthenticatedRoutes section="store-admin" />}
                 key={path}
                 path={`${path}/*`}
               />
@@ -48,7 +66,7 @@ export function App() {
             path="/:storeSlug/p/:pageSlug"
             element={
               <PublicStorefrontSlugGuard
-                reservedFallback={<AuthenticatedRoutes />}
+                reservedFallback={<AuthenticatedRoutes section="store-admin" />}
               >
                 <PublicCustomPageRoute />
               </PublicStorefrontSlugGuard>
@@ -58,7 +76,7 @@ export function App() {
             path="/:storeSlug"
             element={
               <PublicStorefrontSlugGuard
-                reservedFallback={<AuthenticatedRoutes />}
+                reservedFallback={<AuthenticatedRoutes section="store-admin" />}
               >
                 <PublicStorefrontPage />
               </PublicStorefrontSlugGuard>

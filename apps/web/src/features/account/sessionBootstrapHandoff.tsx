@@ -3,7 +3,7 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useRef,
+  useState,
   type ReactNode,
 } from "react";
 import type { SessionBootstrap } from "./apiClient";
@@ -27,26 +27,25 @@ export function SessionBootstrapHandoffProvider({
 }: {
   children: ReactNode;
 }) {
-  const handoffRef = useRef<BootstrapHandoff | null>(null);
+  const [handoff, setHandoff] = useState<BootstrapHandoff | null>(null);
 
   const clear = useCallback(
     (clerkUserId: string, bootstrap: SessionBootstrap) => {
-      const current = handoffRef.current;
-      if (
-        current?.clerkUserId === clerkUserId &&
-        current.bootstrap === bootstrap
-      ) {
-        handoffRef.current = null;
-      }
+      setHandoff((current) =>
+        current?.clerkUserId === clerkUserId && current.bootstrap === bootstrap
+          ? null
+          : current,
+      );
     },
     [],
   );
-  const peek = useCallback((clerkUserId: string | null | undefined) => {
-    const current = handoffRef.current;
-    return clerkUserId && current?.clerkUserId === clerkUserId
-      ? current.bootstrap
-      : null;
-  }, []);
+  const peek = useCallback(
+    (clerkUserId: string | null | undefined) =>
+      clerkUserId && handoff?.clerkUserId === clerkUserId
+        ? handoff.bootstrap
+        : null,
+    [handoff],
+  );
   const store = useCallback(
     (clerkUserId: string, bootstrap: SessionBootstrap) => {
       if (bootstrap.user.clerkUserId !== clerkUserId) {
@@ -54,7 +53,7 @@ export function SessionBootstrapHandoffProvider({
           "Session bootstrap actor does not match Clerk session.",
         );
       }
-      handoffRef.current = { bootstrap, clerkUserId };
+      setHandoff({ bootstrap, clerkUserId });
     },
     [],
   );

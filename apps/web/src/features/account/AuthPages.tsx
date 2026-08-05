@@ -1,7 +1,7 @@
-import { RedirectToSignIn, SignIn, SignUp, useAuth } from "@clerk/react";
+import { SignIn, useAuth } from "@clerk/react-router";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { AppBootScreen } from "../../components/ui";
 import {
   FeatureActionButton,
@@ -44,7 +44,7 @@ export function ProtectedRoute({
     );
   }
   return (
-    <ConfiguredProtectedRoute access={access}>
+    <ConfiguredProtectedRoute access={access} signInPath={config.signInPath}>
       {children}
     </ConfiguredProtectedRoute>
   );
@@ -53,22 +53,16 @@ export function ProtectedRoute({
 function ConfiguredProtectedRoute({
   access,
   children,
+  signInPath,
 }: {
   access: AccountAccess | "signed-in";
   children: ReactNode;
+  signInPath: string;
 }) {
-  const config = useClerkAuthConfiguration();
   const auth = useAuth();
 
   if (!auth.isLoaded) return <AuthLoadingPage title="Validando sessão" />;
-  if (!auth.isSignedIn) {
-    return (
-      <RedirectToSignIn
-        signInForceRedirectUrl={config.sessionPath}
-        signUpForceRedirectUrl={config.sessionPath}
-      />
-    );
-  }
+  if (!auth.isSignedIn) return <Navigate replace to={signInPath} />;
 
   if (access !== "signed-in") {
     return (
@@ -91,14 +85,8 @@ export function SignInPage() {
   if (config.localAuthBypass) return <LocalDevAuthPage />;
 
   return (
-    <AuthEntryShell eyebrow="Acesso seguro" title="Entrar na Loja Veículos">
-      <SignIn
-        forceRedirectUrl={config.sessionPath}
-        path={config.signInPath}
-        routing="path"
-        signUpForceRedirectUrl={config.sessionPath}
-        signUpUrl={config.signUpPath}
-      />
+    <AuthEntryShell eyebrow="Acesso seguro" title="Acessar a Loja Veículos">
+      <SignIn path={config.signInPath} routing="path" />
     </AuthEntryShell>
   );
 }
@@ -108,17 +96,7 @@ export function SignUpPage() {
   if (!config.configured) return <AuthConfigurationMissingPage />;
   if (config.localAuthBypass) return <LocalDevAuthPage />;
 
-  return (
-    <AuthEntryShell eyebrow="Criar acesso" title="Começar no Loja Veículos">
-      <SignUp
-        forceRedirectUrl={config.sessionPath}
-        path={config.signUpPath}
-        routing="path"
-        signInForceRedirectUrl={config.sessionPath}
-        signInUrl={config.signInPath}
-      />
-    </AuthEntryShell>
-  );
+  return <Navigate replace to={config.signInPath} />;
 }
 
 export function SessionBootstrapPage() {
@@ -131,7 +109,7 @@ export function SessionBootstrapPage() {
 function ConfiguredSessionBootstrapPage() {
   const navigate = useNavigate();
   const auth = useAuth();
-  const bootstrapHandoff = useSessionBootstrapHandoff();
+  const { store: storeBootstrapHandoff } = useSessionBootstrapHandoff();
   const [error, setError] = useState<string | null>(null);
   const [accessUnavailable, setAccessUnavailable] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -162,7 +140,7 @@ function ConfiguredSessionBootstrapPage() {
         const destination = resolveSessionDestination(bootstrap);
         if (cancelled) return;
         if (destination) {
-          if (userId) bootstrapHandoff.store(userId, bootstrap);
+          if (userId) storeBootstrapHandoff(userId, bootstrap);
           void navigate(destination, { replace: true });
         } else {
           setAccessUnavailable(true);
@@ -181,7 +159,7 @@ function ConfiguredSessionBootstrapPage() {
     return () => {
       cancelled = true;
     };
-  }, [attempt, bootstrapHandoff, isLoaded, isSignedIn, navigate, userId]);
+  }, [attempt, isLoaded, isSignedIn, navigate, storeBootstrapHandoff, userId]);
 
   if (!isLoaded) return <AuthLoadingPage title="Preparando autenticação" />;
   if (!isSignedIn) return <SessionSignInRedirect />;
@@ -222,12 +200,7 @@ function ConfiguredSessionBootstrapPage() {
 
 function SessionSignInRedirect() {
   const config = useClerkAuthConfiguration();
-  return (
-    <RedirectToSignIn
-      signInForceRedirectUrl={config.sessionPath}
-      signUpForceRedirectUrl={config.sessionPath}
-    />
-  );
+  return <Navigate replace to={config.signInPath} />;
 }
 
 function AuthEntryShell({

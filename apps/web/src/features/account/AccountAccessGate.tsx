@@ -37,9 +37,11 @@ export function AccountAccessGate({
   userId?: string | null;
 }) {
   const navigate = useNavigate();
-  const bootstrapHandoff = useSessionBootstrapHandoff();
-  const [bootstrap, setBootstrap] = useState<SessionBootstrap | null>(() =>
-    bootstrapHandoff.peek(userId),
+  const { clear: clearBootstrapHandoff, peek: peekBootstrapHandoff } =
+    useSessionBootstrapHandoff();
+  const handedOffBootstrap = peekBootstrapHandoff(userId);
+  const [bootstrap, setBootstrap] = useState<SessionBootstrap | null>(
+    () => handedOffBootstrap,
   );
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -50,9 +52,15 @@ export function AccountAccessGate({
   }, [getToken]);
 
   useEffect(() => {
+    if (!bootstrap && handedOffBootstrap) {
+      setBootstrap(handedOffBootstrap);
+    }
+  }, [bootstrap, handedOffBootstrap]);
+
+  useEffect(() => {
     if (!bootstrap || !userId) return;
-    bootstrapHandoff.clear(userId, bootstrap);
-  }, [bootstrap, bootstrapHandoff, userId]);
+    clearBootstrapHandoff(userId, bootstrap);
+  }, [bootstrap, clearBootstrapHandoff, userId]);
 
   useEffect(() => {
     if (bootstrap) return;
