@@ -5,6 +5,11 @@ export const AuthenticatedRoutes = lazy(() =>
     default: module.AuthenticatedRoutes,
   })),
 );
+export const ClerkAuthProvider = lazy(() =>
+  import("../features/account/ClerkAuthProvider").then((module) => ({
+    default: module.ClerkAuthProvider,
+  })),
+);
 export const AdminApp = lazy(() =>
   import("./AdminApp").then((module) => ({ default: module.AdminApp })),
 );

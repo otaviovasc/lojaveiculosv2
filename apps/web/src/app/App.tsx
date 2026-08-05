@@ -2,10 +2,10 @@ import { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AppBootScreen } from "../components/ui";
 import { DelayedFallback } from "../components/ui/DelayedFallback";
-import { ClerkAuthProvider } from "../features/account/ClerkAuthProvider";
 import { adminRoutePaths } from "./adminRoutePaths";
 import {
   AuthenticatedRoutes,
+  ClerkAuthProvider,
   LandingPage,
   PublicCustomPageRoute,
   PublicStorefrontPage,
@@ -15,14 +15,14 @@ import { NotFoundPage } from "../features/system/NotFoundPage";
 
 export function App() {
   return (
-    <ClerkAuthProvider>
-      <Suspense
-        fallback={
-          <DelayedFallback>
-            <AppBootScreen title="Carregando experiência" />
-          </DelayedFallback>
-        }
-      >
+    <Suspense
+      fallback={
+        <DelayedFallback>
+          <AppBootScreen title="Carregando experiência" />
+        </DelayedFallback>
+      }
+    >
+      <ClerkAuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/sign-in/*" element={<AuthenticatedRoutes />} />
@@ -67,7 +67,7 @@ export function App() {
           <Route path="/p/:pageSlug" element={<PublicCustomPageRoute />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </Suspense>
-    </ClerkAuthProvider>
+      </ClerkAuthProvider>
+    </Suspense>
   );
 }

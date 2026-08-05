@@ -21,6 +21,8 @@ vi.mock("./AppLazyRoutes", async () => {
   const { Outlet, Route, Routes, useLocation, useNavigate } =
     await import("react-router-dom");
   const { LandingPage } = await import("../features/marketing/LandingPage");
+  const { ClerkAuthProvider } =
+    await import("../features/account/ClerkAuthProvider");
   const { useSessionBootstrapHandoff } =
     await import("../features/account/sessionBootstrapHandoff");
   const emptyRoute = () => null;
@@ -63,6 +65,7 @@ vi.mock("./AppLazyRoutes", async () => {
       );
     },
     AdminApp: emptyRoute,
+    ClerkAuthProvider,
     AgencyBillingPage: emptyRoute,
     AgencyCrederePage: () => <div>Credere agency route</div>,
     AgencyCreateStorePage: emptyRoute,
