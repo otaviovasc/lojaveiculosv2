@@ -26,12 +26,9 @@
 @import "./settingsProfile.css";
 @import "./settingsForms.css";
 @import "./billing.css";
-@import "./billing-composition.css";
-@import "./billing-upgrade.css";
 @import "./billing-packages.css";
 @import "./billing-checkout.css";
 @import "./billing-features.css";
-@import "./billing-panels.css";
 @import "./documents.css";
 @import "./documents-command.css";
 @import "./documents-shell-top.css";
@@ -62,7 +59,6 @@
 @import "./appBootScreen.css";
 @import "./checklists.css";
 @import "./finance.css";
-@import "./autoEntries.css";
 @import "./sales.css";
 @import "./sales-delete-dialog.css";
 @import "./sales-summary.css";

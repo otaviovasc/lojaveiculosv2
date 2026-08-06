@@ -1,5 +1,6 @@
 import { Bot, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import "../../styles/autoEntries.css";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import {
   FeatureActionButton,

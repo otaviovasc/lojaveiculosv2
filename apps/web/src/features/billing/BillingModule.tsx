@@ -4,6 +4,9 @@ import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { cn } from "../../lib/utils";
 import { Receipt, Sparkles } from "lucide-react";
+import "../../styles/billing-composition.css";
+import "../../styles/billing-panels.css";
+import "../../styles/billing-upgrade.css";
 import { createBillingApi, type BillingApi } from "./apiClient";
 import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
 import {
