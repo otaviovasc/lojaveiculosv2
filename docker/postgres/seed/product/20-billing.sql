@@ -112,14 +112,6 @@ VALUES
   (
     '15151515-1515-4515-8515-151515151517', '2026-07-v1',
     'fiscal_spedy', 'fiscal', false, 19990, 'Fiscal NF-e + NFS-e', 'active'
-  ),
-  (
-    '15151515-1515-4515-8515-151515151518', '2026-07-v1',
-    'public_api_access', 'external_api', false, 9990, 'API Pública', 'active'
-  ),
-  (
-    '15151515-1515-4515-8515-151515151519', '2026-07-v1',
-    'simulations_pro', 'simulations', false, 4990, 'Simulações Pro', 'active'
   )
 ON CONFLICT (code, catalog_version) DO UPDATE SET
   feature_key = EXCLUDED.feature_key,

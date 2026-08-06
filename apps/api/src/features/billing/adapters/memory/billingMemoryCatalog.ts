@@ -129,13 +129,6 @@ export const memoryBillingAddons: readonly BillingAddon[] = [
     status: "active",
   },
   addon(
-    "addon_custom_domain",
-    "custom_domain_addon",
-    "custom_domain",
-    2000,
-    "Domínio Próprio",
-  ),
-  addon(
     "addon_marketplaces",
     "marketplace_connectors",
     "marketplace",
@@ -143,27 +136,6 @@ export const memoryBillingAddons: readonly BillingAddon[] = [
     "Marketplaces",
   ),
   addon("addon_fiscal", "fiscal_spedy", "fiscal", 3500, "Fiscal NF-e + NFS-e"),
-  addon(
-    "addon_public_api",
-    "public_api_access",
-    "external_api",
-    5000,
-    "API & Integrações",
-  ),
-  addon(
-    "addon_plate_lookup",
-    "auto_placa_lookup",
-    "plate_lookup",
-    3000,
-    "Consulta de Placas",
-  ),
-  addon(
-    "addon_simulations",
-    "simulations_pro",
-    "simulations",
-    4990,
-    "Simulações Pro",
-  ),
 ];
 
 export const memoryTrialEntitlements: readonly StoreEntitlement[] = [

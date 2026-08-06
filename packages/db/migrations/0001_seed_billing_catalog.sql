@@ -123,28 +123,12 @@ VALUES
     24900, 'CRM WhatsApp', 'active'
   ),
   (
-    'custom_domain_addon', '2026-07-v1', 'custom_domain', false,
-    2000, 'Domínio Próprio', 'active'
-  ),
-  (
     'marketplace_connectors', '2026-07-v1', 'marketplace', false,
     14990, 'Marketplaces', 'active'
   ),
   (
     'fiscal_spedy', '2026-07-v1', 'fiscal', false,
     3500, 'Fiscal NF-e + NFS-e', 'active'
-  ),
-  (
-    'public_api_access', '2026-07-v1', 'external_api', false,
-    5000, 'API & Integrações', 'active'
-  ),
-  (
-    'auto_placa_lookup', '2026-07-v1', 'plate_lookup', false,
-    3000, 'Consulta de Placas', 'active'
-  ),
-  (
-    'simulations_pro', '2026-07-v1', 'simulations', false,
-    4990, 'Simulações Pro', 'active'
   )
 ON CONFLICT ("code", "catalog_version") DO UPDATE SET
   "feature_key" = EXCLUDED."feature_key",
@@ -153,4 +137,3 @@ ON CONFLICT ("code", "catalog_version") DO UPDATE SET
   "name" = EXCLUDED."name",
   "status" = EXCLUDED."status",
   "updated_at" = now();
-
