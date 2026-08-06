@@ -146,7 +146,7 @@ export function BillingSignupFlow({
           <button
             type="button"
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-black transition-all",
+              "px-4 py-1.5 rounded-md text-xs font-black transition-all",
               billingCycle === "monthly"
                 ? "bg-accent-strong text-accent-strong-foreground"
                 : "text-muted hover:text-foreground",
@@ -158,7 +158,7 @@ export function BillingSignupFlow({
           <button
             type="button"
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-2",
+              "px-4 py-1.5 rounded-md text-xs font-black transition-all flex items-center gap-2",
               billingCycle === "annual"
                 ? "bg-accent-strong text-accent-strong-foreground"
                 : "text-muted hover:text-foreground",
@@ -175,7 +175,7 @@ export function BillingSignupFlow({
 
       {/* Main Content Sections */}
       <div className="relative z-10 space-y-6">
-        {/* Section 1: Plan Selector Baseline */}
+        {/* Section 1: Full Icon-Theme Base Plan Cards */}
         <section className="space-y-6 pt-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-widest text-accent-strong flex items-center gap-1.5">
@@ -198,15 +198,15 @@ export function BillingSignupFlow({
                 plan.monthlyPriceCents * annualDiscountFactor,
               );
               const includedFeatures = plan.features.filter((f) => f.included);
+              const theme = getPlanTheme(plan, index);
+              const IconComponent = theme.icon;
 
               return (
                 <button
                   aria-checked={selected}
                   className={cn(
-                    "text-left p-7 md:p-8 min-h-[440px] md:min-h-[480px] rounded-3xl border transition-all relative flex flex-col justify-between",
-                    selected
-                      ? "border-accent-strong bg-accent-soft/20 ring-2 ring-accent-strong/30"
-                      : "border-line bg-app-elevated hover:border-accent-strong/40",
+                    "text-left relative group p-7 md:p-8 min-h-[460px] md:min-h-[500px] rounded-3xl transition-all flex flex-col justify-between",
+                    selected ? theme.cardSelected : theme.cardDefault,
                     !canManage
                       ? "opacity-75 cursor-not-allowed"
                       : "cursor-pointer",
@@ -217,23 +217,45 @@ export function BillingSignupFlow({
                   role="radio"
                   type="button"
                 >
+                  {/* Keep decorative art clipped without clipping the recommendation badge. */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none"
+                  >
+                    <IconComponent
+                      aria-hidden="true"
+                      className={cn(
+                        "absolute -bottom-8 -right-8 size-48 select-none stroke-[1.2] -rotate-12 transition-all duration-300 group-hover:scale-110",
+                        theme.iconColor,
+                        selected ? "opacity-20" : "opacity-10",
+                      )}
+                    />
+                  </div>
+
                   {index === 0 ? (
-                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-accent-strong text-accent-strong-foreground text-xs font-black uppercase tracking-widest px-3.5 py-0.5 rounded-full">
+                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-accent-strong text-accent-strong-foreground text-xs font-black uppercase tracking-widest px-3.5 py-0.5 rounded-full z-10">
                       RECOMENDADO PARA SUA LOJA
                     </span>
                   ) : null}
 
                   <div>
                     <div className="flex items-center justify-between gap-3 mb-4">
-                      <strong className="text-xl md:text-2xl font-black text-foreground">
-                        {plan.name}
-                      </strong>
+                      <div className="flex items-center gap-3">
+                        <IconComponent
+                          className={cn("size-7 shrink-0", theme.iconColor)}
+                          aria-hidden="true"
+                        />
+                        <strong className="text-xl md:text-2xl font-black text-foreground">
+                          {plan.name}
+                        </strong>
+                      </div>
+
                       <div
                         className={cn(
-                          "size-6.5 rounded-full border-2 flex items-center justify-center transition-all",
+                          "size-6.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-transform active:scale-90",
                           selected
-                            ? "bg-accent-strong border-accent-strong text-accent-strong-foreground"
-                            : "border-line text-transparent",
+                            ? theme.checkBg
+                            : "border-line bg-app-surface/80 text-transparent",
                         )}
                       >
                         <Check className="size-3.5 stroke-[3]" />
@@ -256,7 +278,7 @@ export function BillingSignupFlow({
                       ) : null}
                     </div>
 
-                    <div className="space-y-3 text-xs text-muted font-medium pt-5 border-t border-line/60">
+                    <div className="space-y-3 text-xs text-muted font-medium pt-5 border-t border-line/40">
                       {billingPlanLimitHighlights(plan).map((limit) => (
                         <div
                           key={limit}
@@ -275,7 +297,10 @@ export function BillingSignupFlow({
                           className="flex items-start gap-2.5"
                         >
                           <Check
-                            className="size-3.5 text-accent-strong shrink-0 mt-0.5"
+                            className={cn(
+                              "size-3.5 shrink-0 mt-0.5",
+                              theme.iconColor,
+                            )}
                             aria-hidden="true"
                           />
                           <span className="leading-snug">
@@ -334,7 +359,7 @@ export function BillingSignupFlow({
                   <button
                     aria-checked={isSelected}
                     className={cn(
-                      "text-left relative p-6 md:p-7 min-h-[270px] rounded-3xl transition-all flex flex-col justify-between gap-6",
+                      "text-left relative group p-6 md:p-7 min-h-[270px] rounded-3xl transition-all flex flex-col justify-between gap-6",
                       isSelected ? theme.cardSelected : theme.cardDefault,
                       !canManage
                         ? "opacity-75 cursor-not-allowed"
@@ -346,8 +371,23 @@ export function BillingSignupFlow({
                     role="checkbox"
                     type="button"
                   >
+                    {/* Decorative Background Icon Overlay Container */}
+                    <div
+                      className="absolute inset-0 rounded-none overflow-hidden pointer-events-none"
+                      aria-hidden="true"
+                    >
+                      <IconComponent
+                        aria-hidden="true"
+                        className={cn(
+                          "absolute -bottom-6 -right-6 size-36 select-none stroke-[1.2] -rotate-12 transition-all duration-300 group-hover:scale-110",
+                          theme.iconColor,
+                          isSelected ? "opacity-20" : "opacity-10",
+                        )}
+                      />
+                    </div>
+
                     {theme.recommended ? (
-                      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-accent-strong text-accent-strong-foreground text-xs font-black uppercase tracking-widest px-3.5 py-0.5 rounded-full">
+                      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-accent-strong text-accent-strong-foreground text-xs font-black uppercase tracking-widest px-3.5 py-0.5 rounded-full z-20 shadow-sm">
                         {theme.recommended}
                       </span>
                     ) : null}
@@ -419,7 +459,7 @@ export function BillingSignupFlow({
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
           {/* Price & Plan Summary */}
           <div className="flex items-center gap-4">
-            <div className="size-12 rounded-2xl bg-accent-soft text-accent-strong flex items-center justify-center shrink-0">
+            <div className="size-12 rounded-2xl text-accent-strong flex items-center justify-center shrink-0">
               <Receipt className="size-6" aria-hidden="true" />
             </div>
 
@@ -459,7 +499,7 @@ export function BillingSignupFlow({
                   aria-hidden="true"
                   className="size-4 text-accent-strong inline mr-1.5"
                 />
-                Gerenciado pela agência
+                Gerenciado pela Agência
               </div>
             ) : (
               <div className="flex items-center gap-3 w-full md:w-auto">
@@ -490,12 +530,6 @@ export function BillingSignupFlow({
                         ? "Atualizar assinatura"
                         : "Continuar para pagamento"}
                 </button>
-                {!providerReady ? (
-                  <p className="text-xs font-semibold text-muted">
-                    Nenhuma cobrança foi feita enquanto o pagamento está
-                    indisponível.
-                  </p>
-                ) : null}
               </div>
             )}
           </div>
@@ -503,6 +537,64 @@ export function BillingSignupFlow({
       </aside>
     </div>
   );
+}
+
+function getPlanTheme(plan: BillingPlan, index: number) {
+  const cd = (plan.code ?? "").toLowerCase();
+  const nm = (plan.name ?? "").toLowerCase();
+
+  const isPremium = cd.includes("premium") || nm.includes("premium");
+  if (isPremium) {
+    return {
+      cardDefault:
+        "bg-purple-500/10 border-purple-500/30 hover:border-purple-500/60",
+      cardSelected:
+        "bg-purple-500/25 border-2 border-purple-500 ring-2 ring-purple-500/20",
+      checkBg: "bg-purple-500 text-white border-purple-500",
+      icon: Sparkles,
+      iconColor: "text-purple-500",
+    };
+  }
+
+  const isGrowth = cd.includes("growth") || nm.includes("growth");
+  if (isGrowth) {
+    return {
+      cardDefault: "bg-cyan-500/10 border-cyan-500/30 hover:border-cyan-500/60",
+      cardSelected:
+        "bg-cyan-500/25 border-2 border-cyan-500 ring-2 ring-cyan-500/20",
+      checkBg: "bg-cyan-500 text-white border-cyan-500",
+      icon: Zap,
+      iconColor: "text-cyan-500",
+    };
+  }
+
+  const isPro =
+    cd.includes("pro") ||
+    cd.includes("estoque") ||
+    nm.includes("pro") ||
+    nm.includes("escala");
+  if (isPro) {
+    return {
+      cardDefault:
+        "bg-amber-500/10 border-amber-500/30 hover:border-amber-500/60",
+      cardSelected:
+        "bg-amber-500/25 border-2 border-amber-500 ring-2 ring-amber-500/20",
+      checkBg: "bg-amber-500 text-white border-amber-500",
+      icon: Crown,
+      iconColor: "text-amber-500",
+    };
+  }
+
+  return {
+    cardDefault:
+      "bg-accent-soft/30 border-accent/30 hover:border-accent-strong/60",
+    cardSelected:
+      "bg-accent-soft/50 border-2 border-accent-strong ring-2 ring-accent-strong/20",
+    checkBg:
+      "bg-accent-strong text-accent-strong-foreground border-accent-strong",
+    icon: Sparkles,
+    iconColor: "text-accent-strong",
+  };
 }
 
 function getAddonTheme(featureKey: string, code: string, name: string) {
