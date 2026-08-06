@@ -45,6 +45,19 @@ describe("local dev auth", () => {
     });
   });
 
+  it("exposes the store-owned billing account", () => {
+    selectLocalDevAccount("clerk_seed_isolation_owner");
+
+    expect(
+      readLocalDevAccount({ VITE_LOCAL_AUTH_BYPASS: "true" }),
+    ).toMatchObject({
+      email: "rafael.martins@example.test",
+      role: "owner",
+      storeSlug: "isolation-store",
+      userId: "clerk_seed_isolation_owner",
+    });
+  });
+
   it("clears the selected local account", () => {
     selectLocalDevAccount("clerk_seed_salesman");
     clearLocalDevAccount();

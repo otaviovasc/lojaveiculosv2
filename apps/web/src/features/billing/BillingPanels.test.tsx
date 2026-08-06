@@ -69,7 +69,6 @@ describe("BillingPlanComposition", () => {
     } satisfies BillingOverview;
 
     render(<BillingPlanComposition canManage overview={overview} />);
-
     expect(screen.getByRole("heading", { name: "CRM WhatsApp" })).toBeVisible();
     expect(screen.getByText(/R\$\s249,99\/mês/)).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Ver detalhes" }));

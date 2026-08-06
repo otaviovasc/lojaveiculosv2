@@ -77,15 +77,24 @@ export function BillingPackageCard({
 }
 
 export function BillingPriceLine({
+  icon,
   label,
   value,
 }: {
+  icon?: React.ReactNode;
   label: string;
   value: number;
 }) {
   return (
     <div className="billing-price-line">
-      <span>{label}</span>
+      <span className="billing-price-line-label">
+        {icon ? (
+          <span className="billing-price-line-icon" aria-hidden="true">
+            {icon}
+          </span>
+        ) : null}
+        <span>{label}</span>
+      </span>
       <strong>{money(value)}</strong>
     </div>
   );

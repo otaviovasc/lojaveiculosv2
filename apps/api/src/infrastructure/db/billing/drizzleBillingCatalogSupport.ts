@@ -1,4 +1,4 @@
-import { and, desc, eq, lte } from "drizzle-orm";
+import { and, asc, desc, eq, lte } from "drizzle-orm";
 import { addons, planFeatures, plans, subscriptions } from "@lojaveiculosv2/db";
 import type {
   BillingAddon,
@@ -17,7 +17,7 @@ export async function listPlans(
       .where(
         and(eq(plans.status, "active"), lte(plans.publishedAt, new Date())),
       )
-      .orderBy(desc(plans.publishedAt))
+      .orderBy(asc(plans.monthlyPriceCents))
       .limit(50),
     db.select().from(planFeatures).limit(500),
   ]);

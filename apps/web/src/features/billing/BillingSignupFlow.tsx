@@ -1,12 +1,17 @@
 import {
   BadgeCheck,
+  Boxes,
   Building2,
   Check,
+  ArrowRight,
   Loader2,
   PackagePlus,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
 import { featureLabels, money } from "./billingFormat";
 import type { BillingCheckoutState } from "./BillingCheckoutPanel";
 import {
@@ -68,19 +73,25 @@ export function BillingSignupFlow({
     canManage && providerReady && Boolean(selectedPlan) && !busy;
 
   return (
-    <section className="billing-composition">
-      <header className="billing-composition-header">
-        <div>
-          <span className="billing-section-label">
-            <Sparkles aria-hidden="true" /> Assinatura
-          </span>
-          <h2>Escolha seu plano</h2>
-          <p>
-            Selecione o plano base, adicione os pacotes que fazem sentido e
-            conclua a assinatura em um único passo.
-          </p>
-        </div>
-      </header>
+    <section className="billing-conversion">
+      <Card className="billing-conversion-hero">
+        <CardContent className="billing-conversion-hero-content">
+          <div>
+            <span className="billing-section-label">
+              <Sparkles aria-hidden="true" /> Assinatura
+            </span>
+            <h2>Invista no ritmo da sua operação</h2>
+            <p>
+              Comece com uma base operacional completa. Adicione só o que
+              acelera a sua loja hoje — e altere quando o negócio pedir.
+            </p>
+          </div>
+          <div className="billing-conversion-proof">
+            <ShieldCheck aria-hidden="true" />
+            <span>Pagamento e liberação confirmados pelo provedor</span>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="billing-signup-grid">
         <div className="billing-signup-main">
@@ -161,72 +172,104 @@ export function BillingSignupFlow({
           ) : null}
         </div>
 
-        <aside className="billing-price-summary" aria-label="Resumo mensal">
-          <span className="billing-section-label">Investimento mensal</span>
-          <BillingPriceLine
-            label={selectedPlan ? `Plano ${selectedPlan.name}` : "Plano base"}
-            value={planCents}
-          />
-          <BillingPriceLine
-            label="Pacotes adicionais"
-            value={addonTotalCents}
-          />
-          <div className="billing-price-total">
-            <span>Total</span>
-            <strong>{money(planCents + addonTotalCents)}</strong>
-            <small>por mês</small>
-          </div>
-          <p>
-            {paidSubscription
-              ? "A atualização é aplicada direto na sua assinatura Asaas com a nova composição."
-              : "A cobrança é feita na hora, no cartão. Você confere o valor no checkout Asaas antes de concluir."}
-          </p>
+        <Card
+          className="billing-price-summary billing-conversion-summary"
+          aria-label="Resumo mensal"
+        >
+          <CardContent className="billing-conversion-summary-content">
+            <span className="billing-section-label">Sua escolha</span>
+            <h3>Um valor claro. Sem surpresa no checkout.</h3>
 
-          {!canManage ? (
-            <p className="billing-signup-managed">
-              <Building2 aria-hidden="true" className="size-4" />
-              Gerenciado pela agência — {overview.authority.summary}
-            </p>
-          ) : (
-            <>
-              <button
-                className="billing-checkout-button"
-                disabled={!canSubscribe}
-                onClick={() =>
-                  void onSubscribe({
-                    billingTypes: ["CREDIT_CARD"],
-                    minutesToExpire: 90,
-                  })
+            <div className="billing-price-breakdown">
+              <BillingPriceLine
+                icon={<Boxes className="size-3.5" />}
+                label={
+                  selectedPlan ? `Plano ${selectedPlan.name}` : "Plano base"
                 }
-                type="button"
-              >
-                {busy ? (
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                ) : (
-                  <BadgeCheck aria-hidden="true" className="size-4" />
-                )}
-                {!providerReady
-                  ? "Pagamento indisponível"
-                  : busy
-                    ? "Redirecionando…"
-                    : paidSubscription
-                      ? "Atualizar assinatura"
-                      : "Assinar agora"}
-              </button>
-              {!providerReady ? (
-                <p className="billing-signup-pending">
-                  Estamos finalizando a conexão segura de cobrança. Nenhuma
-                  cobrança foi feita.
-                </p>
-              ) : null}
-              <p className="billing-checkout-secure">
-                <ShieldCheck aria-hidden="true" className="size-4" />
-                Checkout seguro pelo Asaas. Você confere o valor antes de
-                concluir.
+                value={planCents}
+              />
+              <BillingPriceLine
+                icon={<PackagePlus className="size-3.5" />}
+                label="Pacotes adicionais"
+                value={addonTotalCents}
+              />
+            </div>
+
+            <div className="billing-price-total-card">
+              <div className="billing-price-total-top">
+                <span>Total mensal</span>
+                <Badge variant="success">Sem fidelidade</Badge>
+              </div>
+              <div className="billing-price-total-amount">
+                <strong>{money(planCents + addonTotalCents)}</strong>
+                <small>/mês</small>
+              </div>
+              <span className="billing-price-total-note">
+                {paidSubscription
+                  ? "A alteração entra no próximo ciclo."
+                  : "Sem taxa de adesão ou multa por cancelamento."}
+              </span>
+            </div>
+
+            {!canManage ? (
+              <p className="billing-signup-managed">
+                <Building2 aria-hidden="true" className="size-4" />
+                Gerenciado pela agência — {overview.authority.summary}
               </p>
-            </>
-          )}
-        </aside>
+            ) : (
+              <div className="billing-checkout-actions">
+                <Button
+                  className="billing-checkout-button"
+                  disabled={!canSubscribe}
+                  onClick={() =>
+                    void onSubscribe({
+                      billingTypes: ["CREDIT_CARD"],
+                      minutesToExpire: 90,
+                    })
+                  }
+                  type="button"
+                >
+                  {busy ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-4 animate-spin"
+                    />
+                  ) : (
+                    <BadgeCheck aria-hidden="true" className="size-4" />
+                  )}
+                  {!providerReady
+                    ? "Pagamento indisponível"
+                    : busy
+                      ? "Redirecionando…"
+                      : paidSubscription
+                        ? "Atualizar assinatura"
+                        : "Continuar para pagamento"}
+                  {!busy ? (
+                    <ArrowRight aria-hidden="true" className="size-4" />
+                  ) : null}
+                </Button>
+
+                {!providerReady ? (
+                  <p className="billing-signup-pending">
+                    A conexão de pagamento ainda não está pronta. Nenhuma
+                    cobrança foi feita.
+                  </p>
+                ) : null}
+
+                <ul className="billing-guarantee-list">
+                  <li>
+                    <Check aria-hidden="true" className="size-3.5" />
+                    <span>Cancele quando quiser sem multa</span>
+                  </li>
+                  <li>
+                    <ShieldCheck aria-hidden="true" className="size-3.5" />
+                    <span>Checkout seguro via Asaas</span>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </section>
   );
@@ -244,6 +287,7 @@ function BillingPlanOption({
   selected: boolean;
 }) {
   const includedFeatures = plan.features.filter((feature) => feature.included);
+  const tag = planBadgeLabel(plan.code);
   return (
     <button
       aria-checked={selected}
@@ -255,7 +299,20 @@ function BillingPlanOption({
     >
       <span className="billing-plan-option-top">
         <span>
-          <span>Plano base</span>
+          <span className="billing-plan-tag-wrap">
+            <span>Plano base</span>
+            {tag ? (
+              <span
+                className={`billing-plan-badge ${
+                  plan.code === "growth" || plan.code === "pro"
+                    ? "is-highlight"
+                    : ""
+                }`}
+              >
+                {tag}
+              </span>
+            ) : null}
+          </span>
           <strong>{plan.name}</strong>
         </span>
         <span
@@ -285,4 +342,12 @@ function BillingPlanOption({
       </span>
     </button>
   );
+}
+
+function planBadgeLabel(code: string) {
+  if (code === "growth") return "Recomendado";
+  if (code === "pro") return "Mais Popular";
+  if (code === "estoque") return "Escala";
+  if (code === "premium") return "Intermediário";
+  return null;
 }
