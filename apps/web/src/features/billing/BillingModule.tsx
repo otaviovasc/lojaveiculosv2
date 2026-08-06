@@ -1,34 +1,24 @@
-import { CreditCard, RefreshCcw, Sparkles, TriangleAlert } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  FeatureActionButton,
-  FeaturePageHeader,
-  FeaturePageShell,
-} from "../../components/ui/FeatureLayout";
-import {
-  FeatureAlert,
-  FeatureEmptyState,
-} from "../../components/ui/FeatureStates";
-import { FeatureTabs } from "../../components/ui/FeatureTabs";
+import { useEffect, useMemo, useState } from "react";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { cn } from "../../lib/utils";
+import { Receipt, Sparkles } from "lucide-react";
 import { createBillingApi, type BillingApi } from "./apiClient";
+import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
 import {
   readBillingCheckoutReturn,
   redirectToCheckout,
 } from "./billingCheckoutReturn";
-import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
 import type { BillingCheckoutState } from "./BillingCheckoutPanel";
-import { BillingSignupFlow } from "./BillingSignupFlow";
-import { BillingTrialStatus } from "./BillingTrialStatus";
 import {
   BillingAllocationTable,
   BillingEventList,
   BillingKpiGrid,
 } from "./BillingPanels";
+import { BillingSignupFlow } from "./BillingSignupFlow";
 import { createBillingApiOptions } from "./runtimeApi";
 import type { BillingOverview, BillingProviderStatus } from "./types";
-
-type BillingPageTab = "assinatura" | "detalhes";
 
 export function BillingModule({ api }: { api?: BillingApi }) {
   const billingApi = useMemo(() => api ?? createRuntimeBillingApi(), [api]);
@@ -36,15 +26,12 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   const [providerStatus, setProviderStatus] =
     useState<BillingProviderStatus | null>(null);
   const [status, setStatus] = useState<BillingStatus>({ kind: "loading" });
-  const [activeTab, setActiveTab] = useState<BillingPageTab>("assinatura");
   const [checkoutState, setCheckoutState] = useState<BillingCheckoutState>({
     kind: "idle",
   });
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [selectionSaving, setSelectionSaving] = useState(false);
-  const signupRef = useRef<HTMLDivElement | null>(null);
-  const [signupScrollSignal, setSignupScrollSignal] = useState(0);
   const checkoutReturn = readBillingCheckoutReturn("store");
 
   const refresh = async () => {
@@ -106,15 +93,6 @@ export function BillingModule({ api }: { api?: BillingApi }) {
     void refresh();
   }, []);
 
-  useEffect(() => {
-    if (signupScrollSignal > 0) {
-      signupRef.current?.scrollIntoView?.({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  }, [signupScrollSignal]);
-
   const startCheckout: BillingApi["createCheckout"] = async (input) => {
     setCheckoutState({ kind: "starting" });
     try {
@@ -130,35 +108,13 @@ export function BillingModule({ api }: { api?: BillingApi }) {
     }
   };
 
-  const goToSignup = () => {
-    setActiveTab("assinatura");
-    setSignupScrollSignal((current) => current + 1);
-  };
-
   const canManage = overview?.authority.currentActorCanManage ?? false;
+  const [activeTab, setActiveTab] = useState<"subscription" | "details">(
+    "subscription",
+  );
 
   return (
     <FeaturePageShell className="billing-shell" variant="content">
-      <FeaturePageHeader
-        actions={
-          <FeatureActionButton
-            icon={RefreshCcw}
-            label="Atualizar"
-            onClick={() => void refresh()}
-          />
-        }
-        description={
-          "Tenha a base certa para vender mais e adicione novas capacidades no ritmo da sua operação."
-        }
-        eyebrow={
-          <>
-            <CreditCard aria-hidden="true" className="size-4" />
-            Assinatura
-          </>
-        }
-        title="Seu plano Loja Veículos"
-      />
-
       {status.kind === "error" ? (
         <FeatureAlert className="billing-alert">{status.message}</FeatureAlert>
       ) : null}
@@ -173,75 +129,78 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       ) : null}
 
       {overview ? (
-        <>
-          <BillingTrialStatus
-            overview={overview}
-            onCta={canManage ? goToSignup : undefined}
-          />
-          <BillingKpiGrid overview={overview} />
-          <FeatureTabs
-            ariaLabel="Seções da assinatura"
-            className="billing-tabs"
-            onChange={setActiveTab}
-            options={[
-              { label: "Assinatura", value: "assinatura" },
-              { label: "Detalhes", value: "detalhes" },
-            ]}
-            value={activeTab}
-          />
-          {activeTab === "assinatura" ? (
-            <div ref={signupRef}>
-              <BillingSignupFlow
-                canManage={canManage}
-                checkoutState={checkoutState}
-                overview={overview}
-                providerStatus={providerStatus}
-                selectedAddonIds={selectedAddonIds}
-                selectedPlanId={selectedPlanId}
-                selectionSaving={selectionSaving}
-                onAddonToggle={(addonId) =>
-                  setSelectedAddonIds((current) =>
-                    current.includes(addonId)
-                      ? current.filter((id) => id !== addonId)
-                      : [...current, addonId],
-                  )
-                }
-                onPlanSelect={setSelectedPlanId}
-                onSubscribe={startCheckout}
+        <div className="space-y-6">
+          <div
+            className="flex items-center gap-2 border-b border-line pb-1"
+            role="tablist"
+          >
+            <button
+              aria-selected={activeTab === "subscription"}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 text-sm font-bold border-b-2 transition-all",
+                activeTab === "subscription"
+                  ? "border-accent-strong text-foreground"
+                  : "border-transparent text-muted hover:text-foreground",
+              )}
+              onClick={() => setActiveTab("subscription")}
+              role="tab"
+              type="button"
+            >
+              <Sparkles
+                className="size-4 text-accent-strong"
+                aria-hidden="true"
               />
-            </div>
+              Assinatura
+            </button>
+            <button
+              aria-selected={activeTab === "details"}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 text-sm font-bold border-b-2 transition-all",
+                activeTab === "details"
+                  ? "border-accent-strong text-foreground"
+                  : "border-transparent text-muted hover:text-foreground",
+              )}
+              onClick={() => setActiveTab("details")}
+              role="tab"
+              type="button"
+            >
+              <Receipt
+                className="size-4 text-accent-strong"
+                aria-hidden="true"
+              />
+              Detalhes
+            </button>
+          </div>
+
+          {activeTab === "subscription" ? (
+            <BillingSignupFlow
+              canManage={canManage}
+              checkoutState={checkoutState}
+              overview={overview}
+              providerStatus={providerStatus}
+              selectedAddonIds={selectedAddonIds}
+              selectedPlanId={selectedPlanId}
+              selectionSaving={selectionSaving}
+              onAddonToggle={(addonId) =>
+                setSelectedAddonIds((current) =>
+                  current.includes(addonId)
+                    ? current.filter((id) => id !== addonId)
+                    : [...current, addonId],
+                )
+              }
+              onPlanSelect={setSelectedPlanId}
+              onSubscribe={startCheckout}
+            />
           ) : (
-            <>
-              {isPaidSubscription(overview) ? (
-                <BillingAutomaticBillingPanel overview={overview} />
-              ) : null}
+            <div className="space-y-6">
+              <BillingKpiGrid overview={overview} />
+              <BillingAutomaticBillingPanel overview={overview} />
               <BillingAllocationTable allocations={overview.allocations} />
               <BillingEventList events={overview.entitlementEvents} />
-            </>
+            </div>
           )}
-        </>
-      ) : status.kind === "error" ? (
-        <FeatureEmptyState
-          action={
-            <FeatureActionButton
-              icon={RefreshCcw}
-              label="Tentar novamente"
-              onClick={() => void refresh()}
-              variant="primary"
-            />
-          }
-          body="Não foi possível sincronizar planos, pacotes e cobrança. Nenhuma cobrança foi feita."
-          icon={TriangleAlert}
-          title="Faturamento indisponível"
-          tone="warning"
-        />
-      ) : (
-        <FeatureEmptyState
-          body="Sincronizando planos, add-ons e acesso efetivo por feature."
-          icon={Sparkles}
-          title="Carregando billing"
-        />
-      )}
+        </div>
+      ) : null}
     </FeaturePageShell>
   );
 }
@@ -281,6 +240,6 @@ function createRuntimeBillingApi(): BillingApi {
 function errorMessage(error: unknown) {
   return formatApiErrorDisplay(
     error,
-    "Nao foi possivel carregar o faturamento.",
+    "Não foi possível carregar o faturamento.",
   );
 }
