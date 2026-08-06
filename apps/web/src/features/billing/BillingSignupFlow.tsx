@@ -84,7 +84,6 @@ export function BillingSignupFlow({
   const activeAddons = overview.addons.filter(
     (addon) =>
       addon.status === "active" &&
-      addon.featureKey !== "public_api" &&
       !addon.code.toLowerCase().includes("public_api") &&
       !addon.name.toLowerCase().includes("public api") &&
       !addon.name.toLowerCase().includes("api pública") &&
