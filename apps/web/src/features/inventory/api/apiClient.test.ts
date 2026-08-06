@@ -8,6 +8,21 @@ import {
 } from "./apiClientTestSupport";
 
 describe("createInventoryApi", () => {
+  it("publishes a listing through the canonical publication route", async () => {
+    const fake = createFakeFetch([listingDetailPayload()]);
+    const api = createInventoryApi({ fetch: fake.fetch });
+
+    await api.publishListing("listing_1", { reason: "Ready for storefront" });
+
+    expect(callAt(fake.calls, 0).input).toBe(
+      "/api/v1/inventory/listings/listing_1/publish",
+    );
+    expect(callAt(fake.calls, 0).init?.method).toBe("POST");
+    expect(bodyOf(callAt(fake.calls, 0))).toEqual({
+      reason: "Ready for storefront",
+    });
+  });
+
   it("creates listing and unit using the inventory routes", async () => {
     const fake = createFakeFetch([
       listingDetailPayload(),

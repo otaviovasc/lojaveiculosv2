@@ -1,9 +1,22 @@
 import { useState } from "react";
-import { ExternalLink, Info, Share2, Store } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  Info,
+  LoaderCircle,
+  Share2,
+  Store,
+} from "lucide-react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import type { InventoryApi } from "../api/apiClient";
+import type { InventoryListingDetail } from "../model/types";
 
 type Props = {
+  api: InventoryApi;
   advertisedPrice: string;
+  detail: InventoryListingDetail;
   publicListingUrl: string | null;
+  onUpdated: (detail: InventoryListingDetail) => void;
   title: string;
 };
 
@@ -28,10 +41,38 @@ const partnerPortals: PortalBrand[] = [
 ];
 
 export function InventoryDetailPortaisSection({
+  api,
   advertisedPrice,
+  detail,
   publicListingUrl,
+  onUpdated,
   title,
 }: Props) {
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const canPublish =
+    detail.listing.status !== "published" || !detail.listing.publicSlug;
+
+  async function publishVehicle() {
+    setIsPublishing(true);
+    setPublishError(null);
+    try {
+      const updated = await api.publishListing(detail.listing.id, {
+        reason: "Published from inventory publication portals.",
+      });
+      onUpdated(updated);
+    } catch (error) {
+      setPublishError(
+        formatApiErrorDisplay(
+          error,
+          "Não foi possível publicar o veículo na vitrine.",
+        ),
+      );
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
       <div className="flex flex-col justify-between gap-2 border-b border-line pb-3 sm:flex-row sm:items-center">
@@ -68,7 +109,7 @@ export function InventoryDetailPortaisSection({
               {publicListingUrl ? "Publicado" : "Pendente"}
             </span>
           </header>
-          <div className="p-3.5">
+          <div className="flex flex-col gap-3 p-3.5">
             {publicListingUrl ? (
               <a
                 className="inline-flex items-center gap-1 text-xs font-black text-accent-strong hover:underline"
@@ -80,9 +121,34 @@ export function InventoryDetailPortaisSection({
                 <ExternalLink className="size-3" />
               </a>
             ) : (
-              <p className="text-xs font-bold text-muted">
-                O link público ainda não está disponível para este cadastro.
-              </p>
+              <>
+                <p className="text-xs font-bold text-muted">
+                  O link público ainda não está disponível para este cadastro.
+                </p>
+                {canPublish ? (
+                  <button
+                    className="inline-flex min-h-9 w-fit items-center gap-1.5 rounded-lg bg-accent px-3.5 text-xs font-black text-accent-foreground transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                    disabled={isPublishing}
+                    onClick={() => void publishVehicle()}
+                    type="button"
+                  >
+                    {isPublishing ? (
+                      <LoaderCircle
+                        aria-hidden="true"
+                        className="size-3.5 animate-spin"
+                      />
+                    ) : (
+                      <Check aria-hidden="true" className="size-3.5" />
+                    )}
+                    {isPublishing ? "Publicando..." : "Publicar veículo"}
+                  </button>
+                ) : null}
+                {publishError ? (
+                  <p className="text-xs font-black text-danger">
+                    {publishError}
+                  </p>
+                ) : null}
+              </>
             )}
           </div>
         </article>
