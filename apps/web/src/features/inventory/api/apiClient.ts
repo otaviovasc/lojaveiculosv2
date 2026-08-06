@@ -198,6 +198,15 @@ export function createInventoryApi({
       .then(readJson<{ events: InventoryAuditEvent[] }>)
       .then((payload) => payload.events);
 
+  const publishListing = (
+    listingId: string,
+    input: { publicSlug?: string | null; reason?: string | null } = {},
+  ) =>
+    postJson<InventoryListingDetail>(
+      inventoryRoutes.publishListing(listingId, baseUrl),
+      input,
+    );
+
   const listChecklists = (unitId: string) =>
     fetch(inventoryRoutes.checklists(unitId, baseUrl), {
       headers: createInventoryHeaders(auth),
@@ -337,6 +346,7 @@ export function createInventoryApi({
     listChecklistOverview,
     listListingAuditEvents,
     listListings,
+    publishListing,
     ...mediaApi,
     releaseReservation,
     reserveUnit,

@@ -68,6 +68,10 @@ export type InventoryApi = {
   listListingAuditEvents: (
     listingId: string,
   ) => Promise<readonly InventoryAuditEvent[]>;
+  publishListing: (
+    listingId: string,
+    input?: { publicSlug?: string | null; reason?: string | null },
+  ) => Promise<InventoryListingDetail>;
   listChecklists: (unitId: string) => Promise<readonly InventoryChecklist[]>;
   listChecklistOverview: (
     input?: InventoryChecklistOverviewInput,

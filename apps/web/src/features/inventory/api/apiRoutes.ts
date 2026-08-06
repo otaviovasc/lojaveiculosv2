@@ -99,6 +99,11 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(listingId)}/audit-events`,
       baseUrl,
     ),
+  publishListing: (listingId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/listings/${encodeURIComponent(listingId)}/publish`,
+      baseUrl,
+    ),
   listingResaleAnalysis: (listingId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/listings/${encodeURIComponent(listingId)}/resale-analysis`,
