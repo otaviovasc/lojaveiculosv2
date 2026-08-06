@@ -19,7 +19,7 @@ export class MarketplaceProviderGatewayError extends Error {
       "MARKETPLACE_PROVIDER_NOT_CONFIGURED",
       `Marketplace provider ${provider} is not configured.`,
       provider,
-      500,
+      503,
     );
   }
 
