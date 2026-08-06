@@ -7,6 +7,20 @@ import {
 } from "./httpMarketplaceProviderGatewayTestSupport.js";
 
 describe("createMarketplaceGatewayRegistry", () => {
+  it("fails Mercado Livre closed when env config is missing", async () => {
+    const gateway = createMarketplaceGatewayRegistry({}).getGateway(
+      "mercado_livre",
+    );
+
+    await expect(
+      gateway.createAuthorizationUrl({ redirectUri: "x", state: "s" }),
+    ).rejects.toMatchObject({
+      code: "MARKETPLACE_PROVIDER_NOT_CONFIGURED",
+      provider: "mercado_livre",
+      status: 503,
+    });
+  });
+
   it("fails OLX closed when env config is missing", async () => {
     const gateway = createMarketplaceGatewayRegistry({}).getGateway("olx");
 
@@ -17,6 +31,7 @@ describe("createMarketplaceGatewayRegistry", () => {
       gateway.createAuthorizationUrl({ redirectUri: "x", state: "s" }),
     ).rejects.toMatchObject({
       code: "MARKETPLACE_PROVIDER_NOT_CONFIGURED",
+      status: 503,
     });
   });
 

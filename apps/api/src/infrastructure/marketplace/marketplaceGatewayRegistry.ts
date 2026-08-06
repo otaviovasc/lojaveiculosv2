@@ -12,7 +12,7 @@ export function createMarketplaceGatewayRegistry(
 ): MarketplaceProviderGatewayRegistry {
   const gateways = new Map<MarketplaceProvider, MarketplaceProviderGateway>();
   const mercadoLivre = createMercadoLivreGateway(env);
-  if (mercadoLivre) gateways.set("mercado_livre", mercadoLivre);
+  gateways.set("mercado_livre", mercadoLivre);
   gateways.set("olx", createOlxGateway(env));
 
   return {
@@ -26,7 +26,12 @@ export function createMarketplaceGatewayRegistry(
 
 function createMercadoLivreGateway(env: Record<string, string | undefined>) {
   const clientId = env.MERCADO_LIVRE_CLIENT_ID;
-  if (!clientId) return null;
+  if (!clientId) {
+    return createFailClosedGateway(
+      "mercado_livre",
+      MarketplaceProviderGatewayError.notConfigured("mercado_livre"),
+    );
+  }
   return createHttpMarketplaceProviderGateway({
     auth: {
       clientId,
