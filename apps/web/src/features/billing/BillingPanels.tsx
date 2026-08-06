@@ -21,23 +21,35 @@ export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
   return (
     <section className="billing-summary-grid">
       <SummaryCard
-        icon={<BadgeCheck aria-hidden="true" className="size-5" />}
+        className="billing-kpi-card billing-kpi-card--accent"
+        decorativeIcon
+        icon={<BadgeCheck aria-hidden="true" className="size-7" />}
         label="Plano atual"
+        showIcon={false}
         value={overview.subscription?.plan?.name ?? "Sem plano"}
       />
       <SummaryCard
-        icon={<WalletCards aria-hidden="true" className="size-5" />}
+        className="billing-kpi-card billing-kpi-card--success"
+        decorativeIcon
+        icon={<WalletCards aria-hidden="true" className="size-7" />}
         label="Investimento mensal"
+        showIcon={false}
         value={money(overview.financialSummary.monthlyRecurringCents)}
       />
       <SummaryCard
-        icon={<PackageCheck aria-hidden="true" className="size-5" />}
+        className="billing-kpi-card billing-kpi-card--info"
+        decorativeIcon
+        icon={<PackageCheck aria-hidden="true" className="size-7" />}
         label="Pacotes adicionais"
+        showIcon={false}
         value={`${activePackages} ativo${activePackages === 1 ? "" : "s"}`}
       />
       <SummaryCard
-        icon={<CalendarClock aria-hidden="true" className="size-5" />}
+        className="billing-kpi-card billing-kpi-card--warning"
+        decorativeIcon
+        icon={<CalendarClock aria-hidden="true" className="size-7" />}
         label="Próxima renovação"
+        showIcon={false}
         value={periodEndLabel(overview.subscription?.currentPeriodEnd)}
       />
     </section>

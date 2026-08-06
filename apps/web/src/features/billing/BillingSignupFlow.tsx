@@ -499,7 +499,7 @@ export function BillingSignupFlow({
                   aria-hidden="true"
                   className="size-4 text-accent-strong inline mr-1.5"
                 />
-                Gerenciado pela Agência
+                Gerenciado pela agência
               </div>
             ) : (
               <div className="flex items-center gap-3 w-full md:w-auto">
@@ -530,6 +530,12 @@ export function BillingSignupFlow({
                         ? "Atualizar assinatura"
                         : "Continuar para pagamento"}
                 </button>
+                {!providerReady ? (
+                  <p className="text-xs font-semibold text-muted">
+                    Nenhuma cobrança foi feita enquanto o pagamento está
+                    indisponível.
+                  </p>
+                ) : null}
               </div>
             )}
           </div>

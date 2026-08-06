@@ -192,11 +192,23 @@ export function BillingModule({ api }: { api?: BillingApi }) {
               onSubscribe={startCheckout}
             />
           ) : (
-            <div className="space-y-6">
-              <BillingKpiGrid overview={overview} />
-              <BillingAutomaticBillingPanel overview={overview} />
-              <BillingAllocationTable allocations={overview.allocations} />
-              <BillingEventList events={overview.entitlementEvents} />
+            <div className="billing-details-workspace relative space-y-6 px-2 pb-8 md:px-4">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute right-1/4 top-0 h-[300px] w-[500px] rounded-full bg-accent-strong/15 blur-[120px]"
+              />
+              <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft px-3.5 py-1 text-xs font-extrabold text-accent-strong">
+                  <Receipt aria-hidden="true" className="size-3.5" />
+                  Detalhes da assinatura
+                </span>
+              </header>
+              <div className="relative z-10 space-y-6">
+                <BillingKpiGrid overview={overview} />
+                <BillingAutomaticBillingPanel overview={overview} />
+                <BillingAllocationTable allocations={overview.allocations} />
+                <BillingEventList events={overview.entitlementEvents} />
+              </div>
             </div>
           )}
         </div>
