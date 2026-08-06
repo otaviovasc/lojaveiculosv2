@@ -90,7 +90,7 @@ describe("BillingModule signup flow", () => {
     expect(planOption).toBeVisible();
     await user.click(planOption);
     await user.click(
-      screen.getByRole("button", { name: "Adicionar à escolha" }),
+      screen.getByRole("checkbox", { name: /Marketplaces Extra/ }),
     );
     await user.click(
       within(screen.getByLabelText("Resumo mensal")).getByRole("button", {
