@@ -40,6 +40,32 @@ export async function publishVehicleListing(
   const listing = await findScopedListing(context, repository, input.listingId);
   assertListingCanChangePublication(listing, "publish");
 
+  return publishVehicleListingRecord(context, listing, input, ports);
+}
+
+/**
+ * Publishes a listing created in the same transaction. Creation already
+ * requires inventory.create, so this internal path deliberately does not
+ * require inventory.update_status a second time.
+ */
+export async function publishCreatedVehicleListing(
+  context: ServiceContext,
+  listing: VehicleListing,
+  input: Pick<PublishVehicleListingInput, "publicSlug" | "reason"> = {},
+  ports?: VehicleInventoryServicePorts,
+): Promise<VehicleListing> {
+  assertListingCanChangePublication(listing, "publish");
+  return publishVehicleListingRecord(context, listing, input, ports);
+}
+
+async function publishVehicleListingRecord(
+  context: ServiceContext,
+  listing: VehicleListing,
+  input: Pick<PublishVehicleListingInput, "publicSlug" | "reason">,
+  ports: VehicleInventoryServicePorts | undefined,
+): Promise<VehicleListing> {
+  const repository = getListingRepository(ports);
+
   const publicSlug = await resolvePublicationSlug(
     context,
     repository,

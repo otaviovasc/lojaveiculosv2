@@ -178,7 +178,7 @@ export function createInitialInventoryForm(): InventoryFormState {
     modelYear: "",
     plate: "",
     price: "",
-    status: "draft",
+    status: "published",
     stockNumber: "",
     title: "",
     transmission: "",

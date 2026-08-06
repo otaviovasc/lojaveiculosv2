@@ -18,6 +18,7 @@ import {
   StorefrontLoadingFrame,
   StorefrontStateFrame,
 } from "./PublicStorefrontPageSupport";
+import { createEditorPreviewStorefrontApi } from "./editorPreviewApi";
 import {
   applyWebsiteBuilderPreviewToStorefrontData,
   mergeWebsiteBuilderPreviewPayload,
@@ -28,12 +29,14 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   const { storeSlug } = useParams<{ storeSlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditorMode = searchParams.get("editor") === "1";
-  const storefrontApi = useMemo(
-    () =>
+  const storefrontApi = useMemo(() => {
+    const publicApi =
       api ??
-      createPublicStorefrontApi(createPublicStorefrontApiOptions(storeSlug)),
-    [api, storeSlug],
-  );
+      createPublicStorefrontApi(createPublicStorefrontApiOptions(storeSlug));
+    return isEditorMode
+      ? createEditorPreviewStorefrontApi(publicApi)
+      : publicApi;
+  }, [api, isEditorMode, storeSlug]);
   const [retryKey, setRetryKey] = useState(0);
   const [detailRetryKey, setDetailRetryKey] = useState(0);
   const [snapshot, setSnapshot] = useState<PublicStorefrontSnapshot>({

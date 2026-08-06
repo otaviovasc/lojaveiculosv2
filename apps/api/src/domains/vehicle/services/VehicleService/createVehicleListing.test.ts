@@ -3,6 +3,30 @@ import { createVehicleListing } from "./createVehicleListing.js";
 import { createContext, createInMemoryVehiclePorts } from "./testSupport.js";
 
 describe("VehicleService create listing denials", () => {
+  it("publishes a newly created listing by default", async () => {
+    const context = createContext(["inventory.create"]);
+    const ports = createInMemoryVehiclePorts();
+
+    const listing = await createVehicleListing(
+      context,
+      { plate: "ABC1D23", title: "Civic" },
+      ports,
+    );
+
+    expect(listing).toMatchObject({
+      isVisibleOnPublicSite: true,
+      publicSlug: "civic-listing-1",
+      status: "published",
+    });
+    expect(ports.operationsRepository.statuses).toEqual([
+      expect.objectContaining({
+        fromStatus: "draft",
+        listingId: "listing_1",
+        toStatus: "published",
+      }),
+    ]);
+  });
+
   it("rejects listing creation without a store-scoped context and audits the denial", async () => {
     const context = {
       ...createContext(["inventory.create"]),
