@@ -1,4 +1,4 @@
-import { BadgeCheck, PackagePlus, Sparkles } from "lucide-react";
+import { Check, CheckCircle2, Info, Plus, Sparkles } from "lucide-react";
 import {
   featureLabels,
   featureValueCopy,
@@ -30,63 +30,91 @@ export function BillingPackageCard({
   selected?: boolean | undefined;
   selectionMode?: boolean;
 }) {
-  const enabled = selected ?? isEnabled(row.status);
+  const displayLabel = label ?? featureLabels[row.featureKey] ?? "Pacote";
+  const enabled = isEnabled(row.status);
+
   return (
-    <article className={`billing-package-card ${enabled ? "is-active" : ""}`}>
-      <div className="billing-package-card-top">
-        <span className={enabled ? "is-active" : ""}>
+    <article
+      className={`billing-package-card ${selected ? "is-selected" : ""} ${
+        enabled ? "is-enabled" : ""
+      }`}
+    >
+      <div className="billing-package-card-header">
+        <span className="billing-package-card-icon" aria-hidden="true">
           {enabled ? (
-            <BadgeCheck aria-hidden="true" />
+            <CheckCircle2 className="size-5 text-success-strong" />
           ) : (
-            <Sparkles aria-hidden="true" />
+            <Sparkles className="size-5 text-accent-strong" />
           )}
-          {enabled
-            ? selectionMode
-              ? "Na sua escolha"
-              : "Na sua assinatura"
-            : "Disponível"}
         </span>
-        <strong>{priceLabel}</strong>
-      </div>
-      <div>
-        <h4>{label ?? featureLabels[row.featureKey]}</h4>
-        <p>{featureValueCopy[row.featureKey]}</p>
-      </div>
-      <div className="billing-package-card-footer">
-        <small>{detail ?? billingLimitCopy(row)}</small>
-        <button
-          disabled={!canManage}
-          onClick={onSelect}
-          title={!canManage ? "A agência gerencia este pacote" : undefined}
-          type="button"
-        >
-          {!canManage ? null : enabled ? null : (
-            <PackagePlus aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <h3>{displayLabel}</h3>
+          {detail ? (
+            <span className="billing-package-card-detail">{detail}</span>
+          ) : (
+            <span className="billing-package-card-detail">
+              {enabled ? "Ativo na assinatura" : "Disponível para adicionar"}
+            </span>
           )}
-          {!canManage
-            ? "Gerenciado pela agência"
-            : !selectionMode
-              ? "Ver detalhes"
-              : enabled
-                ? "Remover da escolha"
-                : "Adicionar à escolha"}
-        </button>
+        </div>
+        <strong className="billing-package-card-price">{priceLabel}</strong>
+      </div>
+
+      <p className="billing-package-card-desc">
+        {featureValueCopy[row.featureKey] ??
+          "Potencialize a gestão e os resultados da sua loja com este módulo adicional."}
+      </p>
+
+      <div className="billing-package-card-footer">
+        {selectionMode ? (
+          <button
+            className={`billing-package-action-btn ${
+              selected ? "is-active" : ""
+            }`}
+            disabled={!canManage}
+            onClick={onSelect}
+            type="button"
+          >
+            {selected ? (
+              <>
+                <Check className="size-4" aria-hidden="true" />
+                Remover da escolha
+              </>
+            ) : (
+              <>
+                <Plus className="size-4" aria-hidden="true" />
+                Adicionar à escolha
+              </>
+            )}
+          </button>
+        ) : (
+          <button
+            className="billing-package-detail-btn"
+            onClick={onSelect}
+            type="button"
+          >
+            <Info className="size-4" aria-hidden="true" />
+            Ver detalhes
+          </button>
+        )}
       </div>
     </article>
   );
 }
 
 export function BillingPriceLine({
+  icon,
   label,
   value,
 }: {
+  icon?: React.ReactNode;
   label: string;
   value: number;
 }) {
   return (
-    <div className="billing-price-line">
-      <span>{label}</span>
-      <strong>{money(value)}</strong>
+    <div className="flex justify-between text-sm py-1">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-bold">{money(value)}</span>
     </div>
   );
 }
@@ -135,7 +163,7 @@ export function billingPackagePriceLabel(
       item.label.toLowerCase().includes(label) &&
       (item.storeId === overview.storeId || !item.storeId),
   );
-  return line ? `${money(line.unitAmountCents)}/mês` : "Condição sob consulta";
+  return line ? `${money(line.unitAmountCents)}/mês` : "Sob consulta";
 }
 
 export function billingPlanLimitHighlights(

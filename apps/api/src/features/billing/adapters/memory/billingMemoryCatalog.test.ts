@@ -36,9 +36,9 @@ describe("billing memory catalog contracts", () => {
     ]);
     expect(trialFeatures).not.toContain("custom_domain");
     expect(
-      memoryBillingPlans[0]?.features.find(
-        (feature) => feature.featureKey === "plate_lookup",
-      ),
+      memoryBillingPlans
+        .find((plan) => plan.code === "growth")
+        ?.features.find((feature) => feature.featureKey === "plate_lookup"),
     ).toMatchObject({
       includedInTrial: true,
       limitValue: 300,

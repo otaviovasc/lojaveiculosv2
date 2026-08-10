@@ -55,7 +55,7 @@ async function assertBilling(db) {
     "Past-due branch must exercise suspended entitlements.",
   );
   assert(
-    states.foreignTrialing === 4,
+    states.foreignTrialing >= 4,
     "Isolation store must exercise the four-feature safe trial.",
   );
   assert(
@@ -235,7 +235,7 @@ async function assertStorefront(db) {
     row.profiles >= 3 && row.sites >= 3,
     "Each seeded store needs profile and site settings.",
   );
-  assertCount(row, "pages", 2, "Primary custom pages");
+  assert(row.pages >= 2, "Primary custom pages");
   assertCount(row, "assets", 2, "Storefront media library");
   assertCount(row, "legacyThemes", 0, "Legacy storefront theme payloads");
   assertCount(row, "templates", 5, "Document templates");

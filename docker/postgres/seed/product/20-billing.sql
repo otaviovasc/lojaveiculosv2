@@ -7,16 +7,12 @@ INSERT INTO plans (
   id, catalog_version, code, is_default, limits,
   monthly_price_cents, name, status
 )
-VALUES (
-  '12121212-1212-4212-8212-121212121212',
-  '2026-07-v1',
-  'growth',
-  true,
-  '{"vehicle_limit": 300, "seller_limit": 8}'::jsonb,
-  29900,
-  'Growth',
-  'active'
-)
+VALUES
+  ('12121212-1212-4212-8212-121212121210', '2026-07-v1', 'basico', false, '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb, 0, 'Básico', 'active'),
+  ('12121212-1212-4212-8212-121212121211', '2026-07-v1', 'premium', false, '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb, 9997, 'Premium', 'active'),
+  ('12121212-1212-4212-8212-121212121213', '2026-07-v1', 'estoque', false, '{"vehicle_limit": 60, "seller_limit": 1}'::jsonb, 14999, 'Estoque', 'active'),
+  ('12121212-1212-4212-8212-121212121214', '2026-07-v1', 'pro', false, '{"vehicle_limit": 100, "seller_limit": 1}'::jsonb, 17990, 'Pro', 'active'),
+  ('12121212-1212-4212-8212-121212121212', '2026-07-v1', 'growth', true, '{"vehicle_limit": 300, "seller_limit": 8}'::jsonb, 29900, 'Growth', 'active')
 ON CONFLICT (code, catalog_version) DO UPDATE SET
   is_default = EXCLUDED.is_default,
   limits = EXCLUDED.limits,
@@ -26,21 +22,72 @@ ON CONFLICT (code, catalog_version) DO UPDATE SET
   updated_at = now();
 
 INSERT INTO plan_features (
-  feature_key, included, included_in_trial, limit_value, plan_id,
-  trial_limit_value
+  feature_key, included, included_in_trial, limit_value, plan_id, trial_limit_value
 )
-VALUES
-  ('analytics', 1, true, null, '12121212-1212-4212-8212-121212121212', null),
-  ('automation', 1, true, null, '12121212-1212-4212-8212-121212121212', null),
-  ('compliance', 1, true, null, '12121212-1212-4212-8212-121212121212', null),
-  ('crm', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
-  ('custom_domain', 1, false, null, '12121212-1212-4212-8212-121212121212', null),
-  ('external_api', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
-  ('marketplace', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
-  ('fiscal', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
-  ('plate_lookup', 1, true, 300, '12121212-1212-4212-8212-121212121212', 10),
-  ('simulations', 0, false, null, '12121212-1212-4212-8212-121212121212', null),
-  ('subdomain', 1, true, null, '12121212-1212-4212-8212-121212121212', null)
+SELECT
+  pf.feature_key, pf.included, pf.included_in_trial, pf.limit_value, plan.id, pf.trial_limit_value
+FROM plans plan
+JOIN (
+  VALUES
+    ('basico', 'subdomain', 1, true, null::integer, null::integer),
+    ('basico', 'automation', 0, false, null::integer, null::integer),
+    ('basico', 'plate_lookup', 0, false, null::integer, null::integer),
+    ('basico', 'custom_domain', 0, false, null::integer, null::integer),
+    ('basico', 'crm', 0, false, null::integer, null::integer),
+    ('basico', 'external_api', 0, false, null::integer, null::integer),
+    ('basico', 'marketplace', 0, false, null::integer, null::integer),
+    ('basico', 'fiscal', 0, false, null::integer, null::integer),
+    ('basico', 'simulations', 0, false, null::integer, null::integer),
+
+    ('premium', 'subdomain', 1, true, null::integer, null::integer),
+    ('premium', 'automation', 1, true, null::integer, null::integer),
+    ('premium', 'analytics', 1, true, null::integer, null::integer),
+    ('premium', 'compliance', 1, true, null::integer, null::integer),
+    ('premium', 'plate_lookup', 0, false, null::integer, null::integer),
+    ('premium', 'custom_domain', 0, false, null::integer, null::integer),
+    ('premium', 'crm', 0, false, null::integer, null::integer),
+    ('premium', 'external_api', 0, false, null::integer, null::integer),
+    ('premium', 'marketplace', 0, false, null::integer, null::integer),
+    ('premium', 'fiscal', 0, false, null::integer, null::integer),
+    ('premium', 'simulations', 0, false, null::integer, null::integer),
+
+    ('estoque', 'subdomain', 1, true, null::integer, null::integer),
+    ('estoque', 'automation', 1, true, null::integer, null::integer),
+    ('estoque', 'analytics', 1, true, null::integer, null::integer),
+    ('estoque', 'compliance', 1, true, null::integer, null::integer),
+    ('estoque', 'plate_lookup', 1, true, 60, 10),
+    ('estoque', 'external_api', 1, true, null::integer, null::integer),
+    ('estoque', 'simulations', 1, true, null::integer, null::integer),
+    ('estoque', 'custom_domain', 0, false, null::integer, null::integer),
+    ('estoque', 'crm', 0, false, null::integer, null::integer),
+    ('estoque', 'marketplace', 0, false, null::integer, null::integer),
+    ('estoque', 'fiscal', 0, false, null::integer, null::integer),
+
+    ('pro', 'subdomain', 1, true, null::integer, null::integer),
+    ('pro', 'automation', 1, true, null::integer, null::integer),
+    ('pro', 'analytics', 1, true, null::integer, null::integer),
+    ('pro', 'compliance', 1, true, null::integer, null::integer),
+    ('pro', 'plate_lookup', 1, true, 100, 10),
+    ('pro', 'external_api', 1, true, null::integer, null::integer),
+    ('pro', 'custom_domain', 1, true, null::integer, null::integer),
+    ('pro', 'simulations', 1, true, null::integer, null::integer),
+    ('pro', 'crm', 0, false, null::integer, null::integer),
+    ('pro', 'marketplace', 0, false, null::integer, null::integer),
+    ('pro', 'fiscal', 0, false, null::integer, null::integer),
+
+    ('growth', 'subdomain', 1, true, null::integer, null::integer),
+    ('growth', 'automation', 1, true, null::integer, null::integer),
+    ('growth', 'analytics', 1, true, null::integer, null::integer),
+    ('growth', 'compliance', 1, true, null::integer, null::integer),
+    ('growth', 'plate_lookup', 1, true, 300, 10),
+    ('growth', 'custom_domain', 1, true, null::integer, null::integer),
+    ('growth', 'crm', 0, false, null::integer, null::integer),
+    ('growth', 'external_api', 0, false, null::integer, null::integer),
+    ('growth', 'marketplace', 0, false, null::integer, null::integer),
+    ('growth', 'fiscal', 0, false, null::integer, null::integer),
+    ('growth', 'simulations', 0, false, null::integer, null::integer)
+) AS pf(plan_code, feature_key, included, included_in_trial, limit_value, trial_limit_value)
+  ON plan.code = pf.plan_code AND plan.catalog_version = '2026-07-v1'
 ON CONFLICT (plan_id, feature_key) DO UPDATE SET
   included = EXCLUDED.included,
   included_in_trial = EXCLUDED.included_in_trial,
@@ -65,14 +112,6 @@ VALUES
   (
     '15151515-1515-4515-8515-151515151517', '2026-07-v1',
     'fiscal_spedy', 'fiscal', false, 19990, 'Fiscal NF-e + NFS-e', 'active'
-  ),
-  (
-    '15151515-1515-4515-8515-151515151518', '2026-07-v1',
-    'public_api_access', 'external_api', false, 9990, 'API Pública', 'active'
-  ),
-  (
-    '15151515-1515-4515-8515-151515151519', '2026-07-v1',
-    'simulations_pro', 'simulations', false, 4990, 'Simulações Pro', 'active'
   )
 ON CONFLICT (code, catalog_version) DO UPDATE SET
   feature_key = EXCLUDED.feature_key,
