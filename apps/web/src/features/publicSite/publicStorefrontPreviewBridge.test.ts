@@ -102,6 +102,7 @@ function createStorefrontData(): PublicStorefrontPageData {
         engineDisplacement: "1.0",
         fuelType: "flex",
         heroMedia: null,
+        media: [],
         manufactureYear: 2024,
         mileageKm: 0,
         modelYear: 2025,
@@ -117,6 +118,12 @@ function createStorefrontData(): PublicStorefrontPageData {
     ],
     settings: {
       contact: {
+        addressCity: "Sao Paulo",
+        addressLine1: null,
+        addressLine2: null,
+        addressState: null,
+        addressZipCode: null,
+        businessHours: {},
         city: "Sao Paulo",
         contactEmail: null,
         contactPhone: null,

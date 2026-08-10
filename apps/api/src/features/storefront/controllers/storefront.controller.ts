@@ -33,6 +33,7 @@ import {
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(48).default(24),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 export type CreateStorefrontFeatureOptions = {
@@ -92,7 +93,11 @@ export function createStorefrontFeature(
       );
       const result = await listPublicVehicleListings(
         serviceContext,
-        { limit: query.data.limit, storeSlug },
+        {
+          limit: query.data.limit,
+          offset: query.data.offset,
+          storeSlug,
+        },
         repository,
       );
 

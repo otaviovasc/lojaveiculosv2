@@ -15,6 +15,7 @@ const permission = "public_storefront.read";
 
 export type ListPublicVehicleListingsInput = {
   limit: number;
+  offset?: number;
   storeSlug: string;
 };
 
@@ -35,6 +36,7 @@ export async function listPublicVehicleListings(
     "public_storefront.listings.started",
     createServiceLogMetadata(context, {
       limit: input.limit,
+      offset: input.offset ?? 0,
       storeSlug: input.storeSlug,
     }),
   );
@@ -49,6 +51,7 @@ export async function listPublicVehicleListings(
 
   const listings = await storefrontRepository.listPublicListings({
     limit: input.limit,
+    offset: input.offset ?? 0,
     storeId: store.id,
     tenantId: store.tenantId,
   });
@@ -59,7 +62,12 @@ export async function listPublicVehicleListings(
     category: "data_access",
     entityId: store.id,
     entityType: "store",
-    metadata: { listingCount: listings.length, permission },
+    metadata: {
+      limit: input.limit,
+      listingCount: listings.length,
+      offset: input.offset ?? 0,
+      permission,
+    },
     outcome: "succeeded",
     requestId: context.requestId,
     storeId: store.id,

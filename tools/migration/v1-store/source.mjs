@@ -85,6 +85,9 @@ export async function loadStoreData(sql, storeId) {
       'SELECT cp.* FROM "Loja" l JOIN "CustomPlan" cp ON cp.plan_name=l.custom_plan_name WHERE l.id=$1',
     ),
     settings: await one('SELECT * FROM "Settings" WHERE "lojaId" = $1'),
+    testimonials: await many(
+      'SELECT * FROM "Depoimento" WHERE "lojaId"=$1 ORDER BY "order",id',
+    ),
     accesses: await many(
       'SELECT a.*, row_to_json(u.*) AS profile FROM "LojaAccess" a LEFT JOIN "UserProfile" u ON u."clerkUserId"=a."clerkUserId" WHERE a."lojaId"=$1 ORDER BY a.id',
     ),
@@ -146,12 +149,7 @@ export async function loadStoreData(sql, storeId) {
 }
 
 async function assertUnsupportedTablesEmpty(sql, storeId) {
-  const tables = [
-    "Depoimento",
-    "PartnerStore",
-    "Investor",
-    "VehicleConsignment",
-  ];
+  const tables = ["PartnerStore", "Investor", "VehicleConsignment"];
   const unresolved = [];
   for (const table of tables) {
     const [row] = await sql.unsafe(

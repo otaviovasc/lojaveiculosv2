@@ -21,6 +21,7 @@ import {
   addDays,
   assertNoActiveInvitation,
 } from "./drizzleAccountProvisioningInvitations.js";
+import { createPublicStorefrontDefaults } from "./drizzleAccountProvisioningDefaults.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
 
 export async function assertSlugsAvailable(
@@ -123,9 +124,7 @@ export async function insertStoreDefaults(
       .onConflictDoNothing(),
     db
       .insert(storePublicSiteSettings)
-      // Stores ship with their storefront live by default; owners can
-      // unpublish from the customize page.
-      .values({ isPublished: true, storeId, tenantId })
+      .values(createPublicStorefrontDefaults(tenantId, storeId))
       .onConflictDoNothing(),
     db
       .insert(storeEntitlements)

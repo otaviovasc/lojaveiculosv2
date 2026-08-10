@@ -283,11 +283,7 @@ export function StockSection({
   const featuredListing =
     variant === "featured-large" ? (filteredListings[0] ?? null) : null;
   const visibleListings =
-    variant === "featured"
-      ? filteredListings.slice(0, 6)
-      : variant === "featured-large"
-        ? filteredListings.slice(1, 7)
-        : filteredListings;
+    variant === "featured-large" ? filteredListings.slice(1) : filteredListings;
 
   return (
     <section

@@ -19,12 +19,14 @@ export type WebsiteBuilderTestimonial = {
 };
 
 export type WebsiteBuilderHeroMediaSource = "auto" | "banners" | "vehicles";
+export type WebsiteBuilderAppearanceMode = "both" | "dark" | "light";
 
 export type WebsiteBuilderConfig = {
   aboutImageUrl?: string | null;
   aboutText?: string | null;
   aboutTitle?: string | null;
   accentColor: string;
+  appearanceMode: WebsiteBuilderAppearanceMode;
   backgroundColor: string;
   brandColor: string;
   contact: {

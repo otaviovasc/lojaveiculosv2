@@ -78,8 +78,9 @@ describe("storefront preset defaults", () => {
       "header",
       "hero",
       "stock",
-      "lead",
+      "testimonials",
       "about",
+      "lead",
       "footer",
     ]);
     expect(
@@ -88,8 +89,9 @@ describe("storefront preset defaults", () => {
       ["header", "opaque"],
       ["hero", "split"],
       ["stock", "grid-compact"],
-      ["lead", "standard"],
+      ["testimonials", "standard"],
       ["about", "standard"],
+      ["lead", "standard"],
       ["footer", "standard"],
     ]);
   });

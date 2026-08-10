@@ -9,6 +9,7 @@ describe("findListingGallery", () => {
         {
           altText: "Front photo",
           displayOrder: 0,
+          id: "media_front",
           kind: "photo",
           unitId: "unit_1",
           url: "https://cdn.local/front.jpg",
@@ -16,6 +17,7 @@ describe("findListingGallery", () => {
         {
           altText: "Walkaround video",
           displayOrder: 1,
+          id: "media_walkaround",
           kind: "video",
           unitId: "unit_1",
           url: "https://cdn.local/walkaround.mp4",
@@ -46,6 +48,7 @@ describe("findListingGallery", () => {
         {
           altText: "Front photo",
           displayOrder: 0,
+          id: "media_front",
           kind: "photo",
           unitId: "unit_1",
           url: "https://cdn.local/front.jpg",
@@ -53,6 +56,7 @@ describe("findListingGallery", () => {
         {
           altText: "Blue walkaround",
           displayOrder: 0,
+          id: "media_blue_walkaround",
           kind: "video",
           unitId: "unit_2",
           url: "https://cdn.local/blue-walkaround.mp4",
@@ -85,5 +89,40 @@ describe("findListingGallery", () => {
       "https://cdn.local/blue-walkaround.mp4",
     );
     expect(gallery.thumbnailUrl).toBe("https://cdn.local/front.jpg");
+  });
+
+  it("orders tied media by stable media id in the query and comparator", async () => {
+    const db = createFakePublicStorefrontDb({
+      media: [
+        {
+          altText: "Second stable photo",
+          displayOrder: 0,
+          id: "media_z",
+          kind: "photo",
+          unitId: "unit_1",
+          url: "https://cdn.local/z.jpg",
+        },
+        {
+          altText: "First stable photo",
+          displayOrder: 0,
+          id: "media_a",
+          kind: "photo",
+          unitId: "unit_1",
+          url: "https://cdn.local/a.jpg",
+        },
+      ],
+    });
+
+    const gallery = await findListingGallery(db, {
+      listingId: "listing_1",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+
+    expect(gallery.defaultMedia.map((item) => item.url)).toEqual([
+      "https://cdn.local/a.jpg",
+      "https://cdn.local/z.jpg",
+    ]);
+    expect(db.orderByArgumentCounts).toEqual([1, 2]);
   });
 });

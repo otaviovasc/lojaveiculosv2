@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { StatusIllustration } from "../../components/ui/StatusIllustration";
 import { AppApiError } from "../../lib/apiErrors";
 import type { PublicStorefrontApi } from "./apiClient";
+import { publicStorefrontPreview } from "./fixtures";
 import { PublicCustomPageRoute } from "./PublicCustomPageRoute";
 import { PublicStorefrontPage } from "./PublicStorefrontPage";
 import {
@@ -15,6 +16,12 @@ import {
 import { derivePublicStorefrontState } from "./state";
 
 afterEach(cleanup);
+
+vi.mock("./PublicStorefront", () => ({
+  PublicStorefront: ({ data }: { data: { listings: readonly unknown[] } }) => (
+    <div data-testid="public-storefront">{data.listings.length}</div>
+  ),
+}));
 
 describe("derivePublicStorefrontState", () => {
   it("maps API 404 failures to a dedicated not-found state", () => {
@@ -43,6 +50,34 @@ describe("derivePublicStorefrontState", () => {
 });
 
 describe("PublicStorefrontPage states", () => {
+  it("renders the published landing page when its inventory is empty", async () => {
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: async () => publicStorefrontPreview.settings,
+      listListings: async () => ({
+        listings: [],
+        store: publicStorefrontPreview.store,
+      }),
+      submitListingInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    render(
+      <MemoryRouter initialEntries={["/demo"]}>
+        <Routes>
+          <Route
+            element={<PublicStorefrontPage api={api} />}
+            path="/:storeSlug"
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId("public-storefront")).toHaveTextContent(
+      "0",
+    );
+  });
+
   it("shows a friendly not-found page when the store does not exist", async () => {
     const api = {
       getCustomPage: vi.fn(),

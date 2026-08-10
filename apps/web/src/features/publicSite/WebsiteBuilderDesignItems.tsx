@@ -6,6 +6,7 @@ import {
   Palette,
   Phone,
   Search,
+  SunMoon,
   Sparkles,
   Store,
   Type,
@@ -24,6 +25,7 @@ import {
   WebsiteBuilderTypographyPanel,
 } from "./WebsiteBuilderPanelsPrimary";
 import { WebsiteBuilderColorsSection } from "./WebsiteBuilderColorsSection";
+import { WebsiteBuilderAppearancePanel } from "./WebsiteBuilderAppearancePanel";
 import { WebsiteBuilderSectionsManager } from "./WebsiteBuilderSectionsManager";
 import type {
   WebsiteBuilderConfig,
@@ -135,6 +137,17 @@ export function createWebsiteBuilderEditorGroups({
         icon: Palette,
         id: "colors",
         title: "Cores",
+      },
+      {
+        children: (
+          <WebsiteBuilderAppearancePanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: SunMoon,
+        id: "appearance",
+        title: "Aparência",
       },
       {
         children: (

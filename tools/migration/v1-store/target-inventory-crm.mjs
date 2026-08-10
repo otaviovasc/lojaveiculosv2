@@ -25,7 +25,7 @@ export async function seedInventory(tx, data, config, ids) {
     const unitId = targetId(config.legacyStoreId, "Veiculo:unit", vehicle.id);
     ids.listings.set(vehicle.id, listingId);
     ids.units.set(vehicle.id, unitId);
-    const sold = vehicle.status_anuncio === "VENDIDO";
+    const publication = mapLegacyVehiclePublication(vehicle.status_anuncio);
     const vehicleType =
       vehicle.tipo_veiculo === "Moto" ? "motorcycles" : "cars";
     const catalog = {
@@ -47,19 +47,20 @@ export async function seedInventory(tx, data, config, ids) {
     };
     const metadata = legacyMetadata("Veiculo", vehicle, {
       catalog,
+      ...mapLegacyVehicleMarkers(vehicle),
       videoUrl: vehicle.video_url ?? null,
     });
     await tx`INSERT INTO vehicle_listings
       (id, asking_price_cents, condition, description, doors, engine_aspiration, engine_displacement, fuel_type, is_visible_on_public_site, manufacture_year, metadata, mileage_km, model_year, public_slug, status, store_id, tenant_id, title, transmission, trim_name, created_at, updated_at)
       VALUES (${listingId}, ${money(vehicle.preco)}, 'used', ${vehicle.descricao_detalhada || null}, ${vehicle.portas || null}, ${mapAspiration(vehicle.aspiracao)},
-        ${nullableString(vehicle.cilindrada, 32)}, ${mapFuel(vehicle.combustivel)}, ${!sold}, ${vehicle.ano_fabricacao || null}, ${tx.json(metadata)},
+        ${nullableString(vehicle.cilindrada, 32)}, ${mapFuel(vehicle.combustivel)}, ${publication.isVisible}, ${vehicle.ano_fabricacao || null}, ${tx.json(metadata)},
         ${vehicle.km || null}, ${vehicle.ano_modelo || null}, ${`legacy-${vehicle.id}-${slugify(vehicle.titulo_anuncio).slice(0, 140)}`},
-        ${sold ? "sold_out" : "published"}, ${ids.store}, ${ids.tenant}, ${vehicle.titulo_anuncio || `Veículo ${vehicle.id}`},
+        ${publication.listingStatus}, ${ids.store}, ${ids.tenant}, ${vehicle.titulo_anuncio || `Veículo ${vehicle.id}`},
         ${mapTransmission(vehicle.cambio)}, ${nullableString(vehicle.versao, 160)}, ${vehicle.data_cadastro}, ${vehicle.data_atualizacao})
-      ON CONFLICT (id) DO UPDATE SET metadata=excluded.metadata, status=excluded.status, updated_at=excluded.updated_at`;
+      ON CONFLICT (id) DO UPDATE SET is_visible_on_public_site=excluded.is_visible_on_public_site, metadata=excluded.metadata, status=excluded.status, updated_at=excluded.updated_at`;
     await tx`INSERT INTO vehicle_units
       (id, acquisition_date, color_name, listing_id, plate, status, store_id, tenant_id, vin, created_at, updated_at)
-      VALUES (${unitId}, ${vehicle.data_cadastro}, ${nullableString(vehicle.cor, 64)}, ${listingId}, ${nullableString(vehicle.placa_final, 16)?.toUpperCase() ?? null}, ${sold ? "sold" : "available"},
+      VALUES (${unitId}, ${vehicle.data_cadastro}, ${nullableString(vehicle.cor, 64)}, ${listingId}, ${nullableString(vehicle.placa_final, 16)?.toUpperCase() ?? null}, ${publication.unitStatus},
         ${ids.store}, ${ids.tenant}, ${nullableString(vehicle.chassi, 32)}, ${vehicle.data_cadastro}, ${vehicle.data_atualizacao})
       ON CONFLICT (id) DO UPDATE SET plate=excluded.plate, status=excluded.status, updated_at=excluded.updated_at`;
     await addLegacyMap(
@@ -97,6 +98,56 @@ export async function seedInventory(tx, data, config, ids) {
       ON CONFLICT (id) DO UPDATE SET items=excluded.items, updated_at=excluded.updated_at`;
   }
   log("  Inventory done");
+}
+
+export function mapLegacyVehiclePublication(status) {
+  if (status === "DISPONIVEL") {
+    return {
+      isVisible: true,
+      listingStatus: "published",
+      unitStatus: "available",
+    };
+  }
+  if (status === "RESERVADO") {
+    return {
+      isVisible: true,
+      listingStatus: "published",
+      unitStatus: "reserved",
+    };
+  }
+  if (status === "VENDIDO") {
+    return {
+      isVisible: false,
+      listingStatus: "sold_out",
+      unitStatus: "sold",
+    };
+  }
+  if (status === "RASCUNHO") {
+    return {
+      isVisible: false,
+      listingStatus: "draft",
+      unitStatus: "acquired",
+    };
+  }
+  return {
+    isVisible: false,
+    listingStatus: "unpublished",
+    unitStatus: "inactive",
+  };
+}
+
+export function mapLegacyVehicleMarkers(vehicle) {
+  return {
+    commercialTags: [
+      ...(vehicle.destaque === true ? ["Destaque"] : []),
+      ...(vehicle.blindado === true ? ["Blindado"] : []),
+      ...(vehicle.leilao === true ? ["Leilão"] : []),
+      ...(vehicle.laudo === "SIM" ? ["Laudo cautelar"] : []),
+      ...(vehicle.under_preparation === true ? ["Em preparação"] : []),
+    ],
+    hidePrice: vehicle.hide_price === true,
+    legacyFeatured: vehicle.destaque === true || vehicle.is_cover === true,
+  };
 }
 
 export async function seedCrm(tx, data, config, ids) {

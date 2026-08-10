@@ -24,6 +24,14 @@
       "maxViolations": 1,
       "reason": "legacy page-builder media editor pending shared overlay migration"
     },
+    "apps/web/src/features/publicSite/quadra/QuadraListingContactModal.tsx": {
+      "maxViolations": 1,
+      "reason": "intentional V1 storefront contact dialog with local focus containment"
+    },
+    "apps/web/src/features/publicSite/quadra/QuadraListingGallery.tsx": {
+      "maxViolations": 1,
+      "reason": "intentional V1 fullscreen gallery with local focus containment"
+    },
     "apps/web/src/features/publicSite/WebsiteBuilderDesign.tsx": {
       "maxViolations": 1,
       "reason": "legacy responsive site preview pending shared overlay migration"

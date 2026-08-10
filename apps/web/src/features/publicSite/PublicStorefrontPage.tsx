@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button";
 import { StatusIllustration } from "../../components/ui/StatusIllustration";
 import {
   createPublicStorefrontApi,
+  listAllPublicStorefrontListings,
   type PublicStorefrontApi,
 } from "./apiClient";
 import type { PublicListingDetailSnapshot } from "./PublicListingDetailPanel";
@@ -54,13 +55,11 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     let isActive = true;
     setSnapshot({ isLoading: true });
 
-    storefrontApi
-      .getSettings()
-      .then((settings) =>
-        storefrontApi
-          .listListings({ limit: 12 })
-          .then((data) => ({ ...data, settings })),
-      )
+    Promise.all([
+      storefrontApi.getSettings(),
+      listAllPublicStorefrontListings(storefrontApi),
+    ])
+      .then(([settings, data]) => ({ ...data, settings }))
       .then((data) => {
         if (isActive) setSnapshot({ data, isLoading: false });
       })

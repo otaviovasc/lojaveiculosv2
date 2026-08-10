@@ -70,8 +70,9 @@ describe("normalizeStorefrontConfig", () => {
       "header",
       "hero",
       "stock",
-      "lead",
+      "testimonials",
       "about",
+      "lead",
       "footer",
     ]);
   });

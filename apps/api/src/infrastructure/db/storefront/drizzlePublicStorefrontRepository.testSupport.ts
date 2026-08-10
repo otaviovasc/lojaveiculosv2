@@ -26,9 +26,11 @@ type FakePublicStorefrontRows = {
 export function createFakePublicStorefrontDb(
   overrides: Partial<FakePublicStorefrontRows> = {},
 ) {
+  const orderByArgumentCounts: number[] = [];
   const queriedTables: unknown[] = [];
   const rows = { ...defaultRows(), ...overrides };
   const db = {
+    orderByArgumentCounts,
     queriedTables,
     select(selection?: Record<string, unknown>) {
       return {
@@ -47,10 +49,21 @@ export function createFakePublicStorefrontDb(
             },
             where() {
               return {
-                orderBy() {
+                orderBy(...columns: unknown[]) {
+                  orderByArgumentCounts.push(columns.length);
                   return {
                     async limit(count: number) {
                       return rowsFor(table, rows, rowKind).slice(0, count);
+                    },
+                    offset(count: number) {
+                      return {
+                        async limit(limit: number) {
+                          return rowsFor(table, rows, rowKind).slice(
+                            count,
+                            count + limit,
+                          );
+                        },
+                      };
                     },
                   };
                 },
@@ -116,6 +129,7 @@ function defaultRows(): FakePublicStorefrontRows {
       {
         altText: "Front photo",
         displayOrder: 0,
+        id: "media_1",
         kind: "photo",
         unitId: "unit_1",
         url: "https://cdn.local/front.jpg",
@@ -124,6 +138,14 @@ function defaultRows(): FakePublicStorefrontRows {
     publicSites: [
       {
         addressCity: "Sao Paulo",
+        addressLine1: "Avenida Paulista, 1000",
+        addressLine2: "Bela Vista",
+        addressState: "SP",
+        addressZipCode: "01310-100",
+        businessHours: {
+          monday: { close: "18:00", open: "09:00" },
+          saturday: "09:00 - 13:00",
+        },
         contactEmail: "contato@demo.com.br",
         contactPhone: null,
         customDomain: null,

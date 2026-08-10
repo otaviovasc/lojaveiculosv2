@@ -114,6 +114,7 @@ function createListing(
     fuelType: null,
     heroMedia: null,
     manufactureYear: 2024,
+    media: [],
     mileageKm: 12000,
     modelYear: 2025,
     priceCents: 10000000,

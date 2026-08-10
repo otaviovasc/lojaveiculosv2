@@ -32,8 +32,8 @@ export function createEditorPreviewStorefrontApi(
         settingsApi.getStoreSettings(),
         createRuntimeInventoryApi(),
       ]);
-      const result = await inventory.listListings({ limit: 100 });
-      const summary = findListing(result.items, listingSlug);
+      const summaries = await listAllPreviewInventory(inventory);
+      const summary = findListing(summaries, listingSlug);
       if (!summary) throw new Error("Preview vehicle not found.");
       const detail = await inventory.getListing(summary.listing.id);
       return toPublicListingDetail(detail, settings);
@@ -45,10 +45,15 @@ export function createEditorPreviewStorefrontApi(
         settingsApi.getStoreSettings(),
         createRuntimeInventoryApi(),
       ]);
-      const result = await inventory.listListings({
-        limit: query?.limit ?? 24,
-      });
-      return toPublicStorefrontData(settings, result.items);
+      const summaries = (await listAllPreviewInventory(inventory)).filter(
+        ({ listing }) => listing.status === "published",
+      );
+      const limit = query?.limit ?? 24;
+      const offset = query?.offset ?? 0;
+      return toPublicStorefrontData(
+        settings,
+        summaries.slice(offset, offset + limit),
+      );
     },
     submitListingInterest: publicApi.submitListingInterest,
   };
@@ -56,6 +61,21 @@ export function createEditorPreviewStorefrontApi(
 
 async function createRuntimeInventoryApi() {
   return createInventoryApi(await createInventoryApiOptions());
+}
+
+async function listAllPreviewInventory(
+  inventory: Awaited<ReturnType<typeof createRuntimeInventoryApi>>,
+): Promise<readonly InventoryListingSummary[]> {
+  const summaries: InventoryListingSummary[] = [];
+  let offset = 0;
+
+  while (true) {
+    const result = await inventory.listListings({ limit: 100, offset });
+    summaries.push(...result.items);
+
+    if (!result.hasMore || result.nextOffset === null) return summaries;
+    offset = result.nextOffset;
+  }
 }
 
 function toPublicStorefrontData(
@@ -76,6 +96,12 @@ function toPublicSettings(
   const phone = settings.profile.whatsappPhone;
   return {
     contact: {
+      addressCity: settings.profile.addressCity,
+      addressLine1: settings.profile.addressLine1,
+      addressLine2: settings.profile.addressLine2,
+      addressState: settings.profile.addressState,
+      addressZipCode: settings.profile.addressZipCode,
+      businessHours: settings.profile.businessHours,
       city: settings.profile.addressCity,
       contactEmail: settings.profile.contactEmail,
       contactPhone: settings.profile.contactPhone,
@@ -120,7 +146,7 @@ function toPublicListing(
       })
     : null;
 
-  return toPublicListingFields(listing, heroMedia);
+  return toPublicListingFields(listing, heroMedia ? [heroMedia] : []);
 }
 
 function toPublicListingDetail(
@@ -130,7 +156,7 @@ function toPublicListingDetail(
   const media = source.media
     .filter((item) => item.isPublic)
     .map((item) => toPublicMedia(item));
-  const listing = toPublicListingFields(source.listing, media[0] ?? null);
+  const listing = toPublicListingFields(source.listing, media);
   const mediaGroups = source.units.map((unit) => ({
     colorName: unit.colorName,
     media: media.filter((item) => item.unitId === unit.id),
@@ -138,15 +164,16 @@ function toPublicListingDetail(
   }));
 
   return {
-    listing: { ...listing, media, mediaGroups },
+    listing: { ...listing, mediaGroups },
     store: toPublicStoreSummary(settings),
   };
 }
 
 function toPublicListingFields(
   listing: InventoryListing,
-  heroMedia: PublicVehicleMedia | null,
+  media: readonly PublicVehicleMedia[],
 ): PublicVehicleListing {
+  const heroMedia = media[0] ?? null;
   return {
     commercialTags: listing.commercialTags,
     condition: "used",
@@ -157,6 +184,7 @@ function toPublicListingFields(
     fuelType: listing.fuelType,
     heroMedia,
     manufactureYear: listing.manufactureYear,
+    media,
     mileageKm: listing.mileageKm,
     modelYear: listing.modelYear,
     priceCents: listing.priceCents,

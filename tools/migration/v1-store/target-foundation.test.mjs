@@ -69,6 +69,16 @@ test("foundation seeds the mapped V1 billing contract", async () => {
 
   await seedFoundation(tx, data, config, ids);
 
+  const storefrontInsert = queries.find((query) =>
+    query.includes("INSERT INTO store_public_site_settings"),
+  );
+  assert.ok(storefrontInsert, "expected a public storefront insert");
+  assert.match(storefrontInsert, /is_published/);
+  assert.match(
+    storefrontInsert,
+    /ON CONFLICT \(store_id\) DO UPDATE SET is_published=excluded\.is_published/,
+  );
+
   const customerInsert = queries.find((query) =>
     query.includes("INSERT INTO billing_customers"),
   );

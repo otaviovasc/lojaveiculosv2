@@ -47,6 +47,7 @@ describe("public storefront routes", () => {
     expect(repository.findPublicStoreBySlug).toHaveBeenCalledWith("demo");
     expect(repository.listPublicListings).toHaveBeenCalledWith({
       limit: 1,
+      offset: 0,
       storeId: "store_1",
       tenantId: "tenant_1",
     });

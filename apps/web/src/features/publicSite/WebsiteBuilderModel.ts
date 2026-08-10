@@ -1,6 +1,7 @@
 import type { StoreSettingsSnapshot } from "../settings/types";
 import type {
   WebsiteBuilderConfig,
+  WebsiteBuilderAppearanceMode,
   WebsiteBuilderHeroMediaSource,
   WebsiteBuilderSection,
   WebsiteBuilderTemplateId,
@@ -17,7 +18,7 @@ export const websiteBuilderTemplateInfo: Record<
   { description: string; name: string }
 > = {
   aurora: {
-    description: "Vitrine cinematográfica escura para alto padrão",
+    description: "Vitrine editorial moderna, premium e responsiva",
     name: "Aurora",
   },
   quadra: {
@@ -34,7 +35,7 @@ export const websiteBuilderTemplateBranding: Record<
     gradient:
       "from-amber-500/20 via-orange-400/10 to-rose-400/15 dark:from-amber-500/15 dark:via-orange-400/8 dark:to-rose-400/10",
     icon: "*",
-    tagline: "Alto padrão",
+    tagline: "Editorial moderno",
   },
   quadra: {
     gradient:
@@ -124,6 +125,7 @@ export function createWebsiteConfigFromSettings(
     aboutText: stringOrNull(theme.aboutText),
     aboutTitle: stringOrNull(theme.aboutTitle),
     accentColor: stringOrDefault(theme.accentColor, hex("C9A84C")),
+    appearanceMode: readAppearanceMode(theme.appearanceMode),
     backgroundColor: stringOrDefault(theme.backgroundColor, hex("F8F5F0")),
     brandColor: stringOrDefault(theme.brandColor, hex("1A1A1A")),
     contact: {
@@ -177,6 +179,10 @@ export function createWebsiteConfigFromSettings(
     ),
     testimonials: readTestimonials(theme.testimonials),
   };
+}
+
+function readAppearanceMode(value: unknown): WebsiteBuilderAppearanceMode {
+  return value === "dark" || value === "both" ? value : "light";
 }
 
 export function applyWebsiteConfigToSettings(
