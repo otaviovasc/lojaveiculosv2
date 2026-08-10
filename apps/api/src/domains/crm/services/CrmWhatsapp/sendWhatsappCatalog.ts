@@ -16,6 +16,7 @@ import {
 const permission = "crm.whatsapp.send";
 
 export type SendWhatsappCatalogInput = {
+  idempotencyKey?: string;
   catalogDescription?: string;
   catalogPhone?: string;
   catalogUrl?: string;
@@ -52,6 +53,10 @@ export async function sendWhatsappCatalog(
       sendWhatsappOutboundMessage(
         context,
         {
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
+            : {}),
+          idempotencyPayload: input,
           prepare: async ({ connection, gateway, phone }) =>
             prepareCatalogSend(context, input, connection, gateway, phone),
           sessionId: input.sessionId,
@@ -95,7 +100,6 @@ async function prepareCatalogSend(
       },
       provider: connection.provider,
       providerTransport: "zapi_catalog",
-      raw: sent.raw,
       sentByActorId: context.actor.id,
     },
     sent,

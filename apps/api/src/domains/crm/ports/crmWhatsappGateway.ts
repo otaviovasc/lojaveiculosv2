@@ -20,7 +20,6 @@ export type CrmWhatsappSendTextInput = {
 export type CrmWhatsappSendTextResult = {
   externalId: string;
   providerTimestamp: Date;
-  raw: Record<string, unknown>;
 };
 
 export type CrmWhatsappSendMediaType = "audio" | "document" | "image" | "video";
@@ -110,7 +109,6 @@ export type CrmWhatsappCatalogProductsPage = {
   cartEnabled: boolean | null;
   nextCursor: string | null;
   products: readonly CrmWhatsappCatalogProduct[];
-  raw: Record<string, unknown>;
 };
 
 export type CrmWhatsappListCatalogProductsInput = {
@@ -154,9 +152,7 @@ export type CrmWhatsappRemoveReactionInput = {
 };
 
 export type CrmWhatsappMessageActionResult = CrmWhatsappSendTextResult;
-export type CrmWhatsappDeleteMessageResult = {
-  raw: Record<string, unknown>;
-};
+export type CrmWhatsappDeleteMessageResult = { deleted: boolean };
 
 export type CrmWhatsappWebhookRegistration = {
   type: string;
@@ -164,6 +160,7 @@ export type CrmWhatsappWebhookRegistration = {
 };
 
 export type CrmWhatsappConfigureWebhooksInput = {
+  correlationId?: string;
   webhooks: readonly CrmWhatsappWebhookRegistration[];
 };
 
@@ -230,6 +227,12 @@ export class CrmWhatsappGatewayError extends Error {
     message: string,
     public readonly status: 409 | 429 | 502 = 502,
     public readonly retryAfterSeconds?: number,
+    public readonly code:
+      | "configuration_error"
+      | "provider_rejected"
+      | "rate_limited"
+      | "request_failed"
+      | "timeout" = status === 429 ? "rate_limited" : "provider_rejected",
   ) {
     super(message);
     this.name = "CrmWhatsappGatewayError";

@@ -2,6 +2,8 @@ import { readApiJson } from "../../lib/apiErrors";
 import type {
   BillingChargePreview,
   BillingAddon,
+  BillingAddonContract,
+  BillingAddonContractResponse,
   BillingEntitlementEvent,
   BillingEntitlementMatrixRow,
   BillingFinancialSummary,
@@ -9,10 +11,12 @@ import type {
   BillingProviderStatus,
   BillingStoreAllocation,
   BillingSubscription,
+  BillingOverview,
   BillingCheckoutSession,
   CreateBillingCheckoutInput,
   EntitlementKey,
   UpdateEntitlementInput,
+  UpdateBillingSelectionInput,
 } from "../billing/types";
 
 export type AgencyAuth = {
@@ -23,6 +27,7 @@ export type AgencyAuth = {
 };
 
 export type AgencyTenantOverview = {
+  addonContracts?: readonly BillingAddonContract[];
   addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: {
@@ -47,6 +52,7 @@ export type AgencyTenantOverview = {
 };
 
 export type AgencyManagedStoreOverview = {
+  addonContracts?: readonly BillingAddonContract[];
   activeEntitlementCount: number;
   addonCount: number;
   createdAt: string;
@@ -63,13 +69,26 @@ export type AgencyManagedStoreOverview = {
 };
 
 export type AgencyApi = {
+  cancelStoreZapiRequest: (
+    tenantId: string,
+    storeId: string,
+  ) => Promise<BillingAddonContractResponse>;
   createCheckout: (
     tenantId: string,
     input: CreateBillingCheckoutInput,
   ) => Promise<BillingCheckoutSession>;
   getOverview: (tenantId: string) => Promise<AgencyTenantOverview>;
   getProviderStatus: (tenantId: string) => Promise<BillingProviderStatus>;
+  requestStoreZapi: (
+    tenantId: string,
+    storeId: string,
+  ) => Promise<BillingAddonContractResponse>;
   syncProviderSubscription: (tenantId: string) => Promise<unknown>;
+  updateStoreSelection: (
+    tenantId: string,
+    storeId: string,
+    input: UpdateBillingSelectionInput,
+  ) => Promise<BillingOverview>;
   updateStoreEntitlement: (
     tenantId: string,
     storeId: string,
@@ -87,6 +106,11 @@ export function createAgencyApi(options: {
   const request = <T>(path: string, init?: RequestInit) =>
     options.fetch.call(globalThis, path, init).then(readJson<T>);
   return {
+    cancelStoreZapiRequest: (tenantId, storeId) =>
+      request<BillingAddonContractResponse>(
+        routes.storeZapiRequest(tenantId, storeId, options.baseUrl),
+        { headers: headers(auth), method: "DELETE" },
+      ),
     createCheckout: (tenantId, input) =>
       request<BillingCheckoutSession>(
         routes.providerCheckout(tenantId, options.baseUrl),
@@ -108,12 +132,26 @@ export function createAgencyApi(options: {
         routes.providerStatus(tenantId, options.baseUrl),
         { headers: headers(auth) },
       ),
+    requestStoreZapi: (tenantId, storeId) =>
+      request<BillingAddonContractResponse>(
+        routes.storeZapiRequest(tenantId, storeId, options.baseUrl),
+        { headers: headers(auth), method: "POST" },
+      ),
     syncProviderSubscription: (tenantId) =>
       request<unknown>(routes.providerSync(tenantId, options.baseUrl), {
         body: JSON.stringify({ billingType: "PIX" }),
         headers: headers(auth),
         method: "POST",
       }),
+    updateStoreSelection: (tenantId, storeId, input) =>
+      request<BillingOverview>(
+        routes.storeSelection(tenantId, storeId, options.baseUrl),
+        {
+          body: JSON.stringify(input),
+          headers: headers(auth),
+          method: "PUT",
+        },
+      ),
     updateStoreEntitlement: (tenantId, storeId, featureKey, input) =>
       request<AgencyTenantOverview>(
         routes.storeEntitlement(tenantId, storeId, featureKey, options.baseUrl),
@@ -163,6 +201,20 @@ const routes = {
       )}/stores/${encodeURIComponent(storeId)}/entitlements/${encodeURIComponent(
         featureKey,
       )}`,
+      baseUrl,
+    ),
+  storeZapiRequest: (tenantId: string, storeId: string, baseUrl?: string) =>
+    endpoint(
+      `/agency/tenants/${encodeURIComponent(
+        tenantId,
+      )}/stores/${encodeURIComponent(storeId)}/billing/addons/zapi/request`,
+      baseUrl,
+    ),
+  storeSelection: (tenantId: string, storeId: string, baseUrl?: string) =>
+    endpoint(
+      `/agency/tenants/${encodeURIComponent(
+        tenantId,
+      )}/stores/${encodeURIComponent(storeId)}/billing/selection`,
       baseUrl,
     ),
 } as const;

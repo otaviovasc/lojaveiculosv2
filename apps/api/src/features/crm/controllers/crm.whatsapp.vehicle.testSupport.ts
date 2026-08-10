@@ -1,5 +1,4 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type {
   VehicleListing,
   VehicleMedia,
@@ -8,6 +7,7 @@ import type {
 import { testNow } from "../../../domains/vehicle/testSupportVehicleServiceFixtures.js";
 import { createInMemoryVehiclePorts } from "../../../domains/vehicle/testSupportVehicleServiceInventoryPorts.js";
 import type { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 
 export const storeId = "store_1" as StoreId;
 export const tenantId = "tenant_1" as TenantId;
@@ -49,23 +49,16 @@ export function seedSession(
 }
 
 export function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  overrides: Parameters<
+    typeof createConfiguredZapiTestConnection
+  >[0]["overrides"] = {},
+) {
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+    overrides,
+  });
 }
 
 function createVehicleListing(): VehicleListing {

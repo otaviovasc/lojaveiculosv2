@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import {
   billingCheckoutSessions,
   billingCustomers,
+  subscriptionItems,
   subscriptions,
 } from "@lojaveiculosv2/db";
 import type {
@@ -10,6 +11,7 @@ import type {
 } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
+import { activateInitialZapiContractAfterCheckout } from "./drizzleBillingAddonContracts.js";
 
 export async function syncProviderCheckout(
   db: DrizzleBillingClient,
@@ -83,10 +85,31 @@ async function syncProviderCheckoutTransaction(
         updatedAt: new Date(),
       })
       .where(eq(subscriptions.id, checkout.subscriptionId));
-    if (checkout.storeId) {
+    const activatedContracts = await activateInitialZapiContractAfterCheckout(
+      db,
+      {
+        paidAt: new Date(),
+        providerCheckoutId: input.providerCheckoutId,
+        ...(checkout.storeId ? { storeId: checkout.storeId } : {}),
+        subscriptionId: checkout.subscriptionId,
+        tenantId: checkout.tenantId,
+      },
+    );
+    const itemRows = await db
+      .select({ storeId: subscriptionItems.storeId })
+      .from(subscriptionItems)
+      .where(eq(subscriptionItems.subscriptionId, checkout.subscriptionId))
+      .limit(200);
+    const storeIds = [
+      ...new Set([
+        ...itemRows.flatMap((item) => (item.storeId ? [item.storeId] : [])),
+        ...activatedContracts.map((contract) => contract.storeId),
+      ]),
+    ];
+    for (const storeId of storeIds) {
       await projectSelectedEntitlements(db, {
         source: "billing_checkout",
-        storeId: checkout.storeId,
+        storeId,
         subscriptionId: checkout.subscriptionId,
         tenantId: checkout.tenantId,
       });

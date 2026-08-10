@@ -32,6 +32,20 @@ export type FindCrmConnectionByExternalIdInput = {
   providers: readonly CrmConnectionProvider[];
 };
 
+export type CreateCrmConnectionInput = {
+  credentialsRef?: Record<string, unknown>;
+  displayName: string;
+  externalConnectionId?: string | null;
+  externalInstanceId?: string | null;
+  metadata?: Record<string, unknown>;
+  phone?: string | null;
+  provider: Extract<CrmConnectionProvider, "zapi" | "composio_whatsapp">;
+  status?: CrmConnectionConfiguredStatus;
+  storeId: StoreId;
+  tenantId: TenantId;
+  webhookUrl?: string | null;
+};
+
 export type UpdateCrmConnectionInput = {
   connectionId: string;
   credentialsRef?: Record<string, unknown>;
@@ -47,6 +61,26 @@ export type UpdateCrmConnectionInput = {
 };
 
 export type CrmConnectionRepository = {
+  archiveAbandonedZapiConnections: (input: {
+    cutoff: Date;
+    limit: number;
+  }) => Promise<readonly CrmConnection[]>;
+  createConnection: (input: CreateCrmConnectionInput) => Promise<CrmConnection>;
+  claimZapiWebhookSetup: (input: {
+    connectionId: string;
+    leaseExpiresAt: Date;
+    leaseOwner: string;
+    now: Date;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<CrmConnection | null>;
+  finishZapiWebhookSetup: (input: {
+    connectionId: string;
+    leaseOwner: string;
+    metadata: Record<string, unknown>;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<CrmConnection | null>;
   findConnectionByExternalId: (
     input: FindCrmConnectionByExternalIdInput,
   ) => Promise<CrmConnection | null>;

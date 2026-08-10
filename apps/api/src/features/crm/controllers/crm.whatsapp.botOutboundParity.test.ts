@@ -5,6 +5,10 @@ import type { DispatchCrmBotWebhookInput } from "../../../domains/crm/ports/crmB
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import {
+  createConfiguredZapiTestConnection,
+  withTestZapiWebhookToken,
+} from "./crm.whatsapp.connectionFixtures.js";
+import {
   configureBot,
   connectionId,
   createBotDispatcher,
@@ -115,7 +119,10 @@ describe("CRM WhatsApp bot outbound parity", () => {
 
     const response = await app.request(
       `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/connected`,
-      jsonRequest({ connected: true, connectedPhone: "5511888887777" }),
+      jsonRequest(
+        { connected: true, connectedPhone: "5511888887777" },
+        withTestZapiWebhookToken(),
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -124,7 +131,7 @@ describe("CRM WhatsApp bot outbound parity", () => {
     expect(payload).toMatchObject({
       connection: { phone: "5511888887777", status: "active" },
       event: "connection_status_changed",
-      previousStatus: "sandbox",
+      previousStatus: "active",
       reason: "connected",
       status: "active",
     });
@@ -164,18 +171,10 @@ async function seedSession(
 }
 
 function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: "5511999999999",
-    provider: "zapi",
-    status: "sandbox",
+    overrides: { phone: "5511999999999" },
     storeId,
     tenantId,
-    webhookUrl: null,
-  };
+  });
 }

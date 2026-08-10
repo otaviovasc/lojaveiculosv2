@@ -121,6 +121,5 @@ function toSendResult(payload: Record<string, unknown>) {
   return {
     externalId: readCanonicalMessageId(payload),
     providerTimestamp: new Date(),
-    raw: payload,
   };
 }

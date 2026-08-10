@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, lte, or, sql } from "drizzle-orm";
 import { providerEvents } from "@lojaveiculosv2/db";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type {
@@ -11,6 +11,43 @@ export function createDrizzleCrmWebhookEventRepository(
   db: DrizzleCrmClient,
 ): CrmWebhookEventRepository {
   return {
+    async claimForProcessing(input) {
+      const directlyClaimable = [
+        eq(providerEvents.status, "failed"),
+        eq(providerEvents.status, "received"),
+      ];
+      if (input.allowIgnored) {
+        directlyClaimable.push(eq(providerEvents.status, "ignored"));
+      }
+      const [row] = await db
+        .update(providerEvents)
+        .set({
+          errorMessage: null,
+          processedAt: null,
+          processingAttempts: sql`${providerEvents.processingAttempts} + 1`,
+          processingStartedAt: input.processingStartedAt,
+          processingToken: input.processingToken,
+          status: "processing",
+          updatedAt: input.processingStartedAt,
+        })
+        .where(
+          and(
+            eq(providerEvents.id, input.eventId),
+            or(
+              ...directlyClaimable,
+              and(
+                eq(providerEvents.status, "processing"),
+                or(
+                  isNull(providerEvents.processingStartedAt),
+                  lte(providerEvents.processingStartedAt, input.staleBefore),
+                ),
+              ),
+            ),
+          ),
+        )
+        .returning();
+      return row ? toWebhookEvent(row) : null;
+    },
     async findById(input) {
       const [row] = await db
         .select()
@@ -90,14 +127,23 @@ export function createDrizzleCrmWebhookEventRepository(
       return { created: false, event: toWebhookEvent(existing) };
     },
     async updateStatus(input) {
+      const filters = [eq(providerEvents.id, input.eventId)];
+      if (input.processingToken) {
+        filters.push(
+          eq(providerEvents.status, "processing"),
+          eq(providerEvents.processingToken, input.processingToken),
+        );
+      }
       const [row] = await db
         .update(providerEvents)
         .set({
           errorMessage: input.errorMessage ?? null,
           processedAt: new Date(),
+          processingStartedAt: null,
+          processingToken: null,
           status: input.status,
         })
-        .where(eq(providerEvents.id, input.eventId))
+        .where(and(...filters))
         .returning();
       return row ? toWebhookEvent(row) : null;
     },
@@ -113,6 +159,9 @@ function toWebhookEvent(row: typeof providerEvents.$inferSelect) {
     eventType: row.eventType,
     id: row.id,
     payload: row.payload as Record<string, unknown>,
+    processingAttempts: row.processingAttempts,
+    processingStartedAt: row.processingStartedAt,
+    processingToken: row.processingToken,
     processedAt: row.processedAt,
     provider: row.provider as CrmProviderWebhookEvent["provider"],
     providerEventId: row.providerEventId,

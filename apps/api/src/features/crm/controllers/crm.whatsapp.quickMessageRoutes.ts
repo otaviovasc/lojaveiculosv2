@@ -99,6 +99,9 @@ export function registerCrmWhatsappQuickMessageRoutes(
         const message = await services.sendWhatsappQuickMessage(
           serviceContext,
           {
+            ...(context.req.header("Idempotency-Key")
+              ? { idempotencyKey: context.req.header("Idempotency-Key")! }
+              : {}),
             quickMessageId: readQuickMessageId(context),
             sessionId: input.sessionId,
           },

@@ -2,7 +2,7 @@ import { targetId } from "./common.mjs";
 import { log } from "./log.mjs";
 import { seedBillingRecords } from "./target-billing-records.mjs";
 
-const CATALOG_VERSION = "2026-07-v1";
+const CATALOG_VERSION = "2026-08-v1";
 
 export async function seedLegacyBilling(tx, data, config, ids) {
   const billing = data.billing;

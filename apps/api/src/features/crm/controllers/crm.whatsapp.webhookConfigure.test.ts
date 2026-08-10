@@ -7,25 +7,25 @@ import type {
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import {
+  createZapiWebhookSetupIntent,
+  withZapiWebhookSetupState,
+} from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
 
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
+const storeId = "26000000-0000-4000-8000-000000000001" as StoreId;
+const tenantId = "26000000-0000-4000-8000-000000000002" as TenantId;
 const connectionId = "24000000-0000-4000-8000-000000000101";
 
 describe("CRM WhatsApp webhook auto-configuration", () => {
   const originalApiBaseUrl = process.env.API_BASE_URL;
-  const originalToken = process.env.CRM_ZAPI_WEBHOOK_TOKEN;
 
   afterEach(() => {
     if (originalApiBaseUrl === undefined) delete process.env.API_BASE_URL;
     else process.env.API_BASE_URL = originalApiBaseUrl;
-    if (originalToken === undefined) delete process.env.CRM_ZAPI_WEBHOOK_TOKEN;
-    else process.env.CRM_ZAPI_WEBHOOK_TOKEN = originalToken;
   });
 
-  it("registers every ZAPI webhook with the env token appended", async () => {
+  it("registers every ZAPI webhook with its connection-bound secret", async () => {
     process.env.API_BASE_URL = "https://api.trusted.test";
-    process.env.CRM_ZAPI_WEBHOOK_TOKEN = "webhook-secret";
     const configureWebhooks = vi.fn(
       async (
         _connection: CrmConnection,
@@ -41,6 +41,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       }),
     );
     const app = createTestApp({
+      ...secureSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
@@ -52,16 +53,12 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     });
 
     const response = await app.request(
-      `https://attacker.example/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
-      { method: "POST" },
+      `https://attacker.example/api/v1/crm/whatsapp/support/zapi/connections/${connectionId}/webhooks/configure`,
+      supportRequest(),
     );
 
     expect(response.status).toBe(200);
-    const body =
-      (await response.json()) as CrmWhatsappConfigureWebhooksResult & {
-        tokenApplied: boolean;
-      };
-    expect(body.tokenApplied).toBe(true);
+    const body = (await response.json()) as CrmWhatsappConfigureWebhooksResult;
     expect(body.results).toHaveLength(6);
     for (const result of body.results) {
       expect(result.url).not.toContain("webhook-secret");
@@ -87,9 +84,8 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     }
   });
 
-  it("registers webhooks without a token when none is configured", async () => {
+  it("never registers ZAPI webhooks without connection authentication", async () => {
     process.env.API_BASE_URL = "https://api.trusted.test";
-    delete process.env.CRM_ZAPI_WEBHOOK_TOKEN;
     const configureWebhooks = vi.fn(
       async (
         _connection: CrmConnection,
@@ -105,6 +101,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       }),
     );
     const app = createTestApp({
+      ...secureSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
@@ -120,24 +117,22 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       { method: "POST" },
     );
 
-    expect(response.status).toBe(200);
-    const input = configureWebhooks.mock.calls[0]?.[1];
-    for (const webhook of input?.webhooks ?? []) {
-      expect(webhook.url).not.toContain("token=");
-    }
+    expect(response.status).toBe(404);
+    expect(configureWebhooks).not.toHaveBeenCalled();
   });
 
   it("rejects official connections and untrusted shared-token destinations", async () => {
     process.env.API_BASE_URL = "https://api.trusted.test";
-    process.env.CRM_ZAPI_WEBHOOK_TOKEN = "webhook-secret";
     const configureWebhooks = vi.fn();
     const officialApp = createTestApp({
+      ...secureSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection({ provider: "composio_whatsapp" }),
       ]),
       crmWhatsappGateway: { configureWebhooks },
     });
     const untrustedApp = createTestApp({
+      ...secureSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection({
           webhookUrl: "https://attacker.example/callbacks",
@@ -147,12 +142,12 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     });
 
     const official = await officialApp.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
-      { method: "POST" },
+      `/api/v1/crm/whatsapp/support/zapi/connections/${connectionId}/webhooks/configure`,
+      supportRequest(),
     );
     const untrusted = await untrustedApp.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
-      { method: "POST" },
+      `/api/v1/crm/whatsapp/support/zapi/connections/${connectionId}/webhooks/configure`,
+      supportRequest(),
     );
 
     expect(official.status).toBe(409);
@@ -167,13 +162,20 @@ function createZapiConnection(
   return {
     credentialsRef: {
       mode: "stored",
-      stored: { instanceId: "zapi-instance-1", instanceToken: "zapi-secret" },
+      stored: {
+        instanceId: "zapi-instance-1",
+        instanceToken: "zapi-secret",
+        webhookSecret: "sealed:webhook-secret",
+      },
     },
     displayName: "ZAPI Test Connection",
     externalConnectionId: null,
     externalInstanceId: "zapi-instance-1",
     id: connectionId,
-    metadata: {},
+    metadata: withZapiWebhookSetupState(
+      {},
+      createZapiWebhookSetupIntent(connectionId),
+    ),
     phone: null,
     provider: "zapi" as const,
     status: "sandbox" as const,
@@ -181,5 +183,29 @@ function createZapiConnection(
     tenantId,
     webhookUrl: null,
     ...overrides,
+  };
+}
+
+function secureSetupOptions() {
+  return {
+    crmConnectionCredentialVault: {
+      open: async ({ sealed }: { sealed: string }) =>
+        sealed.replace(/^sealed:/u, ""),
+      seal: async ({ plaintext }: { plaintext: string }) =>
+        `sealed:${plaintext}`,
+    },
+    crmZapiSupportAuthorizer: {
+      assertPaidSetupEligible: async () => undefined,
+    },
+    entitlements: ["crm", "crm_zapi"] as ("crm" | "crm_zapi")[],
+    supportPermissions: ["tenant.manage"] as "tenant.manage"[],
+  };
+}
+
+function supportRequest() {
+  return {
+    body: JSON.stringify({ storeId, tenantId }),
+    headers: { "content-type": "application/json" },
+    method: "POST",
   };
 }

@@ -4,6 +4,7 @@ import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepo
 import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
@@ -136,19 +137,10 @@ function seedSession(
 function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
+    overrides,
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+  });
 }

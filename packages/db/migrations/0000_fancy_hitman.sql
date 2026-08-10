@@ -13,11 +13,11 @@ CREATE TYPE "public"."payment_status" AS ENUM('pending', 'paid', 'overdue', 'ref
 CREATE TYPE "public"."subscription_item_type" AS ENUM('plan', 'addon');--> statement-breakpoint
 CREATE TYPE "public"."subscription_status" AS ENUM('trialing', 'active', 'past_due', 'cancelled', 'expired');--> statement-breakpoint
 CREATE TYPE "public"."billing_checkout_status" AS ENUM('created', 'paid', 'cancelled', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."crm_connection_provider" AS ENUM('zapi');--> statement-breakpoint
+CREATE TYPE "public"."crm_connection_provider" AS ENUM('zapi', 'composio_whatsapp', 'composio_instagram');--> statement-breakpoint
 CREATE TYPE "public"."crm_connection_status" AS ENUM('sandbox', 'active', 'paused', 'disconnected', 'error', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."crm_sync_status" AS ENUM('pending', 'processed', 'failed', 'ignored');--> statement-breakpoint
 CREATE TYPE "public"."crm_pipeline_stage_status" AS ENUM('open', 'won', 'lost');--> statement-breakpoint
-CREATE TYPE "public"."crm_whatsapp_channel" AS ENUM('OLX_CHAT', 'WEB_CHAT', 'WHATSAPP');--> statement-breakpoint
+CREATE TYPE "public"."crm_whatsapp_channel" AS ENUM('OLX_CHAT', 'WEB_CHAT', 'WHATSAPP', 'INSTAGRAM');--> statement-breakpoint
 CREATE TYPE "public"."crm_whatsapp_message_direction" AS ENUM('INBOUND', 'OUTBOUND');--> statement-breakpoint
 CREATE TYPE "public"."crm_whatsapp_message_sender_type" AS ENUM('AI', 'CUSTOMER', 'HUMAN', 'SYSTEM');--> statement-breakpoint
 CREATE TYPE "public"."crm_whatsapp_message_status" AS ENUM('DELIVERED', 'FAILED', 'PENDING', 'READ', 'SENT');--> statement-breakpoint
@@ -70,7 +70,7 @@ CREATE TYPE "public"."lead_activity_type" AS ENUM('note', 'call', 'whatsapp', 'e
 CREATE TYPE "public"."lead_source" AS ENUM('public_site', 'crm', 'external_api', 'manual', 'olx', 'whatsapp', 'other');--> statement-breakpoint
 CREATE TYPE "public"."lead_status" AS ENUM('new', 'contacted', 'qualified', 'negotiating', 'won', 'lost', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."migration_run_status" AS ENUM('planned', 'running', 'succeeded', 'failed', 'rolled_back');--> statement-breakpoint
-CREATE TYPE "public"."provider_event_status" AS ENUM('received', 'processed', 'failed', 'ignored');--> statement-breakpoint
+CREATE TYPE "public"."provider_event_status" AS ENUM('received', 'processing', 'processed', 'failed', 'ignored');--> statement-breakpoint
 CREATE TYPE "public"."sale_payment_status" AS ENUM('pending', 'paid', 'refunded', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."sale_status" AS ENUM('draft', 'pending', 'closed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."custom_domain_status" AS ENUM('not_configured', 'pending', 'verified', 'failed');--> statement-breakpoint

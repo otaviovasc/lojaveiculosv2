@@ -1,16 +1,14 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import {
-  createAuditSpy,
-  createTestApp,
-} from "./crm.whatsapp.controller.testSupport.js";
-
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
-const connectionId = "24000000-0000-4000-8000-000000000101";
+  connectionId,
+  createWebhookTestApp,
+  createZapiConnection,
+  postWebhook,
+  readSessionId,
+  storeId,
+  tenantId,
+} from "./crm.whatsapp.webhooks.testSupport.js";
 const originalWebhookEnv = {
   APP_ENV: process.env.APP_ENV,
   CRM_ZAPI_WEBHOOK_TOKEN: process.env.CRM_ZAPI_WEBHOOK_TOKEN,
@@ -153,95 +151,23 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
       status: "composing",
     });
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      reason: "connection_not_found",
-      status: "ignored",
-    });
+    expect(response.status).toBe(403);
+  });
+
+  it("never resurrects an archived Z-API connection", async () => {
+    const connectionRepository = createMemoryCrmConnectionRepository([
+      createZapiConnection({ status: "archived" }),
+    ]);
+    const { app } = await createWebhookTestApp({ connectionRepository });
+
+    const response = await postWebhook(app, "connected", { connected: true });
+
+    expect(response.status).toBe(403);
+    await expect(
+      connectionRepository.findConnectionById(connectionId),
+    ).resolves.toMatchObject({ status: "archived" });
   });
 });
-
-async function createWebhookTestApp(
-  input: {
-    connectionRepository?: ReturnType<
-      typeof createMemoryCrmConnectionRepository
-    >;
-  } = {},
-) {
-  const { audit, record } = createAuditSpy();
-  const whatsappRepository = createMemoryCrmWhatsappRepository();
-  await whatsappRepository.ingestMessage({
-    buyerName: "Ana",
-    buyerPhone: "5511999999999",
-    channel: "WHATSAPP",
-    connectionId,
-    content: "Mensagem enviada",
-    direction: "OUTBOUND",
-    externalId: "zapi-out-1",
-    metadata: {},
-    providerTimestamp: new Date("2026-07-02T19:01:00.000Z"),
-    senderType: "HUMAN",
-    status: "SENT",
-    storeId,
-    tenantId,
-    type: "TEXT",
-  });
-  const app = createTestApp({
-    audit,
-    crmConnectionRepository:
-      input.connectionRepository ??
-      createMemoryCrmConnectionRepository([createZapiConnection()]),
-    crmWhatsappRepository: whatsappRepository,
-  });
-  return { app, auditRecord: record, whatsappRepository };
-}
-
-async function readSessionId(
-  whatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
-) {
-  const sessions = await whatsappRepository.listSessions({
-    limit: 1,
-    offset: 0,
-    storeId,
-    tenantId,
-  });
-  return sessions[0]?.id ?? null;
-}
-
-function postWebhook(
-  app: ReturnType<typeof createTestApp>,
-  event: string,
-  payload: Record<string, unknown>,
-) {
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/${event}`,
-    {
-      body: JSON.stringify(payload),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    },
-  );
-}
-
-function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
-}
 
 function restoreEnv(name: string, value: string | undefined) {
   if (value === undefined) delete process.env[name];

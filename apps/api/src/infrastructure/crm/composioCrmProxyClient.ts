@@ -117,7 +117,12 @@ export async function fetchComposio(
     return { payload, response };
   } catch {
     throw new CrmWhatsappGatewayError(
-      "Composio request failed before receiving a response",
+      controller.signal.aborted
+        ? "Composio request timed out"
+        : "Composio request failed before receiving a response",
+      502,
+      undefined,
+      controller.signal.aborted ? "timeout" : "request_failed",
     );
   } finally {
     clearTimeout(timeout);

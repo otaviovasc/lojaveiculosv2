@@ -1,3 +1,4 @@
+import type { StoreId } from "@lojaveiculosv2/shared";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { createBillingProviderCheckout } from "../../../domains/billing/services/BillingService/createBillingProviderCheckout.js";
 import type { CreateBillingProviderCheckoutInput } from "../../../domains/billing/services/BillingService/createBillingProviderCheckout.js";
@@ -18,8 +19,14 @@ import { updateBillingSelection } from "../../../domains/billing/services/Billin
 import type { UpdateStoreEntitlementServiceInput } from "../../../domains/billing/services/BillingService/updateStoreEntitlement.js";
 import type {
   AgencyTenantOverview,
+  BillingAddonContract,
   BillingOverview,
 } from "../../../domains/billing/ports/billingRepository.js";
+import {
+  cancelZapiAddon,
+  requestZapiAddon,
+  updateAgencyBillingSelection,
+} from "../../../domains/billing/services/BillingService/zapiAddonContract.js";
 import type { PaymentProviderStatus } from "../../../domains/billing/ports/paymentProviderGateway.js";
 import type { BillingServicePorts } from "../../../domains/billing/services/BillingService/serviceSupport.js";
 import {
@@ -35,6 +42,10 @@ import { createMemoryBillingWebhookRepository } from "../adapters/memory/billing
 import { createMemoryPaymentProviderGateway } from "../adapters/memory/paymentProviderGateway.js";
 
 export type BillingServices = {
+  cancelZapiAddon: (
+    context: ServiceContext,
+    input?: { storeId?: StoreId },
+  ) => Promise<BillingAddonContract>;
   getAgencyOverview: (context: ServiceContext) => Promise<AgencyTenantOverview>;
   getAgencyProviderStatus: (
     context: ServiceContext,
@@ -47,6 +58,10 @@ export type BillingServices = {
     context: ServiceContext,
     input: ProcessBillingProviderWebhookInput,
   ) => ReturnType<typeof processBillingProviderWebhook>;
+  requestZapiAddon: (
+    context: ServiceContext,
+    input?: { storeId?: StoreId },
+  ) => Promise<BillingAddonContract>;
   syncProviderSubscription: (
     context: ServiceContext,
     input: SyncBillingProviderSubscriptionInput,
@@ -59,6 +74,10 @@ export type BillingServices = {
     context: ServiceContext,
     input: UpdateAgencyStoreEntitlementServiceInput,
   ) => Promise<AgencyTenantOverview>;
+  updateAgencySelection: (
+    context: ServiceContext,
+    input: { addonIds: readonly string[]; planId: string; storeId: StoreId },
+  ) => Promise<BillingOverview>;
   updateEntitlement: (
     context: ServiceContext,
     input: UpdateStoreEntitlementServiceInput,
@@ -79,6 +98,8 @@ export function createBillingServices(
   const ports = resolvePorts(options);
 
   return {
+    cancelZapiAddon: (context, input = {}) =>
+      cancelZapiAddon(context, input, ports),
     getAgencyOverview: (context) => getAgencyTenantOverview(context, ports),
     getAgencyProviderStatus: (context) =>
       getAgencyBillingProviderStatus(context, ports),
@@ -86,12 +107,16 @@ export function createBillingServices(
     getProviderStatus: (context) => getBillingProviderStatus(context, ports),
     processAsaasWebhook: (context, input) =>
       processBillingProviderWebhook(context, input, ports),
+    requestZapiAddon: (context, input = {}) =>
+      requestZapiAddon(context, input, ports),
     createProviderCheckout: (context, input) =>
       createBillingProviderCheckout(context, input, ports),
     syncProviderSubscription: (context, input) =>
       syncBillingProviderSubscription(context, input, ports),
     updateAgencyEntitlement: (context, input) =>
       updateAgencyStoreEntitlement(context, input, ports),
+    updateAgencySelection: (context, input) =>
+      updateAgencyBillingSelection(context, input, ports),
     updateEntitlement: (context, input) =>
       updateStoreEntitlement(context, input, ports),
     updateSelection: (context, input) =>

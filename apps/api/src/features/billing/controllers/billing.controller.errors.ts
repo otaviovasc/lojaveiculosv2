@@ -16,6 +16,7 @@ import {
 import { BillingProviderSyncError } from "../../../domains/billing/services/BillingService/syncBillingProviderSubscription.js";
 import { BillingCheckoutError } from "../../../domains/billing/services/BillingService/createBillingProviderCheckout.js";
 import { BillingSelectionError } from "../../../domains/billing/services/BillingService/updateBillingSelection.js";
+import { BillingAddonContractError } from "../../../domains/billing/ports/billingRepository.js";
 
 export class BillingRequestValidationError extends Error {
   constructor(message: string) {
@@ -43,7 +44,8 @@ export async function handleBilling(
       error instanceof BillingRequestValidationError ||
       error instanceof BillingWebhookValidationError ||
       error instanceof BillingScopeError ||
-      error instanceof BillingSelectionError
+      error instanceof BillingSelectionError ||
+      error instanceof BillingAddonContractError
     ) {
       return jsonApiError(context, {
         code: "BILLING_REQUEST_ERROR",

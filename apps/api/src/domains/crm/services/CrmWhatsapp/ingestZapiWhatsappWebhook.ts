@@ -16,10 +16,7 @@ import {
   parseZapiAdAttribution,
 } from "../../whatsapp/zapiAdAttribution.js";
 import { mirrorZapiWhatsappMedia } from "../../whatsapp/mirrorZapiWhatsappMedia.js";
-import {
-  forwardWhatsappMessageToBot,
-  notifyWhatsappInterventionChangedToBot,
-} from "../../whatsapp/whatsappBotWebhookForwarding.js";
+import { forwardWhatsappMessageToBot } from "../../whatsapp/whatsappBotWebhookForwarding.js";
 import {
   toWhatsappMessage,
   toWhatsappSession,
@@ -42,6 +39,14 @@ import {
   applyZapiAdSessionTransition,
   unchangedZapiAdSession,
 } from "../../whatsapp/zapiAdSessionTransition.js";
+import {
+  isWhatsappReaction,
+  transitionHumanAttendance,
+} from "../../whatsapp/humanAttendanceTransition.js";
+import {
+  publishZapiWhatsappAttendanceEnded,
+  publishZapiWhatsappAttendanceStarted,
+} from "../../whatsapp/publishZapiWhatsappAttendance.js";
 
 const permission = "crm.whatsapp.ingest" as const;
 export type {
@@ -120,7 +125,10 @@ export async function ingestZapiWhatsappWebhook(
           content: parsed.content,
           direction: parsed.fromMe ? "OUTBOUND" : "INBOUND",
           externalId: parsed.externalId,
-          firstHandledAt: parsed.fromMe ? parsed.providerTimestamp : null,
+          firstHandledAt:
+            parsed.fromMe && !isWhatsappReaction(parsed.metadata)
+              ? parsed.providerTimestamp
+              : null,
           freshLeadAt: parsed.fromMe ? null : parsed.providerTimestamp,
           leadId: lead.id,
           ...(parsed.mediaType ? { mediaType: parsed.mediaType } : {}),
@@ -157,23 +165,42 @@ export async function ingestZapiWhatsappWebhook(
             );
           }
         }
+        const attendanceTransition =
+          parsed.fromMe &&
+          result.createdMessage &&
+          !isWhatsappReaction(parsed.metadata)
+            ? await transitionHumanAttendance({
+                command: {
+                  kind: "start",
+                  reason: "human_outbound_message",
+                  source: "seller_whatsapp",
+                  state: "IN_HUMAN_SERVICE",
+                },
+                now: parsed.providerTimestamp,
+                repository,
+                session: result.session,
+              })
+            : null;
         const transition =
           attribution && !parsed.fromMe
             ? await applyZapiAdSessionTransition(repository, {
                 actorId: context.actor.id,
                 attribution,
                 detectedAt,
-                session: result.session,
+                session: attendanceTransition?.session ?? result.session,
               })
-            : unchangedZapiAdSession(result.session);
+            : unchangedZapiAdSession(
+                attendanceTransition?.session ?? result.session,
+              );
         return {
           result: { ...result, session: transition.session },
+          attendanceTransition,
           transition,
         };
       }),
   );
 
-  const { result, transition } = persisted;
+  const { attendanceTransition, result, transition } = persisted;
   const message = toWhatsappMessage(result.message);
   const session = toWhatsappSession(result.session, connection);
   if (result.createdMessage) {
@@ -185,22 +212,11 @@ export async function ingestZapiWhatsappWebhook(
       tenantId: connection.tenantId,
       type: "message",
     });
-    if (transition.resumedIntervention) {
-      await notifyWhatsappInterventionChangedToBot(
-        context,
-        {
-          active: false,
-          connection,
-          endedAt: transition.endedAt,
-          excludedMessageId: result.message.id,
-          reason: "ad_initiated_conversation",
-          session: result.session,
-          startedAt: transition.interventionStartedAt,
-          triggeredBy: "system",
-        },
-        ports,
-      );
-    }
+    await publishZapiWhatsappAttendanceEnded(
+      context,
+      { connection, result, transition },
+      ports,
+    );
     await forwardWhatsappMessageToBot(
       context,
       {
@@ -210,23 +226,11 @@ export async function ingestZapiWhatsappWebhook(
       },
       ports,
     );
-    if (
-      parsed.fromMe &&
-      result.session.status === "HUMAN_TAKEOVER" &&
-      result.session.humanTakeoverAt?.getTime() ===
-        parsed.providerTimestamp.getTime()
-    ) {
-      await notifyWhatsappInterventionChangedToBot(
-        context,
-        {
-          active: true,
-          connection,
-          session: result.session,
-          triggeredBy: "human",
-        },
-        ports,
-      );
-    }
+    await publishZapiWhatsappAttendanceStarted(
+      context,
+      { attendanceTransition, connection, result },
+      ports,
+    );
   }
   await getCrmRealtimePublisher(ports).publish({
     connectionId: connection.id,

@@ -1,5 +1,6 @@
 import {
   boolean,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -11,6 +12,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
@@ -57,12 +59,25 @@ export const crmConnections = pgTable(
     webhookUrl: varchar("webhook_url", { length: 500 }),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "crm_connections_store_tenant_fk",
+    }),
     index("crm_connections_store_status_idx").on(table.storeId, table.status),
-    uniqueIndex("crm_connections_store_provider_name_unique").on(
+    uniqueIndex("crm_connections_scope_id_unique").on(
+      table.tenantId,
       table.storeId,
-      table.provider,
-      table.displayName,
+      table.id,
     ),
+    index("crm_connections_zapi_sandbox_cleanup_idx")
+      .on(table.updatedAt)
+      .where(sql`${table.provider} = 'zapi' and ${table.status} = 'sandbox'`),
+    uniqueIndex("crm_connections_store_provider_active_unique")
+      .on(table.storeId, table.provider)
+      .where(
+        sql`${table.status} <> 'archived' and ${table.provider} in ('zapi', 'composio_whatsapp')`,
+      ),
     uniqueIndex("crm_connections_provider_external_unique").on(
       table.provider,
       table.externalConnectionId,

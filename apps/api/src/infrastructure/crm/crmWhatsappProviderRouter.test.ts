@@ -61,7 +61,6 @@ function createGateway(externalId: string): CrmWhatsappGateway {
     sendText: vi.fn(async () => ({
       externalId,
       providerTimestamp: new Date("2026-07-27T12:00:00.000Z"),
-      raw: {},
     })),
     sendTemplate: unsupported,
   };

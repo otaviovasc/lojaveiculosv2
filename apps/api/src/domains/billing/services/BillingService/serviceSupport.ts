@@ -1,12 +1,14 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { BillingProviderRepository } from "../../ports/billingProviderRepository.js";
+import type { BillingProviderReconciliationRepository } from "../../ports/billingProviderReconciliation.js";
 import type { BillingRepository } from "../../ports/billingRepository.js";
 import type { BillingWebhookRepository } from "../../ports/billingWebhookRepository.js";
 import type { PaymentProviderGateway } from "../../ports/paymentProviderGateway.js";
 
 export type BillingServicePorts = {
   billingProviderRepository?: BillingProviderRepository;
+  billingProviderReconciliationRepository?: BillingProviderReconciliationRepository;
   billingRepository: BillingRepository;
   billingWebhookRepository?: BillingWebhookRepository;
   environment?: string;

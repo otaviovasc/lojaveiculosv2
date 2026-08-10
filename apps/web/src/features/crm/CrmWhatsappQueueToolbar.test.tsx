@@ -21,6 +21,7 @@ describe("WhatsappToolbar", () => {
     const user = userEvent.setup();
     const callbacks = {
       onConnectionFilterChange: vi.fn(),
+      onHumanAttendanceFilterChange: vi.fn(),
       onOtherAssigneeChange: vi.fn(),
       onQuickFilterChange: vi.fn(),
       onSearch: vi.fn(),
@@ -44,6 +45,7 @@ describe("WhatsappToolbar", () => {
         onManageTags={vi.fn()}
         assignableMembers={createAssignableMembers()}
         currentUserId="user_current"
+        humanAttendanceFilter=""
         otherAssigneeId={null}
         quickFilter="fresh"
         search=""
@@ -87,6 +89,17 @@ describe("WhatsappToolbar", () => {
 
     await user.click(screen.getByRole("button", { name: /Concluídos/ }));
     expect(callbacks.onStatusFilterChange).toHaveBeenCalledWith("COMPLETED");
+
+    await user.click(screen.getByRole("button", { name: /Aguardando Humano/ }));
+    expect(callbacks.onHumanAttendanceFilterChange).toHaveBeenCalledWith(
+      "WAITING_HUMAN",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Em atendimento Humano/ }),
+    );
+    expect(callbacks.onHumanAttendanceFilterChange).toHaveBeenCalledWith(
+      "IN_HUMAN_SERVICE",
+    );
 
     await user.click(screen.getByLabelText("Filtrar por conexão"));
     await user.click(screen.getByRole("option", { name: "Loja Centro" }));
@@ -132,6 +145,7 @@ function createCounts(): CrmWhatsappSessionCounts {
       others: 4,
       unassigned: 6,
     },
+    inHumanService: 3,
     statuses: {
       ACTIVE: 7,
       COMPLETED: 1,
@@ -141,6 +155,7 @@ function createCounts(): CrmWhatsappSessionCounts {
     },
     total: 12,
     unread: 5,
+    waitingHuman: 2,
   };
 }
 

@@ -120,7 +120,7 @@ function createFakeTx() {
     }
     if (text.includes("FROM addons")) {
       return Promise.resolve([
-        { code: "crm_whatsapp_instance", id: "addon_crm" },
+        { code: "crm_core", id: "addon_crm" },
         { code: "fiscal_spedy", id: "addon_fiscal" },
         { code: "marketplace_connectors", id: "addon_marketplace" },
         { code: "public_api_access", id: "addon_api" },

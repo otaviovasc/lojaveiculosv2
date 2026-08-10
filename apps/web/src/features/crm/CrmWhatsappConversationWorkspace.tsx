@@ -54,6 +54,7 @@ export function CrmWhatsappConversationWorkspace({
           connections={inbox.connections}
           currentUserId={inbox.currentUserId}
           onConnectionFilterChange={inbox.setConnectionFilterId}
+          onHumanAttendanceFilterChange={inbox.setHumanAttendanceFilter}
           onManageConnections={() => onScopeChange("connection")}
           onManageTags={() => onScopeChange("tags")}
           onOtherAssigneeChange={inbox.setOtherAssigneeId}
@@ -73,6 +74,7 @@ export function CrmWhatsappConversationWorkspace({
           onTagFilterToggle={inbox.toggleTagFilter}
           onUnreadOnlyChange={inbox.setUnreadOnly}
           otherAssigneeId={inbox.otherAssigneeId}
+          humanAttendanceFilter={inbox.humanAttendanceFilter}
           quickFilter={inbox.quickFilter}
           search={inbox.search}
           selectedTagIds={inbox.selectedTagIds}

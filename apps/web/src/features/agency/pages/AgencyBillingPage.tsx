@@ -14,12 +14,16 @@ import { BillingEventList } from "../../billing/BillingPanels";
 import { BillingAutomaticBillingPanel } from "../../billing/BillingAutomaticBillingPanel";
 import { readBillingCheckoutReturn } from "../../billing/billingCheckoutReturn";
 import type { BillingCheckoutState } from "../../billing/BillingCheckoutPanel";
-import type { BillingProviderStatus } from "../../billing/types";
+import type {
+  BillingAddonContract,
+  BillingProviderStatus,
+} from "../../billing/types";
 import { useAccountSession } from "../../account/accountSession";
 import type { AgencyApi, AgencyTenantOverview } from "../apiClient";
 import {
   agencyBillingErrorMessage,
   createAgencyBillingPanelOverview,
+  startAgencyStoreCheckout,
   type AgencyBillingStatus,
   type AgencyBillingTab,
 } from "./AgencyBillingPage.model";
@@ -47,6 +51,9 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     kind: "idle",
   });
   const [activeTab, setActiveTab] = useState<AgencyBillingTab>("overview");
+  const [zapiRequestSaving, setZapiRequestSaving] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const checkoutReturn = readBillingCheckoutReturn("agency");
 
   const refresh = async () => {
@@ -84,14 +91,48 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     [overview, selectedStoreId],
   );
 
+  useEffect(() => {
+    if (!overview || !selectedStoreId) return;
+    const selectedStore = overview.stores.find(
+      (store) => store.storeId === selectedStoreId,
+    );
+    const selectedPlan = selectedStore?.planCode
+      ? overview.plans.find((plan) => plan.code === selectedStore.planCode)
+      : overview.plans.find((plan) => plan.status === "active");
+    setSelectedPlanId(selectedPlan?.id ?? null);
+    setSelectedAddonIds(
+      overview.addons.flatMap((addon) =>
+        (!selectedPlan ||
+          addon.catalogVersion === selectedPlan.catalogVersion) &&
+        selectedStore?.entitlementMatrix.some(
+          (row) =>
+            row.featureKey === addon.featureKey &&
+            (row.status === "active" || row.status === "trialing"),
+        )
+          ? [addon.id]
+          : [],
+      ),
+    );
+  }, [overview, selectedStoreId]);
+
   const startCheckout: AgencyApi["createCheckout"] = async (
     tenantId,
     input,
   ) => {
     setCheckoutState({ kind: "starting" });
     try {
+      if (!selectedStoreId || !selectedPlanId) {
+        throw new Error("Selecione uma loja e um plano antes de continuar.");
+      }
       const billingApi = api ?? (await createRuntimeAgencyBillingApi());
-      const checkout = await billingApi.createCheckout(tenantId, input);
+      const checkout = await startAgencyStoreCheckout({
+        addonIds: selectedAddonIds,
+        api: billingApi,
+        input,
+        planId: selectedPlanId,
+        storeId: selectedStoreId,
+        tenantId,
+      });
       setCheckoutState({ kind: "started" });
       window.location.assign(checkout.checkoutUrl);
       return checkout;
@@ -99,6 +140,33 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
       setCheckoutState({ kind: "idle" });
       setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
       throw error;
+    }
+  };
+
+  const updateZapiRequest = async (action: "cancel" | "request") => {
+    if (!agencyTenant || !selectedStoreId) return;
+    setZapiRequestSaving(true);
+    try {
+      const billingApi = api ?? (await createRuntimeAgencyBillingApi());
+      const response =
+        action === "request"
+          ? await billingApi.requestStoreZapi(
+              agencyTenant.tenantId,
+              selectedStoreId,
+            )
+          : await billingApi.cancelStoreZapiRequest(
+              agencyTenant.tenantId,
+              selectedStoreId,
+            );
+      setOverview((current) =>
+        current
+          ? withAgencyStoreContract(current, selectedStoreId, response.contract)
+          : current,
+      );
+    } catch (error) {
+      setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
+    } finally {
+      setZapiRequestSaving(false);
     }
   };
 
@@ -166,6 +234,32 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
                 overview={overview}
                 panelOverview={panelOverview}
                 selectedStoreId={selectedStoreId}
+                zapiRequestSaving={zapiRequestSaving}
+                selectedAddonIds={selectedAddonIds}
+                onAddonToggle={(addonId) =>
+                  setSelectedAddonIds((current) => {
+                    const selectedAddon = overview.addons.find(
+                      (addon) => addon.id === addonId,
+                    );
+                    const zapiAddon = overview.addons.find(
+                      (addon) =>
+                        addon.code === "crm_zapi" &&
+                        addon.catalogVersion === selectedAddon?.catalogVersion,
+                    );
+                    if (selectedAddon?.code === "crm_core") {
+                      return current.includes(addonId)
+                        ? current.filter(
+                            (id) => id !== addonId && id !== zapiAddon?.id,
+                          )
+                        : [...current, addonId];
+                    }
+                    return current.includes(addonId)
+                      ? current.filter((id) => id !== addonId)
+                      : [...current, addonId];
+                  })
+                }
+                onCancelZapi={() => void updateZapiRequest("cancel")}
+                onRequestZapi={() => void updateZapiRequest("request")}
                 onStoreChange={setSelectedStoreId}
               />
               <AgencyBillingAllocation overview={overview} />
@@ -187,4 +281,27 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
       )}
     </FeaturePageShell>
   );
+}
+
+function withAgencyStoreContract(
+  overview: AgencyTenantOverview,
+  storeId: string,
+  contract: BillingAddonContract,
+): AgencyTenantOverview {
+  return {
+    ...overview,
+    stores: overview.stores.map((store) =>
+      store.storeId === storeId
+        ? {
+            ...store,
+            addonContracts: [
+              ...(store.addonContracts ?? []).filter(
+                (candidate) => candidate.addonCode !== contract.addonCode,
+              ),
+              contract,
+            ],
+          }
+        : store,
+    ),
+  };
 }

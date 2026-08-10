@@ -19,6 +19,7 @@ type RealtimeOptions = {
     options?: { preserveLocalOnly?: boolean },
   ) => void;
   refreshConnections: () => Promise<void>;
+  refreshSessionCounts: () => Promise<void>;
   refreshSessions: (options?: { preserveLocalOnly?: boolean }) => Promise<void>;
   setError: (error: Error) => void;
   updateRealtimeMessageStatus: (
@@ -34,6 +35,7 @@ export function useCrmWhatsappRealtime({
   mergeRealtimeMessage,
   mergeSessions,
   refreshConnections,
+  refreshSessionCounts,
   refreshSessions,
   setError,
   updateRealtimeMessageStatus,
@@ -49,10 +51,12 @@ export function useCrmWhatsappRealtime({
         return;
       if (event.type === "session") {
         mergeSessions([event.session], { preserveLocalOnly: true });
+        void refreshSessionCounts().catch(() => undefined);
         return;
       }
       if (event.type === "message") {
         mergeSessions([event.session], { preserveLocalOnly: true });
+        void refreshSessionCounts().catch(() => undefined);
         if (String(event.session.id) === String(activeSessionId)) {
           mergeRealtimeMessage(event.message);
         }
@@ -77,6 +81,7 @@ export function useCrmWhatsappRealtime({
       mergeRealtimeMessage,
       mergeSessions,
       refreshConnections,
+      refreshSessionCounts,
       refreshSessions,
       updateRealtimeMessageStatus,
     ],

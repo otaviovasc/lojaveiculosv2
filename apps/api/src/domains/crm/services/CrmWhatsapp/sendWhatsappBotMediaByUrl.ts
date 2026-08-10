@@ -32,6 +32,11 @@ import type { SendWhatsappBotMediaByUrlInput } from "../../whatsapp/whatsappBotM
 import { assertOfficialMessagingWindow } from "../../messaging/assertOfficialMessagingWindow.js";
 import { channelForCrmProvider } from "../../messaging/crmMessagingProvider.js";
 import { WhatsappBotActionError } from "./whatsappBotIntegration.js";
+import { assertWhatsappProviderEffectAllowed } from "../../whatsapp/assertWhatsappProviderEffectAllowed.js";
+import {
+  completeDurableOutboundProviderCall,
+  executeDurableOutboundProviderCall,
+} from "../../whatsapp/executeDurableOutboundProviderCall.js";
 
 const permission = "crm.whatsapp.send";
 
@@ -42,6 +47,7 @@ export async function sendWhatsappBotMediaByUrl(
 ): Promise<WhatsappMessage> {
   assertPermission(context, permission);
   const target = await resolveBotMediaTarget(context, input, ports);
+  assertWhatsappProviderEffectAllowed(context, target.connection);
   assertBotMediaTargetIsAvailable(target.session);
   const repository = getCrmWhatsappRepository(ports);
   if (target.connection.provider !== "zapi") {
@@ -78,22 +84,35 @@ export async function sendWhatsappBotMediaByUrl(
       summary: "Sent CRM WhatsApp bot media from remote URL",
     },
     async () => {
-      const sent = await getCrmWhatsappGateway(ports).sendMedia(
-        target.connection,
+      const effect = await executeDurableOutboundProviderCall(
+        context,
         {
-          ...(input.mediaType === "audio" ? { asyncProcessing: true } : {}),
-          ...(input.caption?.trim() ? { caption: input.caption.trim() } : {}),
-          ...(input.fileName?.trim()
-            ? { fileName: input.fileName.trim() }
+          connectionId: target.connection.id,
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
             : {}),
-          mediaType: input.mediaType,
-          mediaUrl: input.mediaUrl,
-          ...(input.mimeType?.trim()
-            ? { mimeType: input.mimeType.trim() }
-            : {}),
-          phone: target.phone,
+          payload: input,
+          send: () =>
+            getCrmWhatsappGateway(ports).sendMedia(target.connection, {
+              ...(input.mediaType === "audio" ? { asyncProcessing: true } : {}),
+              ...(input.caption?.trim()
+                ? { caption: input.caption.trim() }
+                : {}),
+              ...(input.fileName?.trim()
+                ? { fileName: input.fileName.trim() }
+                : {}),
+              mediaType: input.mediaType,
+              mediaUrl: input.mediaUrl,
+              ...(input.mimeType?.trim()
+                ? { mimeType: input.mimeType.trim() }
+                : {}),
+              phone: target.phone,
+            }),
+          sessionId: target.session?.id ?? null,
         },
+        ports,
       );
+      const sent = effect.sent;
       const scope = requireCrmWhatsappScope(context);
       const leadId =
         target.session?.leadId ??
@@ -134,7 +153,6 @@ export async function sendWhatsappBotMediaByUrl(
             source: "remote_url",
           },
           provider: target.connection.provider,
-          raw: sent.raw,
           sentByActorId: context.actor.id,
           sentByBot: true,
           sentByCrm: true,
@@ -153,10 +171,15 @@ export async function sendWhatsappBotMediaByUrl(
         messageExternalId: sent.externalId,
         occurredAt: sent.providerTimestamp,
         provider: target.connection.provider,
-        raw: sent.raw,
         sessionId: result.session.id,
       });
       const message = toWhatsappMessage(result.message);
+      await completeDurableOutboundProviderCall(ports, {
+        claimToken: effect.intent.claimToken,
+        id: effect.intent.id,
+        messageId: String(result.message.id),
+        sessionId: String(result.session.id),
+      });
       const realtimeSession = toWhatsappSession(
         result.session,
         target.connection,

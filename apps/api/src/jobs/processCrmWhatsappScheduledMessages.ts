@@ -9,6 +9,7 @@ import {
   type StoreScopedServiceContext,
 } from "../shared/serviceContext.js";
 import type { CrmServices } from "../features/crm/controllers/crmServices.js";
+import { runCrmScheduledWorkerMaintenance } from "./crmScheduledWorkerMaintenance.js";
 
 loadLocalEnv();
 
@@ -30,6 +31,16 @@ async function main(): Promise<void> {
     if (!services) {
       throw new Error("CRM services are not available for schedule worker.");
     }
+    const cleanupContext = createWorkerContext({
+      ...(runtime.appOptions.audit ? { audit: runtime.appOptions.audit } : {}),
+      logger,
+      requestId: `crm_connection_cleanup_${Date.now()}`,
+    });
+    const cleanup = await runCrmScheduledWorkerMaintenance(
+      services,
+      cleanupContext,
+      { limit: 100 },
+    );
     const dueAt =
       parseOptionalDate("CRM_WHATSAPP_SCHEDULE_DUE_AT") ?? new Date();
     const perScopeLimit =
@@ -44,7 +55,10 @@ async function main(): Promise<void> {
       scopeLimit,
       services,
     });
-    logger.info("crm.whatsapp.schedule.worker.finished", result);
+    logger.info("crm.whatsapp.schedule.worker.finished", {
+      ...result,
+      archivedAbandonedConnections: cleanup.archived,
+    });
   } finally {
     await runtime.close();
   }
@@ -102,7 +116,11 @@ function createWorkerContext(input: {
     actor: { id: "crm_whatsapp_schedule_worker", kind: "system" },
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
-    permissions: ["crm.whatsapp.schedules.process", "crm.whatsapp.send"],
+    permissions: [
+      "crm.whatsapp.connection.manage",
+      "crm.whatsapp.schedules.process",
+      "crm.whatsapp.send",
+    ],
     request: { requestId: input.requestId },
     source: { component: "crm-whatsapp-schedule-worker", service: "api" },
   });

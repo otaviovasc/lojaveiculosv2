@@ -3,10 +3,12 @@ import type {
   CrmWhatsappSession,
 } from "../ports/crmWhatsappRepository.js";
 import type { ZapiAdAttribution } from "./zapiAdAttribution.js";
+import { transitionHumanAttendance } from "./humanAttendanceTransition.js";
 
 export type ZapiAdSessionTransition = {
   endedAt: Date | null;
   interventionStartedAt: Date | null;
+  previousSession: CrmWhatsappSession;
   resumedIntervention: boolean;
   session: CrmWhatsappSession;
 };
@@ -29,8 +31,17 @@ export async function applyZapiAdSessionTransition(
   const interventionStartedAt = resumedIntervention
     ? input.session.humanTakeoverAt
     : null;
+  const attendanceTransition = resumedIntervention
+    ? await transitionHumanAttendance({
+        command: { kind: "clear", status: "ACTIVE" },
+        now: input.detectedAt,
+        repository,
+        session: input.session,
+      })
+    : null;
+  const currentSession = attendanceTransition?.session ?? input.session;
   const metadata = {
-    ...input.session.metadata,
+    ...currentSession.metadata,
     ...(shouldStoreAttribution ? input.attribution : {}),
     ...(resumedIntervention
       ? {
@@ -46,7 +57,6 @@ export async function applyZapiAdSessionTransition(
       : {}),
   };
   const updated = await repository.updateSession({
-    ...(resumedIntervention ? { humanTakeoverAt: null, status: "ACTIVE" } : {}),
     metadata,
     sessionId: input.session.id,
     storeId: input.session.storeId,
@@ -56,6 +66,7 @@ export async function applyZapiAdSessionTransition(
   return {
     endedAt: resumedIntervention ? input.detectedAt : null,
     interventionStartedAt,
+    previousSession: attendanceTransition?.previous ?? input.session,
     resumedIntervention,
     session: updated,
   };
@@ -71,6 +82,7 @@ function unchanged(session: CrmWhatsappSession): ZapiAdSessionTransition {
   return {
     endedAt: null,
     interventionStartedAt: null,
+    previousSession: session,
     resumedIntervention: false,
     session,
   };

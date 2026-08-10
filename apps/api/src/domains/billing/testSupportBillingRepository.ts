@@ -7,8 +7,13 @@ export function createUnusedBillingRepository(): BillingRepository {
   };
   return {
     activateSubscriptionSelection: vi.fn(async () => undefined),
+    cancelZapiAddon: unused,
+    confirmZapiAddonCancellationSync: unused,
+    completeZapiAddonSetup: unused,
     getOverview: unused,
     getTenantOverview: unused,
+    markZapiAddonScheduled: unused,
+    requestZapiAddon: unused,
     storeExistsInTenant: unused,
     updateSubscriptionSelection: unused,
     updateStoreEntitlement: unused,

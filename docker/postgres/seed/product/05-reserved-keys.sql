@@ -61,8 +61,8 @@ BEGIN
     SELECT 1
     FROM plans
     WHERE code = 'growth'
-      AND catalog_version = '2026-07-v1'
-      AND id <> '12121212-1212-4212-8212-121212121212'
+      AND catalog_version = '2026-08-v1'
+      AND id <> '82121212-1212-4212-8212-121212121212'
   ) THEN
     RAISE EXCEPTION 'seed preflight: Growth plan key is owned by another id';
   END IF;
@@ -71,14 +71,15 @@ BEGIN
     SELECT 1
     FROM addons existing_addon
     INNER JOIN (VALUES
-      ('15151515-1515-4515-8515-151515151515'::uuid, 'crm_whatsapp_instance'),
-      ('15151515-1515-4515-8515-151515151516'::uuid, 'marketplace_connectors'),
-      ('15151515-1515-4515-8515-151515151517'::uuid, 'fiscal_spedy'),
-      ('15151515-1515-4515-8515-151515151518'::uuid, 'public_api_access'),
-      ('15151515-1515-4515-8515-151515151519'::uuid, 'simulations_pro')
+      ('85151515-1515-4515-8515-151515151515'::uuid, 'crm_core'),
+      ('85151515-1515-4515-8515-151515151520'::uuid, 'crm_zapi'),
+      ('85151515-1515-4515-8515-151515151516'::uuid, 'marketplace_connectors'),
+      ('85151515-1515-4515-8515-151515151517'::uuid, 'fiscal_spedy'),
+      ('85151515-1515-4515-8515-151515151518'::uuid, 'public_api_access'),
+      ('85151515-1515-4515-8515-151515151519'::uuid, 'simulations_pro')
     ) AS seed_addon(id, code)
       ON seed_addon.code = existing_addon.code
-    WHERE existing_addon.catalog_version = '2026-07-v1'
+    WHERE existing_addon.catalog_version = '2026-08-v1'
       AND existing_addon.id <> seed_addon.id
   ) THEN
     RAISE EXCEPTION 'seed preflight: billing add-on key is owned by another id';

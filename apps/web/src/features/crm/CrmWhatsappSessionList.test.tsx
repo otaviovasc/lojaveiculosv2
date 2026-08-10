@@ -63,6 +63,30 @@ describe("SessionList", () => {
     expect(onToggleSelected).toHaveBeenCalledWith("session_1");
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it("replaces the generic intervention label with the precise attendance badge", () => {
+    render(
+      <SessionList
+        activeSessionId={null}
+        onSelect={vi.fn()}
+        onToggleSelected={vi.fn()}
+        selectedSessionIds={[]}
+        selectionMode={false}
+        sessions={[
+          {
+            ...createSession(),
+            humanAttendanceState: "WAITING_HUMAN",
+            status: "HUMAN_TAKEOVER",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Aguardando Humano")).toHaveClass(
+      "crm-whatsapp-human-attendance-waiting",
+    );
+    expect(screen.queryByText("Intervenção humana")).not.toBeInTheDocument();
+  });
 });
 
 function createSession(): CrmWhatsappSession {

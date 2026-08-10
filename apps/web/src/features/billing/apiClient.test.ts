@@ -2,6 +2,28 @@ import { describe, expect, it, vi } from "vitest";
 import { createBillingApi } from "./apiClient";
 
 describe("createBillingApi", () => {
+  it("requests and cancels Z-API at the dedicated server-owned endpoint", async () => {
+    const fetch = vi.fn().mockResolvedValue({
+      json: async () => ({ contract: { status: "scheduled" } }),
+      ok: true,
+    });
+    const api = createBillingApi({ fetch: fetch as never });
+
+    await api.requestZapi();
+    await api.cancelZapiRequest();
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/billing/addons/zapi/request",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/billing/addons/zapi/request",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+
   it("persists a server-priced plan and add-on selection", async () => {
     const fetch = vi.fn().mockResolvedValue({
       json: async () => ({ plans: [] }),

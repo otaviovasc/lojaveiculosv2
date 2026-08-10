@@ -9,6 +9,7 @@ export type EntitlementKey =
   | "automation"
   | "compliance"
   | "crm"
+  | "crm_zapi"
   | "custom_domain"
   | "external_api"
   | "fiscal"
@@ -46,6 +47,10 @@ export type BillingAddon = {
   featureKey: EntitlementKey;
   id: string;
   includedInTrial: boolean;
+  limits?: {
+    composioToolExecutionsPerBillingMonth: number | null;
+    enforcement: "hard" | "soft" | null;
+  };
   monthlyPriceCents: number;
   name: string;
   status: "active" | "archived" | "inactive";
@@ -153,6 +158,7 @@ export type BillingEntitlementEvent = {
 };
 
 export type BillingOverview = {
+  addonContracts?: readonly BillingAddonContract[];
   addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: BillingAuthority;
@@ -165,6 +171,26 @@ export type BillingOverview = {
   storeId: string;
   subscription: BillingSubscription | null;
   tenantId: string;
+};
+
+export type BillingAddonContractStatus =
+  "active" | "cancelled" | "paid_awaiting_setup" | "pending" | "scheduled";
+
+export type BillingAddonContract = {
+  addonCode: string;
+  cancellationScheduledFor: string | null;
+  id: string;
+  monthlyPriceCents: number;
+  paidAt: string | null;
+  scheduledFor: string | null;
+  setupCompletedAt: string | null;
+  status: BillingAddonContractStatus;
+  storeId: string;
+  supportCode: string | null;
+};
+
+export type BillingAddonContractResponse = {
+  contract: BillingAddonContract;
 };
 
 export type BillingProviderStatus = {

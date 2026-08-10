@@ -1,6 +1,7 @@
 import { readApiJson } from "../../lib/apiErrors";
 import type {
   BillingAuth,
+  BillingAddonContractResponse,
   BillingCheckoutSession,
   BillingOverview,
   BillingProviderStatus,
@@ -12,11 +13,13 @@ import type {
 } from "./types";
 
 export type BillingApi = {
+  cancelZapiRequest: () => Promise<BillingAddonContractResponse>;
   createCheckout: (
     input: CreateBillingCheckoutInput,
   ) => Promise<BillingCheckoutSession>;
   getOverview: () => Promise<BillingOverview>;
   getProviderStatus: () => Promise<BillingProviderStatus>;
+  requestZapi: () => Promise<BillingAddonContractResponse>;
   syncProviderSubscription: (
     input: SyncBillingProviderSubscriptionInput,
   ) => Promise<unknown>;
@@ -41,6 +44,11 @@ export function createBillingApi({
   fetch,
 }: CreateBillingApiOptions): BillingApi {
   return {
+    cancelZapiRequest: () =>
+      fetch(billingRoutes.zapiRequest(baseUrl), {
+        headers: createBillingHeaders(auth),
+        method: "DELETE",
+      }).then(readJson<BillingAddonContractResponse>),
     createCheckout: (input) =>
       fetch(billingRoutes.providerCheckout(baseUrl), {
         body: JSON.stringify(input),
@@ -55,6 +63,11 @@ export function createBillingApi({
       fetch(billingRoutes.providerStatus(baseUrl), {
         headers: createBillingHeaders(auth),
       }).then(readJson<BillingProviderStatus>),
+    requestZapi: () =>
+      fetch(billingRoutes.zapiRequest(baseUrl), {
+        headers: createBillingHeaders(auth),
+        method: "POST",
+      }).then(readJson<BillingAddonContractResponse>),
     syncProviderSubscription: (input) =>
       fetch(billingRoutes.providerSync(baseUrl), {
         body: JSON.stringify(input),
@@ -92,6 +105,8 @@ export const billingRoutes = {
     createBillingEndpoint("/billing/provider/subscription/sync", baseUrl),
   selection: (baseUrl?: string) =>
     createBillingEndpoint("/billing/selection", baseUrl),
+  zapiRequest: (baseUrl?: string) =>
+    createBillingEndpoint("/billing/addons/zapi/request", baseUrl),
 } as const;
 
 function createBillingHeaders(auth: BillingAuth): HeadersInit {

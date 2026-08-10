@@ -2,10 +2,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import {
-  createTestApp,
-  expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -57,7 +54,7 @@ describe("CRM official messaging connections", () => {
     expect(JSON.stringify(body)).not.toContain("ca_private");
   });
 
-  it("stores only Composio references and environment variable names", async () => {
+  it("rejects customer attempts to store Composio provider references", async () => {
     const repository = createMemoryCrmConnectionRepository([
       createConnection("composio_whatsapp", whatsappId, {
         credentialsRef: {},
@@ -93,24 +90,16 @@ describe("CRM official messaging connections", () => {
       },
     );
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-      credentials: {
-        apiKeyEnv: "COMPOSIO_API_KEY",
-        composioConnectedAccountConfigured: true,
-        mode: "composio",
-      },
-      externalConnectionId: "phone-number-id-1",
+      code: "CRM_WHATSAPP_VALIDATION_ERROR",
+      message: "Request is invalid.",
     });
     await expect(
       repository.findConnectionById(whatsappId),
     ).resolves.toMatchObject({
-      credentialsRef: {
-        composio: { connectedAccountId: "ca_private" },
-        env: { apiKey: "COMPOSIO_API_KEY" },
-        mode: "composio",
-      },
-      metadata: { graphVersion: "v25.0" },
+      credentialsRef: {},
+      externalConnectionId: null,
     });
   });
 
@@ -137,11 +126,12 @@ describe("CRM official messaging connections", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-      message: "Z-API credentials can only be configured on Z-API connections.",
+      code: "CRM_WHATSAPP_VALIDATION_ERROR",
+      message: "Request is invalid.",
     });
   });
 
-  it("requires integration-management permission for credential references", async () => {
+  it("does not expose credential mutation even with integration permission", async () => {
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createConnection("composio_whatsapp", whatsappId),
@@ -163,10 +153,10 @@ describe("CRM official messaging connections", () => {
       },
     );
 
-    expect(response.status).toBe(403);
-    await expectApiError(response, {
-      code: "AUTHORIZATION_DENIED",
-      message: "Missing permission: crm.whatsapp.integrations.manage",
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_WHATSAPP_VALIDATION_ERROR",
+      message: "Request is invalid.",
     });
   });
 });

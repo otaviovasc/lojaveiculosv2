@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import {
   actionGroups,
+  attendanceDegradedNotes,
+  attendanceFieldRows,
+  attendanceTransitionRows,
   botDocCards,
   botEndpoint,
   importantFieldNotes,
@@ -126,7 +129,7 @@ export function CrmWhatsappBotDocs() {
       <DocPanel
         description="Como o bot deve se comportar quando um humano assume."
         icon={<ShieldCheck aria-hidden="true" />}
-        title="Intervencao humana"
+        title="Estados de atendimento humano"
       >
         <div className="crm-whatsapp-bot-note-grid">
           {interventionFlowNotes.map((note) => (
@@ -136,8 +139,62 @@ export function CrmWhatsappBotDocs() {
             </article>
           ))}
         </div>
+        <div className="crm-whatsapp-bot-table-wrap">
+          <table className="crm-whatsapp-bot-table">
+            <thead>
+              <tr>
+                <th>Campo</th>
+                <th>Tipo</th>
+                <th>Uso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attendanceFieldRows.map((row) => (
+                <tr key={row.field}>
+                  <td>
+                    <code>{row.field}</code>
+                  </td>
+                  <td>{row.type}</td>
+                  <td>{row.meaning}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="crm-whatsapp-bot-table-wrap">
+          <table className="crm-whatsapp-bot-table">
+            <thead>
+              <tr>
+                <th>Evento</th>
+                <th>De</th>
+                <th>Para</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attendanceTransitionRows.map((row) => (
+                <tr key={row.event}>
+                  <td>{row.event}</td>
+                  <td>
+                    <code>{row.from}</code>
+                  </td>
+                  <td>
+                    <code>{row.to}</code>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div className="crm-whatsapp-bot-note-grid">
           {interventionNotes.map((note) => (
+            <article key={note.title}>
+              <strong>{note.title}</strong>
+              <p>{note.description}</p>
+            </article>
+          ))}
+        </div>
+        <div className="crm-whatsapp-bot-note-grid">
+          {attendanceDegradedNotes.map((note) => (
             <article key={note.title}>
               <strong>{note.title}</strong>
               <p>{note.description}</p>

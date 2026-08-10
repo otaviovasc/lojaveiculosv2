@@ -26,6 +26,31 @@ const trialPlan: BillingPlan = {
 };
 
 describe("createBillingOverview", () => {
+  it("revokes scheduled Z-API access at period end without a payment", () => {
+    const now = new Date("2026-09-10T00:00:00.000Z");
+    const overview = createBillingOverview({
+      entitlements: [
+        {
+          endsAt: now,
+          featureKey: "crm_zapi",
+          metadata: {},
+          source: "billing_catalog",
+          startsAt: new Date("2026-08-10T00:00:00.000Z"),
+          status: "active",
+        },
+      ],
+      now,
+      plans: [],
+      storeId: "store_1" as never,
+      subscription: null,
+      tenantId: "tenant_1" as never,
+    });
+
+    expect(
+      overview.entitlementMatrix.find((row) => row.featureKey === "crm_zapi")
+        ?.status,
+    ).toBe("inactive");
+  });
   it("builds agency billing matrix and financial summary defaults", () => {
     const overview = createBillingOverview({
       allocations: [

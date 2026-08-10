@@ -1,6 +1,8 @@
 import {
   Check,
   CheckSquare,
+  Headset,
+  Hourglass,
   Plug,
   Plus,
   Search,
@@ -16,6 +18,7 @@ import {
 } from "./CrmWhatsappQueueToolbarParts";
 import type {
   CrmWhatsappAssignableMember,
+  CrmWhatsappHumanAttendanceState,
   CrmWhatsappProviderConnection,
   CrmWhatsappSessionCounts,
   CrmWhatsappSessionFilter,
@@ -34,6 +37,7 @@ export function WhatsappToolbar({
   connections,
   currentUserId,
   onConnectionFilterChange,
+  onHumanAttendanceFilterChange,
   onManageConnections,
   onManageTags,
   onOtherAssigneeChange,
@@ -45,6 +49,7 @@ export function WhatsappToolbar({
   onTagFilterToggle,
   onUnreadOnlyChange,
   otherAssigneeId,
+  humanAttendanceFilter,
   quickFilter,
   search,
   selectedTagIds,
@@ -68,6 +73,9 @@ export function WhatsappToolbar({
   connections: CrmWhatsappProviderConnection[];
   currentUserId: string | null;
   onConnectionFilterChange: (connectionId: string | null) => void;
+  onHumanAttendanceFilterChange: (
+    state: CrmWhatsappHumanAttendanceState | "",
+  ) => void;
   onManageConnections: () => void;
   onManageTags: () => void;
   onOtherAssigneeChange: (assigneeId: string | null) => void;
@@ -79,6 +87,7 @@ export function WhatsappToolbar({
   onTagFilterToggle: (tagId: string) => void;
   onUnreadOnlyChange: (unreadOnly: boolean) => void;
   otherAssigneeId: string | null;
+  humanAttendanceFilter: CrmWhatsappHumanAttendanceState | "";
   quickFilter: CrmWhatsappSessionFilter;
   search: string;
   selectedTagIds: string[];
@@ -139,6 +148,48 @@ export function WhatsappToolbar({
           Não lidas
           {sessionCounts.unread > 0 ? (
             <span>{sessionCounts.unread}</span>
+          ) : null}
+        </button>
+        <button
+          aria-pressed={humanAttendanceFilter === "WAITING_HUMAN"}
+          className={
+            humanAttendanceFilter === "WAITING_HUMAN"
+              ? "crm-whatsapp-smart-filter crm-whatsapp-smart-filter-waiting-human crm-whatsapp-smart-filter-active"
+              : "crm-whatsapp-smart-filter crm-whatsapp-smart-filter-waiting-human"
+          }
+          onClick={() =>
+            onHumanAttendanceFilterChange(
+              humanAttendanceFilter === "WAITING_HUMAN" ? "" : "WAITING_HUMAN",
+            )
+          }
+          type="button"
+        >
+          <Hourglass aria-hidden="true" />
+          Aguardando Humano
+          {sessionCounts.waitingHuman > 0 ? (
+            <span>{sessionCounts.waitingHuman}</span>
+          ) : null}
+        </button>
+        <button
+          aria-pressed={humanAttendanceFilter === "IN_HUMAN_SERVICE"}
+          className={
+            humanAttendanceFilter === "IN_HUMAN_SERVICE"
+              ? "crm-whatsapp-smart-filter crm-whatsapp-smart-filter-in-human-service crm-whatsapp-smart-filter-active"
+              : "crm-whatsapp-smart-filter crm-whatsapp-smart-filter-in-human-service"
+          }
+          onClick={() =>
+            onHumanAttendanceFilterChange(
+              humanAttendanceFilter === "IN_HUMAN_SERVICE"
+                ? ""
+                : "IN_HUMAN_SERVICE",
+            )
+          }
+          type="button"
+        >
+          <Headset aria-hidden="true" />
+          Em atendimento Humano
+          {sessionCounts.inHumanService > 0 ? (
+            <span>{sessionCounts.inHumanService}</span>
           ) : null}
         </button>
         <QueueTagFilterMenu

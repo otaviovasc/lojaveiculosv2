@@ -1,8 +1,13 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
 import type { TransactionSql } from "postgres";
+import { currentBillingCatalog } from "../domains/billing/catalog/currentBillingCatalog.js";
+import {
+  assertBillingCatalogIsPublished,
+  assertValidBillingCatalog,
+  billingCatalogChecksum,
+  canonicalBillingCatalogJson,
+} from "../domains/billing/catalog/billingCatalogIntegrity.js";
 import { defaultRolePermissions } from "../domains/identity/domain/accessPolicy.js";
-
-const PLAN_ID = "12121212-1212-4212-8212-121212121212";
 
 const roleTemplates: ReadonlyArray<{
   description: string;
@@ -50,58 +55,6 @@ const roleTemplates: ReadonlyArray<{
   },
 ];
 
-const planFeatures = [
-  ["analytics", 1, true, null, null],
-  ["automation", 1, true, null, null],
-  ["compliance", 1, true, null, null],
-  ["crm", 0, false, null, null],
-  ["custom_domain", 1, false, null, null],
-  ["external_api", 0, false, null, null],
-  ["marketplace", 0, false, null, null],
-  ["fiscal", 0, false, null, null],
-  ["plate_lookup", 1, true, 300, 10],
-  ["simulations", 0, false, null, null],
-  ["subdomain", 1, true, null, null],
-] as const;
-
-const addons = [
-  [
-    "15151515-1515-4515-8515-151515151515",
-    "crm_whatsapp_instance",
-    "crm",
-    24999,
-    "CRM WhatsApp",
-  ],
-  [
-    "15151515-1515-4515-8515-151515151516",
-    "marketplace_connectors",
-    "marketplace",
-    14990,
-    "Marketplaces",
-  ],
-  [
-    "15151515-1515-4515-8515-151515151517",
-    "fiscal_spedy",
-    "fiscal",
-    19990,
-    "Fiscal NF-e + NFS-e",
-  ],
-  [
-    "15151515-1515-4515-8515-151515151518",
-    "public_api_access",
-    "external_api",
-    9990,
-    "API Pública",
-  ],
-  [
-    "15151515-1515-4515-8515-151515151519",
-    "simulations_pro",
-    "simulations",
-    4990,
-    "Simulações Pro",
-  ],
-] as const;
-
 const rolePermissions = roleTemplates.flatMap((role) =>
   [...new Set(defaultRolePermissions[role.roleKey])].map(
     (permissionKey: PermissionKey) => ({
@@ -112,36 +65,62 @@ const rolePermissions = roleTemplates.flatMap((role) =>
 );
 
 export async function seedProductBaseline(sql: TransactionSql): Promise<void> {
+  assertValidBillingCatalog(currentBillingCatalog);
+  assertBillingCatalogIsPublished(currentBillingCatalog, new Date());
+  const checksum = billingCatalogChecksum(currentBillingCatalog);
+  const publishedAt = new Date(currentBillingCatalog.publishedAt);
   await sql`
-    INSERT INTO plans (
-      id, catalog_version, code, is_default, limits,
-      monthly_price_cents, name, status
+    INSERT INTO billing_catalog_versions (
+      activated_at, checksum, definition, published_at, status, version
     ) VALUES (
-      ${PLAN_ID}, '2026-07-v1', 'growth', true,
-      ${sql.json({ seller_limit: 8, vehicle_limit: 300 })},
-      29900, 'Growth', 'active'
+      now(), ${checksum},
+      ${sql.json(JSON.parse(canonicalBillingCatalogJson(currentBillingCatalog)))},
+      ${publishedAt}, 'active', ${currentBillingCatalog.version}
     )
   `;
 
-  for (const [featureKey, included, trial, limit, trialLimit] of planFeatures) {
+  for (const plan of currentBillingCatalog.plans) {
     await sql`
-      INSERT INTO plan_features (
-        feature_key, included, included_in_trial, limit_value, plan_id,
-        trial_limit_value
+      INSERT INTO plans (
+        id, catalog_version, code, is_default, limits,
+        monthly_price_cents, name, published_at, status
       ) VALUES (
-        ${featureKey}, ${included}, ${trial}, ${limit}, ${PLAN_ID}, ${trialLimit}
+        ${plan.id}, ${currentBillingCatalog.version}, ${plan.code},
+        ${plan.isDefault},
+        ${sql.json({
+          seller_limit: plan.limits.sellerLimit,
+          vehicle_limit: plan.limits.vehicleLimit,
+        })},
+        ${plan.monthlyPriceCents}, ${plan.name}, ${publishedAt}, ${plan.status}
       )
     `;
   }
 
-  for (const [id, code, featureKey, price, name] of addons) {
+  for (const plan of currentBillingCatalog.plans) {
+    for (const feature of plan.features) {
+      await sql`
+      INSERT INTO plan_features (
+        feature_key, included, included_in_trial, limit_value, plan_id,
+        trial_limit_value
+      ) VALUES (
+          ${feature.featureKey}, ${feature.included ? 1 : 0},
+          ${feature.includedInTrial}, ${feature.limitValue}, ${plan.id},
+          ${feature.trialLimitValue}
+      )
+    `;
+    }
+  }
+
+  for (const addon of currentBillingCatalog.addons) {
     await sql`
       INSERT INTO addons (
         id, catalog_version, code, feature_key, included_in_trial,
-        monthly_price_cents, name, status
+        limits, monthly_price_cents, name, published_at, status
       ) VALUES (
-        ${id}, '2026-07-v1', ${code}, ${featureKey}, false,
-        ${price}, ${name}, 'active'
+        ${addon.id}, ${currentBillingCatalog.version}, ${addon.code},
+        ${addon.featureKey}, ${addon.includedInTrial},
+        ${sql.json(toDatabaseAddonLimits(addon.limits))},
+        ${addon.monthlyPriceCents}, ${addon.name}, ${publishedAt}, ${addon.status}
       )
     `;
   }
@@ -167,9 +146,32 @@ export async function seedProductBaseline(sql: TransactionSql): Promise<void> {
 }
 
 export const productBaselineCounts = {
-  addons: addons.length,
-  planFeatures: planFeatures.length,
-  plans: 1,
+  addons: currentBillingCatalog.addons.length,
+  billingCatalogVersions: 1,
+  planFeatures: currentBillingCatalog.plans.reduce(
+    (count, plan) => count + plan.features.length,
+    0,
+  ),
+  plans: currentBillingCatalog.plans.length,
   roleTemplatePermissions: rolePermissions.length,
   roleTemplates: roleTemplates.length,
 };
+
+function toDatabaseAddonLimits(
+  limits: (typeof currentBillingCatalog.addons)[number]["limits"],
+) {
+  return {
+    ...(limits.composioToolExecutionsPerBillingMonth !== undefined
+      ? {
+          composio_tool_executions_per_billing_month:
+            limits.composioToolExecutionsPerBillingMonth,
+        }
+      : {}),
+    ...(limits.enforcement !== undefined
+      ? { enforcement: limits.enforcement }
+      : {}),
+    ...(limits.includedChannels !== undefined
+      ? { included_channels: [...limits.includedChannels] }
+      : {}),
+  };
+}

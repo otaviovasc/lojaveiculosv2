@@ -4,6 +4,7 @@ import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepo
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
@@ -34,6 +35,7 @@ describe("CRM WhatsApp sessions", () => {
   it("ingests a ZAPI webhook into CRM sessions and messages", async () => {
     const crmRepository = createMemoryCrmRepository();
     const app = createTestApp({
+      crmConnectionCredentialVault: testVault(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
@@ -186,21 +188,12 @@ describe("CRM WhatsApp sessions", () => {
 function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
+    overrides,
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+  });
 }
 
 function postZapiWebhook(
@@ -218,10 +211,21 @@ function postZapiWebhook(
         timestamp: 1783029600,
         ...overrides,
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-crm-webhook-token": "webhook-secret",
+      },
       method: "POST",
     },
   );
+}
+
+function testVault() {
+  return {
+    open: async ({ sealed }: { sealed: string }) =>
+      sealed.replace(/^sealed:/u, ""),
+    seal: async ({ plaintext }: { plaintext: string }) => `sealed:${plaintext}`,
+  };
 }
 
 function restoreEnv(name: string, value: string | undefined) {

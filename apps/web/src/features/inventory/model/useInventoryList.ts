@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import { formatApiErrorDisplay, readApiJson } from "../../../lib/apiErrors";
 import { useRemoteSearch } from "../../../lib/useRemoteSearch";
+import {
+  createRuntimeFetch,
+  readRuntimeApiBaseUrl,
+} from "../../account/runtimeAuth";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import {
   createInventoryApiOptions,
@@ -108,10 +112,15 @@ export function useInventoryList(api?: InventoryApi) {
     const loadStoreSettings = async () => {
       try {
         const headers = await createInventoryRuntimeHeaders();
-        const response = await fetch("/api/v1/settings/store", { headers });
-        if (response.ok) {
-          setStoreSettings((await response.json()) as InventoryStoreSettings);
-        }
+        const { baseUrl } = readRuntimeApiBaseUrl();
+        const endpoint = `${(baseUrl ?? "/api/v1").replace(/\/$/, "")}/settings/store`;
+        const response = await createRuntimeFetch()(endpoint, { headers });
+        setStoreSettings(
+          await readApiJson<InventoryStoreSettings>(response, {
+            endpoint,
+            feature: "Configuracoes da loja",
+          }),
+        );
       } catch (error) {
         console.error("Failed to load store settings", error);
       }

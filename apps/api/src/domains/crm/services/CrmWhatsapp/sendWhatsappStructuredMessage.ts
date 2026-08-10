@@ -78,6 +78,7 @@ async function sendStructuredText(
       sendWhatsappOutboundMessage(
         context,
         {
+          idempotencyPayload: input,
           prepare: async ({ connection, gateway, phone }) => {
             const sent = await gateway.sendText(connection, {
               phone,
@@ -89,7 +90,6 @@ async function sendStructuredText(
               metadata: {
                 ...input.metadata,
                 provider: connection.provider,
-                raw: sent.raw,
                 sentByActorId: context.actor.id,
               },
               sent,

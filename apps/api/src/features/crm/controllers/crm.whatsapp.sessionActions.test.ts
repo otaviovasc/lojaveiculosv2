@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { CrmRealtimeEvent } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
@@ -63,6 +64,7 @@ describe("CRM WhatsApp session actions", () => {
   });
 
   it("assigns, toggles intervention, closes, and updates linked leads", async () => {
+    const realtimeEvents: CrmRealtimeEvent[] = [];
     const crmRepository = createMemoryCrmRepository();
     const lead = await crmRepository.createLead({
       buyerName: "Ana",
@@ -95,6 +97,11 @@ describe("CRM WhatsApp session actions", () => {
         createZapiConnection(),
       ]),
       crmRepository,
+      crmRealtimePublisher: {
+        publish: async (event) => {
+          realtimeEvents.push(event);
+        },
+      },
       crmWhatsappRepository: whatsappRepository,
     });
 
@@ -125,7 +132,31 @@ describe("CRM WhatsApp session actions", () => {
     );
     expect(interventionResponse.status).toBe(200);
     await expect(interventionResponse.json()).resolves.toMatchObject({
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceStateVersion: 1,
       status: "HUMAN_TAKEOVER",
+    });
+    expect(realtimeEvents.at(-1)).toMatchObject({
+      session: {
+        humanAttendanceState: "IN_HUMAN_SERVICE",
+        humanAttendanceStateVersion: 1,
+      },
+      type: "session",
+    });
+
+    const attendanceFilterResponse = await app.request(
+      "/api/v1/crm/whatsapp/sessions?humanAttendanceState=IN_HUMAN_SERVICE",
+    );
+    expect(attendanceFilterResponse.status).toBe(200);
+    await expect(attendanceFilterResponse.json()).resolves.toHaveLength(1);
+    const countsResponse = await app.request(
+      "/api/v1/crm/whatsapp/session-counts?humanAttendanceState=IN_HUMAN_SERVICE",
+    );
+    expect(countsResponse.status).toBe(200);
+    await expect(countsResponse.json()).resolves.toMatchObject({
+      inHumanService: 1,
+      total: 1,
+      waitingHuman: 0,
     });
 
     const closeResponse = await app.request(
@@ -133,10 +164,18 @@ describe("CRM WhatsApp session actions", () => {
       { method: "POST" },
     );
     expect(closeResponse.status).toBe(200);
-    await expect(closeResponse.json()).resolves.toMatchObject({
+    const closed = (await closeResponse.json()) as {
+      humanAttendanceChangedAt: unknown;
+    };
+    expect(closed).toMatchObject({
       assignedUserId: null,
+      humanAttendanceState: null,
+      humanAttendanceStateVersion: 2,
+      humanHandlingStartedAt: null,
+      interventionId: null,
       status: "COMPLETED",
     });
+    expect(typeof closed.humanAttendanceChangedAt).toBe("string");
 
     const [updatedLead] = await crmRepository.listLeads({
       limit: 10,

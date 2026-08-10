@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { assertPermission } from "../../../../shared/authorization.js";
+import { createHash } from "node:crypto";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { CrmWhatsappGatewayError } from "../../ports/crmWhatsappGateway.js";
 import type { WhatsappMessage } from "../../whatsapp/whatsappModels.js";
@@ -19,6 +20,7 @@ export type SendWhatsappMediaInput = {
   base64: string;
   caption?: string;
   fileName?: string;
+  idempotencyKey?: string;
   mediaType: SendWhatsappMediaType;
   mimeType?: string;
   sessionId: string;
@@ -97,6 +99,17 @@ export async function sendWhatsappMedia(
       sendWhatsappOutboundMessage(
         context,
         {
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
+            : {}),
+          idempotencyPayload: {
+            caption: input.caption ?? null,
+            fileName: input.fileName ?? null,
+            mediaType: input.mediaType,
+            payloadDigest: createHash("sha256").update(body).digest("hex"),
+            mimeType: input.mimeType ?? null,
+            sessionId: input.sessionId,
+          },
           prepare: async ({ connection, gateway, phone, scope, session }) => {
             const storage = getCrmWhatsappMediaStorage(ports);
             if (!storage) {
@@ -157,7 +170,6 @@ export async function sendWhatsappMedia(
                     storageKey: stored.storageKey,
                   },
                   provider: connection.provider,
-                  raw: sent.raw,
                   sentByActorId: context.actor.id,
                 },
                 sent,

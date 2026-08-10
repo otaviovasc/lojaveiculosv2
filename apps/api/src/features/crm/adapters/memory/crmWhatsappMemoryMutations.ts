@@ -49,6 +49,22 @@ export function updateMemoryWhatsappSession(
       item.tenantId === input.tenantId,
   );
   if (!session) return null;
+  if (input.expectedStatus && session.status !== input.expectedStatus) {
+    return null;
+  }
+  if (
+    input.expectedHumanAttendanceStateVersion !== undefined &&
+    session.humanAttendanceStateVersion !==
+      input.expectedHumanAttendanceStateVersion
+  ) {
+    return null;
+  }
+  if (
+    input.expectedInterventionId !== undefined &&
+    session.interventionId !== input.expectedInterventionId
+  ) {
+    return null;
+  }
   if (input.assignedUserId !== undefined) {
     session.assignedUserId = input.assignedUserId;
   }
@@ -56,8 +72,23 @@ export function updateMemoryWhatsappSession(
     session.firstHandledAt = input.firstHandledAt;
   }
   if (input.freshLeadAt !== undefined) session.freshLeadAt = input.freshLeadAt;
+  if (input.humanAttendanceChangedAt !== undefined) {
+    session.humanAttendanceChangedAt = input.humanAttendanceChangedAt;
+  }
+  if (input.humanAttendanceState !== undefined) {
+    session.humanAttendanceState = input.humanAttendanceState;
+  }
+  if (input.humanAttendanceStateVersion !== undefined) {
+    session.humanAttendanceStateVersion = input.humanAttendanceStateVersion;
+  }
+  if (input.humanHandlingStartedAt !== undefined) {
+    session.humanHandlingStartedAt = input.humanHandlingStartedAt;
+  }
   if (input.humanTakeoverAt !== undefined) {
     session.humanTakeoverAt = input.humanTakeoverAt;
+  }
+  if (input.interventionId !== undefined) {
+    session.interventionId = input.interventionId;
   }
   if (input.lastAssignedAt !== undefined) {
     session.lastAssignedAt = input.lastAssignedAt;

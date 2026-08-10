@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   Check,
-  Copy,
   RefreshCw,
   Webhook,
   Wifi,
@@ -13,15 +12,16 @@ import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type {
   CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappProviderConnection,
-  CrmWhatsappWebhookEndpoint,
 } from "./crmWhatsappTypes";
 import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
+import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
 
 export type ConnectionWebhookAutoConfigState = {
   disabled?: boolean;
   isConfiguring: boolean;
   onConfigure: () => void;
   result: CrmWhatsappConfigureWebhooksResult | null;
+  supportCode?: string | null;
 };
 
 export function ConnectionSectionCard({
@@ -113,9 +113,11 @@ export function ConnectionWebhookAutoConfig({
   isConfiguring,
   onConfigure,
   result,
+  supportCode,
 }: ConnectionWebhookAutoConfigState) {
-  const failed = result?.results.filter((entry) => !entry.ok) ?? [];
-  const succeeded = result?.results.filter((entry) => entry.ok) ?? [];
+  const setupFailed =
+    result?.setup.status === "failed" || result?.setup.status === "partial";
+  const effectiveSupportCode = result?.setup.supportCode ?? supportCode;
   return (
     <div className="crm-whatsapp-webhook-autoconfig">
       <button
@@ -126,42 +128,43 @@ export function ConnectionWebhookAutoConfig({
       >
         <Zap aria-hidden="true" />
         {isConfiguring
-          ? "Configurando webhooks"
-          : "Configurar webhooks na Z-API"}
+          ? "Configurando automaticamente"
+          : setupFailed
+            ? "Tentar configuração novamente"
+            : "Configurar automaticamente"}
       </button>
       {result ? (
         <div
           className="crm-whatsapp-webhook-autoconfig-result"
-          data-tone={failed.length ? "warning" : "success"}
+          data-tone={setupFailed ? "warning" : "success"}
           role="status"
         >
-          {failed.length === 0 ? (
+          {result.setup.status === "configured" ? (
             <p className="crm-whatsapp-webhook-autoconfig-ok">
               <Check aria-hidden="true" />
-              {succeeded.length} webhooks registrados na Z-API automaticamente
-              {result.tokenApplied ? " com token." : "."}
+              Conexão preparada automaticamente para receber novas mensagens.
             </p>
           ) : (
             <>
               <p className="crm-whatsapp-webhook-autoconfig-warn">
                 <AlertTriangle aria-hidden="true" />
-                {failed.length} de {result.results.length} webhooks nao foram
-                configurados.
+                Não foi possível concluir toda a configuração. Tente novamente
+                ou fale com o suporte.
               </p>
-              <ul className="crm-whatsapp-webhook-autoconfig-errors">
-                {failed.map((entry) => (
-                  <li key={entry.type}>
-                    <strong>{entry.type}</strong>:{" "}
-                    {entry.error ?? "erro desconhecido"}
-                  </li>
-                ))}
-              </ul>
+              <a
+                className="crm-whatsapp-connection-save"
+                href={crmWhatsappSupportUrl(effectiveSupportCode)}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Falar com o suporte
+              </a>
             </>
           )}
         </div>
       ) : (
         <p className="crm-whatsapp-connection-webhook-note">
-          Registra as URLs abaixo direto na Z-API usando o token do backend.
+          O CRM prepara o recebimento de mensagens sem exibir credenciais.
         </p>
       )}
     </div>
@@ -170,55 +173,24 @@ export function ConnectionWebhookAutoConfig({
 
 export function ConnectionWebhookList({
   autoConfig,
-  copiedType,
   embedded = false,
-  endpoints,
-  onCopy,
-  tokenRequired,
 }: {
   autoConfig?: ConnectionWebhookAutoConfigState;
-  copiedType: string | null;
   embedded?: boolean;
-  endpoints: readonly CrmWhatsappWebhookEndpoint[];
-  onCopy: (endpoint: CrmWhatsappWebhookEndpoint) => void;
-  tokenRequired?: boolean;
 }) {
-  const description = tokenRequired
-    ? "Token obrigatorio via header x-crm-webhook-token ou query token."
-    : "URLs geradas pelo backend para configurar na Z-API.";
+  const description =
+    "Configuração protegida para receber mensagens e atualizações no CRM.";
   const content = (
     <>
       {embedded ? (
         <p className="crm-whatsapp-connection-webhook-note">{description}</p>
       ) : null}
       {autoConfig ? <ConnectionWebhookAutoConfig {...autoConfig} /> : null}
-      <div className="crm-whatsapp-webhook-list">
-        {endpoints.length ? (
-          endpoints.map((endpoint) => (
-            <label className="crm-whatsapp-webhook-row" key={endpoint.type}>
-              <span>{endpoint.label}</span>
-              <input readOnly value={endpoint.url} />
-              <button
-                aria-label={`Copiar webhook ${endpoint.label}`}
-                className="crm-icon-action"
-                onClick={() => onCopy(endpoint)}
-                title={`Copiar ${endpoint.label}`}
-                type="button"
-              >
-                {copiedType === endpoint.type ? (
-                  <Check aria-hidden="true" />
-                ) : (
-                  <Copy aria-hidden="true" />
-                )}
-              </button>
-            </label>
-          ))
-        ) : (
-          <p className="crm-whatsapp-connection-empty">
-            Nenhum webhook gerado para esta conexão.
-          </p>
-        )}
-      </div>
+      {!autoConfig ? (
+        <p className="crm-whatsapp-connection-empty">
+          A configuração automática ainda não está disponível.
+        </p>
+      ) : null}
     </>
   );
 
@@ -229,7 +201,7 @@ export function ConnectionWebhookList({
       className="crm-whatsapp-connection-webhooks-card"
       description={description}
       icon={<Webhook aria-hidden="true" />}
-      title="Webhooks"
+      title="Recebimento automático"
     >
       {content}
     </ConnectionSectionCard>
@@ -262,12 +234,12 @@ function readProviderStatusTone(connection: CrmWhatsappProviderConnection) {
 function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
   if (connection.live.providerStatus === "error") {
     return connection.provider === "zapi"
-      ? connection.live.errorMessage
-      : `${connection.live.errorMessage} Nenhuma operacao oficial foi confirmada.`;
+      ? "Não foi possível confirmar a conexão. Tente novamente ou fale com o suporte."
+      : "Não foi possível confirmar o canal. Nenhuma operação oficial foi confirmada.";
   }
   if (connection.live.providerStatus === "connected") {
     if (connection.provider === "composio_instagram") {
-      return "Conta profissional conectada pelo Composio";
+      return "Conta profissional conectada com segurança";
     }
     const phone =
       connection.live.connectedPhone ??
@@ -275,16 +247,14 @@ function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
       connection.phone;
     if (phone) return `Conectado - ${phone}`;
     return connection.provider === "composio_whatsapp"
-      ? "Conta oficial conectada pelo Composio"
+      ? "Conta oficial conectada com segurança"
       : "Conectado sem telefone informado";
   }
   if (connection.live.providerStatus === "disconnected") {
     if (connection.provider !== "zapi") {
       return "Canal oficial desconectado. Nenhuma operacao oficial esta disponivel.";
     }
-    return connection.externalInstanceId
-      ? "Instancia configurada. Conecte o WhatsApp pelo QR Code da Z-API."
-      : "Informe o ID e o token da instancia Z-API.";
+    return "Aguardando configuração ou reconexão pela equipe de suporte.";
   }
   if (connection.provider !== "zapi") {
     return "Status oficial ainda nao verificado. Nenhuma operacao oficial foi confirmada.";

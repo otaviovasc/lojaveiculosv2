@@ -74,10 +74,18 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
         sessionId,
         input,
       ),
+    authorizeComposioConnection: async (connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).authorizeComposioConnection(connectionId),
     closeSession: async (sessionId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
         sessionId,
       ),
+    completeComposioConnection: async (connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).completeComposioConnection(connectionId),
     configureConnectionWebhooks: async (connectionId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -88,6 +96,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       ),
     createCampaign: async (input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).createCampaign(
+        input,
+      ),
+    createConnection: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).createConnection(
         input,
       ),
     createQuickMessage: async (input) =>
@@ -204,6 +216,14 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(await createProductCrmApiOptions()).removeReaction(
         messageId,
       ),
+    requestZapiPairingCode: async (connectionId, phone) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).requestZapiPairingCode(connectionId, phone),
+    requestZapiPairingQr: async (connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).requestZapiPairingQr(connectionId),
     retryProviderEvent: async (eventId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -231,6 +251,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
         messageId,
         input,
       ),
+    selectComposioSender: async (connectionId, senderId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).selectComposioSender(connectionId, senderId),
     sendQuickMessage: async (input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).sendQuickMessage(
         input,

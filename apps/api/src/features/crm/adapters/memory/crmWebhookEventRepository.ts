@@ -11,6 +11,26 @@ export function createMemoryCrmWebhookEventRepository(
   const events = [...initialEvents];
 
   return {
+    async claimForProcessing(input) {
+      const event = events.find((item) => item.id === input.eventId);
+      if (!event) return null;
+      const claimable =
+        event.status === "failed" ||
+        event.status === "received" ||
+        (input.allowIgnored === true && event.status === "ignored") ||
+        (event.status === "processing" &&
+          (!event.processingStartedAt ||
+            event.processingStartedAt <= input.staleBefore));
+      if (!claimable) return null;
+      event.errorMessage = null;
+      event.processedAt = null;
+      event.processingAttempts += 1;
+      event.processingStartedAt = input.processingStartedAt;
+      event.processingToken = input.processingToken;
+      event.status = "processing";
+      event.updatedAt = input.processingStartedAt;
+      return event;
+    },
     async findById(input) {
       return events.find((event) => matchesScope(event, input)) ?? null;
     },
@@ -40,6 +60,9 @@ export function createMemoryCrmWebhookEventRepository(
         eventType: input.eventType,
         id: randomUUID(),
         payload: input.payload,
+        processingAttempts: 0,
+        processingStartedAt: null,
+        processingToken: null,
         processedAt: null,
         provider: input.provider,
         providerEventId: input.providerEventId,
@@ -54,8 +77,17 @@ export function createMemoryCrmWebhookEventRepository(
     async updateStatus(input) {
       const event = events.find((item) => item.id === input.eventId);
       if (!event) return null;
+      if (
+        input.processingToken &&
+        (event.status !== "processing" ||
+          event.processingToken !== input.processingToken)
+      ) {
+        return null;
+      }
       event.errorMessage = input.errorMessage ?? null;
       event.processedAt = new Date();
+      event.processingStartedAt = null;
+      event.processingToken = null;
       event.status = input.status;
       event.updatedAt = new Date();
       return event;

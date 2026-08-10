@@ -29,6 +29,7 @@ import type {
 const permission = "crm.whatsapp.send";
 
 export type SendWhatsappTextInput = {
+  idempotencyKey?: string;
   replyToMessageId?: string;
   senderType?: CrmWhatsappMessageSenderType;
   sessionId: string;
@@ -59,6 +60,14 @@ export async function sendWhatsappText(
       sendWhatsappOutboundMessage(
         context,
         {
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
+            : {}),
+          idempotencyPayload: {
+            replyToMessageId: input.replyToMessageId ?? null,
+            sessionId: input.sessionId,
+            text: input.text,
+          },
           prepare: async ({ connection, gateway, phone }) => {
             const replyTo = input.replyToMessageId
               ? await resolveReplyTarget(context, {
@@ -78,7 +87,6 @@ export async function sendWhatsappText(
               content: input.text,
               metadata: {
                 provider: connection.provider,
-                raw: sent.raw,
                 ...(replyTo ? { replyTo: replyMetadata(replyTo) } : {}),
                 sentByActorId: context.actor.id,
               },

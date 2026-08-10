@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { assertPermission } from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
@@ -16,6 +17,7 @@ import {
 import { BillingWebhookAuthenticationError } from "../../readModels/billingWebhookErrors.js";
 
 const permission = "billing.webhook.ingest" as const;
+const processingLeaseMs = 5 * 60 * 1_000;
 
 export type ProcessBillingProviderWebhookInput = {
   payload: Record<string, unknown>;
@@ -54,8 +56,16 @@ export async function processBillingProviderWebhook(
     provider: input.provider,
     providerEventId: webhook.providerEventId,
   });
+  const processingStartedAt = new Date();
+  const processingToken = randomUUID();
+  const claimed = await repository.claimForProcessing({
+    eventId: recorded.event.id,
+    processingStartedAt,
+    processingToken,
+    staleBefore: new Date(processingStartedAt.getTime() - processingLeaseMs),
+  });
 
-  if (!recorded.created && recorded.event.status !== "failed") {
+  if (!claimed) {
     await auditWebhook(context, {
       action: "billing.webhook.asaas.duplicate",
       eventId: recorded.event.id,
@@ -90,7 +100,8 @@ export async function processBillingProviderWebhook(
       }),
     );
     await repository.updateStatus({
-      eventId: recorded.event.id,
+      eventId: claimed.id,
+      processingToken,
       status: sync.status === "synced" ? "processed" : "ignored",
       storeId: sync.storeId,
       tenantId: sync.tenantId,
@@ -111,8 +122,9 @@ export async function processBillingProviderWebhook(
     };
   } catch (error) {
     await repository.updateStatus({
-      errorMessage: error instanceof Error ? error.message : "Unknown error",
-      eventId: recorded.event.id,
+      errorMessage: error instanceof Error ? error.name : "UnknownError",
+      eventId: claimed.id,
+      processingToken,
       status: "failed",
     });
     await auditWebhook(context, {
@@ -144,7 +156,10 @@ async function syncWebhook(
     return repository.syncProviderCheckout(webhook.checkout);
   }
   if (webhook.payment) {
-    return repository.upsertProviderPayment(webhook.payment);
+    return repository.upsertProviderPayment({
+      ...webhook.payment,
+      providerEventId: webhook.providerEventId,
+    });
   }
   if (webhook.subscription) {
     return repository.syncProviderSubscription(webhook.subscription);

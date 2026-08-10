@@ -52,7 +52,7 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
       intervention: {
         active: false,
         reason: "ad_initiated_conversation",
-        triggeredBy: "system",
+        triggeredBy: "auto",
       },
       session: {
         adAttribution: {

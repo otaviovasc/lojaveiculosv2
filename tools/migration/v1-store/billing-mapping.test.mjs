@@ -42,12 +42,9 @@ test("maps active V1 plan, add-ons, Asaas ids, and payments to V2", () => {
   assert.equal(billing.customer.providerCustomerId, "cus_v1");
   assert.equal(billing.subscription.providerSubscriptionId, "sub_v1");
   assert.equal(product(billing, "growth").unitAmountCents, 17990);
+  assert.equal(product(billing, "crm_core").unitAmountCents, 17900);
   assert.equal(
-    product(billing, "crm_whatsapp_instance").unitAmountCents,
-    24900,
-  );
-  assert.equal(
-    product(billing, "crm_whatsapp_instance").startsAt.toISOString(),
+    product(billing, "crm_core").startsAt.toISOString(),
     NOW.toISOString(),
   );
   assert.equal(product(billing, "fiscal_spedy").unitAmountCents, 3500);
@@ -72,10 +69,7 @@ test("maps combo plan add-ons even when old rows are missing", () => {
   );
 
   assert.equal(product(billing, "growth").unitAmountCents, 17990);
-  assert.equal(
-    product(billing, "crm_whatsapp_instance").unitAmountCents,
-    24900,
-  );
+  assert.equal(product(billing, "crm_core").unitAmountCents, 17900);
   assert.equal(product(billing, "fiscal_spedy").unitAmountCents, 3500);
   assert.equal(entitlement(billing, "crm").active, true);
   assert.equal(entitlement(billing, "fiscal").active, true);

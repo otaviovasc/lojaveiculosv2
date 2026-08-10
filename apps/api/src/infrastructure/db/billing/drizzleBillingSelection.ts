@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, or, gt } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
 import {
   addons,
   plans,
@@ -10,6 +10,7 @@ import { BillingSelectionError } from "../../../domains/billing/services/Billing
 import { ensureTenantBillingAccount } from "./drizzleBillingAccount.js";
 import { toStorePlanContractItem } from "./drizzleBillingPlanContract.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
 
 export async function updateStoreSubscriptionSelection(
   db: DrizzleBillingClient,
@@ -25,26 +26,40 @@ export async function updateStoreSubscriptionSelection(
   const subscription =
     existingSubscription ??
     (await ensureTenantBillingAccount(db, input.tenantId)).subscription;
+  const activeCatalogVersion = await findActiveBillingCatalogVersion(db);
+  if (!activeCatalogVersion) {
+    throw new BillingSelectionError("Billing catalog is unavailable.");
+  }
 
   const [plan] = await db
     .select()
     .from(plans)
-    .where(and(eq(plans.id, input.planId), eq(plans.status, "active")))
+    .where(
+      and(
+        eq(plans.id, input.planId),
+        eq(plans.catalogVersion, activeCatalogVersion),
+        eq(plans.status, "active"),
+        lte(plans.publishedAt, now),
+      ),
+    )
     .limit(1);
   if (!plan) throw new BillingSelectionError("Selected plan is unavailable.");
   const selectedAddons = input.addonIds.length
     ? await db
         .select()
         .from(addons)
-        .where(inArray(addons.id, [...input.addonIds]))
+        .where(
+          and(
+            inArray(addons.id, [...input.addonIds]),
+            eq(addons.catalogVersion, activeCatalogVersion),
+            eq(addons.status, "active"),
+            lte(addons.publishedAt, now),
+          ),
+        )
     : [];
   if (
     selectedAddons.length !== input.addonIds.length ||
-    selectedAddons.some(
-      (addon) =>
-        addon.status !== "active" ||
-        addon.catalogVersion !== plan.catalogVersion,
-    )
+    selectedAddons.some((addon) => addon.catalogVersion !== plan.catalogVersion)
   ) {
     throw new BillingSelectionError("Selected add-on is unavailable.");
   }

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
@@ -95,17 +96,22 @@ async function processEvent(
     provider: event.provider,
     providerEventId: event.providerEventKey,
   });
-  if (
-    !recorded.created &&
-    (recorded.event.status === "processed" ||
-      recorded.event.status === "ignored")
-  ) {
+  const processingStartedAt = new Date();
+  const processingToken = randomUUID();
+  const claimed = await events.claimForProcessing({
+    eventId: recorded.event.id,
+    processingStartedAt,
+    processingToken,
+    staleBefore: new Date(processingStartedAt.getTime() - 5 * 60 * 1_000),
+  });
+  if (!claimed) {
     result.duplicates += 1;
     return;
   }
   if (!connection || !ingestibleConnectionStatuses.has(connection.status)) {
     await events.updateStatus({
-      eventId: recorded.event.id,
+      eventId: claimed.id,
+      processingToken,
       status: "ignored",
     });
     result.ignored += 1;
@@ -121,7 +127,8 @@ async function processEvent(
     }
     const processed = outcome === true || outcome === "applied";
     await events.updateStatus({
-      eventId: recorded.event.id,
+      eventId: claimed.id,
+      processingToken,
       status: processed ? "processed" : "ignored",
     });
     result[processed ? "processed" : "ignored"] += 1;
@@ -141,9 +148,9 @@ async function processEvent(
     });
   } catch (error) {
     await events.updateStatus({
-      errorMessage:
-        error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
-      eventId: recorded.event.id,
+      errorMessage: error instanceof Error ? error.name : "UnknownError",
+      eventId: claimed.id,
+      processingToken,
       status: "failed",
     });
     throw error;

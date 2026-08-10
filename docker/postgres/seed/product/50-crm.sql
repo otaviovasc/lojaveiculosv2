@@ -140,7 +140,9 @@ VALUES (
   '77777777-7777-4777-8777-777777777777',
   null
 )
-ON CONFLICT (store_id, provider, display_name) DO UPDATE SET
+ON CONFLICT (store_id, provider)
+WHERE status <> 'archived' AND provider IN ('zapi', 'composio_whatsapp')
+DO UPDATE SET
   credentials_ref = EXCLUDED.credentials_ref,
   external_connection_id = EXCLUDED.external_connection_id,
   external_instance_id = EXCLUDED.external_instance_id,

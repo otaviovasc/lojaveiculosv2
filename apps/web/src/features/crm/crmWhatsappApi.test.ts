@@ -152,12 +152,53 @@ describe("CRM WhatsApp API", () => {
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await expect(api.listConnections()).resolves.toEqual({
+      allowance: { limit: 1, remaining: 0, used: 1 },
+      availableProviders: ["zapi", "composio_whatsapp"],
       connections: [{ id: "connection_1" }],
     });
     expect(fake.calls[0]).toMatchObject({
       input: "/api/v1/crm/whatsapp/connections",
       init: { method: "GET" },
     });
+  });
+
+  it("uses the self-service connection and provider setup contracts", async () => {
+    const fake = createFakeFetch([
+      { id: "connection_1" },
+      { qrCode: "data:image/png;base64,qr" },
+      { redirectUrl: "https://connect.composio.dev/session/test" },
+    ]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await api.createConnection({
+      instanceCredentials: {
+        instanceId: "instance-1",
+        instanceToken: "secret-1",
+      },
+      provider: "zapi",
+    });
+    await api.requestZapiPairingQr("connection_1");
+    await api.authorizeComposioConnection("connection_2");
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/connections",
+      init: {
+        body: JSON.stringify({
+          instanceCredentials: {
+            instanceId: "instance-1",
+            instanceToken: "secret-1",
+          },
+          provider: "zapi",
+        }),
+        method: "POST",
+      },
+    });
+    expect(fake.calls[1]?.input).toBe(
+      "/api/v1/crm/whatsapp/connections/connection_1/zapi/pairing/qr",
+    );
+    expect(fake.calls[2]?.input).toBe(
+      "/api/v1/crm/whatsapp/connections/connection_2/composio/authorize",
+    );
   });
 
   it("loads WhatsApp sessions, counts, and messages through V2", async () => {

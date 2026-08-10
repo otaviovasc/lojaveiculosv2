@@ -21,6 +21,7 @@ export const defaultWhatsappSessionCounts: CrmWhatsappSessionCounts = {
     others: 0,
     unassigned: 0,
   },
+  inHumanService: 0,
   statuses: {
     ACTIVE: 0,
     COMPLETED: 0,
@@ -30,6 +31,7 @@ export const defaultWhatsappSessionCounts: CrmWhatsappSessionCounts = {
   },
   total: 0,
   unread: 0,
+  waitingHuman: 0,
 };
 
 export function selectedWhatsappSessions(

@@ -19,6 +19,11 @@ import {
   crmWhatsappCampaignRoutes,
 } from "./crmWhatsappCampaignApiRoutes";
 import { subscribeCrmWhatsappEvents } from "./crmWhatsappRealtimeApi";
+import type {
+  CrmWhatsappConnectionsResponse,
+  CrmWhatsappProviderConnection,
+  CrmWhatsappSetupProvider,
+} from "./crmWhatsappTypes";
 
 export {
   createCrmWhatsappSessionQuery,
@@ -73,12 +78,16 @@ export function createCrmWhatsappApi({
       postMaybeJson(crmWhatsappRoutes.assignSession(sessionId, baseUrl), {
         assignedUserId: input.assignedUserId,
       }),
+    authorizeComposioConnection: (connectionId) =>
+      postJson(crmWhatsappRoutes.composioAuthorize(connectionId, baseUrl)),
     cancelScheduledMessage: (scheduledMessageId) =>
       deleteMaybeJson(
         crmWhatsappRoutes.scheduledMessage(scheduledMessageId, baseUrl),
       ),
     closeSession: (sessionId) =>
       postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl)),
+    completeComposioConnection: (connectionId) =>
+      postJson(crmWhatsappRoutes.composioComplete(connectionId, baseUrl)),
     configureConnectionWebhooks: (connectionId) =>
       postJson(crmWhatsappRoutes.connectionWebhooks(connectionId, baseUrl)),
     cancelCampaign: (campaignId) =>
@@ -89,6 +98,8 @@ export function createCrmWhatsappApi({
       postJson(crmWhatsappRoutes.quickMessages(baseUrl), input),
     createCampaign: (input) =>
       postJson(crmWhatsappCampaignRoutes.campaigns(baseUrl), input),
+    createConnection: (input) =>
+      postJson(crmWhatsappRoutes.connections(baseUrl), input),
     createScheduledMessage: (input) =>
       postJson(crmWhatsappRoutes.scheduledMessages(baseUrl), input),
     createTag: (input) => postJson(crmWhatsappRoutes.tags(baseUrl), input),
@@ -118,7 +129,10 @@ export function createCrmWhatsappApi({
           createCrmWhatsappCampaignsQuery(input),
         ]),
       ),
-    listConnections: () => getJson(crmWhatsappRoutes.connections(baseUrl)),
+    listConnections: () =>
+      getJson<unknown>(crmWhatsappRoutes.connections(baseUrl)).then(
+        normalizeConnectionsResponse,
+      ),
     listProviderEventIssues: () =>
       getJson(crmWhatsappRoutes.providerEventIssues(baseUrl)),
     listMessages: (sessionId, query) =>
@@ -164,6 +178,12 @@ export function createCrmWhatsappApi({
       ),
     removeReaction: (messageId) =>
       deleteMaybeJson(crmWhatsappRoutes.messageReaction(messageId, baseUrl)),
+    requestZapiPairingCode: (connectionId, phone) =>
+      postJson(crmWhatsappRoutes.zapiPairingCode(connectionId, baseUrl), {
+        phone,
+      }),
+    requestZapiPairingQr: (connectionId) =>
+      postJson(crmWhatsappRoutes.zapiPairingQr(connectionId, baseUrl)),
     removeSessionTag: (sessionId, tagId) =>
       deleteMaybeJson(crmWhatsappRoutes.sessionTag(sessionId, tagId, baseUrl)),
     reorderTags: (input) =>
@@ -188,6 +208,10 @@ export function createCrmWhatsappApi({
       ),
     sendReaction: (messageId, input) =>
       postJson(crmWhatsappRoutes.messageReaction(messageId, baseUrl), input),
+    selectComposioSender: (connectionId, senderId) =>
+      postJson(crmWhatsappRoutes.composioSender(connectionId, baseUrl), {
+        senderId,
+      }),
     sendText: (input) => postJson(crmWhatsappRoutes.sendText(baseUrl), input),
     sendVehicle: (input) =>
       postJson(crmWhatsappRoutes.sendVehicle(baseUrl), input),
@@ -213,6 +237,39 @@ export function createCrmWhatsappApi({
   };
 }
 
+export function normalizeConnectionsResponse(
+  payload: unknown,
+): CrmWhatsappConnectionsResponse {
+  const record = asRecord(payload);
+  const connections = Array.isArray(record.connections)
+    ? (record.connections.filter(isRecord) as CrmWhatsappProviderConnection[])
+    : [];
+  const allowance = asRecord(record.allowance);
+  const limit = readNonNegativeNumber(allowance.limit, connections.length);
+  const used = readNonNegativeNumber(allowance.used, connections.length);
+  const remaining = readNonNegativeNumber(
+    allowance.remaining,
+    Math.max(0, limit - used),
+  );
+  const explicitProviders = Array.isArray(record.availableProviders)
+    ? record.availableProviders.filter(isSetupProvider)
+    : null;
+  const existing = new Set(
+    connections.map((connection) => connection.provider),
+  );
+  const fallbackProviders = (
+    ["zapi", "composio_whatsapp"] as CrmWhatsappSetupProvider[]
+  ).filter((provider) => !existing.has(provider));
+
+  return {
+    allowance: { limit, remaining, used },
+    availableProviders: (explicitProviders ?? fallbackProviders).filter(
+      (provider) => !existing.has(provider),
+    ),
+    connections,
+  };
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   return readApiJson<T>(response, { feature: "CRM WhatsApp" });
 }
@@ -229,4 +286,24 @@ function cleanJson(body: JsonBody) {
   return Object.fromEntries(
     Object.entries(body).filter(([, value]) => value !== undefined),
   );
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object");
+}
+
+function isSetupProvider(value: unknown): value is CrmWhatsappSetupProvider {
+  return value === "zapi" || value === "composio_whatsapp";
+}
+
+function readNonNegativeNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : fallback;
 }

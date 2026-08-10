@@ -1,15 +1,17 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import {
+  connectionId,
+  createZapiConnection,
+} from "./crm.whatsapp.botForwarding.testSupport.js";
 import {
   createAuditSpy,
   createTestApp,
 } from "./crm.whatsapp.controller.testSupport.js";
 
-const connectionId = "24000000-0000-4000-8000-000000000101";
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 type StartConversationBody = { lead: { id: string } };
@@ -60,8 +62,11 @@ describe("CRM WhatsApp start conversation", () => {
       session: {
         buyerName: "Ana Silva",
         buyerPhone: "5511999999999",
+        humanAttendanceState: "IN_HUMAN_SERVICE",
+        humanAttendanceStateVersion: 1,
         lastMessageContent: "Ola, tudo bem?",
         leadId: body.lead.id,
+        status: "HUMAN_TAKEOVER",
       },
     });
     expect(sendText).toHaveBeenCalledWith(
@@ -200,7 +205,10 @@ describe("CRM WhatsApp start conversation", () => {
     });
     expect(session).toMatchObject({
       buyerPhone: "5511977776666",
+      firstHandledAt: null,
+      humanAttendanceState: null,
       lastMessageContent: "Mensagem com falha.",
+      status: "ACTIVE",
     });
     const [message] = await whatsappRepository.listMessages({
       limit: 1,
@@ -225,24 +233,4 @@ function requestStartConversation(
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });
-}
-
-function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
 }

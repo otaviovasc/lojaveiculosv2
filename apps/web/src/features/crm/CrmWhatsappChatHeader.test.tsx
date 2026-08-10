@@ -99,4 +99,39 @@ describe("CrmWhatsappChatHeader", () => {
       name: "Respondeu",
     });
   });
+
+  it("shows the current human attendance state in the chat header", () => {
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        canAssignSession={false}
+        canCloseSession={false}
+        canMarkRead={false}
+        canScheduleMessages={false}
+        canTagSessions={false}
+        canToggleIntervention={false}
+        onAddTag={vi.fn(async () => false)}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={vi.fn()}
+        onToggleIntervention={vi.fn()}
+        session={{
+          buyerName: "Ana Premium",
+          channel: "WHATSAPP",
+          humanAttendanceState: "IN_HUMAN_SERVICE",
+          id: "session-1",
+          status: "HUMAN_TAKEOVER",
+          uuid: "session-1",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Em atendimento Humano")).toHaveClass(
+      "crm-whatsapp-human-attendance-in-service",
+    );
+  });
 });

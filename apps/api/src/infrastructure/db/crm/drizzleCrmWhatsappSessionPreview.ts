@@ -39,17 +39,10 @@ function sessionStatusPreview(
   input: IngestCrmWhatsappMessageInput,
   session: WhatsappSessionRow,
 ) {
-  if (input.direction === "OUTBOUND" && input.senderType === "HUMAN") {
-    return {
-      firstHandledAt: session.firstHandledAt ?? input.providerTimestamp,
-      humanTakeoverAt: session.humanTakeoverAt ?? input.providerTimestamp,
-      status: "HUMAN_TAKEOVER" as const,
-    };
-  }
   if (input.direction === "OUTBOUND") {
-    return {
-      firstHandledAt: session.firstHandledAt ?? input.providerTimestamp,
-    };
+    return input.firstHandledAt
+      ? { firstHandledAt: session.firstHandledAt ?? input.firstHandledAt }
+      : {};
   }
   const freshLeadAt =
     session.freshLeadAt ?? input.freshLeadAt ?? input.providerTimestamp;
@@ -58,7 +51,10 @@ function sessionStatusPreview(
   }
   return {
     freshLeadAt,
+    humanAttendanceState: null,
+    humanHandlingStartedAt: null,
     humanTakeoverAt: null,
+    interventionId: null,
     status: "ACTIVE" as const,
   };
 }

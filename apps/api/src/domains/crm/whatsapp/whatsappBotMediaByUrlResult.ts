@@ -47,7 +47,6 @@ export async function recordBotMediaLeadActivity(
     messageExternalId: string;
     occurredAt: Date;
     provider: string;
-    raw: unknown;
     sessionId: string;
   },
 ) {
@@ -63,7 +62,6 @@ export async function recordBotMediaLeadActivity(
         sessionId: input.sessionId,
       },
       provider: input.provider,
-      raw: input.raw,
     },
     occurredAt: input.occurredAt,
     storeId: scope.storeId as never,

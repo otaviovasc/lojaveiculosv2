@@ -1,15 +1,23 @@
-import type { CrmWhatsappSession } from "../ports/crmWhatsappRepository.js";
+import type {
+  CrmWhatsappHumanAttendanceState,
+  CrmWhatsappSession,
+} from "../ports/crmWhatsappRepository.js";
 import {
   getCrmWhatsappRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 
 export type InterventionEventDetails = {
+  attendanceState: CrmWhatsappHumanAttendanceState | null;
   durationSeconds: number | null;
   endedAt: Date | null;
+  interventionId: string | null;
   messageCount: number;
   reason: string | null;
+  source: string | null;
   startedAt: Date | null;
+  stateChangedAt: Date | null;
+  stateVersion: number | null;
   summary: string | null;
 };
 
@@ -20,10 +28,15 @@ const maxInterventionSummaryLineLength = 180;
 export async function buildInterventionDetails(
   input: {
     active: boolean;
+    attendanceChangedAt?: Date | null;
+    attendanceState?: CrmWhatsappHumanAttendanceState | null;
+    attendanceStateVersion?: number | null;
     endedAt?: Date | null;
     excludedMessageId?: string;
+    interventionId?: string | null;
     reason?: string | null;
     session: CrmWhatsappSession;
+    source?: string | null;
     startedAt?: Date | null;
   },
   ports: CrmServicePorts,
@@ -39,11 +52,20 @@ export async function buildInterventionDetails(
       : null;
   if (input.active || !startedAt || !endedAt) {
     return {
+      attendanceState:
+        input.attendanceState ?? input.session.humanAttendanceState,
       durationSeconds,
       endedAt,
+      interventionId: input.interventionId ?? input.session.interventionId,
       messageCount: 0,
       reason: input.reason ?? null,
+      source: input.source ?? null,
       startedAt,
+      stateChangedAt:
+        input.attendanceChangedAt ?? input.session.humanAttendanceChangedAt,
+      stateVersion:
+        input.attendanceStateVersion ??
+        input.session.humanAttendanceStateVersion,
       summary: null,
     };
   }
@@ -56,11 +78,19 @@ export async function buildInterventionDetails(
     ports,
   );
   return {
+    attendanceState:
+      input.attendanceState ?? input.session.humanAttendanceState,
     durationSeconds,
     endedAt,
+    interventionId: input.interventionId ?? input.session.interventionId,
     messageCount: transcript.messageCount,
     reason: input.reason ?? null,
+    source: input.source ?? null,
     startedAt,
+    stateChangedAt:
+      input.attendanceChangedAt ?? input.session.humanAttendanceChangedAt,
+    stateVersion:
+      input.attendanceStateVersion ?? input.session.humanAttendanceStateVersion,
     summary: transcript.summary,
   };
 }

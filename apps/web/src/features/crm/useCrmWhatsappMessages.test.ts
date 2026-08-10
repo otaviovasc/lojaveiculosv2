@@ -139,6 +139,39 @@ describe("useCrmWhatsappMessages", () => {
     expect(api.sendCatalogProduct).not.toHaveBeenCalled();
     expect(api.sendQuickMessage).not.toHaveBeenCalled();
   });
+
+  it("does not change human attendance when a reaction succeeds", async () => {
+    const api = createApi();
+    const message = createMessage();
+    vi.mocked(api.sendReaction).mockResolvedValue({
+      ...message,
+      metadata: { reaction: "👍" },
+    });
+    const mergeSessions = vi.fn();
+    let latest: ReturnType<typeof useCrmWhatsappMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: {
+          ...createSession(),
+          humanAttendanceState: "WAITING_HUMAN",
+        },
+        api,
+        mergeSessions,
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await expect(latest!.sendReaction(message, "👍")).resolves.toBe(true);
+
+    expect(api.sendReaction).toHaveBeenCalledWith(message.id, {
+      reaction: "👍",
+    });
+    expect(mergeSessions).not.toHaveBeenCalled();
+  });
 });
 
 function Harness({

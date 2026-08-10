@@ -1,13 +1,15 @@
-import { assertPermission } from "../../../../shared/authorization.js";
+import {
+  assertEntitlement,
+  assertPermission,
+} from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
-  getCrmWhatsappGateway,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
+import { getCrmBillingQuotaGuard } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
@@ -16,14 +18,26 @@ import {
 import {
   toWhatsappConnection,
   type WhatsappConnection,
-  type WhatsappConnectionLiveStatus,
 } from "../../whatsapp/whatsappConnectionModels.js";
+import type {
+  CreatableWhatsappConnectionProvider,
+  WhatsappConnectionOverview,
+} from "../../whatsapp/whatsappConnectionCreation.js";
 import {
   assertCredentialUpdateMatchesProvider,
   buildUpdatedConnectionCredentialsRef,
   buildUpdatedConnectionMetadata,
   type UpdateWhatsappConnectionInput,
 } from "../../whatsapp/whatsappConnectionUpdates.js";
+import {
+  createZapiWebhookSetupIntent,
+  withZapiWebhookSetupState,
+} from "../../whatsapp/zapiWebhookSetupState.js";
+import { runZapiWebhookSetupAttempt } from "./runZapiWebhookSetupAttempt.js";
+import {
+  readConnectionLiveStatus,
+  sealUpdatedZapiCredentials,
+} from "../../whatsapp/zapiConnectionCredentialUpdate.js";
 
 export type { WhatsappConnection } from "../../whatsapp/whatsappConnectionModels.js";
 export type { UpdateWhatsappConnectionInput } from "../../whatsapp/whatsappConnectionUpdates.js";
@@ -31,6 +45,46 @@ export type { UpdateWhatsappConnectionInput } from "../../whatsapp/whatsappConne
 const readPermission = "crm.whatsapp.list";
 const updatePermission = "crm.whatsapp.connection.manage";
 const credentialUpdatePermission = "crm.whatsapp.integrations.manage";
+const creatableProviders = [
+  "zapi",
+  "composio_whatsapp",
+] as const satisfies readonly CreatableWhatsappConnectionProvider[];
+
+export async function getWhatsappConnectionOverview(
+  context: ServiceContext,
+  ports: CrmServicePorts,
+): Promise<WhatsappConnectionOverview> {
+  const connections = await listWhatsappConnections(context, ports);
+  const scope = requireCrmWhatsappScope(context);
+  const getAllowance = getCrmBillingQuotaGuard(ports).getAllowance;
+  if (!getAllowance) {
+    throw new Error("Billing quota allowance resolver is unavailable.");
+  }
+  const allowance = await getAllowance({
+    quotaKey: "crm_zapi",
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
+  const configured = new Set(
+    connections
+      .filter((connection) => connection.status !== "archived")
+      .map((connection) => connection.provider),
+  );
+  const entitlements =
+    "entitlements" in context && Array.isArray(context.entitlements)
+      ? context.entitlements
+      : [];
+  return {
+    allowance,
+    availableProviders: creatableProviders.filter(
+      (provider) =>
+        !configured.has(provider) &&
+        (provider !== "zapi" ||
+          (allowance.remaining > 0 && entitlements.includes("crm_zapi"))),
+    ),
+    connections,
+  };
+}
 
 export async function listWhatsappConnections(
   context: ServiceContext,
@@ -50,7 +104,7 @@ export async function listWhatsappConnections(
     connections.map(async (connection) =>
       toWhatsappConnection(
         connection,
-        await readConnectionLiveStatus(connection, ports),
+        await readConnectionLiveStatus(context, connection, ports),
       ),
     ),
   );
@@ -70,12 +124,9 @@ export async function updateWhatsappConnection(
   ports: CrmServicePorts,
 ): Promise<WhatsappConnection> {
   assertPermission(context, updatePermission);
-  if (
-    input.composioCredentials ||
-    input.credentialsEnv ||
-    input.instanceCredentials
-  ) {
+  if (input.instanceCredentials) {
     assertPermission(context, credentialUpdatePermission);
+    assertEntitlement(context as never, "crm_zapi");
   }
   const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.connection.update.started", {
@@ -108,55 +159,54 @@ export async function updateWhatsappConnection(
         throw new WhatsappConnectionNotFoundError(input.connectionId);
       }
       assertCredentialUpdateMatchesProvider(current, input);
-      const metadata = buildUpdatedConnectionMetadata(current.metadata, input);
+      const safeInput = input.instanceCredentials
+        ? {
+            ...input,
+            instanceCredentials: await sealUpdatedZapiCredentials(
+              input.instanceCredentials,
+              current,
+              scope,
+              ports,
+            ),
+          }
+        : input;
+      let metadata = buildUpdatedConnectionMetadata(
+        current.metadata,
+        safeInput,
+      );
+      if (input.instanceCredentials) {
+        metadata = withZapiWebhookSetupState(
+          metadata ?? current.metadata,
+          createZapiWebhookSetupIntent(current.id),
+        );
+      }
       const credentialsRef = buildUpdatedConnectionCredentialsRef(
-        input,
+        safeInput,
         current,
       );
       const updated = await repository.updateConnection({
         ...(credentialsRef ? { credentialsRef } : {}),
         ...(input.displayName ? { displayName: input.displayName } : {}),
-        ...(input.externalConnectionId !== undefined
-          ? { externalConnectionId: input.externalConnectionId }
-          : {}),
-        ...(input.externalInstanceId !== undefined
-          ? { externalInstanceId: input.externalInstanceId }
-          : input.instanceCredentials
-            ? { externalInstanceId: input.instanceCredentials.instanceId }
-            : {}),
         ...(metadata ? { metadata } : {}),
-        ...(input.phone !== undefined ? { phone: input.phone } : {}),
-        ...(input.status ? { status: input.status } : {}),
-        ...(input.webhookUrl !== undefined
-          ? { webhookUrl: input.webhookUrl }
-          : {}),
         connectionId: current.id,
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
       });
       if (!updated)
         throw new WhatsappConnectionNotFoundError(input.connectionId);
+      if (input.instanceCredentials && input.webhookSetupTarget) {
+        await runZapiWebhookSetupAttempt(
+          context,
+          { connectionId: updated.id, ...input.webhookSetupTarget },
+          ports,
+        );
+      }
+      const finalConnection =
+        (await repository.findConnectionById(updated.id)) ?? updated;
       return toWhatsappConnection(
-        updated,
-        await readConnectionLiveStatus(updated, ports),
+        finalConnection,
+        await readConnectionLiveStatus(context, finalConnection, ports),
       );
     },
   );
-}
-
-async function readConnectionLiveStatus(
-  connection: CrmConnection,
-  ports: CrmServicePorts,
-): Promise<WhatsappConnectionLiveStatus> {
-  return getCrmWhatsappGateway(ports)
-    .getConnectionStatus(connection)
-    .catch((error: unknown): WhatsappConnectionLiveStatus => ({
-      checkedAt: new Date(),
-      connected: null,
-      connectedPhone: null,
-      errorMessage:
-        error instanceof Error ? error.message : "Unknown provider error.",
-      providerStatus: "error",
-      smartphoneConnected: null,
-    }));
 }

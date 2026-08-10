@@ -84,6 +84,11 @@ function filterMemorySessions(input: {
     .filter(
       (session) => !input.query.status || session.status === input.query.status,
     )
+    .filter(
+      (session) =>
+        !input.query.humanAttendanceState ||
+        session.humanAttendanceState === input.query.humanAttendanceState,
+    )
     .filter((session) => matchesTagFilter(session, input))
     .filter((session) => matchesFilter(session, input.query))
     .filter((session) => matchesSearch(session, input.query.search))

@@ -8,9 +8,8 @@ The target is the Railway project `respectful-respect`
 (`fcb43bc7-1d5d-40c2-96cd-420f34d99b5b`) with isolated `production` and
 `staging` environments.
 
-As of 2026-07-16, staging contains the six declared resources. Product
-Postgres, audit Postgres, and Redis are running successfully; API, web, and the
-CRM cron service exist without code deployments. Production remains empty.
+Staging declares the API, web, CRM schedule worker, billing reconciliation
+worker, product Postgres, audit Postgres, and Redis. Production remains empty.
 
 Staging public domains are:
 
@@ -33,6 +32,10 @@ between the two processes. Database and Redis URLs remain direct typed
 references to their Railway resources. `railway config plan` reported zero
 drift after this wiring was applied.
 
+The web service receives `VITE_API_BASE_URL` from the API service's
+`API_BASE_URL` reference, so browser requests cannot silently fall back to the
+web service's SPA route and parse `index.html` as an API response.
+
 The following staging shared variables contain explicit `keepme_*` or
 `keepme-*.invalid` placeholders and must be replaced in Railway before the
 corresponding capability is enabled:
@@ -40,7 +43,10 @@ corresponding capability is enabled:
 - Core launch: `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`,
   `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`,
   `R2_PUBLIC_BASE_URL`, and `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY`.
-- CRM WhatsApp: `CRM_ZAPI_CLIENT_TOKEN` and `CRM_ZAPI_WEBHOOK_TOKEN`.
+- CRM messaging: `CRM_ZAPI_CLIENT_TOKEN`, the credential-encryption key, and
+  the Composio/Meta variables documented in `docs/ops/env-vars.md`. Z-API
+  webhook authentication uses server-generated per-connection secrets, not a
+  shared Railway variable.
 - OpenRouter: `OPENROUTER_API_KEY`. AI document suggestions and inventory
   resale analysis remain unavailable until this placeholder is replaced.
 - Asaas sandbox: `ASAAS_API_KEY`, `ASAAS_WEBHOOK_SECRET`, and
@@ -64,6 +70,7 @@ Each persistent environment should contain:
 - `lojaveiculosv2-web`
 - `lojaveiculosv2-api`
 - `lojaveiculosv2-crm-schedule-worker`
+- `lojaveiculosv2-billing-reconciliation-worker`
 - product Postgres
 - audit Postgres
 - Redis
@@ -92,9 +99,23 @@ separate because audit isolation is a product invariant, not optional capacity.
 - Keep PR environments disabled until their feedback value justifies Railway
   usage.
 - API deployment healthcheck path: `/ready`.
+- API startup applies the migration chain, reconciles the immutable
+  server-owned billing catalog, then starts HTTP. Catalog reconciliation is
+  idempotent, serialized with a Postgres advisory lock, and fails the deploy on
+  definition drift rather than overwriting an existing version.
+- API deployment overlap is explicitly zero. The old revision stops before the
+  new revision can activate a catalog, trading a short deploy interruption for
+  a guarantee that two binary versions cannot serve different active-catalog
+  contracts concurrently.
 - Web deployment healthcheck path: `/health`.
 - CRM schedule worker: `*/5 * * * *` UTC; no HTTP healthcheck because each run
   must terminate.
+- Billing reconciliation worker: `*/5 * * * *` UTC; it claims durable billing
+  tasks and exits. Provider writes occur only during scheduled executions,
+  never during build or deploy.
+- Catalog publication is not provider reconciliation: it may install and
+  activate catalog definition rows during API startup, but it never changes
+  subscription items, provider subscriptions, invoices, or payments.
 - `/health` is liveness; `/ready` verifies product and audit database access.
 - Treat Redis loss as a degraded CRM realtime state rather than making the
   entire API unready; Postgres remains the durable message source of truth.

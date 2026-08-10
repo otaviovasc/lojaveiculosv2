@@ -3,60 +3,45 @@ import { assertOfficialMessagingWindow } from "../messaging/assertOfficialMessag
 import {
   getCrmConnectionRepository,
   getCrmRealtimePublisher,
-  getCrmRepository,
   getCrmWhatsappGateway,
+  getCrmWhatsappOutboundIntentRepository,
   getCrmWhatsappRepository,
   requireCrmScope,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import type { CrmConnection } from "../ports/crmConnectionRepository.js";
-import type { CrmWhatsappGateway } from "../ports/crmWhatsappGateway.js";
-import type {
-  CrmWhatsappMessageSenderType,
-  CrmWhatsappMessageType,
-  CrmWhatsappSession,
-} from "../ports/crmWhatsappRepository.js";
 import type { WhatsappMessage } from "./whatsappModels.js";
 import { toWhatsappMessage, toWhatsappSession } from "./whatsappModels.js";
-import {
-  forwardWhatsappMessageToBot,
-  notifyWhatsappInterventionChangedToBot,
-} from "./whatsappBotWebhookForwarding.js";
+import { forwardWhatsappMessageToBot } from "./whatsappBotWebhookForwarding.js";
 import {
   WhatsappConnectionNotFoundError,
   WhatsappSessionNotFoundError,
 } from "./whatsappSendErrors.js";
 import { providerAddressForSession } from "../messaging/crmMessagingProvider.js";
+import { assertWhatsappProviderEffectAllowed } from "./assertWhatsappProviderEffectAllowed.js";
+import {
+  defaultOutboundSenderType,
+  fingerprintOutboundIntent,
+  outboundIdempotencyConflictError,
+  outboundReconciliationPendingError,
+  readPreparedOutboundResult,
+  recordOutboundLeadInteraction,
+  requireOutboundIdempotencyKey,
+  writePreparedOutboundResult,
+} from "./sendWhatsappOutboundSupport.js";
+import type {
+  PreparedOutboundWhatsappMessage,
+  SendWhatsappOutboundInput,
+} from "./sendWhatsappOutboundTypes.js";
+import {
+  notifyHumanOutboundAttendanceStarted,
+  transitionConfirmedHumanOutboundAttendance,
+} from "./sendWhatsappOutboundAttendance.js";
 
-const terminalLeadStatuses = new Set(["archived", "lost", "won"]);
-
-export type ProviderSentMessage = {
-  externalId: string;
-  providerTimestamp: Date;
-  raw: Record<string, unknown>;
-};
-
-export type PreparedOutboundWhatsappMessage = {
-  content: string;
-  leadActivityContent?: string;
-  mediaType?: string;
-  mediaUrl?: string;
-  metadata: Record<string, unknown>;
-  sent: ProviderSentMessage;
-  type: CrmWhatsappMessageType;
-};
-
-export type SendWhatsappOutboundInput = {
-  prepare: (input: {
-    connection: CrmConnection;
-    gateway: CrmWhatsappGateway;
-    phone: string;
-    scope: { storeId: string; tenantId: string };
-    session: CrmWhatsappSession;
-  }) => Promise<PreparedOutboundWhatsappMessage>;
-  senderType?: CrmWhatsappMessageSenderType;
-  sessionId: string;
-};
+export type {
+  PreparedOutboundWhatsappMessage,
+  ProviderSentMessage,
+  SendWhatsappOutboundInput,
+} from "./sendWhatsappOutboundTypes.js";
 
 export async function sendWhatsappOutboundMessage(
   context: ServiceContext,
@@ -84,16 +69,71 @@ export async function sendWhatsappOutboundMessage(
   ) {
     throw new WhatsappConnectionNotFoundError(session.connectionId);
   }
+  assertWhatsappProviderEffectAllowed(context, connection);
   await assertOfficialMessagingWindow(connection, session, whatsappRepository);
-  const providerAddress = providerAddressForSession(session);
-  const prepared = await input.prepare({
-    connection,
-    gateway: getCrmWhatsappGateway(ports),
-    phone: providerAddress,
-    scope,
-    session,
+  const intents = getCrmWhatsappOutboundIntentRepository(ports);
+  const now = new Date();
+  const intentFingerprint = fingerprintOutboundIntent(
+    input.idempotencyPayload ?? input.idempotencyKey ?? context.requestId,
+  );
+  const claimed = await intents.claim({
+    connectionId: connection.id,
+    fingerprint: intentFingerprint,
+    idempotencyKey: requireOutboundIdempotencyKey(
+      input.idempotencyKey ??
+        `${context.correlationId ?? context.requestId}:${intentFingerprint}`,
+    ),
+    now,
+    sessionId: session.id,
+    staleBefore: new Date(now.getTime() - 2 * 60_000),
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
   });
-  const senderType = input.senderType ?? defaultSenderType(context);
+  if (claimed.kind === "conflict") {
+    throw outboundIdempotencyConflictError();
+  }
+  if (claimed.kind === "completed") {
+    if (claimed.intent.messageId) {
+      const existing = await whatsappRepository.findMessageById({
+        messageId: claimed.intent.messageId,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
+      if (existing) return toWhatsappMessage(existing);
+    }
+    throw outboundReconciliationPendingError();
+  }
+  if (claimed.kind === "in_progress" || claimed.kind === "indeterminate") {
+    throw outboundReconciliationPendingError();
+  }
+  let prepared: PreparedOutboundWhatsappMessage;
+  if (claimed.kind === "provider_succeeded") {
+    prepared = readPreparedOutboundResult(claimed.intent.providerResult);
+  } else {
+    try {
+      prepared = await input.prepare({
+        connection,
+        gateway: getCrmWhatsappGateway(ports),
+        phone: providerAddressForSession(session),
+        scope,
+        session,
+      });
+      await intents.recordProviderSuccess({
+        claimToken: claimed.intent.claimToken,
+        id: claimed.intent.id,
+        providerResult: writePreparedOutboundResult(prepared),
+      });
+    } catch (error) {
+      await intents
+        .markIndeterminate({
+          claimToken: claimed.intent.claimToken,
+          id: claimed.intent.id,
+        })
+        .catch(() => undefined);
+      throw error;
+    }
+  }
+  const senderType = input.senderType ?? defaultOutboundSenderType(context);
   const result = await whatsappRepository.ingestMessage({
     ...(session.buyerChatLid ? { buyerChatLid: session.buyerChatLid } : {}),
     ...(session.buyerName ? { buyerName: session.buyerName } : {}),
@@ -118,6 +158,16 @@ export async function sendWhatsappOutboundMessage(
     tenantId: scope.tenantId as never,
     type: prepared.type,
   });
+  const attendanceTransition = await transitionConfirmedHumanOutboundAttendance(
+    {
+      interventionId: claimed.intent.id,
+      providerTimestamp: prepared.sent.providerTimestamp,
+      repository: whatsappRepository,
+      senderType,
+      session: result.session,
+    },
+  );
+  const currentSession = attendanceTransition.session;
 
   if (session.leadId && result.createdMessage) {
     await recordOutboundLeadInteraction(
@@ -128,7 +178,6 @@ export async function sendWhatsappOutboundMessage(
         messageExternalId: prepared.sent.externalId,
         occurredAt: prepared.sent.providerTimestamp,
         provider: connection.provider,
-        raw: prepared.sent.raw,
         sessionId: session.id,
       },
       ports,
@@ -136,7 +185,13 @@ export async function sendWhatsappOutboundMessage(
   }
 
   const message = toWhatsappMessage(result.message);
-  const realtimeSession = toWhatsappSession(result.session, connection);
+  await intents.complete({
+    claimToken: claimed.intent.claimToken,
+    id: claimed.intent.id,
+    messageId: String(result.message.id),
+    sessionId: String(currentSession.id),
+  });
+  const realtimeSession = toWhatsappSession(currentSession, connection);
   await getCrmRealtimePublisher(ports).publish({
     connectionId: connection.id,
     message,
@@ -157,86 +212,20 @@ export async function sendWhatsappOutboundMessage(
     {
       connection,
       message: result.message,
-      session: result.session,
+      session: currentSession,
     },
     ports,
   );
-  if (
-    session.status !== "HUMAN_TAKEOVER" &&
-    result.session.status === "HUMAN_TAKEOVER"
-  ) {
-    await notifyWhatsappInterventionChangedToBot(
-      context,
-      {
-        active: true,
-        connection,
-        reason: "human_outbound_message",
-        session: result.session,
-        startedAt: result.session.humanTakeoverAt ?? new Date(),
-      },
-      ports,
-    );
-  }
+  await notifyHumanOutboundAttendanceStarted(
+    context,
+    {
+      changed: attendanceTransition.changed,
+      connection,
+      providerTimestamp: prepared.sent.providerTimestamp,
+      session: currentSession,
+    },
+    ports,
+  );
 
   return message;
-}
-
-function defaultSenderType(
-  context: ServiceContext,
-): CrmWhatsappMessageSenderType {
-  if (context.actor.kind === "integration") return "AI";
-  if (context.actor.kind === "system") return "SYSTEM";
-  return "HUMAN";
-}
-
-async function recordOutboundLeadInteraction(
-  context: ServiceContext,
-  input: {
-    content: string;
-    leadId: string;
-    messageExternalId: string;
-    occurredAt: Date;
-    provider: string;
-    raw: unknown;
-    sessionId: string;
-  },
-  ports: CrmServicePorts,
-) {
-  const scope = requireCrmScope(context);
-  const repository = getCrmRepository(ports);
-  const lead = await repository.findLeadById({
-    leadId: input.leadId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (!lead) return;
-
-  if (!terminalLeadStatuses.has(lead.status) && lead.status === "new") {
-    await repository.updateLead({
-      leadId: lead.id,
-      status: "contacted",
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-    });
-  }
-
-  await repository.createActivity({
-    activityType: "whatsapp",
-    content: input.content,
-    createdByUserId:
-      context.actor.kind === "user" ? (context.actor.id as never) : null,
-    direction: "outbound",
-    leadId: lead.id,
-    metadata: {
-      crmWhatsapp: {
-        messageExternalId: input.messageExternalId,
-        sessionId: input.sessionId,
-      },
-      provider: input.provider,
-      raw: input.raw,
-    },
-    occurredAt: input.occurredAt,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
 }

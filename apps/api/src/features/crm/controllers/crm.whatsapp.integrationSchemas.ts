@@ -146,6 +146,26 @@ export const whatsappBotActionSchema = z
   .superRefine((input, context) => {
     rejectForbiddenBotPayloadKeys(input.payload ?? {}, context, ["payload"]);
 
+    if (input.action === "set_intervention") {
+      const parsed = z
+        .object({
+          enabled: z.boolean(),
+          interventionId: z.string().uuid().optional(),
+          reason: z.string().trim().min(1).max(120).optional(),
+          source: z.enum(["bot", "auto", "ai_request"]).optional(),
+        })
+        .strict()
+        .safeParse(input.payload);
+      if (!parsed.success) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "set_intervention payload must include enabled and valid optional interventionId, reason, and source fields.",
+          path: ["payload"],
+        });
+      }
+    }
+
     if (input.action !== "credere_create_simulation") return;
     const simulation = input.payload?.simulation;
     if (!input.idempotencyKey) {

@@ -11,6 +11,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
+import { CrmWhatsappHumanAttendanceBadge } from "./CrmWhatsappHumanAttendanceBadge";
 import {
   formatRelativeSessionTime,
   formatSessionName,
@@ -131,7 +132,11 @@ export function SessionList({
                   ) : null}
                 </span>
                 <span className="crm-whatsapp-session-meta">
-                  <SessionStatusBadge status={session.status} />
+                  {session.humanAttendanceState ? (
+                    <CrmWhatsappHumanAttendanceBadge session={session} />
+                  ) : session.status !== "HUMAN_TAKEOVER" ? (
+                    <SessionStatusBadge status={session.status} />
+                  ) : null}
                   {session.sessionTags?.length
                     ? session.sessionTags.slice(0, 2).map((tag) => (
                         <span
@@ -194,11 +199,14 @@ function SessionStatusBadge({
 }: {
   status: CrmWhatsappSession["status"];
 }) {
-  const labels: Record<CrmWhatsappSession["status"], string> = {
+  if (status === "HUMAN_TAKEOVER") return null;
+  const labels: Record<
+    Exclude<CrmWhatsappSession["status"], "HUMAN_TAKEOVER">,
+    string
+  > = {
     ACTIVE: "Ativo",
     COMPLETED: "Concluída",
     EXPIRED: "Expirada",
-    HUMAN_TAKEOVER: "Intervenção humana",
     MINIBOT_ACTIVE: "Bot ativo",
   };
   return (

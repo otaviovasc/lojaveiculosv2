@@ -1,29 +1,22 @@
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   storeEntitlements,
   storeEntitlementEvents,
   stores,
-  subscriptionItems,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
   BillingOverview,
   BillingRepository,
-  BillingSubscription,
-  StoreEntitlement,
 } from "../../../domains/billing/ports/billingRepository.js";
 import {
   createBillingAuthority,
   createBillingOverview,
 } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import { getTenantOverview } from "./drizzleAgencyBillingOverviewSupport.js";
-import {
-  findPlan,
-  findTenantSubscription,
-  listAddons,
-  listPlans,
-} from "./drizzleBillingCatalogSupport.js";
+import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
+import { listAddons, listPlans } from "./drizzleBillingCatalogSupport.js";
 import {
   getFinancialSummary,
   listChargeables,
@@ -32,6 +25,18 @@ import {
 import { listStoreScopedAllocations } from "./drizzleStoreBillingAllocationSupport.js";
 import { updateStoreSubscriptionSelection } from "./drizzleBillingSelection.js";
 import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
+import {
+  cancelZapiAddonContract,
+  confirmZapiAddonCancellationSync,
+  completeZapiAddonContractSetup,
+  listAddonContracts,
+  markZapiAddonContractScheduled,
+  requestZapiAddonContract,
+} from "./drizzleBillingAddonContracts.js";
+import {
+  findSubscription,
+  listEntitlements,
+} from "./drizzleBillingRepositoryReads.js";
 
 export type DrizzleBillingClient = PostgresJsDatabase<typeof schema>;
 
@@ -44,11 +49,34 @@ export function createDrizzleBillingRepository(
         projectSelectedEntitlements(tx as DrizzleBillingClient, input),
       );
     },
+    async cancelZapiAddon(input) {
+      return db.transaction((tx) =>
+        cancelZapiAddonContract(tx as DrizzleBillingClient, input),
+      );
+    },
+    async confirmZapiAddonCancellationSync(input) {
+      return db.transaction((tx) =>
+        confirmZapiAddonCancellationSync(tx as DrizzleBillingClient, input),
+      );
+    },
+    async completeZapiAddonSetup(input) {
+      return db.transaction((tx) =>
+        completeZapiAddonContractSetup(tx as DrizzleBillingClient, input),
+      );
+    },
     async getOverview(input) {
       return getOverview(db, input);
     },
     async getTenantOverview(input) {
       return getTenantOverview(db, input);
+    },
+    async markZapiAddonScheduled(input) {
+      return markZapiAddonContractScheduled(db, input);
+    },
+    async requestZapiAddon(input) {
+      return db.transaction((tx) =>
+        requestZapiAddonContract(tx as DrizzleBillingClient, input),
+      );
     },
     async storeExistsInTenant(input) {
       const [store] = await db
@@ -131,14 +159,22 @@ async function getOverview(
     tenantId: string;
   },
 ): Promise<BillingOverview> {
-  const [addons, billingPlans, entitlements, subscription, events] =
-    await Promise.all([
-      listAddons(db),
-      listPlans(db),
-      listEntitlements(db, input),
-      findSubscription(db, input),
-      listEntitlementEvents(db, input),
-    ]);
+  const catalogVersion = await findActiveBillingCatalogVersion(db);
+  const [
+    addons,
+    addonContracts,
+    billingPlans,
+    entitlements,
+    subscription,
+    events,
+  ] = await Promise.all([
+    listAddons(db, catalogVersion),
+    listAddonContracts(db, input),
+    listPlans(db, catalogVersion),
+    listEntitlements(db, input),
+    findSubscription(db, input),
+    listEntitlementEvents(db, input),
+  ]);
   const [allocations, chargeables, financialSummary] = await Promise.all([
     listStoreScopedAllocations(db, input, billingPlans, subscription),
     listChargeables(db, input, billingPlans, subscription),
@@ -146,6 +182,7 @@ async function getOverview(
   ]);
 
   return createBillingOverview({
+    addonContracts,
     addons,
     allocations,
     authority: createBillingAuthority({
@@ -165,65 +202,4 @@ async function getOverview(
     subscription,
     tenantId: input.tenantId as never,
   });
-}
-
-async function listEntitlements(
-  db: DrizzleBillingClient,
-  input: { storeId: string; tenantId: string },
-): Promise<StoreEntitlement[]> {
-  const rows = await db
-    .select()
-    .from(storeEntitlements)
-    .where(
-      and(
-        eq(storeEntitlements.storeId, input.storeId),
-        eq(storeEntitlements.tenantId, input.tenantId),
-      ),
-    )
-    .limit(100);
-
-  return rows.map((row) => ({
-    endsAt: row.endsAt,
-    featureKey: row.featureKey as never,
-    metadata: toRecord(row.metadata),
-    source: row.source,
-    startsAt: row.startsAt,
-    status: row.status,
-  }));
-}
-
-async function findSubscription(
-  db: DrizzleBillingClient,
-  input: { storeId: string; tenantId: string },
-): Promise<BillingSubscription | null> {
-  const subscription = await findTenantSubscription(db, input);
-  if (!subscription) return null;
-
-  const [item] = await db
-    .select()
-    .from(subscriptionItems)
-    .where(
-      and(
-        eq(subscriptionItems.subscriptionId, subscription.id),
-        eq(subscriptionItems.itemType, "plan"),
-        or(
-          eq(subscriptionItems.storeId, input.storeId),
-          isNull(subscriptionItems.storeId),
-        ),
-      ),
-    )
-    .orderBy(desc(subscriptionItems.createdAt))
-    .limit(1);
-  const plan = item?.planId ? await findPlan(db, item.planId) : null;
-
-  return {
-    ...subscription,
-    plan,
-  };
-}
-
-function toRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
 }

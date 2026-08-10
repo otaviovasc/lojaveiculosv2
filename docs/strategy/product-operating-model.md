@@ -142,6 +142,30 @@ Unavailable or simulated regulatory/provider capabilities must say explicitly
 that no official operation occurred. They must never show a synthetic success
 state.
 
+### CRM commercial decision — 2026-08
+
+- **Segment and outcome:** the initial ICP gets one CRM inbox for Official
+  WhatsApp and Instagram, with the optional ability to keep a Loja-managed
+  Z-API connection.
+- **Billing:** immutable catalog `2026-08-v1` prices CRM at R$179/month and the
+  optional Z-API service at R$100/month. The dealership pays Meta directly;
+  Loja pays Composio and includes a soft allowance of 10,000 tool executions
+  per store and billing month. There is no automatic overage charge or cutoff.
+- **Renewal rule:** an existing customer can schedule or cancel Z-API for the
+  next existing due date. No immediate charge or proration occurs, and other
+  subscription items remain unchanged. Loja buys the provider month and starts
+  setup only after matching payment evidence.
+- **Authority and support:** store owners and billing-authorized agencies buy
+  for their scoped store. Platform support alone handles Z-API credentials,
+  pairing, and setup, using the stable request code and WhatsApp
+  `+55 11 94023-1407`.
+- **Leading metrics:** CRM attach rate, paid-Z-API setup time, verified first
+  conversation, integration allowance consumption, provider failure rate, and
+  support minutes per activated store.
+- **Degraded state:** pending payment, awaiting setup, partial configuration,
+  disconnected, or provider unavailable are explicit states. None imply a
+  message was sent or an official channel is active.
+
 ## Roadmap Decision Test
 
 Each proposed initiative gets a one-page decision record with:

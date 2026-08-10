@@ -6,8 +6,8 @@ import {
 import {
   buildInstanceUrl,
   createProviderMessageId,
+  fetchZapi,
   parseJson,
-  summarize,
   type ZapiCredentials,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 import type { CrmWhatsappSendMediaInput } from "../../domains/crm/ports/crmWhatsappGateway.js";
@@ -25,7 +25,9 @@ export async function sendZapiMedia(
 ) {
   const response = await fetchZapiWithRateLimitRetry(
     () =>
-      fetchImpl(
+      fetchZapi(
+        credentials,
+        fetchImpl,
         `${buildInstanceUrl(credentials)}${createZapiMediaEndpoint(input)}`,
         {
           body: JSON.stringify(createZapiMediaBody(input)),
@@ -45,19 +47,18 @@ export async function sendZapiMedia(
   if (!response.ok) {
     if (response.status === 429) {
       throw new CrmWhatsappGatewayError(
-        `ZAPI send media failed with HTTP 429: ${summarize(text)}`,
+        "ZAPI send media failed with HTTP 429",
         429,
         readRetryAfterSeconds(response.headers) ?? 1,
       );
     }
     throw new CrmWhatsappGatewayError(
-      `ZAPI send media failed with HTTP ${response.status}: ${summarize(text)}`,
+      `ZAPI send media failed with HTTP ${response.status}`,
     );
   }
 
   return {
     externalId: createProviderMessageId(payload),
     providerTimestamp: new Date(),
-    raw: payload,
   };
 }

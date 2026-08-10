@@ -3,8 +3,12 @@ import {
   formatMessageTime,
   formatRelativeSessionTime,
   mergeMessagesFromServer,
+  mergeSessionsFromServer,
 } from "./crmWhatsappModel";
-import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
+import type {
+  CrmWhatsappMessage,
+  CrmWhatsappSession,
+} from "./crmWhatsappTypes";
 
 describe("crmWhatsappModel", () => {
   it("formats conversation timestamps with the Brazilian 24-hour locale", () => {
@@ -59,7 +63,72 @@ describe("crmWhatsappModel", () => {
       serverEcho,
     ]);
   });
+
+  it("does not regress attendance when an older realtime session arrives", () => {
+    const current = createSession({
+      humanAttendanceChangedAt: "2026-07-03T12:05:00.000Z",
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceStateVersion: 2,
+      humanHandlingStartedAt: "2026-07-03T12:05:00.000Z",
+      interventionId: "intervention-1",
+      status: "HUMAN_TAKEOVER",
+    });
+    const stale = createSession({
+      humanAttendanceChangedAt: "2026-07-03T12:04:00.000Z",
+      humanAttendanceState: "WAITING_HUMAN",
+      humanAttendanceStateVersion: 1,
+      humanHandlingStartedAt: null,
+      interventionId: "intervention-1",
+      status: "ACTIVE",
+    });
+
+    expect(mergeSessionsFromServer([current], [stale])[0]).toMatchObject({
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceStateVersion: 2,
+      humanHandlingStartedAt: "2026-07-03T12:05:00.000Z",
+      status: "HUMAN_TAKEOVER",
+    });
+  });
+
+  it("clears a stale attendance badge when a newer tombstone arrives", () => {
+    const current = createSession({
+      humanAttendanceChangedAt: "2026-07-03T12:05:00.000Z",
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceStateVersion: 2,
+      humanHandlingStartedAt: "2026-07-03T12:05:00.000Z",
+      interventionId: "intervention-1",
+    });
+    const cleared = createSession({
+      humanAttendanceChangedAt: "2026-07-03T12:18:00.000Z",
+      humanAttendanceState: null,
+      humanAttendanceStateVersion: 3,
+      humanHandlingStartedAt: null,
+      interventionId: null,
+      status: "ACTIVE",
+    });
+
+    expect(mergeSessionsFromServer([current], [cleared])[0]).toMatchObject({
+      humanAttendanceChangedAt: "2026-07-03T12:18:00.000Z",
+      humanAttendanceState: null,
+      humanAttendanceStateVersion: 3,
+      humanHandlingStartedAt: null,
+      interventionId: null,
+    });
+  });
 });
+
+function createSession(
+  input: Partial<CrmWhatsappSession> = {},
+): CrmWhatsappSession {
+  return {
+    channel: "WHATSAPP",
+    id: "session-1",
+    lastMessageAt: "2026-07-03T12:00:00.000Z",
+    status: "HUMAN_TAKEOVER",
+    uuid: "session-1",
+    ...input,
+  };
+}
 
 function createMessage(
   input: Partial<CrmWhatsappMessage> & { clientId?: string },

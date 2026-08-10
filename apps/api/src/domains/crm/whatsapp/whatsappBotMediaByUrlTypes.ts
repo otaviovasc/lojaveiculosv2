@@ -6,6 +6,7 @@ export type SendWhatsappBotMediaByUrlInput = {
   caption?: string;
   connectionId?: string;
   fileName?: string;
+  idempotencyKey?: string;
   mediaType: "audio" | "document" | "image";
   mediaUrl: string;
   mimeType?: string;

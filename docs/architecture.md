@@ -166,6 +166,20 @@ limits from that immutable catalog selection, while subscription status and
 period dates decide whether access is effective and whether provider billing
 may occur.
 
+The current server-owned catalog is a versioned domain definition. Deployment
+materializes a missing version transactionally and changes one explicit active
+catalog pointer only after the persisted plan, feature, and add-on rows match
+the canonical checksum. Deployed versions are immutable and superseded
+versions cannot be reactivated. Runtime catalog reads resolve through that
+pointer rather than guessing the newest version from a sortable string. Each
+billing overview pins the pointer once so a concurrent activation cannot mix
+plans and add-ons from different versions.
+
+Catalog activation does not migrate commercial contracts. The copied
+`subscription_items.unit_amount_cents` remains the contracted amount until a
+separate, explicit billing reconciliation changes it with provider evidence and
+audit history.
+
 Trial-safe `store_entitlements` remain a separate projection. They determine
 which optional capabilities are available during the trial; deleting paid
 entitlements must not delete the underlying plan selection needed by core

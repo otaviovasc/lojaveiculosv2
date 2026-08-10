@@ -9,6 +9,21 @@ export const whatsappConnectionStatusSchema = z.enum([
   "sandbox",
 ]);
 
+export const whatsappCreateConnectionSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(160).optional(),
+    provider: z.literal("composio_whatsapp"),
+  })
+  .strict();
+
+export const whatsappZapiPairingCodeSchema = z
+  .object({ phone: z.string().trim().min(8).max(30) })
+  .strict();
+
+export const whatsappComposioSenderSchema = z
+  .object({ senderId: z.string().trim().min(1).max(191) })
+  .strict();
+
 export const whatsappScheduledMessageStatusSchema = z.enum([
   "cancelled",
   "failed",
@@ -42,44 +57,35 @@ export const whatsappProcessDueScheduledMessagesSchema = z
 export const whatsappUpdateConnectionSchema = z
   .object({
     catalogPhone: z.string().trim().min(8).max(32).nullable().optional(),
-    connectedPhone: z.string().trim().min(8).max(32).nullable().optional(),
-    credentialsEnv: z
-      .object({
-        apiBaseUrl: z.string().trim().min(1).max(120),
-        clientToken: z.string().trim().min(1).max(120),
-        instanceId: z.string().trim().min(1).max(120),
-        instanceToken: z.string().trim().min(1).max(120),
-      })
-      .strict()
-      .optional(),
-    composioCredentials: z
-      .object({
-        apiKeyEnv: z.literal("COMPOSIO_API_KEY"),
-        connectedAccountId: z.string().trim().min(1).max(191),
-        graphVersion: z
-          .string()
-          .trim()
-          .regex(/^v\d+\.\d+$/u)
-          .optional(),
-      })
-      .strict()
-      .optional(),
     displayName: z.string().trim().min(1).max(120).optional(),
-    externalConnectionId: z.string().trim().max(191).nullable().optional(),
-    externalInstanceId: z.string().trim().max(191).nullable().optional(),
-    instanceCredentials: z
-      .object({
-        instanceId: z.string().trim().min(1).max(191),
-        instanceToken: z.string().trim().min(1).max(500),
-      })
-      .strict()
-      .optional(),
-    phone: z.string().trim().min(8).max(40).nullable().optional(),
     purpose: z.string().trim().max(160).nullable().optional(),
-    status: whatsappConnectionStatusSchema.optional(),
-    webhookUrl: z.string().trim().url().max(500).nullable().optional(),
   })
   .strict()
   .refine((input) => Object.keys(input).length > 0, {
     message: "At least one connection field is required.",
   });
+
+export const whatsappZapiSupportScopeSchema = z
+  .object({
+    storeId: z.string().uuid(),
+    tenantId: z.string().uuid(),
+  })
+  .strict();
+
+export const whatsappZapiSupportCredentialsSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(160).optional(),
+    instanceId: z.string().trim().min(1).max(191),
+    instanceToken: z.string().trim().min(1).max(500),
+    storeId: z.string().uuid(),
+    tenantId: z.string().uuid(),
+  })
+  .strict();
+
+export const whatsappZapiSupportPairingCodeSchema = z
+  .object({
+    phone: z.string().trim().min(8).max(30),
+    storeId: z.string().uuid(),
+    tenantId: z.string().uuid(),
+  })
+  .strict();

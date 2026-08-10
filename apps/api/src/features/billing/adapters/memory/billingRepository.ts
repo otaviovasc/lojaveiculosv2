@@ -1,50 +1,131 @@
 import type {
-  AgencyTenantOverview,
   BillingEntitlementEvent,
   BillingOverview,
   BillingRepository,
-  StoreEntitlement,
 } from "../../../../domains/billing/ports/billingRepository.js";
+import { memoryTrialEntitlements } from "./billingMemoryCatalog.js";
 import {
-  createBillingAuthority,
-  createBillingOverview,
-} from "../../../../domains/billing/readModels/billingOverviewModel.js";
-import {
-  memoryBillingAddons,
-  memoryBillingPlans,
-  memoryTrialEntitlements,
-} from "./billingMemoryCatalog.js";
+  toMemoryBillingOverview,
+  toMemoryTenantOverview,
+} from "./billingRepositoryOverview.js";
 
 export function createMemoryBillingRepository(
   options: { storeId?: string; tenantId?: string } = {},
 ): BillingRepository {
   let entitlements = [...memoryTrialEntitlements];
   let entitlementEvents: BillingEntitlementEvent[] = [];
+  let addonContracts: BillingOverview["addonContracts"] = [];
   const managedStoreId = options.storeId ?? "store_1";
   const managedTenantId = options.tenantId;
 
   return {
     async activateSubscriptionSelection() {},
+    async cancelZapiAddon(input) {
+      const contract = addonContracts.find(
+        (item) => item.storeId === input.storeId && item.status !== "cancelled",
+      );
+      if (!contract) throw new Error("Z-API contract was not found.");
+      const paid =
+        contract.status === "active" ||
+        contract.status === "paid_awaiting_setup";
+      const cancelled = paid
+        ? { ...contract, cancellationScheduledFor: input.effectiveAt }
+        : { ...contract, status: "cancelled" as const };
+      addonContracts = [
+        cancelled,
+        ...addonContracts.filter((item) => item.id !== contract.id),
+      ];
+      return cancelled;
+    },
+    async confirmZapiAddonCancellationSync(input) {
+      const contract = addonContracts.find(
+        (item) => item.storeId === input.storeId && item.status !== "cancelled",
+      );
+      if (!contract) throw new Error("Z-API contract was not found.");
+      const paid =
+        contract.status === "active" ||
+        contract.status === "paid_awaiting_setup";
+      const confirmed = paid
+        ? contract
+        : { ...contract, status: "cancelled" as const };
+      addonContracts = [
+        confirmed,
+        ...addonContracts.filter((item) => item.id !== contract.id),
+      ];
+      return confirmed;
+    },
+    async completeZapiAddonSetup(input) {
+      const contract = addonContracts.find(
+        (item) => item.storeId === input.storeId && item.status !== "cancelled",
+      );
+      if (!contract) throw new Error("Z-API contract was not found.");
+      const active = {
+        ...contract,
+        setupCompletedAt: new Date(),
+        setupConnectionId: input.connectionId,
+        status: "active" as const,
+      };
+      addonContracts = [
+        active,
+        ...addonContracts.filter((item) => item.id !== contract.id),
+      ];
+      return active;
+    },
     async getOverview(input) {
-      return toOverview(
+      return toMemoryBillingOverview(
         input.storeId,
         input.tenantId,
         entitlements,
         entitlementEvents,
+        addonContracts,
         input.billingManagedBy,
         input.currentActorCanManage,
       );
     },
     async getTenantOverview(input) {
-      const overview = toOverview(
+      const overview = toMemoryBillingOverview(
         managedStoreId,
         input.tenantId,
         entitlements,
         entitlementEvents,
+        addonContracts,
         "agency",
         input.currentActorCanManage,
       );
-      return toTenantOverview(overview);
+      return { ...toMemoryTenantOverview(overview), addonContracts };
+    },
+    async markZapiAddonScheduled(input) {
+      const contract = addonContracts.find(
+        (item) => item.id === input.contractId,
+      );
+      if (!contract) throw new Error("Z-API contract was not found.");
+      const scheduled = { ...contract, status: "scheduled" as const };
+      addonContracts = [
+        scheduled,
+        ...addonContracts.filter((item) => item.id !== contract.id),
+      ];
+      return scheduled;
+    },
+    async requestZapiAddon(input) {
+      const existing = addonContracts.find(
+        (item) => item.storeId === input.storeId && item.status !== "cancelled",
+      );
+      if (existing) return existing;
+      const contract = {
+        addonCode: "crm_zapi",
+        cancellationScheduledFor: null,
+        id: `zapi_contract_${addonContracts.length + 1}`,
+        monthlyPriceCents: 10000,
+        paidAt: null,
+        scheduledFor: input.scheduledFor,
+        setupCompletedAt: null,
+        setupConnectionId: null,
+        status: "pending" as const,
+        storeId: input.storeId,
+        supportCode: `ZAPI-MEM${String(addonContracts.length + 1).padStart(9, "0")}`,
+      };
+      addonContracts = [contract, ...addonContracts];
+      return contract;
     },
     async storeExistsInTenant(input) {
       return (
@@ -53,11 +134,12 @@ export function createMemoryBillingRepository(
       );
     },
     async updateSubscriptionSelection(input) {
-      return toOverview(
+      return toMemoryBillingOverview(
         input.storeId,
         input.tenantId,
         entitlements,
         entitlementEvents,
+        addonContracts,
         input.billingManagedBy,
         input.currentActorCanManage,
       );
@@ -94,99 +176,15 @@ export function createMemoryBillingRepository(
         ...entitlementEvents,
       ].slice(0, 25);
 
-      return toOverview(
+      return toMemoryBillingOverview(
         input.storeId,
         input.tenantId,
         entitlements,
         entitlementEvents,
+        addonContracts,
         input.billingManagedBy,
         input.currentActorCanManage,
       );
     },
-  };
-}
-
-function toOverview(
-  storeId: string,
-  tenantId: string,
-  entitlements: StoreEntitlement[],
-  entitlementEvents: BillingEntitlementEvent[],
-  billingManagedBy: "agency" | "store_owner" = "store_owner",
-  currentActorCanManage = true,
-): BillingOverview {
-  return createBillingOverview({
-    addons: memoryBillingAddons,
-    allocations: [
-      {
-        activeEntitlementCount: entitlements.filter(
-          (item) => item.status === "active" || item.status === "trialing",
-        ).length,
-        addonCount: 1,
-        monthlyAmountCents: 54899,
-        planCode: "growth",
-        planName: "Growth",
-        storeId: storeId as never,
-        storeName: "Loja principal",
-        storeSlug: "test-store",
-        subscriptionStatus: "trialing",
-      },
-    ],
-    authority: createBillingAuthority({
-      billingManagedBy,
-      currentActorCanManage,
-    }),
-    entitlementEvents,
-    entitlements,
-    financialSummary: {
-      monthlyRecurringCents: 54899,
-      nextDueAt: null,
-      openInvoiceCount: 0,
-      overdueInvoiceCount: 0,
-      paidThisPeriodCents: 0,
-    },
-    plans: memoryBillingPlans,
-    storeId: storeId as never,
-    subscription: {
-      currentPeriodEnd: new Date("2099-08-01T00:00:00.000Z"),
-      currentPeriodStart: null,
-      id: "subscription_memory",
-      plan: memoryBillingPlans[0] ?? null,
-      status: "trialing",
-    },
-    tenantId: tenantId as never,
-  });
-}
-
-function toTenantOverview(overview: BillingOverview): AgencyTenantOverview {
-  return {
-    addons: overview.addons,
-    allocations: overview.allocations,
-    authority: overview.authority,
-    chargePreview: overview.chargePreview,
-    entitlementEvents: overview.entitlementEvents,
-    financialSummary: overview.financialSummary,
-    plans: overview.plans,
-    stores: overview.allocations.map((allocation) => ({
-      activeEntitlementCount: allocation.activeEntitlementCount,
-      addonCount: allocation.addonCount,
-      createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      entitlementCount: overview.entitlements.length,
-      entitlementMatrix: overview.entitlementMatrix,
-      monthlyAmountCents: allocation.monthlyAmountCents,
-      planCode: allocation.planCode,
-      planName: allocation.planName,
-      storeId: allocation.storeId,
-      storeName: allocation.storeName,
-      storeSlug: allocation.storeSlug,
-      subscriptionStatus: allocation.subscriptionStatus,
-      vehicleCount: 3,
-    })),
-    subscription: overview.subscription,
-    tenant: {
-      tenantId: overview.tenantId,
-      tenantName: "Agency One",
-      tenantSlug: "agency-one",
-    },
-    tenantId: overview.tenantId,
   };
 }

@@ -152,6 +152,14 @@ export function assertConfigured(config) {
     );
   if (
     config.apply &&
+    config.modules?.has("whatsapp") &&
+    !process.env.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY
+  )
+    throw new Error(
+      "CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY is required to import WhatsApp credentials.",
+    );
+  if (
+    config.apply &&
     config.activateWhatsappConnections &&
     !process.env.CRM_ZAPI_CLIENT_TOKEN
   )

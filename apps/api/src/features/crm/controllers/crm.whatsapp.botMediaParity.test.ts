@@ -8,6 +8,7 @@ import {
 } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import {
   configureBot,
   connectionId,
@@ -191,18 +192,10 @@ function createSendMediaSpy(action: string) {
 }
 
 function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: "5511999999999",
-    provider: "zapi",
-    status: "sandbox",
+    overrides: { phone: "5511999999999" },
     storeId,
     tenantId,
-    webhookUrl: null,
-  };
+  });
 }

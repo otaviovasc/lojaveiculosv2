@@ -8,11 +8,11 @@ INSERT INTO plans (
   monthly_price_cents, name, status
 )
 VALUES
-  ('12121212-1212-4212-8212-121212121210', '2026-07-v1', 'basico', false, '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb, 0, 'Básico', 'active'),
-  ('12121212-1212-4212-8212-121212121211', '2026-07-v1', 'premium', false, '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb, 9997, 'Premium', 'active'),
-  ('12121212-1212-4212-8212-121212121213', '2026-07-v1', 'estoque', false, '{"vehicle_limit": 60, "seller_limit": 1}'::jsonb, 14999, 'Estoque', 'active'),
-  ('12121212-1212-4212-8212-121212121214', '2026-07-v1', 'pro', false, '{"vehicle_limit": 100, "seller_limit": 1}'::jsonb, 17990, 'Pro', 'active'),
-  ('12121212-1212-4212-8212-121212121212', '2026-07-v1', 'growth', true, '{"vehicle_limit": 300, "seller_limit": 8}'::jsonb, 29900, 'Growth', 'active')
+  ('82121212-1212-4212-8212-121212121210', '2026-08-v1', 'basico', false, '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb, 0, 'Básico', 'active'),
+  ('82121212-1212-4212-8212-121212121211', '2026-08-v1', 'premium', false, '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb, 9997, 'Premium', 'active'),
+  ('82121212-1212-4212-8212-121212121213', '2026-08-v1', 'estoque', false, '{"vehicle_limit": 60, "seller_limit": 1}'::jsonb, 14999, 'Estoque', 'active'),
+  ('82121212-1212-4212-8212-121212121214', '2026-08-v1', 'pro', false, '{"vehicle_limit": 100, "seller_limit": 1}'::jsonb, 17990, 'Pro', 'active'),
+  ('82121212-1212-4212-8212-121212121212', '2026-08-v1', 'growth', true, '{"vehicle_limit": 300, "seller_limit": 8}'::jsonb, 29900, 'Growth', 'active')
 ON CONFLICT (code, catalog_version) DO UPDATE SET
   is_default = EXCLUDED.is_default,
   limits = EXCLUDED.limits,
@@ -87,7 +87,7 @@ JOIN (
     ('growth', 'fiscal', 0, false, null::integer, null::integer),
     ('growth', 'simulations', 0, false, null::integer, null::integer)
 ) AS pf(plan_code, feature_key, included, included_in_trial, limit_value, trial_limit_value)
-  ON plan.code = pf.plan_code AND plan.catalog_version = '2026-07-v1'
+  ON plan.code = pf.plan_code AND plan.catalog_version = '2026-08-v1'
 ON CONFLICT (plan_id, feature_key) DO UPDATE SET
   included = EXCLUDED.included,
   included_in_trial = EXCLUDED.included_in_trial,
@@ -97,25 +97,34 @@ ON CONFLICT (plan_id, feature_key) DO UPDATE SET
 
 INSERT INTO addons (
   id, catalog_version, code, feature_key, included_in_trial,
-  monthly_price_cents, name, status
+  limits, monthly_price_cents, name, status
 )
 VALUES
   (
-    '15151515-1515-4515-8515-151515151515', '2026-07-v1',
-    'crm_whatsapp_instance', 'crm', false, 24999, 'CRM WhatsApp', 'active'
+    '85151515-1515-4515-8515-151515151515', '2026-08-v1',
+    'crm_core', 'crm', false,
+    '{"composio_tool_executions_per_billing_month":10000,"enforcement":"soft","included_channels":["whatsapp_official","instagram"]}'::jsonb,
+    17900, 'CRM', 'active'
   ),
   (
-    '15151515-1515-4515-8515-151515151516', '2026-07-v1',
-    'marketplace_connectors', 'marketplace', false, 14990,
+    '85151515-1515-4515-8515-151515151520', '2026-08-v1',
+    'crm_zapi', 'crm_zapi', false, '{}'::jsonb,
+    10000, 'Z-API para CRM', 'active'
+  ),
+  (
+    '85151515-1515-4515-8515-151515151516', '2026-08-v1',
+    'marketplace_connectors', 'marketplace', false, '{}'::jsonb, 14990,
     'Marketplaces', 'active'
   ),
   (
-    '15151515-1515-4515-8515-151515151517', '2026-07-v1',
-    'fiscal_spedy', 'fiscal', false, 19990, 'Fiscal NF-e + NFS-e', 'active'
+    '85151515-1515-4515-8515-151515151517', '2026-08-v1',
+    'fiscal_spedy', 'fiscal', false, '{}'::jsonb,
+    19990, 'Fiscal NF-e + NFS-e', 'active'
   )
 ON CONFLICT (code, catalog_version) DO UPDATE SET
   feature_key = EXCLUDED.feature_key,
   included_in_trial = EXCLUDED.included_in_trial,
+  limits = EXCLUDED.limits,
   monthly_price_cents = EXCLUDED.monthly_price_cents,
   name = EXCLUDED.name,
   status = EXCLUDED.status,
@@ -190,7 +199,7 @@ INSERT INTO subscription_items (
 SELECT
   null,
   'plan',
-  '12121212-1212-4212-8212-121212121212',
+  '82121212-1212-4212-8212-121212121212',
   1,
   date_trunc('day', now()) - interval '35 days',
   '66666666-6666-4666-8666-666666666666',
@@ -227,7 +236,7 @@ INSERT INTO subscription_items (
   unit_amount_cents
 )
 SELECT
-  '15151515-1515-4515-8515-151515151515',
+  '85151515-1515-4515-8515-151515151515',
   'addon',
   null,
   1,
@@ -235,13 +244,13 @@ SELECT
   '66666666-6666-4666-8666-666666666666',
   '14141414-1414-4414-8414-141414141414',
   '77777777-7777-4777-8777-777777777777',
-  24999
+  17900
 WHERE NOT EXISTS (
   SELECT 1
   FROM subscription_items
   WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
     AND item_type = 'addon'
-    AND addon_id = '15151515-1515-4515-8515-151515151515'
+    AND addon_id = '85151515-1515-4515-8515-151515151515'
     AND store_id = '66666666-6666-4666-8666-666666666666'
 );
 
@@ -250,20 +259,20 @@ SET
   ends_at = null,
   quantity = 1,
   starts_at = date_trunc('day', now()) - interval '35 days',
-  unit_amount_cents = 24999
+  unit_amount_cents = 17900
 WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
   AND item_type = 'addon'
-  AND addon_id = '15151515-1515-4515-8515-151515151515'
+  AND addon_id = '85151515-1515-4515-8515-151515151515'
   AND store_id = '66666666-6666-4666-8666-666666666666';
 
 INSERT INTO store_entitlements (
   feature_key, metadata, source, starts_at, ends_at, status, store_id, tenant_id
 )
 VALUES
-  ('subdomain', '{"fixture":"local_seed","catalogVersion":"2026-07-v1","billingStatus":"past_due","dunningPolicy":"grace_period"}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('crm', '{"fixture":"local_seed","catalogVersion":"2026-07-v1","billingStatus":"past_due","dunningPolicy":"grace_period","addonCode":"crm_whatsapp_instance"}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('plate_lookup', '{"fixture":"local_seed","catalogVersion":"2026-07-v1","billingStatus":"past_due","dunningPolicy":"grace_period","limitValue":300}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('automation', '{"fixture":"local_seed","catalogVersion":"2026-07-v1","billingStatus":"past_due","dunningPolicy":"grace_period","mode":"preview_only","execution_enabled":false}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('subdomain', '{"fixture":"local_seed","catalogVersion":"2026-08-v1","billingStatus":"past_due","dunningPolicy":"grace_period"}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('crm', '{"fixture":"local_seed","catalogVersion":"2026-08-v1","billingStatus":"past_due","dunningPolicy":"grace_period","addonCode":"crm_core"}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('plate_lookup', '{"fixture":"local_seed","catalogVersion":"2026-08-v1","billingStatus":"past_due","dunningPolicy":"grace_period","limitValue":300}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('automation', '{"fixture":"local_seed","catalogVersion":"2026-08-v1","billingStatus":"past_due","dunningPolicy":"grace_period","mode":"preview_only","execution_enabled":false}'::jsonb, 'billing_catalog', date_trunc('day', now()) - interval '35 days', date_trunc('day', now()) + interval '2 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('analytics', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_product_test_capability","billingBound":false,"dashboards":["sales","finance","crm"]}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('marketplace', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_product_test_capability","billingBound":false,"providers":["olx","mercado_livre"],"officialOperation":false}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('external_api', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","reason":"local_product_test_capability","billingBound":false,"rateLimitPerMinute":120}'::jsonb, 'local_seed_override', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
@@ -293,8 +302,8 @@ INSERT INTO payments (
   tenant_id
 )
 VALUES
-  ('60000000-0000-4000-8000-000000000001', 54899, now() - interval '3 days', 'seed-growth-cancelled', null, null, 'asaas', 'local_asaas_payment_cancelled', '{"billingType": "PIX", "fixture": true, "officialOperation": false}'::jsonb, 'cancelled', '66666666-6666-4666-8666-666666666666', '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777'),
-  ('60000000-0000-4000-8000-000000000002', 109798, now() + interval '3 days', 'seed-growth-recovery-pending', null, null, 'asaas', 'local_asaas_payment_pending', '{"billingType": "BOLETO", "fixture": true, "officialOperation": false}'::jsonb, 'pending', null, '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777')
+  ('60000000-0000-4000-8000-000000000001', 47800, now() - interval '3 days', 'seed-growth-cancelled', null, null, 'asaas', 'local_asaas_payment_cancelled', '{"billingType": "PIX", "fixture": true, "officialOperation": false}'::jsonb, 'cancelled', '66666666-6666-4666-8666-666666666666', '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777'),
+  ('60000000-0000-4000-8000-000000000002', 95600, now() + interval '3 days', 'seed-growth-recovery-pending', null, null, 'asaas', 'local_asaas_payment_pending', '{"billingType": "BOLETO", "fixture": true, "officialOperation": false}'::jsonb, 'pending', null, '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777')
 ON CONFLICT (id) DO UPDATE SET
   amount_cents = EXCLUDED.amount_cents,
   due_at = EXCLUDED.due_at,

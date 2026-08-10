@@ -1,9 +1,11 @@
 import type {
   BillingOverview,
+  BillingCheckoutSession,
   BillingProviderStatus,
+  CreateBillingCheckoutInput,
 } from "../../billing/types";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
-import type { AgencyTenantOverview } from "../apiClient";
+import type { AgencyApi, AgencyTenantOverview } from "../apiClient";
 
 export type AgencyBillingStatus =
   | { kind: "error"; message: string }
@@ -33,8 +35,8 @@ const providerConfigurationLabels = [
   ["ASAAS_API_URL", "Endereço da API do Asaas"],
   ["ASAAS_API_KEY", "Credencial de acesso do Asaas"],
   ["PUBLIC_APP_URL", "Endereço público do aplicativo"],
-  ["ASAAS_WEBHOOK_SECRET", "Chave de validação do webhook"],
-  ["ASAAS_WEBHOOK_URL", "Endereço do webhook de cobrança"],
+  ["ASAAS_WEBHOOK_SECRET", "Segurança da confirmação automática"],
+  ["ASAAS_WEBHOOK_URL", "Endereço de confirmação automática"],
 ] as const;
 
 export function createAgencyBillingPanelOverview(
@@ -52,6 +54,7 @@ export function createAgencyBillingPanelOverview(
     : null;
 
   return {
+    addonContracts: selectedStore?.addonContracts ?? [],
     addons: overview.addons,
     allocations: overview.allocations,
     authority: overview.authority,
@@ -62,9 +65,14 @@ export function createAgencyBillingPanelOverview(
     financialSummary: overview.financialSummary,
     plans: overview.plans,
     storeId: selectedStore?.storeId ?? "",
-    subscription: overview.subscription
-      ? { ...overview.subscription, plan: selectedPlan }
-      : null,
+    subscription:
+      overview.subscription && selectedStore?.subscriptionStatus
+        ? {
+            ...overview.subscription,
+            plan: selectedPlan,
+            status: selectedStore.subscriptionStatus,
+          }
+        : null,
     tenantId: overview.tenantId,
   };
 }
@@ -101,8 +109,10 @@ export function createAgencyBillingCanonicalState(
 
   if (subscription?.status === "trialing") {
     return {
-      canCheckout: false,
-      description: `O plano ${planName} está em período de teste. Nenhuma nova contratação é necessária.`,
+      canCheckout: providerReady,
+      description: providerReady
+        ? `O plano ${planName} está em período de teste. Escolha os pacotes da loja e conclua a primeira assinatura.`
+        : `O plano ${planName} está em período de teste. A conexão de cobrança precisa ser concluída antes da primeira assinatura.`,
       integrationRequirements,
       kind: "current",
       label: "Situação atual",
@@ -178,4 +188,23 @@ export function agencyBillingErrorMessage(error: unknown) {
     error,
     "Nao foi possivel carregar o faturamento da agencia.",
   );
+}
+
+export async function startAgencyStoreCheckout({
+  addonIds,
+  api,
+  input,
+  planId,
+  storeId,
+  tenantId,
+}: {
+  addonIds: readonly string[];
+  api: Pick<AgencyApi, "createCheckout" | "updateStoreSelection">;
+  input: CreateBillingCheckoutInput;
+  planId: string;
+  storeId: string;
+  tenantId: string;
+}): Promise<BillingCheckoutSession> {
+  await api.updateStoreSelection(tenantId, storeId, { addonIds, planId });
+  return api.createCheckout(tenantId, input);
 }

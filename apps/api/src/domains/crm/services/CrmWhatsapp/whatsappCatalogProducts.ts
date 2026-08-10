@@ -21,6 +21,7 @@ import {
   auditWhatsappServiceEvent,
 } from "./serviceSupport.js";
 import { resolveWhatsappCatalogPhone } from "./sendWhatsappCatalog.js";
+import { assertWhatsappProviderEffectAllowed } from "../../whatsapp/assertWhatsappProviderEffectAllowed.js";
 
 const readPermission = "crm.whatsapp.read";
 const sendPermission = "crm.whatsapp.send";
@@ -33,6 +34,7 @@ export type ListWhatsappCatalogProductsInput = {
 
 export type SendWhatsappCatalogProductInput = {
   catalogPhone?: string;
+  idempotencyKey?: string;
   productId: string;
   productName?: string;
   sessionId: string;
@@ -49,6 +51,7 @@ export async function listWhatsappCatalogProducts(
     input.sessionId,
     ports,
   );
+  assertWhatsappProviderEffectAllowed(context, connection);
   const gateway = getCrmWhatsappGateway(ports);
   const catalogPhone = await resolveWhatsappCatalogPhone(
     connection,
@@ -56,7 +59,6 @@ export async function listWhatsappCatalogProducts(
     input.catalogPhone,
   );
   logWhatsappServiceEvent(context, "crm.whatsapp.catalog.products.list", {
-    catalogPhone,
     sessionId: input.sessionId,
   });
   const page = await gateway.listCatalogProducts(connection, {
@@ -69,7 +71,7 @@ export async function listWhatsappCatalogProducts(
     entityId: input.sessionId,
     entityType: "crm_whatsapp_session",
     metadata: {
-      catalogPhone,
+      catalogPhoneConfigured: Boolean(catalogPhone),
       productCount: page.products.length,
     },
     permission: readPermission,
@@ -107,6 +109,10 @@ export async function sendWhatsappCatalogProduct(
       sendWhatsappOutboundMessage(
         context,
         {
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
+            : {}),
+          idempotencyPayload: input,
           prepare: async ({ connection, gateway, phone }) => {
             const catalogPhone = await resolveWhatsappCatalogPhone(
               connection,
@@ -130,7 +136,6 @@ export async function sendWhatsappCatalogProduct(
                 },
                 provider: connection.provider,
                 providerTransport: "zapi_product",
-                raw: sent.raw,
                 sentByActorId: context.actor.id,
               },
               sent,

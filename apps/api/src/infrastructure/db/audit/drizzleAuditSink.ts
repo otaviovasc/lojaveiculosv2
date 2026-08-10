@@ -5,7 +5,9 @@ import type { InferInsertModel } from "drizzle-orm";
 type InsertAuditEventRow = InferInsertModel<typeof auditEvents>;
 
 type InsertValuesBuilder = {
-  values: (record: InsertAuditEventRow) => Promise<unknown>;
+  values: (record: InsertAuditEventRow) => {
+    onConflictDoNothing: (input: { target: unknown }) => Promise<unknown>;
+  };
 };
 
 export type DrizzleAuditSinkClient = {
@@ -15,7 +17,10 @@ export type DrizzleAuditSinkClient = {
 export function createDrizzleAuditSink(db: DrizzleAuditSinkClient): AuditSink {
   return {
     async record(event) {
-      await db.insert(auditEvents).values(toAuditEventRow(event));
+      await db
+        .insert(auditEvents)
+        .values(toAuditEventRow(event))
+        .onConflictDoNothing({ target: auditEvents.id });
     },
   };
 }
@@ -33,6 +38,7 @@ function toAuditEventRow(event: AuditEvent): InsertAuditEventRow {
     entityId: event.entityId,
     entityType: event.entityType,
     failureTier: event.failureTier ?? "best_effort",
+    ...(event.id ? { id: event.id } : {}),
     metadata: event.metadata ?? {},
     outcome: event.outcome ?? "succeeded",
     providerEventId: event.provider?.eventId ?? null,

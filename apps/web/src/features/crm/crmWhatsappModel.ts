@@ -64,12 +64,27 @@ export function mergeSessionsFromServer(
       getSessionTimeMs(localSession) > getSessionTimeMs(serverSession);
     const localReadIsNewer =
       getSessionReadTimeMs(localSession) > getSessionReadTimeMs(serverSession);
+    const localAttendanceIsNewer =
+      (localSession.humanAttendanceStateVersion ?? 0) >
+      (serverSession.humanAttendanceStateVersion ?? 0);
     return {
       ...serverSession,
       ...(localIsNewer
         ? {
             lastMessageAt: localSession.lastMessageAt,
             lastMessageContent: localSession.lastMessageContent,
+            status: localSession.status,
+          }
+        : {}),
+      ...(localAttendanceIsNewer
+        ? {
+            humanAttendanceChangedAt:
+              localSession.humanAttendanceChangedAt ?? null,
+            humanAttendanceState: localSession.humanAttendanceState ?? null,
+            humanAttendanceStateVersion:
+              localSession.humanAttendanceStateVersion,
+            humanHandlingStartedAt: localSession.humanHandlingStartedAt ?? null,
+            interventionId: localSession.interventionId ?? null,
             status: localSession.status,
           }
         : {}),

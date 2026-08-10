@@ -81,14 +81,13 @@ afterEach(() => {
 });
 
 describe("BillingModule signup flow", () => {
-  it("saves the selection and starts checkout with a single CTA on a trial store", async () => {
+  it("defaults to the visible plan and starts checkout without a hidden selection step", async () => {
     const user = userEvent.setup();
     const api = createBillingApiStub(trialOverview(), providerReady);
     render(<BillingModule api={api} />);
 
     const planOption = await screen.findByRole("radio", { name: /Growth/ });
     expect(planOption).toBeVisible();
-    await user.click(planOption);
     await user.click(
       screen.getByRole("checkbox", { name: /Marketplaces Extra/ }),
     );
@@ -275,6 +274,7 @@ function createBillingApiStub(
   providerStatus: BillingProviderStatus,
 ): BillingApi {
   return {
+    cancelZapiRequest: vi.fn().mockResolvedValue({ contract: {} }),
     createCheckout: vi.fn().mockResolvedValue({
       checkoutUrl: "https://asaas.example/checkout/1",
       expiresAt: null,
@@ -285,6 +285,7 @@ function createBillingApiStub(
     }),
     getOverview: vi.fn().mockResolvedValue(overview),
     getProviderStatus: vi.fn().mockResolvedValue(providerStatus),
+    requestZapi: vi.fn().mockResolvedValue({ contract: {} }),
     syncProviderSubscription: vi.fn().mockResolvedValue({}),
     updateEntitlement: vi.fn(),
     updateSelection: vi.fn().mockResolvedValue(overview),

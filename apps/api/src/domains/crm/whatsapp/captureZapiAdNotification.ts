@@ -12,6 +12,7 @@ import {
 } from "../services/CrmService/serviceSupport.js";
 import { recordWhatsappServiceMutation } from "../services/CrmWhatsapp/serviceSupport.js";
 import { applyZapiAdSessionTransition } from "./zapiAdSessionTransition.js";
+import { humanAttendanceSource } from "./humanAttendanceTransition.js";
 
 export async function captureZapiAdNotification(
   context: ServiceContext,
@@ -75,10 +76,15 @@ export async function captureZapiAdNotification(
         active: false,
         connection: input.connection,
         endedAt: transition.endedAt,
+        attendanceChangedAt: transition.session.humanAttendanceChangedAt,
+        attendanceState: transition.session.humanAttendanceState,
+        attendanceStateVersion: transition.session.humanAttendanceStateVersion,
+        interventionId: transition.previousSession.interventionId,
         reason: "ad_initiated_conversation",
         session: transition.session,
+        source: humanAttendanceSource(transition.previousSession),
         startedAt: transition.interventionStartedAt,
-        triggeredBy: "system",
+        triggeredBy: "auto",
       },
       ports,
     );

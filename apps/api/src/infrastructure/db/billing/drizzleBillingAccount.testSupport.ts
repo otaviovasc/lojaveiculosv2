@@ -1,5 +1,6 @@
 import {
   addons,
+  billingCatalogVersions,
   billingCustomers,
   planFeatures,
   plans,
@@ -13,6 +14,7 @@ type Row = Record<string, unknown>;
 
 type FakeBillingRows = {
   addons: readonly Row[];
+  billingCatalogVersions: readonly Row[];
   billingCustomers: readonly Row[];
   planFeatures: readonly Row[];
   plans: readonly Row[];
@@ -24,8 +26,19 @@ type FakeBillingRows = {
 export function createFakeBillingAccountDb(
   overrides: Partial<FakeBillingRows> = {},
 ) {
+  const activeCatalogVersion =
+    overrides.plans?.find((plan) => plan.catalogVersion)?.catalogVersion ??
+    "2026-08-v2";
   const tables = new Map<unknown, Row[]>([
     [addons, [...(overrides.addons ?? [])]],
+    [
+      billingCatalogVersions,
+      [
+        ...(overrides.billingCatalogVersions ?? [
+          { status: "active", version: activeCatalogVersion },
+        ]),
+      ],
+    ],
     [billingCustomers, [...(overrides.billingCustomers ?? [])]],
     [planFeatures, [...(overrides.planFeatures ?? [])]],
     [plans, [...(overrides.plans ?? [])]],
