@@ -54,9 +54,10 @@ export async function createWhatsappConnection(
     );
   }
   const scope = requireCrmWhatsappScope(context);
-  if (input.provider === "zapi") {
-    assertEntitlement(context as never, "crm_zapi");
-  }
+  assertEntitlement(
+    context as never,
+    input.provider === "zapi" ? "crm_zapi" : "crm",
+  );
   logWhatsappServiceEvent(context, "crm.whatsapp.connection.create.started", {
     provider: input.provider,
   });

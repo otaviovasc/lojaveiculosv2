@@ -76,12 +76,13 @@ export async function getWhatsappConnectionOverview(
       : [];
   return {
     allowance,
-    availableProviders: creatableProviders.filter(
-      (provider) =>
-        !configured.has(provider) &&
-        (provider !== "zapi" ||
-          (allowance.remaining > 0 && entitlements.includes("crm_zapi"))),
-    ),
+    availableProviders: creatableProviders.filter((provider) => {
+      if (configured.has(provider)) return false;
+      if (provider === "composio_whatsapp") {
+        return entitlements.includes("crm");
+      }
+      return allowance.remaining > 0 && entitlements.includes("crm_zapi");
+    }),
     connections,
   };
 }
@@ -91,6 +92,7 @@ export async function listWhatsappConnections(
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappConnection[]> {
   assertPermission(context, readPermission);
+  assertEntitlement(context as never, "crm");
   const scope = requireCrmWhatsappScope(context);
   const repository = getCrmConnectionRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.connections.list.started");

@@ -15,10 +15,11 @@ function createContext(
     "crm.whatsapp.connection.manage",
     "crm.whatsapp.integrations.manage",
   ],
+  entitlements: ("crm" | "crm_zapi")[] = ["crm", "crm_zapi"],
 ) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
-    entitlements: ["crm", "crm_zapi"],
+    entitlements,
     permissions,
     request: { requestId: "request_1" },
     storeId,
@@ -183,5 +184,15 @@ describe("createWhatsappConnection", () => {
         tenantId: tenantId as never,
       }),
     ).toHaveLength(1);
+  });
+
+  it("requires the CRM entitlement for Official WhatsApp", async () => {
+    await expect(
+      createWhatsappConnection(
+        createContext(undefined, ["crm_zapi"]),
+        { displayName: "Atendimento", provider: "composio_whatsapp" },
+        createPorts(0),
+      ),
+    ).rejects.toBeInstanceOf(AuthorizationError);
   });
 });

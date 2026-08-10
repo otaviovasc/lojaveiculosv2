@@ -57,11 +57,14 @@ export async function runGrant(input, env = process.env) {
   try {
     const user = await resolveUser(product, input.userId);
     const stores = await resolveStores(product, user.id);
-    const features = await resolveFeatures(product);
+    const catalog = await resolveActiveCatalogFeatures(product);
+    const features = catalog.features;
     const startsAt = new Date();
     const endsAt = oneCalendarMonthFrom(startsAt);
     const preview = {
+      catalogVersion: catalog.version,
       endsAt: endsAt.toISOString(),
+      features,
       featureCount: features.length,
       storeCount: stores.length,
       userId: user.id,
@@ -125,22 +128,37 @@ async function resolveStores(sql, userId) {
   return rows;
 }
 
-async function resolveFeatures(sql) {
-  const rows = await sql`WITH catalog AS (
-      SELECT id, catalog_version FROM plans
-      WHERE status='active' AND is_default=true AND published_at <= now()
-      ORDER BY published_at DESC LIMIT 1
+async function resolveActiveCatalogFeatures(sql) {
+  const rows = await sql`WITH active_catalog AS (
+      SELECT version
+      FROM billing_catalog_versions
+      WHERE status='active' AND published_at <= now()
+      LIMIT 1
+    ), catalog_features AS (
+      SELECT feature.feature_key
+      FROM plan_features AS feature
+      INNER JOIN plans AS plan ON plan.id=feature.plan_id
+      INNER JOIN active_catalog AS catalog
+        ON catalog.version=plan.catalog_version
+      WHERE plan.status='active' AND plan.published_at <= now()
+        AND feature.included=1
+      UNION
+      SELECT addon.feature_key
+      FROM addons AS addon
+      INNER JOIN active_catalog AS catalog
+        ON catalog.version=addon.catalog_version
+      WHERE addon.status='active' AND addon.published_at <= now()
     )
-    SELECT feature_key FROM plan_features
-      WHERE plan_id=(SELECT id FROM catalog)
-    UNION
-    SELECT addon.feature_key FROM addons AS addon, catalog
-      WHERE addon.catalog_version=catalog.catalog_version
-        AND addon.status='active' AND addon.published_at <= now()
-    ORDER BY feature_key`;
+    SELECT catalog.version AS catalog_version, feature.feature_key
+    FROM active_catalog AS catalog
+    CROSS JOIN catalog_features AS feature
+    ORDER BY feature.feature_key`;
   if (!rows.length)
     throw new Error("The active billing catalog has no features.");
-  return rows.map((row) => row.feature_key);
+  return {
+    features: rows.map((row) => row.feature_key),
+    version: rows[0].catalog_version,
+  };
 }
 
 async function grantStoreFeatures(tx, input) {
@@ -238,7 +256,7 @@ if (isMain) {
   try {
     const result = await runGrant(parseGrantArgs(process.argv.slice(2)));
     process.stdout.write(
-      `${result.applied ? "Applied" : "Dry run"}: ${result.featureCount} features across ${result.storeCount} store(s), ending ${result.endsAt}${result.requestId ? ` (request ${result.requestId})` : ""}.\n`,
+      `${result.applied ? "Applied" : "Dry run"}: catalog ${result.catalogVersion}, ${result.featureCount} features [${result.features.join(", ")}] across ${result.storeCount} store(s), ending ${result.endsAt}${result.requestId ? ` (request ${result.requestId})` : ""}.\n`,
     );
   } catch (error) {
     process.stderr.write(

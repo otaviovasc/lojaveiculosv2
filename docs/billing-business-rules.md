@@ -206,8 +206,11 @@ pnpm billing:grant-all -- <userId> --reason="Integration QA" --apply
 Without `--apply`, the command is a dry run. Applied grants require
 `APP_ENV=staging`, `DATABASE_URL`, and `AUDIT_DATABASE_URL`, expire one calendar
 month after execution, write `store_entitlement_events`, and fail if the
-required audit database record cannot be persisted. They do not create payment
-or provider-success records.
+required audit database record cannot be persisted. The command resolves the
+explicit active catalog pointer and grants the union of included plan features
+and active add-on features from that exact version. Its preview prints the
+catalog version and feature keys. It does not create subscription items,
+payments, provider-success records, or paid Z-API capacity.
 
 ## Provider Integration
 
