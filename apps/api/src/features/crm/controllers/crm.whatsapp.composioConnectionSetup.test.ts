@@ -62,6 +62,19 @@ describe("Composio WhatsApp setup", () => {
     ).rejects.toMatchObject({ code: "provider_rejected" });
     expect(subscribe).not.toHaveBeenCalled();
   });
+
+  it("requires the CRM entitlement throughout Official WhatsApp setup", async () => {
+    const { ports, subscribe } = fixture();
+
+    await expect(
+      completeComposioWhatsappConnection(
+        context([]),
+        { connectionId: "connection" },
+        ports,
+      ),
+    ).rejects.toThrow("Missing entitlement: crm");
+    expect(subscribe).not.toHaveBeenCalled();
+  });
 });
 
 function fixture(
@@ -110,10 +123,10 @@ function fixture(
   };
 }
 
-function context(): StoreScopedServiceContext {
+function context(entitlements: "crm"[] = ["crm"]): StoreScopedServiceContext {
   const base = createServiceContext({
     actor: { id: "owner", kind: "user" },
-    entitlements: ["crm"],
+    entitlements,
     permissions: [
       "crm.whatsapp.connection.manage",
       "crm.whatsapp.integrations.manage",
@@ -124,7 +137,7 @@ function context(): StoreScopedServiceContext {
   });
   return {
     ...base,
-    entitlements: ["crm"],
+    entitlements,
     storeId: "store",
     tenantId: "tenant",
   };

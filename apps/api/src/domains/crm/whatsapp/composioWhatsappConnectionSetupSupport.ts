@@ -1,4 +1,5 @@
 import {
+  assertEntitlement,
   assertPermission,
   AuthorizationError,
 } from "../../../shared/authorization.js";
@@ -26,6 +27,7 @@ export async function loadComposioSetupTarget(
 ) {
   assertPermission(context, composioConnectionPermission);
   assertPermission(context, "crm.whatsapp.integrations.manage");
+  assertEntitlement(context as never, "crm");
   if (context.actor.kind !== "user") {
     throw new AuthorizationError(
       "Official WhatsApp setup requires an authenticated store user.",

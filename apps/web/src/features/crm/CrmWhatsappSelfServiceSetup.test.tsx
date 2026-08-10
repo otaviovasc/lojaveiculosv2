@@ -44,7 +44,27 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       />,
     );
 
-    expect(screen.getByText(/limite de 1 conexão foi atingido/i)).toBeVisible();
+    expect(
+      screen.getByText(/limite de 1 conexão Z-API foi atingido/i),
+    ).toBeVisible();
+  });
+
+  it("keeps Official WhatsApp available when only the Z-API quota is zero", () => {
+    render(
+      <CrmWhatsappSelfServiceSetup
+        allowance={{ limit: 0, remaining: 0, used: 0 }}
+        availableProviders={["composio_whatsapp"]}
+        canManage
+        handlers={createHandlers()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /WhatsApp Oficial/i }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/não possui uma conexão Z-API contratada/i),
+    ).not.toBeInTheDocument();
   });
 
   it("shows included Instagram as support-assisted without inventing OAuth", () => {

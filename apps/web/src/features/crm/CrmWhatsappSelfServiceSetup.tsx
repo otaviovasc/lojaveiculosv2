@@ -115,14 +115,25 @@ export function CrmWhatsappSelfServiceSetup({
     );
   }
 
-  if (!connection && allowance.remaining <= 0) {
+  if (
+    !connection &&
+    availableProviders.length === 0 &&
+    allowance.remaining <= 0
+  ) {
     return (
       <SetupNotice>
-        O limite de {allowance.limit} conexão
-        {allowance.limit === 1 ? "" : "ões"} foi atingido. Arquive uma conexão
-        ou ajuste o plano antes de adicionar outro canal. O Instagram continua
-        incluído no CRM sem custo adicional; fale com o suporte para revisar a
-        configuração assistida.
+        {allowance.limit === 0 ? (
+          <>A loja não possui uma conexão Z-API contratada.</>
+        ) : (
+          <>
+            O limite de {allowance.limit}{" "}
+            {allowance.limit === 1 ? "conexão Z-API" : "conexões Z-API"} foi
+            atingido. Arquive uma conexão ou ajuste o plano antes de adicionar
+            outra conexão Z-API.
+          </>
+        )}{" "}
+        O WhatsApp Oficial e o Instagram continuam incluídos no CRM sem custo
+        adicional; fale com o suporte para revisar a configuração assistida.
         <a
           className="font-bold text-accent-strong"
           href={crmWhatsappSupportUrl()}
