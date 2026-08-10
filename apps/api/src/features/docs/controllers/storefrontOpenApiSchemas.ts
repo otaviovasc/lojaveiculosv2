@@ -8,6 +8,12 @@ export const storefrontSchemas = {
     type: "object",
     additionalProperties: false,
     required: [
+      "addressCity",
+      "addressLine1",
+      "addressLine2",
+      "addressState",
+      "addressZipCode",
+      "businessHours",
       "city",
       "contactEmail",
       "contactPhone",
@@ -15,6 +21,12 @@ export const storefrontSchemas = {
       "whatsappUrl",
     ],
     properties: {
+      addressCity: { type: ["string", "null"] },
+      addressLine1: { type: ["string", "null"] },
+      addressLine2: { type: ["string", "null"] },
+      addressState: { type: ["string", "null"] },
+      addressZipCode: { type: ["string", "null"] },
+      businessHours: { type: "object", additionalProperties: true },
       city: { type: ["string", "null"] },
       contactEmail: { type: ["string", "null"] },
       contactPhone: { type: ["string", "null"] },
@@ -129,12 +141,8 @@ export const storefrontSchemas = {
       {
         type: "object",
         additionalProperties: false,
-        required: ["media", "mediaGroups"],
+        required: ["mediaGroups"],
         properties: {
-          media: {
-            type: "array",
-            items: { $ref: "#/components/schemas/PublicVehicleMedia" },
-          },
           mediaGroups: {
             type: "array",
             items: { $ref: "#/components/schemas/PublicVehicleMediaGroup" },
@@ -156,6 +164,7 @@ export const storefrontSchemas = {
       "fuelType",
       "heroMedia",
       "manufactureYear",
+      "media",
       "mileageKm",
       "modelYear",
       "priceCents",
@@ -207,6 +216,10 @@ export const storefrontSchemas = {
           "Preferred hero media from public vehicle media. Videos are selected before photos.",
       },
       manufactureYear: { type: ["integer", "null"] },
+      media: {
+        type: "array",
+        items: { $ref: "#/components/schemas/PublicVehicleMedia" },
+      },
       mileageKm: { type: ["integer", "null"] },
       modelYear: { type: ["integer", "null"] },
       priceCents: { type: ["integer", "null"] },

@@ -78,6 +78,12 @@ export function WebsiteBuilderHeroMediaSettings({
             value={bannerUrls[index] ?? ""}
           />
         ))}
+        <StorefrontImagePicker
+          imageClassName="h-32 w-full rounded-lg"
+          label="Banner para celular"
+          onChange={(value) => updateConfig("heroBannerMobileUrl", value)}
+          value={config.heroBannerMobileUrl ?? ""}
+        />
       </div>
     </div>
   );

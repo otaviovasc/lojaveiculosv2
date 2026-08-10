@@ -1,6 +1,5 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { Context } from "hono";
-import { z } from "zod";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import type { PublicStorefrontLeadSink } from "../../../domains/storefront/ports/publicStorefrontLeadSink.js";
 import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
@@ -14,14 +13,11 @@ import {
   rateLimitPublicLeadRequest,
   type PublicLeadRateLimiter,
 } from "../adapters/rateLimiter/publicLeadRateLimiter.js";
-import { StorefrontRequestValidationError } from "./storefrontErrors.js";
-
-const createLeadSchema = z.object({
-  buyerEmail: z.string().trim().email().optional().or(z.literal("")),
-  buyerName: z.string().trim().min(1).max(191),
-  buyerPhone: z.string().trim().min(3).max(40).optional().or(z.literal("")),
-  message: z.string().trim().max(1000).optional().or(z.literal("")),
-});
+import {
+  normalizeOptionalLeadText,
+  parsePublicPageLeadRequest,
+  parseStrictPublicLeadRequest,
+} from "./storefrontLeadRequest.js";
 
 export async function handleCreatePublicStorefrontLead(
   context: Context,
@@ -58,7 +54,7 @@ export async function handleCreatePublicStorefrontLead(
   );
   if (rateLimitResponse) return rateLimitResponse;
 
-  const body = await parseJson(context, createLeadSchema);
+  const body = await parseStrictPublicLeadRequest(context);
   const serviceContext = createPlaceholderServiceContext(
     context,
     options.audit ? { audit: options.audit } : {},
@@ -66,11 +62,61 @@ export async function handleCreatePublicStorefrontLead(
   const result = await createPublicStorefrontLead(
     serviceContext,
     {
-      buyerEmail: normalizeOptionalText(body.buyerEmail),
+      buyerEmail: body.buyerEmail,
       buyerName: body.buyerName,
-      buyerPhone: normalizeOptionalText(body.buyerPhone),
+      buyerPhone: body.buyerPhone,
       listingSlug,
-      message: normalizeOptionalText(body.message),
+      message: body.message,
+      storeSlug,
+    },
+    {
+      leadSink: options.leadSink ?? createCrmLeadSink(options.crmRepository),
+      storefrontRepository: options.repository,
+    },
+  );
+
+  return context.json(result, result.deduplicated ? 200 : 201);
+}
+
+export async function handleCreatePublicStorefrontSiteLead(
+  context: Context,
+  options: {
+    audit?: AuditSink;
+    crmRepository: CrmRepository;
+    leadRateLimiter: PublicLeadRateLimiter;
+    repository: PublicStorefrontRepository;
+    leadSink?: PublicStorefrontLeadSink;
+  },
+): Promise<Response> {
+  const storeSlug = resolveStoreSlugFromRequest(context);
+
+  if (!storeSlug) {
+    return jsonApiError(context, {
+      code: "STOREFRONT_STORE_SLUG_REQUIRED",
+      message: "Store subdomain is required.",
+      status: 400,
+    });
+  }
+
+  const rateLimitResponse = rateLimitPublicLeadRequest(
+    context,
+    options.leadRateLimiter,
+    { listingSlug: "landing-page", storeSlug },
+  );
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const body = await parseStrictPublicLeadRequest(context);
+  const serviceContext = createPlaceholderServiceContext(
+    context,
+    options.audit ? { audit: options.audit } : {},
+  );
+  const result = await createPublicStorefrontLead(
+    serviceContext,
+    {
+      buyerEmail: body.buyerEmail,
+      buyerName: body.buyerName,
+      buyerPhone: body.buyerPhone,
+      message: body.message,
       storeSlug,
     },
     {
@@ -117,7 +163,7 @@ export async function handleCreatePublicStorefrontPageLead(
   );
   if (rateLimitResponse) return rateLimitResponse;
 
-  const body = await parseJson(context, createLeadSchema);
+  const body = await parsePublicPageLeadRequest(context);
   const serviceContext = createPlaceholderServiceContext(
     context,
     options.audit ? { audit: options.audit } : {},
@@ -125,10 +171,10 @@ export async function handleCreatePublicStorefrontPageLead(
   const result = await createPublicStorefrontPageLead(
     serviceContext,
     {
-      buyerEmail: normalizeOptionalText(body.buyerEmail),
+      buyerEmail: normalizeOptionalLeadText(body.buyerEmail),
       buyerName: body.buyerName,
-      buyerPhone: normalizeOptionalText(body.buyerPhone),
-      message: normalizeOptionalText(body.message),
+      buyerPhone: normalizeOptionalLeadText(body.buyerPhone),
+      message: normalizeOptionalLeadText(body.message),
       pageSlug,
       storeSlug,
     },
@@ -164,30 +210,4 @@ function toPublicLead(lead: Awaited<ReturnType<CrmRepository["createLead"]>>) {
     source: "public_site" as const,
     status: lead.status,
   };
-}
-
-async function parseJson<Schema extends z.ZodType>(
-  context: Context,
-  schema: Schema,
-): Promise<z.infer<Schema>> {
-  let body: unknown;
-
-  try {
-    body = await context.req.json();
-  } catch {
-    throw new StorefrontRequestValidationError(
-      "Request body must be valid JSON.",
-    );
-  }
-
-  const parsed = schema.safeParse(body);
-  if (!parsed.success) {
-    throw new StorefrontRequestValidationError("Request body is invalid.");
-  }
-
-  return parsed.data;
-}
-
-function normalizeOptionalText(value?: string | null) {
-  return value && value.length > 0 ? value : null;
 }

@@ -2,12 +2,14 @@ import { cn } from "@/lib/utils";
 import * as React from "react";
 
 interface InputProps extends React.ComponentProps<"input"> {
+  endIcon?: React.ReactNode;
   startIcon?: React.ReactNode;
   inputSize?: "default" | "sm";
 }
 
 function Input({
   className,
+  endIcon,
   type,
   startIcon,
   inputSize = "default",
@@ -28,24 +30,32 @@ function Input({
           ? "h-9 px-3 py-1.5 text-sm"
           : "h-12 px-4 py-3 text-base",
         startIcon && (inputSize === "sm" ? "pl-9" : "pl-11"),
+        endIcon && (inputSize === "sm" ? "pr-9" : "pr-11"),
         className,
       )}
       {...props}
     />
   );
 
-  if (startIcon) {
+  if (startIcon || endIcon) {
     return (
       <div className="relative w-full flex items-center">
-        <div
-          className={cn(
-            "absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-muted-foreground",
-            inputSize === "sm" ? "[&_svg]:size-4" : "[&_svg]:size-5",
-          )}
-        >
-          {startIcon}
-        </div>
+        {startIcon ? (
+          <div
+            className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-muted-foreground",
+              inputSize === "sm" ? "[&_svg]:size-4" : "[&_svg]:size-5",
+            )}
+          >
+            {startIcon}
+          </div>
+        ) : null}
         {inputEl}
+        {endIcon ? (
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
+            {endIcon}
+          </div>
+        ) : null}
       </div>
     );
   }

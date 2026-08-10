@@ -142,6 +142,7 @@ export * from "./vehicleColors.js";
 export * from "./vehicleTechnicalSpecs.js";
 export * from "./storefrontBuilder.js";
 export * from "./storefrontMedia.js";
+export * from "./storefrontTemplateDefaults.js";
 export * from "./externalApiContract.js";
 export * from "./financeAutoEntries.js";
 export * from "./salePayments.js";

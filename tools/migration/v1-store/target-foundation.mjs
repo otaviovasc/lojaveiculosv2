@@ -7,6 +7,7 @@ import {
   targetId,
 } from "./common.mjs";
 import { log, progress } from "./log.mjs";
+import { mapLegacyFoundation } from "./foundation-mapping.mjs";
 import { seedLegacyBilling } from "./target-billing.mjs";
 import { addLegacyMap } from "./target-support.mjs";
 
@@ -14,9 +15,7 @@ export async function seedFoundation(tx, data, config, ids) {
   log("  Foundation: tenant/store...");
   const store = data.store;
   const customization = json(store.customization);
-  const ownerPayload = json(store.user);
-  const address = json(ownerPayload.address);
-  const contact = json(customization.contact);
+  const mapped = mapLegacyFoundation(data);
   const tradingName =
     nullableString(store.nome_da_loja, 191) ?? config.storeTradingName;
   const publicSlug =
@@ -32,22 +31,24 @@ export async function seedFoundation(tx, data, config, ids) {
     ON CONFLICT (id) DO UPDATE SET legal_name=excluded.legal_name, primary_domain=excluded.primary_domain, trading_name=excluded.trading_name, updated_at=excluded.updated_at`;
 
   await tx`INSERT INTO store_profiles
-    (id, tenant_id, store_id, contact_email, contact_phone, whatsapp_phone, logo_image_url, address_line_1, address_line_2, address_city, address_state, address_zip_code, metadata, created_at, updated_at)
+    (id, tenant_id, store_id, contact_email, contact_phone, whatsapp_phone, logo_image_url, address_line_1, address_line_2, address_city, address_state, address_zip_code, business_hours, document_number, metadata, created_at, updated_at)
     VALUES (${targetId(config.legacyStoreId, "store_profiles", store.id)}, ${ids.tenant}, ${ids.store},
-      ${nullableString(contact.email ?? ownerPayload.email, 254)}, ${nullableString(contact.phone ?? ownerPayload.phone, 40)},
-      ${nullableString(contact.whatsapp ?? contact.phone ?? ownerPayload.phone, 40)}, ${nullableString(customization.logo_url)},
-      ${nullableString(address.street ?? address.address, 191)}, ${nullableString(address.number ?? address.complement, 191)},
-      ${nullableString(address.city, 120)}, ${nullableString(address.state, 80)}, ${nullableString(address.zipCode ?? address.cep, 32)},
+      ${mapped.profile.contactEmail}, ${mapped.profile.contactPhone}, ${mapped.profile.whatsappPhone}, ${mapped.profile.logoImageUrl},
+      ${mapped.profile.addressLine1}, ${mapped.profile.addressLine2}, ${mapped.profile.addressCity}, ${mapped.profile.addressState}, ${mapped.profile.addressZipCode},
+      ${tx.json(mapped.profile.businessHours)}, ${mapped.profile.documentNumber},
       ${tx.json(legacyMetadata("Loja", store, { customization, settings: data.settings }))}, ${store.data_criacao}, ${store.data_criacao})
-    ON CONFLICT (store_id) DO UPDATE SET metadata=excluded.metadata, updated_at=excluded.updated_at`;
+    ON CONFLICT (store_id) DO UPDATE SET contact_email=excluded.contact_email, contact_phone=excluded.contact_phone, whatsapp_phone=excluded.whatsapp_phone,
+      logo_image_url=excluded.logo_image_url, address_line_1=excluded.address_line_1, address_line_2=excluded.address_line_2,
+      address_city=excluded.address_city, address_state=excluded.address_state, address_zip_code=excluded.address_zip_code,
+      business_hours=excluded.business_hours, document_number=excluded.document_number, metadata=excluded.metadata, updated_at=excluded.updated_at`;
 
   await tx`INSERT INTO store_public_site_settings
     (id, tenant_id, store_id, custom_domain, custom_domain_status, hero_image_url, is_published, layout_key, theme, created_at, updated_at)
     VALUES (${targetId(config.legacyStoreId, "store_public_site_settings", store.id)}, ${ids.tenant}, ${ids.store},
       ${nullableString(store.dominio_customizado, 191)}, ${store.dominio_customizado ? "pending" : "not_configured"},
-      ${nullableString(customization.hero_image_url)}, true, ${nullableString(customization.layout ?? customization.landing_template, 80) ?? "default"},
-      ${tx.json(customization)}, ${store.data_criacao}, ${store.data_criacao})
-    ON CONFLICT (store_id) DO UPDATE SET theme=excluded.theme, hero_image_url=excluded.hero_image_url, updated_at=excluded.updated_at`;
+      ${nullableString(customization.hero_image_url)}, true, ${mapped.layoutKey},
+      ${tx.json(mapped.theme)}, ${store.data_criacao}, ${store.data_criacao})
+    ON CONFLICT (store_id) DO UPDATE SET is_published=excluded.is_published, theme=excluded.theme, hero_image_url=excluded.hero_image_url, layout_key=excluded.layout_key, updated_at=excluded.updated_at`;
 
   const roleRows = await tx`SELECT id, role_key FROM role_templates`;
   const roles = Object.fromEntries(

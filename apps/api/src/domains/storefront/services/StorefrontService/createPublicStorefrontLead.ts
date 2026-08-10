@@ -1,4 +1,3 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
@@ -14,6 +13,7 @@ import {
   PublicStorefrontListingNotFoundError,
   PublicStorefrontNotFoundError,
 } from "./serviceSupport.js";
+import { findDuplicatePublicStorefrontLead } from "../../findDuplicatePublicStorefrontLead.js";
 
 const permission = "public_storefront.lead_create";
 
@@ -21,7 +21,7 @@ export type CreatePublicStorefrontLeadInput = {
   buyerEmail?: string | null;
   buyerName: string;
   buyerPhone?: string | null;
-  listingSlug: string;
+  listingSlug?: string;
   message?: string | null;
   storeSlug: string;
 };
@@ -49,7 +49,7 @@ export async function createPublicStorefrontLead(
   context.logger.info(
     "public_storefront.lead.create.started",
     createServiceLogMetadata(context, {
-      listingSlug: input.listingSlug,
+      listingSlug: input.listingSlug ?? null,
       storeSlug: input.storeSlug,
     }),
   );
@@ -60,20 +60,22 @@ export async function createPublicStorefrontLead(
 
   if (!store) throw new PublicStorefrontNotFoundError(input.storeSlug);
 
-  const listing = await storefrontRepository.findPublicListingDetail({
-    listingSlug: input.listingSlug,
-    storeId: store.id,
-    tenantId: store.tenantId,
-  });
+  const listing = input.listingSlug
+    ? await storefrontRepository.findPublicListingDetail({
+        listingSlug: input.listingSlug,
+        storeId: store.id,
+        tenantId: store.tenantId,
+      })
+    : null;
 
-  if (!listing) {
+  if (input.listingSlug && !listing) {
     throw new PublicStorefrontListingNotFoundError(input.listingSlug);
   }
 
-  const duplicate = await findDuplicatePublicLead(ports.leadSink, {
+  const duplicate = await findDuplicatePublicStorefrontLead(ports.leadSink, {
     buyerEmail: input.buyerEmail ?? null,
     buyerPhone: input.buyerPhone ?? null,
-    listingId: listing.id,
+    listingId: listing?.id ?? null,
     storeId: store.id,
     tenantId: store.tenantId,
   });
@@ -100,13 +102,18 @@ export async function createPublicStorefrontLead(
     buyerEmail: input.buyerEmail ?? null,
     buyerName: input.buyerName,
     buyerPhone: input.buyerPhone ?? null,
-    listingId: listing.id,
+    listingId: listing?.id ?? null,
     metadata: {
-      listingId: listing.id,
-      listingSlug: listing.slug,
-      listingTitle: listing.title,
+      ...(listing
+        ? {
+            listingId: listing.id,
+            listingSlug: listing.slug,
+            listingTitle: listing.title,
+          }
+        : {}),
       message: input.message ?? null,
       sourceChannel: "storefront",
+      sourceSurface: listing ? "listing" : "landing_page",
       storeSlug: store.slug,
     },
     source: "public_site",
@@ -129,47 +136,6 @@ export async function createPublicStorefrontLead(
   };
 }
 
-async function findDuplicatePublicLead(
-  repository: PublicStorefrontLeadSink,
-  input: {
-    buyerEmail: string | null;
-    buyerPhone: string | null;
-    listingId: string;
-    storeId: StoreId;
-    tenantId: TenantId;
-  },
-): Promise<PublicStorefrontLead | null> {
-  const search = input.buyerEmail ?? input.buyerPhone;
-  if (!search) return null;
-  const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
-  const leads = await repository.listLeads({
-    limit: 20,
-    search,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
-
-  return (
-    leads.find(
-      (lead) =>
-        lead.source === "public_site" &&
-        lead.listingId === input.listingId &&
-        lead.createdAt.getTime() >= recentCutoff &&
-        sameContact(lead, input),
-    ) ?? null
-  );
-}
-
-function sameContact(
-  lead: Pick<PublicStorefrontLead, "buyerEmail" | "buyerPhone">,
-  input: { buyerEmail: string | null; buyerPhone: string | null },
-) {
-  return Boolean(
-    (input.buyerEmail && lead.buyerEmail === input.buyerEmail) ||
-    (input.buyerPhone && lead.buyerPhone === input.buyerPhone),
-  );
-}
-
 async function recordLeadAudit(
   context: ServiceContext,
   input: {
@@ -179,7 +145,7 @@ async function recordLeadAudit(
       PublicStorefrontLead,
       "buyerEmail" | "buyerPhone" | "id" | "source" | "status"
     >;
-    listing: { id: string; slug: string; title: string };
+    listing: { id: string; slug: string; title: string } | null;
     store: { id: string; slug: string; tenantId: string };
     summary: string;
   },
@@ -194,12 +160,13 @@ async function recordLeadAudit(
       hasBuyerEmail: Boolean(input.lead.buyerEmail),
       hasBuyerPhone: Boolean(input.lead.buyerPhone),
       hasMessage: input.hasMessage,
-      listingId: input.listing.id,
-      listingSlug: input.listing.slug,
-      listingTitle: input.listing.title,
+      listingId: input.listing?.id ?? null,
+      listingSlug: input.listing?.slug ?? null,
+      listingTitle: input.listing?.title ?? null,
       permission,
       source: input.lead.source,
       sourceChannel: "storefront",
+      sourceSurface: input.listing ? "listing" : "landing_page",
       status: input.lead.status,
       storeSlug: input.store.slug,
     },

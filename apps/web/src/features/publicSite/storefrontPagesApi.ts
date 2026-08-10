@@ -29,6 +29,10 @@ export type StorefrontPageUpdatePayload = Partial<
 };
 
 export type StorefrontPagesApi = {
+  createOrReuseVehicleVitrine: (
+    listingId: string,
+    input: { visible: boolean },
+  ) => Promise<StorefrontCustomPage>;
   createPage: (
     input: StorefrontPageCreatePayload,
   ) => Promise<StorefrontCustomPage>;
@@ -53,6 +57,14 @@ export function createStorefrontPagesApi({
   fetch,
 }: CreateStorefrontPagesApiOptions): StorefrontPagesApi {
   return {
+    createOrReuseVehicleVitrine: (listingId, input) =>
+      fetch(storefrontPagesRoutes.vehicleVitrine(listingId, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createHeaders(auth),
+        method: "PUT",
+      })
+        .then(readJson<{ page: StorefrontCustomPage }>)
+        .then((data) => data.page),
     createPage: (input) =>
       fetch(storefrontPagesRoutes.pages(baseUrl), {
         body: JSON.stringify(cleanJson(input)),
@@ -95,6 +107,11 @@ export const storefrontPagesRoutes = {
   page: (pageId: string, baseUrl?: string) =>
     createEndpoint(`/storefront/pages/${encodeURIComponent(pageId)}`, baseUrl),
   pages: (baseUrl?: string) => createEndpoint("/storefront/pages", baseUrl),
+  vehicleVitrine: (listingId: string, baseUrl?: string) =>
+    createEndpoint(
+      `/storefront/pages/vehicle-vitrine/${encodeURIComponent(listingId)}`,
+      baseUrl,
+    ),
 } as const;
 
 function createHeaders(auth: SettingsAuth): HeadersInit {

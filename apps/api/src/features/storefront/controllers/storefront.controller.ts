@@ -29,10 +29,12 @@ import {
 import {
   handleCreatePublicStorefrontLead,
   handleCreatePublicStorefrontPageLead,
+  handleCreatePublicStorefrontSiteLead,
 } from "./storefrontLeadHandler.js";
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(48).default(24),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 export type CreateStorefrontFeatureOptions = {
@@ -92,7 +94,11 @@ export function createStorefrontFeature(
       );
       const result = await listPublicVehicleListings(
         serviceContext,
-        { limit: query.data.limit, storeSlug },
+        {
+          limit: query.data.limit,
+          offset: query.data.offset,
+          storeSlug,
+        },
         repository,
       );
 
@@ -131,6 +137,17 @@ export function createStorefrontFeature(
         crmRepository,
         leadRateLimiter,
         pageRepository,
+        ...(options.audit ? { audit: options.audit } : {}),
+      }),
+    ),
+  );
+
+  storefrontFeature.post("/leads", async (context) =>
+    handleStorefront(context, () =>
+      handleCreatePublicStorefrontSiteLead(context, {
+        crmRepository,
+        leadRateLimiter,
+        repository,
         ...(options.audit ? { audit: options.audit } : {}),
       }),
     ),

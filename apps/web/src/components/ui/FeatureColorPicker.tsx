@@ -1,4 +1,4 @@
-import { Check, Palette } from "lucide-react";
+import { Check, Copy, Palette, Pipette } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { FeatureInput } from "./FeatureControls";
 import { cx } from "./featureShared";
@@ -13,6 +13,10 @@ type FeatureColorPickerProps = {
   placeholder?: string;
   presets?: readonly string[];
   value: string;
+};
+
+type EyeDropperConstructor = new () => {
+  open: () => Promise<{ sRGBHex?: string }>;
 };
 
 const hash = String.fromCharCode(35);
@@ -34,8 +38,16 @@ export function FeatureColorPicker({
   const normalizedFallback = normalizeHexColor(fallbackColor);
   const pickerValue = normalizedValue ?? normalizedFallback ?? defaultColor();
   const [draftValue, setDraftValue] = useState(value);
+  const [copied, setCopied] = useState(false);
   const isInvalid =
     Boolean(draftValue.trim()) && !normalizeHexColor(draftValue);
+
+  const EyeDropper =
+    typeof window === "undefined"
+      ? null
+      : ((window as Window & { EyeDropper?: EyeDropperConstructor })
+          .EyeDropper ?? null);
+  const hasEyeDropper = Boolean(EyeDropper);
 
   useEffect(() => {
     setDraftValue(normalizedValue ?? value);
@@ -51,6 +63,30 @@ export function FeatureColorPicker({
     if (allowEmpty && nextValue.trim() === "") onChange("");
   };
 
+  const handleEyeDropper = async () => {
+    if (!EyeDropper) return;
+    try {
+      const eyeDropper = new EyeDropper();
+      const result = await eyeDropper.open();
+      if (result?.sRGBHex) {
+        commitValue(result.sRGBHex);
+      }
+    } catch {
+      // User cancelled eye dropper selection
+    }
+  };
+
+  const copyHex = async () => {
+    const hexToCopy = normalizedValue ?? pickerValue;
+    try {
+      await navigator.clipboard?.writeText(hexToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard write failed
+    }
+  };
+
   return (
     <div className={cx("grid gap-2", className)}>
       <div className="flex items-center justify-between gap-2">
@@ -60,31 +96,44 @@ export function FeatureColorPicker({
         >
           {label}
         </label>
-        <span className="font-mono text-xs font-semibold uppercase text-muted">
-          {normalizedValue ?? (allowEmpty ? "Tema" : pickerValue)}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <button
+            aria-label="Copiar código HEX"
+            className="flex items-center gap-1 font-mono text-xs font-semibold uppercase text-muted hover:text-foreground"
+            onClick={() => void copyHex()}
+            title="Clique para copiar código HEX"
+            type="button"
+          >
+            {normalizedValue ?? (allowEmpty ? "Tema" : pickerValue)}
+            {copied ? (
+              <Check className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <Copy className="h-3 w-3 opacity-60" />
+            )}
+          </button>
+        </div>
       </div>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
         <button
           aria-label={`Selecionar ${label}`}
-          className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-app outline-none transition-colors hover:border-accent focus:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-app outline-none transition-transform hover:scale-105 focus:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-50"
           disabled={disabled}
           onClick={() => nativeInputRef.current?.click()}
           type="button"
         >
           <span
             aria-hidden="true"
-            className="absolute inset-1 rounded-md"
+            className="absolute inset-1 rounded-md shadow-inner"
             style={{ backgroundColor: pickerValue }}
           />
           <Palette
             aria-hidden="true"
-            className="relative size-4 text-inverse drop-shadow"
+            className="relative size-3.5 text-inverse drop-shadow-md"
           />
         </button>
         <FeatureInput
           aria-invalid={isInvalid}
-          className="font-mono uppercase"
+          className="font-mono uppercase text-xs h-10"
           disabled={disabled}
           id={inputId}
           onBlur={() => {
@@ -95,6 +144,18 @@ export function FeatureColorPicker({
           placeholder={placeholder ?? pickerValue}
           value={draftValue}
         />
+        {hasEyeDropper ? (
+          <button
+            aria-label="Capturar cor da tela"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line bg-card/50 text-muted transition-colors hover:border-accent hover:text-foreground"
+            disabled={disabled}
+            onClick={() => void handleEyeDropper()}
+            title="Conta-gotas: capturar cor de qualquer elemento na tela"
+            type="button"
+          >
+            <Pipette className="h-4 w-4" />
+          </button>
+        ) : null}
         <input
           aria-hidden="true"
           className="sr-only"
@@ -109,7 +170,7 @@ export function FeatureColorPicker({
       {presets.length ? (
         <div
           aria-label={`Cores sugeridas para ${label}`}
-          className="flex flex-wrap gap-1.5"
+          className="flex flex-wrap gap-1.5 pt-0.5"
           role="group"
         >
           {presets.map((preset) => {
@@ -122,10 +183,10 @@ export function FeatureColorPicker({
                 aria-label={`${label} ${normalizedPreset}`}
                 aria-pressed={selected}
                 className={cx(
-                  "grid size-7 place-items-center rounded-full border transition-transform hover:scale-105 focus:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-50",
+                  "grid size-6 place-items-center rounded-full border transition-transform hover:scale-110 focus:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-50",
                   selected
-                    ? "border-accent ring-2 ring-accent/20"
-                    : "border-line",
+                    ? "border-accent ring-2 ring-accent/30 scale-105"
+                    : "border-line/70",
                 )}
                 disabled={disabled}
                 key={normalizedPreset}
@@ -134,7 +195,7 @@ export function FeatureColorPicker({
                 type="button"
               >
                 {selected ? (
-                  <Check aria-hidden="true" className="size-3.5 text-inverse" />
+                  <Check aria-hidden="true" className="size-3 text-inverse" />
                 ) : null}
               </button>
             );
@@ -142,7 +203,9 @@ export function FeatureColorPicker({
         </div>
       ) : null}
       {isInvalid ? (
-        <p className="text-xs font-semibold text-danger">Use HEX válido.</p>
+        <p className="text-xs font-semibold text-danger">
+          Use um HEX válido (ex: RRGGBB).
+        </p>
       ) : null}
     </div>
   );

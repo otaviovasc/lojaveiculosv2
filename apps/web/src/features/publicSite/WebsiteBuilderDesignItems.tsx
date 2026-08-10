@@ -6,6 +6,7 @@ import {
   Palette,
   Phone,
   Search,
+  SunMoon,
   Sparkles,
   Store,
   Type,
@@ -24,6 +25,7 @@ import {
   WebsiteBuilderTypographyPanel,
 } from "./WebsiteBuilderPanelsPrimary";
 import { WebsiteBuilderColorsSection } from "./WebsiteBuilderColorsSection";
+import { WebsiteBuilderAppearancePanel } from "./WebsiteBuilderAppearancePanel";
 import { WebsiteBuilderSectionsManager } from "./WebsiteBuilderSectionsManager";
 import type {
   WebsiteBuilderConfig,
@@ -45,60 +47,6 @@ export function createWebsiteBuilderEditorGroups({
   ) => void;
 }): WebsiteBuilderEditorGroups {
   return {
-    advanced: [
-      {
-        children: (
-          <WebsiteBuilderTypographyPanel
-            config={config}
-            updateConfig={updateConfig}
-          />
-        ),
-        icon: Type,
-        id: "typography",
-        title: "Tipografia",
-      },
-      {
-        children: (
-          <WebsiteBuilderSectionsManager
-            onUpdate={(sections) => updateConfig("sections", sections)}
-            sections={config.sections}
-          />
-        ),
-        icon: Layers,
-        id: "sections",
-        title: "Seções do Site",
-      },
-      {
-        children: (
-          <WebsiteBuilderAboutPanel
-            config={config}
-            updateConfig={updateConfig}
-          />
-        ),
-        icon: Info,
-        id: "about",
-        title: "Sobre",
-      },
-      {
-        children: (
-          <WebsiteBuilderTestimonialsPanel
-            config={config}
-            updateConfig={updateConfig}
-          />
-        ),
-        icon: MessageSquareQuote,
-        id: "testimonials",
-        title: "Depoimentos",
-      },
-      {
-        children: (
-          <WebsiteBuilderSeoPanel config={config} updateConfig={updateConfig} />
-        ),
-        icon: Search,
-        id: "seo",
-        title: "SEO",
-      },
-    ],
     checklist: [
       {
         children: (
@@ -138,6 +86,28 @@ export function createWebsiteBuilderEditorGroups({
       },
       {
         children: (
+          <WebsiteBuilderTypographyPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: Type,
+        id: "typography",
+        title: "Tipografia",
+      },
+      {
+        children: (
+          <WebsiteBuilderAppearancePanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: SunMoon,
+        id: "appearance",
+        title: "Aparência",
+      },
+      {
+        children: (
           <WebsiteBuilderHeroPanel
             config={config}
             updateConfig={updateConfig}
@@ -149,6 +119,39 @@ export function createWebsiteBuilderEditorGroups({
       },
       {
         children: (
+          <WebsiteBuilderSectionsManager
+            onUpdate={(sections) => updateConfig("sections", sections)}
+            sections={config.sections}
+          />
+        ),
+        icon: Layers,
+        id: "sections",
+        title: "Seções do Site",
+      },
+      {
+        children: (
+          <WebsiteBuilderAboutPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: Info,
+        id: "about",
+        title: "Sobre",
+      },
+      {
+        children: (
+          <WebsiteBuilderTestimonialsPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: MessageSquareQuote,
+        id: "testimonials",
+        title: "Depoimentos",
+      },
+      {
+        children: (
           <WebsiteBuilderContactPanel
             config={config}
             updateConfig={updateConfig}
@@ -157,6 +160,14 @@ export function createWebsiteBuilderEditorGroups({
         icon: Phone,
         id: "contact",
         title: "Contato",
+      },
+      {
+        children: (
+          <WebsiteBuilderSeoPanel config={config} updateConfig={updateConfig} />
+        ),
+        icon: Search,
+        id: "seo",
+        title: "SEO",
       },
     ],
   };

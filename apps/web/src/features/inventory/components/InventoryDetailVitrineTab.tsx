@@ -16,10 +16,7 @@ import {
 } from "../../publicSite/storefrontRuntimeApis";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import { buildCustomPagePublicPath } from "../../publicSite/customPageUtils";
-import {
-  createVitrineComponents,
-  createVitrinePageSlug,
-} from "./VitrineTabComponentsHelper";
+import { createVitrinePageSlug } from "./VitrineTabComponentsHelper";
 import type { StoreSettingsSnapshot } from "../../settings/types";
 import { VitrinePreviewMockup, type Specs } from "./VitrinePreviewMockup";
 import { VitrinePromoMockup } from "./VitrinePromoMockup";
@@ -46,7 +43,6 @@ export function InventoryDetailVitrineTab({
   const [error, setError] = useState<string | null>(null);
   const [storeSlug, setStoreSlug] = useState("");
   const [storeName, setStoreName] = useState("");
-  const [whatsappPhone, setWhatsappPhone] = useState("");
   const [activePage, setActivePage] = useState<StorefrontCustomPage | null>(
     null,
   );
@@ -68,10 +64,21 @@ export function InventoryDetailVitrineTab({
           settingsData.identity.legalName ||
           settingsData.identity.publicSlug,
       );
-      setWhatsappPhone(settingsData.profile.whatsappPhone || "");
       setSettings(settingsData);
 
-      const foundPage = pages.find((p) => p.slug === targetSlug);
+      const boundPage = pages.find(
+        (page) => page.sourceListingId === listing.id,
+      );
+      const legacyPage = pages.find(
+        (page) => !page.sourceListingId && page.slug === targetSlug,
+      );
+      const foundPage =
+        boundPage ??
+        (legacyPage
+          ? await pagesApi.createOrReuseVehicleVitrine(listing.id, {
+              visible: legacyPage.visible,
+            })
+          : null);
       setActivePage(foundPage ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -106,28 +113,12 @@ export function InventoryDetailVitrineTab({
     setIsBusy(true);
     setError(null);
     try {
-      // 1. Create custom page
-      const createdPage = await pagesApi.createPage({
-        title: `${listing.title} - Oferta Exclusiva`,
-        slug: targetSlug,
-        description: `Página comercial para o veículo ${listing.title}. Confira fotos, ficha técnica e fale diretamente com a equipe.`,
-      });
-
-      // 2. Generate page components using helper
-      const components = createVitrineComponents({
-        detail,
-        primaryUnit,
-        specs,
-        storeName,
-        storeSlug,
-        whatsappPhone,
-      });
-
-      // 3. Save components & make public
-      const updatedPage = await pagesApi.updatePage(createdPage.id, {
-        components,
-        visible: true,
-      });
+      const updatedPage = await pagesApi.createOrReuseVehicleVitrine(
+        listing.id,
+        {
+          visible: true,
+        },
+      );
 
       setActivePage(updatedPage);
     } catch (err) {
@@ -142,9 +133,11 @@ export function InventoryDetailVitrineTab({
     setIsBusy(true);
     setError(null);
     try {
-      const updated = await pagesApi.updatePage(activePage.id, {
-        visible: checked,
-      });
+      const updated = checked
+        ? await pagesApi.createOrReuseVehicleVitrine(listing.id, {
+            visible: true,
+          })
+        : await pagesApi.updatePage(activePage.id, { visible: false });
       setActivePage(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -168,7 +161,8 @@ export function InventoryDetailVitrineTab({
   };
 
   const handleEdit = () => {
-    window.location.hash = "/custom-pages";
+    if (!activePage) return;
+    window.location.hash = `/custom-pages?page=${encodeURIComponent(activePage.id)}`;
   };
 
   const publicPhotos = useMemo(() => {
@@ -209,6 +203,7 @@ export function InventoryDetailVitrineTab({
               <div className="flex items-center gap-3">
                 <label className="relative inline-flex items-center cursor-pointer select-none">
                   <input
+                    aria-label="Publicar Vitrine"
                     type="checkbox"
                     disabled={isBusy}
                     checked={activePage.visible}
