@@ -56,6 +56,34 @@ export const crmWhatsappRoutes = {
       )}/webhooks/configure`,
       baseUrl,
     ),
+  composioAuthorize: (
+    connectionId: CrmWhatsappConnectionId,
+    baseUrl?: string,
+  ) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/composio/authorize`,
+      baseUrl,
+    ),
+  composioComplete: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/composio/complete`,
+      baseUrl,
+    ),
+  composioSender: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/composio/sender`,
+      baseUrl,
+    ),
+  zapiPairingCode: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/code`,
+      baseUrl,
+    ),
+  zapiPairingQr: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/qr`,
+      baseUrl,
+    ),
   conversationsStart: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/conversations/start", baseUrl),
   events: (baseUrl?: string) =>
@@ -149,6 +177,7 @@ export function createCrmWhatsappSessionQuery(
   addOptionalParam(params, "assigneeId", query.assigneeId);
   addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "filter", query.filter);
+  addOptionalParam(params, "humanAttendanceState", query.humanAttendanceState);
   addOptionalParam(params, "leadId", query.leadId);
   addOptionalParam(params, "limit", query.limit);
   addOptionalParam(params, "offset", query.offset);
@@ -166,6 +195,7 @@ export function createCrmWhatsappSessionCountsQuery(
   const params = new URLSearchParams();
   addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "filter", query.filter);
+  addOptionalParam(params, "humanAttendanceState", query.humanAttendanceState);
   addOptionalParam(params, "leadId", query.leadId);
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "status", query.status);

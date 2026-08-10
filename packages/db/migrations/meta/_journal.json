@@ -113,6 +113,41 @@
       "when": 1785871755074,
       "tag": "0015_vehicle_unit_soft_delete_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786283425479,
+      "tag": "0016_wandering_mesmero",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786373276883,
+      "tag": "0017_nappy_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786375659487,
+      "tag": "0018_yummy_genesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786378818206,
+      "tag": "0019_crm_whatsapp_human_attendance",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786383490111,
+      "tag": "0020_woozy_mandarin",
+      "breakpoints": true
     }
   ]
 }

@@ -24,7 +24,10 @@ import type {
   CrmWhatsappMessageQuery,
   CrmWhatsappMessage,
   CrmWhatsappConfigureWebhooksResult,
+  CrmWhatsappComposioAuthorization,
+  CrmWhatsappComposioCompleteResult,
   CrmWhatsappConnectionsResponse,
+  CrmWhatsappCreateConnectionInput,
   CrmWhatsappUpdateConnectionInput,
   CrmWhatsappProviderConnection,
   CrmWhatsappProviderEventsResponse,
@@ -53,6 +56,8 @@ import type {
   CrmWhatsappTag,
   CrmWhatsappUpdateTagInput,
   CrmWhatsappUpdateQuickMessageInput,
+  CrmWhatsappZapiPairingCode,
+  CrmWhatsappZapiPairingQr,
 } from "./crmWhatsappTypes";
 
 export type CrmWhatsappApi = {
@@ -66,6 +71,15 @@ export type CrmWhatsappApi = {
   configureConnectionWebhooks: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappConfigureWebhooksResult>;
+  authorizeComposioConnection: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappComposioAuthorization>;
+  completeComposioConnection: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappComposioCompleteResult>;
+  createConnection: (
+    input: CrmWhatsappCreateConnectionInput,
+  ) => Promise<CrmWhatsappProviderConnection>;
   deleteMessage: (
     messageId: CrmWhatsappMessage["id"],
   ) => Promise<CrmWhatsappMessage | null>;
@@ -94,6 +108,17 @@ export type CrmWhatsappApi = {
   removeReaction: (
     messageId: CrmWhatsappMessage["id"],
   ) => Promise<CrmWhatsappMessage | null>;
+  requestZapiPairingCode: (
+    connectionId: CrmWhatsappConnectionId,
+    phone: string,
+  ) => Promise<CrmWhatsappZapiPairingCode>;
+  requestZapiPairingQr: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappZapiPairingQr>;
+  selectComposioSender: (
+    connectionId: CrmWhatsappConnectionId,
+    senderId: string,
+  ) => Promise<CrmWhatsappProviderConnection>;
   sendMedia: (input: CrmWhatsappSendMediaInput) => Promise<CrmWhatsappMessage>;
   sendReaction: (
     messageId: CrmWhatsappMessage["id"],

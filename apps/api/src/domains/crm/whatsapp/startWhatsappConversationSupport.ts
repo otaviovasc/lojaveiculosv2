@@ -33,6 +33,36 @@ export function createLocalWhatsappExternalId() {
   return `local-start-${randomUUID()}`;
 }
 
+export async function markStartedConversationMessageFailed(
+  context: ServiceContext,
+  ports: CrmServicePorts,
+  input: {
+    connectionProvider: string;
+    error: unknown;
+    messageId: string;
+    pendingExternalId: string;
+  },
+) {
+  await updateStartedConversationMessage(context, ports, {
+    messageId: input.messageId,
+    metadata: failedMessageMetadata({
+      errorName:
+        input.error instanceof Error ? input.error.name : "UnknownError",
+      pendingExternalId: input.pendingExternalId,
+      provider: input.connectionProvider,
+      sentByActorId: context.actor.id,
+    }),
+    status: "FAILED",
+  }).catch((updateError) => {
+    context.logger.warn("crm.whatsapp.conversation.start.failed_mark_failed", {
+      errorName:
+        updateError instanceof Error ? updateError.name : "UnknownError",
+      messageId: input.messageId,
+      requestId: context.requestId,
+    });
+  });
+}
+
 export async function findOrCreateLead(
   context: ServiceContext,
   ports: CrmServicePorts,
@@ -93,7 +123,6 @@ export async function recordLeadInteraction(
     messageExternalId: string;
     occurredAt: Date;
     provider: CrmConnectionProvider;
-    raw: unknown;
     sessionId: string;
   },
 ) {
@@ -121,7 +150,6 @@ export async function recordLeadInteraction(
         sessionId: input.sessionId,
       },
       provider: input.provider,
-      raw: input.raw,
     },
     occurredAt: input.occurredAt,
     storeId: scope.storeId as never,
@@ -179,13 +207,11 @@ export async function publishConversation(
 export function sentMessageMetadata(input: {
   pendingExternalId: string;
   provider: string;
-  raw: unknown;
   sentByActorId: string;
 }) {
   return {
     pendingExternalId: input.pendingExternalId,
     provider: input.provider,
-    raw: input.raw,
     sentByActorId: input.sentByActorId,
     sendState: "SENT",
   };

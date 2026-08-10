@@ -23,11 +23,13 @@ import {
   listAddons,
   listPlans,
 } from "./drizzleBillingCatalogSupport.js";
+import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
 import {
   getFinancialSummary,
   listChargeables,
 } from "./drizzleBillingOverviewSupport.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { listAddonContracts } from "./drizzleBillingAddonContracts.js";
 
 export async function getTenantOverview(
   db: DrizzleBillingClient,
@@ -42,17 +44,20 @@ export async function getTenantOverview(
     .where(eq(tenants.id, input.tenantId))
     .limit(1);
   if (!tenant) throw new Error("Tenant not found.");
+  const catalogVersion = await findActiveBillingCatalogVersion(db);
 
   const [
     addons,
+    addonContracts,
     billingPlans,
     storeRows,
     entitlementRows,
     subscription,
     events,
   ] = await Promise.all([
-    listAddons(db),
-    listPlans(db),
+    listAddons(db, catalogVersion),
+    listAddonContracts(db, input),
+    listPlans(db, catalogVersion),
     db
       .select()
       .from(stores)
@@ -85,6 +90,7 @@ export async function getTenantOverview(
   ]);
   const storesOverview = storeRows.map((store) =>
     toAgencyManagedStoreOverview({
+      addonContracts,
       billingPlans,
       chargeables,
       entitlementRows,
@@ -96,6 +102,7 @@ export async function getTenantOverview(
   );
 
   return {
+    addonContracts,
     addons,
     allocations: storesOverview.map(toAllocation),
     authority: createBillingAuthority({
@@ -123,6 +130,7 @@ export async function getTenantOverview(
       tenantSlug: tenant.slug,
     },
     tenantId: input.tenantId as never,
+    usageAllowances: [],
   };
 }
 
@@ -151,6 +159,7 @@ async function listTenantEntitlementEvents(
 }
 
 function toAgencyManagedStoreOverview(input: {
+  addonContracts: AgencyTenantOverview["addonContracts"];
   billingPlans: readonly BillingPlan[];
   chargeables: Awaited<ReturnType<typeof listChargeables>>;
   entitlementRows: (typeof storeEntitlements.$inferSelect)[];
@@ -184,6 +193,9 @@ function toAgencyManagedStoreOverview(input: {
       isEffectiveEntitlement(item),
     ).length,
     addonCount: chargeables.filter((item) => item.itemType === "addon").length,
+    addonContracts: input.addonContracts.filter(
+      (contract) => contract.storeId === input.store.id,
+    ),
     createdAt: input.store.createdAt,
     entitlementCount: entitlements.length,
     entitlementMatrix: createEntitlementMatrix({ entitlements, subscription }),

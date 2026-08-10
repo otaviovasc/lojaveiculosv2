@@ -73,6 +73,14 @@ describe("CrmWhatsappIntegrationsPage", () => {
     expect(
       screen.getAllByText(/CRM_WHATSAPP_BOT_ACTION_BLOCKED/)[0],
     ).toBeVisible();
+
+    await user.click(screen.getByText("Estados de atendimento humano"));
+    expect(screen.getByText("humanAttendanceState")).toBeVisible();
+    expect(screen.getByText("humanAttendanceChangedAt")).toBeVisible();
+    expect(screen.getByText("humanHandlingStartedAt")).toBeVisible();
+    expect(screen.getByText("humanAttendanceStateVersion")).toBeVisible();
+    expect(screen.getByText("interventionId")).toBeVisible();
+    expect(screen.getByText("Reacao ou falha de envio")).toBeVisible();
   });
 
   it("shows a healthy provider state in the events view", async () => {

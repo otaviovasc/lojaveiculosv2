@@ -3,6 +3,7 @@ import {
   createCrmWhatsappSessionQuery,
   crmWhatsappRoutes,
 } from "./crmWhatsappApi";
+import { createCrmWhatsappSessionCountsQuery } from "./crmWhatsappApiRoutes";
 
 describe("CRM WhatsApp API routes", () => {
   it("builds V2 WhatsApp routes", () => {
@@ -85,6 +86,7 @@ describe("CRM WhatsApp API routes", () => {
         assigneeId: "03030303-0303-4303-8303-030303030303",
         connectionId: "connection_1",
         filter: "fresh",
+        humanAttendanceState: "WAITING_HUMAN",
         limit: 40,
         offset: 80,
         search: "maria",
@@ -97,7 +99,24 @@ describe("CRM WhatsApp API routes", () => {
         unreadOnly: true,
       }).toString(),
     ).toBe(
-      "assigneeId=03030303-0303-4303-8303-030303030303&connectionId=connection_1&filter=fresh&limit=40&offset=80&search=maria&sessionId=session_1&status=ACTIVE&tagIds=550e8400-e29b-41d4-a716-446655440000%2C550e8400-e29b-41d4-a716-446655440001&unreadOnly=true",
+      "assigneeId=03030303-0303-4303-8303-030303030303&connectionId=connection_1&filter=fresh&humanAttendanceState=WAITING_HUMAN&limit=40&offset=80&search=maria&sessionId=session_1&status=ACTIVE&tagIds=550e8400-e29b-41d4-a716-446655440000%2C550e8400-e29b-41d4-a716-446655440001&unreadOnly=true",
     );
+  });
+
+  it("serializes only the V2 attendance field in count queries", () => {
+    const query = createCrmWhatsappSessionCountsQuery({
+      connectionId: "connection_1",
+      filter: "mine",
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      search: "maria",
+      status: "HUMAN_TAKEOVER",
+      tagIds: ["tag-1", "tag-2"],
+      unreadOnly: true,
+    }).toString();
+
+    expect(query).toBe(
+      "connectionId=connection_1&filter=mine&humanAttendanceState=IN_HUMAN_SERVICE&search=maria&status=HUMAN_TAKEOVER&tagIds=tag-1%2Ctag-2&unreadOnly=true",
+    );
+    expect(query).not.toContain("attendanceState=");
   });
 });

@@ -137,27 +137,38 @@ test("maps stored Z-API credentials without exposing them in metadata", () => {
       provider: "ZAPI",
       status: "CONNECTED",
     },
-    { activate: true },
+    {
+      activate: true,
+      sealCredential: ({ plaintext, purpose }) =>
+        `sealed:${purpose}:${plaintext}`,
+    },
   );
   assert.deepEqual(mapped, {
     credentialsRef: {
       mode: "stored",
-      stored: { instanceId: "instance", instanceToken: "secret" },
+      stored: {
+        instanceId: "sealed:zapi.instance-id:instance",
+        instanceToken: "sealed:zapi.instance-token:secret",
+      },
     },
-    externalInstanceId: "instance",
+    externalInstanceId: null,
+    lookupInstanceId: "instance",
     provider: "zapi",
     status: "active",
   });
 });
 
 test("keeps an imported connection paused until cutover activation", () => {
-  const mapped = mapRepassesConnection({
-    credentials: { instanceId: "instance", token: "secret" },
-    id: 30,
-    is_active: true,
-    provider: "ZAPI",
-    status: "CONNECTED",
-  });
+  const mapped = mapRepassesConnection(
+    {
+      credentials: { instanceId: "instance", token: "secret" },
+      id: 30,
+      is_active: true,
+      provider: "ZAPI",
+      status: "CONNECTED",
+    },
+    { sealCredential: ({ plaintext }) => `sealed:${plaintext}` },
+  );
   assert.equal(mapped.status, "paused");
 });
 

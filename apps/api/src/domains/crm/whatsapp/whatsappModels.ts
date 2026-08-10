@@ -20,7 +20,12 @@ export type WhatsappSession = {
   };
   firstHandledAt: Date | null;
   freshLeadAt: Date | null;
+  humanAttendanceChangedAt: Date | null;
+  humanAttendanceState: CrmWhatsappSession["humanAttendanceState"];
+  humanAttendanceStateVersion: number | null;
+  humanHandlingStartedAt: Date | null;
   humanTakeoverAt: Date | null;
+  interventionId: string | null;
   id: string;
   lastAssignedAt: Date | null;
   lastCustomerReadAt: Date | null;
@@ -86,7 +91,12 @@ export function toWhatsappSession(
     },
     firstHandledAt: session.firstHandledAt,
     freshLeadAt: session.freshLeadAt,
+    humanAttendanceChangedAt: session.humanAttendanceChangedAt,
+    humanAttendanceState: session.humanAttendanceState,
+    humanAttendanceStateVersion: session.humanAttendanceStateVersion,
+    humanHandlingStartedAt: session.humanHandlingStartedAt,
     humanTakeoverAt: session.humanTakeoverAt,
+    interventionId: session.interventionId,
     id: session.id,
     lastAssignedAt: session.lastAssignedAt,
     lastCustomerReadAt: session.lastCustomerReadAt,

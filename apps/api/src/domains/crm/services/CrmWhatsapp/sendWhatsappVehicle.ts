@@ -133,6 +133,7 @@ async function sendVehicleText(
   return sendWhatsappOutboundMessage(
     context,
     {
+      idempotencyPayload: input,
       prepare: async ({ connection, gateway, phone }) => {
         const sent = await gateway.sendText(connection, {
           phone,
@@ -144,7 +145,6 @@ async function sendVehicleText(
           metadata: {
             ...input.metadata,
             provider: connection.provider,
-            raw: sent.raw,
             sentByActorId: context.actor.id,
           },
           sent,
@@ -172,6 +172,7 @@ async function sendInventoryVehicleMedia(
   return sendWhatsappOutboundMessage(
     context,
     {
+      idempotencyPayload: input,
       prepare: async ({ connection, gateway, phone }) => {
         const sent = await gateway.sendMedia(connection, {
           ...(input.caption ? { caption: input.caption } : {}),
@@ -197,7 +198,6 @@ async function sendInventoryVehicleMedia(
               source: "vehicle_inventory",
             },
             provider: connection.provider,
-            raw: sent.raw,
             sentByActorId: context.actor.id,
             vehicle: {
               listingId: input.listing.id,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const providerQueryFiles = [
   "drizzleCrmBotIntegrationRepository.ts",
-  "drizzleCrmConnectionRepository.ts",
+  "drizzleCrmConnectionRepositorySupport.ts",
   "drizzleCrmWhatsappScheduledMessages.ts",
 ] as const;
 

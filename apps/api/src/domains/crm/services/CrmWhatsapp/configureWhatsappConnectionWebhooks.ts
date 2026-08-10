@@ -2,16 +2,11 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmWhatsappConfigureWebhooksResult } from "../../ports/crmWhatsappGateway.js";
 import {
-  buildWhatsappWebhookEndpoints,
-  resolveWebhookBaseUrl,
-} from "../../whatsapp/whatsappWebhookEndpoints.js";
-import {
   WhatsappConnectionNotFoundError,
   WhatsappMessageActionError,
 } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
-  getCrmWhatsappGateway,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -19,6 +14,8 @@ import {
   logWhatsappServiceEvent,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
+import { runZapiWebhookSetupAttempt } from "./runZapiWebhookSetupAttempt.js";
+import type { ZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState.js";
 
 const managePermission = "crm.whatsapp.connection.manage";
 
@@ -26,12 +23,12 @@ export type ConfigureWhatsappConnectionWebhooksInput = {
   basePath: string;
   canonicalApiOrigin: string;
   connectionId: string;
-  webhookToken: string | null;
 };
 
 export type ConfigureWhatsappConnectionWebhooksResult =
   CrmWhatsappConfigureWebhooksResult & {
     connectionId: string;
+    setup: ZapiWebhookSetupState;
     tokenApplied: boolean;
   };
 
@@ -57,7 +54,7 @@ export async function configureWhatsappConnectionWebhooks(
       entityType: "crm_whatsapp_connection",
       metadata: {
         connectionId: input.connectionId,
-        tokenApplied: Boolean(input.webhookToken),
+        tokenApplied: true,
       },
       permission: managePermission,
       summary: "Configured ZAPI WhatsApp webhooks",
@@ -80,27 +77,15 @@ export async function configureWhatsappConnectionWebhooks(
           409,
         );
       }
-      assertSharedTokenDestinationIsTrusted(connection.webhookUrl, input);
-
-      const baseUrl = resolveWebhookBaseUrl({
-        basePath: input.basePath,
-        requestOrigin: input.canonicalApiOrigin,
-        webhookUrl: connection.webhookUrl,
-      });
-      const endpoints = buildWhatsappWebhookEndpoints({
-        baseUrl,
-        connectionId: connection.id,
-        token: input.webhookToken,
-      });
-
-      const { results } = await getCrmWhatsappGateway(ports).configureWebhooks(
-        connection,
+      assertSecretDestinationIsTrusted(connection.webhookUrl, input);
+      const { results, setup } = await runZapiWebhookSetupAttempt(
+        context,
         {
-          webhooks: endpoints.map((endpoint) => ({
-            type: endpoint.type,
-            url: endpoint.url,
-          })),
+          basePath: input.basePath,
+          canonicalApiOrigin: input.canonicalApiOrigin,
+          connectionId: connection.id,
         },
+        ports,
       );
 
       logWhatsappServiceEvent(
@@ -116,17 +101,18 @@ export async function configureWhatsappConnectionWebhooks(
       return {
         connectionId: connection.id,
         results: results.map(redactWebhookResultUrl),
-        tokenApplied: Boolean(input.webhookToken),
+        setup,
+        tokenApplied: true,
       };
     },
   );
 }
 
-function assertSharedTokenDestinationIsTrusted(
+function assertSecretDestinationIsTrusted(
   webhookUrl: string | null,
   input: ConfigureWhatsappConnectionWebhooksInput,
 ) {
-  if (!input.webhookToken || !webhookUrl) return;
+  if (!webhookUrl) return;
   try {
     if (
       new URL(webhookUrl).origin === new URL(input.canonicalApiOrigin).origin

@@ -1,45 +1,24 @@
-import { ChevronDown, KeyRound, RefreshCw, Webhook } from "lucide-react";
+import { ChevronDown, Webhook } from "lucide-react";
 import type { ReactNode } from "react";
-import {
-  CrmWhatsappWorkflowFooter,
-  CrmWhatsappWorkflowPanel,
-  CrmWhatsappWorkflowStepper,
-} from "./CrmWhatsappWorkflow";
 import {
   ConnectionSectionCard,
   ConnectionStatusCard,
   ConnectionWebhookList,
 } from "./CrmWhatsappConnectionAdminParts";
-import {
-  ConnectionInstanceForm,
-  type InstanceDraft,
-} from "./CrmWhatsappConnectionInstanceForm";
 import type {
   CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappProviderConnection,
-  CrmWhatsappWebhookEndpoint,
 } from "./crmWhatsappTypes";
 import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
-
-const setupSteps = [
-  { label: "Credenciais", description: "Instancia protegida" },
-  { label: "Webhooks", description: "Eventos da Z-API" },
-  { label: "Verificar", description: "Conexao em tempo real" },
-] as const;
+import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
 
 type SharedProps = {
   connection: CrmWhatsappProviderConnection;
-  copiedWebhook: string | null;
   disabled: boolean;
-  draft: InstanceDraft;
   isConfiguringWebhooks: boolean;
   isRefreshing: boolean;
-  isSaving: boolean;
   onConfigureWebhooks: () => void;
-  onCopy: (endpoint: CrmWhatsappWebhookEndpoint) => void;
-  onDraftChange: (draft: InstanceDraft) => void;
   onRefresh: () => void;
-  onSave: () => void;
   webhookConfigResult: CrmWhatsappConfigureWebhooksResult | null;
 };
 
@@ -49,100 +28,60 @@ function readWebhookAutoConfig(props: SharedProps) {
     isConfiguring: props.isConfiguringWebhooks,
     onConfigure: props.onConfigureWebhooks,
     result: props.webhookConfigResult,
+    supportCode: readConnectionSetupSupportCode(props.connection),
   };
 }
 
 export function ConnectionSetupFlow({
-  currentStep,
   localError,
-  nextDisabled,
-  onCancel,
-  onNext,
-  onStepChange,
   ...props
 }: SharedProps & {
-  currentStep: number;
   localError: string | null;
-  nextDisabled: boolean;
-  onCancel: () => void;
-  onNext: () => void;
-  onStepChange: (step: number) => void;
 }) {
   if (props.connection.provider !== "zapi") {
     return <OfficialConnectionOverview {...props} />;
   }
 
   return (
-    <div className="crm-whatsapp-connection-setup crm-whatsapp-workflow">
-      <CrmWhatsappWorkflowStepper
-        currentStep={currentStep}
-        onStepChange={onStepChange}
-        steps={setupSteps}
+    <div className="crm-whatsapp-connection-dashboard">
+      <ConnectionStatusCard
+        connection={props.connection}
+        isRefreshing={props.isRefreshing}
+        onRefresh={props.onRefresh}
       />
-      {currentStep === 0 ? (
-        <CrmWhatsappWorkflowPanel
-          description="O token e armazenado pelo backend e nunca volta ao navegador."
-          title="Credenciais da instancia"
-        >
-          <ConnectionInstanceForm
-            connection={props.connection}
-            disabled={props.disabled}
-            draft={props.draft}
-            embedded
-            hideSave
-            isSaving={props.isSaving}
-            onChange={props.onDraftChange}
-            onSave={props.onSave}
-          />
-        </CrmWhatsappWorkflowPanel>
-      ) : null}
-      {currentStep === 1 ? (
-        <CrmWhatsappWorkflowPanel
-          description="Configure os webhooks na Z-API automaticamente ou copie cada URL manualmente."
-          title="Webhooks da conexao"
-        >
-          <ConnectionWebhookList
-            autoConfig={readWebhookAutoConfig(props)}
-            copiedType={props.copiedWebhook}
-            embedded
-            endpoints={props.connection.webhookEndpoints ?? []}
-            onCopy={props.onCopy}
-            tokenRequired={Boolean(props.connection.webhookTokenRequired)}
-          />
-        </CrmWhatsappWorkflowPanel>
-      ) : null}
-      {currentStep === 2 ? (
-        <CrmWhatsappWorkflowPanel
-          description="A verificacao consulta o provedor; nenhum estado online e simulado."
-          title="Verificar conexao"
-        >
-          <ConnectionStatusCard
-            connection={props.connection}
-            isRefreshing={props.isRefreshing}
-            onRefresh={props.onRefresh}
-            showRefresh={false}
-          />
-        </CrmWhatsappWorkflowPanel>
-      ) : null}
+      <ConnectionSectionCard
+        description="Nossa equipe prepara o canal depois da confirmação do pagamento."
+        icon={<Webhook aria-hidden="true" />}
+        title="Configuração da Z-API"
+      >
+        <ConnectionWebhookList
+          autoConfig={readWebhookAutoConfig(props)}
+          embedded
+        />
+      </ConnectionSectionCard>
       {localError ? (
-        <p className="crm-whatsapp-connection-error" role="alert">
-          {localError}
-        </p>
+        <div className="grid gap-2" role="alert">
+          <p className="crm-whatsapp-connection-error">{localError}</p>
+          <a
+            className="crm-whatsapp-connection-save"
+            href={crmWhatsappSupportUrl(
+              readConnectionSetupSupportCode(props.connection),
+            )}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Falar com o suporte
+          </a>
+        </div>
       ) : null}
-      <CrmWhatsappWorkflowFooter
-        backDisabled={currentStep === 0}
-        cancelLabel="Sair da configuracao"
-        confirmIcon={<RefreshCw aria-hidden="true" />}
-        confirmLabel="Verificar conexao"
-        isBusy={props.isSaving || props.isRefreshing}
-        isLastStep={currentStep === setupSteps.length - 1}
-        nextDisabled={nextDisabled}
-        onBack={() => onStepChange(Math.max(0, currentStep - 1))}
-        onCancel={onCancel}
-        onNext={onNext}
-      />
     </div>
   );
+}
+
+function readConnectionSetupSupportCode(
+  connection: CrmWhatsappProviderConnection,
+) {
+  return connection.setup?.supportCode?.trim() || null;
 }
 
 export function ConnectionDashboard(props: SharedProps) {
@@ -159,32 +98,13 @@ export function ConnectionDashboard(props: SharedProps) {
       />
       <div className="crm-whatsapp-connection-disclosures">
         <ConnectionDisclosure
-          description="Atualize ID ou token somente quando necessario."
-          icon={<KeyRound aria-hidden="true" />}
-          title="Credenciais protegidas"
-        >
-          <ConnectionInstanceForm
-            connection={props.connection}
-            disabled={props.disabled}
-            draft={props.draft}
-            embedded
-            isSaving={props.isSaving}
-            onChange={props.onDraftChange}
-            onSave={props.onSave}
-          />
-        </ConnectionDisclosure>
-        <ConnectionDisclosure
-          description={`${props.connection.webhookEndpoints?.length ?? 0} URLs geradas pelo backend.`}
+          description="Recebimento protegido de mensagens e atualizações."
           icon={<Webhook aria-hidden="true" />}
-          title="Webhooks da integracao"
+          title="Configuração automática"
         >
           <ConnectionWebhookList
             autoConfig={readWebhookAutoConfig(props)}
-            copiedType={props.copiedWebhook}
             embedded
-            endpoints={props.connection.webhookEndpoints ?? []}
-            onCopy={props.onCopy}
-            tokenRequired={Boolean(props.connection.webhookTokenRequired)}
           />
         </ConnectionDisclosure>
       </div>
@@ -202,13 +122,13 @@ function OfficialConnectionOverview(props: SharedProps) {
         onRefresh={props.onRefresh}
       />
       <ConnectionSectionCard
-        description="Credenciais, autorizacao e webhooks sao gerenciados pelo provedor."
-        icon={<KeyRound aria-hidden="true" />}
-        title={`${providerLabel} gerenciado`}
+        description="A autorização e o recebimento de mensagens são protegidos e gerenciados automaticamente."
+        icon={<Webhook aria-hidden="true" />}
+        title={`${providerLabel} conectado`}
       >
         <p className="crm-whatsapp-connection-webhook-note">
           Use Atualizar status para consultar novamente a conexao. Este painel
-          nao armazena nem exibe tokens do canal oficial.
+          não exibe dados protegidos do canal oficial.
         </p>
       </ConnectionSectionCard>
     </div>

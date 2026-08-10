@@ -78,6 +78,30 @@ export function createBillingFeature(
     }),
   );
 
+  feature.post("/addons/zapi/request", async (context) =>
+    handleBilling(context, async () => {
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json({
+        contract: await services.requestZapiAddon(serviceContext),
+      });
+    }),
+  );
+
+  feature.delete("/addons/zapi/request", async (context) =>
+    handleBilling(context, async () => {
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json({
+        contract: await services.cancelZapiAddon(serviceContext),
+      });
+    }),
+  );
+
   feature.post("/provider/subscription/sync", async (context) =>
     handleBilling(context, async () => {
       const input = await parseJson(

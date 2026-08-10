@@ -1,10 +1,14 @@
 import { mapRepassesConnection } from "./crm-whatsapp-mapping.mjs";
 import { nullableString, targetId } from "./common.mjs";
+import { createCrmCredentialSealer } from "./crm-credential-sealer.mjs";
 
 export async function seedWhatsappConnections(tx, source, config, ids) {
+  const seal = createCrmCredentialSealer();
   for (const connection of source.connections) {
     const mapped = mapRepassesConnection(connection, {
       activate: config.activateWhatsappConnections,
+      sealCredential: (input) =>
+        seal({ ...input, storeId: ids.store, tenantId: ids.tenant }),
     });
     const displayName =
       connection.name ||
@@ -83,7 +87,7 @@ async function resolveConnectionId(
       WHERE store_id=$1 AND provider=$2
         AND (external_instance_id=$3 OR display_name=$4)
       ORDER BY id`,
-    [ids.store, mapped.provider, mapped.externalInstanceId ?? "", displayName],
+    [ids.store, mapped.provider, mapped.lookupInstanceId ?? "", displayName],
   );
   const candidateIds = new Set([
     ...(globalExternal ? [globalExternal.id] : []),

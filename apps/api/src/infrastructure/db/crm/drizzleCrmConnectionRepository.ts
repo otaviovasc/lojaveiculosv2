@@ -1,30 +1,118 @@
-import {
-  and,
-  eq,
-  getTableColumns,
-  gt,
-  inArray,
-  isNull,
-  lte,
-  or,
-} from "drizzle-orm";
-import {
-  crmConnections,
-  storeEntitlements,
-  stores,
-  tenants,
-} from "@lojaveiculosv2/db";
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type {
-  CrmConnection,
-  CrmConnectionRepository,
-} from "../../../domains/crm/ports/crmConnectionRepository.js";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { crmConnections } from "@lojaveiculosv2/db";
+import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+import {
+  abandonedZapiConditions,
+  activeCrmConnectionQuery,
+  readRecord,
+  toCrmConnection,
+} from "./drizzleCrmConnectionRepositorySupport.js";
 
 export function createDrizzleCrmConnectionRepository(
   db: DrizzleCrmClient,
 ): CrmConnectionRepository {
   return {
+    async archiveAbandonedZapiConnections(input) {
+      const eligible = await db
+        .select({ id: crmConnections.id })
+        .from(crmConnections)
+        .where(abandonedZapiConditions(input.cutoff))
+        .limit(input.limit);
+      if (!eligible.length) return [];
+      const rows = await db
+        .update(crmConnections)
+        .set({ status: "archived", updatedAt: new Date() })
+        .where(
+          and(
+            inArray(
+              crmConnections.id,
+              eligible.map((item) => item.id),
+            ),
+            abandonedZapiConditions(input.cutoff),
+          ),
+        )
+        .returning();
+      return rows.map(toCrmConnection);
+    },
+    async createConnection(input) {
+      const [row] = await db
+        .insert(crmConnections)
+        .values({
+          credentialsRef: input.credentialsRef ?? {},
+          displayName: input.displayName,
+          externalConnectionId: input.externalConnectionId ?? null,
+          externalInstanceId: input.externalInstanceId ?? null,
+          metadata: input.metadata ?? {},
+          phone: input.phone ?? null,
+          provider: input.provider,
+          status: input.status ?? "sandbox",
+          storeId: input.storeId,
+          tenantId: input.tenantId,
+          webhookUrl: input.webhookUrl ?? null,
+        })
+        .returning();
+      if (!row) throw new Error("CRM connection insert returned no row.");
+      return toCrmConnection(row);
+    },
+    async claimZapiWebhookSetup(input) {
+      const [row] = await db
+        .update(crmConnections)
+        .set({
+          metadata: sql`${crmConnections.metadata} || jsonb_build_object(
+            'webhookSetup',
+            coalesce(${crmConnections.metadata}->'webhookSetup', '{}'::jsonb) ||
+            jsonb_build_object(
+              'attemptCount', coalesce((${crmConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1,
+              'lastErrorCode', null,
+              'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()},
+              'leaseOwner', ${input.leaseOwner},
+              'status', 'configuring',
+              'updatedAt', ${input.now.toISOString()}
+            )
+          )`,
+          updatedAt: input.now,
+        })
+        .where(
+          and(
+            eq(crmConnections.id, input.connectionId),
+            eq(crmConnections.storeId, input.storeId),
+            eq(crmConnections.tenantId, input.tenantId),
+            eq(crmConnections.provider, "zapi"),
+            sql`${crmConnections.status} <> 'archived'`,
+            sql`coalesce(${crmConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
+            sql`(
+              ${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' is null
+              or ${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null
+              or (${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now}
+            )`,
+          ),
+        )
+        .returning();
+      return row ? toCrmConnection(row) : null;
+    },
+    async finishZapiWebhookSetup(input) {
+      const webhookSetup = readRecord(input.metadata.webhookSetup);
+      const [row] = await db
+        .update(crmConnections)
+        .set({
+          metadata: sql`${crmConnections.metadata} || jsonb_build_object(
+            'webhookSetup',
+            ${JSON.stringify(webhookSetup)}::jsonb
+          )`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(crmConnections.id, input.connectionId),
+            eq(crmConnections.storeId, input.storeId),
+            eq(crmConnections.tenantId, input.tenantId),
+            sql`${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
+          ),
+        )
+        .returning();
+      return row ? toCrmConnection(row) : null;
+    },
     async findConnectionByExternalId(input) {
       const now = new Date();
       const [row] = await activeCrmConnectionQuery(db, now)
@@ -94,69 +182,4 @@ export function createDrizzleCrmConnectionRepository(
       return row ? toCrmConnection(row) : null;
     },
   };
-}
-
-function activeCrmConnectionQuery(db: DrizzleCrmClient, now: Date) {
-  return db
-    .select(getTableColumns(crmConnections))
-    .from(crmConnections)
-    .innerJoin(
-      stores,
-      and(
-        eq(stores.id, crmConnections.storeId),
-        eq(stores.tenantId, crmConnections.tenantId),
-        eq(stores.isDeleted, false),
-        isNull(stores.deletedAt),
-      ),
-    )
-    .innerJoin(
-      tenants,
-      and(
-        eq(tenants.id, crmConnections.tenantId),
-        eq(tenants.isDeleted, false),
-        isNull(tenants.deletedAt),
-      ),
-    )
-    .innerJoin(
-      storeEntitlements,
-      and(
-        eq(storeEntitlements.storeId, crmConnections.storeId),
-        eq(storeEntitlements.tenantId, crmConnections.tenantId),
-        eq(storeEntitlements.featureKey, "crm"),
-        or(
-          eq(storeEntitlements.status, "active"),
-          eq(storeEntitlements.status, "trialing"),
-        ),
-        or(
-          isNull(storeEntitlements.startsAt),
-          lte(storeEntitlements.startsAt, now),
-        ),
-        or(isNull(storeEntitlements.endsAt), gt(storeEntitlements.endsAt, now)),
-      ),
-    );
-}
-
-function toCrmConnection(
-  row: typeof crmConnections.$inferSelect,
-): CrmConnection {
-  return {
-    credentialsRef: readRecord(row.credentialsRef),
-    displayName: row.displayName,
-    externalConnectionId: row.externalConnectionId,
-    externalInstanceId: row.externalInstanceId,
-    id: row.id,
-    metadata: readRecord(row.metadata),
-    phone: row.phone,
-    provider: row.provider,
-    status: row.status,
-    storeId: row.storeId as StoreId,
-    tenantId: row.tenantId as TenantId,
-    webhookUrl: row.webhookUrl,
-  };
-}
-
-function readRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
 }

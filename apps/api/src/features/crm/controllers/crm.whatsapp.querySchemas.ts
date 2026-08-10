@@ -20,10 +20,16 @@ export const whatsappSessionFilterSchema = z.enum([
   "unassigned",
 ]);
 
+export const whatsappHumanAttendanceStateSchema = z.enum([
+  "WAITING_HUMAN",
+  "IN_HUMAN_SERVICE",
+]);
+
 export const whatsappSessionsQuerySchema = z.object({
   assigneeId: z.string().uuid().optional(),
   connectionId: z.string().uuid().optional(),
   filter: whatsappSessionFilterSchema.default("all"),
+  humanAttendanceState: whatsappHumanAttendanceStateSchema.optional(),
   leadId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(40),
   offset: z.coerce.number().int().min(0).default(0),

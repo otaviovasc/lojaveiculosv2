@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -31,6 +32,11 @@ export const crmWhatsappSessionStatus = pgEnum("crm_whatsapp_session_status", [
   "HUMAN_TAKEOVER",
   "MINIBOT_ACTIVE",
 ]);
+
+export const crmWhatsappHumanAttendanceState = pgEnum(
+  "crm_whatsapp_human_attendance_state",
+  ["WAITING_HUMAN", "IN_HUMAN_SERVICE"],
+);
 
 export const crmWhatsappMessageDirection = pgEnum(
   "crm_whatsapp_message_direction",
@@ -86,7 +92,18 @@ export const crmWhatsappSessions = pgTable(
     externalSessionId: varchar("external_session_id", { length: 191 }),
     firstHandledAt: timestamp("first_handled_at", { withTimezone: true }),
     freshLeadAt: timestamp("fresh_lead_at", { withTimezone: true }),
+    humanAttendanceChangedAt: timestamp("human_attendance_changed_at", {
+      withTimezone: true,
+    }),
+    humanAttendanceState: crmWhatsappHumanAttendanceState(
+      "human_attendance_state",
+    ),
+    humanAttendanceStateVersion: integer("human_attendance_state_version"),
+    humanHandlingStartedAt: timestamp("human_handling_started_at", {
+      withTimezone: true,
+    }),
     humanTakeoverAt: timestamp("human_takeover_at", { withTimezone: true }),
+    interventionId: uuid("intervention_id"),
     lastAssignedAt: timestamp("last_assigned_at", { withTimezone: true }),
     lastCustomerReadAt: timestamp("last_customer_read_at", {
       withTimezone: true,
@@ -108,6 +125,28 @@ export const crmWhatsappSessions = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    check(
+      "crm_whatsapp_sessions_human_attendance_version_positive",
+      sql`${table.humanAttendanceStateVersion} IS NULL OR ${table.humanAttendanceStateVersion} > 0`,
+    ),
+    check(
+      "crm_whatsapp_sessions_human_attendance_active_consistent",
+      sql`${table.humanAttendanceState} IS NULL OR (${table.status} = 'HUMAN_TAKEOVER' AND ${table.humanAttendanceChangedAt} IS NOT NULL AND ${table.humanAttendanceStateVersion} IS NOT NULL AND ${table.interventionId} IS NOT NULL)`,
+    ),
+    check(
+      "crm_whatsapp_sessions_human_attendance_handling_consistent",
+      sql`(${table.humanAttendanceState} IS DISTINCT FROM 'IN_HUMAN_SERVICE' OR ${table.humanHandlingStartedAt} IS NOT NULL) AND (${table.humanAttendanceState} IS DISTINCT FROM 'WAITING_HUMAN' OR ${table.humanHandlingStartedAt} IS NULL)`,
+    ),
+    check(
+      "crm_whatsapp_sessions_human_attendance_inactive_consistent",
+      sql`${table.humanAttendanceState} IS NOT NULL OR (${table.humanHandlingStartedAt} IS NULL AND ${table.interventionId} IS NULL)`,
+    ),
+    uniqueIndex("crm_whatsapp_sessions_scope_connection_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.connectionId,
+      table.id,
+    ),
     uniqueIndex("crm_whatsapp_sessions_connection_phone_unique")
       .on(table.connectionId, table.buyerPhone)
       .where(sql`${table.buyerPhone} <> ''`),
@@ -130,6 +169,10 @@ export const crmWhatsappSessions = pgTable(
     index("crm_whatsapp_sessions_store_status_idx").on(
       table.storeId,
       table.status,
+    ),
+    index("crm_whatsapp_sessions_store_human_attendance_idx").on(
+      table.storeId,
+      table.humanAttendanceState,
     ),
     uniqueIndex("crm_whatsapp_sessions_connection_external_unique").on(
       table.connectionId,
@@ -173,6 +216,13 @@ export const crmWhatsappMessages = pgTable(
     type: crmWhatsappMessageType("type").notNull().default("TEXT"),
   },
   (table) => [
+    uniqueIndex("crm_whatsapp_messages_scope_connection_session_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.connectionId,
+      table.sessionId,
+      table.id,
+    ),
     index("crm_whatsapp_messages_session_created_idx").on(
       table.sessionId,
       table.createdAt,

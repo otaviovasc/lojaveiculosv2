@@ -9,6 +9,101 @@ export function createMemoryCrmConnectionRepository(
   const connections = [...initialConnections];
 
   return {
+    async archiveAbandonedZapiConnections(input) {
+      const candidates = connections
+        .filter(
+          (connection) =>
+            connection.provider === "zapi" &&
+            connection.status === "sandbox" &&
+            readDate(
+              connection.metadata.updatedAt ?? connection.metadata.createdAt,
+            ) <= input.cutoff &&
+            connection.metadata.supportHold !== true &&
+            connection.metadata.hasActiveSession !== true &&
+            connection.metadata.hasMessage !== true,
+        )
+        .slice(0, input.limit);
+      for (const connection of candidates) connection.status = "archived";
+      return candidates;
+    },
+    async createConnection(input) {
+      const duplicate = connections.some(
+        (connection) =>
+          connection.storeId === input.storeId &&
+          connection.provider === input.provider &&
+          connection.status !== "archived",
+      );
+      if (duplicate) {
+        throw new Error("CRM_CONNECTION_PROVIDER_ALREADY_EXISTS");
+      }
+      const connection: CrmConnection = {
+        credentialsRef: input.credentialsRef ?? {},
+        displayName: input.displayName,
+        externalConnectionId: input.externalConnectionId ?? null,
+        externalInstanceId: input.externalInstanceId ?? null,
+        id: crypto.randomUUID(),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          ...(input.metadata ?? {}),
+        },
+        phone: input.phone ?? null,
+        provider: input.provider,
+        status: input.status ?? "sandbox",
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+        webhookUrl: input.webhookUrl ?? null,
+      };
+      connections.push(connection);
+      return connection;
+    },
+    async claimZapiWebhookSetup(input) {
+      const connection = connections.find(
+        (item) =>
+          item.id === input.connectionId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId &&
+          item.provider === "zapi" &&
+          item.status !== "archived",
+      );
+      if (!connection) return null;
+      const setup = readRecord(connection.metadata.webhookSetup);
+      if (setup.status === "configured") return null;
+      const leaseExpiresAt = readDateOrNull(setup.leaseExpiresAt);
+      if (setup.leaseOwner && leaseExpiresAt && leaseExpiresAt > input.now) {
+        return null;
+      }
+      connection.metadata = {
+        ...connection.metadata,
+        webhookSetup: {
+          ...setup,
+          attemptCount:
+            (typeof setup.attemptCount === "number" ? setup.attemptCount : 0) +
+            1,
+          lastErrorCode: null,
+          leaseExpiresAt: input.leaseExpiresAt.toISOString(),
+          leaseOwner: input.leaseOwner,
+          status: "configuring",
+          updatedAt: input.now.toISOString(),
+        },
+      };
+      return connection;
+    },
+    async finishZapiWebhookSetup(input) {
+      const connection = connections.find(
+        (item) =>
+          item.id === input.connectionId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId,
+      );
+      if (!connection) return null;
+      const setup = readRecord(connection.metadata.webhookSetup);
+      if (setup.leaseOwner !== input.leaseOwner) return null;
+      connection.metadata = {
+        ...connection.metadata,
+        webhookSetup: readRecord(input.metadata.webhookSetup),
+      };
+      return connection;
+    },
     async findConnectionByExternalId(input) {
       return (
         connections.find(
@@ -58,4 +153,21 @@ export function createMemoryCrmConnectionRepository(
       return connection;
     },
   };
+}
+
+function readDate(value: unknown) {
+  const parsed = typeof value === "string" ? new Date(value) : new Date();
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function readDateOrNull(value: unknown) {
+  if (typeof value !== "string") return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

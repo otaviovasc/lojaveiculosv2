@@ -230,6 +230,37 @@
   color: var(--color-text);
 }
 
+.crm-whatsapp-bot-table-wrap {
+  overflow-x: auto;
+}
+
+.crm-whatsapp-bot-table {
+  border-collapse: collapse;
+  min-width: 42rem;
+  width: 100%;
+}
+
+.crm-whatsapp-bot-table th,
+.crm-whatsapp-bot-table td {
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.crm-whatsapp-bot-table th {
+  color: var(--color-text);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-bot-table code {
+  color: var(--color-accent-strong);
+  white-space: nowrap;
+}
+
 .crm-whatsapp-bot-action-list span {
   font-family: var(--font-mono, monospace);
   font-size: var(--font-size-xs);

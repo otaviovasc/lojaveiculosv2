@@ -1,6 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { providerEvents } from "@lojaveiculosv2/db";
-import type { FiscalWebhookRepository } from "../../../domains/fiscal/ports/fiscalWebhookRepository.js";
+import type {
+  FiscalWebhookEventStatus,
+  FiscalWebhookRepository,
+} from "../../../domains/fiscal/ports/fiscalWebhookRepository.js";
 import type { DrizzleFiscalClient } from "./drizzleFiscalRepository.js";
 
 export function createDrizzleFiscalWebhookRepository(
@@ -45,7 +48,7 @@ export function createDrizzleFiscalWebhookRepository(
         event: {
           id: row.id,
           providerEventId: row.providerEventId,
-          status: row.status,
+          status: row.status as FiscalWebhookEventStatus,
         },
       };
     },

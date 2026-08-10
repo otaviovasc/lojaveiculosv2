@@ -85,6 +85,9 @@ export function registerCrmWhatsappExtrasRoutes(
       const serviceContext = await createContext(context);
       assertWhatsappSend(serviceContext);
       const message = await services.sendWhatsappCatalog(serviceContext, {
+        ...(readIdempotencyKey(context)
+          ? { idempotencyKey: readIdempotencyKey(context)! }
+          : {}),
         ...(input.catalogDescription
           ? { catalogDescription: input.catalogDescription }
           : {}),
@@ -109,6 +112,9 @@ export function registerCrmWhatsappExtrasRoutes(
       const message = await services.sendWhatsappCatalogProduct(
         serviceContext,
         {
+          ...(readIdempotencyKey(context)
+            ? { idempotencyKey: readIdempotencyKey(context)! }
+            : {}),
           ...(input.catalogPhone ? { catalogPhone: input.catalogPhone } : {}),
           productId: input.productId,
           ...(input.productName ? { productName: input.productName } : {}),
@@ -142,4 +148,8 @@ export function registerCrmWhatsappExtrasRoutes(
       return context.json(message, 201);
     }),
   );
+}
+
+function readIdempotencyKey(context: Context) {
+  return context.req.header("Idempotency-Key")?.trim() || undefined;
 }

@@ -1,13 +1,11 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { CrmWhatsappSessionStatus } from "../../ports/crmWhatsappRepository.js";
 import type { WhatsappSession } from "../../whatsapp/whatsappModels.js";
 import {
-  interventionReason,
   interventionWindow,
   notifyScopedInterventionChangedToBot,
 } from "../../whatsapp/whatsappInterventionNotification.js";
-import { WhatsappSessionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
+import { transitionHumanAttendance } from "../../whatsapp/humanAttendanceTransition.js";
 import {
   getCrmWhatsappRepository,
   type CrmServicePorts,
@@ -24,7 +22,10 @@ import {
 
 export type ToggleWhatsappInterventionInput = {
   enabled: boolean;
+  interventionId?: string;
+  reason?: string;
   sessionId: string;
+  source?: "admin" | "auto" | "bot" | "ai_request" | "seller_whatsapp";
 };
 
 const interventionPermission = "crm.whatsapp.toggle_intervention";
@@ -47,7 +48,12 @@ export async function toggleWhatsappIntervention(
       category: "data_change",
       entityId: input.sessionId,
       entityType: "crm_whatsapp_session",
-      metadata: { enabled: input.enabled },
+      metadata: {
+        enabled: input.enabled,
+        interventionId: input.interventionId ?? null,
+        reasonPresent: Boolean(input.reason),
+        source: input.source ?? null,
+      },
       permission: interventionPermission,
       summary: "Toggled CRM WhatsApp human intervention",
     },
@@ -66,46 +72,76 @@ async function toggleWhatsappInterventionUnchecked(
     ports,
   );
   const now = new Date();
-  const status: CrmWhatsappSessionStatus = input.enabled
-    ? "HUMAN_TAKEOVER"
-    : "MINIBOT_ACTIVE";
   const intervention = interventionWindow({
     enabled: input.enabled,
     now,
     previousStartedAt: session.humanTakeoverAt,
   });
-  const reason = interventionReason(context);
-  const updated = await getCrmWhatsappRepository(ports).updateSession({
-    ...(input.enabled ? { firstHandledAt: session.firstHandledAt ?? now } : {}),
-    humanTakeoverAt: input.enabled ? now : null,
-    metadata: {
-      ...session.metadata,
-      lastInterventionToggle: {
-        actorId: context.actor.id,
-        endedAt: intervention.endedAt?.toISOString() ?? null,
-        enabled: input.enabled,
-        reason,
-        startedAt: intervention.startedAt?.toISOString() ?? null,
-        toggledAt: now.toISOString(),
-      },
-    },
-    sessionId: input.sessionId,
-    status,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
+  const source = attendanceSource(context, input.source);
+  const reason =
+    input.reason ?? defaultInterventionReason(context, input.enabled);
+  const transition = await transitionHumanAttendance({
+    command: input.enabled
+      ? {
+          ...(input.interventionId
+            ? { interventionId: input.interventionId }
+            : {}),
+          kind: "start",
+          reason,
+          source,
+          state:
+            context.actor.kind === "user"
+              ? "IN_HUMAN_SERVICE"
+              : "WAITING_HUMAN",
+        }
+      : {
+          ...(input.interventionId
+            ? { interventionId: input.interventionId }
+            : {}),
+          kind: "clear",
+          status: "MINIBOT_ACTIVE",
+        },
+    now,
+    repository: getCrmWhatsappRepository(ports),
+    session,
   });
-  if (!updated) throw new WhatsappSessionNotFoundError(input.sessionId);
+  const updated = transition.session;
 
   const realtimeSession = await sessionWithConnection(
     updated,
     ports,
     input.sessionId,
   );
+  if (!transition.changed) return realtimeSession;
   await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
   await notifyScopedInterventionChangedToBot(
     context,
-    { active: input.enabled, reason, session: updated, window: intervention },
+    {
+      active: input.enabled,
+      previousSession: transition.previous,
+      reason,
+      session: updated,
+      source,
+      window: intervention,
+    },
     ports,
   );
   return realtimeSession;
+}
+
+function defaultInterventionReason(context: ServiceContext, enabled: boolean) {
+  if (context.actor.kind === "integration") {
+    return enabled ? "KEYWORD_TRIGGER" : "bot_action";
+  }
+  if (context.actor.kind === "system") return "system_toggle";
+  return "manual_toggle";
+}
+
+function attendanceSource(
+  context: ServiceContext,
+  requested?: ToggleWhatsappInterventionInput["source"],
+): NonNullable<ToggleWhatsappInterventionInput["source"]> {
+  if (context.actor.kind === "integration") return requested ?? "bot";
+  if (context.actor.kind === "system") return requested ?? "auto";
+  return "admin";
 }

@@ -72,7 +72,12 @@ export function createMemorySessionContext(
     externalSessionId: null,
     firstHandledAt: null,
     freshLeadAt: null,
+    humanAttendanceChangedAt: null,
+    humanAttendanceState: null,
+    humanAttendanceStateVersion: null,
+    humanHandlingStartedAt: null,
     humanTakeoverAt: null,
+    interventionId: null,
     id: randomUUID(),
     lastAssignedAt: null,
     lastCustomerReadAt: null,
@@ -171,6 +176,9 @@ export async function ingestMemoryWhatsappMessage(input: {
   ) {
     session.status = "ACTIVE";
     session.humanTakeoverAt = null;
+    session.humanAttendanceState = null;
+    session.humanHandlingStartedAt = null;
+    session.interventionId = null;
   }
 
   const existing = input.messages.find(

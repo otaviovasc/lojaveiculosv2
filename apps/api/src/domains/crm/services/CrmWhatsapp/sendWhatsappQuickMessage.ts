@@ -16,6 +16,7 @@ import {
 const permission = "crm.whatsapp.send";
 
 export type SendWhatsappQuickMessageInput = {
+  idempotencyKey?: string;
   quickMessageId: string;
   sessionId: string;
 };
@@ -43,6 +44,10 @@ export async function sendWhatsappQuickMessage(
       sendWhatsappOutboundMessage(
         context,
         {
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
+            : {}),
+          idempotencyPayload: input,
           prepare: async ({ connection, gateway, phone }) => {
             const sent =
               quick.kind === "TEXT"
@@ -66,7 +71,6 @@ export async function sendWhatsappQuickMessage(
               metadata: {
                 provider: connection.provider,
                 quickMessageId: quick.id,
-                raw: sent.raw,
                 sentByActorId: context.actor.id,
               },
               sent,

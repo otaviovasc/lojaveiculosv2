@@ -2,7 +2,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { CrmConnectionProvider } from "./crmConnectionRepository.js";
 
 export type CrmProviderWebhookEventStatus =
-  "failed" | "ignored" | "processed" | "received";
+  "failed" | "ignored" | "processed" | "processing" | "received";
 
 export type CrmProviderWebhookEventProvider = CrmConnectionProvider;
 
@@ -14,6 +14,9 @@ export type CrmProviderWebhookEvent = {
   eventType: string;
   id: string;
   payload: Record<string, unknown>;
+  processingAttempts: number;
+  processingStartedAt: Date | null;
+  processingToken: string | null;
   processedAt: Date | null;
   provider: CrmProviderWebhookEventProvider;
   providerEventId: string;
@@ -59,10 +62,18 @@ export type RecordCrmProviderWebhookEventResult = {
 export type UpdateCrmProviderWebhookEventStatusInput = {
   errorMessage?: string | null;
   eventId: string;
-  status: Exclude<CrmProviderWebhookEventStatus, "received">;
+  processingToken?: string;
+  status: Exclude<CrmProviderWebhookEventStatus, "processing" | "received">;
 };
 
 export type CrmWebhookEventRepository = {
+  claimForProcessing: (input: {
+    allowIgnored?: boolean;
+    eventId: string;
+    processingStartedAt: Date;
+    processingToken: string;
+    staleBefore: Date;
+  }) => Promise<CrmProviderWebhookEvent | null>;
   findById: (
     input: FindCrmProviderWebhookEventInput,
   ) => Promise<CrmProviderWebhookEvent | null>;

@@ -4,6 +4,10 @@ import type {
   CrmConnectionProvider,
 } from "../ports/crmConnectionRepository.js";
 import type { CrmWhatsappProviderStatus } from "../ports/crmWhatsappGateway.js";
+import {
+  readZapiWebhookSetupState,
+  type ZapiWebhookSetupState,
+} from "./zapiWebhookSetupState.js";
 
 export type WhatsappConnectionLiveStatus =
   | (CrmWhatsappProviderStatus & {
@@ -28,6 +32,8 @@ export type WhatsappConnection = {
   metadata: WhatsappConnectionMetadata;
   phone: string | null;
   provider: CrmConnectionProvider;
+  ready: boolean;
+  setup: ZapiWebhookSetupState | null;
   status: CrmConnectionConfiguredStatus;
   webhookUrl: string | null;
 };
@@ -54,6 +60,10 @@ export function toWhatsappConnection(
   connection: CrmConnection,
   live: WhatsappConnectionLiveStatus,
 ): WhatsappConnection {
+  const setup =
+    connection.provider === "zapi"
+      ? readZapiWebhookSetupState(connection.metadata)
+      : null;
   return {
     credentials: readCredentialRefs(connection.credentialsRef),
     displayName: connection.displayName,
@@ -64,6 +74,10 @@ export function toWhatsappConnection(
     metadata: readConnectionMetadata(connection.metadata),
     phone: connection.phone,
     provider: connection.provider,
+    ready:
+      live.connected === true &&
+      (connection.provider !== "zapi" || setup?.status === "configured"),
+    setup,
     status: connection.status,
     webhookUrl: connection.webhookUrl,
   };

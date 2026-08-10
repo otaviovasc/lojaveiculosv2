@@ -26,13 +26,9 @@ import {
 } from "./serviceSupport.js";
 import {
   createLocalWhatsappExternalId,
-  failedMessageMetadata,
-  findConversationSession,
   findOrCreateLead,
+  markStartedConversationMessageFailed,
   publishConversation,
-  recordLeadInteraction,
-  sentMessageMetadata,
-  updateStartedConversationMessage,
 } from "../../whatsapp/startWhatsappConversationSupport.js";
 import { resolveStartConversationTarget } from "../../whatsapp/startWhatsappConversationTarget.js";
 import { channelForCrmProvider } from "../../messaging/crmMessagingProvider.js";
@@ -41,6 +37,13 @@ import {
   conversationContent,
   conversationMessageType,
 } from "../../whatsapp/startWhatsappConversationMode.js";
+import {
+  completeDurableOutboundProviderCall,
+  executeDurableOutboundProviderCall,
+} from "../../whatsapp/executeDurableOutboundProviderCall.js";
+import { fingerprintOutboundIntent } from "../../whatsapp/sendWhatsappOutboundSupport.js";
+import { notifyHumanOutboundAttendanceStarted } from "../../whatsapp/sendWhatsappOutboundAttendance.js";
+import { completeStartedWhatsappConversation } from "../../whatsapp/completeStartedWhatsappConversation.js";
 
 const permission = "crm.whatsapp.send";
 type SentWhatsappText = Awaited<
@@ -49,6 +52,7 @@ type SentWhatsappText = Awaited<
 export type StartWhatsappConversationInput = {
   buyerName?: string;
   connectionId: string;
+  idempotencyKey?: string;
   leadId?: string;
   phone?: string;
   senderType?: CrmWhatsappMessageSenderType;
@@ -102,7 +106,9 @@ export async function startWhatsappConversation(
       summary: "Started CRM WhatsApp conversation",
     },
     async () => {
-      const pendingExternalId = createLocalWhatsappExternalId();
+      const pendingExternalId = input.idempotencyKey
+        ? `crm-local-${fingerprintOutboundIntent(input.idempotencyKey).slice(0, 40)}`
+        : createLocalWhatsappExternalId();
       const pendingAt = new Date();
       const pending = await runCrmTransaction(
         ports,
@@ -123,7 +129,6 @@ export async function startWhatsappConversation(
             content,
             direction: "OUTBOUND",
             externalId: pendingExternalId,
-            firstHandledAt: pendingAt,
             leadId: lead.id,
             metadata: {
               pendingExternalId,
@@ -142,68 +147,64 @@ export async function startWhatsappConversation(
         },
       );
 
-      let sent: SentWhatsappText;
-      try {
-        const gateway = getCrmWhatsappGateway(ports);
-        sent = input.template
-          ? await gateway.sendTemplate(connection, {
-              ...input.template,
-              phone: target.phone,
-            })
-          : await gateway.sendText(connection, {
-              phone: target.phone,
-              text: input.text!,
-            });
-      } catch (error) {
-        await markPendingMessageFailed(context, ports, {
+      const gateway = getCrmWhatsappGateway(ports);
+      const effect = await executeDurableOutboundProviderCall(
+        context,
+        {
+          connectionId: connection.id,
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
+            : {}),
+          payload: input,
+          send: () =>
+            input.template
+              ? gateway.sendTemplate(connection, {
+                  ...input.template,
+                  phone: target.phone,
+                })
+              : gateway.sendText(connection, {
+                  phone: target.phone,
+                  text: input.text!,
+                }),
+          sessionId: pending.ingested.session.id,
+        },
+        ports,
+      ).catch(async (error) => {
+        await markStartedConversationMessageFailed(context, ports, {
           connectionProvider: connection.provider,
           error,
           messageId: pending.ingested.message.id,
           pendingExternalId,
         });
         throw error;
-      }
+      });
+      const sent: SentWhatsappText = effect.sent;
 
-      const result = await runCrmTransaction(
-        ports,
-        async (transactionPorts) => {
-          const persistedMessage = await updateStartedConversationMessage(
-            context,
-            transactionPorts,
-            {
-              externalId: sent.externalId,
-              messageId: pending.ingested.message.id,
-              metadata: sentMessageMetadata({
-                pendingExternalId,
-                provider: connection.provider,
-                raw: sent.raw,
-                sentByActorId: context.actor.id,
-              }),
-              providerTimestamp: sent.providerTimestamp,
-              status: "SENT",
-            },
-          );
-          const lead = pending.ingested.createdMessage
-            ? await recordLeadInteraction(context, transactionPorts, {
-                content,
-                lead: pending.lead,
-                messageExternalId: sent.externalId,
-                occurredAt: sent.providerTimestamp,
-                provider: connection.provider,
-                raw: sent.raw,
-                sessionId: pending.ingested.session.id,
-              })
-            : pending.lead;
-          const persistedSession = await findConversationSession(
-            context,
-            transactionPorts,
-            pending.ingested.session.id,
-          );
-          return { lead, message: persistedMessage, session: persistedSession };
+      const result = await completeStartedWhatsappConversation(
+        context,
+        {
+          content,
+          createdMessage: pending.ingested.createdMessage,
+          interventionId: effect.intent.id,
+          lead: pending.lead,
+          messageId: pending.ingested.message.id,
+          pendingExternalId,
+          provider: connection.provider,
+          providerExternalId: sent.externalId,
+          providerTimestamp: sent.providerTimestamp,
+          senderType: input.senderType ?? "HUMAN",
+          sessionId: pending.ingested.session.id,
         },
+        ports,
       );
 
       const message = toWhatsappMessage(result.message);
+      await completeDurableOutboundProviderCall(ports, {
+        claimToken: effect.intent.claimToken,
+        id: effect.intent.id,
+        messageId: String(result.message.id),
+        sessionId: String(result.session.id),
+      });
       const session = toWhatsappSession(result.session, connection);
       await publishConversation(ports, {
         connectionId: connection.id,
@@ -212,37 +213,17 @@ export async function startWhatsappConversation(
         storeId: scope.storeId,
         tenantId: scope.tenantId,
       });
+      await notifyHumanOutboundAttendanceStarted(
+        context,
+        {
+          changed: result.attendanceChanged,
+          connection,
+          providerTimestamp: sent.providerTimestamp,
+          session: result.session,
+        },
+        ports,
+      );
       return { lead: result.lead, message, session };
     },
   );
-}
-
-async function markPendingMessageFailed(
-  context: ServiceContext,
-  ports: CrmServicePorts,
-  input: {
-    connectionProvider: string;
-    error: unknown;
-    messageId: string;
-    pendingExternalId: string;
-  },
-) {
-  await updateStartedConversationMessage(context, ports, {
-    messageId: input.messageId,
-    metadata: failedMessageMetadata({
-      errorName:
-        input.error instanceof Error ? input.error.name : "UnknownError",
-      pendingExternalId: input.pendingExternalId,
-      provider: input.connectionProvider,
-      sentByActorId: context.actor.id,
-    }),
-    status: "FAILED",
-  }).catch((updateError) => {
-    context.logger.warn("crm.whatsapp.conversation.start.failed_mark_failed", {
-      errorName:
-        updateError instanceof Error ? updateError.name : "UnknownError",
-      messageId: input.messageId,
-      requestId: context.requestId,
-    });
-  });
 }

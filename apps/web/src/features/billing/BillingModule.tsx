@@ -35,6 +35,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [selectionSaving, setSelectionSaving] = useState(false);
+  const [zapiRequestSaving, setZapiRequestSaving] = useState(false);
   const checkoutReturn = readBillingCheckoutReturn("store");
 
   const refresh = async () => {
@@ -45,7 +46,11 @@ export function BillingModule({ api }: { api?: BillingApi }) {
         billingApi.getProviderStatus(),
       ]);
       setOverview(nextOverview);
-      setSelectedPlanId(nextOverview.subscription?.plan?.id ?? null);
+      setSelectedPlanId(
+        nextOverview.subscription?.plan?.id ??
+          nextOverview.plans.find((plan) => plan.status === "active")?.id ??
+          null,
+      );
       setSelectedAddonIds(
         nextOverview.chargePreview.lineItems.flatMap((item) =>
           item.itemType === "addon" && item.sourceId ? [item.sourceId] : [],
@@ -108,6 +113,34 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       setCheckoutState({ kind: "idle" });
       setStatus({ kind: "error", message: errorMessage(error) });
       throw error;
+    }
+  };
+
+  const requestZapi = async () => {
+    setZapiRequestSaving(true);
+    try {
+      const response = await billingApi.requestZapi();
+      setOverview((current) =>
+        current ? withAddonContract(current, response.contract) : current,
+      );
+    } catch (error) {
+      setStatus({ kind: "error", message: errorMessage(error) });
+    } finally {
+      setZapiRequestSaving(false);
+    }
+  };
+
+  const cancelZapi = async () => {
+    setZapiRequestSaving(true);
+    try {
+      const response = await billingApi.cancelZapiRequest();
+      setOverview((current) =>
+        current ? withAddonContract(current, response.contract) : current,
+      );
+    } catch (error) {
+      setStatus({ kind: "error", message: errorMessage(error) });
+    } finally {
+      setZapiRequestSaving(false);
     }
   };
 
@@ -191,8 +224,11 @@ export function BillingModule({ api }: { api?: BillingApi }) {
                     : [...current, addonId],
                 )
               }
+              onCancelZapi={() => void cancelZapi()}
               onPlanSelect={setSelectedPlanId}
+              onRequestZapi={() => void requestZapi()}
               onSubscribe={startCheckout}
+              zapiRequestSaving={zapiRequestSaving}
             />
           ) : (
             <div className="billing-details-workspace relative space-y-6 px-2 pb-8 md:px-4">
@@ -232,10 +268,14 @@ type BillingStatus =
 
 function createRuntimeBillingApi(): BillingApi {
   return {
+    cancelZapiRequest: async () =>
+      createBillingApi(await createBillingApiOptions()).cancelZapiRequest(),
     getOverview: async () =>
       createBillingApi(await createBillingApiOptions()).getOverview(),
     getProviderStatus: async () =>
       createBillingApi(await createBillingApiOptions()).getProviderStatus(),
+    requestZapi: async () =>
+      createBillingApi(await createBillingApiOptions()).requestZapi(),
     createCheckout: async (input) =>
       createBillingApi(await createBillingApiOptions()).createCheckout(input),
     updateEntitlement: async (featureKey, input) =>
@@ -249,6 +289,21 @@ function createRuntimeBillingApi(): BillingApi {
       createBillingApi(
         await createBillingApiOptions(),
       ).syncProviderSubscription(input),
+  };
+}
+
+function withAddonContract(
+  overview: BillingOverview,
+  contract: NonNullable<BillingOverview["addonContracts"]>[number],
+): BillingOverview {
+  return {
+    ...overview,
+    addonContracts: [
+      ...(overview.addonContracts ?? []).filter(
+        (candidate) => candidate.addonCode !== contract.addonCode,
+      ),
+      contract,
+    ],
   };
 }
 

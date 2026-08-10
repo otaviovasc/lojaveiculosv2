@@ -11,6 +11,7 @@ export const agencyStoreEntitlementParamsSchema =
       "automation",
       "compliance",
       "crm",
+      "crm_zapi",
       "custom_domain",
       "external_api",
       "marketplace",
@@ -20,3 +21,7 @@ export const agencyStoreEntitlementParamsSchema =
     ]),
     storeId: z.string().uuid(),
   });
+
+export const agencyStoreBillingParamsSchema = agencyTenantParamsSchema.extend({
+  storeId: z.string().uuid(),
+});

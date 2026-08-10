@@ -37,29 +37,36 @@ import type {
   CreateBillingCheckoutInput,
 } from "./types";
 import { AnimatedCounter } from "../../components/ui/CountUp";
+import { BillingCrmPackage } from "./BillingCrmPackage";
 
 export function BillingSignupFlow({
   canManage,
   checkoutState,
   onAddonToggle,
+  onCancelZapi,
   onPlanSelect,
   onSubscribe,
+  onRequestZapi,
   overview,
   providerStatus,
   selectedAddonIds,
   selectedPlanId,
   selectionSaving = false,
+  zapiRequestSaving = false,
 }: {
   canManage: boolean;
   checkoutState: BillingCheckoutState;
   onAddonToggle: (addonId: string) => void;
+  onCancelZapi: () => void;
   onPlanSelect: (planId: string) => void;
   onSubscribe: (input: CreateBillingCheckoutInput) => Promise<unknown>;
+  onRequestZapi: () => void;
   overview: BillingOverview;
   providerStatus: BillingProviderStatus | null;
   selectedAddonIds: readonly string[];
   selectedPlanId: string | null;
   selectionSaving?: boolean;
+  zapiRequestSaving?: boolean;
 }) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
@@ -81,9 +88,23 @@ export function BillingSignupFlow({
     activePlans[0] ??
     null;
 
+  const crmAddon = overview.addons.find(
+    (addon) =>
+      addon.status === "active" &&
+      addon.code === "crm_core" &&
+      (!selectedPlan || addon.catalogVersion === selectedPlan.catalogVersion),
+  );
+  const zapiAddon = overview.addons.find(
+    (addon) =>
+      addon.status === "active" &&
+      addon.code === "crm_zapi" &&
+      (!selectedPlan || addon.catalogVersion === selectedPlan.catalogVersion),
+  );
   const activeAddons = overview.addons.filter(
     (addon) =>
       addon.status === "active" &&
+      addon.code !== "crm_core" &&
+      addon.code !== "crm_zapi" &&
       !addon.code.toLowerCase().includes("public_api") &&
       !addon.name.toLowerCase().includes("public api") &&
       !addon.name.toLowerCase().includes("api pública") &&
@@ -98,9 +119,11 @@ export function BillingSignupFlow({
 
   const addonTotalCents = selectedAddonIds.reduce((sum, addonId) => {
     const addon = overview.addons.find((item) => item.id === addonId);
-    return (
-      sum + Math.round((addon?.monthlyPriceCents ?? 0) * annualDiscountFactor)
-    );
+    const discountFactor =
+      addon?.code === "crm_core" || addon?.code === "crm_zapi"
+        ? 1
+        : annualDiscountFactor;
+    return sum + Math.round((addon?.monthlyPriceCents ?? 0) * discountFactor);
   }, 0);
 
   const totalCents = planCents + addonTotalCents;
@@ -315,6 +338,37 @@ export function BillingSignupFlow({
             })}
           </div>
         </section>
+
+        {crmAddon ? (
+          <section className="space-y-6 pt-6 border-t border-line/70">
+            <span className="text-xs font-black uppercase tracking-widest text-accent-strong flex items-center gap-1.5">
+              <MessageSquare className="size-4" aria-hidden="true" />
+              Atendimento comercial
+            </span>
+            <BillingCrmPackage
+              canManage={canManage}
+              contract={
+                overview.addonContracts?.find(
+                  (contract) => contract.addonCode === "crm_zapi",
+                ) ?? null
+              }
+              crmAddon={crmAddon}
+              isBusy={zapiRequestSaving}
+              isCrmSelected={selectedAddonIds.includes(crmAddon.id)}
+              isZapiSelected={
+                zapiAddon ? selectedAddonIds.includes(zapiAddon.id) : false
+              }
+              onCancelZapi={onCancelZapi}
+              onRequestZapi={onRequestZapi}
+              onToggleCrm={() => onAddonToggle(crmAddon.id)}
+              onToggleZapi={() =>
+                zapiAddon ? onAddonToggle(zapiAddon.id) : undefined
+              }
+              subscriptionStatus={overview.subscription?.status ?? null}
+              zapiAddon={zapiAddon ?? null}
+            />
+          </section>
+        ) : null}
 
         {/* Section 2: Full Icon-Theme Card Addons */}
         {activeAddons.length ? (

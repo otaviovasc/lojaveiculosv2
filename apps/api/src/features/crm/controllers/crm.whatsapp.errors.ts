@@ -26,6 +26,12 @@ import {
 } from "../../../domains/crm/services/CrmWhatsapp/sendWhatsappVehicle.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
+import {
+  BillingContractUnavailableError,
+  BillingQuotaExceededError,
+} from "../../../domains/billing/ports/billingQuotaGuard.js";
+import { WhatsappConnectionProviderAlreadyExistsError } from "../../../domains/crm/whatsapp/whatsappConnectionCreation.js";
+import { CrmConnectionSetupProviderError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 
 export async function handleWhatsapp(
   context: Context,
@@ -48,6 +54,56 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: 403,
+      });
+    }
+    if (error instanceof WhatsappConnectionProviderAlreadyExistsError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
+        details: { provider: error.provider },
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+    if (error instanceof BillingQuotaExceededError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_CONNECTION_ALLOWANCE_EXHAUSTED",
+        details: {
+          limit: error.limit,
+          quotaKey: error.quotaKey,
+          used: error.current,
+        },
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+    if (error instanceof BillingContractUnavailableError) {
+      return jsonApiError(context, {
+        code: "BILLING_CONTRACT_UNAVAILABLE",
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+    if (error instanceof CrmConnectionSetupProviderError) {
+      const status =
+        error.code === "rate_limited"
+          ? 429
+          : error.code === "configuration_error"
+            ? 503
+            : 502;
+      if (status === 429) {
+        context.header("Retry-After", String(error.retryAfterSeconds ?? 1));
+      }
+      return jsonApiError(context, {
+        code: `CRM_CONNECTION_SETUP_${error.code.toUpperCase()}`,
+        ...(error.retryAfterSeconds
+          ? { details: { retryAfterSeconds: error.retryAfterSeconds } }
+          : {}),
+        error,
+        message: error.message,
+        status,
       });
     }
     if (

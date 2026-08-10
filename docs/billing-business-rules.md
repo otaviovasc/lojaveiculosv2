@@ -10,8 +10,9 @@ The base commercial contract is now enforced by the runtime:
 
 - onboarding selects the latest published default catalog and never writes plan,
   feature, or add-on definitions;
-- Growth and the expansion add-ons are separate chargeable products in catalog
-  version `2026-07-v1`; add-ons are not included in the trial or base plan;
+- Growth and the expansion add-ons are separate chargeable products. CRM uses
+  the immutable `2026-08-v2` catalog; add-ons are not included in the trial or
+  base plan;
 - a fresh store receives a 14-day trial with only the catalog features explicitly
   marked `included_in_trial`: analytics, automation, compliance, plate lookup,
   and the platform storefront subdomain; custom domain and other cost-bearing
@@ -52,25 +53,76 @@ Target billing and product metrics are documented in
 - A subscription belongs to the tenant that pays.
 - Subscription items are the chargeable source of truth:
   - `plan` items price the base store OS plan.
-  - `addon` items price optional recurring modules, such as CRM WhatsApp.
-- Current seed pricing:
-  - Growth plan: `29900` cents monthly.
-  - CRM WhatsApp add-on: `24999` cents monthly.
-  - NF-e integrated with Spedy add-on: `19990` cents monthly.
+  - `addon` items price optional recurring modules, such as CRM.
+- Current `2026-08-v2` pricing:
+  - Básico: `0` cents monthly.
+  - Premium: `9997` cents monthly.
+  - Estoque: `14999` cents monthly.
+  - Pro: `17990` cents monthly.
+  - Growth: `29900` cents monthly.
+  - CRM: `17900` cents monthly. It includes Official WhatsApp and Instagram.
+  - Optional Z-API for CRM: `10000` cents monthly, for a combined CRM price of
+    `27900` cents monthly.
+  - NF-e integrated with Spedy add-on: `5000` cents monthly.
   - Marketplace connectors add-on: `14990` cents monthly.
   - Public API access add-on: `9990` cents monthly.
   - Simulations Pro add-on: `4990` cents monthly.
 - A store owner may select products and complete the first Asaas checkout at any
   point during the 14-day trial. Successful provider evidence activates the paid
   subscription; the trial end is not a purchase lock.
-- Growth limits in catalog `2026-07-v1`:
+- Growth limits in catalog `2026-08-v2`:
   - 8 active/pending team seats per store;
   - 300 non-deleted vehicle listings per store;
   - 300 paid plate lookups per billing period.
 - Trial stores may perform 10 plate lookups during the trial. Activating the
   paid Growth plan changes the plate-lookup allowance to 300 per billing period.
-- CRM WhatsApp has lower gross margin because the Z-API instance cost is about
-  R$100/month; keep that cost visible when changing price.
+- The dealership pays Meta's own messaging charges directly. Loja Veiculos
+  pays Composio and includes 10,000 integration tool executions per store and
+  billing month in CRM. This allowance is initially soft: exceeding it does
+  not create an automatic overage charge or service cutoff.
+- Loja Veiculos buys and configures the optional Z-API instance only after the
+  matching subscription renewal has been paid. Z-API costs a full provider
+  month, so it is never prorated or activated mid-period.
+- An active customer can request or cancel Z-API before renewal. The request is
+  scheduled for the existing next due date, leaves the current invoice and all
+  unrelated add-ons unchanged, and becomes usable only after payment evidence
+  and support setup. An active Z-API cancellation remains effective through
+  the already-paid period and removes the item at renewal.
+- Owners and billing-authorized agency operators can purchase CRM and request
+  or cancel Z-API for the store they manage. Prices and add-on identities come
+  only from the server-owned catalog.
+
+## Catalog Publication
+
+- The canonical current definition is
+  `apps/api/src/domains/billing/catalog/currentBillingCatalog.ts`; it selects an
+  immutable version from `catalog/versions/`.
+- Every price, feature-composition, or limit change requires a new version and
+  new plan/add-on IDs. A deployed version is never edited or reactivated after
+  it is superseded. Keep every canonical definition from v2 onward in the
+  server registry so deploy reconciliation can finish pending audit evidence
+  for the active predecessor before publishing its successor.
+- API startup runs migrations and then `pnpm run billing:catalog:reconcile`.
+  Reconciliation takes a database advisory lock, validates the complete
+  definition, installs missing rows in one transaction, verifies their
+  checksum, and atomically changes the explicit active-version pointer.
+- Repeated deploys are no-ops. If the same version name differs from its stored
+  definition or relational rows, startup fails closed instead of overwriting
+  production data. A future-dated version is also rejected.
+- Activation emits required audit evidence. If the audit database is
+  temporarily unavailable after the product transaction commits, the claim is
+  released and the next startup retries the pending evidence. A leased atomic
+  claim prevents multiple API replicas from emitting duplicate activation
+  events, and the event's deterministic ID makes a retry idempotent if the
+  audit insert succeeds before the product-side marker is written.
+- Existing `subscription_items.unit_amount_cents` values are contracted prices.
+  Catalog publication never rewrites them; any future customer-price migration
+  requires a separate, explicit billing-reconciliation policy.
+- Local seeds and the memory adapter consume the same current definition. SQL
+  migration rows remain immutable historical inputs, not a second editable
+  current catalog. The activation migration records the deployed
+  `2026-08-v1` relational price book as a superseded historical snapshot before
+  v2 becomes active.
 
 ## Expansion Package Contract
 
@@ -78,13 +130,14 @@ The first expansion catalog targets independent used-vehicle stores already
 operating the Growth plan. Prices are initial commercial hypotheses and must be
 changed only through a new catalog version.
 
-| Package         | Customer outcome                                          | Leading metric                        | Entitlement    | Support owner             | Degraded state                                                      |
-| --------------- | --------------------------------------------------------- | ------------------------------------- | -------------- | ------------------------- | ------------------------------------------------------------------- |
-| CRM WhatsApp    | Centralize conversations and lead continuity              | Median first-response time            | `crm`          | Messaging/provider owner  | Connection unavailable; no message is represented as sent           |
-| NF-e integrated | Emit and reconcile fiscal documents in the sale flow      | Accepted emission rate                | `nfe`          | Fiscal/provider owner     | Provider unavailable; no official document is represented as issued |
-| Marketplaces    | Publish and reconcile inventory across supported channels | Listings synchronized without error   | `marketplace`  | Channel integration owner | Channel unavailable; no listing is represented as published         |
-| Public API      | Connect approved external inventory and lead workflows    | Successful scoped API requests        | `external_api` | Platform/API owner        | Access denied or unavailable with an explicit error contract        |
-| Simulations Pro | Compare commercial scenarios before closing               | Simulations completed before proposal | `simulations`  | Sales workflow owner      | Simulation unavailable; no financing approval is implied            |
+| Package         | Customer outcome                                          | Leading metric                           | Entitlement    | Support owner             | Degraded state                                                           |
+| --------------- | --------------------------------------------------------- | ---------------------------------------- | -------------- | ------------------------- | ------------------------------------------------------------------------ |
+| CRM             | Centralize Official WhatsApp and Instagram conversations  | Median first-response time               | `crm`          | Messaging/provider owner  | Connection unavailable; no message is represented as sent                |
+| Z-API for CRM   | Add a Loja-managed WhatsApp Web connection when requested | Paid setups completed within support SLA | `crm_zapi`     | CRM integration support   | Scheduled or awaiting setup; no provider access is represented as active |
+| NF-e integrated | Emit and reconcile fiscal documents in the sale flow      | Accepted emission rate                   | `fiscal`       | Fiscal/provider owner     | Provider unavailable; no official document is represented as issued      |
+| Marketplaces    | Publish and reconcile inventory across supported channels | Listings synchronized without error      | `marketplace`  | Channel integration owner | Channel unavailable; no listing is represented as published              |
+| Public API      | Connect approved external inventory and lead workflows    | Successful scoped API requests           | `external_api` | Platform/API owner        | Access denied or unavailable with an explicit error contract             |
+| Simulations Pro | Compare commercial scenarios before closing               | Simulations completed before proposal    | `simulations`  | Sales workflow owner      | Simulation unavailable; no financing approval is implied                 |
 
 Custom domain is excluded from the trial but included in the paid Growth plan.
 The platform storefront subdomain and 10 plate lookups are included in the

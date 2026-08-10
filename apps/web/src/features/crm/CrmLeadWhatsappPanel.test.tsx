@@ -25,6 +25,8 @@ describe("CrmLeadWhatsappPanel", () => {
     const session = createWhatsappSession({ id: "session_1" });
     const api = createWhatsappApi({
       listConnections: vi.fn(async () => ({
+        allowance: { limit: 1, remaining: 0, used: 1 },
+        availableProviders: [],
         connections: [createConnection()],
       })),
       listSessions: vi.fn(async () => [session]),
@@ -53,6 +55,8 @@ describe("CrmLeadWhatsappPanel", () => {
     }));
     const api = createWhatsappApi({
       listConnections: vi.fn(async () => ({
+        allowance: { limit: 1, remaining: 0, used: 1 },
+        availableProviders: [],
         connections: [createConnection()],
       })),
       listSessions: vi.fn(async () => []),
@@ -84,6 +88,8 @@ describe("CrmLeadWhatsappPanel", () => {
     const startConversation = vi.fn();
     const api = createWhatsappApi({
       listConnections: vi.fn(async () => ({
+        allowance: { limit: 1, remaining: 0, used: 1 },
+        availableProviders: [],
         connections: [createConnection("composio_whatsapp")],
       })),
       listSessions: vi.fn(async () => []),

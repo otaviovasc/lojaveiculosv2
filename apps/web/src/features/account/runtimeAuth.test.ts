@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createRuntimeFetch } from "./runtimeAuth";
+import { createRuntimeFetch, normalizeRuntimeApiBaseUrl } from "./runtimeAuth";
 
 type ClerkWindow = Window & {
   Clerk?: {
@@ -95,5 +95,16 @@ describe("createRuntimeFetch", () => {
 
     expect(response.status).toBe(403);
     expect(baseFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("normalizeRuntimeApiBaseUrl", () => {
+  it.each([
+    ["https://api.example.com", "https://api.example.com/api/v1"],
+    ["https://api.example.com/", "https://api.example.com/api/v1"],
+    ["https://api.example.com/api/v1", "https://api.example.com/api/v1"],
+    ["/api/v1", "/api/v1"],
+  ])("normalizes %s to %s", (baseUrl, expected) => {
+    expect(normalizeRuntimeApiBaseUrl(baseUrl)).toBe(expected);
   });
 });

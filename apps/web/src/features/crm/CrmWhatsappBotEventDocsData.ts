@@ -21,6 +21,11 @@ export const webhookEvents = [
     "leadId": "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
     "status": "ACTIVE",
     "isBotActive": true,
+    "humanAttendanceState": null,
+    "humanAttendanceChangedAt": null,
+    "humanHandlingStartedAt": null,
+    "humanAttendanceStateVersion": null,
+    "interventionId": null,
     "assignedUserId": null,
     "messageCount": 14,
     "tags": [{ "id": "7d42160d-2174-48c9-bd34-4c506d2f5f1d", "name": "Oferta enviada", "color": "green", "emoji": null }]
@@ -61,11 +66,16 @@ export const webhookEvents = [
     "leadId": "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
     "status": "HUMAN_TAKEOVER",
     "isBotActive": false,
+    "humanAttendanceState": "WAITING_HUMAN",
+    "humanAttendanceChangedAt": "2026-07-07T12:04:00.000Z",
+    "humanHandlingStartedAt": null,
+    "humanAttendanceStateVersion": 1,
+    "interventionId": "d34cbfa8-b5b1-43b1-99f4-199319887990",
     "assignedUserId": null,
     "messageCount": 15,
     "tags": [{ "id": "7d42160d-2174-48c9-bd34-4c506d2f5f1d", "name": "Oferta enviada", "color": "green", "emoji": null }]
   },
-  "intervention": { "active": true, "reason": "ADMIN_INTERVENTION", "triggeredBy": "human", "startedAt": "2026-07-07T12:04:00.000Z", "endedAt": null, "durationSeconds": null, "messageCount": 0, "summary": null },
+  "intervention": { "id": "d34cbfa8-b5b1-43b1-99f4-199319887990", "active": true, "attendanceState": "WAITING_HUMAN", "stateChangedAt": "2026-07-07T12:04:00.000Z", "stateVersion": 1, "source": "bot", "reason": "KEYWORD_TRIGGER", "triggeredBy": "bot", "startedAt": "2026-07-07T12:04:00.000Z", "endedAt": null, "durationSeconds": null, "messageCount": 0, "summary": null },
   "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
 }`,
     description:
@@ -88,11 +98,16 @@ export const webhookEvents = [
     "leadId": "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
     "status": "ACTIVE",
     "isBotActive": true,
+    "humanAttendanceState": null,
+    "humanAttendanceChangedAt": "2026-07-07T12:18:00.000Z",
+    "humanHandlingStartedAt": null,
+    "humanAttendanceStateVersion": 3,
+    "interventionId": null,
     "assignedUserId": null,
     "messageCount": 21,
     "tags": [{ "id": "7d42160d-2174-48c9-bd34-4c506d2f5f1d", "name": "Oferta enviada", "color": "green", "emoji": null }]
   },
-  "intervention": { "active": false, "reason": "bot_action", "triggeredBy": "bot", "startedAt": "2026-07-07T12:04:00.000Z", "endedAt": "2026-07-07T12:18:00.000Z", "durationSeconds": 840, "messageCount": 6, "summary": "Cliente combinou visita amanha as 15h." },
+  "intervention": { "id": "d34cbfa8-b5b1-43b1-99f4-199319887990", "active": false, "attendanceState": null, "stateChangedAt": "2026-07-07T12:18:00.000Z", "stateVersion": 3, "source": "bot", "reason": "bot_action", "triggeredBy": "bot", "startedAt": "2026-07-07T12:04:00.000Z", "endedAt": "2026-07-07T12:18:00.000Z", "durationSeconds": 840, "messageCount": 6, "summary": "Cliente combinou visita amanha as 15h." },
   "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
 }`,
     description:

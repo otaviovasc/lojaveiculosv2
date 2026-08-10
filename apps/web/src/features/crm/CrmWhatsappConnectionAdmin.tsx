@@ -6,23 +6,20 @@ import {
   ConnectionSetupFlow,
 } from "./CrmWhatsappConnectionViews";
 import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
+import {
+  CrmWhatsappSelfServiceSetup,
+  type CrmWhatsappSelfServiceHandlers,
+} from "./CrmWhatsappSelfServiceSetup";
 import type {
+  CrmWhatsappConnectionAllowance,
   CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappProviderConnection,
+  CrmWhatsappSetupProvider,
   CrmWhatsappUpdateConnectionInput,
-  CrmWhatsappWebhookEndpoint,
 } from "./crmWhatsappTypes";
+import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
 
-export function CrmWhatsappConnectionAdmin({
-  connections,
-  disabled = false,
-  error,
-  isLoading = false,
-  onClose,
-  onConfigureWebhooks,
-  onUpdate,
-  onRefresh,
-}: {
+type ConnectionAdminProps = {
   connections: CrmWhatsappProviderConnection[];
   disabled?: boolean;
   embedded?: boolean;
@@ -37,9 +34,26 @@ export function CrmWhatsappConnectionAdmin({
     connectionId: CrmWhatsappProviderConnection["id"],
     input: CrmWhatsappUpdateConnectionInput,
   ) => Promise<boolean>;
-}) {
-  const [selectedId, setSelectedId] = useState<string | null>(
-    connections[0]?.id ? String(connections[0].id) : null,
+  selfService?: {
+    allowance: CrmWhatsappConnectionAllowance;
+    availableProviders: CrmWhatsappSetupProvider[];
+    canManage: boolean;
+    handlers: CrmWhatsappSelfServiceHandlers;
+  };
+};
+
+export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
+  const {
+    connections,
+    disabled = false,
+    error,
+    isLoading = false,
+    onConfigureWebhooks,
+    onRefresh,
+    selfService,
+  } = props;
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    readInitialConnectionId(connections),
   );
   const selected = useMemo(
     () =>
@@ -48,29 +62,15 @@ export function CrmWhatsappConnectionAdmin({
       null,
     [connections, selectedId],
   );
-  const [setupStep, setSetupStep] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [copiedWebhook, setCopiedWebhook] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ instanceId: "", instanceToken: "" });
-  const [isConfiguringWebhooks, setIsConfiguringWebhooks] = useState(false);
-  const [webhookConfigResult, setWebhookConfigResult] =
+  const [isConfiguring, setIsConfiguring] = useState(false);
+  const [configResult, setConfigResult] =
     useState<CrmWhatsappConfigureWebhooksResult | null>(null);
 
   useEffect(() => {
     setLocalError(null);
-    setDraft({
-      instanceId:
-        selected?.provider === "zapi"
-          ? (selected.externalInstanceId ?? "")
-          : "",
-      instanceToken: "",
-    });
-    setWebhookConfigResult(null);
-    setSetupStep(
-      selected?.provider === "zapi" && hasCredentials(selected) ? 1 : 0,
-    );
+    setConfigResult(null);
   }, [selected]);
 
   useEffect(() => {
@@ -83,12 +83,6 @@ export function CrmWhatsappConnectionAdmin({
     setSelectedId(connections[0]?.id ? String(connections[0].id) : null);
   }, [connections, selectedId]);
 
-  const copyWebhook = async (endpoint: CrmWhatsappWebhookEndpoint) => {
-    await navigator.clipboard?.writeText(endpoint.url);
-    setCopiedWebhook(endpoint.type);
-    window.setTimeout(() => setCopiedWebhook(null), 1600);
-  };
-
   const refresh = async () => {
     setIsRefreshing(true);
     setLocalError(null);
@@ -99,82 +93,55 @@ export function CrmWhatsappConnectionAdmin({
     }
   };
 
-  const configureWebhooks = async () => {
+  const configureAutomatically = async () => {
     if (!selected || selected.provider !== "zapi") return;
-    setIsConfiguringWebhooks(true);
-    try {
-      const result = await onConfigureWebhooks(selected.id);
-      setWebhookConfigResult(result);
-      if (!result) {
-        setLocalError("Nao foi possivel configurar os webhooks na Z-API.");
-      }
-    } finally {
-      setIsConfiguringWebhooks(false);
-    }
-  };
-
-  const saveInstance = async () => {
-    if (!selected || selected.provider !== "zapi") return false;
-    const instanceId = draft.instanceId.trim();
-    const instanceToken = draft.instanceToken.trim();
-    if (!instanceId || !instanceToken) {
-      setLocalError("Informe o ID e o token da instancia Z-API.");
-      return false;
-    }
-    setIsSaving(true);
+    setIsConfiguring(true);
     setLocalError(null);
     try {
-      const saved = await onUpdate(selected.id, {
-        instanceCredentials: { instanceId, instanceToken },
-      });
-      if (saved) {
-        setDraft({ instanceId, instanceToken: "" });
-        // Auto-register the Z-API webhooks as soon as credentials are stored.
-        void configureWebhooks();
-      } else setLocalError("Nao foi possivel salvar a instancia Z-API.");
-      return saved;
+      const result = await onConfigureWebhooks(selected.id);
+      setConfigResult(result);
+      if (!result) {
+        setLocalError(
+          "Não foi possível concluir a configuração automática. Tente novamente ou fale com o suporte.",
+        );
+      }
+    } catch {
+      setLocalError(
+        "Não foi possível concluir a configuração automática. Tente novamente ou fale com o suporte.",
+      );
     } finally {
-      setIsSaving(false);
+      setIsConfiguring(false);
     }
-  };
-
-  const advanceSetup = async () => {
-    if (!selected) return;
-    if (selected.provider !== "zapi") {
-      await refresh();
-      return;
-    }
-    if (setupStep === 0) {
-      const unchanged =
-        hasCredentials(selected) &&
-        draft.instanceId.trim() === selected.externalInstanceId &&
-        !draft.instanceToken.trim();
-      if (unchanged || (await saveInstance())) setSetupStep(1);
-      return;
-    }
-    if (setupStep === 1) {
-      setSetupStep(2);
-      return;
-    }
-    await refresh();
   };
 
   if (isLoading) {
     return (
       <p className="crm-whatsapp-connection-empty" role="status">
-        Carregando conexao WhatsApp.
+        Carregando conexão de mensagens.
       </p>
     );
   }
 
+  const sharedConnectionProps = selected
+    ? {
+        connection: selected,
+        disabled,
+        isConfiguringWebhooks: isConfiguring,
+        isRefreshing,
+        onConfigureWebhooks: () => void configureAutomatically(),
+        onRefresh: () => void refresh(),
+        webhookConfigResult: configResult,
+      }
+    : null;
+
   return (
-    <section aria-label="Conexao" className="crm-whatsapp-connection-admin">
+    <section aria-label="Conexão" className="crm-whatsapp-connection-admin">
       {error ? (
         <p className="crm-whatsapp-connection-error" role="alert">
-          {formatApiErrorDisplay(error, "Nao foi possivel carregar a conexao.")}
+          {formatApiErrorDisplay(error, "Não foi possível carregar a conexão.")}
         </p>
       ) : null}
-      {selected ? (
+      {selected && sharedConnectionProps ? (
         <>
           {connections.length > 1 ? (
             <label className="crm-whatsapp-connection-selector">
@@ -191,87 +158,45 @@ export function CrmWhatsappConnectionAdmin({
             </label>
           ) : null}
           {selected.live.providerStatus === "connected" ? (
-            <ConnectionDashboard
-              connection={selected}
-              copiedWebhook={copiedWebhook}
-              disabled={disabled}
-              draft={draft}
-              isConfiguringWebhooks={isConfiguringWebhooks}
-              isRefreshing={isRefreshing}
-              isSaving={isSaving}
-              onConfigureWebhooks={() => void configureWebhooks()}
-              onCopy={(endpoint) => void copyWebhook(endpoint)}
-              onDraftChange={setDraft}
-              onRefresh={() => void refresh()}
-              onSave={() => void saveInstance()}
-              webhookConfigResult={webhookConfigResult}
+            <ConnectionDashboard {...sharedConnectionProps} />
+          ) : selfService && selected.provider === "composio_whatsapp" ? (
+            <CrmWhatsappSelfServiceSetup
+              allowance={selfService.allowance}
+              availableProviders={selfService.availableProviders}
+              canManage={selfService.canManage}
+              existingConnection={selected}
+              handlers={selfService.handlers}
             />
           ) : (
             <ConnectionSetupFlow
-              connection={selected}
-              copiedWebhook={copiedWebhook}
-              currentStep={setupStep}
-              disabled={disabled}
-              draft={draft}
-              isConfiguringWebhooks={isConfiguringWebhooks}
-              isRefreshing={isRefreshing}
-              isSaving={isSaving}
+              {...sharedConnectionProps}
               localError={localError}
-              nextDisabled={readNextDisabled({
-                connection: selected,
-                disabled,
-                draft,
-                setupStep,
-              })}
-              onCancel={() => onClose?.()}
-              onConfigureWebhooks={() => void configureWebhooks()}
-              onCopy={(endpoint) => void copyWebhook(endpoint)}
-              onDraftChange={setDraft}
-              onNext={() => void advanceSetup()}
-              onRefresh={() => void refresh()}
-              onSave={() => void saveInstance()}
-              onStepChange={setSetupStep}
-              webhookConfigResult={webhookConfigResult}
             />
           )}
         </>
+      ) : selfService ? (
+        <CrmWhatsappSelfServiceSetup
+          allowance={selfService.allowance}
+          availableProviders={selfService.availableProviders}
+          canManage={selfService.canManage}
+          handlers={selfService.handlers}
+        />
       ) : (
         <p className="crm-whatsapp-connection-empty">
-          Nenhuma conexao de mensagens configurada para esta loja.
+          Nenhuma conexão de mensagens configurada para esta loja.
         </p>
       )}
     </section>
   );
 }
 
-function hasCredentials(connection: CrmWhatsappProviderConnection) {
-  if (connection.provider !== "zapi") {
-    return Boolean(connection.credentials?.composioConnectedAccountConfigured);
+function readInitialConnectionId(connections: CrmWhatsappProviderConnection[]) {
+  const pendingId = readPendingComposioConnectionId();
+  if (
+    pendingId &&
+    connections.some((connection) => String(connection.id) === pendingId)
+  ) {
+    return pendingId;
   }
-  return Boolean(
-    connection.credentials?.storedInstanceConfigured ||
-    (connection.credentials?.instanceIdEnv &&
-      connection.credentials.instanceTokenEnv),
-  );
-}
-
-function readNextDisabled({
-  connection,
-  disabled,
-  draft,
-  setupStep,
-}: {
-  connection: CrmWhatsappProviderConnection;
-  disabled: boolean;
-  draft: { instanceId: string; instanceToken: string };
-  setupStep: number;
-}) {
-  if (connection.provider !== "zapi") return false;
-  if (setupStep === 1) return !(connection.webhookEndpoints?.length ?? 0);
-  if (setupStep === 2) return false;
-  const unchanged =
-    hasCredentials(connection) &&
-    draft.instanceId.trim() === connection.externalInstanceId &&
-    !draft.instanceToken.trim();
-  return disabled || (!unchanged && !(draft.instanceId && draft.instanceToken));
+  return connections[0]?.id ? String(connections[0].id) : null;
 }

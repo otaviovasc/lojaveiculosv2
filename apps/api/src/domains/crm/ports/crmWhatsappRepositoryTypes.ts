@@ -2,6 +2,8 @@ export type CrmWhatsappChannel =
   "OLX_CHAT" | "WEB_CHAT" | "WHATSAPP" | "INSTAGRAM";
 export type CrmWhatsappSessionStatus =
   "ACTIVE" | "COMPLETED" | "EXPIRED" | "HUMAN_TAKEOVER" | "MINIBOT_ACTIVE";
+export type CrmWhatsappHumanAttendanceState =
+  "WAITING_HUMAN" | "IN_HUMAN_SERVICE";
 export type CrmWhatsappMessageDirection = "INBOUND" | "OUTBOUND";
 export type CrmWhatsappMessageStatus =
   "DELIVERED" | "FAILED" | "PENDING" | "READ" | "SENT";

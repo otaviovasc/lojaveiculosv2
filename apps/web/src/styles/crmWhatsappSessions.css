@@ -240,6 +240,36 @@
   color: var(--color-accent-strong);
 }
 
+.crm-whatsapp-human-attendance {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: calc(var(--font-size-xs) * 0.92);
+  font-weight: 900;
+  gap: 0.25rem;
+  padding: 0.125rem 0.4375rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-human-attendance svg {
+  fill: currentColor;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.crm-whatsapp-human-attendance-waiting {
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  color: var(--color-danger);
+}
+
+.crm-whatsapp-human-attendance-in-service {
+  background: var(--color-blue-soft);
+  border: 1px solid color-mix(in srgb, var(--color-blue-start) 30%, transparent);
+  color: var(--color-blue-start);
+}
+
 .crm-whatsapp-session-status-completed,
 .crm-whatsapp-session-status-expired {
   background: color-mix(in srgb, var(--color-text) 6%, transparent);

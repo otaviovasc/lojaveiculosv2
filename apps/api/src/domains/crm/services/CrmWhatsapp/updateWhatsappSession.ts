@@ -13,6 +13,12 @@ import {
 } from "./serviceSupport.js";
 import { closeLinkedWhatsappLead } from "../../whatsapp/updateWhatsappLinkedLead.js";
 import {
+  humanAttendanceReason,
+  humanAttendanceSource,
+  transitionHumanAttendance,
+} from "../../whatsapp/humanAttendanceTransition.js";
+import { notifyScopedInterventionChangedToBot } from "../../whatsapp/whatsappInterventionNotification.js";
+import {
   findScopedWhatsappSession,
   sessionWithConnection,
 } from "./whatsappSessionMutationSupport.js";
@@ -133,11 +139,17 @@ async function closeWhatsappSessionUnchecked(
     ports,
   );
   const now = new Date();
+  const attendanceTransition = await transitionHumanAttendance({
+    command: { kind: "clear", status: "COMPLETED" },
+    now,
+    repository: getCrmWhatsappRepository(ports),
+    session,
+  });
   const updated = await getCrmWhatsappRepository(ports).updateSession({
     assignedUserId: null,
     firstHandledAt: session.firstHandledAt ?? now,
     metadata: {
-      ...session.metadata,
+      ...attendanceTransition.session.metadata,
       lastClosedAt: now.toISOString(),
       lastClosedByActorId: context.actor.id,
     },
@@ -157,5 +169,40 @@ async function closeWhatsappSessionUnchecked(
     input.sessionId,
   );
   await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
+  if (attendanceTransition.previous.status === "HUMAN_TAKEOVER") {
+    await notifyScopedInterventionChangedToBot(
+      context,
+      {
+        active: false,
+        previousSession: attendanceTransition.previous,
+        reason:
+          humanAttendanceReason(attendanceTransition.previous) ??
+          "session_closed",
+        session: attendanceTransition.session,
+        source: attendanceEventSource(attendanceTransition.previous),
+        window: {
+          endedAt: now,
+          startedAt: attendanceTransition.previous.humanTakeoverAt,
+        },
+      },
+      ports,
+    );
+  }
   return realtimeSession;
+}
+
+function attendanceEventSource(
+  session: Parameters<typeof humanAttendanceSource>[0],
+) {
+  const source = humanAttendanceSource(session);
+  if (
+    source === "admin" ||
+    source === "ai_request" ||
+    source === "auto" ||
+    source === "bot" ||
+    source === "seller_whatsapp"
+  ) {
+    return source;
+  }
+  return "admin";
 }

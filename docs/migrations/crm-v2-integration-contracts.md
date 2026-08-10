@@ -1,6 +1,6 @@
 # CRM V2 Integration Contracts
 
-Last updated: 2026-07-27
+Last updated: 2026-08-10
 
 This is the active worker-facing contract for the CRM migration. The older
 control dashboards remain useful context:
@@ -108,8 +108,74 @@ they never expose the Composio API key or connected-account id. The connection
 
 `GET /crm/whatsapp/sessions` supports store-scoped filters for
 `connectionId`, `sessionId`, `leadId`, status, assignment buckets, tags,
-search, unread-only, limit, and offset. Lead detail screens must resolve
-existing WhatsApp sessions through `leadId` before creating a new conversation.
+search, unread-only, human attendance state, limit, and offset. Lead detail
+screens must resolve existing WhatsApp sessions through `leadId` before
+creating a new conversation.
+
+### Human attendance contract
+
+The WhatsApp session is the canonical attendance record and is directly linked
+to the V2 `leads.id`. Session responses and `session` realtime events expose
+these fields (with V2 naming and IDs):
+
+| Field                         | Values / format                                | Meaning                                                                        |
+| ----------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| `humanAttendanceState`        | `WAITING_HUMAN`, `IN_HUMAN_SERVICE`, or `null` | Current human-attendance state.                                                |
+| `humanAttendanceChangedAt`    | RFC 3339 timestamp or `null`                   | Server time of the last attendance-state change.                               |
+| `humanHandlingStartedAt`      | RFC 3339 timestamp or `null`                   | Server time at which human service began.                                      |
+| `humanAttendanceStateVersion` | Positive integer or `null`                     | Session-monotonic version; `null` only before the first attendance transition. |
+| `interventionId`              | V2 intervention ID or `null`                   | Identifier for the current intervention, when one exists.                      |
+
+State transitions are server-owned:
+
+- An AI pause/request for human help sets `WAITING_HUMAN` and emits the
+  intervention-start event. The CRM displays **Aguardando Humano**.
+- A seller/agent's first provider-confirmed outbound message sets
+  `IN_HUMAN_SERVICE` and emits the session update. Text, media, location,
+  catalog, vehicle, document, audio, video, and other supported outbound
+  message actions count; reactions do not. The CRM displays **Em atendimento
+  Humano**.
+- An explicit manual takeover also sets `IN_HUMAN_SERVICE`. Ending the
+  intervention, closing or reopening the session, or resuming automation sets
+  the state, handling-start timestamp, and active intervention ID to `null`.
+  The server advances `humanAttendanceChangedAt` and
+  `humanAttendanceStateVersion` as a tombstone so delayed events cannot restore
+  a finished intervention.
+- A provider rejection, timeout, or otherwise unsuccessful outbound attempt
+  does not change attendance state. The transition occurs only after the
+  provider confirms acceptance.
+
+`GET /crm/whatsapp/sessions` accepts `humanAttendanceState` as a composable
+filter. `GET /crm/whatsapp/session-counts` returns counts for both attendance
+states; counts apply the same tenant/store scope and all other active filters
+(connection, lead, status, assignment, tags, search, and unread state). The
+attendance filters are mutually exclusive in the UI, but are not allowed to
+drop the other filters.
+
+Attendance changes publish the existing ticketed SSE stream at
+`GET /crm/whatsapp/events` as a named `session` event. The event contains the
+complete V2 session projection, including the five fields above, plus the
+stream event ID. Consumers must deduplicate event IDs, apply only a greater
+`humanAttendanceStateVersion` for a session, and use the server timestamps for
+ordering; a reconnect must replay from the last event ID and then reconcile
+with `GET /crm/whatsapp/sessions` and
+`GET /crm/whatsapp/session-counts`.
+
+The bot integration forwards the same attendance fields in its
+`intervention_started`, `intervention_ended`, and session/message payloads;
+the action and event semantics are defined in the Bot Contract section below.
+All transitions are tenant/store scoped, require the existing CRM permission
+for the initiating action (`crm.whatsapp.toggle_intervention` or
+`crm.whatsapp.send`), and emit a sanitized audit event. Bot actions use the
+configured bot secret and the bot-scoped `ServiceContext`; no provider secret
+or message body belongs in an event, audit record, or error details.
+
+If realtime delivery is unavailable, the persisted session state remains the
+source of truth and the UI must show a reconnect/reconciliation state rather
+than a synthetic update. Provider failures return the standard API error
+envelope and leave the previous attendance state unchanged. A successful
+provider result with a temporarily unavailable realtime broker remains
+persisted and is delivered by replay/reconciliation.
 
 `POST /crm/whatsapp/conversations/start` accepts exactly one of `text` or
 `template`. ZAPI starts with free-form text. Official WhatsApp starts with an

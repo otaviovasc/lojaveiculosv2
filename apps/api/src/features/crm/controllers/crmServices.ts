@@ -34,32 +34,13 @@ import type {
   CrmLeadActivity,
 } from "../../../domains/crm/ports/crmRepository.js";
 import type { CrmLeadVisit } from "../../../domains/crm/ports/crmVisitRepository.js";
-import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
-import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
-import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
-import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
-import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
-import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import {
-  createDrizzleCrmRepository,
-  type DrizzleCrmClient,
-} from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
-import { createDrizzleCrmBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmBotIntegrationRepository.js";
-import { createDrizzleCrmVisitRepository } from "../../../infrastructure/db/crm/drizzleCrmVisitRepository.js";
-import { createDrizzleCrmPipelineRepository } from "../../../infrastructure/db/crm/drizzleCrmPipelineRepository.js";
-import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
-import { createDrizzleCrmWebhookEventRepository } from "../../../infrastructure/db/crm/drizzleCrmWebhookEventRepository.js";
-import { createDrizzleCrmWhatsappRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappRepository.js";
-import {
-  createDrizzleVehicleInventoryRepositories,
-  type DrizzleVehicleInventoryClient,
-} from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import {
   createCrmWhatsappServiceBindings,
   type CrmWhatsappServices,
 } from "./crmWhatsappServiceBindings.js";
+import { resolveCrmPorts } from "./crmServicePorts.js";
+import type { CreateCrmServicesOptions } from "./crmServices.types.js";
+export type { CreateCrmServicesOptions } from "./crmServices.types.js";
 export type CrmServices = CrmWhatsappServices & {
   createActivity: (
     context: ServiceContext,
@@ -127,11 +108,6 @@ export type CrmServices = CrmWhatsappServices & {
     input: UpdateCrmLeadInput,
   ) => Promise<CrmLead>;
 };
-export type CreateCrmServicesOptions = {
-  drizzleClient?: DrizzleCrmClient;
-  environment?: string;
-  ports?: Partial<CrmServicePorts>;
-};
 export function createCrmServices(
   options: CreateCrmServicesOptions = {},
 ): CrmServices {
@@ -164,83 +140,5 @@ export function createCrmServices(
     updateLead: (context, input) => updateCrmLead(context, input, ports),
     ...createCrmWhatsappServiceBindings(ports),
   };
-}
-function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
-  const createVehicleInventory = (client: DrizzleCrmClient) => {
-    const repositories = createDrizzleVehicleInventoryRepositories(
-      client as unknown as DrizzleVehicleInventoryClient,
-    );
-    return {
-      listingRepository: repositories.listingRepository,
-      mediaRepository: repositories.mediaRepository,
-      unitRepository: repositories.unitRepository,
-    };
-  };
-  const defaultPorts = options.drizzleClient
-    ? {
-        crmBotIntegrationRepository: createDrizzleCrmBotIntegrationRepository(
-          options.drizzleClient,
-        ),
-        crmConnectionRepository: createDrizzleCrmConnectionRepository(
-          options.drizzleClient,
-        ),
-        crmPipelineRepository: createDrizzleCrmPipelineRepository(
-          options.drizzleClient,
-        ),
-        crmRepository: createDrizzleCrmRepository(options.drizzleClient),
-        crmVisitRepository: createDrizzleCrmVisitRepository(
-          options.drizzleClient,
-        ),
-        crmWebhookEventRepository: createDrizzleCrmWebhookEventRepository(
-          options.drizzleClient,
-        ),
-        crmWhatsappRepository: createDrizzleCrmWhatsappRepository(
-          options.drizzleClient,
-        ),
-        environment: options.environment ?? "local",
-        vehicleInventory: createVehicleInventory(options.drizzleClient),
-      }
-    : {
-        crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
-        crmConnectionRepository: createMemoryCrmConnectionRepository(),
-        crmPipelineRepository: createMemoryCrmPipelineRepository(),
-        crmRepository: createMemoryCrmRepository(),
-        crmVisitRepository: createMemoryCrmVisitRepository(),
-        crmWebhookEventRepository: createMemoryCrmWebhookEventRepository(),
-        crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
-        environment: options.environment ?? "test",
-      };
-  const ports = { ...defaultPorts, ...(options.ports ?? {}) };
-  if (options.drizzleClient && !ports.transaction) {
-    ports.transaction = async (action) =>
-      options.drizzleClient!.transaction(async (tx) => {
-        const { transaction: _transaction, ...transactionPorts } = ports;
-        return action({
-          ...transactionPorts,
-          crmBotIntegrationRepository: createDrizzleCrmBotIntegrationRepository(
-            tx as DrizzleCrmClient,
-          ),
-          crmConnectionRepository: createDrizzleCrmConnectionRepository(
-            tx as DrizzleCrmClient,
-          ),
-          crmPipelineRepository: createDrizzleCrmPipelineRepository(
-            tx as DrizzleCrmClient,
-          ),
-          crmRepository: createDrizzleCrmRepository(tx as DrizzleCrmClient),
-          crmVisitRepository: createDrizzleCrmVisitRepository(
-            tx as DrizzleCrmClient,
-          ),
-          crmWebhookEventRepository: createDrizzleCrmWebhookEventRepository(
-            tx as DrizzleCrmClient,
-          ),
-          crmWhatsappRepository: createDrizzleCrmWhatsappRepository(
-            tx as DrizzleCrmClient,
-            { disableTransactions: true },
-          ),
-          vehicleInventory: createVehicleInventory(tx as DrizzleCrmClient),
-        });
-      });
-  }
-  return ports;
 }
 export const crmServices = createCrmServices();

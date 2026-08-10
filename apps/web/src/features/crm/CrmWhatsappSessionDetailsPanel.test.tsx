@@ -70,6 +70,23 @@ describe("CrmWhatsappSessionDetailsPanel", () => {
       "https://facebook.example.test/ads/civic-123",
     );
   });
+
+  it("shows the precise attendance state in the details panel", () => {
+    render(
+      <CrmWhatsappSessionDetailsPanel
+        assignableMembers={[]}
+        onClose={vi.fn()}
+        session={{
+          ...session(),
+          humanAttendanceState: "WAITING_HUMAN",
+          status: "HUMAN_TAKEOVER",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Aguardando Humano")).toBeVisible();
+    expect(screen.queryByText("Atendimento humano")).not.toBeInTheDocument();
+  });
 });
 
 function session(): CrmWhatsappSession {

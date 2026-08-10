@@ -8,7 +8,10 @@ import { BillingWebhookValidationError } from "./billingWebhookErrors.js";
 export type ParsedAsaasWebhook = {
   checkout?: Parameters<BillingWebhookRepository["syncProviderCheckout"]>[0];
   eventType: string;
-  payment?: Parameters<BillingWebhookRepository["upsertProviderPayment"]>[0];
+  payment?: Omit<
+    Parameters<BillingWebhookRepository["upsertProviderPayment"]>[0],
+    "providerEventId"
+  >;
   providerEventId: string;
   subscription?: Parameters<
     BillingWebhookRepository["syncProviderSubscription"]

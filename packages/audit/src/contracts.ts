@@ -91,6 +91,7 @@ export type AuditEvent = {
   entityId: string;
   entityType: string;
   failureTier?: AuditFailureTier;
+  id?: string;
   metadata?: SafeAuditMetadata;
   occurredAt?: Date | string;
   outcome?: AuditOutcome;

@@ -34,6 +34,7 @@ export const updateEntitlementSchema = z.object({
     "automation",
     "compliance",
     "crm",
+    "crm_zapi",
     "custom_domain",
     "external_api",
     "marketplace",

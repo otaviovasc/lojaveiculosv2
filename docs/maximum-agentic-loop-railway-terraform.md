@@ -54,7 +54,7 @@ Verified locally:
 - `terraform fmt -check -recursive infra/terraform` passes.
 - Terraform staging and production configs validate when provider execution is
   allowed outside the sandbox.
-- The six-resource Railway staging topology was applied on 2026-07-16. Product
+- The original six-resource Railway staging topology was applied on 2026-07-16. Product
   Postgres, audit Postgres, and Redis reached `SUCCESS`; the API, web, and CRM
   cron services intentionally have no code deployment yet.
 
@@ -63,7 +63,7 @@ Still external/manual:
 - Configure staging service variables and sealed secrets.
 - Upload the verified API, web, and CRM worker commit to staging and run smoke
   checks.
-- Apply the reviewed six-resource plan to production only after staging
+- Apply the reviewed current resource plan to production only after staging
   acceptance. Production is currently empty.
 - Configure operator-local staging and production smoke URLs.
 - Add Terraform modules for GitHub, DNS, Sentry, and uptime monitors.
@@ -78,6 +78,7 @@ respectful-respect
     lojaveiculosv2-api
     lojaveiculosv2-web
     lojaveiculosv2-crm-schedule-worker (Railway cron, every 5 minutes)
+    lojaveiculosv2-billing-reconciliation-worker (Railway cron, every 5 minutes)
     product Postgres
     audit Postgres
     Redis
@@ -89,9 +90,9 @@ Use accepted commits from `main` for production and `staging` for staging.
 GitHub source autodeploy is enabled per environment: `staging` tracks the
 `staging` branch and `production` tracks `main`, so promoting a verified branch
 deploys without manual uploads. Redis is enabled for CRM realtime fanout and
-replay. The only worker is the short-lived scheduled-message cron; PR
-environments, permanent queue consumers, and speculative cron services remain
-disabled until measured value justifies cost.
+replay. The two workers are short-lived scheduled-message and durable billing
+reconciliation crons; PR environments, permanent queue consumers, and
+speculative cron services remain disabled until measured value justifies cost.
 
 Railway healthcheck paths:
 

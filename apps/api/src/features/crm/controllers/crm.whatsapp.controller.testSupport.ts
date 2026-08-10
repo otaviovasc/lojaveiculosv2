@@ -1,35 +1,17 @@
 import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
-import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
+import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { expect, vi } from "vitest";
-import type { CrmBotIntegrationRepository } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
-import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
-import type { CrmBotWebhookDispatcher } from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
-import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmFinancingBotActions } from "../../../domains/crm/ports/crmFinancingBotActions.js";
-import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
-import type {
-  CrmRealtimeBroker,
-  CrmRealtimePublisher,
-} from "../../../domains/crm/ports/crmRealtimePublisher.js";
-import type { CrmRemoteMediaFetcher } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
-import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
-import type { CrmVisitRepository } from "../../../domains/crm/ports/crmVisitRepository.js";
-import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
 import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
-import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
-import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
-import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
-import {
-  createServiceContext,
-  type ServiceLogger,
-} from "../../../shared/serviceContext.js";
+import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createCrmFeature } from "./crm.controller.js";
+import { createTestCrmConnectionCredentialVault } from "./crm.whatsapp.connectionFixtures.js";
 import { createCrmServices } from "./crmServices.js";
+import type { CreateCrmWhatsappTestAppOptions } from "./crm.whatsapp.controller.testSupport.types.js";
 
 export const defaultWhatsappPermissions = [
   "crm.whatsapp.assign",
@@ -55,35 +37,19 @@ export const defaultWhatsappPermissions = [
   "crm.visits.read",
 ] satisfies PermissionKey[];
 
-export function createTestApp(
-  options: {
-    audit?: AuditSink;
-    crmBotIntegrationRepository?: CrmBotIntegrationRepository;
-    crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
-    crmConnectionRepository?: CrmConnectionRepository;
-    crmPipelineRepository?: CrmPipelineRepository;
-    crmRealtimeBroker?: CrmRealtimeBroker;
-    crmRealtimePublisher?: CrmRealtimePublisher;
-    crmRepository?: CrmRepository;
-    crmVisitRepository?: CrmVisitRepository;
-    crmWebhookEventRepository?: CrmWebhookEventRepository;
-    crmWhatsappGateway?: Partial<CrmWhatsappGateway>;
-    crmWhatsappMediaFetcher?: CrmRemoteMediaFetcher;
-    crmWhatsappMediaStorage?: ObjectStorage;
-    crmWhatsappRepository?: CrmWhatsappRepository;
-    entitlements?: EntitlementKey[];
-    financingBotActions?: CrmFinancingBotActions;
-    logger?: ServiceLogger;
-    permissions?: PermissionKey[];
-    resolveBotEntitlements?: ResolveCrmBotEntitlements;
-    transaction?: CrmServicePorts["transaction"];
-    vehicleInventory?: CrmServicePorts["vehicleInventory"];
-  } = {},
-) {
+export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
   const app = new Hono();
   app.route(
     "/api/v1/crm",
     createCrmFeature({
+      accountContextFactory: async () =>
+        createServiceContext({
+          actor: { id: "platform_support", kind: "user" },
+          permissions: options.supportPermissions ?? [],
+          request: { requestId: "support_req_1" },
+          storeId: null,
+          tenantId: null,
+        }),
       contextFactory: async () =>
         Object.assign(
           createServiceContext({
@@ -98,7 +64,7 @@ export function createTestApp(
             storeId: "store_1",
             tenantId: "tenant_1",
           }),
-          { entitlements: options.entitlements ?? ["crm"] },
+          { entitlements: options.entitlements ?? ["crm", "crm_zapi"] },
         ),
       webhookContextFactory: async () =>
         createServiceContext({
@@ -115,6 +81,15 @@ export function createTestApp(
         }),
       services: createCrmServices({
         ports: {
+          ...(options.billingQuotaGuard
+            ? { billingQuotaGuard: options.billingQuotaGuard }
+            : {}),
+          ...(options.composioWhatsappOnboardingProvider
+            ? {
+                composioWhatsappOnboardingProvider:
+                  options.composioWhatsappOnboardingProvider,
+              }
+            : {}),
           crmBotIntegrationRepository:
             options.crmBotIntegrationRepository ??
             createMemoryCrmBotIntegrationRepository(),
@@ -124,6 +99,18 @@ export function createTestApp(
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
             : {}),
+          ...(options.crmZapiSetupCompletionReporter
+            ? {
+                crmZapiSetupCompletionReporter:
+                  options.crmZapiSetupCompletionReporter,
+              }
+            : {}),
+          ...(options.crmZapiSupportAuthorizer
+            ? { crmZapiSupportAuthorizer: options.crmZapiSupportAuthorizer }
+            : {}),
+          crmConnectionCredentialVault:
+            options.crmConnectionCredentialVault ??
+            createTestCrmConnectionCredentialVault(),
           ...((options.crmRealtimePublisher ?? options.crmRealtimeBroker)
             ? {
                 crmRealtimePublisher:
@@ -162,11 +149,17 @@ export function createTestApp(
           ...(options.vehicleInventory
             ? { vehicleInventory: options.vehicleInventory }
             : {}),
+          ...(options.zapiConnectionSetupProvider
+            ? {
+                zapiConnectionSetupProvider:
+                  options.zapiConnectionSetupProvider,
+              }
+            : {}),
         },
       }),
       resolveBotEntitlements:
         options.resolveBotEntitlements ??
-        (async () => options.entitlements ?? ["crm"]),
+        (async () => options.entitlements ?? ["crm", "crm_zapi"]),
       ...(options.crmRealtimeBroker
         ? { realtimeBroker: options.crmRealtimeBroker }
         : {}),
@@ -185,7 +178,7 @@ function createTestWhatsappGateway(
   }));
   return {
     configureWebhooks: vi.fn(async () => ({ results: [] })),
-    deleteMessage: vi.fn(async () => ({ raw: {} })),
+    deleteMessage: vi.fn(async () => ({ deleted: true })),
     getConnectionStatus: vi.fn(async () => ({
       checkedAt: new Date("2026-07-02T19:00:00.000Z"),
       connected: false,

@@ -151,16 +151,29 @@ export function mapRepassesConnection(connection, options = {}) {
   const instanceId = nullableString(credentials.instanceId, 191);
   const instanceToken = nullableString(credentials.token, 1000);
   const hasStoredCredentials = Boolean(instanceId && instanceToken);
+  const sealCredential = options.sealCredential;
+  if (hasStoredCredentials && !sealCredential) {
+    throw new Error("A CRM credential sealer is required for Z-API import.");
+  }
   const credentialsRef = hasStoredCredentials
     ? {
         mode: "stored",
-        stored: { instanceId, instanceToken },
+        stored: {
+          instanceId: sealCredential({
+            plaintext: instanceId,
+            purpose: "zapi.instance-id",
+          }),
+          instanceToken: sealCredential({
+            plaintext: instanceToken,
+            purpose: "zapi.instance-token",
+          }),
+        },
       }
     : {};
   return {
     credentialsRef,
-    externalInstanceId:
-      instanceId ?? nullableString(connection.instance_id, 191),
+    externalInstanceId: null,
+    lookupInstanceId: instanceId ?? nullableString(connection.instance_id, 191),
     provider: "zapi",
     status: mapConnectionStatus(
       connection,

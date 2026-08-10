@@ -1,14 +1,3 @@
-import {
-  listWhatsappConnections,
-  updateWhatsappConnection,
-} from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
-import { configureWhatsappConnectionWebhooks } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
-import {
-  authenticateWhatsappBotSecret,
-  getWhatsappBotIntegration,
-  updateWhatsappBotIntegration,
-} from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
-import { executeWhatsappBotAction } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
 import { listWhatsappMessages } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappMessages.js";
 import { countWhatsappSessions } from "../../../domains/crm/services/CrmWhatsapp/countWhatsappSessions.js";
 import { listWhatsappSessions } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappSessions.js";
@@ -58,23 +47,13 @@ import { createCrmWhatsappQuickMessageBindings } from "./crmWhatsappQuickMessage
 import type { CrmWhatsappServices } from "./crmWhatsappServiceBindings.types.js";
 import { createCrmWhatsappCampaignBindings } from "./crmWhatsappCampaignBindings.js";
 import { buildWebhookBindings } from "./crmWhatsappWebhookBindings.js";
+import { createCrmWhatsappConnectionBindings } from "./crmWhatsappConnectionBindings.js";
 
 type CatalogBindings = Pick<
   CrmWhatsappServices,
   | "listWhatsappCatalogProducts"
   | "sendWhatsappCatalog"
   | "sendWhatsappCatalogProduct"
->;
-
-type ConnectionBindings = Pick<
-  CrmWhatsappServices,
-  | "authenticateWhatsappBotSecret"
-  | "configureWhatsappConnectionWebhooks"
-  | "executeWhatsappBotAction"
-  | "getWhatsappBotIntegration"
-  | "listWhatsappConnections"
-  | "updateWhatsappBotIntegration"
-  | "updateWhatsappConnection"
 >;
 
 type MessageBindings = Pick<
@@ -129,24 +108,6 @@ const buildCatalogBindings = (ports: CrmServicePorts): CatalogBindings => ({
     sendWhatsappCatalog(context, input, ports),
   sendWhatsappCatalogProduct: (context, input) =>
     sendWhatsappCatalogProduct(context, input, ports),
-});
-
-const buildConnectionBindings = (
-  ports: CrmServicePorts,
-): ConnectionBindings => ({
-  authenticateWhatsappBotSecret: (context, input) =>
-    authenticateWhatsappBotSecret(context, input, ports),
-  configureWhatsappConnectionWebhooks: (context, input) =>
-    configureWhatsappConnectionWebhooks(context, input, ports),
-  executeWhatsappBotAction: (context, input) =>
-    executeWhatsappBotAction(context, input, ports),
-  getWhatsappBotIntegration: (context) =>
-    getWhatsappBotIntegration(context, ports),
-  listWhatsappConnections: (context) => listWhatsappConnections(context, ports),
-  updateWhatsappBotIntegration: (context, input) =>
-    updateWhatsappBotIntegration(context, input, ports),
-  updateWhatsappConnection: (context, input) =>
-    updateWhatsappConnection(context, input, ports),
 });
 
 const buildMessageBindings = (ports: CrmServicePorts): MessageBindings => ({
@@ -225,7 +186,7 @@ export function createCrmWhatsappServiceBindings(
   ports: CrmServicePorts,
 ): CrmWhatsappServices {
   return {
-    ...buildConnectionBindings(ports),
+    ...createCrmWhatsappConnectionBindings(ports),
     ...buildCatalogBindings(ports),
     ...buildMessageBindings(ports),
     ...createCrmWhatsappCampaignBindings(ports),

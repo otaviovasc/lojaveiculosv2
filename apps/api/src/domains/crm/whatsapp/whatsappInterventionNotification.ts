@@ -1,5 +1,10 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmWhatsappSession } from "../ports/crmWhatsappRepository.js";
+import type { CrmInterventionSource } from "../ports/crmBotWebhookDispatcher.js";
+import {
+  humanAttendanceReason,
+  humanAttendanceSource,
+} from "./humanAttendanceTransition.js";
 import {
   getCrmConnectionRepository,
   type CrmServicePorts,
@@ -11,12 +16,6 @@ export type WhatsappInterventionWindow = {
   startedAt: Date | null;
 };
 
-export function interventionReason(context: ServiceContext) {
-  if (context.actor.kind === "integration") return "bot_action";
-  if (context.actor.kind === "system") return "system_toggle";
-  return "manual_toggle";
-}
-
 export function interventionWindow(input: {
   enabled: boolean;
   now: Date;
@@ -24,7 +23,9 @@ export function interventionWindow(input: {
 }): WhatsappInterventionWindow {
   return {
     endedAt: input.enabled ? null : input.now,
-    startedAt: input.enabled ? input.now : input.previousStartedAt,
+    startedAt: input.enabled
+      ? (input.previousStartedAt ?? input.now)
+      : input.previousStartedAt,
   };
 }
 
@@ -32,8 +33,10 @@ export async function notifyScopedInterventionChangedToBot(
   context: ServiceContext,
   input: {
     active: boolean;
+    previousSession?: CrmWhatsappSession;
     reason: string;
     session: CrmWhatsappSession;
+    source?: CrmInterventionSource;
     window: WhatsappInterventionWindow;
   },
   ports: CrmServicePorts,
@@ -48,15 +51,29 @@ export async function notifyScopedInterventionChangedToBot(
   ) {
     return;
   }
+  const source =
+    humanAttendanceSource(input.previousSession ?? input.session) ??
+    input.source;
   await notifyWhatsappInterventionChangedToBot(
     context,
     {
       active: input.active,
+      attendanceChangedAt: input.session.humanAttendanceChangedAt ?? null,
+      attendanceState: input.session.humanAttendanceState ?? null,
+      attendanceStateVersion: input.session.humanAttendanceStateVersion ?? null,
       connection,
       endedAt: input.window.endedAt,
-      reason: input.reason,
+      interventionId:
+        (input.active
+          ? input.session.interventionId
+          : input.previousSession?.interventionId) ?? null,
+      reason:
+        humanAttendanceReason(input.previousSession ?? input.session) ??
+        input.reason,
       session: input.session,
+      ...(source ? { source } : {}),
       startedAt: input.window.startedAt,
+      ...(input.source ? { triggeredBy: input.source } : {}),
     },
     ports,
   );

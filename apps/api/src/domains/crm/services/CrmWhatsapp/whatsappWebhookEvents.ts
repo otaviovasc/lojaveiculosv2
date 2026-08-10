@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmProviderWebhookEvent } from "../../ports/crmWebhookEventRepository.js";
@@ -29,8 +30,9 @@ import {
   toWebhookEventSummary,
   type WhatsappWebhookEventSummary,
 } from "../../whatsapp/whatsappWebhookEventIssues.js";
+import { WhatsappWebhookEventRetryError } from "../../whatsapp/whatsappWebhookEventRetryError.js";
 export type { WhatsappWebhookEventSummary } from "../../whatsapp/whatsappWebhookEventIssues.js";
-
+export { WhatsappWebhookEventRetryError } from "../../whatsapp/whatsappWebhookEventRetryError.js";
 const readPermission = "crm.whatsapp.read" as const;
 const retryPermission = "crm.whatsapp.send" as const;
 
@@ -163,16 +165,6 @@ export async function retryWhatsappWebhookEvent(
   );
 }
 
-export class WhatsappWebhookEventRetryError extends Error {
-  constructor(
-    message: string,
-    readonly status: 404 | 409 | 422,
-  ) {
-    super(message);
-    this.name = "WhatsappWebhookEventRetryError";
-  }
-}
-
 function readRetryProcessor(type: ZapiWebhookType): RetryProcessor {
   const processors = {
     chat_presence: processZapiWhatsappChatPresenceWebhook,
@@ -195,6 +187,21 @@ async function retryRecordedZapiWebhookEvent(
   },
 ) {
   const repository = getCrmWebhookEventRepository(input.ports);
+  const processingStartedAt = new Date();
+  const processingToken = randomUUID();
+  const claimed = await repository.claimForProcessing({
+    allowIgnored: true,
+    eventId: input.event.id,
+    processingStartedAt,
+    processingToken,
+    staleBefore: new Date(processingStartedAt.getTime() - 5 * 60 * 1_000),
+  });
+  if (!claimed) {
+    throw new WhatsappWebhookEventRetryError(
+      "Provider event is already being processed or completed.",
+      409,
+    );
+  }
   try {
     const result = await readRetryProcessor(input.webhookType)(
       withIngestPermission(context),
@@ -202,14 +209,16 @@ async function retryRecordedZapiWebhookEvent(
       input.ports,
     );
     await repository.updateStatus({
-      eventId: input.event.id,
+      eventId: claimed.id,
+      processingToken,
       status: result.status === "ignored" ? "ignored" : "processed",
     });
     return result;
   } catch (error) {
     await repository.updateStatus({
-      errorMessage: error instanceof Error ? error.message : "Unknown error",
-      eventId: input.event.id,
+      errorMessage: error instanceof Error ? error.name : "UnknownError",
+      eventId: claimed.id,
+      processingToken,
       status: "failed",
     });
     throw error;

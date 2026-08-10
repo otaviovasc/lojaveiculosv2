@@ -6,20 +6,24 @@ import {
 } from "./billingMemoryCatalog.js";
 
 describe("billing memory catalog contracts", () => {
-  it("keeps active add-ons unique and outside the plan", () => {
-    const planFeatures = new Set(
-      memoryBillingPlans.flatMap((plan) =>
-        plan.features
-          .filter((feature) => feature.included)
-          .map((feature) => feature.featureKey),
+  it("derives one complete immutable version with unique products", () => {
+    expect(
+      memoryBillingPlans.every((plan) => plan.catalogVersion === "2026-08-v2"),
+    ).toBe(true);
+    expect(
+      memoryBillingAddons.every(
+        (addon) => addon.catalogVersion === "2026-08-v2",
       ),
+    ).toBe(true);
+    expect(new Set(memoryBillingPlans.map((plan) => plan.code)).size).toBe(5);
+    expect(new Set(memoryBillingAddons.map((addon) => addon.code)).size).toBe(
+      6,
     );
-    const addonFeatures = memoryBillingAddons.map((addon) => addon.featureKey);
-
-    expect(new Set(addonFeatures).size).toBe(addonFeatures.length);
-    expect(addonFeatures.some((feature) => planFeatures.has(feature))).toBe(
-      false,
-    );
+    expect(
+      new Set(
+        [...memoryBillingPlans, ...memoryBillingAddons].map((item) => item.id),
+      ).size,
+    ).toBe(11);
   });
 
   it("keeps provider-backed add-ons and custom domain outside the trial", () => {
@@ -48,5 +52,28 @@ describe("billing memory catalog contracts", () => {
       expect(addon.includedInTrial).toBe(false);
       expect(trialFeatures).not.toContain(addon.featureKey);
     }
+  });
+
+  it("prices CRM at R$179 and optional Z-API at R$100", () => {
+    const crm = memoryBillingAddons.find((addon) => addon.code === "crm_core");
+    const zapi = memoryBillingAddons.find((addon) => addon.code === "crm_zapi");
+
+    expect(crm?.monthlyPriceCents).toBe(17900);
+    expect(zapi?.monthlyPriceCents).toBe(10000);
+    expect((crm?.monthlyPriceCents ?? 0) + (zapi?.monthlyPriceCents ?? 0)).toBe(
+      27900,
+    );
+    expect(crm?.limits).toEqual({
+      composioToolExecutionsPerBillingMonth: 10000,
+      enforcement: "soft",
+      includedChannels: ["whatsapp_official", "instagram"],
+    });
+    expect(
+      memoryBillingAddons.find((addon) => addon.code === "fiscal_spedy")
+        ?.monthlyPriceCents,
+    ).toBe(5000);
+    expect(memoryBillingAddons.map((addon) => addon.code)).toEqual(
+      expect.arrayContaining(["public_api_access", "simulations_pro"]),
+    );
   });
 });

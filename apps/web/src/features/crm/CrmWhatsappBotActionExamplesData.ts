@@ -104,9 +104,10 @@ export const botActionExamples = [
     code: `{
   "action": "set_intervention",
   "sessionId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "enabled": false }
+  "payload": { "enabled": true, "source": "ai_request", "reason": "Cliente pediu atendimento humano" }
 }`,
-    description: "O bot pode devolver a conversa ao modo automatico.",
+    description:
+      "A IA pausa a conversa em WAITING_HUMAN. reason e opcional e aceita uma descricao operacional curta.",
     title: "set_intervention",
   },
   {

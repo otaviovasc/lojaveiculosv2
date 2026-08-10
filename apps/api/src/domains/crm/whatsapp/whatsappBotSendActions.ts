@@ -32,6 +32,9 @@ export async function executeBotSendTextAction(
     return sendWhatsappText(
       context,
       {
+        ...(input.idempotencyKey
+          ? { idempotencyKey: input.idempotencyKey }
+          : {}),
         sessionId,
         text: readRequiredText(input.payload, "text"),
       },
@@ -44,6 +47,7 @@ export async function executeBotSendTextAction(
     context,
     {
       connectionId,
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
       phone: readRequiredText(input.payload, "phone"),
     },
     ports,
@@ -82,6 +86,7 @@ export async function executeBotSendMediaAction(
         ? { caption: readRequiredText(input.payload, "caption") }
         : {}),
       ...(input.connectionId ? { connectionId: input.connectionId } : {}),
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
       ...(readOptionalText(input.payload, "fileName")
         ? { fileName: readRequiredText(input.payload, "fileName") }
         : {}),

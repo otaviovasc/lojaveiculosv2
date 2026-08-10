@@ -19,6 +19,7 @@ export const billingFeatureOrder = [
   "subdomain",
   "custom_domain",
   "crm",
+  "crm_zapi",
   "automation",
   "analytics",
   "compliance",
@@ -30,6 +31,7 @@ export const billingFeatureOrder = [
 ] satisfies EntitlementKey[];
 
 export function createBillingOverview(input: {
+  addonContracts?: BillingOverview["addonContracts"];
   addons?: readonly BillingAddon[];
   allocations?: readonly BillingStoreAllocation[];
   authority?: BillingAuthority;
@@ -43,9 +45,11 @@ export function createBillingOverview(input: {
   storeId: BillingOverview["storeId"];
   subscription: BillingSubscription | null;
   tenantId: BillingOverview["tenantId"];
+  usageAllowances?: BillingOverview["usageAllowances"];
 }): BillingOverview {
   const allocations = input.allocations ?? [];
   return {
+    addonContracts: input.addonContracts ?? [],
     addons: input.addons ?? [],
     allocations,
     authority: input.authority ?? defaultBillingAuthority(),
@@ -69,7 +73,34 @@ export function createBillingOverview(input: {
     storeId: input.storeId,
     subscription: input.subscription,
     tenantId: input.tenantId,
+    usageAllowances:
+      input.usageAllowances ??
+      createUsageAllowances(input.addons ?? [], input.entitlements),
   };
+}
+
+function createUsageAllowances(
+  addons: readonly BillingAddon[],
+  entitlements: readonly StoreEntitlement[],
+): BillingOverview["usageAllowances"] {
+  const crmEnabled = entitlements.some(
+    (item) =>
+      item.featureKey === "crm" &&
+      (item.status === "active" || item.status === "trialing"),
+  );
+  const policy = addons.find((addon) => addon.code === "crm_core")?.limits;
+  const allowance = policy?.composioToolExecutionsPerBillingMonth;
+  if (!crmEnabled || allowance == null) return [];
+  return [
+    {
+      allowance,
+      availability: "unavailable",
+      enforcement: policy?.enforcement ?? "soft",
+      key: "crm_composio_tool_executions",
+      period: "billing_month",
+      used: null,
+    },
+  ];
 }
 
 export function createBillingAuthority(input: {

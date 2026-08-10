@@ -4,10 +4,14 @@ import {
 } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type {
+  CrmWhatsappHumanAttendanceState,
   CrmWhatsappMessage,
   CrmWhatsappSession,
 } from "../ports/crmWhatsappRepository.js";
-import type { CrmBotWebhookEvent } from "../ports/crmBotWebhookDispatcher.js";
+import type {
+  CrmBotWebhookEvent,
+  CrmInterventionSource,
+} from "../ports/crmBotWebhookDispatcher.js";
 import {
   getCrmBotIntegrationRepository,
   getCrmBotWebhookDispatcher,
@@ -53,13 +57,18 @@ export async function notifyWhatsappInterventionChangedToBot(
   context: ServiceContext,
   input: {
     active: boolean;
+    attendanceChangedAt?: Date | null;
+    attendanceState?: CrmWhatsappHumanAttendanceState | null;
+    attendanceStateVersion?: number | null;
     connection: CrmConnection;
     endedAt?: Date | null;
     excludedMessageId?: string;
+    interventionId?: string | null;
     reason?: string | null;
     session: CrmWhatsappSession;
+    source?: string | null;
     startedAt?: Date | null;
-    triggeredBy?: "bot" | "human" | "system";
+    triggeredBy?: CrmInterventionSource;
   },
   ports: CrmServicePorts,
 ) {
@@ -129,7 +138,7 @@ async function dispatchBotWebhook(
     ) => ReturnType<typeof buildCrmBotWebhookPayload>;
     session?: CrmWhatsappSession;
     timestamp: Date;
-    triggeredBy?: "bot" | "human" | "system";
+    triggeredBy?: CrmInterventionSource;
   },
 ) {
   const config = await getCrmBotIntegrationRepository(
@@ -177,7 +186,7 @@ function buildSessionBotPayload(
     message?: CrmWhatsappMessage;
     session?: CrmWhatsappSession;
     timestamp: Date;
-    triggeredBy?: "bot" | "human" | "system";
+    triggeredBy?: CrmInterventionSource;
   },
 ) {
   if (!input.session) {
@@ -196,6 +205,6 @@ function buildSessionBotPayload(
 
 function interventionActor(context: ServiceContext) {
   if (context.actor.kind === "integration") return "bot";
-  if (context.actor.kind === "system") return "system";
-  return "human";
+  if (context.actor.kind === "system") return "auto";
+  return "admin";
 }

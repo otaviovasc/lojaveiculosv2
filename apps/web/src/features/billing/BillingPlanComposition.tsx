@@ -49,6 +49,8 @@ export function BillingPlanComposition({
   const activeAddons = overview.addons.filter(
     (addon) =>
       addon.status === "active" &&
+      addon.code !== "crm_core" &&
+      addon.code !== "crm_zapi" &&
       (!plan || addon.catalogVersion === plan.catalogVersion),
   );
   const packages = activeAddons.map((addon) => ({

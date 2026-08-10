@@ -17,6 +17,9 @@ describe("syncBillingProviderSubscription", () => {
     const providerRepository = createProviderRepository();
     const gateway = createGateway();
     const billingRepository = createUnusedBillingRepository();
+    billingRepository.getOverview = vi.fn(
+      async () => ({ addons: [] }) as never,
+    );
 
     const result = await syncBillingProviderSubscription(
       createContext(audit),
@@ -78,6 +81,10 @@ describe("syncBillingProviderSubscription", () => {
   it("blocks provider calls when the calculated charge is empty", async () => {
     const providerRepository = createProviderRepository(0);
     const gateway = createGateway();
+    const billingRepository = createUnusedBillingRepository();
+    billingRepository.getOverview = vi.fn(
+      async () => ({ addons: [] }) as never,
+    );
 
     await expect(
       syncBillingProviderSubscription(
@@ -85,7 +92,7 @@ describe("syncBillingProviderSubscription", () => {
         {},
         {
           billingProviderRepository: providerRepository.repository,
-          billingRepository: createUnusedBillingRepository(),
+          billingRepository,
           paymentProviderGateway: gateway.gateway,
         },
       ),
@@ -185,7 +192,7 @@ function createProviderRepository(totalCents = 54899) {
                     periodEnd: new Date("2026-07-31T00:00:00.000Z"),
                     periodStart: new Date("2026-07-01T00:00:00.000Z"),
                     quantity: 1,
-                    startsAt: new Date("2026-07-16T00:00:00.000Z"),
+                    startsAt: new Date("2026-07-01T00:00:00.000Z"),
                     storeId: "store_1" as never,
                     storeName: "Loja Teste",
                     unitAmountCents: 24999,

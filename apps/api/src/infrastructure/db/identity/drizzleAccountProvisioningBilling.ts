@@ -17,6 +17,7 @@ import {
   lockBillingAccount,
 } from "../billing/drizzleBillingAccount.js";
 import { toStorePlanContractItem } from "../billing/drizzleBillingPlanContract.js";
+import { findActiveBillingCatalogVersion } from "../billing/drizzleActiveBillingCatalog.js";
 
 export class BillingCatalogUnavailableError extends Error {
   constructor() {
@@ -58,12 +59,15 @@ export async function insertBillingDefaults(
 
 async function selectPublishedCatalog(db: DrizzleAccountProvisioningClient) {
   const now = new Date();
+  const catalogVersion = await findActiveBillingCatalogVersion(db);
+  if (!catalogVersion) throw new BillingCatalogUnavailableError();
   const [plan] = await db
     .select()
     .from(plans)
     .where(
       and(
         eq(plans.status, "active"),
+        eq(plans.catalogVersion, catalogVersion),
         eq(plans.isDefault, true),
         lte(plans.publishedAt, now),
       ),
@@ -83,6 +87,7 @@ async function selectPublishedCatalog(db: DrizzleAccountProvisioningClient) {
       .where(
         and(
           eq(addons.status, "active"),
+          eq(addons.catalogVersion, catalogVersion),
           eq(addons.includedInTrial, true),
           lte(addons.publishedAt, now),
         ),
@@ -96,9 +101,7 @@ async function selectPublishedCatalog(db: DrizzleAccountProvisioningClient) {
       ...features
         .filter((feature) => feature.includedInTrial)
         .map((feature) => feature.featureKey as EntitlementKey),
-      ...trialAddons
-        .filter((addon) => addon.catalogVersion === plan.catalogVersion)
-        .map((addon) => addon.featureKey as EntitlementKey),
+      ...trialAddons.map((addon) => addon.featureKey as EntitlementKey),
     ],
   };
 }

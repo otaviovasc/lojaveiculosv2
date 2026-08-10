@@ -70,6 +70,7 @@ export type {
 } from "./crmWhatsappCampaignRepositoryInputs.js";
 export type {
   CrmWhatsappChannel,
+  CrmWhatsappHumanAttendanceState,
   CrmWhatsappMessageDirection,
   CrmWhatsappMessageSenderType,
   CrmWhatsappMessageStatus,

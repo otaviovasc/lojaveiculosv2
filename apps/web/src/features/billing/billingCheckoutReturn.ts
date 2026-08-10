@@ -9,8 +9,8 @@ export function readBillingCheckoutReturn(scope: "agency" | "store") {
     return {
       message:
         scope === "agency"
-          ? "Recebemos o retorno do Asaas. A assinatura consolidada sera confirmada pelo webhook."
-          : "Recebemos o retorno do Asaas. A assinatura sera confirmada pelo webhook assim que o pagamento for conciliado.",
+          ? "Recebemos o retorno do Asaas. A assinatura consolidada será confirmada automaticamente."
+          : "Recebemos o retorno do Asaas. A assinatura será confirmada automaticamente assim que o pagamento for conciliado.",
       title: "Checkout concluido",
       tone: "success" as const,
     };

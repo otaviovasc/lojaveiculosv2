@@ -66,6 +66,38 @@
   background: var(--color-inverse);
 }
 
+.crm-whatsapp-smart-filter-waiting-human {
+  color: var(--color-danger);
+}
+
+.crm-whatsapp-smart-filter-waiting-human.crm-whatsapp-smart-filter-active {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-inverse);
+}
+
+.crm-whatsapp-smart-filter-waiting-human.crm-whatsapp-smart-filter-active
+  > span {
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
+.crm-whatsapp-smart-filter-in-human-service {
+  color: var(--color-blue-start);
+}
+
+.crm-whatsapp-smart-filter-in-human-service.crm-whatsapp-smart-filter-active {
+  background: var(--color-blue-soft);
+  border-color: var(--color-blue-start);
+  color: var(--color-blue-start);
+}
+
+.crm-whatsapp-smart-filter-in-human-service.crm-whatsapp-smart-filter-active
+  > span {
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
 .crm-whatsapp-search-row {
   align-items: center;
   display: grid;

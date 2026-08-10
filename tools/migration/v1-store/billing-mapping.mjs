@@ -18,9 +18,9 @@ export const LEGACY_ADDON_MAPPING = {
     monthlyPriceCents: 10000,
   },
   CRM_WHATSAPP: {
-    catalogCode: "crm_whatsapp_instance",
+    catalogCode: "crm_core",
     featureKey: "crm",
-    monthlyPriceCents: 24900,
+    monthlyPriceCents: 17900,
   },
   SPEDY_NFE: {
     catalogCode: "fiscal_spedy",

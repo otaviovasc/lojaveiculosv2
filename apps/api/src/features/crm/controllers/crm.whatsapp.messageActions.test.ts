@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import {
   createAuditSpy,
   createTestApp,
@@ -99,7 +100,7 @@ describe("CRM WhatsApp message actions", () => {
   it("deletes messages through the provider and persists deletedAt", async () => {
     const whatsappRepository = createMemoryCrmWhatsappRepository();
     const inbound = await createInboundMessage(whatsappRepository);
-    const deleteMessage = vi.fn(async () => ({ raw: { ok: true } }));
+    const deleteMessage = vi.fn(async () => ({ deleted: true }));
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
@@ -153,19 +154,10 @@ async function createInboundMessage(
 function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
+    overrides,
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+  });
 }

@@ -18,6 +18,7 @@ import {
   type ZapiWebhookInput,
   type ZapiWebhookResult,
 } from "./serviceSupport.js";
+import { readZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState.js";
 
 const permission = "crm.whatsapp.ingest";
 
@@ -81,7 +82,7 @@ export async function processZapiWhatsappChatPresenceWebhook(
   });
   await getCrmRealtimePublisher(ports).publish({
     connectionId: connection.id,
-    payload: input.payload,
+    payload: { received: true },
     storeId: connection.storeId,
     tenantId: connection.tenantId,
     type: "presence",
@@ -104,6 +105,15 @@ async function updateConnectionState(
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
   const previousPhone = connection.phone;
   const previousStatus = connection.status;
+  if (
+    input.status === "active" &&
+    readZapiWebhookSetupState(connection.metadata)?.status !== "configured"
+  ) {
+    await auditZapiWebhook(context, connection, input.eventType, {
+      ignoredReason: "webhook_setup_not_configured",
+    });
+    return { reason: "setup_not_configured", status: "ignored" };
+  }
   await getCrmConnectionRepository(ports).updateConnection({
     connectionId: connection.id,
     metadata: {
@@ -116,7 +126,6 @@ async function updateConnectionState(
     tenantId: connection.tenantId,
   });
   await auditZapiWebhook(context, connection, input.eventType, {
-    ...(input.connectedPhone ? { connectedPhone: input.connectedPhone } : {}),
     status: input.status,
   });
   await getCrmRealtimePublisher(ports).publish({

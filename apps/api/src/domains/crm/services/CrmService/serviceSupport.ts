@@ -1,7 +1,10 @@
-import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { StoreScopedServiceContext } from "../../../../shared/serviceContext.js";
+import type {
+  ServiceContext,
+  StoreScopedServiceContext,
+} from "../../../../shared/serviceContext.js";
 import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
+import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
 import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
 import {
@@ -9,6 +12,13 @@ import {
   type CrmBotWebhookDispatcher,
 } from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
+import type {
+  ComposioWhatsappOnboardingProvider,
+  CrmConnectionCredentialVault,
+  CrmZapiSetupCompletionReporter,
+  CrmZapiSupportAuthorizer,
+  ZapiConnectionSetupProvider,
+} from "../../ports/crmConnectionSetupProvider.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
   createNoopCrmRealtimePublisher,
@@ -20,17 +30,39 @@ import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepos
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
 import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
+import type { CrmWhatsappOutboundIntentRepository } from "../../ports/crmWhatsappOutboundIntentRepository.js";
 import type { CrmFinancingBotActions } from "../../ports/crmFinancingBotActions.js";
 import type {
   VehicleListingRepository,
   VehicleMediaRepository,
   VehicleUnitRepository,
 } from "../../../vehicle/ports/vehicleInventoryRepository.js";
+import { CrmScopeError } from "../../crmScopeError.js";
+export { CrmScopeError } from "../../crmScopeError.js";
+export {
+  CrmPipelineDuplicateNameError,
+  CrmPipelineInUseError,
+  CrmPipelineStageNotFoundError,
+  CrmVisitNotFoundError,
+  CrmVisitSessionMismatchError,
+  CrmVisitVehicleNotFoundError,
+} from "../../crmServiceDomainErrors.js";
+
+export {
+  CrmActivityIdempotencyConflictError,
+  CrmLeadNotFoundError,
+  CrmPipelineNotFoundError,
+} from "./crmServiceErrors.js";
 
 export type CrmServicePorts = {
+  billingQuotaGuard?: BillingQuotaGuard;
   crmBotIntegrationRepository?: CrmBotIntegrationRepository;
   crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
   crmConnectionRepository?: CrmConnectionRepository;
+  crmConnectionCredentialVault?: CrmConnectionCredentialVault;
+  crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
+  crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
+  composioWhatsappOnboardingProvider?: ComposioWhatsappOnboardingProvider;
   crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRepository: CrmRepository;
@@ -39,6 +71,7 @@ export type CrmServicePorts = {
   crmWhatsappGateway?: CrmWhatsappGateway;
   crmWhatsappMediaFetcher?: CrmRemoteMediaFetcher;
   crmWhatsappMediaStorage?: ObjectStorage;
+  crmWhatsappOutboundIntentRepository?: CrmWhatsappOutboundIntentRepository;
   crmWhatsappRepository?: CrmWhatsappRepository;
   financingBotActions?: CrmFinancingBotActions;
   environment?: string;
@@ -50,78 +83,16 @@ export type CrmServicePorts = {
     mediaRepository: VehicleMediaRepository;
     unitRepository: VehicleUnitRepository;
   };
+  zapiConnectionSetupProvider?: ZapiConnectionSetupProvider;
 };
 
-export class CrmLeadNotFoundError extends Error {
-  constructor(leadId: string) {
-    super(`Lead not found: ${leadId}`);
-    this.name = "CrmLeadNotFoundError";
+export function getCrmWhatsappOutboundIntentRepository(
+  ports: CrmServicePorts,
+): CrmWhatsappOutboundIntentRepository {
+  if (!ports.crmWhatsappOutboundIntentRepository) {
+    throw new Error("CRM WhatsApp outbound intent repository is unavailable.");
   }
-}
-
-export class CrmActivityIdempotencyConflictError extends Error {
-  constructor() {
-    super(
-      "Idempotency key was already used with a different CRM activity payload.",
-    );
-    this.name = "CrmActivityIdempotencyConflictError";
-  }
-}
-
-export class CrmPipelineNotFoundError extends Error {
-  constructor(pipelineId: string) {
-    super(`CRM pipeline not found: ${pipelineId}`);
-    this.name = "CrmPipelineNotFoundError";
-  }
-}
-
-export class CrmPipelineStageNotFoundError extends Error {
-  constructor(stageId: string) {
-    super(`CRM pipeline stage not found: ${stageId}`);
-    this.name = "CrmPipelineStageNotFoundError";
-  }
-}
-
-export class CrmPipelineDuplicateNameError extends Error {
-  constructor(name: string) {
-    super(`CRM pipeline name already exists: ${name}`);
-    this.name = "CrmPipelineDuplicateNameError";
-  }
-}
-
-export class CrmPipelineInUseError extends Error {
-  constructor(message = "CRM pipeline is in use by active leads.") {
-    super(message);
-    this.name = "CrmPipelineInUseError";
-  }
-}
-
-export class CrmVisitNotFoundError extends Error {
-  constructor(visitId: string) {
-    super(`CRM visit not found: ${visitId}`);
-    this.name = "CrmVisitNotFoundError";
-  }
-}
-
-export class CrmVisitSessionMismatchError extends Error {
-  constructor() {
-    super("WhatsApp session is not linked to the requested lead.");
-    this.name = "CrmVisitSessionMismatchError";
-  }
-}
-
-export class CrmVisitVehicleNotFoundError extends Error {
-  constructor(listingId: string) {
-    super(`Vehicle listing not found for CRM visit: ${listingId}`);
-    this.name = "CrmVisitVehicleNotFoundError";
-  }
-}
-
-export class CrmScopeError extends Error {
-  constructor(fieldName: string) {
-    super(`CRM service requires ${fieldName}.`);
-    this.name = "CrmScopeError";
-  }
+  return ports.crmWhatsappOutboundIntentRepository;
 }
 
 export function requireCrmScope(context: ServiceContext): {
@@ -189,8 +160,14 @@ export function getCrmConnectionRepository(
 ): CrmConnectionRepository {
   if (!ports.crmConnectionRepository) {
     return {
+      archiveAbandonedZapiConnections: async () => [],
+      claimZapiWebhookSetup: async () => null,
+      createConnection: async () => {
+        throw new CrmScopeError("crmConnectionRepository");
+      },
       findConnectionByExternalId: async () => null,
       findConnectionById: async () => null,
+      finishZapiWebhookSetup: async () => null,
       listConnections: async () => [],
       updateConnection: async () => null,
     };

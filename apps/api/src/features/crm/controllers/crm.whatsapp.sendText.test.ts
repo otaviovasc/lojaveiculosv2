@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import {
   createAuditSpy,
   createTestApp,
@@ -165,19 +166,10 @@ describe("CRM WhatsApp send text", () => {
 function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
+    overrides,
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+  });
 }

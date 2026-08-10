@@ -98,10 +98,17 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
         endedAt: null,
         messageCount: 0,
         reason: "human_outbound_message",
+        attendanceState: "IN_HUMAN_SERVICE",
+        stateVersion: 1,
         summary: null,
-        triggeredBy: "human",
+        triggeredBy: "admin",
       },
-      session: { isBotActive: false, status: "HUMAN_TAKEOVER" },
+      session: {
+        humanAttendanceState: "IN_HUMAN_SERVICE",
+        humanAttendanceStateVersion: 1,
+        isBotActive: false,
+        status: "HUMAN_TAKEOVER",
+      },
     });
     expect(startedPayload?.intervention?.durationSeconds).toBeNull();
     expect(typeof startedPayload?.intervention?.startedAt).toBe("string");
@@ -132,7 +139,7 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
       intervention: {
         active: false,
         messageCount: 2,
-        reason: "bot_action",
+        reason: "human_outbound_message",
         triggeredBy: "bot",
       },
     });

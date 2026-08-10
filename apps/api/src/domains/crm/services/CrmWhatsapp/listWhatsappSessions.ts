@@ -1,6 +1,9 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { CrmWhatsappSessionStatus } from "../../ports/crmWhatsappRepository.js";
+import type {
+  CrmWhatsappHumanAttendanceState,
+  CrmWhatsappSessionStatus,
+} from "../../ports/crmWhatsappRepository.js";
 import {
   getCrmConnectionRepository,
   getCrmWhatsappRepository,
@@ -20,6 +23,7 @@ export type ListWhatsappSessionsInput = {
   assigneeId?: string;
   connectionId?: string;
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";
+  humanAttendanceState?: CrmWhatsappHumanAttendanceState;
   leadId?: string;
   limit: number;
   offset: number;
@@ -42,6 +46,7 @@ export async function listWhatsappSessions(
   logWhatsappServiceEvent(context, "crm.whatsapp.sessions.list.started", {
     assigneeId: input.assigneeId ?? null,
     filter: input.filter ?? null,
+    humanAttendanceState: input.humanAttendanceState ?? null,
     leadId: input.leadId ?? null,
     search: input.search ?? null,
     status: input.status ?? null,

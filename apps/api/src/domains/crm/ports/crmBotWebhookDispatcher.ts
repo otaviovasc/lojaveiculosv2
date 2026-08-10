@@ -10,6 +10,9 @@ export type CrmBotWebhookEvent =
 export type CrmBotSenderOrigin =
   "bot_api" | "customer" | "human_crm" | "human_whatsapp" | "system";
 
+export type CrmInterventionSource =
+  "admin" | "ai_request" | "auto" | "bot" | "seller_whatsapp";
+
 export type CrmBotWebhookPayload = {
   actionsApi: {
     baseUrl: string;
@@ -35,13 +38,18 @@ export type CrmBotWebhookPayload = {
   instanceName: string;
   intervention?: {
     active: boolean;
+    attendanceState: "WAITING_HUMAN" | "IN_HUMAN_SERVICE" | null;
     durationSeconds: number | null;
     endedAt: string | null;
+    id: string | null;
     messageCount: number;
     reason: string | null;
+    source: string | null;
     startedAt: string | null;
+    stateChangedAt: string | null;
+    stateVersion: number | null;
     summary: string | null;
-    triggeredBy: "bot" | "human" | "system";
+    triggeredBy: CrmInterventionSource;
   };
   message?: {
     content: string;
@@ -72,7 +80,12 @@ export type CrmBotWebhookPayload = {
       title: string | null;
     };
     assignedUserId: string | null;
+    humanAttendanceChangedAt: string | null;
+    humanAttendanceState: "WAITING_HUMAN" | "IN_HUMAN_SERVICE" | null;
+    humanAttendanceStateVersion: number | null;
+    humanHandlingStartedAt: string | null;
     id: string;
+    interventionId: string | null;
     isBotActive: boolean;
     leadId: string | null;
     messageCount: number;

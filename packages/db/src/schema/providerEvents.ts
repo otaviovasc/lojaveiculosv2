@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -14,6 +15,7 @@ import { lifecycleColumns } from "./_shared.js";
 
 export const providerEventStatus = pgEnum("provider_event_status", [
   "received",
+  "processing",
   "processed",
   "failed",
   "ignored",
@@ -28,6 +30,11 @@ export const providerEvents = pgTable(
     errorMessage: text("error_message"),
     eventType: varchar("event_type", { length: 120 }).notNull(),
     payload: jsonb("payload").notNull().default({}),
+    processingAttempts: integer("processing_attempts").notNull().default(0),
+    processingStartedAt: timestamp("processing_started_at", {
+      withTimezone: true,
+    }),
+    processingToken: uuid("processing_token"),
     processedAt: timestamp("processed_at", { withTimezone: true }),
     provider: varchar("provider", { length: 80 }).notNull(),
     providerEventId: varchar("provider_event_id", { length: 191 }).notNull(),
@@ -37,6 +44,10 @@ export const providerEvents = pgTable(
   },
   (table) => [
     index("provider_events_status_idx").on(table.status),
+    index("provider_events_processing_claim_idx").on(
+      table.status,
+      table.processingStartedAt,
+    ),
     index("provider_events_connection_id_idx").on(table.connectionId),
     index("provider_events_store_id_idx").on(table.storeId),
     index("provider_events_tenant_id_idx").on(table.tenantId),

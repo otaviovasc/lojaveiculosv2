@@ -40,9 +40,11 @@ export type CountWhatsappSessionsInput = Omit<
 export type WhatsappSessionCounts = {
   assignees: ReadonlyArray<{ assigneeId: string; count: number }>;
   filters: Record<(typeof whatsappSessionCountFilters)[number], number>;
+  inHumanService: number;
   statuses: Record<CrmWhatsappSessionStatus, number>;
   total: number;
   unread: number;
+  waitingHuman: number;
 };
 
 export async function countWhatsappSessions(
@@ -57,6 +59,7 @@ export async function countWhatsappSessions(
     filter: input.filter ?? null,
     search: input.search ?? null,
     status: input.status ?? null,
+    humanAttendanceState: input.humanAttendanceState ?? null,
     unreadOnly: input.unreadOnly ?? false,
   });
   const base = {
@@ -90,11 +93,15 @@ export async function countWhatsappSessions(
     filters: Object.fromEntries(
       filterCounts,
     ) as WhatsappSessionCounts["filters"],
+    inHumanService: await count({
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+    }),
     statuses: Object.fromEntries(
       statusCounts,
     ) as WhatsappSessionCounts["statuses"],
     total: await count(),
     unread: await count({ unreadOnly: true }),
+    waitingHuman: await count({ humanAttendanceState: "WAITING_HUMAN" }),
   };
   await auditWhatsappServiceEvent(context, {
     action: "crm.whatsapp.sessions.count",
@@ -105,6 +112,8 @@ export async function countWhatsappSessions(
       assignees: result.assignees.length,
       total: result.total,
       unread: result.unread,
+      waitingHuman: result.waitingHuman,
+      inHumanService: result.inHumanService,
     },
     permission,
     summary: "Counted CRM WhatsApp sessions",

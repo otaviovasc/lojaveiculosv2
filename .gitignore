@@ -3,6 +3,7 @@ node_modules/
 .pnpm-store/
 .worktrees/
 .codebase-memory/
+otavio-ai-workflow.md
 /reports/
 .terraform/
 dist/

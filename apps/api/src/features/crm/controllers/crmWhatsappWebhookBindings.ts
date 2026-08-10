@@ -12,10 +12,12 @@ import { processZapiWhatsappWebhookEvent } from "../../../domains/crm/services/C
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import type { CrmWhatsappServices } from "./crmWhatsappServiceBindings.types.js";
 import { processMetaMessagingWebhook } from "../../../domains/crm/services/CrmMessaging/processMetaMessagingWebhook.js";
+import { authorizeZapiWebhook } from "../../../domains/crm/services/CrmWhatsapp/authorizeZapiWebhook.js";
 
 type WebhookBindings = Pick<
   CrmWhatsappServices,
   | "ingestZapiWhatsappWebhook"
+  | "authorizeZapiWebhook"
   | "processMetaMessagingWebhook"
   | "processZapiWhatsappChatPresenceWebhook"
   | "processZapiWhatsappConnectedWebhook"
@@ -27,6 +29,8 @@ type WebhookBindings = Pick<
 export const buildWebhookBindings = (
   ports: CrmServicePorts,
 ): WebhookBindings => ({
+  authorizeZapiWebhook: (context, input) =>
+    authorizeZapiWebhook(context, input, ports),
   processMetaMessagingWebhook: (context, input) =>
     processMetaMessagingWebhook(context, input, ports),
   ingestZapiWhatsappWebhook: (context, input) =>

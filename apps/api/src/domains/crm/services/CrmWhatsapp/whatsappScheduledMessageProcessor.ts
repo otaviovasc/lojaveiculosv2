@@ -132,6 +132,7 @@ async function processDueMessages(
       const message = await sendWhatsappText(
         context,
         {
+          idempotencyKey: `scheduled:${scheduled.id}`,
           senderType: "SYSTEM",
           sessionId: scheduled.sessionId,
           text: scheduled.text,

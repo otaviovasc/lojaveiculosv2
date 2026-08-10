@@ -1,4 +1,11 @@
-export type BillingQuotaKey = "plate_lookup" | "seller" | "vehicle";
+export type BillingQuotaKey =
+  "crm_zapi" | "plate_lookup" | "seller" | "vehicle";
+
+export type BillingQuotaAllowance = {
+  limit: number;
+  remaining: number;
+  used: number;
+};
 
 export type BillingQuotaGuard = {
   assertAvailable: (input: {
@@ -7,6 +14,11 @@ export type BillingQuotaGuard = {
     storeId: string;
     tenantId: string;
   }) => Promise<void>;
+  getAllowance?: (input: {
+    quotaKey: BillingQuotaKey;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<BillingQuotaAllowance>;
 };
 
 export class BillingQuotaExceededError extends Error {

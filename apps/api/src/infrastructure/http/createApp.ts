@@ -210,6 +210,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/crm",
     createCrmFeature({
+      accountContextFactory,
       contextFactory,
       financialProductTransactionRunner:
         options.crmFinancialProductTransactionRunner,

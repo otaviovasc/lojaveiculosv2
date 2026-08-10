@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
@@ -19,6 +20,7 @@ import {
 import type { IngestZapiWhatsappWebhookResult } from "./ingestZapiWhatsappWebhook.js";
 
 const permission = "crm.whatsapp.ingest" as const;
+const processingLeaseMs = 5 * 60 * 1_000;
 
 export type DurableZapiWebhookResult =
   IngestZapiWhatsappWebhookResult | ZapiWebhookResult;
@@ -58,8 +60,16 @@ export async function processZapiWhatsappWebhookEvent<
     storeId: connection?.storeId ?? null,
     tenantId: connection?.tenantId ?? null,
   });
+  const processingStartedAt = new Date();
+  const processingToken = randomUUID();
+  const claimed = await repository.claimForProcessing({
+    eventId: recorded.event.id,
+    processingStartedAt,
+    processingToken,
+    staleBefore: new Date(processingStartedAt.getTime() - processingLeaseMs),
+  });
 
-  if (!recorded.created && recorded.event.status !== "failed") {
+  if (!claimed) {
     await auditWhatsappServiceEvent(context, {
       action: "crm.whatsapp.webhook.zapi.duplicate",
       category: "data_change",
@@ -78,7 +88,8 @@ export async function processZapiWhatsappWebhookEvent<
   try {
     const result = await process(context, input, ports);
     await repository.updateStatus({
-      eventId: recorded.event.id,
+      eventId: claimed.id,
+      processingToken,
       status: result.status === "ignored" ? "ignored" : "processed",
     });
     return result;
@@ -104,8 +115,9 @@ export async function processZapiWhatsappWebhookEvent<
       "failed",
     );
     await repository.updateStatus({
-      errorMessage: error instanceof Error ? error.message : "Unknown error",
-      eventId: recorded.event.id,
+      errorMessage: error instanceof Error ? error.name : "UnknownError",
+      eventId: claimed.id,
+      processingToken,
       status: "failed",
     });
     throw error;

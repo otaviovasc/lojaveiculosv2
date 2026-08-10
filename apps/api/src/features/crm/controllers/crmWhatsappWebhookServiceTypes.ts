@@ -26,6 +26,10 @@ export type ZapiWebhookProcessor = CrmContextService<
 >;
 
 export type CrmWhatsappWebhookServices = {
+  authorizeZapiWebhook: CrmContextService<
+    { connectionId: string; token: string | null },
+    { authorized: true; storeId: string; tenantId: string }
+  >;
   configureWhatsappConnectionWebhooks: CrmContextService<
     ConfigureWhatsappConnectionWebhooksInput,
     ConfigureWhatsappConnectionWebhooksResult

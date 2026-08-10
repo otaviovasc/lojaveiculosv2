@@ -2,10 +2,10 @@ import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGate
 import { readZapiCatalogProducts } from "./zapiCrmWhatsappCatalogPayload.js";
 import {
   buildInstanceUrl,
+  fetchZapi,
   createProviderMessageId,
   parseJson,
   readString,
-  summarize,
   type ZapiCredentials,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 import type {
@@ -22,23 +22,28 @@ export async function listZapiCatalogProducts(
   const path = input.catalogPhone
     ? `/catalogs/${encodeURIComponent(input.catalogPhone)}`
     : "/catalogs";
-  const response = await fetchImpl(`${buildInstanceUrl(credentials)}${path}`, {
-    body: JSON.stringify(
-      input.nextCursor ? { nextCursor: input.nextCursor } : {},
-    ),
-    headers: {
-      Accept: "application/json",
-      "Client-Token": credentials.clientToken,
-      "Content-Type": "application/json",
+  const response = await fetchZapi(
+    credentials,
+    fetchImpl,
+    `${buildInstanceUrl(credentials)}${path}`,
+    {
+      body: JSON.stringify(
+        input.nextCursor ? { nextCursor: input.nextCursor } : {},
+      ),
+      headers: {
+        Accept: "application/json",
+        "Client-Token": credentials.clientToken,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
     },
-    method: "POST",
-  });
+  );
   const text = await response.text();
   const payload = parseJson(text);
 
   if (!response.ok) {
     throw new CrmWhatsappGatewayError(
-      `ZAPI catalog list failed with HTTP ${response.status}: ${summarize(text)}`,
+      `ZAPI catalog list failed with HTTP ${response.status}`,
     );
   }
 
@@ -48,7 +53,6 @@ export async function listZapiCatalogProducts(
     nextCursor:
       readString(payload.nextCursor) ?? readString(payload.cursor) ?? null,
     products: readZapiCatalogProducts(payload.products),
-    raw: payload,
   };
 }
 
@@ -100,27 +104,31 @@ async function postZapiCatalogMessage(
   body: Record<string, unknown>,
   label: string,
 ) {
-  const response = await fetchImpl(`${buildInstanceUrl(credentials)}${path}`, {
-    body: JSON.stringify(body),
-    headers: {
-      Accept: "application/json",
-      "Client-Token": credentials.clientToken,
-      "Content-Type": "application/json",
+  const response = await fetchZapi(
+    credentials,
+    fetchImpl,
+    `${buildInstanceUrl(credentials)}${path}`,
+    {
+      body: JSON.stringify(body),
+      headers: {
+        Accept: "application/json",
+        "Client-Token": credentials.clientToken,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
     },
-    method: "POST",
-  });
+  );
   const text = await response.text();
   const payload = parseJson(text);
 
   if (!response.ok) {
     throw new CrmWhatsappGatewayError(
-      `${label} failed with HTTP ${response.status}: ${summarize(text)}`,
+      `${label} failed with HTTP ${response.status}`,
     );
   }
 
   return {
     externalId: createProviderMessageId(payload),
     providerTimestamp: new Date(),
-    raw: payload,
   };
 }

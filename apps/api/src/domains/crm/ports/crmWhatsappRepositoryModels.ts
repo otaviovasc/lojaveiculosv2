@@ -1,6 +1,7 @@
 import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
 import type {
   CrmWhatsappChannel,
+  CrmWhatsappHumanAttendanceState,
   CrmWhatsappMessageDirection,
   CrmWhatsappMessageSenderType,
   CrmWhatsappMessageStatus,
@@ -26,7 +27,12 @@ export type CrmWhatsappSession = {
   externalSessionId: string | null;
   firstHandledAt: Date | null;
   freshLeadAt: Date | null;
+  humanAttendanceChangedAt: Date | null;
+  humanAttendanceState: CrmWhatsappHumanAttendanceState | null;
+  humanAttendanceStateVersion: number | null;
+  humanHandlingStartedAt: Date | null;
   humanTakeoverAt: Date | null;
+  interventionId: string | null;
   id: string;
   lastAssignedAt: Date | null;
   lastCustomerReadAt: Date | null;

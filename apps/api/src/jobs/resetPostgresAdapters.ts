@@ -163,6 +163,7 @@ async function countRowsForTables(
 async function assertProductBaseline(sql: TransactionSql): Promise<void> {
   const expected = {
     addons: productBaselineCounts.addons,
+    billing_catalog_versions: productBaselineCounts.billingCatalogVersions,
     plan_features: productBaselineCounts.planFeatures,
     plans: productBaselineCounts.plans,
     role_template_permissions: productBaselineCounts.roleTemplatePermissions,

@@ -6,7 +6,7 @@ import type {
 import type { ZapiWebhookEndpointType } from "../../domains/crm/whatsapp/whatsappWebhookEndpoints.js";
 import {
   buildInstanceUrl,
-  summarize,
+  fetchZapi,
   type ZapiCredentials,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 
@@ -67,20 +67,25 @@ async function registerZapiWebhook(
   }
 
   try {
-    const response = await fetchImpl(`${instanceUrl}/${path}`, {
-      body: JSON.stringify({ value: url }),
-      headers: {
-        Accept: "application/json",
-        "Client-Token": credentials.clientToken,
-        "Content-Type": "application/json",
+    const response = await fetchZapi(
+      credentials,
+      fetchImpl,
+      `${instanceUrl}/${path}`,
+      {
+        body: JSON.stringify({ value: url }),
+        headers: {
+          Accept: "application/json",
+          "Client-Token": credentials.clientToken,
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
       },
-      method: "PUT",
-    });
-    const text = await response.text();
+    );
+    await response.arrayBuffer();
     return {
       error: response.ok
         ? null
-        : `ZAPI ${path} failed with HTTP ${response.status}: ${summarize(text)}`,
+        : `ZAPI webhook registration failed with HTTP ${response.status}`,
       ok: response.ok,
       status: response.status,
       type,

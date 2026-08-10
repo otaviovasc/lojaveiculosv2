@@ -8,6 +8,7 @@ import type {
 } from "../../../shared/storage/objectStorage.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import {
   createAuditSpy,
   createTestApp,
@@ -51,7 +52,10 @@ describe("CRM WhatsApp send media", () => {
         mimeType: "image/jpeg",
         sessionId: inbound.session.id,
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "media-upload-1",
+      },
       method: "POST",
     });
 
@@ -91,9 +95,28 @@ describe("CRM WhatsApp send media", () => {
         phone: "5511999999999",
       },
     );
+    const conflicting = await app.request("/api/v1/crm/whatsapp/send/media", {
+      body: JSON.stringify({
+        base64: Buffer.from("different-image-bytes").toString("base64"),
+        caption: "Foto do Civic",
+        fileName: "civic.jpg",
+        mediaType: "image",
+        mimeType: "image/jpeg",
+        sessionId: inbound.session.id,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "media-upload-1",
+      },
+      method: "POST",
+    });
+    expect(conflicting.status).toBe(409);
+    expect(sendMedia).toHaveBeenCalledTimes(1);
     expect(record.mock.calls.map((call) => call[0].outcome)).toEqual([
       "attempted",
       "succeeded",
+      "attempted",
+      "failed",
     ]);
   });
 
@@ -181,21 +204,12 @@ function seedSession(
 function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
+    overrides,
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+  });
 }
 
 function createTestObjectStorage(): {

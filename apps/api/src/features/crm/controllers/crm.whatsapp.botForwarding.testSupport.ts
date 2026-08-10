@@ -4,7 +4,10 @@ import type {
   CrmBotWebhookDispatcher,
   DispatchCrmBotWebhookInput,
 } from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import {
+  createConfiguredZapiTestConnection,
+  withTestZapiWebhookToken,
+} from "./crm.whatsapp.connectionFixtures.js";
 import type { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 export const connectionId = "24000000-0000-4000-8000-000000000101";
@@ -46,14 +49,17 @@ export function postZapiWebhook(
 ) {
   return app.request(
     `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/received`,
-    jsonRequest({
-      messageId: "zapi-inbound-forward-1",
-      phone: "5511999999999",
-      senderName: "Ana",
-      text: { message: "Ola, tenho interesse" },
-      timestamp: 1783018800,
-      ...overrides,
-    }),
+    jsonRequest(
+      {
+        messageId: "zapi-inbound-forward-1",
+        phone: "5511999999999",
+        senderName: "Ana",
+        text: { message: "Ola, tenho interesse" },
+        timestamp: 1783018800,
+        ...overrides,
+      },
+      withTestZapiWebhookToken(),
+    ),
   );
 }
 
@@ -82,21 +88,13 @@ export function createSendTextSpy() {
   });
 }
 
-export function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+export function createZapiConnection() {
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: "5511999999999",
-    provider: "zapi",
-    status: "sandbox",
+    overrides: { phone: "5511999999999" },
     storeId,
     tenantId,
-    webhookUrl: null,
-  };
+  });
 }
 
 export function requireDispatch(

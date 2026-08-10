@@ -103,9 +103,6 @@ export function useCrmWhatsappSessionActions({
         () => api.interveneSession(sessionId, { enabled }),
         {
           ...session,
-          humanTakeoverAt: enabled
-            ? (session.humanTakeoverAt ?? new Date().toISOString())
-            : null,
           status: enabled ? "HUMAN_TAKEOVER" : "MINIBOT_ACTIVE",
         },
       );

@@ -1,10 +1,6 @@
-import { Hono, type Context } from "hono";
-import type { z } from "zod";
+import { Hono } from "hono";
 import type { TenantId } from "@lojaveiculosv2/shared";
-import type { HttpAccountContext } from "../../../infrastructure/http/createHttpAccountContext.js";
 import { createHttpAccountContext } from "../../../infrastructure/http/createHttpAccountContext.js";
-import { HttpContextAuthenticationError } from "../../../infrastructure/http/createHttpServiceContext.js";
-import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   BillingRequestValidationError,
   handleBilling,
@@ -12,6 +8,7 @@ import {
 import {
   createBillingProviderCheckoutSchema,
   syncBillingProviderSubscriptionSchema,
+  updateBillingSelectionSchema,
   updateEntitlementSchema,
 } from "../../billing/controllers/billing.controller.schemas.js";
 import {
@@ -19,14 +16,19 @@ import {
   type BillingServices,
 } from "../../billing/controllers/billingServices.js";
 import {
+  agencyStoreBillingParamsSchema,
   agencyStoreEntitlementParamsSchema,
   agencyTenantParamsSchema,
 } from "./agency.controller.schemas.js";
+import {
+  createAgencyContext,
+  parseDateOrNull,
+  parseJson,
+  parseParams,
+  type AgencyAccountContextFactory,
+} from "./agency.controller.support.js";
 
-export type AgencyAccountContextFactory = (
-  context: Context,
-  scope: { tenantId: TenantId },
-) => Promise<HttpAccountContext>;
+export type { AgencyAccountContextFactory } from "./agency.controller.support.js";
 
 export type CreateAgencyFeatureOptions = {
   accountContextFactory?: AgencyAccountContextFactory;
@@ -90,6 +92,27 @@ export function createAgencyFeature(options: CreateAgencyFeatureOptions = {}) {
             ...(typeof input.updatePendingPayments === "boolean"
               ? { updatePendingPayments: input.updatePendingPayments }
               : {}),
+          }),
+        );
+      }),
+  );
+
+  feature.put(
+    "/tenants/:tenantId/stores/:storeId/billing/selection",
+    async (context) =>
+      handleBilling(context, async () => {
+        const params = parseParams(context, agencyStoreBillingParamsSchema);
+        const input = await parseJson(context, updateBillingSelectionSchema);
+        const serviceContext = await createAgencyContext(
+          context,
+          accountContextFactory,
+          params.tenantId as TenantId,
+        );
+        return context.json(
+          await services.updateAgencySelection(serviceContext, {
+            addonIds: input.addonIds,
+            planId: input.planId,
+            storeId: params.storeId as never,
           }),
         );
       }),
@@ -160,49 +183,41 @@ export function createAgencyFeature(options: CreateAgencyFeatureOptions = {}) {
       }),
   );
 
+  feature.post(
+    "/tenants/:tenantId/stores/:storeId/billing/addons/zapi/request",
+    async (context) =>
+      handleBilling(context, async () => {
+        const params = parseParams(context, agencyStoreBillingParamsSchema);
+        const serviceContext = await createAgencyContext(
+          context,
+          accountContextFactory,
+          params.tenantId as TenantId,
+        );
+        return context.json({
+          contract: await services.requestZapiAddon(serviceContext, {
+            storeId: params.storeId as never,
+          }),
+        });
+      }),
+  );
+
+  feature.delete(
+    "/tenants/:tenantId/stores/:storeId/billing/addons/zapi/request",
+    async (context) =>
+      handleBilling(context, async () => {
+        const params = parseParams(context, agencyStoreBillingParamsSchema);
+        const serviceContext = await createAgencyContext(
+          context,
+          accountContextFactory,
+          params.tenantId as TenantId,
+        );
+        return context.json({
+          contract: await services.cancelZapiAddon(serviceContext, {
+            storeId: params.storeId as never,
+          }),
+        });
+      }),
+  );
+
   return feature;
 }
-
-async function createAgencyContext(
-  context: Context,
-  contextFactory: AgencyAccountContextFactory,
-  tenantId: TenantId,
-): Promise<ServiceContext> {
-  const account = await contextFactory(context, { tenantId });
-  if (account.serviceContext.actor.kind !== "user") {
-    throw new HttpContextAuthenticationError(
-      "Agency routes require user context.",
-    );
-  }
-
-  return {
-    ...account.serviceContext,
-    billingManagedBy: "agency",
-    tenantId,
-  };
-}
-
-async function parseJson<Schema extends z.ZodType>(
-  context: Context,
-  schema: Schema,
-): Promise<z.infer<Schema>> {
-  try {
-    return schema.parse(await context.req.json());
-  } catch {
-    throw new BillingRequestValidationError("Request body is invalid.");
-  }
-}
-
-function parseParams<Schema extends z.ZodType>(
-  context: Context,
-  schema: Schema,
-): z.infer<Schema> {
-  try {
-    return schema.parse(context.req.param());
-  } catch {
-    throw new BillingRequestValidationError("Route parameters are invalid.");
-  }
-}
-
-const parseDateOrNull = (value: string | null): Date | null =>
-  value ? new Date(value) : null;

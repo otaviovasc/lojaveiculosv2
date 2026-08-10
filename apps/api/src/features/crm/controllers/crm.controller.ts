@@ -43,6 +43,7 @@ import { encodeCrmLeadCursor } from "./crm.leadCursor.js";
 export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
 export type CreateCrmFeatureOptions = {
+  accountContextFactory?: CrmContextFactory;
   contextFactory?: CrmContextFactory;
   financialProductTransactionRunner?:
     CrmFinancialProductTransactionRunner | undefined;
@@ -191,6 +192,9 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
   );
 
   registerCrmWhatsappRoutes(crmFeature, {
+    ...(options.accountContextFactory
+      ? { createSupportContext: options.accountContextFactory }
+      : {}),
     createContext,
     ...(options.webhookContextFactory
       ? { createWebhookContext: options.webhookContextFactory }

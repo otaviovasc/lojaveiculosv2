@@ -5,6 +5,7 @@ export const featureLabels: Record<EntitlementKey, string> = {
   automation: "Operador IA",
   compliance: "Compliance",
   crm: "CRM",
+  crm_zapi: "Z-API",
   custom_domain: "Domínio próprio",
   external_api: "API externa",
   fiscal: "Fiscal",
@@ -21,6 +22,7 @@ export const featureValueCopy: Record<EntitlementKey, string> = {
   compliance:
     "Controles operacionais para reduzir riscos em processos da loja.",
   crm: "Atendimento comercial integrado para organizar leads e conversas.",
+  crm_zapi: "Conexão adicional de WhatsApp configurada pela nossa equipe.",
   custom_domain: "Domínio próprio para deixar a vitrine pública com sua marca.",
   external_api: "API para conectar estoque, parceiros e automações externas.",
   fiscal: "Emissão fiscal integrada aos fluxos comerciais da loja.",

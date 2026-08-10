@@ -69,6 +69,16 @@ export const importantFieldNotes = [
   },
   {
     description:
+      "WAITING_HUMAN quando a IA pediu ajuda; IN_HUMAN_SERVICE depois do primeiro envio humano confirmado; null fora do atendimento humano.",
+    title: "session.humanAttendanceState",
+  },
+  {
+    description:
+      "bot, auto ou ai_request na Bot Action API. O webhook tambem informa source e triggeredBy na intervencao.",
+    title: "intervention.source",
+  },
+  {
+    description:
       "Etiquetas V2 do WhatsApp. Nao representam etapas de pipeline.",
     title: "session.tags",
   },
@@ -81,13 +91,13 @@ export const importantFieldNotes = [
 export const interventionFlowNotes = [
   {
     description:
-      "Quando um humano envia mensagem ou assume a sessao, V2 dispara intervention_started e para de encaminhar eventos message regulares.",
-    title: "Inicio",
+      "Quando a IA pausa e pede ajuda, V2 grava WAITING_HUMAN, dispara intervention_started e para de encaminhar eventos message regulares.",
+    title: "Aguardando humano",
   },
   {
     description:
-      "triggeredBy indica human, bot ou system; reason explica o motivo operacional como human_outbound_message ou bot_action.",
-    title: "Origem",
+      "Depois que texto, audio, imagem, video, documento, localizacao, contato, catalogo ou veiculo humano for aceito pelo provedor, V2 muda para IN_HUMAN_SERVICE. Reacoes nao mudam o estado.",
+    title: "Atendimento iniciado",
   },
   {
     description:
@@ -121,5 +131,83 @@ export const interventionNotes = [
     description:
       "Nao use summary para substituir historico; ele e contexto curto para continuidade.",
     title: "Resumo de handback",
+  },
+] as const;
+
+export const attendanceFieldRows = [
+  {
+    field: "humanAttendanceState",
+    meaning:
+      "WAITING_HUMAN, IN_HUMAN_SERVICE ou null. E a fonte canonica para badges e filtros.",
+    type: "string | null",
+  },
+  {
+    field: "humanAttendanceChangedAt",
+    meaning: "Instante ISO 8601 da ultima mudanca do estado de atendimento.",
+    type: "string | null",
+  },
+  {
+    field: "humanHandlingStartedAt",
+    meaning:
+      "Instante ISO 8601 do primeiro envio humano aceito pelo provedor; null enquanto aguarda.",
+    type: "string | null",
+  },
+  {
+    field: "humanAttendanceStateVersion",
+    meaning:
+      "Versao monotona. Ignore eventos com versao menor que a ultima processada para a sessao.",
+    type: "number | null",
+  },
+  {
+    field: "interventionId",
+    meaning:
+      "UUID que correlaciona a pausa, o inicio do atendimento e a devolucao da mesma intervencao.",
+    type: "string | null",
+  },
+] as const;
+
+export const attendanceTransitionRows = [
+  {
+    event: "IA pausa e solicita ajuda humana",
+    from: "null",
+    to: "WAITING_HUMAN",
+  },
+  {
+    event: "Primeiro envio humano aceito pelo provedor",
+    from: "WAITING_HUMAN",
+    to: "IN_HUMAN_SERVICE",
+  },
+  {
+    event: "Humano assume manualmente",
+    from: "null",
+    to: "IN_HUMAN_SERVICE",
+  },
+  {
+    event: "Intervencao encerrada, sessao concluida ou devolvida a IA",
+    from: "WAITING_HUMAN | IN_HUMAN_SERVICE",
+    to: "null",
+  },
+  {
+    event: "Reacao ou falha de envio",
+    from: "qualquer estado",
+    to: "sem mudanca",
+  },
+] as const;
+
+export const attendanceDegradedNotes = [
+  {
+    description:
+      "Responda 2xx somente depois de persistir o evento. Em timeout ou 5xx, use event id e interventionId para deduplicar a repeticao.",
+    title: "Entrega do webhook",
+  },
+  {
+    description:
+      "A versao do estado e monotona. Eventos atrasados nao devem sobrescrever uma versao mais nova ja processada.",
+    title: "Eventos fora de ordem",
+  },
+  {
+    description:
+      "Uma falha do provedor nao inicia atendimento humano. Aguarde um envio aceito ou uma sessao atualizada pelo V2.",
+    title: "Falha no envio humano",
   },
 ] as const;

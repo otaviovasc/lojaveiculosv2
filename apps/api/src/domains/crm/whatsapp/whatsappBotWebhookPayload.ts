@@ -5,6 +5,7 @@ import type {
 } from "../ports/crmWhatsappRepository.js";
 import type {
   CrmBotSenderOrigin,
+  CrmInterventionSource,
   CrmBotWebhookEvent,
   CrmBotWebhookPayload,
 } from "../ports/crmBotWebhookDispatcher.js";
@@ -17,7 +18,7 @@ export type BuildCrmBotWebhookPayloadInput = {
   message?: CrmWhatsappMessage;
   session: CrmWhatsappSession;
   timestamp: Date;
-  triggeredBy?: "bot" | "human" | "system";
+  triggeredBy?: CrmInterventionSource;
 };
 
 export type BuildCrmBotConnectionStatusPayloadInput = {
@@ -62,7 +63,14 @@ export function buildCrmBotWebhookPayload(
     session: {
       ...adAttribution(input.session.metadata),
       assignedUserId: input.session.assignedUserId,
+      humanAttendanceChangedAt:
+        input.session.humanAttendanceChangedAt?.toISOString() ?? null,
+      humanAttendanceState: input.session.humanAttendanceState,
+      humanAttendanceStateVersion: input.session.humanAttendanceStateVersion,
+      humanHandlingStartedAt:
+        input.session.humanHandlingStartedAt?.toISOString() ?? null,
       id: input.session.id,
+      interventionId: input.session.interventionId,
       isBotActive: isBotActive(input.session.status),
       leadId: input.session.leadId,
       messageCount: input.session.messageCount,
@@ -143,13 +151,18 @@ function buildInterventionPayload(
 ) {
   return {
     active: input.event === "intervention_started",
+    attendanceState: intervention.attendanceState,
     durationSeconds: intervention.durationSeconds,
     endedAt: intervention.endedAt?.toISOString() ?? null,
+    id: intervention.interventionId,
     messageCount: intervention.messageCount,
     reason: intervention.reason,
+    source: intervention.source,
     startedAt: intervention.startedAt?.toISOString() ?? null,
+    stateChangedAt: intervention.stateChangedAt?.toISOString() ?? null,
+    stateVersion: intervention.stateVersion,
     summary: intervention.summary,
-    triggeredBy: input.triggeredBy ?? "system",
+    triggeredBy: input.triggeredBy ?? "auto",
   };
 }
 

@@ -4,7 +4,10 @@ import {
   buildWhatsappWebhookEndpoints,
   resolveWebhookBaseUrl,
 } from "../../../domains/crm/whatsapp/whatsappWebhookEndpoints.js";
-import { whatsappUpdateConnectionSchema } from "./crm.controller.schemas.js";
+import {
+  whatsappCreateConnectionSchema,
+  whatsappUpdateConnectionSchema,
+} from "./crm.controller.schemas.js";
 import {
   assertWhatsappList,
   parseWhatsappJson,
@@ -15,6 +18,7 @@ import {
 } from "./crm.whatsapp.errors.js";
 import type { CrmServices } from "./crmServices.js";
 import type { WhatsappConnection } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import { registerCrmWhatsappConnectionSetupRoutes } from "./crm.whatsapp.connectionSetupRoutes.js";
 
 type RegisterCrmWhatsappConnectionRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -29,11 +33,33 @@ export function registerCrmWhatsappConnectionRoutes(
     handleWhatsapp(context, async () => {
       const serviceContext = await createContext(context);
       assertWhatsappList(serviceContext);
-      const connections =
-        await services.listWhatsappConnections(serviceContext);
+      const overview =
+        await services.getWhatsappConnectionOverview(serviceContext);
       return context.json({
-        connections: withWebhookEndpoints(context, connections),
+        ...overview,
+        connections: withWebhookEndpoints(context, overview.connections),
       });
+    }),
+  );
+
+  crmFeature.post("/whatsapp/connections", async (context) =>
+    handleWhatsapp(context, async () => {
+      const input = await parseWhatsappJson(
+        context,
+        whatsappCreateConnectionSchema,
+      );
+      const serviceContext = await createContext(context);
+      const connection = await services.createWhatsappConnection(
+        serviceContext,
+        {
+          displayName: input.displayName ?? "WhatsApp Oficial",
+          provider: input.provider,
+        },
+      );
+      return context.json(
+        withWebhookEndpoints(context, [connection])[0] ?? connection,
+        201,
+      );
     }),
   );
 
@@ -56,43 +82,9 @@ export function registerCrmWhatsappConnectionRoutes(
           ...(input.catalogPhone !== undefined
             ? { catalogPhone: input.catalogPhone }
             : {}),
-          ...(input.connectedPhone !== undefined
-            ? { connectedPhone: input.connectedPhone }
-            : {}),
-          ...(input.composioCredentials
-            ? {
-                composioCredentials: {
-                  apiKeyEnv: input.composioCredentials.apiKeyEnv,
-                  connectedAccountId:
-                    input.composioCredentials.connectedAccountId,
-                  ...(input.composioCredentials.graphVersion
-                    ? {
-                        graphVersion: input.composioCredentials.graphVersion,
-                      }
-                    : {}),
-                },
-              }
-            : {}),
           connectionId,
-          ...(input.credentialsEnv
-            ? { credentialsEnv: input.credentialsEnv }
-            : {}),
           ...(input.displayName ? { displayName: input.displayName } : {}),
-          ...(input.externalConnectionId !== undefined
-            ? { externalConnectionId: input.externalConnectionId }
-            : {}),
-          ...(input.externalInstanceId !== undefined
-            ? { externalInstanceId: input.externalInstanceId }
-            : {}),
-          ...(input.instanceCredentials
-            ? { instanceCredentials: input.instanceCredentials }
-            : {}),
-          ...(input.phone !== undefined ? { phone: input.phone } : {}),
           ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
-          ...(input.status ? { status: input.status } : {}),
-          ...(input.webhookUrl !== undefined
-            ? { webhookUrl: input.webhookUrl }
-            : {}),
         },
       );
       return context.json(
@@ -101,31 +93,10 @@ export function registerCrmWhatsappConnectionRoutes(
     }),
   );
 
-  crmFeature.post(
-    "/whatsapp/connections/:connectionId/webhooks/configure",
-    async (context) =>
-      handleWhatsapp(context, async () => {
-        const connectionId = context.req.param("connectionId");
-        if (!connectionId) {
-          throw new CrmWhatsappValidationError(
-            "Route param connectionId is invalid.",
-          );
-        }
-        const serviceContext = await createContext(context);
-        const { basePath, canonicalApiOrigin } =
-          readWebhookRequestBase(context);
-        const result = await services.configureWhatsappConnectionWebhooks(
-          serviceContext,
-          {
-            basePath,
-            canonicalApiOrigin,
-            connectionId,
-            webhookToken: readWebhookToken(),
-          },
-        );
-        return context.json(result);
-      }),
-  );
+  registerCrmWhatsappConnectionSetupRoutes(crmFeature, {
+    createContext,
+    services,
+  });
 }
 
 function withWebhookEndpoints(
@@ -148,18 +119,20 @@ function withWebhookEndpoints(
             connectionId: connection.id,
           })
         : [],
-    webhookTokenRequired:
-      connection.provider === "zapi" && Boolean(readWebhookToken()),
+    webhookTokenRequired: false,
   }));
 }
 
-function readWebhookRequestBase(context: Context): {
+export function readWebhookRequestBase(context: Context): {
   basePath: string;
   canonicalApiOrigin: string;
 } {
   const requestUrl = new URL(context.req.url);
   return {
-    basePath: requestUrl.pathname.replace(/\/whatsapp\/connections.*$/, ""),
+    basePath: requestUrl.pathname.replace(
+      /\/whatsapp\/(?:support\/zapi\/)?connections.*$/,
+      "",
+    ),
     canonicalApiOrigin: readCanonicalApiOrigin(requestUrl),
   };
 }
@@ -196,8 +169,4 @@ function isLocalRuntime() {
     ""
   ).toLowerCase();
   return ["development", "local", "test"].includes(environment);
-}
-
-function readWebhookToken(): string | null {
-  return process.env.CRM_ZAPI_WEBHOOK_TOKEN?.trim() || null;
 }

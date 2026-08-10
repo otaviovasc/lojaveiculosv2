@@ -14,6 +14,7 @@ import {
 import { useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { ChatAssignmentSelect } from "./CrmWhatsappChatHeaderAssignment";
+import { CrmWhatsappHumanAttendanceBadge } from "./CrmWhatsappHumanAttendanceBadge";
 import { SessionTagRow } from "./CrmWhatsappChatHeaderTags";
 import { formatSessionName } from "./crmWhatsappModel";
 import { TagMenu } from "./CrmWhatsappTagMenu";
@@ -118,6 +119,7 @@ export function ChatHeader({
             <MessageCircleMore aria-hidden="true" />
             WhatsApp
           </span>
+          <CrmWhatsappHumanAttendanceBadge session={session} />
           <SessionTagRow
             disabled={disabled || !canTagSessions}
             onRemoveTag={onRemoveTag}

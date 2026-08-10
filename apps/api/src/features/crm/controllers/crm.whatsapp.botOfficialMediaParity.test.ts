@@ -140,7 +140,7 @@ function createOfficialConnection(
     metadata: {},
     phone: provider === "composio_whatsapp" ? "5511999999999" : null,
     provider,
-    status: "sandbox",
+    status: "active",
     storeId,
     tenantId,
     webhookUrl: null,

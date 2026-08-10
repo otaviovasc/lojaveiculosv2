@@ -32,6 +32,7 @@ import {
 } from "./CrmWhatsappScopedSections";
 import { CrmWhatsappVisitsPage } from "./CrmWhatsappVisitsPage";
 import { MessageCircle, PlugZap } from "lucide-react";
+import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
 
 export function CrmWhatsappInbox({
   api,
@@ -50,11 +51,12 @@ export function CrmWhatsappInbox({
   );
   const visitsApi = useMemo(() => createRuntimeCrmVisitsApi(), []);
   const inbox = useCrmWhatsappInbox(whatsappApi);
-  const [activeScope, setActiveScope] =
-    useState<CrmWhatsappScope>("conversations");
+  const [activeScope, setActiveScope] = useState<CrmWhatsappScope>(() =>
+    readPendingComposioConnectionId() ? "connection" : "conversations",
+  );
   const [visitedScopes, setVisitedScopes] = useState<
     ReadonlySet<CrmWhatsappScope>
-  >(() => new Set<CrmWhatsappScope>(["conversations"]));
+  >(() => new Set<CrmWhatsappScope>([activeScope]));
   const originalTitleRef = useRef(
     typeof document === "undefined" ? "CRM" : document.title,
   );
@@ -177,6 +179,21 @@ export function CrmWhatsappInbox({
                     onConfigureWebhooks={inbox.configureConnectionWebhooks}
                     onRefresh={inbox.refreshConnections}
                     onUpdate={inbox.updateConnection}
+                    selfService={{
+                      allowance: inbox.connectionAllowance,
+                      availableProviders: inbox.availableConnectionProviders,
+                      canManage:
+                        inbox.permissions.canConnectionManage &&
+                        inbox.permissions.canIntegrationsManage,
+                      handlers: {
+                        onAuthorizeComposio: inbox.authorizeComposioConnection,
+                        onCompleteComposio: inbox.completeComposioConnection,
+                        onCreate: inbox.createConnection,
+                        onRefreshConnections: inbox.refreshConnections,
+                        onSelectComposioSender:
+                          inbox.selectComposioConnectionSender,
+                      },
+                    }}
                   />
                 </section>
               </div>

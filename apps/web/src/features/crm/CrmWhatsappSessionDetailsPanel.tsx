@@ -1,6 +1,7 @@
 import { CalendarClock, ExternalLink, Tag, UserRound, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { CrmWhatsappAdAttribution } from "./CrmWhatsappAdAttribution";
+import { readCrmWhatsappHumanAttendance } from "./crmWhatsappHumanAttendance";
 import { formatSessionName } from "./crmWhatsappModel";
 import type {
   CrmWhatsappAssignableMember,
@@ -61,7 +62,10 @@ export function CrmWhatsappSessionDetailsPanel({
         <DetailRow
           icon={<Tag />}
           label="Status"
-          value={statusLabel(session.status)}
+          value={
+            readCrmWhatsappHumanAttendance(session)?.label ??
+            statusLabel(session.status)
+          }
         />
       </div>
       <CrmWhatsappAdAttribution metadata={session.metadata} />
@@ -126,7 +130,7 @@ function formatDate(value?: string | null) {
 }
 
 function statusLabel(status: string) {
-  if (status === "HUMAN_TAKEOVER") return "Atendimento humano";
+  if (status === "HUMAN_TAKEOVER") return "-";
   if (status === "MINIBOT_ACTIVE") return "Minibot ativo";
   if (status === "COMPLETED") return "Concluida";
   if (status === "EXPIRED") return "Expirada";

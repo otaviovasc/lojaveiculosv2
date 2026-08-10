@@ -152,7 +152,7 @@ BEGIN
       AND store_id = '66666666-6666-4666-8666-666666666668'
       AND tenant_id = '77777777-7777-4777-8777-777777777778'
       AND item_type = 'plan'
-      AND plan_id = '12121212-1212-4212-8212-121212121212'
+      AND plan_id = '82121212-1212-4212-8212-121212121212'
       AND ends_at IS NULL
   ) THEN
     RAISE EXCEPTION 'seed invariant: trial must contain exactly one selected plan contract';

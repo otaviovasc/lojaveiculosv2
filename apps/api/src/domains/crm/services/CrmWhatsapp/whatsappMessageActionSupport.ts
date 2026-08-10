@@ -18,6 +18,7 @@ import {
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import type { WhatsappServiceAuditInput } from "./serviceSupport.js";
+import { assertWhatsappProviderEffectAllowed } from "../../whatsapp/assertWhatsappProviderEffectAllowed.js";
 
 const permission = "crm.whatsapp.send";
 
@@ -58,6 +59,7 @@ export async function loadMessageActionTarget(
   if (!connection) {
     throw new WhatsappConnectionNotFoundError(message.connectionId);
   }
+  assertWhatsappProviderEffectAllowed(context, connection);
   return {
     connection,
     message,

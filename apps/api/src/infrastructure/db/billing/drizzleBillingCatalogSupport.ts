@@ -6,16 +6,27 @@ import type {
   BillingSubscription,
 } from "../../../domains/billing/ports/billingRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
 
 export async function listPlans(
   db: DrizzleBillingClient,
+  catalogVersion?: string | null,
 ): Promise<BillingPlan[]> {
+  const resolvedCatalogVersion =
+    catalogVersion === undefined
+      ? await findActiveBillingCatalogVersion(db)
+      : catalogVersion;
+  if (!resolvedCatalogVersion) return [];
   const [planRows, featureRows] = await Promise.all([
     db
       .select()
       .from(plans)
       .where(
-        and(eq(plans.status, "active"), lte(plans.publishedAt, new Date())),
+        and(
+          eq(plans.catalogVersion, resolvedCatalogVersion),
+          eq(plans.status, "active"),
+          lte(plans.publishedAt, new Date()),
+        ),
       )
       .orderBy(asc(plans.monthlyPriceCents))
       .limit(50),
@@ -44,12 +55,22 @@ export async function listPlans(
 
 export async function listAddons(
   db: DrizzleBillingClient,
+  catalogVersion?: string | null,
 ): Promise<BillingAddon[]> {
+  const resolvedCatalogVersion =
+    catalogVersion === undefined
+      ? await findActiveBillingCatalogVersion(db)
+      : catalogVersion;
+  if (!resolvedCatalogVersion) return [];
   const rows = await db
     .select()
     .from(addons)
     .where(
-      and(eq(addons.status, "active"), lte(addons.publishedAt, new Date())),
+      and(
+        eq(addons.catalogVersion, resolvedCatalogVersion),
+        eq(addons.status, "active"),
+        lte(addons.publishedAt, new Date()),
+      ),
     )
     .orderBy(desc(addons.publishedAt))
     .limit(100);
@@ -59,10 +80,35 @@ export async function listAddons(
     featureKey: addon.featureKey as never,
     id: addon.id,
     includedInTrial: addon.includedInTrial,
+    limits: toAddonLimits(addon.limits),
     monthlyPriceCents: addon.monthlyPriceCents,
     name: addon.name,
     status: addon.status,
   }));
+}
+
+function toAddonLimits(value: unknown): NonNullable<BillingAddon["limits"]> {
+  const limits =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : {};
+  const executionLimit = limits.composio_tool_executions_per_billing_month;
+  const enforcement = limits.enforcement;
+  const includedChannels = Array.isArray(limits.included_channels)
+    ? limits.included_channels.filter(
+        (channel): channel is "instagram" | "whatsapp_official" =>
+          channel === "instagram" || channel === "whatsapp_official",
+      )
+    : [];
+  return {
+    composioToolExecutionsPerBillingMonth:
+      typeof executionLimit === "number" && Number.isFinite(executionLimit)
+        ? executionLimit
+        : null,
+    enforcement:
+      enforcement === "soft" || enforcement === "hard" ? enforcement : null,
+    includedChannels,
+  };
 }
 
 export async function findTenantSubscription(
@@ -128,7 +174,7 @@ export async function findPlan(
   };
 }
 
-function toPlanLimits(value: unknown): BillingPlan["limits"] {
+function toPlanLimits(value: unknown): NonNullable<BillingPlan["limits"]> {
   const limits =
     value && typeof value === "object"
       ? (value as Record<string, unknown>)

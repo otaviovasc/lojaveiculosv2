@@ -45,6 +45,25 @@ export async function updateBillingSelection(
   if (selectedAddons.some((addon) => !addon)) {
     throw new BillingSelectionError("Selected add-on is unavailable.");
   }
+  const zapiAddon = before.addons.find((addon) => addon.code === "crm_zapi");
+  const hasCurrentZapi = zapiAddon
+    ? before.chargePreview.lineItems.some(
+        (item) =>
+          item.sourceId === zapiAddon.id &&
+          (!item.endsAt || item.endsAt.getTime() > Date.now()),
+      )
+    : false;
+  const selectsZapi = selectedAddons.some(
+    (addon) => addon?.code === "crm_zapi",
+  );
+  if (
+    before.subscription?.status === "active" &&
+    hasCurrentZapi !== selectsZapi
+  ) {
+    throw new BillingSelectionError(
+      "Use the Z-API renewal workflow to change this add-on.",
+    );
+  }
   const featureKeys = new Set<string>();
   for (const addon of selectedAddons) {
     if (!addon) continue;

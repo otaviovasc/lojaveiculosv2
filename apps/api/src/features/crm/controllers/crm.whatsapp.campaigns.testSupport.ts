@@ -1,8 +1,11 @@
 import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { expect, vi } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import {
+  createConfiguredZapiTestConnection,
+  withTestZapiWebhookToken,
+} from "./crm.whatsapp.connectionFixtures.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 export const campaignConnectionId = "24000000-0000-4000-8000-000000000101";
@@ -128,20 +131,26 @@ export function postZapiReply(
 ) {
   return app.request(
     `/api/v1/crm/whatsapp/webhooks/zapi/${campaignConnectionId}/received`,
-    jsonPost({
-      messageId: input.messageId ?? `reply-${phone}`,
-      phone,
-      senderName: "Ana",
-      text: { message: input.content ?? "Tenho interesse" },
-      timestamp: 1893492300,
-    }),
+    jsonPost(
+      {
+        messageId: input.messageId ?? `reply-${phone}`,
+        phone,
+        senderName: "Ana",
+        text: { message: input.content ?? "Tenho interesse" },
+        timestamp: 1893492300,
+      },
+      withTestZapiWebhookToken(),
+    ),
   );
 }
 
-export function jsonPost(body: Record<string, unknown>) {
+export function jsonPost(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {},
+) {
   return {
     body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     method: "POST",
   };
 }
@@ -154,19 +163,10 @@ function createSendTextSpy() {
   }));
 }
 
-function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+function createZapiConnection() {
+  return createConfiguredZapiTestConnection({
     id: campaignConnectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
     storeId: campaignStoreId,
     tenantId: campaignTenantId,
-    webhookUrl: null,
-  };
+  });
 }

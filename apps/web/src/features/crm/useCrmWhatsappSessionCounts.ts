@@ -3,6 +3,7 @@ import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { defaultWhatsappSessionCounts } from "./crmWhatsappQueueState";
 import type {
   CrmWhatsappConnectionId,
+  CrmWhatsappHumanAttendanceState,
   CrmWhatsappSessionFilter,
   CrmWhatsappStatus,
 } from "./crmWhatsappTypes";
@@ -11,6 +12,7 @@ export function useCrmWhatsappSessionCounts({
   api,
   canList,
   connectionId,
+  humanAttendanceFilter,
   quickFilter,
   searchRef,
   selectedTagIds,
@@ -20,6 +22,7 @@ export function useCrmWhatsappSessionCounts({
   api: CrmWhatsappApi;
   canList: boolean;
   connectionId: CrmWhatsappConnectionId | null;
+  humanAttendanceFilter: CrmWhatsappHumanAttendanceState | "";
   quickFilter: CrmWhatsappSessionFilter;
   searchRef: MutableRefObject<string>;
   selectedTagIds: string[];
@@ -37,6 +40,9 @@ export function useCrmWhatsappSessionCounts({
     const counts = await api.listSessionCounts({
       connectionId,
       filter: quickFilter,
+      ...(humanAttendanceFilter
+        ? { humanAttendanceState: humanAttendanceFilter }
+        : {}),
       ...(searchRef.current ? { search: searchRef.current } : {}),
       ...(selectedTagIds.length ? { tagIds: selectedTagIds } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
@@ -47,6 +53,7 @@ export function useCrmWhatsappSessionCounts({
     api,
     canList,
     connectionId,
+    humanAttendanceFilter,
     quickFilter,
     searchRef,
     selectedTagIds,

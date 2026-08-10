@@ -56,7 +56,7 @@ describe("Composio CRM gateway resilience", () => {
 
     await expect(
       gateway.getConnectionStatus(createConnection()),
-    ).rejects.toThrow("failed before receiving a response");
+    ).rejects.toThrow("Composio request timed out");
   });
 
   it("keeps the timeout active while reading the provider body", async () => {
@@ -81,7 +81,7 @@ describe("Composio CRM gateway resilience", () => {
 
     await expect(
       gateway.getConnectionStatus(createConnection()),
-    ).rejects.toThrow("failed before receiving a response");
+    ).rejects.toThrow("Composio request timed out");
   });
 
   it.each(["clientToken", "client_secret", "refreshToken", "password"])(

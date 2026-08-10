@@ -66,7 +66,6 @@ export async function sendWhatsappReaction(
           ...target.message.metadata,
           reaction: {
             providerMessageId: sent.externalId,
-            raw: sent.raw,
             sentAt: sent.providerTimestamp.toISOString(),
             sentByActorId: context.actor.id,
             value: reaction,
@@ -108,7 +107,6 @@ export async function removeWhatsappReaction(
           ...metadata,
           reactionRemoved: {
             providerMessageId: sent.externalId,
-            raw: sent.raw,
             removedAt: sent.providerTimestamp.toISOString(),
             removedByActorId: context.actor.id,
           },
@@ -134,21 +132,17 @@ export async function deleteWhatsappMessage(
     async () => {
       const target = await loadMessageActionTarget(context, input, ports);
       const deletedAt = new Date();
-      const result = await getCrmWhatsappGateway(ports).deleteMessage(
-        target.connection,
-        {
-          messageId: target.providerMessageId,
-          owner: target.message.direction === "OUTBOUND",
-          phone: target.phone,
-        },
-      );
+      await getCrmWhatsappGateway(ports).deleteMessage(target.connection, {
+        messageId: target.providerMessageId,
+        owner: target.message.direction === "OUTBOUND",
+        phone: target.phone,
+      });
       return updateTargetMessage(context, ports, target, {
         action: "deleted",
         deletedAt,
         metadata: {
           ...target.message.metadata,
           deletedByActorId: context.actor.id,
-          deleteProviderRaw: result.raw,
         },
       });
     },

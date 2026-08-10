@@ -28,16 +28,14 @@ export function updateMemorySessionPreview(
     session.freshLeadAt =
       session.freshLeadAt ?? input.freshLeadAt ?? input.providerTimestamp;
     if (session.status !== "HUMAN_TAKEOVER") {
+      session.humanAttendanceState = null;
+      session.humanHandlingStartedAt = null;
       session.humanTakeoverAt = null;
+      session.interventionId = null;
       session.status = "ACTIVE";
     }
-  } else if (input.senderType === "HUMAN") {
-    session.firstHandledAt = session.firstHandledAt ?? input.providerTimestamp;
-    session.humanTakeoverAt =
-      session.humanTakeoverAt ?? input.providerTimestamp;
-    session.status = "HUMAN_TAKEOVER";
-  } else {
-    session.firstHandledAt = session.firstHandledAt ?? input.providerTimestamp;
+  } else if (input.firstHandledAt) {
+    session.firstHandledAt = session.firstHandledAt ?? input.firstHandledAt;
   }
   session.leadId = session.leadId ?? input.leadId ?? null;
   if (

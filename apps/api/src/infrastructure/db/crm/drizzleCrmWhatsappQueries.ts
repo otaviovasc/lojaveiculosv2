@@ -66,6 +66,11 @@ export function sessionFilters(input: CountCrmWhatsappSessionsInput): SQL[] {
     filters.push(eq(crmWhatsappSessions.connectionId, input.connectionId));
   }
   if (input.leadId) filters.push(eq(crmWhatsappSessions.leadId, input.leadId));
+  if (input.humanAttendanceState) {
+    filters.push(
+      eq(crmWhatsappSessions.humanAttendanceState, input.humanAttendanceState),
+    );
+  }
   if (input.sessionId)
     filters.push(eq(crmWhatsappSessions.id, input.sessionId));
   if (input.status) filters.push(eq(crmWhatsappSessions.status, input.status));

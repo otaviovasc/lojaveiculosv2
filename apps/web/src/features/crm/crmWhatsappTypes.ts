@@ -7,6 +7,8 @@ export type CrmWhatsappSessionId = number | string;
 
 export type CrmWhatsappStatus =
   "ACTIVE" | "COMPLETED" | "EXPIRED" | "HUMAN_TAKEOVER" | "MINIBOT_ACTIVE";
+export type CrmWhatsappHumanAttendanceState =
+  "IN_HUMAN_SERVICE" | "WAITING_HUMAN";
 export type CrmWhatsappSessionFilter =
   "all" | "fresh" | "mine" | "others" | "unassigned";
 
@@ -56,6 +58,8 @@ export type CrmWhatsappProviderConnection = {
   metadata?: CrmWhatsappConnectionMetadata;
   phone: string | null;
   provider: CrmWhatsappProvider;
+  ready?: boolean;
+  setup?: CrmWhatsappZapiSetupState | null;
   status: CrmWhatsappConnectionConfiguredStatus;
   webhookEndpoints?: CrmWhatsappWebhookEndpoint[];
   webhookTokenRequired?: boolean;
@@ -83,6 +87,19 @@ export type CrmWhatsappConnectionMetadata = {
   purpose: string | null;
 };
 
+export type CrmWhatsappZapiSetupState = {
+  attemptCount: number;
+  configuredAt: string | null;
+  lastErrorCode: string | null;
+  requestedAt: string;
+  requiredTypes: readonly string[];
+  status: "configured" | "configuring" | "failed" | "partial";
+  succeededTypes: readonly string[];
+  supportCode: string;
+  updatedAt: string;
+  version: 1;
+};
+
 export type CrmWhatsappWebhookEndpoint = {
   label: string;
   type:
@@ -106,11 +123,64 @@ export type CrmWhatsappWebhookConfigResult = {
 export type CrmWhatsappConfigureWebhooksResult = {
   connectionId: string;
   results: CrmWhatsappWebhookConfigResult[];
+  setup: CrmWhatsappZapiSetupState;
   tokenApplied: boolean;
 };
 
 export type CrmWhatsappConnectionsResponse = {
+  allowance: CrmWhatsappConnectionAllowance;
+  availableProviders: CrmWhatsappSetupProvider[];
   connections: CrmWhatsappProviderConnection[];
+};
+
+export type CrmWhatsappSetupProvider = Extract<
+  CrmWhatsappProvider,
+  "composio_whatsapp" | "zapi"
+>;
+
+export type CrmWhatsappConnectionAllowance = {
+  limit: number;
+  remaining: number;
+  used: number;
+};
+
+export type CrmWhatsappCreateConnectionInput =
+  | {
+      instanceCredentials: {
+        instanceId: string;
+        instanceToken: string;
+      };
+      provider: "zapi";
+    }
+  | {
+      provider: "composio_whatsapp";
+    };
+
+export type CrmWhatsappZapiPairingQr = {
+  expiresAt: string;
+  qrCode: string;
+};
+
+export type CrmWhatsappZapiPairingCode = {
+  code?: string;
+  requested: boolean;
+};
+
+export type CrmWhatsappComposioAuthorization = {
+  expiresAt: string;
+  redirectUrl: string;
+};
+
+export type CrmWhatsappComposioSender = {
+  displayName?: string | null;
+  phone?: string | null;
+  senderId: string;
+};
+
+export type CrmWhatsappComposioCompleteResult = {
+  connection: CrmWhatsappProviderConnection;
+  nextAction: string | null;
+  senders: CrmWhatsappComposioSender[];
 };
 
 export type CrmWhatsappUpdateConnectionInput = {
@@ -153,8 +223,12 @@ export type CrmWhatsappSession = {
   buyerPhone?: string | null;
   channel: CrmWhatsappChannel;
   connection?: CrmWhatsappConnection | null;
-  humanTakeoverAt?: string | null;
+  humanAttendanceChangedAt?: string | null;
+  humanAttendanceState?: CrmWhatsappHumanAttendanceState | null;
+  humanAttendanceStateVersion?: number | null;
+  humanHandlingStartedAt?: string | null;
   id: CrmWhatsappSessionId;
+  interventionId?: string | null;
   lastCustomerReadAt?: string | null;
   leadId?: string | null;
   lastMessageAt?: string | null;
@@ -208,6 +282,7 @@ export type CrmWhatsappSessionQuery = {
   assigneeId?: string;
   connectionId?: CrmWhatsappConnectionId;
   filter?: CrmWhatsappSessionFilter;
+  humanAttendanceState?: CrmWhatsappHumanAttendanceState;
   leadId?: string;
   limit?: number;
   offset?: number;
@@ -226,9 +301,11 @@ export type CrmWhatsappSessionCountsQuery = Omit<
 export type CrmWhatsappSessionCounts = {
   assignees: Array<{ assigneeId: string; count: number }>;
   filters: Record<CrmWhatsappSessionFilter, number>;
+  inHumanService: number;
   statuses: Record<CrmWhatsappStatus, number>;
   total: number;
   unread: number;
+  waitingHuman: number;
 };
 
 export type CrmWhatsappAssignSessionInput = {

@@ -118,4 +118,33 @@ describe("product database schema contract", () => {
     });
     expect(providerId?.getSQLType()).toBe("varchar(191)");
   });
+
+  it("models billing catalog activation as one immutable database version", () => {
+    const config = getTableConfig(schema.billingCatalogVersions);
+
+    expect(schema.billingCatalogVersionStatus.enumValues).toEqual([
+      "staged",
+      "active",
+      "superseded",
+    ]);
+    expect(config.columns.map((column) => column.name)).toEqual(
+      expect.arrayContaining([
+        "activation_audit_claim_token",
+        "activation_audit_claimed_at",
+        "activation_audit_recorded_at",
+        "checksum",
+        "definition",
+        "previous_version",
+        "published_at",
+        "status",
+        "version",
+      ]),
+    );
+    expect(config.indexes.map((index) => index.config.name)).toEqual(
+      expect.arrayContaining([
+        "billing_catalog_versions_version_unique",
+        "billing_catalog_versions_single_active_unique",
+      ]),
+    );
+  });
 });

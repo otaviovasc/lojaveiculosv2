@@ -34,9 +34,11 @@ import { registerCrmWhatsappScheduledRoutes } from "./crm.whatsapp.scheduledRout
 import { registerCrmWhatsappWebhookEventRoutes } from "./crm.whatsapp.webhookEventRoutes.js";
 import { registerCrmWhatsappWebhookRoutes } from "./crm.whatsapp.webhookRoutes.js";
 import type { CrmServices } from "./crmServices.js";
+import { registerCrmWhatsappZapiSupportRoutes } from "./crm.whatsapp.zapiSupportRoutes.js";
 
 export type RegisterCrmWhatsappApiRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
+  createSupportContext?: (context: Context) => Promise<ServiceContext>;
   createWebhookContext?: (context: Context) => Promise<ServiceContext>;
   resolveBotEntitlements?: ResolveCrmBotEntitlements;
   services: CrmServices;
@@ -46,12 +48,19 @@ export function registerCrmWhatsappApiRoutes(
   crmFeature: Hono,
   {
     createContext,
+    createSupportContext,
     createWebhookContext = createContext,
     resolveBotEntitlements,
     services,
   }: RegisterCrmWhatsappApiRoutesOptions,
 ) {
   registerCrmWhatsappConnectionRoutes(crmFeature, { createContext, services });
+  if (createSupportContext) {
+    registerCrmWhatsappZapiSupportRoutes(crmFeature, {
+      createSupportContext,
+      services,
+    });
+  }
 
   crmFeature.get("/whatsapp/sessions", async (context) =>
     handleWhatsapp(context, async () => {
@@ -103,6 +112,9 @@ export function registerCrmWhatsappApiRoutes(
       const serviceContext = await createContext(context);
       assertWhatsappSend(serviceContext);
       const message = await services.sendWhatsappText(serviceContext, {
+        ...(context.req.header("Idempotency-Key")
+          ? { idempotencyKey: context.req.header("Idempotency-Key")! }
+          : {}),
         ...(input.replyToMessageId
           ? { replyToMessageId: input.replyToMessageId }
           : {}),
@@ -124,6 +136,9 @@ export function registerCrmWhatsappApiRoutes(
       const result = await services.startWhatsappConversation(serviceContext, {
         ...(input.buyerName ? { buyerName: input.buyerName } : {}),
         connectionId: input.connectionId,
+        ...(context.req.header("Idempotency-Key")
+          ? { idempotencyKey: context.req.header("Idempotency-Key")! }
+          : {}),
         ...(input.leadId ? { leadId: input.leadId } : {}),
         ...(input.phone ? { phone: input.phone } : {}),
         ...(input.template
@@ -196,6 +211,9 @@ export function registerCrmWhatsappApiRoutes(
         base64: input.base64,
         ...(input.caption ? { caption: input.caption } : {}),
         ...(input.fileName ? { fileName: input.fileName } : {}),
+        ...(context.req.header("Idempotency-Key")
+          ? { idempotencyKey: context.req.header("Idempotency-Key")! }
+          : {}),
         mediaType: input.mediaType,
         ...(input.mimeType ? { mimeType: input.mimeType } : {}),
         sessionId: input.sessionId,
@@ -220,6 +238,7 @@ export function registerCrmWhatsappApiRoutes(
   });
   registerCrmWhatsappWebhookRoutes(crmFeature, {
     createWebhookContext,
+    resolveEntitlements: resolveBotEntitlements ?? (async () => [] as const),
     services,
   });
 }

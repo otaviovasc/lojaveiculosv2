@@ -1,35 +1,31 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { vi } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmRemoteMediaFetcher } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
 import type {
   ObjectStorage,
   PutStorageObjectInput,
 } from "../../../shared/storage/objectStorage.js";
 import type { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import {
+  createConfiguredZapiTestConnection,
+  withTestZapiWebhookToken,
+} from "./crm.whatsapp.connectionFixtures.js";
 
 export const mediaTestStoreId = "store_1" as StoreId;
 export const mediaTestTenantId = "tenant_1" as TenantId;
 export const mediaTestConnectionId = "24000000-0000-4000-8000-000000000101";
 
 export function createZapiMediaTestConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  overrides: Parameters<
+    typeof createConfiguredZapiTestConnection
+  >[0]["overrides"] = {},
+) {
+  return createConfiguredZapiTestConnection({
     id: mediaTestConnectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
     storeId: mediaTestStoreId,
     tenantId: mediaTestTenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+    overrides,
+  });
 }
 
 export function createRemoteMediaFetcher(
@@ -63,7 +59,9 @@ export function postImageWebhook(
         senderName: "Ana",
         timestamp: 1783029600,
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: withTestZapiWebhookToken({
+        "Content-Type": "application/json",
+      }),
       method: "POST",
     },
   );

@@ -8,6 +8,7 @@ import type { CrmServices } from "./crmServices.js";
 
 export type RegisterCrmWhatsappRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
+  createSupportContext?: (context: Context) => Promise<ServiceContext>;
   createWebhookContext?: (context: Context) => Promise<ServiceContext>;
   realtimeBroker?: CrmRealtimeBroker;
   resolveBotEntitlements?: ResolveCrmBotEntitlements;

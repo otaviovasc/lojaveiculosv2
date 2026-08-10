@@ -1,25 +1,11 @@
-import {
-  and,
-  count,
-  eq,
-  gt,
-  gte,
-  inArray,
-  isNull,
-  lte,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
-  identityInvitations,
+  addons,
   planFeatures,
   plans,
-  storeMemberships,
   subscriptionItems,
   subscriptions,
-  vehicleListings,
-  vehiclePlateLookups,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import {
@@ -28,6 +14,7 @@ import {
   type BillingQuotaGuard,
   type BillingQuotaKey,
 } from "../../../domains/billing/ports/billingQuotaGuard.js";
+import { countBillingQuotaUsage } from "./drizzleBillingQuotaUsage.js";
 
 export type DrizzleBillingQuotaClient = PostgresJsDatabase<typeof schema>;
 
@@ -35,6 +22,22 @@ export function createDrizzleBillingQuotaGuard(
   db: DrizzleBillingQuotaClient,
   now: () => Date = () => new Date(),
 ): BillingQuotaGuard {
+  async function getAllowance(input: {
+    quotaKey: BillingQuotaKey;
+    storeId: string;
+    tenantId: string;
+  }) {
+    const checkedAt = now();
+    const contract = await findEffectiveContract(db, input, checkedAt);
+    const limit = await resolveLimit(db, contract, input, checkedAt);
+    const used = await countBillingQuotaUsage(db, input, contract.periodStart);
+    const effectiveLimit = limit ?? Number.MAX_SAFE_INTEGER;
+    return {
+      limit: effectiveLimit,
+      remaining: Math.max(0, effectiveLimit - used),
+      used,
+    };
+  }
   return {
     async assertAvailable(input) {
       const checkedAt = now();
@@ -42,9 +45,13 @@ export function createDrizzleBillingQuotaGuard(
         sql`select pg_advisory_xact_lock(hashtextextended(${`${input.storeId}:${input.quotaKey}`}, 29))`,
       );
       const contract = await findEffectiveContract(db, input, checkedAt);
-      const limit = await resolveLimit(db, contract, input.quotaKey);
+      const limit = await resolveLimit(db, contract, input, checkedAt);
       if (limit === null) return;
-      const current = await countUsage(db, input, contract.periodStart);
+      const current = await countBillingQuotaUsage(
+        db,
+        input,
+        contract.periodStart,
+      );
       if (current + (input.increment ?? 1) <= limit) return;
       throw new BillingQuotaExceededError({
         current,
@@ -52,6 +59,7 @@ export function createDrizzleBillingQuotaGuard(
         quotaKey: input.quotaKey,
       });
     },
+    getAllowance,
   };
 }
 
@@ -65,6 +73,7 @@ async function findEffectiveContract(
       limits: plans.limits,
       periodStart: subscriptions.currentPeriodStart,
       planId: plans.id,
+      subscriptionId: subscriptions.id,
       subscriptionStatus: subscriptions.status,
     })
     .from(subscriptionItems)
@@ -104,13 +113,47 @@ async function resolveLimit(
   contract: {
     limits: unknown;
     planId: string;
+    subscriptionId: string;
     subscriptionStatus:
       "active" | "cancelled" | "expired" | "past_due" | "trialing";
   },
-  quotaKey: BillingQuotaKey,
+  input: {
+    quotaKey: BillingQuotaKey;
+    storeId: string;
+    tenantId: string;
+  },
+  now: Date,
 ): Promise<number | null> {
-  if (quotaKey === "seller") return readLimit(contract.limits, "seller_limit");
-  if (quotaKey === "vehicle")
+  if (input.quotaKey === "crm_zapi") {
+    const [row] = await db
+      .select({
+        quantity: sql<number>`coalesce(sum(${subscriptionItems.quantity}), 0)`,
+      })
+      .from(subscriptionItems)
+      .innerJoin(addons, eq(addons.id, subscriptionItems.addonId))
+      .where(
+        and(
+          eq(subscriptionItems.itemType, "addon"),
+          eq(subscriptionItems.subscriptionId, contract.subscriptionId),
+          eq(subscriptionItems.storeId, input.storeId),
+          eq(subscriptionItems.tenantId, input.tenantId),
+          eq(addons.code, "crm_zapi"),
+          eq(addons.status, "active"),
+          or(
+            isNull(subscriptionItems.startsAt),
+            lte(subscriptionItems.startsAt, now),
+          ),
+          or(
+            isNull(subscriptionItems.endsAt),
+            gt(subscriptionItems.endsAt, now),
+          ),
+        ),
+      );
+    return Number(row?.quantity ?? 0);
+  }
+  if (input.quotaKey === "seller")
+    return readLimit(contract.limits, "seller_limit");
+  if (input.quotaKey === "vehicle")
     return readLimit(contract.limits, "vehicle_limit");
   const [feature] = await db
     .select({
@@ -138,64 +181,6 @@ export function resolveFeatureLimit(
   return subscriptionStatus === "trialing"
     ? (feature.trialLimit ?? feature.limit)
     : feature.limit;
-}
-
-async function countUsage(
-  db: DrizzleBillingQuotaClient,
-  input: { quotaKey: BillingQuotaKey; storeId: string; tenantId: string },
-  periodStart: Date | null,
-) {
-  if (input.quotaKey === "seller") {
-    const [[members], [invitations]] = await Promise.all([
-      db
-        .select({ value: count() })
-        .from(storeMemberships)
-        .where(
-          and(
-            eq(storeMemberships.storeId, input.storeId),
-            eq(storeMemberships.tenantId, input.tenantId),
-            eq(storeMemberships.status, "active"),
-          ),
-        ),
-      db
-        .select({ value: count() })
-        .from(identityInvitations)
-        .where(
-          and(
-            eq(identityInvitations.storeId, input.storeId),
-            eq(identityInvitations.tenantId, input.tenantId),
-            inArray(identityInvitations.status, ["pending", "sent"]),
-          ),
-        ),
-    ]);
-    return Number(members?.value ?? 0) + Number(invitations?.value ?? 0);
-  }
-  if (input.quotaKey === "vehicle") {
-    const [row] = await db
-      .select({ value: count() })
-      .from(vehicleListings)
-      .where(
-        and(
-          eq(vehicleListings.storeId, input.storeId),
-          eq(vehicleListings.tenantId, input.tenantId),
-          eq(vehicleListings.isDeleted, false),
-        ),
-      );
-    return Number(row?.value ?? 0);
-  }
-  const [row] = await db
-    .select({ value: count() })
-    .from(vehiclePlateLookups)
-    .where(
-      and(
-        eq(vehiclePlateLookups.storeId, input.storeId),
-        eq(vehiclePlateLookups.tenantId, input.tenantId),
-        ...(periodStart
-          ? [gte(vehiclePlateLookups.fetchedAt, periodStart)]
-          : []),
-      ),
-    );
-  return Number(row?.value ?? 0);
 }
 
 function readLimit(value: unknown, key: string) {

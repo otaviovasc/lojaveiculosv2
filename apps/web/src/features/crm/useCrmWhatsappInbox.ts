@@ -31,6 +31,7 @@ import type {
   CrmWhatsappSession,
   CrmWhatsappSessionFilter,
   CrmWhatsappSessionId,
+  CrmWhatsappHumanAttendanceState,
   CrmWhatsappStatus,
 } from "./crmWhatsappTypes";
 
@@ -50,6 +51,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   const [search, setSearch] = useState("");
   const remoteSearch = useRemoteSearch(search);
   const [statusFilter, setStatusFilter] = useState<CrmWhatsappStatus | "">("");
+  const [humanAttendanceFilter, setHumanAttendanceFilter] = useState<
+    CrmWhatsappHumanAttendanceState | ""
+  >("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [sessions, setSessions] = useState<CrmWhatsappSession[]>([]);
   const currentUserId = accountSession?.user.id ?? null;
@@ -124,6 +128,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     api,
     canList: permissions.canList,
     connectionId,
+    humanAttendanceFilter,
     quickFilter,
     searchRef,
     selectedTagIds,
@@ -141,6 +146,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
           ? { assigneeId: otherAssigneeId }
           : {}),
         filter: quickFilter,
+        ...(humanAttendanceFilter
+          ? { humanAttendanceState: humanAttendanceFilter }
+          : {}),
         limit: 40,
         offset: 0,
         ...(searchRef.current ? { search: searchRef.current } : {}),
@@ -178,6 +186,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       initialSessionId,
       mergeSessions,
       connectionId,
+      humanAttendanceFilter,
       permissions.canList,
       otherAssigneeId,
       quickFilter,
@@ -258,6 +267,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     mergeRealtimeMessage,
     mergeSessions,
     refreshConnections: connections.refreshConnections,
+    refreshSessionCounts,
     refreshSessions,
     setError,
     updateRealtimeMessageStatus,
@@ -283,6 +293,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     activeSessionId,
     assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
+    availableConnectionProviders: connections.availableProviders,
     canAssignSessions: assignmentState.canAssignSessions,
     canStartConversation:
       canSendMessages && conversationStartCapability.canStart,
@@ -292,10 +303,17 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     connectionFilterId,
     connectionId,
     connectionError: connections.error,
+    connectionAllowance: connections.allowance,
     connectionIsLoading: connections.isLoading,
     configureConnectionWebhooks: connections.configureWebhooks,
     connections: connections.connections,
+    createConnection: connections.createConnection,
+    authorizeComposioConnection: connections.authorizeComposio,
+    completeComposioConnection: connections.completeComposio,
     refreshConnections: connections.refreshConnections,
+    requestZapiPairingCode: connections.requestZapiPairingCode,
+    requestZapiPairingQr: connections.requestZapiPairingQr,
+    selectComposioConnectionSender: connections.selectComposioSender,
     updateConnection: connections.updateConnection,
     createTag: tagState.createTag,
     createQuickMessage: quickMessageState.createQuickMessage,
@@ -307,6 +325,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     error: error ?? connections.error,
     hasConnection: connections.hasConnectedConnection,
     isLoading: connections.isLoading || isLoadingSessions,
+    humanAttendanceFilter,
     isLoadingMessages: messageState.isLoadingMessages,
     isMutatingSession: sessionActions.isMutatingSession,
     isSending: messageState.isSending,
@@ -343,6 +362,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     sessions,
     setActiveSessionId: selectSession,
     setConnectionFilterId,
+    setHumanAttendanceFilter,
     setOtherAssigneeId,
     setQuickFilter: changeQuickFilter,
     setSearch,

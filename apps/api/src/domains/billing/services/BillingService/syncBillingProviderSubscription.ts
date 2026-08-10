@@ -7,11 +7,7 @@ import type {
   BillingProviderSubscriptionRecord,
   BillingProviderSubscriptionSyncResult,
 } from "../../ports/billingProviderRepository.js";
-import type { BillingChargePreviewLineItem } from "../../ports/billingRepository.js";
-import type {
-  PaymentProviderBillingType,
-  PaymentProviderGateway,
-} from "../../ports/paymentProviderGateway.js";
+import type { PaymentProviderBillingType } from "../../ports/paymentProviderGateway.js";
 import {
   assertSyncableAccount,
   BillingProviderSyncError,
@@ -31,6 +27,10 @@ import {
   requireTenantBillingScope,
   type BillingServicePorts,
 } from "./serviceSupport.js";
+import {
+  getPaymentProviderGateway,
+  recurringTotalCents,
+} from "../../readModels/billingProviderSubscriptionSyncSupport.js";
 
 export { BillingProviderSyncError };
 
@@ -38,6 +38,7 @@ export type SyncBillingProviderSubscriptionInput = {
   billingType?: PaymentProviderBillingType;
   nextDueDate?: Date;
   updatePendingPayments?: boolean;
+  zapiLifecycleSync?: boolean;
 };
 
 export async function syncBillingProviderSubscription(
@@ -59,10 +60,43 @@ export async function syncBillingProviderSubscription(
       tenantId: scope.tenantId,
     }),
   );
+  if (!input.zapiLifecycleSync) {
+    const overview = scope.storeId
+      ? await ports.billingRepository.getOverview({
+          billingManagedBy: context.billingManagedBy ?? "store_owner",
+          currentActorCanManage: context.permissions.includes("billing.manage"),
+          storeId: scope.storeId,
+          tenantId: scope.tenantId,
+        })
+      : await ports.billingRepository.getTenantOverview({
+          currentActorCanManage: context.permissions.includes("billing.manage"),
+          tenantId: scope.tenantId,
+        });
+    const zapiAddonIds = new Set(
+      overview.addons
+        .filter((addon) => addon.code === "crm_zapi")
+        .map((addon) => addon.id),
+    );
+    if (
+      account.chargePreview.lineItems.some(
+        (item) => item.sourceId && zapiAddonIds.has(item.sourceId),
+      )
+    ) {
+      throw new BillingProviderSyncError(
+        "zapi_requires_server_owned_renewal",
+        "Z-API billing changes use the server-owned renewal workflow.",
+        409,
+      );
+    }
+  }
   const subscription = account.subscription;
   const billingType = input.billingType ?? "PIX";
-  const nextDueDate = formatDate(input.nextDueDate ?? tomorrow());
-  const chargeTotalCents = recurringTotalCents(account.chargePreview.lineItems);
+  const renewalDate = input.nextDueDate ?? tomorrow();
+  const nextDueDate = formatDate(renewalDate);
+  const chargeTotalCents = recurringTotalCents(
+    account.chargePreview.lineItems,
+    renewalDate,
+  );
 
   context.logger.info(
     "billing.provider_subscription.sync.started",
@@ -162,38 +196,6 @@ export async function syncBillingProviderSubscription(
   }
 }
 
-function recurringTotalCents(
-  lineItems: readonly BillingChargePreviewLineItem[],
-) {
-  const now = Date.now();
-  return lineItems
-    .filter((item) => !item.endsAt || item.endsAt.getTime() > now)
-    .reduce((total, item) => total + item.fullAmountCents, 0);
-}
-
-function getPaymentProviderGateway(
-  ports: BillingServicePorts,
-): Required<Pick<PaymentProviderGateway, "syncCustomer" | "syncSubscription">> {
-  if (!ports.paymentProviderGateway?.syncCustomer) {
-    throw new BillingProviderSyncError(
-      "missing_provider_customer_sync",
-      "Billing payment provider customer sync is not configured.",
-      503,
-    );
-  }
-  if (!ports.paymentProviderGateway.syncSubscription) {
-    throw new BillingProviderSyncError(
-      "missing_provider_subscription_sync",
-      "Billing payment provider subscription sync is not configured.",
-      503,
-    );
-  }
-  return {
-    syncCustomer: ports.paymentProviderGateway.syncCustomer,
-    syncSubscription: ports.paymentProviderGateway.syncSubscription,
-  };
-}
-
 async function auditSync(
   context: ServiceContext,
   input: {
@@ -213,14 +215,7 @@ async function auditSync(
     criticality: "critical",
     entityId: input.subscriptionId,
     entityType: "billing_subscription",
-    metadata: {
-      chargeTotalCents: input.chargeTotalCents,
-      provider: "asaas",
-      providerCustomerId: input.providerCustomerId,
-      providerSubscriptionId: input.providerSubscriptionId,
-      reason: input.reason,
-      status: input.status,
-    },
+    metadata: { ...input, provider: "asaas" },
     outcome: input.outcome,
     requestId: context.requestId,
     storeId: context.storeId,

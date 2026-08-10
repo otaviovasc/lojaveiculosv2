@@ -49,7 +49,17 @@ function withAuthorization(
 
 export function readRuntimeApiBaseUrl(): { baseUrl?: string } {
   const env = import.meta.env as { VITE_API_BASE_URL?: string };
-  return env.VITE_API_BASE_URL ? { baseUrl: env.VITE_API_BASE_URL } : {};
+  const configuredBaseUrl = env.VITE_API_BASE_URL?.trim();
+  return configuredBaseUrl
+    ? { baseUrl: normalizeRuntimeApiBaseUrl(configuredBaseUrl) }
+    : {};
+}
+
+export function normalizeRuntimeApiBaseUrl(baseUrl: string): string {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+  return normalizedBaseUrl.endsWith("/api/v1")
+    ? normalizedBaseUrl
+    : `${normalizedBaseUrl}/api/v1`;
 }
 
 export async function createRuntimeAuthHeaders(

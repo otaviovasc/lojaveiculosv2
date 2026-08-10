@@ -23,8 +23,10 @@ export default defineRailway((context) => {
   const api = service("lojaveiculosv2-api", {
     source: appSource,
     build: "pnpm --filter @lojaveiculosv2/api build",
+    deploy: { overlapSeconds: 0 },
     env: {
       API_BASE_URL: context.shared.API_BASE_URL,
+      API_PLACA_KEY: context.shared.API_PLACA_KEY,
       API_PRIMARY_DOMAIN: context.shared.API_PRIMARY_DOMAIN,
       APP_ENV: appEnvironment,
       APP_PRIMARY_DOMAIN: context.shared.APP_PRIMARY_DOMAIN,
@@ -45,15 +47,22 @@ export default defineRailway((context) => {
       CLERK_SECRET_KEY: context.shared.CLERK_SECRET_KEY,
       CLERK_SIGN_IN_URL: context.shared.CLERK_SIGN_IN_URL,
       CLERK_SIGN_UP_URL: context.shared.CLERK_SIGN_UP_URL,
+      COMPOSIO_API_BASE_URL: context.shared.COMPOSIO_API_BASE_URL,
+      COMPOSIO_API_KEY: context.shared.COMPOSIO_API_KEY,
+      COMPOSIO_META_GRAPH_VERSION: context.shared.COMPOSIO_META_GRAPH_VERSION,
+      COMPOSIO_REQUEST_TIMEOUT_MS: context.shared.COMPOSIO_REQUEST_TIMEOUT_MS,
+      COMPOSIO_WHATSAPP_AUTH_CONFIG_ID:
+        context.shared.COMPOSIO_WHATSAPP_AUTH_CONFIG_ID,
       CREDERE_BANK_POLICY_CODES: context.shared.CREDERE_BANK_POLICY_CODES,
       CREDERE_CLIENT_ID: context.shared.CREDERE_CLIENT_ID,
       CREDERE_CLIENT_SECRET: context.shared.CREDERE_CLIENT_SECRET,
       CREDERE_CREDENTIAL_ENCRYPTION_KEY:
         context.shared.CREDERE_CREDENTIAL_ENCRYPTION_KEY,
       CREDERE_REDIRECT_URI: context.shared.CREDERE_REDIRECT_URI,
+      CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
+        context.shared.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
       CRM_ZAPI_API_BASE_URL: context.shared.CRM_ZAPI_API_BASE_URL,
       CRM_ZAPI_CLIENT_TOKEN: context.shared.CRM_ZAPI_CLIENT_TOKEN,
-      CRM_ZAPI_WEBHOOK_TOKEN: context.shared.CRM_ZAPI_WEBHOOK_TOKEN,
       DATABASE_URL: productDatabase.env.DATABASE_URL,
       DB_CLOSE_TIMEOUT_SECONDS: "5",
       DB_POOL_MAX: "3",
@@ -62,12 +71,26 @@ export default defineRailway((context) => {
       LOG_LEVEL: "info",
       MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY:
         context.shared.MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY,
+      MERCADO_LIVRE_ACCOUNT_PATH: context.shared.MERCADO_LIVRE_ACCOUNT_PATH,
+      MERCADO_LIVRE_API_BASE_URL: context.shared.MERCADO_LIVRE_API_BASE_URL,
+      MERCADO_LIVRE_AUTHORIZATION_URL:
+        context.shared.MERCADO_LIVRE_AUTHORIZATION_URL,
+      MERCADO_LIVRE_CLIENT_ID: context.shared.MERCADO_LIVRE_CLIENT_ID,
+      MERCADO_LIVRE_CLIENT_SECRET: context.shared.MERCADO_LIVRE_CLIENT_SECRET,
+      MERCADO_LIVRE_TOKEN_URL: context.shared.MERCADO_LIVRE_TOKEN_URL,
       NODE_ENV: "production",
       OPENROUTER_API_KEY: context.shared.OPENROUTER_API_KEY,
       OPENROUTER_DEFAULT_MODEL: context.shared.OPENROUTER_DEFAULT_MODEL,
       OPENROUTER_DOCUMENTS_MODEL: context.shared.OPENROUTER_DOCUMENTS_MODEL,
       OPENROUTER_INVENTORY_RESALE_MODEL:
         context.shared.OPENROUTER_INVENTORY_RESALE_MODEL,
+      OLX_API_BASE_URL: context.shared.OLX_API_BASE_URL,
+      OLX_AUTHORIZATION_URL: context.shared.OLX_AUTHORIZATION_URL,
+      OLX_CLIENT_ID: context.shared.OLX_CLIENT_ID,
+      OLX_CLIENT_SECRET: context.shared.OLX_CLIENT_SECRET,
+      OLX_LISTINGS_PATH: context.shared.OLX_LISTINGS_PATH,
+      OLX_REQUIREMENT_CONFIG: context.shared.OLX_REQUIREMENT_CONFIG,
+      OLX_TOKEN_URL: context.shared.OLX_TOKEN_URL,
       PUBLIC_APP_URL: context.shared.PUBLIC_APP_URL,
       PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET:
         context.shared.PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET,
@@ -94,7 +117,7 @@ export default defineRailway((context) => {
     healthcheck: "/ready",
     healthcheckTimeout: 300,
     start:
-      "pnpm run db:migrate:deploy && pnpm --filter @lojaveiculosv2/api start",
+      "pnpm run db:migrate:deploy && pnpm run billing:catalog:reconcile && pnpm --filter @lojaveiculosv2/api start",
   });
 
   const web = service("lojaveiculosv2-web", {
@@ -103,7 +126,7 @@ export default defineRailway((context) => {
     env: {
       APP_ENV: appEnvironment,
       NODE_ENV: "production",
-      VITE_API_BASE_URL: context.shared.VITE_API_BASE_URL,
+      VITE_API_BASE_URL: api.env.API_BASE_URL,
       VITE_CLERK_PUBLISHABLE_KEY: context.shared.VITE_CLERK_PUBLISHABLE_KEY,
     },
     healthcheck: "/health",
@@ -139,11 +162,16 @@ export default defineRailway((context) => {
       CLERK_SECRET_KEY: api.env.CLERK_SECRET_KEY,
       CLERK_SIGN_IN_URL: api.env.CLERK_SIGN_IN_URL,
       CLERK_SIGN_UP_URL: api.env.CLERK_SIGN_UP_URL,
+      COMPOSIO_API_BASE_URL: api.env.COMPOSIO_API_BASE_URL,
+      COMPOSIO_API_KEY: api.env.COMPOSIO_API_KEY,
+      COMPOSIO_META_GRAPH_VERSION: api.env.COMPOSIO_META_GRAPH_VERSION,
+      COMPOSIO_REQUEST_TIMEOUT_MS: api.env.COMPOSIO_REQUEST_TIMEOUT_MS,
+      CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
+        api.env.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
       CRM_WHATSAPP_SCHEDULE_BATCH_SIZE: "25",
       CRM_WHATSAPP_SCHEDULE_SCOPE_LIMIT: "100",
       CRM_ZAPI_API_BASE_URL: api.env.CRM_ZAPI_API_BASE_URL,
       CRM_ZAPI_CLIENT_TOKEN: api.env.CRM_ZAPI_CLIENT_TOKEN,
-      CRM_ZAPI_WEBHOOK_TOKEN: api.env.CRM_ZAPI_WEBHOOK_TOKEN,
       DATABASE_URL: productDatabase.env.DATABASE_URL,
       DB_CLOSE_TIMEOUT_SECONDS: "5",
       DB_POOL_MAX: "2",
@@ -168,9 +196,39 @@ export default defineRailway((context) => {
       R2_UPLOAD_URL_EXPIRES_SECONDS: api.env.R2_UPLOAD_URL_EXPIRES_SECONDS,
       REDIS_URL: realtimeCache.env.REDIS_URL,
       SHUTDOWN_TIMEOUT_MS: "10000",
+      SPEDY_API_URL: api.env.SPEDY_API_URL,
+      SPEDY_RUNTIME_IMPLEMENTATION: api.env.SPEDY_RUNTIME_IMPLEMENTATION,
     },
     start: "pnpm run crm:whatsapp:schedule:process",
   });
+
+  const billingReconciliationWorker = service(
+    "lojaveiculosv2-billing-reconciliation-worker",
+    {
+      source: appSource,
+      build: "pnpm --filter @lojaveiculosv2/api build",
+      deploy: {
+        cronSchedule: "*/5 * * * *",
+        restartPolicyType: "NEVER",
+      },
+      env: {
+        APP_ENV: appEnvironment,
+        ASAAS_API_KEY: api.env.ASAAS_API_KEY,
+        ASAAS_API_URL: api.env.ASAAS_API_URL,
+        ASAAS_CHECKOUT_URL: api.env.ASAAS_CHECKOUT_URL,
+        ASAAS_RUNTIME_IMPLEMENTATION: api.env.ASAAS_RUNTIME_IMPLEMENTATION,
+        ASAAS_WEBHOOK_SECRET: api.env.ASAAS_WEBHOOK_SECRET,
+        ASAAS_WEBHOOK_URL: api.env.ASAAS_WEBHOOK_URL,
+        AUDIT_DATABASE_URL: auditDatabase.env.DATABASE_URL,
+        DATABASE_URL: productDatabase.env.DATABASE_URL,
+        DB_POOL_MAX: "2",
+        LOG_LEVEL: api.env.LOG_LEVEL,
+        NODE_ENV: "production",
+        PUBLIC_APP_URL: api.env.PUBLIC_APP_URL,
+      },
+      start: "pnpm run billing:asaas:reconcile",
+    },
+  );
 
   return project("respectful-respect", {
     resources: [
@@ -180,6 +238,7 @@ export default defineRailway((context) => {
       api,
       web,
       crmScheduleWorker,
+      billingReconciliationWorker,
     ],
   });
 });
