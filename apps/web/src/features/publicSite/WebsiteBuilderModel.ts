@@ -1,5 +1,17 @@
+import {
+  DEFAULT_PUBLIC_STOREFRONT_THEME,
+  DEFAULT_STOREFRONT_ABOUT_FEATURES,
+  DEFAULT_STOREFRONT_ABOUT_IMAGES,
+  DEFAULT_STOREFRONT_SECTIONS,
+  DEFAULT_STOREFRONT_TESTIMONIALS,
+} from "@lojaveiculosv2/shared";
+import {
+  businessHoursToText,
+  textToBusinessHours,
+} from "../settings/settingsBusinessHours";
 import type { StoreSettingsSnapshot } from "../settings/types";
 import type {
+  WebsiteBuilderAboutFeature,
   WebsiteBuilderConfig,
   WebsiteBuilderAppearanceMode,
   WebsiteBuilderHeroMediaSource,
@@ -22,7 +34,7 @@ export const websiteBuilderTemplateInfo: Record<
     name: "Aurora",
   },
   quadra: {
-    description: "Grade clara e direta, foco em estoque",
+    description: "Template Modern original, usado pelas lojas da plataforma",
     name: "Quadra",
   },
 };
@@ -96,15 +108,8 @@ export const websiteBuilderColorPalettes = [
   },
 ] as const;
 
-export const defaultWebsiteSections: WebsiteBuilderSection[] = [
-  { id: "hero", order: 0, type: "hero", visible: true },
-  { id: "featured", order: 1, type: "featured", visible: true },
-  { id: "about", order: 2, type: "about", visible: true },
-  { id: "testimonials", order: 3, type: "testimonials", visible: false },
-  { id: "contact", order: 4, type: "contact", visible: true },
-  { id: "search", order: 5, type: "search", visible: false },
-  { id: "all_properties", order: 6, type: "all_properties", visible: false },
-];
+export const defaultWebsiteSections: WebsiteBuilderSection[] =
+  DEFAULT_STOREFRONT_SECTIONS.map((section) => ({ ...section }));
 
 export function normalizeWebsiteTemplateId(
   value: string | null | undefined,
@@ -116,22 +121,82 @@ export function createWebsiteConfigFromSettings(
   settings: StoreSettingsSnapshot,
 ): WebsiteBuilderConfig {
   const theme = toRecord(settings.publicSite.theme);
+  const legacyAbout = toRecord(theme.about);
   const socialLinks = toRecord(theme.socialLinks);
   const contact = toRecord(theme.contact);
+  const footer = toRecord(theme.footer);
   const seo = toRecord(theme.seo);
   const fonts = toRecord(theme.fonts);
   return {
-    aboutImageUrl: stringOrNull(theme.aboutImageUrl),
-    aboutText: stringOrNull(theme.aboutText),
-    aboutTitle: stringOrNull(theme.aboutTitle),
+    aboutButtonText:
+      stringOrNull(theme.aboutButtonText) ??
+      stringOrNull(legacyAbout.button_text) ??
+      DEFAULT_PUBLIC_STOREFRONT_THEME.about.button_text,
+    aboutCuradoriaText:
+      stringOrNull(theme.aboutCuradoriaText) ??
+      stringOrNull(legacyAbout.curadoria_text) ??
+      DEFAULT_PUBLIC_STOREFRONT_THEME.about.curadoria_text,
+    aboutFeatures: readAboutFeatures(
+      theme.aboutFeatures ?? legacyAbout.features,
+    ),
+    aboutImage2Url:
+      stringOrNull(theme.aboutImage2Url) ??
+      stringOrNull(legacyAbout.image2_url) ??
+      DEFAULT_STOREFRONT_ABOUT_IMAGES.secondary,
+    aboutImageUrl:
+      stringOrNull(theme.aboutImageUrl) ??
+      stringOrNull(legacyAbout.image1_url) ??
+      DEFAULT_STOREFRONT_ABOUT_IMAGES.primary,
+    aboutText:
+      stringOrNull(theme.aboutText) ??
+      stringOrNull(legacyAbout.description) ??
+      DEFAULT_PUBLIC_STOREFRONT_THEME.about.description,
+    aboutTitle:
+      stringOrNull(theme.aboutTitle) ??
+      stringOrNull(legacyAbout.title) ??
+      DEFAULT_PUBLIC_STOREFRONT_THEME.about.title,
+    aboutWhyText:
+      stringOrNull(theme.aboutWhyText) ??
+      stringOrNull(legacyAbout.why_text) ??
+      DEFAULT_PUBLIC_STOREFRONT_THEME.about.why_text,
+    aboutWhyTitle:
+      stringOrNull(theme.aboutWhyTitle) ??
+      stringOrNull(legacyAbout.why_title) ??
+      DEFAULT_PUBLIC_STOREFRONT_THEME.about.why_title,
     accentColor: stringOrDefault(theme.accentColor, hex("C9A84C")),
     appearanceMode: readAppearanceMode(theme.appearanceMode),
     backgroundColor: stringOrDefault(theme.backgroundColor, hex("F8F5F0")),
     brandColor: stringOrDefault(theme.brandColor, hex("1A1A1A")),
     contact: {
       address: stringOrNull(contact.address) ?? formatAddress(settings.profile),
+      businessHours:
+        stringOrNull(contact.businessHours) ??
+        stringOrNull(businessHoursToText(settings.profile.businessHours)) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.businessHours,
+      description1:
+        stringOrNull(contact.description1) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.description1,
+      description2:
+        stringOrNull(contact.description2) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.description2,
       email: stringOrNull(contact.email) ?? settings.profile.contactEmail,
+      mapEmbedUrl: stringOrNull(contact.mapEmbedUrl),
       phone: stringOrNull(contact.phone) ?? settings.profile.contactPhone,
+      phone2: stringOrNull(contact.phone2),
+      phone2Label:
+        stringOrNull(contact.phone2Label) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.phone2Label,
+      phone3: stringOrNull(contact.phone3),
+      phone3Label:
+        stringOrNull(contact.phone3Label) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.phone3Label,
+      phoneLabel:
+        stringOrNull(contact.phoneLabel) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.phoneLabel,
+      showMap: contact.showMap !== false,
+      title:
+        stringOrNull(contact.title) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.title,
     },
     corretorCreci: stringOrNull(theme.corretorCreci),
     corretorName:
@@ -142,22 +207,36 @@ export function createWebsiteConfigFromSettings(
       stringOrNull(theme.favicon_url) ??
       stringOrNull(theme.logoIconUrl) ??
       stringOrNull(theme.logo_icon_url),
+    footer: {
+      cnpj: stringOrNull(footer.cnpj) ?? settings.profile.documentNumber,
+      extraInfo:
+        stringOrNull(footer.extraInfo) ?? stringOrNull(footer.extra_info),
+    },
     fonts: {
       body: stringOrNull(fonts.body) ?? "Inter",
       heading: stringOrNull(fonts.heading) ?? "Bricolage Grotesque",
     },
     heroBannerUrls: readHeroBannerUrls(
       theme.heroBannerUrls,
-      settings.publicSite.heroImageUrl,
+      stringOrNull(theme.heroBannerDesktopUrl) ??
+        stringOrNull(theme.banner_pc_url) ??
+        settings.publicSite.heroImageUrl,
     ),
+    heroBannerMobileUrl:
+      stringOrNull(theme.heroBannerMobileUrl) ??
+      stringOrNull(theme.banner_mobile_url),
     heroImageUrl: settings.publicSite.heroImageUrl,
-    heroMediaSource: readHeroMediaSource(theme.heroMediaSource),
+    heroMediaSource: readHeroMediaSource(
+      theme.heroMediaSource ?? DEFAULT_PUBLIC_STOREFRONT_THEME.heroMediaSource,
+    ),
     heroSubtitle:
-      stringOrNull(theme.heroSubtitle) ?? settings.publicSite.seoDescription,
+      stringOrNull(theme.heroSubtitle) ??
+      settings.publicSite.seoDescription ??
+      DEFAULT_PUBLIC_STOREFRONT_THEME.heroSubtitle,
     heroTitle:
       stringOrNull(theme.heroTitle) ??
       stringOrNull(theme.headline) ??
-      "Encontre o veículo ideal para sua garagem",
+      DEFAULT_PUBLIC_STOREFRONT_THEME.heroTitle,
     logoUrl: settings.profile.logoImageUrl ?? stringOrNull(theme.logoUrl),
     sections: readSections(theme.sections),
     seo: {
@@ -194,11 +273,17 @@ export function applyWebsiteConfigToSettings(
   const nextTheme = {
     ...settings.publicSite.theme,
     ...configTheme,
+    banner_mobile_url: null,
+    banner_pc_url: null,
+    heroBannerDesktopUrl:
+      config.heroBannerUrls[0] ?? config.heroImageUrl ?? null,
+    heroBannerMobileUrl: config.heroBannerMobileUrl ?? null,
   };
   return {
     ...settings,
     profile: {
       ...settings.profile,
+      businessHours: textToBusinessHours(config.contact.businessHours ?? ""),
       contactEmail: config.contact.email ?? null,
       contactPhone: config.contact.phone ?? null,
       logoImageUrl: config.logoUrl ?? null,
@@ -248,16 +333,36 @@ function isWebsiteSection(value: unknown): value is WebsiteBuilderSection {
 }
 
 function readTestimonials(value: unknown): WebsiteBuilderTestimonial[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is WebsiteBuilderTestimonial => {
-    const testimonial = toRecord(item);
-    return (
-      typeof testimonial.id === "string" &&
-      typeof testimonial.quote === "string" &&
-      typeof testimonial.name === "string" &&
-      typeof testimonial.role === "string"
-    );
+  if (!Array.isArray(value)) {
+    return DEFAULT_STOREFRONT_TESTIMONIALS.map((testimonial) => ({
+      ...testimonial,
+    }));
+  }
+  const testimonials = value.filter(
+    (item): item is WebsiteBuilderTestimonial => {
+      const testimonial = toRecord(item);
+      return (
+        typeof testimonial.id === "string" &&
+        typeof testimonial.quote === "string" &&
+        typeof testimonial.name === "string" &&
+        typeof testimonial.role === "string"
+      );
+    },
+  );
+  return testimonials;
+}
+
+function readAboutFeatures(value: unknown): WebsiteBuilderAboutFeature[] {
+  if (!Array.isArray(value)) {
+    return DEFAULT_STOREFRONT_ABOUT_FEATURES.map((feature) => ({ ...feature }));
+  }
+  const features = value.flatMap((item) => {
+    const feature = toRecord(item);
+    const title = stringOrNull(feature.title);
+    const description = stringOrNull(feature.description);
+    return title && description ? [{ description, title }] : [];
   });
+  return features;
 }
 
 function formatAddress(profile: StoreSettingsSnapshot["profile"]) {

@@ -7,6 +7,11 @@ describe("adaptQuadraStorefront", () => {
   it("prefers V2 camelCase config and keeps V1 raw-theme fallbacks", () => {
     const data = withTheme({
       heroBannerUrls: ["https://cdn.test/new-banner.jpg"],
+      heroBannerButtonText: "Ver todos",
+      heroBannerMobileUrl: "https://cdn.test/new-banner-mobile.jpg",
+      heroBannerMode: true,
+      heroBannerShowButton: true,
+      heroBannerShowText: false,
       heroTitle: "Título V2",
       hero_banners: ["https://cdn.test/legacy-banner.jpg"],
       hero_subtitle: "Subtítulo legado",
@@ -30,6 +35,13 @@ describe("adaptQuadraStorefront", () => {
     expect(model.hero.title).toBe("Título V2");
     expect(model.hero.subtitle).toBe("Subtítulo legado");
     expect(model.hero.bannerUrls).toEqual(["https://cdn.test/new-banner.jpg"]);
+    expect(model.hero.bannerMobileUrl).toBe(
+      "https://cdn.test/new-banner-mobile.jpg",
+    );
+    expect(model.hero.bannerMode).toBe(true);
+    expect(model.hero.bannerShowText).toBe(false);
+    expect(model.hero.bannerShowButton).toBe(true);
+    expect(model.hero.bannerButtonText).toBe("Ver todos");
     expect(model.hero.mediaSource).toBe("banners");
     expect(model.logoUrl).toBe("https://cdn.test/logo.svg");
     expect(model.logoWidth).toBe(180);
@@ -47,7 +59,36 @@ describe("adaptQuadraStorefront", () => {
     ]);
   });
 
-  it("prefers the public V2 profile address and hours over theme fallbacks", () => {
+  it("maps raw V1 responsive banner fields and keeps a V2 vehicle override", () => {
+    const legacy = adaptQuadraStorefront(
+      withTheme({
+        banner_button_text: "Explorar veículos",
+        banner_mobile_url: "https://cdn.test/mobile.jpg",
+        banner_mode: true,
+        banner_pc_url: "https://cdn.test/desktop.jpg",
+        banner_show_button: true,
+        banner_show_text: true,
+      }),
+    );
+    const v2Override = adaptQuadraStorefront(
+      withTheme({
+        banner_mode: true,
+        hero_banners: ["https://cdn.test/banner.jpg"],
+        heroMediaSource: "vehicles",
+      }),
+    );
+
+    expect(legacy.hero.mediaSource).toBe("banners");
+    expect(legacy.hero.bannerUrls).toEqual(["https://cdn.test/desktop.jpg"]);
+    expect(legacy.hero.bannerMobileUrl).toBe("https://cdn.test/mobile.jpg");
+    expect(legacy.hero.bannerShowText).toBe(true);
+    expect(legacy.hero.bannerShowButton).toBe(true);
+    expect(legacy.hero.bannerButtonText).toBe("Explorar veículos");
+    expect(v2Override.hero.mediaSource).toBe("vehicles");
+    expect(v2Override.hero.bannerUrls).toEqual([]);
+  });
+
+  it("prefers the editable theme address and profile business hours", () => {
     const data = withTheme({
       business_hours: "Horario legado",
       contact: { address: "Endereco legado" },
@@ -55,13 +96,11 @@ describe("adaptQuadraStorefront", () => {
 
     const model = adaptQuadraStorefront(data);
 
-    expect(model.contact.address).toBe(
-      "Avenida Paulista, 1000, Bela Vista, Sao Paulo - SP, 01310-100",
-    );
+    expect(model.contact.address).toBe("Endereco legado");
     expect(model.contact.businessHours).toBe("Segunda a sexta, 9h as 18h");
   });
 
-  it("formats keyed V2 business hours for the classic contact section", () => {
+  it("formats keyed V2 business hours for the Modern contact section", () => {
     const data = {
       ...withTheme({}),
       settings: {
@@ -106,6 +145,14 @@ describe("adaptQuadraStorefront", () => {
     const contact = adaptQuadraStorefront(data).contact;
     expect(contact.address).toBe("Rua Legada, 50");
     expect(contact.businessHours).toBe("Segunda a sexta, 8h as 17h");
+  });
+
+  it("prefers a storefront-specific address over the profile address", () => {
+    const model = adaptQuadraStorefront(
+      withTheme({ contact: { address: "Rua da Vitrine, 42" } }),
+    );
+
+    expect(model.contact.address).toBe("Rua da Vitrine, 42");
   });
 
   it("uses the canonical vehicle-first hero resolver semantics", () => {
@@ -156,6 +203,69 @@ describe("adaptQuadraStorefront", () => {
 
     expect(model.hero.imageUrl).toBe("https://cdn.test/classic-hero.jpg");
     expect(model.hero.bannerUrls).toEqual([]);
+  });
+
+  it("fills empty tenants with editable Modern defaults", () => {
+    const model = adaptQuadraStorefront(withTheme({}));
+
+    expect(model.about.image1Url).toBe("/images/storefront/about-store.webp");
+    expect(model.about.image2Url).toBe(
+      "/images/storefront/about-showroom.webp",
+    );
+    expect(model.about.features).toHaveLength(4);
+    expect(model.testimonials).toHaveLength(3);
+    expect(model.contact.showMap).toBe(true);
+    expect(model.contact.description1).toContain("Entre em contato");
+  });
+
+  it("preserves intentionally cleared differentials and reads legal footer copy", () => {
+    const model = adaptQuadraStorefront(
+      withTheme({
+        aboutFeatures: [],
+        footer: {
+          cnpj: "12.345.678/0001-90",
+          extraInfo: "Desde 1999",
+        },
+      }),
+    );
+
+    expect(model.about.features).toEqual([]);
+    expect(model.footer).toEqual({
+      cnpj: "12.345.678/0001-90",
+      extraInfo: "Desde 1999",
+    });
+  });
+
+  it("accepts only Google HTTPS embeds for the public map", () => {
+    const accepted = adaptQuadraStorefront(
+      withTheme({
+        contact: {
+          mapEmbedUrl: "https://www.google.com/maps/embed?pb=test",
+          showMap: true,
+        },
+      }),
+    );
+    const rejected = adaptQuadraStorefront(
+      withTheme({
+        contact: {
+          mapEmbedUrl: "https://example.com/untrusted",
+          showMap: true,
+        },
+      }),
+    );
+
+    expect(accepted.contact.mapEmbedUrl).toContain("google.com/maps/embed");
+    expect(rejected.contact.mapEmbedUrl).toBeNull();
+  });
+
+  it("maps the V1 Modern landing-page lead form flag", () => {
+    expect(
+      adaptQuadraStorefront(withTheme({ lead_form: { show_on_lp: true } }))
+        .leadForm.showOnLandingPage,
+    ).toBe(true);
+    expect(
+      adaptQuadraStorefront(withTheme({})).leadForm.showOnLandingPage,
+    ).toBe(false);
   });
 });
 

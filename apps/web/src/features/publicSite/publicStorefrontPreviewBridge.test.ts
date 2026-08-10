@@ -10,10 +10,21 @@ describe("public storefront preview bridge", () => {
     const accentColor = ["#", "C9A84C"].join("");
     const preview = mergeWebsiteBuilderPreviewPayload(null, {
       accentColor,
+      appearanceMode: "both",
+      aboutButtonText: "Conheça a loja",
+      aboutCuradoriaText: "Seleção feita por especialistas.",
+      aboutFeatures: [
+        { description: "Compra com confiança", title: "Procedência" },
+      ],
+      aboutImage2Url: "https://cdn.local/about-showroom.jpg",
+      aboutWhyText: "Atendimento do início ao pós-venda.",
+      aboutWhyTitle: "Por que comprar aqui?",
+      footer: { cnpj: "12.345.678/0001-90", extraInfo: "Desde 1999" },
       heroBannerUrls: [
         "https://cdn.local/banner-1.jpg",
         "https://cdn.local/banner-2.jpg",
       ],
+      heroBannerMobileUrl: "https://cdn.local/banner-mobile.jpg",
       heroImageUrl: "https://cdn.local/preview-hero.jpg",
       heroMediaSource: "banners",
       heroSubtitle: "Atendimento direto",
@@ -40,10 +51,22 @@ describe("public storefront preview bridge", () => {
     expect(data.settings.site.seoDescription).toBe("Atendimento direto");
     expect(data.settings.site.theme).toMatchObject({
       accentColor,
+      appearanceMode: "both",
+      aboutButtonText: "Conheça a loja",
+      aboutCuradoriaText: "Seleção feita por especialistas.",
+      aboutFeatures: [
+        { description: "Compra com confiança", title: "Procedência" },
+      ],
+      aboutImage2Url: "https://cdn.local/about-showroom.jpg",
+      aboutWhyText: "Atendimento do início ao pós-venda.",
+      aboutWhyTitle: "Por que comprar aqui?",
+      footer: { cnpj: "12.345.678/0001-90", extraInfo: "Desde 1999" },
       heroBannerUrls: [
         "https://cdn.local/banner-1.jpg",
         "https://cdn.local/banner-2.jpg",
       ],
+      heroBannerDesktopUrl: "https://cdn.local/banner-1.jpg",
+      heroBannerMobileUrl: "https://cdn.local/banner-mobile.jpg",
       heroMediaSource: "banners",
       headline: "Garagem premium",
       logoUrl: "https://cdn.local/logo.png",

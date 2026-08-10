@@ -6,6 +6,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PublicStorefront } from "../PublicStorefront";
@@ -57,7 +58,7 @@ describe("PublicStorefront QUADRA renderer", () => {
     expect(onOpenListing).toHaveBeenCalledWith("fiat-toro-2023");
   });
 
-  it("filters the landing-page stock and keeps multi-photo card navigation local", () => {
+  it("keeps all landing-page stock visible and multi-photo navigation local", () => {
     const onOpenListing = vi.fn();
     const data = quadraData();
     const firstListing = data.listings[0];
@@ -68,7 +69,10 @@ describe("PublicStorefront QUADRA renderer", () => {
     ];
     renderStorefront(data, onOpenListing);
 
-    const image = screen.getByAltText("Fiat Toro Volcano 2023");
+    const image = screen
+      .getAllByAltText("Fiat Toro Volcano 2023")
+      .find((candidate) => candidate.getAttribute("loading") === "lazy");
+    if (!image) throw new Error("vehicle card image must render");
     expect(image).toHaveAttribute("src", "https://cdn.test/front.jpg");
     expect(image).toHaveAttribute("loading", "lazy");
     fireEvent.click(
@@ -79,12 +83,11 @@ describe("PublicStorefront QUADRA renderer", () => {
     expect(image).toHaveAttribute("src", "https://cdn.test/rear.jpg");
     expect(onOpenListing).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar carros" }), {
-      target: { value: "Renegade" },
-    });
     expect(
-      screen.queryByText("Fiat Toro Volcano 2023"),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", {
+        name: "Abrir detalhes de Fiat Toro Volcano 2023",
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
         name: "Abrir detalhes de Jeep Renegade Longitude 2022",
@@ -256,11 +259,13 @@ describe("PublicStorefront QUADRA renderer", () => {
         "https://cdn.test/banner-1.jpg",
         "https://cdn.test/banner-2.jpg",
       ],
+      hero_banner_autoplay: true,
+      hero_banner_speed: 4000,
       heroMediaSource: "banners",
     };
     renderStorefront(data, vi.fn());
-    const viewport = document.querySelector(".quadra-banner__viewport");
-    if (!viewport) throw new Error("banner viewport must render");
+    const viewport = document.querySelector(".quadra-hero__stage");
+    if (!viewport) throw new Error("hero viewport must render");
 
     fireEvent.mouseEnter(viewport);
     await act(async () => vi.advanceTimersByTime(8000));
@@ -268,7 +273,8 @@ describe("PublicStorefront QUADRA renderer", () => {
       "src",
       "https://cdn.test/banner-1.jpg",
     );
-    fireEvent.mouseLeave(viewport);
+    await act(async () => fireEvent.mouseLeave(viewport));
+    await act(async () => Promise.resolve());
     await act(async () => vi.advanceTimersByTime(4000));
     expect(screen.getByAltText("Banner promocional 2")).toHaveAttribute(
       "src",
@@ -276,7 +282,7 @@ describe("PublicStorefront QUADRA renderer", () => {
     );
 
     const previousButton = screen.getByRole("button", {
-      name: "Banner anterior",
+      name: "Destaque anterior",
     });
     fireEvent.focus(previousButton);
     await act(async () => vi.advanceTimersByTime(4000));
@@ -293,11 +299,51 @@ describe("PublicStorefront QUADRA renderer", () => {
     ).toBeInTheDocument();
     expect(document.querySelector("[data-quadra-classic]")).toBeNull();
   });
+
+  it("submits the V1 Modern landing-page lead form without a listing", async () => {
+    const data = quadraData();
+    data.settings.site.theme = {
+      ...data.settings.site.theme,
+      lead_form: { show_on_lp: true },
+    };
+    const onSubmitStorefrontInterest = vi.fn(async () => ({
+      deduplicated: false,
+      lead: { id: "lead-lp", source: "public_site" as const, status: "new" },
+    }));
+    renderStorefront(data, vi.fn(), onSubmitStorefrontInterest);
+
+    fireEvent.change(screen.getByLabelText("Nome"), {
+      target: { value: "Ana Cliente" },
+    });
+    fireEvent.change(screen.getByLabelText("Telefone"), {
+      target: { value: "(11) 99999-9999" },
+    });
+    fireEvent.change(screen.getByLabelText("E-mail"), {
+      target: { value: "ana@example.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Tenho interesse" }));
+
+    await waitFor(() =>
+      expect(onSubmitStorefrontInterest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          buyerName: "Ana Cliente",
+          buyerPhone: "11999999999",
+          buyerEmail: "ana@example.com",
+          message: "Olá, tenho interesse. Por favor entre em contato.",
+          website: "",
+        }),
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("Interesse enviado"),
+    );
+  });
 });
 
 function renderStorefront(
   data: PublicStorefrontPageData,
   onOpenListing: (slug: string) => void,
+  onSubmitStorefrontInterest = vi.fn(),
 ) {
   return render(
     <PublicStorefront
@@ -307,6 +353,7 @@ function renderStorefront(
       onOpenListing={onOpenListing}
       onRetryListing={vi.fn()}
       onSubmitListingInterest={vi.fn()}
+      onSubmitStorefrontInterest={onSubmitStorefrontInterest}
     />,
   );
 }

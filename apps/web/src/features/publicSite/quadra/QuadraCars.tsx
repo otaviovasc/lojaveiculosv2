@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { DEFAULT_STOREFRONT_VEHICLE_IMAGE } from "@lojaveiculosv2/shared";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type MouseEvent, useState } from "react";
 import {
   formatPublicVehicleMileage,
@@ -17,6 +18,16 @@ export function QuadraCars({ listings, onOpenListing }: QuadraCarsProps) {
   return (
     <section className="quadra-cars" id="cars">
       <div className="quadra-container">
+        <header className="quadra-cars__heading">
+          <div className="quadra-modern-divider" />
+          <span>Nossas ofertas</span>
+          <div>
+            <h2>
+              Nosso <strong className="quadra-accent-text">estoque</strong>
+            </h2>
+            <p>{listings.length} veículos disponíveis</p>
+          </div>
+        </header>
         {listings.length ? (
           <div className="quadra-cars__grid">
             {listings.map((listing) => (
@@ -59,27 +70,22 @@ function QuadraVehicleCard({
   return (
     <article className="quadra-car-card">
       <div className="quadra-car-card__media">
-        {selectedMedia ? (
-          <img
-            alt={selectedMedia.altText ?? listing.title}
-            decoding="async"
-            loading="lazy"
-            src={selectedMedia.url}
-          />
-        ) : (
-          <div className="quadra-car-card__placeholder">
-            <span>
-              <ImageIcon aria-hidden="true" />
-            </span>
-            <strong>{listing.title}</strong>
-            <small>Foto em breve</small>
-          </div>
-        )}
+        <img
+          alt={selectedMedia?.altText ?? `${listing.title}: foto em preparação`}
+          decoding="async"
+          loading="lazy"
+          src={selectedMedia?.url ?? DEFAULT_STOREFRONT_VEHICLE_IMAGE}
+        />
+        <div className="quadra-car-card__overlay" />
 
         {listing.commercialTags[0] ? (
           <span className="quadra-car-card__badge">
             {listing.commercialTags[0]}
           </span>
+        ) : null}
+
+        {listing.fuelType ? (
+          <span className="quadra-car-card__fuel">{listing.fuelType}</span>
         ) : null}
 
         {media.length > 1 ? (
@@ -142,7 +148,7 @@ function QuadraVehicleCard({
           }}
           type="button"
         >
-          Clique para ver detalhes
+          + Detalhes
         </button>
       </div>
     </article>

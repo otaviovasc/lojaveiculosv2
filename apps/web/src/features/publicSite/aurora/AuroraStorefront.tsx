@@ -1,28 +1,36 @@
+import { MessageCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { SectionSpec, StorefrontConfig } from "../config/types";
 import { searchListings } from "../publicStorefrontTheme";
-import type { PublicStorefrontPageData } from "../types";
+import type {
+  PublicStorefrontLeadInput,
+  PublicStorefrontLeadResult,
+  PublicStorefrontPageData,
+} from "../types";
 import { adaptQuadraStorefront } from "../quadra/quadraAdapter";
+import { AuroraAbout } from "./AuroraAbout";
+import { AuroraContact } from "./AuroraContact";
+import { AuroraFooter } from "./AuroraFooter";
 import { AuroraHeader } from "./AuroraHeader";
 import { AuroraHero } from "./AuroraHero";
 import { AuroraInventory } from "./AuroraInventory";
-import {
-  AuroraAbout,
-  AuroraContact,
-  AuroraFooter,
-  AuroraTestimonials,
-} from "./AuroraSections";
+import { AuroraTestimonials } from "./AuroraTestimonials";
+import { createAuroraWhatsappUrl } from "./auroraContactModel";
 
 type AuroraStorefrontProps = {
   config: StorefrontConfig;
   data: PublicStorefrontPageData;
   onOpenListing: (listingSlug: string) => void;
+  onSubmitStorefrontInterest: (
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export function AuroraStorefront({
   config,
   data,
   onOpenListing,
+  onSubmitStorefrontInterest,
 }: AuroraStorefrontProps) {
   const [query, setQuery] = useState("");
   const model = useMemo(() => adaptQuadraStorefront(data), [data]);
@@ -41,10 +49,13 @@ export function AuroraStorefront({
 
   return (
     <div className="aurora-modern">
+      <a className="aurora-skip-link" href="#aurora-main-content">
+        Pular para o conteúdo
+      </a>
       {visibleTypes.has("header") ? (
         <AuroraHeader model={model} visibleSections={visibleTypes} />
       ) : null}
-      <main>
+      <main id="aurora-main-content">
         {sections.map((section) => {
           switch (section.type) {
             case "header":
@@ -74,13 +85,33 @@ export function AuroraStorefront({
             case "about":
               return <AuroraAbout key={section.id} model={model} />;
             case "lead":
-              return <AuroraContact key={section.id} model={model} />;
+              return (
+                <AuroraContact
+                  key={section.id}
+                  model={model}
+                  onSubmitInterest={onSubmitStorefrontInterest}
+                />
+              );
             default:
               return null;
           }
         })}
       </main>
-      {visibleTypes.has("footer") ? <AuroraFooter model={model} /> : null}
+      {visibleTypes.has("footer") ? (
+        <AuroraFooter model={model} visibleSections={visibleTypes} />
+      ) : null}
+      {model.contact.whatsappUrl ? (
+        <a
+          aria-label="Conversar com a loja no WhatsApp"
+          className="aurora-whatsapp-fab"
+          href={createAuroraWhatsappUrl(model.contact.whatsappUrl)}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <MessageCircle aria-hidden="true" />
+          <span>Falar com a loja</span>
+        </a>
+      ) : null}
     </div>
   );
 }

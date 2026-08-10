@@ -60,6 +60,7 @@ describe("PublicStorefrontPage states", () => {
         store: publicStorefrontPreview.store,
       }),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     render(
@@ -86,6 +87,7 @@ describe("PublicStorefrontPage states", () => {
         Promise.reject(new AppApiError({ message: "missing", status: 404 })),
       listListings: vi.fn(),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     render(
@@ -123,6 +125,7 @@ describe("PublicCustomPageRoute states", () => {
       getSettings: vi.fn(),
       listListings: vi.fn(),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     render(
@@ -155,6 +158,7 @@ describe("PublicCustomPageRoute states", () => {
       getSettings: vi.fn(),
       listListings: vi.fn(),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     render(

@@ -4,9 +4,11 @@ import {
   Eye,
   Globe,
   Loader2,
+  Moon,
   Palette,
   Save,
   Smartphone,
+  Sun,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -120,7 +122,7 @@ export function WebsiteBuilderDesign({
   };
 
   return (
-    <div className="website-builder-surface flex h-[calc(100dvh-4rem)] w-full flex-col overflow-hidden text-foreground lg:h-dvh">
+    <div className="website-builder-surface flex h-[calc(100dvh-3.5rem)] w-full flex-col overflow-hidden text-foreground md:h-[calc(100dvh-4rem)] lg:h-dvh">
       <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-card/80 px-4 py-2.5 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
@@ -133,6 +135,30 @@ export function WebsiteBuilderDesign({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            aria-label="Alternar tema da prévia"
+            className="hidden xs:flex"
+            onClick={() =>
+              updateConfig(
+                "appearanceMode",
+                config.appearanceMode === "dark" ? "light" : "dark",
+              )
+            }
+            size="sm"
+            title={`Tema atual: ${config.appearanceMode === "dark" ? "Escuro" : "Claro"}. Clique para alternar.`}
+            type="button"
+            variant="outline"
+          >
+            {config.appearanceMode === "dark" ? (
+              <Moon className="mr-1.5 h-3.5 w-3.5 text-indigo-400" />
+            ) : (
+              <Sun className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
+            )}
+            <span className="hidden sm:inline">
+              {config.appearanceMode === "dark" ? "Escuro" : "Claro"}
+            </span>
+          </Button>
+
           <Button
             aria-pressed={isPublished}
             disabled={isSaving}
@@ -317,7 +343,7 @@ function WebsiteBuilderMobileTabs({
             className={cn(
               "flex flex-1 items-center justify-center gap-2 border-b-2 py-2.5 text-xs font-semibold transition-colors",
               active === value
-                ? "border-accent-strong bg-accent/10 text-accent-strong"
+                ? "border-primary bg-primary/10 text-primary"
                 : "border-transparent text-muted-foreground",
             )}
             key={item.value}

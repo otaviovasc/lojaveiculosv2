@@ -3,6 +3,12 @@ import type {
   PublicVehicleListing,
   PublicVehicleMedia,
 } from "../types";
+import {
+  DEFAULT_PUBLIC_STOREFRONT_THEME,
+  DEFAULT_STOREFRONT_ABOUT_FEATURES,
+  DEFAULT_STOREFRONT_ABOUT_IMAGES,
+  DEFAULT_STOREFRONT_TESTIMONIALS,
+} from "@lojaveiculosv2/shared";
 import { resolvePublicStorefrontHeroMedia } from "../PublicStorefrontHeroMedia";
 
 export type QuadraFeature = { description: string; title: string };
@@ -17,8 +23,12 @@ export type QuadraTestimonial = {
 
 export type QuadraStorefrontModel = {
   about: {
+    buttonText: string;
+    curadoriaText: string;
     description: string;
     features: readonly QuadraFeature[];
+    image1Url: string;
+    image2Url: string;
     title: string;
     visualSubtitle: string;
     visualTitle: string;
@@ -34,11 +44,26 @@ export type QuadraStorefrontModel = {
     instagramUrl: string | null;
     mapEmbedUrl: string | null;
     phone: string | null;
+    phone2: string | null;
+    phone2Label: string;
+    phone3: string | null;
+    phone3Label: string;
+    phoneLabel: string;
+    showMap: boolean;
     title: string;
     whatsappUrl: string | null;
   };
+  footer: {
+    cnpj: string | null;
+    extraInfo: string | null;
+  };
   hero: {
     autoplay: boolean;
+    bannerButtonText: string;
+    bannerMobileUrl: string | null;
+    bannerMode: boolean;
+    bannerShowButton: boolean;
+    bannerShowText: boolean;
     bannerUrls: readonly string[];
     imageKind: "image" | "video";
     imageUrl: string | null;
@@ -46,6 +71,10 @@ export type QuadraStorefrontModel = {
     speed: number;
     subtitle: string;
     title: string;
+    vehicles: readonly PublicVehicleListing[];
+  };
+  leadForm: {
+    showOnLandingPage: boolean;
   };
   logoUrl: string | null;
   logoWidth: number;
@@ -53,18 +82,8 @@ export type QuadraStorefrontModel = {
   testimonials: readonly QuadraTestimonial[];
 };
 
-const defaultFeatures: readonly QuadraFeature[] = [
-  { description: "Carros, motos e SUVs", title: "Veículos bem Cuidados" },
-  {
-    description: "Segurança em cada negociação",
-    title: "Garantia Total",
-  },
-  {
-    description: "Atendimento personalizado",
-    title: "Equipe Especializada",
-  },
-  { description: "Tradição em bons negócios", title: "Desde 2023" },
-];
+const defaultFeatures: readonly QuadraFeature[] =
+  DEFAULT_STOREFRONT_ABOUT_FEATURES;
 
 export function adaptQuadraStorefront(
   data: PublicStorefrontPageData,
@@ -73,27 +92,51 @@ export function adaptQuadraStorefront(
   const about = record(theme.about);
   const contact = record(theme.contact);
   const contactExtras = record(theme.contact_extras);
+  const footer = record(theme.footer);
   const legacySettings = record(theme.settings);
+  const leadForm = record(theme.lead_form);
+  const modernLeadForm = record(theme.leadForm);
   const socialLinks = record(theme.socialLinks);
-  const testimonials = Array.isArray(theme.testimonials)
+  const configuredTestimonials = Array.isArray(theme.testimonials)
     ? theme.testimonials.flatMap(readTestimonial)
     : [];
-  const configuredFeatures = Array.isArray(about.features)
-    ? about.features.flatMap(readFeature)
+  const testimonials =
+    configuredTestimonials.length || Array.isArray(theme.testimonials)
+      ? configuredTestimonials
+      : DEFAULT_STOREFRONT_TESTIMONIALS.flatMap(readTestimonial);
+  const featureSource = Array.isArray(theme.aboutFeatures)
+    ? theme.aboutFeatures
+    : about.features;
+  const configuredFeatures = Array.isArray(featureSource)
+    ? featureSource.flatMap(readFeature)
     : [];
   const heroBannerUrls = firstStrings(theme.heroBannerUrls, theme.hero_banners);
+  const heroBannerDesktopUrl =
+    text(theme.heroBannerDesktopUrl) ?? text(theme.banner_pc_url);
+  const heroBannerMobileUrl =
+    text(theme.heroBannerMobileUrl) ?? text(theme.banner_mobile_url);
+  const heroBannerMode =
+    boolean(theme.heroBannerMode) ?? boolean(theme.banner_mode) ?? false;
   const heroImageUrl =
     data.settings.site.heroImageUrl ?? text(theme.hero_image_url);
+  const configuredHeroMediaSource = readConfiguredMediaSource(
+    theme.heroMediaSource,
+  );
+  const legacyHeroTemplateIsBanner = theme.hero_template === "banner";
   const heroMediaSource =
-    theme.hero_template === "banner"
-      ? "banners"
-      : readMediaSource(theme.heroMediaSource);
+    configuredHeroMediaSource ??
+    (heroBannerMode || legacyHeroTemplateIsBanner ? "banners" : "auto");
+  const desktopBannerUrls = heroBannerUrls.length
+    ? heroBannerUrls
+    : heroBannerDesktopUrl
+      ? [heroBannerDesktopUrl]
+      : [];
   const heroMedia = resolvePublicStorefrontHeroMedia({
     heroImageUrl,
     listings: data.listings,
     theme: {
       ...theme,
-      heroBannerUrls,
+      heroBannerUrls: desktopBannerUrls,
       heroMediaSource,
     },
   });
@@ -101,64 +144,130 @@ export function adaptQuadraStorefront(
 
   return {
     about: {
+      buttonText:
+        text(theme.aboutButtonText) ??
+        text(about.button_text) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.about.button_text,
+      curadoriaText:
+        text(theme.aboutCuradoriaText) ??
+        text(about.curadoria_text) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.about.curadoria_text,
       description:
         text(theme.aboutText) ??
         text(about.description) ??
-        "Especialistas em conectar você aos melhores negócios em veículos. Encontre o carro dos seus sonhos com as condições mais vantajosas do mercado.",
-      features: configuredFeatures.length
+        DEFAULT_PUBLIC_STOREFRONT_THEME.about.description,
+      features: Array.isArray(featureSource)
         ? configuredFeatures
         : defaultFeatures,
-      title: text(theme.aboutTitle) ?? text(about.title) ?? "Sobre Nós",
+      image1Url:
+        text(theme.aboutImageUrl) ??
+        text(about.image1_url) ??
+        DEFAULT_STOREFRONT_ABOUT_IMAGES.primary,
+      image2Url:
+        text(theme.aboutImage2Url) ??
+        text(about.image2_url) ??
+        DEFAULT_STOREFRONT_ABOUT_IMAGES.secondary,
+      title:
+        text(theme.aboutTitle) ??
+        text(about.title) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.about.title,
       visualSubtitle: text(about.visual_subtitle) ?? "Carros, motos e SUVs",
       visualTitle: text(about.visual_title) ?? "Do Clássico ao Moderno",
       whyText:
+        text(theme.aboutWhyText) ??
         text(about.why_text) ??
-        "Combinamos experiência e atendimento personalizado para garantir que você encontre exatamente o que procura, com total segurança.",
-      whyTitle: text(about.why_title) ?? "Por Que Escolher a Gente?",
+        DEFAULT_PUBLIC_STOREFRONT_THEME.about.why_text,
+      whyTitle:
+        text(theme.aboutWhyTitle) ??
+        text(about.why_title) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.about.why_title,
     },
     contact: {
       address:
-        formatProfileAddress(data.settings.contact) ??
         text(contact.address) ??
         text(contactExtras.address_full) ??
+        formatProfileAddress(data.settings.contact) ??
         data.settings.contact.city,
       businessHours:
         formatBusinessHours(data.settings.contact.businessHours) ??
         text(contact.businessHours) ??
         text(theme.businessHours) ??
         text(theme.business_hours) ??
-        text(legacySettings.business_hours),
+        text(legacySettings.business_hours) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.businessHours,
       description1:
         text(contact.description1) ??
         text(contactExtras.description1) ??
-        "Entre em contato conosco para obter mais informações sobre nossos veículos e serviços.",
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.description1,
       description2:
         text(contact.description2) ??
         text(contactExtras.description2) ??
-        "Estamos sempre prontos para ajudar você a encontrar o veículo ideal. Fale conosco através dos nossos canais oficiais.",
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.description2,
       email: text(contact.email) ?? data.settings.contact.contactEmail,
       instagramUrl:
         text(socialLinks.instagram) ??
         text(theme.instagram_url) ??
         text(legacySettings.instagram_url),
-      mapEmbedUrl: text(theme.mapEmbedUrl) ?? text(theme.map_embed_url),
+      mapEmbedUrl: safeMapEmbedUrl(
+        text(contact.mapEmbedUrl) ??
+          text(theme.mapEmbedUrl) ??
+          text(theme.map_embed_url),
+      ),
       phone:
         data.settings.contact.whatsappPhone ??
         data.settings.contact.contactPhone ??
         text(theme.whatsapp_number) ??
         text(legacySettings.whatsapp_number) ??
         text(contact.phone),
+      phone2: text(contact.phone2) ?? text(contactExtras.phone2),
+      phone2Label:
+        text(contact.phone2Label) ??
+        text(contactExtras.phone2_label) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.phone2Label,
+      phone3: text(contact.phone3) ?? text(contactExtras.phone3),
+      phone3Label:
+        text(contact.phone3Label) ??
+        text(contactExtras.phone3_label) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.phone3Label,
+      phoneLabel:
+        text(contact.phoneLabel) ??
+        text(contactExtras.phone_label) ??
+        DEFAULT_PUBLIC_STOREFRONT_THEME.contact.phoneLabel,
+      showMap:
+        typeof contact.showMap === "boolean"
+          ? contact.showMap
+          : typeof theme.show_map === "boolean"
+            ? theme.show_map
+            : true,
       title: text(contact.title) ?? text(contactExtras.title) ?? "Contato",
       whatsappUrl: data.settings.contact.whatsappUrl,
+    },
+    footer: {
+      cnpj: text(footer.cnpj),
+      extraInfo: text(footer.extraInfo) ?? text(footer.extra_info),
     },
     hero: {
       autoplay:
         typeof theme.hero_banner_autoplay === "boolean"
           ? theme.hero_banner_autoplay
           : true,
+      bannerButtonText:
+        text(theme.heroBannerButtonText) ??
+        text(theme.banner_button_text) ??
+        "Ver estoque",
+      bannerMobileUrl: heroBannerMobileUrl,
+      bannerMode: heroBannerMode,
+      bannerShowButton:
+        boolean(theme.heroBannerShowButton) ??
+        boolean(theme.banner_show_button) ??
+        !heroBannerMode,
+      bannerShowText:
+        boolean(theme.heroBannerShowText) ??
+        boolean(theme.banner_show_text) ??
+        !heroBannerMode,
       bannerUrls:
-        heroMediaSource !== "vehicles" && heroBannerUrls.length
-          ? heroBannerUrls
+        heroMediaSource !== "vehicles" && desktopBannerUrls.length
+          ? desktopBannerUrls
           : [],
       imageKind: primaryHeroMedia?.kind ?? "image",
       imageUrl: primaryHeroMedia?.url ?? null,
@@ -173,7 +282,14 @@ export function adaptQuadraStorefront(
         text(theme.heroTitle) ??
         text(theme.texto_cabecalho_ofertas) ??
         text(theme.headline) ??
-        "Nossas **Ofertas**",
+        DEFAULT_PUBLIC_STOREFRONT_THEME.heroTitle,
+      vehicles: heroVehicles(data.listings),
+    },
+    leadForm: {
+      showOnLandingPage:
+        boolean(modernLeadForm.showOnLandingPage) ??
+        boolean(leadForm.show_on_lp) ??
+        false,
     },
     logoUrl: text(theme.logoUrl) ?? text(theme.logo_url),
     logoWidth: positiveNumber(theme.logoWidth ?? theme.logo_width) ?? 130,
@@ -218,6 +334,39 @@ function readFeature(value: unknown): QuadraFeature[] {
   return title && description ? [{ description, title }] : [];
 }
 
+function heroVehicles(listings: readonly PublicVehicleListing[]) {
+  const withMedia = listings.filter(
+    (listing) => quadraListingMedia(listing).length > 0,
+  );
+  return [...withMedia]
+    .sort((left, right) => featuredScore(right) - featuredScore(left))
+    .slice(0, 5);
+}
+
+function featuredScore(listing: PublicVehicleListing) {
+  return listing.commercialTags.some((tag) =>
+    tag.toLocaleLowerCase("pt-BR").includes("destaque"),
+  )
+    ? 1
+    : 0;
+}
+
+function safeMapEmbedUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLocaleLowerCase("en-US");
+    const isGoogle =
+      hostname === "google.com" ||
+      hostname === "maps.google.com" ||
+      hostname === "www.google.com" ||
+      hostname.endsWith(".google.com.br");
+    return url.protocol === "https:" && isGoogle ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function readTestimonial(value: unknown): QuadraTestimonial[] {
   const item = record(value);
   const id = scalarText(item.id);
@@ -235,8 +384,10 @@ function readTestimonial(value: unknown): QuadraTestimonial[] {
   ];
 }
 
-function readMediaSource(value: unknown) {
-  return value === "banners" || value === "vehicles" ? value : "auto";
+function readConfiguredMediaSource(value: unknown) {
+  return value === "auto" || value === "banners" || value === "vehicles"
+    ? value
+    : null;
 }
 
 function formatProfileAddress(
@@ -320,4 +471,8 @@ function scalarText(value: unknown) {
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function boolean(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
 }

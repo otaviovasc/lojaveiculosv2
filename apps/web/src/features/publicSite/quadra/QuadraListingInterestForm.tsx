@@ -24,6 +24,7 @@ export function QuadraListingInterestForm({
     input: PublicStorefrontLeadInput,
   ) => Promise<PublicStorefrontLeadResult>;
 }) {
+  const [formStartedAt] = useState(() => Date.now());
   const [state, setState] = useState<SubmissionState>("idle");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -35,16 +36,19 @@ export function QuadraListingInterestForm({
 
     setState("submitting");
     try {
-      const buyerEmail = optionalFormValue(formData, "buyerEmail");
+      const buyerEmail = formValue(formData, "buyerEmail");
       const buyerPhone = normalizeBrazilianPhoneDigits(
-        optionalFormValue(formData, "buyerPhone") ?? "",
+        formValue(formData, "buyerPhone"),
       );
-      const message = optionalFormValue(formData, "message");
+      if (buyerPhone.length < 10) throw new Error("Invalid buyer phone");
+      const message = formValue(formData, "message");
       await onSubmitInterest(listingSlug, {
-        ...(buyerEmail ? { buyerEmail } : {}),
+        buyerEmail,
         buyerName,
-        ...(buyerPhone ? { buyerPhone } : {}),
-        ...(message ? { message } : {}),
+        buyerPhone,
+        formStartedAt: Number(formValue(formData, "formStartedAt")),
+        message,
+        website: formValue(formData, "website"),
       });
       form.reset();
       setState("submitted");
@@ -78,7 +82,9 @@ export function QuadraListingInterestForm({
             applyInputMask(event.currentTarget, formatBrazilianPhone);
           }}
           placeholder="Seu telefone"
+          required
           type="tel"
+          minLength={10}
         />
       </label>
       <label className="quadra-detail-form__field quadra-detail-form__field--wide">
@@ -87,6 +93,7 @@ export function QuadraListingInterestForm({
           autoComplete="email"
           name="buyerEmail"
           placeholder="Seu e-mail"
+          required
           type="email"
         />
       </label>
@@ -95,9 +102,24 @@ export function QuadraListingInterestForm({
         <textarea
           name="message"
           placeholder="Olá, tenho interesse neste veículo. Aguardo o contato."
+          required
           rows={4}
         />
       </label>
+      <div aria-hidden="true" className="sr-only">
+        <label htmlFor={`${formId}-website`}>Website</label>
+        <input
+          autoComplete="off"
+          id={`${formId}-website`}
+          name="website"
+          tabIndex={-1}
+        />
+      </div>
+      <input
+        defaultValue={String(formStartedAt)}
+        name="formStartedAt"
+        type="hidden"
+      />
       <button
         className="quadra-detail-form__submit"
         disabled={state === "submitting"}
@@ -107,12 +129,20 @@ export function QuadraListingInterestForm({
         {state === "submitting" ? "Enviando..." : "Tenho interesse"}
       </button>
       {state === "submitted" ? (
-        <p className="quadra-detail-form__success" role="status">
+        <p
+          aria-live="polite"
+          className="quadra-detail-form__success"
+          role="status"
+        >
           Interesse enviado! A loja entrará em contato em breve.
         </p>
       ) : null}
       {state === "error" ? (
-        <p className="quadra-detail-form__error" role="alert">
+        <p
+          aria-live="polite"
+          className="quadra-detail-form__error"
+          role="status"
+        >
           Não foi possível enviar o seu interesse no momento.
         </p>
       ) : null}
@@ -123,8 +153,4 @@ export function QuadraListingInterestForm({
 function formValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
-}
-
-function optionalFormValue(formData: FormData, key: string) {
-  return formValue(formData, key) || undefined;
 }

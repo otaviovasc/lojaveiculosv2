@@ -89,6 +89,7 @@ function publicApiStub(): PublicStorefrontApi {
     getSettings: vi.fn(),
     listListings: vi.fn(),
     submitListingInterest: vi.fn(),
+    submitStorefrontInterest: vi.fn(),
   };
 }
 

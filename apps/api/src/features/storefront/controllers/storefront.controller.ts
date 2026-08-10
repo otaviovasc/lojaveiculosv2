@@ -29,6 +29,7 @@ import {
 import {
   handleCreatePublicStorefrontLead,
   handleCreatePublicStorefrontPageLead,
+  handleCreatePublicStorefrontSiteLead,
 } from "./storefrontLeadHandler.js";
 
 const querySchema = z.object({
@@ -136,6 +137,17 @@ export function createStorefrontFeature(
         crmRepository,
         leadRateLimiter,
         pageRepository,
+        ...(options.audit ? { audit: options.audit } : {}),
+      }),
+    ),
+  );
+
+  storefrontFeature.post("/leads", async (context) =>
+    handleStorefront(context, () =>
+      handleCreatePublicStorefrontSiteLead(context, {
+        crmRepository,
+        leadRateLimiter,
+        repository,
         ...(options.audit ? { audit: options.audit } : {}),
       }),
     ),

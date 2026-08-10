@@ -1,8 +1,10 @@
-import { ChevronDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { SectionSpec, StorefrontConfig } from "../config/types";
-import { searchListings } from "../publicStorefrontTheme";
-import type { PublicStorefrontPageData } from "../types";
+import type {
+  PublicStorefrontLeadInput,
+  PublicStorefrontLeadResult,
+  PublicStorefrontPageData,
+} from "../types";
 import { QuadraAbout } from "./QuadraAbout";
 import { adaptQuadraStorefront } from "./quadraAdapter";
 import { QuadraCars } from "./QuadraCars";
@@ -11,19 +13,23 @@ import { QuadraFooter } from "./QuadraFooter";
 import { QuadraHeader } from "./QuadraHeader";
 import { QuadraHero } from "./QuadraHero";
 import { QuadraTestimonials } from "./QuadraTestimonials";
+import { QuadraWhatsAppButton } from "./QuadraWhatsAppButton";
 
 type QuadraStorefrontProps = {
   config: StorefrontConfig;
   data: PublicStorefrontPageData;
   onOpenListing: (listingSlug: string) => void;
+  onSubmitStorefrontInterest: (
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export function QuadraStorefront({
   config,
   data,
   onOpenListing,
+  onSubmitStorefrontInterest,
 }: QuadraStorefrontProps) {
-  const [query, setQuery] = useState("");
   const model = useMemo(() => adaptQuadraStorefront(data), [data]);
   const sections = useMemo(
     () =>
@@ -39,33 +45,13 @@ export function QuadraStorefront({
     () => new Set(sections.map((section) => section.type)),
     [sections],
   );
-  const visibleListings = useMemo(
-    () => searchListings(data.listings, query),
-    [data.listings, query],
-  );
-  const firstContentSection = sections.find(
-    (section) => section.type !== "header" && section.type !== "hero",
-  );
-
   return (
     <>
       {visibleTypes.has("header") ? (
         <QuadraHeader model={model} visibleSections={visibleTypes} />
       ) : null}
 
-      {firstContentSection ? (
-        <a
-          aria-label="Ir para a próxima seção"
-          className="quadra-next-section"
-          href={`#${sectionAnchor(firstContentSection.type)}`}
-        >
-          <span>
-            <ChevronDown aria-hidden="true" />
-          </span>
-        </a>
-      ) : null}
-
-      <main className="quadra-classic__main">
+      <main className="quadra-modern__main">
         {sections.map((section) => {
           switch (section.type) {
             case "header":
@@ -76,15 +62,14 @@ export function QuadraStorefront({
                 <QuadraHero
                   key={section.id}
                   model={model}
-                  onSearch={setQuery}
-                  query={query}
+                  onOpenListing={onOpenListing}
                 />
               );
             case "stock":
               return (
                 <QuadraCars
                   key={section.id}
-                  listings={visibleListings}
+                  listings={data.listings}
                   onOpenListing={onOpenListing}
                 />
               );
@@ -93,12 +78,19 @@ export function QuadraStorefront({
             case "about":
               return <QuadraAbout key={section.id} model={model} />;
             case "lead":
-              return <QuadraContact key={section.id} model={model} />;
+              return (
+                <QuadraContact
+                  key={section.id}
+                  model={model}
+                  onSubmitInterest={onSubmitStorefrontInterest}
+                />
+              );
           }
         })}
       </main>
 
       {visibleTypes.has("footer") ? <QuadraFooter model={model} /> : null}
+      <QuadraWhatsAppButton model={model} />
     </>
   );
 }
@@ -149,12 +141,4 @@ function ensureTestimonialsSection(
     },
     ...sections.slice(insertionIndex),
   ];
-}
-
-function sectionAnchor(type: SectionSpec["type"]) {
-  if (type === "stock") return "cars";
-  if (type === "lead") return "contact";
-  if (type === "testimonials") return "depoimentos";
-  if (type === "hero") return "home";
-  return type;
 }

@@ -111,7 +111,9 @@ describe("public storefront routes", () => {
         buyerEmail: "ana@example.com",
         buyerName: "Ana Cliente",
         buyerPhone: "11999999999",
+        formStartedAt: Date.now() - 2_000,
         message: "Tenho interesse.",
+        website: "",
       }),
       headers: {
         "content-type": "application/json",

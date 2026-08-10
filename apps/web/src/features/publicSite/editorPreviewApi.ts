@@ -56,6 +56,7 @@ export function createEditorPreviewStorefrontApi(
       );
     },
     submitListingInterest: publicApi.submitListingInterest,
+    submitStorefrontInterest: publicApi.submitStorefrontInterest,
   };
 }
 

@@ -100,10 +100,12 @@ export type PublicStorefrontListingDetailData = {
 };
 
 export type PublicStorefrontLeadInput = {
-  buyerEmail?: string;
+  buyerEmail: string;
   buyerName: string;
-  buyerPhone?: string;
-  message?: string;
+  buyerPhone: string;
+  formStartedAt: number;
+  message: string;
+  website: string;
 };
 
 export type PublicStorefrontLeadResult = {

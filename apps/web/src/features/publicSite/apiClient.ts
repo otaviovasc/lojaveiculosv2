@@ -25,6 +25,9 @@ export type PublicStorefrontApi = {
     listingSlug: string,
     input: PublicStorefrontLeadInput,
   ) => Promise<PublicStorefrontLeadResult>;
+  submitStorefrontInterest: (
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export type PublicStorefrontQuery = {
@@ -78,6 +81,12 @@ export function createPublicStorefrontApi({
         headers: { ...headers, "Content-Type": "application/json" },
         method: "POST",
       }).then(readJson<PublicStorefrontLeadResult>),
+    submitStorefrontInterest: (input) =>
+      fetch(publicStorefrontRoutes.lead(baseUrl), {
+        body: JSON.stringify(input),
+        headers: { ...headers, "Content-Type": "application/json" },
+        method: "POST",
+      }).then(readJson<PublicStorefrontLeadResult>),
   };
 }
 
@@ -97,6 +106,8 @@ export const publicStorefrontRoutes = {
       `/public/storefront/listings/${encodeURIComponent(listingSlug)}/leads`,
       baseUrl,
     ),
+  lead: (baseUrl?: string) =>
+    createPublicStorefrontEndpoint("/public/storefront/leads", baseUrl),
   listings: (baseUrl?: string) =>
     createPublicStorefrontEndpoint("/public/storefront/listings", baseUrl),
   settings: (baseUrl?: string) =>

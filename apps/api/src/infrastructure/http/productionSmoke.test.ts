@@ -162,8 +162,12 @@ describe("production smoke contracts", () => {
 
     const response = await app.request("/listings/fiat-toro-2023/leads", {
       body: JSON.stringify({
+        buyerEmail: "ana@example.com",
         buyerName: "Ana Cliente",
         buyerPhone: "11999999999",
+        formStartedAt: Date.now() - 2_000,
+        message: "Tenho interesse neste veículo.",
+        website: "",
       }),
       headers: {
         "content-type": "application/json",

@@ -14,6 +14,7 @@ import { PublicStorefront } from "../PublicStorefront";
 import { publicStorefrontPreview } from "../fixtures";
 import type {
   PublicStorefrontListingDetailData,
+  PublicStorefrontLeadInput,
   PublicStorefrontPageData,
   PublicVehicleListing,
 } from "../types";
@@ -55,6 +56,27 @@ describe("QUADRA vehicle detail", () => {
     expect(document.body.style.overflow).toBe("");
   });
 
+  it("uses the generated preparation photo when listing media is empty", () => {
+    const data = vehicleDetail();
+    data.listing.media = [];
+    data.listing.mediaGroups = [];
+    data.listing.heroMedia = null;
+    data.listing.thumbnailUrl = null;
+    data.listing.videoUrl = null;
+
+    renderDetail({
+      detail: {
+        data,
+        isLoading: false,
+        listingSlug: data.listing.slug,
+      },
+    });
+
+    expect(
+      screen.getByAltText(`${data.listing.title}: foto em preparação`),
+    ).toHaveAttribute("src", "/images/storefront/vehicle-photo-pending.webp");
+  });
+
   it("renders seller/contact actions and submits the V2 listing-interest contract", async () => {
     const onSubmit = vi.fn().mockResolvedValue({
       deduplicated: false,
@@ -83,18 +105,28 @@ describe("QUADRA vehicle detail", () => {
     fireEvent.change(screen.getByLabelText("Telefone"), {
       target: { value: "(11) 98888-7777" },
     });
+    fireEvent.change(screen.getByLabelText("E-mail"), {
+      target: { value: "maria@example.com" },
+    });
     fireEvent.change(screen.getByLabelText("Mensagem"), {
       target: { value: "Quero agendar uma visita." },
     });
     fireEvent.click(screen.getByRole("button", { name: "Tenho interesse" }));
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith("fiat-toro-2023", {
-        buyerName: "Maria Cliente",
-        buyerPhone: "11988887777",
-        message: "Quero agendar uma visita.",
-      });
+      expect(onSubmit).toHaveBeenCalledOnce();
     });
+    const [submittedSlug, submittedInput] = (onSubmit.mock.calls[0] ??
+      []) as unknown as [string, PublicStorefrontLeadInput];
+    expect(submittedSlug).toBe("fiat-toro-2023");
+    expect(submittedInput).toMatchObject({
+      buyerEmail: "maria@example.com",
+      buyerName: "Maria Cliente",
+      buyerPhone: "11988887777",
+      message: "Quero agendar uma visita.",
+      website: "",
+    });
+    expect(typeof submittedInput.formStartedAt).toBe("number");
     expect(screen.getByRole("status")).toHaveTextContent("Interesse enviado");
   });
 
@@ -211,9 +243,9 @@ describe("QUADRA vehicle detail", () => {
       },
     });
 
-    expect(screen.getByRole("img", { name: /Mídia 1/ })).toHaveTextContent(
-      "Documento",
-    );
+    expect(
+      screen.getByRole("img", { name: detail.listing.title }),
+    ).toHaveTextContent("Documento");
     fireEvent.click(
       screen.getByRole("button", { name: "Abrir galeria em tela cheia" }),
     );
@@ -257,6 +289,7 @@ function renderDetail({
       onOpenListing={onOpen}
       onRetryListing={onRetry}
       onSubmitListingInterest={onSubmit}
+      onSubmitStorefrontInterest={vi.fn()}
     />,
   );
 }

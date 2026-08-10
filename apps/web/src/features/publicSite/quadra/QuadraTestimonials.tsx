@@ -1,4 +1,4 @@
-import { Quote, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import {
   type CSSProperties,
@@ -68,16 +68,42 @@ export function QuadraTestimonials({
   return (
     <section className="quadra-testimonials" id="depoimentos">
       <div className="quadra-container">
-        <div className="quadra-section-heading">
-          <span className="quadra-testimonials__heading-icon">
-            <Quote aria-hidden="true" />
-          </span>
-          <h2>O Que Nossos Clientes Dizem</h2>
-          <p>
-            A satisfação dos nossos clientes é a nossa maior conquista. Veja o
-            que eles têm a dizer sobre nós.
-          </p>
-        </div>
+        <header className="quadra-testimonials__heading">
+          <div>
+            <div className="quadra-modern-divider" />
+            <span>Depoimentos</span>
+            <h2>
+              O que nossos{" "}
+              <strong className="quadra-accent-text">clientes</strong> dizem
+            </h2>
+          </div>
+          {lastIndex > 0 ? (
+            <div className="quadra-testimonials__arrows">
+              <button
+                aria-label="Depoimento anterior"
+                onClick={() =>
+                  setActiveIndex((current) =>
+                    current === 0 ? lastIndex : current - 1,
+                  )
+                }
+                type="button"
+              >
+                <ChevronLeft aria-hidden="true" />
+              </button>
+              <button
+                aria-label="Próximo depoimento"
+                onClick={() =>
+                  setActiveIndex((current) =>
+                    current === lastIndex ? 0 : current + 1,
+                  )
+                }
+                type="button"
+              >
+                <ChevronRight aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
+        </header>
 
         <div
           className="quadra-testimonials__slider"
@@ -101,29 +127,25 @@ export function QuadraTestimonials({
                       src={testimonial.imageUrl}
                     />
                   ) : null}
-                  <div className="quadra-testimonial-card__author">
-                    <span>
-                      <Quote aria-hidden="true" />
-                    </span>
-                    <div>
-                      <h3 title={testimonial.name}>
-                        {clampText(testimonial.name, 60)}
-                      </h3>
-                      <div aria-label="5 de 5 estrelas">
-                        {Array.from({ length: 5 }, (_, index) => (
-                          <Star aria-hidden="true" key={index} />
-                        ))}
-                      </div>
+                  <div className="quadra-testimonial-card__content">
+                    <div className="quadra-modern-divider" />
+                    <div
+                      aria-label="5 de 5 estrelas"
+                      className="quadra-testimonial-card__stars"
+                    >
+                      {Array.from({ length: 5 }, (_, index) => (
+                        <Star aria-hidden="true" key={index} />
+                      ))}
                     </div>
-                  </div>
-                  <div className="quadra-testimonial-card__quote">
-                    <Quote
-                      aria-hidden="true"
-                      className="quadra-testimonial-card__watermark"
-                    />
                     <blockquote title={testimonial.quote}>
                       &quot;{clampText(testimonial.quote, 160)}&quot;
                     </blockquote>
+                    <footer>
+                      <h3 title={testimonial.name}>
+                        {clampText(testimonial.name, 60)}
+                      </h3>
+                      <span>{testimonial.role}</span>
+                    </footer>
                   </div>
                 </article>
               ))}

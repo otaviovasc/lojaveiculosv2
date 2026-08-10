@@ -58,10 +58,10 @@ export function WebsiteBuilderAppearancePanel({
           return (
             <label
               className={cn(
-                "relative flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                "relative flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
                 selected
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border bg-card text-foreground hover:bg-accent/10",
+                  ? "border-primary bg-primary/5 text-foreground"
+                  : "border-border/40 bg-card/40 text-foreground hover:bg-muted/30",
               )}
               key={option.value}
             >
@@ -73,8 +73,8 @@ export function WebsiteBuilderAppearancePanel({
                 type="radio"
                 value={option.value}
               />
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background">
-                <Icon aria-hidden="true" className="h-4 w-4" />
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-background/80">
+                <Icon aria-hidden="true" className="h-3.5 w-3.5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-xs font-semibold">
@@ -85,7 +85,10 @@ export function WebsiteBuilderAppearancePanel({
                 </span>
               </span>
               {selected ? (
-                <Check aria-hidden="true" className="h-4 w-4 text-primary" />
+                <Check
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 text-primary"
+                />
               ) : null}
             </label>
           );

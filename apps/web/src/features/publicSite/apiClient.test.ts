@@ -56,6 +56,7 @@ describe("createPublicStorefrontApi", () => {
         store: publicStorefrontPreview.store,
       })),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     const result = await listAllPublicStorefrontListings(api);
@@ -91,6 +92,7 @@ describe("createPublicStorefrontApi", () => {
       getSettings: vi.fn(),
       listListings,
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     await expect(listAllPublicStorefrontListings(api)).rejects.toThrow(
@@ -199,7 +201,9 @@ describe("createPublicStorefrontApi", () => {
       buyerEmail: "ana@example.com",
       buyerName: "Ana Cliente",
       buyerPhone: "11999999999",
+      formStartedAt: 1_700_000_000_000,
       message: "Tenho interesse.",
+      website: "",
     });
 
     expect(result.lead.id).toBe("lead_1");
@@ -211,7 +215,49 @@ describe("createPublicStorefrontApi", () => {
           buyerEmail: "ana@example.com",
           buyerName: "Ana Cliente",
           buyerPhone: "11999999999",
+          formStartedAt: 1_700_000_000_000,
           message: "Tenho interesse.",
+          website: "",
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    });
+  });
+
+  it("submits landing-page interest without a listing", async () => {
+    const calls: FetchCall[] = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input });
+      return new Response(
+        JSON.stringify({
+          deduplicated: false,
+          lead: { id: "lead_2", source: "public_site", status: "new" },
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 201 },
+      );
+    };
+    const api = createPublicStorefrontApi({ fetch: fakeFetch });
+
+    await api.submitStorefrontInterest({
+      buyerEmail: "ana@example.com",
+      buyerName: "Ana Cliente",
+      buyerPhone: "11999999999",
+      formStartedAt: 1_700_000_000_000,
+      message: "Quero conhecer a loja.",
+      website: "",
+    });
+
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/public/storefront/leads",
+      init: {
+        body: JSON.stringify({
+          buyerEmail: "ana@example.com",
+          buyerName: "Ana Cliente",
+          buyerPhone: "11999999999",
+          formStartedAt: 1_700_000_000_000,
+          message: "Quero conhecer a loja.",
+          website: "",
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -227,6 +273,12 @@ describe("createPublicStorefrontApi", () => {
       ),
     ).toBe(
       "https://demo/api/v1/public/storefront/listings/civic%20touring/leads",
+    );
+  });
+
+  it("builds landing-page lead routes", () => {
+    expect(publicStorefrontRoutes.lead("https://demo/api/v1/")).toBe(
+      "https://demo/api/v1/public/storefront/leads",
     );
   });
 

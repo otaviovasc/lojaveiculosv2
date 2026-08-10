@@ -1,10 +1,15 @@
 import {
   ArrowUpRight,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Fuel,
   Gauge,
-  ImageIcon,
+  MessageCircle,
+  SearchX,
+  ShieldCheck,
 } from "lucide-react";
+import { DEFAULT_STOREFRONT_VEHICLE_IMAGE } from "@lojaveiculosv2/shared";
 import { type MouseEvent, useState } from "react";
 import {
   formatPublicVehicleMileage,
@@ -13,6 +18,7 @@ import {
 } from "../publicVehicleFormatters";
 import { quadraListingMedia } from "../quadra/quadraAdapter";
 import type { PublicVehicleListing } from "../types";
+import { createAuroraWhatsappUrl } from "./auroraContactModel";
 
 export function AuroraInventory({
   listings,
@@ -51,7 +57,7 @@ export function AuroraInventory({
           </div>
         ) : (
           <div className="aurora-inventory__empty">
-            <ImageIcon aria-hidden="true" />
+            <SearchX aria-hidden="true" />
             <h3>Nenhum veículo encontrado</h3>
             <p>Tente buscar por outro modelo, marca ou versão.</p>
           </div>
@@ -82,6 +88,10 @@ function AuroraVehicleCard({
     );
   };
 
+  const whatsappMessage = encodeURIComponent(
+    `Olá! Vi o veículo ${listing.title} (${listing.manufactureYear}/${listing.modelYear}) na vitrine e gostaria de mais informações.`,
+  );
+
   return (
     <article className={`aurora-vehicle-card ${featured ? "is-featured" : ""}`}>
       <div className="aurora-vehicle-card__media">
@@ -93,16 +103,23 @@ function AuroraVehicleCard({
             src={selected.url}
           />
         ) : (
-          <div className="aurora-vehicle-card__placeholder">
-            <ImageIcon aria-hidden="true" />
-            <span>Imagem em breve</span>
-          </div>
+          <img
+            alt="Veículo coberto aguardando novas fotos"
+            className="aurora-vehicle-card__placeholder"
+            decoding="async"
+            loading={featured ? "eager" : "lazy"}
+            src={DEFAULT_STOREFRONT_VEHICLE_IMAGE}
+          />
         )}
-        <div className="aurora-vehicle-card__badges">
-          {listing.commercialTags.slice(0, 2).map((tag) => (
-            <span key={tag}>{tag}</span>
-          ))}
-        </div>
+
+        {listing.commercialTags.length > 0 ? (
+          <div className="aurora-vehicle-card__badges">
+            {listing.commercialTags.slice(0, 2).map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+        ) : null}
+
         {media.length > 1 ? (
           <div className="aurora-vehicle-card__media-controls">
             <button
@@ -134,21 +151,33 @@ function AuroraVehicleCard({
           </div>
           <span className="aurora-vehicle-card__availability">Disponível</span>
         </div>
+
         {listing.trimName ? (
           <p className="aurora-vehicle-card__trim">{listing.trimName}</p>
         ) : null}
+
         <div className="aurora-vehicle-card__specs">
           <span>
-            {listing.manufactureYear ?? "—"}/{listing.modelYear ?? "—"}
+            <CalendarDays aria-hidden="true" /> {listing.manufactureYear ?? "—"}
+            /{listing.modelYear ?? "—"}
           </span>
           <span>
             <Gauge aria-hidden="true" />{" "}
             {formatPublicVehicleMileage(listing.mileageKm)}
           </span>
+          {listing.fuelType ? (
+            <span>
+              <Fuel aria-hidden="true" /> {listing.fuelType}
+            </span>
+          ) : null}
           {listing.transmission ? <span>{listing.transmission}</span> : null}
         </div>
+
         <div className="aurora-vehicle-card__footer">
-          <strong>{formatPublicVehiclePrice(listing.priceCents)}</strong>
+          <div className="aurora-vehicle-card__price-wrap">
+            <strong>{formatPublicVehiclePrice(listing.priceCents)}</strong>
+          </div>
+
           <button
             aria-label={`Abrir detalhes de ${listing.title}`}
             onClick={onOpen}

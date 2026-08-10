@@ -159,7 +159,7 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     setSearchParams(setListingParam(searchParams, listingSlug));
   };
 
-  if (renderedState.kind === "ready") {
+  if (renderedState.kind === "ready" || renderedState.kind === "empty") {
     return (
       <PublicStorefront
         data={renderedState.data}
@@ -170,27 +170,9 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
         onSubmitListingInterest={(listingSlug, input) =>
           storefrontApi.submitListingInterest(listingSlug, input)
         }
-      />
-    );
-  }
-
-  if (renderedState.kind === "empty") {
-    return (
-      <StorefrontStateFrame
-        action={
-          <Button
-            onClick={() => setRetryKey((current) => current + 1)}
-            type="button"
-            variant="brand"
-          >
-            <RefreshCcw aria-hidden="true" />
-            Verificar novamente
-          </Button>
+        onSubmitStorefrontInterest={(input) =>
+          storefrontApi.submitStorefrontInterest(input)
         }
-        body="Esta loja ainda não publicou veículos na vitrine. Volte em breve para conferir as novidades."
-        illustration={<StatusIllustration variant="empty-lot" />}
-        title="Estoque indisponível"
-        tone="blue"
       />
     );
   }

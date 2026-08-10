@@ -89,7 +89,7 @@ export function QuadraListingGallery({
       <div className="quadra-detail-gallery__stage">
         {currentMedia ? (
           <QuadraGalleryMedia
-            alt={`${title} - Mídia ${currentIndex + 1}`}
+            alt={currentMedia.altText ?? `${title} - Mídia ${currentIndex + 1}`}
             className="quadra-detail-gallery__media"
             media={currentMedia}
           />
@@ -183,7 +183,9 @@ export function QuadraListingGallery({
           </button>
           <div className="quadra-detail-gallery__dialog-media">
             <QuadraGalleryMedia
-              alt={`${title} - Mídia ${currentIndex + 1}`}
+              alt={
+                currentMedia.altText ?? `${title} - Mídia ${currentIndex + 1}`
+              }
               className="quadra-detail-gallery__fullscreen-media"
               media={currentMedia}
             />

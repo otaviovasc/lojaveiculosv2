@@ -10,6 +10,7 @@ import {
   tenantMemberships,
   tenants,
 } from "@lojaveiculosv2/db";
+import { DEFAULT_PUBLIC_STOREFRONT_THEME } from "@lojaveiculosv2/shared";
 import type { EntitlementKey, RoleKey } from "@lojaveiculosv2/shared";
 import {
   AccountProvisioningConflictError,
@@ -42,11 +43,10 @@ export async function assertTenantSlugAvailable(
     .from(tenants)
     .where(eq(tenants.slug, slug))
     .limit(1);
-  if (tenant) {
+  if (tenant)
     throw new AccountProvisioningConflictError(
       "Tenant slug is already in use.",
     );
-  }
 }
 
 export async function assertStoreSlugAvailable(
@@ -207,6 +207,9 @@ function toProfile(
   profile: StoreProfileDraft | undefined,
 ) {
   return {
+    businessHours: {
+      text: DEFAULT_PUBLIC_STOREFRONT_THEME.contact.businessHours,
+    },
     contactEmail: profile?.contactEmail ?? null,
     contactPhone: profile?.contactPhone ?? null,
     documentNumber: profile?.documentNumber ?? null,

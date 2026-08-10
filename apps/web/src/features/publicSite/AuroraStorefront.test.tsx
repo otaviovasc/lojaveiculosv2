@@ -46,6 +46,80 @@ describe("PublicStorefront Aurora landing inventory", () => {
       screen.getAllByRole("button", { name: /Abrir detalhes de Veículo/ }),
     ).toHaveLength(9);
   });
+
+  it("renders the complete Modern content contract with defaults", () => {
+    const data = auroraData();
+
+    renderStorefront(data);
+
+    expect(
+      screen.getByRole("img", {
+        name: "Fachada e atendimento da Loja Demo Motors",
+      }),
+    ).toHaveAttribute("src", "/images/storefront/about-store.webp");
+    expect(
+      screen.getByRole("img", { name: "Showroom da Loja Demo Motors" }),
+    ).toHaveAttribute("src", "/images/storefront/about-showroom.webp");
+    expect(screen.getByText("Cliente satisfeito")).toBeInTheDocument();
+    expect(
+      screen.getByText("Configure seu mapa no Personalizar"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("img", {
+        name: "Veículo coberto aguardando novas fotos",
+      }),
+    ).toHaveLength(2);
+    expect(
+      screen.getByRole("navigation", { name: "Navegação do rodapé" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Falar com a loja" }),
+    ).toHaveAttribute("href", expect.stringContaining("text="));
+  });
+
+  it("renders configured contact copy, additional phones and Google map", () => {
+    const data = auroraData();
+    data.settings.site.theme = {
+      ...data.settings.site.theme,
+      contact: {
+        description1: "Atendimento personalizado para cada escolha.",
+        description2: "Visite nosso showroom ou fale com a equipe.",
+        mapEmbedUrl: "https://www.google.com/maps/embed?pb=storefront",
+        phone2: "1133334444",
+        phone2Label: "Veículos novos",
+        phone3: "11988887777",
+        phone3Label: "Pós-venda",
+        showMap: true,
+        title: "Vamos conversar",
+      },
+    };
+
+    renderStorefront(data);
+
+    expect(screen.getByText("Vamos conversar")).toBeInTheDocument();
+    expect(screen.getByText("Veículos novos")).toBeInTheDocument();
+    expect(screen.getByText("Pós-venda")).toBeInTheDocument();
+    expect(
+      screen.getByTitle("Localização de Loja Demo Motors"),
+    ).toHaveAttribute("src", "https://www.google.com/maps/embed?pb=storefront");
+  });
+
+  it("renders the V1 Modern landing-page lead form when enabled", () => {
+    const data = auroraData();
+    data.settings.site.theme = {
+      ...data.settings.site.theme,
+      lead_form: { show_on_lp: true },
+    };
+
+    renderStorefront(data);
+
+    expect(
+      screen.getByRole("heading", { name: "Envie uma mensagem" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tenho interesse" }),
+    ).toBeInTheDocument();
+  });
 });
 
 function renderStorefront(data: PublicStorefrontPageData) {
@@ -57,6 +131,7 @@ function renderStorefront(data: PublicStorefrontPageData) {
       onOpenListing={vi.fn()}
       onRetryListing={vi.fn()}
       onSubmitListingInterest={vi.fn()}
+      onSubmitStorefrontInterest={vi.fn()}
     />,
   );
 }

@@ -33,6 +33,9 @@ type PublicStorefrontProps = {
     listingSlug: string,
     input: PublicStorefrontLeadInput,
   ) => Promise<PublicStorefrontLeadResult>;
+  onSubmitStorefrontInterest: (
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export function PublicStorefront({
@@ -42,6 +45,7 @@ export function PublicStorefront({
   onOpenListing,
   onRetryListing,
   onSubmitListingInterest,
+  onSubmitStorefrontInterest,
 }: PublicStorefrontProps) {
   const config = useMemo(
     () =>
@@ -69,7 +73,12 @@ export function PublicStorefront({
       <div
         className="public-light-surface public-storefront min-h-screen w-full"
         data-color-scheme={appearance.scheme}
-        data-quadra-classic={config.preset === "quadra" ? "true" : undefined}
+        data-quadra-classic={
+          config.preset === "quadra" && detail.listingSlug ? "true" : undefined
+        }
+        data-quadra-modern={
+          config.preset === "quadra" && !detail.listingSlug ? "true" : undefined
+        }
         data-motion={config.tokens.motion.style}
         data-preset={config.preset}
         data-storefront
@@ -107,12 +116,14 @@ export function PublicStorefront({
             config={config}
             data={data}
             onOpenListing={onOpenListing}
+            onSubmitStorefrontInterest={onSubmitStorefrontInterest}
           />
         ) : (
           <AuroraStorefront
             config={config}
             data={data}
             onOpenListing={onOpenListing}
+            onSubmitStorefrontInterest={onSubmitStorefrontInterest}
           />
         )}
       </div>

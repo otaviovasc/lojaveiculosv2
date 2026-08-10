@@ -1,14 +1,8 @@
 import { Menu, MessageCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { QuadraStorefrontModel } from "../quadra/quadraAdapter";
-
-const navItems = [
-  { href: "#inicio", label: "Início", section: "hero" },
-  { href: "#estoque", label: "Estoque", section: "stock" },
-  { href: "#sobre", label: "A loja", section: "about" },
-  { href: "#depoimentos", label: "Clientes", section: "testimonials" },
-  { href: "#contato", label: "Contato", section: "lead" },
-] as const;
+import { createAuroraWhatsappUrl } from "./auroraContactModel";
+import { AURORA_NAV_ITEMS } from "./auroraNavigation";
 
 export function AuroraHeader({
   model,
@@ -32,17 +26,10 @@ export function AuroraHeader({
       <div className="aurora-shell aurora-header__bar">
         <a className="aurora-brand" href="#inicio">
           {model.logoUrl ? (
-            <img alt="" src={model.logoUrl} />
-          ) : (
-            <span className="aurora-brand__monogram" aria-hidden="true">
-              {model.storeName.slice(0, 1)}
-            </span>
-          )}
+            <img alt={`Logo ${model.storeName}`} src={model.logoUrl} />
+          ) : null}
           <span className="aurora-brand__copy">
             <strong>{model.storeName}</strong>
-            <small>
-              <i aria-hidden="true" /> Estoque atualizado
-            </small>
           </span>
         </a>
 
@@ -62,23 +49,19 @@ export function AuroraHeader({
           className={open ? "is-open" : ""}
           id="aurora-primary-navigation"
         >
-          {navItems
-            .filter((item) => visibleSections.has(item.section))
-            .map((item) => (
-              <a
-                href={item.href}
-                key={item.href}
-                onClick={() => setOpen(false)}
-              >
-                {item.label}
-              </a>
-            ))}
+          {AURORA_NAV_ITEMS.filter((item) =>
+            visibleSections.has(item.section),
+          ).map((item) => (
+            <a href={item.href} key={item.href} onClick={() => setOpen(false)}>
+              {item.label}
+            </a>
+          ))}
         </nav>
 
         {model.contact.whatsappUrl ? (
           <a
             className="aurora-header__cta"
-            href={model.contact.whatsappUrl}
+            href={createAuroraWhatsappUrl(model.contact.whatsappUrl)}
             rel="noopener noreferrer"
             target="_blank"
           >

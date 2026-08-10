@@ -1,139 +1,66 @@
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
-import { type FocusEvent, type FormEvent, useEffect, useState } from "react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Gauge,
+  Tag,
+} from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { type FocusEvent, type ReactNode, useEffect, useState } from "react";
+import {
+  formatPublicVehicleMileage,
+  formatPublicVehiclePrice,
+  splitVehicleTitle,
+} from "../publicVehicleFormatters";
+import type { PublicVehicleListing } from "../types";
+import { createStorefrontHeroSlides } from "../storefrontHeroSlides";
 import type { QuadraStorefrontModel } from "./quadraAdapter";
 
 type QuadraHeroProps = {
   model: QuadraStorefrontModel;
-  onSearch: (query: string) => void;
-  query: string;
+  onOpenListing: (listingSlug: string) => void;
 };
 
-const fadeDown = {
-  hidden: { opacity: 0, y: -30 },
-  show: { opacity: 1, transition: { duration: 0.7 }, y: 0 },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, transition: { duration: 0.7 }, y: 0 },
-};
-
-export function QuadraHero({ model, onSearch, query }: QuadraHeroProps) {
-  const banners = model.hero.bannerUrls;
-  const useBanners = banners.length > 0;
-
-  if (useBanners && banners.length) {
-    return (
-      <QuadraHeroBanner
-        autoplay={model.hero.autoplay}
-        banners={banners}
-        onSearch={onSearch}
-        query={query}
-        speed={model.hero.speed}
-      />
-    );
-  }
-
-  return (
-    <section className="quadra-hero" id="home">
-      <div className="quadra-container quadra-hero__content">
-        <div className="quadra-hero__grid">
-          <div className="quadra-hero__copy">
-            <motion.h1
-              data-editor-id="hero.title"
-              initial="hidden"
-              variants={fadeDown}
-              viewport={{ amount: 0.6 }}
-              whileInView="show"
-            >
-              <HighlightedTitle value={model.hero.title} />
-            </motion.h1>
-            <motion.p
-              data-editor-id="hero.subtitle"
-              initial="hidden"
-              variants={fadeDown}
-              viewport={{ amount: 0.6 }}
-              whileInView="show"
-            >
-              {model.hero.subtitle}
-            </motion.p>
-          </div>
-
-          <motion.div
-            className="quadra-hero__image-wrap"
-            initial="hidden"
-            variants={fadeUp}
-            viewport={{ amount: 0.6 }}
-            whileInView="show"
-          >
-            {model.hero.imageUrl && model.hero.imageKind === "video" ? (
-              <video
-                aria-label="Vídeo de destaque"
-                autoPlay
-                className="quadra-hero__image"
-                data-editor-id="hero.image"
-                loop
-                muted
-                playsInline
-                src={model.hero.imageUrl}
-              />
-            ) : model.hero.imageUrl ? (
-              <img
-                alt="carro"
-                className="quadra-hero__image"
-                data-editor-id="hero.image"
-                fetchPriority="high"
-                src={model.hero.imageUrl}
-              />
-            ) : (
-              <div className="quadra-hero__image-placeholder" aria-hidden />
-            )}
-          </motion.div>
-        </div>
-
-        <QuadraSearch onSearch={onSearch} query={query} />
-      </div>
-    </section>
-  );
-}
-
-function QuadraHeroBanner({
-  autoplay,
-  banners,
-  onSearch,
-  query,
-  speed,
-}: {
-  autoplay: boolean;
-  banners: readonly string[];
-  onSearch: (query: string) => void;
-  query: string;
-  speed: number;
-}) {
+export function QuadraHero({ model, onOpenListing }: QuadraHeroProps) {
+  const slides = createStorefrontHeroSlides(model);
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const prefersReducedMotion = useReducedMotion();
-  const activeBanner = banners[activeIndex] ?? banners[0];
+  const activeSlide = slides[activeIndex] ?? slides[0];
+  const isBannerSlide =
+    model.hero.mediaSource === "banners" && !activeSlide?.vehicle;
+  const showBannerText = !isBannerSlide || model.hero.bannerShowText;
+  const showBannerButton = isBannerSlide && model.hero.bannerShowButton;
 
   useEffect(() => {
     setActiveIndex((current) =>
-      Math.min(current, Math.max(0, banners.length - 1)),
+      Math.min(current, Math.max(0, slides.length - 1)),
     );
-  }, [banners.length]);
+  }, [slides.length]);
 
   useEffect(() => {
-    if (!autoplay || paused || prefersReducedMotion || banners.length < 2)
-      return;
+    if (
+      !model.hero.autoplay ||
+      paused ||
+      prefersReducedMotion ||
+      slides.length < 2
+    )
+      return undefined;
     const interval = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % banners.length);
-    }, speed);
+      setActiveIndex((current) => (current + 1) % slides.length);
+    }, model.hero.speed);
     return () => window.clearInterval(interval);
-  }, [autoplay, banners.length, paused, prefersReducedMotion, speed]);
+  }, [
+    model.hero.autoplay,
+    model.hero.speed,
+    paused,
+    prefersReducedMotion,
+    slides.length,
+  ]);
 
   const move = (offset: number) => {
     setActiveIndex(
-      (current) => (current + offset + banners.length) % banners.length,
+      (current) => (current + offset + slides.length) % slides.length,
     );
   };
 
@@ -147,97 +74,230 @@ function QuadraHeroBanner({
   };
 
   return (
-    <section className="quadra-banner" id="home">
+    <section className="quadra-hero" id="home">
       <div
-        className="quadra-banner__viewport"
+        className="quadra-hero__stage"
         onBlur={resumeAfterFocusLeaves}
         onFocus={() => setPaused(true)}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        <a
-          aria-label="Ver estoque"
-          className="quadra-banner__link"
-          href="#cars"
-        >
-          {activeBanner ? (
-            <img
-              alt={`Banner promocional ${activeIndex + 1}`}
-              className="quadra-banner__image"
-              fetchPriority="high"
-              src={activeBanner}
-            />
+        <AnimatePresence mode="sync">
+          {activeSlide ? (
+            <motion.div
+              animate={{ opacity: 1, scale: 1 }}
+              className="quadra-hero__media"
+              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, scale: 1.035 }}
+              key={`${activeSlide.url}-${activeIndex}`}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
+            >
+              {activeSlide.kind === "video" ? (
+                <video
+                  aria-label="Vídeo de destaque da loja"
+                  controls
+                  playsInline
+                  preload="metadata"
+                  src={activeSlide.url}
+                />
+              ) : activeSlide.mobileUrl ? (
+                <picture>
+                  <source
+                    media="(max-width: 767px)"
+                    srcSet={activeSlide.mobileUrl}
+                  />
+                  <img
+                    alt={activeSlide.alt}
+                    fetchPriority={activeIndex === 0 ? "high" : "auto"}
+                    src={activeSlide.url}
+                  />
+                </picture>
+              ) : (
+                <img
+                  alt={activeSlide.alt}
+                  fetchPriority={activeIndex === 0 ? "high" : "auto"}
+                  src={activeSlide.url}
+                />
+              )}
+            </motion.div>
           ) : null}
-        </a>
-        {banners.length > 1 ? (
+        </AnimatePresence>
+        <div className="quadra-hero__overlay" />
+
+        <div className="quadra-container quadra-hero__content">
+          <AnimatePresence mode="sync">
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="quadra-hero__copy"
+              exit={{ opacity: 0, y: -18 }}
+              initial={{ opacity: 0, y: 18 }}
+              key={activeSlide?.vehicle?.slug ?? `banner-${activeIndex}`}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
+            >
+              {showBannerText ? (
+                <>
+                  <div className="quadra-modern-divider" />
+                  <HeroTitle
+                    model={model}
+                    vehicle={activeSlide?.vehicle ?? null}
+                  />
+                  <p data-editor-id="hero.subtitle">
+                    {activeSlide?.vehicle?.trimName || model.hero.subtitle}
+                  </p>
+                </>
+              ) : null}
+              {activeSlide?.vehicle ? (
+                <button
+                  className="quadra-modern-button quadra-modern-button--accent"
+                  onClick={() => onOpenListing(activeSlide.vehicle!.slug)}
+                  type="button"
+                >
+                  Ver veículo
+                </button>
+              ) : showBannerButton ? (
+                <a
+                  className="quadra-modern-button quadra-modern-button--accent"
+                  href="#cars"
+                >
+                  {model.hero.bannerButtonText}
+                </a>
+              ) : isBannerSlide ? null : (
+                <a
+                  className="quadra-modern-button quadra-modern-button--accent"
+                  href="#cars"
+                >
+                  Ver showroom
+                </a>
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          <AnimatePresence mode="sync">
+            {activeSlide?.vehicle ? (
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className="quadra-hero__specs-wrapper"
+                exit={{ opacity: 0, y: -18 }}
+                initial={{ opacity: 0, y: 18 }}
+                key={activeSlide.vehicle.slug}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
+              >
+                <HeroSpecs vehicle={activeSlide.vehicle} />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
+
+        {slides.length > 1 ? (
           <>
             <button
-              aria-label="Banner anterior"
-              className="quadra-banner__arrow quadra-banner__arrow--prev"
+              aria-label="Destaque anterior"
+              className="quadra-hero__arrow quadra-hero__arrow--prev"
               onClick={() => move(-1)}
               type="button"
             >
-              <ChevronLeft />
+              <ChevronLeft aria-hidden="true" />
             </button>
             <button
-              aria-label="Próximo banner"
-              className="quadra-banner__arrow quadra-banner__arrow--next"
+              aria-label="Próximo destaque"
+              className="quadra-hero__arrow quadra-hero__arrow--next"
               onClick={() => move(1)}
               type="button"
             >
-              <ChevronRight />
+              <ChevronRight aria-hidden="true" />
             </button>
-            <div className="quadra-banner__dots">
-              {banners.map((banner, index) => (
+            <div className="quadra-hero__pagination">
+              {slides.map((slide, index) => (
                 <button
-                  aria-label={`Mostrar banner ${index + 1}`}
+                  aria-current={index === activeIndex ? "true" : undefined}
+                  aria-label={`Mostrar destaque ${index + 1}`}
                   className={index === activeIndex ? "is-active" : ""}
-                  key={`${banner}-${index}`}
+                  key={`${slide.url}-${index}`}
                   onClick={() => setActiveIndex(index)}
                   type="button"
-                />
+                >
+                  {index === activeIndex ? (
+                    <span
+                      style={{
+                        animationDuration: `${model.hero.speed}ms`,
+                        animationPlayState: paused ? "paused" : "running",
+                      }}
+                    />
+                  ) : null}
+                </button>
               ))}
             </div>
           </>
         ) : null}
       </div>
-      <div className="quadra-container quadra-banner__search">
-        <QuadraSearch onSearch={onSearch} query={query} />
-      </div>
     </section>
   );
 }
 
-export function QuadraSearch({
-  onSearch,
-  query,
+function HeroTitle({
+  model,
+  vehicle,
 }: {
-  onSearch: (query: string) => void;
-  query: string;
+  model: QuadraStorefrontModel;
+  vehicle: PublicVehicleListing | null;
 }) {
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    document.getElementById("cars")?.scrollIntoView({ behavior: "smooth" });
-  };
-
+  if (vehicle) {
+    const title = splitVehicleTitle(vehicle.title);
+    return (
+      <h1 data-editor-id="hero.title">
+        {title.brand}
+        {title.restTitle ? (
+          <span className="quadra-accent-text">{title.restTitle}</span>
+        ) : null}
+      </h1>
+    );
+  }
   return (
-    <div className="quadra-search">
-      <form onSubmit={submit}>
-        <div className="quadra-search__field">
-          <Search aria-hidden="true" />
-          <input
-            aria-label="Buscar carros"
-            onChange={(event) => onSearch(event.target.value)}
-            placeholder="Buscar carros..."
-            type="search"
-            value={query}
-          />
-        </div>
-        <button type="submit">
-          <Search aria-hidden="true" />
-          Buscar
-        </button>
-      </form>
+    <h1 data-editor-id="hero.title">
+      <HighlightedTitle value={model.hero.title} />
+    </h1>
+  );
+}
+
+function HeroSpecs({ vehicle }: { vehicle: PublicVehicleListing }) {
+  return (
+    <aside className="quadra-hero__specs" aria-label="Resumo do veículo">
+      <span className="quadra-hero__specs-eyebrow">Oferta exclusiva</span>
+      <Spec icon={CalendarDays} label="Ano modelo">
+        {vehicle.manufactureYear ?? "-"}/{vehicle.modelYear ?? "-"}
+      </Spec>
+      <Spec icon={Gauge} label="Quilometragem">
+        {formatPublicVehicleMileage(vehicle.mileageKm)}
+      </Spec>
+      {vehicle.priceCents === null ? null : (
+        <Spec accent icon={Tag} label="Preço especial">
+          {formatPublicVehiclePrice(vehicle.priceCents)}
+        </Spec>
+      )}
+    </aside>
+  );
+}
+
+function Spec({
+  accent = false,
+  children,
+  icon: Icon,
+  label,
+}: {
+  accent?: boolean;
+  children: ReactNode;
+  icon: typeof CalendarDays;
+  label: string;
+}) {
+  return (
+    <div className={accent ? "is-accent" : undefined}>
+      <span>
+        <Icon aria-hidden="true" />
+      </span>
+      <p>
+        <small>{label}</small>
+        <strong>{children}</strong>
+      </p>
     </div>
   );
 }

@@ -1,131 +1,152 @@
-import { Mail, MessageCircle, Phone } from "lucide-react";
+import {
+  Building2,
+  Clock3,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+} from "lucide-react";
+import type { ComponentType, ReactNode, SVGProps } from "react";
 import type { QuadraStorefrontModel } from "./quadraAdapter";
 import { formatPhone } from "./QuadraHeader";
 import { InstagramIcon } from "./QuadraSocialIcons";
 
-const platformLogo = "/icons/logo_lv.svg";
+const platformLogo = "/icons/logo_lv_white.svg";
 
 export function QuadraFooter({ model }: { model: QuadraStorefrontModel }) {
   const { contact } = model;
-  const hasStoreInfo = Boolean(contact.address);
-  const hasContacts = Boolean(
-    contact.phone || contact.email || contact.instagramUrl,
-  );
-
-  if (!hasStoreInfo && !hasContacts) {
-    return (
-      <footer className="quadra-footer quadra-footer--compact" id="footer">
-        <div className="quadra-container">
-          <PlatformSignature />
-        </div>
-      </footer>
-    );
-  }
-
   return (
     <footer className="quadra-footer" id="footer">
       <div className="quadra-container">
         <div className="quadra-footer__grid">
-          <div>
-            <h3>Informações</h3>
+          <div className="quadra-footer__identity">
             {model.logoUrl ? (
               <img
                 alt={model.storeName}
-                className="quadra-footer__store-logo"
                 loading="lazy"
                 src={model.logoUrl}
-                style={{ width: `${Math.min(model.logoWidth, 120)}px` }}
+                style={{ width: `${Math.min(model.logoWidth, 140)}px` }}
               />
             ) : (
-              <strong className="quadra-footer__store-name">
-                {model.storeName}
-              </strong>
+              <strong>{model.storeName}</strong>
             )}
             {contact.address ? (
-              <p className="quadra-footer__address">
-                <strong>Endereço:</strong>
+              <p>
+                <MapPin aria-hidden="true" />
                 <span data-editor-id="footer.address">{contact.address}</span>
               </p>
             ) : null}
+            {model.footer.extraInfo ? <p>{model.footer.extraInfo}</p> : null}
+            {model.footer.cnpj ? (
+              <p>
+                <Building2 aria-hidden="true" />
+                <span>CNPJ {model.footer.cnpj}</span>
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <h3>Navegação</h3>
+            <nav aria-label="Navegação do rodapé">
+              <a href="#home">Home</a>
+              <a href="#cars">Showroom</a>
+              <a href="#about">Quem Somos</a>
+              <a href="#contact">Contato</a>
+            </nav>
           </div>
 
           <div>
             <h3>Contato</h3>
             <div className="quadra-footer__contacts">
               {contact.phone ? (
-                <a
+                <FooterLink
                   href={
                     contact.whatsappUrl ??
                     `tel:${contact.phone.replace(/\D/g, "")}`
                   }
-                  rel={contact.whatsappUrl ? "noopener noreferrer" : undefined}
-                  target={contact.whatsappUrl ? "_blank" : undefined}
+                  icon={contact.whatsappUrl ? MessageCircle : Phone}
+                  targetBlank={Boolean(contact.whatsappUrl)}
                 >
-                  <span className="quadra-footer__contact-icon">
-                    {contact.whatsappUrl ? (
-                      <MessageCircle aria-hidden="true" />
-                    ) : (
-                      <Phone aria-hidden="true" />
-                    )}
-                  </span>
-                  <span>
-                    <strong>WhatsApp</strong>
-                    <span data-editor-id="footer.phone">
-                      {formatPhone(contact.phone)}
-                    </span>
-                  </span>
-                </a>
+                  {formatPhone(contact.phone)}
+                </FooterLink>
+              ) : null}
+              {contact.phone2 ? (
+                <FooterLink
+                  href={`tel:${contact.phone2.replace(/\D/g, "")}`}
+                  icon={Phone}
+                >
+                  {formatPhone(contact.phone2)}
+                </FooterLink>
+              ) : null}
+              {contact.phone3 ? (
+                <FooterLink
+                  href={`tel:${contact.phone3.replace(/\D/g, "")}`}
+                  icon={Phone}
+                >
+                  {formatPhone(contact.phone3)}
+                </FooterLink>
               ) : null}
               {contact.email ? (
-                <a href={`mailto:${contact.email}`}>
-                  <span className="quadra-footer__contact-icon">
-                    <Mail aria-hidden="true" />
-                  </span>
-                  <span>
-                    <strong>E-mail</strong>
-                    <span>{contact.email}</span>
-                  </span>
-                </a>
+                <FooterLink href={`mailto:${contact.email}`} icon={Mail}>
+                  {contact.email}
+                </FooterLink>
               ) : null}
               {contact.instagramUrl ? (
-                <a
+                <FooterLink
                   href={contact.instagramUrl}
-                  rel="noopener noreferrer"
-                  target="_blank"
+                  icon={InstagramIcon}
+                  targetBlank
                 >
-                  <span className="quadra-footer__contact-icon">
-                    <InstagramIcon />
-                  </span>
-                  <span>
-                    <strong>Instagram</strong>
-                    <span data-editor-id="footer.instagram">
-                      Acessar perfil
-                    </span>
-                  </span>
-                </a>
+                  Instagram
+                </FooterLink>
+              ) : null}
+              {contact.businessHours ? (
+                <p>
+                  <Clock3 aria-hidden="true" />
+                  <span>{contact.businessHours}</span>
+                </p>
               ) : null}
             </div>
           </div>
         </div>
 
-        <div className="quadra-footer__signature">
-          <PlatformSignature />
+        <div className="quadra-footer__bottom">
+          <span>
+            © {new Date().getFullYear()} {model.storeName}
+          </span>
+          <a
+            href="https://www.lojaveiculos.com.br"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Feito com
+            <img alt="Loja Veículos" loading="lazy" src={platformLogo} />
+          </a>
         </div>
       </div>
     </footer>
   );
 }
 
-function PlatformSignature() {
+function FooterLink({
+  children,
+  href,
+  icon: Icon,
+  targetBlank = false,
+}: {
+  children: ReactNode;
+  href: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  targetBlank?: boolean;
+}) {
   return (
     <a
-      className="quadra-footer__platform"
-      href="https://www.lojaveiculos.com.br"
-      rel="noopener noreferrer"
-      target="_blank"
+      href={href}
+      rel={targetBlank ? "noopener noreferrer" : undefined}
+      target={targetBlank ? "_blank" : undefined}
     >
-      <span>Feito com Loja Veículos</span>
-      <img alt="Loja Veículos" loading="lazy" src={platformLogo} />
+      <Icon aria-hidden="true" />
+      <span>{children}</span>
     </a>
   );
 }

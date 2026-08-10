@@ -1,4 +1,4 @@
-import { Menu, Phone, X } from "lucide-react";
+import { Menu, MessageCircle, Phone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { QuadraStorefrontModel } from "./quadraAdapter";
 
@@ -9,8 +9,8 @@ type QuadraHeaderProps = {
 
 const navItems = [
   { href: "#home", label: "Home", section: "hero" },
-  { href: "#cars", label: "Anúncios", section: "stock" },
-  { href: "#about", label: "Sobre", section: "about" },
+  { href: "#cars", label: "Showroom", section: "stock" },
+  { href: "#about", label: "Quem Somos", section: "about" },
   { href: "#contact", label: "Contato", section: "lead" },
 ] as const;
 
@@ -46,8 +46,7 @@ export function QuadraHeader({ model, visibleSections }: QuadraHeaderProps) {
     };
   }, [model.logoUrl, navOpen]);
 
-  const phone = model.contact.phone;
-  const whatsappHref = model.contact.whatsappUrl ?? undefined;
+  const phoneEntries = createPhoneEntries(model);
 
   return (
     <header
@@ -72,20 +71,15 @@ export function QuadraHeader({ model, visibleSections }: QuadraHeaderProps) {
             )}
           </a>
 
-          {phone ? (
-            <a
-              className="quadra-header__phone"
-              href={whatsappHref ?? `tel:${phone.replace(/\D/g, "")}`}
-              rel={whatsappHref ? "noopener noreferrer" : undefined}
-              target={whatsappHref ? "_blank" : undefined}
-            >
-              <Phone aria-hidden="true" size={11} />
-              <span>{formatPhone(phone)}</span>
-            </a>
-          ) : null}
+          <div className="quadra-header__phones">
+            {phoneEntries.map((entry) => (
+              <PhoneLink entry={entry} key={`${entry.href}-${entry.label}`} />
+            ))}
+          </div>
 
           <button
             aria-expanded={navOpen}
+            aria-controls="quadra-primary-navigation"
             aria-label={navOpen ? "Fechar menu" : "Abrir menu"}
             className="quadra-header__menu-button"
             onClick={() => setNavOpen((current) => !current)}
@@ -98,7 +92,13 @@ export function QuadraHeader({ model, visibleSections }: QuadraHeaderProps) {
         <nav
           aria-label="Navegação principal"
           className={`quadra-header__nav ${navOpen ? "quadra-header__nav--open" : ""}`}
+          id="quadra-primary-navigation"
         >
+          <div className="quadra-header__mobile-phones">
+            {phoneEntries.map((entry) => (
+              <PhoneLink entry={entry} key={`${entry.href}-${entry.label}`} />
+            ))}
+          </div>
           {navItems
             .filter((item) => visibleSections.has(item.section))
             .map((item) => (
@@ -114,6 +114,55 @@ export function QuadraHeader({ model, visibleSections }: QuadraHeaderProps) {
         </nav>
       </div>
     </header>
+  );
+}
+
+type PhoneEntry = {
+  href: string;
+  isWhatsapp: boolean;
+  label: string;
+};
+
+function createPhoneEntries(model: QuadraStorefrontModel): PhoneEntry[] {
+  const entries: PhoneEntry[] = [];
+  if (model.contact.phone) {
+    entries.push({
+      href:
+        model.contact.whatsappUrl ??
+        `tel:${model.contact.phone.replace(/\D/g, "")}`,
+      isWhatsapp: Boolean(model.contact.whatsappUrl),
+      label: model.contact.phoneLabel || formatPhone(model.contact.phone),
+    });
+  }
+  if (model.contact.phone2) {
+    entries.push({
+      href: `tel:${model.contact.phone2.replace(/\D/g, "")}`,
+      isWhatsapp: false,
+      label: model.contact.phone2Label || formatPhone(model.contact.phone2),
+    });
+  }
+  if (model.contact.phone3) {
+    entries.push({
+      href: `tel:${model.contact.phone3.replace(/\D/g, "")}`,
+      isWhatsapp: false,
+      label: model.contact.phone3Label || formatPhone(model.contact.phone3),
+    });
+  }
+  return entries;
+}
+
+function PhoneLink({ entry }: { entry: PhoneEntry }) {
+  const Icon = entry.isWhatsapp ? MessageCircle : Phone;
+  return (
+    <a
+      className="quadra-header__phone"
+      href={entry.href}
+      rel={entry.isWhatsapp ? "noopener noreferrer" : undefined}
+      target={entry.isWhatsapp ? "_blank" : undefined}
+    >
+      <Icon aria-hidden="true" size={14} />
+      <span>{entry.label}</span>
+    </a>
   );
 }
 

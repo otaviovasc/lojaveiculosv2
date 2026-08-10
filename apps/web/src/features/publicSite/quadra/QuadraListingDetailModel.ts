@@ -1,3 +1,4 @@
+import { DEFAULT_STOREFRONT_VEHICLE_IMAGE } from "@lojaveiculosv2/shared";
 import {
   createPhoneHref,
   createWhatsappUrl,
@@ -121,6 +122,16 @@ function fallbackListingMedia(
       unitColorName: null,
       unitId: "listing",
       url: detail.listing.thumbnailUrl,
+    });
+  }
+  if (candidates.length === 0) {
+    candidates.push({
+      altText: `${detail.listing.title}: foto em preparação`,
+      displayOrder: 0,
+      kind: "photo",
+      unitColorName: null,
+      unitId: "listing",
+      url: DEFAULT_STOREFRONT_VEHICLE_IMAGE,
     });
   }
   if (
