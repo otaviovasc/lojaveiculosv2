@@ -47,6 +47,13 @@ export class StorefrontPageScopeError extends Error {
   }
 }
 
+export class StorefrontVehicleVitrineSourceNotFoundError extends Error {
+  constructor(listingId: string) {
+    super(`Vehicle listing is not public and publishable: ${listingId}`);
+    this.name = "StorefrontVehicleVitrineSourceNotFoundError";
+  }
+}
+
 export class StorefrontMediaRepositoryError extends Error {
   constructor() {
     super("Storefront media repository port is not configured");

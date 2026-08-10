@@ -116,6 +116,12 @@ export type FindPublicListingDetailInput = {
   tenantId: TenantId;
 };
 
+export type FindPublicListingDetailByIdInput = {
+  listingId: string;
+  storeId: StoreId;
+  tenantId: TenantId;
+};
+
 export type PublicStorefrontRepository = {
   findPublicSiteBySlug: (
     storeSlug: string,
@@ -125,6 +131,9 @@ export type PublicStorefrontRepository = {
   ) => Promise<PublicStorefrontStore | null>;
   findPublicListingDetail: (
     input: FindPublicListingDetailInput,
+  ) => Promise<PublicVehicleListingDetail | null>;
+  findPublicListingDetailById?: (
+    input: FindPublicListingDetailByIdInput,
   ) => Promise<PublicVehicleListingDetail | null>;
   listPublicListings: (
     input: FindPublicListingsInput,

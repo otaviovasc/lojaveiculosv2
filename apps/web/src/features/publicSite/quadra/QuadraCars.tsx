@@ -2,6 +2,7 @@ import { DEFAULT_STOREFRONT_VEHICLE_IMAGE } from "@lojaveiculosv2/shared";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type MouseEvent, useState } from "react";
 import {
+  formatPublicVehicleFuel,
   formatPublicVehicleMileage,
   formatPublicVehiclePrice,
   splitVehicleTitle,
@@ -19,14 +20,14 @@ export function QuadraCars({ listings, onOpenListing }: QuadraCarsProps) {
     <section className="quadra-cars" id="cars">
       <div className="quadra-container">
         <header className="quadra-cars__heading">
-          <div className="quadra-modern-divider" />
-          <span>Nossas ofertas</span>
           <div>
+            <div className="quadra-modern-divider" />
+            <span>Veículos disponíveis</span>
             <h2>
               Nosso <strong className="quadra-accent-text">estoque</strong>
             </h2>
-            <p>{listings.length} veículos disponíveis</p>
           </div>
+          <p>{listings.length} veículos disponíveis</p>
         </header>
         {listings.length ? (
           <div className="quadra-cars__grid">
@@ -85,7 +86,9 @@ function QuadraVehicleCard({
         ) : null}
 
         {listing.fuelType ? (
-          <span className="quadra-car-card__fuel">{listing.fuelType}</span>
+          <span className="quadra-car-card__fuel">
+            {formatPublicVehicleFuel(listing.fuelType)}
+          </span>
         ) : null}
 
         {media.length > 1 ? (

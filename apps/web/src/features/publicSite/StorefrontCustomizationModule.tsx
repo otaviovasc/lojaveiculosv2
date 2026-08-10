@@ -72,11 +72,16 @@ export function StorefrontCustomizationModule({
       setSavedSettings(settings);
       setDraftSettings(settings);
       setPages(nextPages);
-      setSelectedPage((current) =>
-        current
-          ? (nextPages.find((page) => page.id === current.id) ?? null)
-          : null,
-      );
+      setSelectedPage((current) => {
+        const selectedPageId =
+          current?.id ??
+          readCustomPageIdFromHash(
+            typeof window === "undefined" ? "" : window.location.hash,
+          );
+        return selectedPageId
+          ? (nextPages.find((page) => page.id === selectedPageId) ?? null)
+          : null;
+      });
       setStatus({ kind: "ready" });
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
@@ -253,6 +258,11 @@ export function StorefrontCustomizationModule({
       />
     </div>
   );
+}
+
+export function readCustomPageIdFromHash(hash: string) {
+  const query = hash.split("?", 2)[1];
+  return query ? new URLSearchParams(query).get("page") : null;
 }
 
 function toPageUpdate(page: StorefrontCustomPage) {

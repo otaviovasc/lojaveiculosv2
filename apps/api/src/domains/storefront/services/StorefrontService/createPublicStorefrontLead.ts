@@ -1,4 +1,3 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
@@ -14,6 +13,7 @@ import {
   PublicStorefrontListingNotFoundError,
   PublicStorefrontNotFoundError,
 } from "./serviceSupport.js";
+import { findDuplicatePublicStorefrontLead } from "../../findDuplicatePublicStorefrontLead.js";
 
 const permission = "public_storefront.lead_create";
 
@@ -72,7 +72,7 @@ export async function createPublicStorefrontLead(
     throw new PublicStorefrontListingNotFoundError(input.listingSlug);
   }
 
-  const duplicate = await findDuplicatePublicLead(ports.leadSink, {
+  const duplicate = await findDuplicatePublicStorefrontLead(ports.leadSink, {
     buyerEmail: input.buyerEmail ?? null,
     buyerPhone: input.buyerPhone ?? null,
     listingId: listing?.id ?? null,
@@ -134,47 +134,6 @@ export async function createPublicStorefrontLead(
     deduplicated: false,
     lead: { id: lead.id, source: lead.source, status: lead.status },
   };
-}
-
-async function findDuplicatePublicLead(
-  repository: PublicStorefrontLeadSink,
-  input: {
-    buyerEmail: string | null;
-    buyerPhone: string | null;
-    listingId: string | null;
-    storeId: StoreId;
-    tenantId: TenantId;
-  },
-): Promise<PublicStorefrontLead | null> {
-  const search = input.buyerEmail ?? input.buyerPhone;
-  if (!search) return null;
-  const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
-  const leads = await repository.listLeads({
-    limit: 20,
-    search,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
-
-  return (
-    leads.find(
-      (lead) =>
-        lead.source === "public_site" &&
-        lead.listingId === input.listingId &&
-        lead.createdAt.getTime() >= recentCutoff &&
-        sameContact(lead, input),
-    ) ?? null
-  );
-}
-
-function sameContact(
-  lead: Pick<PublicStorefrontLead, "buyerEmail" | "buyerPhone">,
-  input: { buyerEmail: string | null; buyerPhone: string | null },
-) {
-  return Boolean(
-    (input.buyerEmail && lead.buyerEmail === input.buyerEmail) ||
-    (input.buyerPhone && lead.buyerPhone === input.buyerPhone),
-  );
 }
 
 async function recordLeadAudit(

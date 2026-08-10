@@ -36,6 +36,8 @@ import {
 } from "./InventoryDetailPublicRoute";
 import { InventoryDetailDeleteDialog } from "./InventoryDetailDeleteDialog";
 import { InventoryVehiclePrintSheet } from "./InventoryVehiclePrintSheet";
+import { useOptionalAccountSession } from "../../account/accountSession";
+import { readSessionEffectivePermissions } from "../../account/sessionPermissions";
 
 export function InventoryDetailWorkspace({
   api,
@@ -52,6 +54,12 @@ export function InventoryDetailWorkspace({
   selectedUnitId?: string | null;
   stores?: readonly InventoryDetailStoreLink[];
 }) {
+  const accountSession = useOptionalAccountSession();
+  const canManagePublicSite = accountSession
+    ? readSessionEffectivePermissions(accountSession).includes(
+        "store_public_site.manage",
+      )
+    : true;
   const [detail, setDetail] = useState(initialDetail);
   const [activeTab, setActiveTab] = useState<TabId>("geral");
 
@@ -206,6 +214,7 @@ export function InventoryDetailWorkspace({
 
       <InventoryDetailWorkspaceTabs
         activeTab={activeTab}
+        showVitrine={canManagePublicSite}
         onTabChange={handleTabChange}
       />
 
@@ -267,7 +276,7 @@ export function InventoryDetailWorkspace({
           />
         )}
 
-        {activeTab === "vitrine" && (
+        {activeTab === "vitrine" && canManagePublicSite && (
           <InventoryDetailVitrineTab
             detail={detail}
             primaryUnit={primaryUnit}

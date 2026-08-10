@@ -13,6 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { stores, tenants } from "./identity.js";
+import { vehicleListings } from "./inventory.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
 export const customDomainStatus = pgEnum("custom_domain_status", [
@@ -109,6 +110,9 @@ export const storeCustomPages = pgTable(
     secretToken: varchar("secret_token", { length: 120 }).notNull(),
     seo: jsonb("seo").notNull().default({}),
     slug: varchar("slug", { length: 80 }).notNull(),
+    sourceListingId: uuid("source_listing_id").references(
+      () => vehicleListings.id,
+    ),
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
@@ -127,6 +131,11 @@ export const storeCustomPages = pgTable(
     uniqueIndex("store_custom_pages_store_slug_deleted_unique")
       .on(table.storeId, table.slug)
       .where(sql`${table.isDeleted} = false`),
+    uniqueIndex("store_custom_pages_source_listing_unique")
+      .on(table.tenantId, table.storeId, table.sourceListingId)
+      .where(
+        sql`${table.isDeleted} = false AND ${table.sourceListingId} IS NOT NULL`,
+      ),
   ],
 );
 

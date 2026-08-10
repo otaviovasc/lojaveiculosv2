@@ -12,8 +12,10 @@ import {
 import { DEFAULT_STOREFRONT_VEHICLE_IMAGE } from "@lojaveiculosv2/shared";
 import { type MouseEvent, useState } from "react";
 import {
+  formatPublicVehicleFuel,
   formatPublicVehicleMileage,
   formatPublicVehiclePrice,
+  formatPublicVehicleTransmission,
   splitVehicleTitle,
 } from "../publicVehicleFormatters";
 import { quadraListingMedia } from "../quadra/quadraAdapter";
@@ -167,10 +169,13 @@ function AuroraVehicleCard({
           </span>
           {listing.fuelType ? (
             <span>
-              <Fuel aria-hidden="true" /> {listing.fuelType}
+              <Fuel aria-hidden="true" />{" "}
+              {formatPublicVehicleFuel(listing.fuelType)}
             </span>
           ) : null}
-          {listing.transmission ? <span>{listing.transmission}</span> : null}
+          {listing.transmission ? (
+            <span>{formatPublicVehicleTransmission(listing.transmission)}</span>
+          ) : null}
         </div>
 
         <div className="aurora-vehicle-card__footer">

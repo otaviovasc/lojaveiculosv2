@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { publicStorefrontPreview } from "../fixtures";
 import type { PublicStorefrontPageData } from "../types";
@@ -65,6 +71,46 @@ describe("QuadraHero V1 Modern banner parity", () => {
     expect(onOpenListing).toHaveBeenCalledWith(
       publicStorefrontPreview.listings[0]?.slug,
     );
+  });
+
+  it("crossfades slide copy without an empty content-grid frame", async () => {
+    const model = adaptQuadraStorefront(
+      withTheme({
+        heroBannerShowText: true,
+        heroBannerUrls: [
+          "https://cdn.test/banner-one.jpg",
+          "https://cdn.test/banner-two.jpg",
+        ],
+        heroMediaSource: "banners",
+      }),
+    );
+
+    render(<QuadraHero model={model} onOpenListing={vi.fn()} />);
+    expect(screen.getAllByTestId("quadra-hero-content-grid")).toHaveLength(1);
+    expect(screen.getByTestId("quadra-hero-content-grid")).toHaveAttribute(
+      "data-slide-key",
+      "banner-0",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Próximo destaque" }));
+
+    const transitioningGrids = screen.getAllByTestId(
+      "quadra-hero-content-grid",
+    );
+    expect(transitioningGrids.length).toBeGreaterThan(0);
+    expect(
+      transitioningGrids.some(
+        (grid) => grid.getAttribute("data-slide-key") === "banner-1",
+      ),
+    ).toBe(true);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("quadra-hero-content-grid")).toHaveLength(1);
+      expect(screen.getByTestId("quadra-hero-content-grid")).toHaveAttribute(
+        "data-slide-key",
+        "banner-1",
+      );
+    });
   });
 });
 

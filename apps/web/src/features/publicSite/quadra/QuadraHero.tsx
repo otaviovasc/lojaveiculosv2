@@ -31,6 +31,8 @@ export function QuadraHero({ model, onOpenListing }: QuadraHeroProps) {
     model.hero.mediaSource === "banners" && !activeSlide?.vehicle;
   const showBannerText = !isBannerSlide || model.hero.bannerShowText;
   const showBannerButton = isBannerSlide && model.hero.bannerShowButton;
+  const activeContentKey =
+    activeSlide?.vehicle?.slug ?? `banner-${activeIndex}`;
 
   useEffect(() => {
     setActiveIndex((current) =>
@@ -82,15 +84,18 @@ export function QuadraHero({ model, onOpenListing }: QuadraHeroProps) {
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        <AnimatePresence mode="sync">
+        <AnimatePresence mode="popLayout">
           {activeSlide ? (
             <motion.div
               animate={{ opacity: 1, scale: 1 }}
               className="quadra-hero__media"
               exit={{ opacity: 0 }}
-              initial={{ opacity: 0, scale: 1.035 }}
+              initial={{ opacity: 0, scale: 1.02 }}
               key={`${activeSlide.url}-${activeIndex}`}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.6,
+                ease: "easeInOut",
+              }}
             >
               {activeSlide.kind === "video" ? (
                 <video
@@ -125,66 +130,62 @@ export function QuadraHero({ model, onOpenListing }: QuadraHeroProps) {
         <div className="quadra-hero__overlay" />
 
         <div className="quadra-container quadra-hero__content">
-          <AnimatePresence mode="sync">
+          <AnimatePresence mode="popLayout">
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="quadra-hero__copy"
-              exit={{ opacity: 0, y: -18 }}
-              initial={{ opacity: 0, y: 18 }}
-              key={activeSlide?.vehicle?.slug ?? `banner-${activeIndex}`}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
+              className="quadra-hero__content-grid"
+              data-slide-key={activeContentKey}
+              data-testid="quadra-hero-content-grid"
+              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
+              key={activeContentKey}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.3,
+                ease: "easeInOut",
+              }}
             >
-              {showBannerText ? (
-                <>
-                  <div className="quadra-modern-divider" />
-                  <HeroTitle
-                    model={model}
-                    vehicle={activeSlide?.vehicle ?? null}
-                  />
-                  <p data-editor-id="hero.subtitle">
-                    {activeSlide?.vehicle?.trimName || model.hero.subtitle}
-                  </p>
-                </>
-              ) : null}
-              {activeSlide?.vehicle ? (
-                <button
-                  className="quadra-modern-button quadra-modern-button--accent"
-                  onClick={() => onOpenListing(activeSlide.vehicle!.slug)}
-                  type="button"
-                >
-                  Ver veículo
-                </button>
-              ) : showBannerButton ? (
-                <a
-                  className="quadra-modern-button quadra-modern-button--accent"
-                  href="#cars"
-                >
-                  {model.hero.bannerButtonText}
-                </a>
-              ) : isBannerSlide ? null : (
-                <a
-                  className="quadra-modern-button quadra-modern-button--accent"
-                  href="#cars"
-                >
-                  Ver showroom
-                </a>
-              )}
-            </motion.div>
-          </AnimatePresence>
+              <div className="quadra-hero__copy">
+                {showBannerText ? (
+                  <>
+                    <div className="quadra-modern-divider" />
+                    <HeroTitle
+                      model={model}
+                      vehicle={activeSlide?.vehicle ?? null}
+                    />
+                    <p data-editor-id="hero.subtitle">
+                      {activeSlide?.vehicle?.trimName || model.hero.subtitle}
+                    </p>
+                  </>
+                ) : null}
+                {activeSlide?.vehicle ? (
+                  <button
+                    className="quadra-modern-button quadra-modern-button--accent"
+                    onClick={() => onOpenListing(activeSlide.vehicle!.slug)}
+                    type="button"
+                  >
+                    Ver veículo
+                  </button>
+                ) : showBannerButton ? (
+                  <a
+                    className="quadra-modern-button quadra-modern-button--accent"
+                    href="#cars"
+                  >
+                    {model.hero.bannerButtonText}
+                  </a>
+                ) : isBannerSlide ? null : (
+                  <a
+                    className="quadra-modern-button quadra-modern-button--accent"
+                    href="#cars"
+                  >
+                    Ver estoque
+                  </a>
+                )}
+              </div>
 
-          <AnimatePresence mode="sync">
-            {activeSlide?.vehicle ? (
-              <motion.div
-                animate={{ opacity: 1, y: 0 }}
-                className="quadra-hero__specs-wrapper"
-                exit={{ opacity: 0, y: -18 }}
-                initial={{ opacity: 0, y: 18 }}
-                key={activeSlide.vehicle.slug}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
-              >
+              {activeSlide?.vehicle ? (
                 <HeroSpecs vehicle={activeSlide.vehicle} />
-              </motion.div>
-            ) : null}
+              ) : null}
+            </motion.div>
           </AnimatePresence>
         </div>
 
@@ -220,7 +221,8 @@ export function QuadraHero({ model, onOpenListing }: QuadraHeroProps) {
                     <span
                       style={{
                         animationDuration: `${model.hero.speed}ms`,
-                        animationPlayState: paused ? "paused" : "running",
+                        animationPlayState:
+                          paused || prefersReducedMotion ? "paused" : "running",
                       }}
                     />
                   ) : null}

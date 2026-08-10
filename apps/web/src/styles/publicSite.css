@@ -328,6 +328,207 @@
   }
 }
 
+/* Vehicle vitrines use the custom-page blocks with a cinematic, Quadra-inspired
+   composition. The variant is opt-in so manually built pages keep their layout. */
+.page-builder-renderer[data-page-variant="vehicle-vitrine"] {
+  background: #f4efee !important;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="marquee"]
+  > div {
+  background: #151515;
+  border-color: #4a4444;
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="marquee"]
+  span {
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  > section {
+  background: #151515;
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  .public-storefront-shell {
+  min-height: min(48rem, calc(100svh - 4rem));
+  max-width: 90rem;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  h1 {
+  color: #f4efee;
+  text-wrap: balance;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  h1
+  + p,
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  a
+  + span {
+  color: #a09898;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  img {
+  aspect-ratio: 16 / 11;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  .group.relative {
+  border-color: #4a4444;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="vehicle_specs"]
+  > section {
+  background: #f4efee;
+  border-color: #e8e3e2;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="vehicle_specs"]
+  .grid.max-w-4xl
+  > div {
+  background: var(--color-warm-white);
+  border-color: #e8e3e2;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  > section {
+  background: #151515;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  h2 {
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  h2
+  + p {
+  color: #a09898;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  .mt-10 {
+  grid-auto-flow: dense;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  .mt-10
+  > button:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  button {
+  background: #151515;
+  border-color: #4a4444;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="scroll_zoom"]
+  > section {
+  background: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="scroll_zoom"]
+  img {
+  min-height: 24rem;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="contact_section"]
+  form {
+  background: var(--color-warm-white);
+  border-color: #e8e3e2;
+  box-shadow: var(--shadow-panel);
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  > section {
+  background: #151515;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  .public-storefront-shell
+  > div {
+  background: #151515;
+  border-color: #4a4444;
+  box-shadow: var(--shadow-panel);
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  h2 {
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  h2
+  + p {
+  color: #a09898;
+}
+
+@media (min-width: 1024px) {
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    [data-page-builder-block="hero"]
+    .public-storefront-shell {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    [data-page-builder-block="gallery"]
+    .mt-10
+    > button:first-child {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    [data-page-builder-block="scroll_zoom"]
+    img {
+    min-height: 18rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    :where(img, a, button),
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    .page-builder-marquee-track {
+    animation: none;
+    transition: none;
+  }
+}
+
 @keyframes page-builder-style-fade-in {
   from {
     opacity: 0;

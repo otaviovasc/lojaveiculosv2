@@ -82,6 +82,7 @@ export function createApp(options: CreateAppOptions = {}) {
       ...(options.storefrontPageRepository
         ? {
             services: createStorefrontPageServices({
+              publicRepository: options.publicStorefrontRepository,
               repository: options.storefrontPageRepository,
             }),
           }

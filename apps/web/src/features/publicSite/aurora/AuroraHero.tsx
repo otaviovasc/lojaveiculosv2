@@ -1,22 +1,24 @@
-import { DEFAULT_STOREFRONT_ABOUT_IMAGES } from "@lojaveiculosv2/shared";
 import {
   ArrowDownRight,
   ArrowUpRight,
   CalendarDays,
-  Car,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ChevronRightIcon,
   Gauge,
-  MessageCircle,
-  Pause,
-  Play,
   Search,
   ShieldCheck,
   Sparkles,
+  Tag,
 } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  type FocusEvent,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   formatPublicVehicleMileage,
   formatPublicVehiclePrice,
@@ -26,16 +28,6 @@ import type { PublicVehicleListing } from "../types";
 import { createStorefrontHeroSlides } from "../storefrontHeroSlides";
 import type { QuadraStorefrontModel } from "../quadra/quadraAdapter";
 import { createAuroraWhatsappUrl } from "./auroraContactModel";
-
-const QUICK_CATEGORY_TAGS = [
-  "Todos",
-  "SUVs",
-  "Sedans",
-  "Hatchbacks",
-  "Pickups",
-  "Flex",
-  "Automático",
-] as const;
 
 export function AuroraHero({
   listingCount,
@@ -51,6 +43,7 @@ export function AuroraHero({
   const slides = createStorefrontHeroSlides(model);
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const prefersReducedMotion = Boolean(useReducedMotion());
   const videoRef = useRef<HTMLVideoElement>(null);
   const activeSlide = slides[activeIndex] ?? slides[0];
 
@@ -61,12 +54,24 @@ export function AuroraHero({
   }, [slides.length]);
 
   useEffect(() => {
-    if (!model.hero.autoplay || paused || slides.length < 2) return undefined;
+    if (
+      !model.hero.autoplay ||
+      paused ||
+      prefersReducedMotion ||
+      slides.length < 2
+    )
+      return undefined;
     const interval = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, model.hero.speed || 6000);
     return () => window.clearInterval(interval);
-  }, [model.hero.autoplay, model.hero.speed, paused, slides.length]);
+  }, [
+    model.hero.autoplay,
+    model.hero.speed,
+    paused,
+    prefersReducedMotion,
+    slides.length,
+  ]);
 
   const move = (offset: number) => {
     setActiveIndex(
@@ -74,13 +79,17 @@ export function AuroraHero({
     );
   };
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    document.getElementById("estoque")?.scrollIntoView({ behavior: "smooth" });
+  const resumeAfterFocusLeaves = (event: FocusEvent<HTMLElement>) => {
+    if (
+      !(event.relatedTarget instanceof Node) ||
+      !event.currentTarget.contains(event.relatedTarget)
+    ) {
+      setPaused(false);
+    }
   };
 
-  const selectCategory = (tag: string) => {
-    onSearch(tag === "Todos" ? "" : tag);
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
     document.getElementById("estoque")?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -89,170 +98,119 @@ export function AuroraHero({
       {/* Background Full Media Stage (Quadra inspired full-bleed media) */}
       <div
         className="aurora-hero__bg-stage"
+        onBlur={resumeAfterFocusLeaves}
+        onFocus={() => setPaused(true)}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {activeSlide ? (
-          <div
-            className="aurora-hero__media-wrap"
-            key={`${activeSlide.url}-${activeIndex}`}
-          >
-            {activeSlide.kind === "video" ? (
-              <video
-                aria-label="Vídeo de destaque da loja"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                ref={videoRef}
-                src={activeSlide.url}
-              />
-            ) : activeSlide.mobileUrl ? (
-              <picture>
-                <source
-                  media="(max-width: 767px)"
-                  srcSet={activeSlide.mobileUrl}
+        <AnimatePresence mode="popLayout">
+          {activeSlide ? (
+            <motion.div
+              animate={{ opacity: 1, scale: 1 }}
+              className="aurora-hero__media-wrap"
+              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, scale: 1.04 }}
+              key={`${activeSlide.url}-${activeIndex}`}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.75 }}
+            >
+              {activeSlide.kind === "video" ? (
+                <video
+                  aria-label="Vídeo de destaque da loja"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  ref={videoRef}
+                  src={activeSlide.url}
                 />
+              ) : activeSlide.mobileUrl ? (
+                <picture>
+                  <source
+                    media="(max-width: 767px)"
+                    srcSet={activeSlide.mobileUrl}
+                  />
+                  <img
+                    alt={activeSlide.alt}
+                    fetchPriority={activeIndex === 0 ? "high" : "auto"}
+                    src={activeSlide.url}
+                  />
+                </picture>
+              ) : (
                 <img
                   alt={activeSlide.alt}
                   fetchPriority={activeIndex === 0 ? "high" : "auto"}
                   src={activeSlide.url}
                 />
-              </picture>
-            ) : (
-              <img
-                alt={activeSlide.alt}
-                fetchPriority={activeIndex === 0 ? "high" : "auto"}
-                src={activeSlide.url}
-              />
-            )}
-          </div>
-        ) : null}
+              )}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         {/* Gradient Overlay for Editorial High-Contrast Text */}
         <div className="aurora-hero__bg-overlay" />
       </div>
 
-      <div className="aurora-shell aurora-hero__grid">
-        <div className="aurora-hero__copy">
-          <p className="aurora-eyebrow">
-            <Sparkles aria-hidden="true" /> Curadoria Automotiva Premium
-          </p>
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className={`aurora-shell aurora-hero__grid ${
+            activeSlide?.vehicle ? "" : "aurora-hero__grid--solo"
+          }`}
+          exit={{ opacity: 0, y: -12 }}
+          initial={{ opacity: 0, y: 12 }}
+          key={activeSlide?.vehicle?.slug ?? `banner-${activeIndex}`}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
+        >
+          <div className="aurora-hero__copy">
+            <p className="aurora-eyebrow">
+              <Sparkles aria-hidden="true" /> Curadoria Automotiva Premium
+            </p>
 
-          {activeSlide?.vehicle ? (
-            <VehicleTitle vehicle={activeSlide.vehicle} />
-          ) : (
-            <h1>
-              <HighlightedTitle value={model.hero.title} />
-            </h1>
-          )}
+            {activeSlide?.vehicle ? (
+              <VehicleTitle vehicle={activeSlide.vehicle} />
+            ) : (
+              <h1>
+                <HighlightedTitle value={model.hero.title} />
+              </h1>
+            )}
 
-          <p className="aurora-hero__subtitle">
-            {activeSlide?.vehicle?.trimName || model.hero.subtitle}
-          </p>
+            <p className="aurora-hero__subtitle">
+              {activeSlide?.vehicle?.trimName || model.hero.subtitle}
+            </p>
 
-          <form className="aurora-search" onSubmit={submit}>
-            <Search aria-hidden="true" />
-            <input
-              aria-label="Buscar no estoque"
-              onChange={(event) => onSearch(event.target.value)}
-              placeholder="Busque por marca, modelo ou versão..."
-              type="search"
-              value={query}
-            />
-            <button type="submit">
-              Explorar <ArrowDownRight aria-hidden="true" />
-            </button>
-          </form>
+            <form className="aurora-search" onSubmit={submit}>
+              <Search aria-hidden="true" />
+              <input
+                aria-label="Buscar no estoque"
+                onChange={(event) => onSearch(event.target.value)}
+                placeholder="Busque por marca, modelo ou versão..."
+                type="search"
+                value={query}
+              />
+              <button type="submit">
+                Explorar <ArrowDownRight aria-hidden="true" />
+              </button>
+            </form>
 
-          <div className="aurora-hero__quick-meta">
-            <span className="aurora-hero__stock-pill">
-              <strong>{listingCount}</strong> veículos disponíveis
-            </span>
-            <span className="aurora-hero__meta-dot">•</span>
-            <span className="aurora-hero__meta-text">
-              <ShieldCheck aria-hidden="true" /> Procedência & Laudo Cautelar
-            </span>
-          </div>
-        </div>
-
-        {/* Premium Featured Vehicle Showcase Card */}
-        <div className="aurora-hero__visual">
-          {activeSlide?.vehicle ? (
-            <div className="aurora-hero__showcase-card">
-              <div className="aurora-hero__showcase-media">
-                <img alt={activeSlide.alt} src={activeSlide.url} />
-                <span className="aurora-hero__showcase-badge">
-                  <Sparkles aria-hidden="true" /> Destaque da Vitrine
-                </span>
-              </div>
-              <div className="aurora-hero__showcase-body">
-                <div className="aurora-hero__showcase-header">
-                  <h3>{activeSlide.vehicle.title}</h3>
-                  <p>{activeSlide.vehicle.trimName}</p>
-                </div>
-
-                <div className="aurora-hero__showcase-tags">
-                  <span>
-                    <CalendarDays aria-hidden="true" />{" "}
-                    {activeSlide.vehicle.manufactureYear}/
-                    {activeSlide.vehicle.modelYear}
-                  </span>
-                  <span>
-                    <Gauge aria-hidden="true" />{" "}
-                    {formatPublicVehicleMileage(activeSlide.vehicle.mileageKm)}
-                  </span>
-                </div>
-
-                <div className="aurora-hero__showcase-footer">
-                  <strong>
-                    {formatPublicVehiclePrice(activeSlide.vehicle.priceCents)}
-                  </strong>
-                  <button
-                    aria-label={`Ver detalhes de ${activeSlide.vehicle.title}`}
-                    onClick={() => {
-                      document
-                        .getElementById("estoque")
-                        ?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    type="button"
-                  >
-                    Ver detalhes <ArrowUpRight aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
+            <div className="aurora-hero__quick-meta">
+              <span className="aurora-hero__stock-pill">
+                <strong>{listingCount}</strong> veículos disponíveis
+              </span>
+              <span className="aurora-hero__meta-dot">•</span>
+              <span className="aurora-hero__meta-text">
+                <ShieldCheck aria-hidden="true" /> Procedência & Laudo Cautelar
+              </span>
             </div>
-          ) : (
-            <a
-              className="aurora-hero__showcase-card aurora-hero__showcase-card--banner"
-              href="#estoque"
-            >
-              <div className="aurora-hero__showcase-media">
-                <img
-                  alt={activeSlide?.alt ?? `Showroom ${model.storeName}`}
-                  src={
-                    activeSlide?.url ??
-                    DEFAULT_STOREFRONT_ABOUT_IMAGES.secondary
-                  }
-                />
-                <span className="aurora-hero__showcase-badge">
-                  Estoque Selecionado
-                </span>
-              </div>
-              <div className="aurora-hero__showcase-body">
-                <h3>Conheça nosso estoque completo</h3>
-                <p>Veículos selecionados com procedência e garantia</p>
-                <div className="aurora-hero__showcase-footer">
-                  <span className="aurora-hero__showcase-action">
-                    Explorar vitrine <ArrowUpRight aria-hidden="true" />
-                  </span>
-                </div>
-              </div>
-            </a>
-          )}
-        </div>
-      </div>
+          </div>
+
+          {/* Vehicle slides surface their unique specs in a compact glass
+              panel (Quadra pattern); the media stays full-bleed behind. */}
+          {activeSlide?.vehicle ? (
+            <HeroSpecs vehicle={activeSlide.vehicle} />
+          ) : null}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Slide Navigation Controls */}
       {slides.length > 1 ? (
@@ -288,6 +246,63 @@ export function AuroraHero({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function HeroSpecs({ vehicle }: { vehicle: PublicVehicleListing }) {
+  return (
+    <aside className="aurora-hero__specs" aria-label="Resumo do veículo">
+      <span className="aurora-hero__specs-eyebrow">
+        <Sparkles aria-hidden="true" /> Destaque da Vitrine
+      </span>
+      <Spec icon={CalendarDays} label="Ano modelo">
+        {vehicle.manufactureYear ?? "-"}/{vehicle.modelYear ?? "-"}
+      </Spec>
+      <Spec icon={Gauge} label="Quilometragem">
+        {formatPublicVehicleMileage(vehicle.mileageKm)}
+      </Spec>
+      {vehicle.priceCents === null ? null : (
+        <Spec accent icon={Tag} label="Preço especial">
+          {formatPublicVehiclePrice(vehicle.priceCents)}
+        </Spec>
+      )}
+      <button
+        aria-label={`Ver detalhes de ${vehicle.title}`}
+        className="aurora-hero__specs-cta"
+        onClick={() => {
+          document
+            .getElementById("estoque")
+            ?.scrollIntoView({ behavior: "smooth" });
+        }}
+        type="button"
+      >
+        Ver detalhes <ArrowUpRight aria-hidden="true" />
+      </button>
+    </aside>
+  );
+}
+
+function Spec({
+  accent = false,
+  children,
+  icon: Icon,
+  label,
+}: {
+  accent?: boolean;
+  children: ReactNode;
+  icon: typeof CalendarDays;
+  label: string;
+}) {
+  return (
+    <div className={accent ? "is-accent" : undefined}>
+      <span>
+        <Icon aria-hidden="true" />
+      </span>
+      <p>
+        <small>{label}</small>
+        <strong>{children}</strong>
+      </p>
+    </div>
   );
 }
 

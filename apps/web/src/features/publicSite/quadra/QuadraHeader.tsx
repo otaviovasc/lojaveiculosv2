@@ -8,8 +8,8 @@ type QuadraHeaderProps = {
 };
 
 const navItems = [
-  { href: "#home", label: "Home", section: "hero" },
-  { href: "#cars", label: "Showroom", section: "stock" },
+  { href: "#home", label: "Início", section: "hero" },
+  { href: "#cars", label: "Estoque", section: "stock" },
   { href: "#about", label: "Quem Somos", section: "about" },
   { href: "#contact", label: "Contato", section: "lead" },
 ] as const;

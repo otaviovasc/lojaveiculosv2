@@ -1585,8 +1585,8 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact__lead-form {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
+  background: var(--quadra-surface);
+  border: 1px solid var(--quadra-line);
   box-shadow: var(--shadow-panel);
   margin: 3rem auto 0;
   max-width: 36rem;
@@ -1596,7 +1596,7 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact__lead-form
   h3 {
-  color: var(--color-app-text);
+  color: var(--quadra-ink);
   font-size: var(--font-size-base);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1787,7 +1787,6 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   padding-block: 0.8rem;
-  position: relative;
   text-transform: uppercase;
 }
 
@@ -1859,15 +1858,23 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__content {
-  align-items: center;
-  display: grid;
-  gap: clamp(2rem, 7vw, 7rem);
-  grid-template-columns: minmax(0, 1.3fr) minmax(17rem, 0.7fr);
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  justify-content: center;
   padding-bottom: 3rem;
   padding-top: 8rem;
   position: relative;
   z-index: 2;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__content-grid {
+  align-items: center;
+  display: grid;
+  gap: clamp(2rem, 7vw, 7rem);
+  grid-template-columns: minmax(0, 1.3fr) minmax(17rem, 0.7fr);
+  width: 100%;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2078,6 +2085,12 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact {
   padding-block: clamp(5rem, 9vw, 9rem);
+  scroll-margin-top: calc(var(--tenant-header-height, 80px) + 1rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials {
+  scroll-margin-top: calc(var(--tenant-header-height, 80px) + 1rem);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2092,7 +2105,7 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-cars__heading
-  > span,
+  span,
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials__heading
   span,
@@ -2142,6 +2155,7 @@
   border: 1px solid var(--quadra-line);
   box-shadow: var(--shadow-panel);
   overflow: hidden;
+  position: relative;
   transition:
     transform 220ms ease,
     box-shadow 220ms ease;
@@ -2225,6 +2239,7 @@
   transform: translateY(-50%);
   transition: opacity 160ms ease;
   width: 2.5rem;
+  z-index: 2;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2316,6 +2331,25 @@
   margin-top: 1rem;
   padding: 0;
   text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__hint::before {
+  content: "";
+  inset: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__hint:focus-visible {
+  outline: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__hint:focus-visible::before {
+  outline: 3px solid var(--quadra-accent);
+  outline-offset: -3px;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2824,12 +2858,17 @@
   bottom: 4.75rem;
 }
 
+/* Dark appearance must beat the !important light-token overrides from
+   publicSite.css (.public-storefront[data-storefront]) so inherited heading
+   colors (section titles, about copy) stay readable on dark surfaces. */
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"][data-color-scheme="dark"] {
   --quadra-ink: #f5f5f2;
   --quadra-muted: #aaa9a4;
   --quadra-surface: #111210;
   --quadra-subtle: #191a17;
   --quadra-line: rgb(255 255 255 / 0.13);
+  background: var(--quadra-surface) !important;
+  color: var(--quadra-ink) !important;
 }
 
 @media (max-width: 1279px) {
@@ -2893,7 +2932,7 @@
     display: flex;
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-    .quadra-hero__content {
+    .quadra-hero__content-grid {
     grid-template-columns: minmax(0, 1fr);
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2915,6 +2954,11 @@
 }
 
 @media (max-width: 767px) {
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-whatsapp-button {
+    display: none;
+  }
+
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-hero__stage {
     height: 42rem;

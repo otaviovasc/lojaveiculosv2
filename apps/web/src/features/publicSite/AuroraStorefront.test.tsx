@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PublicStorefront } from "./PublicStorefront";
 import { publicStorefrontPreview } from "./fixtures";
@@ -29,6 +36,66 @@ describe("PublicStorefront Aurora landing inventory", () => {
     ).toHaveLength(12);
     expect(screen.getByText("Mostrando 12 veículos")).toBeInTheDocument();
     expect(document.querySelector('a[href*="/ofertas"]')).toBeNull();
+  });
+
+  it("translates vehicle enum labels before rendering cards", () => {
+    const data = auroraData();
+    const listing = data.listings[0];
+    if (!listing) throw new Error("fixture must include a listing");
+    listing.fuelType = "gasoline";
+    listing.transmission = "automatic";
+
+    renderStorefront(data);
+
+    expect(screen.getByText("Gasolina")).toBeInTheDocument();
+    expect(screen.getAllByText("Automático").length).toBeGreaterThan(0);
+    expect(screen.queryByText("gasoline")).not.toBeInTheDocument();
+    expect(screen.queryByText("automatic")).not.toBeInTheDocument();
+  });
+
+  it("crossfades hero copy without an empty content interval", async () => {
+    const user = userEvent.setup();
+    const data = auroraData();
+    data.listings = createListings(2);
+    data.settings.site.theme = {
+      ...data.settings.site.theme,
+      hero_banner_autoplay: false,
+      heroMediaSource: "vehicles",
+    };
+
+    renderStorefront(data);
+
+    const hero = document.querySelector<HTMLElement>(".aurora-hero");
+    if (!hero) throw new Error("Aurora hero must render");
+    expect(
+      within(hero).getByRole("heading", { level: 1, name: "Veículo 1" }),
+    ).toBeInTheDocument();
+
+    await user.click(within(hero).getByRole("button", { name: "Destaque 2" }));
+
+    expect(hero.querySelectorAll(".aurora-hero__copy").length).toBeGreaterThan(
+      0,
+    );
+    expect(
+      within(hero).getByRole("heading", { level: 1, name: "Veículo 2" }),
+    ).toBeInTheDocument();
+    expect(
+      within(hero).getAllByRole("complementary", {
+        name: "Resumo do veículo",
+      }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(hero).getByRole("button", {
+        name: "Ver detalhes de Veículo 2",
+      }),
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(hero.querySelectorAll(".aurora-hero__copy")).toHaveLength(1);
+      expect(
+        within(hero).queryByRole("heading", { level: 1, name: "Veículo 1" }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("adds the complete landing stock when legacy sections omit it", () => {

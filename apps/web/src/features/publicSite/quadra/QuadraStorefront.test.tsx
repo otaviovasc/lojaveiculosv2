@@ -58,6 +58,18 @@ describe("PublicStorefront QUADRA renderer", () => {
     expect(onOpenListing).toHaveBeenCalledWith("fiat-toro-2023");
   });
 
+  it("translates vehicle fuel labels before rendering cards", () => {
+    const data = quadraData();
+    const listing = data.listings[0];
+    if (!listing) throw new Error("fixture must include a listing");
+    listing.fuelType = "gasoline";
+
+    renderStorefront(data, vi.fn());
+
+    expect(screen.getByText("Gasolina")).toBeInTheDocument();
+    expect(screen.queryByText("gasoline")).not.toBeInTheDocument();
+  });
+
   it("keeps all landing-page stock visible and multi-photo navigation local", () => {
     const onOpenListing = vi.fn();
     const data = quadraData();

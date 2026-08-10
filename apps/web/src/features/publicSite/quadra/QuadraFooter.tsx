@@ -48,8 +48,8 @@ export function QuadraFooter({ model }: { model: QuadraStorefrontModel }) {
           <div>
             <h3>Navegação</h3>
             <nav aria-label="Navegação do rodapé">
-              <a href="#home">Home</a>
-              <a href="#cars">Showroom</a>
+              <a href="#home">Início</a>
+              <a href="#cars">Estoque</a>
               <a href="#about">Quem Somos</a>
               <a href="#contact">Contato</a>
             </nav>
