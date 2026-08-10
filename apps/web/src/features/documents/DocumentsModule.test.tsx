@@ -243,7 +243,10 @@ describe("DocumentsModule", () => {
       { target: { files: [oversized] } },
     );
 
-    expect(await screen.findByText(/excede o limite de 25 MB/)).toBeVisible();
+    const oversizedFileStatus = await screen.findByText(
+      /excede o limite de 25 MB/,
+    );
+    await waitFor(() => expect(oversizedFileStatus).toBeVisible());
     expect(screen.queryByLabelText("Fila de envio")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Salvar documento" }),
