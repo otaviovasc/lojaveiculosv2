@@ -28,32 +28,45 @@ export function createEditorPreviewStorefrontApi(
   return {
     getCustomPage: publicApi.getCustomPage,
     getListing: async (listingSlug) => {
-      const [settings, inventory] = await Promise.all([
-        settingsApi.getStoreSettings(),
-        createRuntimeInventoryApi(),
-      ]);
-      const summaries = await listAllPreviewInventory(inventory);
-      const summary = findListing(summaries, listingSlug);
-      if (!summary) throw new Error("Preview vehicle not found.");
-      const detail = await inventory.getListing(summary.listing.id);
-      return toPublicListingDetail(detail, settings);
+      try {
+        const [settings, inventory] = await Promise.all([
+          settingsApi.getStoreSettings(),
+          createRuntimeInventoryApi(),
+        ]);
+        const summaries = await listAllPreviewInventory(inventory);
+        const summary = findListing(summaries, listingSlug);
+        if (!summary) throw new Error("Preview vehicle not found.");
+        const detail = await inventory.getListing(summary.listing.id);
+        return toPublicListingDetail(detail, settings);
+      } catch {
+        return publicApi.getListing(listingSlug);
+      }
     },
-    getSettings: async () =>
-      toPublicSettings(await settingsApi.getStoreSettings()),
+    getSettings: async () => {
+      try {
+        return toPublicSettings(await settingsApi.getStoreSettings());
+      } catch {
+        return publicApi.getSettings();
+      }
+    },
     listListings: async (query) => {
-      const [settings, inventory] = await Promise.all([
-        settingsApi.getStoreSettings(),
-        createRuntimeInventoryApi(),
-      ]);
-      const summaries = (await listAllPreviewInventory(inventory)).filter(
-        ({ listing }) => listing.status === "published",
-      );
-      const limit = query?.limit ?? 24;
-      const offset = query?.offset ?? 0;
-      return toPublicStorefrontData(
-        settings,
-        summaries.slice(offset, offset + limit),
-      );
+      try {
+        const [settings, inventory] = await Promise.all([
+          settingsApi.getStoreSettings(),
+          createRuntimeInventoryApi(),
+        ]);
+        const summaries = (await listAllPreviewInventory(inventory)).filter(
+          ({ listing }) => listing.status === "published",
+        );
+        const limit = query?.limit ?? 24;
+        const offset = query?.offset ?? 0;
+        return toPublicStorefrontData(
+          settings,
+          summaries.slice(offset, offset + limit),
+        );
+      } catch {
+        return publicApi.listListings(query);
+      }
     },
     submitListingInterest: publicApi.submitListingInterest,
     submitStorefrontInterest: publicApi.submitStorefrontInterest,

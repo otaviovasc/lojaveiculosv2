@@ -1,15 +1,12 @@
-import { LogIn, LogOut, RefreshCcw } from "lucide-react";
+import { LogIn, LogOut, RefreshCcw, UserCheck } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppBootScreen } from "../../components/ui";
-import {
-  FeatureActionButton,
-  FeaturePageHeader,
-  FeaturePageShell,
-} from "../../components/ui/FeatureLayout";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import "../../styles/account-auth.css";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
 import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
@@ -108,29 +105,30 @@ export function LocalDevSessionBootstrapPage() {
   }
 
   return (
-    <FeaturePageShell
-      className="min-h-screen max-w-xl justify-center"
-      variant="plain"
-    >
-      {error ? (
-        <>
-          <FeatureAlert title="Não foi possível preparar sua conta local">
-            {error}
-          </FeatureAlert>
-          <FeatureActionButton
-            icon={RefreshCcw}
-            label="Tentar novamente"
-            onClick={() => setAttempt((current) => current + 1)}
-            variant="primary"
+    <main className="account-auth-shell">
+      <div aria-hidden="true" className="account-auth-glow" />
+      <div className="account-glass-card max-w-xl text-center space-y-6">
+        {error ? (
+          <>
+            <FeatureAlert title="Não foi possível carregar sua conta local">
+              {error}
+            </FeatureAlert>
+            <FeatureActionButton
+              className="account-primary-button"
+              icon={RefreshCcw}
+              label="Tentar novamente"
+              onClick={() => setAttempt((current) => current + 1)}
+              variant="primary"
+            />
+          </>
+        ) : (
+          <AppBootScreen
+            description="Carregando as configurações e o perfil selecionado."
+            title="Entrando na conta local"
           />
-        </>
-      ) : (
-        <AppBootScreen
-          description="Estamos preparando seu acesso à loja."
-          title="Sincronizando conta local"
-        />
-      )}
-    </FeaturePageShell>
+        )}
+      </div>
+    </main>
   );
 }
 
@@ -150,53 +148,74 @@ export function LocalDevAuthPage() {
   }
 
   return (
-    <FeaturePageShell
-      className="min-h-screen max-w-3xl justify-center"
-      variant="plain"
-    >
-      <Logo className="h-11 self-start" variant="full" />
-      <FeaturePageHeader
-        chip="Local QA"
-        description="Contas de teste para validar permissões sem depender do provedor de identidade externo."
-        eyebrow="Ambiente local"
-        title="Selecionar perfil"
-      />
-      <div className="grid gap-3">
-        {localDevAccounts.map((account) => (
-          <button
-            className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-slate-400 hover:bg-slate-50"
-            key={account.userId}
-            onClick={() => signIn(account)}
-            type="button"
-          >
-            <span>
-              <span className="block text-sm font-semibold text-slate-950">
-                {account.name}
-              </span>
-              <span className="block text-xs text-slate-500">
-                {roleLabel(account.role)} · {account.email}
-              </span>
+    <main className="account-auth-shell">
+      <div aria-hidden="true" className="account-auth-glow" />
+      <div className="relative z-10 flex w-full max-w-xl flex-col items-center gap-6">
+        <Logo className="h-10" variant="full" />
+        <div className="account-glass-card space-y-6">
+          <div className="space-y-2 text-center">
+            <span className="account-badge-label">
+              <UserCheck className="size-3.5" aria-hidden="true" /> Ambiente
+              local
             </span>
-            <LogIn aria-hidden className="h-4 w-4 text-slate-500" />
-          </button>
-        ))}
+            <h1 className="font-display text-2xl md:text-3xl font-black text-foreground tracking-tight">
+              Selecionar perfil de teste
+            </h1>
+            <p className="text-sm font-medium text-muted max-w-md mx-auto leading-relaxed">
+              Escolha um perfil para testar permissões e fluxos de trabalho
+              locais.
+            </p>
+          </div>
+
+          <div className="space-y-2.5 pt-2">
+            {localDevAccounts.map((account) => (
+              <button
+                className="account-card-option group"
+                key={account.userId}
+                onClick={() => signIn(account)}
+                type="button"
+              >
+                <div className="flex flex-col gap-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground group-hover:text-accent-text transition-colors">
+                      {account.name}
+                    </span>
+                    <span className="account-role-chip">
+                      {roleLabel(account.role)}
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium text-muted">
+                    {account.email}
+                  </span>
+                </div>
+                <div className="size-8 rounded-full border border-line bg-app flex items-center justify-center text-muted group-hover:border-accent-strong group-hover:text-accent-text transition-all shrink-0">
+                  <LogIn aria-hidden className="size-4" />
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {selectedAccount ? (
+            <div className="pt-2 border-t border-line">
+              <FeatureActionButton
+                className="w-full justify-center text-sm font-bold text-muted hover:text-foreground"
+                icon={LogOut}
+                label={`Sair de ${selectedAccount.name}`}
+                onClick={signOut}
+                variant="secondary"
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
-      {selectedAccount ? (
-        <FeatureActionButton
-          icon={LogOut}
-          label={`Sair de ${selectedAccount.name}`}
-          onClick={signOut}
-          variant="secondary"
-        />
-      ) : null}
-    </FeaturePageShell>
+    </main>
   );
 }
 
 function roleLabel(role: LocalDevAccount["role"]) {
   if (role === "agency") return "Agência";
   if (role === "investor") return "Investidor";
-  if (role === "owner") return "Owner";
+  if (role === "owner") return "Proprietário";
   if (role === "supervisor") return "Supervisor";
   return "Vendedor";
 }

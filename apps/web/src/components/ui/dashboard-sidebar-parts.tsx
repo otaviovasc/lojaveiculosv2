@@ -206,7 +206,7 @@ export function SidebarFooterActions({
             : "Alternar para tema escuro"
         }
         aria-pressed={theme === "dark"}
-        className="workspace-sidebar__footer-button"
+        className={`workspace-sidebar__footer-button${isCompact ? " is-compact" : ""}`}
         onClick={onThemeToggle}
         title={theme === "dark" ? "Tema claro" : "Tema escuro"}
         type="button"
@@ -224,7 +224,7 @@ export function SidebarFooterActions({
       {onCollapsedChange && (
         <button
           aria-label={isCompact ? "Expandir sidebar" : "Recolher sidebar"}
-          className="workspace-sidebar__collapse-button"
+          className={`workspace-sidebar__collapse-button${isCompact ? " is-compact" : ""}`}
           onClick={() => onCollapsedChange(!isCompact)}
           title={isCompact ? "Expandir" : "Recolher"}
           type="button"
