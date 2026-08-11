@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ArrowRight,
-  Camera,
+  AlertCircle,
   ExternalLink,
   Loader2,
   MessageCircle,
-  QrCode,
-  ShieldCheck,
 } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type {
@@ -20,8 +17,7 @@ import type {
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
-import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
-import { ConnectionSectionCard } from "./CrmWhatsappConnectionAdminParts";
+import { CrmWhatsappChannelDirectory } from "./CrmWhatsappChannelDirectory";
 import {
   clearPendingComposioConnection,
   readPendingComposioConnectionId,
@@ -149,7 +145,7 @@ export function CrmWhatsappSelfServiceSetup({
 
   if (!provider) {
     return (
-      <ProviderChooser
+      <CrmWhatsappChannelDirectory
         availableProviders={availableProviders}
         onChoose={setProvider}
         zapiAddonContract={zapiAddonContract}
@@ -191,101 +187,6 @@ export function CrmWhatsappSelfServiceSetup({
       onRedirect={onRedirect}
       onStartBusy={setIsBusy}
     />
-  );
-}
-
-function ProviderChooser({
-  availableProviders,
-  onChoose,
-  zapiAddonContract,
-}: {
-  availableProviders: CrmWhatsappSetupProvider[];
-  onChoose: (provider: CrmWhatsappSetupProvider) => void;
-  zapiAddonContract: CrmWhatsappZapiAddonContract | null;
-}) {
-  return (
-    <div className="grid gap-3 md:grid-cols-2" aria-label="Adicionar canal">
-      {!availableProviders.length ? (
-        <SetupNotice>
-          Os canais com configuração direta já estão conectados nesta loja.
-        </SetupNotice>
-      ) : null}
-      <ProviderOption
-        description={readZapiChooserDescription(zapiAddonContract)}
-        icon={<QrCode aria-hidden="true" />}
-        label="Z-API"
-        onClick={() => onChoose("zapi")}
-      />
-      {availableProviders.includes("composio_whatsapp") ? (
-        <ProviderOption
-          description="Autorize a conta Meta em uma página segura e escolha o número remetente."
-          icon={<ShieldCheck aria-hidden="true" />}
-          label="WhatsApp Oficial"
-          onClick={() => onChoose("composio_whatsapp")}
-        />
-      ) : null}
-      <ConnectionSectionCard
-        description="Sem custo adicional no CRM. A configuração é feita com ajuda da nossa equipe."
-        icon={<Camera aria-hidden="true" />}
-        title="Instagram incluído"
-      >
-        <a
-          className="crm-whatsapp-connection-save"
-          href={crmWhatsappSupportUrl()}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Pedir ajuda para configurar
-        </a>
-      </ConnectionSectionCard>
-    </div>
-  );
-}
-
-function readZapiChooserDescription(
-  contract: CrmWhatsappZapiAddonContract | null,
-) {
-  if (contract?.status === "pending") {
-    return "Solicitação registrada; aguardando confirmação de pagamento.";
-  }
-  if (contract?.status === "scheduled") {
-    return "Ativação programada para o próximo vencimento da assinatura.";
-  }
-  if (contract?.status === "paid_awaiting_setup") {
-    return "Pagamento confirmado; a equipe está preparando a conexão.";
-  }
-  if (contract?.status === "active") {
-    return "Adicional ativo. Informe as credenciais uma única vez para parear o telefone.";
-  }
-  return "Integração opcional paga. O valor e as condições vêm da assinatura da loja.";
-}
-
-function ProviderOption({
-  description,
-  icon,
-  label,
-  onClick,
-}: {
-  description: string;
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className="flex min-h-36 items-start gap-3 rounded-xl border border-line/45 bg-panel/15 p-4 text-left transition hover:border-strong/35 hover:bg-panel/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      onClick={onClick}
-      type="button"
-    >
-      <span className="rounded-lg bg-accent/10 p-2 text-accent">{icon}</span>
-      <span className="grid flex-1 gap-1">
-        <strong className="text-base text-text">{label}</strong>
-        <span className="text-sm leading-relaxed text-muted">
-          {description}
-        </span>
-      </span>
-      <ArrowRight aria-hidden="true" className="size-4 text-muted" />
-    </button>
   );
 }
 
@@ -368,23 +269,63 @@ function OfficialSetup({
         conectado depois da confirmação do provedor e da escolha do remetente.
       </p>
       {completion?.senders.length ? (
-        <fieldset className="grid gap-2">
-          <legend className="mb-2 text-sm font-bold text-text">
-            Escolha o número remetente
-          </legend>
-          {completion.senders.map((sender) => (
+        <div className="crm-whatsapp-official-stage" data-state="senders">
+          <p className="crm-whatsapp-official-stage-label">
+            Autorização confirmada
+          </p>
+          <p className="crm-whatsapp-official-stage-note">
+            O provedor confirmou a autorização. Escolha o número remetente para
+            concluir a conexão do canal.
+          </p>
+          <fieldset className="crm-whatsapp-official-senders">
+            <legend>Escolha o número remetente</legend>
+            {completion.senders.map((sender) => (
+              <button
+                className="crm-action crm-action-secondary justify-start"
+                disabled={isBusy || !canSetup}
+                key={sender.senderId}
+                onClick={() => void selectSender(sender.senderId)}
+                type="button"
+              >
+                <MessageCircle aria-hidden="true" className="size-4" />
+                {sender.displayName || sender.phone || sender.senderId}
+              </button>
+            ))}
+          </fieldset>
+        </div>
+      ) : connection ? (
+        <div className="crm-whatsapp-official-stage" data-state="awaiting">
+          <p className="crm-whatsapp-official-stage-label">
+            Aguardando retorno do provedor
+          </p>
+          <p className="crm-whatsapp-official-stage-note">
+            A autorização foi iniciada na página da Meta, mas o canal ainda não
+            está conectado. Nenhuma operação oficial foi concluída até a
+            confirmação do provedor.
+          </p>
+          <div className="crm-whatsapp-official-stage-actions">
             <button
-              className="crm-action crm-action-secondary justify-start"
+              className="crm-action crm-action-primary"
               disabled={isBusy || !canSetup}
-              key={sender.senderId}
-              onClick={() => void selectSender(sender.senderId)}
+              onClick={onComplete}
               type="button"
             >
-              <MessageCircle aria-hidden="true" className="size-4" />
-              {sender.displayName || sender.phone || sender.senderId}
+              {isBusy ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : null}
+              Verificar autorização
             </button>
-          ))}
-        </fieldset>
+            <button
+              className="crm-action crm-action-secondary"
+              disabled={isBusy || !canSetup}
+              onClick={() => void authorize()}
+              type="button"
+            >
+              <ExternalLink aria-hidden="true" className="size-4" />
+              Reabrir autorização com a Meta
+            </button>
+          </div>
+        </div>
       ) : (
         <button
           className="crm-action crm-action-primary"
@@ -400,9 +341,10 @@ function OfficialSetup({
           Autorizar com a Meta
         </button>
       )}
+      <SetupError error={error} />
       {connection && error ? (
         <button
-          className="crm-action crm-action-secondary"
+          className="crm-action crm-action-secondary justify-self-start"
           disabled={isBusy || !canSetup}
           onClick={onComplete}
           type="button"
@@ -420,7 +362,6 @@ function OfficialSetup({
           Voltar
         </button>
       ) : null}
-      <SetupError error={error} />
     </SetupCard>
   );
 }
@@ -450,8 +391,9 @@ function SetupNotice({ children }: { children: React.ReactNode }) {
 
 function SetupError({ error }: { error: string | null }) {
   return error ? (
-    <p className="text-sm font-bold text-danger" role="alert">
-      {error}
+    <p className="crm-whatsapp-official-error" role="alert">
+      <AlertCircle aria-hidden="true" />
+      <span>{error}</span>
     </p>
   ) : null;
 }

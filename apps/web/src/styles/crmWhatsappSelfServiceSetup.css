@@ -1,0 +1,270 @@
+/* Self-service channel directory and official WhatsApp setup */
+
+.crm-whatsapp-channel-directory {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+  margin: 0;
+  max-width: 40rem;
+  padding: 0;
+}
+
+.crm-whatsapp-channel-row {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 4.25rem;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+  width: 100%;
+}
+
+.crm-whatsapp-channel-row:not([data-actionable="false"]):hover {
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-line));
+}
+
+.crm-whatsapp-channel-row:not([data-actionable="false"]):focus-visible {
+  border-color: var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.crm-whatsapp-channel-row[data-actionable="false"] {
+  background: var(--color-app);
+  cursor: default;
+}
+
+.crm-whatsapp-channel-row[data-variant="support"] {
+  border-style: dashed;
+}
+
+.crm-whatsapp-channel-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.4rem;
+  justify-content: center;
+  width: 2.4rem;
+}
+
+.crm-whatsapp-channel-icon svg {
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.crm-whatsapp-channel-row[data-actionable="false"] .crm-whatsapp-channel-icon {
+  background: var(--color-panel);
+  color: var(--color-muted);
+}
+
+.crm-whatsapp-channel-body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-channel-title {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  gap: 0.5rem;
+  line-height: 1.25;
+}
+
+.crm-whatsapp-channel-badge {
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-accent-strong);
+  font-size: calc(var(--font-size-xs) * 0.88);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-channel-badge[data-tone="muted"] {
+  border-color: var(--color-line);
+  color: var(--color-muted);
+}
+
+.crm-whatsapp-channel-badge[data-tone="success"] {
+  background: var(--color-green-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 32%,
+    var(--color-line)
+  );
+  color: var(--color-success-strong);
+}
+
+.crm-whatsapp-channel-description {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-whatsapp-channel-chevron {
+  color: var(--color-muted);
+  height: 1rem;
+  justify-self: end;
+  width: 1rem;
+}
+
+.crm-whatsapp-channel-support-link {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  justify-self: end;
+  min-height: 2.25rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-channel-empty {
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  line-height: 1.45;
+  padding: 0.85rem 1rem;
+}
+
+/* Official WhatsApp setup stages */
+
+.crm-whatsapp-official-stage {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  padding: 1rem;
+}
+
+.crm-whatsapp-official-stage[data-state="awaiting"] {
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 26%, var(--color-line));
+}
+
+.crm-whatsapp-official-stage[data-state="senders"] {
+  background: var(--color-green-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 32%,
+    var(--color-line)
+  );
+}
+
+.crm-whatsapp-official-stage-label {
+  font-size: calc(var(--font-size-xs) * 0.92);
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-official-stage[data-state="awaiting"]
+  .crm-whatsapp-official-stage-label {
+  color: var(--color-accent-strong);
+}
+
+.crm-whatsapp-official-stage[data-state="senders"]
+  .crm-whatsapp-official-stage-label {
+  color: var(--color-success-strong);
+}
+
+.crm-whatsapp-official-stage-note {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-whatsapp-official-stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.crm-whatsapp-official-senders {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.crm-whatsapp-official-senders legend {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  margin-bottom: 0.4rem;
+}
+
+.crm-whatsapp-official-error {
+  align-items: start;
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger) 30%, var(--color-line));
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  gap: 0.6rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.85rem 1rem;
+}
+
+.crm-whatsapp-official-error svg {
+  flex: 0 0 auto;
+  height: 1rem;
+  margin-top: 0.1rem;
+  width: 1rem;
+}
+
+@media (max-width: 480px) {
+  .crm-whatsapp-channel-row {
+    gap: 0.7rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.8rem 0.85rem;
+  }
+
+  .crm-whatsapp-channel-chevron,
+  .crm-whatsapp-channel-support-link {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .crm-whatsapp-official-stage-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .crm-whatsapp-official-stage-actions .crm-action {
+    width: 100%;
+  }
+}
