@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
@@ -188,6 +189,13 @@ describe("CRM official WhatsApp template conversation start", () => {
 });
 
 function createConnection(provider: CrmConnection["provider"]): CrmConnection {
+  if (provider === "zapi") {
+    return createConfiguredZapiTestConnection({
+      id: connectionId,
+      storeId,
+      tenantId,
+    });
+  }
   return {
     credentialsRef: {},
     displayName: provider,

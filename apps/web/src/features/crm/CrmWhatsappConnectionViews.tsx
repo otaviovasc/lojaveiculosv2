@@ -1,36 +1,18 @@
-import { ChevronDown, Webhook } from "lucide-react";
-import type { ReactNode } from "react";
+import { MessageCircle } from "lucide-react";
 import {
   ConnectionSectionCard,
   ConnectionStatusCard,
-  ConnectionWebhookList,
 } from "./CrmWhatsappConnectionAdminParts";
-import type {
-  CrmWhatsappConfigureWebhooksResult,
-  CrmWhatsappProviderConnection,
-} from "./crmWhatsappTypes";
+import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
 import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
 
 type SharedProps = {
   connection: CrmWhatsappProviderConnection;
   disabled: boolean;
-  isConfiguringWebhooks: boolean;
   isRefreshing: boolean;
-  onConfigureWebhooks: () => void;
   onRefresh: () => void;
-  webhookConfigResult: CrmWhatsappConfigureWebhooksResult | null;
 };
-
-function readWebhookAutoConfig(props: SharedProps) {
-  return {
-    disabled: props.disabled,
-    isConfiguring: props.isConfiguringWebhooks,
-    onConfigure: props.onConfigureWebhooks,
-    result: props.webhookConfigResult,
-    supportCode: readConnectionSetupSupportCode(props.connection),
-  };
-}
 
 export function ConnectionSetupFlow({
   localError,
@@ -46,18 +28,20 @@ export function ConnectionSetupFlow({
     <div className="crm-whatsapp-connection-dashboard">
       <ConnectionStatusCard
         connection={props.connection}
+        disabled={props.disabled}
         isRefreshing={props.isRefreshing}
         onRefresh={props.onRefresh}
       />
       <ConnectionSectionCard
-        description="Nossa equipe prepara o canal depois da confirmação do pagamento."
-        icon={<Webhook aria-hidden="true" />}
+        description="A equipe prepara o canal depois da confirmação do pagamento."
+        icon={<MessageCircle aria-hidden="true" />}
         title="Configuração da Z-API"
       >
-        <ConnectionWebhookList
-          autoConfig={readWebhookAutoConfig(props)}
-          embedded
-        />
+        <p className="crm-whatsapp-connection-webhook-note">
+          O pareamento e o status do telefone ficam disponíveis quando a conexão
+          estiver pronta. O CRM não exibe credenciais nem controles técnicos do
+          provedor.
+        </p>
       </ConnectionSectionCard>
       {localError ? (
         <div className="grid gap-2" role="alert">
@@ -85,6 +69,35 @@ function readConnectionSetupSupportCode(
 }
 
 export function ConnectionDashboard(props: SharedProps) {
+  if (props.connection.provider === "olx_chat") {
+    return (
+      <div className="crm-whatsapp-connection-dashboard">
+        <ConnectionStatusCard
+          connection={props.connection}
+          disabled={props.disabled}
+          isRefreshing={props.isRefreshing}
+          onRefresh={props.onRefresh}
+        />
+        <ConnectionSectionCard
+          description="O canal OLX Chat permite somente mensagens de texto em conversas iniciadas pelo comprador."
+          icon={<MessageCircle aria-hidden="true" />}
+          title="Capacidades do OLX Chat"
+        >
+          <dl className="crm-whatsapp-connection-capability-matrix">
+            <div>
+              <dt>Mensagens de texto</dt>
+              <dd>Disponível</dd>
+            </div>
+            <div>
+              <dt>Novas conversas</dt>
+              <dd>Somente pelo comprador</dd>
+            </div>
+          </dl>
+        </ConnectionSectionCard>
+      </div>
+    );
+  }
+
   if (props.connection.provider !== "zapi") {
     return <OfficialConnectionOverview {...props} />;
   }
@@ -93,21 +106,15 @@ export function ConnectionDashboard(props: SharedProps) {
     <div className="crm-whatsapp-connection-dashboard">
       <ConnectionStatusCard
         connection={props.connection}
+        disabled={props.disabled}
         isRefreshing={props.isRefreshing}
         onRefresh={props.onRefresh}
       />
-      <div className="crm-whatsapp-connection-disclosures">
-        <ConnectionDisclosure
-          description="Recebimento protegido de mensagens e atualizações."
-          icon={<Webhook aria-hidden="true" />}
-          title="Configuração automática"
-        >
-          <ConnectionWebhookList
-            autoConfig={readWebhookAutoConfig(props)}
-            embedded
-          />
-        </ConnectionDisclosure>
-      </div>
+      <p className="crm-whatsapp-connection-webhook-note">
+        O telefone está configurado. Para trocar o aparelho, use o pareamento
+        seguro da seção de conexão; credenciais e configurações técnicas não são
+        exibidas.
+      </p>
     </div>
   );
 }
@@ -118,45 +125,20 @@ function OfficialConnectionOverview(props: SharedProps) {
     <div className="crm-whatsapp-connection-dashboard">
       <ConnectionStatusCard
         connection={props.connection}
+        disabled={props.disabled}
         isRefreshing={props.isRefreshing}
         onRefresh={props.onRefresh}
       />
       <ConnectionSectionCard
         description="A autorização e o recebimento de mensagens são protegidos e gerenciados automaticamente."
-        icon={<Webhook aria-hidden="true" />}
+        icon={<MessageCircle aria-hidden="true" />}
         title={`${providerLabel} conectado`}
       >
         <p className="crm-whatsapp-connection-webhook-note">
-          Use Atualizar status para consultar novamente a conexao. Este painel
-          não exibe dados protegidos do canal oficial.
+          Use Atualizar status para consultar novamente a conexão. Este painel
+          não exibe dados protegidos nem controles do provedor.
         </p>
       </ConnectionSectionCard>
     </div>
-  );
-}
-
-function ConnectionDisclosure({
-  children,
-  description,
-  icon,
-  title,
-}: {
-  children: ReactNode;
-  description: string;
-  icon: ReactNode;
-  title: string;
-}) {
-  return (
-    <details className="crm-whatsapp-connection-disclosure">
-      <summary>
-        <span>{icon}</span>
-        <span>
-          <strong>{title}</strong>
-          <small>{description}</small>
-        </span>
-        <ChevronDown aria-hidden="true" />
-      </summary>
-      <div>{children}</div>
-    </details>
   );
 }

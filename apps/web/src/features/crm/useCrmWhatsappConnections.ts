@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { asError } from "./crmWhatsappHookSupport";
 import type {
   CrmWhatsappComposioCompleteResult,
-  CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappConnectionAllowance,
   CrmWhatsappConnectionId,
   CrmWhatsappCreateConnectionInput,
   CrmWhatsappProviderConnection,
   CrmWhatsappSetupProvider,
-  CrmWhatsappUpdateConnectionInput,
+  CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 
 const fallbackAllowance: CrmWhatsappConnectionAllowance = {
@@ -28,19 +27,40 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
   >([]);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [zapiAddonContract, setZapiAddonContract] =
+    useState<CrmWhatsappZapiAddonContract | null>(null);
+  const requestGenerationRef = useRef(0);
 
   const loadConnections = useCallback(() => api.listConnections(), [api]);
+  const loadZapiAddonContract = useCallback(async () => {
+    if (!api.getZapiAddonContract) return null;
+    try {
+      return await api.getZapiAddonContract();
+    } catch {
+      // Billing is an enrichment for the connection screen. A billing read
+      // failure must not hide an otherwise usable CRM connection list.
+      return null;
+    }
+  }, [api]);
 
   const refreshConnections = useCallback(async () => {
+    const requestGeneration = ++requestGenerationRef.current;
     try {
-      const payload = await loadConnections();
+      const [payload, addonContract] = await Promise.all([
+        loadConnections(),
+        loadZapiAddonContract(),
+      ]);
+      if (requestGeneration !== requestGenerationRef.current) return;
       setConnections(payload.connections);
       setAllowance(payload.allowance);
       setAvailableProviders(payload.availableProviders);
+      setZapiAddonContract(addonContract);
     } catch (caught) {
-      setError(asError(caught));
+      if (requestGeneration === requestGenerationRef.current) {
+        setError(asError(caught));
+      }
     }
-  }, [loadConnections]);
+  }, [loadConnections, loadZapiAddonContract]);
 
   const createConnection = useCallback(
     async (input: CrmWhatsappCreateConnectionInput) => {
@@ -79,6 +99,20 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     },
     [api],
   );
+
+  const requestZapiAddon = useCallback(async () => {
+    if (!api.requestZapiAddon) {
+      throw new Error("A solicitação da Z-API não está disponível.");
+    }
+    try {
+      const contract = await api.requestZapiAddon();
+      setZapiAddonContract(contract);
+      return contract;
+    } catch (caught) {
+      setError(asError(caught));
+      throw caught;
+    }
+  }, [api]);
 
   const authorizeComposio = useCallback(
     (connectionId: CrmWhatsappConnectionId) =>
@@ -122,71 +156,39 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     [api, refreshConnections],
   );
 
-  const updateConnection = useCallback(
-    async (
-      connectionId: CrmWhatsappConnectionId,
-      input: CrmWhatsappUpdateConnectionInput,
-    ) => {
-      try {
-        const updated = await api.updateConnection(connectionId, input);
-        setConnections((current) =>
-          current.map((connection) =>
-            connection.id === updated.id ? updated : connection,
-          ),
-        );
-        return true;
-      } catch (caught) {
-        setError(asError(caught));
-        return false;
-      }
-    },
-    [api],
-  );
-
-  const configureWebhooks = useCallback(
-    async (
-      connectionId: CrmWhatsappConnectionId,
-    ): Promise<CrmWhatsappConfigureWebhooksResult | null> => {
-      try {
-        return await api.configureConnectionWebhooks(connectionId);
-      } catch (caught) {
-        setError(asError(caught));
-        return null;
-      }
-    },
-    [api],
-  );
-
   useEffect(() => {
+    const requestGeneration = ++requestGenerationRef.current;
     let active = true;
     setIsLoading(true);
     setError(null);
     void loadConnections()
-      .then((payload) => {
-        if (active) {
+      .then(async (payload) => {
+        if (active && requestGeneration === requestGenerationRef.current) {
           setConnections(payload.connections);
           setAllowance(payload.allowance);
           setAvailableProviders(payload.availableProviders);
+          setZapiAddonContract(await loadZapiAddonContract());
         }
       })
       .catch((caught) => {
-        if (active) setError(asError(caught));
+        if (active && requestGeneration === requestGenerationRef.current)
+          setError(asError(caught));
       })
       .finally(() => {
-        if (active) setIsLoading(false);
+        if (active && requestGeneration === requestGenerationRef.current)
+          setIsLoading(false);
       });
 
     return () => {
       active = false;
     };
-  }, [loadConnections]);
+  }, [loadConnections, loadZapiAddonContract]);
 
   return {
     allowance,
     authorizeComposio,
     availableProviders,
     completeComposio,
-    configureWebhooks,
     connections,
     createConnection,
     error,
@@ -199,7 +201,8 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     refreshConnections,
     requestZapiPairingCode,
     requestZapiPairingQr,
+    requestZapiAddon,
     selectComposioSender,
-    updateConnection,
+    zapiAddonContract,
   };
 }

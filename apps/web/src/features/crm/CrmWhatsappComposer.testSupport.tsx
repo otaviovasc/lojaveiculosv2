@@ -2,6 +2,7 @@ import { cleanup, render, type RenderResult } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { vi } from "vitest";
 import { MessageComposer } from "./CrmWhatsappComposer";
+import { readCrmWhatsappConnectionCapabilities } from "./crmWhatsappProviderCapabilities";
 
 type ComposerCallbacks = Pick<
   ComponentProps<typeof MessageComposer>,
@@ -43,6 +44,36 @@ export function renderComposer(
   };
   return {
     callbacks,
-    ...render(<MessageComposer {...callbacks} {...props} />),
+    ...render(
+      <MessageComposer
+        capabilities={readCrmWhatsappConnectionCapabilities({
+          capabilities: createZapiCapabilities(),
+          provider: "zapi",
+        })}
+        {...callbacks}
+        {...props}
+      />,
+    ),
   };
+}
+
+function createZapiCapabilities() {
+  return {
+    audio: true,
+    catalog: true,
+    conversationStart: true,
+    delete: true,
+    documents: true,
+    imageCaption: true,
+    images: true,
+    location: true,
+    quickMessages: true,
+    reactions: true,
+    reply: true,
+    scheduling: true,
+    templates: false,
+    text: true,
+    vehicle: true,
+    video: true,
+  } as const;
 }

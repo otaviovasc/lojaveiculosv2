@@ -31,12 +31,17 @@ evidence folder is documented.
 ## Connection
 
 - Load seeded/test ZAPI connection.
+- Verify Z-API is visible in Conexao as an optional buyable integration and
+  that displayed price/SKU comes from the server catalog through the paid
+  add-on flow; do not accept client pricing or synthetic purchase success.
 - Verify status indicator and live provider status render.
-- Save ZAPI instance ID and token through the write-only instance form.
-- Verify the token is not rendered after save and responses only expose
-  configured state.
-- Verify six webhook URLs:
-  received, delivery, status, connected, disconnected, chat-presence.
+- As an entitled authorized store owner/admin or billing-authorized scoped
+  actor, enter initial ZAPI instance credentials through the write-only form.
+- Verify credentials are never returned or logged and the UI shows status, not
+  stored credential fields.
+- Verify customer QR and phone-code pairing after initial credential setup.
+- Verify webhook configuration is automatic and no webhook controls or URLs are
+  customer-facing.
 - Verify permission-denied state disables mutation controls.
 - Desktop screenshot evidence:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-connection-ui/crm-whatsapp-connection.png`.
@@ -63,7 +68,11 @@ evidence folder is documented.
   `crm.whatsapp.connection.update_*`.
 - Verify canonical keys are present in shared types, identity catalog,
   role defaults, frontend capability reader, service checks, and test contexts.
-- Verify connection admin requires `crm.whatsapp.connection.manage`.
+- Verify initial channel configuration requires
+  `crm.messaging.connection.setup` and pairing/status refresh requires
+  `crm.messaging.connection.pair`.
+- Verify the role editor uses provider-neutral labels and descriptions and does
+  not expose Z-API webhook or credential-rotation operations to store users.
 - Verify tag management uses `crm.whatsapp.tags.manage`.
 - Verify tag assignment uses `crm.whatsapp.tags.assign`.
 - Verify scheduled messages use `crm.whatsapp.schedules.*`.

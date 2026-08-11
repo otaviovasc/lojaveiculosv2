@@ -6,6 +6,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
+  isCrmOlxChatEnabled,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -43,8 +44,8 @@ export type { WhatsappConnection } from "../../whatsapp/whatsappConnectionModels
 export type { UpdateWhatsappConnectionInput } from "../../whatsapp/whatsappConnectionUpdates.js";
 
 const readPermission = "crm.whatsapp.list";
-const updatePermission = "crm.whatsapp.connection.manage";
-const credentialUpdatePermission = "crm.whatsapp.integrations.manage";
+const updatePermission = "crm.messaging.connection.setup";
+const credentialUpdatePermission = "tenant.manage";
 const creatableProviders = [
   "zapi",
   "composio_whatsapp",
@@ -78,6 +79,7 @@ export async function getWhatsappConnectionOverview(
     allowance,
     availableProviders: creatableProviders.filter((provider) => {
       if (configured.has(provider)) return false;
+      if (provider === "zapi") return true;
       if (provider === "composio_whatsapp") {
         return entitlements.includes("crm");
       }
@@ -96,8 +98,14 @@ export async function listWhatsappConnections(
   const scope = requireCrmWhatsappScope(context);
   const repository = getCrmConnectionRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.connections.list.started");
+  const providers = [
+    "zapi",
+    "composio_whatsapp",
+    "composio_instagram",
+    ...(isCrmOlxChatEnabled(ports) ? (["olx_chat"] as const) : []),
+  ] as const;
   const connections = await repository.listConnections({
-    providers: ["zapi", "composio_whatsapp", "composio_instagram"],
+    providers,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });

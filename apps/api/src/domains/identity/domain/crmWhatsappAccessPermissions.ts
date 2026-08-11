@@ -3,7 +3,8 @@ import type { PermissionKey } from "@lojaveiculosv2/shared";
 export const crmWhatsappAdminPermissions = [
   "crm.whatsapp.assign",
   "crm.whatsapp.close",
-  "crm.whatsapp.connection.manage",
+  "crm.messaging.connection.pair",
+  "crm.messaging.connection.setup",
   "crm.whatsapp.list",
   "crm.whatsapp.read",
   "crm.whatsapp.campaigns.manage",

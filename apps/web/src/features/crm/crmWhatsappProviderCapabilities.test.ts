@@ -1,63 +1,108 @@
 import { describe, expect, it } from "vitest";
-import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
+import {
+  readCrmWhatsappConnectionCapabilities,
+  readCrmWhatsappSendReadiness,
+} from "./crmWhatsappProviderCapabilities";
 
-describe("readCrmWhatsappProviderCapabilities", () => {
-  it("preserves the complete Z-API action surface", () => {
-    expect(readCrmWhatsappProviderCapabilities("zapi")).toMatchObject({
+const zapiCapabilities = {
+  audio: true,
+  catalog: true,
+  conversationStart: true,
+  delete: true,
+  documents: true,
+  imageCaption: true,
+  images: true,
+  location: true,
+  quickMessages: true,
+  reactions: true,
+  reply: true,
+  scheduling: true,
+  templates: false,
+  text: true,
+  vehicle: true,
+  video: true,
+} as const;
+
+describe("CRM connection capabilities", () => {
+  it("maps every server-owned action flag without provider inference", () => {
+    expect(
+      readCrmWhatsappConnectionCapabilities({
+        capabilities: zapiCapabilities,
+        provider: "backend_defined_provider",
+      }),
+    ).toEqual({
       allowAudio: true,
       allowCatalog: true,
       allowDelete: true,
       allowDocuments: true,
+      allowImageCaption: true,
       allowImages: true,
+      allowLocation: true,
+      allowQuickMessages: true,
       allowReactions: true,
       allowReply: true,
       allowScheduling: true,
+      allowVehicle: true,
       allowVideo: true,
-      provider: "zapi",
+      officialWindowNotice: null,
+      provider: "backend_defined_provider",
     });
   });
 
-  it("keeps supported official WhatsApp sends and hides unsupported actions", () => {
+  it("preserves a server-provided official window notice", () => {
     expect(
-      readCrmWhatsappProviderCapabilities("composio_whatsapp"),
+      readCrmWhatsappConnectionCapabilities({
+        capabilities: {
+          ...zapiCapabilities,
+          audio: false,
+          officialWindowNotice: "A janela oficial exige um template aprovado.",
+        },
+        provider: "backend_defined_provider",
+      }),
     ).toMatchObject({
-      allowAudio: true,
-      allowCatalog: false,
-      allowDelete: false,
-      allowDocuments: true,
-      allowImages: true,
-      allowReactions: false,
-      allowReply: true,
-      allowScheduling: false,
-      allowVideo: true,
-      provider: "composio_whatsapp",
+      allowAudio: false,
+      officialWindowNotice: "A janela oficial exige um template aprovado.",
     });
   });
 
-  it("limits official Instagram to verified text and image behavior", () => {
+  it("fails closed when the server capability DTO is missing", () => {
     expect(
-      readCrmWhatsappProviderCapabilities("composio_instagram"),
+      readCrmWhatsappConnectionCapabilities({ provider: "zapi" }),
     ).toMatchObject({
       allowAudio: false,
       allowCatalog: false,
-      allowDelete: false,
-      allowDocuments: false,
-      allowImageCaption: false,
-      allowImages: true,
-      allowLocation: false,
-      allowQuickMessages: false,
-      allowReactions: false,
+      allowImages: false,
       allowReply: false,
-      allowScheduling: false,
-      allowVehicle: false,
-      allowVideo: false,
-      provider: "composio_instagram",
+      provider: "unknown",
     });
   });
 
-  it("treats legacy connections without a provider as Z-API", () => {
-    expect(readCrmWhatsappProviderCapabilities(undefined).provider).toBe(
-      "zapi",
-    );
+  it("blocks sending until the server confirms text capability", () => {
+    expect(
+      readCrmWhatsappSendReadiness(
+        {
+          displayName: "Canal",
+          externalConnectionId: null,
+          externalInstanceId: null,
+          id: "connection_1",
+          live: {
+            checkedAt: "2026-08-11T12:00:00.000Z",
+            connected: true,
+            connectedPhone: null,
+            providerStatus: "connected",
+            smartphoneConnected: true,
+          },
+          phone: null,
+          provider: "zapi",
+          ready: true,
+          status: "active",
+          webhookUrl: null,
+        },
+        "connected",
+      ),
+    ).toEqual({
+      canSend: false,
+      reason: "As capacidades deste canal ainda não foram confirmadas.",
+    });
   });
 });

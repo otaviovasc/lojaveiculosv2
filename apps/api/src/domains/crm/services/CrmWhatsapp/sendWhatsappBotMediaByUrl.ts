@@ -10,6 +10,7 @@ import { findOrCreateWhatsappLead } from "../../whatsapp/whatsappLeadLinking.js"
 import {
   getCrmWhatsappGateway,
   getCrmWhatsappRepository,
+  isCrmOlxChatEnabled,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -47,7 +48,9 @@ export async function sendWhatsappBotMediaByUrl(
 ): Promise<WhatsappMessage> {
   assertPermission(context, permission);
   const target = await resolveBotMediaTarget(context, input, ports);
-  assertWhatsappProviderEffectAllowed(context, target.connection);
+  assertWhatsappProviderEffectAllowed(context, target.connection, {
+    olxChatEnabled: isCrmOlxChatEnabled(ports),
+  });
   assertBotMediaTargetIsAvailable(target.session);
   const repository = getCrmWhatsappRepository(ports);
   if (target.connection.provider !== "zapi") {
@@ -92,6 +95,8 @@ export async function sendWhatsappBotMediaByUrl(
             ? { idempotencyKey: input.idempotencyKey }
             : {}),
           payload: input,
+          senderOrigin: "bot_api",
+          senderType: "AI",
           send: () =>
             getCrmWhatsappGateway(ports).sendMedia(target.connection, {
               ...(input.mediaType === "audio" ? { asyncProcessing: true } : {}),
@@ -158,6 +163,7 @@ export async function sendWhatsappBotMediaByUrl(
           sentByCrm: true,
         },
         providerTimestamp: sent.providerTimestamp,
+        senderOrigin: "bot_api",
         senderType: "AI",
         status: "SENT",
         storeId: scope.storeId as never,

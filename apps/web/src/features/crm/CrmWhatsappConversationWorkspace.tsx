@@ -11,7 +11,7 @@ import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 import type { CrmWhatsappScope } from "./CrmWhatsappScopedNav";
 import { readInitialSessionId } from "./crmWhatsappHookSupport";
-import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
+import { readCrmWhatsappConnectionCapabilities } from "./crmWhatsappProviderCapabilities";
 
 export function CrmWhatsappConversationWorkspace({
   inbox,
@@ -31,8 +31,14 @@ export function CrmWhatsappConversationWorkspace({
     useState<CrmWhatsappMessage | null>(null);
   const selectedCount = inbox.selectedSessions.length;
   const showSelectionMode = selectionMode || selectedCount > 0;
-  const providerCapabilities = readCrmWhatsappProviderCapabilities(
-    activeSession?.connection?.provider,
+  const activeSessionConnection = inbox.activeSession?.connection?.id
+    ? (inbox.connections.find(
+        (connection) =>
+          String(connection.id) === String(inbox.activeSession?.connection?.id),
+      ) ?? inbox.activeSession.connection)
+    : null;
+  const providerCapabilities = readCrmWhatsappConnectionCapabilities(
+    activeSessionConnection,
   );
 
   useEffect(() => {
@@ -46,7 +52,10 @@ export function CrmWhatsappConversationWorkspace({
         <WhatsappToolbar
           assignableMembers={inbox.assignableMembers}
           availableTags={inbox.availableTags}
-          canManageConnections={inbox.permissions.canConnectionManage}
+          canManageConnections={
+            inbox.permissions.canConnectionSetup ||
+            inbox.permissions.canConnectionPair
+          }
           canManageTags={inbox.permissions.canTagManage}
           canStartConversation={inbox.canStartConversation}
           connectionId={inbox.connectionId}
@@ -243,7 +252,11 @@ export function CrmWhatsappConversationWorkspace({
                 />
               </>
             ) : (
-              <CrmWhatsappReadOnlyComposer />
+              <CrmWhatsappReadOnlyComposer
+                reason={
+                  inbox.permissions.canSend ? inbox.sendUnavailableReason : null
+                }
+              />
             )}
             {detailsOpen ? (
               <CrmWhatsappSessionDetailsPanel

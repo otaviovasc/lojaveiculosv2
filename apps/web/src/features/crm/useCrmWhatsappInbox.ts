@@ -8,7 +8,10 @@ import {
   readConversationStartCapability,
 } from "./crmWhatsappConnectionSelection";
 import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
-import { mergeSessionsFromServer } from "./crmWhatsappModel";
+import {
+  mergeSessionsFromServer,
+  readSessionRevision,
+} from "./crmWhatsappModel";
 import {
   asError,
   createConnectionQuery,
@@ -27,7 +30,9 @@ import { useCrmWhatsappScheduledMessages } from "./useCrmWhatsappScheduledMessag
 import { useCrmWhatsappTags } from "./useCrmWhatsappTags";
 import { useCrmWhatsappVehicleInventory } from "./useCrmWhatsappVehicleInventory";
 import { useCrmWhatsappInboxLifecycle } from "./useCrmWhatsappInboxLifecycle";
+import { readCrmWhatsappSendReadiness } from "./crmWhatsappProviderCapabilities";
 import type {
+  CrmWhatsappRealtimeStatus,
   CrmWhatsappSession,
   CrmWhatsappSessionFilter,
   CrmWhatsappSessionId,
@@ -55,6 +60,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     CrmWhatsappHumanAttendanceState | ""
   >("");
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] =
+    useState<CrmWhatsappRealtimeStatus>("offline");
   const [sessions, setSessions] = useState<CrmWhatsappSession[]>([]);
   const currentUserId = accountSession?.user.id ?? null;
   const permissions = useMemo(
@@ -82,9 +89,27 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       ) ?? null,
     [connectionId, connections.connections],
   );
+  const activeSessionConnection = useMemo(
+    () =>
+      activeSession?.connection?.id
+        ? (connections.connections.find(
+            (connection) =>
+              String(connection.id) === String(activeSession.connection?.id),
+          ) ?? null)
+        : null,
+    [activeSession, connections.connections],
+  );
   const conversationStartCapability = useMemo(
     () => readConversationStartCapability(activeConnection),
     [activeConnection],
+  );
+  const sendReadiness = useMemo(
+    () =>
+      readCrmWhatsappSendReadiness(
+        activeSessionConnection ?? activeConnection,
+        realtimeStatus,
+      ),
+    [activeConnection, activeSessionConnection, realtimeStatus],
   );
   const catalogUrl = useMemo(
     () => buildStorefrontUrl(accountSession?.defaultStore?.storeSlug),
@@ -92,6 +117,10 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   );
   const autoReadSessionIdsRef = useRef(new Set<CrmWhatsappSessionId>());
   const markingReadRef = useRef(new Set<CrmWhatsappSessionId>());
+  const sessionRequestGenerationRef = useRef(0);
+  const sessionRevisionsRef = useRef(
+    new Map<CrmWhatsappSessionId, number | null>(),
+  );
   const searchRef = useRef(remoteSearch ?? "");
   searchRef.current = remoteSearch ?? "";
   const tagState = useCrmWhatsappTags({
@@ -107,13 +136,29 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       nextSessions: CrmWhatsappSession[],
       options?: { preserveLocalOnly?: boolean },
     ) =>
-      setSessions((current) =>
-        mergeSessionsFromServer(current, nextSessions, options),
-      ),
+      setSessions((current) => {
+        const merged = mergeSessionsFromServer(current, nextSessions, options);
+        merged.forEach((session) => {
+          sessionRevisionsRef.current.set(
+            session.id,
+            readSessionRevision(session),
+          );
+        });
+        return merged;
+      }),
     [],
   );
+  const canMergeSessionSnapshot = useCallback((session: CrmWhatsappSession) => {
+    const currentRevision = sessionRevisionsRef.current.get(session.id);
+    if (currentRevision === undefined) return true;
+    const incomingRevision = readSessionRevision(session);
+    if (currentRevision === null) return incomingRevision === null;
+    return incomingRevision !== null && incomingRevision >= currentRevision;
+  }, []);
   const canLoadMessages = Boolean(connectionId && permissions.canRead);
-  const canSendMessages = Boolean(connectionId && permissions.canSend);
+  const canSendMessages = Boolean(
+    connectionId && permissions.canSend && sendReadiness.canSend,
+  );
   const messageState = useCrmWhatsappMessages({
     activeSession,
     activeSessionId,
@@ -139,6 +184,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   const refreshSessions = useCallback(
     async (options: { preserveLocalOnly?: boolean } = {}) => {
       if (!connectionId || !permissions.canList) return;
+      const requestGeneration = ++sessionRequestGenerationRef.current;
       const connectionQuery = createConnectionQuery(connectionId);
       const nextSessions = await api.listSessions({
         ...connectionQuery,
@@ -157,6 +203,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
         ...(unreadOnly ? { unreadOnly } : {}),
       });
       let resolved = nextSessions;
+      if (requestGeneration !== sessionRequestGenerationRef.current) return;
       if (
         initialSessionId &&
         !nextSessions.some((session) => session.id === initialSessionId)
@@ -167,6 +214,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
           offset: 0,
           sessionId: initialSessionId,
         });
+        if (requestGeneration !== sessionRequestGenerationRef.current) return;
         resolved = deepLinked[0]
           ? [deepLinked[0], ...nextSessions]
           : nextSessions;
@@ -199,11 +247,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
 
   const patchSession = useCallback((nextSession: CrmWhatsappSession) => {
     setSessions((current) =>
-      current.map((session) =>
-        session.id === nextSession.id
-          ? { ...session, ...nextSession }
-          : session,
-      ),
+      mergeSessionsFromServer(current, [nextSession], {
+        preserveLocalOnly: true,
+      }),
     );
   }, []);
   const sessionActions = useCrmWhatsappSessionActions({
@@ -264,8 +310,10 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     api,
     connectionId,
     connectionsError: connections.error,
+    canMergeSessionSnapshot,
     mergeRealtimeMessage,
     mergeSessions,
+    onStatus: setRealtimeStatus,
     refreshConnections: connections.refreshConnections,
     refreshSessionCounts,
     refreshSessions,
@@ -298,6 +346,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     canStartConversation:
       canSendMessages && conversationStartCapability.canStart,
     canSendText: canSendMessages,
+    activeConnection,
+    activeSessionConnection,
     catalogUrl,
     clearSelectedSessions: bulkSelection.clearSelectedSessions,
     connectionFilterId,
@@ -305,7 +355,6 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     connectionError: connections.error,
     connectionAllowance: connections.allowance,
     connectionIsLoading: connections.isLoading,
-    configureConnectionWebhooks: connections.configureWebhooks,
     connections: connections.connections,
     createConnection: connections.createConnection,
     authorizeComposioConnection: connections.authorizeComposio,
@@ -313,8 +362,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     refreshConnections: connections.refreshConnections,
     requestZapiPairingCode: connections.requestZapiPairingCode,
     requestZapiPairingQr: connections.requestZapiPairingQr,
+    requestZapiAddon: connections.requestZapiAddon,
     selectComposioConnectionSender: connections.selectComposioSender,
-    updateConnection: connections.updateConnection,
     createTag: tagState.createTag,
     createQuickMessage: quickMessageState.createQuickMessage,
     createScheduledMessage: scheduledMessages.createScheduledMessage,
@@ -330,6 +379,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     isMutatingSession: sessionActions.isMutatingSession,
     isSending: messageState.isSending,
     isStartingConversation: conversationState.isStartingConversation,
+    realtimeStatus,
     cancelScheduledMessage: scheduledMessages.cancelScheduledMessage,
     listCatalogProducts: messageState.listCatalogProducts,
     listScheduledMessages: scheduledMessages.listScheduledMessages,
@@ -373,12 +423,14 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     startConversation: conversationState.startConversation,
     startConversationProvider: conversationStartCapability.provider,
     startConversationUnavailableReason:
-      conversationStartCapability.unavailableReason,
+      conversationStartCapability.unavailableReason ?? sendReadiness.reason,
+    sendUnavailableReason: sendReadiness.reason,
     toggleSelectedSession: bulkSelection.toggleSelectedSession,
     toggleTagFilter: tagState.toggleTagFilter,
     unreadOnly,
     updateQuickMessage: quickMessageState.updateQuickMessage,
     updateTag: tagState.updateTag,
+    zapiAddonContract: connections.zapiAddonContract,
     actions: { ...sessionActions.actions, ...bulkSelection.actions },
   };
 }

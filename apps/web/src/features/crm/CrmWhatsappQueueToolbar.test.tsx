@@ -102,7 +102,9 @@ describe("WhatsappToolbar", () => {
     );
 
     await user.click(screen.getByLabelText("Filtrar por conexão"));
-    await user.click(screen.getByRole("option", { name: "Loja Centro" }));
+    await user.click(
+      screen.getByRole("option", { name: "Loja Centro · Z-API" }),
+    );
     expect(callbacks.onConnectionFilterChange).toHaveBeenCalledWith(
       "connection_2",
     );

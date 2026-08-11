@@ -1,4 +1,4 @@
-import { and, desc, eq, type SQL } from "drizzle-orm";
+import { and, desc, eq, sql, type SQL } from "drizzle-orm";
 import { crmWhatsappSessions } from "@lojaveiculosv2/db";
 import type {
   IngestCrmWhatsappMessageInput,
@@ -46,20 +46,33 @@ export async function updateWhatsappSessionIdentity(
   const matchedByChatLid = Boolean(
     input.buyerChatLid && session.buyerChatLid === input.buyerChatLid,
   );
+  const buyerPhone = shouldBackfillWhatsappPhone(
+    session.buyerPhone,
+    input.buyerPhone,
+    matchedByChatLid,
+  )
+    ? input.buyerPhone
+    : session.buyerPhone;
+  const buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
+  const buyerName = session.buyerName ?? input.buyerName ?? null;
+  const channelExternalId =
+    session.channelExternalId ?? input.channelExternalId ?? null;
+  if (
+    buyerPhone === session.buyerPhone &&
+    buyerChatLid === session.buyerChatLid &&
+    buyerName === session.buyerName &&
+    channelExternalId === session.channelExternalId
+  ) {
+    return session;
+  }
   const [updated] = await db
     .update(crmWhatsappSessions)
     .set({
-      ...(shouldBackfillWhatsappPhone(
-        session.buyerPhone,
-        input.buyerPhone,
-        matchedByChatLid,
-      )
-        ? { buyerPhone: input.buyerPhone }
-        : {}),
-      buyerChatLid: session.buyerChatLid ?? input.buyerChatLid ?? null,
-      buyerName: session.buyerName ?? input.buyerName ?? null,
-      channelExternalId:
-        session.channelExternalId ?? input.channelExternalId ?? null,
+      buyerChatLid,
+      buyerName,
+      buyerPhone,
+      channelExternalId,
+      revision: sql`${crmWhatsappSessions.revision} + 1`,
       updatedAt: new Date(),
     })
     .where(

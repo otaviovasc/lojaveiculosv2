@@ -1,3 +1,10 @@
+import {
+  readRecord,
+  readRecords,
+  readString,
+  readTimestamp,
+} from "./metaWebhookPayloadReaders.js";
+
 export type MetaMessagingProvider = "composio_whatsapp" | "composio_instagram";
 export type MetaMessageStatus = "SENT" | "DELIVERED" | "READ" | "FAILED";
 export type MetaMediaReference = {
@@ -16,6 +23,7 @@ type ParsedMetaEventBase = {
   timestamp: Date | null;
 };
 type MetaMessageEvent = ParsedMetaEventBase & {
+  direction: "INBOUND" | "OUTBOUND";
   kind: "message";
   media: MetaMediaReference | null;
   text: string | null;
@@ -66,7 +74,11 @@ function parseWhatsappMessage(
   connectionId: string,
 ): MetaMessageEvent | null {
   const messageId = readString(message.id);
-  const contactId = readString(message.from);
+  const senderId = readString(message.from);
+  const isEcho = message.is_echo === true || senderId === connectionId;
+  const contactId = isEcho
+    ? (readString(message.to) ?? readString(message.recipient_id))
+    : senderId;
   if (!messageId || !contactId) return null;
   return {
     ...eventBase(
@@ -77,6 +89,7 @@ function parseWhatsappMessage(
       contactId,
       readTimestamp(message.timestamp, 1_000),
     ),
+    direction: isEcho ? "OUTBOUND" : "INBOUND",
     kind: "message",
     media: readWhatsappMedia(message),
     text: readWhatsappText(message),
@@ -127,9 +140,9 @@ function parseInstagramEvent(
   const timestamp = readTimestamp(event.timestamp, 1);
 
   if (message) {
-    if (message.is_echo === true) return null;
     const messageId = readString(message.mid);
     if (!messageId) return null;
+    const isEcho = message.is_echo === true || senderId === connectionId;
     return {
       ...eventBase(
         "composio_instagram",
@@ -139,6 +152,7 @@ function parseInstagramEvent(
         contactId,
         timestamp,
       ),
+      direction: isEcho ? "OUTBOUND" : "INBOUND",
       kind: "message",
       media: readInstagramMedia(message),
       text: readString(message.text),
@@ -215,30 +229,4 @@ function eventBase(
     providerEventKey: `meta:${provider}:${kind}:${connectionId}:${messageId}`,
     timestamp,
   };
-}
-function readTimestamp(value: unknown, multiplier: number): Date | null {
-  const numeric =
-    typeof value === "number"
-      ? value
-      : typeof value === "string" && value.trim()
-        ? Number(value)
-        : Number.NaN;
-  if (!Number.isFinite(numeric) || numeric < 0) return null;
-  const parsed = new Date(numeric * multiplier);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-function readRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-function readRecords(value: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => {
-    const record = readRecord(item);
-    return record ? [record] : [];
-  });
-}
-function readString(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value : null;
 }

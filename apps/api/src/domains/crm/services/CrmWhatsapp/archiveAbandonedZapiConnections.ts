@@ -12,7 +12,7 @@ import {
   logWhatsappServiceEvent,
 } from "./serviceSupport.js";
 
-const cleanupPermission = "crm.whatsapp.connection.manage" as const;
+const cleanupPermission = "crm.messaging.connection.setup" as const;
 export const abandonedZapiConnectionTtlMs = 7 * 24 * 60 * 60 * 1_000;
 
 export async function archiveAbandonedZapiConnections(

@@ -2,7 +2,10 @@ import type {
   CrmConnection,
   CrmConnectionRepository,
 } from "./ports/crmConnectionRepository.js";
-
+import {
+  readConfiguredString,
+  readRecord,
+} from "./testSupportConnectionValues.js";
 export function createTestCrmConnectionRepository(
   initialConnections: readonly CrmConnection[] = [],
 ): CrmConnectionRepository {
@@ -28,6 +31,53 @@ export function createTestCrmConnectionRepository(
       };
       connections.push(connection);
       return connection;
+    },
+    async upsertOlxConnection(input) {
+      const existing = connections.find(
+        (item) =>
+          item.provider === "olx_chat" &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId &&
+          item.status !== "archived",
+      );
+      if (existing) {
+        Object.assign(existing, input, { provider: "olx_chat" as const });
+        return existing;
+      }
+      const connection: CrmConnection = {
+        credentialsRef: input.credentialsRef ?? {},
+        displayName: input.displayName,
+        externalConnectionId: input.externalConnectionId ?? null,
+        externalInstanceId: null,
+        id: crypto.randomUUID(),
+        metadata: input.metadata ?? {},
+        phone: null,
+        provider: "olx_chat",
+        status: input.status ?? "error",
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+        webhookUrl: input.webhookUrl ?? null,
+      };
+      connections.push(connection);
+      return connection;
+    },
+    async configureInitialZapiCredentials(input) {
+      const connection = connections.find(
+        (item) =>
+          item.id === input.connectionId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId &&
+          item.provider === "zapi" &&
+          item.status !== "archived",
+      );
+      if (!connection) return { status: "not_found" };
+      const stored = readRecord(connection.credentialsRef.stored);
+      const instanceId = readConfiguredString(stored.instanceId);
+      const instanceToken = readConfiguredString(stored.instanceToken);
+      if (instanceId && instanceToken) return { status: "already_configured" };
+      if (instanceId || instanceToken) return { status: "partial_state" };
+      connection.credentialsRef = input.credentialsRef;
+      return { connection, status: "configured" };
     },
     async claimZapiWebhookSetup(input) {
       const connection = connections.find(
@@ -67,6 +117,39 @@ export function createTestCrmConnectionRepository(
       };
       return connection;
     },
+    async claimOlxWebhookSetup(input) {
+      const connection = connections.find(
+        (item) =>
+          item.id === input.connectionId &&
+          item.provider === "olx_chat" &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId,
+      );
+      if (!connection) return null;
+      const setup = readRecord(connection.metadata.webhookSetup);
+      const leaseExpiresAt =
+        typeof setup.leaseExpiresAt === "string"
+          ? new Date(setup.leaseExpiresAt)
+          : null;
+      if (
+        setup.status === "configured" ||
+        (setup.leaseOwner && leaseExpiresAt && leaseExpiresAt > input.now)
+      )
+        return null;
+      connection.metadata = {
+        ...connection.metadata,
+        webhookSetup: {
+          ...setup,
+          attemptCount:
+            (typeof setup.attemptCount === "number" ? setup.attemptCount : 0) +
+            1,
+          leaseExpiresAt: input.leaseExpiresAt.toISOString(),
+          leaseOwner: input.leaseOwner,
+          status: "configuring",
+        },
+      };
+      return connection;
+    },
     async finishZapiWebhookSetup(input) {
       const connection = connections.find(
         (item) =>
@@ -85,6 +168,29 @@ export function createTestCrmConnectionRepository(
         ...connection.metadata,
         webhookSetup: readRecord(input.metadata.webhookSetup),
       };
+      return connection;
+    },
+    async finishOlxWebhookSetup(input) {
+      const connection = connections.find(
+        (item) =>
+          item.id === input.connectionId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId,
+      );
+      if (
+        !connection ||
+        readRecord(connection.metadata.webhookSetup).leaseOwner !==
+          input.leaseOwner
+      )
+        return null;
+      connection.metadata = {
+        ...connection.metadata,
+        webhookSetup: readRecord(input.metadata.webhookSetup),
+      };
+      connection.status =
+        readRecord(input.metadata.webhookSetup).status === "configured"
+          ? "active"
+          : "error";
       return connection;
     },
     async findConnectionByExternalId(input) {
@@ -137,10 +243,4 @@ export function createTestCrmConnectionRepository(
       return connection;
     },
   };
-}
-
-function readRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
 }

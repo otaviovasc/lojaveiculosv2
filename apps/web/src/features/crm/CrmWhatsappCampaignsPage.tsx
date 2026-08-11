@@ -9,6 +9,7 @@ import {
 } from "./CrmWhatsappCampaignsPageSupport";
 import { useCrmWhatsappCampaignAudience } from "./useCrmWhatsappCampaignAudience";
 import { useCrmWhatsappCampaignReview } from "./useCrmWhatsappCampaignReview";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type {
   CrmWhatsappCampaign,
   CrmWhatsappCampaignDetail,
@@ -53,6 +54,7 @@ export function CrmWhatsappCampaignsPage({
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [campaignError, setCampaignError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
   const audience = useCrmWhatsappCampaignAudience({
     canRead,
@@ -78,10 +80,18 @@ export function CrmWhatsappCampaignsPage({
     if (!hasCampaignsDataRef.current) setIsLoading(true);
     try {
       const nextCampaigns = await onListCampaigns();
+      setCampaignError(null);
       hasCampaignsDataRef.current = true;
       setCampaigns(nextCampaigns);
       setSelectedCampaignId(
         (current) => current ?? nextCampaigns[0]?.id ?? null,
+      );
+    } catch (caught) {
+      setCampaignError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível carregar as campanhas.",
+        ),
       );
     } finally {
       setIsLoading(false);
@@ -100,6 +110,14 @@ export function CrmWhatsappCampaignsPage({
     setIsLoadingDetail(true);
     try {
       setCampaignDetail(await onGetCampaign(selectedCampaignId));
+      setCampaignError(null);
+    } catch (caught) {
+      setCampaignError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível carregar os detalhes da campanha.",
+        ),
+      );
     } finally {
       setIsLoadingDetail(false);
     }
@@ -124,21 +142,29 @@ export function CrmWhatsappCampaignsPage({
     setIsSaving(true);
     setLocalError(null);
     setLastResult(null);
-    const campaign = await onCreateCampaign(
-      buildCampaignInput({
-        campaignName,
-        firstDate,
-        initialTagId,
-        intervalMinutes,
-        replyTagId,
-        secondaryContent,
-        secondaryDelayMinutes,
-        text,
-        validRecipients: review.validRecipients,
-      }),
-    );
+    let campaign: CrmWhatsappCampaign | null = null;
+    try {
+      campaign = await onCreateCampaign(
+        buildCampaignInput({
+          campaignName,
+          firstDate,
+          initialTagId,
+          intervalMinutes,
+          replyTagId,
+          secondaryContent,
+          secondaryDelayMinutes,
+          text,
+          validRecipients: review.validRecipients,
+        }),
+      );
+    } catch (caught) {
+      setCampaignError(
+        formatApiErrorDisplay(caught, "Não foi possível criar a campanha."),
+      );
+    }
     setIsSaving(false);
     if (campaign) {
+      setCampaignError(null);
       setLastResult(`${campaign.totalRecipients} destinatario(s) agendado(s).`);
       setCampaignName("Nova campanha");
       setCsvInput("");
@@ -175,6 +201,7 @@ export function CrmWhatsappCampaignsPage({
             <CampaignStats campaigns={campaigns} />
             <CrmWhatsappCampaignOverview
               campaignDetail={campaignDetail}
+              campaignError={campaignError}
               campaigns={campaigns}
               canManage={canCancel}
               isLoading={isLoading}
@@ -182,6 +209,15 @@ export function CrmWhatsappCampaignsPage({
               onCancelCampaign={onCancelCampaign}
               onPauseCampaign={onPauseCampaign}
               onReload={reloadCampaignViews}
+              onMutationError={(caught) =>
+                setCampaignError(
+                  formatApiErrorDisplay(
+                    caught,
+                    "Não foi possível atualizar a campanha.",
+                  ),
+                )
+              }
+              onRetryCampaigns={reloadCampaignViews}
               onResumeCampaign={onResumeCampaign}
               onSelectCampaign={setSelectedCampaignId}
               selectedCampaignId={selectedCampaignId}

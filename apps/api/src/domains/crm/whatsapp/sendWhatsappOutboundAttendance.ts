@@ -1,7 +1,9 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type {
+  CrmWhatsappMessageSenderOrigin,
   CrmWhatsappMessageSenderType,
+  CrmWhatsappInterventionActorKind,
   CrmWhatsappRepository,
   CrmWhatsappSession,
 } from "../ports/crmWhatsappRepository.js";
@@ -14,16 +16,24 @@ import {
 import { notifyWhatsappInterventionChangedToBot } from "./whatsappBotWebhookForwarding.js";
 
 export async function transitionConfirmedHumanOutboundAttendance(input: {
+  actorId: string;
+  actorKind: CrmWhatsappInterventionActorKind;
   interventionId: string;
   providerTimestamp: Date;
   repository: CrmWhatsappRepository;
   senderType: CrmWhatsappMessageSenderType;
+  senderOrigin: CrmWhatsappMessageSenderOrigin;
   session: CrmWhatsappSession;
 }) {
-  if (input.senderType !== "HUMAN") {
+  if (
+    input.senderType !== "HUMAN" ||
+    !["human_crm", "human_whatsapp"].includes(input.senderOrigin)
+  ) {
     return { changed: false, previous: input.session, session: input.session };
   }
   return transitionHumanAttendance({
+    actorId: input.actorId,
+    actorKind: input.actorKind,
     command: {
       interventionId: input.session.interventionId ?? input.interventionId,
       kind: "start",

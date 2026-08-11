@@ -4,6 +4,8 @@ import {
   formatRelativeSessionTime,
   mergeMessagesFromServer,
   mergeSessionsFromServer,
+  parseCrmWhatsappMessage,
+  parseCrmWhatsappSession,
 } from "./crmWhatsappModel";
 import type {
   CrmWhatsappMessage,
@@ -114,6 +116,40 @@ describe("crmWhatsappModel", () => {
       humanHandlingStartedAt: null,
       interventionId: null,
     });
+  });
+
+  it("rejects a lower revision even when its timestamp is newer", () => {
+    const current = createSession({
+      lastMessageAt: "2026-07-03T12:00:00.000Z",
+      revision: 8,
+      status: "HUMAN_TAKEOVER",
+    });
+    const stale = createSession({
+      lastMessageAt: "2026-07-03T12:30:00.000Z",
+      revision: 7,
+      status: "ACTIVE",
+    });
+
+    expect(mergeSessionsFromServer([current], [stale])[0]).toBe(current);
+  });
+
+  it("normalizes API origin, safe numeric revision, and history coverage", () => {
+    expect(
+      parseCrmWhatsappSession({
+        id: "session-1",
+        interventionHistoryStartedAt: "2026-08-10T12:00:00.000Z",
+        revision: 4,
+      }),
+    ).toMatchObject({
+      interventionHistoryStartedAt: "2026-08-10T12:00:00.000Z",
+      revision: 4,
+    });
+    expect(parseCrmWhatsappSession({ id: "session-2", revision: "4" })).toEqual(
+      expect.objectContaining({ revision: 0 }),
+    );
+    expect(parseCrmWhatsappMessage({ id: "message-1" })).toEqual(
+      expect.objectContaining({ senderOrigin: "unknown" }),
+    );
   });
 });
 

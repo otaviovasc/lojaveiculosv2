@@ -87,6 +87,7 @@ describe("product database schema contract", () => {
       "zapi",
       "composio_whatsapp",
       "composio_instagram",
+      "olx_chat",
     ]);
     expect(schema.crmWhatsappChannel.enumValues).toEqual([
       "OLX_CHAT",

@@ -1,4 +1,9 @@
-import type { CrmWhatsappProvider } from "./crmWhatsappTypes";
+import type {
+  CrmWhatsappProviderCapabilities as CrmWhatsappProviderCapabilitiesDto,
+  CrmWhatsappProvider,
+  CrmWhatsappProviderConnection,
+  CrmWhatsappRealtimeStatus,
+} from "./crmWhatsappTypes";
 
 export type CrmWhatsappProviderCapabilities = {
   allowAudio: boolean;
@@ -18,42 +23,13 @@ export type CrmWhatsappProviderCapabilities = {
   provider: CrmWhatsappProvider;
 };
 
-const ZAPI_CAPABILITIES: CrmWhatsappProviderCapabilities = {
-  allowAudio: true,
-  allowCatalog: true,
-  allowDelete: true,
-  allowDocuments: true,
-  allowImageCaption: true,
-  allowImages: true,
-  allowLocation: true,
-  allowQuickMessages: true,
-  allowReactions: true,
-  allowReply: true,
-  allowScheduling: true,
-  allowVehicle: true,
-  allowVideo: true,
-  officialWindowNotice: null,
-  provider: "zapi",
-};
-
-const OFFICIAL_WHATSAPP_CAPABILITIES: CrmWhatsappProviderCapabilities = {
-  ...ZAPI_CAPABILITIES,
-  allowCatalog: false,
-  allowDelete: false,
-  allowReactions: false,
-  allowScheduling: false,
-  officialWindowNotice:
-    "WhatsApp oficial: mensagens livres exigem interação recente do cliente. Fora da janela, inicie com um template aprovado.",
-  provider: "composio_whatsapp",
-};
-
-const OFFICIAL_INSTAGRAM_CAPABILITIES: CrmWhatsappProviderCapabilities = {
-  ...ZAPI_CAPABILITIES,
+const UNKNOWN_PROVIDER_CAPABILITIES: CrmWhatsappProviderCapabilities = {
   allowAudio: false,
   allowCatalog: false,
   allowDelete: false,
   allowDocuments: false,
   allowImageCaption: false,
+  allowImages: false,
   allowLocation: false,
   allowQuickMessages: false,
   allowReactions: false,
@@ -62,18 +38,100 @@ const OFFICIAL_INSTAGRAM_CAPABILITIES: CrmWhatsappProviderCapabilities = {
   allowVehicle: false,
   allowVideo: false,
   officialWindowNotice:
-    "Instagram oficial: o atendimento só envia texto ou imagem em uma conversa iniciada recentemente pelo cliente.",
-  provider: "composio_instagram",
+    "O provedor deste canal não é reconhecido. O envio fica bloqueado até a configuração ser confirmada.",
+  provider: "unknown",
 };
 
-export function readCrmWhatsappProviderCapabilities(
-  provider: string | null | undefined,
+/**
+ * Translate the capability facts attached to the active connection into the
+ * composer surface. Missing facts intentionally produce a closed composer;
+ * provider names are not a capability contract.
+ */
+export function readCrmWhatsappConnectionCapabilities(
+  connection:
+    | Pick<CrmWhatsappProviderConnection, "capabilities" | "provider">
+    | { capabilities?: CrmWhatsappProviderCapabilitiesDto; provider?: string }
+    | null
+    | undefined,
 ): CrmWhatsappProviderCapabilities {
+  const dto = connection?.capabilities;
+  if (!dto || typeof connection?.provider !== "string") {
+    return UNKNOWN_PROVIDER_CAPABILITIES;
+  }
+
+  return {
+    allowAudio: dto.audio === true,
+    allowCatalog: dto.catalog === true,
+    allowDelete: dto.delete === true,
+    allowDocuments: dto.documents === true,
+    allowImageCaption: dto.imageCaption === true,
+    allowImages: dto.images === true,
+    allowLocation: dto.location === true,
+    allowQuickMessages: dto.quickMessages === true,
+    allowReactions: dto.reactions === true,
+    allowReply: dto.reply === true,
+    allowScheduling: dto.scheduling === true,
+    allowVehicle: dto.vehicle === true,
+    allowVideo: dto.video === true,
+    officialWindowNotice:
+      dto.officialWindowNotice ?? readProviderWindowNotice(connection.provider),
+    provider: connection.provider as CrmWhatsappProvider,
+  };
+}
+
+function readProviderWindowNotice(provider: string) {
   if (provider === "composio_whatsapp") {
-    return OFFICIAL_WHATSAPP_CAPABILITIES;
+    return "WhatsApp oficial: mensagens livres exigem interação recente do cliente. Fora da janela, inicie com um template aprovado.";
   }
   if (provider === "composio_instagram") {
-    return OFFICIAL_INSTAGRAM_CAPABILITIES;
+    return "Instagram oficial: o atendimento só envia texto ou imagem em uma conversa iniciada recentemente pelo cliente.";
   }
-  return ZAPI_CAPABILITIES;
+  return null;
+}
+
+export function readCrmWhatsappSendReadiness(
+  connection: CrmWhatsappProviderConnection | null,
+  realtimeStatus: CrmWhatsappRealtimeStatus,
+) {
+  if (!connection) {
+    return {
+      canSend: false,
+      reason: "O canal ainda não foi identificado.",
+    };
+  }
+  const capabilities = connection.capabilities;
+  if (!capabilities) {
+    return {
+      canSend: false,
+      reason: "As capacidades deste canal ainda não foram confirmadas.",
+    };
+  }
+  if (capabilities.text !== true) {
+    return {
+      canSend: false,
+      reason: "Este canal não permite envio de texto.",
+    };
+  }
+  if (connection.ready !== true) {
+    return {
+      canSend: false,
+      reason: "O provedor ainda não está pronto para envio.",
+    };
+  }
+  if (connection.live.providerStatus !== "connected") {
+    return {
+      canSend: false,
+      reason: "O canal está offline ou a conexão ainda está sendo verificada.",
+    };
+  }
+  if (realtimeStatus !== "connected") {
+    return {
+      canSend: false,
+      reason:
+        realtimeStatus === "degraded"
+          ? "A atualização em tempo real está degradada; enviar está bloqueado por segurança."
+          : "A conexão em tempo real ainda não está pronta para envio.",
+    };
+  }
+  return { canSend: true, reason: null };
 }

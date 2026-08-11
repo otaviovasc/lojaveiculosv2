@@ -31,6 +31,8 @@ export async function updateSessionPreview(
       ...crmWhatsappNewerMessagePreview(input),
       ...(input.leadId ? { leadId: input.leadId } : {}),
       messageCount: sql`${crmWhatsappSessions.messageCount} + 1`,
+      revision: sql`${crmWhatsappSessions.revision} + 1`,
+      updatedAt: new Date(),
     })
     .where(eq(crmWhatsappSessions.id, session.id));
 }

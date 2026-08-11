@@ -8,6 +8,11 @@ import {
   readRecord,
   toCrmConnection,
 } from "./drizzleCrmConnectionRepositorySupport.js";
+import {
+  claimOlxWebhookSetup,
+  finishOlxWebhookSetup,
+  upsertOlxConnection,
+} from "./drizzleCrmOlxConnectionSetup.js";
 
 export function createDrizzleCrmConnectionRepository(
   db: DrizzleCrmClient,
@@ -55,6 +60,56 @@ export function createDrizzleCrmConnectionRepository(
       if (!row) throw new Error("CRM connection insert returned no row.");
       return toCrmConnection(row);
     },
+    async upsertOlxConnection(input) {
+      return upsertOlxConnection(db, input);
+    },
+    async configureInitialZapiCredentials(input) {
+      const [configured] = await db
+        .update(crmConnections)
+        .set({
+          credentialsRef: input.credentialsRef,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(crmConnections.id, input.connectionId),
+            eq(crmConnections.storeId, input.storeId),
+            eq(crmConnections.tenantId, input.tenantId),
+            eq(crmConnections.provider, "zapi"),
+            sql`${crmConnections.status} <> 'archived'`,
+            sql`coalesce(nullif(btrim(${crmConnections.credentialsRef}->'stored'->>'instanceId'), ''), '') = ''`,
+            sql`coalesce(nullif(btrim(${crmConnections.credentialsRef}->'stored'->>'instanceToken'), ''), '') = ''`,
+          ),
+        )
+        .returning();
+      if (configured) {
+        return {
+          connection: toCrmConnection(configured),
+          status: "configured",
+        };
+      }
+      const [current] = await db
+        .select({ credentialsRef: crmConnections.credentialsRef })
+        .from(crmConnections)
+        .where(
+          and(
+            eq(crmConnections.id, input.connectionId),
+            eq(crmConnections.storeId, input.storeId),
+            eq(crmConnections.tenantId, input.tenantId),
+            eq(crmConnections.provider, "zapi"),
+            sql`${crmConnections.status} <> 'archived'`,
+          ),
+        )
+        .limit(1);
+      if (!current) return { status: "not_found" };
+      const stored = readRecord(readRecord(current.credentialsRef).stored);
+      const instanceId = readConfiguredString(stored.instanceId);
+      const instanceToken = readConfiguredString(stored.instanceToken);
+      return {
+        status:
+          instanceId && instanceToken ? "already_configured" : "partial_state",
+      };
+    },
     async claimZapiWebhookSetup(input) {
       const [row] = await db
         .update(crmConnections)
@@ -91,6 +146,9 @@ export function createDrizzleCrmConnectionRepository(
         .returning();
       return row ? toCrmConnection(row) : null;
     },
+    async claimOlxWebhookSetup(input) {
+      return claimOlxWebhookSetup(db, input);
+    },
     async finishZapiWebhookSetup(input) {
       const webhookSetup = readRecord(input.metadata.webhookSetup);
       const [row] = await db
@@ -112,6 +170,9 @@ export function createDrizzleCrmConnectionRepository(
         )
         .returning();
       return row ? toCrmConnection(row) : null;
+    },
+    async finishOlxWebhookSetup(input) {
+      return finishOlxWebhookSetup(db, input);
     },
     async findConnectionByExternalId(input) {
       const now = new Date();
@@ -182,4 +243,7 @@ export function createDrizzleCrmConnectionRepository(
       return row ? toCrmConnection(row) : null;
     },
   };
+}
+function readConfiguredString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0;
 }

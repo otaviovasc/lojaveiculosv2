@@ -7,19 +7,21 @@ import type {
 
 type StoredBotIntegration = CrmBotIntegration & {
   webhookSecretHash: string | null;
-  webhookSecretValue: string | null;
+  webhookSecretSealed: string | null;
 };
 
 export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepository {
   const records: StoredBotIntegration[] = [];
   return {
     findBotIntegration: async (input) => findRecord(records, input),
-    findBotIntegrationBySecretHash: async (input) => {
-      const record = records.find(
+    findBotIntegrationsBySecretHash: async (input) => {
+      const matches = records.filter(
         (item) =>
-          item.enabled && item.webhookSecretHash === input.webhookSecretHash,
+          item.enabled &&
+          Boolean(item.webhookSecretSealed) &&
+          item.webhookSecretHash === input.webhookSecretHash,
       );
-      return record ? withoutSecretHash(record) : null;
+      return matches.map(withoutSecretHash);
     },
     findBotIntegrationDeliveryConfig: async (input) => {
       const record = findStoredRecord(records, input);
@@ -28,7 +30,7 @@ export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepo
             enabled: record.enabled,
             storeId: record.storeId,
             tenantId: record.tenantId,
-            webhookSecret: record.webhookSecretValue,
+            webhookSecretSealed: record.webhookSecretSealed,
             webhookUrl: record.webhookUrl,
           }
         : null;
@@ -40,15 +42,15 @@ export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepo
         input.webhookSecretHash === undefined
           ? (current?.webhookSecretHash ?? null)
           : input.webhookSecretHash;
-      const secretValue =
-        input.webhookSecretValue === undefined
-          ? (current?.webhookSecretValue ?? null)
-          : input.webhookSecretValue;
+      const secretSealed =
+        input.webhookSecretSealed === undefined
+          ? (current?.webhookSecretSealed ?? null)
+          : input.webhookSecretSealed;
       const record: StoredBotIntegration = {
         createdAt: current?.createdAt ?? now,
         enabled: input.enabled,
         id: current?.id ?? `crm_bot_integration_${records.length + 1}`,
-        secretConfigured: Boolean(secretHash),
+        secretConfigured: Boolean(secretHash && secretSealed),
         secretUpdatedAt:
           input.webhookSecretHash === undefined
             ? (current?.secretUpdatedAt ?? null)
@@ -57,7 +59,7 @@ export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepo
         tenantId: input.tenantId,
         updatedAt: now,
         webhookSecretHash: secretHash,
-        webhookSecretValue: secretValue,
+        webhookSecretSealed: secretSealed,
         webhookUrl: input.webhookUrl,
       };
       if (current) {
@@ -91,7 +93,7 @@ function findStoredRecord(
 function withoutSecretHash(record: StoredBotIntegration): CrmBotIntegration {
   const {
     webhookSecretHash: _webhookSecretHash,
-    webhookSecretValue: _webhookSecretValue,
+    webhookSecretSealed: _webhookSecretSealed,
     ...safe
   } = record;
   return safe;

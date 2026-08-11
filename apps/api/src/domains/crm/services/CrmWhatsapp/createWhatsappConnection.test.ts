@@ -1,93 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
-import { BillingQuotaExceededError } from "../../../billing/ports/billingQuotaGuard.js";
+import { describe, expect, it } from "vitest";
 import { AuthorizationError } from "../../../../shared/authorization.js";
-import { createServiceContext } from "../../../../shared/serviceContext.js";
 import { createTestCrmConnectionRepository } from "../../testSupportConnections.js";
-import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
-import { WhatsappConnectionProviderAlreadyExistsError } from "../../whatsapp/whatsappConnectionCreation.js";
+import {
+  WhatsappConnectionCredentialStateError,
+  WhatsappConnectionProviderAlreadyExistsError,
+} from "../../whatsapp/whatsappConnectionCreation.js";
 import { createWhatsappConnection } from "./createWhatsappConnection.js";
-
-const storeId = "11111111-1111-4111-8111-111111111111";
-const tenantId = "22222222-2222-4222-8222-222222222222";
-
-function createContext(
-  permissions = [
-    "crm.whatsapp.connection.manage",
-    "crm.whatsapp.integrations.manage",
-  ],
-  entitlements: ("crm" | "crm_zapi")[] = ["crm", "crm_zapi"],
-) {
-  return createServiceContext({
-    actor: { id: "user_1", kind: "user" },
-    entitlements,
-    permissions,
-    request: { requestId: "request_1" },
-    storeId,
-    tenantId,
-  });
-}
-
-function createPorts(limit = 1): CrmServicePorts {
-  const repository = createTestCrmConnectionRepository();
-  return {
-    billingQuotaGuard: {
-      assertAvailable: vi.fn(async () => undefined),
-      getAllowance: vi.fn(async () => ({
-        limit,
-        remaining: limit,
-        used: 0,
-      })),
-    },
-    crmConnectionCredentialVault: {
-      open: vi.fn(async ({ sealed }: { sealed: string }) => sealed),
-      seal: vi.fn(
-        async ({ plaintext }: { plaintext: string }) => `sealed:${plaintext}`,
-      ),
-    },
-    crmConnectionRepository: repository,
-    crmRepository: {} as never,
-    transaction: (action) =>
-      action(createPortsForTransaction(repository, limit)),
-  };
-}
-
-function createPortsForTransaction(
-  repository: ReturnType<typeof createTestCrmConnectionRepository>,
-  limit: number,
-): CrmServicePorts {
-  return {
-    billingQuotaGuard: {
-      assertAvailable: vi.fn(async () => {
-        const used = (
-          await repository.listConnections({
-            storeId: storeId as never,
-            tenantId: tenantId as never,
-          })
-        ).filter((connection) => connection.status !== "archived").length;
-        if (used >= limit) {
-          throw new BillingQuotaExceededError({
-            current: used,
-            limit,
-            quotaKey: "crm_zapi",
-          });
-        }
-      }),
-      getAllowance: vi.fn(async () => ({
-        limit,
-        remaining: limit,
-        used: 0,
-      })),
-    },
-    crmConnectionCredentialVault: {
-      open: vi.fn(async ({ sealed }: { sealed: string }) => sealed),
-      seal: vi.fn(
-        async ({ plaintext }: { plaintext: string }) => `sealed:${plaintext}`,
-      ),
-    },
-    crmConnectionRepository: repository,
-    crmRepository: {} as never,
-  };
-}
+import {
+  createContext,
+  createPorts,
+  storeId,
+  tenantId,
+  unconfiguredZapiConnection,
+} from "../../testSupportWhatsappConnectionCreation.js";
 
 describe("createWhatsappConnection", () => {
   it("creates a store-scoped sandbox connection inside the quota transaction", async () => {
@@ -126,10 +51,10 @@ describe("createWhatsappConnection", () => {
     );
   });
 
-  it("requires both connection and integration management permissions", async () => {
+  it("requires the customer channel setup permission", async () => {
     await expect(
       createWhatsappConnection(
-        createContext(["crm.whatsapp.connection.manage"]),
+        createContext([]),
         {
           displayName: "Atendimento",
           instanceId: "instance_1",
@@ -166,6 +91,90 @@ describe("createWhatsappConnection", () => {
         ports,
       ),
     ).rejects.toBeInstanceOf(WhatsappConnectionProviderAlreadyExistsError);
+  });
+
+  it("atomically configures an unconfigured Z-API connection exactly once", async () => {
+    const repository = createTestCrmConnectionRepository([
+      unconfiguredZapiConnection(),
+    ]);
+    const ports = createPorts(2, repository);
+
+    const results = await Promise.allSettled([
+      createWhatsappConnection(
+        createContext(),
+        {
+          displayName: "Primeira",
+          instanceId: "instance_first",
+          instanceToken: "token_first",
+          provider: "zapi",
+        },
+        ports,
+      ),
+      createWhatsappConnection(
+        createContext(),
+        {
+          displayName: "Segunda",
+          instanceId: "instance_second",
+          instanceToken: "token_second",
+          provider: "zapi",
+        },
+        ports,
+      ),
+    ]);
+
+    expect(
+      results.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    const rejected = results.find((result) => result.status === "rejected");
+    const rejectionReason: unknown = rejected?.reason;
+    expect(rejected).toMatchObject({
+      status: "rejected",
+    });
+    expect(rejectionReason).toBeInstanceOf(
+      WhatsappConnectionProviderAlreadyExistsError,
+    );
+    const [stored] = await repository.listConnections({
+      storeId: storeId as never,
+      tenantId: tenantId as never,
+    });
+    const credentials = stored?.credentialsRef.stored as Record<
+      string,
+      unknown
+    >;
+    expect(String(credentials.instanceId)).toMatch(
+      /^sealed:instance_(first|second)$/u,
+    );
+    expect(String(credentials.instanceToken)).toMatch(
+      /^sealed:token_(first|second)$/u,
+    );
+    expect(String(credentials.instanceId).split("_").at(-1)).toBe(
+      String(credentials.instanceToken).split("_").at(-1),
+    );
+  });
+
+  it("fails explicitly without rotating a partial Z-API credential state", async () => {
+    const partial = unconfiguredZapiConnection({
+      mode: "stored",
+      stored: { instanceId: "sealed:existing-instance" },
+    });
+    const repository = createTestCrmConnectionRepository([partial]);
+
+    await expect(
+      createWhatsappConnection(
+        createContext(),
+        {
+          displayName: "Atendimento",
+          instanceId: "replacement-instance",
+          instanceToken: "replacement-token",
+          provider: "zapi",
+        },
+        createPorts(2, repository),
+      ),
+    ).rejects.toBeInstanceOf(WhatsappConnectionCredentialStateError);
+    expect(partial.credentialsRef).toEqual({
+      mode: "stored",
+      stored: { instanceId: "sealed:existing-instance" },
+    });
   });
 
   it("does not apply the paid Z-API quota to official WhatsApp", async () => {

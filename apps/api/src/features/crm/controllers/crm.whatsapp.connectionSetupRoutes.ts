@@ -1,6 +1,7 @@
 import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { whatsappComposioSenderSchema } from "./crm.controller.schemas.js";
+import { whatsappZapiPairingCodeSchema } from "./crm.whatsapp.connectionSchemas.js";
 import { parseWhatsappJson } from "./crm.whatsapp.controller.support.js";
 import {
   CrmWhatsappValidationError,
@@ -17,6 +18,41 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   crmFeature: Hono,
   { createContext, services }: ConnectionSetupRouteOptions,
 ) {
+  crmFeature.post(
+    "/whatsapp/connections/:connectionId/zapi/pairing/qr",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.requestZapiPairingQr(serviceContext, { connectionId }),
+        );
+      }),
+  );
+
+  crmFeature.post(
+    "/whatsapp/connections/:connectionId/zapi/pairing/code",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const input = await parseWhatsappJson(
+          context,
+          whatsappZapiPairingCodeSchema,
+        );
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.requestZapiPairingCode(serviceContext, {
+            connectionId,
+            phone: input.phone,
+          }),
+        );
+      }),
+  );
+
   crmFeature.post(
     "/whatsapp/connections/:connectionId/composio/authorize",
     async (context) =>

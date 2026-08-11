@@ -1,4 +1,5 @@
 import type { InvitationSender } from "../../domains/identity/ports/accountProvisioningRepository.js";
+import type { CrmOlxWebhookSecurity } from "../../domains/crm/ports/crmOlxWebhookSecurity.js";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
@@ -10,7 +11,9 @@ export type RuntimeHttpAppOptionsInput = {
     clerkUserProfileProvider?: ClerkUserProfileProvider;
     invitationSender?: InvitationSender;
   };
-  crmRealtimeBroker: CrmRealtimeBroker;
+  crmRealtimeBroker: CrmRealtimeBroker & {
+    olxWebhookSecurity: CrmOlxWebhookSecurity;
+  };
   db: unknown;
   env: Record<string, string | undefined>;
   identityVerifier: CreateAppOptions["identityVerifier"] | null;

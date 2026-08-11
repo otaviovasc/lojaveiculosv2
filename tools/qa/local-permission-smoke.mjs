@@ -1,8 +1,10 @@
+import { pathToFileURL } from "node:url";
+
 const apiBaseUrl =
   process.env.API_BASE_URL?.replace(/\/$/, "") ??
   "http://127.0.0.1:8787/api/v1";
 
-const personas = [
+export const personas = [
   {
     email: "agency.seed@lojaveiculos.com.br",
     expectedDestination: "/agency/admin",
@@ -47,6 +49,32 @@ const personas = [
     storeSlug: "test-store",
     userId: "clerk_test_investor",
   },
+  {
+    email: "camila.ribeiro@example.test",
+    expectedDestination: "/dashboard",
+    expectedRole: "salesman",
+    key: "branchSalesperson",
+    name: "Camila Ribeiro",
+    storeSlug: "test-store-sorocaba",
+    userId: "clerk_seed_branch_salesman",
+  },
+  {
+    email: "rafael.martins@example.test",
+    expectedDestination: "/dashboard",
+    expectedRole: "owner",
+    key: "isolationOwner",
+    name: "Rafael Martins",
+    storeSlug: "isolation-store",
+    userId: "clerk_seed_isolation_owner",
+  },
+  {
+    email: "bruno.almeida@example.test",
+    expectedDestination: "/onboarding",
+    expectedNoAccess: true,
+    key: "suspendedMember",
+    name: "Bruno Almeida",
+    userId: "clerk_seed_suspended_salesman",
+  },
 ];
 
 const results = [];
@@ -58,6 +86,7 @@ async function main() {
   await verifyBootstrapDestinations();
   verifyCrmWhatsappPermissions();
   await verifyStoreScopedAccess();
+  await verifyIsolationAndEntitlementBoundaries();
   await verifyRoleManagementBoundaries();
   await verifyAgencyStoreAuthorization();
   printSummary();
@@ -97,7 +126,16 @@ async function verifyBootstrapDestinations() {
       )}`,
     );
 
-    if (account.storeSlug) {
+    if (account.expectedNoAccess) {
+      expect(
+        `${account.key}: suspended access omitted`,
+        response.body?.defaultStore === null &&
+          !response.body?.tenantMemberships?.some(
+            (membership) => membership.status === "active",
+          ),
+        "expected no active tenant or default-store access",
+      );
+    } else if (account.storeSlug) {
       expect(
         `${account.key}: default store role`,
         response.body?.defaultStore?.role === account.expectedRole &&
@@ -120,7 +158,14 @@ async function verifyBootstrapDestinations() {
 }
 
 async function verifyStoreScopedAccess() {
-  for (const key of ["owner", "supervisor", "salesman", "investor"]) {
+  for (const key of [
+    "owner",
+    "supervisor",
+    "salesman",
+    "investor",
+    "branchSalesperson",
+    "isolationOwner",
+  ]) {
     const account = persona(key);
     const inventory = await request(
       account,
@@ -146,6 +191,48 @@ async function verifyStoreScopedAccess() {
       includeStore: true,
     });
     expectStatus(`${key}: store settings denied`, response, [403]);
+  }
+}
+
+async function verifyIsolationAndEntitlementBoundaries() {
+  const crossTenantAttempts = [
+    ["owner", "isolation-store"],
+    ["isolationOwner", "test-store"],
+  ];
+  for (const [key, storeSlug] of crossTenantAttempts) {
+    const response = await request(
+      persona(key),
+      "GET",
+      "/inventory/listings?limit=1",
+      { includeStore: storeSlug },
+    );
+    expectStatus(`${key}: cross-tenant inventory denied`, response, [403]);
+  }
+
+  const suspended = await request(
+    persona("suspendedMember"),
+    "GET",
+    "/inventory/listings?limit=1",
+    { includeStore: "test-store" },
+  );
+  expectStatus("suspended member: store access denied", suspended, [403]);
+
+  const crmAllowed = await request(
+    persona("owner"),
+    "GET",
+    "/crm/whatsapp/sessions",
+    { includeStore: true },
+  );
+  expectStatus("owner: CRM entitlement allowed", crmAllowed, [200]);
+
+  for (const key of ["branchSalesperson", "isolationOwner"]) {
+    const response = await request(
+      persona(key),
+      "GET",
+      "/crm/whatsapp/sessions",
+      { includeStore: true },
+    );
+    expectStatus(`${key}: CRM entitlement denied`, response, [403]);
   }
 }
 
@@ -226,6 +313,10 @@ async function verifyAgencyStoreAuthorization() {
 }
 
 function verifyCrmWhatsappPermissions() {
+  const connectionPermissions = [
+    "crm.messaging.connection.pair",
+    "crm.messaging.connection.setup",
+  ];
   const operatorPermissions = [
     "crm.whatsapp.assign",
     "crm.whatsapp.close",
@@ -234,9 +325,20 @@ function verifyCrmWhatsappPermissions() {
     "crm.whatsapp.send",
     "crm.whatsapp.toggle_intervention",
   ];
-  for (const key of ["owner", "supervisor", "salesman"]) {
+  for (const key of ["owner", "supervisor", "salesman", "branchSalesperson"]) {
     expectPermissionSet(`${key}: WhatsApp operator permissions`, key, {
       includes: operatorPermissions,
+    });
+  }
+  for (const key of ["owner", "supervisor", "isolationOwner"]) {
+    expectPermissionSet(`${key}: connection administration permissions`, key, {
+      excludes: ["crm.whatsapp.connection.manage"],
+      includes: connectionPermissions,
+    });
+  }
+  for (const key of ["salesman", "investor", "branchSalesperson"]) {
+    expectPermissionSet(`${key}: connection administration denied`, key, {
+      excludes: [...connectionPermissions, "crm.whatsapp.connection.manage"],
     });
   }
   expectPermissionSet("investor: WhatsApp read-only permissions", "investor", {
@@ -316,7 +418,7 @@ async function readBody(response) {
   }
 }
 
-function resolveDestination(bootstrap) {
+export function resolveDestination(bootstrap) {
   if (bootstrap?.needsOnboarding) return "/onboarding";
   if (bootstrap?.platformAdmin) return "/platform/admin";
   if (bootstrap?.defaultStore) return "/dashboard";
@@ -374,17 +476,22 @@ function printSummary() {
   }
 }
 
-function formatBody(body) {
+export function formatBody(body) {
   if (!body) return "empty body";
-  if (typeof body === "string") return body.slice(0, 300);
-  return JSON.stringify(body).slice(0, 300);
+  if (typeof body !== "object") return "non-JSON response redacted";
+  const code = typeof body.code === "string" ? body.code : "unknown";
+  const requestId =
+    typeof body.requestId === "string" ? body.requestId : "unavailable";
+  return `code=${code}, requestId=${requestId}`;
 }
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
+}

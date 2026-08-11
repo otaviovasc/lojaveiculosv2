@@ -8,7 +8,12 @@ export type CrmBotWebhookEvent =
   | "message";
 
 export type CrmBotSenderOrigin =
-  "bot_api" | "customer" | "human_crm" | "human_whatsapp" | "system";
+  | "bot_api"
+  | "customer"
+  | "human_crm"
+  | "human_whatsapp"
+  | "system"
+  | "unknown";
 
 export type CrmInterventionSource =
   "admin" | "ai_request" | "auto" | "bot" | "seller_whatsapp";
@@ -89,6 +94,7 @@ export type CrmBotWebhookPayload = {
     isBotActive: boolean;
     leadId: string | null;
     messageCount: number;
+    revision: number;
     status: string;
     tags: Array<{
       color: string;

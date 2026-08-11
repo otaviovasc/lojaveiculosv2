@@ -25,6 +25,17 @@ describe("CRM messaging connection selection", () => {
     expect(findFreeTextStartConnection([official])).toBeNull();
   });
 
+  it("does not offer OLX Chat as a new-conversation channel", () => {
+    const olx = createConnection("olx_chat", "olx");
+
+    expect(findFreeTextStartConnection([olx])).toBeNull();
+    expect(readConversationStartCapability(olx)).toMatchObject({
+      canStart: false,
+      mode: null,
+      provider: "olx_chat",
+    });
+  });
+
   it("maps provider-specific conversation initiation rules", () => {
     expect(
       readConversationStartCapability(
@@ -61,6 +72,7 @@ function createConnection(
   id: string,
 ): CrmWhatsappProviderConnection {
   return {
+    capabilities: capabilitiesForProvider(provider),
     displayName: id,
     externalConnectionId: id,
     externalInstanceId: null,
@@ -77,4 +89,85 @@ function createConnection(
     status: "active",
     webhookUrl: null,
   };
+}
+
+function capabilitiesForProvider(provider: CrmWhatsappProvider) {
+  if (provider === "composio_whatsapp") {
+    return {
+      audio: true,
+      catalog: false,
+      conversationStart: true,
+      delete: false,
+      documents: true,
+      imageCaption: true,
+      images: true,
+      location: true,
+      quickMessages: true,
+      reactions: false,
+      reply: true,
+      scheduling: false,
+      templates: true,
+      text: true,
+      vehicle: true,
+      video: true,
+    } as const;
+  }
+  if (provider === "composio_instagram") {
+    return {
+      audio: false,
+      catalog: false,
+      conversationStart: false,
+      delete: false,
+      documents: false,
+      imageCaption: false,
+      images: true,
+      location: false,
+      quickMessages: false,
+      reactions: false,
+      reply: false,
+      scheduling: false,
+      templates: false,
+      text: true,
+      vehicle: false,
+      video: false,
+    } as const;
+  }
+  if (provider === "olx_chat") {
+    return {
+      audio: false,
+      catalog: false,
+      conversationStart: false,
+      delete: false,
+      documents: false,
+      imageCaption: false,
+      images: false,
+      location: false,
+      quickMessages: false,
+      reactions: false,
+      reply: false,
+      scheduling: false,
+      templates: false,
+      text: true,
+      vehicle: false,
+      video: false,
+    } as const;
+  }
+  return {
+    audio: true,
+    catalog: true,
+    conversationStart: true,
+    delete: true,
+    documents: true,
+    imageCaption: true,
+    images: true,
+    location: true,
+    quickMessages: true,
+    reactions: true,
+    reply: true,
+    scheduling: true,
+    templates: false,
+    text: true,
+    vehicle: true,
+    video: true,
+  } as const;
 }

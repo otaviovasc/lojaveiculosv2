@@ -10,6 +10,7 @@ import {
 } from "../services/CrmService/serviceSupport.js";
 
 export type FindOrCreateWhatsappLeadInput = {
+  buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
   connectionId: string;
@@ -46,6 +47,9 @@ export async function findOrCreateWhatsappLead(
   if (existing) return enrichExistingWhatsappLead(repository, existing, input);
 
   return repository.createLead({
+    ...(input.buyerEmail?.trim()
+      ? { buyerEmail: input.buyerEmail.trim() }
+      : {}),
     ...(input.buyerName?.trim() ? { buyerName: input.buyerName.trim() } : {}),
     ...(input.buyerPhone ? { buyerPhone: input.buyerPhone } : {}),
     metadata: createWhatsappLeadMetadata(input),
@@ -61,6 +65,7 @@ async function enrichExistingWhatsappLead(
   input: FindOrCreateWhatsappLeadInput,
 ) {
   const buyerName = readEnrichedBuyerName(lead, input.buyerName);
+  const buyerEmail = readEnrichedBuyerEmail(lead, input.buyerEmail);
   const buyerPhone =
     input.buyerPhone &&
     shouldBackfillWhatsappPhone(lead.buyerPhone, input.buyerPhone, true)
@@ -68,6 +73,7 @@ async function enrichExistingWhatsappLead(
       : undefined;
   const metadata = readEnrichedMetadata(lead.metadata, input);
   if (
+    buyerEmail === undefined &&
     buyerName === undefined &&
     buyerPhone === undefined &&
     metadata === undefined
@@ -76,6 +82,7 @@ async function enrichExistingWhatsappLead(
   }
 
   return repository.updateLead({
+    ...(buyerEmail !== undefined ? { buyerEmail } : {}),
     ...(buyerName !== undefined ? { buyerName } : {}),
     ...(buyerPhone !== undefined ? { buyerPhone } : {}),
     leadId: lead.id,
@@ -83,6 +90,12 @@ async function enrichExistingWhatsappLead(
     storeId: input.storeId,
     tenantId: input.tenantId,
   });
+}
+
+function readEnrichedBuyerEmail(lead: CrmLead, buyerEmail?: string | null) {
+  const normalized = buyerEmail?.trim();
+  if (!normalized || lead.buyerEmail?.trim()) return undefined;
+  return normalized;
 }
 
 function readEnrichedBuyerName(lead: CrmLead, buyerName?: string | null) {

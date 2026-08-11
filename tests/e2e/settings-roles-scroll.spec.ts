@@ -106,7 +106,97 @@ for (const viewport of viewports) {
   });
 }
 
-async function installRolesRoutes(page: Page) {
+test("roles panel exposes provider-neutral CRM connection permissions", async ({
+  page,
+}) => {
+  await installLocalSession(page, {
+    permissions: ["store_profile.manage", "users.manage"],
+    persona: qaPersonas.owner,
+  });
+  await installRolesRoutes(page, [
+    {
+      key: "crm",
+      label: "CRM e canais de mensagens",
+      permissions: [
+        {
+          description:
+            "Cadastrar a configuração inicial e gravar credenciais write-only de um canal.",
+          key: "crm.messaging.connection.setup",
+          label: "Configurar novo canal",
+          risk: "high",
+        },
+        {
+          description:
+            "Solicitar QR Code ou código por telefone e atualizar o estado de conexão do canal.",
+          key: "crm.messaging.connection.pair",
+          label: "Conectar canal",
+          risk: "high",
+        },
+        {
+          description:
+            "Criar, pausar, retomar e cancelar campanhas de mensagens.",
+          key: "crm.whatsapp.campaigns.manage",
+          label: "Gerenciar campanhas",
+          risk: "high",
+        },
+      ],
+    },
+  ]);
+
+  await page.goto("/settings#/settings?tab=roles");
+  const crmAccordion = page.getByRole("button", {
+    name: /Vendas, Propostas e Atendimento \(CRM\)/,
+  });
+  await expect(crmAccordion).toBeVisible();
+  await crmAccordion.click();
+
+  const setupPermission = page
+    .locator("article")
+    .filter({ hasText: "Configurar novo canal" });
+  await setupPermission.scrollIntoViewIfNeeded();
+  await expect(setupPermission).toBeVisible();
+  await expect(setupPermission).toContainText(
+    "Cadastrar a configuração inicial e gravar credenciais write-only de um canal.",
+  );
+  await expect(
+    page.locator("article").filter({ hasText: "Conectar canal" }),
+  ).toBeVisible();
+  await expect(
+    page.locator("article").filter({ hasText: "Gerenciar campanhas" }),
+  ).toContainText("Criar, pausar, retomar e cancelar campanhas de mensagens.");
+  await expect(
+    page.getByText(
+      /campanhas WhatsApp|mensagens WhatsApp agendadas|etiquetas do WhatsApp|Gerenciar conexão ZAPI|webhooks|rotacionar credenciais|interações de WhatsApp/i,
+    ),
+  ).toHaveCount(0);
+});
+
+type PermissionGroupFixture = {
+  key: string;
+  label: string;
+  permissions: Array<{
+    description: string;
+    key: string;
+    label: string;
+    risk: "high" | "low" | "medium";
+  }>;
+};
+
+async function installRolesRoutes(
+  page: Page,
+  permissionGroups: PermissionGroupFixture[] = [
+    {
+      key: "inventory_marketplace",
+      label: "Estoque e Marketplace",
+      permissions: Array.from({ length: 12 }, (_, index) => ({
+        description: `Permissão ${index}`,
+        key: `inventory.permission_${index}`,
+        label: `Permissão ${index}`,
+        risk: "low" as const,
+      })),
+    },
+  ],
+) {
   await page.route("**/api/v1/settings/store", (route) =>
     route.fulfill({
       body: JSON.stringify({
@@ -183,18 +273,7 @@ async function installRolesRoutes(page: Page) {
         },
         memberships,
         pendingInvitations,
-        permissionGroups: [
-          {
-            key: "inventory_marketplace",
-            label: "Estoque e Marketplace",
-            permissions: Array.from({ length: 12 }, (_, index) => ({
-              description: `Permissão ${index}`,
-              key: `inventory.permission_${index}`,
-              label: `Permissão ${index}`,
-              risk: "low",
-            })),
-          },
-        ],
+        permissionGroups,
         roles: [
           {
             assignable: true,

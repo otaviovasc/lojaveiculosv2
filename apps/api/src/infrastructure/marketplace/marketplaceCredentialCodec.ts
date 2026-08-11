@@ -9,12 +9,15 @@ const localPrefix = "local:";
 const encryptedPrefix = "enc:";
 
 export type MarketplaceCredentialCodec = {
+  decryptSecret: (value: string) => string;
   decodeAccountConfig: (
     config: Record<string, unknown>,
   ) => Record<string, unknown>;
   encodeAccountConfig: (
     config: Record<string, unknown>,
   ) => Record<string, unknown>;
+  encryptSecret: (value: string) => string;
+  fingerprint: (value: string) => string;
   redactAccountConfig: (
     config: Record<string, unknown>,
   ) => Record<string, unknown>;
@@ -24,10 +27,13 @@ export function createMarketplaceCredentialCodec(
   env: Record<string, string | undefined>,
 ): MarketplaceCredentialCodec {
   return {
+    decryptSecret: (value) => decrypt(value, env),
     decodeAccountConfig: (config) =>
       mapCredentials(config, (value) => decrypt(value, env)),
     encodeAccountConfig: (config) =>
       mapCredentials(config, (value) => encrypt(value, env)),
+    encryptSecret: (value) => encrypt(value, env),
+    fingerprint: (value) => createHash("sha256").update(value).digest("hex"),
     redactAccountConfig: redactAccountConfig,
   };
 }

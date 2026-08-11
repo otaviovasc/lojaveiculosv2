@@ -1,7 +1,10 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmLead } from "../../ports/crmRepository.js";
-import type { CrmWhatsappMessageSenderType } from "../../ports/crmWhatsappRepository.js";
+import type {
+  CrmWhatsappMessageSenderOrigin,
+  CrmWhatsappMessageSenderType,
+} from "../../ports/crmWhatsappRepository.js";
 import type { CrmWhatsappSendTemplateInput } from "../../ports/crmWhatsappGateway.js";
 import type {
   WhatsappMessage,
@@ -16,6 +19,7 @@ import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
   getCrmWhatsappRepository,
+  isCrmOlxChatEnabled,
   requireCrmWhatsappScope,
   runCrmTransaction,
   type CrmServicePorts,
@@ -44,6 +48,7 @@ import {
 import { fingerprintOutboundIntent } from "../../whatsapp/sendWhatsappOutboundSupport.js";
 import { notifyHumanOutboundAttendanceStarted } from "../../whatsapp/sendWhatsappOutboundAttendance.js";
 import { completeStartedWhatsappConversation } from "../../whatsapp/completeStartedWhatsappConversation.js";
+import { assertWhatsappProviderEffectAllowed } from "../../whatsapp/assertWhatsappProviderEffectAllowed.js";
 
 const permission = "crm.whatsapp.send";
 type SentWhatsappText = Awaited<
@@ -55,6 +60,7 @@ export type StartWhatsappConversationInput = {
   idempotencyKey?: string;
   leadId?: string;
   phone?: string;
+  senderOrigin?: CrmWhatsappMessageSenderOrigin;
   senderType?: CrmWhatsappMessageSenderType;
   template?: Omit<CrmWhatsappSendTemplateInput, "phone">;
   text?: string;
@@ -83,6 +89,9 @@ export async function startWhatsappConversation(
   ) {
     throw new WhatsappConnectionNotFoundError(input.connectionId);
   }
+  assertWhatsappProviderEffectAllowed(context, connection, {
+    olxChatEnabled: isCrmOlxChatEnabled(ports),
+  });
   assertConversationStartMode(connection.provider, input);
   const target = await resolveStartConversationTarget(context, input, ports);
   const content = conversationContent(input);
@@ -137,6 +146,7 @@ export async function startWhatsappConversation(
               sendState: "PENDING_PROVIDER_SEND",
             },
             providerTimestamp: pendingAt,
+            senderOrigin: input.senderOrigin ?? "human_crm",
             senderType: input.senderType ?? "HUMAN",
             status: "PENDING",
             storeId: scope.storeId as never,
@@ -156,6 +166,8 @@ export async function startWhatsappConversation(
             ? { idempotencyKey: input.idempotencyKey }
             : {}),
           payload: input,
+          senderOrigin: input.senderOrigin ?? "human_crm",
+          senderType: input.senderType ?? "HUMAN",
           send: () =>
             input.template
               ? gateway.sendTemplate(connection, {

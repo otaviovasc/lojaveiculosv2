@@ -3,6 +3,7 @@ import {
   installCampaignApiMocks,
   installNoopCampaignEventSource,
 } from "./crm-whatsapp-campaigns-helpers";
+import { createCampaignConnection } from "./crm-whatsapp-campaigns-fixtures";
 import { installLocalOwnerSession } from "./crm-whatsapp-test-helpers";
 import { saveQaScreenshot } from "./support/artifacts";
 import { setQaViewport } from "./support/viewports";
@@ -16,6 +17,7 @@ test.describe("CRM WhatsApp operations mobile", () => {
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
     await installOperationsMocks(page);
+    await installPairingConnectionMocks(page);
     await page.goto("/crm#/crm?surface=whatsapp");
 
     await expectMobileNavigation(page);
@@ -72,11 +74,89 @@ test.describe("CRM WhatsApp operations mobile", () => {
     await expectMoreMenuAboveNavigation(page);
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-more-mobile");
     await mobileNav.getByRole("menuitem", { name: "Conexão" }).click();
-    await expect(page.getByText("Credenciais protegidas")).toBeVisible();
+    const connection = page.getByRole("region", { name: /Conexão/i });
+    await expect(
+      connection.getByRole("heading", { name: /Conectar WhatsApp.*Z-API/ }),
+    ).toBeVisible();
+    await expect(
+      connection.getByRole("heading", { name: "QR Code" }),
+    ).toBeVisible();
+    await expect(
+      connection.getByRole("button", { name: "Gerar QR Code" }),
+    ).toBeVisible();
+    await expect(
+      connection.getByLabel("Telefone para pareamento"),
+    ).toBeVisible();
+    await expect(
+      connection.getByText(/O status só muda depois/i),
+    ).toBeVisible();
+    await expect(connection.getByText("Credenciais protegidas")).toHaveCount(0);
+    await expect(
+      connection.getByLabel(/ID da instância|Token da instância/i),
+    ).toHaveCount(0);
+    await expect(connection.getByText(/webhook/i)).toHaveCount(0);
+    await expect(
+      connection.getByRole("button", { name: /configurar|webhook/i }),
+    ).toHaveCount(0);
+
+    await connection.getByRole("button", { name: "Gerar QR Code" }).click();
+    await expect(
+      connection.getByAltText("QR Code para conectar o WhatsApp"),
+    ).toBeVisible();
+    await connection
+      .getByLabel("Telefone para pareamento")
+      .fill("+55 (11) 99999-9999");
+    await connection.getByRole("button", { name: "Solicitar código" }).click();
+    await expect(
+      connection.locator("output").filter({ hasText: "5511999999999" }),
+    ).toBeVisible();
     await expectNoPageOverflow(page);
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-connection-mobile");
   });
 });
+
+async function installPairingConnectionMocks(page: Page) {
+  const connection = createCampaignConnection();
+  await page.route("**/crm/whatsapp/connections", (route) =>
+    fulfillJson(route, {
+      allowance: { limit: 1, remaining: 0, used: 1 },
+      availableProviders: [],
+      connections: [
+        {
+          ...connection,
+          id: "connection-pairing-mobile-e2e",
+          live: {
+            checkedAt: "2026-08-10T12:00:00.000Z",
+            connected: false,
+            connectedPhone: null,
+            providerStatus: "disconnected",
+            smartphoneConnected: false,
+          },
+          phone: null,
+          ready: true,
+          status: "disconnected",
+        },
+      ],
+    }),
+  );
+  await page.route(
+    "**/crm/whatsapp/connections/connection-pairing-mobile-e2e/zapi/pairing/qr",
+    (route) =>
+      fulfillJson(route, {
+        expiresAt: "2099-08-10T12:00:00.000Z",
+        qrCode: "data:image/png;base64,crm-pairing-qr-mobile",
+      }),
+  );
+  await page.route(
+    "**/crm/whatsapp/connections/connection-pairing-mobile-e2e/zapi/pairing/code",
+    (route) =>
+      fulfillJson(route, {
+        code: "5511999999999",
+        expiresAt: "2099-08-10T12:00:00.000Z",
+        requested: true,
+      }),
+  );
+}
 
 async function installOperationsMocks(page: Page) {
   await page.route("**/crm/whatsapp/scheduled-messages**", (route) =>

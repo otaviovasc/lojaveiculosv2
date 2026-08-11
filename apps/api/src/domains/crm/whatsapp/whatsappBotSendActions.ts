@@ -35,6 +35,8 @@ export async function executeBotSendTextAction(
         ...(input.idempotencyKey
           ? { idempotencyKey: input.idempotencyKey }
           : {}),
+        senderOrigin: "bot_api",
+        senderType: "AI",
         sessionId,
         text: readRequiredText(input.payload, "text"),
       },
@@ -60,6 +62,7 @@ export async function executeBotSendTextAction(
         : {}),
       connectionId,
       phone,
+      senderOrigin: "bot_api",
       senderType: "AI",
       text: readRequiredText(input.payload, "text"),
     },

@@ -56,6 +56,55 @@ export function createMemoryCrmConnectionRepository(
       connections.push(connection);
       return connection;
     },
+    async upsertOlxConnection(input) {
+      const existing = connections.find(
+        (item) =>
+          item.provider === "olx_chat" &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId &&
+          item.status !== "archived",
+      );
+      if (existing) {
+        existing.credentialsRef = input.credentialsRef ?? {};
+        existing.displayName = input.displayName;
+        existing.externalConnectionId = input.externalConnectionId ?? null;
+        existing.metadata = input.metadata ?? {};
+        existing.status = input.status ?? "error";
+        existing.webhookUrl = input.webhookUrl ?? null;
+        return existing;
+      }
+      const connection: CrmConnection = {
+        credentialsRef: input.credentialsRef ?? {},
+        displayName: input.displayName,
+        externalConnectionId: input.externalConnectionId ?? null,
+        externalInstanceId: null,
+        id: crypto.randomUUID(),
+        metadata: input.metadata ?? {},
+        phone: null,
+        provider: "olx_chat",
+        status: input.status ?? "error",
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+        webhookUrl: input.webhookUrl ?? null,
+      };
+      connections.push(connection);
+      return connection;
+    },
+    async configureInitialZapiCredentials(input) {
+      const connection = connections.find(
+        (item) =>
+          item.id === input.connectionId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId &&
+          item.provider === "zapi" &&
+          item.status !== "archived",
+      );
+      if (!connection) return { status: "not_found" };
+      const state = readZapiCredentialState(connection.credentialsRef);
+      if (state !== "unconfigured") return { status: state };
+      connection.credentialsRef = input.credentialsRef;
+      return { connection, status: "configured" };
+    },
     async claimZapiWebhookSetup(input) {
       const connection = connections.find(
         (item) =>
@@ -170,4 +219,17 @@ function readRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function readZapiCredentialState(credentialsRef: Record<string, unknown>) {
+  const stored = readRecord(credentialsRef.stored);
+  const instanceId = readConfiguredString(stored.instanceId);
+  const instanceToken = readConfiguredString(stored.instanceToken);
+  if (instanceId && instanceToken) return "already_configured" as const;
+  if (instanceId || instanceToken) return "partial_state" as const;
+  return "unconfigured" as const;
+}
+
+function readConfiguredString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0;
 }

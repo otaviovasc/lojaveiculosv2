@@ -20,6 +20,7 @@ import {
   type ZapiWebhookInput,
   type ZapiWebhookResult,
 } from "./serviceSupport.js";
+import { updateWhatsappSessionWithCas } from "../../whatsapp/updateWhatsappSessionWithCas.js";
 
 const permission = "crm.whatsapp.ingest";
 const statusRank: Record<CrmWhatsappMessageStatus, number> = {
@@ -165,11 +166,17 @@ async function markMessagesReadByMe(
     if (message) sessionIds.add(message.sessionId);
   }
   for (const sessionId of sessionIds) {
-    await repository.updateSession({
-      lastReadAt: new Date(),
+    const readAt = new Date();
+    await updateWhatsappSessionWithCas(repository, {
       sessionId,
       storeId: connection.storeId,
       tenantId: connection.tenantId,
+      update: (session) => ({
+        lastReadAt:
+          session.lastReadAt && session.lastReadAt > readAt
+            ? session.lastReadAt
+            : readAt,
+      }),
     });
   }
   await auditZapiWebhook(context, connection, "status", {
@@ -194,11 +201,17 @@ async function updateReadSessionState(
 ) {
   if (status !== "READ") return null;
   const lastCustomerReadAt = new Date();
-  await repository.updateSession({
-    lastCustomerReadAt,
+  await updateWhatsappSessionWithCas(repository, {
     sessionId: message.sessionId,
     storeId: message.storeId,
     tenantId: message.tenantId,
+    update: (session) => ({
+      lastCustomerReadAt:
+        session.lastCustomerReadAt &&
+        session.lastCustomerReadAt > lastCustomerReadAt
+          ? session.lastCustomerReadAt
+          : lastCustomerReadAt,
+    }),
   });
   return lastCustomerReadAt.toISOString();
 }

@@ -121,7 +121,8 @@ async function authorizeSupport(
     permissions: [
       ...new Set([
         ...context.permissions,
-        "crm.whatsapp.connection.manage",
+        "crm.messaging.connection.pair",
+        "crm.messaging.connection.setup",
         "crm.whatsapp.integrations.manage",
         "crm.whatsapp.list",
       ]),

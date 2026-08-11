@@ -2,6 +2,7 @@ import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type { CrmWhatsappGateway } from "../ports/crmWhatsappGateway.js";
 import type {
   CrmWhatsappMessageSenderType,
+  CrmWhatsappMessageSenderOrigin,
   CrmWhatsappMessageType,
   CrmWhatsappSession,
 } from "../ports/crmWhatsappRepository.js";
@@ -31,6 +32,7 @@ export type SendWhatsappOutboundInput = {
     scope: { storeId: string; tenantId: string };
     session: CrmWhatsappSession;
   }) => Promise<PreparedOutboundWhatsappMessage>;
+  senderOrigin: CrmWhatsappMessageSenderOrigin;
   senderType?: CrmWhatsappMessageSenderType;
   sessionId: string;
 };

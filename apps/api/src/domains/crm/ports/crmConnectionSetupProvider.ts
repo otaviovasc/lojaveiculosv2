@@ -3,7 +3,10 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 
 export const ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE = "zapi.instance-id";
 export const ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE = "zapi.instance-token";
+export const ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE = "zapi.client-token";
 export const ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE = "zapi.webhook-secret";
+export const CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE =
+  "crm-bot.webhook-secret";
 
 export type CrmCredentialScope = {
   purpose: string;
@@ -14,6 +17,18 @@ export type CrmCredentialScope = {
 export type CrmConnectionCredentialVault = {
   open: (input: CrmCredentialScope & { sealed: string }) => Promise<string>;
   seal: (input: CrmCredentialScope & { plaintext: string }) => Promise<string>;
+};
+
+export type OlxCrmWebhookSetupProvider = {
+  configureChat: (input: {
+    accessToken: string;
+    callbackUrl: string;
+  }) => Promise<void>;
+  configureLeads: (input: {
+    accessToken: string;
+    callbackUrl: string;
+    token: string;
+  }) => Promise<void>;
 };
 
 export type ZapiSetupCredentials = {

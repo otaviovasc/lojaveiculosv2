@@ -81,7 +81,12 @@ export async function mutateCampaign(
   action: (campaignId: string) => Promise<CrmWhatsappCampaign | null>,
   campaignId: string,
   reload: () => Promise<void>,
+  onError?: (error: unknown) => void,
 ) {
-  const result = await action(campaignId);
-  if (result) await reload();
+  try {
+    const result = await action(campaignId);
+    if (result) await reload();
+  } catch (error) {
+    onError?.(error);
+  }
 }

@@ -23,12 +23,16 @@ export function findConnectedConnection(
 export function findFreeTextStartConnection(
   connections: CrmWhatsappProviderConnection[],
 ) {
-  const zapiConnections = connections.filter(
-    (connection) => connection.provider === "zapi",
+  const startableConnections = connections.filter(
+    (connection) =>
+      connection.capabilities?.conversationStart === true &&
+      connection.capabilities.templates !== true,
   );
   return (
-    findConnectedConnection(zapiConnections) ??
-    zapiConnections.find((connection) => connection.status !== "archived") ??
+    findConnectedConnection(startableConnections) ??
+    startableConnections.find(
+      (connection) => connection.status !== "archived",
+    ) ??
     null
   );
 }
@@ -51,26 +55,30 @@ export function readConversationStartCapability(
       unavailableReason: "Conecte um canal antes de iniciar uma conversa.",
     };
   }
-  if (connection.provider === "composio_instagram") {
+  const capabilities = connection.capabilities;
+  if (!capabilities) {
     return {
       canStart: false,
       mode: null,
       provider: connection.provider,
       unavailableReason:
-        "No Instagram, o cliente precisa enviar a primeira mensagem.",
+        "As capacidades deste canal ainda não foram confirmadas.",
     };
   }
-  if (connection.provider === "composio_whatsapp") {
+  if (capabilities.conversationStart !== true) {
     return {
-      canStart: true,
-      mode: "template",
+      canStart: false,
+      mode: null,
       provider: connection.provider,
-      unavailableReason: null,
+      unavailableReason:
+        connection.provider === "composio_instagram"
+          ? "No Instagram, o cliente precisa enviar a primeira mensagem."
+          : "Este canal não permite iniciar novas conversas pelo CRM.",
     };
   }
   return {
     canStart: true,
-    mode: "text",
+    mode: capabilities.templates === true ? "template" : "text",
     provider: connection.provider,
     unavailableReason: null,
   };

@@ -13,6 +13,10 @@ import {
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { CrmWhatsappHumanAttendanceBadge } from "./CrmWhatsappHumanAttendanceBadge";
 import {
+  readCrmWhatsappChannelLabel,
+  readCrmWhatsappProviderLabel,
+} from "./crmWhatsappConnectionStatus";
+import {
   formatRelativeSessionTime,
   formatSessionName,
   formatSessionPreview,
@@ -159,7 +163,12 @@ export function SessionList({
                       +{(session.sessionTags?.length ?? 0) - 2}
                     </span>
                   ) : null}
-                  <ChannelBadge channel={session.channel} />
+                  <ChannelBadge
+                    channel={session.channel}
+                    {...(session.connection?.provider
+                      ? { provider: session.connection.provider }
+                      : {})}
+                  />
                   {session.vehicle?.title ? (
                     <span className="crm-whatsapp-session-chip crm-whatsapp-session-chip-wide">
                       <Car aria-hidden="true" />
@@ -223,19 +232,29 @@ function SessionStatusBadge({
   );
 }
 
-function ChannelBadge({ channel }: { channel: string }) {
-  if (channel === "WHATSAPP") {
-    return (
-      <span className="crm-whatsapp-channel crm-whatsapp-session-chip">
-        <Phone aria-hidden="true" className="size-3" />
-        WhatsApp
-      </span>
-    );
-  }
+function ChannelBadge({
+  channel,
+  provider,
+}: {
+  channel: string;
+  provider?: string;
+}) {
+  const channelLabel = readCrmWhatsappChannelLabel(channel);
   return (
-    <span className="crm-whatsapp-channel crm-whatsapp-session-chip">
-      <MessageCircle aria-hidden="true" className="size-3" />
-      {channel === "OLX_CHAT" ? "OLX Chat" : channel}
-    </span>
+    <>
+      <span className="crm-whatsapp-channel crm-whatsapp-session-chip">
+        {channel === "WHATSAPP" ? (
+          <Phone aria-hidden="true" className="size-3" />
+        ) : (
+          <MessageCircle aria-hidden="true" className="size-3" />
+        )}
+        {channelLabel}
+      </span>
+      {provider ? (
+        <span className="crm-whatsapp-provider crm-whatsapp-session-chip">
+          {readCrmWhatsappProviderLabel(provider)}
+        </span>
+      ) : null}
+    </>
   );
 }

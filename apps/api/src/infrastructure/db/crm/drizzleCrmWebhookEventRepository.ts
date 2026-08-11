@@ -1,4 +1,15 @@
-import { and, desc, eq, isNull, lte, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  lt,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import { providerEvents } from "@lojaveiculosv2/db";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type {
@@ -6,11 +17,60 @@ import type {
   CrmWebhookEventRepository,
 } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+import { createDrizzleCrmWebhookEffects } from "./drizzleCrmWebhookEffects.js";
 
 export function createDrizzleCrmWebhookEventRepository(
   db: DrizzleCrmClient,
 ): CrmWebhookEventRepository {
   return {
+    ...createDrizzleCrmWebhookEffects(db),
+    claimDueEvents: (input) =>
+      db.transaction(async (transaction) => {
+        const client = transaction as DrizzleCrmClient;
+        const claimable = and(
+          eq(providerEvents.eventType, input.eventType),
+          eq(providerEvents.provider, input.provider),
+          lt(providerEvents.processingAttempts, input.maxAttempts),
+          or(
+            eq(providerEvents.status, "received"),
+            eq(providerEvents.status, "failed"),
+            and(
+              eq(providerEvents.status, "processing"),
+              or(
+                isNull(providerEvents.processingStartedAt),
+                lte(providerEvents.processingStartedAt, input.staleBefore),
+              ),
+            ),
+          ),
+        );
+        const candidates = await client
+          .select({ id: providerEvents.id })
+          .from(providerEvents)
+          .where(claimable)
+          .orderBy(asc(providerEvents.createdAt))
+          .limit(input.limit)
+          .for("update", { skipLocked: true });
+        if (candidates.length === 0) return [];
+        const rows = await client
+          .update(providerEvents)
+          .set({
+            errorMessage: null,
+            processedAt: null,
+            processingAttempts: sql`${providerEvents.processingAttempts} + 1`,
+            processingStartedAt: input.now,
+            processingToken: input.processingToken,
+            status: "processing",
+            updatedAt: input.now,
+          })
+          .where(
+            inArray(
+              providerEvents.id,
+              candidates.map(({ id }) => id),
+            ),
+          )
+          .returning();
+        return rows.map(toWebhookEvent);
+      }),
     async claimForProcessing(input) {
       const directlyClaimable = [
         eq(providerEvents.status, "failed"),
@@ -101,13 +161,7 @@ export function createDrizzleCrmWebhookEventRepository(
           storeId: input.storeId ?? null,
           tenantId: input.tenantId ?? null,
         })
-        .onConflictDoNothing({
-          target: [
-            providerEvents.provider,
-            providerEvents.environment,
-            providerEvents.providerEventId,
-          ],
-        })
+        .onConflictDoNothing()
         .returning();
       if (inserted) return { created: true, event: toWebhookEvent(inserted) };
 
@@ -118,6 +172,9 @@ export function createDrizzleCrmWebhookEventRepository(
           and(
             eq(providerEvents.provider, input.provider),
             eq(providerEvents.environment, input.environment),
+            input.connectionId
+              ? eq(providerEvents.connectionId, input.connectionId)
+              : isNull(providerEvents.connectionId),
             eq(providerEvents.providerEventId, input.providerEventId),
           ),
         )

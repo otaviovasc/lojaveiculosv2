@@ -204,6 +204,7 @@ function formatProvider(provider: CrmWhatsappProviderEvent["provider"]) {
   const labels: Record<CrmWhatsappProviderEvent["provider"], string> = {
     composio_instagram: "Instagram oficial",
     composio_whatsapp: "WhatsApp oficial",
+    olx_chat: "OLX Chat",
     zapi: "Z-API",
   };
   return labels[provider];

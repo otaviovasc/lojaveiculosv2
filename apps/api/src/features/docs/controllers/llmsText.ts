@@ -214,7 +214,7 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/marketplaces/integrations/{provider}/sync-jobs: queues inventory, lead, publish, update, or unpublish sync jobs after provider setup; requires the matching marketplace permission.
 - POST /api/v1/marketplaces/sync-jobs/{jobId}/run: runs one queued provider job, maps the scoped listing payload for publish/update jobs, fails closed before provider IO unless the listing is not deleted, published, public-visible, backed by an eligible unit, and has at least one public photo, allows unpublish from the stored provider external id after the local listing projection is gone, then stores provider external ids and marks the job succeeded or failed.
 - Mercado Livre runtime uses OAuth token exchange and item endpoints when MERCADO_LIVRE_CLIENT_ID is configured.
-- OLX runtime is partner-configurable through OLX_AUTHORIZATION_URL, OLX_API_BASE_URL, OLX_TOKEN_URL, and OLX_LISTINGS_PATH because public official OLX Brasil API docs were not available in this environment.
+- OLX uses the fixed official authorization, token, basic-user, and Autoupload contracts. OAuth requests the exact basic_user_info, autoupload, autoservice, and chat scopes.
 - Provider tokens are encrypted at rest with MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY in production and redacted from API responses, docs, audit metadata, and UI state.
 
 ## Current documents endpoints

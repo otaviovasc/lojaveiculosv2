@@ -66,10 +66,10 @@ describe("CRM WhatsApp connections", () => {
       phone: null,
       provider: "zapi",
       status: "active",
-      webhookTokenRequired: false,
-      webhookUrl: null,
     });
-    expect(JSON.stringify(body)).toContain("/webhooks/zapi/");
+    expect(JSON.stringify(body)).not.toContain("/webhooks/zapi/");
+    expect(JSON.stringify(body)).not.toContain("webhookTokenRequired");
+    expect(JSON.stringify(body)).not.toContain("webhookUrl");
     expect(JSON.stringify(body)).not.toContain("credentialsRef");
     expect(getConnectionStatus).toHaveBeenCalledTimes(1);
     expect(record.mock.calls[0]?.[0]).toMatchObject({
@@ -109,6 +109,35 @@ describe("CRM WhatsApp connections", () => {
         },
       ],
     });
+  });
+
+  it("does not advertise imported OLX connections while the runtime switch is off", async () => {
+    const getConnectionStatus = vi.fn();
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        {
+          credentialsRef: {},
+          displayName: "Imported OLX Chat",
+          externalConnectionId: null,
+          externalInstanceId: null,
+          id: "24000000-0000-4000-8000-000000000102",
+          metadata: {},
+          phone: null,
+          provider: "olx_chat",
+          status: "active",
+          storeId,
+          tenantId,
+          webhookUrl: null,
+        },
+      ]),
+      crmWhatsappGateway: { getConnectionStatus },
+    });
+
+    const response = await app.request("/api/v1/crm/whatsapp/connections");
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ connections: [] });
+    expect(getConnectionStatus).not.toHaveBeenCalled();
   });
 
   it("rejects customer attempts to update ZAPI instance credentials", async () => {

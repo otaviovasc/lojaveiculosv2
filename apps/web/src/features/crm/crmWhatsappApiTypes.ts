@@ -23,18 +23,17 @@ import type {
   CrmWhatsappInterventionInput,
   CrmWhatsappMessageQuery,
   CrmWhatsappMessage,
-  CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappComposioAuthorization,
   CrmWhatsappComposioCompleteResult,
   CrmWhatsappConnectionsResponse,
   CrmWhatsappCreateConnectionInput,
-  CrmWhatsappUpdateConnectionInput,
   CrmWhatsappProviderConnection,
   CrmWhatsappProviderEventsResponse,
   CrmWhatsappQuickMessage,
   CrmWhatsappProcessDueScheduledMessagesInput,
   CrmWhatsappProcessDueScheduledMessagesResult,
   CrmWhatsappRealtimeEvent,
+  CrmWhatsappRealtimeStatus,
   CrmWhatsappReorderTagsInput,
   CrmWhatsappRetryProviderEventResponse,
   CrmWhatsappSendLocationInput,
@@ -58,6 +57,7 @@ import type {
   CrmWhatsappUpdateQuickMessageInput,
   CrmWhatsappZapiPairingCode,
   CrmWhatsappZapiPairingQr,
+  CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 
 export type CrmWhatsappApi = {
@@ -68,9 +68,6 @@ export type CrmWhatsappApi = {
   closeSession: (
     sessionId: CrmWhatsappSessionId,
   ) => Promise<CrmWhatsappSession | null>;
-  configureConnectionWebhooks: (
-    connectionId: CrmWhatsappConnectionId,
-  ) => Promise<CrmWhatsappConfigureWebhooksResult>;
   authorizeComposioConnection: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappComposioAuthorization>;
@@ -80,6 +77,7 @@ export type CrmWhatsappApi = {
   createConnection: (
     input: CrmWhatsappCreateConnectionInput,
   ) => Promise<CrmWhatsappProviderConnection>;
+  getZapiAddonContract?: () => Promise<CrmWhatsappZapiAddonContract | null>;
   deleteMessage: (
     messageId: CrmWhatsappMessage["id"],
   ) => Promise<CrmWhatsappMessage | null>;
@@ -115,6 +113,7 @@ export type CrmWhatsappApi = {
   requestZapiPairingQr: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappZapiPairingQr>;
+  requestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
   selectComposioSender: (
     connectionId: CrmWhatsappConnectionId,
     senderId: string,
@@ -132,11 +131,8 @@ export type CrmWhatsappApi = {
     connectionId?: CrmWhatsappConnectionId | null;
     onError?: (error: Error) => void;
     onEvent: (event: CrmWhatsappRealtimeEvent) => void;
+    onStatus?: (status: CrmWhatsappRealtimeStatus) => void;
   }) => () => void;
-  updateConnection: (
-    connectionId: CrmWhatsappConnectionId,
-    input: CrmWhatsappUpdateConnectionInput,
-  ) => Promise<CrmWhatsappProviderConnection>;
   updateBotIntegration: (
     input: CrmWhatsappUpdateBotIntegrationInput,
   ) => Promise<CrmWhatsappBotIntegrationResponse>;

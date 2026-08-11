@@ -6,6 +6,29 @@ export type CrmProviderWebhookEventStatus =
 
 export type CrmProviderWebhookEventProvider = CrmConnectionProvider;
 
+export type CrmWebhookEffectType =
+  "audit_accepted" | "bot_message" | "realtime_message" | "realtime_session";
+
+export type CrmWebhookEffect = {
+  connectionId: string;
+  deadLetteredAt: Date | null;
+  deliveredAt: Date | null;
+  effectType: CrmWebhookEffectType;
+  id: string;
+  lastErrorCode: string | null;
+  messageId: string;
+  nextAttemptAt: Date;
+  processingAttempts: number;
+  processingStartedAt: Date | null;
+  processingToken: string | null;
+  providerEventId: string;
+  sequence: number;
+  sessionId: string;
+  status: "dead_letter" | "delivered" | "failed" | "pending" | "processing";
+  storeId: StoreId;
+  tenantId: TenantId;
+};
+
 export type CrmProviderWebhookEvent = {
   connectionId: string | null;
   createdAt: Date;
@@ -67,6 +90,30 @@ export type UpdateCrmProviderWebhookEventStatusInput = {
 };
 
 export type CrmWebhookEventRepository = {
+  claimDueEvents: (input: {
+    eventType: string;
+    limit: number;
+    maxAttempts: number;
+    now: Date;
+    processingToken: string;
+    provider: CrmProviderWebhookEventProvider;
+    staleBefore: Date;
+  }) => Promise<readonly CrmProviderWebhookEvent[]>;
+  claimDueEffects: (input: {
+    limit: number;
+    maxAttempts: number;
+    now: Date;
+    processingToken: string;
+    staleBefore: Date;
+  }) => Promise<readonly CrmWebhookEffect[]>;
+  claimEffect: (input: {
+    effectId: string;
+    maxAttempts: number;
+    now: Date;
+    processingStartedAt: Date;
+    processingToken: string;
+    staleBefore: Date;
+  }) => Promise<CrmWebhookEffect | null>;
   claimForProcessing: (input: {
     allowIgnored?: boolean;
     eventId: string;
@@ -77,12 +124,37 @@ export type CrmWebhookEventRepository = {
   findById: (
     input: FindCrmProviderWebhookEventInput,
   ) => Promise<CrmProviderWebhookEvent | null>;
+  completeEffect: (input: {
+    deliveredAt: Date;
+    effectId: string;
+    processingToken: string;
+  }) => Promise<CrmWebhookEffect | null>;
+  failEffect: (input: {
+    deadLetteredAt: Date | null;
+    effectId: string;
+    lastErrorCode: string;
+    nextAttemptAt: Date;
+    processingToken: string;
+    status: "dead_letter" | "failed";
+  }) => Promise<CrmWebhookEffect | null>;
+  listEffects: (
+    providerEventId: string,
+  ) => Promise<readonly CrmWebhookEffect[]>;
   list: (
     input: ListCrmProviderWebhookEventsInput,
   ) => Promise<readonly CrmProviderWebhookEvent[]>;
   recordReceived: (
     input: RecordCrmProviderWebhookEventInput,
   ) => Promise<RecordCrmProviderWebhookEventResult>;
+  stageEffects: (input: {
+    connectionId: string;
+    effects: readonly { effectType: CrmWebhookEffectType; sequence: number }[];
+    messageId: string;
+    providerEventId: string;
+    sessionId: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<readonly CrmWebhookEffect[]>;
   updateStatus: (
     input: UpdateCrmProviderWebhookEventStatusInput,
   ) => Promise<CrmProviderWebhookEvent | null>;

@@ -34,14 +34,41 @@ export async function exchangeToken(
       tokenRefresh: values.grant_type === "refresh_token",
     });
   }
+  const accessToken = readString(payload.access_token);
+  if (!accessToken) {
+    throw new MarketplaceProviderGatewayError(
+      "MARKETPLACE_PROVIDER_VALIDATION_FAILED",
+      "Marketplace provider returned an invalid token response.",
+      options.provider,
+      502,
+      { provider: options.provider },
+    );
+  }
   return {
-    accessToken: readString(payload.access_token) ?? "",
+    accessToken,
     expiresAt: expiresAt(payload.expires_in),
     providerAccountId: readString(payload.user_id),
     refreshToken: readString(payload.refresh_token),
-    scope: readString(payload.scope),
+    scope: normalizeScope(payload.scope),
     tokenType: readString(payload.token_type),
   };
+}
+
+function normalizeScope(value: unknown): string | null {
+  const values = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[\s,]+/u)
+      : [];
+  const normalized = [
+    ...new Set(
+      values
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ].sort();
+  return normalized.length ? normalized.join(" ") : null;
 }
 
 export async function checkAccount(

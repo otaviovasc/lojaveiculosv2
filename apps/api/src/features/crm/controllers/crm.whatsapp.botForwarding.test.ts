@@ -52,7 +52,7 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
     const firstDispatch = requireDispatch(dispatched, 0);
     expect(firstDispatch.idempotencyKey).toContain(inbound.message.id);
     expect(firstDispatch).toMatchObject({
-      webhookSecret: "bot-secret-value",
+      webhookSecret: "bot-webhook-secret-value-32-characters",
       webhookUrl: "https://bot.example.test/webhook",
       payload: {
         actionsApi: { authentication: "X-Webhook-Secret" },
@@ -75,7 +75,7 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
       },
     });
     expect(JSON.stringify(firstDispatch.payload)).not.toContain(
-      "bot-secret-value",
+      "bot-webhook-secret-value-32-characters",
     );
 
     const humanResponse = await app.request(
@@ -88,6 +88,7 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
     expect(humanResponse.status).toBe(201);
     await expect(humanResponse.clone().json()).resolves.toMatchObject({
       externalId: "zapi-outbound-1",
+      senderOrigin: "human_crm",
     });
     expect(logger.warn).not.toHaveBeenCalled();
     const startedPayload = dispatched.at(-1)?.payload;
@@ -129,7 +130,7 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
           payload: { enabled: false },
           sessionId: inbound.session.id,
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
     expect(resumed.status).toBe(200);
@@ -161,7 +162,7 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
           payload: { text: "Retomando o atendimento automatico." },
           sessionId: inbound.session.id,
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
     expect(botSend.status).toBe(200);
@@ -179,7 +180,9 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
     expect(dispatchAudits.length).toBeGreaterThanOrEqual(6);
     expect(dispatchAudits.map((event) => event.outcome)).toContain("attempted");
     expect(dispatchAudits.map((event) => event.outcome)).toContain("succeeded");
-    expect(JSON.stringify(dispatchAudits)).not.toContain("bot-secret-value");
+    expect(JSON.stringify(dispatchAudits)).not.toContain(
+      "bot-webhook-secret-value-32-characters",
+    );
   });
 
   it("forwards scheduled sends without emitting human takeover events", async () => {

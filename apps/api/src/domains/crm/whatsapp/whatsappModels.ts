@@ -36,6 +36,7 @@ export type WhatsappSession = {
   linkedSessionId: null;
   metadata: Record<string, unknown>;
   profilePhotoUrl: string | null;
+  revision: number;
   sessionTags: WhatsappSessionTag[];
   status: string;
   unreadCount: number;
@@ -66,6 +67,7 @@ export type WhatsappMessage = {
   mediaUrl: string | null;
   metadata: Record<string, unknown>;
   providerTimestamp: Date | null;
+  senderOrigin: CrmWhatsappMessage["senderOrigin"];
   senderType: string;
   status: string;
   type: string;
@@ -107,6 +109,7 @@ export function toWhatsappSession(
     linkedSessionId: null,
     metadata: session.metadata,
     profilePhotoUrl: session.profilePhotoUrl,
+    revision: session.revision,
     sessionTags: session.sessionTags,
     status: session.status,
     unreadCount: session.unreadCount,
@@ -147,6 +150,7 @@ export function toWhatsappMessage(
     mediaUrl: message.mediaUrl,
     metadata: message.metadata,
     providerTimestamp: message.providerTimestamp,
+    senderOrigin: message.senderOrigin,
     senderType: message.senderType,
     status: message.status,
     type: message.type,

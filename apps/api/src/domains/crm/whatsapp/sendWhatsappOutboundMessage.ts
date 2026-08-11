@@ -1,11 +1,13 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { assertOfficialMessagingWindow } from "../messaging/assertOfficialMessagingWindow.js";
+import { interventionActorKind } from "./humanAttendanceTransition.js";
 import {
   getCrmConnectionRepository,
   getCrmRealtimePublisher,
   getCrmWhatsappGateway,
   getCrmWhatsappOutboundIntentRepository,
   getCrmWhatsappRepository,
+  isCrmOlxChatEnabled,
   requireCrmScope,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
@@ -69,13 +71,19 @@ export async function sendWhatsappOutboundMessage(
   ) {
     throw new WhatsappConnectionNotFoundError(session.connectionId);
   }
-  assertWhatsappProviderEffectAllowed(context, connection);
+  assertWhatsappProviderEffectAllowed(context, connection, {
+    olxChatEnabled: isCrmOlxChatEnabled(ports),
+  });
   await assertOfficialMessagingWindow(connection, session, whatsappRepository);
   const intents = getCrmWhatsappOutboundIntentRepository(ports);
   const now = new Date();
-  const intentFingerprint = fingerprintOutboundIntent(
-    input.idempotencyPayload ?? input.idempotencyKey ?? context.requestId,
-  );
+  const senderType = input.senderType ?? defaultOutboundSenderType(context);
+  const intentFingerprint = fingerprintOutboundIntent({
+    payload:
+      input.idempotencyPayload ?? input.idempotencyKey ?? context.requestId,
+    senderOrigin: input.senderOrigin,
+    senderType,
+  });
   const claimed = await intents.claim({
     connectionId: connection.id,
     fingerprint: intentFingerprint,
@@ -133,7 +141,6 @@ export async function sendWhatsappOutboundMessage(
       throw error;
     }
   }
-  const senderType = input.senderType ?? defaultOutboundSenderType(context);
   const result = await whatsappRepository.ingestMessage({
     ...(session.buyerChatLid ? { buyerChatLid: session.buyerChatLid } : {}),
     ...(session.buyerName ? { buyerName: session.buyerName } : {}),
@@ -152,6 +159,7 @@ export async function sendWhatsappOutboundMessage(
     ...(prepared.mediaUrl ? { mediaUrl: prepared.mediaUrl } : {}),
     metadata: prepared.metadata,
     providerTimestamp: prepared.sent.providerTimestamp,
+    senderOrigin: input.senderOrigin,
     senderType,
     status: "SENT",
     storeId: scope.storeId as never,
@@ -160,10 +168,13 @@ export async function sendWhatsappOutboundMessage(
   });
   const attendanceTransition = await transitionConfirmedHumanOutboundAttendance(
     {
+      actorId: context.actor.id,
+      actorKind: interventionActorKind(context.actor.kind, "admin"),
       interventionId: claimed.intent.id,
       providerTimestamp: prepared.sent.providerTimestamp,
       repository: whatsappRepository,
       senderType,
+      senderOrigin: result.message.senderOrigin,
       session: result.session,
     },
   );

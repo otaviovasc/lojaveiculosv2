@@ -39,18 +39,16 @@ describe("CRM official messaging connections", () => {
         expect.objectContaining({
           id: whatsappId,
           provider: "composio_whatsapp",
-          webhookEndpoints: [],
-          webhookTokenRequired: false,
         }),
         expect.objectContaining({
           id: instagramId,
           provider: "composio_instagram",
-          webhookEndpoints: [],
-          webhookTokenRequired: false,
         }),
       ]),
     );
     expect(JSON.stringify(body)).not.toContain("/webhooks/zapi/");
+    expect(JSON.stringify(body)).not.toContain("webhookEndpoints");
+    expect(JSON.stringify(body)).not.toContain("webhookTokenRequired");
     expect(JSON.stringify(body)).not.toContain("ca_private");
   });
 
@@ -136,7 +134,7 @@ describe("CRM official messaging connections", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createConnection("composio_whatsapp", whatsappId),
       ]),
-      permissions: ["crm.whatsapp.connection.manage"],
+      permissions: ["crm.messaging.connection.setup"],
     });
 
     const response = await app.request(

@@ -14,8 +14,10 @@ import type {
   CrmWhatsappComposioCompleteResult,
   CrmWhatsappConnectionAllowance,
   CrmWhatsappCreateConnectionInput,
+  CrmWhatsappConnectionId,
   CrmWhatsappProviderConnection,
   CrmWhatsappSetupProvider,
+  CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
@@ -37,6 +39,18 @@ export type CrmWhatsappSelfServiceHandlers = {
     input: CrmWhatsappCreateConnectionInput,
   ) => Promise<CrmWhatsappProviderConnection | null>;
   onRefreshConnections: () => Promise<void>;
+  onRequestZapiPairingCode?: (
+    connectionId: CrmWhatsappConnectionId,
+    phone: string,
+  ) => Promise<{
+    code?: string;
+    expiresAt?: string;
+    requested: boolean;
+  }>;
+  onRequestZapiPairingQr?: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<{ expiresAt: string; qrCode: string }>;
+  onRequestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
   onSelectComposioSender: (
     connectionId: string,
     senderId: string,
@@ -46,22 +60,28 @@ export type CrmWhatsappSelfServiceHandlers = {
 export function CrmWhatsappSelfServiceSetup({
   allowance,
   availableProviders,
-  canManage,
+  canPair,
+  canSetup,
   existingConnection = null,
   handlers,
   onRedirect = (url) => window.location.assign(url),
+  zapiAddonContract = null,
 }: {
   allowance: CrmWhatsappConnectionAllowance;
   availableProviders: CrmWhatsappSetupProvider[];
-  canManage: boolean;
+  canPair: boolean;
+  canSetup: boolean;
   existingConnection?: CrmWhatsappProviderConnection | null;
   handlers: CrmWhatsappSelfServiceHandlers;
   onRedirect?: (url: string) => void;
+  zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
 }) {
   const [provider, setProvider] = useState<CrmWhatsappSetupProvider | null>(
-    existingConnection?.provider === "composio_whatsapp"
-      ? "composio_whatsapp"
-      : null,
+    existingConnection?.provider === "zapi"
+      ? "zapi"
+      : existingConnection?.provider === "composio_whatsapp"
+        ? "composio_whatsapp"
+        : null,
   );
   const [connection, setConnection] =
     useState<CrmWhatsappProviderConnection | null>(existingConnection);
@@ -70,6 +90,18 @@ export function CrmWhatsappSelfServiceSetup({
   const [completion, setCompletion] =
     useState<CrmWhatsappComposioCompleteResult | null>(null);
   const completingConnectionRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setConnection(existingConnection);
+    if (
+      existingConnection?.provider === "zapi" ||
+      existingConnection?.provider === "composio_whatsapp"
+    ) {
+      setProvider(
+        existingConnection.provider === "zapi" ? "zapi" : "composio_whatsapp",
+      );
+    }
+  }, [existingConnection]);
 
   const completeOfficialSetup = useCallback(
     async (connectionId: string) => {
@@ -106,42 +138,11 @@ export function CrmWhatsappSelfServiceSetup({
     }
   }, [completeOfficialSetup, connection, provider]);
 
-  if (!canManage) {
+  if (!connection && !canSetup) {
     return (
       <SetupNotice>
         Para adicionar um canal, seu usuário precisa das permissões de gerenciar
         conexões e integrações.
-      </SetupNotice>
-    );
-  }
-
-  if (
-    !connection &&
-    availableProviders.length === 0 &&
-    allowance.remaining <= 0
-  ) {
-    return (
-      <SetupNotice>
-        {allowance.limit === 0 ? (
-          <>A loja não possui uma conexão Z-API contratada.</>
-        ) : (
-          <>
-            O limite de {allowance.limit}{" "}
-            {allowance.limit === 1 ? "conexão Z-API" : "conexões Z-API"} foi
-            atingido. Arquive uma conexão ou ajuste o plano antes de adicionar
-            outra conexão Z-API.
-          </>
-        )}{" "}
-        O WhatsApp Oficial e o Instagram continuam incluídos no CRM sem custo
-        adicional; fale com o suporte para revisar a configuração assistida.
-        <a
-          className="font-bold text-accent-strong"
-          href={crmWhatsappSupportUrl()}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Falar com o suporte
-        </a>
       </SetupNotice>
     );
   }
@@ -151,17 +152,30 @@ export function CrmWhatsappSelfServiceSetup({
       <ProviderChooser
         availableProviders={availableProviders}
         onChoose={setProvider}
+        zapiAddonContract={zapiAddonContract}
       />
     );
   }
 
   if (provider === "zapi") {
-    return <CrmWhatsappZapiSetup onBack={() => setProvider(null)} />;
+    return (
+      <CrmWhatsappZapiSetup
+        allowance={allowance}
+        canPair={canPair}
+        canSetup={canSetup}
+        connection={connection?.provider === "zapi" ? connection : null}
+        handlers={handlers}
+        onBack={() => setProvider(null)}
+        onConnection={setConnection}
+        zapiAddonContract={zapiAddonContract}
+      />
+    );
   }
 
   return (
     <OfficialSetup
       completion={completion}
+      canSetup={canSetup}
       connection={
         connection?.provider === "composio_whatsapp" ? connection : null
       }
@@ -183,9 +197,11 @@ export function CrmWhatsappSelfServiceSetup({
 function ProviderChooser({
   availableProviders,
   onChoose,
+  zapiAddonContract,
 }: {
   availableProviders: CrmWhatsappSetupProvider[];
   onChoose: (provider: CrmWhatsappSetupProvider) => void;
+  zapiAddonContract: CrmWhatsappZapiAddonContract | null;
 }) {
   return (
     <div className="grid gap-3 md:grid-cols-2" aria-label="Adicionar canal">
@@ -194,14 +210,12 @@ function ProviderChooser({
           Os canais com configuração direta já estão conectados nesta loja.
         </SetupNotice>
       ) : null}
-      {availableProviders.includes("zapi") ? (
-        <ProviderOption
-          description="Adicional contratado na assinatura, ativado no próximo vencimento e configurado pela nossa equipe."
-          icon={<QrCode aria-hidden="true" />}
-          label="Z-API"
-          onClick={() => onChoose("zapi")}
-        />
-      ) : null}
+      <ProviderOption
+        description={readZapiChooserDescription(zapiAddonContract)}
+        icon={<QrCode aria-hidden="true" />}
+        label="Z-API"
+        onClick={() => onChoose("zapi")}
+      />
       {availableProviders.includes("composio_whatsapp") ? (
         <ProviderOption
           description="Autorize a conta Meta em uma página segura e escolha o número remetente."
@@ -226,6 +240,24 @@ function ProviderChooser({
       </ConnectionSectionCard>
     </div>
   );
+}
+
+function readZapiChooserDescription(
+  contract: CrmWhatsappZapiAddonContract | null,
+) {
+  if (contract?.status === "pending") {
+    return "Solicitação registrada; aguardando confirmação de pagamento.";
+  }
+  if (contract?.status === "scheduled") {
+    return "Ativação programada para o próximo vencimento da assinatura.";
+  }
+  if (contract?.status === "paid_awaiting_setup") {
+    return "Pagamento confirmado; a equipe está preparando a conexão.";
+  }
+  if (contract?.status === "active") {
+    return "Adicional ativo. Informe as credenciais uma única vez para parear o telefone.";
+  }
+  return "Integração opcional paga. O valor e as condições vêm da assinatura da loja.";
 }
 
 function ProviderOption({
@@ -258,6 +290,7 @@ function ProviderOption({
 }
 
 function OfficialSetup({
+  canSetup,
   completion,
   connection,
   error,
@@ -270,6 +303,7 @@ function OfficialSetup({
   onRedirect,
   onStartBusy,
 }: {
+  canSetup: boolean;
   completion: CrmWhatsappComposioCompleteResult | null;
   connection: CrmWhatsappProviderConnection | null;
   error: string | null;
@@ -283,6 +317,7 @@ function OfficialSetup({
   onStartBusy: (busy: boolean) => void;
 }) {
   const authorize = async () => {
+    if (!canSetup) return;
     onStartBusy(true);
     onError(null);
     try {
@@ -308,7 +343,7 @@ function OfficialSetup({
   };
 
   const selectSender = async (senderId: string) => {
-    if (!connection) return;
+    if (!canSetup || !connection) return;
     onStartBusy(true);
     onError(null);
     try {
@@ -340,7 +375,7 @@ function OfficialSetup({
           {completion.senders.map((sender) => (
             <button
               className="crm-action crm-action-secondary justify-start"
-              disabled={isBusy}
+              disabled={isBusy || !canSetup}
               key={sender.senderId}
               onClick={() => void selectSender(sender.senderId)}
               type="button"
@@ -353,7 +388,7 @@ function OfficialSetup({
       ) : (
         <button
           className="crm-action crm-action-primary"
-          disabled={isBusy}
+          disabled={isBusy || !canSetup}
           onClick={() => void authorize()}
           type="button"
         >
@@ -368,7 +403,7 @@ function OfficialSetup({
       {connection && error ? (
         <button
           className="crm-action crm-action-secondary"
-          disabled={isBusy}
+          disabled={isBusy || !canSetup}
           onClick={onComplete}
           type="button"
         >

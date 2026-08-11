@@ -28,7 +28,7 @@ export async function resolveMetaMessageIdentity(
   const lead = await findOrCreateWhatsappLead(ports, {
     ...(!isInstagram ? { buyerPhone: event.contactExternalId } : {}),
     connectionId: connection.id,
-    direction: "INBOUND",
+    direction: event.direction,
     externalId: event.externalMessageId,
     ...(instagramSession?.leadId
       ? { preferredLeadId: instagramSession.leadId }

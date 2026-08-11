@@ -9,6 +9,7 @@ import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
 
 export function CrmWhatsappCampaignOverview({
   campaignDetail,
+  campaignError,
   campaigns,
   canManage,
   isLoading,
@@ -16,6 +17,8 @@ export function CrmWhatsappCampaignOverview({
   onCancelCampaign,
   onPauseCampaign,
   onReload,
+  onMutationError,
+  onRetryCampaigns,
   onResumeCampaign,
   onSelectCampaign,
   selectedCampaignId,
@@ -23,6 +26,7 @@ export function CrmWhatsappCampaignOverview({
   tags,
 }: {
   campaignDetail: CrmWhatsappCampaignDetail | null;
+  campaignError?: string | null;
   campaigns: CrmWhatsappCampaign[];
   canManage: boolean;
   isLoading: boolean;
@@ -30,6 +34,8 @@ export function CrmWhatsappCampaignOverview({
   onCancelCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign | null>;
   onPauseCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign | null>;
   onReload: () => Promise<void>;
+  onMutationError?: (error: unknown) => void;
+  onRetryCampaigns?: () => Promise<void>;
   onResumeCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign | null>;
   onSelectCampaign: (campaignId: string) => void;
   selectedCampaignId: string | null;
@@ -42,10 +48,18 @@ export function CrmWhatsappCampaignOverview({
         campaigns={campaigns}
         canManage={canManage}
         isLoading={isLoading}
-        onCancel={(id) => mutateCampaign(onCancelCampaign, id, onReload)}
-        onPause={(id) => mutateCampaign(onPauseCampaign, id, onReload)}
-        onResume={(id) => mutateCampaign(onResumeCampaign, id, onReload)}
+        {...(campaignError !== undefined ? { error: campaignError } : {})}
+        onCancel={(id) =>
+          mutateCampaign(onCancelCampaign, id, onReload, onMutationError)
+        }
+        onPause={(id) =>
+          mutateCampaign(onPauseCampaign, id, onReload, onMutationError)
+        }
+        onResume={(id) =>
+          mutateCampaign(onResumeCampaign, id, onReload, onMutationError)
+        }
         onSelect={onSelectCampaign}
+        {...(onRetryCampaigns ? { onRetry: onRetryCampaigns } : {})}
         selectedCampaignId={selectedCampaignId}
       />
       <CrmWhatsappCampaignDetailPanel

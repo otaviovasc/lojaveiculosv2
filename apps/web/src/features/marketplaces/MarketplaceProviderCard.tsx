@@ -6,7 +6,6 @@ import {
   Play,
   SearchCheck,
 } from "lucide-react";
-import { FeatureInput } from "../../components/ui/FeatureControls";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
@@ -28,23 +27,17 @@ import type {
 export function MarketplaceProviderCard({
   account,
   isSaving,
-  onCompleteConnection,
   onConnect,
-  onOauthCodeChange,
   onPreview,
   onRun,
   onStatusChange,
-  oauthCode,
   preview,
   provider,
   state,
 }: {
   account: MarketplaceAccount | undefined;
   isSaving: boolean;
-  oauthCode: string;
-  onCompleteConnection: (provider: MarketplaceProvider) => Promise<void>;
   onConnect: (provider: MarketplaceProvider) => Promise<void>;
-  onOauthCodeChange: (provider: MarketplaceProvider, value: string) => void;
   onPreview: (provider: MarketplaceProvider) => Promise<void>;
   onRun: (provider: MarketplaceProvider) => Promise<void>;
   onStatusChange: (
@@ -175,33 +168,6 @@ export function MarketplaceProviderCard({
           ) : null}
         </div>
       </footer>
-
-      {!connection.canSync ? (
-        <details className="marketplace-authorization">
-          <summary>Conexão manual para suporte</summary>
-          <p>{presentation.authorizationHint}</p>
-          <div className="marketplace-form-grid">
-            <FeatureInput
-              aria-label={`Código de autorização do ${providerLabel}`}
-              disabled={isSaving}
-              minLength={8}
-              onChange={(event) =>
-                onOauthCodeChange(provider, event.target.value)
-              }
-              placeholder="Cole o código devolvido pelo canal"
-              value={oauthCode}
-            />
-            <FeatureActionButton
-              disabled={oauthCode.trim().length < 8}
-              isBusy={isSaving}
-              label={`Finalizar conexão manual do ${providerLabel}`}
-              onClick={() => void onCompleteConnection(provider)}
-            >
-              Finalizar conexão
-            </FeatureActionButton>
-          </div>
-        </details>
-      ) : null}
     </article>
   );
 }

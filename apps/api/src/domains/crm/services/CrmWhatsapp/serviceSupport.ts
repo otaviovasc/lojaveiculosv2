@@ -1,4 +1,8 @@
-import type { AuditOutcome, SafeAuditMetadata } from "@lojaveiculosv2/audit";
+import type {
+  AuditFailureTier,
+  AuditOutcome,
+  SafeAuditMetadata,
+} from "@lojaveiculosv2/audit";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import {
   createServiceLogMetadata,
@@ -14,9 +18,11 @@ import type { WhatsappSession } from "../../whatsapp/whatsappModels.js";
 
 export type WhatsappServiceAuditInput = {
   action: string;
+  auditId?: string;
   category: "data_access" | "data_change";
   entityId?: string;
   entityType?: string;
+  failureTier?: AuditFailureTier;
   metadata?: SafeAuditMetadata;
   permission: PermissionKey;
   storeId?: string;
@@ -45,6 +51,8 @@ export async function auditWhatsappServiceEvent(
     category: input.category,
     entityId: input.entityId ?? input.storeId ?? context.storeId ?? "unknown",
     entityType: input.entityType ?? "store",
+    ...(input.auditId ? { id: input.auditId } : {}),
+    ...(input.failureTier ? { failureTier: input.failureTier } : {}),
     metadata: {
       permission: input.permission,
       ...(input.metadata ?? {}),

@@ -13,7 +13,9 @@ export async function assertOfficialMessagingWindow(
   repository: CrmWhatsappRepository,
   now = new Date(),
 ) {
-  if (connection.provider === "zapi") return;
+  if (connection.provider === "zapi" || connection.provider === "olx_chat") {
+    return;
+  }
   const [latestInbound] = await repository.listMessages({
     direction: "INBOUND",
     limit: 1,

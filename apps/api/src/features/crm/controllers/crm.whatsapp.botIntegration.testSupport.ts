@@ -4,7 +4,7 @@ import type { FinancingSimulation } from "../../../domains/financing/ports/finan
 import type { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 export const botActionSecretHeader = {
-  "X-Webhook-Secret": "bot-secret-value",
+  "X-Webhook-Secret": "bot-webhook-secret-value-32-characters",
 } as const;
 
 export async function configureBot(app: ReturnType<typeof createTestApp>) {
@@ -13,7 +13,7 @@ export async function configureBot(app: ReturnType<typeof createTestApp>) {
     jsonPost(
       {
         enabled: true,
-        webhookSecret: "bot-secret-value",
+        webhookSecret: "bot-webhook-secret-value-32-characters",
         webhookUrl: "https://bot.example.test/webhook",
       },
       undefined,

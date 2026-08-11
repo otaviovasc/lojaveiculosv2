@@ -1,17 +1,27 @@
-import { createHash } from "node:crypto";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmBotIntegration } from "../../ports/crmBotIntegrationRepository.js";
+import { CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE } from "../../ports/crmConnectionSetupProvider.js";
 import {
   getCrmBotIntegrationRepository,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
+import { getCrmConnectionCredentialVault } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
+import {
+  hashWebhookSecret,
+  isStrongWebhookSecret,
+  normalizeWebhookSecretUpdate,
+  normalizeWebhookUrlUpdate,
+  WhatsappBotIntegrationValidationError,
+} from "../../whatsapp/whatsappBotIntegrationValidation.js";
+
+export { WhatsappBotIntegrationValidationError };
 
 const permission = "crm.whatsapp.integrations.manage";
 
@@ -78,18 +88,21 @@ export async function updateWhatsappBotIntegration(
   assertPermission(context, permission);
   const scope = requireCrmWhatsappScope(context);
   const repository = getCrmBotIntegrationRepository(ports);
+  const webhookSecretUpdate = normalizeWebhookSecretUpdate(input.webhookSecret);
   const current =
     (await repository.findBotIntegration({
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     })) ?? defaultBotIntegration(scope);
   const nextEnabled = input.enabled ?? current.enabled;
-  const nextWebhookUrl =
-    input.webhookUrl === undefined ? current.webhookUrl : input.webhookUrl;
+  const nextWebhookUrl = normalizeWebhookUrlUpdate(
+    input.webhookUrl,
+    current.webhookUrl,
+  );
   const nextSecretConfigured =
-    input.webhookSecret === undefined
+    webhookSecretUpdate === undefined
       ? current.secretConfigured
-      : Boolean(input.webhookSecret);
+      : Boolean(webhookSecretUpdate);
 
   if (nextEnabled && (!nextWebhookUrl || !nextSecretConfigured)) {
     throw new WhatsappBotIntegrationIncompleteError();
@@ -100,7 +113,7 @@ export async function updateWhatsappBotIntegration(
     "crm.whatsapp.integrations.bot.update.start",
     {
       enabled: nextEnabled,
-      secretChanged: input.webhookSecret !== undefined,
+      secretChanged: webhookSecretUpdate !== undefined,
       webhookConfigured: Boolean(nextWebhookUrl),
     },
   );
@@ -114,28 +127,38 @@ export async function updateWhatsappBotIntegration(
       metadata: {
         enabled: nextEnabled,
         permission,
-        secretChanged: input.webhookSecret !== undefined,
+        secretChanged: webhookSecretUpdate !== undefined,
         webhookConfigured: Boolean(nextWebhookUrl),
       },
       permission,
       summary: "Updated CRM WhatsApp bot integration",
     },
-    async () =>
-      repository.upsertBotIntegration({
+    async () => {
+      const sealedWebhookSecret =
+        typeof webhookSecretUpdate === "string"
+          ? await getCrmConnectionCredentialVault(ports).seal({
+              plaintext: webhookSecretUpdate,
+              purpose: CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
+              storeId: scope.storeId as never,
+              tenantId: scope.tenantId as never,
+            })
+          : webhookSecretUpdate;
+      return repository.upsertBotIntegration({
         enabled: nextEnabled,
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
-        ...(input.webhookSecret !== undefined
+        ...(webhookSecretUpdate !== undefined
           ? {
-              secretUpdatedAt: input.webhookSecret ? new Date() : null,
-              webhookSecretHash: input.webhookSecret
-                ? hashWebhookSecret(input.webhookSecret)
+              secretUpdatedAt: webhookSecretUpdate ? new Date() : null,
+              webhookSecretHash: webhookSecretUpdate
+                ? hashWebhookSecret(webhookSecretUpdate)
                 : null,
-              webhookSecretValue: input.webhookSecret,
+              webhookSecretSealed: sealedWebhookSecret ?? null,
             }
           : {}),
         webhookUrl: nextWebhookUrl,
-      }),
+      });
+    },
   );
 }
 
@@ -144,11 +167,16 @@ export async function authenticateWhatsappBotSecret(
   input: AuthenticateWhatsappBotSecretInput,
   ports: CrmServicePorts,
 ): Promise<CrmBotIntegration> {
-  const integration = await getCrmBotIntegrationRepository(
+  const webhookSecret = input.webhookSecret.trim();
+  if (!isStrongWebhookSecret(webhookSecret)) {
+    throw new WhatsappBotIntegrationUnauthorizedError();
+  }
+  const integrations = await getCrmBotIntegrationRepository(
     ports,
-  ).findBotIntegrationBySecretHash({
-    webhookSecretHash: hashWebhookSecret(input.webhookSecret),
+  ).findBotIntegrationsBySecretHash({
+    webhookSecretHash: hashWebhookSecret(webhookSecret),
   });
+  const integration = integrations.length === 1 ? integrations[0] : null;
   if (!integration?.enabled || !integration.secretConfigured) {
     throw new WhatsappBotIntegrationUnauthorizedError();
   }
@@ -207,8 +235,4 @@ function defaultBotIntegration(scope: {
     updatedAt: null,
     webhookUrl: null,
   };
-}
-
-function hashWebhookSecret(secret: string) {
-  return `sha256:${createHash("sha256").update(secret).digest("hex")}`;
 }

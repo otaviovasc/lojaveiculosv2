@@ -11,6 +11,10 @@ import { createDrizzleCrmVisitRepository } from "../../../infrastructure/db/crm/
 import { createDrizzleCrmWebhookEventRepository } from "../../../infrastructure/db/crm/drizzleCrmWebhookEventRepository.js";
 import { createDrizzleCrmWhatsappOutboundIntentRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappOutboundIntentRepository.js";
 import { createDrizzleCrmWhatsappRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappRepository.js";
+import {
+  createOlxWebhookSecurity,
+  CrmOlxWebhookSecurityConfigurationError,
+} from "../../../infrastructure/crm/olxWebhookSecurity.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
@@ -26,6 +30,11 @@ import { createCrmVehicleInventoryPorts } from "./crmVehicleInventoryPorts.js";
 export function resolveCrmPorts(
   options: CreateCrmServicesOptions,
 ): CrmServicePorts {
+  const environment =
+    options.environment ?? (options.drizzleClient ? "local" : "test");
+  const crmOlxWebhookSecurity =
+    options.ports?.crmOlxWebhookSecurity ??
+    createAllowedInMemoryOlxWebhookSecurity(environment);
   const connectionSetupPorts = createCrmConnectionSetupPorts(
     options.drizzleClient,
   );
@@ -41,6 +50,7 @@ export function resolveCrmPorts(
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
           options.drizzleClient,
         ),
+        crmOlxWebhookSecurity,
         crmPipelineRepository: createDrizzleCrmPipelineRepository(
           options.drizzleClient,
         ),
@@ -58,7 +68,7 @@ export function resolveCrmPorts(
         crmWhatsappRepository: createDrizzleCrmWhatsappRepository(
           options.drizzleClient,
         ),
-        environment: options.environment ?? "local",
+        environment,
         vehicleInventory: createCrmVehicleInventoryPorts(options.drizzleClient),
       }
     : {
@@ -71,6 +81,7 @@ export function resolveCrmPorts(
         },
         crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
         crmConnectionRepository: createMemoryCrmConnectionRepository(),
+        crmOlxWebhookSecurity,
         crmPipelineRepository: createMemoryCrmPipelineRepository(),
         crmRepository: createMemoryCrmRepository(),
         crmVisitRepository: createMemoryCrmVisitRepository(),
@@ -78,7 +89,7 @@ export function resolveCrmPorts(
         crmWhatsappOutboundIntentRepository:
           createMemoryCrmWhatsappOutboundIntentRepository(),
         crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
-        environment: options.environment ?? "test",
+        environment,
       };
   const ports = { ...defaultPorts, ...(options.ports ?? {}) };
   if (options.drizzleClient && !ports.transaction) {
@@ -121,4 +132,13 @@ export function resolveCrmPorts(
       });
   }
   return ports;
+}
+
+function createAllowedInMemoryOlxWebhookSecurity(environment: string) {
+  if (environment === "local" || environment === "test") {
+    return createOlxWebhookSecurity();
+  }
+  throw new CrmOlxWebhookSecurityConfigurationError(
+    "Shared OLX webhook rate limiting must be configured outside local/test.",
+  );
 }

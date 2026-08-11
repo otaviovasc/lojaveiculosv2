@@ -17,6 +17,7 @@ import type {
   CrmConnectionCredentialVault,
   CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
+  OlxCrmWebhookSetupProvider,
   ZapiConnectionSetupProvider,
 } from "../../ports/crmConnectionSetupProvider.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
@@ -27,6 +28,7 @@ import {
 import type { CrmRepository } from "../../ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
+import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
 import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
@@ -60,6 +62,11 @@ export type CrmServicePorts = {
   crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
   crmConnectionRepository?: CrmConnectionRepository;
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
+  crmOlxWebhookSecurity?: CrmOlxWebhookSecurity;
+  olxCrmWebhookSetupProvider?: OlxCrmWebhookSetupProvider;
+  crmProviderRuntime?: {
+    olxChatEnabled: boolean;
+  };
   crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
   composioWhatsappOnboardingProvider?: ComposioWhatsappOnboardingProvider;
@@ -85,6 +92,10 @@ export type CrmServicePorts = {
   };
   zapiConnectionSetupProvider?: ZapiConnectionSetupProvider;
 };
+
+export function isCrmOlxChatEnabled(ports: CrmServicePorts): boolean {
+  return ports.crmProviderRuntime?.olxChatEnabled === true;
+}
 
 export function getCrmWhatsappOutboundIntentRepository(
   ports: CrmServicePorts,
@@ -154,7 +165,6 @@ export function getCrmRealtimePublisher(
 ): CrmRealtimePublisher {
   return ports.crmRealtimePublisher ?? createNoopCrmRealtimePublisher();
 }
-
 export function getCrmConnectionRepository(
   ports: CrmServicePorts,
 ): CrmConnectionRepository {
@@ -162,7 +172,11 @@ export function getCrmConnectionRepository(
     return {
       archiveAbandonedZapiConnections: async () => [],
       claimZapiWebhookSetup: async () => null,
+      configureInitialZapiCredentials: async () => ({ status: "not_found" }),
       createConnection: async () => {
+        throw new CrmScopeError("crmConnectionRepository");
+      },
+      upsertOlxConnection: async () => {
         throw new CrmScopeError("crmConnectionRepository");
       },
       findConnectionByExternalId: async () => null,
@@ -203,6 +217,15 @@ export function getCrmWebhookEventRepository(
     throw new CrmScopeError("crmWebhookEventRepository");
   }
   return ports.crmWebhookEventRepository;
+}
+
+export function getCrmOlxWebhookSecurity(
+  ports: CrmServicePorts,
+): CrmOlxWebhookSecurity {
+  if (!ports.crmOlxWebhookSecurity) {
+    throw new CrmScopeError("crmOlxWebhookSecurity");
+  }
+  return ports.crmOlxWebhookSecurity;
 }
 
 export function getCrmEnvironment(ports: CrmServicePorts): string {

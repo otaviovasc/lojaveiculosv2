@@ -12,6 +12,7 @@ import {
   getCrmWhatsappRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
+import { updateWhatsappSessionWithCas } from "../whatsapp/updateWhatsappSessionWithCas.js";
 
 const statusRank: Record<CrmWhatsappMessageStatus, number> = {
   FAILED: 5,
@@ -53,11 +54,16 @@ export async function applyMetaMessageStatus(
   const lastCustomerReadAt =
     event.status === "READ" ? (event.timestamp ?? new Date()) : null;
   if (lastCustomerReadAt) {
-    await repository.updateSession({
-      lastCustomerReadAt,
+    await updateWhatsappSessionWithCas(repository, {
       sessionId: message.sessionId,
       storeId: connection.storeId,
       tenantId: connection.tenantId,
+      update: (session) => ({
+        lastCustomerReadAt: laterDate(
+          session.lastCustomerReadAt,
+          lastCustomerReadAt,
+        ),
+      }),
     });
   }
   await getCrmRealtimePublisher(ports).publish({
@@ -73,6 +79,10 @@ export async function applyMetaMessageStatus(
     type: "message_status",
   });
   return "applied" as const;
+}
+
+function laterDate(current: Date | null, incoming: Date) {
+  return current && current > incoming ? current : incoming;
 }
 
 export function metaMessageContent(

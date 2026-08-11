@@ -39,14 +39,7 @@ import {
   applyZapiAdSessionTransition,
   unchangedZapiAdSession,
 } from "../../whatsapp/zapiAdSessionTransition.js";
-import {
-  isWhatsappReaction,
-  transitionHumanAttendance,
-} from "../../whatsapp/humanAttendanceTransition.js";
-import {
-  publishZapiWhatsappAttendanceEnded,
-  publishZapiWhatsappAttendanceStarted,
-} from "../../whatsapp/publishZapiWhatsappAttendance.js";
+import { publishZapiWhatsappAttendanceEnded } from "../../whatsapp/publishZapiWhatsappAttendance.js";
 
 const permission = "crm.whatsapp.ingest" as const;
 export type {
@@ -125,17 +118,15 @@ export async function ingestZapiWhatsappWebhook(
           content: parsed.content,
           direction: parsed.fromMe ? "OUTBOUND" : "INBOUND",
           externalId: parsed.externalId,
-          firstHandledAt:
-            parsed.fromMe && !isWhatsappReaction(parsed.metadata)
-              ? parsed.providerTimestamp
-              : null,
+          firstHandledAt: null,
           freshLeadAt: parsed.fromMe ? null : parsed.providerTimestamp,
           leadId: lead.id,
           ...(parsed.mediaType ? { mediaType: parsed.mediaType } : {}),
           ...(media.mediaUrl ? { mediaUrl: media.mediaUrl } : {}),
           metadata: media.metadata,
           providerTimestamp: parsed.providerTimestamp,
-          senderType: parsed.fromMe ? "HUMAN" : "CUSTOMER",
+          senderOrigin: parsed.fromMe ? "unknown" : "customer",
+          senderType: parsed.fromMe ? "SYSTEM" : "CUSTOMER",
           status: parsed.fromMe ? "SENT" : "DELIVERED",
           storeId: connection.storeId,
           tenantId: connection.tenantId,
@@ -165,42 +156,24 @@ export async function ingestZapiWhatsappWebhook(
             );
           }
         }
-        const attendanceTransition =
-          parsed.fromMe &&
-          result.createdMessage &&
-          !isWhatsappReaction(parsed.metadata)
-            ? await transitionHumanAttendance({
-                command: {
-                  kind: "start",
-                  reason: "human_outbound_message",
-                  source: "seller_whatsapp",
-                  state: "IN_HUMAN_SERVICE",
-                },
-                now: parsed.providerTimestamp,
-                repository,
-                session: result.session,
-              })
-            : null;
         const transition =
           attribution && !parsed.fromMe
             ? await applyZapiAdSessionTransition(repository, {
                 actorId: context.actor.id,
+                actorKind: "provider",
                 attribution,
                 detectedAt,
-                session: attendanceTransition?.session ?? result.session,
+                session: result.session,
               })
-            : unchangedZapiAdSession(
-                attendanceTransition?.session ?? result.session,
-              );
+            : unchangedZapiAdSession(result.session);
         return {
           result: { ...result, session: transition.session },
-          attendanceTransition,
           transition,
         };
       }),
   );
 
-  const { attendanceTransition, result, transition } = persisted;
+  const { result, transition } = persisted;
   const message = toWhatsappMessage(result.message);
   const session = toWhatsappSession(result.session, connection);
   if (result.createdMessage) {
@@ -224,11 +197,6 @@ export async function ingestZapiWhatsappWebhook(
         message: result.message,
         session: result.session,
       },
-      ports,
-    );
-    await publishZapiWhatsappAttendanceStarted(
-      context,
-      { attendanceTransition, connection, result },
       ports,
     );
   }

@@ -128,7 +128,7 @@ function context(entitlements: "crm"[] = ["crm"]): StoreScopedServiceContext {
     actor: { id: "owner", kind: "user" },
     entitlements,
     permissions: [
-      "crm.whatsapp.connection.manage",
+      "crm.messaging.connection.setup",
       "crm.whatsapp.integrations.manage",
     ],
     request: { requestId: "composio-test" },

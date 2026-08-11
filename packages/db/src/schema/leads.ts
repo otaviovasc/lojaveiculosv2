@@ -10,6 +10,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { stores, tenants, users } from "./identity.js";
 import { vehicleListings, vehicleUnits } from "./inventory.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
@@ -67,6 +68,7 @@ export const leads = pgTable(
       () => crmPipelineStages.id,
     ),
     source: leadSource("source").notNull(),
+    sourceIdentityKey: varchar("source_identity_key", { length: 64 }),
     status: leadStatus("status").notNull().default("new"),
     storeId: uuid("store_id")
       .notNull()
@@ -89,6 +91,11 @@ export const leads = pgTable(
     index("leads_pipeline_id_idx").on(table.pipelineId),
     index("leads_pipeline_stage_id_idx").on(table.pipelineStageId),
     index("leads_source_idx").on(table.source),
+    uniqueIndex("leads_source_identity_unique")
+      .on(table.tenantId, table.storeId, table.source, table.sourceIdentityKey)
+      .where(
+        sql`${table.sourceIdentityKey} IS NOT NULL AND ${table.isDeleted} = false`,
+      ),
     index("leads_status_idx").on(table.status),
     index("leads_store_status_idx").on(table.storeId, table.status),
     index("leads_tenant_id_idx").on(table.tenantId),

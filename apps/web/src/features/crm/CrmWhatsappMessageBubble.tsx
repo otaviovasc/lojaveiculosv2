@@ -4,7 +4,11 @@ import {
   type MessageActionHandlers,
 } from "./CrmWhatsappMessageActions";
 import { MessageContent, QuotedMessage } from "./CrmWhatsappMessageContent";
-import { formatMessageTime, getSenderLabel } from "./crmWhatsappModel";
+import {
+  formatMessageTime,
+  getSenderLabel,
+  getSenderOriginLabel,
+} from "./crmWhatsappModel";
 import { readReaction } from "./crmWhatsappMessageHelpers";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 
@@ -38,7 +42,10 @@ export function MessageBubble({
         onRemoveReaction={onRemoveReaction}
         onReply={onReply}
       />
-      {senderLabel ? <strong>{senderLabel}</strong> : null}
+      <div className="crm-whatsapp-message-attribution">
+        {senderLabel ? <strong>{senderLabel}</strong> : null}
+        <span>{getSenderOriginLabel(message)}</span>
+      </div>
       <QuotedMessage metadata={message.metadata} />
       <MessageContent message={message} />
       {reaction ? (

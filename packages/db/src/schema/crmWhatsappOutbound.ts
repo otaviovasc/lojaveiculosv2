@@ -14,6 +14,9 @@ import { crmConnections } from "./crm.js";
 import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
 import { stores, tenants } from "./identity.js";
 
+const includeCrmScopeForeignKeys =
+  process.env.DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP !== "true";
+
 export const crmWhatsappOutboundIntentStatus = pgEnum(
   "crm_whatsapp_outbound_intent_status",
   ["started", "provider_succeeded", "completed", "indeterminate"],
@@ -45,47 +48,51 @@ export const crmWhatsappOutboundIntents = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
-    foreignKey({
-      columns: [table.tenantId, table.storeId, table.connectionId],
-      foreignColumns: [
-        crmConnections.tenantId,
-        crmConnections.storeId,
-        crmConnections.id,
-      ],
-      name: "crm_whatsapp_outbound_intents_scoped_connection_fk",
-    }),
-    foreignKey({
-      columns: [
-        table.tenantId,
-        table.storeId,
-        table.connectionId,
-        table.sessionId,
-      ],
-      foreignColumns: [
-        crmWhatsappSessions.tenantId,
-        crmWhatsappSessions.storeId,
-        crmWhatsappSessions.connectionId,
-        crmWhatsappSessions.id,
-      ],
-      name: "crm_whatsapp_outbound_intents_scoped_session_fk",
-    }),
-    foreignKey({
-      columns: [
-        table.tenantId,
-        table.storeId,
-        table.connectionId,
-        table.sessionId,
-        table.messageId,
-      ],
-      foreignColumns: [
-        crmWhatsappMessages.tenantId,
-        crmWhatsappMessages.storeId,
-        crmWhatsappMessages.connectionId,
-        crmWhatsappMessages.sessionId,
-        crmWhatsappMessages.id,
-      ],
-      name: "crm_whatsapp_outbound_intents_scoped_message_fk",
-    }),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              crmConnections.tenantId,
+              crmConnections.storeId,
+              crmConnections.id,
+            ],
+            name: "crm_whatsapp_outbound_intents_scoped_connection_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.connectionId,
+              table.sessionId,
+            ],
+            foreignColumns: [
+              crmWhatsappSessions.tenantId,
+              crmWhatsappSessions.storeId,
+              crmWhatsappSessions.connectionId,
+              crmWhatsappSessions.id,
+            ],
+            name: "crm_whatsapp_outbound_intents_scoped_session_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.connectionId,
+              table.sessionId,
+              table.messageId,
+            ],
+            foreignColumns: [
+              crmWhatsappMessages.tenantId,
+              crmWhatsappMessages.storeId,
+              crmWhatsappMessages.connectionId,
+              crmWhatsappMessages.sessionId,
+              crmWhatsappMessages.id,
+            ],
+            name: "crm_whatsapp_outbound_intents_scoped_message_fk",
+          }),
+        ]
+      : []),
     uniqueIndex("crm_whatsapp_outbound_intents_scope_key_unique").on(
       table.tenantId,
       table.storeId,

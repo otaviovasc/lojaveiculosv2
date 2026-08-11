@@ -33,7 +33,7 @@ export async function configureBot(app: ReturnType<typeof createTestApp>) {
     jsonRequest(
       {
         enabled: true,
-        webhookSecret: "bot-secret-value",
+        webhookSecret: "bot-webhook-secret-value-32-characters",
         webhookUrl: "https://bot.example.test/webhook",
       },
       undefined,

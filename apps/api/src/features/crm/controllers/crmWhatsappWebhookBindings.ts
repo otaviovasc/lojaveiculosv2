@@ -13,10 +13,16 @@ import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/s
 import type { CrmWhatsappServices } from "./crmWhatsappServiceBindings.types.js";
 import { processMetaMessagingWebhook } from "../../../domains/crm/services/CrmMessaging/processMetaMessagingWebhook.js";
 import { authorizeZapiWebhook } from "../../../domains/crm/services/CrmWhatsapp/authorizeZapiWebhook.js";
+import { authorizeOlxChatWebhook } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
+import { ingestOlxChatWebhook } from "../../../domains/crm/services/CrmMessaging/ingestOlxChatWebhook.js";
+import { ingestOlxLeadWebhook } from "../../../domains/crm/services/CrmMessaging/ingestOlxLeadWebhook.js";
 
 type WebhookBindings = Pick<
   CrmWhatsappServices,
   | "ingestZapiWhatsappWebhook"
+  | "ingestOlxChatWebhook"
+  | "ingestOlxLeadWebhook"
+  | "authorizeOlxChatWebhook"
   | "authorizeZapiWebhook"
   | "processMetaMessagingWebhook"
   | "processZapiWhatsappChatPresenceWebhook"
@@ -29,10 +35,16 @@ type WebhookBindings = Pick<
 export const buildWebhookBindings = (
   ports: CrmServicePorts,
 ): WebhookBindings => ({
+  authorizeOlxChatWebhook: (context, input) =>
+    authorizeOlxChatWebhook(context, input, ports),
   authorizeZapiWebhook: (context, input) =>
     authorizeZapiWebhook(context, input, ports),
   processMetaMessagingWebhook: (context, input) =>
     processMetaMessagingWebhook(context, input, ports),
+  ingestOlxChatWebhook: (context, input) =>
+    ingestOlxChatWebhook(context, input, ports),
+  ingestOlxLeadWebhook: (context, input) =>
+    ingestOlxLeadWebhook(context, input, ports),
   ingestZapiWhatsappWebhook: (context, input) =>
     processZapiWhatsappWebhookEvent(
       context,

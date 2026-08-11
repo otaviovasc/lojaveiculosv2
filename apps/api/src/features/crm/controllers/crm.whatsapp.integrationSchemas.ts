@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPublicHttpsWebhookUrl } from "../../../domains/crm/whatsapp/crmBotWebhookDestination.js";
 
 const positiveCents = z.number().int().positive();
 const idString = z.string().trim().min(1).max(128);
@@ -188,8 +189,18 @@ export const whatsappBotActionSchema = z
 
 export const whatsappBotIntegrationUpdateSchema = z.object({
   enabled: z.boolean().optional(),
-  webhookSecret: z.string().trim().min(8).max(256).nullable().optional(),
-  webhookUrl: z.string().trim().url().max(500).nullable().optional(),
+  webhookSecret: z.string().trim().min(32).max(256).nullable().optional(),
+  webhookUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(500)
+    .refine(isPublicHttpsWebhookUrl, {
+      message:
+        "Webhook URL must use public HTTPS without embedded credentials.",
+    })
+    .nullable()
+    .optional(),
 });
 
 function rejectForbiddenBotPayloadKeys(

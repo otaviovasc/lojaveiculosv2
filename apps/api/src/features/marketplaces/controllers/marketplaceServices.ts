@@ -1,5 +1,13 @@
-import { completeMarketplaceConnection } from "../../../domains/marketplace/services/MarketplaceService/completeMarketplaceConnection.js";
-import type { CompleteMarketplaceConnectionInput } from "../../../domains/marketplace/services/MarketplaceService/completeMarketplaceConnection.js";
+import {
+  completeMarketplaceConnection,
+  receiveMarketplaceOAuthCallback,
+} from "../../../domains/marketplace/services/MarketplaceService/completeMarketplaceConnection.js";
+import type {
+  CompleteMarketplaceConnectionInput,
+  CompleteMarketplaceConnectionResult,
+  ReceiveMarketplaceOAuthCallbackInput,
+  ReceiveMarketplaceOAuthCallbackResult,
+} from "../../../domains/marketplace/services/MarketplaceService/completeMarketplaceConnection.js";
 import { createMarketplaceConnectUrl } from "../../../domains/marketplace/services/MarketplaceService/createMarketplaceConnectUrl.js";
 import type {
   CreateMarketplaceConnectUrlInput,
@@ -39,12 +47,13 @@ import {
   type DrizzleMarketplaceClient,
 } from "../../../infrastructure/db/marketplace/drizzleMarketplaceRepository.js";
 import { createMemoryMarketplaceRepository } from "../adapters/memory/marketplaceRepository.js";
+import { createMemoryMarketplaceOAuthStateStore } from "../adapters/memory/marketplaceOAuthStateStore.js";
 
 export type MarketplaceServices = {
   completeConnection: (
     context: ServiceContext,
     input: CompleteMarketplaceConnectionInput,
-  ) => Promise<MarketplaceAccount>;
+  ) => Promise<CompleteMarketplaceConnectionResult>;
   createConnectUrl: (
     context: ServiceContext,
     input: CreateMarketplaceConnectUrlInput,
@@ -62,6 +71,10 @@ export type MarketplaceServices = {
     context: ServiceContext,
     input: RetryMarketplaceSyncJobInput,
   ) => Promise<RetryMarketplaceSyncJobResult>;
+  receiveOAuthCallback: (
+    context: ServiceContext,
+    input: ReceiveMarketplaceOAuthCallbackInput,
+  ) => Promise<ReceiveMarketplaceOAuthCallbackResult>;
   runStockSync: (
     context: ServiceContext,
     input: MarketplaceStockSyncRunInput,
@@ -81,6 +94,9 @@ export type CreateMarketplaceServicesOptions =
   | {
       drizzleClient: DrizzleMarketplaceClient;
       gatewayRegistry?: MarketplaceServicePorts["gatewayRegistry"];
+      oauthRedirectUri?: MarketplaceServicePorts["oauthRedirectUri"];
+      oauthStateStore?: MarketplaceServicePorts["oauthStateStore"];
+      olxCrmOnboarding?: MarketplaceServicePorts["olxCrmOnboarding"];
       ports?: never;
     };
 
@@ -101,6 +117,8 @@ export function createMarketplaceServices(
       previewMarketplaceStockSync(context, input, ports),
     retrySyncJob: (context, input) =>
       retryMarketplaceSyncJob(context, input, ports),
+    receiveOAuthCallback: (context, input) =>
+      receiveMarketplaceOAuthCallback(context, input, ports),
     runStockSync: (context, input) =>
       runMarketplaceStockSync(context, input, ports),
     runSyncJob: (context, input) =>
@@ -119,13 +137,26 @@ function resolvePorts(
       ...(options.gatewayRegistry
         ? { gatewayRegistry: options.gatewayRegistry }
         : {}),
+      ...(options.oauthRedirectUri
+        ? { oauthRedirectUri: options.oauthRedirectUri }
+        : {}),
+      ...(options.oauthStateStore
+        ? { oauthStateStore: options.oauthStateStore }
+        : {}),
+      ...(options.olxCrmOnboarding
+        ? { olxCrmOnboarding: options.olxCrmOnboarding }
+        : {}),
       marketplaceRepository: createDrizzleMarketplaceRepository(
         options.drizzleClient,
       ),
     };
   }
 
-  return { marketplaceRepository: createMemoryMarketplaceRepository() };
+  return {
+    marketplaceRepository: createMemoryMarketplaceRepository(),
+    oauthRedirectUri: () => "http://localhost:3000/marketplaces/oauth/callback",
+    oauthStateStore: createMemoryMarketplaceOAuthStateStore(),
+  };
 }
 
 export const marketplaceServices = createMarketplaceServices();

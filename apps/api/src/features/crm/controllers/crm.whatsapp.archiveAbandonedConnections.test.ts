@@ -135,7 +135,7 @@ describe("archiveAbandonedZapiConnections", () => {
 function context() {
   return createServiceContext({
     actor: { id: "cleanup", kind: "system" },
-    permissions: ["crm.whatsapp.connection.manage"],
+    permissions: ["crm.messaging.connection.setup"],
     request: { requestId: "cleanup-test" },
   });
 }

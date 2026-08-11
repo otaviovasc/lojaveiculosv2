@@ -35,6 +35,7 @@ import type {
   UpdateCrmWhatsappMessageInput,
   UpdateCrmWhatsappScheduledMessageInput,
   UpdateCrmWhatsappSessionInput,
+  TransitionCrmWhatsappAttendanceInput,
   UpdateCrmWhatsappSessionTagInput,
   UpdateCrmWhatsappTagInput,
   UpsertCrmWhatsappSessionContextInput,
@@ -71,8 +72,10 @@ export type {
 export type {
   CrmWhatsappChannel,
   CrmWhatsappHumanAttendanceState,
+  CrmWhatsappInterventionActorKind,
   CrmWhatsappMessageDirection,
   CrmWhatsappMessageSenderType,
+  CrmWhatsappMessageSenderOrigin,
   CrmWhatsappMessageStatus,
   CrmWhatsappMessageType,
   CrmWhatsappSessionStatus,
@@ -110,6 +113,7 @@ export type {
   UpdateCrmWhatsappMessageInput,
   UpdateCrmWhatsappScheduledMessageInput,
   UpdateCrmWhatsappSessionInput,
+  TransitionCrmWhatsappAttendanceInput,
   UpdateCrmWhatsappSessionTagInput,
   UpdateCrmWhatsappTagInput,
   UpsertCrmWhatsappSessionContextInput,
@@ -214,6 +218,12 @@ export type CrmWhatsappRepository = {
   updateSession: (
     input: UpdateCrmWhatsappSessionInput,
   ) => Promise<CrmWhatsappSession | null>;
+  transitionAttendance: (
+    input: TransitionCrmWhatsappAttendanceInput,
+  ) => Promise<{
+    session: CrmWhatsappSession;
+    transitionCreated: boolean;
+  } | null>;
   updateTag: (
     input: UpdateCrmWhatsappTagInput,
   ) => Promise<CrmWhatsappTag | null>;

@@ -11,8 +11,6 @@ import {
 } from "../../ports/crmConnectionSetupProvider.js";
 import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
-import { WhatsappMessageActionError } from "../../whatsapp/whatsappSendErrors.js";
-import { readZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState.js";
 import {
   getCrmConnectionRepository,
   requireCrmWhatsappScope,
@@ -27,8 +25,7 @@ import {
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 
-const connectionPermission = "crm.whatsapp.connection.manage" as const;
-const integrationPermission = "crm.whatsapp.integrations.manage";
+const connectionPermission = "crm.messaging.connection.pair" as const;
 
 export type RequestZapiPairingQrInput = { connectionId: string };
 export type RequestZapiPairingCodeInput = RequestZapiPairingQrInput & {
@@ -102,7 +99,6 @@ async function loadZapiSetupTarget(
   ports: CrmServicePorts,
 ) {
   assertPermission(context, connectionPermission);
-  assertPermission(context, integrationPermission);
   if (context.actor.kind !== "user") {
     throw new AuthorizationError(
       "Z-API pairing requires an authenticated store user.",
@@ -127,13 +123,6 @@ async function loadZapiSetupTarget(
     connection.tenantId !== scope.tenantId
   ) {
     throw new WhatsappConnectionNotFoundError(connectionId);
-  }
-  const setup = readZapiWebhookSetupState(connection.metadata);
-  if (setup?.status !== "configured") {
-    throw new WhatsappMessageActionError(
-      `Z-API setup is not ready. Support code: ${setup?.supportCode ?? "ZAPI-SETUP"}.`,
-      409,
-    );
   }
   return {
     connection,

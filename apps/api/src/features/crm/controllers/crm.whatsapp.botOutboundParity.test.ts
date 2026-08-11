@@ -47,7 +47,7 @@ describe("CRM WhatsApp bot outbound parity", () => {
             text: "Ola, sou o assistente da loja.",
           },
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 
@@ -98,7 +98,7 @@ describe("CRM WhatsApp bot outbound parity", () => {
           connectionId,
           payload: { phone: "5511999999999", text: "Resposta automatica" },
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 
@@ -162,6 +162,7 @@ async function seedSession(
     externalId: "inbound-for-bot-action",
     metadata: {},
     providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId,

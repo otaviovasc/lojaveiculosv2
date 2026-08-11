@@ -48,6 +48,7 @@ export async function sendWhatsappQuickMessage(
             ? { idempotencyKey: input.idempotencyKey }
             : {}),
           idempotencyPayload: input,
+          senderOrigin: "human_crm",
           prepare: async ({ connection, gateway, phone }) => {
             const sent =
               quick.kind === "TEXT"

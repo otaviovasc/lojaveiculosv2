@@ -1,6 +1,7 @@
 import type {
   CrmWhatsappAssignableMember,
   CrmWhatsappMessage,
+  CrmWhatsappMessageSenderOrigin,
   CrmWhatsappSendMediaType,
   CrmWhatsappSession,
 } from "./crmWhatsappTypes";
@@ -9,6 +10,42 @@ export type WhatsappMessageView = CrmWhatsappMessage & {
   clientId?: string;
   quotedMessageText?: string;
 };
+
+const senderOrigins = new Set<CrmWhatsappMessageSenderOrigin>([
+  "customer",
+  "human_crm",
+  "human_whatsapp",
+  "bot_api",
+  "system",
+  "unknown",
+]);
+
+export function parseCrmWhatsappSession(value: unknown): CrmWhatsappSession {
+  const record = asRecord(value);
+  return {
+    ...(record as CrmWhatsappSession),
+    interventionHistoryStartedAt: readNullableString(
+      record.interventionHistoryStartedAt,
+    ),
+    revision: readSafeRevision(record.revision),
+  };
+}
+
+export function parseCrmWhatsappMessage(value: unknown): CrmWhatsappMessage {
+  const record = asRecord(value);
+  return {
+    ...(record as CrmWhatsappMessage),
+    senderOrigin: readSenderOrigin(record.senderOrigin),
+  };
+}
+
+export function parseCrmWhatsappSessions(value: unknown): CrmWhatsappSession[] {
+  return Array.isArray(value) ? value.map(parseCrmWhatsappSession) : [];
+}
+
+export function parseCrmWhatsappMessages(value: unknown): CrmWhatsappMessage[] {
+  return Array.isArray(value) ? value.map(parseCrmWhatsappMessage) : [];
+}
 
 export function formatSessionName(session: CrmWhatsappSession) {
   const name = session.buyerName?.trim();
@@ -60,6 +97,12 @@ export function mergeSessionsFromServer(
     const localSession = currentById.get(serverSession.id);
     if (!localSession) return serverSession;
 
+    const revisionComparison = compareSessionRevisions(
+      localSession,
+      serverSession,
+    );
+    if (revisionComparison < 0) return localSession;
+
     const localIsNewer =
       getSessionTimeMs(localSession) > getSessionTimeMs(serverSession);
     const localReadIsNewer =
@@ -84,6 +127,8 @@ export function mergeSessionsFromServer(
             humanAttendanceStateVersion:
               localSession.humanAttendanceStateVersion,
             humanHandlingStartedAt: localSession.humanHandlingStartedAt ?? null,
+            interventionHistoryStartedAt:
+              localSession.interventionHistoryStartedAt ?? null,
             interventionId: localSession.interventionId ?? null,
             status: localSession.status,
           }
@@ -138,6 +183,48 @@ function hasServerEquivalent(
   );
 }
 
+function compareSessionRevisions(
+  current: CrmWhatsappSession,
+  incoming: CrmWhatsappSession,
+) {
+  const currentRevision = readSessionRevision(current);
+  const incomingRevision = readSessionRevision(incoming);
+  if (currentRevision === null && incomingRevision === null) return 0;
+  if (currentRevision === null) return 1;
+  if (incomingRevision === null) return -1;
+  return incomingRevision - currentRevision;
+}
+
+export function readSessionRevision(session: CrmWhatsappSession) {
+  return typeof session.revision === "number" &&
+    Number.isSafeInteger(session.revision) &&
+    session.revision >= 0
+    ? session.revision
+    : null;
+}
+
+function readSafeRevision(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : fallback;
+}
+
+function readSenderOrigin(value: unknown): CrmWhatsappMessageSenderOrigin {
+  return typeof value === "string" && senderOrigins.has(value as never)
+    ? (value as CrmWhatsappMessageSenderOrigin)
+    : "unknown";
+}
+
+function readNullableString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 export function createOptimisticTextMessage(
   text: string,
   metadata?: Record<string, unknown>,
@@ -150,6 +237,7 @@ export function createOptimisticTextMessage(
     direction: "OUTBOUND",
     id: clientId,
     ...(metadata ? { metadata } : {}),
+    senderOrigin: "human_crm",
     senderType: "HUMAN",
     status: "PENDING",
     type: "TEXT",
@@ -169,6 +257,7 @@ export function createOptimisticStructuredMessage(input: {
     direction: "OUTBOUND",
     id: clientId,
     ...(input.metadata ? { metadata: input.metadata } : {}),
+    senderOrigin: "human_crm",
     senderType: "HUMAN",
     status: "PENDING",
     type: input.type,
@@ -201,6 +290,7 @@ export function createOptimisticMediaMessage(input: {
         ...(input.mimeType ? { mimeType: input.mimeType } : {}),
       },
     },
+    senderOrigin: "human_crm",
     senderType: "HUMAN",
     status: "PENDING",
     type: mediaMessageType(input.mediaType),
@@ -231,6 +321,24 @@ export function getSenderLabel(message: CrmWhatsappMessage) {
   if (message.senderType === "SYSTEM") return "Sistema";
   if (message.direction === "OUTBOUND") return "Atendente";
   return null;
+}
+
+export function getSenderOriginLabel(message: CrmWhatsappMessage) {
+  switch (message.senderOrigin ?? "unknown") {
+    case "customer":
+      return "Cliente";
+    case "human_crm":
+      return "Atendente CRM";
+    case "human_whatsapp":
+      return "Atendente no WhatsApp";
+    case "bot_api":
+      return "Bot/API";
+    case "system":
+      return "Sistema";
+    case "unknown":
+    default:
+      return "Origem desconhecida";
+  }
 }
 
 export function canAssign(member: CrmWhatsappAssignableMember) {

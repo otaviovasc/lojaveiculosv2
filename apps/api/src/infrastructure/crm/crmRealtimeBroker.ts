@@ -49,7 +49,9 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
     },
     async resolveTicket(ticket) {
       purgeExpiredTickets(tickets);
-      return tickets.get(ticket) ?? null;
+      const resolved = tickets.get(ticket) ?? null;
+      if (resolved) tickets.delete(ticket);
+      return resolved;
     },
     subscribe(subscription) {
       const id = randomUUID();

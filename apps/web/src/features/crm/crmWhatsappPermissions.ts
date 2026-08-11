@@ -5,7 +5,8 @@ const permissions = {
   campaignManage: "crm.whatsapp.campaigns.manage",
   campaignRead: "crm.whatsapp.campaigns.read",
   close: "crm.whatsapp.close",
-  connectionManage: "crm.whatsapp.connection.manage",
+  connectionPair: "crm.messaging.connection.pair",
+  connectionSetup: "crm.messaging.connection.setup",
   integrationsManage: "crm.whatsapp.integrations.manage",
   list: "crm.whatsapp.list",
   read: "crm.whatsapp.read",
@@ -26,7 +27,8 @@ export type CrmWhatsappCapabilities = {
   canCampaignManage: boolean;
   canCampaignRead: boolean;
   canClose: boolean;
-  canConnectionManage: boolean;
+  canConnectionPair: boolean;
+  canConnectionSetup: boolean;
   canIntegrationsManage: boolean;
   canList: boolean;
   canRead: boolean;
@@ -53,9 +55,13 @@ export function readCrmWhatsappCapabilities(
     ),
     canCampaignRead: hasWhatsappPermission(session, permissions.campaignRead),
     canClose: hasWhatsappPermission(session, permissions.close),
-    canConnectionManage: hasWhatsappPermission(
+    canConnectionPair: hasWhatsappPermission(
       session,
-      permissions.connectionManage,
+      permissions.connectionPair,
+    ),
+    canConnectionSetup: hasWhatsappPermission(
+      session,
+      permissions.connectionSetup,
     ),
     canIntegrationsManage: hasWhatsappPermission(
       session,

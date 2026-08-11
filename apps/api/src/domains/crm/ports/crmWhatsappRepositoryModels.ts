@@ -3,6 +3,7 @@ import type {
   CrmWhatsappChannel,
   CrmWhatsappHumanAttendanceState,
   CrmWhatsappMessageDirection,
+  CrmWhatsappMessageSenderOrigin,
   CrmWhatsappMessageSenderType,
   CrmWhatsappMessageStatus,
   CrmWhatsappMessageType,
@@ -43,6 +44,7 @@ export type CrmWhatsappSession = {
   messageCount: number;
   metadata: Record<string, unknown>;
   profilePhotoUrl: string | null;
+  revision: number;
   sessionTags: CrmWhatsappTag[];
   source: string | null;
   status: CrmWhatsappSessionStatus;
@@ -77,6 +79,7 @@ export type CrmWhatsappMessage = {
   mediaUrl: string | null;
   metadata: Record<string, unknown>;
   providerTimestamp: Date | null;
+  senderOrigin: CrmWhatsappMessageSenderOrigin;
   senderType: CrmWhatsappMessageSenderType;
   sessionId: string;
   status: CrmWhatsappMessageStatus;

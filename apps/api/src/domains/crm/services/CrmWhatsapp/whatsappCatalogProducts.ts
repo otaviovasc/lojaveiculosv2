@@ -12,6 +12,7 @@ import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
   getCrmWhatsappRepository,
+  isCrmOlxChatEnabled,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -51,7 +52,9 @@ export async function listWhatsappCatalogProducts(
     input.sessionId,
     ports,
   );
-  assertWhatsappProviderEffectAllowed(context, connection);
+  assertWhatsappProviderEffectAllowed(context, connection, {
+    olxChatEnabled: isCrmOlxChatEnabled(ports),
+  });
   const gateway = getCrmWhatsappGateway(ports);
   const catalogPhone = await resolveWhatsappCatalogPhone(
     connection,
@@ -113,6 +116,7 @@ export async function sendWhatsappCatalogProduct(
             ? { idempotencyKey: input.idempotencyKey }
             : {}),
           idempotencyPayload: input,
+          senderOrigin: "human_crm",
           prepare: async ({ connection, gateway, phone }) => {
             const catalogPhone = await resolveWhatsappCatalogPhone(
               connection,

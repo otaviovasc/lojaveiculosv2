@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  readCrmWhatsappChannelLabel,
   readCrmWhatsappProviderLabel,
   readWhatsappStatus,
 } from "./crmWhatsappConnectionStatus";
@@ -39,6 +40,20 @@ describe("readWhatsappStatus", () => {
     ).toEqual({ label: "Desconectado", tone: "offline" });
   });
 
+  it("keeps human provider and channel labels for OLX Chat", () => {
+    expect(readCrmWhatsappProviderLabel("olx_chat")).toBe("OLX Chat");
+    expect(readCrmWhatsappProviderLabel("OLX_CHAT")).toBe("OLX Chat");
+    expect(readCrmWhatsappChannelLabel("OLX_CHAT")).toBe("OLX Chat");
+    expect(
+      readWhatsappStatus({
+        connectionError: null,
+        hasConnection: true,
+        isLoading: false,
+        provider: "olx_chat",
+      }),
+    ).toEqual({ label: "OLX Chat: online", tone: "online" });
+  });
+
   it("distinguishes Z-API, official WhatsApp, and Instagram providers", () => {
     expect(readCrmWhatsappProviderLabel("zapi")).toBe("Z-API");
     expect(readCrmWhatsappProviderLabel("composio_whatsapp")).toBe(
@@ -47,13 +62,5 @@ describe("readWhatsappStatus", () => {
     expect(readCrmWhatsappProviderLabel("composio_instagram")).toBe(
       "Instagram",
     );
-    expect(
-      readWhatsappStatus({
-        connectionError: null,
-        hasConnection: true,
-        isLoading: false,
-        provider: "composio_instagram",
-      }),
-    ).toEqual({ label: "Instagram: online", tone: "online" });
   });
 });

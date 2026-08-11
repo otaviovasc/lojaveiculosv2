@@ -27,6 +27,8 @@ describe("CRM WhatsApp realtime", () => {
       },
     );
     expect(ticketResponse.status).toBe(200);
+    expect(ticketResponse.headers.get("cache-control")).toBe("no-store");
+    expect(ticketResponse.headers.get("referrer-policy")).toBe("no-referrer");
     const ticket = (await ticketResponse.json()) as { ticket: string };
 
     const streamResponse = await app.request(
@@ -36,6 +38,8 @@ describe("CRM WhatsApp realtime", () => {
     expect(streamResponse.headers.get("content-type")).toContain(
       "text/event-stream",
     );
+    expect(streamResponse.headers.get("cache-control")).toBe("no-store");
+    expect(streamResponse.headers.get("referrer-policy")).toBe("no-referrer");
     const reader = streamResponse.body?.getReader();
     expect(reader).toBeDefined();
     const chunk = await reader!.read();
@@ -43,6 +47,13 @@ describe("CRM WhatsApp realtime", () => {
     expect(new TextDecoder().decode(chunk.value)).toContain(
       '"type":"connected"',
     );
+
+    const reusedResponse = await app.request(
+      `/api/v1/crm/whatsapp/events?ticket=${ticket.ticket}`,
+    );
+    expect(reusedResponse.status).toBe(401);
+    expect(reusedResponse.headers.get("cache-control")).toBe("no-store");
+    expect(reusedResponse.headers.get("referrer-policy")).toBe("no-referrer");
   });
 
   it("replays missed scoped events after the last received event id", async () => {

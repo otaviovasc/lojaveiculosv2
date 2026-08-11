@@ -4,7 +4,6 @@ import { createComplianceFeature } from "../../features/compliance/controllers/c
 import { createDocumentsFeature } from "../../features/documents/controllers/documents.controller.js";
 import { createExternalApiFeature } from "../../features/externalApi/controllers/externalApi.controller.js";
 import { createInternalMonitoringFeature } from "../../features/internal/controllers/internalMonitoring.controller.js";
-import { createMarketplaceFeature } from "../../features/marketplaces/controllers/marketplace.controller.js";
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createCrmFeature } from "../../features/crm/controllers/crm.controller.js";
 import { createFinanceFeature } from "../../features/finance/controllers/finance.controller.js";
@@ -32,6 +31,7 @@ import { createLocalHttpLogger } from "./localHttpLogger.js";
 import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
 import { createBillingWebhookContextFactory } from "./billingWebhookContextFactory.js";
 import { installFiscalRoutes } from "./installFiscalRoutes.js";
+import { installMarketplaceRoutes } from "./installMarketplaceRoutes.js";
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
@@ -199,15 +199,7 @@ export function createApp(options: CreateAppOptions = {}) {
         : {}),
     }),
   );
-  app.route(
-    "/api/v1/marketplaces",
-    createMarketplaceFeature({
-      contextFactory,
-      ...(options.marketplaceServices
-        ? { services: options.marketplaceServices }
-        : {}),
-    }),
-  );
+  installMarketplaceRoutes(app, options, contextFactory);
   app.route(
     "/api/v1/crm",
     createCrmFeature({

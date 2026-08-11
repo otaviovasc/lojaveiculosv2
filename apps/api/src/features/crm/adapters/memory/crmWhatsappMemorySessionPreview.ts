@@ -46,5 +46,6 @@ export function updateMemorySessionPreview(
     session.lastMessageContent = input.content;
   }
   session.messageCount += 1;
+  session.revision += 1;
   session.updatedAt = new Date();
 }

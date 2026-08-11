@@ -14,10 +14,10 @@ import type {
   MessageComposerProps,
 } from "./CrmWhatsappComposerTypes";
 import { useMessageComposerState } from "./CrmWhatsappComposerState";
-import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
+import { readCrmWhatsappConnectionCapabilities } from "./crmWhatsappProviderCapabilities";
 
 export function MessageComposer({
-  capabilities = readCrmWhatsappProviderCapabilities("zapi"),
+  capabilities = readCrmWhatsappConnectionCapabilities(undefined),
   catalogUrl,
   defaultLocationName,
   disabled = false,
@@ -236,6 +236,7 @@ export function MessageComposer({
             />
           ) : null}
           <textarea
+            aria-label="Mensagem para enviar"
             disabled={effectiveDisabled}
             onChange={(event) => onTextChange(event.target.value)}
             onKeyDown={onTextKeyDown}

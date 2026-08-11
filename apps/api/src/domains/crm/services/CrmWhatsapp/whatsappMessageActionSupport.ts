@@ -14,6 +14,7 @@ import {
   getCrmConnectionRepository,
   getCrmRealtimePublisher,
   getCrmWhatsappRepository,
+  isCrmOlxChatEnabled,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -59,7 +60,9 @@ export async function loadMessageActionTarget(
   if (!connection) {
     throw new WhatsappConnectionNotFoundError(message.connectionId);
   }
-  assertWhatsappProviderEffectAllowed(context, connection);
+  assertWhatsappProviderEffectAllowed(context, connection, {
+    olxChatEnabled: isCrmOlxChatEnabled(ports),
+  });
   return {
     connection,
     message,

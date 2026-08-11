@@ -58,6 +58,33 @@ with a provider error and must never return synthetic success.
 
 All routes are under `/api/v1/crm`.
 
+### OLX lead delivery
+
+- `POST /crm/whatsapp/webhooks/olx/:connectionId/leads`
+
+This connection-scoped endpoint implements OLX's individual lead-delivery JSON
+contract. It authenticates the configured OLX webhook secret from the request
+header or `token` query parameter, requires both the existing `marketplace` and
+`crm` store entitlements plus `crm.whatsapp.ingest`, and returns HTTP 200 with a
+stable, non-secret `responseId` after durable persistence. No new entitlement
+or add-on is introduced.
+
+Delivery creates or reuses one V2 lead with source `olx`, including phone-less
+leads. Provider `externalId` is the preferred idempotency input; a deterministic
+fallback covers deliveries without it. Only bounded contact, OLX source, ad
+reference/link, and selected ad-summary fields are retained. The message is an
+idempotent inbound lead activity; raw payloads and `buyerHistory` are not
+stored. Lead delivery never opens a WhatsApp success state, sends a reply, or
+calls an outbound provider.
+
+Product contract: target segment is V1 dealerships using OLX; the customer
+outcome is capturing every OLX inquiry in CRM. Leading metrics are delivery
+acceptance rate and time-to-first-response. Customer Success owns onboarding
+and first-line support, with Engineering owning webhook/security incidents. In
+degraded state, invalid, unauthorized, disabled, or unentitled delivery fails
+closed with no synthetic success; durable accepted leads remain available for
+manual CRM follow-up even if later automation is unavailable.
+
 ### Connections
 
 - `GET /crm/whatsapp/connections`
@@ -328,7 +355,8 @@ not claim that the bot responded.
 
 Use these canonical permissions for new CRM work:
 
-- `crm.whatsapp.connection.manage`
+- `crm.messaging.connection.setup`
+- `crm.messaging.connection.pair`
 - `crm.whatsapp.tags.manage`
 - `crm.whatsapp.tags.assign`
 - `crm.whatsapp.schedules.read`

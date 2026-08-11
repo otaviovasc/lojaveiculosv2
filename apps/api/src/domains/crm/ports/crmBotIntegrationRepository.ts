@@ -18,7 +18,7 @@ export type CrmBotIntegrationDeliveryConfig = {
   enabled: boolean;
   storeId: StoreId;
   tenantId: TenantId;
-  webhookSecret: string | null;
+  webhookSecretSealed: string | null;
   webhookUrl: string | null;
 };
 
@@ -35,7 +35,7 @@ export type UpsertCrmBotIntegrationInput = FindCrmBotIntegrationInput & {
   enabled: boolean;
   secretUpdatedAt?: Date | null;
   webhookSecretHash?: string | null;
-  webhookSecretValue?: string | null;
+  webhookSecretSealed?: string | null;
   webhookUrl: string | null;
 };
 
@@ -43,9 +43,9 @@ export type CrmBotIntegrationRepository = {
   findBotIntegration: (
     input: FindCrmBotIntegrationInput,
   ) => Promise<CrmBotIntegration | null>;
-  findBotIntegrationBySecretHash: (
+  findBotIntegrationsBySecretHash: (
     input: FindCrmBotIntegrationBySecretHashInput,
-  ) => Promise<CrmBotIntegration | null>;
+  ) => Promise<readonly CrmBotIntegration[]>;
   findBotIntegrationDeliveryConfig: (
     input: FindCrmBotIntegrationInput,
   ) => Promise<CrmBotIntegrationDeliveryConfig | null>;

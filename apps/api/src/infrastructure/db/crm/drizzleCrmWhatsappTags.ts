@@ -7,51 +7,14 @@ import type {
   ListCrmWhatsappTagsInput,
   ReorderCrmWhatsappTagsInput,
   UpdateCrmWhatsappTagInput,
-  UpdateCrmWhatsappSessionTagInput,
 } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
-  findHydratedSessionById,
   hydrateWhatsappSession,
   toCrmWhatsappTag,
 } from "./drizzleCrmWhatsappTagHydration.js";
 
 export { hydrateWhatsappSession };
-export async function addWhatsappSessionTag(
-  db: DrizzleCrmClient,
-  input: UpdateCrmWhatsappSessionTagInput,
-) {
-  const tag = await findScopedTagById(db, input);
-  if (!tag) return findHydratedSessionById(db, input.sessionId, input);
-  await db
-    .insert(crmWhatsappSessionTags)
-    .values({
-      sessionId: input.sessionId,
-      storeId: input.storeId,
-      tagId: input.tagId,
-      tenantId: input.tenantId,
-    })
-    .onConflictDoNothing({
-      target: [crmWhatsappSessionTags.sessionId, crmWhatsappSessionTags.tagId],
-    });
-  return findHydratedSessionById(db, input.sessionId, input);
-}
-export async function removeWhatsappSessionTag(
-  db: DrizzleCrmClient,
-  input: UpdateCrmWhatsappSessionTagInput,
-) {
-  await db
-    .delete(crmWhatsappSessionTags)
-    .where(
-      and(
-        eq(crmWhatsappSessionTags.sessionId, input.sessionId),
-        eq(crmWhatsappSessionTags.tagId, input.tagId),
-        eq(crmWhatsappSessionTags.storeId, input.storeId),
-        eq(crmWhatsappSessionTags.tenantId, input.tenantId),
-      ),
-    );
-  return findHydratedSessionById(db, input.sessionId, input);
-}
 export async function findOrCreateWhatsappTag(
   db: DrizzleCrmClient,
   input: FindOrCreateCrmWhatsappTagInput,
@@ -218,23 +181,6 @@ async function findTagByName(
         eq(crmTags.tenantId, input.tenantId as never),
         connectionFilter,
         eq(crmTags.name, input.name),
-      ),
-    )
-    .limit(1);
-  return row ? toCrmWhatsappTag(row) : null;
-}
-async function findScopedTagById(
-  db: DrizzleCrmClient,
-  input: UpdateCrmWhatsappSessionTagInput,
-) {
-  const [row] = await db
-    .select()
-    .from(crmTags)
-    .where(
-      and(
-        eq(crmTags.id, input.tagId),
-        eq(crmTags.storeId, input.storeId as never),
-        eq(crmTags.tenantId, input.tenantId as never),
       ),
     )
     .limit(1);

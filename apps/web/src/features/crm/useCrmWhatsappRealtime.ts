@@ -1,9 +1,10 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { asError } from "./crmWhatsappHookSupport";
 import type {
   CrmWhatsappMessage,
   CrmWhatsappRealtimeEvent,
+  CrmWhatsappRealtimeStatus,
   CrmWhatsappSession,
   CrmWhatsappSessionId,
 } from "./crmWhatsappTypes";
@@ -11,6 +12,7 @@ import type {
 type RealtimeOptions = {
   activeSessionId: CrmWhatsappSessionId | null;
   api: CrmWhatsappApi;
+  canMergeSessionSnapshot?: (session: CrmWhatsappSession) => boolean;
   connectionId: string | null;
   connectionsError: Error | null;
   mergeRealtimeMessage: (message: CrmWhatsappMessage) => void;
@@ -18,6 +20,7 @@ type RealtimeOptions = {
     nextSessions: CrmWhatsappSession[],
     options?: { preserveLocalOnly?: boolean },
   ) => void;
+  onStatus?: (status: CrmWhatsappRealtimeStatus) => void;
   refreshConnections: () => Promise<void>;
   refreshSessionCounts: () => Promise<void>;
   refreshSessions: (options?: { preserveLocalOnly?: boolean }) => Promise<void>;
@@ -30,16 +33,19 @@ type RealtimeOptions = {
 export function useCrmWhatsappRealtime({
   activeSessionId,
   api,
+  canMergeSessionSnapshot,
   connectionId,
   connectionsError,
   mergeRealtimeMessage,
   mergeSessions,
+  onStatus,
   refreshConnections,
   refreshSessionCounts,
   refreshSessions,
   setError,
   updateRealtimeMessageStatus,
 }: RealtimeOptions) {
+  const [status, setStatus] = useState<CrmWhatsappRealtimeStatus>("offline");
   const handleRealtimeEvent = useCallback(
     (event: CrmWhatsappRealtimeEvent) => {
       if (event.type === "connected") return;
@@ -50,11 +56,23 @@ export function useCrmWhatsappRealtime({
       )
         return;
       if (event.type === "session") {
+        if (
+          canMergeSessionSnapshot &&
+          !canMergeSessionSnapshot(event.session)
+        ) {
+          return;
+        }
         mergeSessions([event.session], { preserveLocalOnly: true });
         void refreshSessionCounts().catch(() => undefined);
         return;
       }
       if (event.type === "message") {
+        if (
+          canMergeSessionSnapshot &&
+          !canMergeSessionSnapshot(event.session)
+        ) {
+          return;
+        }
         mergeSessions([event.session], { preserveLocalOnly: true });
         void refreshSessionCounts().catch(() => undefined);
         if (String(event.session.id) === String(activeSessionId)) {
@@ -77,6 +95,7 @@ export function useCrmWhatsappRealtime({
     },
     [
       activeSessionId,
+      canMergeSessionSnapshot,
       connectionId,
       mergeRealtimeMessage,
       mergeSessions,
@@ -88,11 +107,34 @@ export function useCrmWhatsappRealtime({
   );
 
   useEffect(() => {
-    if (connectionsError || !connectionId) return;
+    if (connectionsError || !connectionId) {
+      setStatus("offline");
+      onStatus?.("offline");
+      return;
+    }
+    setStatus("connecting");
+    onStatus?.("connecting");
     return api.subscribeEvents({
       connectionId,
-      onError: (caught) => setError(asError(caught)),
+      onError: (caught) => {
+        setStatus("degraded");
+        onStatus?.("degraded");
+        setError(asError(caught));
+      },
       onEvent: handleRealtimeEvent,
+      onStatus: (nextStatus) => {
+        setStatus(nextStatus);
+        onStatus?.(nextStatus);
+      },
     });
-  }, [api, connectionsError, connectionId, handleRealtimeEvent, setError]);
+  }, [
+    api,
+    connectionsError,
+    connectionId,
+    handleRealtimeEvent,
+    onStatus,
+    setError,
+  ]);
+
+  return { status };
 }

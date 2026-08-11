@@ -143,6 +143,9 @@ export function createCrmRepository(): CrmRepository {
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       vehicleTitle: null,
     })),
+    createLeadIdempotently: vi.fn(async () => {
+      throw new Error("Unexpected idempotent lead creation");
+    }),
     countLeadsByPipeline: vi.fn(async () => 0),
     countLeadsByPipelineStages: vi.fn(async () => 0),
     countLeads: vi.fn(async () => 0),

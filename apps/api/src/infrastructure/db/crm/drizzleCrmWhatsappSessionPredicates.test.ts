@@ -3,8 +3,9 @@ import type { SQL } from "drizzle-orm";
 import { CasingCache } from "drizzle-orm/casing";
 import { describe, expect, it } from "vitest";
 import type { IngestCrmWhatsappMessageInput } from "../../../domains/crm/ports/crmWhatsappRepository.js";
-import { crmWhatsappUnreadSessionPredicate } from "./drizzleCrmWhatsappRepository.js";
+import { crmWhatsappUnreadSessionPredicate } from "./drizzleCrmWhatsappQueries.js";
 import { crmWhatsappNewerMessagePreview } from "./drizzleCrmWhatsappSessionPreview.js";
+import { cleanSessionUpdate } from "./drizzleCrmWhatsappUpdates.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -33,6 +34,7 @@ describe("Drizzle CRM WhatsApp session predicates", () => {
       externalId: "zapi-message-new",
       metadata: {},
       providerTimestamp: incomingAt,
+      senderOrigin: "customer",
       senderType: "CUSTOMER",
       status: "DELIVERED",
       storeId,
@@ -60,6 +62,19 @@ describe("Drizzle CRM WhatsApp session predicates", () => {
     );
     expect(lastMessageAt.params).toContain(incomingAt.toISOString());
     expect(lastMessageContent.params).toContain("Mensagem nova");
+  });
+
+  it("increments every persisted session mutation revision in SQL", () => {
+    const update = cleanSessionUpdate({
+      sessionId: "session-1",
+      status: "ACTIVE",
+      storeId,
+      tenantId,
+    });
+
+    expect(renderDrizzleSql(update.revision).sql).toContain(
+      "crm_whatsapp_sessions.revision + 1",
+    );
   });
 });
 

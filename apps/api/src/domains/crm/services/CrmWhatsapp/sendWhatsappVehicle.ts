@@ -134,6 +134,7 @@ async function sendVehicleText(
     context,
     {
       idempotencyPayload: input,
+      senderOrigin: "human_crm",
       prepare: async ({ connection, gateway, phone }) => {
         const sent = await gateway.sendText(connection, {
           phone,
@@ -173,6 +174,7 @@ async function sendInventoryVehicleMedia(
     context,
     {
       idempotencyPayload: input,
+      senderOrigin: "human_crm",
       prepare: async ({ connection, gateway, phone }) => {
         const sent = await gateway.sendMedia(connection, {
           ...(input.caption ? { caption: input.caption } : {}),

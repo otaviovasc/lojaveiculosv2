@@ -287,3 +287,15 @@
   justify-content: flex-end;
   margin-top: 0.375rem;
 }
+.crm-whatsapp-message-attribution {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.crm-whatsapp-message-attribution > span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}

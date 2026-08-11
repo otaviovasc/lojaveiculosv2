@@ -41,7 +41,7 @@ describe("CRM WhatsApp integrations", () => {
       {
         body: JSON.stringify({
           enabled: true,
-          webhookSecret: "bot-secret-value",
+          webhookSecret: "bot-webhook-secret-value-32-characters",
           webhookUrl: "https://bot.example.test/webhook",
         }),
         method: "PATCH",
@@ -59,7 +59,9 @@ describe("CRM WhatsApp integrations", () => {
     });
     expect(body.integration.webhookSecret).toBeUndefined();
     expect(body.integration.webhookSecretHash).toBeUndefined();
-    expect(JSON.stringify(record.mock.calls)).not.toContain("bot-secret-value");
+    expect(JSON.stringify(record.mock.calls)).not.toContain(
+      "bot-webhook-secret-value-32-characters",
+    );
   });
 
   it("does not enable bot forwarding until URL and secret are configured", async () => {
@@ -111,7 +113,7 @@ describe("CRM WhatsApp integrations", () => {
           connectionId,
           payload: { color: "#16a34a", name: "Quente" },
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 
@@ -121,7 +123,9 @@ describe("CRM WhatsApp integrations", () => {
       result: { name: "Quente" },
       success: true,
     });
-    expect(JSON.stringify(record.mock.calls)).not.toContain("bot-secret-value");
+    expect(JSON.stringify(record.mock.calls)).not.toContain(
+      "bot-webhook-secret-value-32-characters",
+    );
   });
 
   it("rejects bot actions with an invalid webhook secret", async () => {
@@ -152,6 +156,7 @@ describe("CRM WhatsApp integrations", () => {
       externalId: "bot-action-inbound-1",
       metadata: {},
       providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+      senderOrigin: "customer",
       senderType: "CUSTOMER",
       status: "DELIVERED",
       storeId,
@@ -183,7 +188,7 @@ describe("CRM WhatsApp integrations", () => {
           payload: { text: "Resposta automatica" },
           sessionId: inbound.session.id,
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 

@@ -33,6 +33,7 @@ import {
 import { CrmWhatsappVisitsPage } from "./CrmWhatsappVisitsPage";
 import { MessageCircle, PlugZap } from "lucide-react";
 import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
+import { CrmWhatsappRealtimeBanner } from "./CrmWhatsappRealtimeBanner";
 
 export function CrmWhatsappInbox({
   api,
@@ -133,6 +134,12 @@ export function CrmWhatsappInbox({
           )}
         />
       ) : null}
+      {inbox.permissions.canList && inbox.hasConnection ? (
+        <CrmWhatsappRealtimeBanner
+          hasCachedInbox={inbox.sessions.length > 0}
+          status={inbox.realtimeStatus}
+        />
+      ) : null}
       {!inbox.permissions.canList ? (
         <WhatsappNotice message="Seu usuario nao tem permissao para visualizar o WhatsApp CRM." />
       ) : null}
@@ -154,7 +161,7 @@ export function CrmWhatsappInbox({
               >
                 {inbox.hasConnection === false ? (
                   <WhatsappDisconnectedState
-                    canManage={inbox.permissions.canConnectionManage}
+                    canManage={inbox.permissions.canConnectionSetup}
                     onConnect={() => setActiveScope("connection")}
                   />
                 ) : (
@@ -173,26 +180,27 @@ export function CrmWhatsappInbox({
                 <section className="crm-whatsapp-section">
                   <CrmWhatsappConnectionAdmin
                     connections={inbox.connections}
-                    disabled={!inbox.permissions.canConnectionManage}
+                    disabled={!inbox.permissions.canConnectionPair}
                     embedded
                     onClose={() => setActiveScope("conversations")}
-                    onConfigureWebhooks={inbox.configureConnectionWebhooks}
                     onRefresh={inbox.refreshConnections}
-                    onUpdate={inbox.updateConnection}
                     selfService={{
                       allowance: inbox.connectionAllowance,
                       availableProviders: inbox.availableConnectionProviders,
-                      canManage:
-                        inbox.permissions.canConnectionManage &&
-                        inbox.permissions.canIntegrationsManage,
+                      canPair: inbox.permissions.canConnectionPair,
+                      canSetup: inbox.permissions.canConnectionSetup,
                       handlers: {
                         onAuthorizeComposio: inbox.authorizeComposioConnection,
                         onCompleteComposio: inbox.completeComposioConnection,
                         onCreate: inbox.createConnection,
                         onRefreshConnections: inbox.refreshConnections,
+                        onRequestZapiPairingCode: inbox.requestZapiPairingCode,
+                        onRequestZapiPairingQr: inbox.requestZapiPairingQr,
+                        onRequestZapiAddon: inbox.requestZapiAddon,
                         onSelectComposioSender:
                           inbox.selectComposioConnectionSender,
                       },
+                      zapiAddonContract: inbox.zapiAddonContract,
                     }}
                   />
                 </section>

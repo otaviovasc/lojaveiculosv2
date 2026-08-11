@@ -22,7 +22,7 @@ type BotIntegrationConfig = {
   enabled?: unknown;
   secretUpdatedAt?: unknown;
   webhookSecretHash?: unknown;
-  webhookSecretValue?: unknown;
+  webhookSecretSealed?: unknown;
   webhookUrl?: unknown;
 };
 
@@ -31,8 +31,8 @@ export function createDrizzleCrmBotIntegrationRepository(
 ): CrmBotIntegrationRepository {
   return {
     findBotIntegration: (input) => findBotIntegration(db, input),
-    findBotIntegrationBySecretHash: (input) =>
-      findBotIntegrationBySecretHash(db, input),
+    findBotIntegrationsBySecretHash: (input) =>
+      findBotIntegrationsBySecretHash(db, input),
     findBotIntegrationDeliveryConfig: (input) =>
       findBotIntegrationDeliveryConfig(db, input),
     upsertBotIntegration: (input) => upsertBotIntegration(db, input),
@@ -47,7 +47,7 @@ async function findBotIntegration(
   return row ? toBotIntegration(row) : null;
 }
 
-async function findBotIntegrationBySecretHash(
+async function findBotIntegrationsBySecretHash(
   db: DrizzleCrmBotIntegrationClient,
   input: FindCrmBotIntegrationBySecretHashInput,
 ) {
@@ -90,14 +90,17 @@ async function findBotIntegrationBySecretHash(
       ),
     )
     .where(eq(integrationAccounts.provider, crmBotIntegrationProvider));
-  const row = rows.find((item) => {
+  const matches = rows.filter((item) => {
     const config = readConfig(item.config);
     return (
       item.status === "active" &&
-      readString(config.webhookSecretHash) === input.webhookSecretHash
+      readString(config.webhookSecretHash) === input.webhookSecretHash &&
+      Boolean(readString(config.webhookSecretSealed))
     );
   });
-  return row ? toBotIntegration(row) : null;
+  return [...new Map(matches.map((row) => [row.id, row])).values()].map(
+    toBotIntegration,
+  );
 }
 
 async function findBotIntegrationDeliveryConfig(
@@ -111,7 +114,7 @@ async function findBotIntegrationDeliveryConfig(
     enabled: readBoolean(config.enabled) ?? row.status === "active",
     storeId: row.storeId as never,
     tenantId: row.tenantId as never,
-    webhookSecret: readString(config.webhookSecretValue),
+    webhookSecretSealed: readString(config.webhookSecretSealed),
     webhookUrl: readString(config.webhookUrl),
   };
 }
@@ -126,15 +129,15 @@ async function upsertBotIntegration(
     input.webhookSecretHash === undefined
       ? readString(currentConfig.webhookSecretHash)
       : input.webhookSecretHash;
-  const secretValue =
-    input.webhookSecretValue === undefined
-      ? readString(currentConfig.webhookSecretValue)
-      : input.webhookSecretValue;
+  const secretSealed =
+    input.webhookSecretSealed === undefined
+      ? readString(currentConfig.webhookSecretSealed)
+      : input.webhookSecretSealed;
   const config = {
     enabled: input.enabled,
     secretUpdatedAt: readSecretUpdatedAt(input, currentConfig),
     webhookSecretHash: secretHash,
-    webhookSecretValue: secretValue,
+    webhookSecretSealed: secretSealed,
     webhookUrl: input.webhookUrl,
   };
   const [row] = await db
@@ -181,11 +184,12 @@ function toBotIntegration(
 ): CrmBotIntegration {
   const config = readConfig(row.config);
   const secretHash = readString(config.webhookSecretHash);
+  const secretSealed = readString(config.webhookSecretSealed);
   return {
     createdAt: row.createdAt,
     enabled: readBoolean(config.enabled) ?? row.status === "active",
     id: row.id,
-    secretConfigured: Boolean(secretHash),
+    secretConfigured: Boolean(secretHash && secretSealed),
     secretUpdatedAt: readDate(config.secretUpdatedAt),
     storeId: row.storeId as never,
     tenantId: row.tenantId as never,

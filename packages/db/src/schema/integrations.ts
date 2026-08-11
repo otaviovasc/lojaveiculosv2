@@ -1,4 +1,6 @@
 import {
+  check,
+  foreignKey,
   index,
   jsonb,
   pgEnum,
@@ -9,7 +11,8 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { stores, tenants } from "./identity.js";
+import { sql } from "drizzle-orm";
+import { stores, tenants, users } from "./identity.js";
 import { vehicleListings } from "./inventory.js";
 import { lifecycleColumns } from "./_shared.js";
 
@@ -50,6 +53,81 @@ export const integrationAccounts = pgTable(
     uniqueIndex("integration_accounts_store_provider_unique").on(
       table.storeId,
       table.provider,
+    ),
+  ],
+);
+
+export const marketplaceOauthTransactions = pgTable(
+  "marketplace_oauth_transactions",
+  {
+    ...lifecycleColumns,
+    authorizationCodeCiphertext: text("authorization_code_ciphertext"),
+    callbackReceivedAt: timestamp("callback_received_at", {
+      withTimezone: true,
+    }),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    exchangeLeaseExpiresAt: timestamp("exchange_lease_expires_at", {
+      withTimezone: true,
+    }),
+    exchangeLeaseOwner: varchar("exchange_lease_owner", { length: 191 }),
+    exchangeTokenCiphertext: text("exchange_token_ciphertext"),
+    provider: varchar("provider", { length: 80 }).notNull(),
+    redirectUri: varchar("redirect_uri", { length: 500 }).notNull(),
+    requestId: varchar("request_id", { length: 191 }).notNull(),
+    requestedByUserId: uuid("requested_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    stateHash: varchar("state_hash", { length: 64 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "marketplace_oauth_transactions_store_tenant_fk",
+    }),
+    uniqueIndex("marketplace_oauth_transactions_state_hash_unique").on(
+      table.stateHash,
+    ),
+    index("marketplace_oauth_transactions_scope_status_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.status,
+      table.expiresAt,
+    ),
+    check(
+      "marketplace_oauth_transactions_state_hash_sha256",
+      sql`${table.stateHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "marketplace_oauth_transactions_status_valid",
+      sql`${table.status} IN ('pending', 'received', 'exchanging', 'consumed', 'cancelled')`,
+    ),
+    check(
+      "marketplace_oauth_transactions_callback_consistent",
+      sql`(
+        (${table.status} IN ('received', 'exchanging') AND ${table.callbackReceivedAt} IS NOT NULL AND ${table.authorizationCodeCiphertext} IS NOT NULL AND ${table.consumedAt} IS NULL)
+        OR (${table.status} IN ('consumed', 'cancelled') AND ${table.consumedAt} IS NOT NULL)
+        OR (${table.status} = 'pending' AND ${table.callbackReceivedAt} IS NULL AND ${table.authorizationCodeCiphertext} IS NULL AND ${table.consumedAt} IS NULL)
+      )`,
+    ),
+    check(
+      "marketplace_oauth_transactions_exchange_lease_consistent",
+      sql`(
+        (${table.status} = 'exchanging' AND ${table.exchangeLeaseOwner} IS NOT NULL AND ${table.exchangeLeaseExpiresAt} IS NOT NULL)
+        OR (${table.status} <> 'exchanging' AND ${table.exchangeLeaseOwner} IS NULL AND ${table.exchangeLeaseExpiresAt} IS NULL)
+      )`,
+    ),
+    check(
+      "marketplace_oauth_transactions_ttl_valid",
+      sql`${table.expiresAt} > ${table.createdAt}`,
     ),
   ],
 );

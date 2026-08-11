@@ -133,6 +133,7 @@ async function processDueMessages(
         context,
         {
           idempotencyKey: `scheduled:${scheduled.id}`,
+          senderOrigin: "system",
           senderType: "SYSTEM",
           sessionId: scheduled.sessionId,
           text: scheduled.text,

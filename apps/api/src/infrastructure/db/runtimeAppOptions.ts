@@ -1,8 +1,5 @@
 import type { BillingServicePorts } from "../../domains/billing/services/BillingService/serviceSupport.js";
-import {
-  createInternalMonitoringServices,
-  type InternalMonitoringServices,
-} from "../../features/internal/controllers/internalMonitoringServices.js";
+import { createInternalMonitoringServices } from "../../features/internal/controllers/internalMonitoringServices.js";
 import { createMarketplaceServices } from "../../features/marketplaces/controllers/marketplaceServices.js";
 import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
 import {
@@ -58,7 +55,9 @@ import {
   type DrizzleBillingQuotaClient,
 } from "./billing/drizzleBillingQuotaGuard.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
+import { createDrizzleMarketplaceOAuthStateStore } from "./marketplace/drizzleMarketplaceOAuthStateStore.js";
 import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
+import { createMarketplaceOAuthRedirectUriResolver } from "../marketplace/marketplaceOAuthRedirectUris.js";
 import {
   createRuntimeAnalyticsServices,
   type RuntimeAnalyticsClient,
@@ -82,7 +81,7 @@ import { createRuntimeSalesServices } from "./runtimeSalesServices.js";
 import type { RuntimeHttpAppOptionsInput } from "./runtimeAppOptionsTypes.js";
 import { createRuntimeCredereFinancingServices } from "../financing/runtimeCredereFinancingServices.js";
 import { createDrizzleCrmBotEntitlementResolver } from "./crm/resolveCrmBotEntitlements.js";
-
+import { createRuntimeOlxCrmOnboarding } from "../marketplace/runtimeOlxCrmOnboarding.js";
 export function createRuntimeHttpAppOptions({
   auditDb,
   clerkAccountProviders = {},
@@ -97,6 +96,8 @@ export function createRuntimeHttpAppOptions({
     : null;
   const runtimeObjectStorage = objectStorage ?? createRuntimeObjectStorage(env);
   const financingServices = createRuntimeCredereFinancingServices(db, env);
+  const marketplaceDb = db as DrizzleMarketplaceClient;
+  const crmDb = db as DrizzleCrmClient;
   return {
     logger: createPinoServiceLogger({
       baseMetadata: {
@@ -130,6 +131,7 @@ export function createRuntimeHttpAppOptions({
         env,
         crmRealtimeBroker,
         runtimeObjectStorage,
+        crmRealtimeBroker.olxWebhookSecurity,
       ),
     crmRealtimeBroker,
     resolveCrmBotEntitlements: createDrizzleCrmBotEntitlementResolver(
@@ -141,6 +143,7 @@ export function createRuntimeHttpAppOptions({
       crmRealtimeBroker,
       runtimeObjectStorage,
       financingServices,
+      crmRealtimeBroker.olxWebhookSecurity,
     ),
     documentServices: createRuntimeDocumentServices(
       db,
@@ -172,11 +175,19 @@ export function createRuntimeHttpAppOptions({
       auditDb,
     ),
     internalMonitoringServices: auditDb
-      ? createRuntimeInternalMonitoringServices(auditDb)
+      ? createInternalMonitoringServices({
+          auditDrizzleClient: auditDb as DrizzleInternalMonitoringClient,
+        })
       : createInternalMonitoringServices(),
     marketplaceServices: createMarketplaceServices({
-      drizzleClient: db as DrizzleMarketplaceClient,
+      drizzleClient: marketplaceDb,
       gatewayRegistry: createMarketplaceGatewayRegistry(env),
+      oauthRedirectUri: createMarketplaceOAuthRedirectUriResolver(env),
+      oauthStateStore: createDrizzleMarketplaceOAuthStateStore(
+        marketplaceDb,
+        env,
+      ),
+      olxCrmOnboarding: createRuntimeOlxCrmOnboarding(crmDb, env),
     }),
     publicStorefrontRepository: createDrizzlePublicStorefrontRepository(
       db as unknown as DrizzlePublicStorefrontClient,
@@ -219,27 +230,16 @@ export function createRuntimeBillingServicePorts(
     ...(publicAppUrl ? { publicAppUrl } : {}),
   };
 }
-
 function createRuntimeExternalApiServices(db: unknown): ExternalApiServices {
   return createExternalApiServices({
     drizzleClient: db as DrizzleExternalApiClient,
   });
 }
-
-function createRuntimeInternalMonitoringServices(
-  auditDb: unknown,
-): InternalMonitoringServices {
-  return createInternalMonitoringServices({
-    auditDrizzleClient: auditDb as DrizzleInternalMonitoringClient,
-  });
-}
-
 function createRuntimeSettingsServices(db: unknown): SettingsServices {
   return createSettingsServices({
     drizzleClient: db as DrizzleStoreSettingsClient,
   });
 }
-
 function createRuntimeRoleServices(db: unknown): RoleServices {
   return createRoleServices(
     createDrizzleRoleManagementRepository(

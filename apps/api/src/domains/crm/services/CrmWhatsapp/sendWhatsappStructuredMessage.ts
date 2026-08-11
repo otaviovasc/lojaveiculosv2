@@ -79,6 +79,7 @@ async function sendStructuredText(
         context,
         {
           idempotencyPayload: input,
+          senderOrigin: "human_crm",
           prepare: async ({ connection, gateway, phone }) => {
             const sent = await gateway.sendText(connection, {
               phone,

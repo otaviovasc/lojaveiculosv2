@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { crmWhatsappMessages, crmWhatsappSessions } from "@lojaveiculosv2/db";
 import type {
   IngestCrmWhatsappMessageInput,
@@ -16,6 +16,7 @@ import {
   findWhatsappSessionByIdentity,
   updateWhatsappSessionIdentity,
 } from "./drizzleCrmWhatsappSessionIdentity.js";
+import { reconciledOutboundEchoSender } from "../../../domains/crm/whatsapp/reconcileWhatsappOutboundEcho.js";
 
 export async function ingestMessageInDatabase(
   db: DrizzleCrmClient,
@@ -24,7 +25,7 @@ export async function ingestMessageInDatabase(
   const session = await findOrCreateSession(db, input);
   const insertedMessage = await insertMessage(db, input, session.id);
   const createdMessage = Boolean(insertedMessage);
-  const message =
+  let message =
     insertedMessage ??
     (await findWhatsappMessageBySessionExternalId(
       db,
@@ -33,6 +34,9 @@ export async function ingestMessageInDatabase(
     ));
 
   if (!message) throw new Error("CRM WhatsApp message was not persisted.");
+  if (!createdMessage) {
+    message = await reconcileOutboundEchoSender(db, message, input);
+  }
   if (createdMessage) await updateSessionPreview(db, input, session);
 
   const updatedSession = await findSessionById(db, session.id);
@@ -47,6 +51,29 @@ export async function ingestMessageInDatabase(
       await countUnreadMessages(db, updatedSession),
     ),
   };
+}
+
+async function reconcileOutboundEchoSender(
+  db: DrizzleCrmClient,
+  message: typeof crmWhatsappMessages.$inferSelect,
+  input: IngestCrmWhatsappMessageInput,
+) {
+  const reconciled = reconciledOutboundEchoSender(message, input);
+  if (!reconciled) return message;
+  const [updated] = await db
+    .update(crmWhatsappMessages)
+    .set({ ...reconciled, updatedAt: new Date() })
+    .where(
+      and(
+        eq(crmWhatsappMessages.id, message.id),
+        eq(crmWhatsappMessages.direction, "OUTBOUND"),
+        eq(crmWhatsappMessages.senderOrigin, "unknown"),
+        eq(crmWhatsappMessages.storeId, input.storeId),
+        eq(crmWhatsappMessages.tenantId, input.tenantId),
+      ),
+    )
+    .returning();
+  return updated ?? message;
 }
 
 export function ingestMessageWithTransaction(
@@ -160,6 +187,7 @@ async function insertMessage(
       mediaUrl: input.mediaUrl ?? null,
       metadata: input.metadata,
       providerTimestamp: input.providerTimestamp,
+      senderOrigin: input.senderOrigin,
       senderType: input.senderType,
       sessionId,
       status: input.status,

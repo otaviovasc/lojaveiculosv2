@@ -1,7 +1,11 @@
 export type CrmWhatsappChannel =
-  "INSTAGRAM" | "OLX_CHAT" | "WEB_CHAT" | "WHATSAPP";
+  "INSTAGRAM" | "OLX_CHAT" | "WEB_CHAT" | "WHATSAPP" | (string & {});
 export type CrmWhatsappProvider =
-  "composio_instagram" | "composio_whatsapp" | "zapi";
+  | "composio_instagram"
+  | "composio_whatsapp"
+  | "olx_chat"
+  | "zapi"
+  | (string & {});
 export type CrmWhatsappConnectionId = number | string;
 export type CrmWhatsappSessionId = number | string;
 
@@ -9,6 +13,15 @@ export type CrmWhatsappStatus =
   "ACTIVE" | "COMPLETED" | "EXPIRED" | "HUMAN_TAKEOVER" | "MINIBOT_ACTIVE";
 export type CrmWhatsappHumanAttendanceState =
   "IN_HUMAN_SERVICE" | "WAITING_HUMAN";
+export type CrmWhatsappMessageSenderOrigin =
+  | "customer"
+  | "human_crm"
+  | "human_whatsapp"
+  | "bot_api"
+  | "system"
+  | "unknown";
+export type CrmWhatsappRealtimeStatus =
+  "connecting" | "connected" | "degraded" | "offline";
 export type CrmWhatsappSessionFilter =
   "all" | "fresh" | "mine" | "others" | "unassigned";
 
@@ -23,12 +36,35 @@ export type CrmWhatsappAssignableMember = {
 };
 
 export type CrmWhatsappConnection = {
+  capabilities?: CrmWhatsappProviderCapabilities;
   id: CrmWhatsappConnectionId;
   lojaSlug?: string | null;
   name: string;
   phone?: string | null;
   provider?: string;
   status: string;
+};
+
+/** Capability facts returned by the CRM connection DTO. Keep this contract
+ * server-owned: the UI must not infer provider support from provider names. */
+export type CrmWhatsappProviderCapabilities = {
+  audio: boolean;
+  catalog: boolean;
+  conversationStart: boolean;
+  delete: boolean;
+  documents: boolean;
+  imageCaption: boolean;
+  images: boolean;
+  location: boolean;
+  quickMessages: boolean;
+  reactions: boolean;
+  reply: boolean;
+  scheduling: boolean;
+  templates: boolean;
+  text: boolean;
+  vehicle: boolean;
+  video: boolean;
+  officialWindowNotice?: string | null;
 };
 
 export type CrmWhatsappConnectionLiveStatus =
@@ -49,6 +85,7 @@ export type CrmWhatsappConnectionLiveStatus =
     };
 
 export type CrmWhatsappProviderConnection = {
+  capabilities?: CrmWhatsappProviderCapabilities;
   credentials?: CrmWhatsappConnectionCredentialRefs;
   displayName: string;
   externalConnectionId: string | null;
@@ -120,13 +157,6 @@ export type CrmWhatsappWebhookConfigResult = {
   url: string;
 };
 
-export type CrmWhatsappConfigureWebhooksResult = {
-  connectionId: string;
-  results: CrmWhatsappWebhookConfigResult[];
-  setup: CrmWhatsappZapiSetupState;
-  tokenApplied: boolean;
-};
-
 export type CrmWhatsappConnectionsResponse = {
   allowance: CrmWhatsappConnectionAllowance;
   availableProviders: CrmWhatsappSetupProvider[];
@@ -138,6 +168,22 @@ export type CrmWhatsappSetupProvider = Extract<
   "composio_whatsapp" | "zapi"
 >;
 
+export type CrmWhatsappZapiAddonContractStatus =
+  "active" | "cancelled" | "paid_awaiting_setup" | "pending" | "scheduled";
+
+export type CrmWhatsappZapiAddonContract = {
+  addonCode: "crm_zapi";
+  cancellationScheduledFor: string | null;
+  id: string;
+  monthlyPriceCents: number;
+  paidAt: string | null;
+  scheduledFor: string | null;
+  setupCompletedAt: string | null;
+  status: CrmWhatsappZapiAddonContractStatus;
+  storeId: string;
+  supportCode: string | null;
+};
+
 export type CrmWhatsappConnectionAllowance = {
   limit: number;
   remaining: number;
@@ -146,10 +192,9 @@ export type CrmWhatsappConnectionAllowance = {
 
 export type CrmWhatsappCreateConnectionInput =
   | {
-      instanceCredentials: {
-        instanceId: string;
-        instanceToken: string;
-      };
+      clientToken: string;
+      instanceId: string;
+      instanceToken: string;
       provider: "zapi";
     }
   | {
@@ -163,6 +208,7 @@ export type CrmWhatsappZapiPairingQr = {
 
 export type CrmWhatsappZapiPairingCode = {
   code?: string;
+  expiresAt?: string;
   requested: boolean;
 };
 
@@ -181,28 +227,6 @@ export type CrmWhatsappComposioCompleteResult = {
   connection: CrmWhatsappProviderConnection;
   nextAction: string | null;
   senders: CrmWhatsappComposioSender[];
-};
-
-export type CrmWhatsappUpdateConnectionInput = {
-  catalogPhone?: string | null;
-  connectedPhone?: string | null;
-  credentialsEnv?: {
-    apiBaseUrl: string;
-    clientToken: string;
-    instanceId: string;
-    instanceToken: string;
-  };
-  displayName?: string;
-  externalConnectionId?: string | null;
-  externalInstanceId?: string | null;
-  instanceCredentials?: {
-    instanceId: string;
-    instanceToken: string;
-  };
-  phone?: string | null;
-  purpose?: string | null;
-  status?: CrmWhatsappConnectionConfiguredStatus;
-  webhookUrl?: string | null;
 };
 
 export type CrmWhatsappTag = {
@@ -228,6 +252,7 @@ export type CrmWhatsappSession = {
   humanAttendanceStateVersion?: number | null;
   humanHandlingStartedAt?: string | null;
   id: CrmWhatsappSessionId;
+  interventionHistoryStartedAt?: string | null;
   interventionId?: string | null;
   lastCustomerReadAt?: string | null;
   leadId?: string | null;
@@ -237,6 +262,7 @@ export type CrmWhatsappSession = {
   linkedSessionId?: CrmWhatsappSessionId | null;
   metadata?: Record<string, unknown>;
   profilePhotoUrl?: string | null;
+  revision?: number;
   sessionTags?: CrmWhatsappTag[];
   status: CrmWhatsappStatus;
   unreadCount?: number | undefined;
@@ -260,6 +286,7 @@ export type CrmWhatsappMessage = {
   mediaUrl?: string | null;
   metadata?: Record<string, unknown>;
   providerTimestamp?: string | null;
+  senderOrigin?: CrmWhatsappMessageSenderOrigin;
   senderType: "AI" | "CUSTOMER" | "HUMAN" | "SYSTEM" | string;
   status: "DELIVERED" | "FAILED" | "PENDING" | "READ" | "SENT" | string;
   type:
