@@ -70,7 +70,7 @@ export function FeatureFormSection({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-accent-strong">
             {title}
           </h4>
           {description ? (

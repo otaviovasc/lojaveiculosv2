@@ -10,6 +10,7 @@ import {
 import { getCredereRequiredFields } from "../../domains/financing/services/FinancingService/requiredFieldsService.js";
 import { getFinancingReadiness } from "../../domains/financing/services/FinancingService/readinessService.js";
 import { createCredereSimulation } from "../../domains/financing/services/FinancingService/simulationCreateService.js";
+import { resolveCredereFipeVehicle } from "../../domains/financing/services/FinancingService/fipeResolutionService.js";
 import {
   getCredereSimulation,
   listCredereSimulations,
@@ -88,6 +89,8 @@ export function createRuntimeCredereFinancingServices(
       listSimulations: (context) => listCredereSimulations(context, {}, ports),
       refreshSimulation: (context, input) =>
         pollCredereSimulation(context, input, ports),
+      resolveFipeVehicle: (context, input) =>
+        resolveCredereFipeVehicle(context, input, ports),
     },
   };
 }

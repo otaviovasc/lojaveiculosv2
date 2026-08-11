@@ -130,6 +130,39 @@ describe("createCredereApi", () => {
     });
   });
 
+  it("resolves exact FIPE candidates without exposing provider scope", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      jsonResponse({
+        candidates: [
+          {
+            brand: "VW",
+            fipeCode: "005340-6",
+            fuelType: "Flex",
+            modelId: "model_1",
+            molicarCode: "01906108-0",
+            name: "Gol",
+            version: "1.0 MPI",
+            yearEnd: 2025,
+            yearStart: 2020,
+          },
+        ],
+        status: "ambiguous",
+      }),
+    );
+    const api = createCredereApi({ fetch });
+
+    await expect(
+      api.resolveFipeVehicle({ fipeCode: "005340-6", modelYear: 2023 }),
+    ).resolves.toMatchObject({ status: "ambiguous" });
+    expect(fetch.mock.calls[0]?.[0]).toBe(
+      "/api/v1/financing/credere/vehicle-models/resolve-fipe",
+    );
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toEqual({
+      fipeCode: "005340-6",
+      modelYear: 2023,
+    });
+  });
+
   it("lists, gets and refreshes simulations through the settled routes", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()

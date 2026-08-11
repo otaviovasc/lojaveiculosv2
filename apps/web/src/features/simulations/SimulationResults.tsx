@@ -1,9 +1,15 @@
 import { RefreshCw } from "lucide-react";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import {
-  FeatureActionButton,
-  FeatureSection,
-} from "../../components/ui/FeatureLayout";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+  FeatureAlert,
+  FeatureStatusBadge,
+} from "../../components/ui/FeatureStates";
+import {
+  getCredereReasonGuidance,
+  simulationStatusLabel,
+  splitSimulationConditions,
+  type GroupedCredereRefusal,
+} from "./simulationPresentation";
 import type { CredereSimulation, CredereSimulationCondition } from "./types";
 
 const brlFormatter = new Intl.NumberFormat("pt-BR", {
@@ -12,6 +18,7 @@ const brlFormatter = new Intl.NumberFormat("pt-BR", {
 });
 
 const REFRESHABLE_STATUSES = new Set([
+  "indeterminate",
   "pending",
   "processing",
   "submitted",
@@ -19,26 +26,46 @@ const REFRESHABLE_STATUSES = new Set([
 ]);
 
 export function isProcessingStatus(status: string) {
-  return REFRESHABLE_STATUSES.has(status);
+  return REFRESHABLE_STATUSES.has(status.trim().toLowerCase());
 }
 
 export function SimulationResults({
   isPolling,
   isRefreshing,
   onRefresh,
+  pollError,
+  pollExhausted,
   simulation,
 }: {
   isPolling: boolean;
   isRefreshing: boolean;
   onRefresh: () => void;
+  pollError: string | null;
+  pollExhausted: boolean;
   simulation: CredereSimulation;
 }) {
   const refreshable = isProcessingStatus(simulation.status);
+  const isIndeterminate =
+    simulation.status.trim().toLowerCase() === "indeterminate" ||
+    (!refreshable && simulation.success === null);
+  const showRefresh = refreshable || isIndeterminate;
+  const { accepted, refused } = splitSimulationConditions(
+    simulation.conditions,
+  );
+  const reasonGuidance = getCredereReasonGuidance(simulation.reason);
 
   return (
-    <FeatureSection
-      actions={
-        refreshable ? (
+    <section aria-labelledby="credere-result-title" className="credere-results">
+      <header className="credere-pane-header">
+        <div>
+          <span className="credere-section-label">Retorno dos bancos</span>
+          <h3 id="credere-result-title">Resultado da simulação</h3>
+          <p>
+            O Credere apresenta uma pré-análise. A aprovação final depende da
+            validação do banco e não é garantida por esta tela.
+          </p>
+        </div>
+        {showRefresh ? (
           <FeatureActionButton
             disabled={isRefreshing}
             icon={RefreshCw}
@@ -47,58 +74,81 @@ export function SimulationResults({
             onClick={onRefresh}
             title="Consultar o provedor novamente"
           />
-        ) : undefined
-      }
-      description="Status exibidos são os retornados pelo provedor e pelos bancos, sem garantia de aprovação."
-      title="Resultado da simulação"
-    >
-      <div className="mt-4 grid gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+        ) : null}
+      </header>
+
+      <div className="credere-result-body">
+        <div className="credere-result-meta">
           <FeatureStatusBadge tone={statusTone(simulation.status)}>
-            {simulation.status}
+            {simulationStatusLabel(simulation.status)}
           </FeatureStatusBadge>
           {simulation.createdAt ? (
             <span className="text-xs font-bold text-muted">
               Criada em {formatDateTime(simulation.createdAt)}
             </span>
           ) : null}
-          {simulation.providerRequestId ? (
-            <span className="text-xs font-bold text-muted">
-              Protocolo do provedor: {simulation.providerRequestId}
-            </span>
-          ) : null}
         </div>
 
         {isPolling ? (
-          <p className="text-xs font-semibold text-muted" role="status">
+          <p className="credere-polling-note" role="status">
             Atualizando automaticamente a cada 5 segundos.
           </p>
         ) : null}
 
+        {pollExhausted ? (
+          <FeatureAlert title="Atualização automática pausada" tone="warning">
+            O limite de consultas automáticas foi atingido e o resultado segue
+            indeterminado. Use “Atualizar status” para consultar novamente; isto
+            não significa aprovação nem recusa.
+          </FeatureAlert>
+        ) : null}
+
+        {pollError ? (
+          <FeatureAlert
+            title="Atualização automática interrompida"
+            tone="warning"
+          >
+            {pollError} Use “Atualizar status” para tentar novamente; nenhuma
+            aprovação ou recusa foi inferida.
+          </FeatureAlert>
+        ) : null}
+
+        {isIndeterminate ? (
+          <FeatureAlert title="Resultado indeterminado" tone="warning">
+            O backend ainda não confirmou sucesso ou falha para esta consulta.
+            Revise o retorno dos bancos e atualize o status antes de orientar o
+            cliente.
+          </FeatureAlert>
+        ) : null}
+
+        {reasonGuidance ? (
+          <FeatureAlert title={reasonGuidance.title} tone="info">
+            {reasonGuidance.body}
+          </FeatureAlert>
+        ) : null}
+
         {simulation.reason ? (
-          <p className="text-xs font-semibold text-muted">
-            {simulation.reason}
-          </p>
+          <p className="credere-provider-reason">{simulation.reason}</p>
         ) : null}
 
         {simulation.conditions.length === 0 ? (
-          <p className="text-sm font-semibold text-muted">
+          <p className="credere-results-empty">
             O provedor ainda não retornou condições para esta simulação.
           </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[540px] text-left text-xs">
+        ) : accepted.length ? (
+          <div className="credere-table-wrap">
+            <table className="credere-table">
               <thead>
-                <tr className="border-b border-line/60 text-muted">
-                  <th className="py-2 pr-3 font-bold">Banco</th>
-                  <th className="py-2 pr-3 font-bold">Status</th>
-                  <th className="py-2 pr-3 font-bold">Parcelas</th>
-                  <th className="py-2 pr-3 font-bold">Total</th>
-                  <th className="py-2 font-bold">Observação</th>
+                <tr>
+                  <th>Banco</th>
+                  <th>Pré-análise</th>
+                  <th>Prazo</th>
+                  <th>Total</th>
+                  <th>Detalhe</th>
                 </tr>
               </thead>
               <tbody>
-                {simulation.conditions.map((condition, index) => (
+                {accepted.map((condition, index) => (
                   <ConditionRow
                     condition={condition}
                     key={`${condition.bankCode ?? "bank"}-${index}`}
@@ -107,9 +157,11 @@ export function SimulationResults({
               </tbody>
             </table>
           </div>
-        )}
+        ) : null}
+
+        {refused.length ? <RefusedConditions conditions={refused} /> : null}
       </div>
-    </FeatureSection>
+    </section>
   );
 }
 
@@ -119,30 +171,78 @@ function ConditionRow({
   condition: CredereSimulationCondition;
 }) {
   return (
-    <tr className="border-b border-line/40 last:border-0">
-      <td className="py-2 pr-3 font-bold text-app-text">
+    <tr>
+      <td className="credere-bank-name">
         {condition.bankName ?? condition.bankCode ?? "—"}
       </td>
-      <td className="py-2 pr-3">
+      <td>
         <FeatureStatusBadge size="dense" tone={statusTone(condition.status)}>
-          {condition.status}
+          {simulationStatusLabel(condition.status)}
         </FeatureStatusBadge>
       </td>
-      <td className="py-2 pr-3 font-semibold text-app-text">
+      <td>
         {condition.installments != null ? `${condition.installments}x` : "—"}
       </td>
-      <td className="py-2 pr-3 font-semibold text-app-text">
-        {formatCents(condition.totalAmountCents)}
-      </td>
-      <td className="py-2 font-semibold text-muted">
+      <td>{formatCents(condition.totalAmountCents)}</td>
+      <td className="credere-condition-detail">
         {condition.summary ?? condition.reason ?? "—"}
       </td>
     </tr>
   );
 }
 
+function RefusedConditions({
+  conditions,
+}: {
+  conditions: readonly GroupedCredereRefusal[];
+}) {
+  return (
+    <details className="credere-refusals">
+      <summary>
+        Ocorrências dos bancos ({conditions.length} motivo
+        {conditions.length === 1 ? "" : "s"})
+      </summary>
+      <div className="credere-refusal-list">
+        {conditions.map((condition, index) => {
+          const detail = condition.reason ?? condition.summary;
+          const guidance = getCredereReasonGuidance(detail);
+          return (
+            <article
+              className="credere-refusal-row"
+              key={`${condition.bankCode ?? condition.bankName ?? "bank"}-${index}`}
+            >
+              <div>
+                <strong>
+                  {condition.bankName ?? condition.bankCode ?? "Banco"}
+                </strong>
+                <p>{detail ?? "O banco não informou o motivo."}</p>
+                {condition.occurrences > 1 ? (
+                  <small>
+                    Mesmo motivo em {condition.occurrences} condições.
+                  </small>
+                ) : null}
+                {guidance ? <small>{guidance.body}</small> : null}
+              </div>
+              {condition.affectedInstallments.length ? (
+                <div className="credere-refusal-terms">
+                  <span>Prazos afetados</span>
+                  <strong>
+                    {condition.affectedInstallments
+                      .map((term) => `${term}x`)
+                      .join(", ")}
+                  </strong>
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </details>
+  );
+}
+
 function statusTone(status: string) {
-  switch (status) {
+  switch (status.trim().toLowerCase()) {
     case "available":
       return "success" as const;
     case "failed":
@@ -152,6 +252,7 @@ function statusTone(status: string) {
     case "processing":
     case "submitted":
     case "requested":
+    case "indeterminate":
       return "warning" as const;
     default:
       return "neutral" as const;

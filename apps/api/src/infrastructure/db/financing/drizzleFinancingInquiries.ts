@@ -7,6 +7,7 @@ import {
   financingProviderAccounts,
   financingProviderStoreMappings,
 } from "@lojaveiculosv2/db";
+import { FinancingInquiryReferenceError } from "../../../domains/financing/ports/financingRepository.js";
 import type {
   CompleteFinancingInquiryInput,
   CreateFinancingInquiryInput,
@@ -17,6 +18,7 @@ import {
   inquiryScope,
 } from "./drizzleFinancingInquiryQueries.js";
 import type { DrizzleFinancingClient } from "./drizzleFinancingRepository.js";
+import { validateInquiryReferences } from "./drizzleFinancingReferenceValidation.js";
 
 export {
   findInquiryById,
@@ -33,6 +35,10 @@ export async function createInquiry(
 ) {
   return db.transaction(async (transaction) => {
     const client = transaction as DrizzleFinancingClient;
+    const references = await validateInquiryReferences(client, input);
+    if (!references.valid) {
+      throw new FinancingInquiryReferenceError(references.reason);
+    }
     const mapping = await findMapping(client, input);
     if (!mapping) throw new Error("Credere store mapping was not found.");
     const [consent] = await client

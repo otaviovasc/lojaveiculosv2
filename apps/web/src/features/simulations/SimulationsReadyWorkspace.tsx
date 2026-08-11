@@ -13,8 +13,10 @@ export function SimulationsReadyWorkspace({
   isRefreshing,
   isSubmitting,
   onRefresh,
+  onResolveFipe,
   onSelectSimulation,
   onSubmit,
+  pollError,
   pollExhausted,
   prefill,
   status,
@@ -26,8 +28,10 @@ export function SimulationsReadyWorkspace({
   isRefreshing: boolean;
   isSubmitting: boolean;
   onRefresh: () => void;
+  onResolveFipe: ComponentProps<typeof SimulationForm>["onResolveFipe"];
   onSelectSimulation: (simulation: CredereSimulation) => void;
   onSubmit: ComponentProps<typeof SimulationForm>["onSubmit"];
+  pollError: string | null;
   pollExhausted: boolean;
   prefill?: SimulationPrefill | undefined;
   status: CredereStoreStatus;
@@ -35,43 +39,73 @@ export function SimulationsReadyWorkspace({
 }) {
   const formKey = prefill ? createPrefillIdentity(prefill) : "manual";
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <FeatureSection
-        description="Os dados seguem apenas com o consentimento do proponente."
-        title="Nova simulação"
-      >
-        {status.usableBanks.length === 0 ? (
-          <FeatureAlert title="Nenhum banco habilitado" tone="warning">
-            O provedor não retornou bancos utilizáveis para esta loja no
-            momento. Tente novamente mais tarde ou fale com a agência.
-          </FeatureAlert>
-        ) : (
-          <SimulationForm
-            banks={status.usableBanks}
-            isSubmitting={isSubmitting}
-            key={formKey}
-            onSubmit={onSubmit}
-            {...(prefill ? { prefill } : {})}
-            submitError={submitError}
+    <FeatureSection className="credere-workspace" padding="none">
+      <div className="credere-workspace-grid">
+        <section
+          aria-labelledby="credere-new-simulation-title"
+          className="credere-form-pane"
+        >
+          <header className="credere-pane-header">
+            <div>
+              <span className="credere-section-label">Consulta oficial</span>
+              <h2 id="credere-new-simulation-title">Nova simulação</h2>
+              <p>
+                Os dados seguem aos bancos somente após o consentimento do
+                proponente.
+              </p>
+            </div>
+          </header>
+          <div className="credere-form-body">
+            {status.usableBanks.length === 0 ? (
+              <FeatureAlert title="Nenhum banco habilitado" tone="warning">
+                O provedor não retornou bancos utilizáveis para esta loja no
+                momento. Tente novamente mais tarde ou fale com a agência.
+              </FeatureAlert>
+            ) : (
+              <SimulationForm
+                banks={status.usableBanks}
+                isSubmitting={isSubmitting}
+                key={formKey}
+                onResolveFipe={onResolveFipe}
+                onSubmit={onSubmit}
+                {...(prefill ? { prefill } : {})}
+                submitError={submitError}
+              />
+            )}
+          </div>
+        </section>
+        <aside className="credere-response-pane">
+          {current ? (
+            <SimulationResults
+              isPolling={
+                isProcessingStatus(current.status) &&
+                !pollError &&
+                !pollExhausted
+              }
+              isRefreshing={isRefreshing}
+              onRefresh={onRefresh}
+              pollError={pollError}
+              pollExhausted={pollExhausted}
+              simulation={current}
+            />
+          ) : (
+            <section className="credere-awaiting-result">
+              <span className="credere-section-label">Retorno dos bancos</span>
+              <h3>Preencha a consulta ao lado</h3>
+              <p>
+                O resultado aparecerá aqui sem substituir a análise formal da
+                instituição financeira.
+              </p>
+            </section>
+          )}
+          <SimulationHistoryPanel
+            error={historyError}
+            history={history}
+            onSelect={onSelectSimulation}
           />
-        )}
-      </FeatureSection>
-      <div className="grid content-start gap-4">
-        {current ? (
-          <SimulationResults
-            isPolling={isProcessingStatus(current.status) && !pollExhausted}
-            isRefreshing={isRefreshing}
-            onRefresh={onRefresh}
-            simulation={current}
-          />
-        ) : null}
-        <SimulationHistoryPanel
-          error={historyError}
-          history={history}
-          onSelect={onSelectSimulation}
-        />
+        </aside>
       </div>
-    </div>
+    </FeatureSection>
   );
 }
 

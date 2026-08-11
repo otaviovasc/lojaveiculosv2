@@ -26,6 +26,63 @@
   z-index: 0;
 }
 
+/* Two-zone composition: brand/context on the left, one auth surface on the
+   right at large viewports; compact single column on mobile. */
+.account-auth-grid {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.account-auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.account-auth-features {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .account-auth-grid {
+    max-width: 68rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 460px);
+    align-items: center;
+    gap: 4.5rem;
+    padding: 0 2rem;
+  }
+
+  .account-auth-brand {
+    align-items: flex-start;
+    text-align: left;
+    gap: 1.25rem;
+    max-width: 32rem;
+  }
+
+  .account-auth-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin-top: 0.75rem;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+/* The single elevated surface: only the interactive content gets the card. */
+.account-auth-surface {
+  width: 100%;
+}
+
 .account-glass-card {
   position: relative;
   z-index: 10;
@@ -75,28 +132,73 @@
   border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
-.account-card-option {
-  position: relative;
-  background: color-mix(in srgb, var(--color-panel) 95%, transparent);
-  border: 1px solid var(--color-line);
-  border-radius: 1rem;
-  padding: 1rem 1.25rem;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+/* Local dev profile choices: restrained rows separated by hairlines, not
+   nested cards inside the auth surface. */
+.account-profile-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-profile-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   width: 100%;
+  padding: 0.875rem 0.25rem;
+  border: none;
+  border-top: 1px solid var(--color-line);
+  background: transparent;
   text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.account-card-option:hover {
-  border-color: color-mix(
-    in srgb,
-    var(--color-accent-strong) 60%,
-    var(--color-line)
-  );
-  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel));
-  transform: translateY(-2px);
+.account-profile-list > li:first-child > .account-profile-row {
+  border-top: none;
+}
+
+.account-profile-row:hover {
+  background: var(--color-accent-soft);
+}
+
+.account-profile-row:focus-visible {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: -2px;
+}
+
+.account-profile-signout {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  justify-content: center;
+}
+
+.account-profile-signout > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-muted);
+  transition: color 0.2s ease;
+}
+
+.account-profile-signout > button:hover {
+  color: var(--color-foreground);
+}
+
+.account-profile-signout > button:focus-visible {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
 }
 
 .account-primary-button {

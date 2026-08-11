@@ -29,6 +29,7 @@ export function mapStores(payload: Record<string, unknown>): FinancingStore[] {
       displayName: readString(store.display_name),
       id: readString(store.id) ?? "",
       name: readString(store.name),
+      status: readString(store.status),
     }))
     .filter((store) => store.id);
 }
@@ -123,7 +124,6 @@ export function simulationPayload(input: FinancingSimulationInput) {
         licensing_uf: input.vehicle.licensingUf,
         manufacture_year: input.vehicle.manufactureYear,
         model_year: input.vehicle.modelYear,
-        vehicle_molicar_code: input.vehicle.vehicleMolicarCode,
         zero_km: input.vehicle.zeroKm,
       },
     },

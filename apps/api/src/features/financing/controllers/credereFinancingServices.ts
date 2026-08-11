@@ -41,6 +41,15 @@ export type CredereFinancingServices = {
       context: ServiceContext,
       input: { inquiryId: string },
     ) => Promise<unknown>;
+    resolveFipeVehicle: (
+      context: ServiceContext,
+      input: {
+        fipeCode: string;
+        modelYear: number;
+        selectedModelId?: string;
+        selectedMolicarCode?: string;
+      },
+    ) => Promise<unknown>;
   };
 };
 
@@ -73,6 +82,7 @@ export function createUnavailableCredereFinancingServices(): CredereFinancingSer
       getStatus: unavailable,
       listSimulations: unavailable,
       refreshSimulation: unavailable,
+      resolveFipeVehicle: unavailable,
     },
   };
 }

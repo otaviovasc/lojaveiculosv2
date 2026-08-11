@@ -6,7 +6,11 @@ import {
   FeatureSection,
 } from "../../components/ui/FeatureLayout";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
-import { FeatureAlert } from "../../components/ui/FeatureStates";
+import {
+  FeatureAlert,
+  FeatureLoadingState,
+  FeatureStatusBadge,
+} from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CredereApi } from "./apiClient";
 import type { CredereConnectionSummary, CredereProviderStore } from "./types";
@@ -126,6 +130,7 @@ export function DirectOwnerCrederePanel({
   return (
     <>
       <FeatureSection
+        className="credere-connection"
         actions={
           <FeatureActionButton
             icon={RefreshCw}
@@ -134,14 +139,21 @@ export function DirectOwnerCrederePanel({
             onClick={() => void loadConnection()}
           />
         }
-        description="Conecte a conta OAuth Credere da loja ativa e vincule esta loja a uma loja Credere da própria conta."
+        description="A conexão e o vínculo definem onde as simulações oficiais desta loja são processadas."
+        padding="compact"
         title="Credere da loja"
       >
         {actionError ? (
           <FeatureAlert tone="danger">{actionError}</FeatureAlert>
         ) : null}
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
-          <div className="space-y-3 text-sm font-medium text-muted">
+        <div className="credere-connection-body">
+          <div className="credere-connection-summary">
+            {connectionState.kind === "loading" ? (
+              <FeatureLoadingState
+                density="compact"
+                title="Consultando conexão"
+              />
+            ) : null}
             {connectionState.kind === "error" ? (
               <FeatureAlert title="Conexão indisponível" tone="danger">
                 {connectionState.message}
@@ -149,25 +161,27 @@ export function DirectOwnerCrederePanel({
             ) : null}
             {connection ? (
               <>
-                <p>
-                  Status:{" "}
-                  <strong className="text-app-text">
-                    {connection.connected ? "conectado" : "não conectado"}
-                  </strong>
-                </p>
-                <p>
-                  Loja Credere vinculada:{" "}
-                  <strong className="text-app-text">
+                <div className="credere-connection-fact">
+                  <span>Status da conta</span>
+                  <FeatureStatusBadge
+                    size="dense"
+                    tone={connection.connected ? "success" : "warning"}
+                  >
+                    {connection.connected ? "Conectada" : "Não conectada"}
+                  </FeatureStatusBadge>
+                </div>
+                <div className="credere-connection-fact">
+                  <span>Loja vinculada</span>
+                  <strong>
                     {connection.storeMapping?.externalStoreAlias ||
-                      connection.storeMapping?.externalStoreId ||
-                      "nenhuma"}
+                      (connection.storeMapping ? "Loja Credere" : "Nenhuma")}
                   </strong>
-                </p>
+                </div>
               </>
             ) : null}
           </div>
 
-          <div className="grid gap-3">
+          <div className="credere-connection-actions">
             {!connection?.connected ? (
               <FeatureActionButton
                 icon={PlugZap}
@@ -178,44 +192,48 @@ export function DirectOwnerCrederePanel({
               />
             ) : (
               <>
-                <FeatureActionButton
-                  icon={Link2}
-                  isBusy={busyAction === "provider-stores"}
-                  label="Listar lojas Credere"
-                  onClick={() => void loadProviderStores()}
-                />
-                {providers ? (
-                  <StoreSelector
-                    onChange={setSelectedExternalStoreId}
-                    stores={providers}
-                    value={selectedExternalStoreId}
+                <div className="credere-mapping-actions">
+                  <FeatureActionButton
+                    icon={Link2}
+                    isBusy={busyAction === "provider-stores"}
+                    label="Listar lojas Credere"
+                    onClick={() => void loadProviderStores()}
                   />
+                  <FeatureActionButton
+                    disabled={!connection.storeMapping}
+                    icon={Link2Off}
+                    isBusy={busyAction === "unmap"}
+                    label="Remover vínculo Credere"
+                    onClick={() => setConfirmAction("unmap")}
+                  />
+                  <FeatureActionButton
+                    icon={Unplug}
+                    isBusy={busyAction === "disconnect"}
+                    label="Desconectar Credere"
+                    onClick={() => setConfirmAction("disconnect")}
+                  />
+                </div>
+                {providers ? (
+                  <div className="credere-store-mapping-control">
+                    <StoreSelector
+                      onChange={setSelectedExternalStoreId}
+                      stores={providers}
+                      value={selectedExternalStoreId}
+                    />
+                    <FeatureActionButton
+                      disabled={!selectedExternalStoreId}
+                      icon={Link2}
+                      isBusy={busyAction === "map"}
+                      label="Vincular loja Credere"
+                      onClick={() =>
+                        void runAction("map", (api) =>
+                          api.mapStore(selectedExternalStoreId),
+                        )
+                      }
+                      variant="primary"
+                    />
+                  </div>
                 ) : null}
-                <FeatureActionButton
-                  disabled={!selectedExternalStoreId}
-                  icon={Link2}
-                  isBusy={busyAction === "map"}
-                  label="Vincular loja Credere"
-                  onClick={() =>
-                    void runAction("map", (api) =>
-                      api.mapStore(selectedExternalStoreId),
-                    )
-                  }
-                  variant="primary"
-                />
-                <FeatureActionButton
-                  disabled={!connection.storeMapping}
-                  icon={Link2Off}
-                  isBusy={busyAction === "unmap"}
-                  label="Remover vínculo Credere"
-                  onClick={() => setConfirmAction("unmap")}
-                />
-                <FeatureActionButton
-                  icon={Unplug}
-                  isBusy={busyAction === "disconnect"}
-                  label="Desconectar Credere"
-                  onClick={() => setConfirmAction("disconnect")}
-                />
               </>
             )}
           </div>
@@ -263,18 +281,18 @@ function StoreSelector({
   value: string;
 }) {
   return (
-    <div className="grid gap-2 text-sm font-bold text-app-text">
-      Loja Credere
+    <label className="credere-store-selector">
+      <span>Loja Credere</span>
       <FeatureSelect
         ariaLabel="Loja Credere"
         onChange={onChange}
         options={stores.map((store) => ({
-          label: store.name || store.alias || store.externalStoreId,
+          label: store.name || store.alias || "Loja Credere sem nome",
           value: store.externalStoreId,
         }))}
         placeholder="Selecione uma loja Credere"
         value={value}
       />
-    </div>
+    </label>
   );
 }

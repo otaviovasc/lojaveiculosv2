@@ -165,6 +165,7 @@ describe("Financing connection service", () => {
         displayName: "Credere Matriz",
         id: "credere_store_1",
         name: "Credere Matriz",
+        status: "active",
       },
     ]);
     const ports = createPorts(repository, { listStores });
@@ -179,5 +180,41 @@ describe("Financing connection service", () => {
     await expect(
       discoverCredereProviderStores(createAgencyContext(), ports),
     ).resolves.toHaveLength(1);
+  });
+
+  it("preserves discovery status and rejects non-active provider stores for mapping", async () => {
+    const repository = createMemoryFinancingRepository();
+    repository.seedConnection();
+    const listStores = vi.fn(async () => [
+      {
+        cnpj: "00.000.000/0001-00",
+        displayName: "Credere Pendente",
+        id: "credere_store_pending",
+        name: "Credere Pendente",
+        status: "pending",
+      },
+    ]);
+    const context = createAgencyContext();
+    const ports = createPorts(repository, { listStores });
+
+    await expect(
+      discoverCredereProviderStores(context, ports),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: "credere_store_pending",
+        status: "pending",
+      }),
+    ]);
+    await expect(
+      mapCredereStore(
+        context,
+        {
+          providerStoreId: "credere_store_pending",
+          storeId: "store_1",
+        },
+        ports,
+      ),
+    ).rejects.toThrow("Provider store is not available");
+    expect(repository.inspect().storeMappings).toEqual([]);
   });
 });

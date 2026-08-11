@@ -142,6 +142,10 @@ export function createServices(
         inquiryId: "inquiry_1",
         status: "processing",
       })),
+      resolveFipeVehicle: vi.fn(async () => ({
+        candidates: [],
+        status: "not_found",
+      })),
       ...overrides.store,
     },
   };

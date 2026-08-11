@@ -36,6 +36,13 @@ export class CredereFinancingConfigurationError extends Error {
   }
 }
 
+export class CredereFinancingInquiryNotFoundError extends Error {
+  constructor(inquiryId: string) {
+    super(`Credere financing inquiry ${inquiryId} was not found.`);
+    this.name = "CredereFinancingInquiryNotFoundError";
+  }
+}
+
 export function handleCredereFinancing(
   context: Context,
   action: () => Promise<Response>,
@@ -56,6 +63,10 @@ function mapCredereFinancingError(error: unknown) {
 
   if (error instanceof CredereFinancingConfigurationError) {
     return apiErrorInput(error, "CREDERE_FINANCING_UNAVAILABLE", 503);
+  }
+
+  if (error instanceof CredereFinancingInquiryNotFoundError) {
+    return apiErrorInput(error, "CREDERE_FINANCING_INQUIRY_NOT_FOUND", 404);
   }
 
   if (error instanceof FinancingProviderGatewayError) {

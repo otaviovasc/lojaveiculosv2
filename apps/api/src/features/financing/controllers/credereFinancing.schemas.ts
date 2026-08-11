@@ -27,6 +27,28 @@ export const requiredFieldsSchema = z
   .object({ document: brazilianDocumentSchema() })
   .strict();
 
+export const resolveFipeVehicleSchema = z
+  .object({
+    fipeCode: z
+      .string()
+      .trim()
+      .regex(/^\d{6}-\d$/),
+    modelYear: yearSchema(),
+    selectedModelId: idString.optional(),
+    selectedMolicarCode: z.string().trim().min(3).max(32).optional(),
+  })
+  .strict()
+  .superRefine((input, context) => {
+    if (Boolean(input.selectedModelId) !== Boolean(input.selectedMolicarCode)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Selected Credere model id and Molicar code are required together.",
+        path: ["selectedModelId"],
+      });
+    }
+  });
+
 export const oauthCallbackQuerySchema = z
   .object({
     code: nonEmptyString,
@@ -66,6 +88,11 @@ export const createSimulationSchema = z
     vehicle: z
       .object({
         credereVehicleModelId: idString.optional(),
+        fipeCode: z
+          .string()
+          .trim()
+          .regex(/^\d{6}-\d$/)
+          .optional(),
         licensingCity: nonEmptyString,
         licensingUf: z
           .string()

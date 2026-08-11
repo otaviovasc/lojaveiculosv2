@@ -37,6 +37,30 @@ export type {
   UpsertFinancingConnectionInput,
 } from "./financingModels.js";
 
+export type FinancingInquiryReferenceInput = {
+  leadId: string | null;
+  listingId: string | null;
+  storeId: StoreId;
+  tenantId: TenantId;
+  unitId: string | null;
+};
+
+export type FinancingInquiryReferenceFailure =
+  | "lead_not_found"
+  | "listing_not_found"
+  | "unit_listing_mismatch"
+  | "unit_not_found";
+
+export type FinancingInquiryReferenceValidation =
+  { valid: true } | { reason: FinancingInquiryReferenceFailure; valid: false };
+
+export class FinancingInquiryReferenceError extends Error {
+  constructor(readonly reason: FinancingInquiryReferenceFailure) {
+    super("Financing inquiry reference validation failed.");
+    this.name = "FinancingInquiryReferenceError";
+  }
+}
+
 export type FinancingRepository = {
   completeInquiry: (
     input: CompleteFinancingInquiryInput,
@@ -88,6 +112,9 @@ export type FinancingRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<{ storeId: StoreId; tenantId: TenantId } | null>;
+  validateInquiryReferences: (
+    input: FinancingInquiryReferenceInput,
+  ) => Promise<FinancingInquiryReferenceValidation>;
   listActiveOkayBankCredentials: (input: {
     provider: FinancingProvider;
     providerStoreId: string;

@@ -9,11 +9,15 @@ import {
   parseParams,
   readRequiredIdempotencyKey,
 } from "./credereFinancing.controller.http.js";
-import { handleCredereFinancing } from "./credereFinancing.errors.js";
+import {
+  CredereFinancingInquiryNotFoundError,
+  handleCredereFinancing,
+} from "./credereFinancing.errors.js";
 import {
   createSimulationSchema,
   inquiryParamsSchema,
   requiredFieldsSchema,
+  resolveFipeVehicleSchema,
 } from "./credereFinancing.schemas.js";
 import type { CredereFinancingServices } from "./credereFinancingServices.js";
 import {
@@ -53,6 +57,28 @@ export function registerStoreCredereFinancingRoutes(
       return context.json(
         await input.services.store.getRequiredFields(serviceContext, {
           document: body.document,
+        }),
+      );
+    }),
+  );
+
+  feature.post("/credere/vehicle-models/resolve-fipe", (context) =>
+    handleCredereFinancing(context, async () => {
+      const body = await parseJson(context, resolveFipeVehicleSchema);
+      const serviceContext = await createStoreFinancingContext(
+        context,
+        input.contextFactory,
+      );
+      return context.json(
+        await input.services.store.resolveFipeVehicle(serviceContext, {
+          fipeCode: body.fipeCode,
+          modelYear: body.modelYear,
+          ...(body.selectedModelId
+            ? { selectedModelId: body.selectedModelId }
+            : {}),
+          ...(body.selectedMolicarCode
+            ? { selectedMolicarCode: body.selectedMolicarCode }
+            : {}),
         }),
       );
     }),
@@ -101,13 +127,13 @@ export function registerStoreCredereFinancingRoutes(
         context,
         input.contextFactory,
       );
-      return context.json(
-        presentSimulation(
-          await input.services.store.getSimulation(serviceContext, {
-            inquiryId,
-          }),
-        ),
+      const simulation = await input.services.store.getSimulation(
+        serviceContext,
+        { inquiryId },
       );
+      if (!simulation)
+        throw new CredereFinancingInquiryNotFoundError(inquiryId);
+      return context.json(presentSimulation(simulation));
     }),
   );
 
@@ -118,14 +144,13 @@ export function registerStoreCredereFinancingRoutes(
         context,
         input.contextFactory,
       );
-      return context.json(
-        presentSimulation(
-          await input.services.store.refreshSimulation(serviceContext, {
-            inquiryId,
-          }),
-        ),
-        202,
+      const simulation = await input.services.store.refreshSimulation(
+        serviceContext,
+        { inquiryId },
       );
+      if (!simulation)
+        throw new CredereFinancingInquiryNotFoundError(inquiryId);
+      return context.json(presentSimulation(simulation), 202);
     }),
   );
 }

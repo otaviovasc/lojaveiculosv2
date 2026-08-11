@@ -16,6 +16,7 @@ import {
 import type {
   CredereAuth,
   CredereConnectionSummary,
+  CredereFipeResolution,
   CredereOAuthStart,
   CredereProviderStore,
   CredereRequiredFields,
@@ -24,6 +25,7 @@ import type {
   CredereStoreMapping,
   CredereStoreStatus,
 } from "./types";
+import { parseFipeResolution } from "./fipeResolution";
 
 export { parseStoreStatus } from "./apiParsers";
 
@@ -47,6 +49,12 @@ export type CredereApi = {
   listSimulations: () => Promise<CredereSimulation[]>;
   mapStore: (externalStoreId: string) => Promise<CredereStoreMapping>;
   refreshSimulation: (simulationId: string) => Promise<CredereSimulation>;
+  resolveFipeVehicle: (input: {
+    fipeCode: string;
+    modelYear: number;
+    selectedModelId?: string;
+    selectedMolicarCode?: string;
+  }) => Promise<CredereFipeResolution>;
   startOAuth: () => Promise<CredereOAuthStart>;
   unmapStore: () => Promise<unknown>;
 };
@@ -132,6 +140,14 @@ export function createCredereApi({
       })
         .then((response) => readJson<unknown>(response))
         .then(parseSimulation),
+    resolveFipeVehicle: (input) =>
+      fetch(credereRoutes.resolveFipeVehicle(baseUrl), {
+        body: JSON.stringify(input),
+        headers: createCredereHeaders(auth),
+        method: "POST",
+      })
+        .then((response) => readJson<unknown>(response))
+        .then(parseFipeResolution),
     startOAuth: () =>
       fetch(credereRoutes.oauthStart(baseUrl), {
         body: JSON.stringify({}),
@@ -162,6 +178,8 @@ export const credereRoutes = {
     ),
   requiredFields: (baseUrl?: string) =>
     endpoint("/financing/credere/required-fields", baseUrl),
+  resolveFipeVehicle: (baseUrl?: string) =>
+    endpoint("/financing/credere/vehicle-models/resolve-fipe", baseUrl),
   simulation: (simulationId: string, baseUrl?: string) =>
     endpoint(
       `/financing/credere/simulations/${encodeURIComponent(simulationId)}`,

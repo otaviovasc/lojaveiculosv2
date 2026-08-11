@@ -4,6 +4,7 @@ import type {
   ReserveSimulationOperationInput,
   ReserveSimulationOperationResult,
 } from "../ports/financingRepository.js";
+import { FinancingInquiryReferenceError } from "../ports/financingRepository.js";
 import {
   nextId,
   requireInquiry,
@@ -23,6 +24,7 @@ type InquiryMethods = Pick<
   | "markInquiryIndeterminate"
   | "readStoreBankPolicy"
   | "reserveSimulationOperation"
+  | "validateInquiryReferences"
 >;
 
 export function createInquiryRepositoryMethods(
@@ -53,6 +55,10 @@ export function createInquiryRepositoryMethods(
       return requireInquiry(state.inquiries, input);
     },
     async createInquiry(input) {
+      const references = validateInquiryReferences(state, input);
+      if (!references.valid) {
+        throw new FinancingInquiryReferenceError(references.reason);
+      }
       const inquiry = createInquiry(input, nextId(state, "financing_inquiry"));
       state.inquiries = [inquiry, ...state.inquiries];
       state.operations = state.operations.map((operation) =>
@@ -109,7 +115,62 @@ export function createInquiryRepositoryMethods(
     async reserveSimulationOperation(input) {
       return reserveSimulationOperation(state, input);
     },
+    async validateInquiryReferences(input) {
+      return validateInquiryReferences(state, input);
+    },
   };
+}
+
+function validateInquiryReferences(
+  state: MemoryFinancingRepositoryState,
+  input: Parameters<FinancingRepository["validateInquiryReferences"]>[0],
+): Awaited<ReturnType<FinancingRepository["validateInquiryReferences"]>> {
+  const activeInScope = (reference: {
+    deletedAt?: Date | null;
+    isDeleted?: boolean;
+    storeId: string;
+    tenantId: string;
+  }) =>
+    reference.storeId === input.storeId &&
+    reference.tenantId === input.tenantId &&
+    reference.isDeleted !== true &&
+    !reference.deletedAt;
+
+  if (
+    input.leadId &&
+    !state.leads.some(
+      (reference) => reference.id === input.leadId && activeInScope(reference),
+    )
+  ) {
+    return { reason: "lead_not_found", valid: false };
+  }
+
+  if (
+    input.listingId &&
+    !state.listings.some(
+      (reference) =>
+        reference.id === input.listingId && activeInScope(reference),
+    )
+  ) {
+    return { reason: "listing_not_found", valid: false };
+  }
+
+  if (input.unitId) {
+    const unit = state.units.find(
+      (reference) => reference.id === input.unitId && activeInScope(reference),
+    );
+    if (!unit) return { reason: "unit_not_found", valid: false };
+    const unitListing = state.listings.find(
+      (reference) =>
+        reference.id === unit.listingId && activeInScope(reference),
+    );
+    if (!unitListing) return { reason: "unit_not_found", valid: false };
+    if (input.listingId && unit.listingId !== input.listingId) {
+      return { reason: "unit_listing_mismatch", valid: false };
+    }
+  }
+
+  return { valid: true };
 }
 
 function createInquiry(

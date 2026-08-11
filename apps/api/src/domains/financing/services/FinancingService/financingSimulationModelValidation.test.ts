@@ -116,4 +116,41 @@ describe("Financing simulation model validation", () => {
     );
     expect(createSimulation).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { yearEnd: 2022, yearStart: 2018 },
+    { yearEnd: 2028, yearStart: 2024 },
+  ])(
+    "rejects a provider model outside its compatible year interval",
+    async ({ yearEnd, yearStart }) => {
+      const repository = createMemoryFinancingRepository();
+      repository.seedConnection();
+      repository.seedStoreMapping();
+      const createSimulation = vi.fn();
+
+      await expect(
+        createCredereSimulation(
+          createStoreContext(["financing.simulation.create"]),
+          simulationInput({ idempotencyKey: `idem_year_${yearStart}` }),
+          createPorts(repository, {
+            createSimulation,
+            lookupVehicleModel: async () => ({
+              active: true,
+              brand: "VW",
+              fipeCode: null,
+              id: "model_1",
+              molicarCode: "01906108-0",
+              name: "Gol",
+              version: null,
+              yearEnd,
+              yearStart,
+            }),
+          }),
+        ),
+      ).rejects.toThrow(
+        "Credere vehicle model is not available for the submitted model year",
+      );
+      expect(createSimulation).not.toHaveBeenCalled();
+    },
+  );
 });

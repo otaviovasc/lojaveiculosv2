@@ -61,6 +61,21 @@ export function createPorts(
           displayName: "Credere Matriz",
           id: "credere_store_1",
           name: "Credere Matriz",
+          status: "active",
+        },
+      ],
+      listVehicleModelsByFipe: async () => [
+        {
+          available: true,
+          brand: "VW",
+          fipeCode: "005340-6",
+          fuelType: "Flex",
+          id: "model_1",
+          molicarCode: "01906108-0",
+          name: "Gol",
+          version: "1.0 MPI",
+          yearEnd: 2025,
+          yearStart: 2020,
         },
       ],
       lookupVehicleModel: async () => ({

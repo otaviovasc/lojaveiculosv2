@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Landmark } from "lucide-react";
 import {
   FeaturePageHeader,
   FeaturePageShell,
@@ -59,6 +60,7 @@ export function SimulationsPage({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pollExhausted, setPollExhausted] = useState(false);
+  const [pollError, setPollError] = useState<string | null>(null);
   const pollAttemptsRef = useRef(0);
   const currentId = current?.id;
   const loadStatus = useCallback(async () => {
@@ -109,6 +111,7 @@ export function SimulationsPage({
   useEffect(() => {
     pollAttemptsRef.current = 0;
     setPollExhausted(false);
+    setPollError(null);
   }, [currentId]);
 
   useEffect(() => {
@@ -129,7 +132,18 @@ export function SimulationsPage({
         if (cancelled) return;
         setCurrent(next);
         setHistory((previous) => upsertSimulation(previous ?? [], next));
-      } catch {}
+        setPollError(null);
+      } catch (error) {
+        if (!cancelled) {
+          setPollError(
+            formatApiErrorDisplay(
+              error,
+              "Não foi possível consultar a atualização automática.",
+            ),
+          );
+        }
+        return;
+      }
       if (!cancelled) {
         timer = setTimeout(() => void tick(), POLL_INTERVAL_MS);
       }
@@ -160,9 +174,18 @@ export function SimulationsPage({
     }
   };
 
+  const resolveFipeVehicle = useCallback(
+    async (input: Parameters<CredereApi["resolveFipeVehicle"]>[0]) => {
+      const api = await apiPromise;
+      return api.resolveFipeVehicle(input);
+    },
+    [apiPromise],
+  );
+
   const refreshCurrent = async () => {
     if (!current || isRefreshing) return;
     setIsRefreshing(true);
+    setPollError(null);
     try {
       const api = await apiPromise;
       const next = await api.refreshSimulation(current.id);
@@ -180,16 +203,21 @@ export function SimulationsPage({
   };
 
   return (
-    <FeaturePageShell>
+    <FeaturePageShell className="credere-shell" variant="content">
       <FeaturePageHeader
         chip={
           statusState.kind === "ready" && statusState.status.mappedStoreAlias
-            ? `Mapeamento: ${statusState.status.mappedStoreAlias}`
+            ? `Loja vinculada: ${statusState.status.mappedStoreAlias}`
             : undefined
         }
-        description="Simulações de financiamento Credere vinculadas à loja ativa."
-        eyebrow="Operação"
-        title="Simulações"
+        description="Consulte os bancos autorizados para a loja ativa e acompanhe cada retorno sem confundir pré-análise com aprovação."
+        eyebrow={
+          <>
+            <Landmark aria-hidden="true" className="size-4" />
+            Financiamento
+          </>
+        }
+        title="Simulações Credere"
       />
       {canManageDirectCredere ? (
         <DirectOwnerCrederePanel
@@ -216,8 +244,10 @@ export function SimulationsPage({
           isRefreshing={isRefreshing}
           isSubmitting={isSubmitting}
           onRefresh={() => void refreshCurrent()}
+          onResolveFipe={resolveFipeVehicle}
           onSelectSimulation={setCurrent}
           onSubmit={handleSubmit}
+          pollError={pollError}
           pollExhausted={pollExhausted}
           {...(prefill ? { prefill } : {})}
           status={statusState.status}

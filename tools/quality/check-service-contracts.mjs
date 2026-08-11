@@ -11,6 +11,7 @@ const nonEntrypointFiles = new Set([
   "financeAutoEntryEvaluator.ts",
   "financeAutoEntryLabels.ts",
   "financeAutoEntryRuleValidation.ts",
+  "inquiryReferenceValidation.ts",
   "leadVisitSupport.ts",
   "marketplaceAccountPreflight.ts",
   "marketplaceAccountPreflightMessages.ts",

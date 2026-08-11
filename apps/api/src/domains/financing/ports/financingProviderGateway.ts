@@ -1,3 +1,13 @@
+import type {
+  FinancingFipeVehicleCandidate,
+  FinancingFipeVehicleLookupInput,
+} from "./financingFipeModels.js";
+
+export type {
+  FinancingFipeVehicleCandidate,
+  FinancingFipeVehicleLookupInput,
+} from "./financingFipeModels.js";
+
 export type FinancingProvider = "credere";
 
 export type FinancingProviderErrorKind =
@@ -33,6 +43,7 @@ export type FinancingStore = {
   displayName: string | null;
   id: string;
   name: string | null;
+  status: string | null;
 };
 
 export type FinancingSeller = {
@@ -202,6 +213,9 @@ export type FinancingProviderGateway = {
   listStores: (input: {
     token: FinancingTokenSet;
   }) => Promise<FinancingStore[]>;
+  listVehicleModelsByFipe: (
+    input: StoreScopedFinancingRequest & FinancingFipeVehicleLookupInput,
+  ) => Promise<FinancingFipeVehicleCandidate[]>;
   lookupVehicleModel: (
     input: StoreScopedFinancingRequest & FinancingVehicleLookupInput,
   ) => Promise<FinancingVehicleModel | null>;

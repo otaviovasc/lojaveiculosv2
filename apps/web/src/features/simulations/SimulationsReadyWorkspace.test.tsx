@@ -11,6 +11,7 @@ describe("createPrefillIdentity", () => {
       cpfCnpj: "52998224725",
       credereVehicleModelId: "model_1",
       email: "ana@example.test",
+      fipeCode: "005340-6",
       leadId: "lead_1",
       licensingCity: "Sao Paulo",
       licensingUf: "SP",
