@@ -74,6 +74,7 @@ export type CreateCredereSimulationInput = {
   vehicle: {
     assetValueCents: number;
     credereVehicleModelId?: string;
+    fipeCode?: string;
     licensingCity: string;
     licensingUf: string;
     manufactureYear: number;

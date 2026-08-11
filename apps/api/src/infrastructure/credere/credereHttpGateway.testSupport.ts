@@ -32,6 +32,7 @@ export function simulationInput() {
       licensingUf: "SP",
       manufactureYear: 2022,
       modelYear: 2023,
+      vehicleMolicarCode: "01906108-0",
       zeroKm: false,
     },
   };

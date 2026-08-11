@@ -36,6 +36,7 @@ export type CredereSimulationBody = {
   unitId?: string;
   vehicle: {
     credereVehicleModelId?: string;
+    fipeCode?: string;
     priceCents: number;
     manufactureYear: number;
     modelYear: number;
@@ -69,6 +70,9 @@ export function buildCreateSimulationBody(
   const vehicle = {
     ...(draft.vehicle.credereVehicleModelId?.trim()
       ? { credereVehicleModelId: draft.vehicle.credereVehicleModelId.trim() }
+      : {}),
+    ...(draft.vehicle.fipeCode?.trim()
+      ? { fipeCode: draft.vehicle.fipeCode.trim() }
       : {}),
     priceCents: positiveCents(draft.vehicle.priceCents, "valor do veículo"),
     manufactureYear: requiredYear(draft.vehicle.manufactureYear),

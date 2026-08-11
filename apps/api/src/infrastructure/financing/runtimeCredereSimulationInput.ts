@@ -14,6 +14,7 @@ export function toCredereSimulationInput(
   const leadId = readString(record.leadId);
   const unitId = readString(record.unitId);
   const credereVehicleModelId = readString(vehicle.credereVehicleModelId);
+  const fipeCode = readString(vehicle.fipeCode);
   const monthlyIncomeCents = readPositiveNumber(applicant.monthlyIncomeCents);
   const priceCents = requirePositiveNumber(
     vehicle.priceCents,
@@ -72,6 +73,7 @@ export function toCredereSimulationInput(
     vehicle: {
       assetValueCents: priceCents,
       ...(credereVehicleModelId ? { credereVehicleModelId } : {}),
+      ...(fipeCode ? { fipeCode } : {}),
       licensingCity: requireString(
         vehicle.licensingCity,
         "vehicle.licensingCity",

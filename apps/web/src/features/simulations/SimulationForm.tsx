@@ -1,18 +1,25 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Send } from "lucide-react";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
+import { FeatureFormSection } from "../../components/ui/FeatureForms";
 import {
   formatBrazilianDocument,
   formatBrazilianPhone,
   parseCurrencyInput,
 } from "../../lib/masks";
 import { SimulationBankSelector } from "./SimulationBankSelector";
+import { SimulationFipeResolver } from "./SimulationFipeResolver";
 import {
   SimulationApplicantFields,
   SimulationTermsFields,
   SimulationVehicleFields,
 } from "./SimulationFormFields";
-import type { CredereSimulationDraft, CredereUsableBank } from "./types";
+import type {
+  CredereFipeCandidate,
+  CredereFipeResolution,
+  CredereSimulationDraft,
+  CredereUsableBank,
+} from "./types";
 
 export type SimulationPrefill = {
   applicantName?: string;
@@ -20,6 +27,7 @@ export type SimulationPrefill = {
   credereVehicleModelId?: string;
   cpfCnpj?: string;
   email?: string;
+  fipeCode?: string;
   leadId?: string;
   listingId?: string;
   licensingCity?: string;
@@ -36,6 +44,12 @@ export type SimulationPrefill = {
 type SimulationFormProps = {
   banks: readonly CredereUsableBank[];
   isSubmitting: boolean;
+  onResolveFipe: (input: {
+    fipeCode: string;
+    modelYear: number;
+    selectedModelId?: string;
+    selectedMolicarCode?: string;
+  }) => Promise<CredereFipeResolution>;
   onSubmit: (draft: CredereSimulationDraft) => void | Promise<void>;
   prefill?: SimulationPrefill | undefined;
   submitError: string | null;
@@ -44,6 +58,7 @@ type SimulationFormProps = {
 export function SimulationForm({
   banks,
   isSubmitting,
+  onResolveFipe,
   onSubmit,
   prefill,
   submitError,
@@ -69,6 +84,12 @@ export function SimulationForm({
     prefill?.modelYear ? String(prefill.modelYear) : "",
   );
   const [molicarCode, setMolicarCode] = useState(prefill?.molicarCode ?? "");
+  const [fipeCode, setFipeCode] = useState(prefill?.fipeCode ?? "");
+  const [credereVehicleModelId, setCredereVehicleModelId] = useState(
+    prefill?.credereVehicleModelId ?? "",
+  );
+  const [selectedFipeCandidate, setSelectedFipeCandidate] =
+    useState<CredereFipeCandidate | null>(null);
   const [licensingCity, setLicensingCity] = useState(
     prefill?.licensingCity ?? "",
   );
@@ -98,7 +119,11 @@ export function SimulationForm({
       return fail("A entrada deve ser menor que o valor do veículo.");
     if (!manYear || !modYear)
       return fail("Informe os anos de fabricação e modelo do veículo.");
-    if (!molicarCode.trim()) return fail("Informe o código Molicar.");
+    if (!fipeCode.trim() || !molicarCode.trim() || !credereVehicleModelId) {
+      return fail(
+        "Consulte a FIPE e confirme a versão Molicar antes de simular.",
+      );
+    }
     if (!licensingUf.trim()) return fail("Informe a UF de licenciamento.");
     if (!licensingCity.trim())
       return fail("Informe a cidade de licenciamento.");
@@ -131,9 +156,8 @@ export function SimulationForm({
       ...(prefill?.unitId ? { unitId: prefill.unitId } : {}),
       ...(bankCodes.length ? { requestedBankCodes: [...bankCodes] } : {}),
       vehicle: {
-        ...(prefill?.credereVehicleModelId?.trim()
-          ? { credereVehicleModelId: prefill.credereVehicleModelId.trim() }
-          : {}),
+        credereVehicleModelId,
+        fipeCode,
         priceCents: vehicleValueCents,
         manufactureYear: manYear,
         modelYear: modYear,
@@ -162,51 +186,91 @@ export function SimulationForm({
   const visibleError = validationError ?? submitError;
 
   return (
-    <form className="grid gap-4" onSubmit={handleSubmit}>
-      <SimulationApplicantFields
-        cpfCnpj={cpfCnpj}
-        email={email}
-        income={income}
-        name={name}
-        onCpfCnpjChange={setCpfCnpj}
-        onEmailChange={setEmail}
-        onIncomeChange={currencyChange(setIncome)}
-        onNameChange={setName}
-        onPhoneChange={setPhone}
-        phone={phone}
-      />
+    <form className="credere-simulation-form" onSubmit={handleSubmit}>
+      <FeatureFormSection
+        description="Identificação e contato usados na consulta consentida."
+        title="Proponente"
+      >
+        <SimulationApplicantFields
+          cpfCnpj={cpfCnpj}
+          email={email}
+          income={income}
+          name={name}
+          onCpfCnpjChange={setCpfCnpj}
+          onEmailChange={setEmail}
+          onIncomeChange={currencyChange(setIncome)}
+          onNameChange={setName}
+          onPhoneChange={setPhone}
+          phone={phone}
+        />
+      </FeatureFormSection>
 
-      <SimulationTermsFields
-        downPayment={downPayment}
-        installments={installments}
-        onDownPaymentChange={currencyChange(setDownPayment)}
-        onInstallmentsChange={setInstallments}
-        onVehicleValueChange={currencyChange(setVehicleValue)}
-        vehicleValue={vehicleValue}
-      />
+      <FeatureFormSection
+        description="Defina valor, entrada e prazo desejado."
+        title="Condições"
+      >
+        <SimulationTermsFields
+          downPayment={downPayment}
+          installments={installments}
+          onDownPaymentChange={currencyChange(setDownPayment)}
+          onInstallmentsChange={setInstallments}
+          onVehicleValueChange={currencyChange(setVehicleValue)}
+          vehicleValue={vehicleValue}
+        />
+      </FeatureFormSection>
 
-      <SimulationVehicleFields
-        licensingCity={licensingCity}
-        licensingUf={licensingUf}
-        manufactureYear={manufactureYear}
-        modelYear={modelYear}
-        molicarCode={molicarCode}
-        onLicensingCityChange={setLicensingCity}
-        onLicensingUfChange={setLicensingUf}
-        onManufactureYearChange={setManufactureYear}
-        onModelYearChange={setModelYear}
-        onMolicarCodeChange={setMolicarCode}
-        onZeroKmChange={setZeroKm}
-        zeroKm={zeroKm}
-      />
+      <FeatureFormSection
+        description="Confirme a FIPE e escolha a versão Molicar exata antes do envio."
+        title="Veículo"
+      >
+        <div className="grid gap-4">
+          <SimulationVehicleFields
+            licensingCity={licensingCity}
+            licensingUf={licensingUf}
+            manufactureYear={manufactureYear}
+            modelYear={modelYear}
+            molicarCode={molicarCode}
+            onLicensingCityChange={setLicensingCity}
+            onLicensingUfChange={setLicensingUf}
+            onManufactureYearChange={setManufactureYear}
+            onModelYearChange={(value) => {
+              setModelYear(value);
+              setSelectedFipeCandidate(null);
+              setCredereVehicleModelId("");
+              setMolicarCode("");
+            }}
+            onMolicarCodeChange={setMolicarCode}
+            onZeroKmChange={setZeroKm}
+            zeroKm={zeroKm}
+          />
+          <SimulationFipeResolver
+            fipeCode={fipeCode}
+            key={`${fipeCode}:${modelYear}`}
+            modelYear={modelYear}
+            onFipeCodeChange={setFipeCode}
+            onResolve={onResolveFipe}
+            onSelect={(candidate) => {
+              setSelectedFipeCandidate(candidate);
+              setCredereVehicleModelId(candidate?.modelId ?? "");
+              setMolicarCode(candidate?.molicarCode ?? "");
+            }}
+            selected={selectedFipeCandidate}
+          />
+        </div>
+      </FeatureFormSection>
 
-      <SimulationBankSelector
-        bankCodes={bankCodes}
-        banks={banks}
-        onToggleBank={toggleBank}
-      />
+      <FeatureFormSection
+        description="A lista já respeita os bancos ativos e autorizados para esta loja."
+        title="Instituições"
+      >
+        <SimulationBankSelector
+          bankCodes={bankCodes}
+          banks={banks}
+          onToggleBank={toggleBank}
+        />
+      </FeatureFormSection>
 
-      <label className="flex items-start gap-2 text-xs font-bold text-app-text">
+      <label className="credere-consent">
         <input
           checked={consent}
           className="mt-0.5 size-4"
@@ -223,7 +287,7 @@ export function SimulationForm({
         </p>
       ) : null}
 
-      <div>
+      <div className="credere-submit-row">
         <FeatureActionButton
           icon={Send}
           isBusy={isSubmitting}

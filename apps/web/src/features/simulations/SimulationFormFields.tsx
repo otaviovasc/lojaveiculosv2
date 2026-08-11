@@ -180,9 +180,15 @@ export function SimulationVehicleFields({
       </FeatureField>
       <FeatureField label="Código Molicar">
         <FeatureInput
+          aria-describedby="simulation-molicar-hint"
           onChange={(event) => onMolicarCodeChange(event.target.value)}
+          placeholder="Confirme primeiro o código FIPE"
+          readOnly
           value={molicarCode}
         />
+        <span className="sr-only" id="simulation-molicar-hint">
+          Preenchido após a confirmação da versão FIPE na Credere.
+        </span>
       </FeatureField>
       <FeatureField label="UF de licenciamento">
         <FeatureInput

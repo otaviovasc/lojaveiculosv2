@@ -21,6 +21,18 @@ export function toProviderStores(
     documentLast4: store.cnpj ? normalizeDocument(store.cnpj).slice(-4) : null,
     id: store.id,
     name: store.displayName ?? store.name ?? store.id,
-    status: "active" as const,
+    status: toProviderStoreStatus(store.status),
   }));
+}
+
+function toProviderStoreStatus(status: string | null) {
+  const normalized = status?.trim().toLowerCase();
+  if (
+    normalized === "active" ||
+    normalized === "inactive" ||
+    normalized === "pending"
+  ) {
+    return normalized;
+  }
+  return "unknown" as const;
 }

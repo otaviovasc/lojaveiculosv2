@@ -92,6 +92,33 @@ describe("Credere financing simulation presenter", () => {
       safeInquiry({ inquiryId: "inquiry_refresh_1" }),
     );
   });
+
+  it("returns a stable 404 for missing detail and refresh inquiries", async () => {
+    const services = createServices({
+      store: {
+        getSimulation: vi.fn(async () => null),
+        refreshSimulation: vi.fn(async () => null),
+      },
+    });
+    const app = createStoreApp(services);
+
+    const detail = await app.request(
+      "/api/v1/financing/credere/simulations/inquiry_missing",
+    );
+    const refresh = await app.request(
+      "/api/v1/financing/credere/simulations/inquiry_missing/refresh",
+      { method: "POST" },
+    );
+
+    expect(detail.status).toBe(404);
+    expect(refresh.status).toBe(404);
+    expect(await detail.json()).toMatchObject({
+      code: "CREDERE_FINANCING_INQUIRY_NOT_FOUND",
+    });
+    expect(await refresh.json()).toMatchObject({
+      code: "CREDERE_FINANCING_INQUIRY_NOT_FOUND",
+    });
+  });
 });
 
 function requestSimulation(services: ReturnType<typeof createServices>) {

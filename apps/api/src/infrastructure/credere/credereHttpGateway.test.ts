@@ -34,6 +34,40 @@ describe("createCredereHttpGateway", () => {
     });
     expect(body.simulation.bank_febraban_codes).toEqual(["655", "623"]);
     expect(JSON.stringify(body)).not.toContain("store_999");
+    expect(JSON.stringify(body)).not.toContain("vehicle_molicar_code");
+    expect(body).toMatchObject({
+      simulation: {
+        vehicle: { credere_vehicle_model_id: "20089" },
+      },
+    });
+  });
+
+  it("preserves provider store status from discovery", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        stores: [
+          {
+            cnpj: "00.000.000/0001-00",
+            display_name: "Credere Filial",
+            id: "store_inactive",
+            name: "Filial",
+            status: "inactive",
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      gateway(fetcher).listStores({ token: tokenSet() }),
+    ).resolves.toEqual([
+      {
+        cnpj: "00.000.000/0001-00",
+        displayName: "Credere Filial",
+        id: "store_inactive",
+        name: "Filial",
+        status: "inactive",
+      },
+    ]);
   });
 
   it("filters integrated banks to active okay unique credentials", async () => {

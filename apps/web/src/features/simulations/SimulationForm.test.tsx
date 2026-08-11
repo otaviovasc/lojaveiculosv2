@@ -29,6 +29,7 @@ describe("SimulationForm", () => {
       applicantName: "Ana Souza",
       cpfCnpj: "52998224725",
       credereVehicleModelId: "credere_model_1",
+      fipeCode: "005340-6",
       licensingCity: "Sao Paulo",
       licensingUf: "sp",
       manufactureYear: 2022,
@@ -54,6 +55,7 @@ describe("SimulationForm", () => {
       downPaymentCents: 1_000_000,
       vehicle: {
         credereVehicleModelId: "credere_model_1",
+        fipeCode: "005340-6",
         licensingCity: "Sao Paulo",
         licensingUf: "SP",
         manufactureYear: 2022,
@@ -75,6 +77,10 @@ function renderForm(
     <SimulationForm
       banks={[{ code: "655", name: "BV", status: "okay" }]}
       isSubmitting={false}
+      onResolveFipe={vi.fn(async () => ({
+        candidates: [] as [],
+        status: "not_found" as const,
+      }))}
       onSubmit={onSubmit}
       {...(prefill ? { prefill } : {})}
       submitError={null}

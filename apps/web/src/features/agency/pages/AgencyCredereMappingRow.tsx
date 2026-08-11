@@ -28,27 +28,25 @@ export function AgencyCredereMappingRow({
   store: AgencyManagedStoreOverview;
 }) {
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-line bg-app p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="truncate text-sm font-bold text-app-text">
-          {store.storeName}
-        </span>
+    <li className="credere-mapping-row">
+      <div className="credere-mapping-store">
+        <span>{store.storeName}</span>
+        <small>{store.storeSlug}</small>
+      </div>
+      <div className="credere-mapping-status">
         {mapping ? (
           <FeatureStatusBadge size="dense" tone="success">
-            Mapeada
+            Vinculada
           </FeatureStatusBadge>
         ) : (
           <FeatureStatusBadge size="dense" tone="warning">
-            Não mapeada
+            Pendente
           </FeatureStatusBadge>
         )}
       </div>
       {mapping ? (
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-muted">
-            {mapping.externalStoreAlias ?? "Loja do provedor"} · ID externo{" "}
-            {mapping.externalStoreId}
-          </span>
+        <div className="credere-mapping-control">
+          <span>{mapping.externalStoreAlias ?? "Loja Credere vinculada"}</span>
           <FeatureActionButton
             disabled={busyKey !== null}
             icon={Link2Off}
@@ -58,7 +56,7 @@ export function AgencyCredereMappingRow({
           />
         </div>
       ) : (
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="credere-mapping-control">
           <FeatureSelect
             ariaLabel={`Loja do provedor para ${store.storeName}`}
             density="compact"
@@ -67,7 +65,7 @@ export function AgencyCredereMappingRow({
             options={[
               { label: "Selecione a loja do provedor", value: "" },
               ...providerStores.map((providerStore) => ({
-                label: `${providerStore.name ?? "Loja Credere"} · ${providerStore.externalStoreId}`,
+                label: providerStore.name ?? "Loja Credere",
                 value: providerStore.externalStoreId,
               })),
             ]}

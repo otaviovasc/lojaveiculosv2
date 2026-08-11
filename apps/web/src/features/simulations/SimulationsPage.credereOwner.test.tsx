@@ -117,6 +117,10 @@ function createApi(): CredereApi {
       externalStoreId: "external_1",
     })),
     refreshSimulation: vi.fn(),
+    resolveFipeVehicle: vi.fn(async () => ({
+      candidates: [] as [],
+      status: "not_found" as const,
+    })),
     startOAuth: vi.fn(async () => ({
       authorizationUrl: "https://credere.example/auth",
     })),

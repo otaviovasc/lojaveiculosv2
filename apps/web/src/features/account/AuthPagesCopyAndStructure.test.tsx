@@ -46,7 +46,7 @@ describe("Auth Pages Copy & Visual Structure", () => {
   });
 
   it("renders SignInPage with direct Portuguese product copy", () => {
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={["/sign-in"]}>
         <SignInPage />
       </MemoryRouter>,
@@ -56,7 +56,6 @@ describe("Auth Pages Copy & Visual Structure", () => {
     expect(
       screen.getByRole("heading", { name: "Acessar a Loja Veículos" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Acesso à conta")).toBeInTheDocument();
     expect(
       screen.getByText(
         /Entre para gerenciar o estoque, vendas, atendimento e a operação da sua loja/i,
@@ -64,7 +63,16 @@ describe("Auth Pages Copy & Visual Structure", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("clerk-signin-mock")).toBeInTheDocument();
 
-    // Verify absence of AI-slop
+    // Two-zone composition: brand pane + exactly one elevated auth surface.
+    expect(container.querySelector(".account-auth-grid")).toBeInTheDocument();
+    expect(container.querySelector(".account-auth-brand")).toBeInTheDocument();
+    expect(container.querySelectorAll(".account-glass-card")).toHaveLength(1);
+    expect(
+      screen.getByText(/Estoque, vendas e despesas em um só painel/i),
+    ).toBeInTheDocument();
+
+    // Verify absence of AI-slop and of the removed eyebrow/H1 redundancy.
+    expect(screen.queryByText("Acesso à conta")).not.toBeInTheDocument();
     expect(screen.queryByText("Acesso protegido")).not.toBeInTheDocument();
     expect(
       screen.queryByText(/Sua identidade é validada/i),
@@ -74,7 +82,7 @@ describe("Auth Pages Copy & Visual Structure", () => {
   it("renders LocalDevAuthPage with clean Portuguese copy and role badges", async () => {
     const user = userEvent.setup();
 
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={["/auth/dev"]}>
         <Routes>
           <Route path="/auth/dev" element={<LocalDevAuthPage />} />
@@ -90,15 +98,28 @@ describe("Auth Pages Copy & Visual Structure", () => {
     expect(
       screen.getByRole("heading", { name: "Selecionar perfil de teste" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Ambiente local")).toBeInTheDocument();
     expect(
       screen.getByText(/Escolha um perfil para testar permissões/i),
     ).toBeInTheDocument();
 
+    // Profiles render as restrained rows inside the single auth surface.
+    expect(container.querySelectorAll(".account-glass-card")).toHaveLength(1);
+    expect(
+      container.querySelector(".account-profile-list"),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelectorAll(".account-profile-row").length,
+    ).toBeGreaterThan(0);
+    expect(
+      container.querySelector(".account-card-option"),
+    ).not.toBeInTheDocument();
+
     expect(screen.getAllByText("Proprietário").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Supervisor").length).toBeGreaterThan(0);
 
-    const ownerButton = screen.getByText("Seed Owner");
+    const ownerButton = screen.getByRole("button", {
+      name: /^Seed Owner\b/,
+    });
     await user.click(ownerButton);
 
     expect(

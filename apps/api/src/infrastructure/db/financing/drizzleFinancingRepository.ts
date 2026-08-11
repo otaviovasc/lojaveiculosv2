@@ -23,6 +23,7 @@ import {
   listInquiries,
   markInquiryIndeterminate,
 } from "./drizzleFinancingInquiries.js";
+import { validateInquiryReferences } from "./drizzleFinancingReferenceValidation.js";
 import {
   deleteStoreMapping,
   findStoreMapping,
@@ -80,6 +81,7 @@ export function createDrizzleFinancingRepository(
       upsertConnection(db, entry, codec, input.environment),
     upsertStoreMapping: (entry) =>
       upsertStoreMapping(db, entry, input.environment),
+    validateInquiryReferences: (entry) => validateInquiryReferences(db, entry),
   };
 }
 

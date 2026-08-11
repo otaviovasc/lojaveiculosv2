@@ -6,10 +6,7 @@ import type {
   FinancingProvider,
 } from "../../ports/financingRepository.js";
 import { FinancingProviderGatewayError } from "../../ports/financingProviderGateway.js";
-import {
-  resolveCredereSellerCpf,
-  resolveCredereVehicle,
-} from "../../support/providerResolutionHelpers.js";
+import { resolveCredereSellerCpf } from "../../support/providerResolutionHelpers.js";
 import {
   completeFromProvider,
   resolveUsableBankCodes,
@@ -19,6 +16,11 @@ import {
 } from "../../support/simulationProviderHelpers.js";
 import { getUsableProviderConnection } from "../../support/tokenConnectionSupport.js";
 import type { CreateCredereSimulationInput } from "./types.js";
+import { resolveSubmittedCredereVehicle } from "./fipeResolutionService.js";
+import {
+  assertValidInquiryReferences,
+  createValidatedInquiry,
+} from "./inquiryReferenceValidation.js";
 import {
   documentLast4,
   financingSimulationCreatePermission,
@@ -36,7 +38,6 @@ import {
 } from "./serviceSupport.js";
 
 const provider = "credere" satisfies FinancingProvider;
-
 export async function createCredereSimulation(
   context: ServiceContext,
   input: CreateCredereSimulationInput,
@@ -57,7 +58,7 @@ export async function createCredereSimulation(
   if (!idempotencyKey) {
     throw new FinancingValidationError("Idempotency key is required.");
   }
-
+  await assertValidInquiryReferences(input, scope, ports.repository);
   const connection = await getUsableProviderConnection(
     { provider, tenantId: scope.tenantId },
     ports,
@@ -78,7 +79,7 @@ export async function createCredereSimulation(
   );
   const [sellerCpf, vehicle] = await Promise.all([
     resolveCredereSellerCpf(mapping.providerStoreId, connection.token!, ports),
-    resolveCredereVehicle(
+    resolveSubmittedCredereVehicle(
       mapping.providerStoreId,
       connection.token!,
       input,
@@ -108,7 +109,7 @@ export async function createCredereSimulation(
     throw new FinancingOperationInProgressError();
   }
 
-  const inquiry = await ports.repository.createInquiry({
+  const inquiry = await createValidatedInquiry(ports.repository, {
     amountCents: input.amountCents,
     bankCodes,
     consentEvidence: {

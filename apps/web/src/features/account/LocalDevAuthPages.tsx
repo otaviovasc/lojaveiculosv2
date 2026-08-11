@@ -1,14 +1,14 @@
-import { LogIn, LogOut, RefreshCcw, UserCheck } from "lucide-react";
+import { LogIn, LogOut, RefreshCcw } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppBootScreen } from "../../components/ui";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
-import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import "../../styles/account-auth.css";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
 import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
+import { AuthEntryLayout } from "./AuthEntryLayout";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
 import {
   clearLocalDevAccount,
@@ -148,67 +148,50 @@ export function LocalDevAuthPage() {
   }
 
   return (
-    <main className="account-auth-shell">
-      <div aria-hidden="true" className="account-auth-glow" />
-      <div className="relative z-10 flex w-full max-w-xl flex-col items-center gap-6">
-        <Logo className="h-10" variant="full" />
-        <div className="account-glass-card space-y-6">
-          <div className="space-y-2 text-center">
-            <span className="account-badge-label">
-              <UserCheck className="size-3.5" aria-hidden="true" /> Ambiente
-              local
-            </span>
-            <h1 className="font-display text-2xl md:text-3xl font-black text-foreground tracking-tight">
-              Selecionar perfil de teste
-            </h1>
-            <p className="text-sm font-medium text-muted max-w-md mx-auto leading-relaxed">
-              Escolha um perfil para testar permissões e fluxos de trabalho
-              locais.
-            </p>
-          </div>
-
-          <div className="space-y-2.5 pt-2">
-            {localDevAccounts.map((account) => (
-              <button
-                className="account-card-option group"
-                key={account.userId}
-                onClick={() => signIn(account)}
-                type="button"
-              >
-                <div className="flex flex-col gap-1 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground group-hover:text-accent-text transition-colors">
-                      {account.name}
-                    </span>
-                    <span className="account-role-chip">
-                      {roleLabel(account.role)}
-                    </span>
-                  </div>
-                  <span className="text-xs font-medium text-muted">
-                    {account.email}
+    <AuthEntryLayout
+      description="Escolha um perfil para testar permissões e fluxos de trabalho locais."
+      title="Selecionar perfil de teste"
+    >
+      <ul className="account-profile-list">
+        {localDevAccounts.map((account) => (
+          <li key={account.userId}>
+            <button
+              aria-label={`${account.name}, ${roleLabel(account.role)}, ${account.email}`}
+              className="account-profile-row group"
+              onClick={() => signIn(account)}
+              type="button"
+            >
+              <div className="flex flex-col gap-1 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground group-hover:text-accent-text transition-colors">
+                    {account.name}
+                  </span>
+                  <span className="account-role-chip">
+                    {roleLabel(account.role)}
                   </span>
                 </div>
-                <div className="size-8 rounded-full border border-line bg-app flex items-center justify-center text-muted group-hover:border-accent-strong group-hover:text-accent-text transition-all shrink-0">
-                  <LogIn aria-hidden className="size-4" />
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {selectedAccount ? (
-            <div className="pt-2 border-t border-line">
-              <FeatureActionButton
-                className="w-full justify-center text-sm font-bold text-muted hover:text-foreground"
-                icon={LogOut}
-                label={`Sair de ${selectedAccount.name}`}
-                onClick={signOut}
-                variant="secondary"
+                <span className="text-xs font-medium text-muted">
+                  {account.email}
+                </span>
+              </div>
+              <LogIn
+                aria-hidden
+                className="size-4 shrink-0 text-muted transition-colors group-hover:text-accent-text"
               />
-            </div>
-          ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {selectedAccount ? (
+        <div className="account-profile-signout">
+          <button onClick={signOut} type="button">
+            <LogOut aria-hidden className="size-4" />
+            Sair de {selectedAccount.name}
+          </button>
         </div>
-      </div>
-    </main>
+      ) : null}
+    </AuthEntryLayout>
   );
 }
 

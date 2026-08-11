@@ -55,6 +55,7 @@ export async function resolveCredereVehicle(
       "Credere vehicle model is not available.",
     );
   }
+  validateVehicleModelYear(input.vehicle.modelYear, model);
   validateSelectedVehicleModel(input, model);
   return {
     ...input.vehicle,
@@ -63,6 +64,20 @@ export async function resolveCredereVehicle(
       ? {}
       : { vehicleMolicarCode: model.molicarCode }),
   };
+}
+
+function validateVehicleModelYear(
+  modelYear: number,
+  model: FinancingVehicleModel,
+) {
+  if (
+    (model.yearStart !== null && modelYear < model.yearStart) ||
+    (model.yearEnd !== null && modelYear > model.yearEnd)
+  ) {
+    throw new FinancingValidationError(
+      "Credere vehicle model is not available for the submitted model year.",
+    );
+  }
 }
 
 function isUsableVehicleModel(

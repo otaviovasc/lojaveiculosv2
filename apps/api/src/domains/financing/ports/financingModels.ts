@@ -39,7 +39,7 @@ export type FinancingProviderStore = {
   documentLast4: string | null;
   id: string;
   name: string;
-  status: "active" | "inactive" | "unknown";
+  status: "active" | "inactive" | "pending" | "unknown";
 };
 
 export type FinancingStoreMapping = {

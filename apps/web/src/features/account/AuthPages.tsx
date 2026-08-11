@@ -1,5 +1,5 @@
 import { SignIn, useAuth } from "@clerk/react-router";
-import { AlertTriangle, LogIn, RefreshCcw } from "lucide-react";
+import { AlertTriangle, RefreshCcw } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { AppBootScreen } from "../../components/ui";
@@ -8,7 +8,6 @@ import {
   FeatureAlert,
   FeatureEmptyState,
 } from "../../components/ui/FeatureStates";
-import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import "../../styles/account-auth.css";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
@@ -18,6 +17,7 @@ import { loadRuntimeSessionBootstrap } from "./sessionBootstrapLoader";
 import { useClerkAuthConfiguration } from "./ClerkAuthProvider";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
 import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
+import { AuthEntryLayout } from "./AuthEntryLayout";
 import {
   LocalDevAuthPage,
   LocalDevProtectedRoute,
@@ -82,17 +82,55 @@ export function SignInPage() {
   if (config.localAuthBypass) return <LocalDevAuthPage />;
 
   return (
-    <AuthEntryShell eyebrow="Acesso à conta" title="Acessar a Loja Veículos">
-      <SignIn path={config.signInPath} routing="path" />
-    </AuthEntryShell>
+    <AuthEntryLayout
+      description="Entre para gerenciar o estoque, vendas, atendimento e a operação da sua loja."
+      features={[
+        "Estoque, vendas e despesas em um só painel",
+        "Comissões, permissões e atendimento da equipe",
+        "Documentos e integrações fiscais da operação",
+      ]}
+      title="Acessar a Loja Veículos"
+    >
+      <SignIn
+        appearance={authEntryClerkAppearance}
+        path={config.signInPath}
+        routing="path"
+      />
+    </AuthEntryLayout>
   );
 }
+
+const authEntryClerkAppearance = {
+  elements: {
+    cardBox: "shadow-none border-0 bg-transparent w-full",
+    card: "shadow-none border-0 bg-transparent p-0 gap-4 w-full",
+    headerTitle: "hidden",
+    headerSubtitle: "hidden",
+    socialButtonsBlockButton:
+      "border border-line bg-app text-foreground font-bold rounded-xl",
+    formFieldInput: "border-line bg-app text-foreground rounded-xl",
+    footer: "bg-transparent",
+  },
+  variables: {
+    borderRadius: "0.875rem",
+    colorBackground: "transparent",
+    colorDanger: "var(--color-danger)",
+    colorInputBackground: "var(--color-app)",
+    colorInputText: "var(--color-foreground)",
+    colorPrimary: "var(--color-accent-strong)",
+    colorText: "var(--color-foreground)",
+    colorTextSecondary: "var(--color-muted)",
+    fontFamily: "inherit",
+  },
+} as const;
 
 export function SignUpPage() {
   const config = useClerkAuthConfiguration();
   if (!config.configured) return <AuthConfigurationMissingPage />;
   if (config.localAuthBypass) return <LocalDevAuthPage />;
 
+  // Invite-only by design: members are provisioned via inviteStoreMember, so
+  // the legacy sign-up route canonicalizes to the unified sign-in flow.
   return <Navigate replace to={config.signInPath} />;
 }
 
@@ -199,40 +237,6 @@ function ConfiguredSessionBootstrapPage() {
 function SessionSignInRedirect() {
   const config = useClerkAuthConfiguration();
   return <Navigate replace to={config.signInPath} />;
-}
-
-function AuthEntryShell({
-  children,
-  eyebrow,
-  title,
-}: {
-  children: ReactNode;
-  eyebrow: string;
-  title: string;
-}) {
-  return (
-    <main className="account-auth-shell">
-      <div aria-hidden="true" className="account-auth-glow" />
-      <div className="relative z-10 flex w-full max-w-xl flex-col items-center gap-6">
-        <Logo className="h-10" variant="full" />
-        <div className="account-glass-card space-y-6 text-center">
-          <div className="space-y-2">
-            <span className="account-badge-label">
-              <LogIn className="size-3.5" aria-hidden="true" /> {eyebrow}
-            </span>
-            <h1 className="font-display text-2xl md:text-3xl font-black text-foreground tracking-tight">
-              {title}
-            </h1>
-            <p className="text-sm font-medium text-muted max-w-md mx-auto leading-relaxed">
-              Entre para gerenciar o estoque, vendas, atendimento e a operação
-              da sua loja.
-            </p>
-          </div>
-          <div className="flex w-full justify-center pt-2">{children}</div>
-        </div>
-      </div>
-    </main>
-  );
 }
 
 function AuthConfigurationMissingPage() {

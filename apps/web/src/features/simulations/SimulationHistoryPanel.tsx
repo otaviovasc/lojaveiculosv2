@@ -1,11 +1,11 @@
 import { History } from "lucide-react";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
   FeatureLoadingState,
   FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
 import type { CredereSimulation } from "./types";
+import { simulationStatusLabel } from "./simulationPresentation";
 
 export function SimulationHistoryPanel({
   error,
@@ -17,10 +17,14 @@ export function SimulationHistoryPanel({
   onSelect: (simulation: CredereSimulation) => void;
 }) {
   return (
-    <FeatureSection
-      icon={<History aria-hidden="true" className="size-4" />}
-      title="Histórico"
+    <section
+      aria-labelledby="credere-history-title"
+      className="credere-history"
     >
+      <header className="credere-history-header">
+        <History aria-hidden="true" className="size-4" />
+        <h3 id="credere-history-title">Histórico</h3>
+      </header>
       {error ? (
         <FeatureAlert tone="danger">{error}</FeatureAlert>
       ) : history === null ? (
@@ -30,24 +34,24 @@ export function SimulationHistoryPanel({
           Nenhuma simulação registrada para esta loja.
         </p>
       ) : (
-        <ul className="grid gap-2">
+        <ul className="credere-history-list">
           {history.map((item) => (
             <li key={item.id}>
               <button
-                className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-line bg-app px-3 py-2 text-left text-xs font-bold text-app-text"
+                className="credere-history-row"
                 onClick={() => onSelect(item)}
                 type="button"
               >
                 <span>{formatHistoryDate(item.createdAt)}</span>
                 <FeatureStatusBadge size="dense" tone="neutral">
-                  {item.status}
+                  {simulationStatusLabel(item.status)}
                 </FeatureStatusBadge>
               </button>
             </li>
           ))}
         </ul>
       )}
-    </FeatureSection>
+    </section>
   );
 }
 

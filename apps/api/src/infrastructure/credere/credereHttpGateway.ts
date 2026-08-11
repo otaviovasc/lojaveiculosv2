@@ -30,6 +30,7 @@ import {
 } from "./credereHttpSupport.js";
 import { leadPayload } from "./credereLeadPayload.js";
 import { mapSellers } from "./credereSellerMappers.js";
+import { mapCredereFipeModels } from "./credereFipeModels.js";
 
 export type CredereHttpGatewayOptions = {
   auth?: FinancingGatewayAuthConfig;
@@ -114,6 +115,18 @@ export function createCredereHttpGateway(
       ),
     listStores: async (input) =>
       mapStores(await readJson(fetchImpl, "/stores", input)),
+    listVehicleModelsByFipe: async (input) =>
+      mapCredereFipeModels(
+        await readJson(fetchImpl, "/vehicle_models", input, {
+          query: {
+            fipe_code: input.fipeCode,
+            per_page: "100",
+            year_end_greater_than_or_equal_to: String(input.modelYear),
+            year_start_less_than_or_equal_to: String(input.modelYear),
+          },
+          storeHeader: false,
+        }),
+      ),
     lookupVehicleModel: async (input) =>
       mapVehicleModel(
         await readJson(fetchImpl, "/vehicle_models/search", input, {

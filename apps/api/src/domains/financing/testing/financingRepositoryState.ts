@@ -24,8 +24,19 @@ export type MemoryFinancingRepositoryOptions = {
     tenantId?: string;
   })[];
   bankPolicy?: readonly string[] | null;
+  leads?: readonly MemoryScopedReference[];
+  listings?: readonly MemoryScopedReference[];
   providerStores?: readonly FinancingProviderStore[];
   tenantStores?: readonly { storeId: string; tenantId: string }[];
+  units?: readonly (MemoryScopedReference & { listingId: string })[];
+};
+
+export type MemoryScopedReference = {
+  deletedAt?: Date | null;
+  id: string;
+  isDeleted?: boolean;
+  storeId: string;
+  tenantId: string;
 };
 
 export type MemoryFinancingRepositoryState = {
@@ -37,12 +48,15 @@ export type MemoryFinancingRepositoryState = {
   bankPolicy: readonly string[] | null | undefined;
   connections: FinancingConnection[];
   inquiries: FinancingInquiry[];
+  leads: MemoryScopedReference[];
+  listings: MemoryScopedReference[];
   oauthTransactions: FinancingOAuthTransaction[];
   operations: MemoryOperation[];
   providerStores: FinancingProviderStore[];
   sequence: number;
   storeMappings: FinancingStoreMapping[];
   tenantStores: { storeId: string; tenantId: string }[];
+  units: (MemoryScopedReference & { listingId: string })[];
 };
 
 export type MemoryFinancingRepository = FinancingRepository & {
@@ -72,6 +86,16 @@ export function createMemoryFinancingRepositoryState(
     bankPolicy: options.bankPolicy,
     connections: [],
     inquiries: [],
+    leads: [
+      ...(options.leads ?? [
+        { id: "lead_1", storeId: "store_1", tenantId: "tenant_1" },
+      ]),
+    ],
+    listings: [
+      ...(options.listings ?? [
+        { id: "listing_1", storeId: "store_1", tenantId: "tenant_1" },
+      ]),
+    ],
     oauthTransactions: [],
     operations: [],
     providerStores: [
@@ -90,6 +114,16 @@ export function createMemoryFinancingRepositoryState(
       ...(options.tenantStores ?? [
         { storeId: "store_1", tenantId: "tenant_1" },
         { storeId: "store_2", tenantId: "tenant_1" },
+      ]),
+    ],
+    units: [
+      ...(options.units ?? [
+        {
+          id: "unit_1",
+          listingId: "listing_1",
+          storeId: "store_1",
+          tenantId: "tenant_1",
+        },
       ]),
     ],
   };

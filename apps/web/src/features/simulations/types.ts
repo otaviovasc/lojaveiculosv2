@@ -95,6 +95,7 @@ export type CredereApplicantInput = {
 
 export type CredereVehicleInput = {
   credereVehicleModelId?: string | undefined;
+  fipeCode?: string | undefined;
   priceCents: number;
   manufactureYear: number;
   modelYear: number;
@@ -103,6 +104,26 @@ export type CredereVehicleInput = {
   molicarCode: string;
   zeroKm: boolean;
 };
+
+export type CredereFipeCandidate = {
+  brand: string | null;
+  fipeCode: string;
+  fuelType: string | null;
+  modelId: string;
+  molicarCode: string;
+  name: string;
+  version: string | null;
+  yearEnd: number | null;
+  yearStart: number | null;
+};
+
+export type CredereFipeResolution =
+  | { candidate: CredereFipeCandidate; status: "resolved" }
+  | {
+      candidates: CredereFipeCandidate[];
+      status: "ambiguous" | "mismatch";
+    }
+  | { candidates: []; status: "not_found" };
 
 export type CredereSimulationDraft = {
   applicant: CredereApplicantInput;

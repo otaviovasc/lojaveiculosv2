@@ -1,9 +1,10 @@
-import { PlugZap, RefreshCw, Unplug } from "lucide-react";
+import { Landmark, PlugZap, RefreshCw, Unplug } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "../../../components/ui/confirm-dialog";
 import {
   FeatureActionButton,
   FeaturePageHeader,
+  FeaturePageShell,
   FeatureSection,
 } from "../../../components/ui/FeatureLayout";
 import {
@@ -47,9 +48,10 @@ export function AgencyCrederePage({
       .filter((mapping) => mapping.externalStoreId)
       .map((mapping) => [mapping.storeId, mapping]),
   );
+  const mappedStoreCount = mappingsByStore.size;
 
   return (
-    <div className="content-frame animate-fade-in">
+    <FeaturePageShell className="credere-shell" variant="content">
       <FeaturePageHeader
         actions={
           connection?.connected ? (
@@ -69,14 +71,15 @@ export function AgencyCrederePage({
             </>
           ) : undefined
         }
-        chip={
-          connection?.connected
-            ? (connection.connectionStatus ?? "Conta Credere conectada")
-            : undefined
+        chip={connection?.connected ? "Conta Credere conectada" : undefined}
+        description="Conecte uma conta Credere e defina, loja por loja, onde as simulações da rede serão processadas."
+        eyebrow={
+          <>
+            <Landmark aria-hidden="true" className="size-4" />
+            Financiamento da rede
+          </>
         }
-        description="Conexão OAuth da agência com o Credere e mapeamento explícito de cada loja afiliada."
-        eyebrow="Agência"
-        title="Credere"
+        title="Integração Credere"
       />
 
       {!agencyTenant ? (
@@ -121,8 +124,28 @@ export function AgencyCrederePage({
           {actionError ? (
             <FeatureAlert tone="danger">{actionError}</FeatureAlert>
           ) : null}
+          <section
+            aria-label="Resumo da conexão Credere"
+            className="credere-network-summary"
+          >
+            <div>
+              <span>Conta do provedor</span>
+              <strong>Conectada</strong>
+            </div>
+            <div>
+              <span>Lojas vinculadas</span>
+              <strong>
+                {mappedStoreCount} de {stores.length}
+              </strong>
+            </div>
+            <p>
+              Lojas sem vínculo permanecem bloqueadas para simulações oficiais.
+            </p>
+          </section>
           <FeatureSection
+            className="credere-mapping-workspace"
             description="Cada loja local precisa ser vinculada explicitamente a uma loja do provedor. Lojas sem mapeamento não conseguem simular."
+            padding="none"
             title="Mapeamento de lojas"
           >
             {providerStores === null ? (
@@ -140,7 +163,7 @@ export function AgencyCrederePage({
                 Nenhuma loja afiliada nesta agência.
               </p>
             ) : (
-              <ul className="mt-4 grid gap-3">
+              <ul className="credere-mapping-list">
                 {stores.map((store) => (
                   <AgencyCredereMappingRow
                     busyKey={busyKey}
@@ -177,6 +200,6 @@ export function AgencyCrederePage({
         title="Desconectar a conta Credere da agência?"
         variant="destructive"
       />
-    </div>
+    </FeaturePageShell>
   );
 }
