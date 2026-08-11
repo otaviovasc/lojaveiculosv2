@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { CrmSelect } from "./CrmFormControls";
 import {
@@ -6,10 +6,7 @@ import {
   ConnectionSetupFlow,
 } from "./CrmWhatsappConnectionViews";
 import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
-import {
-  CrmWhatsappSelfServiceSetup,
-  type CrmWhatsappSelfServiceHandlers,
-} from "./CrmWhatsappSelfServiceSetup";
+import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
 import type {
   CrmWhatsappConnectionAllowance,
   CrmWhatsappProviderConnection,
@@ -17,6 +14,12 @@ import type {
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
+
+const CrmWhatsappSelfServiceSetup = lazy(() =>
+  import("./CrmWhatsappSelfServiceSetup").then((module) => ({
+    default: module.CrmWhatsappSelfServiceSetup,
+  })),
+);
 
 type ConnectionAdminProps = {
   connections: CrmWhatsappProviderConnection[];
@@ -106,61 +109,69 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
           {formatApiErrorDisplay(error, "Não foi possível carregar a conexão.")}
         </p>
       ) : null}
-      {selected && sharedConnectionProps ? (
-        <>
-          {connections.length > 1 ? (
-            <label className="crm-whatsapp-connection-selector">
-              Canal
-              <CrmSelect
-                className="crm-whatsapp-select"
-                onChange={setSelectedId}
-                options={connections.map((connection) => ({
-                  label: `${connection.displayName} · ${readCrmWhatsappProviderLabel(connection.provider)}`,
-                  value: String(connection.id),
-                }))}
-                value={String(selected.id)}
+      <Suspense
+        fallback={
+          <p className="crm-whatsapp-connection-empty" role="status">
+            Carregando configuração do canal.
+          </p>
+        }
+      >
+        {selected && sharedConnectionProps ? (
+          <>
+            {connections.length > 1 ? (
+              <label className="crm-whatsapp-connection-selector">
+                Canal
+                <CrmSelect
+                  className="crm-whatsapp-select"
+                  onChange={setSelectedId}
+                  options={connections.map((connection) => ({
+                    label: `${connection.displayName} · ${readCrmWhatsappProviderLabel(connection.provider)}`,
+                    value: String(connection.id),
+                  }))}
+                  value={String(selected.id)}
+                />
+              </label>
+            ) : null}
+            {selected.live.providerStatus === "connected" ? (
+              <ConnectionDashboard {...sharedConnectionProps} />
+            ) : selfService &&
+              (selected.provider === "composio_whatsapp" ||
+                selected.provider === "zapi") ? (
+              <CrmWhatsappSelfServiceSetup
+                allowance={selfService.allowance}
+                availableProviders={selfService.availableProviders}
+                canPair={selfService.canPair}
+                canSetup={selfService.canSetup}
+                existingConnection={selected}
+                handlers={selfService.handlers}
+                {...(selfService.zapiAddonContract !== undefined
+                  ? { zapiAddonContract: selfService.zapiAddonContract }
+                  : {})}
               />
-            </label>
-          ) : null}
-          {selected.live.providerStatus === "connected" ? (
-            <ConnectionDashboard {...sharedConnectionProps} />
-          ) : selfService &&
-            (selected.provider === "composio_whatsapp" ||
-              selected.provider === "zapi") ? (
-            <CrmWhatsappSelfServiceSetup
-              allowance={selfService.allowance}
-              availableProviders={selfService.availableProviders}
-              canPair={selfService.canPair}
-              canSetup={selfService.canSetup}
-              existingConnection={selected}
-              handlers={selfService.handlers}
-              {...(selfService.zapiAddonContract !== undefined
-                ? { zapiAddonContract: selfService.zapiAddonContract }
-                : {})}
-            />
-          ) : (
-            <ConnectionSetupFlow
-              {...sharedConnectionProps}
-              localError={localError}
-            />
-          )}
-        </>
-      ) : selfService ? (
-        <CrmWhatsappSelfServiceSetup
-          allowance={selfService.allowance}
-          availableProviders={selfService.availableProviders}
-          canPair={selfService.canPair}
-          canSetup={selfService.canSetup}
-          handlers={selfService.handlers}
-          {...(selfService.zapiAddonContract !== undefined
-            ? { zapiAddonContract: selfService.zapiAddonContract }
-            : {})}
-        />
-      ) : (
-        <p className="crm-whatsapp-connection-empty">
-          Nenhuma conexão de mensagens configurada para esta loja.
-        </p>
-      )}
+            ) : (
+              <ConnectionSetupFlow
+                {...sharedConnectionProps}
+                localError={localError}
+              />
+            )}
+          </>
+        ) : selfService ? (
+          <CrmWhatsappSelfServiceSetup
+            allowance={selfService.allowance}
+            availableProviders={selfService.availableProviders}
+            canPair={selfService.canPair}
+            canSetup={selfService.canSetup}
+            handlers={selfService.handlers}
+            {...(selfService.zapiAddonContract !== undefined
+              ? { zapiAddonContract: selfService.zapiAddonContract }
+              : {})}
+          />
+        ) : (
+          <p className="crm-whatsapp-connection-empty">
+            Nenhuma conexão de mensagens configurada para esta loja.
+          </p>
+        )}
+      </Suspense>
     </section>
   );
 }

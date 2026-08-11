@@ -34,7 +34,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
     expect(screen.queryByText(/webhook/i)).not.toBeInTheDocument();
   });
 
-  it("shows pairing-only controls for an existing disconnected Z-API connection", () => {
+  it("shows pairing-only controls for an existing disconnected Z-API connection", async () => {
     render(
       <CrmWhatsappConnectionAdmin
         connections={[createConnection("zapi", "disconnected", true)]}
@@ -58,7 +58,9 @@ describe("CrmWhatsappConnectionAdmin", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Conectar WhatsApp · Z-API" }),
+      await screen.findByRole("heading", {
+        name: "Conectar WhatsApp · Z-API",
+      }),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
     fireEvent.click(screen.getByRole("tab", { name: "Código do telefone" }));
