@@ -9,12 +9,23 @@ export const whatsappConnectionStatusSchema = z.enum([
   "sandbox",
 ]);
 
-export const whatsappCreateConnectionSchema = z
-  .object({
-    displayName: z.string().trim().min(1).max(160).optional(),
-    provider: z.literal("composio_whatsapp"),
-  })
-  .strict();
+export const whatsappCreateConnectionSchema = z.discriminatedUnion("provider", [
+  z
+    .object({
+      displayName: z.string().trim().min(1).max(160).optional(),
+      provider: z.literal("composio_whatsapp"),
+    })
+    .strict(),
+  z
+    .object({
+      clientToken: z.string().trim().min(1).max(500),
+      displayName: z.string().trim().min(1).max(160).optional(),
+      instanceId: z.string().trim().min(1).max(191),
+      instanceToken: z.string().trim().min(1).max(500),
+      provider: z.literal("zapi"),
+    })
+    .strict(),
+]);
 
 export const whatsappZapiPairingCodeSchema = z
   .object({ phone: z.string().trim().min(8).max(30) })

@@ -27,13 +27,14 @@ import {
   readOptionalText,
   readRequiredDate,
   readRequiredText,
+  findBotActionSession,
   requireBotActionSessionId,
   resolveBotActionLeadId,
   resolveBotActionTagName,
 } from "../../whatsapp/whatsappBotActionSupport.js";
 import {
-  auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
+  recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 import { updateBotSession } from "./whatsappBotSessionActions.js";
 import {
@@ -69,18 +70,29 @@ export async function executeWhatsappBotAction(
     connectionId: input.connectionId ?? null,
     sessionId: input.sessionId ?? null,
   });
-  await auditWhatsappServiceEvent(context, {
-    action: "crm.whatsapp.bot.action.execute",
-    category: "data_change",
-    metadata: {
-      action: input.action,
-      connectionId: input.connectionId ?? null,
-      idempotencyKey: input.idempotencyKey ?? null,
-      sessionId: input.sessionId ?? null,
+  return recordWhatsappServiceMutation(
+    context,
+    {
+      action: "crm.whatsapp.bot.action.execute",
+      category: "data_change",
+      metadata: {
+        action: input.action,
+        connectionId: input.connectionId ?? null,
+        idempotencyKey: input.idempotencyKey ?? null,
+        sessionId: input.sessionId ?? null,
+      },
+      permission: auditPermission,
+      summary: "Execute CRM WhatsApp bot action",
     },
-    permission: auditPermission,
-    summary: "Executed CRM WhatsApp bot action",
-  });
+    () => dispatchWhatsappBotAction(context, input, ports),
+  );
+}
+
+async function dispatchWhatsappBotAction(
+  context: ServiceContext,
+  input: ExecuteWhatsappBotActionInput,
+  ports: CrmServicePorts,
+) {
   switch (input.action) {
     case "credere_readiness":
       return executeCredereReadinessAction(context, ports);
@@ -158,12 +170,15 @@ export async function executeWhatsappBotAction(
       return executeBotInterventionAction(context, input, ports);
     case "update_session":
       return updateBotSession(context, input, ports);
-    case "close_session":
+    case "close_session": {
+      const sessionId = requireBotActionSessionId(input);
+      const session = await findBotActionSession(context, sessionId, ports);
       return closeWhatsappSession(
         context,
-        { sessionId: requireBotActionSessionId(input) },
+        { expectedRevision: session.revision, sessionId },
         ports,
       );
+    }
     case "get_session":
       return listWhatsappSessions(
         context,
@@ -222,7 +237,6 @@ export async function executeWhatsappBotAction(
       );
   }
 }
-
 function assertBotActionAuthorized(
   context: ServiceContext,
   action: WhatsappBotActionName,

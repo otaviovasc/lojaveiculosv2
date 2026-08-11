@@ -15,8 +15,11 @@ import { closeLinkedWhatsappLead } from "../../whatsapp/updateWhatsappLinkedLead
 import {
   humanAttendanceReason,
   humanAttendanceSource,
-  transitionHumanAttendance,
+  interventionActorKind,
+  humanAttendanceUpdate,
 } from "../../whatsapp/humanAttendanceTransition.js";
+import { persistHumanAttendanceTransition } from "../../whatsapp/persistHumanAttendanceTransition.js";
+import { WhatsappSessionRevisionConflictError } from "../../whatsapp/whatsappSendErrors.js";
 import { notifyScopedInterventionChangedToBot } from "../../whatsapp/whatsappInterventionNotification.js";
 import {
   findScopedWhatsappSession,
@@ -29,10 +32,12 @@ export {
 
 export type AssignWhatsappSessionInput = {
   assignedUserId: string | null;
+  expectedRevision: number;
   sessionId: string;
 };
 
 export type CloseWhatsappSessionInput = {
+  expectedRevision: number;
   sessionId: string;
 };
 
@@ -77,6 +82,7 @@ async function assignWhatsappSessionUnchecked(
   const now = new Date();
   const updated = await getCrmWhatsappRepository(ports).updateSession({
     assignedUserId: input.assignedUserId as never,
+    expectedRevision: input.expectedRevision,
     ...(input.assignedUserId
       ? {
           firstHandledAt: session.firstHandledAt ?? now,
@@ -87,6 +93,9 @@ async function assignWhatsappSessionUnchecked(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
+  if (!updated) {
+    throw new WhatsappSessionRevisionConflictError(input.sessionId);
+  }
   if (session.leadId) {
     await getCrmRepository(ports).updateLead({
       assignedUserId: input.assignedUserId as never,
@@ -139,25 +148,44 @@ async function closeWhatsappSessionUnchecked(
     ports,
   );
   const now = new Date();
-  const attendanceTransition = await transitionHumanAttendance({
-    command: { kind: "clear", status: "COMPLETED" },
-    now,
-    repository: getCrmWhatsappRepository(ports),
+  if (session.revision !== input.expectedRevision) {
+    throw new WhatsappSessionRevisionConflictError(input.sessionId);
+  }
+  const attendanceUpdate = humanAttendanceUpdate(
     session,
-  });
-  const updated = await getCrmWhatsappRepository(ports).updateSession({
-    assignedUserId: null,
-    firstHandledAt: session.firstHandledAt ?? now,
-    metadata: {
-      ...attendanceTransition.session.metadata,
-      lastClosedAt: now.toISOString(),
-      lastClosedByActorId: context.actor.id,
+    { kind: "clear", status: "COMPLETED" },
+    now,
+  );
+  if (!attendanceUpdate) {
+    throw new WhatsappSessionRevisionConflictError(input.sessionId);
+  }
+  const persisted = await persistHumanAttendanceTransition({
+    actorId: context.actor.id,
+    actorKind: interventionActorKind(context.actor.kind, "admin"),
+    current: session,
+    now,
+    reason: humanAttendanceReason(session) ?? "session_closed",
+    repository: getCrmWhatsappRepository(ports),
+    source: humanAttendanceSource(session) ?? "admin",
+    update: {
+      ...attendanceUpdate,
+      assignedUserId: null,
+      firstHandledAt: session.firstHandledAt ?? now,
+      metadata: {
+        ...(attendanceUpdate.metadata ?? session.metadata),
+        lastClosedAt: now.toISOString(),
+        lastClosedByActorId: context.actor.id,
+      },
     },
-    sessionId: input.sessionId,
-    status: "COMPLETED",
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
   });
+  if (!persisted) {
+    throw new WhatsappSessionRevisionConflictError(input.sessionId);
+  }
+  const attendanceTransition = {
+    previous: session,
+    session: persisted.session,
+  };
+  const updated = persisted.session;
 
   if (session.leadId) {
     await closeLinkedWhatsappLead(context, session.leadId, ports);

@@ -4,17 +4,30 @@ import { createHttpIntegrationServiceContext } from "./httpIntegrationServiceCon
 
 export function createCrmWebhookContextFactory(audit?: AuditSink) {
   return async (context: Context) => {
-    const meta = new URL(context.req.url).pathname.endsWith(
-      "/whatsapp/webhooks/meta",
-    );
+    const actor = resolveCrmWebhookActor(new URL(context.req.url).pathname);
     return createHttpIntegrationServiceContext(
       context,
       {
-        actorId: meta ? "meta" : "zapi",
-        displayName: meta ? "Meta" : "ZAPI",
+        ...actor,
         permissions: ["crm.whatsapp.ingest"],
       },
       { ...(audit ? { audit } : {}) },
     );
   };
+}
+
+export function resolveCrmWebhookActor(pathname: string) {
+  if (pathname.endsWith("/whatsapp/integrations/bot/actions")) {
+    return { actorId: "external_crm_bot", displayName: "External CRM bot" };
+  }
+  if (pathname.endsWith("/whatsapp/webhooks/meta")) {
+    return { actorId: "meta", displayName: "Meta" };
+  }
+  if (pathname.includes("/whatsapp/webhooks/zapi/")) {
+    return { actorId: "zapi", displayName: "Z-API" };
+  }
+  if (pathname.includes("/whatsapp/webhooks/olx/")) {
+    return { actorId: "olx_chat", displayName: "OLX Chat" };
+  }
+  throw new Error("Unknown CRM webhook provider path.");
 }

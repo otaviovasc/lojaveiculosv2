@@ -2,13 +2,28 @@ import type { PermissionDescriptor } from "./permissionCatalogTypes.js";
 
 export const crmWhatsappPermissionDescriptors = [
   {
-    description: "Visualizar a fila de atendimentos e conexões do WhatsApp.",
+    description:
+      "Visualizar os canais de mensagens e a fila unificada de atendimentos.",
     key: "crm.whatsapp.list",
-    label: "Visualizar conexões",
+    label: "Visualizar canais",
     risk: "low",
   },
   {
-    description: "Abrir e ler mensagens recebidas no WhatsApp.",
+    description:
+      "Cadastrar a configuração inicial e gravar credenciais write-only de um canal.",
+    key: "crm.messaging.connection.setup",
+    label: "Configurar novo canal",
+    risk: "high",
+  },
+  {
+    description:
+      "Solicitar QR Code ou código por telefone e atualizar o estado de conexão do canal.",
+    key: "crm.messaging.connection.pair",
+    label: "Conectar canal",
+    risk: "high",
+  },
+  {
+    description: "Abrir e ler mensagens recebidas nos canais do CRM.",
     key: "crm.whatsapp.read",
     label: "Visualizar conversas",
     risk: "low",
@@ -20,37 +35,37 @@ export const crmWhatsappPermissionDescriptors = [
     risk: "medium",
   },
   {
-    description: "Visualizar campanhas WhatsApp e seus indicadores.",
+    description: "Visualizar campanhas de mensagens e seus indicadores.",
     key: "crm.whatsapp.campaigns.read",
     label: "Visualizar campanhas",
     risk: "low",
   },
   {
-    description: "Criar, pausar, retomar e cancelar campanhas WhatsApp.",
+    description: "Criar, pausar, retomar e cancelar campanhas de mensagens.",
     key: "crm.whatsapp.campaigns.manage",
     label: "Gerenciar campanhas",
     risk: "high",
   },
   {
-    description: "Visualizar mensagens WhatsApp agendadas.",
+    description: "Visualizar mensagens agendadas nos canais do CRM.",
     key: "crm.whatsapp.schedules.read",
     label: "Visualizar agendamentos",
     risk: "low",
   },
   {
-    description: "Agendar mensagens WhatsApp para envio futuro.",
+    description: "Agendar mensagens nos canais do CRM para envio futuro.",
     key: "crm.whatsapp.schedules.create",
     label: "Agendar mensagens",
     risk: "medium",
   },
   {
-    description: "Cancelar mensagens WhatsApp agendadas.",
+    description: "Cancelar mensagens agendadas nos canais do CRM.",
     key: "crm.whatsapp.schedules.cancel",
     label: "Cancelar agendamentos",
     risk: "medium",
   },
   {
-    description: "Processar e disparar mensagens WhatsApp vencidas.",
+    description: "Processar e disparar mensagens agendadas vencidas.",
     key: "crm.whatsapp.schedules.process",
     label: "Processar agendamentos",
     risk: "high",
@@ -62,7 +77,7 @@ export const crmWhatsappPermissionDescriptors = [
     risk: "medium",
   },
   {
-    description: "Criar, editar, excluir e reordenar etiquetas do WhatsApp.",
+    description: "Criar, editar, excluir e reordenar etiquetas do CRM.",
     key: "crm.whatsapp.tags.manage",
     label: "Gerenciar etiquetas",
     risk: "medium",
@@ -81,15 +96,9 @@ export const crmWhatsappPermissionDescriptors = [
   },
   {
     description:
-      "Editar metadados, status, credenciais por variavel de ambiente e webhooks ZAPI.",
-    key: "crm.whatsapp.connection.manage",
-    label: "Gerenciar conexao ZAPI",
-    risk: "high",
-  },
-  {
-    description: "Configurar bot externo, segredos write-only e Action API.",
+      "Configurar bots, automações e segredos write-only usados no atendimento.",
     key: "crm.whatsapp.integrations.manage",
-    label: "Gerenciar integracoes",
+    label: "Gerenciar automações",
     risk: "high",
   },
   {

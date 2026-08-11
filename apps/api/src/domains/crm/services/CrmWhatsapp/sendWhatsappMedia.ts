@@ -110,6 +110,7 @@ export async function sendWhatsappMedia(
             mimeType: input.mimeType ?? null,
             sessionId: input.sessionId,
           },
+          senderOrigin: "human_crm",
           prepare: async ({ connection, gateway, phone, scope, session }) => {
             const storage = getCrmWhatsappMediaStorage(ports);
             if (!storage) {

@@ -53,6 +53,12 @@ export function updateMemoryWhatsappSession(
     return null;
   }
   if (
+    input.expectedRevision !== undefined &&
+    session.revision !== input.expectedRevision
+  ) {
+    return null;
+  }
+  if (
     input.expectedHumanAttendanceStateVersion !== undefined &&
     session.humanAttendanceStateVersion !==
       input.expectedHumanAttendanceStateVersion
@@ -100,6 +106,7 @@ export function updateMemoryWhatsappSession(
   if (input.leadId !== undefined) session.leadId = input.leadId;
   if (input.metadata) session.metadata = input.metadata;
   if (input.status) session.status = input.status;
+  session.revision += 1;
   session.updatedAt = new Date();
   return withUnreadCount(session, messages);
 }

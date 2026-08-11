@@ -12,6 +12,8 @@ import type {
   CrmBotWebhookEvent,
   CrmInterventionSource,
 } from "../ports/crmBotWebhookDispatcher.js";
+import { CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE } from "../ports/crmConnectionSetupProvider.js";
+import { getCrmConnectionCredentialVault } from "../services/CrmService/crmConnectionSetupSupport.js";
 import {
   getCrmBotIntegrationRepository,
   getCrmBotWebhookDispatcher,
@@ -34,6 +36,7 @@ export async function forwardWhatsappMessageToBot(
     session: CrmWhatsappSession;
   },
   ports: CrmServicePorts,
+  options: { throwOnFailure?: boolean } = {},
 ) {
   if (input.session.status === "HUMAN_TAKEOVER") return;
   if (input.message.type === "STICKER") return;
@@ -50,6 +53,7 @@ export async function forwardWhatsappMessageToBot(
     message: input.message,
     session: input.session,
     timestamp: input.message.providerTimestamp ?? input.message.createdAt,
+    throwOnFailure: options.throwOnFailure ?? false,
   });
 }
 
@@ -139,6 +143,7 @@ async function dispatchBotWebhook(
     session?: CrmWhatsappSession;
     timestamp: Date;
     triggeredBy?: CrmInterventionSource;
+    throwOnFailure?: boolean;
   },
 ) {
   const config = await getCrmBotIntegrationRepository(
@@ -147,7 +152,16 @@ async function dispatchBotWebhook(
     storeId: input.connection.storeId,
     tenantId: input.connection.tenantId,
   });
-  if (!config?.enabled || !config.webhookSecret || !config.webhookUrl) return;
+  if (!config?.enabled || !config.webhookSecretSealed || !config.webhookUrl) {
+    return;
+  }
+
+  const webhookSecret = await getCrmConnectionCredentialVault(ports).open({
+    purpose: CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
+    sealed: config.webhookSecretSealed,
+    storeId: input.connection.storeId,
+    tenantId: input.connection.tenantId,
+  });
 
   const dispatcher = getCrmBotWebhookDispatcher(ports);
   await auditBotWebhookDispatch(context, input, "attempted");
@@ -159,7 +173,7 @@ async function dispatchBotWebhook(
         : buildSessionBotPayload(dispatcher.actionApiBaseUrl, input),
       storeId: input.connection.storeId,
       tenantId: input.connection.tenantId,
-      webhookSecret: config.webhookSecret,
+      webhookSecret,
       webhookUrl: config.webhookUrl,
     });
     await auditBotWebhookDispatch(context, input, "succeeded");
@@ -174,6 +188,7 @@ async function dispatchBotWebhook(
       }),
     );
     await auditBotWebhookDispatch(context, input, "failed", error);
+    if (input.throwOnFailure) throw error;
   }
 }
 

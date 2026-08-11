@@ -14,8 +14,10 @@ import {
   findScopedWhatsappSession,
   sessionWithConnection,
 } from "./whatsappSessionMutationSupport.js";
+import { WhatsappSessionRevisionConflictError } from "../../whatsapp/whatsappSendErrors.js";
 
 export type MarkWhatsappSessionReadInput = {
+  expectedRevision: number;
   sessionId: string;
   unread: boolean;
 };
@@ -58,10 +60,14 @@ async function markWhatsappSessionReadStateUnchecked(
   const { scope } = await findScopedWhatsappSession(context, input, ports);
   const updated = await getCrmWhatsappRepository(ports).updateSession({
     lastReadAt: input.unread ? null : new Date(),
+    expectedRevision: input.expectedRevision,
     sessionId: input.sessionId,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
+  if (!updated) {
+    throw new WhatsappSessionRevisionConflictError(input.sessionId);
+  }
   const realtimeSession = await sessionWithConnection(
     updated,
     ports,

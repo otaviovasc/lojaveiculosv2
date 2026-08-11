@@ -66,6 +66,43 @@ describe("CrmWhatsappCampaignsPage", () => {
     );
   });
 
+  it("keeps a campaign load failure distinct from an empty campaign list", async () => {
+    const user = userEvent.setup();
+    let attempts = 0;
+    const onListCampaigns = vi.fn(async () => {
+      attempts += 1;
+      if (attempts === 1) throw new Error("campaign service unavailable");
+      return [];
+    });
+    render(
+      <CrmWhatsappCampaignsPage
+        canCancel
+        canCreate
+        canRead
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={vi.fn(async () => createCampaign())}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={onListCampaigns}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        sessions={[]}
+        tags={[]}
+      />,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "campaign service unavailable",
+    );
+    expect(
+      screen.queryByText(/nenhuma campanha criada/i),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /tentar novamente/i }));
+    expect(
+      await screen.findByText(/nenhuma campanha criada ainda/i),
+    ).toBeVisible();
+  });
+
   it("blocks campaign launch until invalid csv recipients are excluded", async () => {
     const user = userEvent.setup();
     const onCreateCampaign = vi.fn(async () => createCampaign());

@@ -58,6 +58,8 @@ async function main(): Promise<void> {
     logger.info("crm.whatsapp.schedule.worker.finished", {
       ...result,
       archivedAbandonedConnections: cleanup.archived,
+      olxWebhookEffects: cleanup.olxEffects,
+      olxLeadReceipts: cleanup.olxLeads,
     });
   } finally {
     await runtime.close();
@@ -117,7 +119,7 @@ function createWorkerContext(input: {
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
     permissions: [
-      "crm.whatsapp.connection.manage",
+      "crm.whatsapp.ingest",
       "crm.whatsapp.schedules.process",
       "crm.whatsapp.send",
     ],

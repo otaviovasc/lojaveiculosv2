@@ -2,6 +2,7 @@ import type { CrmConnection } from "../../domains/crm/ports/crmConnectionReposit
 import {
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
 } from "../../domains/crm/ports/crmConnectionSetupProvider.js";
 import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import { openSealedCrmConnectionCredential } from "./crmConnectionCredentialVault.js";
@@ -14,12 +15,19 @@ export function resolveZapiCredentials(
   const envRefs = readEnvRefs(connection.credentialsRef);
   const stored = readStoredCredentials(connection, env);
   if (stored) {
+    const storedClientToken = decryptIfSealed(
+      connection,
+      readString(readRecord(connection.credentialsRef.stored).clientToken),
+      ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
+      env,
+    );
     return {
       apiBaseUrl:
         readOptionalEnv(env, envRefs.apiBaseUrl) ??
         env.CRM_ZAPI_API_BASE_URL?.trim() ??
         "https://api.z-api.io",
       clientToken:
+        storedClientToken ??
         readOptionalEnv(env, envRefs.clientToken) ??
         env.CRM_ZAPI_CLIENT_TOKEN?.trim() ??
         env.CRM_ZAPI_TEST_CLIENT_TOKEN?.trim() ??
@@ -106,7 +114,7 @@ function decryptIfSealed(
     );
   } catch {
     throw new CrmWhatsappGatewayError(
-      "Stored ZAPI instance token could not be decrypted",
+      "Stored ZAPI credential could not be decrypted",
     );
   }
 }

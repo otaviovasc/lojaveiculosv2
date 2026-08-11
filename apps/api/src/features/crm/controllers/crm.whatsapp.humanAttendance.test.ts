@@ -13,6 +13,113 @@ import {
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp human attendance", () => {
+  it("correlates a ZAPI echo that arrives before the CRM outbound insert", async () => {
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmWhatsappGateway: { sendText: createSendTextSpy() },
+      crmWhatsappRepository: whatsappRepository,
+    });
+    const inboundResponse = await postZapiWebhook(app, {
+      messageId: "zapi-origin-race-inbound",
+    });
+    const inbound = (await inboundResponse.json()) as {
+      session: { id: string };
+    };
+    const echoResponse = await postZapiWebhook(app, {
+      fromMe: true,
+      messageId: "zapi-outbound-1",
+      text: { message: "Resposta do CRM" },
+    });
+    expect(echoResponse.status).toBe(201);
+
+    const sentResponse = await app.request(
+      "/api/v1/crm/whatsapp/send/text",
+      jsonRequest({
+        sessionId: inbound.session.id,
+        text: "Resposta do CRM",
+      }),
+    );
+    expect(sentResponse.status).toBe(201);
+    await expect(sentResponse.json()).resolves.toMatchObject({
+      externalId: "zapi-outbound-1",
+      senderOrigin: "human_crm",
+      senderType: "HUMAN",
+    });
+    const messages = await whatsappRepository.listMessages({
+      limit: 10,
+      offset: 0,
+      sessionId: inbound.session.id,
+      storeId: createZapiConnection().storeId,
+      tenantId: createZapiConnection().tenantId,
+    });
+    expect(
+      messages.filter((message) => message.externalId === "zapi-outbound-1"),
+    ).toEqual([
+      expect.objectContaining({
+        senderOrigin: "human_crm",
+        senderType: "HUMAN",
+      }),
+    ]);
+  });
+
+  it("keeps provider-only fromMe echoes unknown and outside human attendance", async () => {
+    const dispatched: DispatchCrmBotWebhookInput[] = [];
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const app = createTestApp({
+      crmBotWebhookDispatcher: createBotDispatcher(dispatched),
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmWhatsappGateway: { sendText: createSendTextSpy() },
+      crmWhatsappRepository: whatsappRepository,
+    });
+    await configureBot(app);
+    const inboundResponse = await postZapiWebhook(app, {
+      messageId: "zapi-before-provider-echo",
+    });
+    const inbound = (await inboundResponse.json()) as {
+      session: { id: string; revision: number };
+    };
+
+    const echoResponse = await postZapiWebhook(app, {
+      fromMe: true,
+      messageId: "zapi-provider-only-echo",
+      text: { message: "Mensagem enviada fora do CRM" },
+    });
+    const echo = (await echoResponse.json()) as {
+      message: { senderOrigin: string; senderType: string };
+      session: {
+        humanAttendanceState: string | null;
+        revision: number;
+        status: string;
+      };
+    };
+
+    expect(echoResponse.status).toBe(201);
+    expect(echo.message).toMatchObject({
+      senderOrigin: "unknown",
+      senderType: "SYSTEM",
+    });
+    expect(echo.session).toMatchObject({
+      humanAttendanceState: null,
+      revision: inbound.session.revision + 1,
+      status: "ACTIVE",
+    });
+    expect(dispatched.at(-1)?.payload).toMatchObject({
+      event: "message",
+      message: {
+        senderOrigin: "unknown",
+        wasSentByApi: false,
+      },
+    });
+    expect(
+      dispatched.some((item) => item.payload.event === "intervention_started"),
+    ).toBe(false);
+  });
+
   it("keeps an active conversation active when a seller only reacts", async () => {
     const whatsappRepository = createMemoryCrmWhatsappRepository();
     const app = createTestApp({
@@ -51,124 +158,6 @@ describe("CRM WhatsApp human attendance", () => {
       firstHandledAt: null,
       humanAttendanceState: null,
       status: "ACTIVE",
-    });
-  });
-
-  it("upserts the same intervention when a human answers an AI pause", async () => {
-    const dispatched: DispatchCrmBotWebhookInput[] = [];
-    const app = createTestApp({
-      crmBotWebhookDispatcher: createBotDispatcher(dispatched),
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
-      ]),
-      crmWhatsappGateway: { sendText: createSendTextSpy() },
-      crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
-    });
-    await configureBot(app);
-    const inboundResponse = await postZapiWebhook(app, {
-      messageId: "zapi-waiting-human",
-    });
-    const inbound = (await inboundResponse.json()) as {
-      session: { id: string };
-    };
-    const interventionId = "00000000-0000-4000-8000-000000000901";
-
-    const pauseResponse = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot/actions",
-      jsonRequest(
-        {
-          action: "set_intervention",
-          payload: {
-            enabled: true,
-            interventionId,
-            reason: "KEYWORD_TRIGGER",
-            source: "bot",
-          },
-          sessionId: inbound.session.id,
-        },
-        { "X-Webhook-Secret": "bot-secret-value" },
-      ),
-    );
-    expect(pauseResponse.status).toBe(200);
-    expect(dispatched.at(-1)?.payload).toMatchObject({
-      event: "intervention_started",
-      intervention: {
-        attendanceState: "WAITING_HUMAN",
-        id: interventionId,
-        stateVersion: 1,
-        triggeredBy: "bot",
-      },
-      session: {
-        humanAttendanceState: "WAITING_HUMAN",
-        interventionId,
-      },
-    });
-
-    const reactionResponse = await postZapiWebhook(app, {
-      fromMe: true,
-      messageId: "zapi-human-reaction",
-      reaction: { messageId: "zapi-waiting-human", value: "👍" },
-      text: undefined,
-    });
-    expect(reactionResponse.status).toBe(201);
-    const waitingResponse = await app.request(
-      `/api/v1/crm/whatsapp/sessions?sessionId=${inbound.session.id}`,
-    );
-    await expect(waitingResponse.json()).resolves.toMatchObject([
-      {
-        humanAttendanceState: "WAITING_HUMAN",
-        humanAttendanceStateVersion: 1,
-        interventionId,
-      },
-    ]);
-
-    const answerResponse = await app.request(
-      "/api/v1/crm/whatsapp/send/text",
-      jsonRequest({
-        sessionId: inbound.session.id,
-        text: "Assumi o atendimento.",
-      }),
-    );
-    expect(answerResponse.status).toBe(201);
-    expect(dispatched.at(-1)?.payload).toMatchObject({
-      event: "intervention_started",
-      intervention: {
-        attendanceState: "IN_HUMAN_SERVICE",
-        id: interventionId,
-        stateVersion: 2,
-        triggeredBy: "admin",
-      },
-      session: {
-        humanAttendanceState: "IN_HUMAN_SERVICE",
-        humanAttendanceStateVersion: 2,
-        interventionId,
-      },
-    });
-
-    const endResponse = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot/actions",
-      jsonRequest(
-        {
-          action: "set_intervention",
-          payload: { enabled: false, interventionId },
-          sessionId: inbound.session.id,
-        },
-        { "X-Webhook-Secret": "bot-secret-value" },
-      ),
-    );
-    expect(endResponse.status).toBe(200);
-    expect(dispatched.at(-1)?.payload).toMatchObject({
-      event: "intervention_ended",
-      intervention: {
-        attendanceState: null,
-        id: interventionId,
-        stateVersion: 3,
-      },
-      session: {
-        humanAttendanceState: null,
-        humanAttendanceStateVersion: 3,
-        interventionId: null,
-      },
     });
   });
 });

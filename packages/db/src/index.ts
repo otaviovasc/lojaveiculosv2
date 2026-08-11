@@ -9,6 +9,7 @@ export * from "./schema/leads.js";
 export * from "./schema/crm.js";
 export * from "./schema/crmPipeline.js";
 export * from "./schema/crmWhatsapp.js";
+export * from "./schema/crmWhatsappInterventions.js";
 export * from "./schema/crmWhatsappOutbound.js";
 export * from "./schema/crmWhatsappCampaigns.js";
 export * from "./schema/crmWhatsappScheduled.js";

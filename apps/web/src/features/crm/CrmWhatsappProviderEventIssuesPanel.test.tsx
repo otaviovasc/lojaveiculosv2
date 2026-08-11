@@ -74,6 +74,23 @@ describe("CrmWhatsappProviderEventIssuesPanel", () => {
       screen.queryByRole("button", { name: "Reprocessar" }),
     ).not.toBeInTheDocument();
   });
+
+  it("uses the truthful OLX Chat provider label", async () => {
+    const user = userEvent.setup();
+    const api = createApi({
+      provider: "olx_chat",
+      retryable: false,
+    });
+
+    render(<CrmWhatsappProviderEventIssuesPanel api={api} canRetry={false} />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: /1 evento de provedor com atenção/i,
+      }),
+    );
+    expect(screen.getByText("OLX Chat")).toBeVisible();
+  });
 });
 
 function createApi(

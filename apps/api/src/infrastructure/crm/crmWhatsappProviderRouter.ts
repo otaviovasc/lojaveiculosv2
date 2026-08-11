@@ -1,18 +1,30 @@
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import {
+  CrmWhatsappCapabilityError,
   CrmWhatsappGatewayError,
   type CrmWhatsappGateway,
 } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import { createComposioCrmWhatsappGateway } from "./composioCrmWhatsappGateway.js";
 import { createZapiCrmWhatsappGateway } from "./zapiCrmWhatsappGateway.js";
+import { createOlxCrmChatGateway } from "./olxCrmChatGateway.js";
 
 export function createCrmWhatsappProviderRouter(
   zapiGateway: CrmWhatsappGateway,
   composioGateway: CrmWhatsappGateway,
+  olxGateway: CrmWhatsappGateway,
+  options: { olxChatEnabled: boolean } = { olxChatEnabled: false },
 ): CrmWhatsappGateway {
   const gatewayFor = (connection: CrmConnection) => {
     const provider = String(connection.provider);
     if (provider === "zapi") return zapiGateway;
+    if (provider === "olx_chat") {
+      if (!options.olxChatEnabled) {
+        throw new CrmWhatsappCapabilityError(
+          "OLX Chat is disabled by the server runtime policy.",
+        );
+      }
+      return olxGateway;
+    }
     if (provider === "composio_whatsapp" || provider === "composio_instagram") {
       return composioGateway;
     }
@@ -54,5 +66,13 @@ export function createRuntimeCrmWhatsappProviderGateway(
   return createCrmWhatsappProviderRouter(
     createZapiCrmWhatsappGateway(env, fetchImpl),
     createComposioCrmWhatsappGateway(env, fetchImpl),
+    createOlxCrmChatGateway(env, fetchImpl),
+    { olxChatEnabled: isOlxChatRuntimeEnabled(env) },
   );
+}
+
+export function isOlxChatRuntimeEnabled(
+  env: Record<string, string | undefined>,
+): boolean {
+  return env.CRM_OLX_CHAT_ENABLED === "true";
 }

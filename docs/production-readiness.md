@@ -152,11 +152,6 @@ Marketplace/runtime integrations:
 - `MERCADO_LIVRE_WEBHOOK_URL`
 - `OLX_CLIENT_ID`
 - `OLX_CLIENT_SECRET`
-- `OLX_AUTHORIZATION_URL`
-- `OLX_API_BASE_URL`
-- `OLX_TOKEN_URL`
-- `OLX_LISTINGS_PATH`
-- `OLX_WEBHOOK_URL`
 
 Observability:
 

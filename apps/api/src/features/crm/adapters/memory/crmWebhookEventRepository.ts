@@ -1,16 +1,83 @@
 import { randomUUID } from "node:crypto";
 import type {
-  CrmProviderWebhookEventProvider,
   CrmProviderWebhookEvent,
+  CrmWebhookEffect,
   CrmWebhookEventRepository,
 } from "../../../../domains/crm/ports/crmWebhookEventRepository.js";
+import {
+  claimMemoryWebhookEffect,
+  isMemoryWebhookEffectClaimable,
+  isNextMemoryWebhookEffect,
+} from "./crmWebhookEffectMemory.js";
+import {
+  matchesMemoryWebhookEventList,
+  matchesMemoryWebhookEventScope,
+} from "./crmWebhookEventMemory.js";
 
 export function createMemoryCrmWebhookEventRepository(
   initialEvents: readonly CrmProviderWebhookEvent[] = [],
 ): CrmWebhookEventRepository {
   const events = [...initialEvents];
+  const effects: CrmWebhookEffect[] = [];
 
   return {
+    async claimDueEvents(input) {
+      const candidates = events
+        .filter(
+          (event) =>
+            event.eventType === input.eventType &&
+            event.provider === input.provider &&
+            event.processingAttempts < input.maxAttempts &&
+            (event.status === "received" ||
+              event.status === "failed" ||
+              (event.status === "processing" &&
+                (!event.processingStartedAt ||
+                  event.processingStartedAt <= input.staleBefore))),
+        )
+        .sort(
+          (left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+        )
+        .slice(0, input.limit);
+      for (const event of candidates) {
+        event.errorMessage = null;
+        event.processedAt = null;
+        event.processingAttempts += 1;
+        event.processingStartedAt = input.now;
+        event.processingToken = input.processingToken;
+        event.status = "processing";
+        event.updatedAt = input.now;
+      }
+      return candidates;
+    },
+    async claimDueEffects(input) {
+      const claimed: CrmWebhookEffect[] = [];
+      const candidates = effects
+        .filter((effect) => isNextMemoryWebhookEffect(effects, effect))
+        .filter((effect) => isMemoryWebhookEffectClaimable(effect, input))
+        .sort(
+          (left, right) =>
+            left.nextAttemptAt.getTime() - right.nextAttemptAt.getTime() ||
+            left.sequence - right.sequence,
+        )
+        .slice(0, input.limit);
+      for (const effect of candidates) {
+        claimMemoryWebhookEffect(effect, input.now, input.processingToken);
+        claimed.push(effect);
+      }
+      return claimed;
+    },
+    async claimEffect(input) {
+      const effect = effects.find((item) => item.id === input.effectId);
+      if (!effect) return null;
+      if (!isNextMemoryWebhookEffect(effects, effect)) return null;
+      if (!isMemoryWebhookEffectClaimable(effect, input)) return null;
+      claimMemoryWebhookEffect(
+        effect,
+        input.processingStartedAt,
+        input.processingToken,
+      );
+      return effect;
+    },
     async claimForProcessing(input) {
       const event = events.find((item) => item.id === input.eventId);
       if (!event) return null;
@@ -32,11 +99,50 @@ export function createMemoryCrmWebhookEventRepository(
       return event;
     },
     async findById(input) {
-      return events.find((event) => matchesScope(event, input)) ?? null;
+      return (
+        events.find((event) => matchesMemoryWebhookEventScope(event, input)) ??
+        null
+      );
+    },
+    async completeEffect(input) {
+      const effect = effects.find(
+        (item) =>
+          item.id === input.effectId &&
+          item.status === "processing" &&
+          item.processingToken === input.processingToken,
+      );
+      if (!effect) return null;
+      effect.deliveredAt = input.deliveredAt;
+      effect.deadLetteredAt = null;
+      effect.processingStartedAt = null;
+      effect.processingToken = null;
+      effect.status = "delivered";
+      return effect;
+    },
+    async failEffect(input) {
+      const effect = effects.find(
+        (item) =>
+          item.id === input.effectId &&
+          item.status === "processing" &&
+          item.processingToken === input.processingToken,
+      );
+      if (!effect) return null;
+      effect.lastErrorCode = input.lastErrorCode;
+      effect.deadLetteredAt = input.deadLetteredAt;
+      effect.nextAttemptAt = input.nextAttemptAt;
+      effect.processingStartedAt = null;
+      effect.processingToken = null;
+      effect.status = input.status;
+      return effect;
+    },
+    async listEffects(providerEventId) {
+      return effects
+        .filter((effect) => effect.providerEventId === providerEventId)
+        .sort((left, right) => left.sequence - right.sequence);
     },
     async list(input) {
       return events
-        .filter((event) => matchesList(event, input))
+        .filter((event) => matchesMemoryWebhookEventList(event, input))
         .sort(
           (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
         )
@@ -47,6 +153,7 @@ export function createMemoryCrmWebhookEventRepository(
         (event) =>
           event.provider === input.provider &&
           event.environment === input.environment &&
+          event.connectionId === (input.connectionId ?? null) &&
           event.providerEventId === input.providerEventId,
       );
       if (existing) return { created: false, event: existing };
@@ -74,6 +181,42 @@ export function createMemoryCrmWebhookEventRepository(
       events.push(event);
       return { created: true, event };
     },
+    async stageEffects(input) {
+      const now = new Date();
+      for (const staged of input.effects) {
+        if (
+          effects.some(
+            (effect) =>
+              effect.providerEventId === input.providerEventId &&
+              effect.effectType === staged.effectType,
+          )
+        ) {
+          continue;
+        }
+        effects.push({
+          connectionId: input.connectionId,
+          deadLetteredAt: null,
+          deliveredAt: null,
+          effectType: staged.effectType,
+          id: randomUUID(),
+          lastErrorCode: null,
+          messageId: input.messageId,
+          nextAttemptAt: now,
+          processingAttempts: 0,
+          processingStartedAt: null,
+          processingToken: null,
+          providerEventId: input.providerEventId,
+          sequence: staged.sequence,
+          sessionId: input.sessionId,
+          status: "pending",
+          storeId: input.storeId,
+          tenantId: input.tenantId,
+        });
+      }
+      return effects
+        .filter((effect) => effect.providerEventId === input.providerEventId)
+        .sort((left, right) => left.sequence - right.sequence);
+    },
     async updateStatus(input) {
       const event = events.find((item) => item.id === input.eventId);
       if (!event) return null;
@@ -93,36 +236,4 @@ export function createMemoryCrmWebhookEventRepository(
       return event;
     },
   };
-}
-
-function matchesScope(
-  event: CrmProviderWebhookEvent,
-  input: { eventId: string; storeId: string; tenantId: string },
-) {
-  return (
-    event.id === input.eventId &&
-    event.storeId === input.storeId &&
-    event.tenantId === input.tenantId
-  );
-}
-
-function matchesList(
-  event: CrmProviderWebhookEvent,
-  input: {
-    connectionId?: string | null;
-    eventType?: string;
-    provider?: CrmProviderWebhookEventProvider;
-    status?: string;
-    storeId: string;
-    tenantId: string;
-  },
-) {
-  if (event.storeId !== input.storeId) return false;
-  if (event.tenantId !== input.tenantId) return false;
-  if (input.connectionId && event.connectionId !== input.connectionId)
-    return false;
-  if (input.eventType && event.eventType !== input.eventType) return false;
-  if (input.provider && event.provider !== input.provider) return false;
-  if (input.status && event.status !== input.status) return false;
-  return true;
 }

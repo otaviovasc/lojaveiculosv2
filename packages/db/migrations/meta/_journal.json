@@ -155,6 +155,62 @@
       "when": 1786390165064,
       "tag": "0021_storefront_vehicle_vitrine",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786396810897,
+      "tag": "0022_crm_whatsapp_consistency_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786405023573,
+      "tag": "0023_crm_olx_chat_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786408000000,
+      "tag": "0024_split_crm_connection_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786409000000,
+      "tag": "0025_crm_webhook_effect_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786410000000,
+      "tag": "0026_durable_olx_webhook_effects",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786411000000,
+      "tag": "0027_crm_olx_lead_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786412000000,
+      "tag": "0028_marketplace_oauth_transactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786413000000,
+      "tag": "0029_marketplace_oauth_exchange_lease",
+      "breakpoints": true
     }
   ]
 }

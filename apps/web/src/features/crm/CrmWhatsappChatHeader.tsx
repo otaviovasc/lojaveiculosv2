@@ -17,6 +17,10 @@ import { ChatAssignmentSelect } from "./CrmWhatsappChatHeaderAssignment";
 import { CrmWhatsappHumanAttendanceBadge } from "./CrmWhatsappHumanAttendanceBadge";
 import { SessionTagRow } from "./CrmWhatsappChatHeaderTags";
 import { formatSessionName } from "./crmWhatsappModel";
+import {
+  readCrmWhatsappChannelLabel,
+  readCrmWhatsappProviderLabel,
+} from "./crmWhatsappConnectionStatus";
 import { TagMenu } from "./CrmWhatsappTagMenu";
 import type {
   CrmWhatsappAddSessionTagInput,
@@ -117,7 +121,12 @@ export function ChatHeader({
           </button>
           <span className="crm-whatsapp-chat-channel-pill">
             <MessageCircleMore aria-hidden="true" />
-            WhatsApp
+            {readCrmWhatsappChannelLabel(session.channel)}
+            <small>
+              {readCrmWhatsappProviderLabel(
+                session.connection?.provider ?? "unknown",
+              )}
+            </small>
           </span>
           <CrmWhatsappHumanAttendanceBadge session={session} />
           <SessionTagRow

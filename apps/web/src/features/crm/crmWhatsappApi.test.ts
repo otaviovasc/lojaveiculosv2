@@ -166,29 +166,23 @@ describe("CRM WhatsApp API", () => {
     const fake = createFakeFetch([
       { id: "connection_1" },
       { qrCode: "data:image/png;base64,qr" },
+      { code: "123456", requested: true },
       { redirectUrl: "https://connect.composio.dev/session/test" },
     ]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await api.createConnection({
-      instanceCredentials: {
-        instanceId: "instance-1",
-        instanceToken: "secret-1",
-      },
-      provider: "zapi",
+      provider: "composio_whatsapp",
     });
     await api.requestZapiPairingQr("connection_1");
+    await api.requestZapiPairingCode("connection_1", "5511999999999");
     await api.authorizeComposioConnection("connection_2");
 
     expect(fake.calls[0]).toMatchObject({
       input: "/api/v1/crm/whatsapp/connections",
       init: {
         body: JSON.stringify({
-          instanceCredentials: {
-            instanceId: "instance-1",
-            instanceToken: "secret-1",
-          },
-          provider: "zapi",
+          provider: "composio_whatsapp",
         }),
         method: "POST",
       },
@@ -197,6 +191,13 @@ describe("CRM WhatsApp API", () => {
       "/api/v1/crm/whatsapp/connections/connection_1/zapi/pairing/qr",
     );
     expect(fake.calls[2]?.input).toBe(
+      "/api/v1/crm/whatsapp/connections/connection_1/zapi/pairing/code",
+    );
+    expect(fake.calls[2]?.init).toMatchObject({
+      body: JSON.stringify({ phone: "5511999999999" }),
+      method: "POST",
+    });
+    expect(fake.calls[3]?.input).toBe(
       "/api/v1/crm/whatsapp/connections/connection_2/composio/authorize",
     );
   });
@@ -215,12 +216,14 @@ describe("CRM WhatsApp API", () => {
         leadId: "lead_1",
         limit: 10,
       }),
-    ).resolves.toEqual([{ id: "session_1" }]);
+    ).resolves.toEqual([
+      { id: "session_1", interventionHistoryStartedAt: null, revision: 0 },
+    ]);
     await expect(
       api.listSessionCounts({ connectionId: "connection_1", unreadOnly: true }),
     ).resolves.toMatchObject({ total: 1, unread: 1 });
     await expect(api.listMessages("session_1")).resolves.toEqual([
-      { id: "message_1" },
+      { id: "message_1", senderOrigin: "unknown" },
     ]);
 
     expect(fake.calls[0]?.input).toBe(

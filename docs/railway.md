@@ -32,38 +32,30 @@ between the two processes. Database and Redis URLs remain direct typed
 references to their Railway resources. `railway config plan` reported zero
 drift after this wiring was applied.
 
+Meta webhook verification is API-only. `CRM_META_APP_SECRET` and
+`CRM_META_WEBHOOK_VERIFY_TOKEN` are shared staging secrets referenced by the API
+service, but they are intentionally not copied to the CRM schedule worker. The
+worker sends scheduled messages through Composio and does not receive Meta
+webhooks.
+
 The web service receives `VITE_API_BASE_URL` from the API service's
 `API_BASE_URL` reference, so browser requests cannot silently fall back to the
 web service's SPA route and parse `index.html` as an API response.
 
-The following staging shared variables contain explicit `keepme_*` or
-`keepme-*.invalid` placeholders and must be replaced in Railway before the
-corresponding capability is enabled:
+Staging currently retains explicit `keepme_*` placeholders only for capabilities
+that are not ready to receive provider callbacks:
 
-- Core launch: `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`,
-  `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`,
-  `R2_PUBLIC_BASE_URL`, and `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY`.
-- CRM messaging: `CRM_ZAPI_CLIENT_TOKEN`, the credential-encryption key, and
-  the Composio/Meta variables documented in `docs/ops/env-vars.md`. Z-API
-  webhook authentication uses server-generated per-connection secrets, not a
-  shared Railway variable.
-- OpenRouter: `OPENROUTER_API_KEY`. AI document suggestions and inventory
-  resale analysis remain unavailable until this placeholder is replaced.
-- Asaas sandbox: `ASAAS_API_KEY`, `ASAAS_WEBHOOK_SECRET`, and
-  `ASAAS_RUNTIME_IMPLEMENTATION`. Set the implementation to `http` only after
-  the other values are real.
-- SPEDY: `SPEDY_API_URL`, `SPEDY_OWNER_API_KEY`,
-  `FISCAL_CREDENTIAL_ENCRYPTION_KEY`, `SPEDY_WEBHOOK_URL`, and
-  `SPEDY_RUNTIME_IMPLEMENTATION`. The owner key manages company subaccounts;
-  store API keys are encrypted in the product database. Set the implementation
-  to `http` only after every value is real and the callback is reachable.
+- Official Meta inbound messaging: `CRM_META_APP_SECRET` and
+  `CRM_META_WEBHOOK_VERIFY_TOKEN`. Replace both before registering the shared
+  Meta webhook. The verification token must match the value entered in Meta.
 - Deferred storefront DNS: `PUBLIC_STOREFRONT_ROOT_DOMAIN` and
   `PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET`.
 
-Asaas and SPEDY remain fail-closed while their implementation variables retain
-placeholder values. Do not deploy with a core-launch placeholder. Do not place
-real secrets in `.railway/railway.ts`; replace them in Railway's staging shared
-variable settings.
+Core launch, Z-API, Composio, OpenRouter, Asaas, SPEDY, R2, Clerk, marketplace,
+and financing values must remain real staging values. Z-API webhook
+authentication uses server-generated per-connection secrets, not a shared
+Railway variable. Do not place real secrets in `.railway/railway.ts`; maintain
+them as sealed Railway shared variables.
 
 Each persistent environment should contain:
 

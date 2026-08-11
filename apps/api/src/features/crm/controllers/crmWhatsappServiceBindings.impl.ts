@@ -19,6 +19,8 @@ import {
   listWhatsappWebhookEventIssues,
   retryWhatsappWebhookEvent,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
+import { recoverOlxWebhookEffects } from "../../../domains/crm/services/CrmMessaging/recoverOlxWebhookEffects.js";
+import { recoverOlxLeadWebhooks } from "../../../domains/crm/services/CrmMessaging/recoverOlxLeadWebhooks.js";
 import {
   cancelWhatsappScheduledMessage,
   createWhatsappScheduledMessage,
@@ -97,6 +99,8 @@ type TagBindings = Pick<
 type WebhookEventBindings = Pick<
   CrmWhatsappServices,
   | "listWhatsappWebhookEventIssues"
+  | "recoverOlxWebhookEffects"
+  | "recoverOlxLeadWebhooks"
   | "removeWhatsappReaction"
   | "retryWhatsappWebhookEvent"
 >;
@@ -178,6 +182,10 @@ const buildWebhookEventBindings = (
     listWhatsappWebhookEventIssues(context, input, ports),
   retryWhatsappWebhookEvent: (context, input) =>
     retryWhatsappWebhookEvent(context, input, ports),
+  recoverOlxWebhookEffects: (context, input) =>
+    recoverOlxWebhookEffects(context, input, ports),
+  recoverOlxLeadWebhooks: (context, input) =>
+    recoverOlxLeadWebhooks(context, input, ports),
   removeWhatsappReaction: (context, input) =>
     removeWhatsappReaction(context, input, ports),
 });

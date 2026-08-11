@@ -1,19 +1,20 @@
 import type {
-  CreateCrmLeadInput,
-  CreateLeadActivityInput,
-  CountCrmLeadsInput,
   CrmLead,
   CrmLeadActivity,
   CrmRepository,
-  ListCrmLeadsInput,
-  ListLeadActivitiesInput,
-  UpdateCrmLeadInput,
 } from "../../../../domains/crm/ports/crmRepository.js";
 import { whatsappPhoneLookupCandidates } from "../../../../domains/crm/whatsapp/whatsappPhone.js";
+import {
+  applyMemoryLeadUpdate,
+  filterMemoryCrmLeads,
+  findScopedMemoryLead,
+  isMemoryLeadAfterCursor,
+} from "./crmRepositorySupport.js";
 
 export function createMemoryCrmRepository(): CrmRepository {
   const leads: CrmLead[] = [];
   const activities: CrmLeadActivity[] = [];
+  const leadIdentityIds = new Map<string, string>();
 
   return {
     async createActivity(input) {
@@ -91,6 +92,23 @@ export function createMemoryCrmRepository(): CrmRepository {
       leads.push(lead);
       return lead;
     },
+    async createLeadIdempotently(input) {
+      const identity = [
+        input.tenantId,
+        input.storeId,
+        input.source,
+        input.sourceIdentityKey,
+      ].join(":");
+      const existingId = leadIdentityIds.get(identity);
+      const existing = existingId
+        ? findScopedMemoryLead(leads, existingId, input)
+        : undefined;
+      if (existing) return { created: false, lead: existing };
+
+      const lead = await this.createLead(input);
+      leadIdentityIds.set(identity, lead.id);
+      return { created: true, lead };
+    },
     async countLeadsByPipeline(input) {
       return leads.filter(
         (lead) =>
@@ -110,10 +128,10 @@ export function createMemoryCrmRepository(): CrmRepository {
       ).length;
     },
     async countLeads(input) {
-      return filterLeads(leads, input).length;
+      return filterMemoryCrmLeads(leads, input).length;
     },
     async findLeadById(input) {
-      return findScopedLead(leads, input.leadId, input) ?? null;
+      return findScopedMemoryLead(leads, input.leadId, input) ?? null;
     },
     async findLeadByPhone(input) {
       const candidates = whatsappPhoneLookupCandidates(input.buyerPhone);
@@ -141,7 +159,7 @@ export function createMemoryCrmRepository(): CrmRepository {
     },
     async listLeadBoard(input) {
       const stages = new Map<string, CrmLead[]>();
-      for (const lead of filterLeads(leads, input)) {
+      for (const lead of filterMemoryCrmLeads(leads, input)) {
         if (!lead.pipelineStageId) continue;
         const items = stages.get(lead.pipelineStageId) ?? [];
         items.push(lead);
@@ -155,94 +173,22 @@ export function createMemoryCrmRepository(): CrmRepository {
     },
     async listLeads(input) {
       const offset = input.cursor ? 0 : (input.offset ?? 0);
-      return filterLeads(leads, input)
-        .filter((lead) => isAfterCursor(lead, input.cursor))
+      return filterMemoryCrmLeads(leads, input)
+        .filter((lead) => isMemoryLeadAfterCursor(lead, input.cursor))
         .slice(offset, offset + input.limit);
     },
     async updateLead(input) {
-      const lead = findScopedLead(leads, input.leadId, input);
+      const lead = findScopedMemoryLead(leads, input.leadId, input);
       if (!lead) throw new Error(`Lead not found: ${input.leadId}`);
 
-      applyLeadUpdate(lead, input);
+      applyMemoryLeadUpdate(lead, input);
       lead.updatedAt = new Date();
       return lead;
     },
   };
 }
 
-function filterLeads(
-  leads: CrmLead[],
-  input: CountCrmLeadsInput | ListCrmLeadsInput,
-) {
-  return leads
-    .filter((lead) => lead.storeId === input.storeId)
-    .filter((lead) => lead.tenantId === input.tenantId)
-    .filter((lead) => !input.listingId || lead.listingId === input.listingId)
-    .filter((lead) => !input.pipelineId || lead.pipelineId === input.pipelineId)
-    .filter(
-      (lead) =>
-        !input.pipelineStageId ||
-        lead.pipelineStageId === input.pipelineStageId,
-    )
-    .filter((lead) => !input.source || lead.source === input.source)
-    .filter((lead) => !input.status || lead.status === input.status)
-    .filter((lead) => matchesSearch(lead, input.search))
-    .sort(compareLeadsDescending);
-}
-
-function compareLeadsDescending(left: CrmLead, right: CrmLead) {
-  const timestampDifference =
-    right.updatedAt.getTime() - left.updatedAt.getTime();
-  return timestampDifference || right.id.localeCompare(left.id);
-}
-
-function isAfterCursor(lead: CrmLead, cursor: ListCrmLeadsInput["cursor"]) {
-  if (!cursor) return true;
-  const leadTimestamp = lead.updatedAt.getTime();
-  const cursorTimestamp = cursor.updatedAt.getTime();
-  return (
-    leadTimestamp < cursorTimestamp ||
-    (leadTimestamp === cursorTimestamp && lead.id < cursor.id)
-  );
-}
-
-function findScopedLead(
-  leads: CrmLead[],
-  leadId: string,
-  scope: Pick<CreateCrmLeadInput, "storeId" | "tenantId">,
-) {
-  return leads.find(
-    (lead) =>
-      lead.id === leadId &&
-      lead.storeId === scope.storeId &&
-      lead.tenantId === scope.tenantId,
-  );
-}
-
-function applyLeadUpdate(lead: CrmLead, input: UpdateCrmLeadInput) {
-  if (input.assignedUserId !== undefined) {
-    lead.assignedUserId = input.assignedUserId;
-  }
-  if (input.buyerEmail !== undefined) lead.buyerEmail = input.buyerEmail;
-  if (input.buyerName !== undefined) lead.buyerName = input.buyerName;
-  if (input.buyerPhone !== undefined) lead.buyerPhone = input.buyerPhone;
-  if (input.metadata) lead.metadata = input.metadata;
-  if (input.pipelineId !== undefined) lead.pipelineId = input.pipelineId;
-  if (input.pipelineStageId !== undefined) {
-    lead.pipelineStageId = input.pipelineStageId;
-  }
-  if (input.status) lead.status = input.status;
-}
-
 function matchesLeadPhone(value: string | null, candidates: string[]) {
   if (!value) return false;
   return candidates.includes(value.replace(/\D/g, ""));
-}
-
-function matchesSearch(lead: CrmLead, search: ListCrmLeadsInput["search"]) {
-  if (!search) return true;
-  const needle = search.toLowerCase();
-  return [lead.buyerName, lead.buyerPhone, lead.buyerEmail, lead.vehicleTitle]
-    .filter(Boolean)
-    .some((value) => value?.toLowerCase().includes(needle));
 }

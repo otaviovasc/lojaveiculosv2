@@ -60,6 +60,11 @@ import type { CrmWhatsappCampaignServices } from "./crmWhatsappCampaignBindings.
 import type { CrmWhatsappQuickMessageServices } from "./crmWhatsappQuickMessageBindings.js";
 import type { CrmWhatsappWebhookServices } from "./crmWhatsappWebhookServiceTypes.js";
 import type { CrmWhatsappConnectionServices } from "./crmWhatsappConnectionServiceTypes.js";
+import type {
+  RecoverOlxWebhookEffectsInput,
+  RecoverOlxWebhookEffectsResult,
+} from "../../../domains/crm/services/CrmMessaging/recoverOlxWebhookEffects.js";
+import type { RecoverOlxLeadWebhooksResult } from "../../../domains/crm/services/CrmMessaging/recoverOlxLeadWebhooks.js";
 
 type CrmContextService<Input, Output> = (
   context: ServiceContext,
@@ -137,6 +142,14 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     processDueWhatsappScheduledMessages: CrmContextService<
       ProcessDueWhatsappScheduledMessagesInput,
       ProcessDueWhatsappScheduledMessagesResult
+    >;
+    recoverOlxWebhookEffects: CrmContextService<
+      RecoverOlxWebhookEffectsInput,
+      RecoverOlxWebhookEffectsResult
+    >;
+    recoverOlxLeadWebhooks: CrmContextService<
+      { limit: number; now?: Date },
+      RecoverOlxLeadWebhooksResult
     >;
     removeWhatsappReaction: CrmContextService<
       RemoveWhatsappReactionInput,

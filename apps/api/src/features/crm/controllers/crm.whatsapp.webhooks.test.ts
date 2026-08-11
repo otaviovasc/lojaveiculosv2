@@ -75,6 +75,38 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
     expect(messages[0]).toMatchObject({ status: "READ" });
   });
 
+  it("carries authenticated scope through delivery and status bindings", async () => {
+    let entitlementResolutions = 0;
+    const { app } = await createWebhookTestApp({
+      resolveBotEntitlements: async ({
+        context,
+        storeId: resolvedStoreId,
+        tenantId: resolvedTenantId,
+      }) => {
+        expect(context).toMatchObject({
+          actor: { id: "zapi", kind: "integration" },
+          permissions: ["crm.whatsapp.ingest"],
+          storeId: resolvedStoreId,
+          tenantId: resolvedTenantId,
+        });
+        entitlementResolutions++;
+        return ["crm", "crm_zapi"];
+      },
+    });
+
+    const delivery = await postWebhook(app, "delivery", {
+      messageId: "zapi-out-1",
+    });
+    const status = await postWebhook(app, "status", {
+      ids: ["zapi-out-1"],
+      status: "RECEIVED",
+    });
+
+    expect(delivery.status).toBe(200);
+    expect(status.status).toBe(200);
+    expect(entitlementResolutions).toBe(2);
+  });
+
   it("marks delivery errors as failed and records webhook audit", async () => {
     const { app, auditRecord, whatsappRepository } =
       await createWebhookTestApp();

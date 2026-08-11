@@ -5,7 +5,10 @@ import {
   interventionWindow,
   notifyScopedInterventionChangedToBot,
 } from "../../whatsapp/whatsappInterventionNotification.js";
-import { transitionHumanAttendance } from "../../whatsapp/humanAttendanceTransition.js";
+import {
+  interventionActorKind,
+  transitionHumanAttendance,
+} from "../../whatsapp/humanAttendanceTransition.js";
 import {
   getCrmWhatsappRepository,
   type CrmServicePorts,
@@ -22,6 +25,7 @@ import {
 
 export type ToggleWhatsappInterventionInput = {
   enabled: boolean;
+  expectedRevision: number;
   interventionId?: string;
   reason?: string;
   sessionId: string;
@@ -81,6 +85,8 @@ async function toggleWhatsappInterventionUnchecked(
   const reason =
     input.reason ?? defaultInterventionReason(context, input.enabled);
   const transition = await transitionHumanAttendance({
+    actorId: context.actor.id,
+    actorKind: interventionActorKind(context.actor.kind, source),
     command: input.enabled
       ? {
           ...(input.interventionId
@@ -102,6 +108,7 @@ async function toggleWhatsappInterventionUnchecked(
           status: "MINIBOT_ACTIVE",
         },
     now,
+    expectedRevision: input.expectedRevision,
     repository: getCrmWhatsappRepository(ports),
     session,
   });

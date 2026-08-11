@@ -107,6 +107,7 @@ export function seedSession(
     externalId: `seed-${buyerPhone}`,
     metadata: {},
     providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId: campaignStoreId,

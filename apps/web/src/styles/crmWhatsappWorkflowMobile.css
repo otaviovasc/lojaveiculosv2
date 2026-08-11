@@ -10,7 +10,7 @@
   }
 
   .crm-whatsapp-workflow {
-    height: max(20rem, calc(100dvh - 14.5rem));
+    height: max(20rem, calc(100dvh - 19.25rem));
     min-height: 0;
     overflow: hidden;
   }

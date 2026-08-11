@@ -21,7 +21,7 @@ export function listListingBlockers(
   if (!listing.mediaUrls.length) {
     blockers.push(blocker("MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS", "media"));
   }
-  if (!listing.priceCents || listing.priceCents <= 0) {
+  if (!listing.priceCents || Math.round(listing.priceCents / 100) <= 0) {
     blockers.push(blocker("MARKETPLACE_LISTING_PRICE_MISSING", "priceCents"));
   }
   blockers.push(...catalogBlockers(listing.catalog));
@@ -118,6 +118,15 @@ function olxBlockers(
   listing: MarketplaceListingProjection,
 ): MarketplaceListingBlocker[] {
   const blockers: MarketplaceListingBlocker[] = [];
+  if (!validOlxText(listing.title, 90)) {
+    blockers.push(blocker("MARKETPLACE_LISTING_TEXT_INVALID", "title"));
+  }
+  if (!validOlxText(listing.description ?? listing.title, 6000)) {
+    blockers.push(blocker("MARKETPLACE_LISTING_TEXT_INVALID", "description"));
+  }
+  if (!validOlxImages(listing.mediaUrls)) {
+    blockers.push(blocker("MARKETPLACE_LISTING_PHOTOS_INVALID", "media"));
+  }
   if (!validOlxPhone(listing.contactPhone)) {
     blockers.push(
       blocker("MARKETPLACE_LISTING_CONTACT_PHONE_MISSING", "contactPhone"),
@@ -140,6 +149,19 @@ function olxBlockers(
     );
   }
   return blockers;
+}
+
+function validOlxText(value: string, maxLength: number) {
+  const length = value.trim().length;
+  return length >= 2 && length <= maxLength;
+}
+
+function validOlxImages(values: readonly string[]) {
+  if (values.length === 0 || values.length > 20) return false;
+  const normalized = values.map((value) => value.trim());
+  return (
+    normalized.every(Boolean) && new Set(normalized).size === values.length
+  );
 }
 
 function validOlxPhone(value: string | null) {
@@ -183,7 +205,11 @@ const messages: Record<MarketplaceListingBlockerCode, string> = {
     "Mapeamento do catalogo FIPE com o provedor pendente.",
   MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS: "Anuncio sem fotos publicas.",
   MARKETPLACE_LISTING_NOT_PUBLIC: "Anuncio nao publicado no site publico.",
+  MARKETPLACE_LISTING_PHOTOS_INVALID:
+    "A OLX aceita de 1 a 20 fotos publicas, sem URLs vazias ou repetidas.",
   MARKETPLACE_LISTING_PRICE_MISSING: "Preco do anuncio ausente.",
+  MARKETPLACE_LISTING_TEXT_INVALID:
+    "Titulo ou descricao fora dos limites aceitos pela OLX.",
   MARKETPLACE_LISTING_TECHNICAL_FIELD_MISSING:
     "Campo tecnico obrigatorio ausente.",
 };
@@ -204,7 +230,11 @@ const actions: Record<MarketplaceListingBlockerCode, string> = {
   MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS: "Adicione pelo menos uma foto publica.",
   MARKETPLACE_LISTING_NOT_PUBLIC:
     "Publique o anuncio e habilite a visibilidade publica.",
+  MARKETPLACE_LISTING_PHOTOS_INVALID:
+    "Mantenha no maximo 20 fotos publicas e remova URLs vazias ou repetidas.",
   MARKETPLACE_LISTING_PRICE_MISSING: "Informe o preco de venda.",
+  MARKETPLACE_LISTING_TEXT_INVALID:
+    "Informe titulo e descricao com pelo menos 2 caracteres.",
   MARKETPLACE_LISTING_TECHNICAL_FIELD_MISSING:
     "Complete combustivel, portas e quilometragem.",
 };

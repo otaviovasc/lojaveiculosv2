@@ -14,6 +14,9 @@ import type {
   WhatsappWebhookEventSummary,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
 import type { ProcessMetaMessagingWebhookResult } from "../../../domains/crm/services/CrmMessaging/processMetaMessagingWebhook.js";
+import type { IngestOlxChatWebhookResult } from "../../../domains/crm/services/CrmMessaging/ingestOlxChatWebhook.js";
+import type { IngestOlxLeadWebhookResult } from "../../../domains/crm/services/CrmMessaging/ingestOlxLeadWebhook.js";
+import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
 
 type CrmContextService<Input, Output> = (
   context: ServiceContext,
@@ -26,6 +29,19 @@ export type ZapiWebhookProcessor = CrmContextService<
 >;
 
 export type CrmWhatsappWebhookServices = {
+  authorizeOlxChatWebhook: CrmContextService<
+    {
+      connectionId: string;
+      sourceFingerprint: string;
+      token: string | null;
+    },
+    {
+      authorization: OlxWebhookAuthorization;
+      authorized: true;
+      storeId: string;
+      tenantId: string;
+    }
+  >;
   authorizeZapiWebhook: CrmContextService<
     { connectionId: string; token: string | null },
     { authorized: true; storeId: string; tenantId: string }
@@ -37,6 +53,24 @@ export type CrmWhatsappWebhookServices = {
   ingestZapiWhatsappWebhook: CrmContextService<
     IngestZapiWhatsappWebhookInput,
     IngestZapiWhatsappWebhookResult
+  >;
+  ingestOlxChatWebhook: CrmContextService<
+    {
+      authorization: OlxWebhookAuthorization;
+      connectionId: string;
+      entitlementGranted: boolean;
+      payload: Record<string, unknown>;
+    },
+    IngestOlxChatWebhookResult
+  >;
+  ingestOlxLeadWebhook: CrmContextService<
+    {
+      authorization: OlxWebhookAuthorization;
+      connectionId: string;
+      entitlementGranted: boolean;
+      payload: Record<string, unknown>;
+    },
+    IngestOlxLeadWebhookResult
   >;
   listWhatsappWebhookEventIssues: CrmContextService<
     ListWhatsappWebhookEventIssuesInput,

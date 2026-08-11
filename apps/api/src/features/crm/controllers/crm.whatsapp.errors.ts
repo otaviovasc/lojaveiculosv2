@@ -8,6 +8,7 @@ import {
   WhatsappBotActionError,
   WhatsappBotIntegrationIncompleteError,
   WhatsappBotIntegrationUnauthorizedError,
+  WhatsappBotIntegrationValidationError,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import { WhatsappQuickMessageError } from "../../../domains/crm/services/CrmWhatsapp/whatsappQuickMessageServiceSupport.js";
 import { WhatsappWebhookEventRetryError } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
@@ -18,6 +19,7 @@ import {
   WhatsappMessageNotFoundError,
   WhatsappScheduledMessageNotFoundError,
   WhatsappSessionNotFoundError,
+  WhatsappSessionRevisionConflictError,
   WhatsappTagNotFoundError,
 } from "../../../domains/crm/whatsapp/whatsappSendErrors.js";
 import {
@@ -26,12 +28,11 @@ import {
 } from "../../../domains/crm/services/CrmWhatsapp/sendWhatsappVehicle.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
-import {
-  BillingContractUnavailableError,
-  BillingQuotaExceededError,
-} from "../../../domains/billing/ports/billingQuotaGuard.js";
-import { WhatsappConnectionProviderAlreadyExistsError } from "../../../domains/crm/whatsapp/whatsappConnectionCreation.js";
-import { CrmConnectionSetupProviderError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
+import { OlxWebhookRejectedError } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
+import { handleWhatsappConnectionError } from "./crm.whatsapp.connectionErrors.js";
+import { CrmWhatsappValidationError } from "./crm.whatsapp.validationError.js";
+
+export { CrmWhatsappValidationError } from "./crm.whatsapp.validationError.js";
 
 export async function handleWhatsapp(
   context: Context,
@@ -56,56 +57,23 @@ export async function handleWhatsapp(
         status: 403,
       });
     }
-    if (error instanceof WhatsappConnectionProviderAlreadyExistsError) {
+    if (error instanceof OlxWebhookRejectedError) {
+      if (error.status === 429) context.header("Retry-After", "60");
       return jsonApiError(context, {
-        code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
-        details: { provider: error.provider },
+        code:
+          error.status === 429
+            ? "CRM_OLX_WEBHOOK_RATE_LIMITED"
+            : "CRM_OLX_WEBHOOK_REJECTED",
         error,
         message: error.message,
-        status: 409,
+        status: error.status,
       });
     }
-    if (error instanceof BillingQuotaExceededError) {
-      return jsonApiError(context, {
-        code: "CRM_WHATSAPP_CONNECTION_ALLOWANCE_EXHAUSTED",
-        details: {
-          limit: error.limit,
-          quotaKey: error.quotaKey,
-          used: error.current,
-        },
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-    if (error instanceof BillingContractUnavailableError) {
-      return jsonApiError(context, {
-        code: "BILLING_CONTRACT_UNAVAILABLE",
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-    if (error instanceof CrmConnectionSetupProviderError) {
-      const status =
-        error.code === "rate_limited"
-          ? 429
-          : error.code === "configuration_error"
-            ? 503
-            : 502;
-      if (status === 429) {
-        context.header("Retry-After", String(error.retryAfterSeconds ?? 1));
-      }
-      return jsonApiError(context, {
-        code: `CRM_CONNECTION_SETUP_${error.code.toUpperCase()}`,
-        ...(error.retryAfterSeconds
-          ? { details: { retryAfterSeconds: error.retryAfterSeconds } }
-          : {}),
-        error,
-        message: error.message,
-        status,
-      });
-    }
+    const connectionErrorResponse = handleWhatsappConnectionError(
+      context,
+      error,
+    );
+    if (connectionErrorResponse) return connectionErrorResponse;
     if (
       error instanceof WhatsappSessionNotFoundError ||
       error instanceof WhatsappMessageNotFoundError ||
@@ -129,6 +97,14 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: error.status,
+      });
+    }
+    if (error instanceof WhatsappSessionRevisionConflictError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_SESSION_REVISION_CONFLICT",
+        error,
+        message: error.message,
+        status: 409,
       });
     }
     if (error instanceof CrmWhatsappCapabilityError) {
@@ -164,6 +140,14 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: 422,
+      });
+    }
+    if (error instanceof WhatsappBotIntegrationValidationError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_BOT_INTEGRATION_INVALID",
+        error,
+        message: error.message,
+        status: 400,
       });
     }
     if (error instanceof WhatsappBotIntegrationUnauthorizedError) {
@@ -215,12 +199,5 @@ export async function handleWhatsapp(
       message: "Internal server error.",
       status: 500,
     });
-  }
-}
-
-export class CrmWhatsappValidationError extends Error {
-  constructor(message = "Request is invalid.") {
-    super(message);
-    this.name = "CrmWhatsappValidationError";
   }
 }

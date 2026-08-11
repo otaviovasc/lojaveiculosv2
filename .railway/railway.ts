@@ -2,6 +2,7 @@ import {
   defineRailway,
   github,
   postgres,
+  preserve,
   project,
   redis,
   service,
@@ -49,6 +50,7 @@ export default defineRailway((context) => {
       CLERK_SIGN_UP_URL: context.shared.CLERK_SIGN_UP_URL,
       COMPOSIO_API_BASE_URL: context.shared.COMPOSIO_API_BASE_URL,
       COMPOSIO_API_KEY: context.shared.COMPOSIO_API_KEY,
+      COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID: preserve(),
       COMPOSIO_META_GRAPH_VERSION: context.shared.COMPOSIO_META_GRAPH_VERSION,
       COMPOSIO_REQUEST_TIMEOUT_MS: context.shared.COMPOSIO_REQUEST_TIMEOUT_MS,
       COMPOSIO_WHATSAPP_AUTH_CONFIG_ID:
@@ -61,6 +63,10 @@ export default defineRailway((context) => {
       CREDERE_REDIRECT_URI: context.shared.CREDERE_REDIRECT_URI,
       CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
         context.shared.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
+      CRM_OLX_CHAT_ENABLED: context.shared.CRM_OLX_CHAT_ENABLED,
+      CRM_META_APP_SECRET: context.shared.CRM_META_APP_SECRET,
+      CRM_META_WEBHOOK_VERIFY_TOKEN:
+        context.shared.CRM_META_WEBHOOK_VERIFY_TOKEN,
       CRM_ZAPI_API_BASE_URL: context.shared.CRM_ZAPI_API_BASE_URL,
       CRM_ZAPI_CLIENT_TOKEN: context.shared.CRM_ZAPI_CLIENT_TOKEN,
       DATABASE_URL: productDatabase.env.DATABASE_URL,
@@ -84,13 +90,8 @@ export default defineRailway((context) => {
       OPENROUTER_DOCUMENTS_MODEL: context.shared.OPENROUTER_DOCUMENTS_MODEL,
       OPENROUTER_INVENTORY_RESALE_MODEL:
         context.shared.OPENROUTER_INVENTORY_RESALE_MODEL,
-      OLX_API_BASE_URL: context.shared.OLX_API_BASE_URL,
-      OLX_AUTHORIZATION_URL: context.shared.OLX_AUTHORIZATION_URL,
       OLX_CLIENT_ID: context.shared.OLX_CLIENT_ID,
       OLX_CLIENT_SECRET: context.shared.OLX_CLIENT_SECRET,
-      OLX_LISTINGS_PATH: context.shared.OLX_LISTINGS_PATH,
-      OLX_REQUIREMENT_CONFIG: context.shared.OLX_REQUIREMENT_CONFIG,
-      OLX_TOKEN_URL: context.shared.OLX_TOKEN_URL,
       PUBLIC_APP_URL: context.shared.PUBLIC_APP_URL,
       PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET:
         context.shared.PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET,
@@ -168,6 +169,7 @@ export default defineRailway((context) => {
       COMPOSIO_REQUEST_TIMEOUT_MS: api.env.COMPOSIO_REQUEST_TIMEOUT_MS,
       CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
         api.env.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
+      CRM_OLX_CHAT_ENABLED: api.env.CRM_OLX_CHAT_ENABLED,
       CRM_WHATSAPP_SCHEDULE_BATCH_SIZE: "25",
       CRM_WHATSAPP_SCHEDULE_SCOPE_LIMIT: "100",
       CRM_ZAPI_API_BASE_URL: api.env.CRM_ZAPI_API_BASE_URL,

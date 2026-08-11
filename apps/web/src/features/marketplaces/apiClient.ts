@@ -2,6 +2,7 @@ import { readApiJson } from "../../lib/apiErrors";
 import type {
   CreateMarketplaceSyncJobInput,
   CompleteMarketplaceConnectionInput,
+  CompleteMarketplaceConnectionResult,
   CreateMarketplaceConnectUrlInput,
   MarketplaceAuth,
   MarketplaceConnectUrl,
@@ -20,7 +21,7 @@ import type {
 export type MarketplaceApi = {
   completeConnection: (
     input: CompleteMarketplaceConnectionInput,
-  ) => Promise<MarketplaceOverview["accounts"][number]>;
+  ) => Promise<CompleteMarketplaceConnectionResult>;
   createConnectUrl: (
     input: CreateMarketplaceConnectUrlInput,
   ) => Promise<MarketplaceConnectUrl>;
@@ -65,7 +66,7 @@ export function createMarketplaceApi({
         body: JSON.stringify(input),
         headers: createMarketplaceHeaders(auth),
         method: "POST",
-      }).then(readJson<MarketplaceOverview["accounts"][number]>),
+      }).then(readJson<CompleteMarketplaceConnectionResult>),
     createConnectUrl: (input) =>
       fetch(marketplaceRoutes.connectUrl(baseUrl), {
         body: JSON.stringify(input),

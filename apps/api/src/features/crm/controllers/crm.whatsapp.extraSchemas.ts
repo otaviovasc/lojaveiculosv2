@@ -123,10 +123,22 @@ export const whatsappAddSessionTagSchema = z
   })
   .strict();
 
-export const whatsappAssignSessionSchema = z.object({
-  assignedUserId: z.string().uuid().nullable(),
-});
+const whatsappExpectedRevisionSchema = z.number().int().min(0);
 
-export const whatsappToggleInterventionSchema = z.object({
-  enabled: z.boolean(),
-});
+export const whatsappSessionRevisionSchema = z
+  .object({ expectedRevision: whatsappExpectedRevisionSchema })
+  .strict();
+
+export const whatsappAssignSessionSchema = z
+  .object({
+    assignedUserId: z.string().uuid().nullable(),
+    expectedRevision: whatsappExpectedRevisionSchema,
+  })
+  .strict();
+
+export const whatsappToggleInterventionSchema = z
+  .object({
+    enabled: z.boolean(),
+    expectedRevision: whatsappExpectedRevisionSchema,
+  })
+  .strict();

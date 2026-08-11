@@ -45,6 +45,7 @@ export async function updateBotSession(
     },
     async () => {
       const updated = await getCrmWhatsappRepository(ports).updateSession({
+        expectedRevision: session.revision,
         ...(input.leadId ? { leadId: input.leadId } : {}),
         metadata: {
           ...session.metadata,

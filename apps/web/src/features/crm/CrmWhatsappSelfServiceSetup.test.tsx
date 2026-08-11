@@ -17,36 +17,33 @@ describe("CrmWhatsappSelfServiceSetup", () => {
     const handlers = createHandlers();
     render(
       <CrmWhatsappSelfServiceSetup
-        allowance={{ limit: 1, remaining: 1, used: 0 }}
+        allowance={{ limit: 0, remaining: 0, used: 0 }}
         availableProviders={["zapi"]}
-        canManage
+        canPair={false}
+        canSetup={true}
         handlers={handlers}
+        zapiAddonContract={createZapiContract("scheduled")}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Z-API/i }));
-    expect(
-      screen.getByText(/programada para o próximo vencimento/i),
-    ).toBeVisible();
+    expect(screen.getByText(/ativada no próximo vencimento/i)).toBeVisible();
     expect(screen.queryByLabelText(/token/i)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Ver assinatura" }));
-    expect(window.location.hash).toBe("#/billing");
     expect(handlers.onCreate).not.toHaveBeenCalled();
   });
 
-  it("blocks creation when the server-owned allowance is exhausted", () => {
+  it("keeps setup controls behind the setup permission", () => {
     render(
       <CrmWhatsappSelfServiceSetup
         allowance={{ limit: 1, remaining: 0, used: 1 }}
         availableProviders={[]}
-        canManage
+        canPair={false}
+        canSetup={false}
         handlers={createHandlers()}
       />,
     );
 
-    expect(
-      screen.getByText(/limite de 1 conexão Z-API foi atingido/i),
-    ).toBeVisible();
+    expect(screen.getByText(/permissões de gerenciar conexões/i)).toBeVisible();
   });
 
   it("keeps Official WhatsApp available when only the Z-API quota is zero", () => {
@@ -54,7 +51,8 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       <CrmWhatsappSelfServiceSetup
         allowance={{ limit: 0, remaining: 0, used: 0 }}
         availableProviders={["composio_whatsapp"]}
-        canManage
+        canPair={false}
+        canSetup={true}
         handlers={createHandlers()}
       />,
     );
@@ -72,7 +70,8 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       <CrmWhatsappSelfServiceSetup
         allowance={{ limit: 2, remaining: 2, used: 0 }}
         availableProviders={["composio_whatsapp"]}
-        canManage
+        canPair={false}
+        canSetup={true}
         handlers={createHandlers()}
       />,
     );
@@ -92,5 +91,23 @@ function createHandlers(): CrmWhatsappSelfServiceHandlers {
     onCreate: vi.fn(async () => null),
     onRefreshConnections: vi.fn(async () => undefined),
     onSelectComposioSender: vi.fn(),
+  };
+}
+
+function createZapiContract(
+  status:
+    "active" | "cancelled" | "paid_awaiting_setup" | "pending" | "scheduled",
+) {
+  return {
+    addonCode: "crm_zapi" as const,
+    cancellationScheduledFor: null,
+    id: "zapi_contract_1",
+    monthlyPriceCents: 10000,
+    paidAt: null,
+    scheduledFor: "2099-08-10T12:00:00.000Z",
+    setupCompletedAt: null,
+    status,
+    storeId: "store_1",
+    supportCode: "ZAPI-TEST",
   };
 }

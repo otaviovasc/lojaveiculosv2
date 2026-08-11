@@ -1,5 +1,8 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
-import { assertPermission } from "../../../../shared/authorization.js";
+import {
+  assertPermission,
+  AuthorizationError,
+} from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
   type ServiceContext,
@@ -65,6 +68,11 @@ export async function listRoleManagement(
     tenantId: scope.tenantId as never,
   });
   const actor = findActorMembership(context, state.memberships);
+  if (!actor || actor.status !== "active") {
+    throw new AuthorizationError(
+      "Role management requires an active store membership.",
+    );
+  }
 
   await context.audit.record({
     action: "identity.roles.list",
@@ -82,20 +90,20 @@ export async function listRoleManagement(
 
   return {
     actor: {
-      canManageRoles: canManageAs(actor?.role),
-      membershipId: actor?.membershipId ?? null,
-      role: actor?.role ?? null,
+      canManageRoles: canManageAs(actor.role),
+      membershipId: actor.membershipId,
+      role: actor.role,
     },
     memberships: state.memberships.map((member) =>
       toMemberView(member, {
-        actorMembershipId: actor?.membershipId ?? null,
-        actorRole: actor?.role ?? null,
+        actorMembershipId: actor.membershipId,
+        actorRole: actor.role,
       }),
     ),
     pendingInvitations: state.pendingInvitations,
     permissionGroups,
     roles: visibleRoleKeys.map((role) => ({
-      assignable: canAssignRole(actor?.role, role),
+      assignable: canAssignRole(actor.role, role),
       defaultPermissions: getDefaultPermissions(role),
       description: roleDescription(role),
       label: roleLabel(role),

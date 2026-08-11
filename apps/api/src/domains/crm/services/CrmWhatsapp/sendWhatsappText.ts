@@ -23,6 +23,7 @@ import {
 } from "../../whatsapp/whatsappSendErrors.js";
 import type {
   CrmWhatsappMessage,
+  CrmWhatsappMessageSenderOrigin,
   CrmWhatsappMessageSenderType,
 } from "../../ports/crmWhatsappRepository.js";
 
@@ -31,6 +32,7 @@ const permission = "crm.whatsapp.send";
 export type SendWhatsappTextInput = {
   idempotencyKey?: string;
   replyToMessageId?: string;
+  senderOrigin?: CrmWhatsappMessageSenderOrigin;
   senderType?: CrmWhatsappMessageSenderType;
   sessionId: string;
   text: string;
@@ -95,6 +97,7 @@ export async function sendWhatsappText(
             };
           },
           ...(input.senderType ? { senderType: input.senderType } : {}),
+          senderOrigin: input.senderOrigin ?? "human_crm",
           sessionId: input.sessionId,
         },
         ports,

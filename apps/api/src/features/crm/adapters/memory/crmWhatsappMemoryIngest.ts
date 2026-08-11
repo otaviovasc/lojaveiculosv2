@@ -12,6 +12,7 @@ import {
   type MemoryWhatsappTagState,
 } from "./crmWhatsappMemoryTags.js";
 import { updateMemorySessionPreview } from "./crmWhatsappMemorySessionPreview.js";
+import { reconciledOutboundEchoSender } from "../../../../domains/crm/whatsapp/reconcileWhatsappOutboundEcho.js";
 
 type WhatsappSessionIdentityInput =
   IngestCrmWhatsappMessageInput | UpsertCrmWhatsappSessionContextInput;
@@ -21,7 +22,11 @@ export function findMemorySession(
   input: WhatsappSessionIdentityInput,
 ) {
   const scoped = sessions.filter(
-    (session) => session.connectionId === input.connectionId,
+    (session) =>
+      session.channel === input.channel &&
+      session.connectionId === input.connectionId &&
+      session.storeId === input.storeId &&
+      session.tenantId === input.tenantId,
   );
   return (
     scoped.find(
@@ -88,6 +93,7 @@ export function createMemorySessionContext(
     messageCount: 0,
     metadata: {},
     profilePhotoUrl: null,
+    revision: 0,
     sessionTags: [],
     source: null,
     status: "ACTIVE",
@@ -117,6 +123,7 @@ export function createMemoryMessage(
     mediaUrl: input.mediaUrl ?? null,
     metadata: input.metadata,
     providerTimestamp: input.providerTimestamp,
+    senderOrigin: input.senderOrigin,
     senderType: input.senderType,
     sessionId,
     status: input.status,
@@ -139,6 +146,7 @@ export function upsertMemorySessionContext(
     const matchedByChatLid = Boolean(
       input.buyerChatLid && session.buyerChatLid === input.buyerChatLid,
     );
+    let changed = false;
     if (
       shouldBackfillWhatsappPhone(
         session.buyerPhone,
@@ -147,12 +155,24 @@ export function upsertMemorySessionContext(
       )
     ) {
       session.buyerPhone = input.buyerPhone;
+      changed = true;
     }
-    session.buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
-    session.buyerName = session.buyerName ?? input.buyerName ?? null;
-    session.channelExternalId =
-      session.channelExternalId ?? input.channelExternalId ?? null;
-    session.updatedAt = new Date();
+    if (!session.buyerChatLid && input.buyerChatLid) {
+      session.buyerChatLid = input.buyerChatLid;
+      changed = true;
+    }
+    if (!session.buyerName && input.buyerName) {
+      session.buyerName = input.buyerName;
+      changed = true;
+    }
+    if (!session.channelExternalId && input.channelExternalId) {
+      session.channelExternalId = input.channelExternalId;
+      changed = true;
+    }
+    if (changed) {
+      session.revision += 1;
+      session.updatedAt = new Date();
+    }
   }
   return session;
 }
@@ -170,15 +190,6 @@ export async function ingestMemoryWhatsappMessage(input: {
     createdSession = true;
     session = createMemorySession(input.message, now);
     input.sessions.push(session);
-  } else if (
-    input.message.direction === "INBOUND" &&
-    session.status === "COMPLETED"
-  ) {
-    session.status = "ACTIVE";
-    session.humanTakeoverAt = null;
-    session.humanAttendanceState = null;
-    session.humanHandlingStartedAt = null;
-    session.interventionId = null;
   }
 
   const existing = input.messages.find(
@@ -187,6 +198,12 @@ export async function ingestMemoryWhatsappMessage(input: {
       message.externalId === input.message.externalId,
   );
   if (existing) {
+    const reconciled = reconciledOutboundEchoSender(existing, input.message);
+    if (reconciled) {
+      existing.senderOrigin = reconciled.senderOrigin;
+      existing.senderType = reconciled.senderType;
+      existing.updatedAt = now;
+    }
     return {
       createdMessage: false,
       createdSession,

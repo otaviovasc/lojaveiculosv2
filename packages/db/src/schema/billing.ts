@@ -16,6 +16,9 @@ import { sql } from "drizzle-orm";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
+const includeBillingScopeForeignKeys =
+  process.env.DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP !== "true";
+
 export const catalogStatus = pgEnum("billing_catalog_status", [
   "active",
   "inactive",
@@ -314,11 +317,15 @@ export const billingProviderReconciliations = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
-    foreignKey({
-      columns: [table.subscriptionId, table.tenantId],
-      foreignColumns: [subscriptions.id, subscriptions.tenantId],
-      name: "billing_provider_reconciliations_subscription_tenant_fk",
-    }),
+    ...(includeBillingScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.subscriptionId, table.tenantId],
+            foreignColumns: [subscriptions.id, subscriptions.tenantId],
+            name: "billing_provider_reconciliations_subscription_tenant_fk",
+          }),
+        ]
+      : []),
     index("billing_provider_reconciliations_claim_idx").on(
       table.status,
       table.availableAt,
@@ -378,40 +385,48 @@ export const billingAddonContracts = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
-    foreignKey({
-      columns: [table.storeId, table.tenantId],
-      foreignColumns: [stores.id, stores.tenantId],
-      name: "billing_addon_contracts_store_tenant_fk",
-    }),
-    foreignKey({
-      columns: [table.subscriptionId, table.tenantId],
-      foreignColumns: [subscriptions.id, subscriptions.tenantId],
-      name: "billing_addon_contracts_subscription_tenant_fk",
-    }),
-    foreignKey({
-      columns: [
-        table.subscriptionItemId,
-        table.subscriptionId,
-        table.tenantId,
-        table.storeId,
-      ],
-      foreignColumns: [
-        subscriptionItems.id,
-        subscriptionItems.subscriptionId,
-        subscriptionItems.tenantId,
-        subscriptionItems.storeId,
-      ],
-      name: "billing_addon_contracts_item_scope_fk",
-    }),
-    foreignKey({
-      columns: [
-        table.activatedByPaymentId,
-        table.subscriptionId,
-        table.tenantId,
-      ],
-      foreignColumns: [payments.id, payments.subscriptionId, payments.tenantId],
-      name: "billing_addon_contracts_payment_scope_fk",
-    }),
+    ...(includeBillingScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.storeId, table.tenantId],
+            foreignColumns: [stores.id, stores.tenantId],
+            name: "billing_addon_contracts_store_tenant_fk",
+          }),
+          foreignKey({
+            columns: [table.subscriptionId, table.tenantId],
+            foreignColumns: [subscriptions.id, subscriptions.tenantId],
+            name: "billing_addon_contracts_subscription_tenant_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.subscriptionItemId,
+              table.subscriptionId,
+              table.tenantId,
+              table.storeId,
+            ],
+            foreignColumns: [
+              subscriptionItems.id,
+              subscriptionItems.subscriptionId,
+              subscriptionItems.tenantId,
+              subscriptionItems.storeId,
+            ],
+            name: "billing_addon_contracts_item_scope_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.activatedByPaymentId,
+              table.subscriptionId,
+              table.tenantId,
+            ],
+            foreignColumns: [
+              payments.id,
+              payments.subscriptionId,
+              payments.tenantId,
+            ],
+            name: "billing_addon_contracts_payment_scope_fk",
+          }),
+        ]
+      : []),
     index("billing_addon_contracts_subscription_status_idx").on(
       table.subscriptionId,
       table.status,

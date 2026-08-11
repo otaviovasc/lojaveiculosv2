@@ -24,9 +24,81 @@ import {
   createDraft,
   createOverrides,
   summarizeDraft,
+  type Draft,
   type OverrideMode,
 } from "./roleDraft";
 import { getRoleLabel } from "../settingsLabels";
+
+const RETIRED_PERMISSION = "crm.whatsapp.connection.manage";
+const RETIRED_PERMISSION_REPLACEMENTS = [
+  "crm.messaging.connection.setup",
+  "crm.messaging.connection.pair",
+] as const;
+
+type PermissionOverride = {
+  allowed: boolean;
+  permission: string;
+};
+
+export function sanitizePermissionOverrides(
+  overrides: readonly PermissionOverride[],
+  permissionCatalog: ReadonlySet<string>,
+): PermissionOverride[] {
+  const allowedByPermission = new Map<string, boolean>();
+
+  const addOverride = (permission: string, allowed: boolean) => {
+    if (!permissionCatalog.has(permission)) return;
+    const existing = allowedByPermission.get(permission);
+    allowedByPermission.set(
+      permission,
+      existing === undefined ? allowed : existing && allowed,
+    );
+  };
+
+  for (const override of overrides) {
+    if (override.permission === RETIRED_PERMISSION) {
+      RETIRED_PERMISSION_REPLACEMENTS.forEach((permission) =>
+        addOverride(permission, override.allowed),
+      );
+      continue;
+    }
+    addOverride(override.permission, override.allowed);
+  }
+
+  return [...allowedByPermission.entries()].map(([permission, allowed]) => ({
+    allowed,
+    permission,
+  }));
+}
+
+export function sanitizeCustomRolePresets(
+  presets: readonly CustomRolePreset[],
+  permissionCatalog: ReadonlySet<string>,
+): CustomRolePreset[] {
+  return presets.map((preset) => ({
+    ...preset,
+    overrides: sanitizePermissionOverrides(preset.overrides, permissionCatalog),
+  }));
+}
+
+function sanitizeDraft(draft: Draft, permissionCatalog: ReadonlySet<string>) {
+  const overrides = sanitizePermissionOverrides(
+    [...draft.overrides].flatMap(([permission, mode]) =>
+      mode === "inherit" ? [] : [{ allowed: mode === "allow", permission }],
+    ),
+    permissionCatalog,
+  );
+
+  return {
+    ...draft,
+    overrides: new Map(
+      overrides.map(
+        ({ allowed, permission }) =>
+          [permission, allowed ? "allow" : "deny"] as const,
+      ),
+    ),
+  };
+}
 
 export function RoleManagementPanel({
   isSaving,
@@ -47,9 +119,20 @@ export function RoleManagementPanel({
   ) => Promise<void>;
   roles: RoleManagementView;
 }) {
+  const permissionCatalog = useMemo(
+    () =>
+      new Set(
+        roles.permissionGroups.flatMap((group) =>
+          group.permissions.map((permission) => permission.key),
+        ),
+      ),
+    [roles.permissionGroups],
+  );
   const [selectedId, setSelectedId] = useState(initialSelection(roles));
   const selected = roles.memberships.find((m) => m.membershipId === selectedId);
-  const [draft, setDraft] = useState(() => createDraft(selected));
+  const [draft, setDraft] = useState<Draft>(() =>
+    sanitizeDraft(createDraft(selected), permissionCatalog),
+  );
   const [customRoles, setCustomRoles] = useState<CustomRolePreset[]>([]);
   const [memberPresetMapping, setMemberPresetMapping] = useState<
     Record<string, string>
@@ -66,15 +149,28 @@ export function RoleManagementPanel({
     try {
       const r = localStorage.getItem("lojaveiculosv2:custom-roles");
       const m = localStorage.getItem("lojaveiculosv2:member-presets");
-      if (r) setCustomRoles(JSON.parse(r));
+      if (r) {
+        const parsed = JSON.parse(r) as CustomRolePreset[];
+        if (Array.isArray(parsed)) {
+          const sanitized = sanitizeCustomRolePresets(
+            parsed,
+            permissionCatalog,
+          );
+          setCustomRoles(sanitized);
+          persistCustomRoles(sanitized);
+        }
+      }
       if (m) setMemberPresetMapping(JSON.parse(m));
     } catch {}
-  }, []);
+  }, [permissionCatalog]);
 
   useEffect(() => {
     if (!selected) setSelectedId(initialSelection(roles));
   }, [roles, selected]);
-  useEffect(() => setDraft(createDraft(selected)), [selected]);
+  useEffect(
+    () => setDraft(sanitizeDraft(createDraft(selected), permissionCatalog)),
+    [permissionCatalog, selected],
+  );
 
   const editable = Boolean(selected?.manageable && roles.actor.canManageRoles);
   const availableRoles = roles.roles.filter(
@@ -100,11 +196,20 @@ export function RoleManagementPanel({
       </FeatureLoadingState>
     );
 
-  const save = () =>
-    onSave(selected.membershipId, {
-      overrides: createOverrides(draft),
+  const save = () => {
+    const overrides = sanitizePermissionOverrides(
+      createOverrides(draft),
+      permissionCatalog,
+    ).map((override) => ({
+      ...override,
+      reason: "role_management_tri_state",
+    }));
+
+    return onSave(selected.membershipId, {
+      overrides,
       role: draft.role,
     });
+  };
 
   const selectStandardRole = (roleKey: RoleKey) => {
     setDraft({ overrides: new Map(), role: roleKey });
@@ -116,8 +221,9 @@ export function RoleManagementPanel({
 
   const selectCustomRole = (role: CustomRolePreset) => {
     const overrides = new Map<string, OverrideMode>();
-    role.overrides.forEach((override) =>
-      overrides.set(override.permission, override.allowed ? "allow" : "deny"),
+    sanitizePermissionOverrides(role.overrides, permissionCatalog).forEach(
+      (override) =>
+        overrides.set(override.permission, override.allowed ? "allow" : "deny"),
     );
     const next = { ...memberPresetMapping, [selected.membershipId]: role.id };
     setDraft({ role: role.baseRole, overrides });
@@ -126,9 +232,11 @@ export function RoleManagementPanel({
   };
 
   const handleCreateCustomRole = (name: string) => {
-    const overridesList: { permission: string; allowed: boolean }[] = [];
-    draft.overrides.forEach((value, key) =>
-      overridesList.push({ permission: key, allowed: value === "allow" }),
+    const overridesList = sanitizePermissionOverrides(
+      [...draft.overrides].flatMap(([permission, mode]) =>
+        mode === "inherit" ? [] : [{ allowed: mode === "allow", permission }],
+      ),
+      permissionCatalog,
     );
     const newRole: CustomRolePreset = {
       baseRole: draft.role,
@@ -136,7 +244,10 @@ export function RoleManagementPanel({
       name,
       overrides: overridesList,
     };
-    const nextRoles = [...customRoles, newRole];
+    const nextRoles = sanitizeCustomRolePresets(
+      [...customRoles, newRole],
+      permissionCatalog,
+    );
     const nextMap = {
       ...memberPresetMapping,
       [selected.membershipId]: newRole.id,
@@ -173,6 +284,7 @@ export function RoleManagementPanel({
   };
 
   const changePermissionMode = (permission: string, mode: OverrideMode) => {
+    if (!permissionCatalog.has(permission)) return;
     const overrides = new Map(draft.overrides);
     if (mode === "inherit") overrides.delete(permission);
     else overrides.set(permission, mode);

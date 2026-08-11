@@ -1,10 +1,6 @@
 import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
-  buildWhatsappWebhookEndpoints,
-  resolveWebhookBaseUrl,
-} from "../../../domains/crm/whatsapp/whatsappWebhookEndpoints.js";
-import {
   whatsappCreateConnectionSchema,
   whatsappUpdateConnectionSchema,
 } from "./crm.controller.schemas.js";
@@ -17,7 +13,6 @@ import {
   handleWhatsapp,
 } from "./crm.whatsapp.errors.js";
 import type { CrmServices } from "./crmServices.js";
-import type { WhatsappConnection } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
 import { registerCrmWhatsappConnectionSetupRoutes } from "./crm.whatsapp.connectionSetupRoutes.js";
 
 type RegisterCrmWhatsappConnectionRoutesOptions = {
@@ -37,7 +32,7 @@ export function registerCrmWhatsappConnectionRoutes(
         await services.getWhatsappConnectionOverview(serviceContext);
       return context.json({
         ...overview,
-        connections: withWebhookEndpoints(context, overview.connections),
+        connections: overview.connections,
       });
     }),
   );
@@ -51,15 +46,20 @@ export function registerCrmWhatsappConnectionRoutes(
       const serviceContext = await createContext(context);
       const connection = await services.createWhatsappConnection(
         serviceContext,
-        {
-          displayName: input.displayName ?? "WhatsApp Oficial",
-          provider: input.provider,
-        },
+        input.provider === "zapi"
+          ? {
+              clientToken: input.clientToken,
+              displayName: input.displayName ?? "Z-API",
+              instanceId: input.instanceId,
+              instanceToken: input.instanceToken,
+              provider: "zapi",
+            }
+          : {
+              displayName: input.displayName ?? "WhatsApp Oficial",
+              provider: "composio_whatsapp",
+            },
       );
-      return context.json(
-        withWebhookEndpoints(context, [connection])[0] ?? connection,
-        201,
-      );
+      return context.json(connection, 201);
     }),
   );
 
@@ -87,9 +87,7 @@ export function registerCrmWhatsappConnectionRoutes(
           ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
         },
       );
-      return context.json(
-        withWebhookEndpoints(context, [connection])[0] ?? connection,
-      );
+      return context.json(connection);
     }),
   );
 
@@ -97,30 +95,6 @@ export function registerCrmWhatsappConnectionRoutes(
     createContext,
     services,
   });
-}
-
-function withWebhookEndpoints(
-  context: Context,
-  connections: readonly WhatsappConnection[],
-) {
-  const { basePath, canonicalApiOrigin } = readWebhookRequestBase(context);
-  return connections.map((connection) => ({
-    ...connection,
-    // Displayed URLs intentionally omit the webhook token so it never reaches
-    // the browser clipboard; the auto-configure flow appends it server-side.
-    webhookEndpoints:
-      connection.provider === "zapi"
-        ? buildWhatsappWebhookEndpoints({
-            baseUrl: resolveWebhookBaseUrl({
-              basePath,
-              requestOrigin: canonicalApiOrigin,
-              webhookUrl: connection.webhookUrl,
-            }),
-            connectionId: connection.id,
-          })
-        : [],
-    webhookTokenRequired: false,
-  }));
 }
 
 export function readWebhookRequestBase(context: Context): {

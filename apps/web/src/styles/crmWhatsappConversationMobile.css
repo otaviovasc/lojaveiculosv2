@@ -22,6 +22,7 @@
   .crm-whatsapp-session-list {
     flex: 1;
     max-height: none;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 
   .crm-whatsapp-mobile-back {

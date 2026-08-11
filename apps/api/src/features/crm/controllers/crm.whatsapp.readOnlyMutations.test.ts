@@ -31,6 +31,7 @@ describe("CRM WhatsApp read-only mutation permissions", () => {
       externalId: "read-only-inbound",
       metadata: {},
       providerTimestamp: new Date("2026-07-03T12:10:00.000Z"),
+      senderOrigin: "customer",
       senderType: "CUSTOMER",
       status: "DELIVERED",
       storeId,

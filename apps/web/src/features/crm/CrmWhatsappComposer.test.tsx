@@ -4,7 +4,7 @@ import { screen, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanupTest, renderComposer } from "./CrmWhatsappComposer.testSupport";
-import { readCrmWhatsappProviderCapabilities } from "./crmWhatsappProviderCapabilities";
+import { readCrmWhatsappConnectionCapabilities } from "./crmWhatsappProviderCapabilities";
 
 describe("CrmWhatsappComposer", () => {
   afterEach(cleanupTest);
@@ -195,7 +195,27 @@ describe("CrmWhatsappComposer", () => {
     });
     const user = userEvent.setup();
     const { callbacks, container } = renderComposer({
-      capabilities: readCrmWhatsappProviderCapabilities("composio_instagram"),
+      capabilities: readCrmWhatsappConnectionCapabilities({
+        capabilities: {
+          audio: false,
+          catalog: false,
+          conversationStart: false,
+          delete: false,
+          documents: false,
+          imageCaption: false,
+          images: true,
+          location: false,
+          quickMessages: false,
+          reactions: false,
+          reply: false,
+          scheduling: false,
+          templates: false,
+          text: true,
+          vehicle: false,
+          video: false,
+        },
+        provider: "composio_instagram",
+      }),
     });
 
     expect(

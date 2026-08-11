@@ -74,6 +74,7 @@ export function buildCrmBotWebhookPayload(
       isBotActive: isBotActive(input.session.status),
       leadId: input.session.leadId,
       messageCount: input.session.messageCount,
+      revision: input.session.revision,
       status: input.session.status,
       tags: (input.session.sessionTags ?? []).map((tag) => ({
         color: tag.color,
@@ -139,10 +140,7 @@ export function buildCrmBotConnectionStatusPayload(
 export function botSenderOrigin(
   message: CrmWhatsappMessage,
 ): CrmBotSenderOrigin {
-  if (message.direction === "INBOUND") return "customer";
-  if (message.senderType === "AI") return "bot_api";
-  if (message.senderType === "SYSTEM") return "system";
-  return wasSentByApi(message) ? "human_crm" : "human_whatsapp";
+  return message.senderOrigin;
 }
 
 function buildInterventionPayload(
@@ -187,10 +185,7 @@ function botMessage(
 }
 
 function wasSentByApi(message: CrmWhatsappMessage) {
-  return (
-    message.senderType === "AI" ||
-    typeof message.metadata?.sentByActorId === "string"
-  );
+  return ["bot_api", "human_crm", "system"].includes(message.senderOrigin);
 }
 
 function isBotActive(status: string) {

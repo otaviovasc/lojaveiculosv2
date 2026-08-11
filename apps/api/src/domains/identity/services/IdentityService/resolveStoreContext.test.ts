@@ -108,6 +108,39 @@ describe("resolveStoreContext", () => {
     expect(context.permissions).not.toContain("financing.connection.manage");
   });
 
+  it("exposes CRM setup but not explicitly denied pairing in the resolved context", async () => {
+    const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
+      entitlements: ["crm"],
+      overrides: [
+        {
+          allowed: false,
+          permission: "crm.messaging.connection.pair",
+        },
+      ],
+      role: "supervisor",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+      userId: "user_1" as never,
+    };
+
+    const context = await resolveStoreContext({
+      actor: { id: "user_1", kind: "user" },
+      audit: { record: vi.fn(async () => undefined) },
+      clerkUserId: "clerk_1",
+      logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+      repository: { findByClerkUserAndStoreSlug: vi.fn(async () => access) },
+      requestId: "req_1",
+      storeSlug: "demo",
+    });
+
+    expect(
+      context.permissions.filter((permission) =>
+        permission.startsWith("crm.messaging.connection."),
+      ),
+    ).toEqual(["crm.messaging.connection.setup"]);
+  });
+
   it("removes owner billing and Credere connection permissions when an agency manages the billing", async () => {
     const access: StoreAccessRecord = {
       billingManagedBy: "agency",

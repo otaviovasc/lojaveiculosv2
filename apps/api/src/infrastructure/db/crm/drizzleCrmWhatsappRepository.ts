@@ -1,6 +1,5 @@
-import { and, count, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import {
-  crmWhatsappMessages,
   crmWhatsappSessions,
   crmWhatsappSessionTags,
 } from "@lojaveiculosv2/db";
@@ -10,6 +9,7 @@ import { toWhatsappSession } from "./drizzleCrmWhatsappMappers.js";
 import {
   countSessionsByAssignee as countWhatsappSessionsByAssignee,
   countUnreadMessages,
+  crmWhatsappUnreadSessionPredicate,
   sessionFilters,
 } from "./drizzleCrmWhatsappQueries.js";
 import {
@@ -49,26 +49,30 @@ import {
   upsertSessionContextWithTransaction,
 } from "./drizzleCrmWhatsappIngest.js";
 import { updateWhatsappSession } from "./drizzleCrmWhatsappUpdates.js";
+import { transitionWhatsappAttendanceWithTransaction } from "./drizzleCrmWhatsappAttendance.js";
 import {
-  addWhatsappSessionTag,
   createWhatsappTag,
   deleteWhatsappTag,
   findOrCreateWhatsappTag,
   hydrateWhatsappSession,
   listWhatsappTags,
   reorderWhatsappTags,
-  removeWhatsappSessionTag,
   updateWhatsappTag,
 } from "./drizzleCrmWhatsappTags.js";
+import { mutateWhatsappSessionTagWithTransaction } from "./drizzleCrmWhatsappSessionTags.js";
 
 export function createDrizzleCrmWhatsappRepository(
   db: DrizzleCrmClient,
   options: { disableTransactions?: boolean } = {},
 ): CrmWhatsappRepository {
   return {
-    async addSessionTag(input) {
-      return addWhatsappSessionTag(db, input);
-    },
+    addSessionTag: (input) =>
+      mutateWhatsappSessionTagWithTransaction(
+        db,
+        input,
+        "add",
+        !!options.disableTransactions,
+      ),
     async findMessageByExternalId(input) {
       return findWhatsappMessageByExternalId(db, input);
     },
@@ -192,6 +196,12 @@ export function createDrizzleCrmWhatsappRepository(
       return deleteWhatsappQuickMessage(db, input);
     },
     updateSession: (input) => updateWhatsappSession(db, input),
+    transitionAttendance: (input) =>
+      transitionWhatsappAttendanceWithTransaction(
+        db,
+        input,
+        !!options.disableTransactions,
+      ),
     upsertSessionContext: (input) =>
       upsertSessionContextWithTransaction(
         db,
@@ -210,9 +220,13 @@ export function createDrizzleCrmWhatsappRepository(
     async updateCampaignRecipient(input) {
       return updateWhatsappCampaignRecipient(db, input);
     },
-    async removeSessionTag(input) {
-      return removeWhatsappSessionTag(db, input);
-    },
+    removeSessionTag: (input) =>
+      mutateWhatsappSessionTagWithTransaction(
+        db,
+        input,
+        "remove",
+        !!options.disableTransactions,
+      ),
   };
 }
 
@@ -232,16 +246,4 @@ async function findSessionIdsByTags(
       ),
     );
   return Array.from(new Set(rows.map((row) => row.sessionId)));
-}
-export function crmWhatsappUnreadSessionPredicate(): SQL {
-  return sql`exists (
-    select 1
-    from ${crmWhatsappMessages}
-    where ${crmWhatsappMessages.sessionId} = ${crmWhatsappSessions.id}
-      and ${crmWhatsappMessages.direction} = 'INBOUND'
-      and ${crmWhatsappMessages.createdAt} > coalesce(
-        ${crmWhatsappSessions.lastReadAt},
-        timestamp with time zone '1970-01-01 00:00:00+00'
-      )
-  )`;
 }

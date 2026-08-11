@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { asError } from "./crmWhatsappHookSupport";
 import { readFileAsBase64 } from "./crmWhatsappMediaFiles";
@@ -49,6 +49,7 @@ export function useCrmWhatsappMessages({
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<WhatsappMessageView[]>([]);
+  const requestGenerationRef = useRef(0);
   const structuredMessages = useCrmWhatsappStructuredMessages({
     activeSession,
     activeSessionId,
@@ -62,6 +63,7 @@ export function useCrmWhatsappMessages({
   });
 
   useEffect(() => {
+    const requestGeneration = ++requestGenerationRef.current;
     if (
       !activeSessionId ||
       !canLoadMessages ||
@@ -78,7 +80,7 @@ export function useCrmWhatsappMessages({
         limit: MESSAGE_PAGE_SIZE,
         offset: 0,
       });
-      if (active) {
+      if (active && requestGeneration === requestGenerationRef.current) {
         setMessages((current) =>
           mergeMessagesFromServer(current, nextMessages),
         );
@@ -86,10 +88,13 @@ export function useCrmWhatsappMessages({
     };
     void loadMessages()
       .catch((caught) => {
-        if (active) setError(asError(caught));
+        if (active && requestGeneration === requestGenerationRef.current)
+          setError(asError(caught));
       })
       .finally(() => {
-        if (active) setIsLoadingMessages(false);
+        if (active && requestGeneration === requestGenerationRef.current) {
+          setIsLoadingMessages(false);
+        }
       });
     const interval = window.setInterval(() => {
       void loadMessages().catch(() => undefined);

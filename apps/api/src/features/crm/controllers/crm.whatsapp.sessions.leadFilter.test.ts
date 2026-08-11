@@ -118,6 +118,7 @@ function createWhatsappSession(
     messageCount: 1,
     metadata: {},
     profilePhotoUrl: null,
+    revision: 0,
     sessionTags: [],
     source: null,
     status: "ACTIVE",

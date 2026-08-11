@@ -39,6 +39,7 @@ export type MarketplaceServiceErrorCode =
   | "MARKETPLACE_PROVIDER_RATE_LIMITED"
   | "MARKETPLACE_PROVIDER_UNAVAILABLE"
   | "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"
+  | "MARKETPLACE_OAUTH_STATE_INVALID"
   | "MARKETPLACE_TOKEN_REFRESH_FAILED"
   | "MARKETPLACE_SYNC_JOB_INVALID_METADATA"
   | "MARKETPLACE_SYNC_JOB_NOT_RETRYABLE"
@@ -137,11 +138,13 @@ export type MarketplaceConnectUrl = {
 
 export type CreateMarketplaceConnectUrlInput = {
   provider: MarketplaceProvider;
-  redirectUri: string;
 };
 
-export type CompleteMarketplaceConnectionInput = {
-  code: string;
-  provider: MarketplaceProvider;
-  redirectUri: string;
-};
+export type CompleteMarketplaceConnectionInput =
+  | { code: string; state: string }
+  | { error: string; state: string }
+  | { transactionId: string };
+
+export type CompleteMarketplaceConnectionResult =
+  | { account: MarketplaceAccount; kind: "connected" }
+  | { kind: "cancelled"; provider: MarketplaceProvider };

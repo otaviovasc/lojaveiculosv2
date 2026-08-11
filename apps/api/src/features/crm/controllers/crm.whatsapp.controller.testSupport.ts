@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { expect, vi } from "vitest";
 import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
+import { resolveCrmWebhookActor } from "../../../infrastructure/http/crmWebhookContextFactory.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
@@ -16,7 +17,8 @@ import type { CreateCrmWhatsappTestAppOptions } from "./crm.whatsapp.controller.
 export const defaultWhatsappPermissions = [
   "crm.whatsapp.assign",
   "crm.whatsapp.close",
-  "crm.whatsapp.connection.manage",
+  "crm.messaging.connection.pair",
+  "crm.messaging.connection.setup",
   "crm.whatsapp.list",
   "crm.whatsapp.read",
   "crm.whatsapp.campaigns.manage",
@@ -66,11 +68,13 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
           }),
           { entitlements: options.entitlements ?? ["crm", "crm_zapi"] },
         ),
-      webhookContextFactory: async () =>
-        createServiceContext({
+      webhookContextFactory: async (context) => {
+        const actor = resolveCrmWebhookActor(new URL(context.req.url).pathname);
+        return createServiceContext({
           actor: {
-            id: "zapi",
+            id: actor.actorId,
             kind: "integration",
+            displayName: actor.displayName,
           },
           ...(options.audit ? { audit: options.audit } : {}),
           ...(options.logger ? { logger: options.logger } : {}),
@@ -78,7 +82,8 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
           request: { requestId: "req_1" },
           storeId: null,
           tenantId: null,
-        }),
+        });
+      },
       services: createCrmServices({
         ports: {
           ...(options.billingQuotaGuard
@@ -99,6 +104,12 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
             : {}),
+          ...(options.crmOlxWebhookSecurity
+            ? { crmOlxWebhookSecurity: options.crmOlxWebhookSecurity }
+            : {}),
+          crmProviderRuntime: {
+            olxChatEnabled: options.olxChatEnabled === true,
+          },
           ...(options.crmZapiSetupCompletionReporter
             ? {
                 crmZapiSetupCompletionReporter:

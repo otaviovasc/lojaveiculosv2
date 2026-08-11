@@ -85,7 +85,12 @@ export async function installCampaignApiMocks(page: Page) {
 }
 
 function createWhatsappRoleManagement() {
-  const permissions = ["crm.whatsapp.assign", "crm.whatsapp.list"];
+  const permissions = [
+    "crm.messaging.connection.pair",
+    "crm.messaging.connection.setup",
+    "crm.whatsapp.assign",
+    "crm.whatsapp.list",
+  ];
   return {
     actor: {
       canManageRoles: true,

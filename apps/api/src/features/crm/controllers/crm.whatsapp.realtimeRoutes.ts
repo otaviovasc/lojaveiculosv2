@@ -24,6 +24,7 @@ export function registerCrmWhatsappRealtimeRoutes(
 
   crmFeature.post("/whatsapp/events/ticket", async (context) =>
     handleWhatsapp(context, async () => {
+      setRealtimeSecurityHeaders(context);
       const serviceContext = await createContext(context);
       assertWhatsappRead(serviceContext);
       const scope = requireCrmScope(serviceContext);
@@ -43,6 +44,7 @@ export function registerCrmWhatsappRealtimeRoutes(
 
   crmFeature.get("/whatsapp/events", async (context) =>
     handleWhatsapp(context, async () => {
+      setRealtimeSecurityHeaders(context);
       const ticket = context.req.query("ticket");
       const scope = ticket ? await broker.resolveTicket(ticket) : null;
       if (!scope) {
@@ -162,12 +164,18 @@ function createSseResponse(input: {
 
   return new Response(stream, {
     headers: {
-      "Cache-Control": "no-cache",
+      "Cache-Control": "no-store",
       Connection: "keep-alive",
       "Content-Type": "text/event-stream",
+      "Referrer-Policy": "no-referrer",
       "X-Accel-Buffering": "no",
     },
   });
+}
+
+function setRealtimeSecurityHeaders(context: Context) {
+  context.header("Cache-Control", "no-store");
+  context.header("Referrer-Policy", "no-referrer");
 }
 
 function readSinceEventId(context: Context) {

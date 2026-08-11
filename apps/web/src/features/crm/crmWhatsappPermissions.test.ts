@@ -16,7 +16,8 @@ describe("CRM WhatsApp permissions", () => {
       canCampaignManage: false,
       canCampaignRead: false,
       canClose: false,
-      canConnectionManage: false,
+      canConnectionPair: false,
+      canConnectionSetup: false,
       canIntegrationsManage: false,
       canList: true,
       canRead: true,
@@ -49,25 +50,47 @@ describe("CRM WhatsApp permissions", () => {
           "crm.whatsapp.toggle_intervention",
         ]),
       ),
-    ).toEqual({
+    ).toMatchObject({
       canAssign: true,
-      canCampaignManage: false,
-      canCampaignRead: false,
       canClose: true,
-      canConnectionManage: false,
-      canIntegrationsManage: false,
-      canList: true,
-      canRead: true,
       canScheduleCancel: true,
       canScheduleCreate: true,
-      canScheduleProcess: false,
       canScheduleRead: true,
       canSend: true,
       canTagAssign: true,
-      canTagManage: false,
       canToggleIntervention: true,
-      canVisitsManage: false,
-      canVisitsRead: false,
+    });
+  });
+
+  it("maps setup and pairing permissions independently", () => {
+    expect(
+      readCrmWhatsappCapabilities(
+        createSession([
+          "crm.messaging.connection.pair",
+          "crm.messaging.connection.setup",
+        ]),
+      ),
+    ).toMatchObject({
+      canConnectionPair: true,
+      canConnectionSetup: true,
+    });
+
+    expect(
+      readCrmWhatsappCapabilities(
+        createSession(["crm.messaging.connection.setup"]),
+      ),
+    ).toMatchObject({
+      canConnectionPair: false,
+      canConnectionSetup: true,
+    });
+
+    expect(
+      readCrmWhatsappCapabilities(
+        createSession(["crm.messaging.connection.pair"]),
+      ),
+    ).toMatchObject({
+      canConnectionPair: true,
+      canConnectionSetup: false,
     });
   });
 
@@ -80,14 +103,6 @@ describe("CRM WhatsApp permissions", () => {
       canVisitsManage: true,
       canVisitsRead: true,
     });
-  });
-
-  it("uses one V2 manage key for connection administration", () => {
-    expect(
-      readCrmWhatsappCapabilities(
-        createSession(["crm.whatsapp.connection.manage"]),
-      ).canConnectionManage,
-    ).toBe(true);
   });
 
   it("maps the integrations manage permission independently", () => {

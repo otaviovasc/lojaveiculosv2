@@ -58,13 +58,17 @@ export const marketplaceSyncJobRetrySchema = z
   })
   .strict();
 
-export const createMarketplaceConnectUrlSchema = z.object({
-  provider: marketplaceProviderSchema,
-  redirectUri: z.string().url(),
-});
+export const createMarketplaceConnectUrlSchema = z
+  .object({ provider: marketplaceProviderSchema })
+  .strict();
 
-export const completeMarketplaceConnectionSchema = z.object({
-  code: z.string().min(8),
-  provider: marketplaceProviderSchema,
-  redirectUri: z.string().url(),
-});
+export const completeMarketplaceConnectionSchema = z
+  .object({ transactionId: z.string().uuid() })
+  .strict();
+
+export const marketplaceOAuthCallbackQuerySchema = z.union([
+  z.object({ code: z.string().min(8), state: z.string().min(32) }).strict(),
+  z
+    .object({ error: z.string().min(1).max(120), state: z.string().min(32) })
+    .strict(),
+]);

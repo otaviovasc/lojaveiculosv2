@@ -1,25 +1,28 @@
 # CRM messaging connection operations
 
-This runbook is for Loja Veiculos support operating CRM messaging connections.
-Dealership owners and agency billing managers buy CRM and request the optional
-Z-API service from Billing; they do not receive provider credentials or a
-technical setup console. This procedure does not replace Meta business
-verification or a provider's account-recovery process.
+This runbook covers customer and support operation of Loja Veiculos CRM
+messaging connections. Z-API is always visible in the customer Conexao tab as
+an optional buyable integration. The customer uses the existing paid add-on
+flow; this procedure does not replace Meta business verification or a
+provider's account-recovery process.
 
 ## Scope and safety
 
 V2 runtime supports `zapi`, `composio_whatsapp`, and `composio_instagram`.
 Official WhatsApp and Instagram are included in the R$179/month CRM package;
 their onboarding is assisted while the customer completes Meta authorization.
-Z-API is an optional R$100/month Loja-managed service and is configured only
-after the matching renewal payment. A connection
+Z-API is an optional Loja-managed service and is configured only after matching
+payment evidence. Its price and SKU come from the server-owned catalog and
+existing paid add-on flow, never client constants. A connection
 belongs to one store scope and its provider is persisted on that connection.
 Provider failures do not fall back to another provider because a second attempt
 could duplicate a message. A provider-unavailable or indeterminate result must
 remain visible as unavailable or failed; it must never be presented as an
 official success.
 
-Credential values are write-only. The API and Conexao surface expose only
+Credential values are write-only and may be entered initially only by an
+entitled, authorized customer store owner/admin or a billing-authorized scoped
+actor under existing policy. The API and Conexao surface expose only
 configuration status and safe reference metadata. Do not paste tokens into
 tickets, screenshots, chat, logs, connection metadata, or `credentials_ref`.
 The database must contain references or encrypted-at-rest values according to
@@ -57,8 +60,9 @@ The canonical variable checklist and environment classification are in
 [`docs/ops/env-vars.md`](../ops/env-vars.md). Never commit real values to
 `.env.example`.
 
-Release check: only a platform-support operation may accept Z-API credentials;
-ordinary store and agency routes must reject them. Credential values are
+Release check: the authorized customer setup route may accept initial Z-API
+credentials only when entitlement, store scope, and actor permission pass;
+unauthorized routes must reject them. Credential values are
 write-only and responses contain only safe configuration metadata. Confirm the
 deployed credential adapter consumes
 `CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY` before enabling stored-credential
@@ -74,17 +78,20 @@ setting an unused key does not provide encryption.
    contract is `paid_awaiting_setup`, belongs to the exact tenant/store, and the
    payment reference matches the scheduled renewal. Never configure a pending
    or merely scheduled request.
-2. As the authenticated platform-support actor, create or select the exact
-   store connection and save the instance ID and token through the support-only
-   operation. An existing token is never returned.
-3. Saving valid credentials creates a durable setup intent and automatically
-   configures all six callbacks: `received`, `delivery`, `status`, `connected`,
-   `disconnected`, and `chat-presence`. Do not copy callback URLs manually.
+2. As the entitled, authorized customer store owner/admin or billing-authorized
+   scoped actor, create or select the exact store connection and enter the
+   instance credentials. The write-only form accepts them once; existing
+   credentials are never returned or logged.
+3. Saving valid credentials creates a durable setup intent. Backend/support
+   automatically configures all six callbacks: `received`, `delivery`,
+   `status`, `connected`, `disconnected`, and `chat-presence`. Callback URLs and
+   webhook controls are never shown to the customer.
 4. Treat `partial` or `failed` as unavailable. Retry through the same support
    operation using the support code; never create a duplicate connection to
    hide a failed attempt.
-5. Pair the provider only from the support-only operation. Continue only when
-   all callbacks are configured and the provider reports connected.
+5. The customer pairs the provider through the customer-facing QR or phone
+   code flow. Continue only when backend setup is complete and the provider
+   reports connected.
 6. Completion records the connection ID against the paid add-on contract and
    activates `crm_zapi`. The customer-facing support code remains unchanged.
    If the provider is disconnected, the CRM must remain visibly unavailable.
@@ -118,9 +125,11 @@ Re-authenticate when the provider reports an expired, revoked, disconnected,
 or otherwise invalid account. Do not delete the store connection first: that
 can remove the audit trail and makes recovery harder.
 
-For Z-API, support replaces the instance token through the support-only
-operation. Saving it automatically starts webhook configuration; refresh live
-status and send only a controlled test after every callback is configured and
+For Z-API, an entitled authorized customer actor may replace the instance
+credentials through the write-only Conexao form. Support retains recovery,
+troubleshooting, rotation/revocation, disconnect, and exceptional setup;
+credential replacement automatically starts backend webhook configuration.
+Refresh live status and send only a controlled test after setup is complete and
 the provider reports connected. For Composio, create a fresh authorization link,
 complete consent, verify the new `ca_` account, update the connection reference,
 then refresh status. Keep the old provider account disabled or revoked only

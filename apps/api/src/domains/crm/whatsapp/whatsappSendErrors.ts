@@ -5,6 +5,13 @@ export class WhatsappSessionNotFoundError extends Error {
   }
 }
 
+export class WhatsappSessionRevisionConflictError extends Error {
+  constructor(sessionId: string) {
+    super(`CRM WhatsApp session revision conflicted: ${sessionId}`);
+    this.name = "WhatsappSessionRevisionConflictError";
+  }
+}
+
 export class WhatsappMessageNotFoundError extends Error {
   constructor(messageId: string) {
     super(`CRM WhatsApp message not found: ${messageId}`);

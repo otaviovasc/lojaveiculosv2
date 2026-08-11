@@ -5,6 +5,7 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { handleWhatsapp } from "./crm.whatsapp.errors.js";
 import type { CrmServices } from "./crmServices.js";
 import {
+  authorizeOlxWebhook,
   authorizeWebhook,
   parseMetaWebhookPayload,
   readWebhookInput,
@@ -28,6 +29,50 @@ export function registerCrmWhatsappWebhookRoutes(
     services,
   }: RegisterCrmWhatsappWebhookRoutesOptions,
 ) {
+  crmFeature.post(
+    "/whatsapp/webhooks/olx/:connectionId/leads",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const authorized = await authorizeOlxWebhook(
+          context,
+          createWebhookContext,
+          resolveEntitlements,
+          services,
+        );
+        const result = await services.ingestOlxLeadWebhook(
+          authorized.serviceContext,
+          {
+            ...(await readWebhookInput(context)),
+            authorization: authorized.authorization,
+            entitlementGranted: authorized.entitlementGranted,
+          },
+        );
+        return context.json(result);
+      }),
+  );
+
+  crmFeature.post(
+    "/whatsapp/webhooks/olx/:connectionId/received",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const authorized = await authorizeOlxWebhook(
+          context,
+          createWebhookContext,
+          resolveEntitlements,
+          services,
+        );
+        const result = await services.ingestOlxChatWebhook(
+          authorized.serviceContext,
+          {
+            ...(await readWebhookInput(context)),
+            authorization: authorized.authorization,
+            entitlementGranted: authorized.entitlementGranted,
+          },
+        );
+        return context.json(result, result.status === "stored" ? 201 : 200);
+      }),
+  );
+
   crmFeature.get("/whatsapp/webhooks/meta", (context) =>
     handleWhatsapp(context, async () => {
       const expectedVerifyToken =

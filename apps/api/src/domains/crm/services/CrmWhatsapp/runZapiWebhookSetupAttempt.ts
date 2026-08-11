@@ -50,7 +50,7 @@ export async function runZapiWebhookSetupAttempt(
   input: RunZapiWebhookSetupInput,
   ports: CrmServicePorts,
 ): Promise<RunZapiWebhookSetupResult> {
-  assertPermission(context, "crm.whatsapp.integrations.manage");
+  assertPermission(context, "crm.messaging.connection.setup");
   const scope = requireCrmWhatsappScope(context);
   assertEntitlement(context as never, "crm_zapi");
   const repository = getCrmConnectionRepository(ports);
@@ -73,6 +73,7 @@ export async function runZapiWebhookSetupAttempt(
     readZapiWebhookSetupState(connection.metadata) ??
     createZapiWebhookSetupIntent(connection.id);
   if (current.status === "configured") {
+    await auditSetupResult(context, connection.id, current);
     await reportConfiguredSetup(context, connection.id, current, ports);
     return { results: [], setup: current };
   }
@@ -133,15 +134,7 @@ export async function runZapiWebhookSetupAttempt(
   const setup = completeZapiWebhookSetupAttempt(configuring, response.results);
   await persistSetupState(pending, setup, leaseOwner, ports);
   logSetup(context, "completed", connection.id, setup, startedAt);
-  await auditSetupResult(context, connection.id, setup).catch((error) => {
-    logWhatsappServiceEvent(context, "crm.provider.zapi.setup_audit.failed", {
-      connectionId: connection.id,
-      errorName: error instanceof Error ? error.name : "UnknownError",
-      operation: "audit_setup_result",
-      provider: "zapi",
-      setupStatus: setup.status,
-    });
-  });
+  await auditSetupResult(context, connection.id, setup);
   if (setup.status === "configured") {
     await reportConfiguredSetup(context, connection.id, setup, ports);
   }
@@ -219,6 +212,7 @@ async function auditSetupResult(
       category: "data_change",
       entityId: connectionId,
       entityType: "crm_whatsapp_connection",
+      failureTier: "required",
       metadata: {
         attemptCount: setup.attemptCount,
         errorCode: setup.lastErrorCode,
@@ -226,7 +220,7 @@ async function auditSetupResult(
         succeededCount: setup.succeededTypes.length,
         supportCode: setup.supportCode,
       },
-      permission: "crm.whatsapp.connection.manage",
+      permission: "crm.messaging.connection.setup",
       summary: "Processed Z-API webhook setup intent",
     },
     setup.status === "configured" ? "succeeded" : "failed",

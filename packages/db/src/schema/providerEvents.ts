@@ -1,4 +1,6 @@
 import {
+  check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -10,8 +12,14 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { crmConnections } from "./crm.js";
+import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
+
+const includeCrmScopeForeignKeys =
+  process.env.DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP !== "true";
 
 export const providerEventStatus = pgEnum("provider_event_status", [
   "received",
@@ -19,6 +27,21 @@ export const providerEventStatus = pgEnum("provider_event_status", [
   "processed",
   "failed",
   "ignored",
+]);
+
+export const crmWebhookEffectStatus = pgEnum("crm_webhook_effect_status", [
+  "pending",
+  "processing",
+  "failed",
+  "dead_letter",
+  "delivered",
+]);
+
+export const crmWebhookEffectType = pgEnum("crm_webhook_effect_type", [
+  "audit_accepted",
+  "bot_message",
+  "realtime_message",
+  "realtime_session",
 ]);
 
 export const providerEvents = pgTable(
@@ -43,6 +66,32 @@ export const providerEvents = pgTable(
     tenantId: uuid("tenant_id").references(() => tenants.id),
   },
   (table) => [
+    check(
+      "provider_events_scope_complete_check",
+      sql`(${table.storeId} IS NULL AND ${table.tenantId} IS NULL) OR (${table.storeId} IS NOT NULL AND ${table.tenantId} IS NOT NULL)`,
+    ),
+    check(
+      "provider_events_connection_scope_check",
+      sql`${table.connectionId} IS NULL OR (${table.storeId} IS NOT NULL AND ${table.tenantId} IS NOT NULL)`,
+    ),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.storeId, table.tenantId],
+            foreignColumns: [stores.id, stores.tenantId],
+            name: "provider_events_store_tenant_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              crmConnections.tenantId,
+              crmConnections.storeId,
+              crmConnections.id,
+            ],
+            name: "provider_events_scoped_connection_fk",
+          }),
+        ]
+      : []),
     index("provider_events_status_idx").on(table.status),
     index("provider_events_processing_claim_idx").on(
       table.status,
@@ -51,10 +100,136 @@ export const providerEvents = pgTable(
     index("provider_events_connection_id_idx").on(table.connectionId),
     index("provider_events_store_id_idx").on(table.storeId),
     index("provider_events_tenant_id_idx").on(table.tenantId),
-    uniqueIndex("provider_events_provider_event_unique").on(
-      table.provider,
-      table.environment,
+    uniqueIndex("provider_events_provider_connection_event_unique")
+      .on(
+        table.provider,
+        table.environment,
+        table.connectionId,
+        table.providerEventId,
+      )
+      .where(sql`${table.connectionId} IS NOT NULL`),
+    uniqueIndex("provider_events_provider_unscoped_event_unique")
+      .on(table.provider, table.environment, table.providerEventId)
+      .where(sql`${table.connectionId} IS NULL`),
+    uniqueIndex("provider_events_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.connectionId,
+      table.id,
+    ),
+  ],
+);
+
+export const crmWebhookEffectOutbox = pgTable(
+  "crm_webhook_effect_outbox",
+  {
+    ...lifecycleColumns,
+    connectionId: uuid("connection_id")
+      .notNull()
+      .references(() => crmConnections.id),
+    deadLetteredAt: timestamp("dead_lettered_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    effectType: crmWebhookEffectType("effect_type").notNull(),
+    lastErrorCode: varchar("last_error_code", { length: 120 }),
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => crmWhatsappMessages.id),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    processingAttempts: integer("processing_attempts").notNull().default(0),
+    processingStartedAt: timestamp("processing_started_at", {
+      withTimezone: true,
+    }),
+    processingToken: uuid("processing_token"),
+    providerEventId: uuid("provider_event_id")
+      .notNull()
+      .references(() => providerEvents.id, { onDelete: "cascade" }),
+    sequence: integer("sequence").notNull(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => crmWhatsappSessions.id),
+    status: crmWebhookEffectStatus("status").notNull().default("pending"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+  },
+  (table) => [
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.connectionId,
+              table.providerEventId,
+            ],
+            foreignColumns: [
+              providerEvents.tenantId,
+              providerEvents.storeId,
+              providerEvents.connectionId,
+              providerEvents.id,
+            ],
+            name: "crm_webhook_effect_outbox_scoped_provider_event_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              crmConnections.tenantId,
+              crmConnections.storeId,
+              crmConnections.id,
+            ],
+            name: "crm_webhook_effect_outbox_scoped_connection_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.connectionId,
+              table.sessionId,
+            ],
+            foreignColumns: [
+              crmWhatsappSessions.tenantId,
+              crmWhatsappSessions.storeId,
+              crmWhatsappSessions.connectionId,
+              crmWhatsappSessions.id,
+            ],
+            name: "crm_webhook_effect_outbox_scoped_session_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.connectionId,
+              table.sessionId,
+              table.messageId,
+            ],
+            foreignColumns: [
+              crmWhatsappMessages.tenantId,
+              crmWhatsappMessages.storeId,
+              crmWhatsappMessages.connectionId,
+              crmWhatsappMessages.sessionId,
+              crmWhatsappMessages.id,
+            ],
+            name: "crm_webhook_effect_outbox_scoped_message_fk",
+          }),
+        ]
+      : []),
+    uniqueIndex("crm_webhook_effect_outbox_event_type_unique").on(
       table.providerEventId,
+      table.effectType,
+    ),
+    index("crm_webhook_effect_outbox_pending_idx").on(
+      table.status,
+      table.nextAttemptAt,
+      table.processingStartedAt,
+    ),
+    index("crm_webhook_effect_outbox_event_sequence_idx").on(
+      table.providerEventId,
+      table.sequence,
     ),
   ],
 );

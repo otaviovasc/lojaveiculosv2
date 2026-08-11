@@ -86,10 +86,6 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).completeComposioConnection(connectionId),
-    configureConnectionWebhooks: async (connectionId) =>
-      createCrmWhatsappApi(
-        await createProductCrmApiOptions(),
-      ).configureConnectionWebhooks(connectionId),
     cancelCampaign: async (campaignId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).cancelCampaign(
         campaignId,
@@ -102,6 +98,13 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(await createProductCrmApiOptions()).createConnection(
         input,
       ),
+    getZapiAddonContract: async () => {
+      const api = createCrmWhatsappApi(await createProductCrmApiOptions());
+      if (!api.getZapiAddonContract) {
+        throw new Error("A consulta do add-on Z-API não está disponível.");
+      }
+      return api.getZapiAddonContract();
+    },
     createQuickMessage: async (input) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -139,11 +142,6 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).listConnections(),
-    updateConnection: async (connectionId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).updateConnection(
-        connectionId,
-        input,
-      ),
     updateBotIntegration: async (input) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -224,6 +222,13 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).requestZapiPairingQr(connectionId),
+    requestZapiAddon: async () => {
+      const api = createCrmWhatsappApi(await createProductCrmApiOptions());
+      if (!api.requestZapiAddon) {
+        throw new Error("A solicitação do add-on Z-API não está disponível.");
+      }
+      return api.requestZapiAddon();
+    },
     retryProviderEvent: async (eventId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),

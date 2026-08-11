@@ -155,10 +155,18 @@ state.
   next existing due date. No immediate charge or proration occurs, and other
   subscription items remain unchanged. Loja buys the provider month and starts
   setup only after matching payment evidence.
-- **Authority and support:** store owners and billing-authorized agencies buy
-  for their scoped store. Platform support alone handles Z-API credentials,
-  pairing, and setup, using the stable request code and WhatsApp
-  `+55 11 94023-1407`.
+- **Purchase and setup authority:** Z-API is always visible in the customer
+  Conexao tab as an optional buyable integration. Its price and SKU come only
+  from the active server-owned catalog and existing paid add-on flow; clients
+  must not supply pricing or constants, and a purchase must never show success
+  without billing evidence. Only an entitled, authorized customer store
+  owner/admin, or a billing-authorized scoped actor under existing policy, may
+  enter initial instance credentials. Credentials are write-only and
+  encrypted/reference-backed; the UI shows status, never stored credential
+  fields. After setup, the customer pairs through QR or phone code. Webhook
+  configuration is backend/support managed and never customer-facing. Support
+  retains recovery, troubleshooting, rotation/revocation, disconnect, and
+  exceptional setup ownership.
 - **Leading metrics:** CRM attach rate, paid-Z-API setup time, verified first
   conversation, integration allowance consumption, provider failure rate, and
   support minutes per activated store.

@@ -23,6 +23,7 @@ export type WhatsappConnectionLiveStatus =
     };
 
 export type WhatsappConnection = {
+  capabilities: WhatsappProviderCapabilities;
   credentials: WhatsappConnectionCredentialRefs;
   displayName: string;
   externalConnectionId: string | null;
@@ -35,7 +36,25 @@ export type WhatsappConnection = {
   ready: boolean;
   setup: ZapiWebhookSetupState | null;
   status: CrmConnectionConfiguredStatus;
-  webhookUrl: string | null;
+};
+
+export type WhatsappProviderCapabilities = {
+  audio: boolean;
+  catalog: boolean;
+  conversationStart: boolean;
+  delete: boolean;
+  documents: boolean;
+  imageCaption: boolean;
+  images: boolean;
+  location: boolean;
+  quickMessages: boolean;
+  reactions: boolean;
+  reply: boolean;
+  scheduling: boolean;
+  templates: boolean;
+  text: boolean;
+  vehicle: boolean;
+  video: boolean;
 };
 
 export type WhatsappConnectionCredentialRefs = {
@@ -65,6 +84,7 @@ export function toWhatsappConnection(
       ? readZapiWebhookSetupState(connection.metadata)
       : null;
   return {
+    capabilities: providerCapabilities(connection.provider),
     credentials: readCredentialRefs(connection.credentialsRef),
     displayName: connection.displayName,
     externalConnectionId: connection.externalConnectionId,
@@ -79,7 +99,89 @@ export function toWhatsappConnection(
       (connection.provider !== "zapi" || setup?.status === "configured"),
     setup,
     status: connection.status,
-    webhookUrl: connection.webhookUrl,
+  };
+}
+
+export function providerCapabilities(
+  provider: CrmConnectionProvider,
+): WhatsappProviderCapabilities {
+  if (provider === "olx_chat") {
+    return {
+      audio: false,
+      catalog: false,
+      conversationStart: false,
+      delete: false,
+      documents: false,
+      imageCaption: false,
+      images: false,
+      location: false,
+      quickMessages: false,
+      reactions: false,
+      reply: false,
+      scheduling: false,
+      templates: false,
+      text: true,
+      vehicle: false,
+      video: false,
+    };
+  }
+  if (provider === "composio_instagram") {
+    return {
+      audio: false,
+      catalog: false,
+      conversationStart: false,
+      delete: false,
+      documents: false,
+      imageCaption: false,
+      images: true,
+      location: false,
+      quickMessages: false,
+      reactions: false,
+      reply: false,
+      scheduling: false,
+      templates: false,
+      text: true,
+      vehicle: false,
+      video: false,
+    };
+  }
+  if (provider === "composio_whatsapp") {
+    return {
+      audio: true,
+      catalog: false,
+      conversationStart: true,
+      delete: false,
+      documents: true,
+      imageCaption: true,
+      images: true,
+      location: true,
+      quickMessages: true,
+      reactions: false,
+      reply: true,
+      scheduling: false,
+      templates: true,
+      text: true,
+      vehicle: true,
+      video: true,
+    };
+  }
+  return {
+    audio: true,
+    catalog: true,
+    conversationStart: true,
+    delete: true,
+    documents: true,
+    imageCaption: true,
+    images: true,
+    location: true,
+    quickMessages: true,
+    reactions: true,
+    reply: true,
+    scheduling: true,
+    templates: false,
+    text: true,
+    vehicle: true,
+    video: true,
   };
 }
 

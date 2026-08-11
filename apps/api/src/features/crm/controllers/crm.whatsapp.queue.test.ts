@@ -1,19 +1,19 @@
-import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 import {
-  createTestApp,
-  expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
-
-const actorUserId = "02020202-0202-4202-8202-020202020202";
-const otherUserId = "03030303-0303-4303-8303-030303030303";
-const connectionId = "24000000-0000-4000-8000-000000000101";
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
+  actorUserId,
+  connectionId,
+  createZapiConnection,
+  expectForbidden,
+  ingestText,
+  jsonPost,
+  otherUserId,
+  storeId,
+  tenantId,
+} from "./crm.whatsapp.queue.testSupport.js";
 
 describe("CRM WhatsApp queue", () => {
   it("returns exact session counts for operator filters", async () => {
@@ -151,20 +151,24 @@ describe("CRM WhatsApp queue", () => {
     await expectForbidden(
       app.request(
         `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
-        jsonPost({ assignedUserId: actorUserId }),
+        jsonPost({
+          assignedUserId: actorUserId,
+          expectedRevision: inbound.session.revision,
+        }),
       ),
       "crm.whatsapp.assign",
     );
     await expectForbidden(
-      app.request(`/api/v1/crm/whatsapp/sessions/${inbound.session.id}/close`, {
-        method: "POST",
-      }),
+      app.request(
+        `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/close`,
+        jsonPost({ expectedRevision: inbound.session.revision }),
+      ),
       "crm.whatsapp.close",
     );
     await expectForbidden(
       app.request(
         `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/intervention`,
-        jsonPost({ enabled: true }),
+        jsonPost({ enabled: true, expectedRevision: inbound.session.revision }),
       ),
       "crm.whatsapp.toggle_intervention",
     );
@@ -182,64 +186,3 @@ describe("CRM WhatsApp queue", () => {
     );
   });
 });
-
-function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-  };
-}
-
-function ingestText(
-  repository: CrmWhatsappRepository,
-  input: {
-    buyerName: string;
-    buyerPhone: string;
-    content: string;
-    externalId: string;
-    providerTimestamp: Date;
-  },
-) {
-  return repository.ingestMessage({
-    ...input,
-    channel: "WHATSAPP",
-    connectionId,
-    direction: "INBOUND",
-    metadata: {},
-    senderType: "CUSTOMER",
-    status: "DELIVERED",
-    storeId,
-    tenantId,
-    type: "TEXT",
-  });
-}
-
-async function expectForbidden(
-  responsePromise: Promise<Response> | Response,
-  permission: PermissionKey,
-) {
-  const response = await responsePromise;
-  expect(response.status).toBe(403);
-  await expectApiError(response, {
-    code: "AUTHORIZATION_DENIED",
-    message: `Missing permission: ${permission}`,
-  });
-}
-
-function jsonPost(body: Record<string, unknown>) {
-  return {
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  };
-}

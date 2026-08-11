@@ -19,6 +19,7 @@ import {
 } from "./drizzleCrmLeadReferenceCounts.js";
 import { toActivity, toLead } from "./drizzleCrmMappers.js";
 import { createIdempotentCrmActivity } from "./drizzleCrmActivityWrites.js";
+import { createIdempotentCrmLead } from "./drizzleCrmLeadWrites.js";
 import {
   countCrmLeads,
   listCrmLeadBoard,
@@ -91,6 +92,7 @@ export function createDrizzleCrmRepository(
         vehicleTitle,
       });
     },
+    createLeadIdempotently: (input) => createIdempotentCrmLead(db, input),
     async findLeadById(input) {
       const [row] = await db
         .select()

@@ -1,4 +1,7 @@
-import { createRuntimeCrmWhatsappProviderGateway } from "../crm/crmWhatsappProviderRouter.js";
+import {
+  createRuntimeCrmWhatsappProviderGateway,
+  isOlxChatRuntimeEnabled,
+} from "../crm/crmWhatsappProviderRouter.js";
 import { createHttpCrmBotWebhookDispatcher } from "../crm/httpCrmBotWebhookDispatcher.js";
 import { createSafeCrmRemoteMediaFetcher } from "../crm/safeCrmRemoteMediaFetcher.js";
 import {
@@ -9,6 +12,7 @@ import type { CredereFinancingServices } from "../../features/financing/controll
 import type { FinancingInquiry } from "../../domains/financing/ports/financingRepository.js";
 import type { CrmFinancingBotActions } from "../../domains/crm/ports/crmFinancingBotActions.js";
 import type { CrmRealtimePublisher } from "../../domains/crm/ports/crmRealtimePublisher.js";
+import type { CrmOlxWebhookSecurity } from "../../domains/crm/ports/crmOlxWebhookSecurity.js";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
 
@@ -18,11 +22,17 @@ export function createRuntimeCrmServices(
   realtimePublisher?: CrmRealtimePublisher,
   objectStorage?: ObjectStorage | null,
   financingServices?: CredereFinancingServices,
+  olxWebhookSecurity?: CrmOlxWebhookSecurity,
 ): CrmServices {
+  const olxChatEnabled = isOlxChatRuntimeEnabled(env);
   return createCrmServices({
     drizzleClient: db as DrizzleCrmClient,
     environment: env.APP_ENV ?? env.NODE_ENV ?? "local",
     ports: {
+      ...(olxWebhookSecurity
+        ? { crmOlxWebhookSecurity: olxWebhookSecurity }
+        : {}),
+      crmProviderRuntime: { olxChatEnabled },
       ...(realtimePublisher ? { crmRealtimePublisher: realtimePublisher } : {}),
       ...(objectStorage ? { crmWhatsappMediaStorage: objectStorage } : {}),
       crmBotWebhookDispatcher: createHttpCrmBotWebhookDispatcher(env),

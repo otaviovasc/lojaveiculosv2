@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -17,6 +19,9 @@ import { crmConnections, crmTags } from "./crm.js";
 import { stores, tenants, users } from "./identity.js";
 import { leads } from "./leads.js";
 import { lifecycleColumns } from "./_shared.js";
+
+const includeCrmScopeForeignKeys =
+  process.env.DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP !== "true";
 
 export const crmWhatsappChannel = pgEnum("crm_whatsapp_channel", [
   "OLX_CHAT",
@@ -54,6 +59,11 @@ export const crmWhatsappMessageStatus = pgEnum("crm_whatsapp_message_status", [
 export const crmWhatsappMessageSenderType = pgEnum(
   "crm_whatsapp_message_sender_type",
   ["AI", "CUSTOMER", "HUMAN", "SYSTEM"],
+);
+
+export const crmWhatsappMessageSenderOrigin = pgEnum(
+  "crm_whatsapp_message_sender_origin",
+  ["customer", "human_crm", "human_whatsapp", "bot_api", "system", "unknown"],
 );
 
 export const crmWhatsappMessageType = pgEnum("crm_whatsapp_message_type", [
@@ -104,6 +114,11 @@ export const crmWhatsappSessions = pgTable(
     }),
     humanTakeoverAt: timestamp("human_takeover_at", { withTimezone: true }),
     interventionId: uuid("intervention_id"),
+    interventionHistoryStartedAt: timestamp("intervention_history_started_at", {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
     lastAssignedAt: timestamp("last_assigned_at", { withTimezone: true }),
     lastCustomerReadAt: timestamp("last_customer_read_at", {
       withTimezone: true,
@@ -115,6 +130,7 @@ export const crmWhatsappSessions = pgTable(
     messageCount: integer("message_count").notNull().default(0),
     metadata: jsonb("metadata").notNull().default({}),
     profilePhotoUrl: text("profile_photo_url"),
+    revision: bigint("revision", { mode: "number" }).notNull().default(0),
     source: varchar("source", { length: 80 }),
     status: crmWhatsappSessionStatus("status").notNull().default("ACTIVE"),
     storeId: uuid("store_id")
@@ -126,9 +142,26 @@ export const crmWhatsappSessions = pgTable(
   },
   (table) => [
     check(
+      "crm_whatsapp_sessions_revision_nonnegative",
+      sql`${table.revision} >= 0`,
+    ),
+    check(
       "crm_whatsapp_sessions_human_attendance_version_positive",
       sql`${table.humanAttendanceStateVersion} IS NULL OR ${table.humanAttendanceStateVersion} > 0`,
     ),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              crmConnections.tenantId,
+              crmConnections.storeId,
+              crmConnections.id,
+            ],
+            name: "crm_whatsapp_sessions_scoped_connection_fk",
+          }),
+        ]
+      : []),
     check(
       "crm_whatsapp_sessions_human_attendance_active_consistent",
       sql`${table.humanAttendanceState} IS NULL OR (${table.status} = 'HUMAN_TAKEOVER' AND ${table.humanAttendanceChangedAt} IS NOT NULL AND ${table.humanAttendanceStateVersion} IS NOT NULL AND ${table.interventionId} IS NOT NULL)`,
@@ -203,6 +236,9 @@ export const crmWhatsappMessages = pgTable(
     metadata: jsonb("metadata").notNull().default({}),
     providerTimestamp: timestamp("provider_timestamp", { withTimezone: true }),
     senderType: crmWhatsappMessageSenderType("sender_type").notNull(),
+    senderOrigin: crmWhatsappMessageSenderOrigin("sender_origin")
+      .notNull()
+      .default("unknown"),
     sessionId: uuid("session_id")
       .notNull()
       .references(() => crmWhatsappSessions.id),
@@ -216,6 +252,25 @@ export const crmWhatsappMessages = pgTable(
     type: crmWhatsappMessageType("type").notNull().default("TEXT"),
   },
   (table) => [
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.connectionId,
+              table.sessionId,
+            ],
+            foreignColumns: [
+              crmWhatsappSessions.tenantId,
+              crmWhatsappSessions.storeId,
+              crmWhatsappSessions.connectionId,
+              crmWhatsappSessions.id,
+            ],
+            name: "crm_whatsapp_messages_scoped_session_fk",
+          }),
+        ]
+      : []),
     uniqueIndex("crm_whatsapp_messages_scope_connection_session_id_unique").on(
       table.tenantId,
       table.storeId,

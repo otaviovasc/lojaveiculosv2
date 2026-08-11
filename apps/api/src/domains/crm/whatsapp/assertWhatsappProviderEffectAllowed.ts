@@ -10,6 +10,7 @@ import { readZapiWebhookSetupState } from "./zapiWebhookSetupState.js";
 export function assertWhatsappProviderEffectAllowed(
   context: ServiceContext,
   connection: CrmConnection,
+  options: { olxChatEnabled: boolean } = { olxChatEnabled: false },
 ) {
   if (
     connection.status !== "active" ||
@@ -18,6 +19,12 @@ export function assertWhatsappProviderEffectAllowed(
   ) {
     throw new WhatsappMessageActionError(
       "WhatsApp connection is not active for this store.",
+      409,
+    );
+  }
+  if (connection.provider === "olx_chat" && !options.olxChatEnabled) {
+    throw new WhatsappMessageActionError(
+      "OLX Chat is not enabled for provider operations.",
       409,
     );
   }

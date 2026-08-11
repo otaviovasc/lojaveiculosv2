@@ -212,6 +212,9 @@ function createCrmRepository(): CrmRepository {
       leads.push(lead);
       return lead;
     }),
+    createLeadIdempotently: vi.fn(async () =>
+      unexpected("idempotent lead creation"),
+    ),
     countLeadsByPipeline: vi.fn(async () => 0),
     countLeadsByPipelineStages: vi.fn(async () => 0),
     countLeads: vi.fn(async () => leads.length),

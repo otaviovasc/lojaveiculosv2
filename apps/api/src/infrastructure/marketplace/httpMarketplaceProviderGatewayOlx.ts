@@ -2,7 +2,10 @@ import type {
   MarketplacePublishInput,
   MarketplacePublishResult,
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
-import { createProviderListingPayload } from "../../domains/marketplace/payloads/marketplaceListingPayload.js";
+import {
+  assertOlxProviderListingId,
+  createProviderListingPayload,
+} from "../../domains/marketplace/payloads/marketplaceListingPayload.js";
 import { assertOlxContract } from "./httpMarketplaceProviderGatewayAuth.js";
 import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
@@ -23,11 +26,17 @@ export async function runOlxAutouploadSync(
     input.jobType === "listing_unpublish"
       ? {
           attributes: { categoryId: "autoupload" },
-          body: { id: input.externalId, operation: "delete" },
+          body: {
+            id: assertOlxProviderListingId(input.externalId ?? ""),
+            operation: "delete",
+          },
           mediaUrls: [],
           title: input.externalId ?? "OLX listing",
         }
       : createProviderListingPayload({
+          ...(input.externalId !== undefined
+            ? { externalId: input.externalId }
+            : {}),
           listing: requireListing(input),
           provider: options.provider,
           settings: input.metadata,
@@ -60,10 +69,7 @@ export async function runOlxAutouploadSync(
     input.jobType,
   );
   const externalId = readString(payload.body.id) ?? input.externalId ?? null;
-  const providerStatus =
-    readString(responsePayload.statusMessage) ??
-    readString(responsePayload.status) ??
-    "accepted";
+  const providerStatus = "accepted";
   return {
     externalId,
     metadata: {
@@ -108,7 +114,7 @@ function assertOlxImportAccepted(
       olxDetails(statusCode, externalId),
     );
   }
-  if (statusCode === null || statusCode >= 0) return;
+  if (statusCode === 0) return;
   if (statusCode === -6 || statusCode === -7 || statusCode === -8) {
     throw new MarketplaceProviderGatewayError(
       "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED",
@@ -118,7 +124,7 @@ function assertOlxImportAccepted(
       olxDetails(statusCode, externalId),
     );
   }
-  if (statusCode === -4) {
+  if (statusCode === -3 || statusCode === -4) {
     throw new MarketplaceProviderGatewayError(
       "MARKETPLACE_PROVIDER_VALIDATION_FAILED",
       "Marketplace provider rejected the listing payload.",

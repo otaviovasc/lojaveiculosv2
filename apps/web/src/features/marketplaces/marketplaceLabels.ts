@@ -75,6 +75,11 @@ export function getMarketplaceRequirementCopy(
   }
 
   switch (requirement.code) {
+    case "MARKETPLACE_OAUTH_STATE_INVALID":
+      return {
+        action: "Inicie uma nova conexão com o canal.",
+        message: "Autorização expirada ou já utilizada",
+      };
     case "MARKETPLACE_ACCOUNT_NOT_CONNECTED":
       return {
         action: "Conecte a conta antes de publicar o estoque.",

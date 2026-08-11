@@ -55,6 +55,7 @@ export async function captureZapiAdNotification(
         });
         return applyZapiAdSessionTransition(repository, {
           actorId: context.actor.id,
+          actorKind: "provider",
           attribution: input.attribution,
           detectedAt: input.detectedAt,
           session,

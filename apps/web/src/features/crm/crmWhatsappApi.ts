@@ -19,10 +19,15 @@ import {
   crmWhatsappCampaignRoutes,
 } from "./crmWhatsappCampaignApiRoutes";
 import { subscribeCrmWhatsappEvents } from "./crmWhatsappRealtimeApi";
+import {
+  parseCrmWhatsappMessages,
+  parseCrmWhatsappSessions,
+} from "./crmWhatsappModel";
 import type {
   CrmWhatsappConnectionsResponse,
   CrmWhatsappProviderConnection,
   CrmWhatsappSetupProvider,
+  CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 
 export {
@@ -88,8 +93,6 @@ export function createCrmWhatsappApi({
       postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl)),
     completeComposioConnection: (connectionId) =>
       postJson(crmWhatsappRoutes.composioComplete(connectionId, baseUrl)),
-    configureConnectionWebhooks: (connectionId) =>
-      postJson(crmWhatsappRoutes.connectionWebhooks(connectionId, baseUrl)),
     cancelCampaign: (campaignId) =>
       postJson(
         crmWhatsappCampaignRoutes.campaignAction(campaignId, "cancel", baseUrl),
@@ -100,6 +103,10 @@ export function createCrmWhatsappApi({
       postJson(crmWhatsappCampaignRoutes.campaigns(baseUrl), input),
     createConnection: (input) =>
       postJson(crmWhatsappRoutes.connections(baseUrl), input),
+    getZapiAddonContract: () =>
+      getJson<unknown>(crmWhatsappRoutes.billingOverview(baseUrl)).then(
+        readZapiAddonContract,
+      ),
     createScheduledMessage: (input) =>
       postJson(crmWhatsappRoutes.scheduledMessages(baseUrl), input),
     createTag: (input) => postJson(crmWhatsappRoutes.tags(baseUrl), input),
@@ -140,7 +147,7 @@ export function createCrmWhatsappApi({
         withQuery(crmWhatsappRoutes.messages(sessionId, baseUrl), [
           createCrmWhatsappMessageQuery(query),
         ]),
-      ),
+      ).then(parseCrmWhatsappMessages),
     listQuickMessages: () => getJson(crmWhatsappRoutes.quickMessages(baseUrl)),
     listScheduledMessages: (input) =>
       getJson(
@@ -159,7 +166,7 @@ export function createCrmWhatsappApi({
         withQuery(crmWhatsappRoutes.sessions(baseUrl), [
           createCrmWhatsappSessionQuery(query),
         ]),
-      ),
+      ).then(parseCrmWhatsappSessions),
     listTags: (input) =>
       getJson(
         withQuery(crmWhatsappRoutes.tags(baseUrl), [
@@ -184,6 +191,10 @@ export function createCrmWhatsappApi({
       }),
     requestZapiPairingQr: (connectionId) =>
       postJson(crmWhatsappRoutes.zapiPairingQr(connectionId, baseUrl)),
+    requestZapiAddon: () =>
+      postJson<{ contract: CrmWhatsappZapiAddonContract }>(
+        crmWhatsappRoutes.billingZapiRequest(baseUrl),
+      ).then((response) => response.contract),
     removeSessionTag: (sessionId, tagId) =>
       deleteMaybeJson(crmWhatsappRoutes.sessionTag(sessionId, tagId, baseUrl)),
     reorderTags: (input) =>
@@ -224,10 +235,9 @@ export function createCrmWhatsappApi({
         eventsTicketRoute: crmWhatsappRoutes.eventsTicket(baseUrl),
         onError: input.onError,
         onEvent: input.onEvent,
+        ...(input.onStatus ? { onStatus: input.onStatus } : {}),
         postJson,
       }),
-    updateConnection: (connectionId, input) =>
-      patchJson(crmWhatsappRoutes.connection(connectionId, baseUrl), input),
     updateBotIntegration: (input) =>
       patchJson(crmWhatsappRoutes.botIntegration(baseUrl), input),
     updateQuickMessage: (quickMessageId, input) =>
@@ -289,17 +299,60 @@ function cleanJson(body: JsonBody) {
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object"
+  return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object");
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
 function isSetupProvider(value: unknown): value is CrmWhatsappSetupProvider {
   return value === "zapi" || value === "composio_whatsapp";
+}
+
+function readZapiAddonContract(
+  payload: unknown,
+): CrmWhatsappZapiAddonContract | null {
+  const record = asRecord(payload);
+  const contracts = Array.isArray(record.addonContracts)
+    ? record.addonContracts.filter(isRecord)
+    : [];
+  return contracts.find(isZapiAddonContract) ?? null;
+}
+
+function isZapiAddonContract(
+  value: Record<string, unknown>,
+): value is CrmWhatsappZapiAddonContract {
+  return (
+    value.addonCode === "crm_zapi" &&
+    typeof value.id === "string" &&
+    typeof value.monthlyPriceCents === "number" &&
+    isNullableString(value.cancellationScheduledFor) &&
+    isNullableString(value.paidAt) &&
+    isNullableString(value.scheduledFor) &&
+    isNullableString(value.setupCompletedAt) &&
+    isZapiAddonContractStatus(value.status) &&
+    typeof value.storeId === "string" &&
+    isNullableString(value.supportCode)
+  );
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isZapiAddonContractStatus(
+  value: unknown,
+): value is CrmWhatsappZapiAddonContract["status"] {
+  return (
+    value === "active" ||
+    value === "cancelled" ||
+    value === "paid_awaiting_setup" ||
+    value === "pending" ||
+    value === "scheduled"
+  );
 }
 
 function readNonNegativeNumber(value: unknown, fallback: number) {

@@ -55,7 +55,7 @@ describe("CRM WhatsApp bot media action parity", () => {
             },
             sessionId: inbound.session.id,
           },
-          { "X-Webhook-Secret": "bot-secret-value" },
+          { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
         ),
       );
 
@@ -101,7 +101,7 @@ describe("CRM WhatsApp bot media action parity", () => {
             phone: "5511999999999",
           },
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 
@@ -138,7 +138,7 @@ describe("CRM WhatsApp bot media action parity", () => {
           payload: { imageUrl: "https://cdn.example.test/vehicle.jpg" },
           sessionId: inbound.session.id,
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 
@@ -173,6 +173,7 @@ async function seedSession(
     externalId: "inbound-for-bot-action",
     metadata: {},
     providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId,

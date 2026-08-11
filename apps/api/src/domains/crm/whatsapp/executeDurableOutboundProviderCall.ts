@@ -1,5 +1,9 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { ProviderSentMessage } from "./sendWhatsappOutboundTypes.js";
+import type {
+  CrmWhatsappMessageSenderOrigin,
+  CrmWhatsappMessageSenderType,
+} from "../ports/crmWhatsappRepository.js";
 import {
   fingerprintOutboundIntent,
   outboundIdempotencyConflictError,
@@ -19,13 +23,19 @@ export async function executeDurableOutboundProviderCall(
     idempotencyKey?: string;
     payload: unknown;
     send: () => Promise<ProviderSentMessage>;
+    senderOrigin: CrmWhatsappMessageSenderOrigin;
+    senderType: CrmWhatsappMessageSenderType;
     sessionId: string | null;
   },
   ports: CrmServicePorts,
 ) {
   const scope = requireCrmScope(context);
   const repository = getCrmWhatsappOutboundIntentRepository(ports);
-  const fingerprint = fingerprintOutboundIntent(input.payload);
+  const fingerprint = fingerprintOutboundIntent({
+    payload: input.payload,
+    senderOrigin: input.senderOrigin,
+    senderType: input.senderType,
+  });
   const now = new Date();
   const claimed = await repository.claim({
     connectionId: input.connectionId,

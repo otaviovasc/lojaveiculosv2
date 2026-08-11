@@ -16,6 +16,9 @@ import { sql } from "drizzle-orm";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
+const includeCrmScopeForeignKeys =
+  process.env.DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP !== "true";
+
 export const crmSyncStatus = pgEnum("crm_sync_status", [
   "pending",
   "processed",
@@ -27,6 +30,7 @@ export const crmConnectionProvider = pgEnum("crm_connection_provider", [
   "zapi",
   "composio_whatsapp",
   "composio_instagram",
+  "olx_chat",
 ]);
 
 export const crmConnectionStatus = pgEnum("crm_connection_status", [
@@ -59,11 +63,15 @@ export const crmConnections = pgTable(
     webhookUrl: varchar("webhook_url", { length: 500 }),
   },
   (table) => [
-    foreignKey({
-      columns: [table.storeId, table.tenantId],
-      foreignColumns: [stores.id, stores.tenantId],
-      name: "crm_connections_store_tenant_fk",
-    }),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.storeId, table.tenantId],
+            foreignColumns: [stores.id, stores.tenantId],
+            name: "crm_connections_store_tenant_fk",
+          }),
+        ]
+      : []),
     index("crm_connections_store_status_idx").on(table.storeId, table.status),
     uniqueIndex("crm_connections_scope_id_unique").on(
       table.tenantId,
@@ -73,10 +81,11 @@ export const crmConnections = pgTable(
     index("crm_connections_zapi_sandbox_cleanup_idx")
       .on(table.updatedAt)
       .where(sql`${table.provider} = 'zapi' and ${table.status} = 'sandbox'`),
+    // Instagram can retain multiple accounts; every other provider is single-active.
     uniqueIndex("crm_connections_store_provider_active_unique")
       .on(table.storeId, table.provider)
       .where(
-        sql`${table.status} <> 'archived' and ${table.provider} in ('zapi', 'composio_whatsapp')`,
+        sql`${table.status} <> 'archived' and ${table.provider} <> 'composio_instagram'`,
       ),
     uniqueIndex("crm_connections_provider_external_unique").on(
       table.provider,

@@ -8,6 +8,7 @@ import {
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 import { transitionConfirmedHumanOutboundAttendance } from "./sendWhatsappOutboundAttendance.js";
+import { interventionActorKind } from "./humanAttendanceTransition.js";
 import {
   findConversationSession,
   recordLeadInteraction,
@@ -65,10 +66,13 @@ export async function completeStartedWhatsappConversation(
       input.sessionId,
     );
     const attendance = await transitionConfirmedHumanOutboundAttendance({
+      actorId: context.actor.id,
+      actorKind: interventionActorKind(context.actor.kind, "admin"),
       interventionId: input.interventionId,
       providerTimestamp: input.providerTimestamp,
       repository,
       senderType: input.senderType,
+      senderOrigin: message.senderOrigin,
       session: persistedSession,
     });
     return {

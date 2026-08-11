@@ -1,6 +1,6 @@
 -- Local product seed v2.
--- Shared-account dunning and isolated-trial fixtures using the server-owned
--- 2026-08-v1 catalog.
+-- Shared-account dunning and isolated-trial fixtures using the active
+-- server-owned 2026-08-v2 catalog.
 -- Provider identifiers below are local placeholders; no provider call succeeded.
 -- Included by ../product-test-user.sql inside one transaction.
 
@@ -89,7 +89,7 @@ VALUES
     null,
     null,
     'plan',
-    '82121212-1212-4212-8212-121212121212',
+    '82221212-1212-4212-8212-121212121212',
     1,
     date_trunc('day', now()) - interval '35 days',
     '66666666-6666-4666-8666-666666666667',
@@ -99,7 +99,7 @@ VALUES
   ),
   (
     '25000000-0000-4000-8000-000000000012',
-    '85151515-1515-4515-8515-151515151515',
+    '85251515-1515-4515-8515-151515151515',
     null,
     'addon',
     null,
@@ -115,7 +115,7 @@ VALUES
     null,
     null,
     'plan',
-    '82121212-1212-4212-8212-121212121212',
+    '82221212-1212-4212-8212-121212121212',
     1,
     date_trunc('day', now()),
     '66666666-6666-4666-8666-666666666668',
@@ -149,7 +149,7 @@ INSERT INTO store_entitlements (
 VALUES
   (
     'subdomain',
-    '{"fixture":"local_seed","catalogVersion":"2026-08-v1","scenario":"past_due_grace_period","billingStatus":"past_due","dunningPolicy":"grace_period"}'::jsonb,
+    '{"fixture":"local_seed","catalogVersion":"2026-08-v2","scenario":"past_due_grace_period","billingStatus":"past_due","dunningPolicy":"grace_period"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()) - interval '35 days',
     date_trunc('day', now()) + interval '2 days',
@@ -159,7 +159,7 @@ VALUES
   ),
   (
     'crm',
-    '{"fixture":"local_seed","catalogVersion":"2026-08-v1","scenario":"dunning_suspension","billingStatus":"past_due","addonCode":"crm_core"}'::jsonb,
+    '{"fixture":"local_seed","catalogVersion":"2026-08-v2","scenario":"dunning_suspension","billingStatus":"past_due","addonCode":"crm_core"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()) - interval '35 days',
     null,
@@ -169,7 +169,7 @@ VALUES
   ),
   (
     'automation',
-    '{"fixture":"local_seed","catalogVersion":"2026-08-v1","scenario":"dunning_suspension","billingStatus":"past_due","mode":"preview_only","execution_enabled":false}'::jsonb,
+    '{"fixture":"local_seed","catalogVersion":"2026-08-v2","scenario":"dunning_suspension","billingStatus":"past_due","mode":"preview_only","execution_enabled":false}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()) - interval '35 days',
     null,
@@ -179,7 +179,7 @@ VALUES
   ),
   (
     'plate_lookup',
-    '{"fixture":"local_seed","catalogVersion":"2026-08-v1","scenario":"dunning_suspension","billingStatus":"past_due","limitValue":300}'::jsonb,
+    '{"fixture":"local_seed","catalogVersion":"2026-08-v2","scenario":"dunning_suspension","billingStatus":"past_due","limitValue":300}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()) - interval '35 days',
     null,
@@ -199,7 +199,7 @@ VALUES
   ),
   (
     'subdomain',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v1","sourceDetail":"safe_trial_catalog"}'::jsonb,
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v2","sourceDetail":"safe_trial_catalog"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -209,7 +209,7 @@ VALUES
   ),
   (
     'automation',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v1","sourceDetail":"safe_trial_catalog","mode":"preview_only","execution_enabled":false}'::jsonb,
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v2","sourceDetail":"safe_trial_catalog","mode":"preview_only","execution_enabled":false}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -219,7 +219,7 @@ VALUES
   ),
   (
     'analytics',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v1","sourceDetail":"safe_trial_catalog"}'::jsonb,
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v2","sourceDetail":"safe_trial_catalog"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -229,7 +229,7 @@ VALUES
   ),
   (
     'compliance',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v1","sourceDetail":"safe_trial_catalog"}'::jsonb,
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v2","sourceDetail":"safe_trial_catalog"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -239,7 +239,7 @@ VALUES
   ),
   (
     'plate_lookup',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v1","sourceDetail":"safe_trial_catalog","limitValue":10}'::jsonb,
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-08-v2","sourceDetail":"safe_trial_catalog","limitValue":10}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -284,7 +284,7 @@ INSERT INTO payments (
 VALUES
   (
     '25000000-0000-4000-8000-000000000021',
-    95600,
+    115590,
     date_trunc('day', now()) - interval '7 days',
     'local-seed-branch-overdue',
     'https://billing.example.test/invoices/branch-overdue',
@@ -325,9 +325,9 @@ INSERT INTO store_entitlement_events (
   tenant_id
 )
 VALUES
-  ('25000000-0000-4000-8000-000000000031', 'local_seed', 'crm', '{"fixture":"local_seed","billingStatus":"past_due","catalogVersion":"2026-08-v1"}'::jsonb, 'suspended', 'active', 'Shared subscription entered dunning; branch CRM access was suspended', 'billing_catalog', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777'),
-  ('25000000-0000-4000-8000-000000000032', 'local_seed', 'automation', '{"fixture":"local_seed","billingStatus":"past_due","catalogVersion":"2026-08-v1"}'::jsonb, 'suspended', 'active', 'Shared subscription entered dunning; branch automation was suspended', 'billing_catalog', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777'),
-  ('25000000-0000-4000-8000-000000000033', 'local_seed', 'plate_lookup', '{"fixture":"local_seed","billingStatus":"past_due","catalogVersion":"2026-08-v1"}'::jsonb, 'suspended', 'active', 'Shared subscription entered dunning; branch paid lookups were suspended', 'billing_catalog', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777'),
+  ('25000000-0000-4000-8000-000000000031', 'local_seed', 'crm', '{"fixture":"local_seed","billingStatus":"past_due","catalogVersion":"2026-08-v2"}'::jsonb, 'suspended', 'active', 'Shared subscription entered dunning; branch CRM access was suspended', 'billing_catalog', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777'),
+  ('25000000-0000-4000-8000-000000000032', 'local_seed', 'automation', '{"fixture":"local_seed","billingStatus":"past_due","catalogVersion":"2026-08-v2"}'::jsonb, 'suspended', 'active', 'Shared subscription entered dunning; branch automation was suspended', 'billing_catalog', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777'),
+  ('25000000-0000-4000-8000-000000000033', 'local_seed', 'plate_lookup', '{"fixture":"local_seed","billingStatus":"past_due","catalogVersion":"2026-08-v2"}'::jsonb, 'suspended', 'active', 'Shared subscription entered dunning; branch paid lookups were suspended', 'billing_catalog', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777'),
   ('25000000-0000-4000-8000-000000000034', 'local_seed', 'marketplace', '{"fixture":"local_seed","overrideContractVersion":"2026-07-capability-v1","officialOperation":false}'::jsonb, 'suspended', 'active', 'Local marketplace preview override was suspended during dunning', 'local_seed_override', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777')
 ON CONFLICT (id) DO UPDATE SET
   actor_id = EXCLUDED.actor_id,

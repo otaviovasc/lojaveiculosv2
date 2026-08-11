@@ -52,6 +52,23 @@ describe("runZapiWebhookSetupAttempt", () => {
     expect(report).toHaveBeenCalledTimes(2);
   });
 
+  it("does not report setup success until strict result audit persists", async () => {
+    const { connection, configure, ports } = fixture({});
+    const auditFailure = new Error("audit unavailable");
+
+    await expect(
+      runZapiWebhookSetupAttempt(
+        context({ record: vi.fn(async () => Promise.reject(auditFailure)) }),
+        input(connection.id),
+        ports,
+      ),
+    ).rejects.toBe(auditFailure);
+    await expect(
+      runZapiWebhookSetupAttempt(context(), input(connection.id), ports),
+    ).resolves.toMatchObject({ setup: { status: "configured" } });
+    expect(configure).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects a guessed cross-tenant connection before provider I/O", async () => {
     const { connection, configure, ports } = fixture({ tenantId: "tenant_b" });
 
@@ -172,12 +189,15 @@ function fixture(input: {
   };
 }
 
-function context(): StoreScopedServiceContext {
+function context(audit?: {
+  record: () => Promise<void>;
+}): StoreScopedServiceContext {
   const base = createServiceContext({
     actor: { id: "support", kind: "user" },
+    ...(audit ? { audit } : {}),
     entitlements: ["crm", "crm_zapi"],
     permissions: [
-      "crm.whatsapp.connection.manage",
+      "crm.messaging.connection.setup",
       "crm.whatsapp.integrations.manage",
     ],
     request: { requestId: "setup-test" },

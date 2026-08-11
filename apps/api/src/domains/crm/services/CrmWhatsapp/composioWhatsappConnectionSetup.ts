@@ -199,6 +199,5 @@ export async function selectComposioWhatsappSender(
 }
 
 function assertComposioSetupPermissions(context: ServiceContext) {
-  assertPermission(context, "crm.whatsapp.connection.manage");
-  assertPermission(context, "crm.whatsapp.integrations.manage");
+  assertPermission(context, "crm.messaging.connection.setup");
 }

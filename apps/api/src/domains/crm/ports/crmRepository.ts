@@ -74,6 +74,15 @@ export type CreateCrmLeadInput = {
   tenantId: TenantId;
 };
 
+export type CreateIdempotentCrmLeadInput = CreateCrmLeadInput & {
+  sourceIdentityKey: string;
+};
+
+export type CreateIdempotentCrmLeadResult = {
+  created: boolean;
+  lead: CrmLead;
+};
+
 export type UpdateCrmLeadInput = {
   assignedUserId?: UserId | null;
   buyerEmail?: string | null;
@@ -158,6 +167,9 @@ export type CrmRepository = {
     input: CreateIdempotentLeadActivityInput,
   ) => Promise<CreateIdempotentLeadActivityResult>;
   createLead: (input: CreateCrmLeadInput) => Promise<CrmLead>;
+  createLeadIdempotently: (
+    input: CreateIdempotentCrmLeadInput,
+  ) => Promise<CreateIdempotentCrmLeadResult>;
   findLeadById: (input: {
     leadId: string;
     storeId: StoreId;

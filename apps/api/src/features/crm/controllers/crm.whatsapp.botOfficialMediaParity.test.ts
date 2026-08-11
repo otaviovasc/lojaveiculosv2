@@ -37,7 +37,7 @@ describe("CRM official bot media parity", () => {
             phone: "5511999999999",
           },
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 
@@ -66,6 +66,7 @@ describe("CRM official bot media parity", () => {
       externalId: "ig-inbound-1",
       metadata: {},
       providerTimestamp: new Date(),
+      senderOrigin: "customer",
       senderType: "CUSTOMER",
       status: "DELIVERED",
       storeId,
@@ -87,7 +88,7 @@ describe("CRM official bot media parity", () => {
           payload: { imageUrl: "https://cdn.example.test/vehicle.jpg" },
           sessionId: inbound.session.id,
         },
-        { "X-Webhook-Secret": "bot-secret-value" },
+        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
       ),
     );
 

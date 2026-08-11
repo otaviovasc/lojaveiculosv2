@@ -58,12 +58,12 @@ BEGIN
   IF EXISTS (
     WITH expected(role_key, expected_count) AS (
       VALUES
-        ('agency'::role_template_key, 100),
-        ('admin'::role_template_key, 94),
-        ('owner'::role_template_key, 100),
+        ('agency'::role_template_key, 101),
+        ('admin'::role_template_key, 95),
+        ('owner'::role_template_key, 101),
         ('investor'::role_template_key, 14),
         ('salesman'::role_template_key, 46),
-        ('supervisor'::role_template_key, 74)
+        ('supervisor'::role_template_key, 75)
     )
     SELECT 1
     FROM expected
@@ -74,6 +74,18 @@ BEGIN
     HAVING count(permission.id) <> expected.expected_count
   ) THEN
     RAISE EXCEPTION 'seed invariant: runtime permission projection drifted';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM role_template_permissions
+    WHERE permission_key = 'crm.whatsapp.connection.manage'
+  ) OR EXISTS (
+    SELECT 1
+    FROM membership_permission_overrides
+    WHERE permission_key = 'crm.whatsapp.connection.manage'
+  ) THEN
+    RAISE EXCEPTION 'seed invariant: legacy CRM connection permission remains';
   END IF;
 
   FOR scoped_table IN
@@ -136,7 +148,7 @@ BEGIN
     FROM subscription_items
     WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
       AND ends_at IS NULL
-  ) <> 4 THEN
+  ) <> 5 THEN
     RAISE EXCEPTION 'seed invariant: shared subscription allocations are incomplete';
   END IF;
 
@@ -152,10 +164,84 @@ BEGIN
       AND store_id = '66666666-6666-4666-8666-666666666668'
       AND tenant_id = '77777777-7777-4777-8777-777777777778'
       AND item_type = 'plan'
-      AND plan_id = '82121212-1212-4212-8212-121212121212'
+      AND plan_id = '82221212-1212-4212-8212-121212121212'
       AND ends_at IS NULL
   ) THEN
     RAISE EXCEPTION 'seed invariant: trial must contain exactly one selected plan contract';
+  END IF;
+
+  IF (
+    SELECT count(DISTINCT item.subscription_id)
+    FROM subscription_items item
+    LEFT JOIN plans plan ON plan.id = item.plan_id
+    LEFT JOIN addons addon ON addon.id = item.addon_id
+    WHERE item.tenant_id IN (
+      '77777777-7777-4777-8777-777777777777',
+      '77777777-7777-4777-8777-777777777778'
+    )
+      AND item.ends_at IS NULL
+      AND COALESCE(plan.catalog_version, addon.catalog_version) = '2026-08-v1'
+  ) <> 1 OR (
+    SELECT count(*)
+    FROM subscription_items item
+    LEFT JOIN plans plan ON plan.id = item.plan_id
+    LEFT JOIN addons addon ON addon.id = item.addon_id
+    WHERE item.tenant_id IN (
+      '77777777-7777-4777-8777-777777777777',
+      '77777777-7777-4777-8777-777777777778'
+    )
+      AND item.ends_at IS NULL
+      AND COALESCE(plan.catalog_version, addon.catalog_version) = '2026-08-v1'
+  ) <> 3 OR EXISTS (
+    SELECT 1
+    FROM subscription_items item
+    LEFT JOIN plans plan ON plan.id = item.plan_id
+    LEFT JOIN addons addon ON addon.id = item.addon_id
+    WHERE item.tenant_id IN (
+      '77777777-7777-4777-8777-777777777777',
+      '77777777-7777-4777-8777-777777777778'
+    )
+      AND item.ends_at IS NULL
+      AND item.store_id <> '66666666-6666-4666-8666-666666666666'
+      AND COALESCE(plan.catalog_version, addon.catalog_version) <> '2026-08-v2'
+  ) THEN
+    RAISE EXCEPTION 'seed invariant: only the explicit historical store contract may use catalog v1';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM subscription_items item
+    JOIN addons historical ON historical.id = item.addon_id
+    JOIN addons current
+      ON current.code = historical.code
+      AND current.catalog_version = '2026-08-v2'
+    WHERE item.id = '20000000-0000-4000-8000-000000000001'
+      AND historical.catalog_version = '2026-08-v1'
+      AND item.unit_amount_cents = 19990
+      AND current.monthly_price_cents = 5000
+      AND item.unit_amount_cents <> current.monthly_price_cents
+  ) THEN
+    RAISE EXCEPTION 'seed invariant: active catalog pricing must not reprice the historical contract';
+  END IF;
+
+  IF (
+    SELECT count(*)
+    FROM addons
+    WHERE catalog_version = '2026-08-v2' AND status = 'active'
+  ) <> 6 THEN
+    RAISE EXCEPTION 'seed invariant: current add-on catalog is incomplete';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM store_entitlements
+    WHERE store_id = '66666666-6666-4666-8666-666666666668'
+      AND feature_key = 'crm'
+      AND status IN ('active', 'trialing')
+      AND (starts_at IS NULL OR starts_at <= now())
+      AND (ends_at IS NULL OR ends_at > now())
+  ) THEN
+    RAISE EXCEPTION 'seed invariant: CRM paid add-on must be denied during the safe trial';
   END IF;
 
   IF EXISTS (

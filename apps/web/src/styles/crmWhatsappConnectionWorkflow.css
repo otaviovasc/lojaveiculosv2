@@ -95,6 +95,107 @@
   line-height: 1.35;
 }
 
+.crm-whatsapp-zapi-pairing-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.crm-whatsapp-pairing-method {
+  align-content: start;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.625rem;
+  padding: 1rem;
+}
+
+.crm-whatsapp-pairing-method h3 {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.crm-whatsapp-pairing-method p,
+.crm-whatsapp-pairing-method small,
+.crm-whatsapp-pairing-note {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+}
+
+.crm-whatsapp-pairing-method img {
+  aspect-ratio: 1;
+  background: var(--color-text);
+  border-radius: var(--radius-sm);
+  justify-self: center;
+  max-width: min(100%, 15rem);
+  padding: 0.5rem;
+  width: 15rem;
+}
+
+.crm-whatsapp-pairing-phone {
+  color: var(--color-text);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.35rem;
+}
+
+.crm-whatsapp-pairing-phone input {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  min-height: 2.5rem;
+  padding: 0.5rem 0.625rem;
+}
+
+.crm-whatsapp-pairing-code {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.crm-whatsapp-pairing-success {
+  align-items: center;
+  background: var(--color-green-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--color-green-start) 32%, var(--color-line));
+  border-radius: var(--radius-md);
+  color: var(--color-success-strong);
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+}
+
+.crm-whatsapp-pairing-success > svg {
+  flex: 0 0 auto;
+}
+
+.crm-whatsapp-pairing-success span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.crm-whatsapp-pairing-success small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: 700px) {
+  .crm-whatsapp-zapi-pairing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .crm-whatsapp-connection-disclosure > summary > svg {
   color: var(--color-muted);
   transition: transform 180ms ease;

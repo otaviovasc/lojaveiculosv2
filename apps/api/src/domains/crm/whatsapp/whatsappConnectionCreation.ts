@@ -10,6 +10,7 @@ export type CreatableWhatsappConnectionProvider = Extract<
 export type CreateWhatsappConnectionInput =
   | {
       displayName: string;
+      clientToken?: string;
       instanceId: string;
       instanceToken: string;
       provider: "zapi";
@@ -36,5 +37,14 @@ export class WhatsappConnectionProviderAlreadyExistsError extends Error {
     super(`An active ${provider} connection already exists for this store.`);
     this.name = "WhatsappConnectionProviderAlreadyExistsError";
     this.provider = provider;
+  }
+}
+
+export class WhatsappConnectionCredentialStateError extends Error {
+  constructor() {
+    super(
+      "The initial Z-API credential state is partial and requires support recovery.",
+    );
+    this.name = "WhatsappConnectionCredentialStateError";
   }
 }

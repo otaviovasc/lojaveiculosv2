@@ -4,19 +4,23 @@ import type { CrmWhatsappCampaign } from "./crmWhatsappCampaignTypes";
 export function CrmWhatsappCampaignList({
   campaigns,
   canManage,
+  error,
   isLoading,
   onCancel,
   onPause,
   onResume,
+  onRetry,
   onSelect,
   selectedCampaignId,
 }: {
   campaigns: CrmWhatsappCampaign[];
   canManage: boolean;
+  error?: string | null;
   isLoading: boolean;
   onCancel: (campaignId: string) => Promise<void>;
   onPause: (campaignId: string) => Promise<void>;
   onResume: (campaignId: string) => Promise<void>;
+  onRetry?: () => Promise<void>;
   onSelect: (campaignId: string) => void;
   selectedCampaignId: string | null;
 }) {
@@ -24,7 +28,17 @@ export function CrmWhatsappCampaignList({
     <section className="crm-whatsapp-campaign-panel crm-whatsapp-campaign-list">
       <h3>Campanhas recentes</h3>
       {isLoading ? <p>Carregando campanhas...</p> : null}
-      {!isLoading && !campaigns.length ? (
+      {!isLoading && error ? (
+        <div className="crm-whatsapp-campaign-error" role="alert">
+          <p>{error}</p>
+          {onRetry ? (
+            <button onClick={() => void onRetry()} type="button">
+              Tentar novamente
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {!isLoading && !error && !campaigns.length ? (
         <p>Nenhuma campanha criada ainda.</p>
       ) : null}
       {campaigns.map((campaign) => (

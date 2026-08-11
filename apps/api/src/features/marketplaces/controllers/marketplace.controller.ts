@@ -28,6 +28,7 @@ export type MarketplaceContextFactory = (
 ) => Promise<ServiceContext>;
 
 export type CreateMarketplaceFeatureOptions = {
+  callbackContextFactory?: MarketplaceContextFactory;
   contextFactory?: MarketplaceContextFactory;
   services?: MarketplaceServices;
 };

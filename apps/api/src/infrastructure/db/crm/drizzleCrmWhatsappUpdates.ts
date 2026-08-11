@@ -1,4 +1,4 @@
-import { and, eq, isNull, type SQL } from "drizzle-orm";
+import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
 import { crmWhatsappSessions } from "@lojaveiculosv2/db";
 import type { UpdateCrmWhatsappSessionInput } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
@@ -22,7 +22,9 @@ export async function updateWhatsappSession(
   );
 }
 
-function sessionUpdateFilters(input: UpdateCrmWhatsappSessionInput): SQL[] {
+export function sessionUpdateFilters(
+  input: UpdateCrmWhatsappSessionInput,
+): SQL[] {
   const filters: SQL[] = [
     eq(crmWhatsappSessions.id, input.sessionId),
     eq(crmWhatsappSessions.storeId, input.storeId),
@@ -30,6 +32,9 @@ function sessionUpdateFilters(input: UpdateCrmWhatsappSessionInput): SQL[] {
   ];
   if (input.expectedStatus) {
     filters.push(eq(crmWhatsappSessions.status, input.expectedStatus));
+  }
+  if (input.expectedRevision !== undefined) {
+    filters.push(eq(crmWhatsappSessions.revision, input.expectedRevision));
   }
   if (input.expectedHumanAttendanceStateVersion !== undefined) {
     filters.push(
@@ -90,6 +95,7 @@ export function cleanSessionUpdate(input: UpdateCrmWhatsappSessionInput) {
     ...(input.leadId !== undefined ? { leadId: input.leadId } : {}),
     ...(input.metadata ? { metadata: input.metadata } : {}),
     ...(input.status ? { status: input.status } : {}),
+    revision: sql`${crmWhatsappSessions.revision} + 1`,
     updatedAt: new Date(),
   };
 }

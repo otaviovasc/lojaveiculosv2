@@ -40,6 +40,7 @@ export function seedSession(
     externalId: `inbound-vehicle-${suffix}`,
     metadata: {},
     providerTimestamp: new Date("2026-07-02T20:00:00.000Z"),
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId,

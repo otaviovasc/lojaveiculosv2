@@ -20,6 +20,12 @@ export function assertConversationStartMode(
       409,
     );
   }
+  if (provider === "olx_chat") {
+    throw new WhatsappMessageActionError(
+      "OLX Chat conversations must be initiated by the buyer.",
+      409,
+    );
+  }
   throw new WhatsappMessageActionError(
     provider === "composio_whatsapp"
       ? "Official WhatsApp conversation starts require an approved template."

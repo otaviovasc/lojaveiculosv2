@@ -57,6 +57,7 @@ export async function sendWhatsappCatalog(
             ? { idempotencyKey: input.idempotencyKey }
             : {}),
           idempotencyPayload: input,
+          senderOrigin: "human_crm",
           prepare: async ({ connection, gateway, phone }) =>
             prepareCatalogSend(context, input, connection, gateway, phone),
           sessionId: input.sessionId,

@@ -70,15 +70,10 @@ export function createRuntimeAppDependencies(
   assertRuntimeIdentityVerifierConfig(env);
   assertRuntimeObjectStorageConfig(env);
 
+  const crmRealtimeBroker = createRuntimeCrmRealtimeBroker(env);
   const productDb = createProductDb(databaseUrl, env);
   const auditDatabase = createAuditDb(env);
   const objectStorage = createRuntimeObjectStorage(env);
-  const crmRealtimeBroker = createRuntimeCrmRealtimeBroker(env);
-  const closeCrmRealtimeBroker =
-    "close" in crmRealtimeBroker &&
-    typeof crmRealtimeBroker.close === "function"
-      ? (crmRealtimeBroker.close as () => Promise<void>)
-      : null;
   const clerkAccountProviders = createRuntimeClerkAccountProviders(env);
   const resources: RuntimeResource[] = [
     productDb.resource,
@@ -98,14 +93,10 @@ export function createRuntimeAppDependencies(
           }),
         ]
       : []),
-    ...(closeCrmRealtimeBroker
-      ? [
-          createIdempotentResource({
-            close: closeCrmRealtimeBroker,
-            name: "crm-realtime-broker",
-          }),
-        ]
-      : []),
+    createIdempotentResource({
+      close: crmRealtimeBroker.close,
+      name: "crm-realtime-broker",
+    }),
   ];
 
   try {
@@ -113,6 +104,7 @@ export function createRuntimeAppDependencies(
       [
         productDb.readinessCheck,
         ...(auditDatabase ? [auditDatabase.readinessCheck] : []),
+        { name: "crmRealtime", run: crmRealtimeBroker.ready },
       ],
       readReadinessTimeoutMs(env),
     );

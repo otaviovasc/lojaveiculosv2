@@ -1,5 +1,6 @@
 export type {
   CompleteMarketplaceConnectionInput,
+  CompleteMarketplaceConnectionResult,
   CreateMarketplaceConnectUrlInput,
   CreateMarketplaceSyncJobInput,
   MarketplaceAccount,

@@ -42,53 +42,65 @@ describe("official messaging customer service window", () => {
     },
   );
 
-  it("allows official WhatsApp text inside the 24-hour customer window", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
-    const seeded = await seedMessage(repository, {
-      channel: "WHATSAPP",
-      direction: "INBOUND",
-      providerTimestamp: new Date(),
-    });
-    const sendText = vi.fn(async () => ({
-      externalId: "wamid.service-window-1",
-      providerTimestamp: new Date(),
-      raw: { messages: [{ id: "wamid.service-window-1" }] },
-    }));
-    const app = createTestApp({
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_whatsapp"),
-      ]),
-      crmWhatsappGateway: { sendText },
-      crmWhatsappRepository: repository,
-    });
+  it.each([
+    ["composio_whatsapp", "WHATSAPP"],
+    ["composio_instagram", "INSTAGRAM"],
+  ] as const)(
+    "allows %s text inside the 24-hour customer window",
+    async (provider, channel) => {
+      const repository = createMemoryCrmWhatsappRepository();
+      const seeded = await seedMessage(repository, {
+        channel,
+        direction: "INBOUND",
+        providerTimestamp: new Date(),
+      });
+      const sendText = vi.fn(async () => ({
+        externalId: "wamid.service-window-1",
+        providerTimestamp: new Date(),
+        raw: { messages: [{ id: "wamid.service-window-1" }] },
+      }));
+      const app = createTestApp({
+        crmConnectionRepository: createMemoryCrmConnectionRepository([
+          createConnection(provider),
+        ]),
+        crmWhatsappGateway: { sendText },
+        crmWhatsappRepository: repository,
+      });
 
-    const response = await send(app, seeded.session.id);
+      const response = await send(app, seeded.session.id);
 
-    expect(response.status).toBe(201);
-    expect(sendText).toHaveBeenCalledOnce();
-  });
+      expect(response.status).toBe(201);
+      expect(sendText).toHaveBeenCalledOnce();
+    },
+  );
 
-  it("rejects official WhatsApp text after the customer window expires", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
-    const seeded = await seedMessage(repository, {
-      channel: "WHATSAPP",
-      direction: "INBOUND",
-      providerTimestamp: new Date(Date.now() - 25 * 60 * 60 * 1_000),
-    });
-    const sendText = vi.fn();
-    const app = createTestApp({
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_whatsapp"),
-      ]),
-      crmWhatsappGateway: { sendText },
-      crmWhatsappRepository: repository,
-    });
+  it.each([
+    ["composio_whatsapp", "WHATSAPP"],
+    ["composio_instagram", "INSTAGRAM"],
+  ] as const)(
+    "rejects %s text after the customer window expires",
+    async (provider, channel) => {
+      const repository = createMemoryCrmWhatsappRepository();
+      const seeded = await seedMessage(repository, {
+        channel,
+        direction: "INBOUND",
+        providerTimestamp: new Date(Date.now() - 25 * 60 * 60 * 1_000),
+      });
+      const sendText = vi.fn();
+      const app = createTestApp({
+        crmConnectionRepository: createMemoryCrmConnectionRepository([
+          createConnection(provider),
+        ]),
+        crmWhatsappGateway: { sendText },
+        crmWhatsappRepository: repository,
+      });
 
-    const response = await send(app, seeded.session.id);
+      const response = await send(app, seeded.session.id);
 
-    expect(response.status).toBe(409);
-    expect(sendText).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(409);
+      expect(sendText).not.toHaveBeenCalled();
+    },
+  );
 });
 
 function send(app: ReturnType<typeof createTestApp>, sessionId: string) {
@@ -111,12 +123,16 @@ function seedMessage(
     buyerPhone:
       input.channel === "INSTAGRAM" ? "ig-scoped-user-1" : "5511999999999",
     channel: input.channel,
+    ...(input.channel === "INSTAGRAM"
+      ? { channelExternalId: "ig-scoped-user-1" }
+      : {}),
     connectionId,
     content: "Mensagem inicial",
     direction: input.direction,
     externalId: `seed-${input.direction}-${input.providerTimestamp.getTime()}`,
     metadata: {},
     providerTimestamp: input.providerTimestamp,
+    senderOrigin: input.direction === "INBOUND" ? "customer" : "human_crm",
     senderType: input.direction === "INBOUND" ? "CUSTOMER" : "HUMAN",
     status: input.direction === "INBOUND" ? "DELIVERED" : "SENT",
     storeId,

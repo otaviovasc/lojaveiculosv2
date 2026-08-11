@@ -75,6 +75,7 @@ function ingestText(
     connectionId,
     direction: "INBOUND",
     metadata: {},
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId,

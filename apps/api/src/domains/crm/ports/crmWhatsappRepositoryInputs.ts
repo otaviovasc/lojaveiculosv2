@@ -2,7 +2,9 @@ import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
 import type {
   CrmWhatsappChannel,
   CrmWhatsappHumanAttendanceState,
+  CrmWhatsappInterventionActorKind,
   CrmWhatsappMessageDirection,
+  CrmWhatsappMessageSenderOrigin,
   CrmWhatsappMessageSenderType,
   CrmWhatsappMessageStatus,
   CrmWhatsappMessageType,
@@ -55,6 +57,7 @@ export type IngestCrmWhatsappMessageInput = {
   mediaUrl?: string;
   metadata: Record<string, unknown>;
   providerTimestamp: Date;
+  senderOrigin: CrmWhatsappMessageSenderOrigin;
   senderType: CrmWhatsappMessageSenderType;
   firstHandledAt?: Date | null;
   freshLeadAt?: Date | null;
@@ -80,6 +83,7 @@ export type UpdateCrmWhatsappSessionInput = {
   assignedUserId?: UserId | null;
   expectedHumanAttendanceStateVersion?: number | null;
   expectedInterventionId?: string | null;
+  expectedRevision?: number;
   expectedStatus?: CrmWhatsappSessionStatus;
   firstHandledAt?: Date | null;
   freshLeadAt?: Date | null;
@@ -99,6 +103,21 @@ export type UpdateCrmWhatsappSessionInput = {
   storeId: StoreId;
   tenantId: TenantId;
 };
+
+export type TransitionCrmWhatsappAttendanceInput =
+  UpdateCrmWhatsappSessionInput & {
+    actorId: string;
+    actorKind: CrmWhatsappInterventionActorKind;
+    expectedRevision: number;
+    idempotencyKey: string;
+    interventionIdForLedger: string;
+    nextState: CrmWhatsappHumanAttendanceState | null;
+    occurredAt: Date;
+    previousState: CrmWhatsappHumanAttendanceState | null;
+    reason: string;
+    requestFingerprint: string;
+    source: string;
+  };
 
 export type FindCrmWhatsappMessageByExternalIdInput = {
   connectionId: string;

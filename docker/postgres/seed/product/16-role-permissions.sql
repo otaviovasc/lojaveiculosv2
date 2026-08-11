@@ -34,7 +34,8 @@ VALUES
   ('22222222-2222-4222-8222-222222222222', 'crm.manage'),
   ('22222222-2222-4222-8222-222222222222', 'crm.whatsapp.assign'),
   ('22222222-2222-4222-8222-222222222222', 'crm.whatsapp.close'),
-  ('22222222-2222-4222-8222-222222222222', 'crm.whatsapp.connection.manage'),
+  ('22222222-2222-4222-8222-222222222222', 'crm.messaging.connection.pair'),
+  ('22222222-2222-4222-8222-222222222222', 'crm.messaging.connection.setup'),
   ('22222222-2222-4222-8222-222222222222', 'crm.whatsapp.list'),
   ('22222222-2222-4222-8222-222222222222', 'crm.whatsapp.read'),
   ('22222222-2222-4222-8222-222222222222', 'crm.whatsapp.campaigns.manage'),
@@ -124,7 +125,8 @@ VALUES
   ('11111111-1111-4111-8111-111111111111', 'crm.manage'),
   ('11111111-1111-4111-8111-111111111111', 'crm.whatsapp.assign'),
   ('11111111-1111-4111-8111-111111111111', 'crm.whatsapp.close'),
-  ('11111111-1111-4111-8111-111111111111', 'crm.whatsapp.connection.manage'),
+  ('11111111-1111-4111-8111-111111111111', 'crm.messaging.connection.pair'),
+  ('11111111-1111-4111-8111-111111111111', 'crm.messaging.connection.setup'),
   ('11111111-1111-4111-8111-111111111111', 'crm.whatsapp.list'),
   ('11111111-1111-4111-8111-111111111111', 'crm.whatsapp.read'),
   ('11111111-1111-4111-8111-111111111111', 'crm.whatsapp.campaigns.manage'),
@@ -212,7 +214,8 @@ VALUES
   ('55555555-5555-4555-8555-555555555555', 'crm.manage'),
   ('55555555-5555-4555-8555-555555555555', 'crm.whatsapp.assign'),
   ('55555555-5555-4555-8555-555555555555', 'crm.whatsapp.close'),
-  ('55555555-5555-4555-8555-555555555555', 'crm.whatsapp.connection.manage'),
+  ('55555555-5555-4555-8555-555555555555', 'crm.messaging.connection.pair'),
+  ('55555555-5555-4555-8555-555555555555', 'crm.messaging.connection.setup'),
   ('55555555-5555-4555-8555-555555555555', 'crm.whatsapp.list'),
   ('55555555-5555-4555-8555-555555555555', 'crm.whatsapp.read'),
   ('55555555-5555-4555-8555-555555555555', 'crm.whatsapp.campaigns.manage'),
@@ -301,7 +304,8 @@ VALUES
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.manage'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.whatsapp.assign'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.whatsapp.close'),
-  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.whatsapp.connection.manage'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.messaging.connection.pair'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.messaging.connection.setup'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.whatsapp.list'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.whatsapp.read'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'crm.whatsapp.campaigns.manage'),
@@ -452,4 +456,4 @@ VALUES
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.update_video')
 ON CONFLICT (role_template_id, permission_key) DO NOTHING;
 
--- Expected permission counts at generation time: {"agency":100,"admin":94,"owner":100,"investor":14,"salesman":46,"supervisor":74}
+-- Expected permission counts at generation time: {"agency":101,"admin":95,"owner":101,"investor":14,"salesman":46,"supervisor":75}

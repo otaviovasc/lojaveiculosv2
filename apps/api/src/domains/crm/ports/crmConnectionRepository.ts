@@ -1,7 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 
 export type CrmConnectionProvider =
-  "zapi" | "composio_whatsapp" | "composio_instagram";
+  "zapi" | "composio_whatsapp" | "composio_instagram" | "olx_chat";
 
 export type CrmConnectionConfiguredStatus =
   "sandbox" | "active" | "paused" | "disconnected" | "error" | "archived";
@@ -39,7 +39,10 @@ export type CreateCrmConnectionInput = {
   externalInstanceId?: string | null;
   metadata?: Record<string, unknown>;
   phone?: string | null;
-  provider: Extract<CrmConnectionProvider, "zapi" | "composio_whatsapp">;
+  provider: Extract<
+    CrmConnectionProvider,
+    "zapi" | "composio_whatsapp" | "olx_chat"
+  >;
   status?: CrmConnectionConfiguredStatus;
   storeId: StoreId;
   tenantId: TenantId;
@@ -60,12 +63,25 @@ export type UpdateCrmConnectionInput = {
   webhookUrl?: string | null;
 };
 
+export type ConfigureInitialZapiCredentialsResult =
+  | { connection: CrmConnection; status: "configured" }
+  | { status: "already_configured" | "not_found" | "partial_state" };
+
 export type CrmConnectionRepository = {
   archiveAbandonedZapiConnections: (input: {
     cutoff: Date;
     limit: number;
   }) => Promise<readonly CrmConnection[]>;
   createConnection: (input: CreateCrmConnectionInput) => Promise<CrmConnection>;
+  upsertOlxConnection: (
+    input: Omit<CreateCrmConnectionInput, "provider">,
+  ) => Promise<CrmConnection>;
+  configureInitialZapiCredentials: (input: {
+    connectionId: string;
+    credentialsRef: Record<string, unknown>;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<ConfigureInitialZapiCredentialsResult>;
   claimZapiWebhookSetup: (input: {
     connectionId: string;
     leaseExpiresAt: Date;
@@ -74,6 +90,7 @@ export type CrmConnectionRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmConnection | null>;
+  claimOlxWebhookSetup?: CrmConnectionRepository["claimZapiWebhookSetup"];
   finishZapiWebhookSetup: (input: {
     connectionId: string;
     leaseOwner: string;
@@ -81,6 +98,7 @@ export type CrmConnectionRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmConnection | null>;
+  finishOlxWebhookSetup?: CrmConnectionRepository["finishZapiWebhookSetup"];
   findConnectionByExternalId: (
     input: FindCrmConnectionByExternalIdInput,
   ) => Promise<CrmConnection | null>;

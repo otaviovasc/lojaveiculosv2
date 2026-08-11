@@ -212,9 +212,7 @@ describe("MarketplaceModule", () => {
     window.history.replaceState(
       {},
       "",
-      `/marketplaces/oauth/callback?code=authorization_code_123&state=${encodeURIComponent(
-        JSON.stringify({ provider: "olx" }),
-      )}`,
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=11111111-1111-4111-8111-111111111111#/marketplaces",
     );
     const api = createApi();
 
@@ -222,9 +220,7 @@ describe("MarketplaceModule", () => {
 
     await waitFor(() =>
       expect(api.completeConnection).toHaveBeenCalledWith({
-        code: "authorization_code_123",
-        provider: "olx",
-        redirectUri: "http://localhost:3000/marketplaces/oauth/callback",
+        transactionId: "11111111-1111-4111-8111-111111111111",
       }),
     );
     expect(
@@ -237,7 +233,10 @@ describe("MarketplaceModule", () => {
 
 function createApi(overrides: Partial<MarketplaceApi> = {}): MarketplaceApi {
   const api: MarketplaceApi = {
-    completeConnection: vi.fn(async () => account),
+    completeConnection: vi.fn(async () => ({
+      account,
+      kind: "connected" as const,
+    })),
     createConnectUrl: vi.fn(async () => ({
       authorizationUrl: "https://provider.local/oauth",
       provider: "olx" as const,

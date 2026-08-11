@@ -17,7 +17,7 @@ import {
 import { runZapiWebhookSetupAttempt } from "./runZapiWebhookSetupAttempt.js";
 import type { ZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState.js";
 
-const managePermission = "crm.whatsapp.connection.manage";
+const managePermission = "tenant.manage";
 
 export type ConfigureWhatsappConnectionWebhooksInput = {
   basePath: string;

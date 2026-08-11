@@ -4,21 +4,25 @@ import type { ExecuteWhatsappBotActionInput } from "../services/CrmWhatsapp/what
 import { WhatsappBotActionError } from "../services/CrmWhatsapp/whatsappBotIntegration.js";
 import { toggleWhatsappIntervention } from "../services/CrmWhatsapp/updateWhatsappSession.js";
 import {
+  findBotActionSession,
   readOptionalText,
   readRequiredBoolean,
   readRequiredText,
   requireBotActionSessionId,
 } from "./whatsappBotActionSupport.js";
 
-export function executeBotInterventionAction(
+export async function executeBotInterventionAction(
   context: ServiceContext,
   input: ExecuteWhatsappBotActionInput,
   ports: CrmServicePorts,
 ) {
+  const sessionId = requireBotActionSessionId(input);
+  const session = await findBotActionSession(context, sessionId, ports);
   return toggleWhatsappIntervention(
     context,
     {
       enabled: readRequiredBoolean(input.payload, "enabled"),
+      expectedRevision: session.revision,
       ...(readOptionalText(input.payload, "interventionId")
         ? {
             interventionId: readRequiredText(input.payload, "interventionId"),
@@ -27,7 +31,7 @@ export function executeBotInterventionAction(
       ...(readOptionalText(input.payload, "reason")
         ? { reason: readRequiredText(input.payload, "reason") }
         : {}),
-      sessionId: requireBotActionSessionId(input),
+      sessionId,
       source: readInterventionSource(input.payload),
     },
     ports,

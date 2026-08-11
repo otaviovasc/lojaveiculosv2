@@ -80,12 +80,18 @@ describe("access policy", () => {
     );
   });
 
-  it("keeps WhatsApp permissions explicit and operator-manageable", () => {
+  it("keeps provider-neutral CRM permissions unique and operator-manageable", () => {
     const crmPermissions =
       permissionGroups.find((group) => group.key === "crm")?.permissions ?? [];
+    const catalogKeys = permissionGroups.flatMap((group) =>
+      group.permissions.map((permission) => permission.key),
+    );
 
+    expect(new Set(catalogKeys).size).toBe(catalogKeys.length);
     expect(crmPermissions.map((permission) => permission.key)).toEqual(
       expect.arrayContaining([
+        "crm.messaging.connection.setup",
+        "crm.messaging.connection.pair",
         "crm.whatsapp.list",
         "crm.whatsapp.read",
         "crm.whatsapp.send",
@@ -94,6 +100,30 @@ describe("access policy", () => {
         "crm.whatsapp.toggle_intervention",
       ]),
     );
+    expect(catalogKeys).not.toContain("crm.whatsapp.connection.manage");
+  });
+
+  it("grants connection setup and pairing to manager roles only", () => {
+    const connectionPermissions = [
+      "crm.messaging.connection.setup",
+      "crm.messaging.connection.pair",
+    ] as const;
+
+    for (const role of ["agency", "owner", "admin", "supervisor"] as const) {
+      const permissions = resolvePermissions({ role });
+      for (const permission of connectionPermissions) {
+        expect(canAccess(permissions, permission)).toEqual({ allowed: true });
+      }
+    }
+    for (const role of ["salesman", "investor"] as const) {
+      const permissions = resolvePermissions({ role });
+      for (const permission of connectionPermissions) {
+        expect(canAccess(permissions, permission)).toEqual({
+          allowed: false,
+          reason: `Missing permission: ${permission}`,
+        });
+      }
+    }
   });
 
   it("mirrors prior WhatsApp role behavior with explicit CRM permissions", () => {

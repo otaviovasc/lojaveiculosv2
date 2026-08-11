@@ -1,4 +1,5 @@
 import type {
+  CrmWhatsappInterventionActorKind,
   CrmWhatsappRepository,
   CrmWhatsappSession,
 } from "../ports/crmWhatsappRepository.js";
@@ -17,6 +18,7 @@ export async function applyZapiAdSessionTransition(
   repository: CrmWhatsappRepository,
   input: {
     actorId: string;
+    actorKind: CrmWhatsappInterventionActorKind;
     attribution: ZapiAdAttribution;
     detectedAt: Date;
     session: CrmWhatsappSession;
@@ -33,6 +35,8 @@ export async function applyZapiAdSessionTransition(
     : null;
   const attendanceTransition = resumedIntervention
     ? await transitionHumanAttendance({
+        actorId: input.actorId,
+        actorKind: input.actorKind,
         command: { kind: "clear", status: "ACTIVE" },
         now: input.detectedAt,
         repository,
@@ -57,6 +61,7 @@ export async function applyZapiAdSessionTransition(
       : {}),
   };
   const updated = await repository.updateSession({
+    expectedRevision: currentSession.revision,
     metadata,
     sessionId: input.session.id,
     storeId: input.session.storeId,

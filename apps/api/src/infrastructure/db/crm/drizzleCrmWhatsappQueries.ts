@@ -8,12 +8,26 @@ import {
   isNull,
   ne,
   or,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { crmWhatsappMessages, crmWhatsappSessions } from "@lojaveiculosv2/db";
 import type { UserId } from "@lojaveiculosv2/shared";
 import type { CountCrmWhatsappSessionsInput } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+
+export function crmWhatsappUnreadSessionPredicate(): SQL {
+  return sql`exists (
+    select 1
+    from ${crmWhatsappMessages}
+    where ${crmWhatsappMessages.sessionId} = ${crmWhatsappSessions.id}
+      and ${crmWhatsappMessages.direction} = 'INBOUND'
+      and ${crmWhatsappMessages.createdAt} > coalesce(
+        ${crmWhatsappSessions.lastReadAt},
+        timestamp with time zone '1970-01-01 00:00:00+00'
+      )
+  )`;
+}
 
 export async function countUnreadMessages(
   db: DrizzleCrmClient,

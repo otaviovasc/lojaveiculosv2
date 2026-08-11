@@ -106,10 +106,13 @@ The initial automation slice cannot execute tools. Approval and rejection are
 terminal review decisions, and optimistic run, step, and approval versions plus
 the proposal digest must match before a decision is persisted.
 
-## CRM WhatsApp Contract
+## CRM Messaging Contract
 
-WhatsApp is a CRM feature, but it does not inherit lead permissions. Operators
-manage these explicit permissions in the CRM group:
+External messaging channels are CRM features, but they do not inherit lead
+permissions. Operators manage these explicit permissions in the CRM group. The
+existing `crm.whatsapp.*` key namespace remains an internal authorization
+identifier for the migrated operational capabilities; labels and descriptions
+shown to store users are provider-neutral:
 
 - `crm.whatsapp.list`: bootstrap, connection, agent, and session-list reads.
 - `crm.whatsapp.read`: message reads and read-state changes.
@@ -119,19 +122,21 @@ manage these explicit permissions in the CRM group:
 - `crm.whatsapp.toggle_intervention`: toggle manual intervention.
 - `crm.whatsapp.tags.assign`: attach and remove existing tags on sessions.
 - `crm.whatsapp.tags.manage`: create, edit, delete, and reorder tags.
-- `crm.whatsapp.schedules.read`: list scheduled WhatsApp messages.
-- `crm.whatsapp.schedules.create`: schedule a WhatsApp text message.
+- `crm.whatsapp.schedules.read`: list scheduled channel messages.
+- `crm.whatsapp.schedules.create`: schedule a channel text message.
 - `crm.whatsapp.schedules.cancel`: cancel a pending scheduled message.
 - `crm.whatsapp.schedules.process`: process due scheduled messages.
-- `crm.whatsapp.connection.manage`: edit ZAPI metadata, configured status,
-  env-var credential references, and webhook base URL.
-- `crm.whatsapp.campaigns.read`: view WhatsApp campaigns and metrics.
-- `crm.whatsapp.campaigns.manage`: create, pause, resume, and cancel WhatsApp
+- `crm.messaging.connection.setup`: configure a new channel and submit its
+  initial write-only credentials.
+- `crm.messaging.connection.pair`: request pairing by QR Code or phone code and
+  refresh channel connection state.
+- `crm.whatsapp.campaigns.read`: view messaging campaigns and metrics.
+- `crm.whatsapp.campaigns.manage`: create, pause, resume, and cancel messaging
   campaigns.
 - `crm.whatsapp.integrations.manage`: configure external bot integrations and
   write-only webhook secrets.
 
 V2 asserts these permissions, tenant/store scope, CRM entitlement context, and
-audit metadata before every WhatsApp operation. Pre-launch WhatsApp code should
-not keep Repasses payload compatibility or dead fallback branches unless a new
+audit metadata before every messaging operation. Pre-launch CRM code should not
+keep Repasses payload compatibility or dead fallback branches unless a new
 explicit business requirement says otherwise.

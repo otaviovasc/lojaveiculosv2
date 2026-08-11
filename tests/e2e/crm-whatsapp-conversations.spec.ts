@@ -1,8 +1,9 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
   installCampaignApiMocks,
   installNoopCampaignEventSource,
 } from "./crm-whatsapp-campaigns-helpers";
+import { createCampaignConnection } from "./crm-whatsapp-campaigns-fixtures";
 import { installLocalOwnerSession } from "./crm-whatsapp-test-helpers";
 import { saveQaScreenshot } from "./support/artifacts";
 import {
@@ -25,11 +26,23 @@ test.describe("CRM WhatsApp conversations", () => {
     await installLocalOwnerSession(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
+    await installCapabilityAwareConnectionMock(page);
     const richSessions = createRichSessions();
     const primarySession = richSessions[0]!;
     await page.route("**/crm/whatsapp/sessions**", (route) =>
       route.fulfill({
         body: JSON.stringify(richSessions),
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+    await page.route("**/crm/whatsapp/sessions/*/read", (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          ...primarySession,
+          lastReadAt: "2026-07-07T12:05:00.000Z",
+          unreadCount: 0,
+        }),
         headers: { "content-type": "application/json" },
         status: 200,
       }),
@@ -175,9 +188,23 @@ test.describe("CRM WhatsApp conversations", () => {
     await installLocalOwnerSession(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
+    await installCapabilityAwareConnectionMock(page);
+    const richSessions = createRichSessions();
+    const primarySession = richSessions[0]!;
     await page.route("**/crm/whatsapp/sessions**", (route) =>
       route.fulfill({
-        body: JSON.stringify(createRichSessions()),
+        body: JSON.stringify(richSessions),
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+    await page.route("**/crm/whatsapp/sessions/*/read", (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          ...primarySession,
+          lastReadAt: "2026-07-07T12:05:00.000Z",
+          unreadCount: 0,
+        }),
         headers: { "content-type": "application/json" },
         status: 200,
       }),
@@ -237,11 +264,49 @@ test.describe("CRM WhatsApp conversations", () => {
       "aria-selected",
       "true",
     );
-    await expect(page.getByLabel("Conexao")).toContainText(
-      "Nenhuma conexao de mensagens configurada para esta loja.",
-    );
+    const connectionRegion = page.getByRole("region", { name: "Conexão" });
+    await expect(connectionRegion).toContainText("Z-API");
+    await expect(connectionRegion).toContainText("WhatsApp Oficial");
   });
 });
+
+async function installCapabilityAwareConnectionMock(page: Page) {
+  await page.route("**/crm/whatsapp/connections", (route) =>
+    route.fulfill({
+      body: JSON.stringify({
+        connections: [
+          {
+            ...createCampaignConnection(),
+            capabilities: {
+              audio: true,
+              catalog: true,
+              conversationStart: true,
+              delete: true,
+              documents: true,
+              imageCaption: true,
+              images: true,
+              location: true,
+              quickMessages: true,
+              reactions: true,
+              reply: true,
+              scheduling: true,
+              templates: false,
+              text: true,
+              vehicle: true,
+              video: true,
+            },
+            ready: true,
+            setup: {
+              status: "configured",
+            },
+          },
+        ],
+      }),
+      headers: { "content-type": "application/json" },
+      status: 200,
+    }),
+  );
+}
 
 function createRichSessions() {
   return [

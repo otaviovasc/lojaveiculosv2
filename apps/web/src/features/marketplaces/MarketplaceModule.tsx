@@ -24,10 +24,7 @@ import {
   type MarketplaceErrorDisplay,
 } from "./marketplaceErrors";
 import { providerLabels } from "./marketplaceLabels";
-import {
-  marketplaceRedirectUri,
-  readMarketplaceOauthCallback,
-} from "./marketplaceOauthCallback";
+import { readMarketplaceOauthCallback } from "./marketplaceOauthCallback";
 import { marketplaceProviderOrder } from "./marketplaceProviderPresentation";
 import { createMarketplaceRuntimeApi } from "./runtimeApi";
 import type {
@@ -46,14 +43,12 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   );
   const [overview, setOverview] = useState<MarketplaceOverview | null>(null);
   const [status, setStatus] = useState<MarketplaceStatus>({ kind: "loading" });
-  const [oauthCodes, setOauthCodes] = useState<Record<string, string>>({});
   const [previews, setPreviews] = useState<Record<string, ProviderPreview>>({});
   const [selectedProvider, setSelectedProvider] =
     useState<MarketplaceProvider | null>(null);
   const [lastRun, setLastRun] =
     useState<MarketplaceStockSyncRunResponse | null>(null);
   const oauthCallbackStartedRef = useRef(false);
-  const redirectUri = marketplaceRedirectUri(window.location);
 
   const applyOverview = (nextOverview: MarketplaceOverview) => {
     setOverview(nextOverview);
@@ -86,7 +81,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       return;
     }
 
-    if (callback.kind === "error") {
+    if (callback.kind === "result-error") {
       clearOauthCallbackLocation();
       try {
         applyOverview(await marketplaceApi.getOverview());
@@ -97,18 +92,35 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       return;
     }
 
-    setStatus({ kind: "saving", provider: callback.provider });
+    setStatus(
+      callback.kind === "staged"
+        ? { kind: "saving", provider: callback.provider }
+        : { kind: "loading" },
+    );
     try {
-      await marketplaceApi.completeConnection({
-        code: callback.code,
-        provider: callback.provider,
-        redirectUri,
-      });
+      const result = await marketplaceApi.completeConnection(
+        callback.kind === "staged"
+          ? { transactionId: callback.transactionId }
+          : callback.kind === "inline-error"
+            ? { error: callback.error, state: callback.state }
+            : { code: callback.code, state: callback.state },
+      );
+      if (result.kind === "cancelled") {
+        clearOauthCallbackLocation();
+        setStatus({
+          kind: "error",
+          display: oauthErrorDisplay({
+            kind: "result-error",
+            provider: result.provider,
+          }),
+        });
+        return;
+      }
       applyOverview(await marketplaceApi.getOverview());
       clearOauthCallbackLocation();
       setStatus({
         kind: "saved",
-        message: `${providerLabels[callback.provider]} conectado. Nenhum anúncio foi enviado.`,
+        message: `${providerLabels[result.account.provider]} conectado. Nenhum anúncio foi enviado.`,
       });
     } catch (error) {
       clearOauthCallbackLocation();
@@ -145,26 +157,8 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     try {
       const result = await marketplaceApi.createConnectUrl({
         provider,
-        redirectUri,
       });
       window.location.assign(result.authorizationUrl);
-    } catch (error) {
-      setStatus({ kind: "error", display: errorDisplay(error) });
-    }
-  };
-
-  const completeConnection = async (provider: MarketplaceProvider) => {
-    const code = oauthCodes[provider]?.trim();
-    if (!code) return;
-    setStatus({ kind: "saving", provider });
-    try {
-      await marketplaceApi.completeConnection({ code, provider, redirectUri });
-      setOauthCodes((current) => ({ ...current, [provider]: "" }));
-      applyOverview(await marketplaceApi.getOverview());
-      setStatus({
-        kind: "saved",
-        message: `${providerLabels[provider]} conectado. Nenhum anúncio foi enviado.`,
-      });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -230,10 +224,6 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     }
   };
 
-  const updateOauthCode = (provider: MarketplaceProvider, value: string) => {
-    setOauthCodes((current) => ({ ...current, [provider]: value }));
-  };
-
   const selectedPreview = selectedProvider
     ? (previews[selectedProvider]?.plan ?? null)
     : null;
@@ -286,10 +276,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
                   isSaving={
                     status.kind === "saving" && status.provider === provider
                   }
-                  oauthCode={oauthCodes[provider] ?? ""}
-                  onCompleteConnection={completeConnection}
                   onConnect={createConnectUrl}
-                  onOauthCodeChange={updateOauthCode}
                   onPreview={previewStock}
                   onRun={runStock}
                   onStatusChange={upsertAccount}
@@ -365,12 +352,12 @@ function clearOauthCallbackLocation() {
 function oauthErrorDisplay(
   callback: Extract<
     ReturnType<typeof readMarketplaceOauthCallback>,
-    { kind: "error" }
+    { kind: "result-error" }
   >,
 ): MarketplaceErrorDisplay {
   return {
     failed: "A conexão não foi concluída.",
-    fix: callback.message,
+    fix: "A autorização foi cancelada, recusada ou expirou. Inicie a conexão novamente.",
     provider: callback.provider
       ? providerLabels[callback.provider]
       : "Canal não identificado",

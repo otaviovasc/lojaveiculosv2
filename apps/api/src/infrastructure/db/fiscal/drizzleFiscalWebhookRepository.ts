@@ -21,13 +21,7 @@ export function createDrizzleFiscalWebhookRepository(
           provider: "spedy",
           providerEventId: input.providerEventId,
         })
-        .onConflictDoNothing({
-          target: [
-            providerEvents.provider,
-            providerEvents.environment,
-            providerEvents.providerEventId,
-          ],
-        })
+        .onConflictDoNothing()
         .returning();
       const [row] = created
         ? [created]

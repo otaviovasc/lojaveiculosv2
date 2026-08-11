@@ -53,17 +53,20 @@ describe("CRM WhatsApp realtime API", () => {
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-1" })
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-2" });
     const events: CrmWhatsappRealtimeEvent[] = [];
+    const statuses: string[] = [];
 
     const unsubscribe = subscribeCrmWhatsappEvents({
       connectionId: "connection-1",
       eventsRoute: "/events",
       eventsTicketRoute: "/events/ticket",
       onEvent: (event) => events.push(event),
+      onStatus: (status) => statuses.push(status),
       postJson,
     });
     await flushPromises();
 
     expect(FakeEventSource.instances[0]?.url).toBe("/events?ticket=ticket-1");
+    FakeEventSource.instances[0]!.onopen?.({} as Event);
     const event = {
       connectionId: "connection-1",
       phone: null,
@@ -90,6 +93,14 @@ describe("CRM WhatsApp realtime API", () => {
     expect(events.map(readEventStatus)).toEqual(["connected", "disconnected"]);
 
     unsubscribe();
+    expect(statuses).toEqual(
+      expect.arrayContaining([
+        "connecting",
+        "connected",
+        "degraded",
+        "offline",
+      ]),
+    );
   });
 
   it("dispatches named SSE events from custom EventSource channels", async () => {

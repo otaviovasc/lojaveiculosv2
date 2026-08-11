@@ -18,7 +18,7 @@ import { logWhatsappServiceEvent } from "../services/CrmWhatsapp/serviceSupport.
 import type { AuthorizeComposioWhatsappInput } from "../services/CrmWhatsapp/composioWhatsappConnectionSetup.types.js";
 
 export const composioConnectionPermission =
-  "crm.whatsapp.connection.manage" as const;
+  "crm.messaging.connection.setup" as const;
 
 export async function loadComposioSetupTarget(
   context: ServiceContext,
@@ -26,7 +26,6 @@ export async function loadComposioSetupTarget(
   ports: CrmServicePorts,
 ) {
   assertPermission(context, composioConnectionPermission);
-  assertPermission(context, "crm.whatsapp.integrations.manage");
   assertEntitlement(context as never, "crm");
   if (context.actor.kind !== "user") {
     throw new AuthorizationError(

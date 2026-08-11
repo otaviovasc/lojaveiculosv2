@@ -65,6 +65,7 @@ import {
   updateMemoryTag,
   type MemoryWhatsappTagState,
 } from "./crmWhatsappMemoryTags.js";
+import { transitionMemoryWhatsappAttendance } from "./crmWhatsappMemoryAttendance.js";
 
 export function createMemoryCrmWhatsappRepository(
   initialSessions: readonly CrmWhatsappSession[] = [],
@@ -77,6 +78,7 @@ export function createMemoryCrmWhatsappRepository(
   const campaignRecipients: CrmWhatsappCampaignRecipient[] = [];
   const quickMessages = [...initialQuickMessages];
   const scheduledMessages: CrmWhatsappScheduledMessage[] = [];
+  const attendanceLedgerFingerprints = new Map<string, string>();
   const tagState: MemoryWhatsappTagState = { sessionTags: [], tags: [] };
 
   return {
@@ -198,6 +200,12 @@ export function createMemoryCrmWhatsappRepository(
       return hydrateSessionTags(
         updateMemoryWhatsappSession(sessions, messages, input),
         tagState,
+      );
+    },
+    async transitionAttendance(input) {
+      return transitionMemoryWhatsappAttendance(
+        { attendanceLedgerFingerprints, messages, sessions, tagState },
+        input,
       );
     },
     async upsertSessionContext(input) {

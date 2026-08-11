@@ -1,40 +1,31 @@
 import { describe, expect, it } from "vitest";
-import {
-  marketplaceRedirectUri,
-  readMarketplaceOauthCallback,
-} from "./marketplaceOauthCallback";
+import { readMarketplaceOauthCallback } from "./marketplaceOauthCallback";
 
 describe("marketplace OAuth callback", () => {
-  it("reads the provider and authorization code from a valid callback", () => {
-    const state = encodeURIComponent(
-      JSON.stringify({ provider: "mercado_livre", storeId: "store_1" }),
-    );
-
+  it("keeps opaque inline callback state for authenticated completion", () => {
     expect(
       readMarketplaceOauthCallback({
         pathname: "/marketplaces/oauth/callback",
-        search: `?code=authorization_code&state=${state}`,
+        search: "?code=authorization_code&state=opaque_state_value",
       }),
     ).toEqual({
       code: "authorization_code",
-      kind: "success",
-      provider: "mercado_livre",
+      kind: "inline",
+      state: "opaque_state_value",
     });
   });
 
-  it("fails visibly when the provider cancels authorization", () => {
+  it("reads the non-secret staged server callback result", () => {
     expect(
       readMarketplaceOauthCallback({
-        pathname: "/marketplaces/oauth/callback",
-        search: `?error=access_denied&state=${encodeURIComponent(
-          JSON.stringify({ provider: "olx" }),
-        )}`,
+        pathname: "/dashboard",
+        search:
+          "?marketplaceOauth=pending&provider=olx&transactionId=transaction_1",
       }),
     ).toEqual({
-      kind: "error",
-      message:
-        "A autorização foi cancelada ou recusada pelo canal. Nenhuma conta foi conectada.",
+      kind: "staged",
       provider: "olx",
+      transactionId: "transaction_1",
     });
   });
 
@@ -45,8 +36,5 @@ describe("marketplace OAuth callback", () => {
         search: "?code=ignored",
       }),
     ).toEqual({ kind: "none" });
-    expect(marketplaceRedirectUri({ origin: "https://app.example.com" })).toBe(
-      "https://app.example.com/marketplaces/oauth/callback",
-    );
   });
 });

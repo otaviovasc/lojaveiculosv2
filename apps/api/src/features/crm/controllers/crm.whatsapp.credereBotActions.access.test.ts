@@ -116,7 +116,7 @@ describe("CRM WhatsApp Credere bot action access", () => {
           { action: "credere_readiness" },
           {
             "Store-Id": "other-provider-store",
-            "X-Webhook-Secret": "bot-secret-value",
+            "X-Webhook-Secret": "bot-webhook-secret-value-32-characters",
           },
         ),
       ),

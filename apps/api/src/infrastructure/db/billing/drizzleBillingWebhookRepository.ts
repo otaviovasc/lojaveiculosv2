@@ -61,13 +61,7 @@ export function createDrizzleBillingWebhookRepository(
           provider: input.provider,
           providerEventId: input.providerEventId,
         })
-        .onConflictDoNothing({
-          target: [
-            providerEvents.provider,
-            providerEvents.environment,
-            providerEvents.providerEventId,
-          ],
-        })
+        .onConflictDoNothing()
         .returning();
       if (inserted) return { created: true, event: toWebhookEvent(inserted) };
 

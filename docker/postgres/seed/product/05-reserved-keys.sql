@@ -45,6 +45,7 @@ BEGIN
     SELECT 1
     FROM role_templates existing_role
     INNER JOIN (VALUES
+      ('11111111-1111-4111-8111-111111111111'::uuid, 'admin'),
       ('22222222-2222-4222-8222-222222222222'::uuid, 'agency'),
       ('55555555-5555-4555-8555-555555555555'::uuid, 'owner'),
       ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid, 'supervisor'),
@@ -59,28 +60,38 @@ BEGIN
 
   IF EXISTS (
     SELECT 1
-    FROM plans
-    WHERE code = 'growth'
-      AND catalog_version = '2026-08-v1'
-      AND id <> '82121212-1212-4212-8212-121212121212'
+    FROM plans existing_plan
+    INNER JOIN (VALUES
+      ('82121212-1212-4212-8212-121212121212'::uuid, '2026-08-v1', 'growth'),
+      ('82221212-1212-4212-8212-121212121210'::uuid, '2026-08-v2', 'basico'),
+      ('82221212-1212-4212-8212-121212121211'::uuid, '2026-08-v2', 'premium'),
+      ('82221212-1212-4212-8212-121212121213'::uuid, '2026-08-v2', 'estoque'),
+      ('82221212-1212-4212-8212-121212121214'::uuid, '2026-08-v2', 'pro'),
+      ('82221212-1212-4212-8212-121212121212'::uuid, '2026-08-v2', 'growth')
+    ) AS seed_plan(id, catalog_version, code)
+      ON seed_plan.catalog_version = existing_plan.catalog_version
+      AND seed_plan.code = existing_plan.code
+    WHERE existing_plan.id <> seed_plan.id
   ) THEN
-    RAISE EXCEPTION 'seed preflight: Growth plan key is owned by another id';
+    RAISE EXCEPTION 'seed preflight: billing plan key is owned by another id';
   END IF;
 
   IF EXISTS (
     SELECT 1
     FROM addons existing_addon
     INNER JOIN (VALUES
-      ('85151515-1515-4515-8515-151515151515'::uuid, 'crm_core'),
-      ('85151515-1515-4515-8515-151515151520'::uuid, 'crm_zapi'),
-      ('85151515-1515-4515-8515-151515151516'::uuid, 'marketplace_connectors'),
-      ('85151515-1515-4515-8515-151515151517'::uuid, 'fiscal_spedy'),
-      ('85151515-1515-4515-8515-151515151518'::uuid, 'public_api_access'),
-      ('85151515-1515-4515-8515-151515151519'::uuid, 'simulations_pro')
-    ) AS seed_addon(id, code)
-      ON seed_addon.code = existing_addon.code
-    WHERE existing_addon.catalog_version = '2026-08-v1'
-      AND existing_addon.id <> seed_addon.id
+      ('85151515-1515-4515-8515-151515151515'::uuid, '2026-08-v1', 'crm_core'),
+      ('85151515-1515-4515-8515-151515151517'::uuid, '2026-08-v1', 'fiscal_spedy'),
+      ('85251515-1515-4515-8515-151515151515'::uuid, '2026-08-v2', 'crm_core'),
+      ('85251515-1515-4515-8515-151515151520'::uuid, '2026-08-v2', 'crm_zapi'),
+      ('85251515-1515-4515-8515-151515151516'::uuid, '2026-08-v2', 'marketplace_connectors'),
+      ('85251515-1515-4515-8515-151515151517'::uuid, '2026-08-v2', 'fiscal_spedy'),
+      ('85251515-1515-4515-8515-151515151518'::uuid, '2026-08-v2', 'public_api_access'),
+      ('85251515-1515-4515-8515-151515151519'::uuid, '2026-08-v2', 'simulations_pro')
+    ) AS seed_addon(id, catalog_version, code)
+      ON seed_addon.catalog_version = existing_addon.catalog_version
+      AND seed_addon.code = existing_addon.code
+    WHERE existing_addon.id <> seed_addon.id
   ) THEN
     RAISE EXCEPTION 'seed preflight: billing add-on key is owned by another id';
   END IF;
@@ -93,5 +104,19 @@ BEGIN
       AND id <> '13131313-1313-4313-8313-131313131313'
   ) THEN
     RAISE EXCEPTION 'seed preflight: Asaas customer key is owned by another id';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM store_entitlement_events
+    WHERE id = '61000000-0000-4000-8000-000000000006'
+      AND (
+        feature_key <> 'crm_zapi'
+        OR source <> 'local_seed_override'
+        OR store_id <> '66666666-6666-4666-8666-666666666666'
+        OR tenant_id <> '77777777-7777-4777-8777-777777777777'
+      )
+  ) THEN
+    RAISE EXCEPTION 'seed preflight: CRM Z-API entitlement event id is reserved';
   END IF;
 END $$;

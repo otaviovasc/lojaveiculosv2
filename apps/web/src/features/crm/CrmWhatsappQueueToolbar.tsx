@@ -25,6 +25,7 @@ import type {
   CrmWhatsappStatus,
   CrmWhatsappTag,
 } from "./crmWhatsappTypes";
+import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
 
 export function WhatsappToolbar({
   assignableMembers,
@@ -225,7 +226,7 @@ export function WhatsappToolbar({
               className="crm-whatsapp-select crm-whatsapp-queue-select"
               onChange={(value) => onConnectionFilterChange(value || null)}
               options={connections.map((connection) => ({
-                label: connection.displayName,
+                label: `${connection.displayName} · ${readCrmWhatsappProviderLabel(connection.provider)}`,
                 value: String(connection.id),
               }))}
               value={connectionValue}
@@ -237,6 +238,7 @@ export function WhatsappToolbar({
         <label className="crm-whatsapp-search">
           <Search aria-hidden="true" className="size-4" />
           <input
+            aria-label="Pesquisar conversas por nome ou telefone"
             onChange={(event) => onSearch(event.target.value)}
             placeholder="Pesquisar por nome ou telefone..."
             value={search}
