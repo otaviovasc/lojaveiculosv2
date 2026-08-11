@@ -26,10 +26,13 @@ import {
   type WebsiteBuilderPreviewConfig,
 } from "./publicStorefrontPreviewBridge";
 
+import { normalizeWebsiteTemplateId } from "./WebsiteBuilderModel";
+
 export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   const { storeSlug } = useParams<{ storeSlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditorMode = searchParams.get("editor") === "1";
+  const templateParam = searchParams.get("template");
   const storefrontApi = useMemo(() => {
     const publicApi =
       api ??
@@ -120,14 +123,21 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
       return state;
     }
 
+    const effectivePreviewConfig: WebsiteBuilderPreviewConfig = {
+      ...(templateParam
+        ? { templateId: normalizeWebsiteTemplateId(templateParam) }
+        : {}),
+      ...previewConfig,
+    };
+
     return {
       ...state,
       data: applyWebsiteBuilderPreviewToStorefrontData(
         state.data,
-        previewConfig,
+        effectivePreviewConfig,
       ),
     };
-  }, [isEditorMode, previewConfig, state]);
+  }, [isEditorMode, previewConfig, state, templateParam]);
 
   useEffect(() => {
     if (!isEditorMode) setPreviewConfig(null);

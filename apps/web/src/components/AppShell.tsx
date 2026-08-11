@@ -61,7 +61,9 @@ export function AppShell({
   onNavigate,
 }: AppShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(false);
+  const isRouteForced = FULL_WIDTH_MODULES.has(activeModule.id);
+  const isSidebarCollapsed = isManuallyCollapsed || isRouteForced;
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
@@ -96,12 +98,6 @@ export function AppShell({
     onNavigate(moduleId);
     setIsMobileNavOpen(false);
   };
-
-  useEffect(() => {
-    if (FULL_WIDTH_MODULES.has(activeModule.id)) {
-      setIsSidebarCollapsed(true);
-    }
-  }, [activeModule.id]);
 
   const toggleTheme = () => {
     setTheme((currentTheme) => {
@@ -180,7 +176,7 @@ export function AppShell({
           activeId={activeModule.id}
           collapsed={isSidebarCollapsed}
           items={sidebarItems}
-          onCollapsedChange={setIsSidebarCollapsed}
+          onCollapsedChange={setIsManuallyCollapsed}
           onSelect={navigate}
           onThemeToggle={toggleTheme}
           renderAccountControl={({ isCompact }) => (

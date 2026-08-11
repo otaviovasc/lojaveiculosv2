@@ -18,8 +18,20 @@ import { derivePublicStorefrontState } from "./state";
 afterEach(cleanup);
 
 vi.mock("./PublicStorefront", () => ({
-  PublicStorefront: ({ data }: { data: { listings: readonly unknown[] } }) => (
-    <div data-testid="public-storefront">{data.listings.length}</div>
+  PublicStorefront: ({
+    data,
+  }: {
+    data: {
+      listings: readonly unknown[];
+      settings: { site: { layoutKey: string } };
+    };
+  }) => (
+    <div
+      data-layout-key={data.settings.site.layoutKey}
+      data-testid="public-storefront"
+    >
+      {data.listings.length}
+    </div>
   ),
 }));
 
@@ -113,6 +125,83 @@ describe("PublicStorefrontPage states", () => {
     expect(
       screen.getByRole("link", { name: /Voltar para o início/ }),
     ).toHaveAttribute("href", "/");
+  });
+
+  it("keeps the storefront rendered when switching templates in editor preview mode", async () => {
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: async () => publicStorefrontPreview.settings,
+      listListings: async () => ({
+        listings: publicStorefrontPreview.listings,
+        store: publicStorefrontPreview.store,
+      }),
+      submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    render(
+      <MemoryRouter initialEntries={["/demo?editor=1&template=quadra"]}>
+        <Routes>
+          <Route
+            element={<PublicStorefrontPage api={api} />}
+            path="/:storeSlug"
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const storefront = await screen.findByTestId("public-storefront");
+    expect(storefront).toBeInTheDocument();
+    expect(storefront).toHaveAttribute("data-layout-key", "quadra");
+    expect(
+      screen.queryByText("Vitrine temporariamente indisponível"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("updates template via postMessage update without falling into error state", async () => {
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: async () => publicStorefrontPreview.settings,
+      listListings: async () => ({
+        listings: publicStorefrontPreview.listings,
+        store: publicStorefrontPreview.store,
+      }),
+      submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    render(
+      <MemoryRouter initialEntries={["/demo?editor=1&template=aurora"]}>
+        <Routes>
+          <Route
+            element={<PublicStorefrontPage api={api} />}
+            path="/:storeSlug"
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const storefront = await screen.findByTestId("public-storefront");
+    expect(storefront).toHaveAttribute("data-layout-key", "aurora");
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { payload: { templateId: "quadra" }, type: "editor:update" },
+        origin: window.location.origin,
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("public-storefront")).toHaveAttribute(
+        "data-layout-key",
+        "quadra",
+      );
+    });
+    expect(
+      screen.queryByText("Vitrine temporariamente indisponível"),
+    ).not.toBeInTheDocument();
   });
 });
 

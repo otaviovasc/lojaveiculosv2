@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { moduleDefinitions } from "../app/moduleDefinitions";
 import type { StoreSettingsSnapshot } from "../features/settings/types";
@@ -21,6 +21,7 @@ describe("AppShell tenant branding", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.clearAllMocks();
   });
 
@@ -71,6 +72,112 @@ describe("AppShell tenant branding", () => {
     expect(
       document.documentElement.style.getPropertyValue("--color-accent"),
     ).toBe(accent);
+  });
+});
+
+describe("AppShell sidebar collapse behavior", () => {
+  beforeEach(() => {
+    document.head.innerHTML = "";
+    vi.mocked(createSettingsApiOptions).mockResolvedValue({
+      fetch: vi.fn().mockResolvedValue(jsonResponse(createSettings())),
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it("forces sidebar collapse on full-width pages and auto-expands after leaving", async () => {
+    const { container, rerender } = render(
+      <AppShell activeModule={moduleDefinitions.dashboard} onNavigate={vi.fn()}>
+        <div>App content</div>
+      </AppShell>,
+    );
+
+    await screen.findByText("App content");
+    expect(container.querySelector(".app-shell")).not.toHaveClass(
+      "app-shell--compact",
+    );
+
+    await act(async () => {
+      rerender(
+        <AppShell activeModule={moduleDefinitions.crm} onNavigate={vi.fn()}>
+          <div>App content</div>
+        </AppShell>,
+      );
+    });
+
+    expect(container.querySelector(".app-shell")).toHaveClass(
+      "app-shell--compact",
+    );
+
+    await act(async () => {
+      rerender(
+        <AppShell
+          activeModule={moduleDefinitions.inventory}
+          onNavigate={vi.fn()}
+        >
+          <div>App content</div>
+        </AppShell>,
+      );
+    });
+
+    expect(container.querySelector(".app-shell")).not.toHaveClass(
+      "app-shell--compact",
+    );
+  });
+
+  it("preserves manual collapse preference when entering and leaving forced-collapse pages", async () => {
+    const { container, rerender } = render(
+      <AppShell activeModule={moduleDefinitions.dashboard} onNavigate={vi.fn()}>
+        <div>App content</div>
+      </AppShell>,
+    );
+
+    await screen.findByText("App content");
+    expect(container.querySelector(".app-shell")).not.toHaveClass(
+      "app-shell--compact",
+    );
+
+    const collapseButton = screen.getAllByRole("button", {
+      name: "Recolher sidebar",
+    })[0];
+    expect(collapseButton).toBeDefined();
+    await act(async () => {
+      collapseButton?.click();
+    });
+
+    expect(container.querySelector(".app-shell")).toHaveClass(
+      "app-shell--compact",
+    );
+
+    await act(async () => {
+      rerender(
+        <AppShell activeModule={moduleDefinitions.crm} onNavigate={vi.fn()}>
+          <div>App content</div>
+        </AppShell>,
+      );
+    });
+
+    expect(container.querySelector(".app-shell")).toHaveClass(
+      "app-shell--compact",
+    );
+
+    await act(async () => {
+      rerender(
+        <AppShell
+          activeModule={moduleDefinitions.inventory}
+          onNavigate={vi.fn()}
+        >
+          <div>App content</div>
+        </AppShell>,
+      );
+    });
+
+    expect(container.querySelector(".app-shell")).toHaveClass(
+      "app-shell--compact",
+    );
   });
 });
 
