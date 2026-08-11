@@ -82,6 +82,48 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       screen.getByRole("link", { name: "Pedir ajuda para configurar" }),
     ).toHaveAttribute("href", expect.stringContaining("5511940231407"));
   });
+
+  it("keeps WhatsApp Oficial visible and honest when it is unavailable", () => {
+    render(
+      <CrmWhatsappSelfServiceSetup
+        allowance={{ limit: 2, remaining: 2, used: 0 }}
+        availableProviders={["zapi"]}
+        canPair={false}
+        canSetup={true}
+        handlers={createHandlers()}
+      />,
+    );
+
+    expect(screen.getByText("WhatsApp Oficial")).toBeVisible();
+    expect(screen.getByText(/indisponível/i)).toBeVisible();
+    expect(
+      screen.getByText(/nenhuma operação oficial foi iniciada/i),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /WhatsApp Oficial/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Instagram incluído")).toBeVisible();
+  });
+
+  it("makes WhatsApp Oficial actionable when it is available", () => {
+    render(
+      <CrmWhatsappSelfServiceSetup
+        allowance={{ limit: 2, remaining: 2, used: 0 }}
+        availableProviders={["composio_whatsapp"]}
+        canPair={false}
+        canSetup={true}
+        handlers={createHandlers()}
+      />,
+    );
+
+    expect(
+      screen.queryByText(/nenhuma operação oficial foi iniciada/i),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /WhatsApp Oficial/i }));
+    expect(
+      screen.getByRole("button", { name: /Autorizar com a Meta/i }),
+    ).toBeVisible();
+  });
 });
 
 function createHandlers(): CrmWhatsappSelfServiceHandlers {

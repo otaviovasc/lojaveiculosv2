@@ -75,7 +75,7 @@ describe("CrmWhatsappZapiSetup", () => {
     fireEvent.change(screen.getByLabelText("Token do cliente"), {
       target: { value: "client-token" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar e conectar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar credenciais" }));
 
     await waitFor(() =>
       expect(handlers.onCreate).toHaveBeenCalledWith({
@@ -87,6 +87,42 @@ describe("CrmWhatsappZapiSetup", () => {
     );
     expect(onConnection).toHaveBeenCalledWith(created);
     expect(screen.getByLabelText("ID da instância")).toHaveValue("");
+  });
+
+  it("lets an authorized user enter credentials when the add-on is paid and awaiting setup", async () => {
+    const handlers = createHandlers();
+    const created = createDisconnectedConnection();
+    handlers.onCreate = vi.fn(async () => created);
+    const onConnection = vi.fn();
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 0, remaining: 0, used: 0 }}
+        canPair={false}
+        canSetup={true}
+        connection={null}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={onConnection}
+        zapiAddonContract={createZapiContract("paid_awaiting_setup")}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Solicitar Z-API" }),
+    ).toBeNull();
+    fireEvent.change(screen.getByLabelText("ID da instância"), {
+      target: { value: "instance-1" },
+    });
+    fireEvent.change(screen.getByLabelText("Token da instância"), {
+      target: { value: "instance-token" },
+    });
+    fireEvent.change(screen.getByLabelText("Token do cliente"), {
+      target: { value: "client-token" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar credenciais" }));
+
+    await waitFor(() => expect(onConnection).toHaveBeenCalledWith(created));
   });
 
   it("loads a QR pairing payload for a configured connection without exposing credentials", async () => {
@@ -140,6 +176,7 @@ describe("CrmWhatsappZapiSetup", () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole("tab", { name: "Código do telefone" }));
     const requestButton = screen.getByRole("button", {
       name: "Solicitar código",
     });
@@ -211,6 +248,18 @@ function createDisconnectedConnection(): CrmWhatsappProviderConnection {
     phone: null,
     provider: "zapi",
     ready: true,
+    setup: {
+      attemptCount: 1,
+      configuredAt: "2026-08-10T12:00:00.000Z",
+      lastErrorCode: null,
+      requestedAt: "2026-08-10T12:00:00.000Z",
+      requiredTypes: ["message-received"],
+      status: "configured",
+      succeededTypes: ["message-received"],
+      supportCode: "ZAPI-TEST",
+      updatedAt: "2026-08-10T12:00:00.000Z",
+      version: 1,
+    },
     status: "disconnected",
     webhookUrl: null,
   };

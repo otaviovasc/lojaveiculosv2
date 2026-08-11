@@ -1,4 +1,6 @@
 @import "./crmWhatsappConnectionWorkflow.css";
+@import "./crmWhatsappConnectionZapiSetup.css";
+@import "./crmWhatsappSelfServiceSetup.css";
 
 .crm-whatsapp-connection-admin {
   display: grid;
@@ -6,6 +8,13 @@
   width: 100%;
   max-width: 76rem;
   margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  /* Clear the fixed mobile bottom nav so the last action scrolls above it. */
+  .crm-whatsapp-connection-admin {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
 }
 
 .crm-whatsapp-connection-header,

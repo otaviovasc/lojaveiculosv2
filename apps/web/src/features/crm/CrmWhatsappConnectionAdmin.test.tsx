@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmWhatsappConnectionAdmin } from "./CrmWhatsappConnectionAdmin";
 import type {
@@ -61,6 +61,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
       screen.getByRole("heading", { name: "Conectar WhatsApp · Z-API" }),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Código do telefone" }));
     expect(screen.getByLabelText("Telefone para pareamento")).toBeVisible();
     expect(screen.queryByLabelText(/ID da instância/i)).not.toBeInTheDocument();
     expect(
