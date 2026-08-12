@@ -230,6 +230,25 @@ test.describe("CRM WhatsApp conversations", () => {
     await expectViewportSafe(page);
     await expectNoBlockingAxeViolations(page);
 
+    await page
+      .getByRole("button", { name: "Abrir detalhes da conversa" })
+      .click();
+    await expect(
+      page.locator('.crm-whatsapp-shell[data-mobile-pane="context"]'),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("complementary", {
+        exact: true,
+        name: "Detalhes da conversa",
+      }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Detalhe da conversa")).toBeHidden();
+    await expect(mobileNavigation).toBeHidden();
+
+    await page.getByRole("button", { name: "Fechar detalhes" }).click();
+    await expect(page.getByLabel("Detalhe da conversa")).toBeVisible();
+    await expect(mobileNavigation).toBeHidden();
+
     await page.getByRole("button", { name: "Voltar para conversas" }).click();
     await expect(
       page.getByLabel("Conversas do WhatsApp").first(),

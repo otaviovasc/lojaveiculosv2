@@ -13,6 +13,13 @@ export function createMemoryCrmWhatsappOutboundIntentRepository(): CrmWhatsappOu
       if (existing) {
         if (existing.fingerprint !== input.fingerprint)
           return { kind: "conflict" };
+        if (existing.status === "retryable_failed") {
+          existing.claimToken = randomUUID();
+          existing.providerResult = null;
+          existing.startedAt = input.now;
+          existing.status = "started";
+          return { intent: existing, kind: "claimed" };
+        }
         if (
           existing.status === "started" &&
           existing.startedAt <= input.staleBefore
@@ -48,6 +55,13 @@ export function createMemoryCrmWhatsappOutboundIntentRepository(): CrmWhatsappOu
     async markIndeterminate(input) {
       mutate(input, (row) => {
         row.status = "indeterminate";
+      });
+    },
+    async recordProviderFailure(input) {
+      mutate(input, (row) => {
+        row.providerResult = input.failure;
+        row.recoveryExpiresAt = null;
+        row.status = input.retryable ? "retryable_failed" : "failed";
       });
     },
     async recordProviderSuccess(input) {

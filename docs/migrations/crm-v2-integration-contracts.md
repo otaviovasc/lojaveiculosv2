@@ -23,13 +23,16 @@ meaning in the active contract.
 - Repasses repos are behavior references and future import sources only. Do not
   call Repasses at runtime for migrated WhatsApp paths.
 - Repasses public CRM APIs are numeric-id heavy; V2 slices expose V2 UUIDs.
-- V2 supports exactly three CRM messaging providers:
-  `zapi`, `composio_whatsapp`, and `composio_instagram`.
+- V2 separates messaging channel, transport provider, and credential broker.
+  The supported mappings are `whatsapp/zapi/direct`,
+  `whatsapp/meta_cloud/composio`, `instagram/meta_cloud/composio`, and
+  `olx_chat/olx/direct`.
 - Provider selection belongs to the persisted connection. There is no automatic
   fallback between official Meta providers and ZAPI; a provider failure must
   remain visible rather than risk a duplicate send.
-- V2 `leads.id` is the CRM identity anchor for pipeline, visits, activities,
-  WhatsApp linking, campaign recipients, and lead detail navigation.
+- The canonical contact is the person identity anchor. An opportunity is a
+  commercial cycle, a thread belongs to exactly one provider connection, and
+  legacy `leads.id` remains only a migration/backfill reference.
 - Old CRM agents do not exist in V2. Use V2 users/store members and permission
   keys.
 

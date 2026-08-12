@@ -1,6 +1,8 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { OlxCapabilityResult } from "./marketplaceOlxCrmOnboarding.js";
 import type { MarketplaceServiceErrorCode } from "./marketplaceErrorCodes.js";
 export type { MarketplaceServiceErrorCode } from "./marketplaceErrorCodes.js";
+export { MarketplaceAccountMissingError } from "./marketplaceRepositoryErrors.js";
 export type MarketplaceProvider = "mercado_livre" | "olx";
 export type MarketplaceAccountStatus = "active" | "error" | "inactive";
 export type MarketplaceAccountConnectionStatus =
@@ -130,6 +132,11 @@ export type MarketplaceAccountRequirement = {
 
 export type MarketplaceProviderState = {
   accountId: string | null;
+  capabilities: {
+    chat: OlxCapabilityResult;
+    leads: OlxCapabilityResult;
+    stock: OlxCapabilityResult;
+  } | null;
   connectionStatus: MarketplaceAccountConnectionStatus;
   lastSyncSummary: MarketplaceStockSyncSummary | null;
   provider: MarketplaceProvider;
@@ -163,6 +170,7 @@ export type MarketplaceCatalogMapping = {
 export type UpsertMarketplaceAccountInput = {
   config: Record<string, unknown>;
   provider: MarketplaceProvider;
+  providerAccountId?: string | null;
   status: MarketplaceAccountStatus;
   storeId: StoreId;
   tenantId: TenantId;
@@ -239,10 +247,3 @@ export type MarketplaceRepository = {
     input: UpsertMarketplaceAccountInput,
   ) => Promise<MarketplaceAccount>;
 };
-
-export class MarketplaceAccountMissingError extends Error {
-  constructor(provider: MarketplaceProvider) {
-    super(`Marketplace account is not configured for ${provider}.`);
-    this.name = "MarketplaceAccountMissingError";
-  }
-}

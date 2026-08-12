@@ -1,7 +1,22 @@
 import { createHash } from "node:crypto";
 import type { ParsedOlxLeadWebhook } from "./parseOlxLeadWebhook.js";
+import type { CrmConnectionCredentialVault } from "../ports/crmConnectionSetupProvider.js";
 
 export const olxLeadReceiptEventType = "crm.lead.olx.received";
+const olxLeadReceiptPurpose = (connectionId: string) =>
+  `olx.lead-recovery:${connectionId}`;
+
+export type SealedOlxLeadReceiptPayload = {
+  identityKey: string;
+  schemaVersion: 2;
+  sealedReceipt: string;
+};
+
+export type ClearedOlxLeadReceiptPayload = {
+  identityKey: string;
+  receiptClearedAt: string;
+  schemaVersion: 3;
+};
 
 export type OlxLeadReceiptPayload = {
   adId: string | null;
@@ -72,8 +87,69 @@ export function readOlxLeadReceiptPayload(
   return payload as OlxLeadReceiptPayload;
 }
 
+export async function sealOlxLeadReceiptPayload(
+  vault: CrmConnectionCredentialVault,
+  scope: { connectionId: string; storeId: string; tenantId: string },
+  receipt: OlxLeadReceiptPayload,
+): Promise<SealedOlxLeadReceiptPayload> {
+  return {
+    identityKey: receipt.identityKey,
+    schemaVersion: 2,
+    sealedReceipt: await vault.seal({
+      plaintext: JSON.stringify(receipt),
+      purpose: olxLeadReceiptPurpose(scope.connectionId),
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    }),
+  };
+}
+
+export async function openOlxLeadReceiptPayload(
+  vault: CrmConnectionCredentialVault,
+  scope: { connectionId: string; storeId: string; tenantId: string },
+  payload: Record<string, unknown>,
+) {
+  if (
+    payload.schemaVersion !== 2 ||
+    typeof payload.identityKey !== "string" ||
+    typeof payload.sealedReceipt !== "string"
+  ) {
+    return null;
+  }
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(
+      await vault.open({
+        purpose: olxLeadReceiptPurpose(scope.connectionId),
+        sealed: payload.sealedReceipt,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      }),
+    );
+  } catch {
+    return null;
+  }
+  if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
+    return null;
+  }
+  const receipt = readOlxLeadReceiptPayload(decoded as Record<string, unknown>);
+  return receipt?.identityKey === payload.identityKey ? receipt : null;
+}
+
 export function buildOlxLeadProviderReference(identityKey: string) {
   return `olx-lead:${createHash("sha256").update(identityKey).digest("hex")}`;
+}
+
+export function clearOlxLeadReceiptPayload(
+  payload: Record<string, unknown>,
+  clearedAt: Date,
+): ClearedOlxLeadReceiptPayload {
+  return {
+    identityKey:
+      typeof payload.identityKey === "string" ? payload.identityKey : "unknown",
+    receiptClearedAt: clearedAt.toISOString(),
+    schemaVersion: 3,
+  };
 }
 
 function leadIdentityKey(connectionId: string, parsed: ParsedOlxLeadWebhook) {

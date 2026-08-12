@@ -17,6 +17,30 @@ export const crmPermissionGroup: PermissionGroup = {
       "Configurar canais, filas e integrações de mensagens.",
       "medium",
     ),
+    permission(
+      "crm.consent.record",
+      "Registrar consentimento",
+      "Registrar evidência versionada de consentimento ou retirada de consentimento.",
+      "high",
+    ),
+    permission(
+      "crm.contact.merge",
+      "Mesclar contatos",
+      "Mesclar e desfazer a mesclagem de identidades canônicas de clientes.",
+      "high",
+    ),
+    permission(
+      "crm.contact_identity.dispute",
+      "Contestar identidade",
+      "Marcar uma identidade de contato como disputada com evidência auditável.",
+      "high",
+    ),
+    permission(
+      "crm.contact_identity.verify",
+      "Verificar identidade",
+      "Confirmar uma identidade de contato com evidência auditável.",
+      "high",
+    ),
     ...crmWhatsappPermissionDescriptors,
     permission(
       "lead.read",

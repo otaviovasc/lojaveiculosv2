@@ -9,6 +9,7 @@ import {
   fetchZapi,
   parseJson,
   type ZapiCredentials,
+  zapiProviderResponseError,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 import type { CrmWhatsappSendMediaInput } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import {
@@ -52,9 +53,7 @@ export async function sendZapiMedia(
         readRetryAfterSeconds(response.headers) ?? 1,
       );
     }
-    throw new CrmWhatsappGatewayError(
-      `ZAPI send media failed with HTTP ${response.status}`,
-    );
+    throw zapiProviderResponseError(response.status, "ZAPI send media");
   }
 
   return {

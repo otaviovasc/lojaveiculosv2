@@ -197,6 +197,9 @@ export async function updateWhatsappConnection(
       const updated = await repository.updateConnection({
         ...(credentialsRef ? { credentialsRef } : {}),
         ...(input.displayName ? { displayName: input.displayName } : {}),
+        ...(input.externalInstanceId
+          ? { externalInstanceId: input.externalInstanceId }
+          : {}),
         ...(metadata ? { metadata } : {}),
         connectionId: current.id,
         storeId: scope.storeId as never,

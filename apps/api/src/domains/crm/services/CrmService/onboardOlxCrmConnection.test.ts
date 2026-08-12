@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMemoryAuditSink } from "../../../../shared/auditSink.js";
-import {
-  createNoopServiceLogger,
-  createServiceContext,
-} from "../../../../shared/serviceContext.js";
 import { createTestCrmConnectionRepository } from "../../testSupportConnections.js";
 import { onboardOlxCrmConnection } from "./onboardOlxCrmConnection.js";
+import {
+  olxOnboardingContext as context,
+  olxOnboardingInput as input,
+} from "../../testSupportOlxOnboarding.js";
 
 describe("onboardOlxCrmConnection", () => {
   it("creates one vault-only connection and rotates only the access token on reconnect", async () => {
@@ -71,9 +70,23 @@ describe("onboardOlxCrmConnection", () => {
     expect(JSON.stringify(reconnected)).not.toContain("token-two");
     expect(provider.configureChat).toHaveBeenCalledTimes(1);
     expect(provider.configureLeads).toHaveBeenCalledTimes(1);
+
+    const revoked = await onboardOlxCrmConnection(
+      context(),
+      { ...input("token-three"), scopes: ["chat"] },
+      ports,
+    );
+    expect(revoked.capabilities).toMatchObject({
+      chat: { grantState: "granted", status: "active" },
+      leads: {
+        grantState: "denied",
+        reason: "missing_scope",
+        status: "blocked",
+      },
+    });
   });
 
-  it("persists an explicit retryable error when one registration fails", async () => {
+  it("keeps leads active and reports degraded when chat registration fails", async () => {
     const repository = createTestCrmConnectionRepository();
     const secrets = new Map<string, string>();
     const ports = {
@@ -103,21 +116,74 @@ describe("onboardOlxCrmConnection", () => {
     };
     await expect(
       onboardOlxCrmConnection(context(), input("token"), ports),
-    ).rejects.toThrow("down");
+    ).resolves.toMatchObject({
+      capabilities: {
+        chat: { reason: "provider_rejected", status: "error" },
+        leads: { reason: null, status: "active" },
+      },
+      status: "degraded",
+    });
     const [connection] = await repository.listConnections({
       providers: ["olx_chat"],
       storeId: "store_1" as never,
       tenantId: "tenant_1" as never,
     });
     expect(connection).toMatchObject({
-      status: "error",
+      status: "active",
       metadata: {
         webhookSetup: {
           lastErrorCode: "registration_failed",
-          status: "failed",
+          status: "partial",
         },
       },
     });
+  });
+
+  it("keeps granted chat independent when the leads scope is missing", async () => {
+    const repository = createTestCrmConnectionRepository();
+    const secrets = new Map<string, string>();
+    const configureChat = vi.fn(async () => undefined);
+    const configureLeads = vi.fn(async () => undefined);
+    const ports = {
+      crmConnectionCredentialVault: {
+        seal: async ({
+          plaintext,
+          purpose,
+        }: {
+          plaintext: string;
+          purpose: string;
+        }) => {
+          const sealed = `sealed:${purpose}`;
+          secrets.set(sealed, plaintext);
+          return sealed;
+        },
+        open: async ({ sealed }: { sealed: string }) =>
+          secrets.get(sealed) ?? "",
+      },
+      crmConnectionRepository: repository,
+      crmRepository: {} as never,
+      olxCrmWebhookSetupProvider: { configureChat, configureLeads },
+    };
+
+    const result = await onboardOlxCrmConnection(
+      context(),
+      { ...input("token"), scopes: ["chat"] },
+      ports,
+    );
+
+    expect(result).toMatchObject({
+      capabilities: {
+        chat: { capability: "messaging", status: "active" },
+        leads: {
+          capability: "lead_ingestion",
+          reason: "missing_scope",
+          status: "blocked",
+        },
+      },
+      status: "degraded",
+    });
+    expect(configureChat).toHaveBeenCalledTimes(1);
+    expect(configureLeads).not.toHaveBeenCalled();
   });
 
   it.each(["registration_succeeded", "registration_failed"] as const)(
@@ -168,25 +234,3 @@ describe("onboardOlxCrmConnection", () => {
     },
   );
 });
-
-function context() {
-  return createServiceContext({
-    actor: { id: "user_1", kind: "user" },
-    audit: createMemoryAuditSink(),
-    entitlements: ["crm"],
-    logger: createNoopServiceLogger(),
-    permissions: ["crm.messaging.connection.setup"],
-    request: { requestId: "request_1" },
-    storeId: "store_1",
-    tenantId: "tenant_1",
-  });
-}
-function input(accessToken: string) {
-  return {
-    accessToken,
-    canonicalApiOrigin: "https://v2.example.test",
-    providerAccountId: "olx_account",
-    storeId: "store_1",
-    tenantId: "tenant_1",
-  };
-}

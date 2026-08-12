@@ -130,7 +130,7 @@ function validPipeline() {
       "test:dashboard-animation":
         "pnpm --filter @lojaveiculosv2/web exec vitest run src/features/analytics/dashboardHomeAnimation.test.ts",
       "test:quality-tools":
-        "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/quality/*.test.mjs --root ../..",
+        "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions --dir ../../tools/quality --root ../..",
       "test:seed-document-pdf":
         "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/storage/seed-product-document-pdf.test.mjs --root ../..",
       "test:smoke:api":

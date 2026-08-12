@@ -21,13 +21,33 @@ export function createOlxCrmChatGateway(
   return {
     configureWebhooks: async () => unsupported("webhook configuration"),
     deleteMessage: async () => unsupported("message deletion"),
-    getConnectionStatus: async () => ({
-      checkedAt: new Date(),
-      connected: false,
-      connectedPhone: null,
-      providerStatus: "unknown",
-      smartphoneConnected: null,
-    }),
+    getConnectionStatus: async (connection) => {
+      if (connection.provider !== "olx_chat") {
+        throw new CrmWhatsappGatewayError("Invalid OLX Chat connection.");
+      }
+      const checkedAt = new Date();
+      const chatStatus = readOlxChatSetupStatus(connection);
+      if (connection.status !== "active" || chatStatus !== "active") {
+        return {
+          checkedAt,
+          connected: false,
+          connectedPhone: null,
+          providerStatus:
+            chatStatus === null
+              ? ("unknown" as const)
+              : ("disconnected" as const),
+          smartphoneConnected: null,
+        };
+      }
+      resolveOlxAccessToken(connection, env);
+      return {
+        checkedAt,
+        connected: true,
+        connectedPhone: null,
+        providerStatus: "connected",
+        smartphoneConnected: null,
+      };
+    },
     listCatalogProducts: async () => unsupported("catalog"),
     removeReaction: async () => unsupported("reactions"),
     sendCatalog: async () => unsupported("catalog"),
@@ -74,6 +94,23 @@ export function createOlxCrmChatGateway(
   };
 }
 
+function readOlxChatSetupStatus(
+  connection: Parameters<CrmWhatsappGateway["getConnectionStatus"]>[0],
+): "active" | "blocked" | "error" | null {
+  const setup = readRecord(connection.metadata.webhookSetup);
+  const capabilities = readRecord(setup.capabilities);
+  const chat = readRecord(capabilities.chat);
+  return ["active", "blocked", "error"].includes(String(chat.status))
+    ? (chat.status as "active" | "blocked" | "error")
+    : null;
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 async function requestWithTimeout(
   url: string,
   init: RequestInit,
@@ -106,6 +143,14 @@ function providerError(status: number) {
       429,
       1,
       "rate_limited",
+    );
+  }
+  if (status >= 500) {
+    return new CrmWhatsappGatewayError(
+      "OLX Chat is temporarily unavailable.",
+      502,
+      undefined,
+      "provider_unavailable",
     );
   }
   return new CrmWhatsappGatewayError(

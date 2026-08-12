@@ -18,6 +18,7 @@ import {
 } from "./marketplaceRepositorySupport.js";
 
 export function createMemoryMarketplaceRepository(): MarketplaceRepository {
+  let accountSequence = 0;
   let accounts: MarketplaceAccount[] = [];
   let catalogMappings: MarketplaceCatalogMapping[] = [];
   let jobs: MarketplaceJob[] = [];
@@ -145,10 +146,17 @@ export function createMemoryMarketplaceRepository(): MarketplaceRepository {
           item.storeId === input.storeId &&
           item.tenantId === input.tenantId,
       );
+      const sameIdentity =
+        input.providerAccountId === undefined ||
+        (existing !== undefined &&
+          readProviderAccountId(existing.config) === input.providerAccountId);
       const account: MarketplaceAccount = {
         config: input.config,
-        createdAt: existing?.createdAt ?? now,
-        id: existing?.id ?? `marketplace_account_${accounts.length + 1}`,
+        createdAt: existing && sameIdentity ? existing.createdAt : now,
+        id:
+          existing && sameIdentity
+            ? existing.id
+            : `marketplace_account_${++accountSequence}`,
         provider: input.provider,
         status: input.status,
         storeId: input.storeId,
@@ -156,10 +164,25 @@ export function createMemoryMarketplaceRepository(): MarketplaceRepository {
         updatedAt: now,
       };
       accounts = [
-        ...accounts.filter((item) => item.id !== account.id),
+        ...accounts.filter(
+          (item) => item.id !== account.id && item.id !== existing?.id,
+        ),
         account,
       ].sort((left, right) => left.provider.localeCompare(right.provider));
       return account;
     },
   };
+}
+
+function readProviderAccountId(config: Record<string, unknown>) {
+  const connection = toRecord(config.connection);
+  return typeof connection.providerAccountId === "string"
+    ? connection.providerAccountId
+    : null;
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

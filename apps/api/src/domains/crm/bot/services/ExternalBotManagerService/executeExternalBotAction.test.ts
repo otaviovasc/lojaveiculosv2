@@ -1,0 +1,200 @@
+import { describe, expect, it } from "vitest";
+import { createMemoryExternalBotManager } from "../../testSupportExternalBotManager.js";
+import {
+  createExternalBotActionContext as context,
+  createExternalBotActionRequest as request,
+  withExternalBotActionDigest as withDigest,
+} from "../../testSupportExternalBotAction.js";
+import { executeExternalBotAction } from "./executeExternalBotAction.js";
+
+describe("executeExternalBotAction human attendance", () => {
+  it("persists proposal actions without invoking the provider effect", async () => {
+    let providerCalls = 0;
+    const manager = createMemoryExternalBotManager({
+      effectDispatcher: {
+        dispatch: async () => {
+          providerCalls += 1;
+          return { kind: "succeeded" };
+        },
+      },
+      inspect: async () => ({
+        humanAttendanceActive: true,
+        revision: 4,
+        scopeExists: true,
+      }),
+    });
+    const unsigned = await request(manager, "fact.propose", {
+      classification: "purchase_intent",
+      summary: "Customer expressed purchase intent.",
+    });
+    const result = await executeExternalBotAction(
+      context(),
+      withDigest(manager, unsigned),
+      manager.ports,
+    );
+    expect(result.status).toBe("completed");
+    expect(manager.proposals).toHaveLength(1);
+    expect(providerCalls).toBe(0);
+  });
+
+  it("cancels message.send while human attendance is active", async () => {
+    let providerCalls = 0;
+    const manager = createMemoryExternalBotManager({
+      effectDispatcher: {
+        dispatch: async () => {
+          providerCalls += 1;
+          return { kind: "succeeded" };
+        },
+      },
+      inspect: async () => ({
+        humanAttendanceActive: true,
+        revision: 4,
+        scopeExists: true,
+      }),
+    });
+    const unsigned = await request(manager, "message.send", { text: "Hello" });
+    const result = await executeExternalBotAction(
+      context(),
+      withDigest(manager, unsigned),
+      manager.ports,
+    );
+    expect(result.status).toBe("cancelled");
+    expect(manager.proposals).toHaveLength(0);
+    expect(providerCalls).toBe(0);
+  });
+});
+
+describe("executeExternalBotAction security", () => {
+  it("records a proposal without provider effects when bot attendance is active", async () => {
+    let effects = 0;
+    const manager = createMemoryExternalBotManager({
+      effectDispatcher: {
+        dispatch: async () => {
+          effects += 1;
+          return { kind: "succeeded" };
+        },
+      },
+      inspect: async () => ({
+        humanAttendanceActive: false,
+        revision: 4,
+        scopeExists: true,
+      }),
+    });
+    const command = await request(manager, "fact.propose", {
+      classification: "intent",
+      summary: "Interested in vehicle.",
+    });
+    expect(
+      (
+        await executeExternalBotAction(
+          context(),
+          withDigest(manager, command),
+          manager.ports,
+        )
+      ).status,
+    ).toBe("completed");
+    expect(manager.proposals).toHaveLength(1);
+    expect(effects).toBe(0);
+  });
+
+  it("rejects cross-store scope", async () => {
+    const manager = createMemoryExternalBotManager();
+    const unsigned = await request(manager, "message.send", { text: "Hello" });
+    await expect(
+      executeExternalBotAction(
+        { ...context(), storeId: "other-store" },
+        withDigest(manager, unsigned),
+        manager.ports,
+      ),
+    ).rejects.toMatchObject({ code: "CRM_BOT_SCOPE_MISMATCH" });
+  });
+
+  it("rejects grant reuse with a new idempotency key", async () => {
+    const manager = createMemoryExternalBotManager();
+    const first = await request(manager, "message.send", { text: "Hello" });
+    await executeExternalBotAction(
+      context(),
+      withDigest(manager, first),
+      manager.ports,
+    );
+    const reused = { ...first, idempotencyKey: "another-idempotency-key" };
+    await expect(
+      executeExternalBotAction(
+        context(),
+        withDigest(manager, reused),
+        manager.ports,
+      ),
+    ).rejects.toMatchObject({ code: "CRM_BOT_GRANT_INVALID" });
+  });
+
+  it("rejects forbidden PII and enforces scoped kill switches", async () => {
+    const manager = createMemoryExternalBotManager({
+      inspect: async () => ({
+        humanAttendanceActive: false,
+        revision: 4,
+        scopeExists: true,
+      }),
+      killSwitch: "provider",
+    });
+    const pii = await request(manager, "conversation.summarize", {
+      cpf: "forbidden",
+      summary: "safe",
+    });
+    await expect(
+      executeExternalBotAction(
+        context(),
+        withDigest(manager, pii),
+        manager.ports,
+      ),
+    ).rejects.toMatchObject({ code: "CRM_BOT_PII_NOT_ALLOWED" });
+    const command = await request(manager, "message.send", { text: "Hello" });
+    const result = await executeExternalBotAction(
+      context(),
+      withDigest(manager, command),
+      manager.ports,
+    );
+    expect(result).toMatchObject({
+      failureCode: "kill_switch_provider",
+      status: "cancelled",
+    });
+  });
+
+  it("rejects CPF embedded in a free-text value", async () => {
+    const manager = createMemoryExternalBotManager();
+    const command = await request(manager, "message.send", {
+      text: "CPF 123.456.789-00",
+    });
+    await expect(
+      executeExternalBotAction(
+        context(),
+        withDigest(manager, command),
+        manager.ports,
+      ),
+    ).rejects.toMatchObject({ code: "CRM_BOT_PII_NOT_ALLOWED" });
+  });
+
+  it("cancels typed commands without an operational executor", async () => {
+    let effects = 0;
+    const manager = createMemoryExternalBotManager({
+      effectDispatcher: {
+        dispatch: async () => {
+          effects += 1;
+          return { kind: "succeeded" };
+        },
+      },
+    });
+    const command = await request(manager, "task.create", {
+      title: "Call customer",
+    });
+    const result = await executeExternalBotAction(
+      context(),
+      withDigest(manager, command),
+      manager.ports,
+    );
+    expect(result).toMatchObject({
+      failureCode: "action_not_operational",
+      status: "cancelled",
+    });
+    expect(effects).toBe(0);
+  });
+});

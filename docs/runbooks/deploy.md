@@ -7,10 +7,11 @@
 3. From the feature branch, run `pnpm run release:staging`. This runs
    `release:verify`, merges the branch into `staging`, and pushes it.
 4. Pushing `staging` triggers the Railway staging auto-deploy (GitHub source,
-   branch `staging`) for the API, web, CRM schedule worker, and billing
-   reconciliation worker services.
+   branch `staging`) for the API, web, CRM schedule worker, CRM retention
+   worker, and billing reconciliation worker services.
 5. Wait for the staging API and web deployments to reach `SUCCESS`, then
-   verify the first CRM worker cron execution exits successfully.
+   verify the first CRM schedule and retention worker cron executions exit
+   successfully. Retention must report `dryRun: true`.
 6. Run `pnpm run release:smoke:staging` and test the flows on staging.
 7. Run `pnpm run release:promote` to open the `staging` -> `main` release PR.
    The `main-source-guard` check only allows PRs into `main` from `staging`.
@@ -19,7 +20,8 @@
 8. Once production is provisioned, merge the release PR. The push to `main`
    triggers the Railway production auto-deploy (GitHub source, branch `main`).
 9. Wait for API and web production deployments to reach `SUCCESS`, then
-   verify the first CRM worker cron execution exits successfully.
+   verify the first CRM schedule and retention worker cron executions exit
+   successfully.
 10. Run `pnpm run release:smoke:production`.
 11. Watch Railway logs, HTTP metrics, and Sentry for the release window.
 
@@ -59,6 +61,12 @@ as a break-glass path when the GitHub auto-deploy is unhealthy.
 - Billing reconciliation worker start: `pnpm run billing:asaas:reconcile`.
 - Billing reconciliation worker cron: `*/5 * * * *` UTC with restart policy
   `NEVER`. It must not run provider reconciliation as a build or deploy hook.
+- CRM retention worker build: `pnpm --filter @lojaveiculosv2/api build`.
+- CRM retention worker start: `pnpm run crm:retention:process`.
+- CRM retention worker cron: `17 * * * *` UTC with restart policy `NEVER`.
+  Keep `CRM_RETENTION_DRY_RUN=true` for the first staging release; follow the
+  [CRM retention runbook](crm-retention.md) before reviewing any destructive
+  enablement.
 - Configure the worker with the API's Clerk, R2, Z-API, product DB, audit DB,
   and Redis runtime variables before enabling live sends.
 - Keep the full monorepo as build context because both apps import workspace
@@ -94,6 +102,8 @@ Also verify:
   schedule backlog is growing.
 - The billing reconciliation worker's most recent cron execution succeeded and
   no queued or retryable billing reconciliation backlog is growing.
+- The CRM retention worker's most recent cron execution succeeded, reports
+  `dryRun: true`, and has no blocked or failed store scopes.
 - Sentry release has no new high-frequency exception.
 - Critical public storefront route loads.
 
@@ -105,9 +115,10 @@ rollback is required; contracted subscription-item prices remain unchanged.
 ## Cost Controls
 
 - Keep one replica per persistent app service until measured load requires more.
-- Keep one Redis service and the two required short-lived CRM and billing cron
-  workers per persistent environment. Do not add permanent consumers or other
-  cron services without a measured backlog or reliability requirement.
+- Keep one Redis service and the three required short-lived CRM, retention, and
+  billing cron workers per persistent environment. Do not add permanent
+  consumers or other cron services without a measured backlog or reliability
+  requirement.
 - Keep PR environments and Railway buckets disabled by default.
 - Upload only the app services included in the verified release; pushes to the
   environment branch redeploy all app services, so batch changes into one

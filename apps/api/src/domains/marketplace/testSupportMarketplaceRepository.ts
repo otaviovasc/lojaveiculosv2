@@ -6,6 +6,7 @@ import type {
   MarketplaceRepository,
 } from "./ports/marketplaceRepository.js";
 import { MarketplaceAccountMissingError } from "./ports/marketplaceRepository.js";
+import { readMarketplaceProviderCapabilities } from "./readModels/marketplaceProviderCapabilities.js";
 import {
   assertScopedMarketplaceJob,
   createResolvedMarketplaceCatalogMapping,
@@ -20,6 +21,7 @@ import {
 export { createResolvedMarketplaceCatalogMapping };
 
 export function createTestMarketplaceRepository(): MarketplaceRepository {
+  let accountSequence = 0;
   let accounts: MarketplaceAccount[] = [];
   let catalogMappings: MarketplaceCatalogMapping[] = [];
   let jobs: MarketplaceJob[] = [];
@@ -89,20 +91,27 @@ export function createTestMarketplaceRepository(): MarketplaceRepository {
         jobs: jobs.filter((job) =>
           scopedAccounts.some((account) => account.id === job.accountId),
         ),
-        providerStates: testMarketplaceProviders.map((provider) => ({
-          accountId:
-            scopedAccounts.find((account) => account.provider === provider)
-              ?.id ?? null,
-          connectionStatus: scopedAccounts.some(
-            (account) =>
-              account.provider === provider && account.status === "active",
-          )
-            ? "connected"
-            : "not_configured",
-          lastSyncSummary: null,
-          provider,
-          requirements: [],
-        })),
+        providerStates: testMarketplaceProviders.map((provider) => {
+          const account = scopedAccounts.find(
+            (item) => item.provider === provider,
+          );
+          return {
+            accountId: account?.id ?? null,
+            capabilities: readMarketplaceProviderCapabilities(
+              provider,
+              account,
+            ),
+            connectionStatus: scopedAccounts.some(
+              (account) =>
+                account.provider === provider && account.status === "active",
+            )
+              ? "connected"
+              : "not_configured",
+            lastSyncSummary: null,
+            provider,
+            requirements: [],
+          };
+        }),
         providers: testMarketplaceProviders,
         storeId: input.storeId,
         tenantId: input.tenantId,
@@ -168,19 +177,41 @@ export function createTestMarketplaceRepository(): MarketplaceRepository {
           item.storeId === input.storeId &&
           item.tenantId === input.tenantId,
       );
+      const sameIdentity =
+        input.providerAccountId === undefined ||
+        (existing !== undefined &&
+          readProviderAccountId(existing.config) === input.providerAccountId);
       const account: MarketplaceAccount = {
         config: input.config,
-        createdAt: existing?.createdAt ?? now,
-        id: existing?.id ?? `marketplace_account_${accounts.length + 1}`,
+        createdAt: existing && sameIdentity ? existing.createdAt : now,
+        id:
+          existing && sameIdentity
+            ? existing.id
+            : `marketplace_account_${++accountSequence}`,
         provider: input.provider,
         status: input.status,
         storeId: input.storeId,
         tenantId: input.tenantId,
         updatedAt: now,
       };
-      accounts = accounts.filter((item) => item.id !== account.id);
+      accounts = accounts.filter(
+        (item) => item.id !== account.id && item.id !== existing?.id,
+      );
       accounts.push(account);
       return account;
     },
   };
+}
+
+function readProviderAccountId(config: Record<string, unknown>) {
+  const connection = toRecord(config.connection);
+  return typeof connection.providerAccountId === "string"
+    ? connection.providerAccountId
+    : null;
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

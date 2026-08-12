@@ -38,6 +38,10 @@ import {
   notifyHumanOutboundAttendanceStarted,
   transitionConfirmedHumanOutboundAttendance,
 } from "./sendWhatsappOutboundAttendance.js";
+import {
+  recordOutboundProviderFailure,
+  throwPersistedOutboundFailure,
+} from "./outboundProviderFailure.js";
 
 export type {
   PreparedOutboundWhatsappMessage,
@@ -114,6 +118,9 @@ export async function sendWhatsappOutboundMessage(
   if (claimed.kind === "in_progress" || claimed.kind === "indeterminate") {
     throw outboundReconciliationPendingError();
   }
+  if (claimed.kind === "failed") {
+    throwPersistedOutboundFailure(claimed.intent.providerResult);
+  }
   let prepared: PreparedOutboundWhatsappMessage;
   if (claimed.kind === "provider_succeeded") {
     prepared = readPreparedOutboundResult(claimed.intent.providerResult);
@@ -132,12 +139,7 @@ export async function sendWhatsappOutboundMessage(
         providerResult: writePreparedOutboundResult(prepared),
       });
     } catch (error) {
-      await intents
-        .markIndeterminate({
-          claimToken: claimed.intent.claimToken,
-          id: claimed.intent.id,
-        })
-        .catch(() => undefined);
+      await recordOutboundProviderFailure(intents, claimed.intent, error);
       throw error;
     }
   }

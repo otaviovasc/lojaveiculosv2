@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createTestCrmConnectionRepository } from "../../../domains/crm/testSupportConnections.js";
 import { sendWhatsappText } from "../../../domains/crm/services/CrmWhatsapp/sendWhatsappText.js";
 import { executeDurableOutboundProviderCall } from "../../../domains/crm/whatsapp/executeDurableOutboundProviderCall.js";
+import { CrmWhatsappGatewayError } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWhatsappOutboundIntentRepository } from "../adapters/memory/crmWhatsappOutboundIntentRepository.js";
@@ -165,6 +166,55 @@ describe("CRM WhatsApp outbound idempotency", () => {
       );
       expect(recovered.sent).toEqual(first.sent);
       expect(send).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it.each([
+    ["provider_rejected", "failed", 1],
+    ["rate_limited", "retryable_failed", 2],
+    ["timeout", "indeterminate", 1],
+  ] as const)(
+    "persists %s provider outcomes as %s",
+    async (code, _expectedState, expectedCalls) => {
+      const intents = createMemoryCrmWhatsappOutboundIntentRepository();
+      const send = vi
+        .fn<() => Promise<{ externalId: string; providerTimestamp: Date }>>()
+        .mockRejectedValueOnce(
+          new CrmWhatsappGatewayError(
+            `provider ${code}`,
+            code === "rate_limited" ? 429 : 502,
+            undefined,
+            code,
+          ),
+        )
+        .mockResolvedValue({
+          externalId: "provider-retry-id",
+          providerTimestamp: new Date("2026-08-10T12:00:00Z"),
+        });
+      const request = {
+        connectionId: "connection_1",
+        idempotencyKey: `classification-${code}`,
+        payload: { code },
+        senderOrigin: "human_crm" as const,
+        senderType: "HUMAN" as const,
+        send,
+        sessionId: "session_1",
+      };
+
+      await expect(
+        executeDurableOutboundProviderCall(context(), request, {
+          crmRepository: createMemoryCrmRepository(),
+          crmWhatsappOutboundIntentRepository: intents,
+        }),
+      ).rejects.toMatchObject({ code });
+
+      const repeated = executeDurableOutboundProviderCall(context(), request, {
+        crmRepository: createMemoryCrmRepository(),
+        crmWhatsappOutboundIntentRepository: intents,
+      });
+      if (code === "rate_limited") await expect(repeated).resolves.toBeTruthy();
+      else await expect(repeated).rejects.toThrow();
+      expect(send).toHaveBeenCalledTimes(expectedCalls);
     },
   );
 });

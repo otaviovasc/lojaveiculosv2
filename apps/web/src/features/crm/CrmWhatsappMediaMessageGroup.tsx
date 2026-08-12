@@ -1,4 +1,3 @@
-import { CheckCheck } from "lucide-react";
 import {
   formatMessageTime,
   getSenderLabel,
@@ -13,6 +12,10 @@ import {
   MessageActions,
   type MessageActionHandlers,
 } from "./CrmWhatsappMessageActions";
+import {
+  MessageDeliveryStatus,
+  readDeliveryPresentation,
+} from "./CrmWhatsappMessageBubble";
 
 export function CrmWhatsappMediaMessageGroup({
   actionsDisabled,
@@ -30,6 +33,7 @@ export function CrmWhatsappMediaMessageGroup({
   const senderLabel = first ? getSenderLabel(first) : null;
   const captions = messages.map(readCaption).filter(Boolean);
   const reaction = last ? readReaction(last.metadata) : undefined;
+  const delivery = readDeliveryPresentation(last?.status ?? "unknown");
   return (
     <article
       className={
@@ -37,6 +41,7 @@ export function CrmWhatsappMediaMessageGroup({
           ? "crm-whatsapp-bubble crm-whatsapp-bubble-out crm-whatsapp-media-bundle"
           : "crm-whatsapp-bubble crm-whatsapp-media-bundle"
       }
+      data-message-status={delivery.status}
     >
       {last ? (
         <MessageActions
@@ -97,9 +102,7 @@ export function CrmWhatsappMediaMessageGroup({
       {last ? (
         <footer>
           <span>{formatMessageTime(last)}</span>
-          {outgoing ? (
-            <CheckCheck aria-hidden="true" className="size-3" />
-          ) : null}
+          {outgoing ? <MessageDeliveryStatus delivery={delivery} /> : null}
         </footer>
       ) : null}
     </article>

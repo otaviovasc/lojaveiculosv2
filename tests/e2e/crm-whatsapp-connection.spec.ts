@@ -446,7 +446,10 @@ test.describe("CRM WhatsApp connection", () => {
 
     await page.goto("/crm#/crm?surface=whatsapp");
     await page.getByRole("button", { name: "Mais" }).click();
-    await page.getByRole("menuitem", { name: /Conexão/ }).click();
+    await page
+      .getByRole("group", { name: "Outras áreas do CRM" })
+      .getByRole("button", { name: /Conexão/ })
+      .click();
 
     const connection = page.getByRole("region", { name: "Conexão" });
     await expect(

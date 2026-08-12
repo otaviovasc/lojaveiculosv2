@@ -13,6 +13,8 @@ import {
   storeId,
   tenantId,
 } from "./crm.olxChat.testSupport.js";
+import { createTestCrmConnectionCredentialVault } from "./crm.whatsapp.connectionFixtures.js";
+import type { CrmConnectionCredentialVault } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 
 describe("OLX Leads inbound identity", () => {
   it("deduplicates an official externalId after connection recreation", async () => {
@@ -21,10 +23,12 @@ describe("OLX Leads inbound identity", () => {
       ...createOlxConnection(),
       id: "24000000-0000-4000-8000-000000000102",
     };
-    const { app, crmRepository, crmWebhookEventRepository } = identityTestApp([
-      firstConnection,
-      secondConnection,
-    ]);
+    const {
+      app,
+      crmConnectionCredentialVault,
+      crmRepository,
+      crmWebhookEventRepository,
+    } = identityTestApp([firstConnection, secondConnection]);
     const payload = { ...validPayload(), externalId: "lead-1" };
 
     const first = await postLead(app, firstConnection.id, payload);
@@ -32,15 +36,22 @@ describe("OLX Leads inbound identity", () => {
 
     expect(await readResponse(first)).toMatchObject({ status: "accepted" });
     expect(await readResponse(duplicate)).toMatchObject({ status: "accepted" });
-    await recover(crmRepository, crmWebhookEventRepository);
+    await recover(
+      crmConnectionCredentialVault,
+      crmRepository,
+      crmWebhookEventRepository,
+    );
     expect(await listLeads(crmRepository)).toHaveLength(1);
   });
 
   it("canonicalizes fallback formatting and equivalent timestamps", async () => {
     const connection = createOlxConnection();
-    const { app, crmRepository, crmWebhookEventRepository } = identityTestApp([
-      connection,
-    ]);
+    const {
+      app,
+      crmConnectionCredentialVault,
+      crmRepository,
+      crmWebhookEventRepository,
+    } = identityTestApp([connection]);
 
     const first = await postLead(app, connection.id, validPayload());
     const duplicate = await postLead(app, connection.id, {
@@ -55,7 +66,20 @@ describe("OLX Leads inbound identity", () => {
       responseId: (await readResponse(first)).responseId,
       status: "duplicate",
     });
-    await recover(crmRepository, crmWebhookEventRepository);
+    const [event] = await crmWebhookEventRepository.list({
+      limit: 1,
+      storeId,
+      tenantId,
+    });
+    const storedPayload = JSON.stringify(event?.payload);
+    expect(storedPayload).not.toContain("ana@example.com");
+    expect(storedPayload).not.toContain("Tenho interesse");
+    expect(event?.payload).toMatchObject({ schemaVersion: 2 });
+    await recover(
+      crmConnectionCredentialVault,
+      crmRepository,
+      crmWebhookEventRepository,
+    );
     expect(await listLeads(crmRepository)).toHaveLength(1);
   });
 
@@ -65,17 +89,23 @@ describe("OLX Leads inbound identity", () => {
       ...createOlxConnection(),
       id: "24000000-0000-4000-8000-000000000102",
     };
-    const { app, crmRepository, crmWebhookEventRepository } = identityTestApp([
-      firstConnection,
-      secondConnection,
-    ]);
+    const {
+      app,
+      crmConnectionCredentialVault,
+      crmRepository,
+      crmWebhookEventRepository,
+    } = identityTestApp([firstConnection, secondConnection]);
 
     const first = await postLead(app, firstConnection.id, validPayload());
     const second = await postLead(app, secondConnection.id, validPayload());
 
     expect(await readResponse(first)).toMatchObject({ status: "accepted" });
     expect(await readResponse(second)).toMatchObject({ status: "accepted" });
-    await recover(crmRepository, crmWebhookEventRepository);
+    await recover(
+      crmConnectionCredentialVault,
+      crmRepository,
+      crmWebhookEventRepository,
+    );
     expect(await listLeads(crmRepository)).toHaveLength(2);
   });
 });
@@ -85,8 +115,10 @@ function identityTestApp(
 ) {
   const crmRepository = createMemoryCrmRepository();
   const crmWebhookEventRepository = createMemoryCrmWebhookEventRepository();
+  const crmConnectionCredentialVault = createLeadEnvelopeTestVault();
   return {
     app: createTestApp({
+      crmConnectionCredentialVault,
       crmConnectionRepository: createTestCrmConnectionRepository(connections),
       crmOlxWebhookSecurity: olxSecurity(),
       crmRepository,
@@ -94,12 +126,14 @@ function identityTestApp(
       entitlements: ["crm", "marketplace"],
       olxChatEnabled: true,
     }),
+    crmConnectionCredentialVault,
     crmRepository,
     crmWebhookEventRepository,
   };
 }
 
 function recover(
+  crmConnectionCredentialVault: CrmConnectionCredentialVault,
   crmRepository: ReturnType<typeof createMemoryCrmRepository>,
   crmWebhookEventRepository: ReturnType<
     typeof createMemoryCrmWebhookEventRepository
@@ -113,8 +147,30 @@ function recover(
       request: { requestId: "olx-lead-recovery" },
     }),
     { limit: 10 },
-    { crmRepository, crmWebhookEventRepository } as CrmServicePorts,
+    {
+      crmConnectionCredentialVault,
+      crmRepository,
+      crmWebhookEventRepository,
+    } as CrmServicePorts,
   );
+}
+
+function createLeadEnvelopeTestVault(): CrmConnectionCredentialVault {
+  const credentials = createTestCrmConnectionCredentialVault();
+  return {
+    async open(input) {
+      if (!input.purpose.startsWith("olx.lead-recovery:")) {
+        return credentials.open(input);
+      }
+      return Buffer.from(input.sealed, "base64url").toString("utf8");
+    },
+    async seal(input) {
+      if (!input.purpose.startsWith("olx.lead-recovery:")) {
+        return credentials.seal(input);
+      }
+      return Buffer.from(input.plaintext, "utf8").toString("base64url");
+    },
+  };
 }
 
 function postLead(

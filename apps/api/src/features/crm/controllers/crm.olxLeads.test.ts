@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { createTestCrmConnectionRepository } from "../../../domains/crm/testSupportConnections.js";
-import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
 import {
@@ -8,7 +7,6 @@ import {
   expectApiError,
 } from "./crm.whatsapp.controller.testSupport.js";
 import {
-  connectionId,
   createOlxConnection,
   olxSecurity,
   olxWebhookSecret,
@@ -17,7 +15,11 @@ import {
 } from "./crm.olxChat.testSupport.js";
 import {
   deferred,
+  createOlxLeadsTestApp as testApp,
+  expectSealedOlxLeadReceipt,
   fullOlxLeadPayload,
+  listOlxTestLeads as listLeads,
+  postOlxLead as postLead,
   readOlxLeadResponse,
   validOlxLeadPayload,
 } from "./crm.olxLeads.testSupport.js";
@@ -47,16 +49,12 @@ describe("OLX Leads inbound webhook", () => {
       tenantId,
     });
     expect(body.responseId).toBe(receipt?.id);
-    expect(receipt?.payload).toMatchObject({
-      buyerEmail: "ana@example.com",
-      buyerName: "Ana",
-      buyerPhone: "11999999999",
-      adsInfo: { subject: "Honda Civic" },
-      listId: "123",
-    });
+    expectSealedOlxLeadReceipt(expect, receipt?.payload);
     expect(receipt?.payload).not.toHaveProperty("buyerHistory");
     expect(receipt?.payload).not.toHaveProperty("externalId");
     expect(JSON.stringify(receipt?.payload)).not.toContain(olxWebhookSecret);
+    expect(receipt?.payload).not.toHaveProperty("buyerEmail");
+    expect(receipt?.payload).not.toHaveProperty("buyerPhone");
     expect(JSON.stringify(receipt?.payload)).not.toContain("extra@example.com");
     expect(JSON.stringify(receipt?.payload)).not.toContain("not retained");
     expect(sendText).not.toHaveBeenCalled();
@@ -70,7 +68,6 @@ describe("OLX Leads inbound webhook", () => {
       testApp({ crmRepository }),
       validOlxLeadPayload(),
     );
-
     expect(response.status).toBe(200);
     expect(await readOlxLeadResponse(response)).toMatchObject({
       status: "accepted",
@@ -113,11 +110,13 @@ describe("OLX Leads inbound webhook", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(
-      (
-        await crmWebhookEventRepository.list({ limit: 10, storeId, tenantId })
-      )[0]?.payload.buyerPhone,
-    ).toBeNull();
+    const [receipt] = await crmWebhookEventRepository.list({
+      limit: 10,
+      storeId,
+      tenantId,
+    });
+    expectSealedOlxLeadReceipt(expect, receipt?.payload);
+    expect(receipt?.payload).not.toHaveProperty("buyerPhone");
   });
 
   it("rejects malformed input without persisting it", async () => {
@@ -161,7 +160,6 @@ describe("OLX Leads inbound webhook", () => {
 
     expect(response.status).toBe(403);
   });
-
   it("fails closed when the OLX provider is disabled", async () => {
     const response = await postLead(
       createTestApp({
@@ -176,7 +174,7 @@ describe("OLX Leads inbound webhook", () => {
     expect(response.status).toBe(403);
   });
 
-  it("requires the existing marketplace entitlement", async () => {
+  it("accepts the CRM capability without marketplace inventory access", async () => {
     const response = await postLead(
       createTestApp({
         crmConnectionRepository: createTestCrmConnectionRepository([
@@ -189,57 +187,25 @@ describe("OLX Leads inbound webhook", () => {
       validOlxLeadPayload(),
     );
 
+    expect(response.status).toBe(200);
+    expect(await readOlxLeadResponse(response)).toMatchObject({
+      status: "accepted",
+    });
+  });
+
+  it("rejects a store without the CRM capability", async () => {
+    const response = await postLead(
+      createTestApp({
+        crmConnectionRepository: createTestCrmConnectionRepository([
+          createOlxConnection(),
+        ]),
+        crmOlxWebhookSecurity: olxSecurity(),
+        entitlements: ["marketplace"],
+        olxChatEnabled: true,
+      }),
+      validOlxLeadPayload(),
+    );
+
     expect(response.status).toBe(403);
   });
 });
-
-function testApp(options: {
-  crmConnectionRepository?: ReturnType<
-    typeof createTestCrmConnectionRepository
-  >;
-  crmRepository?: ReturnType<typeof createMemoryCrmRepository>;
-  crmWebhookEventRepository?: ReturnType<
-    typeof createMemoryCrmWebhookEventRepository
-  >;
-  sendText?: CrmWhatsappGateway["sendText"];
-}) {
-  return createTestApp({
-    crmConnectionRepository:
-      options.crmConnectionRepository ??
-      createTestCrmConnectionRepository([createOlxConnection()]),
-    crmOlxWebhookSecurity: olxSecurity(),
-    ...(options.crmRepository ? { crmRepository: options.crmRepository } : {}),
-    ...(options.crmWebhookEventRepository
-      ? { crmWebhookEventRepository: options.crmWebhookEventRepository }
-      : {}),
-    ...(options.sendText
-      ? { crmWhatsappGateway: { sendText: options.sendText } }
-      : {}),
-    entitlements: ["crm", "marketplace"],
-    olxChatEnabled: true,
-  });
-}
-
-function postLead(
-  app: ReturnType<typeof createTestApp>,
-  payload: Record<string, unknown>,
-  auth: "header" | "query" = "header",
-  secret = olxWebhookSecret,
-) {
-  const query = auth === "query" ? `?token=${secret}` : "";
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/olx/${connectionId}/leads${query}`,
-    {
-      body: JSON.stringify(payload),
-      headers: {
-        "content-type": "application/json",
-        ...(auth === "header" ? { "x-olx-webhook-secret": secret } : {}),
-      },
-      method: "POST",
-    },
-  );
-}
-
-function listLeads(repository: ReturnType<typeof createMemoryCrmRepository>) {
-  return repository.listLeads({ limit: 20, storeId, tenantId });
-}

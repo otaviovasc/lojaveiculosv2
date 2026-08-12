@@ -10,7 +10,6 @@ import type {
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import { getCrmZapiSupportAuthorizer } from "../CrmService/crmConnectionSetupSupport.js";
 import { createWhatsappConnection } from "./createWhatsappConnection.js";
-import { updateWhatsappConnection } from "./listWhatsappConnections.js";
 import { configureWhatsappConnectionWebhooks } from "./configureWhatsappConnectionWebhooks.js";
 import {
   requestZapiPairingCode,
@@ -20,6 +19,7 @@ import {
   auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
 } from "./serviceSupport.js";
+import { updateVerifiedZapiConnectionIdentity } from "./replaceZapiConnectionIdentity.js";
 
 export type ZapiSupportScope = { storeId: StoreId; tenantId: TenantId };
 export type ZapiSupportWebhookTarget = {
@@ -62,23 +62,16 @@ export async function updateZapiCredentialsAsSupport(
   ports: CrmServicePorts,
 ) {
   const scoped = await authorizeSupport(context, input, ports);
-  return updateWhatsappConnection(
-    scoped,
-    {
-      connectionId: input.connectionId,
-      instanceCredentials: {
-        instanceId: input.instanceId,
-        instanceToken: input.instanceToken,
-      },
-      webhookSetupTarget: input,
-    },
-    ports,
-  );
+  return updateVerifiedZapiConnectionIdentity(scoped, input, ports);
 }
 
 export async function configureZapiWebhooksAsSupport(
   context: ServiceContext,
-  input: ZapiSupportScope & ZapiSupportWebhookTarget & { connectionId: string },
+  input: ZapiSupportScope &
+    ZapiSupportWebhookTarget & {
+      connectionId: string;
+      mode?: "configure" | "reset";
+    },
   ports: CrmServicePorts,
 ) {
   const scoped = await authorizeSupport(context, input, ports);

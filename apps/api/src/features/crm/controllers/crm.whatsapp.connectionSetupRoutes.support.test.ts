@@ -62,7 +62,7 @@ describe("CRM WhatsApp support connection setup routes", () => {
             instanceToken: "sealed:zapi.instance-token:secret-1",
           },
         },
-        externalInstanceId: null,
+        externalInstanceId: "instance-1",
         provider: "zapi",
       },
     ]);

@@ -4,6 +4,7 @@ import type {
   MarketplaceOverview,
   MarketplaceProvider,
 } from "../../../domains/marketplace/ports/marketplaceRepository.js";
+import { readMarketplaceProviderCapabilities } from "../../../domains/marketplace/readModels/marketplaceProviderCapabilities.js";
 
 export function buildProviderStates(input: {
   accounts: readonly MarketplaceAccount[];
@@ -14,6 +15,7 @@ export function buildProviderStates(input: {
     const account = input.accounts.find((item) => item.provider === provider);
     return {
       accountId: account?.id ?? null,
+      capabilities: readMarketplaceProviderCapabilities(provider, account),
       connectionStatus: accountStatusToConnectionStatus(account?.status),
       lastSyncSummary: summarizeStockSyncJobs(
         input.jobs.filter((job) => job.accountId === account?.id),

@@ -11,12 +11,21 @@ import {
   OLX_ACCESS_TOKEN_CREDENTIAL_PURPOSE,
   OLX_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
 } from "../../ports/crmOlxCredentials.js";
-import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import type { CrmServicePorts } from "./serviceSupport.js";
-import { getCrmConnectionRepository } from "./serviceSupport.js";
+import {
+  getCrmConnectionRepository,
+  runCrmTransaction,
+} from "./serviceSupport.js";
 import { getCrmConnectionCredentialVault } from "./crmConnectionSetupSupport.js";
-
-const permission = "crm.messaging.connection.setup" as const;
+import {
+  assertFinishedOlxSetup,
+  buildOlxOnboardingResult,
+  configureOlxCapability,
+  OLX_CRM_CONNECTION_SETUP_PERMISSION,
+  readOlxOnboardingResult,
+  readRecord,
+} from "../../onboardOlxCrmConnectionSupport.js";
+import type { OlxCrmOnboardingResult } from "../../../marketplace/ports/marketplaceOlxCrmOnboarding.js";
 
 export async function onboardOlxCrmConnection(
   context: ServiceContext,
@@ -24,12 +33,13 @@ export async function onboardOlxCrmConnection(
     accessToken: string;
     canonicalApiOrigin: string;
     providerAccountId: string | null;
+    scopes: readonly string[];
     storeId: string;
     tenantId: string;
   },
   ports: CrmServicePorts,
 ) {
-  assertPermission(context, permission);
+  assertPermission(context, OLX_CRM_CONNECTION_SETUP_PERMISSION);
   assertEntitlement(context as StoreScopedServiceContext, "crm");
   context.logger.info("crm.connection.olx.onboard.started", {
     actorId: context.actor.id,
@@ -40,6 +50,12 @@ export async function onboardOlxCrmConnection(
   });
   if (context.storeId !== input.storeId || context.tenantId !== input.tenantId)
     throw new Error("OLX CRM OAuth scope binding mismatch.");
+  const providerAccountId = input.providerAccountId?.trim();
+  if (!providerAccountId) {
+    throw new Error(
+      "OLX account identity could not be authoritatively verified.",
+    );
+  }
   const repository = getCrmConnectionRepository(ports);
   const vault = getCrmConnectionCredentialVault(ports);
   const provider = ports.olxCrmWebhookSetupProvider;
@@ -49,39 +65,52 @@ export async function onboardOlxCrmConnection(
     !repository.finishOlxWebhookSetup
   )
     throw new Error("OLX CRM onboarding is unavailable.");
-  const existing = (
-    await repository.listConnections({
-      providers: ["olx_chat"],
+  const [accessToken, webhookSecret] = await Promise.all([
+    vault.seal({
+      plaintext: input.accessToken,
+      purpose: OLX_ACCESS_TOKEN_CREDENTIAL_PURPOSE,
       storeId: input.storeId as never,
       tenantId: input.tenantId as never,
-    })
-  )[0];
-  const stored = readRecord(existing?.credentialsRef.stored);
-  const webhookSecret =
-    typeof stored.webhookSecret === "string" && stored.webhookSecret.trim()
-      ? stored.webhookSecret
-      : await vault.seal({
-          plaintext: randomBytes(32).toString("base64url"),
-          purpose: OLX_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
-          storeId: input.storeId as never,
-          tenantId: input.tenantId as never,
-        });
-  const accessToken = await vault.seal({
-    plaintext: input.accessToken,
-    purpose: OLX_ACCESS_TOKEN_CREDENTIAL_PURPOSE,
-    storeId: input.storeId as never,
-    tenantId: input.tenantId as never,
-  });
-  const connection = await repository.upsertOlxConnection({
-    credentialsRef: { stored: { accessToken, webhookSecret } },
-    displayName: "OLX Chat",
-    externalConnectionId: input.providerAccountId,
-    metadata: existing?.metadata ?? {},
-    status: existing?.status === "active" ? "active" : "error",
-    storeId: input.storeId as never,
-    tenantId: input.tenantId as never,
-    webhookUrl: existing?.webhookUrl ?? null,
-  });
+    }),
+    vault.seal({
+      plaintext: randomBytes(32).toString("base64url"),
+      purpose: OLX_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
+      storeId: input.storeId as never,
+      tenantId: input.tenantId as never,
+    }),
+  ]);
+  const authorization = await runCrmTransaction(ports, (transactionPorts) =>
+    getCrmConnectionRepository(transactionPorts).upsertOlxConnection({
+      credentialsRef: { stored: { accessToken, webhookSecret } },
+      displayName: "OLX Chat",
+      externalConnectionId: providerAccountId,
+      metadata: {},
+      status: "error",
+      storeId: input.storeId as never,
+      tenantId: input.tenantId as never,
+      webhookUrl: null,
+    }),
+  );
+  const connection = authorization.connection;
+  if (authorization.replacedConnectionId) {
+    await context.audit.record({
+      action: "crm.connection.olx.identity_replaced",
+      actor: context.actor,
+      category: "authorization",
+      entityId: connection.id,
+      entityType: "crm_connection",
+      metadata: {
+        permission: OLX_CRM_CONNECTION_SETUP_PERMISSION,
+        previousConnectionId: authorization.replacedConnectionId,
+        provider: "olx_chat",
+      },
+      outcome: "succeeded",
+      requestId: context.requestId,
+      storeId: input.storeId,
+      summary: "Replaced OLX connection after provider account changed",
+      tenantId: input.tenantId,
+    });
+  }
   await repository.updateConnection({
     connectionId: connection.id,
     storeId: input.storeId as never,
@@ -98,124 +127,121 @@ export async function onboardOlxCrmConnection(
     storeId: input.storeId as never,
     tenantId: input.tenantId as never,
   });
-  if (!claimed)
-    return {
-      connectionId: connection.id,
-      status:
-        connection.status === "active"
-          ? ("active" as const)
-          : ("error" as const),
-    };
+  if (!claimed) {
+    const result = readOlxOnboardingResult(connection, input.scopes);
+    await recordOlxOnboardingOutcome(context, input, result);
+    return result;
+  }
+  const configuredStored = readRecord(connection.credentialsRef.stored);
+  const configuredWebhookSecret = configuredStored.webhookSecret;
+  if (typeof configuredWebhookSecret !== "string") {
+    throw new Error("OLX webhook credential is unavailable.");
+  }
   const secret = await vault.open({
     purpose: OLX_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
-    sealed: webhookSecret,
+    sealed: configuredWebhookSecret,
     storeId: input.storeId as never,
     tenantId: input.tenantId as never,
   });
   const base = `${input.canonicalApiOrigin}/api/v1/crm/whatsapp/webhooks/olx/${connection.id}`;
-  try {
-    await provider.configureLeads({
-      accessToken: input.accessToken,
-      callbackUrl: `${base}/leads?token=${encodeURIComponent(secret)}`,
-      token: secret,
-    });
-    await provider.configureChat({
-      accessToken: input.accessToken,
-      callbackUrl: `${base}/received?token=${encodeURIComponent(secret)}`,
-    });
-    const finished = await repository.finishOlxWebhookSetup({
-      connectionId: connection.id,
-      leaseOwner,
-      metadata: {
-        webhookSetup: {
-          attemptCount: readRecord(claimed.metadata.webhookSetup).attemptCount,
-          configuredAt: new Date().toISOString(),
-          leaseExpiresAt: null,
-          leaseOwner: null,
-          status: "configured",
-        },
+  const leads = await configureOlxCapability(
+    "autoservice",
+    input.scopes,
+    "lead_ingestion",
+    () =>
+      provider.configureLeads({
+        accessToken: input.accessToken,
+        callbackUrl: `${base}/leads?token=${encodeURIComponent(secret)}`,
+        token: secret,
+      }),
+  );
+  const chat = await configureOlxCapability(
+    "chat",
+    input.scopes,
+    "messaging",
+    () =>
+      provider.configureChat({
+        accessToken: input.accessToken,
+        callbackUrl: `${base}/received?token=${encodeURIComponent(secret)}`,
+      }),
+  );
+  const capabilities = { chat, leads };
+  const capabilityValues = Object.values(capabilities);
+  const activeCount = capabilityValues.filter(
+    (capability) => capability.status === "active",
+  ).length;
+  const errorCount = capabilityValues.filter(
+    (capability) => capability.status === "error",
+  ).length;
+  const setupStatus =
+    activeCount === capabilityValues.length
+      ? "configured"
+      : activeCount > 0
+        ? "partial"
+        : "failed";
+  const finished = await repository.finishOlxWebhookSetup({
+    connectionId: connection.id,
+    leaseOwner,
+    metadata: {
+      webhookSetup: {
+        attemptCount: readRecord(claimed.metadata.webhookSetup).attemptCount,
+        capabilities,
+        configuredAt: activeCount ? new Date().toISOString() : null,
+        lastErrorCode:
+          errorCount > 0
+            ? "registration_failed"
+            : activeCount < capabilityValues.length
+              ? "scope_missing"
+              : null,
+        leaseExpiresAt: null,
+        leaseOwner: null,
+        status: setupStatus,
       },
-      storeId: input.storeId as never,
-      tenantId: input.tenantId as never,
-    });
-    assertConfigured(finished);
-    await audit(context, connection.id, input, "succeeded");
-    return { connectionId: connection.id, status: finished.status };
-  } catch (error) {
-    const failed = await repository.finishOlxWebhookSetup({
-      connectionId: connection.id,
-      leaseOwner,
-      metadata: {
-        webhookSetup: {
-          attemptCount: readRecord(claimed.metadata.webhookSetup).attemptCount,
-          lastErrorCode: "registration_failed",
-          leaseExpiresAt: null,
-          leaseOwner: null,
-          status: "failed",
-        },
-      },
-      storeId: input.storeId as never,
-      tenantId: input.tenantId as never,
-    });
-    await audit(context, connection.id, input, "failed");
-    assertFailed(failed, error);
-    throw error;
-  }
-}
-
-function assertConfigured(
-  connection: CrmConnection | null,
-): asserts connection is NonNullable<typeof connection> & { status: "active" } {
-  if (
-    !connection ||
-    connection.status !== "active" ||
-    readRecord(connection.metadata.webhookSetup).status !== "configured"
-  ) {
-    throw setupLeaseLost();
-  }
-}
-
-function assertFailed(
-  connection: CrmConnection | null,
-  cause: unknown,
-): asserts connection is NonNullable<typeof connection> & { status: "error" } {
-  if (
-    !connection ||
-    connection.status !== "error" ||
-    readRecord(connection.metadata.webhookSetup).status !== "failed"
-  ) {
-    throw setupLeaseLost(cause);
-  }
-}
-
-function setupLeaseLost(cause?: unknown) {
-  return new Error("OLX webhook setup lease was lost before completion.", {
-    ...(cause === undefined ? {} : { cause }),
+    },
+    storeId: input.storeId as never,
+    tenantId: input.tenantId as never,
   });
+  assertFinishedOlxSetup(finished, setupStatus);
+  const result = buildOlxOnboardingResult(connection.id, capabilities);
+  await recordOlxOnboardingOutcome(context, input, result);
+  return result;
 }
 
-async function audit(
+async function recordOlxOnboardingOutcome(
   context: ServiceContext,
-  connectionId: string,
   input: { storeId: string; tenantId: string },
-  outcome: "failed" | "succeeded",
+  result: OlxCrmOnboardingResult,
 ) {
+  const outcome = result.status === "active" ? "succeeded" : "failed";
+  const metadata = {
+    actorId: context.actor.id,
+    chatStatus: result.capabilities.chat.status,
+    connectionId: result.connectionId,
+    leadsStatus: result.capabilities.leads.status,
+    provider: "olx_chat",
+    requestId: context.requestId,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  };
+  context.logger.info("crm.connection.olx.onboard.completed", metadata);
   await context.audit.record({
     action: "crm.connection.olx.onboard",
     actor: context.actor,
     category: "integration",
-    entityId: connectionId,
+    entityId: result.connectionId,
     entityType: "crm_connection",
-    metadata: { permission, provider: "olx_chat" },
+    metadata: {
+      capabilityStatuses: {
+        chat: result.capabilities.chat.status,
+        leads: result.capabilities.leads.status,
+      },
+      permission: OLX_CRM_CONNECTION_SETUP_PERMISSION,
+      provider: "olx_chat",
+    },
     outcome,
     requestId: context.requestId,
     storeId: input.storeId,
     tenantId: input.tenantId,
     summary: "Configured OLX CRM connection",
   });
-}
-function readRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
 }

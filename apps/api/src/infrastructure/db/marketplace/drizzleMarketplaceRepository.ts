@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   integrationAccounts,
@@ -14,7 +14,6 @@ import type {
   MarketplaceProvider,
   MarketplaceProviderListing,
   MarketplaceRepository,
-  UpsertMarketplaceAccountInput,
 } from "../../../domains/marketplace/ports/marketplaceRepository.js";
 import { MarketplaceAccountMissingError } from "../../../domains/marketplace/ports/marketplaceRepository.js";
 import {
@@ -34,6 +33,7 @@ import {
 } from "./drizzleMarketplaceJobs.js";
 import { toAccount, toJob, toRecord } from "./drizzleMarketplaceMappers.js";
 import { buildProviderStates } from "./drizzleMarketplaceOverview.js";
+import { upsertMarketplaceAccount } from "./drizzleMarketplaceAccounts.js";
 
 export type DrizzleMarketplaceClient = PostgresJsDatabase<typeof schema>;
 
@@ -57,7 +57,7 @@ export function createDrizzleMarketplaceRepository(
     markJobCompleted: (input) => markJobCompleted(db, input),
     markJobFailed: (input) => markJobFailed(db, input),
     markJobRunning: (input) => markJobRunning(db, input),
-    upsertAccount: (input) => upsertAccount(db, input, codec),
+    upsertAccount: (input) => upsertMarketplaceAccount(db, input, codec),
   };
 }
 
@@ -74,6 +74,7 @@ async function findAccount(
         eq(integrationAccounts.provider, input.provider),
         eq(integrationAccounts.storeId, input.storeId),
         eq(integrationAccounts.tenantId, input.tenantId),
+        isNull(integrationAccounts.archivedAt),
       ),
     )
     .limit(1);
@@ -125,6 +126,7 @@ async function listOverview(
         and(
           eq(integrationAccounts.storeId, input.storeId),
           eq(integrationAccounts.tenantId, input.tenantId),
+          isNull(integrationAccounts.archivedAt),
         ),
       )
       .limit(50),
@@ -160,32 +162,6 @@ async function listOverview(
   };
 }
 
-async function upsertAccount(
-  db: DrizzleMarketplaceClient,
-  input: UpsertMarketplaceAccountInput,
-  codec: MarketplaceCredentialCodec,
-): Promise<MarketplaceAccount> {
-  const [row] = await db
-    .insert(integrationAccounts)
-    .values({
-      config: codec.encodeAccountConfig(input.config),
-      provider: input.provider,
-      status: input.status,
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-    })
-    .onConflictDoUpdate({
-      set: {
-        config: codec.encodeAccountConfig(input.config),
-        status: input.status,
-      },
-      target: [integrationAccounts.storeId, integrationAccounts.provider],
-    })
-    .returning();
-  if (!row) throw new Error("Marketplace account upsert failed.");
-  return toAccount(row, codec.redactAccountConfig);
-}
-
 async function createSyncJob(
   db: DrizzleMarketplaceClient,
   input: CreateMarketplaceJobInput,
@@ -198,6 +174,7 @@ async function createSyncJob(
         eq(integrationAccounts.provider, input.provider),
         eq(integrationAccounts.storeId, input.storeId),
         eq(integrationAccounts.tenantId, input.tenantId),
+        isNull(integrationAccounts.archivedAt),
       ),
     )
     .limit(1);

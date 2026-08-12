@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmWhatsappScopedNav } from "./CrmWhatsappScopedNav";
 
@@ -52,13 +52,18 @@ describe("CrmWhatsappScopedNav", () => {
     await user.click(more);
 
     expect(more).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("menuitem", { name: "Campanhas" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    const otherAreas = screen.getByRole("group", {
+      name: "Outras áreas do CRM",
+    });
+    expect(
+      within(otherAreas).getByRole("button", { name: "Campanhas" }),
+    ).toHaveAttribute("aria-current", "page");
 
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("menuitem", { name: "Campanhas" })).toBeNull();
+    expect(
+      screen.queryByRole("group", { name: "Outras áreas do CRM" }),
+    ).toBeNull();
     expect(more).toHaveAttribute("aria-expanded", "false");
+    expect(more).toHaveFocus();
   });
 });

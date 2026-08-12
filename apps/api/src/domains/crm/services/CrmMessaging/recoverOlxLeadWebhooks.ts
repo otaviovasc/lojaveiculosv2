@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import { olxLeadReceiptEventType } from "../../messaging/olxLeadReceipt.js";
+import {
+  clearOlxLeadReceiptPayload,
+  olxLeadReceiptEventType,
+} from "../../messaging/olxLeadReceipt.js";
 import type { CrmProviderWebhookEvent } from "../../ports/crmWebhookEventRepository.js";
 import {
   getCrmWebhookEventRepository,
@@ -74,6 +77,7 @@ async function recoverOne(
     await processOlxLeadReceipt(context, event, ports);
     const completed = await repository.updateStatus({
       eventId: event.id,
+      payload: clearOlxLeadReceiptPayload(event.payload, new Date()),
       processingToken,
       status: "processed",
     });

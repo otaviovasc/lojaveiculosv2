@@ -142,6 +142,7 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
                 availableProviders={selfService.availableProviders}
                 canPair={selfService.canPair}
                 canSetup={selfService.canSetup}
+                connections={connections}
                 existingConnection={selected}
                 handlers={selfService.handlers}
                 {...(selfService.zapiAddonContract !== undefined
@@ -161,6 +162,7 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
             availableProviders={selfService.availableProviders}
             canPair={selfService.canPair}
             canSetup={selfService.canSetup}
+            connections={connections}
             handlers={selfService.handlers}
             {...(selfService.zapiAddonContract !== undefined
               ? { zapiAddonContract: selfService.zapiAddonContract }

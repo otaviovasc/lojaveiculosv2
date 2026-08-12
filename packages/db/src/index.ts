@@ -7,6 +7,8 @@ export * from "./schema/inventoryOperations.js";
 export * from "./schema/documents.js";
 export * from "./schema/leads.js";
 export * from "./schema/crm.js";
+export * from "./schema/crmCore.js";
+export * from "./schema/crmRetention.js";
 export * from "./schema/crmPipeline.js";
 export * from "./schema/crmWhatsapp.js";
 export * from "./schema/crmWhatsappInterventions.js";

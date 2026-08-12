@@ -21,6 +21,40 @@ beforeAll(async () => {
 });
 
 describe("OLX CRM chat gateway", () => {
+  it("reports configured Chat as connected without claiming smartphone state", async () => {
+    const gateway = createOlxCrmChatGateway(env, vi.fn() as typeof fetch);
+
+    await expect(
+      gateway.getConnectionStatus(createConnection()),
+    ).resolves.toMatchObject({
+      connected: true,
+      connectedPhone: null,
+      providerStatus: "connected",
+      smartphoneConnected: null,
+    });
+  });
+
+  it("does not report Chat as connected when only another OLX capability is active", async () => {
+    const connection = createConnection();
+    connection.metadata = {
+      webhookSetup: {
+        capabilities: {
+          chat: { status: "blocked" },
+          leads: { status: "active" },
+        },
+        status: "partial",
+      },
+    };
+    const gateway = createOlxCrmChatGateway(env, vi.fn() as typeof fetch);
+
+    await expect(
+      gateway.getConnectionStatus(connection),
+    ).resolves.toMatchObject({
+      connected: false,
+      providerStatus: "disconnected",
+    });
+  });
+
   it("sends text with the connection-bound encrypted credential", async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () => new Response(null));
     const gateway = createOlxCrmChatGateway(env, fetchImpl);
@@ -168,7 +202,12 @@ function createConnection(): CrmConnection {
     externalConnectionId: null,
     externalInstanceId: null,
     id: "25000000-0000-4000-8000-000000000102",
-    metadata: {},
+    metadata: {
+      webhookSetup: {
+        capabilities: { chat: { status: "active" } },
+        status: "configured",
+      },
+    },
     phone: null,
     provider: "olx_chat",
     status: "active",

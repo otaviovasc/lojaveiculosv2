@@ -55,6 +55,15 @@ API runtime. Keep local, staging, and production values separate.
   does not carry an explicit non-secret graph version.
 - `CRM_META_WEBHOOK_VERIFY_TOKEN` and `CRM_META_APP_SECRET`: Meta GET
   challenge and POST signature verification values for the shared Meta webhook.
+- `CRM_OLX_WEBHOOK_ALLOWED_IPS`: optional comma-separated exact-IP allowlist
+  for OLX callbacks. Staging and production default to OLX's approved
+  `54.162.151.93`; setting the variable replaces that default. Missing request
+  source addresses, malformed entries, and unlisted addresses fail closed.
+  Set `CRM_OLX_TRUST_PROXY_HEADERS=true` only when Railway is the sole public
+  ingress and overwrites `x-real-ip`. Deployed environments reject every OLX
+  callback until that contract is explicitly enabled. The API accepts exactly
+  one valid `x-real-ip` value and never uses caller-supplied `x-forwarded-for`
+  for this authorization decision.
 
 The canonical variable checklist and environment classification are in
 [`docs/ops/env-vars.md`](../ops/env-vars.md). Never commit real values to
@@ -99,6 +108,17 @@ setting an unused key does not provide encryption.
 Outside local development, the public API origin must be configured with
 `API_BASE_URL` before automatic webhook setup. For local testing, use an HTTPS
 public tunnel when ZAPI cannot reach localhost.
+
+When provider-side callback slots drift, platform support may invoke
+`POST /api/v1/crm/whatsapp/support/zapi/connections/{connectionId}/webhooks/reset`
+with the exact `tenantId` and `storeId`. The operation requires the support
+account and paid-entitlement checks, acquires the connection setup lease, and
+re-registers all six callbacks against the server-owned `API_BASE_URL`. It is
+safe to repeat: Z-API receives idempotent callback-slot updates, while the API
+preserves the attempt history and audits reset separately from initial setup.
+Treat the returned per-callback results and persisted setup status as the
+truth; `partial` or `failed` means the reset did not complete. Returned URLs
+are redacted, and operators must not log request credentials or callback URLs.
 
 ### Official WhatsApp
 

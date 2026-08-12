@@ -205,9 +205,13 @@ export function createApp(options: CreateAppOptions = {}) {
     createCrmFeature({
       accountContextFactory,
       contextFactory,
+      ...(options.crmCoreRepository
+        ? { coreRepository: options.crmCoreRepository }
+        : {}),
       financialProductTransactionRunner:
         options.crmFinancialProductTransactionRunner,
       financeServices: options.financeServices,
+      externalBotManager: options.externalBotManager,
       realtimeBroker: options.crmRealtimeBroker,
       resolveBotEntitlements: options.resolveCrmBotEntitlements,
       webhookContextFactory: createCrmWebhookContextFactory(options.audit),

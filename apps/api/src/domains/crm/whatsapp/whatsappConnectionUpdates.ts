@@ -5,6 +5,7 @@ export type UpdateWhatsappConnectionInput = {
   catalogPhone?: string | null;
   connectionId: string;
   displayName?: string;
+  externalInstanceId?: string;
   instanceCredentials?: {
     instanceId: string;
     instanceToken: string;
@@ -47,6 +48,12 @@ export function assertCredentialUpdateMatchesProvider(
   if (input.instanceCredentials && connection.provider !== "zapi") {
     throw new WhatsappMessageActionError(
       "Z-API credentials can only be configured on Z-API connections.",
+      400,
+    );
+  }
+  if (input.externalInstanceId && connection.provider !== "zapi") {
+    throw new WhatsappMessageActionError(
+      "A provider instance identity can only be set on Z-API connections.",
       400,
     );
   }

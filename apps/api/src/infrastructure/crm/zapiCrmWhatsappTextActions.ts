@@ -5,6 +5,7 @@ import {
   fetchZapi,
   parseJson,
   type ZapiCredentials,
+  zapiProviderResponseError,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 import type { CrmWhatsappSendTextInput } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import {
@@ -54,9 +55,7 @@ export async function sendZapiText(
         readRetryAfterSeconds(response.headers),
       );
     }
-    throw new CrmWhatsappGatewayError(
-      `ZAPI send text failed with HTTP ${response.status}`,
-    );
+    throw zapiProviderResponseError(response.status, "ZAPI send text");
   }
 
   return {

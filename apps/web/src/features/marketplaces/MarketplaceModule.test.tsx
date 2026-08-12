@@ -282,6 +282,26 @@ const overview: MarketplaceOverview = {
   providerStates: [
     {
       accountId: "account_1",
+      capabilities: {
+        chat: {
+          capability: "messaging",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+        leads: {
+          capability: "lead_ingestion",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+        stock: {
+          capability: "inventory_sync",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+      },
       connectionStatus: "connected",
       lastSyncSummary: null,
       provider: "olx",
@@ -305,6 +325,7 @@ const reconnectRequiredOverview: MarketplaceOverview = {
   providerStates: [
     {
       accountId: "account_1",
+      capabilities: overview.providerStates[0]?.capabilities ?? null,
       connectionStatus: "reconnect_required",
       lastSyncSummary: null,
       provider: "olx",
@@ -334,6 +355,7 @@ const bothProvidersOverview: MarketplaceOverview = {
     ...overview.providerStates,
     {
       accountId: "account_ml",
+      capabilities: null,
       connectionStatus: "connected",
       lastSyncSummary: null,
       provider: "mercado_livre",

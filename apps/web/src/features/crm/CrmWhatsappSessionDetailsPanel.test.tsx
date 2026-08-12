@@ -32,8 +32,16 @@ describe("CrmWhatsappSessionDetailsPanel", () => {
     expect(screen.getByText("Maria Cliente")).toBeVisible();
     expect(screen.getByText("Ana")).toBeVisible();
     expect(
+      screen.getByRole("heading", { name: "Rota da conversa" }),
+    ).toBeVisible();
+    expect(screen.getByText("WhatsApp")).toBeVisible();
+    expect(screen.getByText("Z-API")).toBeVisible();
+    expect(screen.getByText("Direto")).toBeVisible();
+    expect(screen.getByText("WhatsApp showroom")).toBeVisible();
+    expect(
       screen.getByRole("link", { name: /Lead vinculado/ }),
     ).toHaveAttribute("href", "#/crm?surface=leads&leadId=lead_1");
+    expect(screen.queryByText("lead_1")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Fechar detalhes" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -87,6 +95,30 @@ describe("CrmWhatsappSessionDetailsPanel", () => {
     expect(screen.getByText("Aguardando Humano")).toBeVisible();
     expect(screen.queryByText("Atendimento humano")).not.toBeInTheDocument();
   });
+
+  it("keeps channel, transport and credential broker as separate facts", () => {
+    render(
+      <CrmWhatsappSessionDetailsPanel
+        assignableMembers={[]}
+        onClose={vi.fn()}
+        session={{
+          ...session(),
+          connection: {
+            id: "connection_meta",
+            name: "Número oficial",
+            provider: "composio_whatsapp",
+            status: "active",
+          },
+          metadata: { broker: "composio" },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("WhatsApp")).toBeVisible();
+    expect(screen.getByText("Meta Cloud")).toBeVisible();
+    expect(screen.getByText("Composio")).toBeVisible();
+    expect(screen.getByText("Número oficial")).toBeVisible();
+  });
 });
 
 function session(): CrmWhatsappSession {
@@ -95,11 +127,19 @@ function session(): CrmWhatsappSession {
     buyerName: "Maria Cliente",
     buyerPhone: "5511999999999",
     channel: "WHATSAPP",
+    connection: {
+      id: "connection_1",
+      name: "WhatsApp showroom",
+      provider: "zapi",
+      status: "active",
+    },
     id: "session_1",
     lastMessageAt: "2026-07-03T12:00:00.000Z",
     leadId: "lead_1",
+    metadata: { broker: "direct" },
     sessionTags: [{ id: "tag_1", name: "Quente" }],
     status: "ACTIVE",
     uuid: "session_1",
+    vehicle: { title: "Honda Civic Touring 2024" },
   };
 }

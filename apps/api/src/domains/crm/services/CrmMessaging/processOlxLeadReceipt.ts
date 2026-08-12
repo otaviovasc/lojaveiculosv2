@@ -1,12 +1,16 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmProviderWebhookEvent } from "../../ports/crmWebhookEventRepository.js";
-import { readOlxLeadReceiptPayload } from "../../messaging/olxLeadReceipt.js";
+import {
+  openOlxLeadReceiptPayload,
+  type OlxLeadReceiptPayload,
+} from "../../messaging/olxLeadReceipt.js";
 import {
   getCrmRepository,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
+import { getCrmConnectionCredentialVault } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
@@ -20,13 +24,18 @@ export async function processOlxLeadReceipt(
   ports: CrmServicePorts,
 ) {
   assertPermission(context, permission);
-  const receipt = readOlxLeadReceiptPayload(event.payload);
-  if (!receipt || !event.connectionId || !event.storeId || !event.tenantId) {
+  if (!event.connectionId || !event.storeId || !event.tenantId) {
     throw new Error("Invalid durable OLX lead receipt.");
   }
   const connectionId = event.connectionId;
   const storeId = event.storeId;
   const tenantId = event.tenantId;
+  const receipt = await openOlxLeadReceiptPayload(
+    getCrmConnectionCredentialVault(ports),
+    { connectionId, storeId, tenantId },
+    event.payload,
+  );
+  if (!receipt) throw new Error("Invalid durable OLX lead receipt.");
   const result = await runCrmTransaction(ports, async (transactionPorts) => {
     const repository = getCrmRepository(transactionPorts);
     const lead = await repository.createLeadIdempotently({
@@ -85,7 +94,7 @@ export async function processOlxLeadReceipt(
   return result;
 }
 
-type Receipt = NonNullable<ReturnType<typeof readOlxLeadReceiptPayload>>;
+type Receipt = OlxLeadReceiptPayload;
 
 function leadMetadata(connectionId: string, receipt: Receipt) {
   return {

@@ -112,8 +112,24 @@ export function assertZapiProvider(provider: string) {
   if (provider !== "zapi") {
     throw new CrmWhatsappGatewayError(
       `Unsupported CRM WhatsApp provider: ${provider}`,
+      409,
+      undefined,
+      "configuration_error",
     );
   }
+}
+
+export function zapiProviderResponseError(status: number, label: string) {
+  return new CrmWhatsappGatewayError(
+    `${label} failed with HTTP ${status}`,
+    status === 429 ? 429 : 502,
+    status === 429 ? 1 : undefined,
+    status === 429
+      ? "rate_limited"
+      : status >= 500
+        ? "provider_unavailable"
+        : "provider_rejected",
+  );
 }
 
 export function createProviderMessageId(payload: Record<string, unknown>) {

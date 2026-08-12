@@ -66,7 +66,7 @@ describe("sendZapiText rate limit handling", () => {
     expect(sleep).toHaveBeenCalledTimes(2);
   });
 
-  it("does not retry ambiguous 5xx responses", async () => {
+  it("maps a received 5xx response to a safe retryable failure", async () => {
     const fetchImpl = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValue(new Response("Gateway failure", { status: 500 }));
@@ -77,7 +77,10 @@ describe("sendZapiText rate limit handling", () => {
     }).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(CrmWhatsappGatewayError);
-    expect(error).toMatchObject({ status: 502 });
+    expect(error).toMatchObject({
+      code: "provider_unavailable",
+      status: 502,
+    });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(sleep).not.toHaveBeenCalled();
   });

@@ -1,19 +1,5 @@
-import type { BillingServicePorts } from "../../domains/billing/services/BillingService/serviceSupport.js";
 import { createInternalMonitoringServices } from "../../features/internal/controllers/internalMonitoringServices.js";
 import { createMarketplaceServices } from "../../features/marketplaces/controllers/marketplaceServices.js";
-import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
-import {
-  createExternalApiServices,
-  type ExternalApiServices,
-} from "../../features/externalApi/controllers/externalApiServices.js";
-import {
-  createSettingsServices,
-  type SettingsServices,
-} from "../../features/settings/controllers/settingsServices.js";
-import {
-  createRoleServices,
-  type RoleServices,
-} from "../../features/identity/controllers/roleServices.js";
 import { createAccountProvisioningServices } from "../../features/identity/controllers/accountProvisioningServices.js";
 import type { CreateAppOptions } from "../http/createApp.js";
 import {
@@ -39,21 +25,7 @@ import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternal
 import { createPinoServiceLogger } from "../logging/createPinoServiceLogger.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
 import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
-import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
-import {
-  createDrizzleRoleManagementRepository,
-  type DrizzleRoleManagementClient,
-} from "./roles/drizzleRoleManagementRepository.js";
-import {
-  createDrizzleBillingRepository,
-  type DrizzleBillingClient,
-} from "./billing/drizzleBillingRepository.js";
-import { createDrizzleBillingProviderRepository } from "./billing/drizzleBillingProviderRepository.js";
-import { createDrizzleBillingWebhookRepository } from "./billing/drizzleBillingWebhookRepository.js";
-import {
-  createDrizzleBillingQuotaGuard,
-  type DrizzleBillingQuotaClient,
-} from "./billing/drizzleBillingQuotaGuard.js";
+import { createDrizzleCrmCoreRepository } from "./crm/drizzleCrmCoreRepository.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
 import { createDrizzleMarketplaceOAuthStateStore } from "./marketplace/drizzleMarketplaceOAuthStateStore.js";
 import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
@@ -65,13 +37,8 @@ import {
 import { createRuntimeComplianceServices } from "../compliance/runtimeComplianceServices.js";
 import { createRuntimeDocumentServices } from "../documents/runtimeDocumentServices.js";
 import { createRuntimeFiscalServices } from "../fiscal/runtimeFiscalServices.js";
-import { createAsaasPaymentProviderGateway } from "../billing/asaasPaymentProviderGateway.js";
 import { createRuntimeCrmServices } from "./runtimeCrmServices.js";
 import { createRuntimeCrmFinancialProductTransactionRunner } from "./runtimeCrmFinancialProductTransaction.js";
-import {
-  createDrizzleExternalApiRepository,
-  type DrizzleExternalApiClient,
-} from "./externalApi/drizzleExternalApiRepository.js";
 import { createRuntimeInventoryServices } from "./runtimeInventoryServices.js";
 import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
 import { createRuntimeAutomationServices } from "./runtimeAutomationServices.js";
@@ -82,6 +49,22 @@ import type { RuntimeHttpAppOptionsInput } from "./runtimeAppOptionsTypes.js";
 import { createRuntimeCredereFinancingServices } from "../financing/runtimeCredereFinancingServices.js";
 import { createDrizzleCrmBotEntitlementResolver } from "./crm/resolveCrmBotEntitlements.js";
 import { createRuntimeOlxCrmOnboarding } from "../marketplace/runtimeOlxCrmOnboarding.js";
+import { createRuntimeExternalBotManager } from "../crm/bot/runtimeExternalBotManager.js";
+import {
+  createBillingServices,
+  createDrizzleBillingQuotaGuard,
+  createRuntimeBillingServicePorts,
+  createRuntimeExternalApiServices,
+  createRuntimeRoleServices,
+  createRuntimeSettingsServices,
+} from "./runtimeAppOptionServiceFactories.js";
+import type { DrizzleBillingQuotaClient } from "./billing/drizzleBillingQuotaGuard.js";
+import {
+  createDrizzleExternalApiRepository,
+  type DrizzleExternalApiClient,
+} from "./externalApi/drizzleExternalApiRepository.js";
+
+export { createRuntimeBillingServicePorts } from "./runtimeAppOptionServiceFactories.js";
 export function createRuntimeHttpAppOptions({
   auditDb,
   clerkAccountProviders = {},
@@ -98,6 +81,7 @@ export function createRuntimeHttpAppOptions({
   const financingServices = createRuntimeCredereFinancingServices(db, env);
   const marketplaceDb = db as DrizzleMarketplaceClient;
   const crmDb = db as DrizzleCrmClient;
+  const externalBotManager = createRuntimeExternalBotManager(db, env);
   return {
     logger: createPinoServiceLogger({
       baseMetadata: {
@@ -133,7 +117,9 @@ export function createRuntimeHttpAppOptions({
         runtimeObjectStorage,
         crmRealtimeBroker.olxWebhookSecurity,
       ),
+    crmCoreRepository: createDrizzleCrmCoreRepository(crmDb),
     crmRealtimeBroker,
+    ...(externalBotManager ? { externalBotManager } : {}),
     resolveCrmBotEntitlements: createDrizzleCrmBotEntitlementResolver(
       db as DrizzleCrmClient,
     ),
@@ -209,41 +195,4 @@ export function createRuntimeHttpAppOptions({
       db as unknown as DrizzleStoreAccessClient,
     ),
   };
-}
-export function createRuntimeBillingServicePorts(
-  db: unknown,
-  env: Record<string, string | undefined>,
-): BillingServicePorts {
-  const publicAppUrl = env.PUBLIC_APP_URL?.trim();
-  return {
-    billingProviderRepository: createDrizzleBillingProviderRepository(
-      db as DrizzleBillingClient,
-    ),
-    billingRepository: createDrizzleBillingRepository(
-      db as DrizzleBillingClient,
-    ),
-    billingWebhookRepository: createDrizzleBillingWebhookRepository(
-      db as DrizzleBillingClient,
-    ),
-    environment: env.APP_ENV ?? env.NODE_ENV ?? "production",
-    paymentProviderGateway: createAsaasPaymentProviderGateway(env),
-    ...(publicAppUrl ? { publicAppUrl } : {}),
-  };
-}
-function createRuntimeExternalApiServices(db: unknown): ExternalApiServices {
-  return createExternalApiServices({
-    drizzleClient: db as DrizzleExternalApiClient,
-  });
-}
-function createRuntimeSettingsServices(db: unknown): SettingsServices {
-  return createSettingsServices({
-    drizzleClient: db as DrizzleStoreSettingsClient,
-  });
-}
-function createRuntimeRoleServices(db: unknown): RoleServices {
-  return createRoleServices(
-    createDrizzleRoleManagementRepository(
-      db as unknown as DrizzleRoleManagementClient,
-    ),
-  );
 }

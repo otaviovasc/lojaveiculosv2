@@ -33,6 +33,20 @@ export function createTestApp(options: TestAppOptions = {}) {
       marketplaceRepository: repository,
       olxCrmOnboarding: options.olxCrmOnboarding ?? {
         onboard: async () => ({
+          capabilities: {
+            chat: {
+              capability: "messaging",
+              grantState: "granted",
+              reason: null,
+              status: "active",
+            },
+            leads: {
+              capability: "lead_ingestion",
+              grantState: "granted",
+              reason: null,
+              status: "active",
+            },
+          },
           connectionId: "olx_connection_1",
           status: "active",
         }),

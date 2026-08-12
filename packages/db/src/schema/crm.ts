@@ -87,10 +87,16 @@ export const crmConnections = pgTable(
       .where(
         sql`${table.status} <> 'archived' and ${table.provider} <> 'composio_instagram'`,
       ),
-    uniqueIndex("crm_connections_provider_external_unique").on(
-      table.provider,
-      table.externalConnectionId,
-    ),
+    uniqueIndex("crm_connections_provider_external_active_unique")
+      .on(table.provider, table.externalConnectionId)
+      .where(
+        sql`${table.status} <> 'archived' and ${table.externalConnectionId} is not null`,
+      ),
+    uniqueIndex("crm_connections_provider_instance_active_unique")
+      .on(table.provider, table.externalInstanceId)
+      .where(
+        sql`${table.provider} = 'zapi' and ${table.status} <> 'archived' and ${table.externalInstanceId} is not null`,
+      ),
   ],
 );
 

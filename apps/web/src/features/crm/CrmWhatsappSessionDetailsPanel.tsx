@@ -1,6 +1,14 @@
-import { CalendarClock, ExternalLink, Tag, UserRound, X } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  CalendarClock,
+  CircleAlert,
+  ExternalLink,
+  Tag,
+  UserRound,
+  X,
+} from "lucide-react";
+import { useId, type ReactNode } from "react";
 import { CrmWhatsappAdAttribution } from "./CrmWhatsappAdAttribution";
+import { readCrmWhatsappChannelLabel } from "./crmWhatsappConnectionStatus";
 import { readCrmWhatsappHumanAttendance } from "./crmWhatsappHumanAttendance";
 import { formatSessionName } from "./crmWhatsappModel";
 import type {
@@ -10,10 +18,12 @@ import type {
 
 export function CrmWhatsappSessionDetailsPanel({
   assignableMembers,
+  mobileOnlyClose = false,
   onClose,
   session,
 }: {
   assignableMembers: CrmWhatsappAssignableMember[];
+  mobileOnlyClose?: boolean;
   onClose: () => void;
   session: CrmWhatsappSession;
 }) {
@@ -24,16 +34,28 @@ export function CrmWhatsappSessionDetailsPanel({
       (member) => String(member.id) === String(session.assignedUserId),
     )?.name ??
     null;
+  const attendance = readCrmWhatsappHumanAttendance(session);
+  const broker =
+    typeof session.metadata?.broker === "string"
+      ? readBrokerLabel(session.metadata.broker)
+      : null;
+  const attention = readAttention(session);
+  const attendanceTitleId = useId();
+  const opportunityTitleId = useId();
+  const routeTitleId = useId();
+  const tagsTitleId = useId();
   return (
     <aside
       aria-label="Detalhes da conversa"
       className="crm-whatsapp-details-panel"
+      tabIndex={-1}
     >
-      <header>
+      <header className="crm-whatsapp-details-header">
         <span className="crm-whatsapp-avatar crm-whatsapp-avatar-lg">
           {name.slice(0, 2).toUpperCase()}
         </span>
-        <span className="min-w-0">
+        <span className="crm-whatsapp-details-identity min-w-0">
+          <small>Cliente</small>
           <strong>{name}</strong>
           {session.buyerPhone && session.buyerPhone !== name ? (
             <small>{session.buyerPhone}</small>
@@ -42,84 +64,172 @@ export function CrmWhatsappSessionDetailsPanel({
         <button
           aria-label="Fechar detalhes"
           className="crm-icon-action"
+          data-mobile-only={mobileOnlyClose ? "true" : "false"}
           onClick={onClose}
           type="button"
         >
           <X />
         </button>
       </header>
-      <div className="crm-whatsapp-details-grid">
-        <DetailRow
-          icon={<UserRound />}
-          label="Atendente"
-          value={agentName ?? "Sem dono"}
-        />
-        <DetailRow
-          icon={<CalendarClock />}
-          label="Ultima mensagem"
-          value={formatDate(session.lastMessageAt)}
-        />
-        <DetailRow
-          icon={<Tag />}
-          label="Status"
-          value={
-            readCrmWhatsappHumanAttendance(session)?.label ??
-            statusLabel(session.status)
-          }
-        />
-      </div>
+      <section
+        aria-labelledby={attendanceTitleId}
+        className="crm-whatsapp-details-section"
+      >
+        <h2 id={attendanceTitleId}>Atendimento</h2>
+        <dl className="crm-whatsapp-details-list">
+          <DetailRow
+            emphasis={attention.requiresAction}
+            icon={<CircleAlert />}
+            label="Atenção"
+            value={attention.label}
+          />
+          <DetailRow
+            icon={<UserRound />}
+            label="Atendente"
+            value={agentName ?? "Sem responsável"}
+          />
+          <DetailRow
+            icon={<Tag />}
+            label="Estado"
+            value={attendance?.label ?? statusLabel(session.status)}
+          />
+          <DetailRow
+            icon={<CalendarClock />}
+            label="Última mensagem"
+            value={formatDate(session.lastMessageAt)}
+          />
+        </dl>
+      </section>
+      <section
+        aria-labelledby={routeTitleId}
+        className="crm-whatsapp-details-section"
+      >
+        <h2 id={routeTitleId}>Rota da conversa</h2>
+        <dl className="crm-whatsapp-details-list">
+          <DetailRow
+            label="Canal"
+            value={readCrmWhatsappChannelLabel(session.channel)}
+          />
+          <DetailRow
+            label="Transporte"
+            value={readTransportLabel(session.connection?.provider)}
+          />
+          <DetailRow label="Broker" value={broker ?? "Não informado"} />
+          <DetailRow
+            label="Conexão"
+            value={session.connection?.name ?? "Não informada"}
+          />
+        </dl>
+      </section>
       <CrmWhatsappAdAttribution metadata={session.metadata} />
-      {session.leadId ? (
-        <a
-          className="crm-whatsapp-details-lead"
-          href={`#/crm?surface=leads&leadId=${encodeURIComponent(session.leadId)}`}
-        >
-          <span>
-            <strong>Lead vinculado</strong>
-            <small>{session.leadId}</small>
-          </span>
-          <ExternalLink aria-hidden="true" />
-        </a>
-      ) : (
-        <div className="crm-whatsapp-details-empty">
-          Esta conversa ainda nao tem lead vinculado.
-        </div>
-      )}
-      {session.sessionTags?.length ? (
-        <div className="crm-whatsapp-details-tags">
-          {session.sessionTags.map((tag) => (
-            <span key={tag.id}>
-              <i
-                aria-hidden="true"
-                style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
-              />
-              {tag.name}
+      <section
+        aria-labelledby={opportunityTitleId}
+        className="crm-whatsapp-details-section"
+      >
+        <h2 id={opportunityTitleId}>Oportunidade</h2>
+        {session.leadId ? (
+          <a
+            className="crm-whatsapp-details-lead"
+            href={`#/crm?surface=leads&leadId=${encodeURIComponent(session.leadId)}`}
+          >
+            <span>
+              <small>Lead vinculado</small>
+              <strong>{session.vehicle?.title ?? "Abrir oportunidade"}</strong>
             </span>
-          ))}
-        </div>
+            <ExternalLink aria-hidden="true" />
+          </a>
+        ) : (
+          <p className="crm-whatsapp-details-empty">
+            Nenhuma oportunidade vinculada a esta conversa.
+          </p>
+        )}
+      </section>
+      {session.sessionTags?.length ? (
+        <section
+          aria-labelledby={tagsTitleId}
+          className="crm-whatsapp-details-section"
+        >
+          <h2 id={tagsTitleId}>Marcadores</h2>
+          <ul className="crm-whatsapp-details-tags">
+            {session.sessionTags.map((tag) => (
+              <li key={tag.id}>
+                <Tag aria-hidden="true" />
+                {tag.name}
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
     </aside>
   );
 }
 
 function DetailRow({
+  emphasis = false,
   icon,
   label,
   value,
 }: {
-  icon: ReactNode;
+  emphasis?: boolean;
+  icon?: ReactNode;
   label: string;
   value?: string | null;
 }) {
   return (
-    <span className="crm-whatsapp-details-row">
-      {icon}
-      <span>
-        <small>{label}</small>
-        <strong>{value || "-"}</strong>
-      </span>
-    </span>
+    <div
+      className="crm-whatsapp-details-row"
+      data-emphasis={emphasis ? "action" : undefined}
+    >
+      <dt>
+        {icon ? <span aria-hidden="true">{icon}</span> : null}
+        {label}
+      </dt>
+      <dd>{value || "-"}</dd>
+    </div>
   );
+}
+
+function readAttention(session: CrmWhatsappSession) {
+  if (session.humanAttendanceState === "WAITING_HUMAN") {
+    return { label: "Resposta humana necessária", requiresAction: true };
+  }
+  if ((session.unreadCount ?? 0) > 0) {
+    const count = session.unreadCount ?? 0;
+    return {
+      label: `${count} ${count === 1 ? "mensagem não lida" : "mensagens não lidas"}`,
+      requiresAction: true,
+    };
+  }
+  return { label: "Sem pendências imediatas", requiresAction: false };
+}
+
+function readTransportLabel(provider?: string | null) {
+  switch (provider) {
+    case "meta_cloud":
+    case "composio_instagram":
+    case "composio_whatsapp":
+      return "Meta Cloud";
+    case "olx":
+    case "olx_chat":
+      return "OLX";
+    case "zapi":
+      return "Z-API";
+    case null:
+    case undefined:
+    default:
+      return "Não informado";
+  }
+}
+
+function readBrokerLabel(broker: string) {
+  switch (broker.trim().toLowerCase()) {
+    case "composio":
+      return "Composio";
+    case "direct":
+      return "Direto";
+    default:
+      return null;
+  }
 }
 
 function formatDate(value?: string | null) {

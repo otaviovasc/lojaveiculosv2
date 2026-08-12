@@ -7,6 +7,7 @@ import {
   parseJson,
   readString,
   type ZapiCredentials,
+  zapiProviderResponseError,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 import type {
   CrmWhatsappListCatalogProductsInput,
@@ -122,9 +123,7 @@ async function postZapiCatalogMessage(
   const payload = parseJson(text);
 
   if (!response.ok) {
-    throw new CrmWhatsappGatewayError(
-      `${label} failed with HTTP ${response.status}`,
-    );
+    throw zapiProviderResponseError(response.status, label);
   }
 
   return {

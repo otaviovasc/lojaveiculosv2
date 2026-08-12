@@ -36,6 +36,7 @@ export type RunZapiWebhookSetupInput = {
   basePath: string;
   canonicalApiOrigin: string;
   connectionId: string;
+  forceReconfigure?: boolean;
 };
 
 export type RunZapiWebhookSetupResult = {
@@ -72,7 +73,7 @@ export async function runZapiWebhookSetupAttempt(
   const current =
     readZapiWebhookSetupState(connection.metadata) ??
     createZapiWebhookSetupIntent(connection.id);
-  if (current.status === "configured") {
+  if (current.status === "configured" && !input.forceReconfigure) {
     await auditSetupResult(context, connection.id, current);
     await reportConfiguredSetup(context, connection.id, current, ports);
     return { results: [], setup: current };
@@ -80,6 +81,7 @@ export async function runZapiWebhookSetupAttempt(
   const now = new Date();
   const leaseOwner = crypto.randomUUID();
   const pending = await repository.claimZapiWebhookSetup({
+    ...(input.forceReconfigure ? { allowConfigured: true } : {}),
     connectionId: connection.id,
     leaseExpiresAt: new Date(now.getTime() + setupLeaseDurationMs),
     leaseOwner,
