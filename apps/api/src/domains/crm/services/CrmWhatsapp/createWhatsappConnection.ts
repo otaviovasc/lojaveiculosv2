@@ -33,6 +33,7 @@ import {
   readZapiCredentialState,
   sealZapiCredentials,
 } from "../../whatsapp/zapiInitialCredentials.js";
+import { readConnectionLiveStatus } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
 
 const connectionPermission = "crm.messaging.connection.setup";
 
@@ -170,13 +171,10 @@ export async function createWhatsappConnection(
         (await getCrmConnectionRepository(ports).findConnectionById(
           created.id,
         )) ?? created;
-      return toWhatsappConnection(finalConnection, {
-        checkedAt: new Date(),
-        connected: false,
-        connectedPhone: null,
-        providerStatus: "disconnected",
-        smartphoneConnected: null,
-      });
+      return toWhatsappConnection(
+        finalConnection,
+        await readConnectionLiveStatus(context, finalConnection, ports),
+      );
     },
   );
 }

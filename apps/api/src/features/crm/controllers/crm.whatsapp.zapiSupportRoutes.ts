@@ -8,7 +8,7 @@ import {
 } from "./crm.whatsapp.connectionSchemas.js";
 import { parseWhatsappJson } from "./crm.whatsapp.controller.support.js";
 import { handleWhatsapp } from "./crm.whatsapp.errors.js";
-import { readWebhookRequestBase } from "./crm.whatsapp.connectionRoutes.js";
+import { readWebhookRequestBase } from "./crm.whatsapp.webhookRequestBase.js";
 import type { CrmServices } from "./crmServices.js";
 
 export function registerCrmWhatsappZapiSupportRoutes(

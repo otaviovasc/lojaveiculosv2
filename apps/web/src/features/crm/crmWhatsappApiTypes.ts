@@ -58,6 +58,7 @@ import type {
   CrmWhatsappZapiPairingCode,
   CrmWhatsappZapiPairingQr,
   CrmWhatsappZapiAddonContract,
+  CrmWhatsappZapiWebhookSetupResult,
 } from "./crmWhatsappTypes";
 
 export type CrmWhatsappApi = {
@@ -114,6 +115,9 @@ export type CrmWhatsappApi = {
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappZapiPairingQr>;
   requestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
+  configureZapiWebhooks: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappZapiWebhookSetupResult>;
   selectComposioSender: (
     connectionId: CrmWhatsappConnectionId,
     senderId: string,

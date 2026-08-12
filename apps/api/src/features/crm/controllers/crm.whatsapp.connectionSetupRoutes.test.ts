@@ -1,5 +1,10 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
+import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type {
+  CrmWhatsappConfigureWebhooksInput,
+  CrmWhatsappConfigureWebhooksResult,
+} from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import {
   createConnection,
@@ -43,6 +48,27 @@ describe("CRM WhatsApp connection setup routes", () => {
       dataUri: "data:image/png;base64,customer-qr",
       expiresInSeconds: 30,
     }));
+    const configureWebhooks = vi.fn(
+      async (
+        _connection: CrmConnection,
+        input: CrmWhatsappConfigureWebhooksInput,
+      ): Promise<CrmWhatsappConfigureWebhooksResult> => ({
+        results: input.webhooks.map((webhook) => ({
+          error: null,
+          ok: true,
+          status: 200,
+          type: webhook.type,
+          url: webhook.url,
+        })),
+      }),
+    );
+    const connectedStatus = {
+      checkedAt: new Date("2026-08-12T12:00:00.000Z"),
+      connected: true,
+      connectedPhone: "5511999999999",
+      providerStatus: "connected" as const,
+      smartphoneConnected: true,
+    };
     const app = createTestApp({
       billingQuotaGuard: {
         assertAvailable: vi.fn(async () => undefined),
@@ -57,10 +83,18 @@ describe("CRM WhatsApp connection setup routes", () => {
         ),
       },
       crmConnectionRepository: repository,
+      crmWhatsappGateway: {
+        configureWebhooks,
+        getConnectionStatus: vi.fn(async () => connectedStatus),
+      },
       zapiConnectionSetupProvider: {
         getPairingCode: vi.fn(),
         getQrCode,
-        validateStatus: vi.fn(),
+        validateStatus: vi.fn(async () => ({
+          connected: true,
+          connectedPhone: "5511999999999",
+          smartphoneConnected: true,
+        })),
       },
     });
     const credentials = {
@@ -83,6 +117,21 @@ describe("CRM WhatsApp connection setup routes", () => {
     }
     expect(configured.status).toBe(201);
     expect(JSON.stringify(configuredBody)).not.toContain("secret-1");
+    expect(configureWebhooks).toHaveBeenCalledTimes(1);
+    expect(configureWebhooks.mock.calls[0]?.[1].webhooks).toHaveLength(6);
+    expect(jsonObject(configuredBody).setup).toMatchObject({
+      attemptCount: 1,
+      status: "configured",
+    });
+    expect(configuredBody).toMatchObject({
+      live: {
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected",
+      },
+      ready: true,
+      status: "active",
+    });
     const savedConnection = await repository.findConnectionById(configuredId);
     expect(savedConnection).toMatchObject({
       credentialsRef: {
@@ -100,6 +149,26 @@ describe("CRM WhatsApp connection setup routes", () => {
     expect(
       jsonObject(savedConnection.credentialsRef.stored).webhookSecret,
     ).toMatch(/^sealed:zapi\.webhook-secret:/u);
+    expect(savedConnection).toMatchObject({
+      phone: "5511999999999",
+      status: "active",
+    });
+
+    const refreshed = await app.request("/api/v1/crm/whatsapp/connections");
+    expect(refreshed.status).toBe(200);
+    const refreshedBody = jsonObject(await refreshed.json());
+    if (!Array.isArray(refreshedBody.connections)) {
+      throw new TypeError("Expected refreshed connections array");
+    }
+    expect(jsonObject(refreshedBody.connections[0])).toMatchObject({
+      live: {
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected",
+      },
+      ready: true,
+      status: "active",
+    });
 
     const duplicate = await app.request("/api/v1/crm/whatsapp/connections", {
       body: JSON.stringify(credentials),

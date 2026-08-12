@@ -165,6 +165,7 @@ describe("CRM WhatsApp API", () => {
   it("uses the self-service connection and provider setup contracts", async () => {
     const fake = createFakeFetch([
       { id: "connection_1" },
+      { results: [], setup: { status: "configured" } },
       { qrCode: "data:image/png;base64,qr" },
       { code: "123456", requested: true },
       { redirectUrl: "https://connect.composio.dev/session/test" },
@@ -174,6 +175,7 @@ describe("CRM WhatsApp API", () => {
     await api.createConnection({
       provider: "composio_whatsapp",
     });
+    await api.configureZapiWebhooks("connection_1");
     await api.requestZapiPairingQr("connection_1");
     await api.requestZapiPairingCode("connection_1", "5511999999999");
     await api.authorizeComposioConnection("connection_2");
@@ -187,17 +189,22 @@ describe("CRM WhatsApp API", () => {
         method: "POST",
       },
     });
-    expect(fake.calls[1]?.input).toBe(
+    expect(fake.calls[1]).toMatchObject({
+      input:
+        "/api/v1/crm/whatsapp/connections/connection_1/zapi/webhooks/configure",
+      init: { body: "{}", method: "POST" },
+    });
+    expect(fake.calls[2]?.input).toBe(
       "/api/v1/crm/whatsapp/connections/connection_1/zapi/pairing/qr",
     );
-    expect(fake.calls[2]?.input).toBe(
+    expect(fake.calls[3]?.input).toBe(
       "/api/v1/crm/whatsapp/connections/connection_1/zapi/pairing/code",
     );
-    expect(fake.calls[2]?.init).toMatchObject({
+    expect(fake.calls[3]?.init).toMatchObject({
       body: JSON.stringify({ phone: "5511999999999" }),
       method: "POST",
     });
-    expect(fake.calls[3]?.input).toBe(
+    expect(fake.calls[4]?.input).toBe(
       "/api/v1/crm/whatsapp/connections/connection_2/composio/authorize",
     );
   });

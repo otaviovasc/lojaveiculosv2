@@ -126,11 +126,11 @@ async function loadZapiSetupTarget(
   }
   return {
     connection,
-    credentials: await openZapiCredentials(connection, ports),
+    credentials: await openZapiSetupCredentials(connection, ports),
   };
 }
 
-async function openZapiCredentials(
+export async function openZapiSetupCredentials(
   connection: CrmConnection,
   ports: CrmServicePorts,
 ): Promise<ZapiSetupCredentials> {

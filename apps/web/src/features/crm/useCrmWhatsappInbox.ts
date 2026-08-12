@@ -359,6 +359,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     createConnection: connections.createConnection,
     authorizeComposioConnection: connections.authorizeComposio,
     completeComposioConnection: connections.completeComposio,
+    configureZapiWebhooks: connections.configureZapiWebhooks,
     refreshConnections: connections.refreshConnections,
     requestZapiPairingCode: connections.requestZapiPairingCode,
     requestZapiPairingQr: connections.requestZapiPairingQr,

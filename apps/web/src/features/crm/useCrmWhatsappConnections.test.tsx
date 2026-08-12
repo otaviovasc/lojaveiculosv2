@@ -42,6 +42,44 @@ describe("useCrmWhatsappConnections", () => {
     });
     expect(result.current.error).toBeNull();
   });
+
+  it("refreshes the connection after configuring Z-API webhooks", async () => {
+    const listConnections = vi
+      .fn()
+      .mockResolvedValueOnce(connectionPayload("connection_1"))
+      .mockResolvedValueOnce(connectionPayload("configured_connection"));
+    const configureZapiWebhooks = vi.fn(async () => ({
+      results: [],
+      setup: {
+        attemptCount: 1,
+        configuredAt: "2026-08-12T12:00:00.000Z",
+        lastErrorCode: null,
+        requestedAt: "2026-08-12T12:00:00.000Z",
+        requiredTypes: [],
+        status: "configured" as const,
+        succeededTypes: [],
+        supportCode: "ZAPI-TEST",
+        updatedAt: "2026-08-12T12:00:00.000Z",
+        version: 1 as const,
+      },
+    }));
+    const api = {
+      configureZapiWebhooks,
+      listConnections,
+    } as unknown as CrmWhatsappApi;
+    const { result } = renderHook(() => useCrmWhatsappConnections(api));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.configureZapiWebhooks("connection_1");
+    });
+
+    expect(configureZapiWebhooks).toHaveBeenCalledWith("connection_1");
+    expect(listConnections).toHaveBeenCalledTimes(2);
+    expect(result.current.connections).toEqual([
+      expect.objectContaining({ id: "configured_connection" }),
+    ]);
+  });
 });
 
 function connectionPayload(id: string) {

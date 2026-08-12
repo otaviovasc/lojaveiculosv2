@@ -114,6 +114,29 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     }
   }, [api]);
 
+  const configureZapiWebhooks = useCallback(
+    async (connectionId: CrmWhatsappConnectionId) => {
+      try {
+        const result = await api.configureZapiWebhooks(connectionId);
+        const payload = await loadConnections();
+        setConnections(payload.connections);
+        setAllowance(payload.allowance);
+        setAvailableProviders(payload.availableProviders);
+        const connection = payload.connections.find(
+          (candidate) => candidate.id === connectionId,
+        );
+        return {
+          ...result,
+          ...(connection ? { connection } : {}),
+        };
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api, loadConnections],
+  );
+
   const authorizeComposio = useCallback(
     (connectionId: CrmWhatsappConnectionId) =>
       api.authorizeComposioConnection(connectionId),
@@ -189,6 +212,7 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     authorizeComposio,
     availableProviders,
     completeComposio,
+    configureZapiWebhooks,
     connections,
     createConnection,
     error,

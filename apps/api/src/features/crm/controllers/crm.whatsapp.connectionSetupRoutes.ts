@@ -8,6 +8,7 @@ import {
   handleWhatsapp,
 } from "./crm.whatsapp.errors.js";
 import type { CrmServices } from "./crmServices.js";
+import { readWebhookRequestBase } from "./crm.whatsapp.webhookRequestBase.js";
 
 type ConnectionSetupRouteOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -18,6 +19,23 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   crmFeature: Hono,
   { createContext, services }: ConnectionSetupRouteOptions,
 ) {
+  crmFeature.post(
+    "/whatsapp/connections/:connectionId/zapi/webhooks/configure",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.configureWhatsappConnectionWebhooks(serviceContext, {
+            connectionId,
+            ...readWebhookRequestBase(context),
+          }),
+        );
+      }),
+  );
+
   crmFeature.post(
     "/whatsapp/connections/:connectionId/zapi/pairing/qr",
     async (context) =>

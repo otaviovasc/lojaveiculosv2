@@ -166,10 +166,12 @@ export function ZapiContractState({
 }
 
 export function ZapiWebhookSetupStatus({
+  canConfigure,
   connection,
   isRefreshing,
   onRefresh,
 }: {
+  canConfigure: boolean;
   connection: CrmWhatsappProviderConnection;
   isRefreshing: boolean;
   onRefresh: () => void;
@@ -208,7 +210,7 @@ export function ZapiWebhookSetupStatus({
         <div className="crm-whatsapp-zapi-inline-actions">
           <button
             className="crm-action crm-action-secondary"
-            disabled={isRefreshing}
+            disabled={isRefreshing || !canConfigure}
             onClick={onRefresh}
             type="button"
           >
@@ -217,8 +219,13 @@ export function ZapiWebhookSetupStatus({
             ) : (
               <RefreshCw aria-hidden="true" />
             )}
-            Verificar agora
+            {isRefreshing ? "Verificando configuração" : "Verificar agora"}
           </button>
+          {!canConfigure ? (
+            <small className="crm-whatsapp-zapi-permission-note">
+              Peça a um administrador da loja para verificar esta configuração.
+            </small>
+          ) : null}
           {failed ? (
             <a
               className="crm-whatsapp-zapi-support-link"

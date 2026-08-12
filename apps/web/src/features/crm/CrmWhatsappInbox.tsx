@@ -192,6 +192,7 @@ export function CrmWhatsappInbox({
                       handlers: {
                         onAuthorizeComposio: inbox.authorizeComposioConnection,
                         onCompleteComposio: inbox.completeComposioConnection,
+                        onConfigureZapiWebhooks: inbox.configureZapiWebhooks,
                         onCreate: inbox.createConnection,
                         onRefreshConnections: inbox.refreshConnections,
                         onRequestZapiPairingCode: inbox.requestZapiPairingCode,

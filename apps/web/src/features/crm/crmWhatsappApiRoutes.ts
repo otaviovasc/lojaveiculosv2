@@ -73,6 +73,14 @@ export const crmWhatsappRoutes = {
       `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/qr`,
       baseUrl,
     ),
+  zapiWebhooksConfigure: (
+    connectionId: CrmWhatsappConnectionId,
+    baseUrl?: string,
+  ) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/webhooks/configure`,
+      baseUrl,
+    ),
   conversationsStart: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/conversations/start", baseUrl),
   events: (baseUrl?: string) =>

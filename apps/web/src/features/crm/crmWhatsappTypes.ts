@@ -157,6 +157,11 @@ export type CrmWhatsappWebhookConfigResult = {
   url: string;
 };
 
+export type CrmWhatsappZapiWebhookSetupResult = {
+  results: readonly CrmWhatsappWebhookConfigResult[];
+  setup: CrmWhatsappZapiSetupState;
+};
+
 export type CrmWhatsappConnectionsResponse = {
   allowance: CrmWhatsappConnectionAllowance;
   availableProviders: CrmWhatsappSetupProvider[];

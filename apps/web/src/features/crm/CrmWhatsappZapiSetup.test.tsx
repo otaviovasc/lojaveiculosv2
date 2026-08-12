@@ -8,11 +8,13 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
 import type {
   CrmWhatsappProviderConnection,
   CrmWhatsappZapiAddonContract,
+  CrmWhatsappZapiSetupState,
 } from "./crmWhatsappTypes";
 
 describe("CrmWhatsappZapiSetup", () => {
@@ -196,12 +198,126 @@ describe("CrmWhatsappZapiSetup", () => {
     );
     expect(await screen.findByText("code-for-5511999999999")).toBeVisible();
   });
+
+  it("invokes the authenticated webhook configuration mutation", async () => {
+    const handlers = createHandlers();
+    handlers.onConfigureZapiWebhooks = vi.fn(async () => ({
+      results: [],
+      setup: createSetupState("partial"),
+    }));
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={true}
+        connection={createSetupConnection("failed")}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Verificar agora" }));
+
+    await waitFor(() =>
+      expect(handlers.onConfigureZapiWebhooks).toHaveBeenCalledWith(
+        "connection_1",
+      ),
+    );
+    expect(handlers.onRefreshConnections).not.toHaveBeenCalled();
+  });
+
+  it("keeps a webhook configuration failure visible", async () => {
+    const handlers = createHandlers();
+    handlers.onConfigureZapiWebhooks = vi.fn(async () => {
+      throw new Error("Z-API indisponível");
+    });
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={true}
+        connection={createSetupConnection("failed")}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Verificar agora" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Z-API indisponível",
+    );
+    expect(
+      screen.getByText(/nenhuma ativação completa foi informada/i),
+    ).toBeVisible();
+  });
+
+  it("advances past pairing when the refreshed connection is configured and connected", async () => {
+    const configured = createSetupState("configured");
+    const connected = {
+      ...createSetupConnection("configured"),
+      live: {
+        checkedAt: "2026-08-12T12:00:00.000Z",
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected" as const,
+        smartphoneConnected: true,
+      },
+      ready: true,
+      status: "active" as const,
+    };
+    const handlers = createHandlers();
+    handlers.onConfigureZapiWebhooks = vi.fn(async () => ({
+      connection: connected,
+      results: [],
+      setup: configured,
+    }));
+
+    function SetupHarness() {
+      const [connection, setConnection] = useState(() =>
+        createSetupConnection("configuring"),
+      );
+      return (
+        <CrmWhatsappZapiSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          canPair={true}
+          canSetup={true}
+          connection={connection}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={setConnection}
+          zapiAddonContract={createZapiContract("active")}
+        />
+      );
+    }
+
+    render(<SetupHarness />);
+    expect(screen.getByText("Etapa 3 de 5 · Configuração")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Verificar agora" }));
+
+    expect(await screen.findByText("Etapa 5 de 5 · Pronto")).toBeVisible();
+    expect(screen.getByText(/WhatsApp conectado e pronto/i)).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Gerar QR Code" }),
+    ).not.toBeInTheDocument();
+  });
 });
 
 function createHandlers(): CrmWhatsappSelfServiceHandlers {
   return {
     onAuthorizeComposio: vi.fn(),
     onCompleteComposio: vi.fn(),
+    onConfigureZapiWebhooks: vi.fn(async () => ({
+      results: [],
+      setup: createSetupState("configuring"),
+    })),
     onCreate: vi.fn(async () => null),
     onRefreshConnections: vi.fn(async () => undefined),
     onSelectComposioSender: vi.fn(),
@@ -262,5 +378,32 @@ function createDisconnectedConnection(): CrmWhatsappProviderConnection {
     },
     status: "disconnected",
     webhookUrl: null,
+  };
+}
+
+function createSetupConnection(
+  status: CrmWhatsappZapiSetupState["status"],
+): CrmWhatsappProviderConnection {
+  return {
+    ...createDisconnectedConnection(),
+    ready: false,
+    setup: createSetupState(status),
+  };
+}
+
+function createSetupState(
+  status: CrmWhatsappZapiSetupState["status"],
+): CrmWhatsappZapiSetupState {
+  return {
+    attemptCount: status === "configuring" ? 0 : 1,
+    configuredAt: status === "configured" ? "2026-08-12T12:00:00.000Z" : null,
+    lastErrorCode: status === "failed" ? "PROVIDER_UNAVAILABLE" : null,
+    requestedAt: "2026-08-12T12:00:00.000Z",
+    requiredTypes: ["message-received"],
+    status,
+    succeededTypes: status === "configured" ? ["message-received"] : [],
+    supportCode: "ZAPI-TEST",
+    updatedAt: "2026-08-12T12:00:00.000Z",
+    version: 1,
   };
 }
