@@ -192,8 +192,9 @@ export function simulationInput(
     },
     downPaymentCents: 1_000_000,
     idempotencyKey: "idem_simulation_1",
-    installments: 48,
+    installmentCounts: [48],
     listingId: "listing_1",
+    processBankSuggestedConditions: true,
     unitId: "unit_1",
     vehicle: {
       assetValueCents: 6_000_000,

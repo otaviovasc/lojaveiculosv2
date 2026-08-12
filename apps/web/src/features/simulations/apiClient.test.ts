@@ -16,7 +16,7 @@ const draft: CredereSimulationDraft = {
     policyVersion: "v1",
   },
   downPaymentCents: 3_000_000,
-  installments: 48,
+  installments: [48],
   vehicle: {
     licensingCity: "São Paulo",
     licensingUf: "SP",
@@ -101,20 +101,23 @@ describe("createCredereApi", () => {
     });
     expect(body["terms"]).toMatchObject({
       downPaymentCents: 3_000_000,
-      installmentCount: 48,
+      installmentCounts: [48],
+      processBankSuggestedConditions: true,
     });
   });
 
   it("posts the required-fields lookup and reads requirement groups", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
       jsonResponse({
-        lead: { id: "lead_ext_1" },
+        knownLead: true,
+        missing_fields: ["monthly_income"],
         requirements: { lead: ["monthlyIncomeCents"], vehicle: [] },
       }),
     );
     const api = createCredereApi({ fetch });
 
     const required = await api.getRequiredFields({
+      bankCodes: ["001", "237"],
       cpfCnpj: "123.456.789-09",
     });
 
@@ -122,10 +125,12 @@ describe("createCredereApi", () => {
     expect(url).toBe("/api/v1/financing/credere/required-fields");
     expect(init?.method).toBe("POST");
     expect(JSON.parse(String(init?.body))).toEqual({
+      bankCodes: ["001", "237"],
       document: "12345678909",
     });
     expect(required).toEqual({
       applicantKnown: true,
+      missingFields: ["monthly_income"],
       requirements: { lead: ["monthlyIncomeCents"], vehicle: [] },
     });
   });

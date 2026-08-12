@@ -5,6 +5,7 @@ import {
   FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
 import {
+  conditionResultRenderKey,
   getCredereReasonGuidance,
   simulationStatusLabel,
   splitSimulationConditions,
@@ -151,7 +152,7 @@ export function SimulationResults({
                 {accepted.map((condition, index) => (
                   <ConditionRow
                     condition={condition}
-                    key={`${condition.bankCode ?? "bank"}-${index}`}
+                    key={conditionResultRenderKey(accepted, index)}
                   />
                 ))}
               </tbody>
@@ -209,7 +210,7 @@ function RefusedConditions({
           return (
             <article
               className="credere-refusal-row"
-              key={`${condition.bankCode ?? condition.bankName ?? "bank"}-${index}`}
+              key={conditionResultRenderKey(conditions, index, "refused")}
             >
               <div>
                 <strong>

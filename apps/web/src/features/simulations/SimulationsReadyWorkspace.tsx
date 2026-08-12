@@ -13,6 +13,7 @@ export function SimulationsReadyWorkspace({
   isRefreshing,
   isSubmitting,
   onRefresh,
+  onGetRequiredFields,
   onResolveFipe,
   onSelectSimulation,
   onSubmit,
@@ -28,6 +29,9 @@ export function SimulationsReadyWorkspace({
   isRefreshing: boolean;
   isSubmitting: boolean;
   onRefresh: () => void;
+  onGetRequiredFields: ComponentProps<
+    typeof SimulationForm
+  >["onGetRequiredFields"];
   onResolveFipe: ComponentProps<typeof SimulationForm>["onResolveFipe"];
   onSelectSimulation: (simulation: CredereSimulation) => void;
   onSubmit: ComponentProps<typeof SimulationForm>["onSubmit"];
@@ -66,6 +70,7 @@ export function SimulationsReadyWorkspace({
                 banks={status.usableBanks}
                 isSubmitting={isSubmitting}
                 key={formKey}
+                onGetRequiredFields={onGetRequiredFields}
                 onResolveFipe={onResolveFipe}
                 onSubmit={onSubmit}
                 {...(prefill ? { prefill } : {})}

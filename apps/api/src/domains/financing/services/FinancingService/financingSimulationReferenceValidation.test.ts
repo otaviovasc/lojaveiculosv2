@@ -102,6 +102,7 @@ describe("Financing simulation reference validation", () => {
     repository.seedStoreMapping();
     vi.spyOn(repository, "validateInquiryReferences").mockResolvedValue({
       valid: true,
+      vehicleAuthority: null,
     });
 
     await expect(

@@ -1,12 +1,17 @@
 import { assertPermission } from "../../../../shared/authorization.js";
-import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
+import {
+  createServiceLogMetadata,
+  type ServiceContext,
+} from "../../../../shared/serviceContext.js";
 import type {
   FinancingInquiry,
   FinancingProvider,
 } from "../../ports/financingRepository.js";
 import { FinancingProviderGatewayError } from "../../ports/financingProviderGateway.js";
+import { canonicalizeSimulationLicensing } from "../../support/licensingLocation.js";
 import { resolveCredereSellerCpf } from "../../support/providerResolutionHelpers.js";
+import { buildCredereSimulationRequest } from "../../support/simulationRequestHelpers.js";
+import { applySimulationStockAuthority } from "../../support/simulationStockAuthority.js";
 import {
   completeFromProvider,
   resolveUsableBankCodes,
@@ -58,7 +63,11 @@ export async function createCredereSimulation(
   if (!idempotencyKey) {
     throw new FinancingValidationError("Idempotency key is required.");
   }
-  await assertValidInquiryReferences(input, scope, ports.repository);
+  input = canonicalizeSimulationLicensing(input);
+  input = applySimulationStockAuthority(
+    input,
+    await assertValidInquiryReferences(input, scope, ports.repository),
+  );
   const connection = await getUsableProviderConnection(
     { provider, tenantId: scope.tenantId },
     ports,
@@ -71,7 +80,7 @@ export async function createCredereSimulation(
   if (!mapping) throw new FinancingProviderMappingRequiredError();
 
   const bankCodes = await resolveUsableBankCodes(
-    input,
+    input.bankCodes,
     scope,
     mapping.providerStoreId,
     connection.token!,
@@ -122,7 +131,7 @@ export async function createCredereSimulation(
     customerDocumentLast4: documentLast4(input.customer.document),
     downPaymentCents: input.downPaymentCents,
     idempotencyKey,
-    installments: input.installments,
+    installments: input.installmentCounts[0]!,
     leadId: input.leadId ?? null,
     listingId: input.listingId ?? null,
     metadata: toSanitizedMetadata(input),
@@ -163,21 +172,13 @@ export async function createCredereSimulation(
     );
     const simulation = await getFinancingGateway(ports).createSimulation({
       credereStoreId: mapping.providerStoreId,
-      simulation: {
-        assetValueCents: input.vehicle.assetValueCents,
-        bankFebrabanCodes: [...bankCodes],
-        conditions: [
-          {
-            downPaymentCents: input.downPaymentCents,
-            financedAmountCents: input.amountCents,
-            installments: input.installments,
-            ...(bankCodes[0] ? { bankFebrabanCode: bankCodes[0] } : {}),
-          },
-        ],
-        retrieveLeadCpfCnpj: lead.cpfCnpj,
+      simulation: buildCredereSimulationRequest({
+        bankCodes,
+        leadCpfCnpj: lead.cpfCnpj,
+        request: input,
         sellerCpf,
         vehicle,
-      },
+      }),
       token: connection.token!,
     });
     const completed = await completeFromProvider(inquiry, simulation, ports);

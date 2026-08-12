@@ -19,6 +19,7 @@ export type CredereSimulationBody = {
     phone: string;
     email?: string;
     birthDate?: string;
+    hasCnh?: boolean;
     monthlyIncomeCents?: number;
   };
   consent: {
@@ -28,9 +29,13 @@ export type CredereSimulationBody = {
   leadId?: string;
   listingId?: string;
   terms: {
+    accessoryValueCents?: number;
+    documentationValueCents?: number;
     downPaymentCents: number;
     financedAmountCents?: number;
-    installmentCount: number;
+    installmentCounts: number[];
+    insuranceValueCents?: number;
+    processBankSuggestedConditions: true;
     requestedBankCodes?: string[];
   };
   unitId?: string;
@@ -54,6 +59,7 @@ export function buildCreateSimulationBody(
   const consent = assertConsent(draft.consent);
   const monthlyIncomeCents = positiveOptionalCents(
     draft.applicant.monthlyIncomeCents,
+    "renda mensal",
   );
   const applicant = {
     name: requiredText(draft.applicant.name, "nome do proponente"),
@@ -64,6 +70,9 @@ export function buildCreateSimulationBody(
       : {}),
     ...(draft.applicant.birthDate?.trim()
       ? { birthDate: draft.applicant.birthDate.trim() }
+      : {}),
+    ...(typeof draft.applicant.hasCnh === "boolean"
+      ? { hasCnh: draft.applicant.hasCnh }
       : {}),
     ...(monthlyIncomeCents ? { monthlyIncomeCents } : {}),
   };
@@ -95,9 +104,19 @@ export function buildCreateSimulationBody(
   if (draft.downPaymentCents >= vehicle.priceCents) {
     throw new Error("A entrada deve ser menor que o valor do veículo.");
   }
-  if (!Number.isInteger(draft.installments) || draft.installments <= 0) {
-    throw new Error("Informe o número de parcelas.");
-  }
+  const installmentCounts = normalizeInstallments(draft.installments);
+  const accessoryValueCents = positiveOptionalCents(
+    draft.accessoryValueCents,
+    "valor de acessórios",
+  );
+  const documentationValueCents = positiveOptionalCents(
+    draft.documentationValueCents,
+    "valor de documentação",
+  );
+  const insuranceValueCents = positiveOptionalCents(
+    draft.insuranceValueCents,
+    "valor de seguro",
+  );
 
   return {
     applicant,
@@ -105,8 +124,12 @@ export function buildCreateSimulationBody(
     ...(draft.leadId?.trim() ? { leadId: draft.leadId.trim() } : {}),
     ...(draft.listingId?.trim() ? { listingId: draft.listingId.trim() } : {}),
     terms: {
+      ...(accessoryValueCents ? { accessoryValueCents } : {}),
+      ...(documentationValueCents ? { documentationValueCents } : {}),
       downPaymentCents: draft.downPaymentCents,
-      installmentCount: Number(draft.installments),
+      installmentCounts,
+      ...(insuranceValueCents ? { insuranceValueCents } : {}),
+      processBankSuggestedConditions: true,
       ...(draft.requestedBankCodes?.length
         ? { requestedBankCodes: [...draft.requestedBankCodes] }
         : {}),
@@ -121,6 +144,22 @@ export function createIdempotencyKey(
   randomUuid: () => string = defaultRandomUuid,
 ): string {
   return `credere-sim-${randomUuid()}`;
+}
+
+export type CredereIdempotencyOperation = {
+  key: string;
+  payload: string;
+};
+
+export function nextIdempotencyOperation(
+  current: CredereIdempotencyOperation | null,
+  draft: CredereSimulationDraft,
+  generateKey: () => string = createIdempotencyKey,
+): CredereIdempotencyOperation {
+  const payload = JSON.stringify(buildCreateSimulationBody(draft));
+  return current?.payload === payload
+    ? current
+    : { key: generateKey(), payload };
 }
 
 function defaultRandomUuid() {
@@ -201,12 +240,25 @@ function positiveCents(value: number, label: string) {
   return value;
 }
 
-function positiveOptionalCents(value: number | undefined) {
+function positiveOptionalCents(value: number | undefined, label: string) {
   if (value === undefined || value === 0) return undefined;
   if (!Number.isInteger(value) || value < 0) {
-    throw new Error("Informe uma renda mensal válida.");
+    throw new Error(`Informe um ${label} válido.`);
   }
   return value;
+}
+
+function normalizeInstallments(values: readonly number[]) {
+  const installments = [...new Set(values)];
+  if (
+    installments.length === 0 ||
+    installments.some(
+      (value) => !Number.isInteger(value) || value <= 0 || value > 120,
+    )
+  ) {
+    throw new Error("Informe ao menos um prazo válido.");
+  }
+  return installments.sort((left, right) => left - right);
 }
 
 function requiredYear(value: number) {

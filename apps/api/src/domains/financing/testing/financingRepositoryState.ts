@@ -25,7 +25,7 @@ export type MemoryFinancingRepositoryOptions = {
   })[];
   bankPolicy?: readonly string[] | null;
   leads?: readonly MemoryScopedReference[];
-  listings?: readonly MemoryScopedReference[];
+  listings?: readonly MemoryListingReference[];
   providerStores?: readonly FinancingProviderStore[];
   tenantStores?: readonly { storeId: string; tenantId: string }[];
   units?: readonly (MemoryScopedReference & { listingId: string })[];
@@ -39,6 +39,14 @@ export type MemoryScopedReference = {
   tenantId: string;
 };
 
+export type MemoryListingReference = MemoryScopedReference & {
+  assetValueCents?: number | null;
+  fipeCode?: string | null;
+  manufactureYear?: number | null;
+  modelYear?: number | null;
+  zeroKm?: boolean;
+};
+
 export type MemoryFinancingRepositoryState = {
   bankCredentials: (FinancingBankCredential & {
     providerStoreId?: string;
@@ -49,7 +57,7 @@ export type MemoryFinancingRepositoryState = {
   connections: FinancingConnection[];
   inquiries: FinancingInquiry[];
   leads: MemoryScopedReference[];
-  listings: MemoryScopedReference[];
+  listings: MemoryListingReference[];
   oauthTransactions: FinancingOAuthTransaction[];
   operations: MemoryOperation[];
   providerStores: FinancingProviderStore[];
@@ -93,7 +101,16 @@ export function createMemoryFinancingRepositoryState(
     ],
     listings: [
       ...(options.listings ?? [
-        { id: "listing_1", storeId: "store_1", tenantId: "tenant_1" },
+        {
+          assetValueCents: 6_000_000,
+          fipeCode: null,
+          id: "listing_1",
+          manufactureYear: 2022,
+          modelYear: 2023,
+          storeId: "store_1",
+          tenantId: "tenant_1",
+          zeroKm: false,
+        },
       ]),
     ],
     oauthTransactions: [],

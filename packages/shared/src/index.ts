@@ -139,6 +139,7 @@ export type RoleKey =
 
 export * from "./brazilianDocuments.js";
 export * from "./brazilianPhones.js";
+export * from "./brazilianStatesCities.js";
 export * from "./vehicleColors.js";
 export * from "./vehicleTechnicalSpecs.js";
 export * from "./storefrontBuilder.js";

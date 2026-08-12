@@ -6,7 +6,9 @@ const idString = z.string().trim().min(1).max(128);
 const bankCode = z
   .string()
   .trim()
-  .regex(/^\d{3}$/);
+  .min(2)
+  .max(32)
+  .regex(/^[A-Za-z0-9_]+$/);
 const nonEmptyString = z.string().trim().min(1).max(256);
 const brazilianDate = z
   .string()
@@ -38,6 +40,7 @@ const credereBotPublicSimulationSchema = z
         birthDate: brazilianDate.optional(),
         document,
         email: z.string().trim().email().max(320).optional(),
+        hasCnh: z.boolean().optional(),
         monthlyIncomeCents: positiveCents.optional(),
         name: nonEmptyString,
         phone,
@@ -53,9 +56,19 @@ const credereBotPublicSimulationSchema = z
     listingId: idString.optional(),
     terms: z
       .object({
+        accessoryValueCents: positiveCents.max(100_000_000).optional(),
+        documentationValueCents: positiveCents.max(100_000_000).optional(),
         downPaymentCents: positiveCents,
         financedAmountCents: positiveCents.optional(),
-        installmentCount: z.number().int().positive().max(120),
+        installmentCounts: z
+          .array(z.number().int().positive().max(120))
+          .min(1)
+          .max(12)
+          .refine((values) => new Set(values).size === values.length, {
+            message: "Installment counts must be unique.",
+          }),
+        insuranceValueCents: positiveCents.max(100_000_000).optional(),
+        processBankSuggestedConditions: z.boolean().optional(),
         requestedBankCodes: z.array(bankCode).max(20).optional(),
       })
       .strict(),

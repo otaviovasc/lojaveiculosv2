@@ -29,7 +29,7 @@ export type CredereFinancingServices = {
     ) => Promise<unknown>;
     getRequiredFields: (
       context: ServiceContext,
-      input: { document: string },
+      input: { bankCodes?: readonly string[]; document: string },
     ) => Promise<unknown>;
     getSimulation: (
       context: ServiceContext,

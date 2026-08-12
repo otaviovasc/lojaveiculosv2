@@ -15,6 +15,11 @@ export function toCredereSimulationInput(
   const unitId = readString(record.unitId);
   const credereVehicleModelId = readString(vehicle.credereVehicleModelId);
   const fipeCode = readString(vehicle.fipeCode);
+  const accessoryValueCents = readPositiveNumber(terms.accessoryValueCents);
+  const documentationValueCents = readPositiveNumber(
+    terms.documentationValueCents,
+  );
+  const insuranceValueCents = readPositiveNumber(terms.insuranceValueCents);
   const monthlyIncomeCents = readPositiveNumber(applicant.monthlyIncomeCents);
   const priceCents = requirePositiveNumber(
     vehicle.priceCents,
@@ -41,6 +46,7 @@ export function toCredereSimulationInput(
     );
   }
   return {
+    ...(accessoryValueCents ? { accessoryValueCents } : {}),
     amountCents,
     bankCodes: readStringArray(terms.requestedBankCodes),
     consent: {
@@ -59,16 +65,23 @@ export function toCredereSimulationInput(
       ...(typeof applicant.email === "string"
         ? { email: applicant.email }
         : {}),
+      ...(typeof applicant.hasCnh === "boolean"
+        ? { hasCnh: applicant.hasCnh }
+        : {}),
       ...(monthlyIncomeCents ? { monthlyIncomeCents } : {}),
     },
+    ...(documentationValueCents ? { documentationValueCents } : {}),
     downPaymentCents,
     idempotencyKey,
-    installments: requirePositiveNumber(
-      terms.installmentCount,
-      "terms.installmentCount",
+    installmentCounts: requirePositiveNumberArray(
+      terms.installmentCounts,
+      "terms.installmentCounts",
     ),
+    ...(insuranceValueCents ? { insuranceValueCents } : {}),
     ...(leadId ? { leadId } : {}),
     ...(listingId ? { listingId } : {}),
+    processBankSuggestedConditions:
+      terms.processBankSuggestedConditions !== false,
     ...(unitId ? { unitId } : {}),
     vehicle: {
       assetValueCents: priceCents,
@@ -119,6 +132,20 @@ function requirePositiveNumber(value: unknown, field: string) {
   const number = readPositiveNumber(value);
   if (!number) throw new FinancingValidationError(`${field} is required.`);
   return number;
+}
+
+function requirePositiveNumberArray(value: unknown, field: string) {
+  if (!Array.isArray(value)) {
+    throw new FinancingValidationError(`${field} is required.`);
+  }
+  const values = value.filter(
+    (item): item is number =>
+      typeof item === "number" && Number.isInteger(item) && item > 0,
+  );
+  if (values.length !== value.length || values.length === 0) {
+    throw new FinancingValidationError(`${field} is invalid.`);
+  }
+  return [...new Set(values)];
 }
 
 function readStringArray(value: unknown): string[] {

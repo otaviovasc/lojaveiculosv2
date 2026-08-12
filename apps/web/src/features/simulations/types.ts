@@ -51,8 +51,15 @@ export type CredereStoreMapping = {
 
 export type CredereRequiredFields = {
   applicantKnown: boolean;
+  missingFields: string[];
   requirements: Record<string, string[]>;
 };
+
+export type CredereApplicantPreflightState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "error"; message: string }
+  | { kind: "ready"; result: CredereRequiredFields };
 
 export type CredereSimulationCondition = {
   bankCode: string | null;
@@ -90,6 +97,7 @@ export type CredereApplicantInput = {
   phone: string;
   email?: string | undefined;
   birthDate?: string | undefined;
+  hasCnh?: boolean | undefined;
   monthlyIncomeCents?: number | undefined;
 };
 
@@ -126,10 +134,13 @@ export type CredereFipeResolution =
   | { candidates: []; status: "not_found" };
 
 export type CredereSimulationDraft = {
+  accessoryValueCents?: number | undefined;
   applicant: CredereApplicantInput;
   consent: CredereConsentEvidence;
+  documentationValueCents?: number | undefined;
   downPaymentCents: number;
-  installments: number;
+  installments: readonly number[];
+  insuranceValueCents?: number | undefined;
   leadId?: string | undefined;
   listingId?: string | undefined;
   unitId?: string | undefined;

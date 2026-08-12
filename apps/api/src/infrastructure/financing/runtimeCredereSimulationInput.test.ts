@@ -6,6 +6,14 @@ describe("runtime Credere simulation input", () => {
     const result = toCredereSimulationInput(simulationPayload(), "idem_1");
 
     expect(result.amountCents).toBe(4_000_000);
+    expect(result).toMatchObject({
+      accessoryValueCents: 25_000,
+      customer: { hasCnh: false },
+      documentationValueCents: 15_000,
+      installmentCounts: [24, 48],
+      insuranceValueCents: 10_000,
+      processBankSuggestedConditions: true,
+    });
     expect(result.vehicle).toMatchObject({
       credereVehicleModelId: "model_1",
       licensingUf: "SP",
@@ -30,13 +38,18 @@ function simulationPayload() {
   return {
     applicant: {
       document: "52998224725",
+      hasCnh: false,
       name: "Buyer Test",
       phone: "11988887777",
     },
     consent: { creditSimulation: true, personalData: true },
     terms: {
+      accessoryValueCents: 25_000,
+      documentationValueCents: 15_000,
       downPaymentCents: 1_000_000,
-      installmentCount: 48,
+      installmentCounts: [24, 48],
+      insuranceValueCents: 10_000,
+      processBankSuggestedConditions: true,
       requestedBankCodes: ["655"],
     },
     vehicle: {

@@ -3,6 +3,7 @@ import type {
   CreateFinancingInquiryInput,
   FinancingInquiryReferenceFailure,
   FinancingRepository,
+  FinancingVehicleAuthority,
 } from "../../ports/financingRepository.js";
 import { FinancingInquiryReferenceError } from "../../ports/financingRepository.js";
 import { FinancingValidationError } from "./serviceSupport.js";
@@ -19,7 +20,7 @@ export async function assertValidInquiryReferences(
   input: Pick<CreateCredereSimulationInput, "leadId" | "listingId" | "unitId">,
   scope: { storeId: StoreId; tenantId: TenantId },
   repository: FinancingRepository,
-): Promise<void> {
+): Promise<FinancingVehicleAuthority | null> {
   const result = await repository.validateInquiryReferences({
     leadId: input.leadId ?? null,
     listingId: input.listingId ?? null,
@@ -28,6 +29,7 @@ export async function assertValidInquiryReferences(
     unitId: input.unitId ?? null,
   });
   if (!result.valid) throw financingReferenceValidationError(result.reason);
+  return result.vehicleAuthority;
 }
 
 export function financingReferenceValidationError(

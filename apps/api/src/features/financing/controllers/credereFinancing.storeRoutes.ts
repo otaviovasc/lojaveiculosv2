@@ -56,6 +56,7 @@ export function registerStoreCredereFinancingRoutes(
       );
       return context.json(
         await input.services.store.getRequiredFields(serviceContext, {
+          ...(body.bankCodes ? { bankCodes: body.bankCodes } : {}),
           document: body.document,
         }),
       );

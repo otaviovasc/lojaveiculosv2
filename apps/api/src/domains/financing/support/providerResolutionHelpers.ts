@@ -117,7 +117,7 @@ function validateProviderRequiredFields(
   const required: Record<string, unknown> = {
     amountCents: input.amountCents,
     downPaymentCents: input.downPaymentCents,
-    installments: input.installments,
+    installmentCounts: input.installmentCounts,
     "consent.termsVersion": input.consent.termsVersion,
     "customer.document": input.customer.document,
     "customer.name": input.customer.name,
@@ -130,7 +130,12 @@ function validateProviderRequiredFields(
     "vehicle.zeroKm": input.vehicle.zeroKm,
   };
   for (const [field, value] of Object.entries(required)) {
-    if (value === null || value === undefined || value === "") {
+    if (
+      value === null ||
+      value === undefined ||
+      value === "" ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
       throw new FinancingValidationError(`Missing required field: ${field}`);
     }
   }

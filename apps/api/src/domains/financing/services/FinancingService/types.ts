@@ -48,6 +48,7 @@ export type MapFinancingStoreInput = {
 };
 
 export type CreateCredereSimulationInput = {
+  accessoryValueCents?: number;
   amountCents: number;
   bankCodes?: readonly string[];
   consent: {
@@ -61,16 +62,20 @@ export type CreateCredereSimulationInput = {
     birthDate?: string;
     document: string;
     email?: string;
+    hasCnh?: boolean;
     monthlyIncomeCents?: number;
     name: string;
     phone: string;
   };
+  documentationValueCents?: number;
   downPaymentCents: number;
   idempotencyKey?: string;
-  installments: number;
+  installmentCounts: readonly number[];
+  insuranceValueCents?: number;
   leadId?: string | null;
   listingId?: string | null;
   unitId?: string | null;
+  processBankSuggestedConditions: boolean;
   vehicle: {
     assetValueCents: number;
     credereVehicleModelId?: string;
