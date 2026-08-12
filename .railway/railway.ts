@@ -253,7 +253,7 @@ export default defineRailway((context) => {
       LOG_LEVEL: api.env.LOG_LEVEL,
       NODE_ENV: "production",
     },
-    start: "pnpm run crm:retention:process",
+    start: "pnpm --filter @lojaveiculosv2/api crm:retention:process",
   });
 
   return project("respectful-respect", {

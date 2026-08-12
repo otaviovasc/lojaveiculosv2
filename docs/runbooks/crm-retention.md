@@ -15,7 +15,7 @@ anonymized or purged. Do not override this variable in the dashboard because
 
 ## Runtime Contract
 
-- Start command: `pnpm run crm:retention:process`
+- Start command: `pnpm --filter @lojaveiculosv2/api crm:retention:process`
 - Cron: `17 * * * *` UTC
 - Restart policy: `NEVER`
 - Product state: `DATABASE_URL` references product Postgres directly.
