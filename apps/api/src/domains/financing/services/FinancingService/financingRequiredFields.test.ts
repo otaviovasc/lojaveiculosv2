@@ -10,19 +10,28 @@ describe("Credere required fields", () => {
     repository.seedStoreMapping();
     const getRequiredFields = vi.fn(async () => ({
       lead: { cpfCnpj: "12345678901", id: "lead_1", name: "Ana Cliente" },
-      requirements: { lead: ["email"], vehicle: ["licensing_city"] },
+      requirements: {
+        email: ["655"],
+        has_cnh: ["BV"],
+        profession: ["999"],
+        phone_number: [],
+      },
     }));
 
     await expect(
       getCredereRequiredFields(
         createStoreContext(["financing.simulation.read"]),
-        { document: "123.456.789-01" },
+        { bankCodes: ["655"], document: "123.456.789-01" },
         createPorts(repository, { getRequiredFields }),
       ),
     ).resolves.toEqual({
       knownLead: true,
-      missingFields: ["email", "licensing_city"],
-      requirements: { lead: ["email"], vehicle: ["licensing_city"] },
+      missingFields: ["email", "has_cnh", "phone_number"],
+      requirements: {
+        email: ["BV"],
+        has_cnh: ["BV"],
+        phone_number: [],
+      },
     });
     expect(getRequiredFields).toHaveBeenCalledWith(
       expect.objectContaining({

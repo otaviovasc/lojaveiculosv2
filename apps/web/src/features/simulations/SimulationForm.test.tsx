@@ -40,6 +40,8 @@ describe("SimulationForm", () => {
     });
 
     await user.type(screen.getByLabelText("Entrada (R$)"), "1000000");
+    await user.click(screen.getByRole("button", { name: "Conferir agora" }));
+    await screen.findByText(/Dados mínimos conferidos/);
     await user.click(screen.getByLabelText(/O proponente autorizou/i));
     await user.click(
       screen.getByRole("button", { name: "Simular no Credere" }),
@@ -56,7 +58,7 @@ describe("SimulationForm", () => {
       vehicle: {
         credereVehicleModelId: "credere_model_1",
         fipeCode: "005340-6",
-        licensingCity: "Sao Paulo",
+        licensingCity: "São Paulo",
         licensingUf: "SP",
         manufactureYear: 2022,
         modelYear: 2023,
@@ -67,16 +69,42 @@ describe("SimulationForm", () => {
     const submitted = onSubmit.mock.calls[0]?.[0];
     expect(submitted?.applicant).not.toHaveProperty("monthlyIncomeCents");
   });
+
+  it("shows only supported applicant fields requested by the preflight", async () => {
+    const user = userEvent.setup();
+    renderForm(vi.fn(), { cpfCnpj: "52998224725" }, async () => ({
+      applicantKnown: true,
+      missingFields: ["birthdate", "has_cnh", "unsupported_provider_field"],
+      requirements: {},
+    }));
+
+    await user.click(screen.getByRole("button", { name: "Conferir agora" }));
+
+    expect(
+      await screen.findByRole("button", { name: /^Data de nascimento:/ }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Possui CNH")).toBeVisible();
+    expect(screen.getByText(/esta tela ainda não envia/)).toBeVisible();
+    expect(screen.queryByLabelText("unsupported_provider_field")).toBeNull();
+  });
 });
 
 function renderForm(
   onSubmit: (draft: CredereSimulationDraft) => void = vi.fn(),
   prefill: ComponentProps<typeof SimulationForm>["prefill"] = undefined,
+  onGetRequiredFields: ComponentProps<
+    typeof SimulationForm
+  >["onGetRequiredFields"] = async () => ({
+    applicantKnown: false,
+    missingFields: [],
+    requirements: {},
+  }),
 ) {
   return render(
     <SimulationForm
       banks={[{ code: "655", name: "BV", status: "okay" }]}
       isSubmitting={false}
+      onGetRequiredFields={onGetRequiredFields}
       onResolveFipe={vi.fn(async () => ({
         candidates: [] as [],
         status: "not_found" as const,

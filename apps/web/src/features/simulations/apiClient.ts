@@ -40,6 +40,7 @@ export type CredereApi = {
   ) => Promise<CredereSimulation>;
   disconnectConnection: () => Promise<unknown>;
   getRequiredFields: (input: {
+    bankCodes?: readonly string[] | undefined;
     cpfCnpj: string;
   }) => Promise<CredereRequiredFields>;
   getConnection: () => Promise<CredereConnectionSummary>;
@@ -88,7 +89,12 @@ export function createCredereApi({
       }).then((response) => readJson<unknown>(response)),
     getRequiredFields: (input) =>
       fetch(credereRoutes.requiredFields(baseUrl), {
-        body: JSON.stringify({ document: input.cpfCnpj.replace(/\D/g, "") }),
+        body: JSON.stringify({
+          document: input.cpfCnpj.replace(/\D/g, ""),
+          ...(input.bankCodes?.length
+            ? { bankCodes: [...input.bankCodes] }
+            : {}),
+        }),
         headers: createCredereHeaders(auth),
         method: "POST",
       })

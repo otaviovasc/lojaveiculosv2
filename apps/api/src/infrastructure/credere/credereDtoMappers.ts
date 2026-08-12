@@ -209,17 +209,23 @@ function flattenRequirements(requirements: Record<string, unknown>) {
   const flattened: Record<string, string[]> = {};
   for (const [field, banks] of Object.entries(requirements)) {
     if (Array.isArray(banks)) {
-      flattened[field] = banks.map(readString).filter(isString);
+      flattened[field] = banks.map(readRequirementIdentifier).filter(isString);
     } else {
       const nested = readRecord(banks);
       for (const [nestedField, nestedBanks] of Object.entries(nested)) {
         flattened[`${field}.${nestedField}`] = readArray(nestedBanks)
-          .map(readString)
+          .map(readRequirementIdentifier)
           .filter(isString);
       }
     }
   }
   return flattened;
+}
+
+function readRequirementIdentifier(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? String(value)
+    : readString(value);
 }
 
 function isString(value: string | null): value is string {

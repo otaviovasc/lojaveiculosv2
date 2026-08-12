@@ -94,6 +94,18 @@ describe("Credere financing simulation schema", () => {
     expect(createSimulation).toHaveBeenCalledOnce();
   });
 
+  it("accepts Credere bank aliases and bounds optional financed values", async () => {
+    const services = createServices();
+    const body = validSimulationBody();
+    body.terms.requestedBankCodes = ["M22", "fontecred"];
+    Object.assign(body.terms, { documentationValueCents: 100_000_000 });
+
+    expect((await postSimulation(services, body)).status).toBe(201);
+
+    Object.assign(body.terms, { documentationValueCents: 100_000_001 });
+    expect((await postSimulation(services, body)).status).toBe(400);
+  });
+
   it.each([
     "sellerCpf",
     "providerStoreId",

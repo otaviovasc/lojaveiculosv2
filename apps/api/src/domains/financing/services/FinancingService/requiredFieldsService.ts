@@ -3,6 +3,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type { FinancingProvider } from "../../ports/financingRepository.js";
 import type { CredereRequiredFieldsResult } from "./types.js";
+import { resolveUsableBanks } from "../../support/simulationProviderHelpers.js";
 import {
   financingSimulationReadPermission,
   FinancingProviderMappingRequiredError,
@@ -18,7 +19,7 @@ const provider = "credere" satisfies FinancingProvider;
 
 export async function getCredereRequiredFields(
   context: ServiceContext,
-  input: { document: string },
+  input: { bankCodes?: readonly string[]; document: string },
   ports: FinancingServicePorts,
 ): Promise<CredereRequiredFieldsResult> {
   assertPermission(context, financingSimulationReadPermission);
@@ -49,12 +50,24 @@ export async function getCredereRequiredFields(
     throw new FinancingValidationError("Customer document is invalid.");
   }
 
-  const result = await getFinancingGateway(ports).getRequiredFields({
-    cpfCnpj,
-    credereStoreId: mapping.providerStoreId,
-    token: connection.token!,
-  });
-  const requirements = sanitizeRequirements(result.requirements);
+  const [result, usableBanks] = await Promise.all([
+    getFinancingGateway(ports).getRequiredFields({
+      cpfCnpj,
+      credereStoreId: mapping.providerStoreId,
+      token: connection.token!,
+    }),
+    resolveUsableBanks(
+      input.bankCodes,
+      scope,
+      mapping.providerStoreId,
+      connection.token!,
+      ports,
+    ),
+  ]);
+  const requirements = filterRequirementsByUsableBanks(
+    sanitizeRequirements(result.requirements),
+    usableBanks,
+  );
   const response = {
     knownLead: Boolean(result.lead),
     missingFields: uniqueRequirementFields(requirements),
@@ -81,6 +94,46 @@ export async function getCredereRequiredFields(
   return response;
 }
 
+function filterRequirementsByUsableBanks(
+  requirements: Record<string, readonly string[]>,
+  banks: readonly {
+    code: string;
+    name: string | null;
+    tradename: string | null;
+  }[],
+): Record<string, readonly string[]> {
+  const byIdentifier = new Map<string, string>();
+  for (const bank of banks) {
+    const label = bank.tradename ?? bank.name ?? bank.code;
+    for (const identifier of [bank.code, bank.name, bank.tradename]) {
+      const normalized = normalizeBankIdentifier(identifier);
+      if (normalized) byIdentifier.set(normalized, label);
+    }
+  }
+  const applicable: Record<string, readonly string[]> = {};
+  for (const [field, identifiers] of Object.entries(requirements)) {
+    if (identifiers.length === 0) {
+      applicable[field] = [];
+      continue;
+    }
+    const matches = identifiers
+      .map((identifier) =>
+        byIdentifier.get(normalizeBankIdentifier(identifier)),
+      )
+      .filter((value): value is string => Boolean(value));
+    if (matches.length) applicable[field] = [...new Set(matches)];
+  }
+  return applicable;
+}
+
+function normalizeBankIdentifier(value: string | null) {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  return digits
+    ? digits.padStart(3, "0")
+    : value.trim().toLocaleLowerCase("pt-BR");
+}
+
 function sanitizeRequirements(
   requirements: Record<string, string[]>,
 ): Record<string, readonly string[]> {
@@ -95,5 +148,5 @@ function sanitizeRequirements(
 function uniqueRequirementFields(
   requirements: Record<string, readonly string[]>,
 ): string[] {
-  return [...new Set(Object.values(requirements).flat())].sort();
+  return [...new Set(Object.keys(requirements))].sort();
 }

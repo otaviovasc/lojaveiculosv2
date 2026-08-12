@@ -20,9 +20,16 @@ export function tokenSet() {
 
 export function simulationInput() {
   return {
+    accessoryValueCents: 25000,
     assetValueCents: 6000000,
     bankFebrabanCodes: ["655", "623"],
-    conditions: [{ downPaymentCents: 3000000, installments: 24 }],
+    conditions: [
+      { downPaymentCents: 3000000, installments: 24 },
+      { downPaymentCents: 3000000, installments: 48 },
+    ],
+    documentationValueCents: 15000,
+    insuranceValueCents: 10000,
+    processBankSuggestedConditions: true,
     retrieveLeadCpfCnpj: "123.456.789-09",
     sellerCpf: "98765432100",
     vehicle: {

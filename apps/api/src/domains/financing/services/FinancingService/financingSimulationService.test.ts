@@ -184,7 +184,6 @@ describe("Financing simulation service", () => {
       success: true,
       uuid: "credere_inquiry_1",
     }));
-
     const inquiry = await createCredereSimulation(
       createStoreContext(["financing.simulation.create"]),
       simulationInput({ idempotencyKey: "idem_derived_provider_fields" }),

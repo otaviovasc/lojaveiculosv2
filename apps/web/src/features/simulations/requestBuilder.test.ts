@@ -3,6 +3,7 @@ import {
   buildCreateSimulationBody,
   createIdempotencyKey,
   FORBIDDEN_SCOPE_KEYS,
+  nextIdempotencyOperation,
 } from "./requestBuilder";
 import type { CredereSimulationDraft } from "./types";
 
@@ -24,7 +25,7 @@ const draft: CredereSimulationDraft = {
   },
   consent,
   downPaymentCents: 3_000_000,
-  installments: 48,
+  installments: [12, 24, 36, 48, 60],
   leadId: "lead_1",
   listingId: "listing_1",
   requestedBankCodes: ["001", "237"],
@@ -61,7 +62,8 @@ describe("buildCreateSimulationBody", () => {
       listingId: "listing_1",
       terms: {
         downPaymentCents: 3_000_000,
-        installmentCount: 48,
+        installmentCounts: [12, 24, 36, 48, 60],
+        processBankSuggestedConditions: true,
         requestedBankCodes: ["001", "237"],
       },
       unitId: "unit_1",
@@ -224,6 +226,28 @@ describe("createIdempotencyKey", () => {
     expect(createIdempotencyKey(() => "fixed-uuid")).toBe(
       "credere-sim-fixed-uuid",
     );
+  });
+});
+
+describe("nextIdempotencyOperation", () => {
+  it("reuses the key for an unchanged normalized payload", () => {
+    const first = nextIdempotencyOperation(null, draft, () => "key-1");
+    const retry = nextIdempotencyOperation(first, draft, () => "key-2");
+
+    expect(retry).toBe(first);
+    expect(retry.key).toBe("key-1");
+  });
+
+  it("creates a new key when the provider payload changes", () => {
+    const first = nextIdempotencyOperation(null, draft, () => "key-1");
+    const changed = nextIdempotencyOperation(
+      first,
+      { ...draft, downPaymentCents: draft.downPaymentCents + 100 },
+      () => "key-2",
+    );
+
+    expect(changed.key).toBe("key-2");
+    expect(changed.payload).not.toBe(first.payload);
   });
 });
 

@@ -169,7 +169,8 @@ export function validSimulationBody() {
     terms: {
       downPaymentCents: 300000,
       financedAmountCents: 700000,
-      installmentCount: 24,
+      installmentCounts: [24],
+      processBankSuggestedConditions: true,
       requestedBankCodes: ["655"],
     },
     vehicle: {

@@ -5,6 +5,7 @@ export type CrmBotPublicFinancingSimulationInput = {
     birthDate?: string;
     document: string;
     email?: string;
+    hasCnh?: boolean;
     monthlyIncomeCents?: number;
     name: string;
     phone: string;
@@ -16,9 +17,13 @@ export type CrmBotPublicFinancingSimulationInput = {
   leadId?: string;
   listingId?: string;
   terms: {
+    accessoryValueCents?: number;
+    documentationValueCents?: number;
     downPaymentCents: number;
     financedAmountCents?: number;
-    installmentCount: number;
+    installmentCounts: readonly number[];
+    insuranceValueCents?: number;
+    processBankSuggestedConditions?: boolean;
     requestedBankCodes?: readonly string[];
   };
   unitId?: string;

@@ -177,6 +177,46 @@
   gap: 1.1rem;
 }
 
+.credere-preflight {
+  align-items: center;
+  border-left: 2px solid var(--color-line-strong);
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.75rem;
+  justify-content: space-between;
+  line-height: 1.5;
+  margin-top: 0.9rem;
+  min-height: 2rem;
+  padding-left: 0.75rem;
+}
+
+.credere-preflight--ready {
+  border-left-color: var(--color-success);
+  color: var(--color-text);
+}
+
+.credere-preflight--error {
+  border-left-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.credere-preflight > button {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-weight: 900;
+  gap: 0.35rem;
+}
+
+.credere-preflight > button:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .credere-consent {
   align-items: start;
   color: var(--color-text);
@@ -489,5 +529,10 @@
   .credere-submit-row > button,
   .credere-store-mapping-control > button {
     width: 100%;
+  }
+
+  .credere-preflight {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

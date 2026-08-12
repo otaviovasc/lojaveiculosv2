@@ -9,7 +9,10 @@ import { readSessionActiveStore } from "../account/sessionPermissions";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createCredereApi, type CredereApi } from "./apiClient";
 import { DirectOwnerCrederePanel } from "./DirectOwnerCrederePanel";
-import { createIdempotencyKey } from "./requestBuilder";
+import {
+  nextIdempotencyOperation,
+  type CredereIdempotencyOperation,
+} from "./requestBuilder";
 import type { SimulationPrefill } from "./SimulationForm";
 import {
   SimulationDisconnectedNotice,
@@ -19,6 +22,7 @@ import {
 } from "./SimulationReadinessNotice";
 import { isProcessingStatus } from "./SimulationResults";
 import { SimulationsReadyWorkspace } from "./SimulationsReadyWorkspace";
+import { simulationSnapshotsEqual } from "./simulationPresentation";
 import {
   createRuntimeCredereOptions,
   POLL_INTERVAL_MS,
@@ -62,7 +66,21 @@ export function SimulationsPage({
   const [pollExhausted, setPollExhausted] = useState(false);
   const [pollError, setPollError] = useState<string | null>(null);
   const pollAttemptsRef = useRef(0);
+  const idempotencyOperationRef = useRef<CredereIdempotencyOperation | null>(
+    null,
+  );
   const currentId = current?.id;
+  const storeSimulationSnapshot = useCallback((next: CredereSimulation) => {
+    setCurrent((previous) =>
+      simulationSnapshotsEqual(previous, next) ? previous : next,
+    );
+    setHistory((previous) => {
+      const existing = previous?.find((item) => item.id === next.id);
+      return simulationSnapshotsEqual(existing, next)
+        ? previous
+        : upsertSimulation(previous ?? [], next);
+    });
+  }, []);
   const loadStatus = useCallback(async () => {
     setStatusState((previous) =>
       previous.kind === "ready" ? previous : { kind: "loading" },
@@ -130,8 +148,7 @@ export function SimulationsPage({
         const api = await apiPromise;
         const next = await api.refreshSimulation(current.id);
         if (cancelled) return;
-        setCurrent(next);
-        setHistory((previous) => upsertSimulation(previous ?? [], next));
+        storeSimulationSnapshot(next);
         setPollError(null);
       } catch (error) {
         if (!cancelled) {
@@ -153,18 +170,24 @@ export function SimulationsPage({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [apiPromise, current, pollExhausted]);
+  }, [apiPromise, current, pollExhausted, storeSimulationSnapshot]);
 
   const handleSubmit = async (draft: CredereSimulationDraft) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setSubmitError(null);
-    const idempotencyKey = createIdempotencyKey();
+    const operation = nextIdempotencyOperation(
+      idempotencyOperationRef.current,
+      draft,
+    );
+    idempotencyOperationRef.current = operation;
     try {
       const api = await apiPromise;
-      const created = await api.createSimulation(draft, { idempotencyKey });
-      setCurrent(created);
-      setHistory((previous) => upsertSimulation(previous ?? [], created));
+      const created = await api.createSimulation(draft, {
+        idempotencyKey: operation.key,
+      });
+      storeSimulationSnapshot(created);
+      idempotencyOperationRef.current = null;
     } catch (error) {
       setSubmitError(
         formatApiErrorDisplay(error, "Não foi possível enviar a simulação."),
@@ -181,6 +204,13 @@ export function SimulationsPage({
     },
     [apiPromise],
   );
+  const getRequiredFields = useCallback(
+    async (input: Parameters<CredereApi["getRequiredFields"]>[0]) => {
+      const api = await apiPromise;
+      return api.getRequiredFields(input);
+    },
+    [apiPromise],
+  );
 
   const refreshCurrent = async () => {
     if (!current || isRefreshing) return;
@@ -189,8 +219,7 @@ export function SimulationsPage({
     try {
       const api = await apiPromise;
       const next = await api.refreshSimulation(current.id);
-      setCurrent(next);
-      setHistory((previous) => upsertSimulation(previous ?? [], next));
+      storeSimulationSnapshot(next);
       pollAttemptsRef.current = 0;
       setPollExhausted(false);
     } catch (error) {
@@ -244,6 +273,7 @@ export function SimulationsPage({
           isRefreshing={isRefreshing}
           isSubmitting={isSubmitting}
           onRefresh={() => void refreshCurrent()}
+          onGetRequiredFields={getRequiredFields}
           onResolveFipe={resolveFipeVehicle}
           onSelectSimulation={setCurrent}
           onSubmit={handleSubmit}

@@ -71,7 +71,8 @@ export function simulationInput() {
     terms: {
       downPaymentCents: 1_000_000,
       financedAmountCents: 4_000_000,
-      installmentCount: 48,
+      installmentCounts: [48],
+      processBankSuggestedConditions: true,
       requestedBankCodes: ["655"],
     },
     vehicle: {

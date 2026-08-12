@@ -7,7 +7,9 @@ const idString = z.string().trim().min(1).max(128);
 const bankCode = z
   .string()
   .trim()
-  .regex(/^\d{3}$/);
+  .min(2)
+  .max(32)
+  .regex(/^[A-Za-z0-9_]+$/);
 
 export const agencyTenantParamsSchema = z
   .object({ tenantId: idString })
@@ -24,7 +26,10 @@ export const upsertStoreMappingSchema = z
   .strict();
 
 export const requiredFieldsSchema = z
-  .object({ document: brazilianDocumentSchema() })
+  .object({
+    bankCodes: z.array(bankCode).max(20).optional(),
+    document: brazilianDocumentSchema(),
+  })
   .strict();
 
 export const resolveFipeVehicleSchema = z
@@ -63,6 +68,7 @@ export const createSimulationSchema = z
         birthDate: brazilianDateSchema().optional(),
         document: brazilianDocumentSchema(),
         email: z.string().trim().email().max(320).optional(),
+        hasCnh: z.boolean().optional(),
         monthlyIncomeCents: positiveCents.optional(),
         name: nonEmptyString,
         phone: phoneSchema(),
@@ -78,9 +84,19 @@ export const createSimulationSchema = z
     listingId: idString.optional(),
     terms: z
       .object({
+        accessoryValueCents: positiveCents.max(100_000_000).optional(),
+        documentationValueCents: positiveCents.max(100_000_000).optional(),
         downPaymentCents: positiveCents,
         financedAmountCents: positiveCents.optional(),
-        installmentCount: z.number().int().positive().max(120),
+        installmentCounts: z
+          .array(z.number().int().positive().max(120))
+          .min(1)
+          .max(12)
+          .refine((values) => new Set(values).size === values.length, {
+            message: "Installment counts must be unique.",
+          }),
+        insuranceValueCents: positiveCents.max(100_000_000).optional(),
+        processBankSuggestedConditions: z.boolean().default(true),
         requestedBankCodes: z.array(bankCode).max(20).optional(),
       })
       .strict(),

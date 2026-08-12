@@ -51,8 +51,21 @@ export type FinancingInquiryReferenceFailure =
   | "unit_listing_mismatch"
   | "unit_not_found";
 
+export type FinancingVehicleAuthority = {
+  assetValueCents: number | null;
+  fipeCode: string | null;
+  listingId: string;
+  manufactureYear: number | null;
+  modelYear: number | null;
+  zeroKm: boolean;
+};
+
 export type FinancingInquiryReferenceValidation =
-  { valid: true } | { reason: FinancingInquiryReferenceFailure; valid: false };
+  | {
+      valid: true;
+      vehicleAuthority: FinancingVehicleAuthority | null;
+    }
+  | { reason: FinancingInquiryReferenceFailure; valid: false };
 
 export class FinancingInquiryReferenceError extends Error {
   constructor(readonly reason: FinancingInquiryReferenceFailure) {

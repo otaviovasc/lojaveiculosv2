@@ -1,4 +1,4 @@
-import type { CredereSimulationCondition } from "./types";
+import type { CredereSimulation, CredereSimulationCondition } from "./types";
 
 const refusalStatuses = new Set([
   "denied",
@@ -13,6 +13,59 @@ export type GroupedCredereRefusal = CredereSimulationCondition & {
   affectedInstallments: number[];
   occurrences: number;
 };
+
+type CredereConditionIdentity = CredereSimulationCondition & {
+  affectedInstallments?: readonly number[];
+};
+
+export function conditionResultKey(
+  condition: CredereConditionIdentity,
+  kind: "accepted" | "refused" = "accepted",
+) {
+  const bank = [condition.bankCode, condition.bankName]
+    .map((value) => normalizeText(value ?? ""))
+    .filter(Boolean)
+    .join("-");
+  const detail = normalizeText(condition.reason ?? condition.summary ?? "");
+  const terms = condition.affectedInstallments?.length
+    ? [...condition.affectedInstallments].sort((a, b) => a - b).join(",")
+    : String(condition.installments ?? "unknown-term");
+  return [
+    kind,
+    bank || "unknown-bank",
+    normalizeText(condition.status),
+    detail,
+    terms,
+    String(condition.totalAmountCents ?? "unknown-total"),
+  ].join(":");
+}
+
+export function conditionResultRenderKey(
+  conditions: readonly CredereConditionIdentity[],
+  index: number,
+  kind: "accepted" | "refused" = "accepted",
+) {
+  const condition = conditions[index];
+  if (!condition) return `${kind}:missing:${index}`;
+  const baseKey = conditionResultKey(condition, kind);
+  let occurrence = 0;
+  for (let cursor = 0; cursor < index; cursor += 1) {
+    const previous = conditions[cursor];
+    if (previous && conditionResultKey(previous, kind) === baseKey) {
+      occurrence += 1;
+    }
+  }
+  return `${baseKey}:${occurrence}`;
+}
+
+export function simulationSnapshotsEqual(
+  previous: CredereSimulation | null | undefined,
+  next: CredereSimulation | null | undefined,
+) {
+  if (previous === next) return true;
+  if (previous == null || next == null) return false;
+  return JSON.stringify(previous) === JSON.stringify(next);
+}
 
 export function splitSimulationConditions(
   conditions: readonly CredereSimulationCondition[],

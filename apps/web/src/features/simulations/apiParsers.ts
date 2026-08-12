@@ -59,8 +59,9 @@ export function parseRequiredFields(raw: unknown): CredereRequiredFields {
   const lead = asRecord(record?.["lead"]);
   return {
     applicantKnown:
-      readBoolean(record, ["applicantKnown", "knownApplicant"]) ??
+      readBoolean(record, ["knownLead", "applicantKnown", "knownApplicant"]) ??
       lead !== null,
+    missingFields: readStringArray(record, ["missingFields", "missing_fields"]),
     requirements: parseRequirements(record?.["requirements"]),
   };
 }
@@ -156,6 +157,16 @@ function readArray(
     if (Array.isArray(value)) return value;
   }
   return [];
+}
+
+function readStringArray(
+  record: Record<string, unknown> | null,
+  keys: readonly string[],
+): string[] {
+  return readArray(record, keys).filter(
+    (value): value is string =>
+      typeof value === "string" && Boolean(value.trim()),
+  );
 }
 
 function readBoolean(
