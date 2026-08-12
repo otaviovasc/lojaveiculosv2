@@ -21,6 +21,19 @@ export type AnalyticsPeriod = {
   to: string;
 };
 
+export type HomeDashboard = {
+  generatedAt: Date;
+  inventory: {
+    availableListings: number;
+    totalListings: number;
+  };
+  leadSummary: {
+    activeLeads: number;
+  };
+  storeId: string;
+  tenantId: string;
+};
+
 export type AnalyticsDashboard = {
   attention: {
     overdueReceivablesCents: number;
@@ -66,4 +79,9 @@ export type AnalyticsRepository = {
     storeId: string;
     tenantId: string;
   }) => Promise<AnalyticsDashboard>;
+  getHomeDashboard: (input: {
+    period: AnalyticsPeriod;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<HomeDashboard>;
 };

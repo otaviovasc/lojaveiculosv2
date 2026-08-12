@@ -10,13 +10,19 @@ export type AnalyticsServicePorts = {
 export function requireAnalyticsScope(
   context: ServiceContext,
 ): StoreScopedServiceContext {
+  const scoped = requireDashboardScope(context);
+  assertEntitlement(scoped, "analytics");
+  return scoped;
+}
+
+export function requireDashboardScope(
+  context: ServiceContext,
+): StoreScopedServiceContext {
   if (!context.storeId || !context.tenantId) {
     throw new AnalyticsScopeError();
   }
 
-  const scoped = context as StoreScopedServiceContext;
-  assertEntitlement(scoped, "analytics");
-  return scoped;
+  return context as StoreScopedServiceContext;
 }
 
 export class AnalyticsScopeError extends Error {

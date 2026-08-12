@@ -49,6 +49,24 @@ export async function getInventory(
   };
 }
 
+export async function getHomeInventory(
+  db: RuntimeAnalyticsClient,
+  input: DashboardScope,
+) {
+  const rows = await db
+    .select({
+      availableListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'published')::int`,
+      totalListings: sql<number>`count(*)::int`,
+    })
+    .from(vehicleListings)
+    .where(scoped(vehicleListings, input));
+
+  return {
+    availableListings: rows[0]?.availableListings ?? 0,
+    totalListings: rows[0]?.totalListings ?? 0,
+  };
+}
+
 // Age of available units, counted from the unit acquisition date and
 // falling back to the listing creation date when it is missing.
 function getAgeBuckets(db: RuntimeAnalyticsClient, input: DashboardScope) {

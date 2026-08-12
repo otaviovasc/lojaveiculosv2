@@ -3,8 +3,12 @@ import {
   type AnalyticsServices,
 } from "../../features/analytics/controllers/analyticsServices.js";
 import { getAttention } from "./runtimeAnalyticsAttention.js";
-import { getInventory } from "./runtimeAnalyticsInventory.js";
-import { getLeadFunnel, getLeadSources } from "./runtimeAnalyticsLeads.js";
+import { getHomeInventory, getInventory } from "./runtimeAnalyticsInventory.js";
+import {
+  getActiveLeadCount,
+  getLeadFunnel,
+  getLeadSources,
+} from "./runtimeAnalyticsLeads.js";
 import { getRevenue, getSalesMetrics } from "./runtimeAnalyticsSales.js";
 import {
   money,
@@ -18,6 +22,19 @@ export function createRuntimeAnalyticsServices(
 ): AnalyticsServices {
   return createAnalyticsServices({
     analyticsRepository: {
+      async getHomeDashboard(input) {
+        const [inventory, activeLeads] = await Promise.all([
+          getHomeInventory(db, input),
+          getActiveLeadCount(db, input),
+        ]);
+        return {
+          generatedAt: new Date(),
+          inventory,
+          leadSummary: { activeLeads },
+          storeId: input.storeId,
+          tenantId: input.tenantId,
+        };
+      },
       async getDashboard(input) {
         const [inventory, revenue, salesMetrics, attention, funnel, sources] =
           await Promise.all([

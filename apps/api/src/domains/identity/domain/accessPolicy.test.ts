@@ -7,6 +7,23 @@ import {
 import { permissionGroups } from "./permissionCatalog.js";
 
 describe("access policy", () => {
+  it("grants the core dashboard to every store role by default", () => {
+    for (const role of [
+      "agency",
+      "admin",
+      "investor",
+      "owner",
+      "salesman",
+      "supervisor",
+    ] as const) {
+      expect(canAccess(resolvePermissions({ role }), "dashboard.read")).toEqual(
+        {
+          allowed: true,
+        },
+      );
+    }
+  });
+
   it("keeps owner and agency defaults aligned with every assignable permission", () => {
     const assignablePermissions = permissionGroups.flatMap((group) =>
       group.permissions.map((permission) => permission.key),

@@ -12,6 +12,7 @@ export type Result<T, E = string> =
 export type PermissionKey =
   | "audit.read"
   | "analytics.read"
+  | "dashboard.read"
   | "automation.approve"
   | "automation.cancel"
   | "automation.read"

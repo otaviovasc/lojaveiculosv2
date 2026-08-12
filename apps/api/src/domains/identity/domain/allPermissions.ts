@@ -5,6 +5,7 @@ import { saleLifecyclePermissions } from "./saleAccessPolicy.js";
 export const allPermissions = [
   "audit.read",
   "analytics.read",
+  "dashboard.read",
   "automation.approve",
   "automation.cancel",
   "automation.read",

@@ -1,5 +1,6 @@
 export const openApiScopes = {
   "analytics.read": "Read commercial analytics dashboards.",
+  "dashboard.read": "Read the core operational home dashboard.",
   "compliance.manage": "Read and operate LGPD/security posture controls.",
   "fiscal.manage": "Operate fiscal provider and NF-e document lifecycle.",
   "finance.read": "Read finance entries, summaries, and rules.",

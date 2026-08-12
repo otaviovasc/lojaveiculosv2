@@ -50,6 +50,10 @@ export function AdminApp() {
   );
   const owner = isActiveStoreOwner(accountSession);
   const managedByAgency = isActiveStoreAgencyManaged(accountSession);
+  const canViewAnalytics = accountSession
+    ? getModulePermission("reports", accountSession).canView &&
+      getModuleEntitlement("reports", accountSession).canUse
+    : false;
 
   useEffect(() => {
     const schedule =
@@ -87,7 +91,10 @@ export function AdminApp() {
                   : {})}
               />
             ) : activeSurface === "dashboard" ? (
-              <DashboardHome onNavigate={navigate} />
+              <DashboardHome
+                canViewAnalytics={canViewAnalytics}
+                onNavigate={navigate}
+              />
             ) : activeSurface === "inventory" ? (
               <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
             ) : activeSurface === "checklists" ? (

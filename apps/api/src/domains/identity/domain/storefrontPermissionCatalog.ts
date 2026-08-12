@@ -81,6 +81,12 @@ export const platformPermissionGroup: PermissionGroup = {
       "medium",
     ),
     permission(
+      "dashboard.read",
+      "Painel inicial",
+      "Consultar o resumo operacional exibido na página inicial da loja.",
+      "low",
+    ),
+    permission(
       "billing.manage",
       "Assinatura e faturamento",
       "Gerenciar mensalidade, faturas e planos da plataforma.",

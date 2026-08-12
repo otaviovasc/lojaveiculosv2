@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 export function DatePickerField({
   align = "left",
   disabled,
+  displayValue,
   isDisabled = false,
   label,
   maxDate,
@@ -16,6 +17,7 @@ export function DatePickerField({
 }: {
   align?: "left" | "right";
   disabled?: ((date: Date) => boolean) | undefined;
+  displayValue?: string | undefined;
   isDisabled?: boolean | undefined;
   label: string;
   maxDate?: Date | null | undefined;
@@ -53,7 +55,7 @@ export function DatePickerField({
           {label}:
         </span>
         <span className="font-bold text-xs text-foreground tracking-wide">
-          {formatDate(value)}
+          {displayValue ?? formatDate(value)}
         </span>
       </button>
 

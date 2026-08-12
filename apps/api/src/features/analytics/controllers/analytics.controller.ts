@@ -32,6 +32,19 @@ export function createAnalyticsFeature(
   const contextFactory =
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
 
+  feature.get("/home", async (context) =>
+    handleAnalytics(context, async () => {
+      const period = parseDashboardPeriod({
+        from: context.req.query("from"),
+        to: context.req.query("to"),
+      });
+      const serviceContext = await createUserContext(context, contextFactory);
+      return context.json(
+        await services.getHomeDashboard(serviceContext, { period }),
+      );
+    }),
+  );
+
   feature.get("/dashboard", async (context) =>
     handleAnalytics(context, async () => {
       const period = parseDashboardPeriod({

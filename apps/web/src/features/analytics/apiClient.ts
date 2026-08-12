@@ -1,8 +1,14 @@
 import { readApiJson } from "../../lib/apiErrors";
-import type { AnalyticsAuth, AnalyticsDashboard } from "./types";
+import type {
+  AnalyticsAuth,
+  AnalyticsDashboard,
+  AnalyticsPeriod,
+  HomeDashboard,
+} from "./types";
 
 export type AnalyticsApi = {
-  getDashboard: () => Promise<AnalyticsDashboard>;
+  getDashboard: (period: AnalyticsPeriod) => Promise<AnalyticsDashboard>;
+  getHomeDashboard: () => Promise<HomeDashboard>;
 };
 
 export type CreateAnalyticsApiOptions = {
@@ -17,16 +23,24 @@ export function createAnalyticsApi({
   fetch,
 }: CreateAnalyticsApiOptions): AnalyticsApi {
   return {
-    getDashboard: () =>
-      fetch(analyticsRoutes.dashboard(baseUrl), {
+    getDashboard: (period) =>
+      fetch(analyticsRoutes.dashboard(period, baseUrl), {
         headers: createHeaders(auth),
       }).then(readJson<AnalyticsDashboard>),
+    getHomeDashboard: () =>
+      fetch(analyticsRoutes.home(baseUrl), {
+        headers: createHeaders(auth),
+      }).then(readJson<HomeDashboard>),
   };
 }
 
 export const analyticsRoutes = {
-  dashboard: (baseUrl?: string) =>
-    createEndpoint("/analytics/dashboard", baseUrl),
+  dashboard: (period: AnalyticsPeriod, baseUrl?: string) =>
+    createEndpoint(
+      `/analytics/dashboard?from=${period.from}&to=${period.to}`,
+      baseUrl,
+    ),
+  home: (baseUrl?: string) => createEndpoint("/analytics/home", baseUrl),
 } as const;
 
 function createHeaders(auth: AnalyticsAuth): HeadersInit {
