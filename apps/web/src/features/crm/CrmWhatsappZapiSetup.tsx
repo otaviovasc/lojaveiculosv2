@@ -165,6 +165,20 @@ export function CrmWhatsappZapiSetup({
     });
   };
 
+  const configureWebhooks = async () => {
+    if (!connection || !canSetup || busy) return;
+    const result = await runAction({
+      action: () => handlers.onConfigureZapiWebhooks(connection.id),
+      busy: "refresh",
+      fallbackError:
+        "Não foi possível verificar a configuração automática da Z-API.",
+      setBusy,
+      setError,
+    });
+    if (!result) return;
+    onConnection(result.connection ?? { ...connection, setup: result.setup });
+  };
+
   const requestQr = async () => {
     const requestPairingQr = handlers.onRequestZapiPairingQr;
     if (!connection || !canPair || !requestPairingQr) return;
@@ -230,9 +244,10 @@ export function CrmWhatsappZapiSetup({
         ) : null}
         {step === 3 && connection ? (
           <ZapiWebhookSetupStatus
+            canConfigure={canSetup}
             connection={connection}
             isRefreshing={busy === "refresh"}
-            onRefresh={() => void refresh()}
+            onRefresh={() => void configureWebhooks()}
           />
         ) : null}
         {step === 4 && connection ? (

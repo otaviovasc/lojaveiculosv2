@@ -47,6 +47,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
           handlers: {
             onAuthorizeComposio: vi.fn(),
             onCompleteComposio: vi.fn(),
+            onConfigureZapiWebhooks: vi.fn(),
             onCreate: vi.fn(),
             onRefreshConnections: vi.fn(async () => undefined),
             onRequestZapiPairingCode: vi.fn(),

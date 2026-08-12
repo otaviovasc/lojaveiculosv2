@@ -7,6 +7,10 @@ import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepo
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 import {
+  customerStoreId,
+  customerTenantId,
+} from "./crm.whatsapp.connectionSetupRoutes.testSupport.js";
+import {
   createZapiWebhookTestConnection as createZapiConnection,
   secureWebhookSetupOptions as secureSetupOptions,
   webhookSetupConnectionId as connectionId,
@@ -81,7 +85,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     }
   });
 
-  it("never registers ZAPI webhooks without connection authentication", async () => {
+  it("lets the owning customer retry a failed setup and reports provider state honestly", async () => {
     process.env.API_BASE_URL = "https://api.trusted.test";
     const configureWebhooks = vi.fn(
       async (
@@ -89,9 +93,9 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
         input: CrmWhatsappConfigureWebhooksInput,
       ): Promise<CrmWhatsappConfigureWebhooksResult> => ({
         results: input.webhooks.map((webhook) => ({
-          error: null,
-          ok: true,
-          status: 200,
+          error: configureWebhooks.mock.calls.length === 1 ? "rejected" : null,
+          ok: configureWebhooks.mock.calls.length !== 1,
+          status: configureWebhooks.mock.calls.length === 1 ? 503 : 200,
           type: webhook.type,
           url: webhook.url,
         })),
@@ -100,7 +104,10 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     const app = createTestApp({
       ...secureSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
+        createZapiConnection({
+          storeId: customerStoreId,
+          tenantId: customerTenantId,
+        }),
       ]),
       crmWhatsappGateway: {
         configureWebhooks,
@@ -109,12 +116,64 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       },
     });
 
-    const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/webhooks/configure`,
+    const failed = await app.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/webhooks/configure`,
+      { method: "POST" },
+    );
+    const configured = await app.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/webhooks/configure`,
       { method: "POST" },
     );
 
-    expect(response.status).toBe(404);
-    expect(configureWebhooks).not.toHaveBeenCalled();
+    expect(failed.status).toBe(200);
+    expect(configured.status).toBe(200);
+    const failedBody = (await failed.json()) as {
+      results: CrmWhatsappConfigureWebhooksResult["results"];
+      setup: { attemptCount: number; status: string };
+    };
+    const configuredBody = (await configured.json()) as typeof failedBody;
+    expect(failedBody.setup).toMatchObject({
+      attemptCount: 1,
+      status: "failed",
+    });
+    expect(configuredBody.setup).toMatchObject({
+      attemptCount: 2,
+      status: "configured",
+    });
+    expect(failedBody.results).toHaveLength(6);
+    expect(configuredBody.results).toHaveLength(6);
+    expect(configureWebhooks).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify({ configuredBody, failedBody })).not.toContain(
+      "webhook-secret",
+    );
+    expect(JSON.stringify({ configuredBody, failedBody })).not.toContain(
+      "token=",
+    );
+  });
+
+  it("requires customer setup permission and Z-API entitlement", async () => {
+    process.env.API_BASE_URL = "https://api.trusted.test";
+    const target = createZapiConnection({
+      storeId: customerStoreId,
+      tenantId: customerTenantId,
+    });
+    const withoutPermission = createTestApp({
+      ...secureSetupOptions(),
+      crmConnectionRepository: createMemoryCrmConnectionRepository([target]),
+      permissions: [],
+    });
+    const withoutEntitlement = createTestApp({
+      ...secureSetupOptions(),
+      crmConnectionRepository: createMemoryCrmConnectionRepository([target]),
+      entitlements: ["crm"],
+    });
+    const path = `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/webhooks/configure`;
+
+    expect(
+      (await withoutPermission.request(path, { method: "POST" })).status,
+    ).toBe(403);
+    expect(
+      (await withoutEntitlement.request(path, { method: "POST" })).status,
+    ).toBe(403);
   });
 });

@@ -1,4 +1,8 @@
-import { assertPermission } from "../../../../shared/authorization.js";
+import {
+  assertEntitlement,
+  assertPermission,
+  AuthorizationError,
+} from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmWhatsappConfigureWebhooksResult } from "../../ports/crmWhatsappGateway.js";
 import {
@@ -17,7 +21,7 @@ import {
 import { runZapiWebhookSetupAttempt } from "./runZapiWebhookSetupAttempt.js";
 import type { ZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState.js";
 
-const managePermission = "tenant.manage";
+const setupPermission = "crm.messaging.connection.setup";
 
 export type ConfigureWhatsappConnectionWebhooksInput = {
   basePath: string;
@@ -39,8 +43,14 @@ export async function configureWhatsappConnectionWebhooks(
   ports: CrmServicePorts,
 ): Promise<ConfigureWhatsappConnectionWebhooksResult> {
   const operation = input.mode ?? "configure";
-  assertPermission(context, managePermission);
+  assertPermission(context, setupPermission);
+  if (context.actor.kind !== "user") {
+    throw new AuthorizationError(
+      "CRM WhatsApp webhook setup requires an authenticated store user.",
+    );
+  }
   const scope = requireCrmWhatsappScope(context);
+  assertEntitlement(context as never, "crm_zapi");
   logWhatsappServiceEvent(
     context,
     `crm.whatsapp.connection.webhooks.${operation}.started`,
@@ -59,7 +69,7 @@ export async function configureWhatsappConnectionWebhooks(
         operation,
         tokenApplied: true,
       },
-      permission: managePermission,
+      permission: setupPermission,
       summary:
         operation === "reset"
           ? "Reset ZAPI WhatsApp webhooks to the canonical API origin"

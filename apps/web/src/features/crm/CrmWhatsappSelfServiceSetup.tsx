@@ -16,6 +16,7 @@ import type {
   CrmWhatsappProviderConnection,
   CrmWhatsappSetupProvider,
   CrmWhatsappZapiAddonContract,
+  CrmWhatsappZapiWebhookSetupResult,
 } from "./crmWhatsappTypes";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import { CrmWhatsappChannelDirectory } from "./CrmWhatsappChannelDirectory";
@@ -35,6 +36,11 @@ export type CrmWhatsappSelfServiceHandlers = {
   onCreate: (
     input: CrmWhatsappCreateConnectionInput,
   ) => Promise<CrmWhatsappProviderConnection | null>;
+  onConfigureZapiWebhooks: (connectionId: CrmWhatsappConnectionId) => Promise<
+    CrmWhatsappZapiWebhookSetupResult & {
+      connection?: CrmWhatsappProviderConnection;
+    }
+  >;
   onRefreshConnections: () => Promise<void>;
   onRequestZapiPairingCode?: (
     connectionId: CrmWhatsappConnectionId,

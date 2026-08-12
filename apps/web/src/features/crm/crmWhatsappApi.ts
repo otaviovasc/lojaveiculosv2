@@ -103,6 +103,8 @@ export function createCrmWhatsappApi({
       postJson(crmWhatsappCampaignRoutes.campaigns(baseUrl), input),
     createConnection: (input) =>
       postJson(crmWhatsappRoutes.connections(baseUrl), input),
+    configureZapiWebhooks: (connectionId) =>
+      postJson(crmWhatsappRoutes.zapiWebhooksConfigure(connectionId, baseUrl)),
     getZapiAddonContract: () =>
       getJson<unknown>(crmWhatsappRoutes.billingOverview(baseUrl)).then(
         readZapiAddonContract,

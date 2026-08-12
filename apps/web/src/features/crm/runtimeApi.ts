@@ -98,6 +98,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(await createProductCrmApiOptions()).createConnection(
         input,
       ),
+    configureZapiWebhooks: async (connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).configureZapiWebhooks(connectionId),
     getZapiAddonContract: async () => {
       const api = createCrmWhatsappApi(await createProductCrmApiOptions());
       if (!api.getZapiAddonContract) {

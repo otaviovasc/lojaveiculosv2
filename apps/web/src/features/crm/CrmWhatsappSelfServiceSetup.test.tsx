@@ -130,6 +130,7 @@ function createHandlers(): CrmWhatsappSelfServiceHandlers {
   return {
     onAuthorizeComposio: vi.fn(),
     onCompleteComposio: vi.fn(),
+    onConfigureZapiWebhooks: vi.fn(),
     onCreate: vi.fn(async () => null),
     onRefreshConnections: vi.fn(async () => undefined),
     onSelectComposioSender: vi.fn(),

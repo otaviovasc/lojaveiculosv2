@@ -31,6 +31,7 @@ import {
 import { openZapiWebhookSecret } from "../../whatsapp/zapiWebhookSecret.js";
 import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import { assertTrustedZapiWebhookDestination } from "../../whatsapp/zapiWebhookDestination.js";
+import { reconcileZapiConnectionStatus } from "./reconcileZapiConnectionStatus.js";
 
 export type RunZapiWebhookSetupInput = {
   basePath: string;
@@ -76,6 +77,7 @@ export async function runZapiWebhookSetupAttempt(
   if (current.status === "configured" && !input.forceReconfigure) {
     await auditSetupResult(context, connection.id, current);
     await reportConfiguredSetup(context, connection.id, current, ports);
+    await reconcileZapiConnectionStatus(context, connection, ports);
     return { results: [], setup: current };
   }
   const now = new Date();
@@ -93,8 +95,9 @@ export async function runZapiWebhookSetupAttempt(
     const latest = await repository.findConnectionById(connection.id);
     const setup = latest ? readZapiWebhookSetupState(latest.metadata) : null;
     if (!setup) throw new Error("Z-API setup target is unavailable.");
-    if (setup.status === "configured") {
+    if (latest && setup.status === "configured") {
       await reportConfiguredSetup(context, connection.id, setup, ports);
+      await reconcileZapiConnectionStatus(context, latest, ports);
     }
     return { results: [], setup };
   }
@@ -139,6 +142,9 @@ export async function runZapiWebhookSetupAttempt(
   await auditSetupResult(context, connection.id, setup);
   if (setup.status === "configured") {
     await reportConfiguredSetup(context, connection.id, setup, ports);
+    const configuredConnection =
+      (await repository.findConnectionById(connection.id)) ?? connection;
+    await reconcileZapiConnectionStatus(context, configuredConnection, ports);
   }
   return { results: response.results, setup };
 }
