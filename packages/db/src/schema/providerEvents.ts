@@ -53,6 +53,7 @@ export const providerEvents = pgTable(
     errorMessage: text("error_message"),
     eventType: varchar("event_type", { length: 120 }).notNull(),
     payload: jsonb("payload").notNull().default({}),
+    payloadDigest: varchar("payload_digest", { length: 64 }),
     processingAttempts: integer("processing_attempts").notNull().default(0),
     processingStartedAt: timestamp("processing_started_at", {
       withTimezone: true,
@@ -73,6 +74,10 @@ export const providerEvents = pgTable(
     check(
       "provider_events_connection_scope_check",
       sql`${table.connectionId} IS NULL OR (${table.storeId} IS NOT NULL AND ${table.tenantId} IS NOT NULL)`,
+    ),
+    check(
+      "provider_events_payload_digest_check",
+      sql`${table.payloadDigest} IS NULL OR ${table.payloadDigest} ~ '^[0-9a-f]{64}$'`,
     ),
     ...(includeCrmScopeForeignKeys
       ? [

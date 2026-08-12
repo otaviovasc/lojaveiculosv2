@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatHeader, MessageComposer } from "./CrmWhatsappParts";
 import { MessageList } from "./CrmWhatsappMessageParts";
 import { WhatsappToolbar } from "./CrmWhatsappQueueToolbar";
@@ -21,9 +21,9 @@ export function CrmWhatsappConversationWorkspace({
   onScopeChange: (scope: CrmWhatsappScope) => void;
 }) {
   const activeSession = inbox.activeSession;
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [mobilePane, setMobilePane] = useState<"chat" | "list">(() =>
-    readInitialSessionId() ? "chat" : "list",
+  const shellRef = useRef<HTMLElement>(null);
+  const [mobilePane, setMobilePane] = useState<"chat" | "context" | "list">(
+    () => (readInitialSessionId() ? "chat" : "list"),
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [newConversationOpen, setNewConversationOpen] = useState(false);
@@ -43,12 +43,40 @@ export function CrmWhatsappConversationWorkspace({
 
   useEffect(() => {
     setReplyToMessage(null);
-    setDetailsOpen(false);
   }, [inbox.activeSessionId]);
 
+  const focusPane = (pane: "chat" | "context" | "list") => {
+    setMobilePane(pane);
+    window.requestAnimationFrame(() => {
+      const selector =
+        pane === "list"
+          ? ".crm-whatsapp-list"
+          : pane === "chat"
+            ? ".crm-whatsapp-chat"
+            : ".crm-whatsapp-details-panel";
+      shellRef.current?.querySelector<HTMLElement>(selector)?.focus();
+    });
+  };
+
   return (
-    <section className="crm-whatsapp-shell" data-mobile-pane={mobilePane}>
-      <aside className="crm-whatsapp-list" aria-label="Conversas do WhatsApp">
+    <section
+      aria-keyshortcuts="Alt+1 Alt+2 Alt+3"
+      className="crm-whatsapp-shell"
+      data-mobile-pane={mobilePane}
+      onKeyDown={(event) => {
+        if (!event.altKey || !["1", "2", "3"].includes(event.key)) return;
+        event.preventDefault();
+        focusPane(
+          event.key === "1" ? "list" : event.key === "2" ? "chat" : "context",
+        );
+      }}
+      ref={shellRef}
+    >
+      <aside
+        className="crm-whatsapp-list"
+        aria-label="Fila de conversas"
+        tabIndex={-1}
+      >
         <WhatsappToolbar
           assignableMembers={inbox.assignableMembers}
           availableTags={inbox.availableTags}
@@ -120,7 +148,7 @@ export function CrmWhatsappConversationWorkspace({
             activeSessionId={inbox.activeSessionId}
             onSelect={(sessionId) => {
               inbox.setActiveSessionId(sessionId);
-              setMobilePane("chat");
+              focusPane("chat");
             }}
             onToggleSelected={inbox.toggleSelectedSession}
             selectedSessionIds={inbox.selectedSessionIds}
@@ -130,7 +158,11 @@ export function CrmWhatsappConversationWorkspace({
         )}
       </aside>
 
-      <section className="crm-whatsapp-chat" aria-label="Detalhe da conversa">
+      <section
+        className="crm-whatsapp-chat"
+        aria-label="Detalhe da conversa"
+        tabIndex={-1}
+      >
         {activeSession ? (
           <>
             <ChatHeader
@@ -150,7 +182,7 @@ export function CrmWhatsappConversationWorkspace({
               canTagSessions={inbox.permissions.canTagAssign}
               canToggleIntervention={inbox.permissions.canToggleIntervention}
               currentUserId={inbox.currentUserId}
-              onBack={() => setMobilePane("list")}
+              onBack={() => focusPane("list")}
               onAddTag={async (input) => {
                 const accepted = await inbox.actions.addSessionTag(
                   activeSession.id,
@@ -174,7 +206,7 @@ export function CrmWhatsappConversationWorkspace({
               onMarkUnread={() => {
                 void inbox.actions.markSessionUnread(activeSession.id);
               }}
-              onOpenDetails={() => setDetailsOpen(true)}
+              onOpenDetails={() => focusPane("context")}
               onRemoveTag={(tagId) =>
                 inbox.actions.removeSessionTag(activeSession.id, tagId)
               }
@@ -220,6 +252,9 @@ export function CrmWhatsappConversationWorkspace({
                   </p>
                 ) : null}
                 <MessageComposer
+                  key={`${String(activeSession.id)}:${String(
+                    activeSessionConnection?.id ?? "unknown",
+                  )}`}
                   capabilities={providerCapabilities}
                   catalogUrl={inbox.catalogUrl}
                   defaultLocationName={inbox.storeLocationName}
@@ -258,13 +293,6 @@ export function CrmWhatsappConversationWorkspace({
                 }
               />
             )}
-            {detailsOpen ? (
-              <CrmWhatsappSessionDetailsPanel
-                assignableMembers={inbox.assignableMembers}
-                onClose={() => setDetailsOpen(false)}
-                session={activeSession}
-              />
-            ) : null}
           </>
         ) : (
           <div className="crm-whatsapp-empty">
@@ -272,13 +300,29 @@ export function CrmWhatsappConversationWorkspace({
           </div>
         )}
       </section>
+      {activeSession ? (
+        <CrmWhatsappSessionDetailsPanel
+          assignableMembers={inbox.assignableMembers}
+          mobileOnlyClose
+          onClose={() => focusPane("chat")}
+          session={activeSession}
+        />
+      ) : (
+        <aside
+          aria-label="Contexto da conversa"
+          className="crm-whatsapp-details-panel crm-whatsapp-details-placeholder"
+          tabIndex={-1}
+        >
+          Selecione uma conversa para consultar lead, responsável e origem.
+        </aside>
+      )}
       {newConversationOpen ? (
         <CrmWhatsappNewConversationDialog
           disabled={inbox.isStartingConversation || !inbox.canStartConversation}
           onClose={() => setNewConversationOpen(false)}
           onStart={async (input) => {
             const accepted = await inbox.startConversation(input);
-            if (accepted) setMobilePane("chat");
+            if (accepted) focusPane("chat");
             return accepted;
           }}
           provider={

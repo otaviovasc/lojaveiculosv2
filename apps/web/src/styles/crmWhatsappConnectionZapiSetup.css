@@ -1,180 +1,171 @@
-/* Guided Z-API setup journey */
+/* CRM-only Z-API setup: quiet service-bay rail and evidence-led states. */
+
 .crm-whatsapp-zapi-guided-card {
+  display: grid;
+  gap: 1rem;
   margin: 0 auto;
-  max-width: 44rem;
+  max-width: 54rem;
   width: 100%;
 }
 
 .crm-whatsapp-zapi-progress {
+  border-block: 1px solid var(--color-line);
   display: grid;
-  gap: 0.75rem;
+  gap: 0;
+  grid-template-columns: minmax(10rem, 0.65fr) minmax(0, 1.6fr);
 }
 
 .crm-whatsapp-zapi-progress-summary {
+  align-content: center;
   color: var(--color-accent-strong);
+  display: grid;
   font-size: var(--font-size-xs);
-  font-weight: 950;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  line-height: 1.4;
   margin: 0;
-  text-transform: uppercase;
+  padding: 0.75rem;
 }
 
 .crm-whatsapp-zapi-progress ol {
+  border-left: 1px solid var(--color-line);
   display: grid;
-  gap: 0.4rem;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .crm-whatsapp-zapi-progress li {
+  align-items: center;
   color: var(--color-muted);
   display: grid;
-  gap: 0.3rem;
-  justify-items: center;
-  min-width: 0;
-  text-align: center;
+  gap: 0.55rem;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  min-height: 2.6rem;
+  padding: 0.4rem 0.65rem;
+  text-align: left;
+}
+
+.crm-whatsapp-zapi-progress li + li {
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
 }
 
 .crm-whatsapp-zapi-progress li > span {
   align-items: center;
-  background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: 999px;
   display: inline-flex;
-  height: 1.75rem;
+  height: 1.45rem;
   justify-content: center;
-  width: 1.75rem;
+  width: 1.45rem;
 }
 
 .crm-whatsapp-zapi-progress li > span svg {
-  height: 0.85rem;
-  width: 0.85rem;
+  height: 0.72rem;
+  width: 0.72rem;
+}
+
+.crm-whatsapp-zapi-progress li small,
+.crm-whatsapp-zapi-progress li strong {
+  font-size: var(--font-size-xs);
+  line-height: 1.25;
 }
 
 .crm-whatsapp-zapi-progress li small {
-  font-size: calc(var(--font-size-xs) * 0.86);
-  font-weight: 850;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 450;
 }
 
 .crm-whatsapp-zapi-progress li strong {
-  font-size: var(--font-size-xs);
-  font-weight: 950;
-  line-height: 1.2;
+  font-weight: 600;
 }
 
 .crm-whatsapp-zapi-progress li[data-state="complete"] {
   color: var(--color-success-strong);
 }
 
-.crm-whatsapp-zapi-progress li[data-state="complete"] > span {
-  background: var(--color-green-soft);
-  border-color: color-mix(
-    in srgb,
-    var(--color-green-start) 32%,
-    var(--color-line)
-  );
-  color: var(--color-success-strong);
-}
-
 .crm-whatsapp-zapi-progress li[data-state="current"] {
+  background: color-mix(in srgb, var(--color-panel) 70%, transparent);
   color: var(--color-text);
 }
 
 .crm-whatsapp-zapi-progress li[data-state="current"] > span {
-  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
-  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-color: var(--color-accent);
   color: var(--color-accent-strong);
 }
 
-.crm-whatsapp-zapi-stage {
-  display: grid;
-  gap: 1rem;
-}
-
-.crm-whatsapp-zapi-stage-heading {
-  align-items: start;
-  display: grid;
-  gap: 0.85rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-.crm-whatsapp-zapi-stage-heading > span {
-  align-items: center;
-  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
-  border-radius: var(--radius-md);
-  color: var(--color-accent-strong);
-  display: inline-flex;
-  height: 2.5rem;
-  justify-content: center;
-  width: 2.5rem;
-}
-
-.crm-whatsapp-zapi-stage-heading > span svg {
-  height: 1.2rem;
-  width: 1.2rem;
-}
-
-.crm-whatsapp-zapi-stage-heading > div {
-  display: grid;
-  gap: 0.25rem;
-  min-width: 0;
-}
-
-.crm-whatsapp-zapi-stage-heading small {
-  color: var(--color-accent-strong);
-  font-size: calc(var(--font-size-xs) * 0.92);
-  font-weight: 950;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.crm-whatsapp-zapi-stage-heading h4 {
-  color: var(--color-text);
-  font-size: var(--font-size-md);
-  font-weight: 950;
-  line-height: 1.25;
-  margin: 0;
-}
-
-.crm-whatsapp-zapi-stage-heading p {
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-  line-height: 1.45;
-  margin: 0;
-}
-
+.crm-whatsapp-zapi-stage,
 .crm-whatsapp-zapi-credentials,
 .crm-whatsapp-zapi-pairing {
   display: grid;
   gap: 1rem;
 }
 
+.crm-whatsapp-zapi-stage-heading {
+  align-items: start;
+  border-bottom: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding-bottom: 0.8rem;
+}
+
+.crm-whatsapp-zapi-stage-heading > span {
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.35rem;
+  justify-content: center;
+  width: 2.35rem;
+}
+
+.crm-whatsapp-zapi-stage-heading > span svg {
+  height: 1.1rem;
+  width: 1.1rem;
+}
+
+.crm-whatsapp-zapi-stage-heading > div {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-zapi-stage-heading small {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+}
+
+.crm-whatsapp-zapi-stage-heading h4 {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.crm-whatsapp-zapi-stage-heading p,
+.crm-whatsapp-zapi-permission-note {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .crm-whatsapp-zapi-credential-fields {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.8rem;
 }
 
 .crm-whatsapp-zapi-credential-fields .crm-whatsapp-connection-field small {
   color: var(--color-muted);
-  font-size: calc(var(--font-size-xs) * 0.92);
-  font-weight: 800;
+  font-size: var(--font-size-xs);
+  font-weight: 450;
   letter-spacing: normal;
   line-height: 1.35;
   text-transform: none;
-}
-
-.crm-whatsapp-zapi-permission-note {
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 850;
-  line-height: 1.4;
-  margin: 0;
 }
 
 .crm-whatsapp-zapi-back {
@@ -186,15 +177,19 @@
   cursor: pointer;
   display: inline-flex;
   font-size: var(--font-size-xs);
-  font-weight: 900;
+  font-weight: 550;
   gap: 0.4rem;
-  min-height: 2rem;
+  min-height: 2.5rem;
   padding: 0;
-  transition: color 0.18s ease;
 }
 
 .crm-whatsapp-zapi-back:hover {
   color: var(--color-text);
+}
+
+.crm-whatsapp-zapi-back:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .crm-whatsapp-zapi-back svg {
@@ -206,36 +201,28 @@
 .crm-whatsapp-zapi-ready,
 .crm-whatsapp-connection-protected-note {
   align-items: start;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-left: 2px solid var(--color-warning);
   display: flex;
-  gap: 0.85rem;
-  padding: 1rem;
-}
-
-.crm-whatsapp-zapi-automatic-setup {
-  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-accent) 26%, var(--color-line));
+  gap: 0.75rem;
+  padding: 0.55rem 0 0.55rem 0.85rem;
 }
 
 .crm-whatsapp-zapi-automatic-setup[data-state="failed"] {
-  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-line));
+  border-color: var(--color-danger);
 }
 
 .crm-whatsapp-zapi-automatic-setup > span,
 .crm-whatsapp-zapi-ready > span,
 .crm-whatsapp-connection-protected-note > span {
   align-items: center;
-  background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-accent-strong);
   display: inline-flex;
   flex: 0 0 auto;
-  height: 2.25rem;
+  height: 2.15rem;
   justify-content: center;
-  width: 2.25rem;
+  width: 2.15rem;
 }
 
 .crm-whatsapp-zapi-automatic-setup[data-state="failed"] > span {
@@ -245,8 +232,8 @@
 .crm-whatsapp-zapi-automatic-setup > span svg,
 .crm-whatsapp-zapi-ready > span svg,
 .crm-whatsapp-connection-protected-note > span svg {
-  height: 1.1rem;
-  width: 1.1rem;
+  height: 1rem;
+  width: 1rem;
 }
 
 .crm-whatsapp-zapi-automatic-setup h4,
@@ -254,7 +241,7 @@
 .crm-whatsapp-connection-protected-note strong {
   color: var(--color-text);
   font-size: var(--font-size-sm);
-  font-weight: 950;
+  font-weight: 600;
   line-height: 1.3;
   margin: 0;
 }
@@ -263,14 +250,14 @@
 .crm-whatsapp-zapi-ready p {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 800;
+  font-weight: 450;
   line-height: 1.45;
   margin: 0;
 }
 
 .crm-whatsapp-zapi-setup-count {
   color: var(--color-accent-strong);
-  font-weight: 950;
+  font-weight: 650;
 }
 
 .crm-whatsapp-zapi-inline-actions {
@@ -285,66 +272,58 @@
   color: var(--color-accent-strong);
   display: inline-flex;
   font-size: var(--font-size-xs);
-  font-weight: 950;
+  font-weight: 600;
   min-height: 2.5rem;
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 
 .crm-whatsapp-zapi-ready {
-  background: var(--color-green-soft);
-  border-color: color-mix(
-    in srgb,
-    var(--color-green-start) 32%,
-    var(--color-line)
-  );
+  border-color: var(--color-success);
 }
 
-.crm-whatsapp-zapi-ready > span {
+.crm-whatsapp-zapi-ready > span,
+.crm-whatsapp-zapi-ready small {
   color: var(--color-success-strong);
 }
 
 .crm-whatsapp-zapi-ready small {
-  color: var(--color-success-strong);
-  font-size: calc(var(--font-size-xs) * 0.92);
-  font-weight: 950;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
 }
 
 .crm-whatsapp-pairing-tabs {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-bottom: 1px solid var(--color-line);
   display: inline-flex;
-  gap: 0.25rem;
+  gap: 0;
   justify-self: start;
-  padding: 0.25rem;
 }
 
 .crm-whatsapp-pairing-tab {
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-bottom: 2px solid transparent;
   color: var(--color-muted);
   cursor: pointer;
   font-size: var(--font-size-xs);
-  font-weight: 950;
-  min-height: 2.25rem;
+  font-weight: 550;
+  min-height: 2.5rem;
   padding: 0 0.9rem;
-  transition: all 0.18s ease;
 }
 
 .crm-whatsapp-pairing-tab[data-active="true"] {
-  background: var(--color-panel);
+  border-bottom-color: var(--color-accent);
   color: var(--color-text);
+}
+
+.crm-whatsapp-pairing-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .crm-whatsapp-pairing-panel {
   align-content: start;
-  background: var(--color-app);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
   display: grid;
   gap: 0.75rem;
   justify-items: center;
@@ -361,10 +340,11 @@
   width: 15rem;
 }
 
-.crm-whatsapp-pairing-countdown {
+.crm-whatsapp-pairing-countdown,
+.crm-whatsapp-pairing-panel > small {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 850;
+  font-weight: 450;
   margin: 0;
 }
 
@@ -383,23 +363,13 @@
 
 .crm-whatsapp-pairing-empty p {
   font-size: var(--font-size-xs);
-  font-weight: 800;
+  font-weight: 450;
   line-height: 1.45;
   margin: 0;
   max-width: 24rem;
 }
 
-.crm-whatsapp-pairing-panel .crm-whatsapp-pairing-phone {
-  justify-self: stretch;
-  max-width: 22rem;
-}
-
-.crm-whatsapp-pairing-panel > small {
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-}
-
+.crm-whatsapp-pairing-panel .crm-whatsapp-pairing-phone,
 .crm-whatsapp-pairing-panel .crm-whatsapp-pairing-code {
   justify-self: stretch;
   max-width: 22rem;
@@ -407,18 +377,14 @@
 
 .crm-whatsapp-zapi-auto-refresh {
   align-items: center;
-  border-top: 1px dashed var(--color-line);
+  border-top: 1px solid var(--color-line);
   color: var(--color-muted);
   display: flex;
   font-size: var(--font-size-xs);
-  font-weight: 850;
+  font-weight: 500;
   gap: 0.75rem;
   justify-content: space-between;
   padding-top: 0.75rem;
-}
-
-.crm-whatsapp-connection-protected-note {
-  background: var(--color-app);
 }
 
 .crm-whatsapp-connection-protected-note > div > .crm-action {
@@ -427,12 +393,17 @@
 }
 
 @media (max-width: 720px) {
-  .crm-whatsapp-zapi-progress li small {
-    display: none;
+  .crm-whatsapp-zapi-progress {
+    grid-template-columns: 1fr;
   }
 
-  .crm-whatsapp-zapi-progress li strong {
-    font-size: calc(var(--font-size-xs) * 0.92);
+  .crm-whatsapp-zapi-progress ol {
+    border-left: 0;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .crm-whatsapp-zapi-progress li[data-state="pending"] {
+    display: none;
   }
 
   .crm-whatsapp-zapi-stage-heading {
@@ -454,30 +425,13 @@
     padding: 0 0.4rem;
   }
 
-  .crm-whatsapp-zapi-auto-refresh {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
+  .crm-whatsapp-zapi-auto-refresh,
   .crm-whatsapp-zapi-inline-actions {
+    align-items: stretch;
     flex-direction: column;
   }
 
   .crm-whatsapp-zapi-inline-actions .crm-action {
     width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  /* Keep the five markers visible but hide the per-marker labels visually;
-     they stay in the accessibility tree and the summary line already names
-     the current step. */
-  .crm-whatsapp-zapi-progress li strong {
-    clip-path: inset(50%);
-    height: 1px;
-    overflow: hidden;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
   }
 }

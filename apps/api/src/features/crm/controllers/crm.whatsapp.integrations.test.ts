@@ -117,11 +117,9 @@ describe("CRM WhatsApp integrations", () => {
       ),
     );
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(410);
     await expect(response.json()).resolves.toMatchObject({
-      action: "create_tag",
-      result: { name: "Quente" },
-      success: true,
+      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
     });
     expect(JSON.stringify(record.mock.calls)).not.toContain(
       "bot-webhook-secret-value-32-characters",
@@ -137,10 +135,9 @@ describe("CRM WhatsApp integrations", () => {
       jsonPost({ action: "list_tags" }, { "X-Webhook-Secret": "wrong-secret" }),
     );
 
-    expect(response.status).toBe(401);
-    await expectApiError(response, {
-      code: "CRM_WHATSAPP_BOT_UNAUTHORIZED",
-      message: "Bot action request is not authorized.",
+    expect(response.status).toBe(410);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
     });
   });
 
@@ -192,10 +189,9 @@ describe("CRM WhatsApp integrations", () => {
       ),
     );
 
-    expect(response.status).toBe(409);
-    await expectApiError(response, {
-      code: "CRM_WHATSAPP_BOT_ACTION_BLOCKED",
-      message: "Bot sends are blocked while human takeover is active.",
+    expect(response.status).toBe(410);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
     });
     expect(sendText).not.toHaveBeenCalled();
   });

@@ -1,12 +1,7 @@
 import { randomUUID } from "node:crypto";
-import {
-  assertEntitlement,
-  assertPermission,
-} from "../../../../shared/authorization.js";
-import type {
-  ServiceContext,
-  StoreScopedServiceContext,
-} from "../../../../shared/serviceContext.js";
+import { assertPermission } from "../../../../shared/authorization.js";
+import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import type { OlxCapabilityResult } from "../../ports/marketplaceOlxCrmOnboarding.js";
 import type {
   MarketplaceAccount,
   MarketplaceProvider,
@@ -25,7 +20,15 @@ import { connectMarketplaceOAuthAccount } from "./marketplaceOAuthCompletionSupp
 export type CompleteMarketplaceConnectionInput = { transactionId: string };
 
 export type CompleteMarketplaceConnectionResult =
-  | { account: MarketplaceAccount; kind: "connected" }
+  | {
+      account: MarketplaceAccount;
+      capabilities?: {
+        chat: OlxCapabilityResult;
+        leads: OlxCapabilityResult;
+        stock: OlxCapabilityResult;
+      };
+      kind: "connected";
+    }
   | { kind: "cancelled"; provider: MarketplaceProvider };
 
 export type ReceiveMarketplaceOAuthCallbackInput =
@@ -47,8 +50,6 @@ export async function completeMarketplaceConnection(
 ): Promise<CompleteMarketplaceConnectionResult> {
   assertPermission(context, "marketplace.manage");
   const scope = requireMarketplaceScope(context);
-  assertPermission(context, "crm.messaging.connection.setup");
-  assertEntitlement(context as StoreScopedServiceContext, "crm");
   const oauth = requireMarketplaceOAuthPorts(ports);
   const binding = {
     actorId: context.actor.id,

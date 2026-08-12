@@ -1,5 +1,5 @@
 import { MoreHorizontal } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type {
   CrmWhatsappScope,
   CrmWhatsappScopeOption,
@@ -17,7 +17,9 @@ export function CrmWhatsappMobileNav({
   scopes: readonly CrmWhatsappScopeOption[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const disclosureId = useId();
+  const disclosureRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const primaryScopes = scopes.filter((scope) =>
     primaryScopeIds.includes(scope.id),
   );
@@ -29,11 +31,18 @@ export function CrmWhatsappMobileNav({
   );
 
   useEffect(() => {
+    if (!menuOpen) return undefined;
+
     const closeOutside = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+      if (!disclosureRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setMenuOpen(false);
+      moreButtonRef.current?.focus();
     };
     document.addEventListener("pointerdown", closeOutside);
     document.addEventListener("keydown", closeOnEscape);
@@ -41,7 +50,7 @@ export function CrmWhatsappMobileNav({
       document.removeEventListener("pointerdown", closeOutside);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, []);
+  }, [menuOpen]);
 
   const selectScope = (scope: CrmWhatsappScope) => {
     setMenuOpen(false);
@@ -63,13 +72,14 @@ export function CrmWhatsappMobileNav({
             scope={scope}
           />
         ))}
-        <div className="crm-whatsapp-mobile-more" ref={menuRef}>
+        <div className="crm-whatsapp-mobile-more" ref={disclosureRef}>
           <button
             aria-current={secondaryActive ? "page" : undefined}
+            aria-controls={disclosureId}
             aria-expanded={menuOpen}
-            aria-haspopup="menu"
             className={secondaryActive ? "is-active" : undefined}
             onClick={() => setMenuOpen((open) => !open)}
+            ref={moreButtonRef}
             type="button"
           >
             <MoreHorizontal aria-hidden="true" />
@@ -77,7 +87,12 @@ export function CrmWhatsappMobileNav({
             {secondaryActive ? <ActiveIndicator /> : null}
           </button>
           {menuOpen ? (
-            <div className="crm-whatsapp-mobile-more-menu" role="menu">
+            <div
+              aria-label="Outras áreas do CRM"
+              className="crm-whatsapp-mobile-more-menu"
+              id={disclosureId}
+              role="group"
+            >
               {secondaryScopes.map((scope) => (
                 <SecondaryNavItem
                   active={activeScope === scope.id}
@@ -140,9 +155,9 @@ function SecondaryNavItem({
   return (
     <button
       aria-current={active ? "page" : undefined}
+      className={active ? "is-active" : undefined}
       data-scope={scope.id}
       onClick={onClick}
-      role="menuitem"
       type="button"
     >
       <Icon aria-hidden="true" />

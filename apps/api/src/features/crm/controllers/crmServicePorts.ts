@@ -2,6 +2,7 @@ import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/s
 import { createDrizzleBillingQuotaGuard } from "../../../infrastructure/db/billing/drizzleBillingQuotaGuard.js";
 import { createDrizzleCrmBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmBotIntegrationRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
+import { createDrizzleCrmCanonicalInboundRepository } from "../../../infrastructure/db/crm/drizzleCrmCanonicalInbound.js";
 import { createDrizzleCrmPipelineRepository } from "../../../infrastructure/db/crm/drizzleCrmPipelineRepository.js";
 import {
   createDrizzleCrmRepository,
@@ -50,6 +51,8 @@ export function resolveCrmPorts(
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
           options.drizzleClient,
         ),
+        crmCanonicalInboundRepository:
+          createDrizzleCrmCanonicalInboundRepository(options.drizzleClient),
         crmOlxWebhookSecurity,
         crmPipelineRepository: createDrizzleCrmPipelineRepository(
           options.drizzleClient,
@@ -107,6 +110,8 @@ export function resolveCrmPorts(
           crmConnectionRepository: createDrizzleCrmConnectionRepository(
             tx as DrizzleCrmClient,
           ),
+          crmCanonicalInboundRepository:
+            createDrizzleCrmCanonicalInboundRepository(tx as DrizzleCrmClient),
           crmPipelineRepository: createDrizzleCrmPipelineRepository(
             tx as DrizzleCrmClient,
           ),

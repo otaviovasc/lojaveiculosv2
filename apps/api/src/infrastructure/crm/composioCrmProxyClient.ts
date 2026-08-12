@@ -144,6 +144,9 @@ function assertSuccessfulProxyResponse(
 
   throw new CrmWhatsappGatewayError(
     `Composio proxy failed with HTTP ${result.status}`,
+    502,
+    undefined,
+    result.status >= 500 ? "provider_unavailable" : "provider_rejected",
   );
 }
 

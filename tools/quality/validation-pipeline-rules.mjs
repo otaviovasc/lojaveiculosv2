@@ -1,5 +1,5 @@
 const qualityTestCommand =
-  "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/quality/*.test.mjs --root ../..";
+  "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions --dir ../../tools/quality --root ../..";
 const seedDocumentTestCommand =
   "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/storage/seed-product-document-pdf.test.mjs --root ../..";
 

@@ -67,6 +67,11 @@ export type ConfigureInitialZapiCredentialsResult =
   | { connection: CrmConnection; status: "configured" }
   | { status: "already_configured" | "not_found" | "partial_state" };
 
+export type AuthorizeOlxConnectionResult = {
+  connection: CrmConnection;
+  replacedConnectionId: string | null;
+};
+
 export type CrmConnectionRepository = {
   archiveAbandonedZapiConnections: (input: {
     cutoff: Date;
@@ -75,14 +80,16 @@ export type CrmConnectionRepository = {
   createConnection: (input: CreateCrmConnectionInput) => Promise<CrmConnection>;
   upsertOlxConnection: (
     input: Omit<CreateCrmConnectionInput, "provider">,
-  ) => Promise<CrmConnection>;
+  ) => Promise<AuthorizeOlxConnectionResult>;
   configureInitialZapiCredentials: (input: {
     connectionId: string;
     credentialsRef: Record<string, unknown>;
+    externalInstanceId: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<ConfigureInitialZapiCredentialsResult>;
   claimZapiWebhookSetup: (input: {
+    allowConfigured?: boolean;
     connectionId: string;
     leaseExpiresAt: Date;
     leaseOwner: string;

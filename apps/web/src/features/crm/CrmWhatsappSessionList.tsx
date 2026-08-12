@@ -12,10 +12,7 @@ import {
 } from "lucide-react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { CrmWhatsappHumanAttendanceBadge } from "./CrmWhatsappHumanAttendanceBadge";
-import {
-  readCrmWhatsappChannelLabel,
-  readCrmWhatsappProviderLabel,
-} from "./crmWhatsappConnectionStatus";
+import { readCrmChannelIdentity } from "./crmChannelPresentation";
 import {
   formatRelativeSessionTime,
   formatSessionName,
@@ -165,6 +162,9 @@ export function SessionList({
                   ) : null}
                   <ChannelBadge
                     channel={session.channel}
+                    {...(typeof session.metadata?.broker === "string"
+                      ? { broker: session.metadata.broker }
+                      : {})}
                     {...(session.connection?.provider
                       ? { provider: session.connection.provider }
                       : {})}
@@ -233,13 +233,19 @@ function SessionStatusBadge({
 }
 
 function ChannelBadge({
+  broker,
   channel,
   provider,
 }: {
+  broker?: string;
   channel: string;
   provider?: string;
 }) {
-  const channelLabel = readCrmWhatsappChannelLabel(channel);
+  const identity = readCrmChannelIdentity({
+    channel,
+    ...(broker ? { broker } : {}),
+    ...(provider ? { provider } : {}),
+  });
   return (
     <>
       <span className="crm-whatsapp-channel crm-whatsapp-session-chip">
@@ -248,11 +254,16 @@ function ChannelBadge({
         ) : (
           <MessageCircle aria-hidden="true" className="size-3" />
         )}
-        {channelLabel}
+        {identity.channelLabel}
       </span>
-      {provider ? (
+      {identity.providerLabel ? (
         <span className="crm-whatsapp-provider crm-whatsapp-session-chip">
-          {readCrmWhatsappProviderLabel(provider)}
+          {identity.providerLabel}
+        </span>
+      ) : null}
+      {identity.brokerLabel ? (
+        <span className="crm-whatsapp-broker crm-whatsapp-session-chip">
+          Broker: {identity.brokerLabel}
         </span>
       ) : null}
     </>

@@ -37,6 +37,7 @@ export type CrmProviderWebhookEvent = {
   eventType: string;
   id: string;
   payload: Record<string, unknown>;
+  payloadDigest: string | null;
   processingAttempts: number;
   processingStartedAt: Date | null;
   processingToken: string | null;
@@ -54,6 +55,7 @@ export type RecordCrmProviderWebhookEventInput = {
   environment: string;
   eventType: string;
   payload: Record<string, unknown>;
+  payloadDigest?: string | null;
   provider: CrmProviderWebhookEventProvider;
   providerEventId: string;
   storeId?: StoreId | null;
@@ -79,12 +81,14 @@ export type FindCrmProviderWebhookEventInput = {
 
 export type RecordCrmProviderWebhookEventResult = {
   created: boolean;
+  divergentReplay: boolean;
   event: CrmProviderWebhookEvent;
 };
 
 export type UpdateCrmProviderWebhookEventStatusInput = {
   errorMessage?: string | null;
   eventId: string;
+  payload?: Record<string, unknown>;
   processingToken?: string;
   status: Exclude<CrmProviderWebhookEventStatus, "processing" | "received">;
 };

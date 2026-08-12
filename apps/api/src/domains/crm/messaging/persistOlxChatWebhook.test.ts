@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type { CrmLead, CrmRepository } from "../ports/crmRepository.js";
 import type { CrmWhatsappRepository } from "../ports/crmWhatsappRepository.js";
+import type { CrmCanonicalInboundRepository } from "../ports/crmCanonicalInboundRepository.js";
+import type { CrmWebhookEventRepository } from "../ports/crmWebhookEventRepository.js";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 import { createTestCrmWhatsappSession } from "../testSupportWhatsapp.js";
 import type { ParsedOlxChatWebhook } from "./parseOlxChatWebhook.js";
@@ -60,7 +62,73 @@ describe("persistOlxChatWebhook", () => {
       }),
     );
   });
+
+  it("writes OLX Chat to the canonical provider-scoped thread", async () => {
+    const canonical = vi.fn(async () => ({
+      contactId: "contact-1",
+      created: true,
+      cycleId: "cycle-1",
+      identityId: "identity-1",
+      messageId: "canonical-message-1",
+      threadId: "thread-1",
+    }));
+    const legacy = createLegacyPorts();
+    await persistOlxChatWebhook(
+      {
+        ...legacy,
+        crmCanonicalInboundRepository: {
+          ingestInboundMessage: canonical,
+        } satisfies CrmCanonicalInboundRepository,
+      },
+      {
+        connection: connection(),
+        parsed: parsed({ origin: "buyer", senderType: "buyer" }),
+        providerEventId: "event-1",
+      },
+    );
+    expect(canonical).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: "olx_chat",
+        connectionId: "connection-1",
+        externalThreadId: "chat-1",
+        identity: {
+          kind: "provider_subject",
+          normalizedValue: "olx:connection-1:chat-1",
+        },
+        provider: "olx",
+        providerMessageId: "message-1",
+      }),
+    );
+  });
 });
+
+function createLegacyPorts(): CrmServicePorts {
+  const lead = createLead();
+  const session = createTestCrmWhatsappSession({
+    channel: "OLX_CHAT",
+    connectionId: "connection-1",
+    leadId: lead.id,
+    storeId,
+    tenantId,
+  });
+  return {
+    crmRepository: {
+      findLeadById: vi.fn(async () => lead),
+    } as unknown as CrmRepository,
+    crmWhatsappRepository: {
+      ingestMessage: vi.fn(async () => ({
+        createdMessage: false,
+        createdSession: false,
+        message: { id: "legacy-message-1" },
+        session,
+      })),
+      upsertSessionContext: vi.fn(async () => session),
+    } as unknown as CrmWhatsappRepository,
+    crmWebhookEventRepository: {
+      stageEffects: vi.fn(async () => undefined),
+    } as unknown as CrmWebhookEventRepository,
+  };
+}
 
 function parsed(
   direction:

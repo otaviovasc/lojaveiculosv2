@@ -39,7 +39,9 @@ export const integrationAccounts = pgTable(
   "integration_accounts",
   {
     ...lifecycleColumns,
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     config: jsonb("config").notNull().default({}),
+    providerAccountId: varchar("provider_account_id", { length: 191 }),
     provider: varchar("provider", { length: 80 }).notNull(),
     status: integrationStatus("status").notNull().default("inactive"),
     storeId: uuid("store_id")
@@ -50,10 +52,24 @@ export const integrationAccounts = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
-    uniqueIndex("integration_accounts_store_provider_unique").on(
-      table.storeId,
-      table.provider,
-    ),
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "integration_accounts_store_tenant_fk",
+    }),
+    uniqueIndex("integration_accounts_store_provider_active_unique")
+      .on(table.storeId, table.provider)
+      .where(sql`${table.archivedAt} is null`),
+    uniqueIndex("integration_accounts_scope_provider_identity_active_unique")
+      .on(
+        table.tenantId,
+        table.storeId,
+        table.provider,
+        table.providerAccountId,
+      )
+      .where(
+        sql`${table.archivedAt} is null and ${table.providerAccountId} is not null`,
+      ),
   ],
 );
 

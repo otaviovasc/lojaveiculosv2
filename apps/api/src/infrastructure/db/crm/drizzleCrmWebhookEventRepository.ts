@@ -156,6 +156,7 @@ export function createDrizzleCrmWebhookEventRepository(
           environment: input.environment,
           eventType: input.eventType,
           payload: input.payload,
+          payloadDigest: input.payloadDigest ?? null,
           provider: input.provider,
           providerEventId: input.providerEventId,
           storeId: input.storeId ?? null,
@@ -163,7 +164,13 @@ export function createDrizzleCrmWebhookEventRepository(
         })
         .onConflictDoNothing()
         .returning();
-      if (inserted) return { created: true, event: toWebhookEvent(inserted) };
+      if (inserted) {
+        return {
+          created: true,
+          divergentReplay: false,
+          event: toWebhookEvent(inserted),
+        };
+      }
 
       const [existing] = await db
         .select()
@@ -181,7 +188,13 @@ export function createDrizzleCrmWebhookEventRepository(
         .limit(1);
       if (!existing)
         throw new Error("Provider webhook event was not persisted.");
-      return { created: false, event: toWebhookEvent(existing) };
+      return {
+        created: false,
+        divergentReplay:
+          input.payloadDigest !== undefined &&
+          input.payloadDigest !== existing.payloadDigest,
+        event: toWebhookEvent(existing),
+      };
     },
     async updateStatus(input) {
       const filters = [eq(providerEvents.id, input.eventId)];
@@ -195,6 +208,7 @@ export function createDrizzleCrmWebhookEventRepository(
         .update(providerEvents)
         .set({
           errorMessage: input.errorMessage ?? null,
+          ...(input.payload ? { payload: input.payload } : {}),
           processedAt: new Date(),
           processingStartedAt: null,
           processingToken: null,
@@ -216,6 +230,7 @@ function toWebhookEvent(row: typeof providerEvents.$inferSelect) {
     eventType: row.eventType,
     id: row.id,
     payload: row.payload as Record<string, unknown>,
+    payloadDigest: row.payloadDigest,
     processingAttempts: row.processingAttempts,
     processingStartedAt: row.processingStartedAt,
     processingToken: row.processingToken,

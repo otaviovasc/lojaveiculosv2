@@ -1,0 +1,79 @@
+import { timingSafeEqual } from "node:crypto";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type * as schema from "@lojaveiculosv2/db";
+import type {
+  ExternalBotActionName,
+  ExternalBotActionRecord,
+  ExternalBotActionStatus,
+  ExternalBotEvent,
+} from "../../../domains/crm/bot/externalBotModels.js";
+
+export type ExternalBotDb = PostgresJsDatabase<typeof schema>;
+export type ExternalBotRow = Record<string, unknown>;
+
+export function mapExternalBotCommand(
+  row: ExternalBotRow,
+): ExternalBotActionRecord {
+  const input = (row.input ?? {}) as {
+    command?: ExternalBotActionRecord["command"];
+    failureCode?: string;
+  };
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    storeId: String(row.store_id),
+    integrationId: String(
+      (row.input as { integrationId?: string })?.integrationId ?? "",
+    ),
+    connectionId: String(row.provider_connection_id),
+    threadId: String(row.thread_id),
+    provider: row.provider as ExternalBotActionRecord["provider"],
+    actionClass:
+      row.authorization_class === "proposal_only" ? "proposal" : "effect",
+    modelVersion: String(
+      (row.input as { modelVersion?: string })?.modelVersion ?? "unknown",
+    ),
+    command: input.command!,
+    expectedRevision: Number(row.expected_revision),
+    idempotencyKey: String(row.idempotency_key),
+    requestDigest: String(row.request_digest),
+    status: row.state as ExternalBotActionStatus,
+    createdAt: new Date(String(row.created_at)),
+    updatedAt: new Date(String(row.updated_at)),
+    ...(input.failureCode ? { failureCode: input.failureCode } : {}),
+  };
+}
+
+export function mapExternalBotEvent(row: ExternalBotRow): ExternalBotEvent {
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    storeId: String(row.store_id),
+    integrationId: String(row.integration_id),
+    connectionId: String(row.provider_connection_id),
+    threadId: String(row.thread_id),
+    provider: row.provider as ExternalBotEvent["provider"],
+    actionClass: row.action_class as ExternalBotEvent["actionClass"],
+    modelVersion: String(row.model_version),
+    type: row.event_type as ExternalBotEvent["type"],
+    payload: row.payload as ExternalBotEvent["payload"],
+    grant: String(row.grant_token),
+    authorizedRequestDigest: String(row.authorized_request_digest),
+    grantExpiresAt: new Date(String(row.grant_expires_at)),
+    occurredAt: new Date(String(row.occurred_at)),
+  };
+}
+
+export function isProposalAction(action: ExternalBotActionName) {
+  return (
+    action === "fact.propose" ||
+    action === "vehicle_interest.propose" ||
+    action === "appointment.propose"
+  );
+}
+
+export function safeDigestEqual(left: string, right: string) {
+  const a = Buffer.from(left);
+  const b = Buffer.from(right);
+  return a.length === b.length && timingSafeEqual(a, b);
+}

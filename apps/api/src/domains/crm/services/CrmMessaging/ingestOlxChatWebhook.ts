@@ -1,10 +1,15 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
   assertPermission,
   AuthorizationError,
 } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { parseOlxChatWebhook } from "../../messaging/parseOlxChatWebhook.js";
+import { digestOlxChatWebhook } from "../../messaging/olxChatWebhookDigest.js";
+import {
+  buildOlxProviderEventReference,
+  getOlxWebhookFreshnessRejectionReason,
+} from "../../messaging/olxChatWebhookSecuritySupport.js";
 import { persistOlxChatWebhook } from "../../messaging/persistOlxChatWebhook.js";
 import {
   toWhatsappMessage,
@@ -31,7 +36,6 @@ import {
   assertOlxWebhookEffectsDelivered,
   deliverOlxWebhookEffects,
 } from "../../messaging/olxWebhookEffectOutbox.js";
-
 const permission = "crm.whatsapp.ingest" as const;
 
 export type IngestOlxChatWebhookResult =
@@ -74,13 +78,16 @@ export async function ingestOlxChatWebhook(
     });
     throw new OlxWebhookRejectedError("OLX Chat webhook was rejected.", 400);
   }
-  await assertFreshEvent(
-    context,
-    input.connectionId,
-    authorizedScope,
+  const freshnessReason = getOlxWebhookFreshnessRejectionReason(
     parsed.timestamp,
-    ports,
+    getCrmOlxWebhookSecurity(ports),
   );
+  if (freshnessReason) {
+    await auditPhase(context, input.connectionId, authorizedScope, "rejected", {
+      reason: freshnessReason,
+    });
+    throw new OlxWebhookRejectedError("OLX Chat webhook was rejected.", 400);
+  }
   logWhatsappServiceEvent(context, "crm.messaging.webhook.olx.received", {
     connectionId: input.connectionId,
     provider: "olx_chat",
@@ -104,7 +111,7 @@ export async function ingestOlxChatWebhook(
   ) {
     throw new AuthorizationError("Invalid OLX Chat webhook token.");
   }
-  const providerEventReference = buildProviderEventReference(
+  const providerEventReference = buildOlxProviderEventReference(
     parsed.externalMessageId,
   );
   const eventRepository = getCrmWebhookEventRepository(ports);
@@ -113,11 +120,30 @@ export async function ingestOlxChatWebhook(
     environment: getCrmEnvironment(ports),
     eventType: "crm.messaging.olx.received",
     payload: { schemaVersion: 1 },
+    payloadDigest: digestOlxChatWebhook(parsed),
     provider: "olx_chat",
     providerEventId: providerEventReference,
     storeId: connection.storeId,
     tenantId: connection.tenantId,
   });
+  if (recorded.divergentReplay) {
+    context.logger.warn("crm.messaging.webhook.olx.replay_conflict", {
+      connectionId: connection.id,
+      provider: "olx_chat",
+      providerEventId: providerEventReference,
+      requestId: context.requestId,
+      storeId: connection.storeId,
+      tenantId: connection.tenantId,
+    });
+    await auditPhase(context, connection.id, authorizedScope, "rejected", {
+      providerEventId: providerEventReference,
+      reason: "divergent_replay",
+    });
+    throw new OlxWebhookRejectedError(
+      "OLX Chat webhook replay conflicts with the original event.",
+      409,
+    );
+  }
   const processingStartedAt = new Date();
   const processingToken = randomUUID();
   const claimed = await eventRepository.claimForProcessing({
@@ -185,26 +211,6 @@ export async function ingestOlxChatWebhook(
   }
 }
 
-async function assertFreshEvent(
-  context: ServiceContext,
-  connectionId: string,
-  scope: { storeId: string; tenantId: string },
-  timestamp: Date,
-  ports: CrmServicePorts,
-) {
-  const policy = getCrmOlxWebhookSecurity(ports);
-  const ageMs = policy.now().getTime() - timestamp.getTime();
-  const reason =
-    ageMs > policy.maxAgeMs
-      ? "stale_event"
-      : ageMs < -policy.futureSkewMs
-        ? "future_event"
-        : null;
-  if (!reason) return;
-  await auditPhase(context, connectionId, scope, "rejected", { reason });
-  throw new OlxWebhookRejectedError("OLX Chat webhook was rejected.", 400);
-}
-
 async function auditPhase(
   context: ServiceContext,
   connectionId: string,
@@ -227,8 +233,4 @@ async function auditPhase(
     },
     phase === "rejected" ? "failed" : "succeeded",
   );
-}
-
-function buildProviderEventReference(externalMessageId: string) {
-  return `olx:${createHash("sha256").update(externalMessageId).digest("hex")}`;
 }

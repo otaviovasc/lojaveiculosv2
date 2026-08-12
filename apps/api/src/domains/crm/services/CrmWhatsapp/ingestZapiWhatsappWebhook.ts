@@ -40,6 +40,7 @@ import {
   unchangedZapiAdSession,
 } from "../../whatsapp/zapiAdSessionTransition.js";
 import { publishZapiWhatsappAttendanceEnded } from "../../whatsapp/publishZapiWhatsappAttendance.js";
+import { persistZapiCanonicalInbound } from "../../whatsapp/persistZapiCanonicalInbound.js";
 
 const permission = "crm.whatsapp.ingest" as const;
 export type {
@@ -132,6 +133,14 @@ export async function ingestZapiWhatsappWebhook(
           tenantId: connection.tenantId,
           type: parsed.type,
         });
+        if (!parsed.fromMe) {
+          await persistZapiCanonicalInbound(transactionPorts, {
+            connection,
+            media,
+            message: parsed,
+            session: result.session,
+          });
+        }
         if (result.createdMessage) {
           await createWhatsappMessageActivity(transactionPorts, {
             connectionId: connection.id,

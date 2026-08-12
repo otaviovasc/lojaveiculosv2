@@ -119,6 +119,7 @@ describe("archiveAbandonedZapiConnections", () => {
           complete: vi.fn(),
           markIndeterminate: vi.fn(),
           purgeExpiredRecoveryPayloads,
+          recordProviderFailure: vi.fn(),
           recordProviderSuccess: vi.fn(),
         },
       },

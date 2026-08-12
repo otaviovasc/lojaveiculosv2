@@ -119,10 +119,9 @@ describe("CRM WhatsApp integration security", () => {
       jsonPost({ action: "list_tags" }, { "X-Webhook-Secret": webhookSecret }),
     );
 
-    expect(response.status).toBe(401);
-    await expectApiError(response, {
-      code: "CRM_WHATSAPP_BOT_UNAUTHORIZED",
-      message: "Bot action request is not authorized.",
+    expect(response.status).toBe(410);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
     });
   });
 });

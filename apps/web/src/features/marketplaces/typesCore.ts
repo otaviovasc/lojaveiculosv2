@@ -56,10 +56,27 @@ export type MarketplaceAccountRequirement = {
 
 export type MarketplaceProviderState = {
   accountId: string | null;
+  capabilities: {
+    chat: MarketplaceProviderCapability;
+    leads: MarketplaceProviderCapability;
+    stock: MarketplaceProviderCapability;
+  } | null;
   connectionStatus: MarketplaceAccountConnectionStatus;
   lastSyncSummary: MarketplaceStockSyncSummary | null;
   provider: MarketplaceProvider;
   requirements: MarketplaceAccountRequirement[];
+};
+
+export type MarketplaceProviderCapability = {
+  capability: "inventory_sync" | "lead_ingestion" | "messaging";
+  grantState: "denied" | "granted";
+  reason:
+    | "access_denied"
+    | "missing_scope"
+    | "provider_rejected"
+    | "runtime_unavailable"
+    | null;
+  status: "active" | "blocked" | "error";
 };
 
 export type MarketplaceJobStatus =

@@ -6,6 +6,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import type { MarketplaceApi } from "../marketplaces/apiClient";
 import type {
   CrmWhatsappComposioAuthorization,
   CrmWhatsappComposioCompleteResult,
@@ -58,8 +59,10 @@ export function CrmWhatsappSelfServiceSetup({
   availableProviders,
   canPair,
   canSetup,
+  connections = [],
   existingConnection = null,
   handlers,
+  marketplaceApi,
   onRedirect = (url) => window.location.assign(url),
   zapiAddonContract = null,
 }: {
@@ -67,8 +70,10 @@ export function CrmWhatsappSelfServiceSetup({
   availableProviders: CrmWhatsappSetupProvider[];
   canPair: boolean;
   canSetup: boolean;
+  connections?: readonly CrmWhatsappProviderConnection[];
   existingConnection?: CrmWhatsappProviderConnection | null;
   handlers: CrmWhatsappSelfServiceHandlers;
+  marketplaceApi?: MarketplaceApi;
   onRedirect?: (url: string) => void;
   zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
 }) {
@@ -147,7 +152,10 @@ export function CrmWhatsappSelfServiceSetup({
     return (
       <CrmWhatsappChannelDirectory
         availableProviders={availableProviders}
+        connections={connections}
+        {...(marketplaceApi ? { marketplaceApi } : {})}
         onChoose={setProvider}
+        onRedirect={onRedirect}
         zapiAddonContract={zapiAddonContract}
       />
     );
@@ -263,8 +271,14 @@ function OfficialSetup({
   };
 
   return (
-    <SetupCard title="WhatsApp Oficial">
-      <p className="text-sm text-muted">
+    <SetupCard
+      broker="Composio"
+      channel="WhatsApp"
+      title="WhatsApp Oficial"
+      transport="Meta Cloud"
+    >
+      <OfficialSetupRail completion={completion} connection={connection} />
+      <p className="crm-whatsapp-setup-intro">
         A autorização abre em página inteira. O canal só será exibido como
         conectado depois da confirmação do provedor e da escolha do remetente.
       </p>
@@ -367,23 +381,82 @@ function OfficialSetup({
 }
 
 function SetupCard({
+  broker,
+  channel,
   children,
   title,
+  transport,
 }: {
+  broker: string;
+  channel: string;
   children: React.ReactNode;
   title: string;
+  transport: string;
 }) {
   return (
-    <section className="grid gap-4 rounded-xl border border-line/40 bg-panel/10 p-4 md:p-5">
-      <h2 className="text-lg font-extrabold text-text">{title}</h2>
+    <section className="crm-whatsapp-setup-card">
+      <header className="crm-whatsapp-setup-card-heading">
+        <span>Configuração do canal</span>
+        <h2>{title}</h2>
+        <p>
+          Canal {channel} · Transporte {transport} · Credencial {broker}
+        </p>
+      </header>
       {children}
     </section>
   );
 }
 
+function OfficialSetupRail({
+  completion,
+  connection,
+}: {
+  completion: CrmWhatsappComposioCompleteResult | null;
+  connection: CrmWhatsappProviderConnection | null;
+}) {
+  const state = completion?.senders.length
+    ? {
+        evidence: "A autorização Meta foi confirmada pelo servidor.",
+        next: "Escolher o número que enviará as mensagens.",
+        state: "Remetente pendente",
+      }
+    : connection
+      ? {
+          evidence:
+            "A conexão foi criada; o provedor ainda não confirmou o canal.",
+          next: "Verificar o retorno ou reabrir a autorização.",
+          state: "Confirmação pendente",
+        }
+      : {
+          evidence: "Nenhuma operação oficial foi iniciada.",
+          next: "Abrir a autorização segura da Meta.",
+          state: "Não iniciado",
+        };
+
+  return (
+    <dl
+      className="crm-whatsapp-setup-rail"
+      aria-label="Andamento da configuração"
+    >
+      <div data-kind="state">
+        <dt>Estado atual</dt>
+        <dd>{state.state}</dd>
+      </div>
+      <div data-kind="next">
+        <dt>Próxima ação</dt>
+        <dd>{state.next}</dd>
+      </div>
+      <div data-kind="evidence">
+        <dt>Evidência</dt>
+        <dd>{state.evidence}</dd>
+      </div>
+    </dl>
+  );
+}
+
 function SetupNotice({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line/40 bg-panel/10 p-4 text-sm font-bold text-muted">
+    <div className="crm-whatsapp-setup-notice" role="note">
       {children}
     </div>
   );

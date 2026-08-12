@@ -11,6 +11,7 @@ import {
   buildOlxLeadProviderReference,
   createOlxLeadReceiptPayload,
   olxLeadReceiptEventType,
+  sealOlxLeadReceiptPayload,
 } from "../../messaging/olxLeadReceipt.js";
 import { parseOlxLeadWebhook } from "../../messaging/parseOlxLeadWebhook.js";
 import {
@@ -21,6 +22,7 @@ import {
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
+import { getCrmConnectionCredentialVault } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
@@ -60,15 +62,11 @@ export async function ingestOlxLeadWebhook(
   }
   const scope = requireCrmWhatsappScope(context);
   const scopedContext = context as StoreScopedServiceContext;
-  if (!scopedContext.entitlements.includes("marketplace")) {
-    await auditRejected(
-      context,
-      input.connectionId,
-      "marketplace_entitlement_missing",
-    );
+  if (!scopedContext.entitlements.includes("crm")) {
+    await auditRejected(context, input.connectionId, "crm_entitlement_missing");
     throw denied();
   }
-  assertEntitlement(scopedContext, "marketplace");
+  assertEntitlement(scopedContext, "crm");
   if (
     scope.storeId !== authorizedScope.storeId ||
     scope.tenantId !== authorizedScope.tenantId
@@ -95,11 +93,20 @@ export async function ingestOlxLeadWebhook(
     throw denied();
   }
   const receipt = createOlxLeadReceiptPayload(connection.id, parsed);
+  const sealedReceipt = await sealOlxLeadReceiptPayload(
+    getCrmConnectionCredentialVault(ports),
+    {
+      connectionId: connection.id,
+      storeId: connection.storeId,
+      tenantId: connection.tenantId,
+    },
+    receipt,
+  );
   const recorded = await getCrmWebhookEventRepository(ports).recordReceived({
     connectionId: connection.id,
     environment: getCrmEnvironment(ports),
     eventType: olxLeadReceiptEventType,
-    payload: receipt,
+    payload: sealedReceipt,
     provider: "olx_chat",
     providerEventId: buildOlxLeadProviderReference(receipt.identityKey),
     storeId: connection.storeId,
@@ -131,7 +138,6 @@ async function auditRejected(
     | "connection_unavailable"
     | "crm_entitlement_missing"
     | "invalid_payload"
-    | "marketplace_entitlement_missing"
     | "scope_mismatch",
 ) {
   logWhatsappServiceEvent(context, "crm.lead.webhook.olx.rejected", {

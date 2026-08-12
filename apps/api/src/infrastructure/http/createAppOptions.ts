@@ -22,6 +22,7 @@ import type { SalesServices } from "../../features/sales/controllers/salesServic
 import type { SettingsServices } from "../../features/settings/controllers/settingsServices.js";
 import type { StorefrontMediaServices } from "../../features/storefront/controllers/storefrontMediaServices.js";
 import type { CrmRepository } from "../../domains/crm/ports/crmRepository.js";
+import type { CrmCoreRepository } from "../../domains/crm/ports/crmCoreRepository.js";
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
 import type { PublicStorefrontRepository } from "../../domains/storefront/ports/publicStorefrontRepository.js";
@@ -30,6 +31,7 @@ import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 import type { ReadinessResult } from "../runtime/readiness.js";
 import type { ServiceLogger } from "../../shared/serviceLogger.js";
+import type { ExternalBotManagerPorts } from "../../domains/crm/bot/ports/externalBotPorts.js";
 
 export type CreateAppOptions = {
   analyticsServices?: AnalyticsServices;
@@ -40,11 +42,13 @@ export type CreateAppOptions = {
   complianceServices?: ComplianceServices;
   crmRealtimeBroker?: CrmRealtimeBroker;
   crmFinancialProductTransactionRunner?: CrmFinancialProductTransactionRunner;
+  crmCoreRepository?: CrmCoreRepository;
   resolveCrmBotEntitlements?: ResolveCrmBotEntitlements;
   crmServices?: CrmServices;
   documentServices?: DocumentServices;
   externalApiRepository?: ExternalApiRepository;
   externalApiServices?: ExternalApiServices;
+  externalBotManager?: ExternalBotManagerPorts;
   financeServices?: FinanceServices;
   financingServices?: CredereFinancingServices;
   fiscalServices?: FiscalServices;

@@ -63,7 +63,9 @@ export async function handleWhatsapp(
         code:
           error.status === 429
             ? "CRM_OLX_WEBHOOK_RATE_LIMITED"
-            : "CRM_OLX_WEBHOOK_REJECTED",
+            : error.status === 409
+              ? "CRM_OLX_WEBHOOK_REPLAY_CONFLICT"
+              : "CRM_OLX_WEBHOOK_REJECTED",
         error,
         message: error.message,
         status: error.status,

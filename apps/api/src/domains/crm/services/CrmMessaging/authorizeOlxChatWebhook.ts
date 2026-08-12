@@ -33,9 +33,9 @@ export type OlxWebhookAuthorization = Readonly<{
 }>;
 
 export class OlxWebhookRejectedError extends Error {
-  readonly status: 400 | 429 | 503;
+  readonly status: 400 | 409 | 429 | 503;
 
-  constructor(message: string, status: 400 | 429 | 503) {
+  constructor(message: string, status: 400 | 409 | 429 | 503) {
     super(message);
     this.name = "OlxWebhookRejectedError";
     this.status = status;

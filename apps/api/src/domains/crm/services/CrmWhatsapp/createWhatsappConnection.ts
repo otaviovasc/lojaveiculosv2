@@ -106,6 +106,7 @@ export async function createWhatsappConnection(
               {
                 connectionId: existing.id,
                 credentialsRef,
+                externalInstanceId: input.instanceId,
                 storeId: existing.storeId,
                 tenantId: existing.tenantId,
               },
@@ -135,6 +136,8 @@ export async function createWhatsappConnection(
           let connection = await repository.createConnection({
             credentialsRef,
             displayName: input.displayName,
+            externalInstanceId:
+              input.provider === "zapi" ? input.instanceId : null,
             provider: input.provider,
             status: "sandbox",
             storeId: scope.storeId as never,

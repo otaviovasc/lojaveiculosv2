@@ -19,7 +19,14 @@ const includeCrmScopeForeignKeys =
 
 export const crmWhatsappOutboundIntentStatus = pgEnum(
   "crm_whatsapp_outbound_intent_status",
-  ["started", "provider_succeeded", "completed", "indeterminate"],
+  [
+    "started",
+    "provider_succeeded",
+    "completed",
+    "failed",
+    "retryable_failed",
+    "indeterminate",
+  ],
 );
 
 export const crmWhatsappOutboundIntents = pgTable(

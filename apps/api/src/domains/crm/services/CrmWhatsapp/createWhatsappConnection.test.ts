@@ -31,6 +31,7 @@ describe("createWhatsappConnection", () => {
 
     expect(connection).toMatchObject({
       displayName: "Atendimento",
+      externalInstanceId: "instance_1",
       provider: "zapi",
       status: "sandbox",
     });
@@ -39,6 +40,7 @@ describe("createWhatsappConnection", () => {
       tenantId: tenantId as never,
     });
     expect(stored).toHaveLength(1);
+    expect(stored?.[0]?.externalInstanceId).toBe("instance_1");
     expect(stored?.[0]?.credentialsRef).toMatchObject({
       mode: "stored",
       stored: {

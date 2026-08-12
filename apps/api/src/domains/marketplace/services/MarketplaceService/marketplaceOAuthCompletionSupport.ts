@@ -10,6 +10,11 @@ import {
   MarketplaceProviderRuntimeError,
   type MarketplaceServicePorts,
 } from "./serviceSupport.js";
+import {
+  normalizedScopes,
+  olxScopeState,
+  resolveOlxCapabilities,
+} from "../../marketplaceOlxCapabilitySupport.js";
 
 export async function connectMarketplaceOAuthAccount(
   context: ServiceContext,
@@ -23,22 +28,26 @@ export async function connectMarketplaceOAuthAccount(
   try {
     const scopes = normalizedScopes(token.scope);
     if (transaction.provider === "olx")
-      requireScopes(scopes, ["basic_user_info", "autoupload"]);
+      requireScopes(scopes, ["basic_user_info"]);
     const providerAccount = await gateway.checkAccount({ token });
     if (transaction.provider === "olx" && !providerAccount.accountId)
       throw new MarketplaceProviderRuntimeError(
         "OLX account identity could not be verified.",
       );
-    const crmMissingScopes = ["autoservice", "chat"].filter(
-      (scope) => !scopes.includes(scope),
-    );
-    const crmConnection =
-      transaction.provider === "olx" && crmMissingScopes.length === 0
-        ? await onboardOlx(
+    const authoritativeProviderAccountId =
+      providerAccount.accountId ?? token.providerAccountId;
+    const previousAccount = await ports.marketplaceRepository.findAccount({
+      provider: transaction.provider,
+      storeId: transaction.storeId as never,
+      tenantId: transaction.tenantId as never,
+    });
+    const olxCapabilities =
+      transaction.provider === "olx"
+        ? await resolveOlxCapabilities(
             context,
             transaction,
             token.accessToken,
-            providerAccount.accountId ?? token.providerAccountId,
+            authoritativeProviderAccountId,
             scopes,
             ports,
           )
@@ -52,18 +61,24 @@ export async function connectMarketplaceOAuthAccount(
             providerAccount.accountId ?? token.providerAccountId,
           scope: scopes.join(" "),
           tokenType: token.tokenType,
-          olxCrm:
-            transaction.provider === "olx"
-              ? {
-                  missingScopes: crmMissingScopes,
-                  ...(crmConnection
-                    ? { connectionId: crmConnection.connectionId }
+          ...(olxCapabilities
+            ? {
+                olxAuthorization: {
+                  externalAccountId:
+                    providerAccount.accountId ?? token.providerAccountId,
+                  grantedScopes: scopes,
+                  provider: "olx",
+                  scopeState: olxScopeState(olxCapabilities),
+                },
+                olxCapabilities: olxCapabilities.capabilities,
+                olxCrm: {
+                  ...(olxCapabilities.connectionId
+                    ? { connectionId: olxCapabilities.connectionId }
                     : {}),
-                  status: crmMissingScopes.length
-                    ? "blocked"
-                    : crmConnection?.status,
-                }
-              : undefined,
+                  status: olxCapabilities.crmStatus,
+                },
+              }
+            : {}),
         },
         credentials: {
           accessToken: token.accessToken,
@@ -71,10 +86,48 @@ export async function connectMarketplaceOAuthAccount(
         },
       },
       provider: transaction.provider,
+      providerAccountId: authoritativeProviderAccountId,
       status: "active",
       storeId: transaction.storeId as never,
       tenantId: transaction.tenantId as never,
     });
+    if (previousAccount && previousAccount.id !== account.id) {
+      await context.audit.record({
+        action: "marketplace.connection.identity_replaced",
+        actor: context.actor,
+        category: "authorization",
+        entityId: account.id,
+        entityType: "integration_account",
+        metadata: {
+          permission: "marketplace.manage",
+          previousAuthorizationId: previousAccount.id,
+          provider: transaction.provider,
+        },
+        outcome: "succeeded",
+        requestId: context.requestId,
+        storeId: transaction.storeId,
+        summary:
+          "Replaced marketplace authorization after provider identity changed",
+        tenantId: transaction.tenantId,
+      });
+    }
+    if (transaction.provider === "olx" && olxCapabilities) {
+      await ports.olxCrmOnboarding?.persistCapabilities?.(context, {
+        authorizationId: account.id,
+        capabilities: olxCapabilities.capabilities,
+        connectionId: olxCapabilities.connectionId,
+        grantedScopes: scopes,
+        providerAccountId: providerAccount.accountId ?? token.providerAccountId,
+        requestedScopes: [
+          "autoupload",
+          "autoservice",
+          "basic_user_info",
+          "chat",
+        ],
+        storeId: transaction.storeId,
+        tenantId: transaction.tenantId,
+      });
+    }
     context.logger.info(
       "marketplace.connection.complete",
       createServiceLogMetadata(context, {
@@ -101,7 +154,13 @@ export async function connectMarketplaceOAuthAccount(
       tenantId: transaction.tenantId,
       summary: "Completed marketplace OAuth connection",
     });
-    return { account, kind: "connected" as const };
+    return {
+      account,
+      ...(olxCapabilities
+        ? { capabilities: olxCapabilities.capabilities }
+        : {}),
+      kind: "connected" as const,
+    };
   } catch (error) {
     await context.audit.record({
       action: "marketplace.connection.complete",
@@ -124,36 +183,6 @@ export async function connectMarketplaceOAuthAccount(
   }
 }
 
-function onboardOlx(
-  context: ServiceContext,
-  transaction: MarketplaceOAuthTransaction,
-  accessToken: string,
-  providerAccountId: string | null,
-  scopes: string[],
-  ports: MarketplaceServicePorts,
-) {
-  if (!ports.olxCrmOnboarding)
-    throw new MarketplaceProviderRuntimeError(
-      "OLX CRM onboarding is unavailable.",
-    );
-  return ports.olxCrmOnboarding.onboard(context, {
-    accessToken,
-    providerAccountId,
-    scopes,
-    storeId: transaction.storeId,
-    tenantId: transaction.tenantId,
-  });
-}
-function normalizedScopes(value: string | null): string[] {
-  return [
-    ...new Set(
-      (value ?? "")
-        .split(/[\s,]+/u)
-        .map((scope) => scope.trim().toLowerCase())
-        .filter(Boolean),
-    ),
-  ].sort();
-}
 function requireScopes(scopes: readonly string[], required: readonly string[]) {
   const missing = required.filter((scope) => !scopes.includes(scope));
   if (missing.length)

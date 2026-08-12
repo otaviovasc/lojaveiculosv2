@@ -6,17 +6,20 @@ import {
   buildOlxLeadProviderReference,
   createOlxLeadReceiptPayload,
   olxLeadReceiptEventType,
+  sealOlxLeadReceiptPayload,
 } from "../../messaging/olxLeadReceipt.js";
 import {
   createOlxLeadRecoveryTestRepository,
   createOlxLeadRecoveryTestWebhookRepository,
 } from "../../testSupportOlxLeadRecovery.js";
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
+import type { CrmConnectionCredentialVault } from "../../ports/crmConnectionSetupProvider.js";
 import { recoverOlxLeadWebhooks } from "./recoverOlxLeadWebhooks.js";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
+const vault = createTestVault();
 
 describe("recoverOlxLeadWebhooks", () => {
   it("allows only one concurrent worker to process a receipt", async () => {
@@ -32,6 +35,7 @@ describe("recoverOlxLeadWebhooks", () => {
     await recordReceipt(webhookRepository);
     const ports = {
       crmRepository: crm.repository,
+      crmConnectionCredentialVault: vault,
       crmWebhookEventRepository: webhookRepository,
     } as CrmServicePorts;
 
@@ -59,6 +63,7 @@ describe("recoverOlxLeadWebhooks", () => {
     await recordReceipt(webhookRepository);
     const ports = {
       crmRepository: crm.repository,
+      crmConnectionCredentialVault: vault,
       crmWebhookEventRepository: webhookRepository,
     } as CrmServicePorts;
     const auditStarted = deferred<void>();
@@ -98,10 +103,17 @@ describe("recoverOlxLeadWebhooks", () => {
       storeId,
       tenantId,
     });
-    expect(processed).toMatchObject({
+    const processedFixture = {
       errorMessage: null,
+      payload: {
+        schemaVersion: 3,
+      },
       status: "processed",
-    });
+    } as const;
+    expect(processed).toMatchObject(processedFixture);
+    expect(typeof processed?.payload.identityKey).toBe("string");
+    expect(typeof processed?.payload.receiptClearedAt).toBe("string");
+    expect(processed?.payload).not.toHaveProperty("sealedReceipt");
   });
 });
 
@@ -121,16 +133,34 @@ async function recordReceipt(
     message: "Tenho interesse",
     source: "chat",
   });
+  const sealed = await sealOlxLeadReceiptPayload(
+    vault,
+    { connectionId, storeId, tenantId },
+    payload,
+  );
+  expect(JSON.stringify(sealed)).not.toContain("ana@example.com");
+  expect(JSON.stringify(sealed)).not.toContain("Tenho interesse");
   return repository.recordReceived({
     connectionId,
     environment: "test",
     eventType: olxLeadReceiptEventType,
-    payload,
+    payload: sealed,
     provider: "olx_chat",
     providerEventId: buildOlxLeadProviderReference(payload.identityKey),
     storeId,
     tenantId,
   });
+}
+
+function createTestVault(): CrmConnectionCredentialVault {
+  return {
+    async open(input) {
+      return Buffer.from(input.sealed, "base64url").toString("utf8");
+    },
+    async seal(input) {
+      return Buffer.from(input.plaintext, "utf8").toString("base64url");
+    },
+  };
 }
 
 function context(

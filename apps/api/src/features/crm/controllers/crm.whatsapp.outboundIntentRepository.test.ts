@@ -28,6 +28,47 @@ describe("CRM WhatsApp outbound intent repository", () => {
     ]);
   });
 
+  it("reclaims a retryable failure with a fresh provider claim", async () => {
+    const intents = createMemoryCrmWhatsappOutboundIntentRepository();
+    const first = await intents.claim(
+      claimInput(new Date("2026-08-10T10:00:00Z")),
+    );
+    if (first.kind !== "claimed") throw new Error("expected claim");
+    const firstClaimToken = first.intent.claimToken;
+    await intents.recordProviderFailure({
+      claimToken: firstClaimToken,
+      failure: { code: "rate_limited", status: 429 },
+      id: first.intent.id,
+      retryable: true,
+    });
+    const retried = await intents.claim(
+      claimInput(new Date("2026-08-10T10:01:00Z")),
+    );
+    expect(retried.kind).toBe("claimed");
+    if (retried.kind === "claimed") {
+      expect(retried.intent.claimToken).not.toBe(firstClaimToken);
+      expect(retried.intent.providerResult).toBeNull();
+    }
+  });
+
+  it("keeps a deterministic provider failure terminal", async () => {
+    const intents = createMemoryCrmWhatsappOutboundIntentRepository();
+    const first = await intents.claim(
+      claimInput(new Date("2026-08-10T10:00:00Z")),
+    );
+    if (first.kind !== "claimed") throw new Error("expected claim");
+    await intents.recordProviderFailure({
+      claimToken: first.intent.claimToken,
+      failure: { code: "provider_rejected", status: 502 },
+      id: first.intent.id,
+      retryable: false,
+    });
+    const repeated = await intents.claim(
+      claimInput(new Date("2026-08-10T10:03:00Z")),
+    );
+    expect(repeated.kind).toBe("failed");
+  });
+
   it("minimizes the recovery payload after local completion", async () => {
     const intents = createMemoryCrmWhatsappOutboundIntentRepository();
     const now = new Date("2026-08-10T10:00:00Z");

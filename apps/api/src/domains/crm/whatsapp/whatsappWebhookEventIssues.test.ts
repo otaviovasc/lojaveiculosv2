@@ -18,6 +18,7 @@ const baseEvent: CrmProviderWebhookEvent = {
     pollVote: { options: [{ name: "SUV" }], pollMessageId: "poll-1" },
     type: "ReceivedCallback",
   },
+  payloadDigest: null,
   processingAttempts: 0,
   processingStartedAt: null,
   processingToken: null,

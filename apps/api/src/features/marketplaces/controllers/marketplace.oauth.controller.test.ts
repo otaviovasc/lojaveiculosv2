@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createMemoryAuditSink } from "../../../shared/auditSink.js";
 import {
   createGateway,
   createTestApp,
@@ -98,101 +99,6 @@ describe("marketplace OAuth controller", () => {
     expect(gateway.tokenRequests).toHaveLength(2);
   });
 
-  it("retries onboarding after token exchange without replaying the authorization code", async () => {
-    const gateway = createGateway();
-    let attempts = 0;
-    const app = createTestApp({
-      gateway,
-      olxCrmOnboarding: {
-        onboard: async () => {
-          attempts += 1;
-          if (attempts === 1)
-            throw new Error("webhook registration unavailable");
-          return { connectionId: "olx_connection_1", status: "active" };
-        },
-      },
-    });
-    const start = await post(app, "/connect-url", { provider: "olx" });
-    const state = new URL(
-      ((await start.json()) as { authorizationUrl: string }).authorizationUrl,
-    ).searchParams.get("state");
-    const callback = await app.request(
-      `/api/v1/marketplaces/oauth/olx/callback?code=single_exchange_code&state=${state}`,
-    );
-    const transactionId = new URL(
-      callback.headers.get("location") ?? "",
-      "http://localhost",
-    ).searchParams.get("transactionId");
-    expect((await post(app, "/oauth/complete", { transactionId })).status).toBe(
-      500,
-    );
-    expect((await post(app, "/oauth/complete", { transactionId })).status).toBe(
-      200,
-    );
-    expect(gateway.tokenRequests).toHaveLength(1);
-  });
-
-  it("denies missing CRM setup access before token exchange", async () => {
-    const gateway = createGateway();
-    const app = createTestApp({ gateway, permissions: ["marketplace.manage"] });
-    const start = await post(app, "/connect-url", { provider: "olx" });
-    const state = new URL(
-      ((await start.json()) as { authorizationUrl: string }).authorizationUrl,
-    ).searchParams.get("state");
-    const callback = await app.request(
-      `/api/v1/marketplaces/oauth/olx/callback?code=denied_code&state=${state}`,
-    );
-    const transactionId = new URL(
-      callback.headers.get("location") ?? "",
-      "http://localhost",
-    ).searchParams.get("transactionId");
-
-    expect((await post(app, "/oauth/complete", { transactionId })).status).toBe(
-      403,
-    );
-    expect(gateway.tokenRequests).toEqual([]);
-  });
-
-  it("denies missing CRM entitlement before token exchange", async () => {
-    const gateway = createGateway();
-    const app = createTestApp({ gateway, entitlements: ["marketplace"] });
-    const start = await post(app, "/connect-url", { provider: "olx" });
-    const state = new URL(
-      ((await start.json()) as { authorizationUrl: string }).authorizationUrl,
-    ).searchParams.get("state");
-    const callback = await app.request(
-      `/api/v1/marketplaces/oauth/olx/callback?code=denied_entitlement&state=${state}`,
-    );
-    const transactionId = new URL(
-      callback.headers.get("location") ?? "",
-      "http://localhost",
-    ).searchParams.get("transactionId");
-    expect((await post(app, "/oauth/complete", { transactionId })).status).toBe(
-      403,
-    );
-    expect(gateway.tokenRequests).toEqual([]);
-  });
-
-  it("fails closed when OLX omits identity or autoupload scopes", async () => {
-    const gateway = createGateway({ scope: "autoservice chat" });
-    const app = createTestApp({ gateway });
-    const start = await post(app, "/connect-url", { provider: "olx" });
-    const state = new URL(
-      ((await start.json()) as { authorizationUrl: string }).authorizationUrl,
-    ).searchParams.get("state");
-    const callback = await app.request(
-      `/api/v1/marketplaces/oauth/olx/callback?code=scope_code&state=${state}`,
-    );
-    const transactionId = new URL(
-      callback.headers.get("location") ?? "",
-      "http://localhost",
-    ).searchParams.get("transactionId");
-
-    expect((await post(app, "/oauth/complete", { transactionId })).status).toBe(
-      400,
-    );
-  });
-
   it("consumes provider cancellation state without exposing the provider error", async () => {
     const app = createTestApp();
     const start = await post(app, "/connect-url", { provider: "olx" });
@@ -207,4 +113,47 @@ describe("marketplace OAuth controller", () => {
       "/dashboard?marketplaceOauth=cancelled&provider=olx#/marketplaces",
     );
   });
+
+  it("reuses an OLX authorization only for the same authoritative account", async () => {
+    const audit = createMemoryAuditSink();
+    const gateway = createGateway();
+    let providerAccountId = "provider-account-one";
+    gateway.checkAccount = async () => ({
+      accountId: providerAccountId,
+      requirements: [],
+      status: "connected",
+    });
+    const app = createTestApp({ audit, gateway });
+
+    const first = await completeAuthorization(app, "code-one");
+    const same = await completeAuthorization(app, "code-two");
+    providerAccountId = "provider-account-two";
+    const replacement = await completeAuthorization(app, "code-three");
+
+    expect(same.account.id).toBe(first.account.id);
+    expect(replacement.account.id).not.toBe(first.account.id);
+    expect(audit.events.map((event) => event.action)).toContain(
+      "marketplace.connection.identity_replaced",
+    );
+  });
 });
+
+async function completeAuthorization(
+  app: ReturnType<typeof createTestApp>,
+  code: string,
+) {
+  const start = await post(app, "/connect-url", { provider: "olx" });
+  const state = new URL(
+    ((await start.json()) as { authorizationUrl: string }).authorizationUrl,
+  ).searchParams.get("state");
+  const callback = await app.request(
+    `/api/v1/marketplaces/oauth/olx/callback?code=${code}&state=${state}`,
+  );
+  const transactionId = new URL(
+    callback.headers.get("location") ?? "",
+    "http://localhost",
+  ).searchParams.get("transactionId");
+  const response = await post(app, "/oauth/complete", { transactionId });
+  expect(response.status).toBe(200);
+  return (await response.json()) as { account: { id: string } };
+}

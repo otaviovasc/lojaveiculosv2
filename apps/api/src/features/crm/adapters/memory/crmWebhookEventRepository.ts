@@ -156,7 +156,15 @@ export function createMemoryCrmWebhookEventRepository(
           event.connectionId === (input.connectionId ?? null) &&
           event.providerEventId === input.providerEventId,
       );
-      if (existing) return { created: false, event: existing };
+      if (existing) {
+        return {
+          created: false,
+          divergentReplay:
+            input.payloadDigest !== undefined &&
+            input.payloadDigest !== existing.payloadDigest,
+          event: existing,
+        };
+      }
 
       const now = new Date();
       const event: CrmProviderWebhookEvent = {
@@ -167,6 +175,7 @@ export function createMemoryCrmWebhookEventRepository(
         eventType: input.eventType,
         id: randomUUID(),
         payload: input.payload,
+        payloadDigest: input.payloadDigest ?? null,
         processingAttempts: 0,
         processingStartedAt: null,
         processingToken: null,
@@ -179,7 +188,7 @@ export function createMemoryCrmWebhookEventRepository(
         updatedAt: now,
       };
       events.push(event);
-      return { created: true, event };
+      return { created: true, divergentReplay: false, event };
     },
     async stageEffects(input) {
       const now = new Date();
@@ -228,6 +237,7 @@ export function createMemoryCrmWebhookEventRepository(
         return null;
       }
       event.errorMessage = input.errorMessage ?? null;
+      if (input.payload) event.payload = input.payload;
       event.processedAt = new Date();
       event.processingStartedAt = null;
       event.processingToken = null;

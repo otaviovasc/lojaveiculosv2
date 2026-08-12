@@ -1,4 +1,3 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   CrmWhatsappConfigureWebhooksInput,
@@ -8,13 +7,11 @@ import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepo
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 import {
-  createZapiWebhookSetupIntent,
-  withZapiWebhookSetupState,
-} from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
-
-const storeId = "26000000-0000-4000-8000-000000000001" as StoreId;
-const tenantId = "26000000-0000-4000-8000-000000000002" as TenantId;
-const connectionId = "24000000-0000-4000-8000-000000000101";
+  createZapiWebhookTestConnection as createZapiConnection,
+  secureWebhookSetupOptions as secureSetupOptions,
+  webhookSetupConnectionId as connectionId,
+  webhookSupportRequest as supportRequest,
+} from "./crm.whatsapp.webhookConfigure.testSupport.js";
 
 describe("CRM WhatsApp webhook auto-configuration", () => {
   const originalApiBaseUrl = process.env.API_BASE_URL;
@@ -120,92 +117,4 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     expect(response.status).toBe(404);
     expect(configureWebhooks).not.toHaveBeenCalled();
   });
-
-  it("rejects official connections and untrusted shared-token destinations", async () => {
-    process.env.API_BASE_URL = "https://api.trusted.test";
-    const configureWebhooks = vi.fn();
-    const officialApp = createTestApp({
-      ...secureSetupOptions(),
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection({ provider: "composio_whatsapp" }),
-      ]),
-      crmWhatsappGateway: { configureWebhooks },
-    });
-    const untrustedApp = createTestApp({
-      ...secureSetupOptions(),
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection({
-          webhookUrl: "https://attacker.example/callbacks",
-        }),
-      ]),
-      crmWhatsappGateway: { configureWebhooks },
-    });
-
-    const official = await officialApp.request(
-      `/api/v1/crm/whatsapp/support/zapi/connections/${connectionId}/webhooks/configure`,
-      supportRequest(),
-    );
-    const untrusted = await untrustedApp.request(
-      `/api/v1/crm/whatsapp/support/zapi/connections/${connectionId}/webhooks/configure`,
-      supportRequest(),
-    );
-
-    expect(official.status).toBe(409);
-    expect(untrusted.status).toBe(409);
-    expect(configureWebhooks).not.toHaveBeenCalled();
-  });
 });
-
-function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    credentialsRef: {
-      mode: "stored",
-      stored: {
-        instanceId: "zapi-instance-1",
-        instanceToken: "zapi-secret",
-        webhookSecret: "sealed:webhook-secret",
-      },
-    },
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: "zapi-instance-1",
-    id: connectionId,
-    metadata: withZapiWebhookSetupState(
-      {},
-      createZapiWebhookSetupIntent(connectionId),
-    ),
-    phone: null,
-    provider: "zapi" as const,
-    status: "sandbox" as const,
-    storeId,
-    tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
-}
-
-function secureSetupOptions() {
-  return {
-    crmConnectionCredentialVault: {
-      open: async ({ sealed }: { sealed: string }) =>
-        sealed.replace(/^sealed:/u, ""),
-      seal: async ({ plaintext }: { plaintext: string }) =>
-        `sealed:${plaintext}`,
-    },
-    crmZapiSupportAuthorizer: {
-      assertPaidSetupEligible: async () => undefined,
-    },
-    entitlements: ["crm", "crm_zapi"] as ("crm" | "crm_zapi")[],
-    supportPermissions: ["tenant.manage"] as "tenant.manage"[],
-  };
-}
-
-function supportRequest() {
-  return {
-    body: JSON.stringify({ storeId, tenantId }),
-    headers: { "content-type": "application/json" },
-    method: "POST",
-  };
-}

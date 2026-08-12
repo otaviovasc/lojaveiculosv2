@@ -143,6 +143,31 @@ describe("access policy", () => {
     }
   });
 
+  it("keeps sensitive CRM identity and consent authority owner/admin-only", () => {
+    const sensitivePermissions = [
+      "crm.consent.record",
+      "crm.contact.merge",
+      "crm.contact_identity.dispute",
+      "crm.contact_identity.verify",
+    ] as const;
+
+    for (const role of ["agency", "owner", "admin"] as const) {
+      const permissions = resolvePermissions({ role });
+      for (const permission of sensitivePermissions) {
+        expect(canAccess(permissions, permission)).toEqual({ allowed: true });
+      }
+    }
+    for (const role of ["investor", "salesman", "supervisor"] as const) {
+      const permissions = resolvePermissions({ role });
+      for (const permission of sensitivePermissions) {
+        expect(canAccess(permissions, permission)).toEqual({
+          allowed: false,
+          reason: `Missing permission: ${permission}`,
+        });
+      }
+    }
+  });
+
   it("mirrors prior WhatsApp role behavior with explicit CRM permissions", () => {
     const investor = resolvePermissions({ role: "investor" });
     const owner = resolvePermissions({ role: "owner" });

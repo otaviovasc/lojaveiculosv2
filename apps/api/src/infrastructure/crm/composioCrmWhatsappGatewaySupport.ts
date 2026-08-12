@@ -99,6 +99,9 @@ export function readCanonicalMessageId(
 
   throw new CrmWhatsappGatewayError(
     "Meta accepted the request without returning a message ID",
+    502,
+    undefined,
+    "request_failed",
   );
 }
 
@@ -165,5 +168,10 @@ function readRequestTimeoutMs(value: string | undefined) {
 }
 
 function configurationError(message: string) {
-  return new CrmWhatsappGatewayError(message);
+  return new CrmWhatsappGatewayError(
+    message,
+    409,
+    undefined,
+    "configuration_error",
+  );
 }

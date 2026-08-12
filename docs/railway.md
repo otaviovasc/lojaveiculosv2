@@ -63,6 +63,7 @@ Each persistent environment should contain:
 - `lojaveiculosv2-api`
 - `lojaveiculosv2-crm-schedule-worker`
 - `lojaveiculosv2-billing-reconciliation-worker`
+- `lojaveiculosv2-crm-retention-worker`
 - product Postgres
 - audit Postgres
 - Redis
@@ -105,6 +106,9 @@ separate because audit isolation is a product invariant, not optional capacity.
 - Billing reconciliation worker: `*/5 * * * *` UTC; it claims durable billing
   tasks and exits. Provider writes occur only during scheduled executions,
   never during build or deploy.
+- CRM retention worker: `17 * * * *` UTC with restart policy `NEVER`. The first
+  staging release is pinned to `CRM_RETENTION_DRY_RUN=true`; it reports scoped
+  eligibility and legal-hold skips without anonymizing or purging CRM data.
 - Catalog publication is not provider reconciliation: it may install and
   activate catalog definition rows during API startup, but it never changes
   subscription items, provider subscriptions, invoices, or payments.
@@ -119,6 +123,7 @@ separate because audit isolation is a product invariant, not optional capacity.
 
 - Full loop: `docs/maximum-agentic-loop-railway-terraform.md`
 - Deploy runbook: `docs/runbooks/deploy.md`
+- CRM retention runbook: `docs/runbooks/crm-retention.md`
 - Basic V1 to V2 migration runbook:
   `docs/runbooks/v1-to-v2-basic-migration.md`
 - Incident runbook: `docs/runbooks/incidents.md`

@@ -6,6 +6,7 @@ import {
   createOlxWebhookSourceFingerprint,
   createRedisOlxWebhookSecurity,
   CrmOlxWebhookSecurityConfigurationError,
+  isOlxWebhookSourceAllowed,
 } from "./olxWebhookSecurity.js";
 
 const now = new Date("2026-08-10T12:01:00.000Z");
@@ -50,6 +51,63 @@ describe("createOlxWebhookSecurity", () => {
     expect(() => resolveCrmPorts({ environment: "production" })).toThrow(
       CrmOlxWebhookSecurityConfigurationError,
     );
+  });
+});
+
+describe("isOlxWebhookSourceAllowed", () => {
+  it("accepts the official OLX address by default in deployed environments", () => {
+    expect(
+      isOlxWebhookSourceAllowed("54.162.151.93", {
+        APP_ENV: "staging",
+        CRM_OLX_TRUST_PROXY_HEADERS: "true",
+      }),
+    ).toBe(true);
+  });
+
+  it("fails closed unless the deployed ingress explicitly owns proxy headers", () => {
+    expect(
+      isOlxWebhookSourceAllowed("54.162.151.93", { APP_ENV: "production" }),
+    ).toBe(false);
+    expect(
+      isOlxWebhookSourceAllowed("54.162.151.93", {
+        APP_ENV: "production",
+        CRM_OLX_TRUST_PROXY_HEADERS: "TRUE",
+      }),
+    ).toBe(false);
+  });
+
+  it("fails closed for missing, malformed, multi-value, or unlisted deployed addresses", () => {
+    const env = {
+      APP_ENV: "production",
+      CRM_OLX_TRUST_PROXY_HEADERS: "true",
+    };
+    expect(isOlxWebhookSourceAllowed(null, env)).toBe(false);
+    expect(isOlxWebhookSourceAllowed("54.162.151.93, 203.0.113.1", env)).toBe(
+      false,
+    );
+    expect(isOlxWebhookSourceAllowed("203.0.113.1", env)).toBe(false);
+  });
+
+  it("honors an explicit allowlist and rejects invalid configuration", () => {
+    const env = {
+      APP_ENV: "production",
+      CRM_OLX_WEBHOOK_ALLOWED_IPS: "203.0.113.1,2001:db8::1",
+      CRM_OLX_TRUST_PROXY_HEADERS: "true",
+    };
+    expect(isOlxWebhookSourceAllowed("203.0.113.1", env)).toBe(true);
+    expect(isOlxWebhookSourceAllowed("54.162.151.93", env)).toBe(false);
+    expect(() =>
+      isOlxWebhookSourceAllowed("203.0.113.1", {
+        APP_ENV: "production",
+        CRM_OLX_WEBHOOK_ALLOWED_IPS: "203.0.113.1,not-an-ip",
+        CRM_OLX_TRUST_PROXY_HEADERS: "true",
+      }),
+    ).toThrow(CrmOlxWebhookSecurityConfigurationError);
+  });
+
+  it("keeps local and test callbacks compatible without proxy headers", () => {
+    expect(isOlxWebhookSourceAllowed(null, { APP_ENV: "local" })).toBe(true);
+    expect(isOlxWebhookSourceAllowed(null, { NODE_ENV: "test" })).toBe(true);
   });
 });
 

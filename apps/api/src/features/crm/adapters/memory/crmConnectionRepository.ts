@@ -42,10 +42,7 @@ export function createMemoryCrmConnectionRepository(
         externalConnectionId: input.externalConnectionId ?? null,
         externalInstanceId: input.externalInstanceId ?? null,
         id: crypto.randomUUID(),
-        metadata: {
-          createdAt: new Date().toISOString(),
-          ...(input.metadata ?? {}),
-        },
+        metadata: { createdAt: new Date().toISOString(), ...input.metadata },
         phone: input.phone ?? null,
         provider: input.provider,
         status: input.status ?? "sandbox",
@@ -64,15 +61,26 @@ export function createMemoryCrmConnectionRepository(
           item.tenantId === input.tenantId &&
           item.status !== "archived",
       );
-      if (existing) {
-        existing.credentialsRef = input.credentialsRef ?? {};
+      if (
+        existing &&
+        existing.externalConnectionId === input.externalConnectionId &&
+        input.externalConnectionId !== null
+      ) {
+        const currentStored = readRecord(existing.credentialsRef.stored);
+        const nextStored = readRecord(input.credentialsRef?.stored);
+        existing.credentialsRef = {
+          ...existing.credentialsRef,
+          stored: {
+            ...nextStored,
+            ...(currentStored.webhookSecret
+              ? { webhookSecret: currentStored.webhookSecret }
+              : {}),
+          },
+        };
         existing.displayName = input.displayName;
-        existing.externalConnectionId = input.externalConnectionId ?? null;
-        existing.metadata = input.metadata ?? {};
-        existing.status = input.status ?? "error";
-        existing.webhookUrl = input.webhookUrl ?? null;
-        return existing;
+        return { connection: existing, replacedConnectionId: null };
       }
+      if (existing) existing.status = "archived";
       const connection: CrmConnection = {
         credentialsRef: input.credentialsRef ?? {},
         displayName: input.displayName,
@@ -88,7 +96,10 @@ export function createMemoryCrmConnectionRepository(
         webhookUrl: input.webhookUrl ?? null,
       };
       connections.push(connection);
-      return connection;
+      return {
+        connection,
+        replacedConnectionId: existing?.id ?? null,
+      };
     },
     async configureInitialZapiCredentials(input) {
       const connection = connections.find(
@@ -103,6 +114,7 @@ export function createMemoryCrmConnectionRepository(
       const state = readZapiCredentialState(connection.credentialsRef);
       if (state !== "unconfigured") return { status: state };
       connection.credentialsRef = input.credentialsRef;
+      connection.externalInstanceId = input.externalInstanceId;
       return { connection, status: "configured" };
     },
     async claimZapiWebhookSetup(input) {
@@ -116,7 +128,7 @@ export function createMemoryCrmConnectionRepository(
       );
       if (!connection) return null;
       const setup = readRecord(connection.metadata.webhookSetup);
-      if (setup.status === "configured") return null;
+      if (setup.status === "configured" && !input.allowConfigured) return null;
       const leaseExpiresAt = readDateOrNull(setup.leaseExpiresAt);
       if (setup.leaseOwner && leaseExpiresAt && leaseExpiresAt > input.now) {
         return null;

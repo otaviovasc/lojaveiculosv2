@@ -14,6 +14,7 @@ export async function sealZapiCredentials(
   scope: { storeId: string; tenantId: string },
   ports: CrmServicePorts,
   currentCredentialsRef: Record<string, unknown> = {},
+  options: { reuseWebhookSecret?: boolean } = {},
 ) {
   const vault = getCrmConnectionCredentialVault(ports);
   const credentialScope = {
@@ -41,7 +42,7 @@ export async function sealZapiCredentials(
             purpose: ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
           })
         : Promise.resolve(readString(currentStored.clientToken)),
-      currentWebhookSecret
+      currentWebhookSecret && options.reuseWebhookSecret !== false
         ? Promise.resolve(currentWebhookSecret)
         : vault.seal({
             ...credentialScope,

@@ -38,6 +38,39 @@ export function createDrizzleCrmWhatsappOutboundIntentRepository(
         .limit(1);
       if (!existing || existing.fingerprint !== input.fingerprint)
         return { kind: "conflict" };
+      if (existing.status === "retryable_failed") {
+        const [retried] = await db
+          .update(crmWhatsappOutboundIntents)
+          .set({
+            claimToken,
+            providerResult: null,
+            startedAt: input.now,
+            status: "started",
+          })
+          .where(
+            and(
+              eq(crmWhatsappOutboundIntents.id, existing.id),
+              eq(crmWhatsappOutboundIntents.status, "retryable_failed"),
+            ),
+          )
+          .returning();
+        if (retried) return { intent: map(retried), kind: "claimed" };
+        const [concurrent] = await db
+          .select()
+          .from(crmWhatsappOutboundIntents)
+          .where(eq(crmWhatsappOutboundIntents.id, existing.id))
+          .limit(1);
+        if (concurrent) {
+          return {
+            intent: map(concurrent),
+            kind:
+              concurrent.status === "started" ||
+              concurrent.status === "retryable_failed"
+                ? "in_progress"
+                : concurrent.status,
+          };
+        }
+      }
       if (
         existing.status === "started" &&
         existing.startedAt <= input.staleBefore
@@ -57,7 +90,11 @@ export function createDrizzleCrmWhatsappOutboundIntentRepository(
       }
       return {
         intent: map(existing),
-        kind: existing.status === "started" ? "in_progress" : existing.status,
+        kind:
+          existing.status === "started" ||
+          existing.status === "retryable_failed"
+            ? "in_progress"
+            : existing.status,
       };
     },
     async complete(input) {
@@ -86,6 +123,18 @@ export function createDrizzleCrmWhatsappOutboundIntentRepository(
         .update(crmWhatsappOutboundIntents)
         .set({ status: "indeterminate" })
         .where(owned(input));
+    },
+    async recordProviderFailure(input) {
+      await db
+        .update(crmWhatsappOutboundIntents)
+        .set({
+          providerResult: input.failure,
+          recoveryExpiresAt: null,
+          status: input.retryable ? "retryable_failed" : "failed",
+        })
+        .where(
+          and(owned(input), eq(crmWhatsappOutboundIntents.status, "started")),
+        );
     },
     async recordProviderSuccess(input) {
       await db

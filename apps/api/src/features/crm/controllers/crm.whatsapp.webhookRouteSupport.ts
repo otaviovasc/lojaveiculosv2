@@ -2,7 +2,10 @@ import type { Context } from "hono";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
 import { completeZapiWebhookAuthorization } from "../../../domains/crm/services/CrmWhatsapp/authorizeZapiWebhook.js";
-import { createOlxWebhookSourceFingerprint } from "../../../infrastructure/crm/olxWebhookSecurity.js";
+import {
+  createOlxWebhookSourceFingerprint,
+  isOlxWebhookSourceAllowed,
+} from "../../../infrastructure/crm/olxWebhookSecurity.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import {
   createServiceContext,
@@ -148,13 +151,16 @@ export async function authorizeOlxWebhook(
   if (!connectionId) {
     throw new CrmWhatsappValidationError("Webhook connectionId is required.");
   }
+  // This header is authoritative only when deployment explicitly enables the
+  // Railway edge contract. x-forwarded-for is never used for authorization.
+  const clientAddress = context.req.header("x-real-ip") ?? null;
+  if (!isOlxWebhookSourceAllowed(clientAddress)) {
+    throw new AuthorizationError("Invalid OLX webhook source.");
+  }
   const authorized = await services.authorizeOlxChatWebhook(serviceContext, {
     connectionId,
-    // Railway documents x-real-ip as its client-address header. It is only a
-    // rate-limit partition key here, never authorization or an IP allowlist:
-    // local and ngrok proxy chains cannot enforce the same trust boundary.
     sourceFingerprint: createOlxWebhookSourceFingerprint({
-      clientAddress: context.req.header("x-real-ip") ?? null,
+      clientAddress,
       connectionId,
     }),
     token:

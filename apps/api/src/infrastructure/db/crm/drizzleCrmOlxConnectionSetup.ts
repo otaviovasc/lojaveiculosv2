@@ -11,7 +11,62 @@ export async function upsertOlxConnection(
   db: DrizzleCrmClient,
   input: Parameters<CrmConnectionRepository["upsertOlxConnection"]>[0],
 ) {
-  const [row] = await db
+  const [existing] = await db
+    .select()
+    .from(crmConnections)
+    .where(
+      and(
+        eq(crmConnections.storeId, input.storeId),
+        eq(crmConnections.tenantId, input.tenantId),
+        eq(crmConnections.provider, "olx_chat"),
+        sql`${crmConnections.status} <> 'archived'`,
+      ),
+    )
+    .limit(1);
+  if (
+    existing &&
+    existing.externalConnectionId === input.externalConnectionId &&
+    input.externalConnectionId !== null
+  ) {
+    const currentStored = readRecord(
+      readRecord(existing.credentialsRef).stored,
+    );
+    const nextStored = readRecord(readRecord(input.credentialsRef).stored);
+    const [updated] = await db
+      .update(crmConnections)
+      .set({
+        credentialsRef: {
+          stored: {
+            ...nextStored,
+            ...(currentStored.webhookSecret
+              ? { webhookSecret: currentStored.webhookSecret }
+              : {}),
+          },
+        },
+        displayName: input.displayName,
+        updatedAt: new Date(),
+      })
+      .where(eq(crmConnections.id, existing.id))
+      .returning();
+    if (!updated) throw new Error("OLX CRM connection update returned no row.");
+    return {
+      connection: toCrmConnection(updated),
+      replacedConnectionId: null,
+    };
+  }
+  if (existing) {
+    await db
+      .update(crmConnections)
+      .set({ status: "archived", updatedAt: new Date() })
+      .where(
+        and(
+          eq(crmConnections.id, existing.id),
+          eq(crmConnections.storeId, input.storeId),
+          eq(crmConnections.tenantId, input.tenantId),
+        ),
+      );
+  }
+  const [created] = await db
     .insert(crmConnections)
     .values({
       credentialsRef: input.credentialsRef ?? {},
@@ -24,22 +79,12 @@ export async function upsertOlxConnection(
       tenantId: input.tenantId,
       webhookUrl: input.webhookUrl ?? null,
     })
-    .onConflictDoUpdate({
-      set: {
-        credentialsRef: input.credentialsRef ?? {},
-        displayName: input.displayName,
-        externalConnectionId: input.externalConnectionId ?? null,
-        metadata: input.metadata ?? {},
-        status: input.status ?? "error",
-        updatedAt: new Date(),
-        webhookUrl: input.webhookUrl ?? null,
-      },
-      target: [crmConnections.storeId, crmConnections.provider],
-      targetWhere: sql`${crmConnections.status} <> 'archived' and ${crmConnections.provider} in ('zapi', 'composio_whatsapp', 'olx_chat')`,
-    })
     .returning();
-  if (!row) throw new Error("OLX CRM connection upsert returned no row.");
-  return toCrmConnection(row);
+  if (!created) throw new Error("OLX CRM connection insert returned no row.");
+  return {
+    connection: toCrmConnection(created),
+    replacedConnectionId: existing?.id ?? null,
+  };
 }
 
 export async function claimOlxWebhookSetup(
@@ -80,7 +125,9 @@ export async function finishOlxWebhookSetup(
     .update(crmConnections)
     .set({
       metadata: sql`${crmConnections.metadata} || jsonb_build_object('webhookSetup', ${JSON.stringify(setup)}::jsonb)`,
-      status: setup.status === "configured" ? "active" : "error",
+      status: ["configured", "partial"].includes(String(setup.status))
+        ? "active"
+        : "error",
       updatedAt: new Date(),
     })
     .where(

@@ -2,6 +2,35 @@ import { describe, expect, it } from "vitest";
 import { createMemoryCrmWebhookEventRepository } from "./crmWebhookEventRepository.js";
 
 describe("memory CRM webhook event claims", () => {
+  it("distinguishes exact and divergent replays without retaining replay content", async () => {
+    const repository = createMemoryCrmWebhookEventRepository();
+    const input = {
+      connectionId: "00000000-0000-4000-8000-000000000001",
+      environment: "test",
+      eventType: "crm.messaging.olx.received",
+      payload: { schemaVersion: 1 },
+      payloadDigest: "a".repeat(64),
+      provider: "olx_chat" as const,
+      providerEventId: "olx:message-1",
+    };
+
+    const first = await repository.recordReceived(input);
+    const exact = await repository.recordReceived(input);
+    const divergent = await repository.recordReceived({
+      ...input,
+      payload: { plaintext: "must-not-be-retained" },
+      payloadDigest: "b".repeat(64),
+    });
+
+    expect(first).toMatchObject({ created: true, divergentReplay: false });
+    expect(exact).toMatchObject({ created: false, divergentReplay: false });
+    expect(divergent).toMatchObject({ created: false, divergentReplay: true });
+    expect(divergent.event.payload).toEqual({ schemaVersion: 1 });
+    expect(JSON.stringify(divergent.event)).not.toContain(
+      "must-not-be-retained",
+    );
+  });
+
   it("allows exactly one concurrent claimant and deduplicates terminal events", async () => {
     const repository = createMemoryCrmWebhookEventRepository();
     const recorded = await repository.recordReceived({

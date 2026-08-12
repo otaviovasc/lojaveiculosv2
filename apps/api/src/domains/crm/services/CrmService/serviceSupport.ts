@@ -4,7 +4,6 @@ import type {
 } from "../../../../shared/serviceContext.js";
 import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
-import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
 import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
 import {
@@ -12,14 +11,6 @@ import {
   type CrmBotWebhookDispatcher,
 } from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
-import type {
-  ComposioWhatsappOnboardingProvider,
-  CrmConnectionCredentialVault,
-  CrmZapiSetupCompletionReporter,
-  CrmZapiSupportAuthorizer,
-  OlxCrmWebhookSetupProvider,
-  ZapiConnectionSetupProvider,
-} from "../../ports/crmConnectionSetupProvider.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
   createNoopCrmRealtimePublisher,
@@ -30,16 +21,11 @@ import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
 import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
-import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
 import type { CrmWhatsappOutboundIntentRepository } from "../../ports/crmWhatsappOutboundIntentRepository.js";
-import type { CrmFinancingBotActions } from "../../ports/crmFinancingBotActions.js";
-import type {
-  VehicleListingRepository,
-  VehicleMediaRepository,
-  VehicleUnitRepository,
-} from "../../../vehicle/ports/vehicleInventoryRepository.js";
 import { CrmScopeError } from "../../crmScopeError.js";
+import type { CrmServicePorts } from "./types.js";
+export type { CrmServicePorts } from "./types.js";
 export { CrmScopeError } from "../../crmScopeError.js";
 export {
   CrmPipelineDuplicateNameError,
@@ -55,43 +41,6 @@ export {
   CrmLeadNotFoundError,
   CrmPipelineNotFoundError,
 } from "./crmServiceErrors.js";
-
-export type CrmServicePorts = {
-  billingQuotaGuard?: BillingQuotaGuard;
-  crmBotIntegrationRepository?: CrmBotIntegrationRepository;
-  crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
-  crmConnectionRepository?: CrmConnectionRepository;
-  crmConnectionCredentialVault?: CrmConnectionCredentialVault;
-  crmOlxWebhookSecurity?: CrmOlxWebhookSecurity;
-  olxCrmWebhookSetupProvider?: OlxCrmWebhookSetupProvider;
-  crmProviderRuntime?: {
-    olxChatEnabled: boolean;
-  };
-  crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
-  crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
-  composioWhatsappOnboardingProvider?: ComposioWhatsappOnboardingProvider;
-  crmPipelineRepository?: CrmPipelineRepository;
-  crmRealtimePublisher?: CrmRealtimePublisher;
-  crmRepository: CrmRepository;
-  crmVisitRepository?: CrmVisitRepository;
-  crmWebhookEventRepository?: CrmWebhookEventRepository;
-  crmWhatsappGateway?: CrmWhatsappGateway;
-  crmWhatsappMediaFetcher?: CrmRemoteMediaFetcher;
-  crmWhatsappMediaStorage?: ObjectStorage;
-  crmWhatsappOutboundIntentRepository?: CrmWhatsappOutboundIntentRepository;
-  crmWhatsappRepository?: CrmWhatsappRepository;
-  financingBotActions?: CrmFinancingBotActions;
-  environment?: string;
-  transaction?: <T>(
-    action: (ports: CrmServicePorts) => Promise<T>,
-  ) => Promise<T>;
-  vehicleInventory?: {
-    listingRepository: VehicleListingRepository;
-    mediaRepository: VehicleMediaRepository;
-    unitRepository: VehicleUnitRepository;
-  };
-  zapiConnectionSetupProvider?: ZapiConnectionSetupProvider;
-};
 
 export function isCrmOlxChatEnabled(ports: CrmServicePorts): boolean {
   return ports.crmProviderRuntime?.olxChatEnabled === true;

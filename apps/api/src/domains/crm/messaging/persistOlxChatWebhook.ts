@@ -8,6 +8,7 @@ import {
 import { createWhatsappMessageActivity } from "../whatsapp/createWhatsappMessageActivity.js";
 import { findOrCreateWhatsappLead } from "../whatsapp/whatsappLeadLinking.js";
 import { stageOlxWebhookEffects } from "./olxWebhookEffectOutbox.js";
+import { persistCanonicalInbound } from "./persistCanonicalInbound.js";
 
 export function persistOlxChatWebhook(
   ports: CrmServicePorts,
@@ -77,6 +78,37 @@ export function persistOlxChatWebhook(
       storeId: connection.storeId,
       tenantId: connection.tenantId,
       type: "TEXT",
+    });
+    await persistCanonicalInbound(transactionPorts, {
+      channel: "olx_chat",
+      connectionCapabilities: {
+        inbound: true,
+        outbound: true,
+        templates: false,
+      },
+      connectionDisplayName: connection.displayName,
+      connectionId: connection.id,
+      contactDisplayName: parsed.buyerName ?? null,
+      content: parsed.message,
+      externalThreadId: parsed.chatId,
+      identity: {
+        kind: "provider_subject",
+        normalizedValue: `olx:${connection.id}:${parsed.chatId}`,
+      },
+      occurredAt: parsed.timestamp,
+      messageType: "text",
+      metadata: {
+        chatId: parsed.chatId,
+        listId: parsed.listId,
+        provider: "olx_chat",
+        senderType: parsed.senderType,
+      },
+      provider: "olx",
+      providerMessageId: parsed.externalMessageId,
+      secondaryPhone: parsed.buyerPhone || null,
+      sender: parsed.senderType === "system" ? "system" : "customer",
+      storeId: connection.storeId,
+      tenantId: connection.tenantId,
     });
     if (persisted.createdMessage) {
       await createWhatsappMessageActivity(transactionPorts, {

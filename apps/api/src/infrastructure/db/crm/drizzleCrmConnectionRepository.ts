@@ -5,6 +5,7 @@ import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   abandonedZapiConditions,
   activeCrmConnectionQuery,
+  readConfiguredString,
   readRecord,
   toCrmConnection,
 } from "./drizzleCrmConnectionRepositorySupport.js";
@@ -68,6 +69,7 @@ export function createDrizzleCrmConnectionRepository(
         .update(crmConnections)
         .set({
           credentialsRef: input.credentialsRef,
+          externalInstanceId: input.externalInstanceId,
           updatedAt: new Date(),
         })
         .where(
@@ -135,7 +137,11 @@ export function createDrizzleCrmConnectionRepository(
             eq(crmConnections.tenantId, input.tenantId),
             eq(crmConnections.provider, "zapi"),
             sql`${crmConnections.status} <> 'archived'`,
-            sql`coalesce(${crmConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
+            ...(input.allowConfigured
+              ? []
+              : [
+                  sql`coalesce(${crmConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
+                ]),
             sql`(
               ${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' is null
               or ${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null
@@ -191,7 +197,6 @@ export function createDrizzleCrmConnectionRepository(
       const [row] = await activeCrmConnectionQuery(db, now)
         .where(eq(crmConnections.id, connectionId))
         .limit(1);
-
       return row ? toCrmConnection(row) : null;
     },
     async listConnections(input) {
@@ -202,12 +207,10 @@ export function createDrizzleCrmConnectionRepository(
       if (input.providers?.length) {
         filters.push(inArray(crmConnections.provider, [...input.providers]));
       }
-
       const rows = await db
         .select()
         .from(crmConnections)
         .where(and(...filters));
-
       return rows.map(toCrmConnection);
     },
     async updateConnection(input) {
@@ -243,7 +246,4 @@ export function createDrizzleCrmConnectionRepository(
       return row ? toCrmConnection(row) : null;
     },
   };
-}
-function readConfiguredString(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0;
 }

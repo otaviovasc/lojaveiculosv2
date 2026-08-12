@@ -11,6 +11,7 @@ const connectionLimit = 120;
 const unauthenticatedLimit = 60;
 const futureSkewMs = 60_000;
 const maxAgeMs = 600_000;
+const defaultOlxWebhookAllowedAddresses = ["54.162.151.93"] as const;
 const atomicFixedWindowScript = `
 local count = redis.call("INCR", KEYS[1])
 if count == 1 then redis.call("PEXPIRE", KEYS[1], ARGV[1]) end
@@ -99,6 +100,17 @@ export function createOlxWebhookSourceFingerprint(input: {
     .digest("hex");
 }
 
+export function isOlxWebhookSourceAllowed(
+  clientAddress: string | null,
+  env: Record<string, string | undefined> = process.env,
+) {
+  if (!isDeployedEnvironment(env)) return true;
+  if (env.CRM_OLX_TRUST_PROXY_HEADERS !== "true") return false;
+  const address = normalizeClientAddress(clientAddress);
+  if (address === "unresolved") return false;
+  return readOlxWebhookAllowedAddresses(env).has(address);
+}
+
 function bucketKey(input: Parameters<CrmOlxWebhookSecurity["consume"]>[0]) {
   if (input.scope === "unauthenticated") {
     if (!/^[a-f0-9]{64}$/u.test(input.sourceFingerprint)) {
@@ -134,6 +146,26 @@ function parseRedisCount(value: unknown) {
 function normalizeClientAddress(value: string | null) {
   const candidate = value?.trim() ?? "";
   return isIP(candidate) ? candidate.toLowerCase() : "unresolved";
+}
+
+function isDeployedEnvironment(env: Record<string, string | undefined>) {
+  const environment = (env.APP_ENV ?? env.NODE_ENV ?? "").toLowerCase();
+  return environment === "staging" || environment === "production";
+}
+
+function readOlxWebhookAllowedAddresses(
+  env: Record<string, string | undefined>,
+) {
+  const configured = env.CRM_OLX_WEBHOOK_ALLOWED_IPS?.trim();
+  const candidates = configured
+    ? configured.split(",").map((value) => value.trim().toLowerCase())
+    : [...defaultOlxWebhookAllowedAddresses];
+  if (candidates.length === 0 || candidates.some((value) => !isIP(value))) {
+    throw new CrmOlxWebhookSecurityConfigurationError(
+      "CRM_OLX_WEBHOOK_ALLOWED_IPS must contain only comma-separated IP addresses.",
+    );
+  }
+  return new Set(candidates);
 }
 
 function removeExpiredBuckets(

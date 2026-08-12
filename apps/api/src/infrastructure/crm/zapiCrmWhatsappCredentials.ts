@@ -90,6 +90,9 @@ function readStoredCredentials(
   ) {
     throw new CrmWhatsappGatewayError(
       "Stored ZAPI credentials must use encrypted CRM credential storage",
+      409,
+      undefined,
+      "configuration_error",
     );
   }
   return instanceId && instanceToken ? { instanceId, instanceToken } : null;
@@ -115,6 +118,9 @@ function decryptIfSealed(
   } catch {
     throw new CrmWhatsappGatewayError(
       "Stored ZAPI credential could not be decrypted",
+      409,
+      undefined,
+      "configuration_error",
     );
   }
 }
@@ -134,12 +140,18 @@ function readRequiredEnv(
   if (!envName) {
     throw new CrmWhatsappGatewayError(
       `ZAPI credential reference is missing: ${credentialName}`,
+      409,
+      undefined,
+      "configuration_error",
     );
   }
   const value = env[envName]?.trim();
   if (!value) {
     throw new CrmWhatsappGatewayError(
       `ZAPI credential env var is not configured: ${envName}`,
+      409,
+      undefined,
+      "configuration_error",
     );
   }
   return value;

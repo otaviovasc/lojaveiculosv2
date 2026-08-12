@@ -15,6 +15,10 @@ import {
   requireCrmScope,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
+import {
+  recordOutboundProviderFailure,
+  throwPersistedOutboundFailure,
+} from "./outboundProviderFailure.js";
 
 export async function executeDurableOutboundProviderCall(
   context: ServiceContext,
@@ -61,6 +65,9 @@ export async function executeDurableOutboundProviderCall(
   if (claimed.kind === "in_progress" || claimed.kind === "indeterminate") {
     throw outboundReconciliationPendingError();
   }
+  if (claimed.kind === "failed") {
+    throwPersistedOutboundFailure(claimed.intent.providerResult);
+  }
   if (claimed.kind === "provider_succeeded") {
     return {
       completedMessageId: null,
@@ -80,12 +87,7 @@ export async function executeDurableOutboundProviderCall(
     });
     return { completedMessageId: null, intent: claimed.intent, sent };
   } catch (error) {
-    await repository
-      .markIndeterminate({
-        claimToken: claimed.intent.claimToken,
-        id: claimed.intent.id,
-      })
-      .catch(() => undefined);
+    await recordOutboundProviderFailure(repository, claimed.intent, error);
     throw error;
   }
 }

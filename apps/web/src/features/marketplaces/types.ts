@@ -14,6 +14,7 @@ export type {
   MarketplaceJobStatus,
   MarketplaceOverview,
   MarketplaceProvider,
+  MarketplaceProviderCapability,
   MarketplaceProviderState,
   MarketplaceRequirementStatus,
   MarketplaceServiceErrorCode,

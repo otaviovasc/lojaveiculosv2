@@ -6,6 +6,7 @@ import {
   readConfiguredString,
   readRecord,
 } from "./testSupportConnectionValues.js";
+import { upsertTestOlxConnection } from "./testSupportOlxConnections.js";
 export function createTestCrmConnectionRepository(
   initialConnections: readonly CrmConnection[] = [],
 ): CrmConnectionRepository {
@@ -33,33 +34,7 @@ export function createTestCrmConnectionRepository(
       return connection;
     },
     async upsertOlxConnection(input) {
-      const existing = connections.find(
-        (item) =>
-          item.provider === "olx_chat" &&
-          item.storeId === input.storeId &&
-          item.tenantId === input.tenantId &&
-          item.status !== "archived",
-      );
-      if (existing) {
-        Object.assign(existing, input, { provider: "olx_chat" as const });
-        return existing;
-      }
-      const connection: CrmConnection = {
-        credentialsRef: input.credentialsRef ?? {},
-        displayName: input.displayName,
-        externalConnectionId: input.externalConnectionId ?? null,
-        externalInstanceId: null,
-        id: crypto.randomUUID(),
-        metadata: input.metadata ?? {},
-        phone: null,
-        provider: "olx_chat",
-        status: input.status ?? "error",
-        storeId: input.storeId,
-        tenantId: input.tenantId,
-        webhookUrl: input.webhookUrl ?? null,
-      };
-      connections.push(connection);
-      return connection;
+      return upsertTestOlxConnection(connections, input);
     },
     async configureInitialZapiCredentials(input) {
       const connection = connections.find(
@@ -77,6 +52,7 @@ export function createTestCrmConnectionRepository(
       if (instanceId && instanceToken) return { status: "already_configured" };
       if (instanceId || instanceToken) return { status: "partial_state" };
       connection.credentialsRef = input.credentialsRef;
+      connection.externalInstanceId = input.externalInstanceId;
       return { connection, status: "configured" };
     },
     async claimZapiWebhookSetup(input) {
@@ -132,7 +108,7 @@ export function createTestCrmConnectionRepository(
           ? new Date(setup.leaseExpiresAt)
           : null;
       if (
-        setup.status === "configured" ||
+        (setup.status === "configured" && !input.allowConfigured) ||
         (setup.leaseOwner && leaseExpiresAt && leaseExpiresAt > input.now)
       )
         return null;
@@ -187,10 +163,11 @@ export function createTestCrmConnectionRepository(
         ...connection.metadata,
         webhookSetup: readRecord(input.metadata.webhookSetup),
       };
-      connection.status =
-        readRecord(input.metadata.webhookSetup).status === "configured"
-          ? "active"
-          : "error";
+      connection.status = ["configured", "partial"].includes(
+        String(readRecord(input.metadata.webhookSetup).status),
+      )
+        ? "active"
+        : "error";
       return connection;
     },
     async findConnectionByExternalId(input) {

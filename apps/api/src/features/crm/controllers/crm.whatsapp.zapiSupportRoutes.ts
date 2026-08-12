@@ -85,6 +85,29 @@ export function registerCrmWhatsappZapiSupportRoutes(
   );
 
   crmFeature.post(
+    "/whatsapp/support/zapi/connections/:connectionId/webhooks/reset",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const input = await parseWhatsappJson(
+          context,
+          whatsappZapiSupportScopeSchema,
+        );
+        const serviceContext = await options.createSupportContext(context);
+        return context.json(
+          await options.services.configureZapiWebhooksAsSupport(
+            serviceContext,
+            {
+              ...supportScope(input),
+              connectionId: context.req.param("connectionId"),
+              mode: "reset",
+              ...readWebhookRequestBase(context),
+            },
+          ),
+        );
+      }),
+  );
+
+  crmFeature.post(
     "/whatsapp/support/zapi/connections/:connectionId/pairing/qr",
     async (context) =>
       handleWhatsapp(context, async () => {

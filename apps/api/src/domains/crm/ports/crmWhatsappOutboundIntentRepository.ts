@@ -7,7 +7,13 @@ export type OutboundIntent = {
   providerResult: OutboundIntentResult | null;
   recoveryExpiresAt: Date | null;
   startedAt: Date;
-  status: "completed" | "indeterminate" | "provider_succeeded" | "started";
+  status:
+    | "completed"
+    | "failed"
+    | "indeterminate"
+    | "provider_succeeded"
+    | "retryable_failed"
+    | "started";
 };
 
 export type ClaimOutboundIntentResult =
@@ -15,7 +21,11 @@ export type ClaimOutboundIntentResult =
   | {
       intent: OutboundIntent;
       kind:
-        "completed" | "indeterminate" | "in_progress" | "provider_succeeded";
+        | "completed"
+        | "failed"
+        | "indeterminate"
+        | "in_progress"
+        | "provider_succeeded";
     }
   | { kind: "conflict" };
 
@@ -37,6 +47,12 @@ export type CrmWhatsappOutboundIntentRepository = {
     sessionId: string;
   }): Promise<void>;
   markIndeterminate(input: { claimToken: string; id: string }): Promise<void>;
+  recordProviderFailure(input: {
+    claimToken: string;
+    failure: OutboundIntentResult;
+    id: string;
+    retryable: boolean;
+  }): Promise<void>;
   recordProviderSuccess(input: {
     claimToken: string;
     id: string;

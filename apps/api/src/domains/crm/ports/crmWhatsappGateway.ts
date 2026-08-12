@@ -229,6 +229,7 @@ export class CrmWhatsappGatewayError extends Error {
     public readonly retryAfterSeconds?: number,
     public readonly code:
       | "configuration_error"
+      | "provider_unavailable"
       | "provider_rejected"
       | "rate_limited"
       | "request_failed"

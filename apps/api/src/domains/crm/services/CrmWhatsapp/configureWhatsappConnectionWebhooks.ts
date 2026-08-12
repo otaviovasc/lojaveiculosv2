@@ -23,6 +23,7 @@ export type ConfigureWhatsappConnectionWebhooksInput = {
   basePath: string;
   canonicalApiOrigin: string;
   connectionId: string;
+  mode?: "configure" | "reset";
 };
 
 export type ConfigureWhatsappConnectionWebhooksResult =
@@ -37,27 +38,32 @@ export async function configureWhatsappConnectionWebhooks(
   input: ConfigureWhatsappConnectionWebhooksInput,
   ports: CrmServicePorts,
 ): Promise<ConfigureWhatsappConnectionWebhooksResult> {
+  const operation = input.mode ?? "configure";
   assertPermission(context, managePermission);
   const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(
     context,
-    "crm.whatsapp.connection.webhooks.configure.started",
+    `crm.whatsapp.connection.webhooks.${operation}.started`,
     { connectionId: input.connectionId },
   );
 
   return recordWhatsappServiceMutation(
     context,
     {
-      action: "crm.whatsapp.connection.webhooks.configure",
+      action: `crm.whatsapp.connection.webhooks.${operation}`,
       category: "data_change",
       entityId: input.connectionId,
       entityType: "crm_whatsapp_connection",
       metadata: {
         connectionId: input.connectionId,
+        operation,
         tokenApplied: true,
       },
       permission: managePermission,
-      summary: "Configured ZAPI WhatsApp webhooks",
+      summary:
+        operation === "reset"
+          ? "Reset ZAPI WhatsApp webhooks to the canonical API origin"
+          : "Configured ZAPI WhatsApp webhooks",
     },
     async () => {
       const repository = getCrmConnectionRepository(ports);
@@ -84,13 +90,14 @@ export async function configureWhatsappConnectionWebhooks(
           basePath: input.basePath,
           canonicalApiOrigin: input.canonicalApiOrigin,
           connectionId: connection.id,
+          forceReconfigure: operation === "reset",
         },
         ports,
       );
 
       logWhatsappServiceEvent(
         context,
-        "crm.whatsapp.connection.webhooks.configure.completed",
+        `crm.whatsapp.connection.webhooks.${operation}.completed`,
         {
           connectionId: connection.id,
           failed: results.filter((result) => !result.ok).length,

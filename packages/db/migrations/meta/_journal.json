@@ -218,6 +218,104 @@
       "when": 1786500000000,
       "tag": "0030_core_dashboard_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786550648643,
+      "tag": "0031_crm_core_canonical",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786551023000,
+      "tag": "0032_external_bot_runtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786551184000,
+      "tag": "0033_crm_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786551400000,
+      "tag": "0034_crm_retention_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786551860971,
+      "tag": "0035_crm_core_semantic_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786552000000,
+      "tag": "0036_crm_external_bot_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786552531972,
+      "tag": "0037_crm_core_provider_consent_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1786552800000,
+      "tag": "0038_crm_core_sensitive_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1786553100000,
+      "tag": "0039_crm_contact_identity_candidates",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1786553400000,
+      "tag": "0040_crm_legacy_retention_window",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1786553700000,
+      "tag": "0041_crm_retention_reconciliation_and_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1786554000000,
+      "tag": "0042_provider_connection_identity_boundaries",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1786554300000,
+      "tag": "0043_provider_event_payload_digest",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1786554600000,
+      "tag": "0044_outbound_failure_classification",
+      "breakpoints": true
     }
   ]
 }

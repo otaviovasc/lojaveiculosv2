@@ -60,9 +60,10 @@ export default defineRailway((context) => {
       CREDERE_CREDENTIAL_ENCRYPTION_KEY:
         context.shared.CREDERE_CREDENTIAL_ENCRYPTION_KEY,
       CREDERE_REDIRECT_URI: context.shared.CREDERE_REDIRECT_URI,
-      CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
-        context.shared.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
+      CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY: preserve(),
       CRM_OLX_CHAT_ENABLED: context.shared.CRM_OLX_CHAT_ENABLED,
+      CRM_OLX_TRUST_PROXY_HEADERS: "true",
+      CRM_OLX_WEBHOOK_ALLOWED_IPS: "54.162.151.93",
       CRM_META_APP_SECRET: context.shared.CRM_META_APP_SECRET,
       CRM_META_WEBHOOK_VERIFY_TOKEN:
         context.shared.CRM_META_WEBHOOK_VERIFY_TOKEN,
@@ -231,6 +232,30 @@ export default defineRailway((context) => {
     },
   );
 
+  const crmRetentionWorker = service("lojaveiculosv2-crm-retention-worker", {
+    source: appSource,
+    build: "pnpm --filter @lojaveiculosv2/api build",
+    deploy: {
+      cronSchedule: "17 * * * *",
+      restartPolicyType: "NEVER",
+    },
+    env: {
+      APP_ENV: appEnvironment,
+      AUDIT_DATABASE_URL: auditDatabase.env.DATABASE_URL,
+      CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
+        api.env.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
+      CRM_RETENTION_BATCH_SIZE: "100",
+      CRM_RETENTION_DRY_RUN: "true",
+      CRM_RETENTION_LEASE_SECONDS: "900",
+      CRM_RETENTION_MAX_BATCHES: "20",
+      CRM_RETENTION_SCOPE_LIMIT: "100",
+      DATABASE_URL: productDatabase.env.DATABASE_URL,
+      LOG_LEVEL: api.env.LOG_LEVEL,
+      NODE_ENV: "production",
+    },
+    start: "pnpm run crm:retention:process",
+  });
+
   return project("respectful-respect", {
     resources: [
       productDatabase,
@@ -240,6 +265,7 @@ export default defineRailway((context) => {
       web,
       crmScheduleWorker,
       billingReconciliationWorker,
+      crmRetentionWorker,
     ],
   });
 });

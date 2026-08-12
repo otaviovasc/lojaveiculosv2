@@ -1,4 +1,4 @@
-import { CheckCheck } from "lucide-react";
+import { AlertTriangle, CheckCheck, CircleHelp, Clock3 } from "lucide-react";
 import {
   MessageActions,
   type MessageActionHandlers,
@@ -25,6 +25,7 @@ export function MessageBubble({
   const outgoing = message.direction === "OUTBOUND";
   const senderLabel = getSenderLabel(message);
   const reaction = readReaction(message.metadata);
+  const delivery = readDeliveryPresentation(message.status);
   return (
     <article
       className={
@@ -32,6 +33,7 @@ export function MessageBubble({
           ? "crm-whatsapp-bubble crm-whatsapp-bubble-out"
           : "crm-whatsapp-bubble"
       }
+      data-message-status={delivery.status}
     >
       <MessageActions
         actionsDisabled={actionsDisabled}
@@ -64,8 +66,51 @@ export function MessageBubble({
       ) : null}
       <footer>
         <span>{formatMessageTime(message)}</span>
-        {outgoing ? <CheckCheck aria-hidden="true" className="size-3" /> : null}
+        {outgoing ? <MessageDeliveryStatus delivery={delivery} /> : null}
       </footer>
     </article>
+  );
+}
+
+export type MessageDeliveryPresentation = {
+  label: string | null;
+  status: string;
+};
+
+export function readDeliveryPresentation(
+  status: string,
+): MessageDeliveryPresentation {
+  const normalized = status.trim().toLowerCase();
+  if (normalized === "pending") {
+    return { label: "Envio pendente", status: normalized };
+  }
+  if (normalized === "failed") {
+    return { label: "Falha no envio", status: normalized };
+  }
+  if (normalized === "indeterminate") {
+    return { label: "Envio não confirmado", status: normalized };
+  }
+  return { label: null, status: normalized || "unknown" };
+}
+
+export function MessageDeliveryStatus({
+  delivery,
+}: {
+  delivery: MessageDeliveryPresentation;
+}) {
+  if (!delivery.label) {
+    return <CheckCheck aria-label="Mensagem enviada" className="size-3" />;
+  }
+  const Icon =
+    delivery.status === "pending"
+      ? Clock3
+      : delivery.status === "failed"
+        ? AlertTriangle
+        : CircleHelp;
+  return (
+    <span className="crm-whatsapp-message-delivery" role="status">
+      <Icon aria-hidden="true" />
+      {delivery.label}
+    </span>
   );
 }
