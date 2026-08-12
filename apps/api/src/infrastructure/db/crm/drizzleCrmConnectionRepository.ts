@@ -122,10 +122,10 @@ export function createDrizzleCrmConnectionRepository(
             jsonb_build_object(
               'attemptCount', coalesce((${crmConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1,
               'lastErrorCode', null,
-              'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()},
-              'leaseOwner', ${input.leaseOwner},
+              'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text,
+              'leaseOwner', ${input.leaseOwner}::text,
               'status', 'configuring',
-              'updatedAt', ${input.now.toISOString()}
+              'updatedAt', ${input.now.toISOString()}::text
             )
           )`,
           updatedAt: input.now,

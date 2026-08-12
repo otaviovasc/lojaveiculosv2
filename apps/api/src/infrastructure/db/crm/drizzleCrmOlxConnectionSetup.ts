@@ -96,7 +96,7 @@ export async function claimOlxWebhookSetup(
   const [row] = await db
     .update(crmConnections)
     .set({
-      metadata: sql`${crmConnections.metadata} || jsonb_build_object('webhookSetup', coalesce(${crmConnections.metadata}->'webhookSetup', '{}'::jsonb) || jsonb_build_object('attemptCount', coalesce((${crmConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1, 'lastErrorCode', null, 'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}, 'leaseOwner', ${input.leaseOwner}, 'status', 'configuring', 'updatedAt', ${input.now.toISOString()}))`,
+      metadata: sql`${crmConnections.metadata} || jsonb_build_object('webhookSetup', coalesce(${crmConnections.metadata}->'webhookSetup', '{}'::jsonb) || jsonb_build_object('attemptCount', coalesce((${crmConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1, 'lastErrorCode', null, 'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text, 'leaseOwner', ${input.leaseOwner}::text, 'status', 'configuring', 'updatedAt', ${input.now.toISOString()}::text))`,
       updatedAt: input.now,
     })
     .where(

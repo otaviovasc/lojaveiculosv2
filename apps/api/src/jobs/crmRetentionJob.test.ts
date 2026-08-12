@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import type { ServiceContext } from "../shared/serviceContext.js";
 import { createMemoryCrmRetentionRepository } from "../domains/crm/retention/testSupportRetentionRepository.js";
@@ -8,6 +9,18 @@ import {
 } from "./crmRetentionJob.js";
 
 describe("CRM retention job", () => {
+  it("starts the API workspace script from the Railway monorepo root", () => {
+    const railway = readFileSync(
+      new URL("../../../../.railway/railway.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(railway).toContain(
+      'start: "pnpm --filter @lojaveiculosv2/api crm:retention:process"',
+    );
+    expect(railway).toContain('CRM_RETENTION_DRY_RUN: "true"');
+  });
+
   it("defaults to dry-run and bounds operational batch settings", () => {
     expect(
       readCrmRetentionJobConfig({
