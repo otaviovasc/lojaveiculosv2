@@ -1,5 +1,5 @@
 import { leads } from "@lojaveiculosv2/db";
-import { sql } from "drizzle-orm";
+import { and, notInArray, sql } from "drizzle-orm";
 import {
   label,
   scoped,
@@ -37,4 +37,17 @@ export async function getLeadSources(
     label: label(row.key),
     value: row.value,
   }));
+}
+
+export async function getActiveLeadCount(
+  db: RuntimeAnalyticsClient,
+  input: DashboardScope,
+) {
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(leads)
+    .where(
+      and(scoped(leads, input), notInArray(leads.status, ["lost", "won"])),
+    );
+  return rows[0]?.count ?? 0;
 }

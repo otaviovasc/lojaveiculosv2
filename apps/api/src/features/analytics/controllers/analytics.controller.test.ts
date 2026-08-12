@@ -1,11 +1,39 @@
 import { Hono } from "hono";
+import type { EntitlementKey } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
-import type { AnalyticsDashboard } from "../../../domains/analytics/ports/analyticsRepository.js";
+import type {
+  AnalyticsDashboard,
+  HomeDashboard,
+} from "../../../domains/analytics/ports/analyticsRepository.js";
+import { createAnalyticsServices } from "./analyticsServices.js";
 import { createAnalyticsFeature } from "./analytics.controller.js";
 import type { AnalyticsServices } from "./analyticsServices.js";
 
 describe("analytics dashboard route", () => {
+  it("keeps the home dashboard available without analytics access", async () => {
+    const app = createApp(createAnalyticsServices(), {
+      entitlements: [],
+      permissions: ["analytics.read", "dashboard.read"],
+    });
+
+    const homeResponse = await app.request("/home");
+    const reportsResponse = await app.request("/dashboard");
+
+    expect(homeResponse.status).toBe(200);
+    const homeDashboard = (await homeResponse.json()) as HomeDashboard;
+    expect(homeDashboard).toMatchObject({
+      inventory: {
+        availableListings: 18,
+        totalListings: 31,
+      },
+      leadSummary: { activeLeads: 142 },
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+    expect(reportsResponse.status).toBe(403);
+  });
+
   it("passes the parsed from/to period to the service", async () => {
     const services = createServicesStub();
     const app = createApp(services);
@@ -48,6 +76,9 @@ describe("analytics dashboard route", () => {
 
 function createServicesStub() {
   const services: AnalyticsServices = {
+    getHomeDashboard: vi.fn(async () => {
+      throw new Error("Unexpected home dashboard request.");
+    }),
     getDashboard: vi.fn(
       async (
         _context: unknown,
@@ -60,7 +91,13 @@ function createServicesStub() {
   };
 }
 
-function createApp(services: AnalyticsServices) {
+function createApp(
+  services: AnalyticsServices,
+  access: {
+    entitlements?: readonly EntitlementKey[];
+    permissions?: readonly string[];
+  } = {},
+) {
   const app = new Hono();
   app.route(
     "/",
@@ -68,7 +105,8 @@ function createApp(services: AnalyticsServices) {
       contextFactory: async () =>
         createServiceContext({
           actor: { id: "user_1", kind: "user" },
-          permissions: ["analytics.read"],
+          entitlements: access.entitlements ?? ["analytics"],
+          permissions: access.permissions ?? ["analytics.read"],
           request: { requestId: "req_1" },
           storeId: "store_1",
           tenantId: "tenant_1",

@@ -1,15 +1,25 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import userEvent from "@testing-library/user-event";
-import { act, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AnalyticsApi } from "../features/analytics/apiClient";
-import type { AnalyticsDashboard } from "../features/analytics/types";
+import type {
+  AnalyticsDashboard,
+  HomeDashboard,
+} from "../features/analytics/types";
 import { AppApiError } from "../lib/apiErrors";
 import { DashboardHome } from "./DashboardHome";
 
 vi.mock("./DashboardHomeToolbar", () => ({
-  DashboardHomeToolbar: () => <div data-testid="dashboard-toolbar" />,
+  DashboardHomeToolbar: ({
+    canViewAnalytics,
+  }: {
+    canViewAnalytics: boolean;
+  }) => (
+    <div data-testid="dashboard-toolbar">
+      {canViewAnalytics ? "analytics-enabled" : "analytics-disabled"}
+    </div>
+  ),
 }));
 
 vi.mock("./DashboardHomeKpis", () => ({
@@ -37,13 +47,16 @@ vi.mock("./DashboardHomeSidebarPanel", () => ({
 }));
 
 describe("DashboardHome", () => {
+  afterEach(cleanup);
+
   it("keeps fallback analytics cards out of the initial loading paint", async () => {
     const deferred = createDeferred<AnalyticsDashboard>();
     const api: AnalyticsApi = {
       getDashboard: vi.fn(() => deferred.promise),
+      getHomeDashboard: vi.fn(async () => createHomeDashboard()),
     };
 
-    render(<DashboardHome api={api} onNavigate={vi.fn()} />);
+    render(<DashboardHome api={api} canViewAnalytics onNavigate={vi.fn()} />);
 
     expect(
       screen.getByRole("status", { name: "Carregando dashboard" }),
@@ -67,9 +80,7 @@ describe("DashboardHome", () => {
     expect(screen.getByTestId("dashboard-main-panels")).toBeInTheDocument();
   });
 
-  it("turns a forbidden analytics response into a quiet permission state", async () => {
-    const user = userEvent.setup();
-    const onNavigate = vi.fn();
+  it("keeps the core dashboard visible when analytics is forbidden", async () => {
     const api: AnalyticsApi = {
       getDashboard: vi.fn(() =>
         Promise.reject(
@@ -81,21 +92,38 @@ describe("DashboardHome", () => {
           }),
         ),
       ),
+      getHomeDashboard: vi.fn(async () => createHomeDashboard()),
     };
 
-    render(<DashboardHome api={api} onNavigate={onNavigate} />);
+    render(<DashboardHome api={api} canViewAnalytics onNavigate={vi.fn()} />);
 
-    expect(
-      await screen.findByRole("heading", { name: "Painel gerencial restrito" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("dashboard-main-panels")).toBeVisible();
     expect(
       screen.queryByRole("status", { name: "Carregando dashboard" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Missing permission")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-kpis")).toHaveTextContent("—");
+  });
 
-    await user.click(screen.getByRole("button", { name: "Ir para veículos" }));
+  it("does not request analytics and renders protected values as placeholders", async () => {
+    const api: AnalyticsApi = {
+      getDashboard: vi.fn(async () => createDashboard()),
+      getHomeDashboard: vi.fn(async () => createHomeDashboard()),
+    };
 
-    expect(onNavigate).toHaveBeenCalledWith("inventory");
+    render(
+      <DashboardHome api={api} canViewAnalytics={false} onNavigate={vi.fn()} />,
+    );
+
+    expect(await screen.findByTestId("dashboard-main-panels")).toBeVisible();
+    expect(api.getHomeDashboard).toHaveBeenCalledOnce();
+    expect(api.getDashboard).not.toHaveBeenCalled();
+    expect(screen.getByTestId("dashboard-kpis")).toHaveTextContent(
+      "Faturamento: —",
+    );
+    expect(screen.getByTestId("dashboard-toolbar")).toHaveTextContent(
+      "analytics-disabled",
+    );
   });
 });
 
@@ -107,6 +135,19 @@ function createDeferred<T>() {
     reject = rej;
   });
   return { promise, reject, resolve };
+}
+
+function createHomeDashboard(): HomeDashboard {
+  return {
+    generatedAt: "2026-06-22T17:00:00.000Z",
+    inventory: {
+      availableListings: 4,
+      totalListings: 7,
+    },
+    leadSummary: { activeLeads: 6 },
+    storeId: "store_1",
+    tenantId: "tenant_1",
+  };
 }
 
 function createDashboard(): AnalyticsDashboard {

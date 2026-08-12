@@ -16,6 +16,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
     agency: allPermissions,
     admin: [
       "analytics.read",
+      "dashboard.read",
       "automation.approve",
       "automation.cancel",
       "automation.read",
@@ -87,6 +88,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
     owner: allPermissions,
     investor: [
       "analytics.read",
+      "dashboard.read",
       "documents.read",
       "documents.download",
       "documents.preview",
@@ -99,6 +101,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "marketplace.read",
     ],
     salesman: [
+      "dashboard.read",
       "automation.read",
       "automation.run",
       "crm.access",
@@ -133,6 +136,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
     ],
     supervisor: [
       "analytics.read",
+      "dashboard.read",
       "automation.approve",
       "automation.cancel",
       "automation.read",

@@ -26,7 +26,7 @@ export const llmsText = `# Loja Veiculos API
 - Download finance entry document: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/download\n- Stream finance entry document content: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/content
 - Update recurring finance entry: PATCH /api/v1/finance/recurring-entries/{recurringEntryId}\n- Cancel recurring finance entry: DELETE /api/v1/finance/recurring-entries/{recurringEntryId}
 - Materialize recurring finance entries: POST /api/v1/finance/recurring-entries/materialize
-- Analytics dashboard: GET /api/v1/analytics/dashboard\n- Compliance snapshot: GET /api/v1/compliance/snapshot
+- Core home dashboard: GET /api/v1/analytics/home\n- Analytics reports dashboard: GET /api/v1/analytics/dashboard\n- Compliance snapshot: GET /api/v1/compliance/snapshot
 - Marketplace overview: GET /api/v1/marketplaces/overview\n- Create marketplace OAuth URL: POST /api/v1/marketplaces/connect-url
 - Complete marketplace OAuth: POST /api/v1/marketplaces/oauth/complete\n- Upsert marketplace connection: PUT /api/v1/marketplaces/integrations/{provider}
 - Queue marketplace sync: POST /api/v1/marketplaces/integrations/{provider}/sync-jobs\n- Run marketplace sync: POST /api/v1/marketplaces/sync-jobs/{jobId}/run
@@ -99,7 +99,8 @@ export const llmsText = `# Loja Veiculos API
 - inventory.delete: reserved for vehicle deletion workflows.
 - users.manage: required to list and update store role/permission management.
 - billing.manage: required to read store billing, read agency tenant billing, sync billing providers, and mutate store entitlements.
-- analytics.read: required to read reports and commercial dashboards.
+- dashboard.read: required to read the core operational home dashboard.
+- analytics.read: required to read detailed commercial reports.
 - compliance.manage: required to read and operate LGPD/security controls.
 - fiscal.manage: required to operate SPEDY/NF-e lifecycle workflows.
 - fiscal.document.issue: required to emit NF-e or NFS-e documents.
@@ -201,6 +202,7 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/finance/commission-rules and POST /api/v1/finance/commission-rules: list and create commission rules.
 
 ## Current analytics endpoints
+- GET /api/v1/analytics/home: returns the core store dashboard summary; requires dashboard.read and is not entitlement-gated.
 - GET /api/v1/analytics/dashboard: returns DB-backed inventory, finance, lead funnel, source attribution, and KPI snapshots; requires analytics.read and analytics entitlement.
 
 ## Current compliance endpoints

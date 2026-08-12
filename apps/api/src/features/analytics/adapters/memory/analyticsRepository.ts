@@ -5,6 +5,18 @@ import type {
 
 export function createMemoryAnalyticsRepository(): AnalyticsRepository {
   return {
+    async getHomeDashboard(input) {
+      return {
+        generatedAt: new Date(),
+        inventory: {
+          availableListings: 18,
+          totalListings: 31,
+        },
+        leadSummary: { activeLeads: 142 },
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      };
+    },
     async getDashboard(input): Promise<AnalyticsDashboard> {
       return {
         attention: {

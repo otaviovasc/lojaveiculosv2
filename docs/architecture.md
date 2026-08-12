@@ -157,6 +157,21 @@ dealer-facing analytics domain.
 The metric and event definitions live in
 `docs/strategy/product-operating-model.md`.
 
+## Store Dashboard Access Direction
+
+The store home dashboard is a core operational surface, separate from the
+dealer-facing analytics entitlement. Every active store role receives
+`dashboard.read`; `GET /api/v1/analytics/home` returns only the minimal
+inventory and active-lead summary needed by the home page and has no commercial
+entitlement requirement.
+
+Detailed, period-filtered revenue, margin, sales, inventory aging, funnel, and
+lead-source reporting remains behind both `analytics.read` and the `analytics`
+entitlement through `GET /api/v1/analytics/dashboard`. Without both grants, the
+frontend must not request or render analytics data; it keeps the dashboard
+layout stable with neutral placeholder values and disabled analytics controls.
+An analytics request failure must not replace or block the core home dashboard.
+
 ## Billing Contract Direction
 
 A trial is a billing phase of a selected store plan, not the absence of a

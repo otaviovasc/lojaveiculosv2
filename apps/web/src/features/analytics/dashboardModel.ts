@@ -6,32 +6,32 @@ const statIcons = [Banknote, Target, TrendingUp, Bot] as const;
 
 export const fallbackDashboardStats: DashboardStatViewModel[] = [
   {
-    deltaLabel: "aguardando dados",
+    deltaLabel: "—",
     icon: Banknote,
     label: "Faturamento",
     tone: "green",
-    value: "R$ 0",
+    value: "—",
   },
   {
-    deltaLabel: "ticket de vendas",
+    deltaLabel: "—",
     icon: Target,
     label: "Ticket medio",
     tone: "blue",
-    value: "R$ 0",
+    value: "—",
   },
   {
-    deltaLabel: "funil ativo",
+    deltaLabel: "—",
     icon: TrendingUp,
     label: "Conversao",
     tone: "violet",
-    value: "0%",
+    value: "—",
   },
   {
-    deltaLabel: "origem WhatsApp",
+    deltaLabel: "—",
     icon: Bot,
     label: "Leads IA",
     tone: "pink",
-    value: "0",
+    value: "—",
   },
 ];
 

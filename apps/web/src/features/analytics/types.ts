@@ -24,6 +24,24 @@ export type AnalyticsBreakdown = {
   value: number;
 };
 
+export type AnalyticsPeriod = {
+  from: string;
+  to: string;
+};
+
+export type HomeDashboard = {
+  generatedAt: string;
+  inventory: {
+    availableListings: number;
+    totalListings: number;
+  };
+  leadSummary: {
+    activeLeads: number;
+  };
+  storeId: string;
+  tenantId: string;
+};
+
 export type AnalyticsDashboard = {
   generatedAt: string;
   inventory: {

@@ -3,6 +3,7 @@ import { DashboardHomeEntry } from "./DashboardHomeEntry";
 import { DatePickerField } from "./ui/DatePickerField";
 
 export function DashboardHomeToolbar({
+  canViewAnalytics,
   copyState,
   onCopyLink,
   onVisitStore,
@@ -12,6 +13,7 @@ export function DashboardHomeToolbar({
   onStartDateChange,
   onEndDateChange,
 }: {
+  canViewAnalytics: boolean;
   copyState: "idle" | "copied";
   onCopyLink: () => void;
   onVisitStore: () => void;
@@ -46,6 +48,8 @@ export function DashboardHomeToolbar({
             <span className="control-group-label">Período</span>
             <div className="datepicker-range-picker">
               <DatePickerField
+                displayValue={canViewAnalytics ? undefined : "—"}
+                isDisabled={!canViewAnalytics}
                 label="De"
                 maxDate={endDate}
                 onChange={onStartDateChange}
@@ -56,6 +60,8 @@ export function DashboardHomeToolbar({
 
               <DatePickerField
                 align="right"
+                displayValue={canViewAnalytics ? undefined : "—"}
+                isDisabled={!canViewAnalytics}
                 label="Até"
                 minDate={startDate}
                 onChange={onEndDateChange}

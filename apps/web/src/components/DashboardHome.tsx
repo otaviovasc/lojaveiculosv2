@@ -13,6 +13,7 @@ import { getDashboardBodyState } from "../features/analytics/dashboardViewState"
 import type {
   AnalyticsDashboard,
   DashboardLoadStatus,
+  HomeDashboard,
 } from "../features/analytics/types";
 import { DashboardHomeKpis } from "./DashboardHomeKpis";
 import { DashboardHomeMainPanels } from "./DashboardHomeMainPanels";
@@ -24,13 +25,19 @@ import { Button } from "./ui/button";
 
 export function DashboardHome({
   api,
+  canViewAnalytics,
   onNavigate,
 }: {
   api?: AnalyticsApi;
+  canViewAnalytics: boolean;
   onNavigate: (moduleId: ModuleId) => void;
 }) {
   const analyticsApi = useMemo(() => api ?? createRuntimeAnalyticsApi(), [api]);
-  const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
+  const [homeDashboard, setHomeDashboard] = useState<HomeDashboard | null>(
+    null,
+  );
+  const [analyticsDashboard, setAnalyticsDashboard] =
+    useState<AnalyticsDashboard | null>(null);
   const [status, setStatus] = useState<DashboardLoadStatus>({
     kind: "loading",
   });
@@ -38,7 +45,7 @@ export function DashboardHome({
   const [resourceIndex, setResourceIndex] = useState(0);
   const [pushEnabled, setPushEnabled] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-  const bodyState = getDashboardBodyState(status, dashboard);
+  const bodyState = getDashboardBodyState(status, homeDashboard);
   const publicStoreSlug = readRuntimeStoreSlug();
 
   const [startDate, setStartDate] = useState<Date>(() => {
@@ -50,10 +57,10 @@ export function DashboardHome({
     return new Date(now.getFullYear(), now.getMonth() + 1, 0);
   });
 
-  const refresh = useCallback(async () => {
+  const refreshHome = useCallback(async () => {
     setStatus({ kind: "loading" });
     try {
-      setDashboard(await analyticsApi.getDashboard());
+      setHomeDashboard(await analyticsApi.getHomeDashboard());
       setStatus({ kind: "ready" });
     } catch (error) {
       const statusCode =
@@ -70,8 +77,33 @@ export function DashboardHome({
   }, [analyticsApi]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh, startDate, endDate]);
+    void refreshHome();
+  }, [refreshHome]);
+
+  useEffect(() => {
+    if (!canViewAnalytics) {
+      setAnalyticsDashboard(null);
+      return;
+    }
+
+    let cancelled = false;
+    setAnalyticsDashboard(null);
+    void analyticsApi
+      .getDashboard({
+        from: formatDashboardDate(startDate),
+        to: formatDashboardDate(endDate),
+      })
+      .then((dashboard) => {
+        if (!cancelled) setAnalyticsDashboard(dashboard);
+      })
+      .catch(() => {
+        if (!cancelled) setAnalyticsDashboard(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [analyticsApi, canViewAnalytics, endDate, startDate]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -114,15 +146,15 @@ export function DashboardHome({
     return (
       <DashboardHomeErrorState
         onNavigate={onNavigate}
-        onRetry={() => void refresh()}
+        onRetry={() => void refreshHome()}
         status={status}
       />
     );
   }
 
-  if (!dashboard) return null;
+  if (!homeDashboard) return null;
 
-  const stats = createDashboardStats(dashboard);
+  const stats = createDashboardStats(analyticsDashboard);
 
   return (
     <div className="relative min-h-screen store-dashboard overflow-hidden">
@@ -136,17 +168,20 @@ export function DashboardHome({
           endDate={endDate}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
+          canViewAnalytics={canViewAnalytics}
         />
         <DashboardHomeKpis stats={stats} />
         <div className="dashboard-panels-grid">
           <DashboardHomeMainPanels
-            dashboard={dashboard}
+            analyticsDashboard={analyticsDashboard}
+            homeDashboard={homeDashboard}
             onNavigate={onNavigate}
             resourceIndex={resourceIndex}
             setResourceIndex={setResourceIndex}
           />
           <DashboardHomeSidebarPanel
-            dashboard={dashboard}
+            canViewAnalytics={canViewAnalytics}
+            dashboard={analyticsDashboard}
             onNavigate={onNavigate}
             pushEnabled={pushEnabled}
             setPushEnabled={setPushEnabled}
@@ -155,6 +190,13 @@ export function DashboardHome({
       </main>
     </div>
   );
+}
+
+function formatDashboardDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function DashboardHomeErrorState({

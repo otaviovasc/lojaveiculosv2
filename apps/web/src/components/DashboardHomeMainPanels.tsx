@@ -9,19 +9,24 @@ import {
   dashboardResources,
   getDashboardResource,
 } from "../features/analytics/dashboardHomeAnimation";
-import type { AnalyticsDashboard } from "../features/analytics/types";
+import type {
+  AnalyticsDashboard,
+  HomeDashboard,
+} from "../features/analytics/types";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
 import { DashboardLeadSourcesPanel } from "./DashboardLeadSourcesPanel";
 import { getPromoBlobClass, PanelHeader } from "./DashboardHomePanelParts";
 import BorderGlow from "./ui/BorderGlow";
 
 export function DashboardHomeMainPanels({
-  dashboard,
+  analyticsDashboard,
+  homeDashboard,
   onNavigate,
   resourceIndex,
   setResourceIndex,
 }: {
-  dashboard: AnalyticsDashboard | null;
+  analyticsDashboard: AnalyticsDashboard | null;
+  homeDashboard: HomeDashboard;
   onNavigate: (moduleId: ModuleId) => void;
   resourceIndex: number;
   setResourceIndex: (index: number) => void;
@@ -29,25 +34,23 @@ export function DashboardHomeMainPanels({
   return (
     <div className="dashboard-main-col">
       <div className="dashboard-sub-grid">
-        <DashboardAgendaPanel dashboard={dashboard} />
-        <DashboardLeadSourcesPanel dashboard={dashboard} />
+        <DashboardAgendaPanel dashboard={homeDashboard} />
+        <DashboardLeadSourcesPanel dashboard={analyticsDashboard} />
       </div>
       <DashboardPromoBanner
         resourceIndex={resourceIndex}
         setResourceIndex={setResourceIndex}
       />
-      <DashboardAgingInventory dashboard={dashboard} onNavigate={onNavigate} />
+      <DashboardAgingInventory
+        dashboard={homeDashboard}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 }
 
-function DashboardAgendaPanel({
-  dashboard,
-}: {
-  dashboard: AnalyticsDashboard | null;
-}) {
-  const activeLeads =
-    dashboard?.leadFunnel.reduce((total, step) => total + step.count, 0) ?? 0;
+function DashboardAgendaPanel({ dashboard }: { dashboard: HomeDashboard }) {
+  const activeLeads = dashboard.leadSummary.activeLeads;
 
   return (
     <DashboardHomeEntry className="h-full" delay={0.14}>
@@ -188,12 +191,12 @@ function DashboardAgingInventory({
   dashboard,
   onNavigate,
 }: {
-  dashboard: AnalyticsDashboard | null;
+  dashboard: HomeDashboard;
   onNavigate: (moduleId: ModuleId) => void;
 }) {
-  const inventory = dashboard?.inventory;
-  const totalListings = inventory?.totalListings ?? 0;
-  const availableListings = inventory?.availableListings ?? 0;
+  const inventory = dashboard.inventory;
+  const totalListings = inventory.totalListings;
+  const availableListings = inventory.availableListings;
   const hasInventory = totalListings > 0;
 
   return (

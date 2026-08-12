@@ -1,4 +1,22 @@
 export const analyticsSchemas = {
+  HomeDashboard: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      generatedAt: { type: "string", format: "date-time" },
+      inventory: { type: "object", additionalProperties: true },
+      leadSummary: { type: "object", additionalProperties: true },
+      storeId: { type: "string" },
+      tenantId: { type: "string" },
+    },
+    required: [
+      "generatedAt",
+      "inventory",
+      "leadSummary",
+      "storeId",
+      "tenantId",
+    ],
+  },
   AnalyticsDashboard: {
     type: "object",
     additionalProperties: true,
@@ -16,6 +34,24 @@ export const analyticsSchemas = {
 } as const;
 
 export const analyticsPaths = {
+  "/api/v1/analytics/home": {
+    get: {
+      tags: ["Dashboard"],
+      summary: "Read the core store home dashboard",
+      operationId: "getHomeDashboard",
+      security: [{ bearerAuth: [] }],
+      responses: {
+        "200": {
+          description: "Core operational dashboard.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/HomeDashboard" },
+            },
+          },
+        },
+      },
+    },
+  },
   "/api/v1/analytics/dashboard": {
     get: {
       tags: ["Analytics"],

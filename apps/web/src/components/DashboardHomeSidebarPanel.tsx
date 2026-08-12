@@ -18,11 +18,13 @@ import type { AnalyticsDashboard } from "../features/analytics/types";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
 
 export function DashboardHomeSidebarPanel({
+  canViewAnalytics,
   dashboard,
   onNavigate,
   pushEnabled,
   setPushEnabled,
 }: {
+  canViewAnalytics: boolean;
   dashboard: AnalyticsDashboard | null;
   onNavigate: (moduleId: ModuleId) => void;
   pushEnabled: boolean;
@@ -53,11 +55,18 @@ export function DashboardHomeSidebarPanel({
             <div className="sidebar-btn-list">
               {dashboardQuickActions.map((btn) => {
                 const BtnIcon = getQuickActionIcon(btn.id);
+                const disabled = btn.id === "reports" && !canViewAnalytics;
                 return (
                   <button
+                    disabled={disabled}
                     key={btn.id}
                     onClick={() => onNavigate(btn.id)}
                     className="sidebar-btn-secondary group"
+                    title={
+                      disabled
+                        ? "Analytics indisponível para este perfil"
+                        : undefined
+                    }
                   >
                     <span className="flex items-center gap-3">
                       <BtnIcon className="size-4 sidebar-btn-secondary-icon" />
@@ -97,7 +106,20 @@ function DashboardSellerPerformance({
     <div className="sidebar-block">
       <h4 className="sidebar-block-subtitle">Performance do Mês</h4>
       <div className="seller-list">
-        {soldListings > 0 ? (
+        {!dashboard ? (
+          <div className="seller-row">
+            <div className={`seller-badge-container ${sellerBadgeClass(0)}`}>
+              —
+            </div>
+            <div className="seller-info">
+              <h5 className="seller-name">Equipe comercial</h5>
+              <div className="seller-stats">
+                <span className="seller-leads">—</span>
+                <span className="seller-value">—</span>
+              </div>
+            </div>
+          </div>
+        ) : soldListings > 0 ? (
           <div className="seller-row group">
             <div className={`seller-badge-container ${sellerBadgeClass(0)}`}>
               Loja
