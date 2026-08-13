@@ -35,7 +35,6 @@ describe("CrmWhatsappConnectionAdmin", () => {
   });
 
   it("keeps management and other channel choices reachable after Z-API connects", async () => {
-    const setPaused = vi.fn(async () => undefined);
     render(
       <CrmWhatsappConnectionAdmin
         connections={[createConnection("zapi", "connected", true)]}
@@ -54,24 +53,23 @@ describe("CrmWhatsappConnectionAdmin", () => {
             onRequestZapiPairingCode: vi.fn(),
             onRequestZapiPairingQr: vi.fn(),
             onSelectComposioSender: vi.fn(),
-            onSetConnectionPaused: setPaused,
           },
         }}
       />,
     );
 
-    expect(
-      await screen.findByRole("button", { name: "Gerenciar conexão" }),
-    ).toBeVisible();
-    expect(screen.queryByText("Central de conexões")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar canal" }));
-    expect(await screen.findByText("Central de conexões")).toBeVisible();
+    const zapiCard = await screen.findByRole("button", { name: /Z-API/i });
+    expect(zapiCard).toBeEnabled();
+    expect(screen.getByText("Já conectado")).toBeVisible();
     expect(
       screen.getByRole("button", { name: /WhatsApp Oficial/i }),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Visão geral" }));
-    fireEvent.click(screen.getByRole("button", { name: "Pausar no CRM" }));
-    expect(setPaused).toHaveBeenCalledWith("zapi-connection", true);
+    fireEvent.click(zapiCard);
+    expect(
+      await screen.findByText("WhatsApp conectado e pronto para uso"),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Ver outros canais" }));
+    expect(await screen.findByRole("button", { name: /Z-API/i })).toBeEnabled();
   });
 
   it("keeps the selected connection management view open across polling refreshes", async () => {
@@ -86,9 +84,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
       />,
     );
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Gerenciar conexão" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: /Z-API/i }));
     fireEvent.click(
       screen.getByRole("button", {
         name: "Reconectar ou trocar aparelho",
@@ -106,8 +102,8 @@ describe("CrmWhatsappConnectionAdmin", () => {
 
     expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Gerenciar conexão" }),
-    ).toHaveAttribute("aria-current", "page");
+      screen.queryByRole("button", { name: /Z-API/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows pairing-only controls for an existing disconnected Z-API connection", async () => {
@@ -134,10 +130,9 @@ describe("CrmWhatsappConnectionAdmin", () => {
       />,
     );
 
+    fireEvent.click(await screen.findByRole("button", { name: /Z-API/i }));
     expect(
-      await screen.findByRole("heading", {
-        name: "Conectar WhatsApp · Z-API",
-      }),
+      await screen.findByRole("heading", { name: "Conectar WhatsApp · Z-API" }),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
     fireEvent.click(screen.getByRole("tab", { name: "Código do telefone" }));

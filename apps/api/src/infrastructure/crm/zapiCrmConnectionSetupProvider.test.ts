@@ -64,6 +64,27 @@ describe("createZapiCrmConnectionSetupProvider", () => {
     });
   });
 
+  it("classifies a passkey challenge without exposing its contents", async () => {
+    const provider = createZapiCrmConnectionSetupProvider(
+      env,
+      vi.fn<typeof fetch>(async () =>
+        Response.json({
+          challenge: {
+            challenge: "sensitive-provider-challenge",
+            rpId: "whatsapp.com",
+            timeout: 600_000,
+          },
+        }),
+      ),
+    );
+
+    const result = provider.getQrCode(credentials);
+    await expect(result).rejects.toMatchObject({
+      code: "pairing_method_required",
+    });
+    await expect(result).rejects.not.toThrow(/sensitive-provider-challenge/u);
+  });
+
   it("models both phone codes and passkey challenges", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()

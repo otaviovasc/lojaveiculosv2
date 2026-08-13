@@ -108,26 +108,88 @@ export function CrmWhatsappSelfServiceSetup({
     useState<CrmWhatsappProviderConnection | null>(existingConnection);
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const [isLifecycleBusy, setIsLifecycleBusy] = useState(false);
+  const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const [completion, setCompletion] =
     useState<CrmWhatsappComposioCompleteResult | null>(null);
   const completingConnectionRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (startAtDirectory) {
-      setConnection(null);
-      setProvider(null);
-      return;
-    }
     setConnection(existingConnection);
     if (
-      existingConnection?.provider === "zapi" ||
-      existingConnection?.provider === "composio_whatsapp"
+      !startAtDirectory &&
+      (existingConnection?.provider === "zapi" ||
+        existingConnection?.provider === "composio_whatsapp")
     ) {
       setProvider(
         existingConnection.provider === "zapi" ? "zapi" : "composio_whatsapp",
       );
     }
   }, [existingConnection, startAtDirectory]);
+
+  const chooseProvider = (nextProvider: CrmWhatsappSetupProvider) => {
+    setConnection(
+      connections.find(
+        (candidate) =>
+          candidate.provider === nextProvider &&
+          candidate.status !== "archived",
+      ) ?? null,
+    );
+    setProvider(nextProvider);
+  };
+
+  const togglePaused = async () => {
+    if (
+      !connection ||
+      !canSetup ||
+      !handlers.onSetConnectionPaused ||
+      isLifecycleBusy
+    ) {
+      return;
+    }
+    setIsLifecycleBusy(true);
+    setLifecycleError(null);
+    try {
+      await handlers.onSetConnectionPaused(
+        connection.id,
+        connection.status !== "paused",
+      );
+    } catch (caught) {
+      setLifecycleError(
+        formatApiErrorDisplay(
+          caught,
+          connection.status === "paused"
+            ? "Não foi possível retomar o canal."
+            : "Não foi possível pausar o canal.",
+        ),
+      );
+    } finally {
+      setIsLifecycleBusy(false);
+    }
+  };
+
+  const lifecycleActions =
+    connection && handlers.onSetConnectionPaused ? (
+      <div className="crm-whatsapp-connection-management-actions">
+        <button
+          className="crm-action crm-action-muted"
+          disabled={!canSetup || isLifecycleBusy}
+          onClick={() => void togglePaused()}
+          type="button"
+        >
+          {isLifecycleBusy
+            ? "Atualizando canal"
+            : connection.status === "paused"
+              ? "Retomar canal"
+              : "Pausar no CRM"}
+        </button>
+        {lifecycleError ? (
+          <p className="crm-whatsapp-connection-error" role="alert">
+            {lifecycleError}
+          </p>
+        ) : null}
+      </div>
+    ) : null;
 
   const completeOfficialSetup = useCallback(
     async (connectionId: string) => {
@@ -179,7 +241,7 @@ export function CrmWhatsappSelfServiceSetup({
         availableProviders={availableProviders}
         connections={connections}
         {...(marketplaceApi ? { marketplaceApi } : {})}
-        onChoose={setProvider}
+        onChoose={chooseProvider}
         onRedirect={onRedirect}
         zapiAddonContract={zapiAddonContract}
       />
@@ -188,38 +250,44 @@ export function CrmWhatsappSelfServiceSetup({
 
   if (provider === "zapi") {
     return (
-      <CrmWhatsappZapiSetup
-        allowance={allowance}
-        canPair={canPair}
-        canSetup={canSetup}
-        connection={connection?.provider === "zapi" ? connection : null}
-        handlers={handlers}
-        onBack={() => setProvider(null)}
-        onConnection={setConnection}
-        zapiAddonContract={zapiAddonContract}
-      />
+      <>
+        <CrmWhatsappZapiSetup
+          allowance={allowance}
+          canPair={canPair}
+          canSetup={canSetup}
+          connection={connection?.provider === "zapi" ? connection : null}
+          handlers={handlers}
+          onBack={() => setProvider(null)}
+          onConnection={setConnection}
+          zapiAddonContract={zapiAddonContract}
+        />
+        {lifecycleActions}
+      </>
     );
   }
 
   return (
-    <OfficialSetup
-      completion={completion}
-      canSetup={canSetup}
-      connection={
-        connection?.provider === "composio_whatsapp" ? connection : null
-      }
-      error={error}
-      handlers={handlers}
-      isBusy={isBusy}
-      onBack={() => setProvider(null)}
-      onComplete={() =>
-        connection ? void completeOfficialSetup(String(connection.id)) : null
-      }
-      onConnection={setConnection}
-      onError={setError}
-      onRedirect={onRedirect}
-      onStartBusy={setIsBusy}
-    />
+    <>
+      <OfficialSetup
+        completion={completion}
+        canSetup={canSetup}
+        connection={
+          connection?.provider === "composio_whatsapp" ? connection : null
+        }
+        error={error}
+        handlers={handlers}
+        isBusy={isBusy}
+        onBack={() => setProvider(null)}
+        onComplete={() =>
+          connection ? void completeOfficialSetup(String(connection.id)) : null
+        }
+        onConnection={setConnection}
+        onError={setError}
+        onRedirect={onRedirect}
+        onStartBusy={setIsBusy}
+      />
+      {lifecycleActions}
+    </>
   );
 }
 

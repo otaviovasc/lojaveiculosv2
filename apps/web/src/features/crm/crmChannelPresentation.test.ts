@@ -57,9 +57,38 @@ describe("readOlxChannelOperations", () => {
   it("does not claim success without marketplace state", () => {
     const operations = readOlxChannelOperations([], undefined);
 
-    expect(operations.chat.state).toBe("indeterminate");
-    expect(operations.leads.state).toBe("indeterminate");
-    expect(operations.stock.state).toBe("indeterminate");
+    expect(operations.chat.state).toBe("not_connected");
+    expect(operations.leads.state).toBe("not_connected");
+    expect(operations.stock.state).toBe("not_connected");
+  });
+
+  it("shows every OLX capability as not connected before OAuth", () => {
+    const operations = readOlxChannelOperations([], {
+      accountId: null,
+      capabilities: null,
+      connectionStatus: "not_connected",
+      lastSyncSummary: null,
+      provider: "olx",
+      requirements: [],
+    });
+
+    expect(operations).toEqual({
+      chat: {
+        detail: "Autorize a conta OLX para habilitar esta capacidade.",
+        label: "Chat",
+        state: "not_connected",
+      },
+      leads: {
+        detail: "Autorize a conta OLX para habilitar esta capacidade.",
+        label: "Leads",
+        state: "not_connected",
+      },
+      stock: {
+        detail: "Autorize a conta OLX para habilitar esta capacidade.",
+        label: "Estoque",
+        state: "not_connected",
+      },
+    });
   });
 });
 

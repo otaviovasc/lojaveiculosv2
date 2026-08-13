@@ -67,6 +67,12 @@ export function createZapiCrmConnectionSetupProvider(
     async getQrCode(credentials) {
       const payload = await request(credentials, "/qr-code");
       const dataUri = normalizeQrDataUri(readString(payload.value));
+      if (!dataUri && isPasskeyChallenge(payload.challenge)) {
+        throw new CrmConnectionSetupProviderError(
+          "Z-API requires another pairing method. Try connecting by phone.",
+          "pairing_method_required",
+        );
+      }
       if (!dataUri) {
         throw invalidResponse("Z-API did not return a valid QR code");
       }
@@ -90,6 +96,12 @@ export function createZapiCrmConnectionSetupProvider(
       };
     },
   };
+}
+
+function isPasskeyChallenge(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const challenge = value as Record<string, unknown>;
+  return Boolean(readString(challenge.challenge) && readString(challenge.rpId));
 }
 
 function normalizeQrDataUri(value: string | null) {

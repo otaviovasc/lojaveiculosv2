@@ -56,9 +56,11 @@ export function handleWhatsappConnectionError(
     const status =
       error.code === "rate_limited"
         ? 429
-        : error.code === "configuration_error"
-          ? 503
-          : 502;
+        : error.code === "pairing_method_required"
+          ? 409
+          : error.code === "configuration_error"
+            ? 503
+            : 502;
     if (status === 429) {
       context.header("Retry-After", String(error.retryAfterSeconds ?? 1));
     }
@@ -66,7 +68,9 @@ export function handleWhatsappConnectionError(
       code: `CRM_CONNECTION_SETUP_${error.code.toUpperCase()}`,
       ...(error.retryAfterSeconds
         ? { details: { retryAfterSeconds: error.retryAfterSeconds } }
-        : {}),
+        : error.code === "pairing_method_required"
+          ? { details: { nextAction: "request_phone_code" } }
+          : {}),
       error,
       message: error.message,
       status,

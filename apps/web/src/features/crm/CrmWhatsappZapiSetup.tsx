@@ -7,7 +7,7 @@ import {
   Loader2,
   QrCode,
 } from "lucide-react";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { AppApiError, formatApiErrorDisplay } from "../../lib/apiErrors";
 import { ConnectionSectionCard } from "./CrmWhatsappConnectionAdminParts";
 import {
   CrmWhatsappZapiPairingStage,
@@ -212,14 +212,24 @@ export function CrmWhatsappZapiSetup({
     const requestPairingQr = handlers.onRequestZapiPairingQr;
     if (!connection || !canPair || !requestPairingQr) return;
     setQr(null);
-    const result = await runAction({
-      action: () => requestPairingQr(connection.id),
-      busy: "qr",
-      fallbackError: "Não foi possível gerar o QR Code.",
-      setBusy,
-      setError,
-    });
-    if (result) setQr(result);
+    setBusy("qr");
+    setError(null);
+    try {
+      setQr(await requestPairingQr(connection.id));
+    } catch (caught) {
+      if (requiresPhonePairing(caught)) {
+        setPairingMethod("code");
+        setError(
+          "Este aparelho exige uma verificação adicional. Continue pelo telefone para concluir o pareamento com segurança.",
+        );
+      } else {
+        setError(
+          formatApiErrorDisplay(caught, "Não foi possível gerar o QR Code."),
+        );
+      }
+    } finally {
+      setBusy(null);
+    }
   };
 
   const requestCode = async () => {
@@ -317,6 +327,22 @@ export function CrmWhatsappZapiSetup({
         Ver outros canais
       </button>
     </ConnectionSectionCard>
+  );
+}
+
+function requiresPhonePairing(error: unknown) {
+  if (
+    !(error instanceof AppApiError) ||
+    error.code !== "CRM_CONNECTION_SETUP_PAIRING_METHOD_REQUIRED" ||
+    !error.details ||
+    typeof error.details !== "object" ||
+    Array.isArray(error.details)
+  ) {
+    return false;
+  }
+  return (
+    (error.details as Record<string, unknown>).nextAction ===
+    "request_phone_code"
   );
 }
 

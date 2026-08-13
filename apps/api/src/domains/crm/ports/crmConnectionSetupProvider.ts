@@ -130,6 +130,7 @@ export type ComposioWhatsappOnboardingProvider = {
 export type CrmConnectionSetupProviderErrorCode =
   | "configuration_error"
   | "invalid_provider_response"
+  | "pairing_method_required"
   | "provider_rejected"
   | "rate_limited"
   | "request_failed"
