@@ -73,7 +73,7 @@ export function createTestApp(options: TestAppOptions = {}) {
           "marketplace.read",
           "crm.messaging.connection.setup",
         ],
-        request: { requestId: "request_1" },
+        request: { requestId: options.requestId ?? "request_1" },
         storeId: "store_1",
         tenantId: "tenant_1",
       }),
@@ -215,6 +215,7 @@ type TestAppOptions = {
   gateway?: ReturnType<typeof createGateway>;
   olxCrmOnboarding?: MarketplaceServicePorts["olxCrmOnboarding"];
   permissions?: string[];
+  requestId?: string;
   repository?: MarketplaceRepository;
 };
 

@@ -40,12 +40,12 @@ describe("createZapiCrmConnectionSetupProvider", () => {
     const provider = createZapiCrmConnectionSetupProvider(
       env,
       vi.fn<typeof fetch>(async () =>
-        Response.json({ value: "data:image/png;base64,aGVsbG8=" }),
+        Response.json({ value: "data:image/png;base64,iVBORw0KGgo=" }),
       ),
     );
 
     await expect(provider.getQrCode(credentials)).resolves.toEqual({
-      dataUri: "data:image/png;base64,aGVsbG8=",
+      dataUri: "data:image/png;base64,iVBORw0KGgo=",
       expiresInSeconds: 20,
     });
   });
@@ -54,12 +54,12 @@ describe("createZapiCrmConnectionSetupProvider", () => {
     const provider = createZapiCrmConnectionSetupProvider(
       env,
       vi.fn<typeof fetch>(async () =>
-        Response.json({ value: "data:image/png;base64,aGVs\n bG8=" }),
+        Response.json({ value: "data:image/png;base64,iVBO\n Rw0KGgo=" }),
       ),
     );
 
     await expect(provider.getQrCode(credentials)).resolves.toEqual({
-      dataUri: "data:image/png;base64,aGVsbG8=",
+      dataUri: "data:image/png;base64,iVBORw0KGgo=",
       expiresInSeconds: 20,
     });
   });

@@ -4,7 +4,12 @@ export type MarketplaceOauthCallback =
   | { code: string; kind: "inline"; state: string }
   | { error: string; kind: "inline-error"; state: string }
   | { kind: "none" }
-  | { kind: "result-error"; provider?: MarketplaceProvider }
+  | {
+      errorCode?: "MARKETPLACE_OAUTH_CALLBACK_FAILED";
+      kind: "result-error";
+      provider?: MarketplaceProvider;
+      requestId?: string;
+    }
   | {
       kind: "staged";
       provider: MarketplaceProvider;
@@ -28,16 +33,30 @@ export function readMarketplaceOauthCallback(
   const status = params.get("marketplaceOauth");
   if (!status) return { kind: "none" };
   const provider = readProvider(params.get("provider"));
+  const errorCode =
+    params.get("errorCode") === "MARKETPLACE_OAUTH_CALLBACK_FAILED"
+      ? ("MARKETPLACE_OAUTH_CALLBACK_FAILED" as const)
+      : undefined;
+  const requestId = readSupportReference(params.get("requestId"));
   const transactionId = params.get("transactionId")?.trim();
   if (status === "pending" && provider && transactionId) {
     return { kind: "staged", provider, transactionId };
   }
   return {
     kind: "result-error",
+    ...(errorCode ? { errorCode } : {}),
     ...(provider ? { provider } : {}),
+    ...(requestId ? { requestId } : {}),
   };
 }
 
 function readProvider(value: string | null) {
   return value === "mercado_livre" || value === "olx" ? value : undefined;
+}
+
+function readSupportReference(value: string | null) {
+  const normalized = value?.trim();
+  return normalized && /^[A-Za-z0-9._:-]{1,128}$/u.test(normalized)
+    ? normalized
+    : undefined;
 }

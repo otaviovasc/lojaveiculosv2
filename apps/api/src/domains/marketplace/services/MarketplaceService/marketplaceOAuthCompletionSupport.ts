@@ -159,7 +159,13 @@ export async function connectMarketplaceOAuthAccount(
       ...(olxCapabilities
         ? { capabilities: olxCapabilities.capabilities }
         : {}),
-      kind: "connected" as const,
+      kind:
+        olxCapabilities &&
+        Object.values(olxCapabilities.capabilities).some(
+          (capability) => capability.status !== "active",
+        )
+          ? ("partial" as const)
+          : ("connected" as const),
     };
   } catch (error) {
     await context.audit.record({

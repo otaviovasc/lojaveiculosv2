@@ -53,7 +53,7 @@ describe("marketplace OAuth OLX capabilities", () => {
         },
         stock: { grantState: "granted", status: "active" },
       },
-      kind: "connected",
+      kind: "partial",
     });
     expect(gateway.tokenRequests).toHaveLength(1);
     expect(attempts).toBe(1);
@@ -78,6 +78,7 @@ describe("marketplace OAuth OLX capabilities", () => {
         },
         stock: { grantState: "granted", status: "active" },
       },
+      kind: "partial",
     });
     expect(gateway.tokenRequests).toHaveLength(1);
   });
@@ -101,6 +102,7 @@ describe("marketplace OAuth OLX capabilities", () => {
         },
         stock: { grantState: "granted", status: "active" },
       },
+      kind: "partial",
     });
     expect(gateway.tokenRequests).toHaveLength(1);
   });
@@ -149,6 +151,7 @@ describe("marketplace OAuth OLX capabilities", () => {
           status: "blocked",
         },
       },
+      kind: "partial",
     });
     expect(persistCapabilities).toHaveBeenCalledTimes(1);
     const persisted = persistCapabilities.mock.calls[0]?.[1];

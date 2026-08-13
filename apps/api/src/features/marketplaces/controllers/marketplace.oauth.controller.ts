@@ -23,23 +23,39 @@ export function createMarketplaceOAuthCallbackFeature(
   feature.get("/callback", async (context) => {
     context.header("Cache-Control", "no-store");
     context.header("Referrer-Policy", "no-referrer");
+    let requestId: string | null = null;
     try {
-      const query = parseOAuthCallbackQuery(context);
       const serviceContext = await contextFactory(context);
+      requestId = sanitizeCallbackRequestId(serviceContext.requestId);
+      const query = parseOAuthCallbackQuery(context);
       const result = await services.receiveOAuthCallback(serviceContext, {
         ...query,
         provider: "olx",
       });
       return context.redirect(marketplaceResultUrl(result), 302);
     } catch {
-      return context.redirect(
-        `${marketplaceResultPath}?marketplaceOauth=error&provider=olx#/marketplaces`,
-        302,
-      );
+      return context.redirect(marketplaceErrorUrl(requestId), 302);
     }
   });
 
   return feature;
+}
+
+function sanitizeCallbackRequestId(requestId: string | null) {
+  const normalized = requestId?.trim();
+  return normalized && /^[A-Za-z0-9._:-]{1,128}$/u.test(normalized)
+    ? normalized
+    : null;
+}
+
+function marketplaceErrorUrl(requestId: string | null) {
+  const params = new URLSearchParams({
+    errorCode: "MARKETPLACE_OAUTH_CALLBACK_FAILED",
+    marketplaceOauth: "error",
+    provider: "olx",
+  });
+  if (requestId) params.set("requestId", requestId);
+  return `${marketplaceResultPath}?${params.toString()}#/marketplaces`;
 }
 
 function parseOAuthCallbackQuery(context: Context) {

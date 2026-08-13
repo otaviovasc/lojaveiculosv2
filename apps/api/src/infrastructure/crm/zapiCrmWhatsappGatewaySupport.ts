@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import {
   CrmWhatsappGatewayError,
   type CrmWhatsappProviderStatus,
@@ -73,16 +72,36 @@ export function parseJson(text: string): Record<string, unknown> {
 
 export function readProviderMessageId(payload: Record<string, unknown>) {
   return (
-    readString(payload.messageId) ??
-    readString(payload.zaapId) ??
-    readString(payload.id) ??
-    readString(payload.externalId) ??
+    readProviderId(payload.messageId) ??
+    readProviderId(payload.zaapId) ??
+    readProviderId(payload.id) ??
+    readProviderId(payload.externalId) ??
     null
+  );
+}
+
+export function requireProviderMessageId(
+  payload: Record<string, unknown>,
+  label: string,
+) {
+  const providerMessageId = readProviderMessageId(payload);
+  if (providerMessageId) return providerMessageId;
+
+  throw new CrmWhatsappGatewayError(
+    `${label} returned without a provider message id`,
+    502,
+    undefined,
+    "request_failed",
   );
 }
 
 export function readString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function readProviderId(value: unknown): string | null {
+  const providerId = readString(value);
+  return providerId && providerId.length <= 512 ? providerId : null;
 }
 
 export function toProviderStatus(
@@ -93,7 +112,7 @@ export function toProviderStatus(
     typeof payload.smartphoneConnected === "boolean"
       ? payload.smartphoneConnected
       : null;
-  const isConnected = connected || smartphoneConnected === true;
+  const isConnected = isZapiProviderConnected(payload);
 
   return {
     checkedAt: new Date(),
@@ -106,6 +125,10 @@ export function toProviderStatus(
     providerStatus: isConnected ? "connected" : "disconnected",
     smartphoneConnected,
   };
+}
+
+export function isZapiProviderConnected(payload: Record<string, unknown>) {
+  return payload.connected === true || payload.smartphoneConnected === true;
 }
 
 export function assertZapiProvider(provider: string) {
@@ -130,8 +153,4 @@ export function zapiProviderResponseError(status: number, label: string) {
         ? "provider_unavailable"
         : "provider_rejected",
   );
-}
-
-export function createProviderMessageId(payload: Record<string, unknown>) {
-  return readProviderMessageId(payload) ?? `zapi-outbound-${randomUUID()}`;
 }

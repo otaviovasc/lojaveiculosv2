@@ -66,10 +66,36 @@ describe("marketplace OAuth controller", () => {
     );
 
     expect(callback.status).toBe(302);
-    expect(callback.headers.get("location")).toBe(
-      "/dashboard?marketplaceOauth=error&provider=olx#/marketplaces",
+    const location = new URL(
+      callback.headers.get("location") ?? "",
+      "http://localhost",
     );
+    expect(location.searchParams.get("marketplaceOauth")).toBe("error");
+    expect(location.searchParams.get("provider")).toBe("olx");
+    expect(location.searchParams.get("errorCode")).toBe(
+      "MARKETPLACE_OAUTH_CALLBACK_FAILED",
+    );
+    expect(location.searchParams.get("requestId")).toBe("request_1");
+    expect(location.search).not.toContain("authorization_code_123");
     expect(gateway.tokenRequests).toEqual([]);
+  });
+
+  it("omits an untrusted request id from the callback error redirect", async () => {
+    const app = createTestApp({ requestId: "bad request id&code=secret" });
+    const callback = await app.request(
+      "/api/v1/marketplaces/oauth/olx/callback?code=authorization_code_123&state=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+
+    expect(callback.status).toBe(302);
+    const location = new URL(
+      callback.headers.get("location") ?? "",
+      "http://localhost",
+    );
+    expect(location.searchParams.get("errorCode")).toBe(
+      "MARKETPLACE_OAUTH_CALLBACK_FAILED",
+    );
+    expect(location.searchParams.has("requestId")).toBe(false);
+    expect(location.search).not.toContain("secret");
   });
 
   it("retries a transient code exchange without consuming or replaying the code", async () => {

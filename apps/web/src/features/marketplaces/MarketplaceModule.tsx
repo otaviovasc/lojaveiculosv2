@@ -1,4 +1,4 @@
-import { CheckCircle2, RefreshCcw, Store } from "lucide-react";
+import { AlertTriangle, CheckCircle2, RefreshCcw, Store } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AnimatedContent from "../../components/ui/AnimatedContent";
 import {
@@ -118,6 +118,13 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       }
       applyOverview(await marketplaceApi.getOverview());
       clearOauthCallbackLocation();
+      if (result.kind === "partial") {
+        setStatus({
+          kind: "partial",
+          message: `${providerLabels[result.account.provider]} autorizada parcialmente. Uma ou mais capacidades de Chat, Leads ou Estoque precisam de atenção. Use Revisar conexão para tentar novamente. Nenhum anúncio foi enviado.`,
+        });
+        return;
+      }
       setStatus({
         kind: "saved",
         message: `${providerLabels[result.account.provider]} conectado. Nenhum anúncio foi enviado.`,
@@ -255,6 +262,14 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
           {status.message}
         </FeatureAlert>
       ) : null}
+      {status.kind === "partial" ? (
+        <FeatureAlert
+          icon={<AlertTriangle aria-hidden="true" className="size-5" />}
+          tone="warning"
+        >
+          {status.message}
+        </FeatureAlert>
+      ) : null}
       {overview ? (
         <>
           <AnimatedContent distance={14} duration={0.32} trigger="mount">
@@ -328,6 +343,7 @@ type ProviderPreview = {
 type MarketplaceStatus =
   | { display: MarketplaceErrorDisplay; kind: "error" }
   | { kind: "loading" }
+  | { kind: "partial"; message: string }
   | { kind: "ready" }
   | { kind: "saved"; message: string }
   | { kind: "saving"; provider: MarketplaceProvider };
@@ -356,12 +372,14 @@ function oauthErrorDisplay(
   >,
 ): MarketplaceErrorDisplay {
   return {
-    failed: "A conexão não foi concluída.",
+    failed: callback.errorCode
+      ? `A conexão não foi concluída (${callback.errorCode}).`
+      : "A conexão não foi concluída.",
     fix: "A autorização foi cancelada, recusada ou expirou. Inicie a conexão novamente.",
     provider: callback.provider
       ? providerLabels[callback.provider]
       : "Canal não identificado",
-    requestId: "Não informado",
+    requestId: callback.requestId ?? "Não informado",
     vehicleLabel: "Não se aplica",
   };
 }

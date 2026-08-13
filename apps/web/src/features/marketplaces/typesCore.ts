@@ -163,5 +163,13 @@ export type CompleteMarketplaceConnectionInput =
   | { transactionId: string };
 
 export type CompleteMarketplaceConnectionResult =
-  | { account: MarketplaceAccount; kind: "connected" }
+  | {
+      account: MarketplaceAccount;
+      capabilities?: {
+        chat: MarketplaceProviderCapability;
+        leads: MarketplaceProviderCapability;
+        stock: MarketplaceProviderCapability;
+      };
+      kind: "connected" | "partial";
+    }
   | { kind: "cancelled"; provider: MarketplaceProvider };

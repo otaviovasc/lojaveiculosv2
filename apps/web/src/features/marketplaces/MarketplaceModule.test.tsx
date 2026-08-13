@@ -229,6 +229,36 @@ describe("MarketplaceModule", () => {
     expect(window.location.pathname).toBe("/dashboard");
     expect(window.location.hash).toBe("#/marketplaces");
   });
+
+  it("reports partial OLX completion and exposes an explicit retry", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=22222222-2222-4222-8222-222222222222#/marketplaces",
+    );
+    const capabilities = degradedOlxOverview.providerStates[0]?.capabilities;
+    if (!capabilities) throw new Error("Expected degraded OLX capabilities.");
+    const api = createApi({
+      completeConnection: vi.fn(async () => ({
+        account,
+        capabilities,
+        kind: "partial" as const,
+      })),
+      getOverview: vi.fn(async () => degradedOlxOverview),
+    });
+
+    render(<MarketplaceModule api={api} />);
+
+    expect(
+      await screen.findByText(/OLX autorizada parcialmente/i),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("OLX conectado. Nenhum anúncio foi enviado."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Revisar conexão do OLX" }),
+    ).toBeEnabled();
+  });
 });
 
 function createApi(overrides: Partial<MarketplaceApi> = {}): MarketplaceApi {
@@ -337,6 +367,39 @@ const reconnectRequiredOverview: MarketplaceOverview = {
           userAction: "Reconnect the provider account.",
         },
       ],
+    },
+  ],
+};
+
+const degradedOlxOverview: MarketplaceOverview = {
+  ...overview,
+  providerStates: [
+    {
+      accountId: "account_1",
+      capabilities: {
+        chat: {
+          capability: "messaging",
+          grantState: "granted",
+          reason: "runtime_unavailable",
+          status: "error",
+        },
+        leads: {
+          capability: "lead_ingestion",
+          grantState: "granted",
+          reason: "runtime_unavailable",
+          status: "error",
+        },
+        stock: {
+          capability: "inventory_sync",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+      },
+      connectionStatus: "degraded",
+      lastSyncSummary: null,
+      provider: "olx",
+      requirements: [],
     },
   ],
 };
