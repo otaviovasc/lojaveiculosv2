@@ -11,7 +11,9 @@ import {
   CrmWhatsappValidationError,
   handleWhatsapp,
 } from "./crm.whatsapp.errors.js";
+import { z } from "zod";
 import {
+  whatsappBotActionNameSchema,
   whatsappBotActionSchema,
   whatsappBotIntegrationUpdateSchema,
 } from "./crm.whatsapp.integrationSchemas.js";
@@ -46,8 +48,11 @@ export function registerCrmWhatsappIntegrationRoutes(
 
   crmFeature.post("/whatsapp/integrations/bot/actions", async (context) =>
     handleWhatsapp(context, async () => {
-      const input = await parseWhatsappJson(context, whatsappBotActionSchema);
-      if (!isCredereAction(input.action)) {
+      const probe = await parseWhatsappJson(
+        context,
+        z.looseObject({ action: whatsappBotActionNameSchema }),
+      );
+      if (!isCredereAction(probe.action)) {
         return jsonApiError(context, {
           code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
           message:
@@ -55,6 +60,7 @@ export function registerCrmWhatsappIntegrationRoutes(
           status: 410,
         });
       }
+      const input = await parseWhatsappJson(context, whatsappBotActionSchema);
       if (context.req.header("Store-Id")) {
         throw new CrmWhatsappValidationError(
           "Store-Id header is not accepted for bot actions.",
@@ -80,7 +86,7 @@ export function registerCrmWhatsappIntegrationRoutes(
         createCredereBotContext(
           authContext,
           integration,
-          input.action,
+          probe.action,
           entitlements,
           input.idempotencyKey,
         ),
