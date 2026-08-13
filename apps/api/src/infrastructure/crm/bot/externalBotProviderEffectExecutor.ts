@@ -59,8 +59,8 @@ export function createExternalBotProviderEffectExecutor(input: {
           };
         }
         await input.services.toggleWhatsappIntervention(context, {
+          commandId: effect.effectId,
           enabled: true,
-          expectedRevision: effect.legacySessionRevision,
           interventionId: effect.effectId,
           reason: effect.command.payload.reason,
           sessionId: effect.legacySessionId,

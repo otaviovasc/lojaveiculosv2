@@ -11,6 +11,7 @@ import {
   type CrmBotWebhookDispatcher,
 } from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
+import type { CrmOutcomeRepository } from "../../ports/crmOutcomeRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
   createNoopCrmRealtimePublisher,
@@ -22,6 +23,7 @@ import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepos
 import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
+import type { CrmWhatsappSessionCommandRepository } from "../../ports/crmWhatsappSessionCommandRepository.js";
 import type { CrmWhatsappOutboundIntentRepository } from "../../ports/crmWhatsappOutboundIntentRepository.js";
 import { CrmScopeError } from "../../crmScopeError.js";
 import type { CrmServicePorts } from "./types.js";
@@ -74,6 +76,14 @@ export function requireCrmWhatsappScope(context: ServiceContext): {
 
 export function getCrmRepository(ports: CrmServicePorts): CrmRepository {
   return ports.crmRepository;
+}
+
+export function getCrmOutcomeRepository(
+  ports: CrmServicePorts,
+): CrmOutcomeRepository {
+  if (!ports.crmOutcomeRepository)
+    throw new CrmScopeError("crmOutcomeRepository");
+  return ports.crmOutcomeRepository;
 }
 
 export function getCrmBotIntegrationRepository(
@@ -157,6 +167,15 @@ export function getCrmWhatsappRepository(
     throw new CrmScopeError("crmWhatsappRepository");
   }
   return ports.crmWhatsappRepository;
+}
+
+export function getCrmWhatsappSessionCommandRepository(
+  ports: CrmServicePorts,
+): CrmWhatsappSessionCommandRepository {
+  if (!ports.crmWhatsappSessionCommandRepository) {
+    throw new CrmScopeError("crmWhatsappSessionCommandRepository");
+  }
+  return ports.crmWhatsappSessionCommandRepository;
 }
 
 export function getCrmWebhookEventRepository(

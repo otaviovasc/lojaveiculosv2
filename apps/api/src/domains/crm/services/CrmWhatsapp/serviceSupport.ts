@@ -116,11 +116,22 @@ export async function recordWhatsappServiceMutation<T>(
   context: ServiceContext,
   input: WhatsappServiceAuditInput,
   action: () => Promise<T>,
+  resultMetadata?: (result: T) => SafeAuditMetadata,
 ): Promise<T> {
   await auditWhatsappServiceEvent(context, input, "attempted");
   try {
     const result = await action();
-    await auditWhatsappServiceEvent(context, input, "succeeded");
+    await auditWhatsappServiceEvent(
+      context,
+      {
+        ...input,
+        metadata: {
+          ...(input.metadata ?? {}),
+          ...(resultMetadata ? resultMetadata(result) : {}),
+        },
+      },
+      "succeeded",
+    );
     return result;
   } catch (error) {
     await auditWhatsappServiceEvent(

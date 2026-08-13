@@ -53,6 +53,7 @@ export function ChatHeader({
   onRemoveTag,
   onScheduleMessage,
   onToggleIntervention,
+  pendingActions,
   session,
 }: {
   actionsDisabled?: boolean;
@@ -75,6 +76,9 @@ export function ChatHeader({
   onRemoveTag: (tagId: string) => Promise<boolean>;
   onScheduleMessage: () => void;
   onToggleIntervention: () => void;
+  pendingActions?: Partial<
+    Record<"assign" | "intervention" | "read" | "tag", boolean>
+  >;
   session: CrmWhatsappSession;
 }) {
   const tagButtonRef = useRef<HTMLButtonElement>(null);
@@ -133,7 +137,7 @@ export function ChatHeader({
           </span>
           <CrmWhatsappHumanAttendanceBadge session={session} />
           <SessionTagRow
-            disabled={disabled || !canTagSessions}
+            disabled={disabled || pendingActions?.tag || !canTagSessions}
             onRemoveTag={onRemoveTag}
             tags={session.sessionTags ?? []}
           />
@@ -154,7 +158,7 @@ export function ChatHeader({
                     : "Marcar conversa como nao lida"
                 }
                 className="crm-icon-action crm-whatsapp-header-action-secondary"
-                disabled={disabled}
+                disabled={disabled || pendingActions?.read}
                 onClick={session.unreadCount ? onMarkRead : onMarkUnread}
                 title={
                   session.unreadCount
@@ -171,7 +175,7 @@ export function ChatHeader({
                 <button
                   aria-label="Adicionar etiqueta"
                   className="crm-icon-action"
-                  disabled={disabled}
+                  disabled={disabled || pendingActions?.tag}
                   onClick={() => setTagMenuOpen((open) => !open)}
                   ref={tagButtonRef}
                   title="Adicionar etiqueta"
@@ -189,7 +193,7 @@ export function ChatHeader({
                   <TagMenu
                     activeTags={session.sessionTags ?? []}
                     availableTags={availableTags ?? []}
-                    disabled={disabled}
+                    disabled={disabled || Boolean(pendingActions?.tag)}
                     onAdd={async (input) => {
                       const accepted = await onAddTag(input);
                       if (accepted) setTagMenuOpen(false);
@@ -237,7 +241,7 @@ export function ChatHeader({
                     ? "crm-icon-action crm-icon-action-active"
                     : "crm-icon-action"
                 }
-                disabled={disabled}
+                disabled={disabled || pendingActions?.intervention}
                 onClick={onToggleIntervention}
                 title="Alternar atendimento humano"
                 type="button"
@@ -256,7 +260,7 @@ export function ChatHeader({
             {canAssignSession ? (
               <ChatAssignmentSelect
                 assignableMembers={assignableMembers}
-                disabled={disabled}
+                disabled={disabled || Boolean(pendingActions?.assign)}
                 onAssign={onAssign}
                 session={session}
               />
@@ -271,7 +275,9 @@ export function ChatHeader({
                     ? "crm-action crm-action-muted"
                     : "crm-action"
                 }
-                disabled={disabled || assignedToCurrentUser}
+                disabled={
+                  disabled || pendingActions?.assign || assignedToCurrentUser
+                }
                 onClick={() => onAssign(currentUserId)}
                 type="button"
               >

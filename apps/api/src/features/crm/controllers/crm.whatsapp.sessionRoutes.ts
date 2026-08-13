@@ -2,7 +2,7 @@ import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   whatsappAssignSessionSchema,
-  whatsappSessionRevisionSchema,
+  whatsappSessionCommandSchema,
   whatsappToggleInterventionSchema,
 } from "./crm.controller.schemas.js";
 import {
@@ -38,7 +38,7 @@ export function registerCrmWhatsappSessionRoutes(
       const sessionId = context.req.param("sessionId");
       const session = await services.assignWhatsappSession(serviceContext, {
         assignedUserId: input.assignedUserId,
-        expectedRevision: input.expectedRevision,
+        commandId: input.commandId,
         sessionId,
       });
       return context.json(session);
@@ -51,14 +51,14 @@ export function registerCrmWhatsappSessionRoutes(
       assertWhatsappClose(serviceContext);
       const input = await parseWhatsappJson(
         context,
-        whatsappSessionRevisionSchema,
+        whatsappSessionCommandSchema,
       );
       const sessionId = context.req.param("sessionId");
-      const session = await services.closeWhatsappSession(serviceContext, {
-        expectedRevision: input.expectedRevision,
+      const command = await services.closeWhatsappSession(serviceContext, {
+        commandId: input.commandId,
         sessionId,
       });
-      return context.json(session);
+      return context.json(command);
     }),
   );
 
@@ -84,15 +84,15 @@ export function registerCrmWhatsappSessionRoutes(
         );
         const serviceContext = await createContext(context);
         assertWhatsappToggleIntervention(serviceContext);
-        const session = await services.toggleWhatsappIntervention(
+        const command = await services.toggleWhatsappIntervention(
           serviceContext,
           {
             enabled: input.enabled,
-            expectedRevision: input.expectedRevision,
+            commandId: input.commandId,
             sessionId: context.req.param("sessionId"),
           },
         );
-        return context.json(session);
+        return context.json(command);
       }),
   );
 }
@@ -105,13 +105,13 @@ async function setReadState(
 ) {
   const serviceContext = await createContext(context);
   assertWhatsappRead(serviceContext);
-  const input = await parseWhatsappJson(context, whatsappSessionRevisionSchema);
+  const input = await parseWhatsappJson(context, whatsappSessionCommandSchema);
   const sessionId = context.req.param("sessionId");
   if (!sessionId) throw new CrmWhatsappValidationError();
-  const session = await services.markWhatsappSessionReadState(serviceContext, {
-    expectedRevision: input.expectedRevision,
+  const command = await services.markWhatsappSessionReadState(serviceContext, {
+    commandId: input.commandId,
     sessionId,
     unread,
   });
-  return context.json(session);
+  return context.json(command);
 }

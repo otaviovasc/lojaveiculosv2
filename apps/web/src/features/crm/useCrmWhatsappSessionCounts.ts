@@ -1,4 +1,4 @@
-import { useCallback, useState, type MutableRefObject } from "react";
+import { useCallback, useRef, useState, type MutableRefObject } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { defaultWhatsappSessionCounts } from "./crmWhatsappQueueState";
 import type {
@@ -32,7 +32,9 @@ export function useCrmWhatsappSessionCounts({
   const [sessionCounts, setSessionCounts] = useState(
     defaultWhatsappSessionCounts,
   );
+  const requestGenerationRef = useRef(0);
   const refreshSessionCounts = useCallback(async () => {
+    const requestGeneration = ++requestGenerationRef.current;
     if (!connectionId || !canList) {
       setSessionCounts(defaultWhatsappSessionCounts);
       return;
@@ -48,6 +50,7 @@ export function useCrmWhatsappSessionCounts({
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(unreadOnly ? { unreadOnly } : {}),
     });
+    if (requestGeneration !== requestGenerationRef.current) return;
     setSessionCounts(counts);
   }, [
     api,

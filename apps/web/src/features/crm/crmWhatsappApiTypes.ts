@@ -26,6 +26,7 @@ import type {
   CrmWhatsappComposioAuthorization,
   CrmWhatsappComposioCompleteResult,
   CrmWhatsappConnectionsResponse,
+  CrmWhatsappConclusionInput,
   CrmWhatsappCreateConnectionInput,
   CrmWhatsappProviderConnection,
   CrmWhatsappProviderEventsResponse,
@@ -49,7 +50,8 @@ import type {
   CrmWhatsappSessionCountsQuery,
   CrmWhatsappSessionId,
   CrmWhatsappSessionQuery,
-  CrmWhatsappSessionRevisionInput,
+  CrmWhatsappSessionCommandInput,
+  CrmWhatsappSessionCommandResult,
   CrmWhatsappScheduledMessage,
   CrmWhatsappStartConversationInput,
   CrmWhatsappStartConversationResult,
@@ -66,11 +68,15 @@ export type CrmWhatsappApi = {
   assignSession: (
     sessionId: CrmWhatsappSessionId,
     input: CrmWhatsappAssignSessionInput,
-  ) => Promise<CrmWhatsappSession | null>;
+  ) => Promise<CrmWhatsappSessionCommandResult>;
   closeSession: (
     sessionId: CrmWhatsappSessionId,
-    input: CrmWhatsappSessionRevisionInput,
-  ) => Promise<CrmWhatsappSession | null>;
+    input: CrmWhatsappSessionCommandInput,
+  ) => Promise<CrmWhatsappSessionCommandResult>;
+  concludeSession: (
+    sessionId: CrmWhatsappSessionId,
+    input: CrmWhatsappConclusionInput,
+  ) => Promise<CrmWhatsappSessionCommandResult>;
   authorizeComposioConnection: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappComposioAuthorization>;
@@ -90,7 +96,7 @@ export type CrmWhatsappApi = {
   interveneSession: (
     sessionId: CrmWhatsappSessionId,
     input: CrmWhatsappInterventionInput,
-  ) => Promise<CrmWhatsappSession | null>;
+  ) => Promise<CrmWhatsappSessionCommandResult>;
   getBotIntegration: () => Promise<CrmWhatsappBotIntegrationResponse>;
   listConnections: () => Promise<CrmWhatsappConnectionsResponse>;
   listMessages: (
@@ -105,12 +111,12 @@ export type CrmWhatsappApi = {
   ) => Promise<CrmWhatsappSession[]>;
   markSessionRead: (
     sessionId: CrmWhatsappSessionId,
-    input: CrmWhatsappSessionRevisionInput,
-  ) => Promise<CrmWhatsappSession | null>;
+    input: CrmWhatsappSessionCommandInput,
+  ) => Promise<CrmWhatsappSessionCommandResult>;
   markSessionUnread: (
     sessionId: CrmWhatsappSessionId,
-    input: CrmWhatsappSessionRevisionInput,
-  ) => Promise<CrmWhatsappSession | null>;
+    input: CrmWhatsappSessionCommandInput,
+  ) => Promise<CrmWhatsappSessionCommandResult>;
   removeReaction: (
     messageId: CrmWhatsappMessage["id"],
   ) => Promise<CrmWhatsappMessage | null>;

@@ -1,6 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { WhatsappSession } from "../../whatsapp/whatsappModels.js";
+import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
 import {
   interventionWindow,
   notifyScopedInterventionChangedToBot,
@@ -19,13 +19,14 @@ import {
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 import {
-  findScopedWhatsappSession,
-  sessionWithConnection,
-} from "./whatsappSessionMutationSupport.js";
+  executeWhatsappSessionCommand,
+  reloadScopedWhatsappSession,
+  type WhatsappSessionCommandResponse,
+} from "./executeWhatsappSessionCommand.js";
 
 export type ToggleWhatsappInterventionInput = {
+  commandId: string;
   enabled: boolean;
-  expectedRevision: number;
   interventionId?: string;
   reason?: string;
   sessionId: string;
@@ -38,14 +39,22 @@ export async function toggleWhatsappIntervention(
   context: ServiceContext,
   input: ToggleWhatsappInterventionInput,
   ports: CrmServicePorts,
-): Promise<WhatsappSession> {
+): Promise<WhatsappSessionCommandResponse> {
   assertPermission(context, interventionPermission);
   logWhatsappServiceEvent(
     context,
     "crm.whatsapp.session.toggle_intervention.started",
-    { enabled: input.enabled, sessionId: input.sessionId },
+    {
+      commandId: input.commandId,
+      enabled: input.enabled,
+      sessionId: input.sessionId,
+    },
   );
-  return recordWhatsappServiceMutation(
+  let previous: CrmWhatsappSession | null = null;
+  const source = attendanceSource(context, input.source);
+  const reason =
+    input.reason ?? defaultInterventionReason(context, input.enabled);
+  const command = await recordWhatsappServiceMutation(
     context,
     {
       action: "crm.whatsapp.session.toggle_intervention",
@@ -53,6 +62,7 @@ export async function toggleWhatsappIntervention(
       entityId: input.sessionId,
       entityType: "crm_whatsapp_session",
       metadata: {
+        commandId: input.commandId,
         enabled: input.enabled,
         interventionId: input.interventionId ?? null,
         reasonPresent: Boolean(input.reason),
@@ -61,79 +71,92 @@ export async function toggleWhatsappIntervention(
       permission: interventionPermission,
       summary: "Toggled CRM WhatsApp human intervention",
     },
-    () => toggleWhatsappInterventionUnchecked(context, input, ports),
-  );
-}
-
-async function toggleWhatsappInterventionUnchecked(
-  context: ServiceContext,
-  input: ToggleWhatsappInterventionInput,
-  ports: CrmServicePorts,
-) {
-  const { scope, session } = await findScopedWhatsappSession(
-    context,
-    input,
-    ports,
-  );
-  const now = new Date();
-  const intervention = interventionWindow({
-    enabled: input.enabled,
-    now,
-    previousStartedAt: session.humanTakeoverAt,
-  });
-  const source = attendanceSource(context, input.source);
-  const reason =
-    input.reason ?? defaultInterventionReason(context, input.enabled);
-  const transition = await transitionHumanAttendance({
-    actorId: context.actor.id,
-    actorKind: interventionActorKind(context.actor.kind, source),
-    command: input.enabled
-      ? {
-          ...(input.interventionId
-            ? { interventionId: input.interventionId }
-            : {}),
-          kind: "start",
-          reason,
-          source,
-          state:
-            context.actor.kind === "user"
-              ? "IN_HUMAN_SERVICE"
-              : "WAITING_HUMAN",
-        }
-      : {
-          ...(input.interventionId
-            ? { interventionId: input.interventionId }
-            : {}),
-          kind: "clear",
-          status: "MINIBOT_ACTIVE",
+    () =>
+      executeWhatsappSessionCommand({
+        commandId: input.commandId,
+        commandType: "intervention",
+        context,
+        fingerprintInput: {
+          enabled: input.enabled,
+          interventionId: input.interventionId ?? null,
+          reason: input.reason ?? null,
+          source: input.source ?? null,
         },
-    now,
-    expectedRevision: input.expectedRevision,
-    repository: getCrmWhatsappRepository(ports),
-    session,
-  });
-  const updated = transition.session;
-
-  const realtimeSession = await sessionWithConnection(
-    updated,
+        mutate: async (current, transactionPorts, scope) => {
+          let candidate = current;
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            const transition = await transitionHumanAttendance({
+              actorId: context.actor.id,
+              actorKind: interventionActorKind(context.actor.kind, source),
+              command: input.enabled
+                ? {
+                    ...(input.interventionId
+                      ? { interventionId: input.interventionId }
+                      : {}),
+                    kind: "start",
+                    reason,
+                    source,
+                    state:
+                      context.actor.kind === "user"
+                        ? "IN_HUMAN_SERVICE"
+                        : "WAITING_HUMAN",
+                  }
+                : {
+                    ...(input.interventionId
+                      ? { interventionId: input.interventionId }
+                      : {}),
+                    kind: "clear",
+                    status: "MINIBOT_ACTIVE",
+                  },
+              repository: getCrmWhatsappRepository(transactionPorts),
+              session: candidate,
+            });
+            if (!transition.changed) {
+              return { result: "already_applied", session: transition.session };
+            }
+            previous = transition.previous;
+            return { result: "applied", session: transition.session };
+          }
+          candidate = await reloadScopedWhatsappSession(
+            transactionPorts,
+            input.sessionId,
+            scope,
+          );
+          return { result: "superseded", session: candidate };
+        },
+        ports,
+        sessionId: input.sessionId,
+      }),
+    (result) => ({ result: result.result }),
+  );
+  const previousSession = previous as CrmWhatsappSession | null;
+  if (!command.changed || !previousSession) return command;
+  const persistedSession = await reloadScopedWhatsappSession(
     ports,
     input.sessionId,
+    { storeId: context.storeId!, tenantId: context.tenantId! },
   );
-  if (!transition.changed) return realtimeSession;
-  await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
+  await publishWhatsappSessionUpdate(ports, command.session, {
+    storeId: context.storeId!,
+    tenantId: context.tenantId!,
+  });
   await notifyScopedInterventionChangedToBot(
     context,
     {
       active: input.enabled,
-      previousSession: transition.previous,
+      previousSession,
       reason,
-      session: updated,
+      session: persistedSession,
       source,
-      window: intervention,
+      window: interventionWindow({
+        enabled: input.enabled,
+        now: new Date(),
+        previousStartedAt: previousSession.humanTakeoverAt,
+      }),
     },
     ports,
   );
-  return realtimeSession;
+  return command;
 }
 
 function defaultInterventionReason(context: ServiceContext, enabled: boolean) {

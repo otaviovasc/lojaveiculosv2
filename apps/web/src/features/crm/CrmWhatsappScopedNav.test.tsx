@@ -4,9 +4,26 @@ import userEvent from "@testing-library/user-event";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmWhatsappScopedNav } from "./CrmWhatsappScopedNav";
+import { readSynchronizedChannelStatus } from "./CrmWhatsappInbox";
 
 describe("CrmWhatsappScopedNav", () => {
   afterEach(cleanup);
+
+  it("maps channel synchronization to the compact indicator", () => {
+    const provider = { label: "Conectado", tone: "online" as const };
+    expect(readSynchronizedChannelStatus(provider, "connected")).toEqual({
+      label: "Sincronizado",
+      tone: "online",
+    });
+    expect(readSynchronizedChannelStatus(provider, "connecting")).toEqual({
+      label: "Reconciliando",
+      tone: "loading",
+    });
+    expect(readSynchronizedChannelStatus(provider, "degraded")).toEqual({
+      label: "Sincronização indisponível",
+      tone: "error",
+    });
+  });
 
   it("moves through WhatsApp areas with tab keyboard navigation", async () => {
     const user = userEvent.setup();

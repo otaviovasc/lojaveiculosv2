@@ -6,7 +6,6 @@ import type {
 
 type UseCrmWhatsappInboxLifecycleInput = {
   activeSession: CrmWhatsappSession | null;
-  autoReadSessionIdsRef: { current: Set<CrmWhatsappSessionId> };
   asError: (error: unknown) => Error;
   connectionId: string | null;
   connections: {
@@ -15,6 +14,8 @@ type UseCrmWhatsappInboxLifecycleInput = {
     refreshConnections: () => Promise<unknown>;
   };
   markSessionReadOnce: (session: CrmWhatsappSession) => void;
+  hasLoadedActiveMessages: boolean;
+  manualUnreadSessionIdsRef: { current: Set<CrmWhatsappSessionId> };
   permissions: {
     canList: boolean;
     canRead: boolean;
@@ -30,11 +31,12 @@ type UseCrmWhatsappInboxLifecycleInput = {
 
 export function useCrmWhatsappInboxLifecycle({
   activeSession,
-  autoReadSessionIdsRef,
   asError,
   connectionId,
   connections,
   markSessionReadOnce,
+  hasLoadedActiveMessages,
+  manualUnreadSessionIdsRef,
   permissions,
   refreshSessions,
   search,
@@ -43,12 +45,21 @@ export function useCrmWhatsappInboxLifecycle({
   setIsLoadingSessions,
 }: UseCrmWhatsappInboxLifecycleInput): void {
   useEffect(() => {
-    if (!activeSession || autoReadSessionIdsRef.current.has(activeSession.id)) {
+    if (
+      !activeSession ||
+      !hasLoadedActiveMessages ||
+      document.visibilityState !== "visible" ||
+      manualUnreadSessionIdsRef.current.has(activeSession.id)
+    ) {
       return;
     }
-    autoReadSessionIdsRef.current.add(activeSession.id);
     markSessionReadOnce(activeSession);
-  }, [activeSession, autoReadSessionIdsRef, markSessionReadOnce]);
+  }, [
+    activeSession,
+    hasLoadedActiveMessages,
+    manualUnreadSessionIdsRef,
+    markSessionReadOnce,
+  ]);
 
   useEffect(() => {
     if (search === null) return;
@@ -92,6 +103,13 @@ export function useCrmWhatsappInboxLifecycle({
     }, 15_000);
     const onVisible = () => {
       if (document.visibilityState === "visible") {
+        if (
+          activeSession &&
+          hasLoadedActiveMessages &&
+          !manualUnreadSessionIdsRef.current.has(activeSession.id)
+        ) {
+          markSessionReadOnce(activeSession);
+        }
         void refreshSessions({ preserveLocalOnly: true }).catch(
           () => undefined,
         );
@@ -104,5 +122,14 @@ export function useCrmWhatsappInboxLifecycle({
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
     };
-  }, [connections.error, connectionId, permissions.canList, refreshSessions]);
+  }, [
+    activeSession,
+    connections.error,
+    connectionId,
+    hasLoadedActiveMessages,
+    manualUnreadSessionIdsRef,
+    markSessionReadOnce,
+    permissions.canList,
+    refreshSessions,
+  ]);
 }

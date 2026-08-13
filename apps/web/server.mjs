@@ -20,6 +20,7 @@ const contentTypes = new Map([
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
 ]);
+const crmApiContractVersion = "crm-lead-session-v1";
 
 export function createSpaServer({
   apiBaseUrl,
@@ -40,7 +41,17 @@ export function createSpaServer({
         "Cache-Control": "no-store",
         "Content-Type": "application/json; charset=utf-8",
       });
-      response.end(request.method === "HEAD" ? undefined : '{"ok":true}');
+      response.end(
+        request.method === "HEAD"
+          ? undefined
+          : JSON.stringify({
+              build: {
+                commitSha: readBuildCommitSha(),
+                crmApiContractVersion,
+              },
+              ok: true,
+            }),
+      );
       return;
     }
     if (pathname === "/api/v1" || pathname.startsWith("/api/v1/")) {
@@ -90,6 +101,14 @@ export function createSpaServer({
     }
     createReadStream(file).pipe(response);
   });
+}
+
+function readBuildCommitSha() {
+  return (
+    process.env.RAILWAY_GIT_COMMIT_SHA?.trim() ||
+    process.env.BUILD_COMMIT_SHA?.trim() ||
+    "unknown"
+  );
 }
 
 function readApiProxyTarget(value) {

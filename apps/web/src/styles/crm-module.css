@@ -2,7 +2,6 @@
 @import "./crmWhatsapp.css";
 @import "./crmWhatsappLayout.css";
 @import "./crmWhatsappReliability.css";
-@import "./crmWhatsappRealtimeBanner.css";
 @import "./crmWhatsappDetails.css";
 @import "./crmWhatsappQueue.css";
 @import "./crmWhatsappAssigneeFilter.css";
@@ -39,6 +38,7 @@
 @import "./crmWhatsappActionDialogCatalog.css";
 @import "./crmWhatsappActionDialogVehicle.css";
 @import "./crmWhatsappActionDialogLayout.css";
+@import "./crmWhatsappConclusionDialog.css";
 @import "./crmWhatsappConversationPolish.css";
 @import "./crmWhatsappConversationComposerPolish.css";
 @import "./crmWhatsappConversationMobile.css";

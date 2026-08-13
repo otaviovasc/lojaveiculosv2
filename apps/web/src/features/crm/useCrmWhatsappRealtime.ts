@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import { asError } from "./crmWhatsappHookSupport";
 import type {
   CrmWhatsappMessage,
   CrmWhatsappRealtimeEvent,
@@ -18,13 +17,19 @@ type RealtimeOptions = {
   mergeRealtimeMessage: (message: CrmWhatsappMessage) => void;
   mergeSessions: (
     nextSessions: CrmWhatsappSession[],
-    options?: { preserveLocalOnly?: boolean },
+    options?: {
+      preserveLocalOnly?: boolean;
+      snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
+    },
   ) => void;
   onStatus?: (status: CrmWhatsappRealtimeStatus) => void;
+  onVisibleInboundMessage?: (session: CrmWhatsappSession) => void;
   refreshConnections: () => Promise<void>;
   refreshSessionCounts: () => Promise<void>;
-  refreshSessions: (options?: { preserveLocalOnly?: boolean }) => Promise<void>;
-  setError: (error: Error) => void;
+  refreshSessions: (options?: {
+    preserveLocalOnly?: boolean;
+    snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
+  }) => Promise<void>;
   updateRealtimeMessageStatus: (
     input: Extract<CrmWhatsappRealtimeEvent, { type: "message_status" }>,
   ) => void;
@@ -39,10 +44,10 @@ export function useCrmWhatsappRealtime({
   mergeRealtimeMessage,
   mergeSessions,
   onStatus,
+  onVisibleInboundMessage,
   refreshConnections,
   refreshSessionCounts,
   refreshSessions,
-  setError,
   updateRealtimeMessageStatus,
 }: RealtimeOptions) {
   const [status, setStatus] = useState<CrmWhatsappRealtimeStatus>("offline");
@@ -62,7 +67,10 @@ export function useCrmWhatsappRealtime({
         ) {
           return;
         }
-        mergeSessions([event.session], { preserveLocalOnly: true });
+        mergeSessions([event.session], {
+          preserveLocalOnly: true,
+          snapshotKind: "realtime",
+        });
         void refreshSessionCounts().catch(() => undefined);
         return;
       }
@@ -73,10 +81,19 @@ export function useCrmWhatsappRealtime({
         ) {
           return;
         }
-        mergeSessions([event.session], { preserveLocalOnly: true });
+        mergeSessions([event.session], {
+          preserveLocalOnly: true,
+          snapshotKind: "realtime",
+        });
         void refreshSessionCounts().catch(() => undefined);
         if (String(event.session.id) === String(activeSessionId)) {
           mergeRealtimeMessage(event.message);
+          if (
+            event.message.direction === "INBOUND" &&
+            document.visibilityState === "visible"
+          ) {
+            onVisibleInboundMessage?.(event.session);
+          }
         }
         return;
       }
@@ -99,6 +116,7 @@ export function useCrmWhatsappRealtime({
       connectionId,
       mergeRealtimeMessage,
       mergeSessions,
+      onVisibleInboundMessage,
       refreshConnections,
       refreshSessionCounts,
       refreshSessions,
@@ -114,26 +132,56 @@ export function useCrmWhatsappRealtime({
     }
     setStatus("connecting");
     onStatus?.("connecting");
-    return api.subscribeEvents({
+    let active = true;
+    const reconcileBeforeConnected = async () => {
+      setStatus("connecting");
+      onStatus?.("connecting");
+      await Promise.all([
+        refreshConnections(),
+        refreshSessions({
+          preserveLocalOnly: true,
+          snapshotKind: "reconciled",
+        }),
+        refreshSessionCounts(),
+      ]);
+      if (!active) return;
+      setStatus("connected");
+      onStatus?.("connected");
+    };
+    const unsubscribe = api.subscribeEvents({
       connectionId,
       onError: (caught) => {
+        void caught;
         setStatus("degraded");
         onStatus?.("degraded");
-        setError(asError(caught));
       },
       onEvent: handleRealtimeEvent,
       onStatus: (nextStatus) => {
+        if (nextStatus === "connected") {
+          void reconcileBeforeConnected().catch(() => {
+            if (!active) return;
+            setStatus("degraded");
+            onStatus?.("degraded");
+          });
+          return;
+        }
         setStatus(nextStatus);
         onStatus?.(nextStatus);
       },
     });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [
     api,
     connectionsError,
     connectionId,
     handleRealtimeEvent,
     onStatus,
-    setError,
+    refreshConnections,
+    refreshSessionCounts,
+    refreshSessions,
   ]);
 
   return { status };

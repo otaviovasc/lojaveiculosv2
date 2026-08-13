@@ -17,7 +17,13 @@ describe("API middleware", () => {
     const readinessResponse = await app.request("/ready");
 
     expect(healthResponse.status).toBe(200);
-    expect(await healthResponse.json()).toEqual({ ok: true });
+    expect(await healthResponse.json()).toEqual({
+      build: {
+        commitSha: "unknown",
+        crmApiContractVersion: "crm-lead-session-v1",
+      },
+      ok: true,
+    });
     expect(readinessResponse.status).toBe(503);
     expect(await readinessResponse.json()).toEqual({
       checks: { productDatabase: "not_ready" },

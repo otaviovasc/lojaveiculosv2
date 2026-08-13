@@ -138,6 +138,7 @@ export type SaleStartContext = {
   listingId?: string;
   listingTitle?: string;
   priceCents?: number;
+  sellerUserId?: string;
   unitId?: string;
   unitLabel?: string;
   plate?: string;

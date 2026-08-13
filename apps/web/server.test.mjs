@@ -20,7 +20,13 @@ describe("production SPA server", () => {
     const route = await fetch(`${runtime.origin}/inventory/listings`);
 
     expect(health.status).toBe(200);
-    await expect(health.json()).resolves.toEqual({ ok: true });
+    await expect(health.json()).resolves.toEqual({
+      build: {
+        commitSha: "unknown",
+        crmApiContractVersion: "crm-lead-session-v1",
+      },
+      ok: true,
+    });
     expect(route.status).toBe(200);
     await expect(route.text()).resolves.toContain("Loja Veiculos");
   });

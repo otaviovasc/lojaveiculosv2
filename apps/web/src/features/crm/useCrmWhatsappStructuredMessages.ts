@@ -47,7 +47,7 @@ export function useCrmWhatsappStructuredMessages({
   );
   const sendStructuredMessage = (input: {
     optimistic: WhatsappMessageView;
-    request: () => Promise<CrmWhatsappMessage>;
+    request: (idempotencyKey: string) => Promise<CrmWhatsappMessage>;
   }) =>
     sendOptimisticStructuredMessage({
       activeSession: activeSession!,
@@ -64,8 +64,12 @@ export function useCrmWhatsappStructuredMessages({
   ) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
-      request: () =>
-        api.sendLocation({ ...input, sessionId: String(activeSessionId) }),
+      request: (idempotencyKey) =>
+        api.sendLocation({
+          ...input,
+          idempotencyKey,
+          sessionId: String(activeSessionId),
+        }),
       optimistic: createOptimisticStructuredMessage({
         content: input.name ?? "Localizacao",
         metadata: {
@@ -87,8 +91,12 @@ export function useCrmWhatsappStructuredMessages({
   ) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
-      request: () =>
-        api.sendCatalog({ ...input, sessionId: String(activeSessionId) }),
+      request: (idempotencyKey) =>
+        api.sendCatalog({
+          ...input,
+          idempotencyKey,
+          sessionId: String(activeSessionId),
+        }),
       optimistic: createOptimisticStructuredMessage({
         content: input.title ?? "Catalogo",
         metadata: {
@@ -118,9 +126,10 @@ export function useCrmWhatsappStructuredMessages({
   ) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
-      request: () =>
+      request: (idempotencyKey) =>
         api.sendCatalogProduct({
           ...input,
+          idempotencyKey,
           sessionId: String(activeSessionId),
         }),
       optimistic: createOptimisticStructuredMessage({
@@ -143,8 +152,12 @@ export function useCrmWhatsappStructuredMessages({
     if (!canSendStructured) return false;
     const title = input.title ?? "Veiculo";
     return sendStructuredMessage({
-      request: () =>
-        api.sendVehicle({ ...input, sessionId: String(activeSessionId) }),
+      request: (idempotencyKey) =>
+        api.sendVehicle({
+          ...input,
+          idempotencyKey,
+          sessionId: String(activeSessionId),
+        }),
       optimistic: createOptimisticStructuredMessage({
         content: title,
         metadata: {
@@ -168,8 +181,9 @@ export function useCrmWhatsappStructuredMessages({
   const sendQuickMessage = async (quickMessage: CrmWhatsappQuickMessage) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
-      request: () =>
+      request: (idempotencyKey) =>
         api.sendQuickMessage({
+          idempotencyKey,
           quickMessageId: quickMessage.id,
           sessionId: String(activeSessionId),
         }),

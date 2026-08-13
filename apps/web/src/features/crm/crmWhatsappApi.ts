@@ -52,10 +52,14 @@ export function createCrmWhatsappApi({
       headers: createProductCrmHeaders(auth),
       method: "GET",
     }).then(readJson<T>);
-  const postJson = <T>(route: string, body: JsonBody = {}) =>
+  const postJson = <T>(
+    route: string,
+    body: JsonBody = {},
+    extraHeaders: Record<string, string> = {},
+  ) =>
     fetch(route, {
       body: JSON.stringify(cleanJson(body)),
-      headers: createProductCrmHeaders(auth),
+      headers: { ...createProductCrmHeaders(auth), ...extraHeaders },
       method: "POST",
     }).then(readJson<T>);
   const patchJson = <T>(route: string, body: JsonBody = {}) =>
@@ -80,10 +84,7 @@ export function createCrmWhatsappApi({
     addSessionTag: (sessionId, input) =>
       postMaybeJson(crmWhatsappRoutes.sessionTags(sessionId, baseUrl), input),
     assignSession: (sessionId, input) =>
-      postMaybeJson(crmWhatsappRoutes.assignSession(sessionId, baseUrl), {
-        assignedUserId: input.assignedUserId,
-        expectedRevision: input.expectedRevision,
-      }),
+      postJson(crmWhatsappRoutes.assignSession(sessionId, baseUrl), input),
     authorizeComposioConnection: (connectionId) =>
       postJson(crmWhatsappRoutes.composioAuthorize(connectionId, baseUrl)),
     cancelScheduledMessage: (scheduledMessageId) =>
@@ -91,7 +92,9 @@ export function createCrmWhatsappApi({
         crmWhatsappRoutes.scheduledMessage(scheduledMessageId, baseUrl),
       ),
     closeSession: (sessionId, input) =>
-      postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl), input),
+      postJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl), input),
+    concludeSession: (sessionId, input) =>
+      postJson(crmWhatsappRoutes.concludeSession(sessionId, baseUrl), input),
     completeComposioConnection: (connectionId) =>
       postJson(crmWhatsappRoutes.composioComplete(connectionId, baseUrl)),
     cancelCampaign: (campaignId) =>
@@ -122,10 +125,7 @@ export function createCrmWhatsappApi({
     deleteTag: (tagId) =>
       deleteMaybeJson(crmWhatsappRoutes.tag(tagId, baseUrl)),
     interveneSession: (sessionId, input) =>
-      postMaybeJson(
-        crmWhatsappRoutes.interveneSession(sessionId, baseUrl),
-        input,
-      ),
+      postJson(crmWhatsappRoutes.interveneSession(sessionId, baseUrl), input),
     getBotIntegration: () => getJson(crmWhatsappRoutes.botIntegration(baseUrl)),
     getCampaign: (campaignId) =>
       getJson(crmWhatsappCampaignRoutes.campaignDetail(campaignId, baseUrl)),
@@ -179,15 +179,9 @@ export function createCrmWhatsappApi({
         ]),
       ),
     markSessionRead: (sessionId, input) =>
-      postMaybeJson(
-        crmWhatsappRoutes.markSessionRead(sessionId, baseUrl),
-        input,
-      ),
+      postJson(crmWhatsappRoutes.markSessionRead(sessionId, baseUrl), input),
     markSessionUnread: (sessionId, input) =>
-      postMaybeJson(
-        crmWhatsappRoutes.markSessionUnread(sessionId, baseUrl),
-        input,
-      ),
+      postJson(crmWhatsappRoutes.markSessionUnread(sessionId, baseUrl), input),
     processDueScheduledMessages: (input = {}) =>
       postJson(crmWhatsappRoutes.scheduledMessagesProcessDue(baseUrl), input),
     pauseCampaign: (campaignId) =>
@@ -222,17 +216,35 @@ export function createCrmWhatsappApi({
       postJson(
         crmWhatsappCampaignRoutes.campaignAction(campaignId, "resume", baseUrl),
       ),
-    sendCatalog: (input) =>
-      postJson(crmWhatsappRoutes.sendCatalog(baseUrl), input),
-    sendCatalogProduct: (input) =>
-      postJson(crmWhatsappRoutes.sendCatalogProduct(baseUrl), input),
-    sendLocation: (input) =>
-      postJson(crmWhatsappRoutes.sendLocation(baseUrl), input),
-    sendMedia: (input) => postJson(crmWhatsappRoutes.sendMedia(baseUrl), input),
-    sendQuickMessage: (input) =>
+    sendCatalog: ({ idempotencyKey, ...input }) =>
+      postJson(
+        crmWhatsappRoutes.sendCatalog(baseUrl),
+        input,
+        idempotencyHeaders(idempotencyKey),
+      ),
+    sendCatalogProduct: ({ idempotencyKey, ...input }) =>
+      postJson(
+        crmWhatsappRoutes.sendCatalogProduct(baseUrl),
+        input,
+        idempotencyHeaders(idempotencyKey),
+      ),
+    sendLocation: ({ idempotencyKey, ...input }) =>
+      postJson(
+        crmWhatsappRoutes.sendLocation(baseUrl),
+        input,
+        idempotencyHeaders(idempotencyKey),
+      ),
+    sendMedia: ({ idempotencyKey, ...input }) =>
+      postJson(
+        crmWhatsappRoutes.sendMedia(baseUrl),
+        input,
+        idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {},
+      ),
+    sendQuickMessage: ({ idempotencyKey, ...input }) =>
       postJson(
         crmWhatsappRoutes.sendQuickMessage(input.quickMessageId, baseUrl),
         { sessionId: input.sessionId },
+        idempotencyHeaders(idempotencyKey),
       ),
     sendReaction: (messageId, input) =>
       postJson(crmWhatsappRoutes.messageReaction(messageId, baseUrl), input),
@@ -240,9 +252,18 @@ export function createCrmWhatsappApi({
       postJson(crmWhatsappRoutes.composioSender(connectionId, baseUrl), {
         senderId,
       }),
-    sendText: (input) => postJson(crmWhatsappRoutes.sendText(baseUrl), input),
-    sendVehicle: (input) =>
-      postJson(crmWhatsappRoutes.sendVehicle(baseUrl), input),
+    sendText: ({ idempotencyKey, ...input }) =>
+      postJson(
+        crmWhatsappRoutes.sendText(baseUrl),
+        input,
+        idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {},
+      ),
+    sendVehicle: ({ idempotencyKey, ...input }) =>
+      postJson(
+        crmWhatsappRoutes.sendVehicle(baseUrl),
+        input,
+        idempotencyHeaders(idempotencyKey),
+      ),
     startConversation: (input) =>
       postJson(crmWhatsappRoutes.conversationsStart(baseUrl), input),
     subscribeEvents: (input) =>
@@ -313,6 +334,10 @@ function cleanJson(body: JsonBody) {
   return Object.fromEntries(
     Object.entries(body).filter(([, value]) => value !== undefined),
   );
+}
+
+function idempotencyHeaders(idempotencyKey?: string) {
+  return idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {};
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

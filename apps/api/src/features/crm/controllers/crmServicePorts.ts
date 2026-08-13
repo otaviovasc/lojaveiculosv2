@@ -4,6 +4,7 @@ import { createDrizzleCrmBotIntegrationRepository } from "../../../infrastructur
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
 import { createDrizzleCrmCanonicalInboundRepository } from "../../../infrastructure/db/crm/drizzleCrmCanonicalInbound.js";
 import { createDrizzleCrmPipelineRepository } from "../../../infrastructure/db/crm/drizzleCrmPipelineRepository.js";
+import { createDrizzleCrmOutcomeRepository } from "../../../infrastructure/db/crm/drizzleCrmOutcomeRepository.js";
 import {
   createDrizzleCrmRepository,
   type DrizzleCrmClient,
@@ -12,6 +13,7 @@ import { createDrizzleCrmVisitRepository } from "../../../infrastructure/db/crm/
 import { createDrizzleCrmWebhookEventRepository } from "../../../infrastructure/db/crm/drizzleCrmWebhookEventRepository.js";
 import { createDrizzleCrmWhatsappOutboundIntentRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappOutboundIntentRepository.js";
 import { createDrizzleCrmWhatsappRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappRepository.js";
+import { createDrizzleCrmWhatsappSessionCommandRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappSessionCommandRepository.js";
 import {
   createOlxWebhookSecurity,
   CrmOlxWebhookSecurityConfigurationError,
@@ -19,11 +21,13 @@ import {
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
+import { createMemoryCrmOutcomeRepository } from "../adapters/memory/crmOutcomeRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
 import { createMemoryCrmWhatsappOutboundIntentRepository } from "../adapters/memory/crmWhatsappOutboundIntentRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmWhatsappSessionCommandRepository } from "../adapters/memory/crmWhatsappSessionCommandRepository.js";
 import { createCrmConnectionSetupPorts } from "./crmConnectionSetupPorts.js";
 import type { CreateCrmServicesOptions } from "./crmServices.types.js";
 import { createCrmVehicleInventoryPorts } from "./crmVehicleInventoryPorts.js";
@@ -54,6 +58,9 @@ export function resolveCrmPorts(
         crmCanonicalInboundRepository:
           createDrizzleCrmCanonicalInboundRepository(options.drizzleClient),
         crmOlxWebhookSecurity,
+        crmOutcomeRepository: createDrizzleCrmOutcomeRepository(
+          options.drizzleClient,
+        ),
         crmPipelineRepository: createDrizzleCrmPipelineRepository(
           options.drizzleClient,
         ),
@@ -71,6 +78,10 @@ export function resolveCrmPorts(
         crmWhatsappRepository: createDrizzleCrmWhatsappRepository(
           options.drizzleClient,
         ),
+        crmWhatsappSessionCommandRepository:
+          createDrizzleCrmWhatsappSessionCommandRepository(
+            options.drizzleClient,
+          ),
         environment,
         vehicleInventory: createCrmVehicleInventoryPorts(options.drizzleClient),
       }
@@ -85,6 +96,7 @@ export function resolveCrmPorts(
         crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
         crmConnectionRepository: createMemoryCrmConnectionRepository(),
         crmOlxWebhookSecurity,
+        crmOutcomeRepository: createMemoryCrmOutcomeRepository(),
         crmPipelineRepository: createMemoryCrmPipelineRepository(),
         crmRepository: createMemoryCrmRepository(),
         crmVisitRepository: createMemoryCrmVisitRepository(),
@@ -92,6 +104,8 @@ export function resolveCrmPorts(
         crmWhatsappOutboundIntentRepository:
           createMemoryCrmWhatsappOutboundIntentRepository(),
         crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
+        crmWhatsappSessionCommandRepository:
+          createMemoryCrmWhatsappSessionCommandRepository(),
         environment,
       };
   const ports = { ...defaultPorts, ...(options.ports ?? {}) };
@@ -112,6 +126,9 @@ export function resolveCrmPorts(
           ),
           crmCanonicalInboundRepository:
             createDrizzleCrmCanonicalInboundRepository(tx as DrizzleCrmClient),
+          crmOutcomeRepository: createDrizzleCrmOutcomeRepository(
+            tx as DrizzleCrmClient,
+          ),
           crmPipelineRepository: createDrizzleCrmPipelineRepository(
             tx as DrizzleCrmClient,
           ),
@@ -130,6 +147,10 @@ export function resolveCrmPorts(
             tx as DrizzleCrmClient,
             { disableTransactions: true },
           ),
+          crmWhatsappSessionCommandRepository:
+            createDrizzleCrmWhatsappSessionCommandRepository(
+              tx as DrizzleCrmClient,
+            ),
           vehicleInventory: createCrmVehicleInventoryPorts(
             tx as DrizzleCrmClient,
           ),

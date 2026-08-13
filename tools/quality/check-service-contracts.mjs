@@ -7,6 +7,9 @@ const nonEntrypointFiles = new Set([
   "auditVehicleServiceEvent.ts",
   "composioWhatsappConnectionSetup.types.ts",
   "crmConnectionSetupSupport.ts",
+  "crmLeadOutcomeContracts.ts",
+  "crmLeadOutcomeMutationSupport.ts",
+  "crmLeadOutcomePersistence.ts",
   "crmServiceErrors.ts",
   "financeAutoEntryEvaluator.ts",
   "financeAutoEntryLabels.ts",
@@ -25,6 +28,8 @@ const nonEntrypointFiles = new Set([
   "serviceSupport.ts",
   "testSupport.ts",
   "types.ts",
+  "executeWhatsappSessionCommand.ts",
+  "whatsappBotCloseAction.ts",
   "whatsappMessageActionSupport.ts",
   "whatsappQuickMessageMedia.ts",
   "whatsappQuickMessageModels.ts",
@@ -122,6 +127,7 @@ for (const file of domainFiles.filter(isServiceFile)) {
     !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
     !source.includes("auditVehicleServiceEvent(") &&
+    !source.includes("recordConclusionOutcomeAudit(") &&
     !source.includes("recordRunAudit(") &&
     !usesDelegatedContractHelper
   ) {

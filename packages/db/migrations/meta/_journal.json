@@ -323,6 +323,13 @@
       "when": 1786644374035,
       "tag": "0045_chubby_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1786658709364,
+      "tag": "0046_first_sinister_six",
+      "breakpoints": true
     }
   ]
 }

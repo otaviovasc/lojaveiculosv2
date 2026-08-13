@@ -67,12 +67,17 @@ describe("CRM WhatsApp session lifecycle", () => {
       `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
       jsonPost({
         assignedUserId: actorUserId,
-        expectedRevision: inbound.session.revision,
+        commandId: "20000000-0000-4000-8000-000000000001",
       }),
     );
     expect(assignResponse.status).toBe(200);
-    const assigned = (await assignResponse.json()) as { revision: number };
-    expect(assigned).toMatchObject({ assignedUserId: actorUserId });
+    const assigned = (await assignResponse.json()) as {
+      session: { revision: number };
+    };
+    expect(assigned).toMatchObject({
+      result: "applied",
+      session: { assignedUserId: actorUserId },
+    });
 
     const mineResponse = await app.request(
       "/api/v1/crm/whatsapp/sessions?filter=mine",
@@ -82,12 +87,16 @@ describe("CRM WhatsApp session lifecycle", () => {
 
     const interventionResponse = await app.request(
       `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/intervention`,
-      jsonPost({ enabled: true, expectedRevision: assigned.revision }),
+      jsonPost({
+        commandId: "20000000-0000-4000-8000-000000000002",
+        enabled: true,
+      }),
     );
     expect(interventionResponse.status).toBe(200);
-    const intervention = (await interventionResponse.json()) as {
-      revision: number;
+    const interventionCommand = (await interventionResponse.json()) as {
+      session: { revision: number };
     };
+    const intervention = interventionCommand.session;
     expect(intervention).toMatchObject({
       humanAttendanceState: "IN_HUMAN_SERVICE",
       humanAttendanceStateVersion: 1,
@@ -118,13 +127,15 @@ describe("CRM WhatsApp session lifecycle", () => {
 
     const closeResponse = await app.request(
       `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/close`,
-      jsonPost({ expectedRevision: intervention.revision }),
+      jsonPost({ commandId: "20000000-0000-4000-8000-000000000003" }),
     );
     expect(closeResponse.status).toBe(200);
-    const closed = (await closeResponse.json()) as {
-      humanAttendanceChangedAt: unknown;
-      revision: number;
+    const closedCommand = (await closeResponse.json()) as {
+      result: string;
+      session: { humanAttendanceChangedAt: unknown; revision: number };
     };
+    expect(closedCommand.result).toBe("applied");
+    const closed = closedCommand.session;
     expect(closed).toMatchObject({
       assignedUserId: null,
       humanAttendanceState: null,

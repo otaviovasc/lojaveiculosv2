@@ -1,12 +1,16 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import type { CrmSaleOutcomePort } from "../../../domains/sales/ports/crmSaleOutcomePort.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import type { FinanceAutoEntryRepository } from "../../../domains/finance/ports/financeAutoEntryRepository.js";
 import { createTestFinanceAutoEntryRepository } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
 import { createDrizzleFinanceAutoEntryRepository } from "../../../infrastructure/db/finance/drizzleFinanceAutoEntryRepository.js";
+import { createDrizzleCrmOutcomeRepository } from "../../../infrastructure/db/crm/drizzleCrmOutcomeRepository.js";
+import { createDrizzleCrmPipelineRepository } from "../../../infrastructure/db/crm/drizzleCrmPipelineRepository.js";
 import {
   createDrizzleCrmRepository,
   type DrizzleCrmClient,
 } from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
+import { createDrizzleCrmWhatsappRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappRepository.js";
 import type { DrizzleFinanceClient } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
 import type { DrizzleSalesClient } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
 import { createDrizzleSalesRepository } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
@@ -40,6 +44,7 @@ import {
   type SalesWorkflowPorts,
 } from "./salesWorkflowTransition.js";
 import { compensateClosedSale } from "../adapters/salesReversionCompensation.js";
+import { createCrmSaleOutcomePort } from "../adapters/crmSaleOutcome.js";
 
 export type SalesServices = {
   createDraft: (
@@ -73,6 +78,7 @@ export type SalesServices = {
 
 export type CreateSalesServicesOptions =
   | {
+      crmSaleOutcomePort?: never;
       crmRepository?: never;
       drizzleClient: DrizzleSalesClient;
       financeAutoEntryRepository?: never;
@@ -83,6 +89,7 @@ export type CreateSalesServicesOptions =
     }
   | {
       drizzleClient?: never;
+      crmSaleOutcomePort?: CrmSaleOutcomePort;
       crmRepository?: Pick<CrmRepository, "listActivities">;
       financeAutoEntryRepository?: FinanceAutoEntryRepository;
       ports?: SalesServicePorts;
@@ -152,6 +159,9 @@ function resolveWorkflowPorts(
   if ("workflowPorts" in options && options.workflowPorts) {
     return {
       ...salesPorts,
+      ...(options.crmSaleOutcomePort
+        ? { crmSaleOutcomePort: options.crmSaleOutcomePort }
+        : {}),
       ...(options.crmRepository
         ? { crmRepository: options.crmRepository }
         : {}),
@@ -196,10 +206,18 @@ function createDrizzleWorkflowPorts(
       ? (options.workflowAdapter ?? createDefaultWorkflowAdapter)
       : createDefaultWorkflowAdapter;
 
+  const crmClient = client as unknown as DrizzleCrmClient;
+  const crmRepository = createDrizzleCrmRepository(crmClient);
   return {
-    crmRepository: createDrizzleCrmRepository(
-      client as unknown as DrizzleCrmClient,
-    ),
+    crmRepository,
+    crmSaleOutcomePort: createCrmSaleOutcomePort({
+      crmOutcomeRepository: createDrizzleCrmOutcomeRepository(crmClient),
+      crmPipelineRepository: createDrizzleCrmPipelineRepository(crmClient),
+      crmRepository,
+      crmWhatsappRepository: createDrizzleCrmWhatsappRepository(crmClient, {
+        disableTransactions: true,
+      }),
+    }),
     financeAutoEntryRepository: createDrizzleFinanceAutoEntryRepository(
       client as unknown as DrizzleFinanceClient,
     ),

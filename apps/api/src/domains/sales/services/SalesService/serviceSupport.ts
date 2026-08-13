@@ -18,6 +18,7 @@ import type {
   SalesRepository,
   SaleScope,
 } from "../../ports/salesRepository.js";
+import type { CrmSaleOutcomePort } from "../../ports/crmSaleOutcomePort.js";
 import { findReservationSignalPayment } from "../../salePaymentSignals.js";
 import {
   collectMissingSalePaymentFields,
@@ -25,6 +26,7 @@ import {
 } from "../../salePaymentReadiness.js";
 
 export type SalesServicePorts = {
+  crmSaleOutcomePort?: CrmSaleOutcomePort;
   salesRepository: SalesRepository;
 };
 
@@ -77,7 +79,13 @@ export class SaleDraftDeletionStateError extends Error {
 
 export class SaleReferenceError extends Error {
   constructor(readonly reference: "lead" | "vehicle_unit" | "unknown") {
-    super(referenceMessage(reference));
+    super(
+      reference === "lead"
+        ? "Referenced lead was not found."
+        : reference === "vehicle_unit"
+          ? "Referenced vehicle unit was not found."
+          : "Referenced sales record dependency was not found.",
+    );
     this.name = "SaleReferenceError";
   }
 }
@@ -102,14 +110,6 @@ export {
 export { SalePaymentCompensationRequiredError } from "../../salePaymentCompensation.js";
 
 export type SaleReadinessPurpose = "close" | "reserve";
-
-function referenceMessage(reference: "lead" | "vehicle_unit" | "unknown") {
-  if (reference === "lead") return "Referenced lead was not found.";
-  if (reference === "vehicle_unit") {
-    return "Referenced vehicle unit was not found.";
-  }
-  return "Referenced sales record dependency was not found.";
-}
 
 export function getSalesRepository(
   ports: SalesServicePorts | undefined,

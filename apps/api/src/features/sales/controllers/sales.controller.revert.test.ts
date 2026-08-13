@@ -104,6 +104,7 @@ function createTestHarness() {
   ]);
   vehiclePorts.units.set("unit_1", createUnit());
   const services = createSalesServices({
+    crmSaleOutcomePort: { applyWon: () => Promise.resolve() },
     ports: { salesRepository: createMemorySalesRepository() },
     workflowPorts: vehiclePorts,
   });

@@ -79,27 +79,24 @@ describe("CRM connection capabilities", () => {
 
   it("blocks sending until the server confirms text capability", () => {
     expect(
-      readCrmWhatsappSendReadiness(
-        {
-          displayName: "Canal",
-          externalConnectionId: null,
-          externalInstanceId: null,
-          id: "connection_1",
-          live: {
-            checkedAt: "2026-08-11T12:00:00.000Z",
-            connected: true,
-            connectedPhone: null,
-            providerStatus: "connected",
-            smartphoneConnected: true,
-          },
-          phone: null,
-          provider: "zapi",
-          ready: true,
-          status: "active",
-          webhookUrl: null,
+      readCrmWhatsappSendReadiness({
+        displayName: "Canal",
+        externalConnectionId: null,
+        externalInstanceId: null,
+        id: "connection_1",
+        live: {
+          checkedAt: "2026-08-11T12:00:00.000Z",
+          connected: true,
+          connectedPhone: null,
+          providerStatus: "connected",
+          smartphoneConnected: true,
         },
-        "connected",
-      ),
+        phone: null,
+        provider: "zapi",
+        ready: true,
+        status: "active",
+        webhookUrl: null,
+      }),
     ).toEqual({
       canSend: false,
       reason: "As capacidades deste canal ainda não foram confirmadas.",
@@ -135,11 +132,9 @@ describe("CRM connection capabilities", () => {
       allowReply: false,
       provider: "zapi",
     });
-    expect(readCrmWhatsappSendReadiness(pausedConnection, "connected")).toEqual(
-      {
-        canSend: false,
-        reason: "Este canal está pausado ou indisponível no CRM.",
-      },
-    );
+    expect(readCrmWhatsappSendReadiness(pausedConnection)).toEqual({
+      canSend: false,
+      reason: "Este canal está pausado ou indisponível no CRM.",
+    });
   });
 });

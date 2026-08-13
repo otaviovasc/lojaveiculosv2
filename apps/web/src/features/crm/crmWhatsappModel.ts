@@ -116,13 +116,22 @@ export function getSessionTimeMs(session?: CrmWhatsappSession | null) {
 export function mergeSessionsFromServer(
   current: CrmWhatsappSession[],
   serverSessions: CrmWhatsappSession[],
-  options: { preserveLocalOnly?: boolean } = {},
+  options: {
+    preserveLocalOnly?: boolean;
+    snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
+  } = {},
 ) {
   const currentById = new Map(current.map((session) => [session.id, session]));
   const serverIds = new Set(serverSessions.map((session) => session.id));
   const merged = serverSessions.map((serverSession) => {
     const localSession = currentById.get(serverSession.id);
     if (!localSession) return serverSession;
+    if (
+      options.snapshotKind === "mutation" ||
+      options.snapshotKind === "reconciled"
+    ) {
+      return serverSession;
+    }
 
     const revisionComparison = compareSessionRevisions(
       localSession,

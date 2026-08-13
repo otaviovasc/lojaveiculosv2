@@ -38,6 +38,7 @@ describe("useCrmWhatsappRealtime", () => {
 
     expect(mergeSessions).toHaveBeenCalledWith([session], {
       preserveLocalOnly: true,
+      snapshotKind: "realtime",
     });
     expect(refreshSessionCounts).toHaveBeenCalledTimes(1);
   });
@@ -62,7 +63,6 @@ function Harness({
     refreshConnections: vi.fn(async () => undefined),
     refreshSessionCounts,
     refreshSessions: vi.fn(async () => undefined),
-    setError: vi.fn(),
     updateRealtimeMessageStatus: vi.fn(),
   });
   return null;

@@ -259,42 +259,57 @@ describe("CRM WhatsApp API", () => {
 
   it("posts WhatsApp session actions through V2", async () => {
     const fake = createFakeFetch([
-      { id: "session_1", assignedUserId: "user_1" },
-      { id: "session_1", status: "COMPLETED" },
-      { id: "session_1", status: "HUMAN_TAKEOVER" },
-      { id: "session_1", unreadCount: 0 },
-      { id: "session_1", unreadCount: 1 },
+      {
+        result: "applied",
+        session: { id: "session_1", assignedUserId: "user_1" },
+      },
+      { result: "applied", session: { id: "session_1", status: "COMPLETED" } },
+      {
+        result: "applied",
+        session: { id: "session_1", status: "HUMAN_TAKEOVER" },
+      },
+      { result: "applied", session: { id: "session_1", unreadCount: 0 } },
+      { result: "applied", session: { id: "session_1", unreadCount: 1 } },
     ]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await expect(
       api.assignSession("session_1", {
         assignedUserId: "user_1",
-        expectedRevision: 11,
+        commandId: "11111111-1111-4111-8111-111111111111",
       }),
-    ).resolves.toMatchObject({ assignedUserId: "user_1" });
+    ).resolves.toMatchObject({
+      result: "applied",
+      session: { assignedUserId: "user_1" },
+    });
     await expect(
-      api.closeSession("session_1", { expectedRevision: 12 }),
-    ).resolves.toMatchObject({ status: "COMPLETED" });
+      api.closeSession("session_1", {
+        commandId: "22222222-2222-4222-8222-222222222222",
+      }),
+    ).resolves.toMatchObject({ session: { status: "COMPLETED" } });
     await expect(
       api.interveneSession("session_1", {
         enabled: true,
-        expectedRevision: 13,
+        commandId: "33333333-3333-4333-8333-333333333333",
       }),
-    ).resolves.toMatchObject({ status: "HUMAN_TAKEOVER" });
+    ).resolves.toMatchObject({ session: { status: "HUMAN_TAKEOVER" } });
     await expect(
-      api.markSessionRead("session_1", { expectedRevision: 14 }),
-    ).resolves.toMatchObject({ unreadCount: 0 });
+      api.markSessionRead("session_1", {
+        commandId: "44444444-4444-4444-8444-444444444444",
+      }),
+    ).resolves.toMatchObject({ session: { unreadCount: 0 } });
     await expect(
-      api.markSessionUnread("session_1", { expectedRevision: 15 }),
-    ).resolves.toMatchObject({ unreadCount: 1 });
+      api.markSessionUnread("session_1", {
+        commandId: "55555555-5555-4555-8555-555555555555",
+      }),
+    ).resolves.toMatchObject({ session: { unreadCount: 1 } });
 
     expect(fake.calls[0]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/assign",
       init: {
         body: JSON.stringify({
           assignedUserId: "user_1",
-          expectedRevision: 11,
+          commandId: "11111111-1111-4111-8111-111111111111",
         }),
         method: "POST",
       },
@@ -302,28 +317,37 @@ describe("CRM WhatsApp API", () => {
     expect(fake.calls[1]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/close",
       init: {
-        body: JSON.stringify({ expectedRevision: 12 }),
+        body: JSON.stringify({
+          commandId: "22222222-2222-4222-8222-222222222222",
+        }),
         method: "POST",
       },
     });
     expect(fake.calls[2]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/intervention",
       init: {
-        body: JSON.stringify({ enabled: true, expectedRevision: 13 }),
+        body: JSON.stringify({
+          enabled: true,
+          commandId: "33333333-3333-4333-8333-333333333333",
+        }),
         method: "POST",
       },
     });
     expect(fake.calls[3]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/read",
       init: {
-        body: JSON.stringify({ expectedRevision: 14 }),
+        body: JSON.stringify({
+          commandId: "44444444-4444-4444-8444-444444444444",
+        }),
         method: "POST",
       },
     });
     expect(fake.calls[4]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/unread",
       init: {
-        body: JSON.stringify({ expectedRevision: 15 }),
+        body: JSON.stringify({
+          commandId: "55555555-5555-4555-8555-555555555555",
+        }),
         method: "POST",
       },
     });

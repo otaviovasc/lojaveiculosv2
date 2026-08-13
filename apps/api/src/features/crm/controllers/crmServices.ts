@@ -2,6 +2,11 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { createLeadActivity } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
 import type { CreateLeadActivityInput } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
 import { changeLeadVisitStatus } from "../../../domains/crm/services/CrmService/changeLeadVisitStatus.js";
+import {
+  concludeWhatsappAttendance,
+  type ConcludeWhatsappAttendanceInput,
+  type ConcludeWhatsappAttendanceResult,
+} from "../../../domains/crm/services/CrmService/concludeWhatsappAttendance.js";
 import { createCrmLead } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import type { CreateCrmLeadInput } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import { createCrmPipeline } from "../../../domains/crm/services/CrmService/createCrmPipeline.js";
@@ -71,6 +76,10 @@ export type CrmServices = CrmWhatsappServices & {
     context: ServiceContext,
     input: { visitId: string },
   ) => Promise<CrmLeadVisit>;
+  concludeWhatsappAttendance: (
+    context: ServiceContext,
+    input: ConcludeWhatsappAttendanceInput,
+  ) => Promise<ConcludeWhatsappAttendanceResult>;
   deletePipeline: (
     context: ServiceContext,
     input: DeleteCrmPipelineInput,
@@ -134,6 +143,8 @@ export function createCrmServices(
       changeLeadVisitStatus(context, { ...input, status: "cancelled" }, ports),
     completeVisit: (context, input) =>
       changeLeadVisitStatus(context, { ...input, status: "completed" }, ports),
+    concludeWhatsappAttendance: (context, input) =>
+      concludeWhatsappAttendance(context, input, ports),
     deletePipeline: (context, input) =>
       deleteCrmPipeline(context, input, ports),
     getLead: (context, input) => getCrmLead(context, input, ports),

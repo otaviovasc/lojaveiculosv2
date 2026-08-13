@@ -19,6 +19,7 @@ import type {
 } from "../../ports/crmConnectionSetupProvider.js";
 import type { CrmFinancingBotActions } from "../../ports/crmFinancingBotActions.js";
 import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
+import type { CrmOutcomeRepository } from "../../ports/crmOutcomeRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import type { CrmRealtimePublisher } from "../../ports/crmRealtimePublisher.js";
 import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
@@ -28,6 +29,7 @@ import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepos
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
 import type { CrmWhatsappOutboundIntentRepository } from "../../ports/crmWhatsappOutboundIntentRepository.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
+import type { CrmWhatsappSessionCommandRepository } from "../../ports/crmWhatsappSessionCommandRepository.js";
 
 export type CrmServicePorts = {
   billingQuotaGuard?: BillingQuotaGuard;
@@ -37,6 +39,7 @@ export type CrmServicePorts = {
   crmConnectionRepository?: CrmConnectionRepository;
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
   crmOlxWebhookSecurity?: CrmOlxWebhookSecurity;
+  crmOutcomeRepository?: CrmOutcomeRepository;
   olxCrmWebhookSetupProvider?: OlxCrmWebhookSetupProvider;
   crmProviderRuntime?: {
     olxChatEnabled: boolean;
@@ -54,6 +57,7 @@ export type CrmServicePorts = {
   crmWhatsappMediaStorage?: ObjectStorage;
   crmWhatsappOutboundIntentRepository?: CrmWhatsappOutboundIntentRepository;
   crmWhatsappRepository?: CrmWhatsappRepository;
+  crmWhatsappSessionCommandRepository?: CrmWhatsappSessionCommandRepository;
   financingBotActions?: CrmFinancingBotActions;
   environment?: string;
   transaction?: <T>(

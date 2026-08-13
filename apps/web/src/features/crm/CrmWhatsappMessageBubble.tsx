@@ -90,7 +90,10 @@ export function readDeliveryPresentation(
   if (normalized === "indeterminate") {
     return { label: "Envio não confirmado", status: normalized };
   }
-  return { label: null, status: normalized || "unknown" };
+  if (["sent", "delivered", "read"].includes(normalized)) {
+    return { label: null, status: normalized };
+  }
+  return { label: "Envio não confirmado", status: "indeterminate" };
 }
 
 export function MessageDeliveryStatus({

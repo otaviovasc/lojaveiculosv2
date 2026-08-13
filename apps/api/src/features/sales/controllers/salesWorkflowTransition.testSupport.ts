@@ -1,6 +1,7 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import { expect } from "vitest";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
+import type { CrmSaleOutcomePort } from "../../../domains/sales/ports/crmSaleOutcomePort.js";
 import {
   createTestFinanceAutoEntryRepository,
   type TestFinanceAutoEntryRepository,
@@ -31,6 +32,7 @@ export function createHarness(
   status: "available" | "reserved",
   salesRepository: SalesRepository = createMemorySalesRepository(),
   crmRepository?: Pick<CrmRepository, "listActivities">,
+  crmSaleOutcomePort: CrmSaleOutcomePort | null = noopCrmSaleOutcomePort,
 ): {
   financeAutoEntryRepository: TestFinanceAutoEntryRepository;
   services: SalesServices;
@@ -48,6 +50,7 @@ export function createHarness(
   vehiclePorts.units.set("unit_1", createUnit(status));
   const financeAutoEntryRepository = createTestFinanceAutoEntryRepository();
   const services = createSalesServices({
+    ...(crmSaleOutcomePort ? { crmSaleOutcomePort } : {}),
     ...(crmRepository ? { crmRepository } : {}),
     financeAutoEntryRepository,
     ports: { salesRepository },
@@ -55,6 +58,10 @@ export function createHarness(
   });
   return { financeAutoEntryRepository, services, vehiclePorts };
 }
+
+const noopCrmSaleOutcomePort: CrmSaleOutcomePort = {
+  applyWon: async () => undefined,
+};
 
 export function completeDraft({
   selectedDocumentKinds = minimalSaleDocumentKinds,
