@@ -61,4 +61,21 @@ describe("configureZapiWebhooks", () => {
     expect(result.results[0]?.status).toBe(401);
     expect(result.results[0]?.error).toContain("HTTP 401");
   });
+
+  it("does not treat a rejected ZAPI acknowledgement as configured", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(Response.json({ value: false }));
+
+    const result = await configureZapiWebhooks(credentials, fetch, {
+      webhooks: [{ type: "received", url: "https://app.test/received" }],
+    });
+
+    expect(result.results[0]).toMatchObject({
+      error: "ZAPI webhook registration was not acknowledged",
+      ok: false,
+      status: 200,
+      type: "received",
+    });
+  });
 });

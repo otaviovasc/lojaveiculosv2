@@ -78,6 +78,9 @@ export type CrmWhatsappApi = {
   createConnection: (
     input: CrmWhatsappCreateConnectionInput,
   ) => Promise<CrmWhatsappProviderConnection>;
+  disconnectZapiConnection: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappProviderConnection>;
   getZapiAddonContract?: () => Promise<CrmWhatsappZapiAddonContract | null>;
   deleteMessage: (
     messageId: CrmWhatsappMessage["id"],
@@ -114,7 +117,14 @@ export type CrmWhatsappApi = {
   requestZapiPairingQr: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappZapiPairingQr>;
+  refreshZapiConnectionStatus: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappProviderConnection>;
   requestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
+  setConnectionPaused?: (
+    connectionId: CrmWhatsappConnectionId,
+    paused: boolean,
+  ) => Promise<CrmWhatsappProviderConnection>;
   configureZapiWebhooks: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappZapiWebhookSetupResult>;

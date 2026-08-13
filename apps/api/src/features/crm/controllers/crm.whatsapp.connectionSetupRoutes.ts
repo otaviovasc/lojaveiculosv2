@@ -20,6 +20,38 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   { createContext, services }: ConnectionSetupRouteOptions,
 ) {
   crmFeature.post(
+    "/whatsapp/connections/:connectionId/zapi/disconnect",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.disconnectZapiConnection(serviceContext, {
+            connectionId,
+          }),
+        );
+      }),
+  );
+
+  crmFeature.post(
+    "/whatsapp/connections/:connectionId/zapi/status/refresh",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.refreshZapiConnectionStatus(serviceContext, {
+            connectionId,
+          }),
+        );
+      }),
+  );
+
+  crmFeature.post(
     "/whatsapp/connections/:connectionId/zapi/webhooks/configure",
     async (context) =>
       handleWhatsapp(context, async () => {
@@ -30,6 +62,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
         return context.json(
           await services.configureWhatsappConnectionWebhooks(serviceContext, {
             connectionId,
+            mode: "reset",
             ...readWebhookRequestBase(context),
           }),
         );

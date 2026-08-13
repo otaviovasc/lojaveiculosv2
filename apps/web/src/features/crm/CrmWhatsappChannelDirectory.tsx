@@ -39,6 +39,10 @@ export function CrmWhatsappChannelDirectory({
   zapiAddonContract: CrmWhatsappZapiAddonContract | null;
 }) {
   const officialAvailable = availableProviders.includes("composio_whatsapp");
+  const zapiConfigured = connections.some(
+    (connection) =>
+      connection.provider === "zapi" && connection.status !== "archived",
+  );
   const api = useMemo(
     () => marketplaceApi ?? createMarketplaceRuntimeApi(),
     [marketplaceApi],
@@ -118,7 +122,10 @@ export function CrmWhatsappChannelDirectory({
         ) : null}
         <li>
           <button
+            aria-disabled={zapiConfigured}
             className="crm-whatsapp-channel-row"
+            data-actionable={!zapiConfigured}
+            disabled={zapiConfigured}
             onClick={() => onChoose("zapi")}
             type="button"
           >
@@ -128,10 +135,21 @@ export function CrmWhatsappChannelDirectory({
             <span className="crm-whatsapp-channel-body">
               <span className="crm-whatsapp-channel-title">
                 Z-API
-                <ChannelBadge contract={zapiAddonContract} />
+                {zapiConfigured ? (
+                  <span
+                    className="crm-whatsapp-channel-badge"
+                    data-tone="muted"
+                  >
+                    Já conectado
+                  </span>
+                ) : (
+                  <ChannelBadge contract={zapiAddonContract} />
+                )}
               </span>
               <span className="crm-whatsapp-channel-description">
-                {readZapiChooserDescription(zapiAddonContract)}
+                {zapiConfigured
+                  ? "Esta loja já possui uma Z-API. Use Gerenciar Z-API acima para parear ou revisar o canal."
+                  : readZapiChooserDescription(zapiAddonContract)}
               </span>
               <ChannelIdentity
                 broker="Credencial direta"

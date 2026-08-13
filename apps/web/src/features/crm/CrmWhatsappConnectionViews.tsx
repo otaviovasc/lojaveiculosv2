@@ -111,7 +111,7 @@ export function ConnectionDashboard(props: SharedProps) {
         onRefresh={props.onRefresh}
       />
       <p className="crm-whatsapp-connection-webhook-note">
-        O telefone está configurado. Para trocar o aparelho, use o pareamento
+        A instância está configurada. Para trocar o aparelho, use o pareamento
         seguro da seção de conexão; credenciais e configurações técnicas não são
         exibidas.
       </p>

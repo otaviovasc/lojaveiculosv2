@@ -8,8 +8,10 @@ export function findConnectedConnection(
 ) {
   const connected = connections.filter(
     (connection) =>
-      connection.live.providerStatus === "connected" ||
-      connection.live.connected === true,
+      connection.status !== "paused" &&
+      connection.status !== "archived" &&
+      (connection.live.providerStatus === "connected" ||
+        connection.live.connected === true),
   );
   return (
     connected.find((connection) => connection.provider === "zapi") ??
@@ -25,6 +27,8 @@ export function findFreeTextStartConnection(
 ) {
   const startableConnections = connections.filter(
     (connection) =>
+      connection.status !== "paused" &&
+      connection.status !== "archived" &&
       connection.capabilities?.conversationStart === true &&
       connection.capabilities.templates !== true,
   );
@@ -53,6 +57,14 @@ export function readConversationStartCapability(
       mode: null,
       provider: null,
       unavailableReason: "Conecte um canal antes de iniciar uma conversa.",
+    };
+  }
+  if (connection.status === "paused" || connection.status === "archived") {
+    return {
+      canStart: false,
+      mode: null,
+      provider: connection.provider,
+      unavailableReason: "Este canal está pausado ou indisponível no CRM.",
     };
   }
   const capabilities = connection.capabilities;

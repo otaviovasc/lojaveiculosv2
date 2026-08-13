@@ -103,6 +103,8 @@ export function createCrmWhatsappApi({
       postJson(crmWhatsappCampaignRoutes.campaigns(baseUrl), input),
     createConnection: (input) =>
       postJson(crmWhatsappRoutes.connections(baseUrl), input),
+    disconnectZapiConnection: (connectionId) =>
+      postJson(crmWhatsappRoutes.zapiDisconnect(connectionId, baseUrl)),
     configureZapiWebhooks: (connectionId) =>
       postJson(crmWhatsappRoutes.zapiWebhooksConfigure(connectionId, baseUrl)),
     getZapiAddonContract: () =>
@@ -193,10 +195,16 @@ export function createCrmWhatsappApi({
       }),
     requestZapiPairingQr: (connectionId) =>
       postJson(crmWhatsappRoutes.zapiPairingQr(connectionId, baseUrl)),
+    refreshZapiConnectionStatus: (connectionId) =>
+      postJson(crmWhatsappRoutes.zapiStatusRefresh(connectionId, baseUrl)),
     requestZapiAddon: () =>
       postJson<{ contract: CrmWhatsappZapiAddonContract }>(
         crmWhatsappRoutes.billingZapiRequest(baseUrl),
       ).then((response) => response.contract),
+    setConnectionPaused: (connectionId, paused) =>
+      patchJson(crmWhatsappRoutes.connection(connectionId, baseUrl), {
+        status: paused ? "paused" : "active",
+      }),
     removeSessionTag: (sessionId, tagId) =>
       deleteMaybeJson(crmWhatsappRoutes.sessionTag(sessionId, tagId, baseUrl)),
     reorderTags: (input) =>

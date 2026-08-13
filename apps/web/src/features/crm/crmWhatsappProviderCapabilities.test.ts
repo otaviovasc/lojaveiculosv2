@@ -105,4 +105,41 @@ describe("CRM connection capabilities", () => {
       reason: "As capacidades deste canal ainda não foram confirmadas.",
     });
   });
+
+  it("closes composer capabilities and send readiness for a paused connection", () => {
+    const pausedConnection = {
+      capabilities: zapiCapabilities,
+      displayName: "Canal pausado",
+      externalConnectionId: null,
+      externalInstanceId: null,
+      id: "connection_paused",
+      live: {
+        checkedAt: "2026-08-11T12:00:00.000Z",
+        connected: true,
+        connectedPhone: null,
+        providerStatus: "connected" as const,
+        smartphoneConnected: true,
+      },
+      phone: null,
+      provider: "zapi" as const,
+      ready: true,
+      status: "paused" as const,
+      webhookUrl: null,
+    };
+
+    expect(
+      readCrmWhatsappConnectionCapabilities(pausedConnection),
+    ).toMatchObject({
+      allowAudio: false,
+      allowImages: false,
+      allowReply: false,
+      provider: "zapi",
+    });
+    expect(readCrmWhatsappSendReadiness(pausedConnection, "connected")).toEqual(
+      {
+        canSend: false,
+        reason: "Este canal está pausado ou indisponível no CRM.",
+      },
+    );
+  });
 });

@@ -14,6 +14,7 @@ import {
   sendZapiReaction,
 } from "./zapiCrmWhatsappMessageActions.js";
 import { sendZapiText } from "./zapiCrmWhatsappTextActions.js";
+import { disconnectZapiConnection } from "./zapiCrmWhatsappConnectionActions.js";
 import { configureZapiWebhooks } from "./zapiCrmWhatsappWebhookActions.js";
 import {
   assertZapiProvider,
@@ -39,6 +40,9 @@ export function createZapiCrmWhatsappGateway(
     },
     async deleteMessage(connection, input) {
       return deleteZapiMessage(credentialsFor(connection), fetchImpl, input);
+    },
+    async disconnectConnection(connection) {
+      return disconnectZapiConnection(credentialsFor(connection), fetchImpl);
     },
     async getConnectionStatus(connection) {
       return readZapiConnectionStatus(credentialsFor(connection), fetchImpl);

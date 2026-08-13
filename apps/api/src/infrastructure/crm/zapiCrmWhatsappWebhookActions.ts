@@ -81,12 +81,16 @@ async function registerZapiWebhook(
         method: "PUT",
       },
     );
-    await response.arrayBuffer();
+    const responseText = await response.text();
+    const acknowledged =
+      response.ok && wasWebhookRegistrationAcknowledged(responseText);
     return {
-      error: response.ok
-        ? null
-        : `ZAPI webhook registration failed with HTTP ${response.status}`,
-      ok: response.ok,
+      error: !response.ok
+        ? `ZAPI webhook registration failed with HTTP ${response.status}`
+        : acknowledged
+          ? null
+          : "ZAPI webhook registration was not acknowledged",
+      ok: acknowledged,
       status: response.status,
       type,
       url,
@@ -100,5 +104,14 @@ async function registerZapiWebhook(
       type,
       url,
     };
+  }
+}
+
+function wasWebhookRegistrationAcknowledged(responseText: string) {
+  try {
+    const payload = JSON.parse(responseText) as { value?: unknown };
+    return payload.value === true;
+  } catch {
+    return false;
   }
 }

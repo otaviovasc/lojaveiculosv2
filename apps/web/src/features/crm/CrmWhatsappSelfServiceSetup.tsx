@@ -36,6 +36,9 @@ export type CrmWhatsappSelfServiceHandlers = {
   onCreate: (
     input: CrmWhatsappCreateConnectionInput,
   ) => Promise<CrmWhatsappProviderConnection | null>;
+  onDisconnectZapi?: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappProviderConnection>;
   onConfigureZapiWebhooks: (connectionId: CrmWhatsappConnectionId) => Promise<
     CrmWhatsappZapiWebhookSetupResult & {
       connection?: CrmWhatsappProviderConnection;
@@ -53,7 +56,14 @@ export type CrmWhatsappSelfServiceHandlers = {
   onRequestZapiPairingQr?: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<{ expiresAt: string; qrCode: string }>;
+  onRefreshZapiStatus?: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappProviderConnection>;
   onRequestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
+  onSetConnectionPaused?: (
+    connectionId: CrmWhatsappConnectionId,
+    paused: boolean,
+  ) => Promise<void>;
   onSelectComposioSender: (
     connectionId: string,
     senderId: string,
@@ -70,6 +80,7 @@ export function CrmWhatsappSelfServiceSetup({
   handlers,
   marketplaceApi,
   onRedirect = (url) => window.location.assign(url),
+  startAtDirectory = false,
   zapiAddonContract = null,
 }: {
   allowance: CrmWhatsappConnectionAllowance;
@@ -81,14 +92,17 @@ export function CrmWhatsappSelfServiceSetup({
   handlers: CrmWhatsappSelfServiceHandlers;
   marketplaceApi?: MarketplaceApi;
   onRedirect?: (url: string) => void;
+  startAtDirectory?: boolean;
   zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
 }) {
   const [provider, setProvider] = useState<CrmWhatsappSetupProvider | null>(
-    existingConnection?.provider === "zapi"
-      ? "zapi"
-      : existingConnection?.provider === "composio_whatsapp"
-        ? "composio_whatsapp"
-        : null,
+    startAtDirectory
+      ? null
+      : existingConnection?.provider === "zapi"
+        ? "zapi"
+        : existingConnection?.provider === "composio_whatsapp"
+          ? "composio_whatsapp"
+          : null,
   );
   const [connection, setConnection] =
     useState<CrmWhatsappProviderConnection | null>(existingConnection);
@@ -99,6 +113,11 @@ export function CrmWhatsappSelfServiceSetup({
   const completingConnectionRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (startAtDirectory) {
+      setConnection(null);
+      setProvider(null);
+      return;
+    }
     setConnection(existingConnection);
     if (
       existingConnection?.provider === "zapi" ||
@@ -108,7 +127,7 @@ export function CrmWhatsappSelfServiceSetup({
         existingConnection.provider === "zapi" ? "zapi" : "composio_whatsapp",
       );
     }
-  }, [existingConnection]);
+  }, [existingConnection, startAtDirectory]);
 
   const completeOfficialSetup = useCallback(
     async (connectionId: string) => {
@@ -312,6 +331,23 @@ function OfficialSetup({
               </button>
             ))}
           </fieldset>
+        </div>
+      ) : connection?.live.providerStatus === "connected" ? (
+        <div className="crm-whatsapp-official-stage" data-state="connected">
+          <p className="crm-whatsapp-official-stage-label">Canal conectado</p>
+          <p className="crm-whatsapp-official-stage-note">
+            A conta e o remetente já estão confirmados. Reautorize somente se a
+            Meta pedir uma nova conexão.
+          </p>
+          <button
+            className="crm-action crm-action-secondary"
+            disabled={isBusy || !canSetup}
+            onClick={() => void authorize()}
+            type="button"
+          >
+            <ExternalLink aria-hidden="true" className="size-4" />
+            Reautorizar com a Meta
+          </button>
         </div>
       ) : connection ? (
         <div className="crm-whatsapp-official-stage" data-state="awaiting">

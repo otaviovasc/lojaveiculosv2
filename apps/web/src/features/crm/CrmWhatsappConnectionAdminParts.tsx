@@ -130,7 +130,7 @@ function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
     if (phone) return `Conectado - ${phone}`;
     return connection.provider === "composio_whatsapp"
       ? "Conta oficial conectada com segurança"
-      : "Conectado sem telefone informado";
+      : "Instância conectada; a Z-API não informou o número";
   }
   if (connection.live.providerStatus === "disconnected") {
     if (connection.provider !== "zapi") {

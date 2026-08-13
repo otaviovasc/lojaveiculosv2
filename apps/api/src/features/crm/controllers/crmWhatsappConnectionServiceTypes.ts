@@ -15,6 +15,10 @@ import type {
   RequestZapiPairingCodeInput,
   RequestZapiPairingQrInput,
 } from "../../../domains/crm/services/CrmWhatsapp/zapiWhatsappConnectionSetup.js";
+import type {
+  disconnectZapiConnection,
+  refreshZapiConnectionStatus,
+} from "../../../domains/crm/services/CrmWhatsapp/zapiConnectionLifecycle.js";
 import type { ExecuteWhatsappBotActionInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
 import type {
   AuthenticateWhatsappBotSecretInput,
@@ -63,6 +67,10 @@ export type CrmWhatsappConnectionServices = {
     CreateWhatsappConnectionInput,
     WhatsappConnection
   >;
+  disconnectZapiConnection: ContextService<
+    Parameters<typeof disconnectZapiConnection>[1],
+    Awaited<ReturnType<typeof disconnectZapiConnection>>
+  >;
   executeWhatsappBotAction: ContextService<
     ExecuteWhatsappBotActionInput,
     unknown
@@ -83,6 +91,10 @@ export type CrmWhatsappConnectionServices = {
   requestZapiPairingQr: ContextService<
     RequestZapiPairingQrInput,
     { expiresAt: string; qrCode: string }
+  >;
+  refreshZapiConnectionStatus: ContextService<
+    Parameters<typeof refreshZapiConnectionStatus>[1],
+    Awaited<ReturnType<typeof refreshZapiConnectionStatus>>
   >;
   requestZapiPairingCodeAsSupport: ContextService<
     Parameters<typeof requestZapiPairingCodeAsSupport>[1],

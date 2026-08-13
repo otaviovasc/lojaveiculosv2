@@ -21,6 +21,7 @@ export function createOlxCrmChatGateway(
   return {
     configureWebhooks: async () => unsupported("webhook configuration"),
     deleteMessage: async () => unsupported("message deletion"),
+    disconnectConnection: async () => unsupported("provider disconnect"),
     getConnectionStatus: async (connection) => {
       if (connection.provider !== "olx_chat") {
         throw new CrmWhatsappGatewayError("Invalid OLX Chat connection.");

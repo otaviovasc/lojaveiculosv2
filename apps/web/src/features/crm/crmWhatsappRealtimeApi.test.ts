@@ -133,6 +133,25 @@ describe("CRM WhatsApp realtime API", () => {
 
     unsubscribe();
   });
+
+  it("opens ticket-authenticated SSE without credentialed CORS mode", async () => {
+    vi.stubGlobal("EventSource", FakeEventSource);
+    const postJson = vi
+      .fn()
+      .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" });
+
+    const unsubscribe = subscribeCrmWhatsappEvents({
+      eventsRoute: "https://api.example.test/events",
+      eventsTicketRoute: "https://api.example.test/events/ticket",
+      onEvent: vi.fn(),
+      postJson,
+    });
+    await flushPromises();
+
+    expect(FakeEventSource.instances[0]?.init?.withCredentials).not.toBe(true);
+
+    unsubscribe();
+  });
 });
 
 async function flushPromises() {

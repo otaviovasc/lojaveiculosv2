@@ -100,6 +100,34 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     [api],
   );
 
+  const disconnectZapiConnection = useCallback(
+    async (connectionId: CrmWhatsappConnectionId) => {
+      try {
+        const connection = await api.disconnectZapiConnection(connectionId);
+        await refreshConnections();
+        return connection;
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api, refreshConnections],
+  );
+
+  const refreshZapiConnectionStatus = useCallback(
+    async (connectionId: CrmWhatsappConnectionId) => {
+      try {
+        const connection = await api.refreshZapiConnectionStatus(connectionId);
+        await refreshConnections();
+        return connection;
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api, refreshConnections],
+  );
+
   const requestZapiAddon = useCallback(async () => {
     if (!api.requestZapiAddon) {
       throw new Error("A solicitação da Z-API não está disponível.");
@@ -113,6 +141,22 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
       throw caught;
     }
   }, [api]);
+
+  const setConnectionPaused = useCallback(
+    async (connectionId: CrmWhatsappConnectionId, paused: boolean) => {
+      if (!api.setConnectionPaused) {
+        throw new Error("O gerenciamento desta conexão não está disponível.");
+      }
+      try {
+        await api.setConnectionPaused(connectionId, paused);
+        await refreshConnections();
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api, refreshConnections],
+  );
 
   const configureZapiWebhooks = useCallback(
     async (connectionId: CrmWhatsappConnectionId) => {
@@ -215,6 +259,7 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     configureZapiWebhooks,
     connections,
     createConnection,
+    disconnectZapiConnection,
     error,
     hasConnectedConnection: connections.some(
       (connection) =>
@@ -226,7 +271,9 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     requestZapiPairingCode,
     requestZapiPairingQr,
     requestZapiAddon,
+    refreshZapiConnectionStatus,
     selectComposioSender,
+    setConnectionPaused,
     zapiAddonContract,
   };
 }

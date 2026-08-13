@@ -136,7 +136,6 @@ export async function updateWhatsappConnection(
   assertPermission(context, updatePermission);
   if (input.instanceCredentials) {
     assertPermission(context, credentialUpdatePermission);
-    assertEntitlement(context as never, "crm_zapi");
   }
   const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.connection.update.started", {
@@ -163,11 +162,16 @@ export async function updateWhatsappConnection(
       const current = await repository.findConnectionById(input.connectionId);
       if (
         !current ||
+        current.status === "archived" ||
         current.storeId !== scope.storeId ||
         current.tenantId !== scope.tenantId
       ) {
         throw new WhatsappConnectionNotFoundError(input.connectionId);
       }
+      assertEntitlement(
+        context as never,
+        current.provider === "zapi" ? "crm_zapi" : "crm",
+      );
       assertCredentialUpdateMatchesProvider(current, input);
       const safeInput = input.instanceCredentials
         ? {
@@ -201,6 +205,7 @@ export async function updateWhatsappConnection(
           ? { externalInstanceId: input.externalInstanceId }
           : {}),
         ...(metadata ? { metadata } : {}),
+        ...(input.status ? { status: input.status } : {}),
         connectionId: current.id,
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
