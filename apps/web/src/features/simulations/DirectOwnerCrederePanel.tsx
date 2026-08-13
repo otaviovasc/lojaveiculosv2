@@ -194,19 +194,21 @@ export function DirectOwnerCrederePanel({
               <>
                 <div className="credere-mapping-actions">
                   <FeatureActionButton
+                    disabled={busyAction !== null}
                     icon={Link2}
                     isBusy={busyAction === "provider-stores"}
                     label="Listar lojas Credere"
                     onClick={() => void loadProviderStores()}
                   />
                   <FeatureActionButton
-                    disabled={!connection.storeMapping}
+                    disabled={!connection.storeMapping || busyAction !== null}
                     icon={Link2Off}
                     isBusy={busyAction === "unmap"}
                     label="Remover vínculo Credere"
                     onClick={() => setConfirmAction("unmap")}
                   />
                   <FeatureActionButton
+                    disabled={busyAction !== null}
                     icon={Unplug}
                     isBusy={busyAction === "disconnect"}
                     label="Desconectar Credere"
@@ -214,25 +216,37 @@ export function DirectOwnerCrederePanel({
                   />
                 </div>
                 {providers ? (
-                  <div className="credere-store-mapping-control">
-                    <StoreSelector
-                      onChange={setSelectedExternalStoreId}
-                      stores={providers}
-                      value={selectedExternalStoreId}
-                    />
-                    <FeatureActionButton
-                      disabled={!selectedExternalStoreId}
-                      icon={Link2}
-                      isBusy={busyAction === "map"}
-                      label="Vincular loja Credere"
-                      onClick={() =>
-                        void runAction("map", (api) =>
-                          api.mapStore(selectedExternalStoreId),
-                        )
-                      }
-                      variant="primary"
-                    />
-                  </div>
+                  providers.length === 0 ? (
+                    <FeatureAlert
+                      title="Nenhuma loja no provedor"
+                      tone="warning"
+                    >
+                      A conta conectada não retornou lojas Credere. Verifique o
+                      cadastro no provedor antes de vincular.
+                    </FeatureAlert>
+                  ) : (
+                    <div className="credere-store-mapping-control">
+                      <StoreSelector
+                        onChange={setSelectedExternalStoreId}
+                        stores={providers}
+                        value={selectedExternalStoreId}
+                      />
+                      <FeatureActionButton
+                        disabled={
+                          !selectedExternalStoreId || busyAction !== null
+                        }
+                        icon={Link2}
+                        isBusy={busyAction === "map"}
+                        label="Vincular loja Credere"
+                        onClick={() =>
+                          void runAction("map", (api) =>
+                            api.mapStore(selectedExternalStoreId),
+                          )
+                        }
+                        variant="primary"
+                      />
+                    </div>
+                  )
                 ) : null}
               </>
             )}

@@ -46,11 +46,24 @@
 }
 
 .credere-connection-fact {
+  align-content: start;
   border-left: 2px solid var(--color-accent);
   display: grid;
   gap: 0.35rem;
   min-height: 3.25rem;
+  min-width: 0;
   padding-left: 0.75rem;
+}
+
+.credere-connection-fact > * {
+  justify-self: start;
+}
+
+.credere-connection-fact > strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .credere-connection-fact > span,
@@ -489,7 +502,7 @@
 
 @media (min-width: 1180px) {
   .credere-connection-body {
-    grid-template-columns: minmax(18rem, 0.75fr) minmax(0, 1.25fr);
+    grid-template-columns: minmax(18rem, 1fr) minmax(0, 1.1fr);
   }
 
   .credere-workspace-grid {
