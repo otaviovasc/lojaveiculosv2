@@ -125,7 +125,11 @@ describe("CRM WhatsApp support connection setup routes", () => {
       zapiConnectionSetupProvider: {
         getPairingCode: vi.fn(),
         getQrCode,
-        validateStatus: vi.fn(),
+        validateStatus: vi.fn(async () => ({
+          connected: false,
+          connectedPhone: null,
+          smartphoneConnected: false,
+        })),
       },
     });
 

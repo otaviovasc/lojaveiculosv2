@@ -85,6 +85,17 @@ describe("createZapiCrmConnectionSetupProvider", () => {
     await expect(result).rejects.not.toThrow(/sensitive-provider-challenge/u);
   });
 
+  it("classifies an already-connected QR response", async () => {
+    const provider = createZapiCrmConnectionSetupProvider(
+      env,
+      vi.fn<typeof fetch>(async () => Response.json({ connected: true })),
+    );
+
+    await expect(provider.getQrCode(credentials)).rejects.toMatchObject({
+      code: "pairing_disconnect_required",
+    });
+  });
+
   it("models both phone codes and passkey challenges", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()
