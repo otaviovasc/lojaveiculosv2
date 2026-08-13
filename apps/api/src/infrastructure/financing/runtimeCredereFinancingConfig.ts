@@ -2,7 +2,7 @@ import {
   allowsMemoryRuntimeFallback,
   RuntimeDatabaseConfigError,
 } from "../db/runtimeConfig.js";
-export const DEFAULT_CREDERE_SCOPE = "simulator+proposals";
+export const DEFAULT_CREDERE_SCOPE = "simulator proposals";
 
 export type RuntimeCredereFinancingConfig = {
   bankPolicyCodes: string[] | null;

@@ -54,12 +54,15 @@ export const resolveFipeVehicleSchema = z
     }
   });
 
-export const oauthCallbackQuerySchema = z
-  .object({
-    code: nonEmptyString,
-    state: nonEmptyString,
-  })
-  .strict();
+export const oauthCallbackQuerySchema = z.union([
+  z.object({ code: nonEmptyString, state: nonEmptyString }).strict(),
+  z
+    .object({
+      error: z.string().trim().min(1).max(128),
+      state: nonEmptyString,
+    })
+    .strict(),
+]);
 
 export const createSimulationSchema = z
   .object({

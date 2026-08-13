@@ -98,9 +98,12 @@ export async function createCredereSimulation(
   const fingerprint = sha256Hex(
     JSON.stringify(toFingerprint(input, bankCodes)),
   );
+  const reservedAt = now(ports);
   const reserved = await ports.repository.reserveSimulationOperation({
     idempotencyKey,
+    leaseExpiresAt: new Date(reservedAt.getTime() + 60_000),
     requestFingerprint: fingerprint,
+    reservedAt,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });

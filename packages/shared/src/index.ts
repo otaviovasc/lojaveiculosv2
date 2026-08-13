@@ -66,6 +66,7 @@ export type PermissionKey =
   | "finance.read"
   | "finance.update"
   | "financing.connection.manage"
+  | "financing.oauth.callback"
   | "financing.simulation.create"
   | "financing.simulation.read"
   | "fiscal.document.cancel"

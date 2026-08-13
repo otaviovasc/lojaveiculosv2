@@ -8,6 +8,7 @@ import type {
   FinancingTokenSet,
 } from "../../../domains/financing/ports/financingRepository.js";
 import type { CredereCredentialCodec } from "../../financing/credereCredentialCodec.js";
+import { deserializeCredereOAuthToken } from "../../financing/credereOAuthTokenSerialization.js";
 
 export type TokenRow = {
   encryptedToken: string;
@@ -44,12 +45,16 @@ export function toOAuthTransaction(
   row: {
     codeVerifierCiphertext: string | null;
     createdAt: Date;
+    exchangeLeaseExpiresAt: Date | null;
+    exchangeLeaseOwner: string | null;
+    exchangeTokenCiphertext: string | null;
     expiresAt: Date;
     id: string;
     provider: "credere";
     redirectUriHash: string;
     requestedByUserId: string | null;
     stateHash: string;
+    status: "cancelled" | "consumed" | "expired" | "failed" | "pending";
     tenantId: string;
     consumedAt: Date | null;
   },
@@ -61,12 +66,18 @@ export function toOAuthTransaction(
       ? codec.decrypt(row.codeVerifierCiphertext)
       : null,
     createdAt: row.createdAt,
+    exchangeLeaseExpiresAt: row.exchangeLeaseExpiresAt,
+    exchangeLeaseOwner: row.exchangeLeaseOwner,
+    exchangeToken: row.exchangeTokenCiphertext
+      ? deserializeCredereOAuthToken(codec.decrypt(row.exchangeTokenCiphertext))
+      : null,
     expiresAt: row.expiresAt,
     id: row.id,
     provider: row.provider,
     redirectUri,
     requestedByUserId: row.requestedByUserId,
     stateHash: row.stateHash,
+    status: row.status,
     tenantId: row.tenantId as never,
     usedAt: row.consumedAt,
   };

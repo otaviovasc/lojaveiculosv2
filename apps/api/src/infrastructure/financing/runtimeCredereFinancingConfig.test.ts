@@ -14,7 +14,7 @@ describe("runtime Credere financing config", () => {
 
     expect(config).toMatchObject({
       bankPolicyCodes: null,
-      scope: "simulator+proposals",
+      scope: "simulator proposals",
     });
   });
 

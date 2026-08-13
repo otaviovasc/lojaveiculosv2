@@ -13,6 +13,7 @@ export function installCredereFinancingRoutes(
   app: Hono,
   input: {
     accountContextFactory: AgencyAccountContextFactory;
+    callbackContextFactory: FinancingContextFactory;
     contextFactory: FinancingContextFactory;
     services?: CredereFinancingServices;
   },
@@ -27,6 +28,7 @@ export function installCredereFinancingRoutes(
   app.route(
     "/api/v1/financing",
     createCredereFinancingFeature({
+      callbackContextFactory: input.callbackContextFactory,
       contextFactory: input.contextFactory,
       ...(input.services ? { services: input.services } : {}),
     }),

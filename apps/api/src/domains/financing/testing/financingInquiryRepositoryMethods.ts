@@ -170,6 +170,13 @@ function reserveSimulationOperation(
       item.tenantId === input.tenantId,
   );
   if (existing?.requestFingerprint === input.requestFingerprint) {
+    if (
+      existing.inquiryId === null &&
+      existing.leaseExpiresAt.getTime() <= input.reservedAt.getTime()
+    ) {
+      existing.leaseExpiresAt = input.leaseExpiresAt;
+      return { kind: "recovered", operationId: existing.id };
+    }
     return {
       inquiryId: existing.inquiryId,
       kind: "duplicate",
@@ -187,6 +194,7 @@ function reserveSimulationOperation(
     id: nextId(state, "financing_operation"),
     idempotencyKey: input.idempotencyKey,
     inquiryId: null,
+    leaseExpiresAt: input.leaseExpiresAt,
     requestFingerprint: input.requestFingerprint,
     storeId: input.storeId,
     tenantId: input.tenantId,
