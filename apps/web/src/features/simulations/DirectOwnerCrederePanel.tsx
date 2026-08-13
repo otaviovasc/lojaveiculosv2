@@ -8,16 +8,13 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import "../../styles/credere-panels.css";
+import { Badge } from "../../components/ui/badge";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
-import {
-  FeatureActionButton,
-  FeatureSection,
-} from "../../components/ui/FeatureLayout";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import {
   FeatureAlert,
   FeatureLoadingState,
-  FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CredereApi } from "./apiClient";
@@ -136,62 +133,76 @@ export function DirectOwnerCrederePanel({
     connectionState.kind === "ready" ? connectionState.connection : null;
 
   return (
-    <>
-      <FeatureSection
-        className="credere-panel-connection"
-        icon={<Landmark aria-hidden="true" className="size-4" />}
-        actions={
+    <section className="credere-owner-panel">
+      {actionError ? (
+        <FeatureAlert tone="danger">{actionError}</FeatureAlert>
+      ) : null}
+
+      <div className="credere-owner-header">
+        <div className="credere-owner-title-group">
+          <div className="credere-owner-icon-box">
+            <Landmark aria-hidden="true" className="size-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="credere-owner-title">Credere da loja</h2>
+              {connection ? (
+                <Badge variant={connection.connected ? "success" : "warning"}>
+                  {connection.connected ? "Conectada" : "Não conectada"}
+                </Badge>
+              ) : null}
+            </div>
+            <p className="credere-owner-subtitle">
+              Conexão e vínculo oficial para processamento de simulações.
+            </p>
+          </div>
+        </div>
+
+        <div className="credere-owner-top-actions">
           <FeatureActionButton
             icon={RefreshCw}
             isBusy={connectionState.kind === "loading"}
             label="Atualizar conexão Credere"
             onClick={() => void loadConnection()}
           />
-        }
-        description="A conexão e o vínculo definem onde as simulações oficiais desta loja são processadas."
-        padding="compact"
-        title="Credere da loja"
-      >
-        {actionError ? (
-          <FeatureAlert tone="danger">{actionError}</FeatureAlert>
-        ) : null}
-        <div className="credere-panel-connection-body">
-          <div className="credere-panel-connection-summary">
-            {connectionState.kind === "loading" ? (
-              <FeatureLoadingState
-                density="compact"
-                title="Consultando conexão"
-              />
-            ) : null}
-            {connectionState.kind === "error" ? (
-              <FeatureAlert title="Conexão indisponível" tone="danger">
-                {connectionState.message}
-              </FeatureAlert>
-            ) : null}
-            {connection ? (
-              <>
-                <div className="credere-panel-connection-fact">
-                  <span>Status da conta</span>
-                  <FeatureStatusBadge
-                    size="dense"
-                    tone={connection.connected ? "success" : "warning"}
-                  >
-                    {connection.connected ? "Conectada" : "Não conectada"}
-                  </FeatureStatusBadge>
-                </div>
-                <div className="credere-panel-connection-fact">
-                  <span>Loja vinculada</span>
-                  <strong>
-                    {connection.storeMapping?.externalStoreAlias ||
-                      (connection.storeMapping ? "Loja Credere" : "Nenhuma")}
-                  </strong>
-                </div>
-              </>
-            ) : null}
+        </div>
+      </div>
+
+      {connectionState.kind === "loading" ? (
+        <FeatureLoadingState
+          density="compact"
+          title="Consultando conexão Credere"
+        />
+      ) : connectionState.kind === "error" ? (
+        <FeatureAlert title="Conexão indisponível" tone="danger">
+          {connectionState.message}
+        </FeatureAlert>
+      ) : connection ? (
+        <div className="credere-owner-body">
+          <div className="credere-owner-summary-bar">
+            <div className="credere-owner-fact">
+              <span>Status da conta</span>
+              <strong>
+                {connection.connected
+                  ? "Autenticada via OAuth"
+                  : "Pendente de login"}
+              </strong>
+            </div>
+            <div className="credere-owner-fact">
+              <span>Loja vinculada</span>
+              <strong className="text-accent-strong">
+                {connection.storeMapping?.externalStoreAlias ||
+                  (connection.storeMapping ? "Loja Credere" : "Nenhuma")}
+              </strong>
+            </div>
+            <div className="credere-owner-fact">
+              <span>Ambiente</span>
+              <strong>Credere Oficial (Produção/Homologação)</strong>
+            </div>
           </div>
 
-          <div className="credere-panel-connection-actions">
-            {!connection?.connected ? (
+          <div className="credere-owner-actions-row">
+            {!connection.connected ? (
               <FeatureActionButton
                 icon={PlugZap}
                 isBusy={busyAction === "oauth"}
@@ -201,67 +212,62 @@ export function DirectOwnerCrederePanel({
               />
             ) : (
               <>
-                <div className="credere-panel-connection-mapping-actions">
-                  <FeatureActionButton
-                    disabled={busyAction !== null}
-                    icon={Link2}
-                    isBusy={busyAction === "provider-stores"}
-                    label="Listar lojas Credere"
-                    onClick={() => void loadProviderStores()}
-                  />
-                  <FeatureActionButton
-                    disabled={!connection.storeMapping || busyAction !== null}
-                    icon={Link2Off}
-                    isBusy={busyAction === "unmap"}
-                    label="Remover vínculo Credere"
-                    onClick={() => setConfirmAction("unmap")}
-                  />
-                  <FeatureActionButton
-                    disabled={busyAction !== null}
-                    icon={Unplug}
-                    isBusy={busyAction === "disconnect"}
-                    label="Desconectar Credere"
-                    onClick={() => setConfirmAction("disconnect")}
-                  />
-                </div>
-                {providers ? (
-                  providers.length === 0 ? (
-                    <FeatureAlert
-                      title="Nenhuma loja no provedor"
-                      tone="warning"
-                    >
-                      A conta conectada não retornou lojas Credere. Verifique o
-                      cadastro no provedor antes de vincular.
-                    </FeatureAlert>
-                  ) : (
-                    <div className="credere-panel-store-mapping">
-                      <StoreSelector
-                        onChange={setSelectedExternalStoreId}
-                        stores={providers}
-                        value={selectedExternalStoreId}
-                      />
-                      <FeatureActionButton
-                        disabled={
-                          !selectedExternalStoreId || busyAction !== null
-                        }
-                        icon={Link2}
-                        isBusy={busyAction === "map"}
-                        label="Vincular loja Credere"
-                        onClick={() =>
-                          void runAction("map", (api) =>
-                            api.mapStore(selectedExternalStoreId),
-                          )
-                        }
-                        variant="primary"
-                      />
-                    </div>
-                  )
-                ) : null}
+                <FeatureActionButton
+                  disabled={busyAction !== null}
+                  icon={Link2}
+                  isBusy={busyAction === "provider-stores"}
+                  label="Listar lojas Credere"
+                  onClick={() => void loadProviderStores()}
+                />
+                <FeatureActionButton
+                  disabled={!connection.storeMapping || busyAction !== null}
+                  icon={Link2Off}
+                  isBusy={busyAction === "unmap"}
+                  label="Remover vínculo Credere"
+                  onClick={() => setConfirmAction("unmap")}
+                />
+                <FeatureActionButton
+                  disabled={busyAction !== null}
+                  icon={Unplug}
+                  isBusy={busyAction === "disconnect"}
+                  label="Desconectar Credere"
+                  onClick={() => setConfirmAction("disconnect")}
+                />
               </>
             )}
           </div>
+
+          {providers ? (
+            providers.length === 0 ? (
+              <FeatureAlert title="Nenhuma loja no provedor" tone="warning">
+                A conta conectada não retornou lojas Credere. Verifique o
+                cadastro no provedor antes de vincular.
+              </FeatureAlert>
+            ) : (
+              <div className="credere-owner-mapping-box">
+                <StoreSelector
+                  onChange={setSelectedExternalStoreId}
+                  stores={providers}
+                  value={selectedExternalStoreId}
+                />
+                <FeatureActionButton
+                  disabled={!selectedExternalStoreId || busyAction !== null}
+                  icon={Link2}
+                  isBusy={busyAction === "map"}
+                  label="Vincular loja Credere"
+                  onClick={() =>
+                    void runAction("map", (api) =>
+                      api.mapStore(selectedExternalStoreId),
+                    )
+                  }
+                  variant="primary"
+                />
+              </div>
+            )
+          ) : null}
         </div>
-      </FeatureSection>
+      ) : null}
+
       <ConfirmDialog
         confirmLabel={
           confirmAction === "disconnect" ? "Desconectar" : "Remover vínculo"
@@ -290,7 +296,7 @@ export function DirectOwnerCrederePanel({
         }
         variant="destructive"
       />
-    </>
+    </section>
   );
 }
 
@@ -304,7 +310,7 @@ function StoreSelector({
   value: string;
 }) {
   return (
-    <label className="credere-panel-store-selector">
+    <label className="credere-owner-store-selector">
       <span>Loja Credere</span>
       <FeatureSelect
         ariaLabel="Loja Credere"

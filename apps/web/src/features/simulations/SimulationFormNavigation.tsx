@@ -64,12 +64,17 @@ export function SimulationFormStepper({
                 type="button"
               >
                 <span aria-hidden="true" className="credere-form-step-marker">
-                  {complete ? <Check /> : <Icon />}
+                  {complete ? (
+                    <Check className="size-3.5" />
+                  ) : (
+                    <span className="text-xs font-black">{index + 1}</span>
+                  )}
                 </span>
                 <span className="credere-form-step-copy">
-                  <small aria-hidden="true" className="credere-form-step-index">
-                    {String(index + 1).padStart(2, "0")}
-                  </small>
+                  <Icon
+                    className="credere-form-step-icon size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span className="credere-form-step-label">{item.label}</span>
                 </span>
               </button>

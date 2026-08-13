@@ -1,3 +1,4 @@
+import type { SimulationSummarySidebarProps } from "./SimulationSummarySidebar";
 import type {
   CredereFipeResolution,
   CredereRequiredFields,
@@ -25,6 +26,8 @@ export type SimulationPrefill = {
   zeroKm?: boolean;
 };
 
+export type SimulationSummaryData = SimulationSummarySidebarProps;
+
 export type SimulationFormProps = {
   banks: readonly CredereUsableBank[];
   isSubmitting: boolean;
@@ -39,6 +42,8 @@ export type SimulationFormProps = {
     selectedMolicarCode?: string;
   }) => Promise<CredereFipeResolution>;
   onSubmit: (draft: CredereSimulationDraft) => void | Promise<void>;
+  onSummaryChange?: (summary: SimulationSummaryData) => void;
+  onToast?: (message: string) => void;
   prefill?: SimulationPrefill | undefined;
   submitError: string | null;
 };

@@ -1,8 +1,10 @@
 import "../../styles/credere-results.css";
+import { useState } from "react";
 import {
   BadgeDollarSign,
   Banknote,
   CalendarClock,
+  Check,
   Copy,
   Landmark,
   RefreshCw,
@@ -248,9 +250,11 @@ function ConditionCard({
   isBest: boolean;
   position: number;
 }) {
+  const [copied, setCopied] = useState(false);
   const bankName = condition.bankName ?? condition.bankCode ?? "Banco";
-  const copySummary = () =>
-    navigator.clipboard?.writeText(
+
+  const handleCopy = () => {
+    void navigator.clipboard?.writeText(
       [
         bankName,
         condition.installments == null ? null : `${condition.installments}x`,
@@ -261,6 +265,10 @@ function ConditionCard({
         .filter(Boolean)
         .join(" · "),
     );
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <li
       className={
@@ -318,12 +326,20 @@ function ConditionCard({
           </FeatureStatusBadge>
           <button
             aria-label={`Copiar condição de ${bankName}`}
-            className="credere-results-offer-copy"
-            onClick={() => void copySummary()}
+            className={
+              copied
+                ? "credere-results-offer-copy credere-results-offer-copy--copied"
+                : "credere-results-offer-copy"
+            }
+            onClick={handleCopy}
             title="Copiar resumo da condição"
             type="button"
           >
-            <Copy aria-hidden="true" />
+            {copied ? (
+              <Check aria-hidden="true" />
+            ) : (
+              <Copy aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>

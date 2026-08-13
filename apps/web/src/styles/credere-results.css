@@ -399,6 +399,11 @@
   color: var(--color-accent-strong);
 }
 
+.credere-results-offer-copy--copied {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
 .credere-results-offer-copy:focus-visible {
   box-shadow: var(--shadow-focus);
   outline: none;

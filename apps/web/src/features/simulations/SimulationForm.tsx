@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CircleAlert } from "lucide-react";
 import { FeatureFormSection } from "../../components/ui/FeatureForms";
 import { formatBrazilianDocument, formatBrazilianPhone } from "../../lib/masks";
@@ -58,6 +58,8 @@ export function SimulationForm({
   onGetRequiredFields,
   onResolveFipe,
   onSubmit,
+  onSummaryChange,
+  onToast,
   prefill,
   submitError,
 }: SimulationFormProps) {
@@ -323,216 +325,238 @@ export function SimulationForm({
     ? selectedFipeCandidate.version || selectedFipeCandidate.name
     : null;
 
+  useEffect(() => {
+    onSummaryChange?.({
+      applicantName: name,
+      bankCount: bankCodes.length,
+      checklist,
+      downPayment,
+      fipeCode,
+      licensingCity,
+      licensingUf,
+      manufactureYear,
+      modelYear,
+      molicarCode,
+      preflightReady: preflightState.kind === "ready",
+      vehicleName: catalog?.modelName ?? null,
+      vehicleValue,
+      versionLabel,
+    });
+  }, [
+    name,
+    bankCodes.length,
+    checklist,
+    downPayment,
+    fipeCode,
+    licensingCity,
+    licensingUf,
+    manufactureYear,
+    modelYear,
+    molicarCode,
+    preflightState.kind,
+    catalog?.modelName,
+    vehicleValue,
+    versionLabel,
+    onSummaryChange,
+  ]);
+
   const visibleError = validationError ?? submitError;
 
   return (
     <form className="credere-form" onSubmit={handleSubmit}>
-      <div className="credere-form-layout">
-        <div className="credere-form-main">
-          <SimulationFormStepper onChange={setStep} step={step} />
+      <div className="flex flex-col gap-6">
+        <SimulationFormStepper onChange={setStep} step={step} />
 
-          {step === "vehicle" ? (
-            <FeatureFormSection
-              className="credere-form-section"
-              description="Selecione um veículo do estoque ou navegue pelo mesmo catálogo FIPE usado no cadastro."
-              title="Veículo"
-            >
-              <div className="grid gap-5">
-                <SimulationVehicleSource
-                  catalog={catalog}
-                  listingId={listingId}
-                  manufactureYear={manufactureYear}
-                  onCatalogChange={selectCatalog}
-                  onManufactureYearChange={setManufactureYear}
-                  onSelectListing={selectListing}
-                  onSourceChange={(value) => {
-                    setVehicleSource(value);
-                    if (value === "catalog") {
-                      setListingId("");
-                      setUnitId("");
-                    }
-                  }}
-                  onYearChange={(year) => {
-                    setModelYear(year == null ? "" : String(year));
-                    setSelectedFipeCandidate(null);
-                    setCredereVehicleModelId("");
-                    setMolicarCode("");
-                  }}
-                  source={vehicleSource}
-                  sources={sources}
-                />
-                <SimulationVehicleFields
-                  licensingCity={licensingCity}
-                  licensingUf={licensingUf}
-                  manufactureYear={manufactureYear}
-                  modelYear={modelYear}
-                  molicarCode={molicarCode}
-                  onLicensingCityChange={setLicensingCity}
-                  onLicensingUfChange={(value) => {
-                    setLicensingUf(value);
-                    setLicensingCity("");
-                  }}
-                  onManufactureYearChange={setManufactureYear}
-                  onModelYearChange={(value) => {
-                    setModelYear(value);
-                    setSelectedFipeCandidate(null);
-                    setCredereVehicleModelId("");
-                    setMolicarCode("");
-                  }}
-                  onMolicarCodeChange={setMolicarCode}
-                  onZeroKmChange={setZeroKm}
-                  zeroKm={zeroKm}
-                />
-                <SimulationFipeResolver
-                  fipeCode={fipeCode}
-                  key={`${fipeCode}:${modelYear}`}
-                  modelYear={modelYear}
-                  onFipeCodeChange={setFipeCode}
-                  onResolve={onResolveFipe}
-                  onSelect={(candidate) => {
-                    setSelectedFipeCandidate(candidate);
-                    setCredereVehicleModelId(candidate?.modelId ?? "");
-                    setMolicarCode(candidate?.molicarCode ?? "");
-                  }}
-                  selected={selectedFipeCandidate}
-                />
-              </div>
-            </FeatureFormSection>
-          ) : null}
-
-          {step === "applicant" ? (
-            <FeatureFormSection
-              className="credere-form-section"
-              description="Selecione um lead do CRM ou informe um novo proponente. O Credere completa somente campos vazios."
-              title="Proponente"
-            >
-              <div className="grid gap-5">
-                <SimulationApplicantSource
-                  leadId={leadId}
-                  onSelect={selectLead}
-                  onSourceChange={(value) => {
-                    setApplicantSource(value);
-                    if (value === "new") setLeadId("");
-                  }}
-                  source={applicantSource}
-                  sources={sources}
-                />
-                <SimulationApplicantFields
-                  birthDate={birthDate}
-                  cpfCnpj={cpfCnpj}
-                  email={email}
-                  hasCnh={hasCnh}
-                  income={income}
-                  name={name}
-                  onBirthDateChange={setBirthDate}
-                  onCpfCnpjBlur={() => void runApplicantPreflight()}
-                  onCpfCnpjChange={(value) => {
-                    setCpfCnpj(value);
-                    preflightRequestRef.current = "";
-                    setPreflightState({ kind: "idle" });
-                    setPreflightErrorId(null);
-                  }}
-                  onEmailChange={setEmail}
-                  onHasCnhChange={setHasCnh}
-                  onIncomeChange={createCurrencyChange(setIncome)}
-                  onNameChange={setName}
-                  onPhoneChange={setPhone}
-                  phone={phone}
-                  requiredFields={requirements.supported}
-                />
-                <SimulationApplicantPreflightStatus
-                  canCheck={isValidPreflightDocument(cpfCnpj)}
-                  onRetry={() => void runApplicantPreflight()}
-                  requestId={preflightErrorId}
-                  state={preflightState}
-                  unsupportedCount={requirements.unsupported.length}
-                />
-              </div>
-            </FeatureFormSection>
-          ) : null}
-
-          {step === "terms" ? (
-            <FeatureFormSection
-              className="credere-form-section"
-              description="Defina valor, entrada e prazos desejados."
-              title="Condições"
-            >
-              <SimulationTermsFields
-                accessoryValue={accessoryValue}
-                documentationValue={documentationValue}
-                downPayment={downPayment}
-                installments={installments}
-                insuranceValue={insuranceValue}
-                onAccessoryValueChange={createCurrencyChange(setAccessoryValue)}
-                onDocumentationValueChange={createCurrencyChange(
-                  setDocumentationValue,
-                )}
-                onDownPaymentChange={createCurrencyChange(setDownPayment)}
-                onInsuranceValueChange={createCurrencyChange(setInsuranceValue)}
-                onInstallmentsChange={setInstallments}
-                onVehicleValueChange={createCurrencyChange(setVehicleValue)}
-                vehicleValue={vehicleValue}
+        {step === "vehicle" ? (
+          <FeatureFormSection
+            className="credere-form-section"
+            description="Selecione um veículo do estoque ou navegue pelo mesmo catálogo FIPE usado no cadastro."
+            title="Veículo"
+          >
+            <div className="grid gap-5">
+              <SimulationVehicleSource
+                catalog={catalog}
+                listingId={listingId}
+                manufactureYear={manufactureYear}
+                onCatalogChange={selectCatalog}
+                onManufactureYearChange={setManufactureYear}
+                onSelectListing={selectListing}
+                onSourceChange={(value) => {
+                  setVehicleSource(value);
+                  if (value === "catalog") {
+                    setListingId("");
+                    setUnitId("");
+                  }
+                }}
+                onToast={onToast}
+                onYearChange={(year) => {
+                  setModelYear(year == null ? "" : String(year));
+                  setSelectedFipeCandidate(null);
+                  setCredereVehicleModelId("");
+                  setMolicarCode("");
+                }}
+                source={vehicleSource}
+                sources={sources}
               />
-            </FeatureFormSection>
-          ) : null}
+              <SimulationVehicleFields
+                licensingCity={licensingCity}
+                licensingUf={licensingUf}
+                manufactureYear={manufactureYear}
+                modelYear={modelYear}
+                molicarCode={molicarCode}
+                onLicensingCityChange={setLicensingCity}
+                onLicensingUfChange={(value) => {
+                  setLicensingUf(value);
+                  setLicensingCity("");
+                }}
+                onManufactureYearChange={setManufactureYear}
+                onModelYearChange={(value) => {
+                  setModelYear(value);
+                  setSelectedFipeCandidate(null);
+                  setCredereVehicleModelId("");
+                  setMolicarCode("");
+                }}
+                onMolicarCodeChange={setMolicarCode}
+                onZeroKmChange={setZeroKm}
+                zeroKm={zeroKm}
+              />
+              <SimulationFipeResolver
+                fipeCode={fipeCode}
+                key={`${fipeCode}:${modelYear}`}
+                modelYear={modelYear}
+                onFipeCodeChange={setFipeCode}
+                onResolve={onResolveFipe}
+                onSelect={(candidate) => {
+                  setSelectedFipeCandidate(candidate);
+                  setCredereVehicleModelId(candidate?.modelId ?? "");
+                  setMolicarCode(candidate?.molicarCode ?? "");
+                  if (candidate && onToast) {
+                    onToast(
+                      `Versão "${candidate.version || candidate.name}" confirmada na Credere.`,
+                    );
+                  }
+                }}
+                selected={selectedFipeCandidate}
+              />
+            </div>
+          </FeatureFormSection>
+        ) : null}
 
-          {step === "review" ? (
-            <SimulationReviewStep
-              applicantName={name}
-              bankCodes={bankCodes}
-              banks={banks}
-              consent={consent}
+        {step === "applicant" ? (
+          <FeatureFormSection
+            className="credere-form-section"
+            description="Selecione um lead do CRM ou informe um novo proponente. O Credere completa somente campos vazios."
+            title="Proponente"
+          >
+            <div className="grid gap-5">
+              <SimulationApplicantSource
+                leadId={leadId}
+                onSelect={selectLead}
+                onSourceChange={(value) => {
+                  setApplicantSource(value);
+                  if (value === "new") setLeadId("");
+                }}
+                source={applicantSource}
+                sources={sources}
+              />
+              <SimulationApplicantFields
+                birthDate={birthDate}
+                cpfCnpj={cpfCnpj}
+                email={email}
+                hasCnh={hasCnh}
+                income={income}
+                name={name}
+                onBirthDateChange={setBirthDate}
+                onCpfCnpjBlur={() => void runApplicantPreflight()}
+                onCpfCnpjChange={(value) => {
+                  setCpfCnpj(value);
+                  preflightRequestRef.current = "";
+                  setPreflightState({ kind: "idle" });
+                  setPreflightErrorId(null);
+                }}
+                onEmailChange={setEmail}
+                onHasCnhChange={setHasCnh}
+                onIncomeChange={createCurrencyChange(setIncome)}
+                onNameChange={setName}
+                onPhoneChange={setPhone}
+                phone={phone}
+                requiredFields={requirements.supported}
+              />
+              <SimulationApplicantPreflightStatus
+                canCheck={isValidPreflightDocument(cpfCnpj)}
+                onRetry={() => void runApplicantPreflight()}
+                requestId={preflightErrorId}
+                state={preflightState}
+                unsupportedCount={requirements.unsupported.length}
+              />
+            </div>
+          </FeatureFormSection>
+        ) : null}
+
+        {step === "terms" ? (
+          <FeatureFormSection
+            className="credere-form-section"
+            description="Defina valor, entrada e prazos desejados."
+            title="Condições"
+          >
+            <SimulationTermsFields
+              accessoryValue={accessoryValue}
+              documentationValue={documentationValue}
               downPayment={downPayment}
-              fipeCode={fipeCode}
               installments={installments}
-              licensingCity={licensingCity}
-              licensingUf={licensingUf}
-              manufactureYear={manufactureYear}
-              modelYear={modelYear}
-              molicarCode={molicarCode}
-              onConsentChange={setConsent}
-              onToggleBank={toggleBank}
-              preflightReady={preflightState.kind === "ready"}
-              vehicleName={catalog?.modelName ?? null}
+              insuranceValue={insuranceValue}
+              onAccessoryValueChange={createCurrencyChange(setAccessoryValue)}
+              onDocumentationValueChange={createCurrencyChange(
+                setDocumentationValue,
+              )}
+              onDownPaymentChange={createCurrencyChange(setDownPayment)}
+              onInsuranceValueChange={createCurrencyChange(setInsuranceValue)}
+              onInstallmentsChange={setInstallments}
+              onVehicleValueChange={createCurrencyChange(setVehicleValue)}
               vehicleValue={vehicleValue}
-              versionLabel={versionLabel}
-              zeroKm={zeroKm}
             />
-          ) : null}
+          </FeatureFormSection>
+        ) : null}
 
-          {visibleError ? (
-            <p className="credere-form-error" role="alert">
-              <CircleAlert aria-hidden="true" />
-              {visibleError}
-            </p>
-          ) : null}
-
-          <SimulationStepActions
-            isLast={step === "review"}
-            isSubmitting={isSubmitting}
-            nextDisabled={!currentReadiness.ready}
-            nextHint={currentReadiness.ready ? null : currentReadiness.reason}
-            onBack={step === "vehicle" ? null : previousStep}
-            onNext={step === "review" ? null : continueStep}
-            step={step}
+        {step === "review" ? (
+          <SimulationReviewStep
+            applicantName={name}
+            bankCodes={bankCodes}
+            banks={banks}
+            consent={consent}
+            downPayment={downPayment}
+            fipeCode={fipeCode}
+            installments={installments}
+            licensingCity={licensingCity}
+            licensingUf={licensingUf}
+            manufactureYear={manufactureYear}
+            modelYear={modelYear}
+            molicarCode={molicarCode}
+            onConsentChange={setConsent}
+            onToggleBank={toggleBank}
+            preflightReady={preflightState.kind === "ready"}
+            vehicleName={catalog?.modelName ?? null}
+            vehicleValue={vehicleValue}
+            versionLabel={versionLabel}
+            zeroKm={zeroKm}
           />
-        </div>
+        ) : null}
 
-        <SimulationSummarySidebar
-          applicantName={name}
-          bankCount={bankCodes.length}
-          checklist={checklist}
-          downPayment={downPayment}
-          fipeCode={fipeCode}
-          licensingCity={licensingCity}
-          licensingUf={licensingUf}
-          manufactureYear={manufactureYear}
-          modelYear={modelYear}
-          molicarCode={molicarCode}
-          preflightReady={preflightState.kind === "ready"}
-          vehicleName={catalog?.modelName ?? null}
-          vehicleValue={vehicleValue}
-          versionLabel={versionLabel}
+        {visibleError ? (
+          <p className="credere-form-error" role="alert">
+            <CircleAlert aria-hidden="true" />
+            {visibleError}
+          </p>
+        ) : null}
+
+        <SimulationStepActions
+          isLast={step === "review"}
+          isSubmitting={isSubmitting}
+          nextDisabled={!currentReadiness.ready}
+          nextHint={currentReadiness.ready ? null : currentReadiness.reason}
+          onBack={step === "vehicle" ? null : previousStep}
+          onNext={step === "review" ? null : continueStep}
+          step={step}
         />
       </div>
     </form>
