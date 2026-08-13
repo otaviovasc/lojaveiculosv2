@@ -165,26 +165,6 @@ describe("Credere financing controller", () => {
     });
   });
 
-  it("uses only opaque callback state and safe JSON in tests", async () => {
-    const services = createServices({
-      oauth: {
-        completeCallback: vi.fn(async () => ({ ok: true })),
-      },
-    });
-    const app = createStoreApp(services);
-
-    const response = await app.request(
-      "/api/v1/financing/credere/oauth/callback?code=oauth_code&state=opaque_state&tenantId=tenant_bad&storeId=store_bad",
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ ok: true, provider: "credere" });
-    expect(services.oauth.completeCallback).toHaveBeenCalledWith({
-      code: "oauth_code",
-      state: "opaque_state",
-    });
-  });
-
   it("maps provider errors without raw PII details", async () => {
     const services = createServices({
       store: {

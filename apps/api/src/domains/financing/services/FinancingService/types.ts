@@ -22,7 +22,8 @@ export type StartFinancingOAuthResult = {
   usesPkce: boolean;
 };
 
-export type CompleteFinancingOAuthInput = { code: string; state: string };
+export type CompleteFinancingOAuthInput =
+  { code: string; state: string } | { error: string; state: string };
 
 export type FinancingReadiness = {
   canCreateSimulation: boolean;

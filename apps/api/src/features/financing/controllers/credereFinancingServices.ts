@@ -17,10 +17,10 @@ export type CredereFinancingServices = {
     ) => Promise<unknown>;
   };
   oauth: {
-    completeCallback: (input: {
-      code: string;
-      state: string;
-    }) => Promise<unknown>;
+    completeCallback: (
+      context: ServiceContext,
+      input: { code: string; state: string } | { error: string; state: string },
+    ) => Promise<unknown>;
   };
   store: {
     createSimulation: (

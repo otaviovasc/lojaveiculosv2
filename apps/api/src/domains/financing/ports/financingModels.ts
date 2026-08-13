@@ -25,12 +25,16 @@ export type FinancingConnection = {
 export type FinancingOAuthTransaction = {
   codeVerifier: string | null;
   createdAt: Date;
+  exchangeLeaseExpiresAt: Date | null;
+  exchangeLeaseOwner: string | null;
+  exchangeToken: FinancingTokenSet | null;
   expiresAt: Date;
   id: string;
   provider: FinancingProvider;
   redirectUri: string;
   requestedByUserId?: string | null;
   stateHash: string;
+  status: "cancelled" | "consumed" | "expired" | "failed" | "pending";
   tenantId: TenantId;
   usedAt: Date | null;
 };
@@ -134,13 +138,16 @@ export type RotateFinancingConnectionTokenInput =
 
 export type ReserveSimulationOperationInput = {
   idempotencyKey: string;
+  leaseExpiresAt: Date;
   requestFingerprint: string;
+  reservedAt: Date;
   storeId: StoreId;
   tenantId: TenantId;
 };
 
 export type ReserveSimulationOperationResult =
   | { kind: "created"; operationId: string }
+  | { kind: "recovered"; operationId: string }
   | { inquiryId: string | null; kind: "duplicate"; operationId: string }
   | { kind: "conflict"; operationId: string; requestFingerprint: string };
 

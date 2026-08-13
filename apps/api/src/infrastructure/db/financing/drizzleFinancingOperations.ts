@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
 import { financingOperationRequests } from "@lojaveiculosv2/db";
 import type {
   ReserveSimulationOperationInput,
@@ -12,6 +12,31 @@ export async function reserveOperation(
 ): Promise<ReserveSimulationOperationResult> {
   const existing = await findOperation(db, input);
   if (existing?.requestFingerprint === input.requestFingerprint) {
+    if (
+      existing.inquiryId === null &&
+      (existing.leaseExpiresAt === null ||
+        existing.leaseExpiresAt.getTime() <= input.reservedAt.getTime())
+    ) {
+      const [recovered] = await db
+        .update(financingOperationRequests)
+        .set({
+          attemptCount: sql`${financingOperationRequests.attemptCount} + 1`,
+          leaseExpiresAt: input.leaseExpiresAt,
+          status: "queued",
+        })
+        .where(
+          and(
+            eq(financingOperationRequests.id, existing.id),
+            isNull(financingOperationRequests.inquiryId),
+            or(
+              isNull(financingOperationRequests.leaseExpiresAt),
+              lte(financingOperationRequests.leaseExpiresAt, input.reservedAt),
+            ),
+          ),
+        )
+        .returning({ id: financingOperationRequests.id });
+      if (recovered) return { kind: "recovered", operationId: recovered.id };
+    }
     return {
       inquiryId: existing.inquiryId,
       kind: "duplicate",
@@ -29,6 +54,8 @@ export async function reserveOperation(
     .insert(financingOperationRequests)
     .values({
       idempotencyKey: input.idempotencyKey,
+      attemptCount: 1,
+      leaseExpiresAt: input.leaseExpiresAt,
       operationType: "simulation",
       provider: "credere",
       resultSummary: { requestFingerprint: input.requestFingerprint },
@@ -76,6 +103,7 @@ async function findOperation(
   return {
     id: row.id,
     inquiryId: row.inquiryId,
+    leaseExpiresAt: row.leaseExpiresAt,
     requestFingerprint:
       typeof summary.requestFingerprint === "string"
         ? summary.requestFingerprint

@@ -1,7 +1,19 @@
 import { FinancingProviderGatewayError } from "../../domains/financing/ports/financingProviderGateway.js";
 
 export const CREDERE_API_ROOT = "https://app.meucredere.com.br/api/v1";
+export const CREDERE_HTTP_TIMEOUT_MS = 20_000;
 const MAX_RETRY_AFTER_SECONDS = 300;
+
+export function fetchCredere(
+  fetchImpl: typeof fetch,
+  url: string,
+  init: RequestInit,
+) {
+  return fetchImpl(url, {
+    ...init,
+    signal: init.signal ?? AbortSignal.timeout(CREDERE_HTTP_TIMEOUT_MS),
+  });
+}
 
 export function credereApiUrl(path: string, query?: Record<string, string>) {
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) {
@@ -126,7 +138,7 @@ export async function fetchWithReadRetry(
   let lastError: unknown = null;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const response = await fetchImpl(url, init);
+      const response = await fetchCredere(fetchImpl, url, init);
       if (response.status < 500 || response.status === 501) return response;
       lastError = response;
     } catch (error) {

@@ -23,6 +23,7 @@ import {
 import {
   bearerHeaders,
   credereApiUrl,
+  fetchCredere,
   fetchWithReadRetry,
   networkError,
   parseSafeJson,
@@ -31,6 +32,7 @@ import {
 import { leadPayload } from "./credereLeadPayload.js";
 import { mapSellers } from "./credereSellerMappers.js";
 import { mapCredereFipeModels } from "./credereFipeModels.js";
+import { listCredereSimulationCandidates } from "./credereSimulationReconciliation.js";
 
 export type CredereHttpGatewayOptions = {
   auth?: FinancingGatewayAuthConfig;
@@ -106,6 +108,8 @@ export function createCredereHttpGateway(
           { storeHeader: false },
         ),
       ).filter(isUsableCredereBank),
+    listSimulationCandidates: (input) =>
+      listCredereSimulationCandidates(fetchImpl, input),
     listSellers: async (input) =>
       mapSellers(
         await readJson(fetchImpl, "/users/proposals_filter_list", input, {
@@ -211,7 +215,7 @@ async function writeJsonResponse(
 ) {
   let response: Response;
   try {
-    response = await fetchImpl(credereApiUrl(path), {
+    response = await fetchCredere(fetchImpl, credereApiUrl(path), {
       body: JSON.stringify(stripUndefined(options.body)),
       headers: bearerHeaders(input.token.accessToken, input.credereStoreId),
       method: options.method,

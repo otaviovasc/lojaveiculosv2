@@ -12,6 +12,7 @@ export type MemoryOperation = {
   id: string;
   idempotencyKey: string;
   inquiryId: string | null;
+  leaseExpiresAt: Date;
   requestFingerprint: string;
   storeId: string;
   tenantId: string;

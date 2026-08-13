@@ -33,7 +33,7 @@ export async function getUsableProviderConnection(
   const previousRefreshToken = currentToken.refreshToken;
   const token =
     await getFinancingGateway(ports).refreshToken(previousRefreshToken);
-  return ports.repository.rotateConnectionToken({
+  const rotated = await ports.repository.rotateConnectionToken({
     connectionId: connection.id,
     previousRefreshToken,
     provider: input.provider,
@@ -42,4 +42,19 @@ export async function getUsableProviderConnection(
     tenantId: input.tenantId,
     token,
   });
+  if (rotated) return rotated;
+  const winner = assertActiveConnection(
+    await ports.repository.findConnection(input),
+    input.provider,
+  );
+  if (
+    winner.token?.accessToken &&
+    (!winner.token.expiresAt ||
+      winner.token.expiresAt.getTime() > now(ports).getTime() + 60_000)
+  ) {
+    return winner;
+  }
+  throw new FinancingValidationError(
+    "Financing token refresh conflicted with another request.",
+  );
 }

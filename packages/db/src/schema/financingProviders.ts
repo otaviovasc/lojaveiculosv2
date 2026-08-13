@@ -136,6 +136,11 @@ export const providerOauthTransactions = pgTable(
     environment: financingProviderEnvironment("environment").notNull(),
     errorCode: varchar("error_code", { length: 120 }),
     errorMessage: text("error_message"),
+    exchangeLeaseExpiresAt: timestamp("exchange_lease_expires_at", {
+      withTimezone: true,
+    }),
+    exchangeLeaseOwner: varchar("exchange_lease_owner", { length: 191 }),
+    exchangeTokenCiphertext: text("exchange_token_ciphertext"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     metadata: jsonb("metadata").notNull().default({}),
     provider: financingProvider("provider").notNull(),
@@ -192,6 +197,14 @@ export const providerOauthTransactions = pgTable(
         (${table.status} = 'consumed' AND ${table.consumedAt} IS NOT NULL)
         OR
         (${table.status} <> 'consumed' AND ${table.consumedAt} IS NULL AND ${table.consumedByUserId} IS NULL)
+      )`,
+    ),
+    check(
+      "provider_oauth_transactions_exchange_lease_consistent",
+      sql`(
+        (${table.status} = 'pending' AND ${table.exchangeLeaseOwner} IS NOT NULL AND ${table.exchangeLeaseExpiresAt} IS NOT NULL)
+        OR
+        (${table.exchangeLeaseOwner} IS NULL AND ${table.exchangeLeaseExpiresAt} IS NULL)
       )`,
     ),
     check(

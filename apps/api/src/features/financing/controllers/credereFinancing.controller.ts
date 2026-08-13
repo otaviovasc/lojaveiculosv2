@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { createPublicOAuthCallbackContextFactory } from "../../../infrastructure/http/createPublicOAuthCallbackContext.js";
 import {
   defaultAgencyAccountContextFactory,
   defaultFinancingContextFactory,
@@ -15,6 +16,7 @@ import {
 } from "./credereFinancingServices.js";
 
 export type CreateCredereFinancingFeatureOptions = {
+  callbackContextFactory?: FinancingContextFactory;
   contextFactory?: FinancingContextFactory;
   services?: CredereFinancingServices;
 };
@@ -31,7 +33,12 @@ export function createCredereFinancingFeature(
   const services = options.services ?? credereFinancingServices;
   const contextFactory =
     options.contextFactory ?? defaultFinancingContextFactory;
-  registerPublicCredereOauthRoutes(feature, { services });
+  registerPublicCredereOauthRoutes(feature, {
+    contextFactory:
+      options.callbackContextFactory ??
+      createPublicOAuthCallbackContextFactory({}),
+    services,
+  });
   registerDirectOwnerCredereFinancingRoutes(feature, {
     contextFactory,
     services,

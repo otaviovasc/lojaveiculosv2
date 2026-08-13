@@ -47,6 +47,7 @@ export function createPorts(
           tradename: "PAN",
         },
       ],
+      listSimulationCandidates: async () => [],
       listSellers: async () => [
         {
           active: true,

@@ -69,6 +69,14 @@ describe("financing provider schema", () => {
     expect(checks.join("\n")).toContain("code_verifier_ciphertext");
     expect(checks.join("\n")).toContain("consumed_at");
     expect(checks.join("\n")).toContain("expires_at");
+    expect(checks.join("\n")).toContain("exchange_lease_owner");
+    expect(config.columns.map((column) => column.name)).toEqual(
+      expect.arrayContaining([
+        "exchange_lease_expires_at",
+        "exchange_lease_owner",
+        "exchange_token_ciphertext",
+      ]),
+    );
   });
 
   it("stores only sanitized financing customer and provider result fields", () => {
@@ -103,6 +111,11 @@ describe("financing provider schema", () => {
       "provider",
       "idempotency_key",
     ]);
+    expect(
+      getTableConfig(financingOperationRequests).columns.map(
+        (column) => column.name,
+      ),
+    ).toContain("lease_expires_at");
   });
 });
 

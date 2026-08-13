@@ -60,6 +60,7 @@ export const financingOperationRequests = pgTable(
     errorMessage: text("error_message"),
     idempotencyKey: varchar("idempotency_key", { length: 191 }).notNull(),
     inquiryId: uuid("inquiry_id"),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
     mappingId: uuid("mapping_id"),
     operationType: financingOperationRequestType("operation_type").notNull(),
     provider: financingProvider("provider").notNull(),

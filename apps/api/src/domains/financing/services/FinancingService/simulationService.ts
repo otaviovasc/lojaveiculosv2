@@ -5,6 +5,7 @@ import type {
   FinancingInquiry,
   FinancingProvider,
 } from "../../ports/financingRepository.js";
+import type { FinancingSimulationCandidate } from "../../ports/financingProviderGateway.js";
 import { completeFromProvider } from "../../support/simulationProviderHelpers.js";
 import { getUsableProviderConnection } from "../../support/tokenConnectionSupport.js";
 import {
@@ -107,9 +108,17 @@ export async function pollCredereSimulation(
     ...scope,
     inquiryId: input.inquiryId,
   });
-  if (!inquiry?.providerInquiryId) {
+  if (!inquiry) {
     await auditSimulationPoll(context, input.inquiryId, {
-      found: Boolean(inquiry),
+      found: false,
+      refreshed: false,
+      scope,
+    });
+    return null;
+  }
+  if (!inquiry.providerInquiryId && inquiry.status !== "indeterminate") {
+    await auditSimulationPoll(context, input.inquiryId, {
+      found: true,
       refreshed: false,
       scope,
     });
@@ -119,6 +128,40 @@ export async function pollCredereSimulation(
     { provider, tenantId: scope.tenantId },
     ports,
   );
+  if (!inquiry.providerInquiryId) {
+    const candidates = await getFinancingGateway(
+      ports,
+    ).listSimulationCandidates({
+      createdAfter: new Date(inquiry.createdAt.getTime() - 86_400_000),
+      credereStoreId: inquiry.providerStoreId,
+      token: connection.token!,
+    });
+    const matches = candidates.filter((candidate) =>
+      matchesIndeterminateInquiry(inquiry, candidate),
+    );
+    if (matches.length !== 1) {
+      await auditSimulationPoll(context, inquiry.id, {
+        found: true,
+        reconciliation: matches.length > 1 ? "ambiguous" : "not_found",
+        refreshed: false,
+        scope,
+      });
+      return inquiry;
+    }
+    const simulation = await getFinancingGateway(ports).getSimulation({
+      credereStoreId: inquiry.providerStoreId,
+      token: connection.token!,
+      uuid: matches[0]!.uuid,
+    });
+    const reconciled = await completeFromProvider(inquiry, simulation, ports);
+    await auditSimulationPoll(context, reconciled.id, {
+      reconciliation: "matched",
+      refreshed: true,
+      scope,
+      status: reconciled.status,
+    });
+    return reconciled;
+  }
   const simulation = await getFinancingGateway(ports).getSimulation({
     credereStoreId: inquiry.providerStoreId,
     token: connection.token!,
@@ -139,6 +182,7 @@ async function auditSimulationPoll(
   metadata: {
     found?: boolean;
     refreshed: boolean;
+    reconciliation?: "ambiguous" | "matched" | "not_found";
     scope: { storeId: string; tenantId: string };
     status?: FinancingInquiry["status"];
   },
@@ -154,6 +198,9 @@ async function auditSimulationPoll(
       permission: financingSimulationReadPermission,
       provider,
       refreshed: metadata.refreshed,
+      ...(metadata.reconciliation
+        ? { reconciliation: metadata.reconciliation }
+        : {}),
       ...(metadata.status ? { status: metadata.status } : {}),
     },
     outcome: "succeeded",
@@ -162,4 +209,30 @@ async function auditSimulationPoll(
     summary: "Polled Credere financing simulation",
     tenantId: metadata.scope.tenantId,
   });
+}
+
+function matchesIndeterminateInquiry(
+  inquiry: FinancingInquiry,
+  candidate: FinancingSimulationCandidate,
+) {
+  const vehicle = toRecord(inquiry.metadata.vehicle);
+  const createdAt = Date.parse(candidate.createdAt);
+  const earliest = inquiry.createdAt.getTime() - 60_000;
+  const latest = inquiry.createdAt.getTime() + 15 * 60_000;
+  return (
+    candidate.customerDocumentHash === inquiry.customerDocumentHash &&
+    candidate.assetValueCents === Number(vehicle.assetValueCents) &&
+    candidate.manufactureYear === Number(vehicle.manufactureYear) &&
+    candidate.modelYear === Number(vehicle.modelYear) &&
+    candidate.vehicleMolicarCode === String(vehicle.vehicleMolicarCode ?? "") &&
+    Number.isFinite(createdAt) &&
+    createdAt >= earliest &&
+    createdAt <= latest
+  );
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

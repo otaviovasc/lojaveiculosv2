@@ -6,6 +6,7 @@ import { FinancingProviderGatewayError } from "../../domains/financing/ports/fin
 import {
   bearerHeaders,
   credereApiUrl,
+  fetchCredere,
   parseSafeJson,
   providerError,
   readNumber,
@@ -13,7 +14,7 @@ import {
   readString,
 } from "./credereHttpSupport.js";
 
-export const CREDERE_DEFAULT_SCOPE = "simulator+proposals";
+export const CREDERE_DEFAULT_SCOPE = "simulator proposals";
 
 export function createCredereAuthorizationUrl(
   auth: FinancingGatewayAuthConfig,
@@ -60,7 +61,7 @@ export async function revokeCredereToken(
   fetchImpl: typeof fetch,
   accessToken: string,
 ) {
-  const response = await fetchImpl(credereApiUrl("/revoke"), {
+  const response = await fetchCredere(fetchImpl, credereApiUrl("/revoke"), {
     headers: bearerHeaders(accessToken),
     method: "POST",
   });
@@ -71,7 +72,7 @@ async function tokenRequest(
   fetchImpl: typeof fetch,
   body: Record<string, string>,
 ): Promise<FinancingTokenSet> {
-  const response = await fetchImpl(credereApiUrl("/token"), {
+  const response = await fetchCredere(fetchImpl, credereApiUrl("/token"), {
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json" },
     method: "POST",

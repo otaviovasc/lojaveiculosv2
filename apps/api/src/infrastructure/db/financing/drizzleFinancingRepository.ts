@@ -33,10 +33,14 @@ import {
   upsertStoreMapping,
 } from "./drizzleFinancingMappings.js";
 import {
-  consumeOAuthTransaction,
+  cancelOAuthTransaction,
+  claimOAuthTransaction,
   createOAuthTransaction,
+  finishOAuthTransaction,
+  saveOAuthExchangeToken,
 } from "./drizzleFinancingOauth.js";
 import { reserveOperation } from "./drizzleFinancingOperations.js";
+import { claimRefreshTokenRotation } from "./drizzleFinancingTokenRotationClaim.js";
 
 export type DrizzleFinancingClient = PostgresJsDatabase<typeof schema>;
 
@@ -52,8 +56,10 @@ export function createDrizzleFinancingRepository(
   const codec = input.codec;
   return {
     completeInquiry: (entry) => completeInquiry(db, entry),
-    consumeOAuthTransaction: (entry) =>
-      consumeOAuthTransaction(db, entry, codec, input.redirectUri),
+    cancelOAuthTransaction: (entry) =>
+      cancelOAuthTransaction(db, entry, codec, input.redirectUri),
+    claimOAuthTransaction: (entry) =>
+      claimOAuthTransaction(db, entry, codec, input.redirectUri),
     createInquiry: (entry) => createInquiry(db, entry),
     createOAuthTransaction: (entry) =>
       createOAuthTransaction(db, entry, codec, input.environment),
@@ -73,10 +79,12 @@ export function createDrizzleFinancingRepository(
     listStoreMappings: (entry) =>
       listStoreMappings(db, entry, input.environment),
     markInquiryIndeterminate: (entry) => markInquiryIndeterminate(db, entry),
+    finishOAuthTransaction: (entry) => finishOAuthTransaction(db, entry),
     readStoreBankPolicy: async () => input.bankPolicyCodes ?? null,
     reserveSimulationOperation: (entry) => reserveOperation(db, entry),
     rotateConnectionToken: (entry) =>
       rotateConnectionToken(db, entry, codec, input.environment),
+    saveOAuthExchangeToken: (entry) => saveOAuthExchangeToken(db, entry, codec),
     upsertConnection: (entry) =>
       upsertConnection(db, entry, codec, input.environment),
     upsertStoreMapping: (entry) =>
@@ -204,6 +212,7 @@ async function rotateConnectionToken(
 ) {
   return db.transaction(async (transaction) => {
     const client = transaction as DrizzleFinancingClient;
+    if (!(await claimRefreshTokenRotation(client, input, codec))) return null;
     await replaceTokens(
       client,
       input.connectionId,

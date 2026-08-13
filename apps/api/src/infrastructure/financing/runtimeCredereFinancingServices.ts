@@ -71,8 +71,8 @@ export function createRuntimeCredereFinancingServices(
         ),
     },
     oauth: {
-      completeCallback: (input) =>
-        completeFinancingOAuthCallbackFromState(input, ports),
+      completeCallback: (context, input) =>
+        completeFinancingOAuthCallbackFromState(context, input, ports),
     },
     store: {
       createSimulation: (context, input) =>

@@ -39,12 +39,16 @@ export function toOAuthTransaction(
   return {
     codeVerifier: input.codeVerifier,
     createdAt: new Date(),
+    exchangeLeaseExpiresAt: null,
+    exchangeLeaseOwner: null,
+    exchangeToken: null,
     expiresAt: input.expiresAt,
     id: `financing_oauth_${sequence}`,
     provider: input.provider,
     redirectUri: input.redirectUri,
     requestedByUserId: input.requestedByUserId ?? null,
     stateHash: input.stateHash,
+    status: "pending",
     tenantId: input.tenantId,
     usedAt: null,
   };

@@ -159,17 +159,35 @@ export async function refreshFinancingConnectionToken(
     tenantId: scope.tenantId,
     token,
   });
+  const settled =
+    rotated ??
+    assertActiveConnection(
+      await ports.repository.findConnection({
+        provider,
+        tenantId: scope.tenantId,
+      }),
+      provider,
+    );
+  if (
+    !rotated &&
+    settled.token?.accessToken === connection.token.accessToken &&
+    settled.token?.refreshToken === previousRefreshToken
+  ) {
+    throw new FinancingValidationError(
+      "Financing token refresh conflicted with another request.",
+    );
+  }
   await context.audit.record({
     action: "financing.connection.token.refresh",
     actor: context.actor,
     category: "authorization",
-    entityId: rotated.id,
+    entityId: settled.id,
     entityType: "financing_connection",
     metadata: {
-      hasRefreshToken: Boolean(token.refreshToken),
+      hasRefreshToken: Boolean(settled.token?.refreshToken),
       permission: financingConnectionManagePermission,
       provider,
-      providerAccountId: token.providerAccountId,
+      providerAccountId: settled.providerAccountId,
     },
     outcome: "succeeded",
     requestId: context.requestId,
@@ -177,5 +195,5 @@ export async function refreshFinancingConnectionToken(
     summary: "Refreshed financing provider token",
     tenantId: scope.tenantId,
   });
-  return redactFinancingConnection(rotated);
+  return redactFinancingConnection(settled);
 }

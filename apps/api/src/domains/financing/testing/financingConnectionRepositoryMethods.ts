@@ -3,25 +3,24 @@ import type {
   FinancingStoreMapping,
   RotateFinancingConnectionTokenInput,
 } from "../ports/financingRepository.js";
-import {
-  nextId,
-  nextSequence,
-  toConnection,
-  toOAuthTransaction,
-} from "./financingRepositorySupport.js";
+import { nextId, toConnection } from "./financingRepositorySupport.js";
 import type { MemoryFinancingRepositoryState } from "./financingRepositoryState.js";
+import { createOAuthRepositoryMethods } from "./financingOAuthRepositoryMethods.js";
 
 type ConnectionMethods = Pick<
   FinancingRepository,
-  | "consumeOAuthTransaction"
+  | "cancelOAuthTransaction"
+  | "claimOAuthTransaction"
   | "createOAuthTransaction"
   | "deleteStoreMapping"
   | "disconnectConnection"
   | "findConnection"
   | "findStoreMapping"
+  | "finishOAuthTransaction"
   | "findTenantStore"
   | "listStoreMappings"
   | "rotateConnectionToken"
+  | "saveOAuthExchangeToken"
   | "upsertConnection"
   | "upsertStoreMapping"
 >;
@@ -30,25 +29,7 @@ export function createConnectionRepositoryMethods(
   state: MemoryFinancingRepositoryState,
 ): ConnectionMethods {
   return {
-    async consumeOAuthTransaction(input) {
-      const transaction = state.oauthTransactions.find(
-        (item) =>
-          item.provider === input.provider &&
-          item.stateHash === input.stateHash &&
-          (!input.tenantId || item.tenantId === input.tenantId) &&
-          item.usedAt === null,
-      );
-      if (!transaction) return null;
-      state.oauthTransactions = state.oauthTransactions.map((item) =>
-        item.id === transaction.id ? { ...item, usedAt: input.usedAt } : item,
-      );
-      return { ...transaction, usedAt: input.usedAt };
-    },
-    async createOAuthTransaction(input) {
-      const transaction = toOAuthTransaction(input, nextSequence(state));
-      state.oauthTransactions = [transaction, ...state.oauthTransactions];
-      return transaction;
-    },
+    ...createOAuthRepositoryMethods(state),
     async deleteStoreMapping(input) {
       const before = state.storeMappings.length;
       state.storeMappings = state.storeMappings.filter(
@@ -113,7 +94,7 @@ export function createConnectionRepositoryMethods(
     },
     async rotateConnectionToken(input) {
       const connection = findRotatableConnection(state, input);
-      if (!connection) throw new Error("Financing token rotation conflict.");
+      if (!connection) return null;
       const rotated = toConnection(
         {
           ...input,

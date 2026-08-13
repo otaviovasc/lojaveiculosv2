@@ -2,11 +2,13 @@ import type {
   FinancingFipeVehicleCandidate,
   FinancingFipeVehicleLookupInput,
 } from "./financingFipeModels.js";
+import type { FinancingSimulationCandidate } from "./financingReconciliationModels.js";
 
 export type {
   FinancingFipeVehicleCandidate,
   FinancingFipeVehicleLookupInput,
 } from "./financingFipeModels.js";
+export type { FinancingSimulationCandidate } from "./financingReconciliationModels.js";
 
 export type FinancingProvider = "credere";
 
@@ -207,6 +209,9 @@ export type FinancingProviderGateway = {
   listIntegratedBanks: (
     input: StoreScopedFinancingRequest,
   ) => Promise<FinancingIntegratedBank[]>;
+  listSimulationCandidates: (
+    input: StoreScopedFinancingRequest & { createdAfter: Date },
+  ) => Promise<FinancingSimulationCandidate[]>;
   listSellers: (
     input: StoreScopedFinancingRequest,
   ) => Promise<FinancingSeller[]>;

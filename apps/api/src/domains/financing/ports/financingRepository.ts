@@ -9,6 +9,7 @@ import type {
   FinancingOAuthTransaction,
   FinancingProvider,
   FinancingStoreMapping,
+  FinancingTokenSet,
   ReserveSimulationOperationInput,
   ReserveSimulationOperationResult,
   RotateFinancingConnectionTokenInput,
@@ -78,7 +79,15 @@ export type FinancingRepository = {
   completeInquiry: (
     input: CompleteFinancingInquiryInput,
   ) => Promise<FinancingInquiry>;
-  consumeOAuthTransaction: (input: {
+  cancelOAuthTransaction: (input: {
+    provider: FinancingProvider;
+    stateHash: string;
+    tenantId?: TenantId;
+    usedAt: Date;
+  }) => Promise<FinancingOAuthTransaction | null>;
+  claimOAuthTransaction: (input: {
+    leaseExpiresAt: Date;
+    leaseOwner: string;
     provider: FinancingProvider;
     stateHash: string;
     tenantId?: TenantId;
@@ -150,6 +159,12 @@ export type FinancingRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<FinancingInquiry>;
+  finishOAuthTransaction: (input: {
+    leaseOwner: string;
+    succeeded: boolean;
+    transactionId: string;
+    usedAt: Date;
+  }) => Promise<boolean>;
   readStoreBankPolicy: (input: {
     provider: FinancingProvider;
     providerStoreId: string;
@@ -161,7 +176,12 @@ export type FinancingRepository = {
   ) => Promise<ReserveSimulationOperationResult>;
   rotateConnectionToken: (
     input: RotateFinancingConnectionTokenInput,
-  ) => Promise<FinancingConnection>;
+  ) => Promise<FinancingConnection | null>;
+  saveOAuthExchangeToken: (input: {
+    leaseOwner: string;
+    token: FinancingTokenSet;
+    transactionId: string;
+  }) => Promise<boolean>;
   upsertConnection: (
     input: UpsertFinancingConnectionInput,
   ) => Promise<FinancingConnection>;

@@ -82,9 +82,9 @@ export async function createInquiry(
       .update(financingOperationRequests)
       .set({
         accountId: mapping.accountId,
-        attemptCount: 1,
         consentId: consent?.id,
         inquiryId: row.id,
+        leaseExpiresAt: null,
         mappingId: mapping.id,
         status: "submitted",
         submittedAt: new Date(),

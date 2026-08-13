@@ -29,6 +29,7 @@ import { installHttpMiddleware } from "./installHttpMiddleware.js";
 import { installAutomationRoutes } from "./installAutomationRoutes.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
 import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
+import { createPublicOAuthCallbackContextFactory } from "./createPublicOAuthCallbackContext.js";
 import { createBillingWebhookContextFactory } from "./billingWebhookContextFactory.js";
 import { installFiscalRoutes } from "./installFiscalRoutes.js";
 import { installMarketplaceRoutes } from "./installMarketplaceRoutes.js";
@@ -151,6 +152,7 @@ export function createApp(options: CreateAppOptions = {}) {
   }
   installCredereFinancingRoutes(app, {
     accountContextFactory: agencyAccountContextFactory,
+    callbackContextFactory: createPublicOAuthCallbackContextFactory(options),
     contextFactory,
     ...(options.financingServices
       ? { services: options.financingServices }
