@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import { createCrmConnectionCredentialVault } from "./crmConnectionCredentialVault.js";
 import {
+  isZapiProviderConnected,
   resolveZapiCredentials,
+  toProviderStatus,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
 } from "./zapiCrmWhatsappGatewaySupport.js";
@@ -81,6 +83,21 @@ describe("resolveZapiCredentials stored token", () => {
 
     expect(() => resolveZapiCredentials(connection, env)).toThrow(
       "must use encrypted CRM credential storage",
+    );
+  });
+});
+
+describe("Z-API canonical connected predicate", () => {
+  it.each([
+    [{ connected: true, smartphoneConnected: false }, true],
+    [{ connected: false, smartphoneConnected: true }, true],
+    [{ connected: false, smartphoneConnected: false }, false],
+    [{}, false],
+    [{ connected: "true", smartphoneConnected: "true" }, false],
+  ])("normalizes status payloads", (payload, expected) => {
+    expect(isZapiProviderConnected(payload)).toBe(expected);
+    expect(toProviderStatus(payload).providerStatus).toBe(
+      expected ? "connected" : "disconnected",
     );
   });
 });

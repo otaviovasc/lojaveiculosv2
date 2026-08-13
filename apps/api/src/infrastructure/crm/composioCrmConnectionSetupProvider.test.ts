@@ -86,6 +86,17 @@ describe("createComposioCrmConnectionSetupProvider", () => {
     ).rejects.toMatchObject({ code: "invalid_provider_response" });
   });
 
+  it("rejects a Connect Link envelope without server-owned link evidence", async () => {
+    const provider = createComposioCrmConnectionSetupProvider(
+      env,
+      vi.fn<typeof fetch>(async () => Response.json({})),
+    );
+
+    await expect(
+      provider.createConnectLink({ userId: "tenant_1:store_1" }),
+    ).rejects.toMatchObject({ code: "invalid_provider_response" });
+  });
+
   it("verifies and normalizes connected-account status", async () => {
     const provider = createComposioCrmConnectionSetupProvider(
       env,

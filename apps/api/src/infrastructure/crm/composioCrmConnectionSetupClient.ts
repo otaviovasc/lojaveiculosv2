@@ -39,6 +39,12 @@ export function createComposioSetupClient(
               : undefined,
           );
         }
+        if (!payload) {
+          throw new CrmConnectionSetupProviderError(
+            "Composio setup returned an invalid response",
+            "invalid_provider_response",
+          );
+        }
         return payload;
       } catch (error) {
         if (error instanceof CrmConnectionSetupProviderError) throw error;
@@ -78,10 +84,19 @@ export async function executeComposioSetupTool(
       method: "POST",
     },
   );
-  if (payload.successful !== true) {
+  if (payload.successful === false) {
     throw new CrmConnectionSetupProviderError(
       `Composio WhatsApp tool ${tool} did not complete successfully`,
       "provider_rejected",
+    );
+  }
+  if (
+    payload.successful !== true ||
+    !Object.prototype.hasOwnProperty.call(payload, "data")
+  ) {
+    throw new CrmConnectionSetupProviderError(
+      `Composio WhatsApp tool ${tool} returned an invalid response`,
+      "invalid_provider_response",
     );
   }
   return payload.data;
@@ -92,9 +107,9 @@ function parseRecord(text: string) {
     const value: unknown = JSON.parse(text);
     return value && typeof value === "object" && !Array.isArray(value)
       ? (value as Record<string, unknown>)
-      : {};
+      : null;
   } catch {
-    return {};
+    return null;
   }
 }
 

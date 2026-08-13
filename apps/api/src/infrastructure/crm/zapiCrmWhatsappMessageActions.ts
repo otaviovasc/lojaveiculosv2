@@ -10,7 +10,7 @@ import {
   buildInstanceUrl,
   fetchZapi,
   parseJson,
-  readProviderMessageId,
+  requireProviderMessageId,
   type ZapiCredentials,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 
@@ -110,7 +110,7 @@ async function postZapiMessageAction(
     );
   }
   return {
-    externalId: readProviderMessageId(payload) ?? `${path.slice(1)}-ok`,
+    externalId: requireProviderMessageId(payload, label),
     providerTimestamp: new Date(),
   };
 }

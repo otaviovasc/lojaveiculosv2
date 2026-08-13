@@ -3,8 +3,8 @@ import { readZapiCatalogProducts } from "./zapiCrmWhatsappCatalogPayload.js";
 import {
   buildInstanceUrl,
   fetchZapi,
-  createProviderMessageId,
   parseJson,
+  requireProviderMessageId,
   readString,
   type ZapiCredentials,
   zapiProviderResponseError,
@@ -127,7 +127,7 @@ async function postZapiCatalogMessage(
   }
 
   return {
-    externalId: createProviderMessageId(payload),
+    externalId: requireProviderMessageId(payload, label),
     providerTimestamp: new Date(),
   };
 }

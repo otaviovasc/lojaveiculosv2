@@ -27,4 +27,31 @@ describe("OLX Autoupload response status", () => {
       });
     },
   );
+
+  it.each([
+    new Response(null, { status: 200 }),
+    new Response("{malformed", {
+      headers: { "content-type": "application/json" },
+      status: 200,
+    }),
+  ])(
+    "rejects 2xx responses without valid acceptance evidence",
+    async (response) => {
+      const fetch = vi
+        .fn<typeof globalThis.fetch>()
+        .mockResolvedValue(response);
+
+      await expect(
+        createOlxTestGateway(fetch).runListingSync({
+          jobType: "listing_publish",
+          listing: listingProjection(),
+          metadata: {},
+          token: tokenSet(),
+        }),
+      ).rejects.toMatchObject({
+        code: "MARKETPLACE_PROVIDER_UNAVAILABLE",
+        details: { provider: "olx" },
+      });
+    },
+  );
 });

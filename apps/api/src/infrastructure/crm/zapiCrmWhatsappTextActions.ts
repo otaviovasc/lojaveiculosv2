@@ -1,9 +1,9 @@
 import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import {
   buildInstanceUrl,
-  createProviderMessageId,
   fetchZapi,
   parseJson,
+  requireProviderMessageId,
   type ZapiCredentials,
   zapiProviderResponseError,
 } from "./zapiCrmWhatsappGatewaySupport.js";
@@ -59,7 +59,7 @@ export async function sendZapiText(
   }
 
   return {
-    externalId: createProviderMessageId(payload),
+    externalId: requireProviderMessageId(payload, "ZAPI send text"),
     providerTimestamp: new Date(),
   };
 }

@@ -9,6 +9,10 @@ import {
   exchangeToken,
 } from "./httpMarketplaceProviderGatewayAuth.js";
 import { runOlxAutouploadSync } from "./httpMarketplaceProviderGatewayOlx.js";
+import {
+  marketplaceProviderSuccessEvidence,
+  readMarketplaceResponsePayload,
+} from "./httpMarketplaceProviderGatewayEvidence.js";
 import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
   baseUrl,
@@ -16,7 +20,6 @@ import {
   MarketplaceProviderGatewayError,
   MarketplaceProviderPayloadError,
   providerHttpError,
-  readString,
   sanitizedResult,
 } from "./httpMarketplaceProviderGatewaySupport.js";
 
@@ -80,16 +83,16 @@ async function runListingSync(
       },
       method,
     });
-    const responsePayload = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const responsePayload = await readMarketplaceResponsePayload(response);
     if (!response.ok) {
       throw providerHttpError(options.provider, response, responsePayload);
     }
-    const externalId =
-      readString(responsePayload.id) ?? input.externalId ?? null;
-    const providerStatus = readString(responsePayload.status) ?? "accepted";
+    const { externalId, providerStatus } = marketplaceProviderSuccessEvidence(
+      options.provider,
+      input,
+      response,
+      responsePayload,
+    );
     return {
       externalId,
       metadata: sanitizedResult(externalId, response, providerStatus),
@@ -113,10 +116,7 @@ async function runListingSync(
   };
   requestInit.body = JSON.stringify(payload.body);
   const response = await fetchImpl(`${baseUrl(options)}${path}`, requestInit);
-  const responsePayload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const responsePayload = await readMarketplaceResponsePayload(response);
   if (!response.ok) {
     if (response.status === 409 && input.jobType === "listing_publish") {
       const duplicateId =
@@ -133,8 +133,12 @@ async function runListingSync(
     }
     throw providerHttpError(options.provider, response, responsePayload);
   }
-  const externalId = readString(responsePayload.id) ?? input.externalId ?? null;
-  const providerStatus = readString(responsePayload.status) ?? "accepted";
+  const { externalId, providerStatus } = marketplaceProviderSuccessEvidence(
+    options.provider,
+    input,
+    response,
+    responsePayload,
+  );
   return {
     externalId,
     metadata: {
@@ -163,13 +167,15 @@ async function updateDuplicateListing(
       method: "PUT",
     },
   );
-  const responsePayload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const responsePayload = await readMarketplaceResponsePayload(response);
   if (!response.ok)
     throw providerHttpError(options.provider, response, responsePayload);
-  const providerStatus = readString(responsePayload.status) ?? "accepted";
+  const { providerStatus } = marketplaceProviderSuccessEvidence(
+    options.provider,
+    { ...input, externalId, jobType: "listing_update" },
+    response,
+    responsePayload,
+  );
   return {
     externalId,
     metadata: {
@@ -184,24 +190,16 @@ function requestShape(
   options: HttpMarketplaceGatewayOptions,
   input: MarketplacePublishInput,
 ) {
-  if (input.jobType === "listing_unpublish" && input.externalId) {
-    return {
-      method: "DELETE",
-      path: `${listingPath(options)}/${input.externalId}`,
-    };
-  }
-  if (input.externalId && input.jobType !== "listing_publish") {
-    return {
-      method: "PUT",
-      path: `${listingPath(options)}/${input.externalId}`,
-    };
-  }
+  const externalPath = `${listingPath(options)}/${input.externalId}`;
+  if (input.jobType === "listing_unpublish" && input.externalId)
+    return { method: "DELETE", path: externalPath };
+  if (input.externalId && input.jobType !== "listing_publish")
+    return { method: "PUT", path: externalPath };
   return { method: "POST", path: listingPath(options) };
 }
 
 function listingPath(options: HttpMarketplaceGatewayOptions) {
-  return (
-    options.listingPath ??
-    (options.provider === "mercado_livre" ? "/items" : "/listings")
-  );
+  const fallback =
+    options.provider === "mercado_livre" ? "/items" : "/listings";
+  return options.listingPath ?? fallback;
 }

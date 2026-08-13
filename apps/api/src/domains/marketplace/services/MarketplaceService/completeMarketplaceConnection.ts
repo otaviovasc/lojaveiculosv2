@@ -27,7 +27,7 @@ export type CompleteMarketplaceConnectionResult =
         leads: OlxCapabilityResult;
         stock: OlxCapabilityResult;
       };
-      kind: "connected";
+      kind: "connected" | "partial";
     }
   | { kind: "cancelled"; provider: MarketplaceProvider };
 

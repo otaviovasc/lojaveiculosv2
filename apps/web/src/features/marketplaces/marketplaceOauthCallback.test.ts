@@ -29,6 +29,21 @@ describe("marketplace OAuth callback", () => {
     });
   });
 
+  it("keeps only the sanitized callback support reference and stable code", () => {
+    expect(
+      readMarketplaceOauthCallback({
+        pathname: "/dashboard",
+        search:
+          "?marketplaceOauth=error&provider=olx&errorCode=MARKETPLACE_OAUTH_CALLBACK_FAILED&requestId=req_123",
+      }),
+    ).toEqual({
+      errorCode: "MARKETPLACE_OAUTH_CALLBACK_FAILED",
+      kind: "result-error",
+      provider: "olx",
+      requestId: "req_123",
+    });
+  });
+
   it("ignores regular marketplace routes", () => {
     expect(
       readMarketplaceOauthCallback({

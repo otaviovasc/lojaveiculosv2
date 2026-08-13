@@ -5,9 +5,9 @@ import {
 } from "./zapiCrmWhatsappMediaPayload.js";
 import {
   buildInstanceUrl,
-  createProviderMessageId,
   fetchZapi,
   parseJson,
+  requireProviderMessageId,
   type ZapiCredentials,
   zapiProviderResponseError,
 } from "./zapiCrmWhatsappGatewaySupport.js";
@@ -57,7 +57,7 @@ export async function sendZapiMedia(
   }
 
   return {
-    externalId: createProviderMessageId(payload),
+    externalId: requireProviderMessageId(payload, "ZAPI send media"),
     providerTimestamp: new Date(),
   };
 }
