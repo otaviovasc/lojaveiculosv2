@@ -22,20 +22,29 @@ describe("configureZapiWebhooks", () => {
 
     const result = await configureZapiWebhooks(credentials, fetch, {
       webhooks: [
-        { type: "received", url: "https://app.test/received?token=t" },
-        { type: "status", url: "https://app.test/status?token=t" },
         {
           type: "chat-presence",
           url: "https://app.test/chat-presence?token=t",
         },
+        { type: "connected", url: "https://app.test/connected?token=t" },
+        { type: "delivery", url: "https://app.test/delivery?token=t" },
+        {
+          type: "disconnected",
+          url: "https://app.test/disconnected?token=t",
+        },
+        { type: "received", url: "https://app.test/received?token=t" },
+        { type: "status", url: "https://app.test/status?token=t" },
       ],
     });
 
     expect(result.results.every((entry) => entry.ok)).toBe(true);
     expect(fetch.mock.calls.map((call) => call[0])).toEqual([
+      `${instanceBase}/update-webhook-chat-presence`,
+      `${instanceBase}/update-webhook-connected`,
+      `${instanceBase}/update-webhook-delivery`,
+      `${instanceBase}/update-webhook-disconnected`,
       `${instanceBase}/update-webhook-received`,
       `${instanceBase}/update-webhook-message-status`,
-      `${instanceBase}/update-webhook-chat-presence`,
     ]);
 
     const firstInit = fetch.mock.calls[0]?.[1];
@@ -44,7 +53,7 @@ describe("configureZapiWebhooks", () => {
       "client-token-1",
     );
     expect(JSON.parse(String(firstInit?.body))).toEqual({
-      value: "https://app.test/received?token=t",
+      value: "https://app.test/chat-presence?token=t",
     });
   });
 

@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -74,14 +75,12 @@ describe("CrmWhatsappZapiSetup", () => {
     fireEvent.change(screen.getByLabelText("Token da instância"), {
       target: { value: "instance-token" },
     });
-    fireEvent.change(screen.getByLabelText("Token do cliente"), {
-      target: { value: "client-token" },
-    });
+    expect(screen.queryByLabelText("Token do cliente")).not.toBeInTheDocument();
+    expect(screen.getByText(/Client-Token da plataforma/i)).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Salvar credenciais" }));
 
     await waitFor(() =>
       expect(handlers.onCreate).toHaveBeenCalledWith({
-        clientToken: "client-token",
         instanceId: "instance-1",
         instanceToken: "instance-token",
         provider: "zapi",
@@ -118,9 +117,6 @@ describe("CrmWhatsappZapiSetup", () => {
     });
     fireEvent.change(screen.getByLabelText("Token da instância"), {
       target: { value: "instance-token" },
-    });
-    fireEvent.change(screen.getByLabelText("Token do cliente"), {
-      target: { value: "client-token" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Salvar credenciais" }));
 
@@ -258,6 +254,34 @@ describe("CrmWhatsappZapiSetup", () => {
     ).toBeVisible();
   });
 
+  it("shows each of the six server-owned webhook states", () => {
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={true}
+        connection={createSetupConnection("partial")}
+        handlers={createHandlers()}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    const list = screen.getByRole("list", {
+      name: "Estado dos webhooks Z-API",
+    });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(6);
+    expect(within(list).getByText("Presença no chat")).toBeVisible();
+    expect(within(list).getByText("Aparelho conectado")).toBeVisible();
+    expect(within(list).getByText("Entrega de mensagens")).toBeVisible();
+    expect(within(list).getByText("Aparelho desconectado")).toBeVisible();
+    expect(within(list).getByText("Mensagens recebidas")).toBeVisible();
+    expect(within(list).getByText("Status das mensagens")).toBeVisible();
+    expect(within(list).getAllByText("Confirmado")).toHaveLength(5);
+    expect(within(list).getByText("Pendente")).toBeVisible();
+  });
+
   it("advances past pairing when the refreshed connection is configured and connected", async () => {
     const configured = createSetupState("configured");
     const connected: CrmWhatsappProviderConnection = {
@@ -308,7 +332,9 @@ describe("CrmWhatsappZapiSetup", () => {
       screen.queryByRole("button", { name: "Gerar QR Code" }),
     ).not.toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: "Parear outro aparelho" }),
+      screen.getByRole("button", {
+        name: "Reconectar ou trocar aparelho",
+      }),
     );
     expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
   });
@@ -341,7 +367,9 @@ describe("CrmWhatsappZapiSetup", () => {
     );
 
     expect(
-      screen.queryByRole("button", { name: "Parear outro aparelho" }),
+      screen.queryByRole("button", {
+        name: "Reconectar ou trocar aparelho",
+      }),
     ).not.toBeInTheDocument();
   });
 
@@ -458,9 +486,9 @@ function createDisconnectedConnection(): CrmWhatsappProviderConnection {
       configuredAt: "2026-08-10T12:00:00.000Z",
       lastErrorCode: null,
       requestedAt: "2026-08-10T12:00:00.000Z",
-      requiredTypes: ["message-received"],
+      requiredTypes: zapiWebhookTypes,
       status: "configured",
-      succeededTypes: ["message-received"],
+      succeededTypes: zapiWebhookTypes,
       supportCode: "ZAPI-TEST",
       updatedAt: "2026-08-10T12:00:00.000Z",
       version: 1,
@@ -488,11 +516,25 @@ function createSetupState(
     configuredAt: status === "configured" ? "2026-08-12T12:00:00.000Z" : null,
     lastErrorCode: status === "failed" ? "PROVIDER_UNAVAILABLE" : null,
     requestedAt: "2026-08-12T12:00:00.000Z",
-    requiredTypes: ["message-received"],
+    requiredTypes: zapiWebhookTypes,
     status,
-    succeededTypes: status === "configured" ? ["message-received"] : [],
+    succeededTypes:
+      status === "configured"
+        ? zapiWebhookTypes
+        : status === "partial"
+          ? zapiWebhookTypes.filter((type) => type !== "received")
+          : [],
     supportCode: "ZAPI-TEST",
     updatedAt: "2026-08-12T12:00:00.000Z",
     version: 1,
   };
 }
+
+const zapiWebhookTypes = [
+  "chat-presence",
+  "connected",
+  "delivery",
+  "disconnected",
+  "received",
+  "status",
+] as const;

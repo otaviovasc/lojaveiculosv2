@@ -29,13 +29,11 @@ import type {
 import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
 
 type ZapiCredentialsDraft = {
-  clientToken: string;
   instanceId: string;
   instanceToken: string;
 };
 
 const emptyCredentials: ZapiCredentialsDraft = {
-  clientToken: "",
   instanceId: "",
   instanceToken: "",
 };
@@ -127,12 +125,8 @@ export function CrmWhatsappZapiSetup({
 
   const saveCredentials = async () => {
     if (!canSetup) return;
-    if (
-      !credentials.clientToken.trim() ||
-      !credentials.instanceId.trim() ||
-      !credentials.instanceToken.trim()
-    ) {
-      setError("Informe o ID da instância e os dois tokens da Z-API.");
+    if (!credentials.instanceId.trim() || !credentials.instanceToken.trim()) {
+      setError("Informe o ID e o token da instância Z-API.");
       return;
     }
     setBusy("credentials");
@@ -330,7 +324,6 @@ function buildZapiConnectionInput(
   credentials: ZapiCredentialsDraft,
 ): CrmWhatsappCreateConnectionInput {
   return {
-    clientToken: credentials.clientToken.trim(),
     instanceId: credentials.instanceId.trim(),
     instanceToken: credentials.instanceToken.trim(),
     provider: "zapi",
@@ -370,8 +363,9 @@ function CredentialsStage({
           <small>Cadastro único e protegido</small>
           <h4 id="zapi-credentials-title">Credenciais da instância Z-API</h4>
           <p>
-            Os valores são enviados uma única vez, não ficam salvos no navegador
-            e nunca retornam pela API.
+            O ID e o token da instância são enviados uma única vez, não ficam
+            salvos no navegador e nunca retornam pela API. O Client-Token da
+            plataforma é aplicado pelo servidor.
           </p>
         </div>
         <button
@@ -408,13 +402,6 @@ function CredentialsStage({
           }
           showValue={showCredentials}
           value={credentials.instanceToken}
-        />
-        <CredentialField
-          invalid={invalid}
-          label="Token do cliente"
-          onChange={(value) => onChange({ ...credentials, clientToken: value })}
-          showValue={showCredentials}
-          value={credentials.clientToken}
         />
       </div>
       {error ? (

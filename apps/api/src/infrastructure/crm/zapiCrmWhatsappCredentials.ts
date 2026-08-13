@@ -2,7 +2,6 @@ import type { CrmConnection } from "../../domains/crm/ports/crmConnectionReposit
 import {
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
-  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
 } from "../../domains/crm/ports/crmConnectionSetupProvider.js";
 import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import { openSealedCrmConnectionCredential } from "./crmConnectionCredentialVault.js";
@@ -13,26 +12,15 @@ export function resolveZapiCredentials(
   env: Record<string, string | undefined>,
 ): ZapiCredentials {
   const envRefs = readEnvRefs(connection.credentialsRef);
+  const clientToken = readCentralClientToken(env);
   const stored = readStoredCredentials(connection, env);
   if (stored) {
-    const storedClientToken = decryptIfSealed(
-      connection,
-      readString(readRecord(connection.credentialsRef.stored).clientToken),
-      ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
-      env,
-    );
     return {
       apiBaseUrl:
         readOptionalEnv(env, envRefs.apiBaseUrl) ??
         env.CRM_ZAPI_API_BASE_URL?.trim() ??
         "https://api.z-api.io",
-      clientToken:
-        storedClientToken ??
-        readOptionalEnv(env, envRefs.clientToken) ??
-        env.CRM_ZAPI_CLIENT_TOKEN?.trim() ??
-        env.CRM_ZAPI_TEST_CLIENT_TOKEN?.trim() ??
-        env.ZAPI_CLIENT_TOKEN?.trim() ??
-        readRequiredEnv(env, envRefs.clientToken, "clientToken"),
+      clientToken,
       instanceId: stored.instanceId,
       instanceToken: stored.instanceToken,
       requestTimeoutMs: readRequestTimeoutMs(env.CRM_ZAPI_REQUEST_TIMEOUT_MS),
@@ -40,7 +28,7 @@ export function resolveZapiCredentials(
   }
   return {
     apiBaseUrl: readRequiredEnv(env, envRefs.apiBaseUrl, "apiBaseUrl"),
-    clientToken: readRequiredEnv(env, envRefs.clientToken, "clientToken"),
+    clientToken,
     instanceId: readRequiredEnv(env, envRefs.instanceId, "instanceId"),
     instanceToken: readRequiredEnv(env, envRefs.instanceToken, "instanceToken"),
     requestTimeoutMs: readRequestTimeoutMs(env.CRM_ZAPI_REQUEST_TIMEOUT_MS),
@@ -58,10 +46,20 @@ function readEnvRefs(credentialsRef: Record<string, unknown>) {
   const envRefs = readRecord(credentialsRef.env);
   return {
     apiBaseUrl: readString(envRefs.apiBaseUrl),
-    clientToken: readString(envRefs.clientToken),
     instanceId: readString(envRefs.instanceId),
     instanceToken: readString(envRefs.instanceToken),
   };
+}
+
+function readCentralClientToken(env: Record<string, string | undefined>) {
+  const value = env.CRM_ZAPI_CLIENT_TOKEN?.trim();
+  if (value) return value;
+  throw new CrmWhatsappGatewayError(
+    "ZAPI central client authentication is not configured",
+    409,
+    undefined,
+    "configuration_error",
+  );
 }
 
 function readStoredCredentials(

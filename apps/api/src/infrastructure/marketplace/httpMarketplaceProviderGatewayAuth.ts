@@ -10,6 +10,7 @@ import {
   providerHttpError,
   readString,
 } from "./httpMarketplaceProviderGatewaySupport.js";
+import { fetchOlxBasicUserInfo } from "./olxBasicUserInfo.js";
 
 export async function exchangeToken(
   fetchImpl: typeof fetch,
@@ -49,7 +50,11 @@ export async function exchangeToken(
     expiresAt: expiresAt(payload.expires_in),
     providerAccountId: readString(payload.user_id),
     refreshToken: readString(payload.refresh_token),
-    scope: normalizeScope(payload.scope),
+    scope:
+      normalizeScope(payload.scope) ??
+      (values.grant_type === "authorization_code"
+        ? normalizeScope(options.authorizationScope)
+        : null),
     tokenType: readString(payload.token_type),
   };
 }
@@ -107,6 +112,32 @@ async function checkOlxAccount(
   token: MarketplaceTokenSet,
   path: string,
 ): Promise<MarketplaceProviderAccountStatus> {
+  const { payload, response } =
+    path === "/oauth_api/basic_user_info"
+      ? await fetchOlxBasicUserInfo(fetchImpl, {
+          accessToken: token.accessToken,
+          baseUrl: baseUrl(options),
+        })
+      : await postOlxAccountCheck(fetchImpl, options, token, path);
+  if (!response.ok) {
+    throw providerHttpError(options.provider, response, payload);
+  }
+  return {
+    accountId:
+      readString(payload.user_email) ??
+      readString(payload.user_name) ??
+      token.providerAccountId,
+    requirements: [...(options.requirementConfig?.requirements ?? [])],
+    status: "connected",
+  };
+}
+
+async function postOlxAccountCheck(
+  fetchImpl: typeof fetch,
+  options: HttpMarketplaceGatewayOptions,
+  token: MarketplaceTokenSet,
+  path: string,
+) {
   const response = await fetchImpl(`${baseUrl(options)}${path}`, {
     body: JSON.stringify({ access_token: token.accessToken }),
     headers: {
@@ -119,17 +150,7 @@ async function checkOlxAccount(
     string,
     unknown
   >;
-  if (!response.ok) {
-    throw providerHttpError(options.provider, response, payload);
-  }
-  return {
-    accountId:
-      readString(payload.user_email) ??
-      readString(payload.user_name) ??
-      token.providerAccountId,
-    requirements: [...(options.requirementConfig?.requirements ?? [])],
-    status: "connected",
-  };
+  return { payload, response };
 }
 
 export function assertOlxContract(options: HttpMarketplaceGatewayOptions) {

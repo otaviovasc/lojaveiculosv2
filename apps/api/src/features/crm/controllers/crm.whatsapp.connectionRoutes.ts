@@ -49,7 +49,6 @@ export function registerCrmWhatsappConnectionRoutes(
         serviceContext,
         input.provider === "zapi"
           ? {
-              clientToken: input.clientToken,
               displayName: input.displayName ?? "Z-API",
               instanceId: input.instanceId,
               instanceToken: input.instanceToken,

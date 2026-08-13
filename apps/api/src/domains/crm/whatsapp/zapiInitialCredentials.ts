@@ -2,7 +2,6 @@ import { randomBytes } from "node:crypto";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 import { getCrmConnectionCredentialVault } from "../services/CrmService/crmConnectionSetupSupport.js";
 import {
-  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
@@ -23,37 +22,28 @@ export async function sealZapiCredentials(
   };
   const currentStored = readRecord(currentCredentialsRef.stored);
   const currentWebhookSecret = readString(currentStored.webhookSecret);
-  const [instanceId, instanceToken, clientToken, webhookSecret] =
-    await Promise.all([
-      vault.seal({
-        ...credentialScope,
-        plaintext: input.instanceId,
-        purpose: ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
-      }),
-      vault.seal({
-        ...credentialScope,
-        plaintext: input.instanceToken,
-        purpose: ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
-      }),
-      input.clientToken
-        ? vault.seal({
-            ...credentialScope,
-            plaintext: input.clientToken,
-            purpose: ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
-          })
-        : Promise.resolve(readString(currentStored.clientToken)),
-      currentWebhookSecret && options.reuseWebhookSecret !== false
-        ? Promise.resolve(currentWebhookSecret)
-        : vault.seal({
-            ...credentialScope,
-            plaintext: randomBytes(32).toString("base64url"),
-            purpose: ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
-          }),
-    ]);
+  const [instanceId, instanceToken, webhookSecret] = await Promise.all([
+    vault.seal({
+      ...credentialScope,
+      plaintext: input.instanceId,
+      purpose: ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
+    }),
+    vault.seal({
+      ...credentialScope,
+      plaintext: input.instanceToken,
+      purpose: ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
+    }),
+    currentWebhookSecret && options.reuseWebhookSecret !== false
+      ? Promise.resolve(currentWebhookSecret)
+      : vault.seal({
+          ...credentialScope,
+          plaintext: randomBytes(32).toString("base64url"),
+          purpose: ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
+        }),
+  ]);
   return {
     mode: "stored",
     stored: {
-      ...(clientToken ? { clientToken } : {}),
       instanceId,
       instanceToken,
       webhookSecret,

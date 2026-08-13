@@ -27,6 +27,7 @@ describe("CRM WhatsApp customer connection setup routes", () => {
               instanceToken: "sealed:token-secret",
             },
           }),
+          status: "disconnected",
           storeId: customerStoreId,
           tenantId: customerTenantId,
         },
@@ -98,7 +99,6 @@ describe("CRM WhatsApp customer connection setup routes", () => {
     });
     const response = await app.request("/api/v1/crm/whatsapp/connections", {
       body: JSON.stringify({
-        clientToken: "client-secret-1",
         instanceId: "instance-1",
         instanceToken: "instance-secret-1",
         provider: "zapi",

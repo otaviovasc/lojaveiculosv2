@@ -50,6 +50,20 @@ describe("createZapiCrmConnectionSetupProvider", () => {
     });
   });
 
+  it("normalizes line-wrapped QR bytes returned by Z-API", async () => {
+    const provider = createZapiCrmConnectionSetupProvider(
+      env,
+      vi.fn<typeof fetch>(async () =>
+        Response.json({ value: "data:image/png;base64,aGVs\n bG8=" }),
+      ),
+    );
+
+    await expect(provider.getQrCode(credentials)).resolves.toEqual({
+      dataUri: "data:image/png;base64,aGVsbG8=",
+      expiresInSeconds: 20,
+    });
+  });
+
   it("models both phone codes and passkey challenges", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()

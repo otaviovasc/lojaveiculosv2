@@ -260,6 +260,46 @@
   font-weight: 650;
 }
 
+.crm-whatsapp-zapi-webhook-status-list {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0;
+}
+
+.crm-whatsapp-zapi-webhook-status-list li {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  font-size: var(--font-size-xs);
+  gap: 0.4rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 0.5rem 0.55rem;
+}
+
+.crm-whatsapp-zapi-webhook-status-list svg {
+  color: var(--color-muted);
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.crm-whatsapp-zapi-webhook-status-list li[data-state="configured"] svg,
+.crm-whatsapp-zapi-webhook-status-list li[data-state="configured"] strong {
+  color: var(--color-success-strong);
+}
+
+.crm-whatsapp-zapi-webhook-status-list li[data-state="pending"] strong {
+  color: var(--color-warning-strong);
+}
+
+.crm-whatsapp-zapi-webhook-status-list strong {
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+}
+
 .crm-whatsapp-zapi-inline-actions {
   display: flex;
   flex-wrap: wrap;
@@ -448,5 +488,9 @@
 
   .crm-whatsapp-zapi-inline-actions .crm-action {
     width: 100%;
+  }
+
+  .crm-whatsapp-zapi-webhook-status-list {
+    grid-template-columns: 1fr;
   }
 }

@@ -5,8 +5,10 @@ import {
   CrmWhatsappGatewayError,
 } from "../../domains/crm/ports/crmWhatsappGateway.js";
 import { resolveOlxAccessToken } from "./olxCrmChatCredentials.js";
+import { fetchOlxBasicUserInfo } from "../marketplace/olxBasicUserInfo.js";
 
 const baseUrl = "https://apps.olx.com.br/autoservice/v1";
+const olxApiBaseUrl = "https://apps.olx.com.br";
 const requestTimeoutMs = 10_000;
 
 export function createOlxCrmChatGateway(
@@ -40,12 +42,16 @@ export function createOlxCrmChatGateway(
           smartphoneConnected: null,
         };
       }
-      resolveOlxAccessToken(connection, env);
+      const accessToken = resolveOlxAccessToken(connection, env);
+      const providerStatus = await readOlxProviderStatus(
+        fetchImpl,
+        accessToken,
+      );
       return {
         checkedAt,
-        connected: true,
+        connected: providerStatus === "connected",
         connectedPhone: null,
-        providerStatus: "connected",
+        providerStatus,
         smartphoneConnected: null,
       };
     },
@@ -93,6 +99,25 @@ export function createOlxCrmChatGateway(
       return { externalId: messageId, providerTimestamp: new Date() };
     },
   };
+}
+
+async function readOlxProviderStatus(
+  fetchImpl: typeof fetch,
+  accessToken: string,
+): Promise<"connected" | "disconnected" | "unknown"> {
+  try {
+    const { response } = await fetchOlxBasicUserInfo(fetchImpl, {
+      accessToken,
+      baseUrl: olxApiBaseUrl,
+      signal: AbortSignal.timeout(requestTimeoutMs),
+    });
+    if (response.ok) return "connected";
+    if (response.status === 401 || response.status === 403)
+      return "disconnected";
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 function readOlxChatSetupStatus(
