@@ -38,6 +38,14 @@ export type FinancingReadiness = {
 };
 
 export type CredereRequiredFieldsResult = {
+  applicant: {
+    birthDate: string | null;
+    email: string | null;
+    hasCnh: boolean | null;
+    monthlyIncomeCents: number | null;
+    name: string | null;
+    phone: string | null;
+  } | null;
   knownLead: boolean;
   missingFields: readonly string[];
   requirements: Record<string, readonly string[]>;

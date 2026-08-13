@@ -116,12 +116,15 @@ describe("CRM WhatsApp integration security", () => {
 
     const response = await app.request(
       "/api/v1/crm/whatsapp/integrations/bot/actions",
-      jsonPost({ action: "list_tags" }, { "X-Webhook-Secret": webhookSecret }),
+      jsonPost(
+        { action: "credere_readiness" },
+        { "X-Webhook-Secret": webhookSecret },
+      ),
     );
 
-    expect(response.status).toBe(410);
+    expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
+      code: "CRM_WHATSAPP_BOT_UNAUTHORIZED",
     });
   });
 });

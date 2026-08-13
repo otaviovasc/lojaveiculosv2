@@ -43,6 +43,9 @@ export const llmsText = `# Loja Veiculos API
 - External lead create: POST /api/v1/external-api/leads
 - External lead detail: GET /api/v1/external-api/leads/{leadId}
 - External lead update: PATCH /api/v1/external-api/leads/{leadId}
+- External Credere preflight: POST /api/v1/external-api/financing/credere/preflight
+- External Credere simulation create: POST /api/v1/external-api/financing/credere/simulations
+- External Credere simulation detail: GET /api/v1/external-api/financing/credere/simulations/{inquiryId}
 - Admin observability snapshot: GET /api/v1/internal/health
 - Platform observability snapshot: GET /api/v1/internal/platform/health
 - List inventory units: GET /api/v1/inventory/units
@@ -119,6 +122,8 @@ export const llmsText = `# Loja Veiculos API
 - marketplace.listing_update: required to update listings.
 - marketplace.listing_unpublish: required to remove listings.
 - external_api.manage: required to create and revoke scoped API keys.
+- financing.simulation.read: required to preflight and read official Credere simulations.
+- financing.simulation.create: required to create consented official Credere simulations.
 - documents.read: required to list shared store-scoped documents.
 - documents.download: required to generate authorized document download descriptors.
 - documents.preview: required to render document previews.
@@ -233,10 +238,13 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/external-api/openapi.json: returns the scoped Public API OpenAPI document without the internal backend surface.
 - GET /api/v1/external-api/llms.txt: returns the scoped Public API llms.txt index with concise canonical links and safety notes.
 - GET /api/v1/external-api/manifest: returns the public API capability manifest with live routes, auth rules, docs URLs, and AI-native discovery URLs.
-- GET /api/v1/external-api/ai-tools: returns OpenAI-style tool definitions for vehicle search and lead creation.
+- GET /api/v1/external-api/ai-tools: returns OpenAI-style tool definitions for vehicle search, lead creation, and Credere financing.
 - GET /api/v1/external-api/clients: returns scoped API clients and key prefixes; requires external_api.manage.
 - POST /api/v1/external-api/clients: creates a scoped API client and returns the plaintext key once; requires external_api.manage.
 - POST /api/v1/external-api/clients/{clientId}/revoke: revokes the client and active keys; requires external_api.manage.
+- POST /api/v1/external-api/financing/credere/preflight: checks readiness, usable banks, requirements, and safe applicant hydration; requires financing.simulation.read.
+- POST /api/v1/external-api/financing/credere/simulations: creates an official consented simulation with Idempotency-Key; requires financing.simulation.create.
+- GET /api/v1/external-api/financing/credere/simulations/{inquiryId}: reads official status and bank conditions; requires financing.simulation.read.
 - GET /api/v1/external-api/vehicles: lists clean external vehicle DTOs without tenant/store ids, VIN, or full plate fields; requires inventory.read.
 - GET /api/v1/external-api/vehicles/search: supports q/search, available, status, price, year, mileage, color, fuel, transmission, and sort aliases for V1-compatible integrations; requires inventory.read.
 - GET /api/v1/external-api/vehicles/{listingId}: returns vehicle detail with public media, safe unit refs, price history, and status history; requires inventory.read.

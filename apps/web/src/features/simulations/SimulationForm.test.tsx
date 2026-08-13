@@ -10,14 +10,19 @@ import type { CredereSimulationDraft } from "./types";
 describe("SimulationForm", () => {
   afterEach(cleanup);
 
-  it("renders empty currency fields as blank and uses custom selects", () => {
+  it("renders empty currency fields as blank and enables usable banks", async () => {
+    const user = userEvent.setup();
     const { container } = renderForm();
 
+    await user.click(screen.getByRole("button", { name: "Condições" }));
     expect(screen.getByLabelText("Valor do veículo (R$)")).toHaveValue("");
     expect(screen.getByLabelText("Entrada (R$)")).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Proponente" }));
     expect(screen.getByLabelText("Renda mensal (R$, opcional)")).toHaveValue(
       "",
     );
+    await user.click(screen.getByRole("button", { name: "Revisão" }));
+    expect(screen.getByRole("checkbox", { name: "BV" })).toBeChecked();
     expect(container.querySelector("select")).toBeNull();
     expect(container.querySelector("option")).toBeNull();
   });
@@ -39,9 +44,12 @@ describe("SimulationForm", () => {
       vehicleValueCents: 5_000_000,
     });
 
-    await user.type(screen.getByLabelText("Entrada (R$)"), "1000000");
+    await user.click(screen.getByRole("button", { name: "Proponente" }));
     await user.click(screen.getByRole("button", { name: "Conferir agora" }));
     await screen.findByText(/Dados mínimos conferidos/);
+    await user.click(screen.getByRole("button", { name: "Condições" }));
+    await user.type(screen.getByLabelText("Entrada (R$)"), "1000000");
+    await user.click(screen.getByRole("button", { name: "Revisão" }));
     await user.click(screen.getByLabelText(/O proponente autorizou/i));
     await user.click(
       screen.getByRole("button", { name: "Simular no Credere" }),
@@ -73,11 +81,13 @@ describe("SimulationForm", () => {
   it("shows only supported applicant fields requested by the preflight", async () => {
     const user = userEvent.setup();
     renderForm(vi.fn(), { cpfCnpj: "52998224725" }, async () => ({
+      applicant: null,
       applicantKnown: true,
       missingFields: ["birthdate", "has_cnh", "unsupported_provider_field"],
       requirements: {},
     }));
 
+    await user.click(screen.getByRole("button", { name: "Proponente" }));
     await user.click(screen.getByRole("button", { name: "Conferir agora" }));
 
     expect(
@@ -87,6 +97,45 @@ describe("SimulationForm", () => {
     expect(screen.getByText(/esta tela ainda não envia/)).toBeVisible();
     expect(screen.queryByLabelText("unsupported_provider_field")).toBeNull();
   });
+
+  it("hydrates empty applicant fields without replacing operator values", async () => {
+    const user = userEvent.setup();
+    renderForm(
+      vi.fn(),
+      {
+        applicantName: "Nome informado pela loja",
+        cpfCnpj: "52998224725",
+        email: "operador@example.com",
+        phone: "11988887777",
+      },
+      async () => ({
+        applicant: {
+          birthDate: "1990-05-10",
+          email: "credere@example.com",
+          hasCnh: true,
+          monthlyIncomeCents: 450_000,
+          name: "Nome retornado pela Credere",
+          phone: "11999990000",
+        },
+        applicantKnown: true,
+        missingFields: ["monthly_income"],
+        requirements: {},
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Proponente" }));
+    await user.click(screen.getByRole("button", { name: "Conferir agora" }));
+    await screen.findByText(/Dados mínimos conferidos/);
+
+    expect(screen.getByLabelText("Nome do proponente")).toHaveValue(
+      "Nome informado pela loja",
+    );
+    expect(screen.getByLabelText("Telefone")).toHaveValue("(11) 98888-7777");
+    expect(screen.getByLabelText(/^E-mail/)).toHaveValue(
+      "operador@example.com",
+    );
+    expect(screen.getByLabelText(/^Renda mensal/)).toHaveValue("4.500,00");
+  });
 });
 
 function renderForm(
@@ -95,6 +144,7 @@ function renderForm(
   onGetRequiredFields: ComponentProps<
     typeof SimulationForm
   >["onGetRequiredFields"] = async () => ({
+    applicant: null,
     applicantKnown: false,
     missingFields: [],
     requirements: {},

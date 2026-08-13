@@ -65,9 +65,16 @@ export function mapIntegratedBanks(
 export function mapLead(payload: Record<string, unknown>): FinancingLead {
   const data = readRecord(payload.data);
   return {
+    birthdate: readString(data.birthdate) ?? readString(data.birth_date),
     cpfCnpj: readString(data.cpf_cnpj) ?? "",
+    email: readString(data.email),
+    hasCnh: readBoolean(data.has_cnh),
     id: readString(data.id) ?? "",
+    monthlyIncomeCents:
+      readNumber(data.monthly_income) ?? readNumber(data.monthly_income_cents),
     name: readString(data.name),
+    phoneNumber:
+      readString(data.phone_number) ?? readString(data.phone) ?? null,
   };
 }
 

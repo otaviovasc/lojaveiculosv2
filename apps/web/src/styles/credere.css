@@ -1,126 +1,131 @@
+/* ==========================================================================
+   Credere — page shell + workspace foundation
+   Automotive-premium language: hairline rules, Satoshi display type,
+   wide-tracked micro labels, a short accent "speed mark", sunken response
+   console. Color only via design tokens / color-mix — never hardcoded.
+   ========================================================================== */
+
 .credere-shell {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: clamp(1.25rem, 2.4vw, 2rem);
   margin: 0 auto;
   max-width: var(--layout-content-max);
-  padding: 1rem;
+  padding: clamp(1rem, 2.5vw, 2rem);
 }
 
-.credere-connection,
+/* --- Page header: editorial hierarchy ---------------------------------- */
+
+.credere-shell-header {
+  position: relative;
+}
+
+.credere-shell-header .documents-top-bar-eyebrow {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.credere-shell-header .documents-top-bar-eyebrow::after {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    color-mix(in srgb, var(--color-accent) 0%, transparent)
+  );
+  content: "";
+  display: inline-block;
+  height: 1px;
+  width: 3rem;
+}
+
+.credere-shell-header .documents-top-bar-title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--font-size-2xl), 3.4vw, var(--font-size-4xl));
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  margin-top: 0.35rem;
+}
+
+.credere-shell-header .documents-top-bar-chip {
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 32%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.4rem;
+  letter-spacing: 0.05em;
+  margin-top: 0.65rem;
+  padding: 0.3rem 0.8rem;
+  width: fit-content;
+}
+
+/* --- Shared surface treatment ------------------------------------------- */
+
 .credere-workspace,
 .credere-mapping-workspace,
 .credere-network-summary {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--surface-radius-2xl);
 }
 
-.credere-connection,
 .credere-network-summary {
   background:
     radial-gradient(
       circle at 92% 8%,
-      color-mix(in srgb, var(--color-accent) 9%, transparent),
-      transparent 44%
+      color-mix(in srgb, var(--color-accent) 7%, transparent),
+      transparent 46%
     ),
     var(--color-panel);
 }
 
-.credere-connection-body {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.credere-connection-summary {
-  align-items: stretch;
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.credere-connection-summary > .feature-alert,
-.credere-connection-summary > .feature-loading-inline {
-  grid-column: 1 / -1;
-}
-
-.credere-connection-fact {
-  align-content: start;
-  border-left: 2px solid var(--color-accent);
-  display: grid;
-  gap: 0.35rem;
-  min-height: 3.25rem;
-  min-width: 0;
-  padding-left: 0.75rem;
-}
-
-.credere-connection-fact > * {
-  justify-self: start;
-}
-
-.credere-connection-fact > strong {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.credere-connection-fact > span,
-.credere-network-summary span,
-.credere-refusal-terms span {
+.credere-network-summary span {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.credere-connection-fact > strong,
 .credere-network-summary strong {
   color: var(--color-text);
+  font-family: var(--font-display);
   font-size: var(--font-size-sm);
   font-weight: 900;
+  letter-spacing: -0.01em;
 }
 
-.credere-connection-actions,
-.credere-mapping-actions,
-.credere-store-mapping-control {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-.credere-connection-actions {
-  align-content: start;
-}
-
-.credere-mapping-actions {
-  width: 100%;
-}
-
-.credere-store-mapping-control {
-  align-items: end;
-  border-top: 1px solid var(--color-line);
-  padding-top: 0.85rem;
-  width: 100%;
-}
-
-.credere-store-selector {
-  color: var(--color-text);
-  display: grid;
-  flex: 1 1 16rem;
-  gap: 0.35rem;
-  min-width: 0;
-}
-
-.credere-store-selector > span {
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-}
+/* --- Workspace: form pane + response console ------------------------------ */
 
 .credere-workspace {
+  box-shadow: var(--shadow-panel);
   overflow: hidden;
+  position: relative;
+}
+
+/* Fine accent thread along the workspace top edge — the "speed line". */
+.credere-workspace::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    color-mix(in srgb, var(--color-accent) 42%, transparent) 34%,
+    color-mix(in srgb, var(--color-accent) 0%, transparent) 72%
+  );
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
 }
 
 .credere-workspace-grid {
@@ -134,15 +139,15 @@
 }
 
 .credere-form-pane {
-  padding: 1.25rem;
+  padding: clamp(1.25rem, 2.6vw, 2rem);
 }
 
 .credere-response-pane {
-  background: color-mix(in srgb, var(--color-app) 55%, var(--color-panel));
+  background: color-mix(in srgb, var(--color-app) 62%, var(--color-panel));
   border-top: 1px solid var(--color-line);
   display: grid;
-  gap: 1rem;
-  padding: 1.25rem;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 2.6vw, 2rem);
 }
 
 .credere-pane-header {
@@ -156,257 +161,50 @@
 .credere-pane-header h3,
 .credere-awaiting-result h3 {
   color: var(--color-text);
-  font-size: var(--font-size-lg);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
   font-weight: 900;
-  margin-top: 0.25rem;
+  letter-spacing: -0.025em;
+  margin-top: 0.35rem;
 }
 
 .credere-pane-header p,
 .credere-awaiting-result p {
   color: var(--color-muted);
   font-size: var(--font-size-sm);
+  font-weight: 600;
   line-height: 1.55;
-  margin-top: 0.3rem;
-  max-width: 64ch;
+  margin-top: 0.4rem;
+  max-width: 58ch;
 }
 
+/* Micro label: uppercase, wide-tracked, preceded by the accent speed mark. */
 .credere-section-label {
-  color: var(--color-accent-strong);
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.credere-form-body,
-.credere-result-body {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1.1rem;
-}
-
-.credere-simulation-form {
-  display: grid;
-  gap: 1.1rem;
-}
-
-.credere-preflight {
-  align-items: center;
-  border-left: 2px solid var(--color-line-strong);
-  color: var(--color-muted);
-  display: flex;
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  gap: 0.75rem;
-  justify-content: space-between;
-  line-height: 1.5;
-  margin-top: 0.9rem;
-  min-height: 2rem;
-  padding-left: 0.75rem;
-}
-
-.credere-preflight--ready {
-  border-left-color: var(--color-success);
-  color: var(--color-text);
-}
-
-.credere-preflight--error {
-  border-left-color: var(--color-danger);
-  color: var(--color-danger);
-}
-
-.credere-preflight > button {
   align-items: center;
   color: var(--color-accent-strong);
   display: inline-flex;
-  flex: 0 0 auto;
-  font-weight: 900;
-  gap: 0.35rem;
-}
-
-.credere-preflight > button:disabled {
-  color: var(--color-muted);
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.credere-consent {
-  align-items: start;
-  color: var(--color-text);
-  display: flex;
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-  gap: 0.6rem;
-  line-height: 1.5;
-}
-
-.credere-consent input {
-  flex: 0 0 auto;
-  margin-top: 0.15rem;
-}
-
-.credere-submit-row {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.credere-awaiting-result {
-  border-bottom: 1px solid var(--color-line);
-  min-height: 9rem;
-  padding-bottom: 1rem;
-}
-
-.credere-result-meta {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem 0.8rem;
-}
-
-.credere-polling-note,
-.credere-provider-reason,
-.credere-results-empty {
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-}
-
-.credere-provider-reason {
-  border-left: 2px solid var(--color-line-strong);
-  line-height: 1.55;
-  padding-left: 0.75rem;
-}
-
-.credere-results-empty {
-  font-size: var(--font-size-sm);
-  min-height: 4rem;
-  padding: 0.75rem 0;
-}
-
-.credere-table-wrap {
-  overflow-x: auto;
-}
-
-.credere-table {
-  border-collapse: collapse;
-  min-width: 36rem;
-  text-align: left;
-  width: 100%;
-}
-
-.credere-table th {
-  color: var(--color-muted);
   font-size: var(--font-size-xs);
   font-weight: 900;
-  padding: 0.65rem 0.75rem;
+  gap: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.credere-table td {
-  border-top: 1px solid var(--color-line);
-  color: var(--color-text);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  padding: 0.8rem 0.75rem;
-  vertical-align: top;
+.credere-section-label::before {
+  background: var(--color-accent);
+  content: "";
+  display: inline-block;
+  height: 2px;
+  width: 1.1rem;
 }
 
-.credere-table .credere-bank-name {
-  font-weight: 900;
-}
-
-.credere-table .credere-condition-detail {
-  color: var(--color-muted);
-  min-width: 12rem;
-}
-
-.credere-refusals {
-  border-top: 1px solid var(--color-line);
-  padding-top: 0.85rem;
-}
-
-.credere-refusals summary {
-  color: var(--color-danger-text);
-  cursor: pointer;
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  list-style-position: inside;
-}
-
-.credere-refusal-list {
+.credere-form-body {
   display: grid;
-  gap: 0.75rem;
-  margin-top: 0.85rem;
+  gap: 1.1rem;
+  margin-top: 1.25rem;
 }
 
-.credere-refusal-row {
-  align-items: start;
-  border-left: 2px solid var(--color-danger);
-  display: grid;
-  gap: 0.75rem;
-  padding-left: 0.8rem;
-}
-
-.credere-refusal-row strong {
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-}
-
-.credere-refusal-row p,
-.credere-refusal-row small {
-  color: var(--color-muted);
-  display: block;
-  font-size: var(--font-size-xs);
-  line-height: 1.5;
-  margin-top: 0.2rem;
-}
-
-.credere-refusal-terms {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.credere-history {
-  border-top: 1px solid var(--color-line);
-  padding-top: 1rem;
-}
-
-.credere-history-header {
-  align-items: center;
-  color: var(--color-accent-strong);
-  display: flex;
-  gap: 0.5rem;
-}
-
-.credere-history-header h3 {
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  font-weight: 900;
-}
-
-.credere-history-list {
-  display: grid;
-  margin-top: 0.65rem;
-}
-
-.credere-history-row {
-  align-items: center;
-  border-bottom: 1px solid var(--color-line);
-  color: var(--color-text);
-  cursor: pointer;
-  display: flex;
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-  gap: 0.75rem;
-  justify-content: space-between;
-  min-height: 2.75rem;
-  text-align: left;
-  transition: background-color 180ms ease;
-  width: 100%;
-}
-
-.credere-history-row:hover {
-  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
-}
+/* --- Network summary / agency mapping ------------------------------------------ */
 
 .credere-network-summary {
   align-items: center;
@@ -490,21 +288,33 @@
   min-width: 0;
 }
 
-@media (min-width: 768px) {
-  .credere-shell {
-    padding: 1.5rem;
+/* --- Notice wrappers (loading / error / empty states) --------------------------- */
+
+.credere-shell-notice {
+  animation: credere-shell-rise var(--motion-duration-slow)
+    var(--motion-ease-emphasized);
+}
+
+.credere-shell-workspace-enter {
+  animation: credere-shell-rise var(--motion-duration-slow)
+    var(--motion-ease-emphasized);
+}
+
+@keyframes credere-shell-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
 
-  .credere-refusal-row {
-    grid-template-columns: minmax(0, 1fr) auto;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (min-width: 1180px) {
-  .credere-connection-body {
-    grid-template-columns: minmax(18rem, 1fr) minmax(0, 1.1fr);
-  }
+/* --- Responsive ------------------------------------------------------------------ */
 
+@media (min-width: 1180px) {
   .credere-workspace-grid {
     grid-template-columns: minmax(0, 1.12fr) minmax(24rem, 0.88fr);
   }
@@ -516,7 +326,6 @@
 }
 
 @media (max-width: 767px) {
-  .credere-connection-summary,
   .credere-network-summary,
   .credere-mapping-row {
     grid-template-columns: minmax(0, 1fr);
@@ -537,15 +346,5 @@
 
   .credere-mapping-control > span {
     text-align: left;
-  }
-
-  .credere-submit-row > button,
-  .credere-store-mapping-control > button {
-    width: 100%;
-  }
-
-  .credere-preflight {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }

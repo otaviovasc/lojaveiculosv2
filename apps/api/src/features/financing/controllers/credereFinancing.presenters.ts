@@ -43,6 +43,11 @@ export function presentSimulation(value: unknown) {
   const record = asRecord(value);
   return {
     inquiryId: String(record.inquiryId ?? record.id ?? ""),
+    ...(typeof record.leadId === "string" ? { leadId: record.leadId } : {}),
+    ...(typeof record.listingId === "string"
+      ? { listingId: record.listingId }
+      : {}),
+    ...(typeof record.unitId === "string" ? { unitId: record.unitId } : {}),
     ...(typeof record.status === "string" ? { status: record.status } : {}),
     ...(presentDate(record.createdAt)
       ? { createdAt: presentDate(record.createdAt) }
@@ -135,6 +140,7 @@ function presentUsableBank(value: unknown) {
 
 function presentSimulationCondition(value: unknown) {
   const record = asRecord(value);
+  const metadata = asRecord(record.metadata);
   return {
     ...(typeof record.id === "string" ? { id: record.id } : {}),
     ...(typeof record.status === "string" ? { status: record.status } : {}),
@@ -150,6 +156,18 @@ function presentSimulationCondition(value: unknown) {
     ...(typeof record.summary === "string" ? { summary: record.summary } : {}),
     ...(typeof record.totalAmountCents === "number"
       ? { totalAmountCents: record.totalAmountCents }
+      : {}),
+    ...(typeof metadata.downPaymentCents === "number"
+      ? { downPaymentCents: metadata.downPaymentCents }
+      : {}),
+    ...(typeof metadata.firstInstallmentCents === "number"
+      ? { firstInstallmentCents: metadata.firstInstallmentCents }
+      : {}),
+    ...(typeof metadata.preApprovalStatus === "number"
+      ? { preApprovalStatus: metadata.preApprovalStatus }
+      : {}),
+    ...(typeof metadata.reasonIdentifier === "string"
+      ? { reasonIdentifier: metadata.reasonIdentifier }
       : {}),
   };
 }

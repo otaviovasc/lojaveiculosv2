@@ -11,6 +11,13 @@ import {
   unitDto,
 } from "../../inventory/controllers/vehicle.controller.testFixtures.js";
 import { createExternalApiFeature } from "./externalApi.controller.js";
+import type {
+  LeadDetailJson,
+  ManifestJson,
+  ToolsJson,
+  VehicleDetailJson,
+  VehicleListJson,
+} from "./externalApiRuntime.controller.testTypes.js";
 
 describe("external API runtime routes", () => {
   it("serves AI-native manifest and tool discovery without tenant data", async () => {
@@ -29,6 +36,9 @@ describe("external API runtime routes", () => {
       expect.arrayContaining([
         expect.objectContaining({ path: "/api/v1/external-api/vehicles" }),
         expect.objectContaining({ path: "/api/v1/external-api/leads" }),
+        expect.objectContaining({
+          path: "/api/v1/external-api/financing/credere/preflight",
+        }),
       ]),
     );
     expect(manifest.aiNative).toMatchObject({
@@ -36,7 +46,20 @@ describe("external API runtime routes", () => {
       llmsTxt: "https://api.local/api/v1/external-api/llms.txt",
       openApi: "https://api.local/api/v1/external-api/openapi.json",
     });
-    expect(tools.tools.at(0)?.function.name).toBe("search_vehicles");
+    expect(tools.tools.map((tool) => tool.function.name)).toEqual(
+      expect.arrayContaining([
+        "preflight_credere_simulation",
+        "create_credere_simulation",
+        "get_credere_simulation",
+        "search_vehicles",
+      ]),
+    );
+    const createCredereTool = tools.tools.find(
+      (tool) => tool.function.name === "create_credere_simulation",
+    );
+    expect(
+      createCredereTool?.function.parameters.properties,
+    ).not.toHaveProperty("idempotencyKey");
     expect(JSON.stringify(manifest)).not.toContain("tenant_");
   });
 
@@ -219,27 +242,3 @@ function userContext(): ServiceContext {
 async function readJson<T>(response: Response): Promise<T> {
   return (await response.json()) as unknown as T;
 }
-
-type ManifestJson = {
-  aiNative: Record<string, string>;
-  operations: Array<{ path: string }>;
-};
-
-type ToolsJson = {
-  tools: Array<{ function: { name: string } }>;
-};
-
-type VehicleListJson = {
-  data: Array<Record<string, unknown>>;
-};
-
-type VehicleDetailJson = {
-  data: {
-    media: Array<Record<string, unknown>>;
-    units: Array<Record<string, unknown>>;
-  };
-};
-
-type LeadDetailJson = {
-  data: Record<string, unknown>;
-};

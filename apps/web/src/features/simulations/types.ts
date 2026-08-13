@@ -50,6 +50,14 @@ export type CredereStoreMapping = {
 };
 
 export type CredereRequiredFields = {
+  applicant: {
+    birthDate: string | null;
+    email: string | null;
+    hasCnh: boolean | null;
+    monthlyIncomeCents: number | null;
+    name: string | null;
+    phone: string | null;
+  } | null;
   applicantKnown: boolean;
   missingFields: string[];
   requirements: Record<string, string[]>;
@@ -65,6 +73,10 @@ export type CredereSimulationCondition = {
   bankCode: string | null;
   bankName: string | null;
   installments: number | null;
+  downPaymentCents: number | null;
+  firstInstallmentCents: number | null;
+  preApprovalStatus: number | null;
+  reasonIdentifier: string | null;
   reason: string | null;
   summary: string | null;
   /** Literal provider/bank status. Never reinterpreted as approval. */
@@ -74,6 +86,9 @@ export type CredereSimulationCondition = {
 
 export type CredereSimulation = {
   id: string;
+  leadId: string | null;
+  listingId: string | null;
+  unitId: string | null;
   /** Literal provider status (for example "pending", "completed", "failed"). */
   status: string;
   createdAt: string | null;

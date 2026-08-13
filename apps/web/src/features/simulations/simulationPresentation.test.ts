@@ -80,8 +80,12 @@ function condition(
   return {
     bankCode: "655",
     bankName: "Banco BV",
+    downPaymentCents: null,
+    firstInstallmentCents: null,
     installments: 36,
+    preApprovalStatus: null,
     reason: "Pré-análise em andamento",
+    reasonIdentifier: null,
     status: "rejected",
     summary: null,
     totalAmountCents: null,
@@ -94,10 +98,13 @@ function simulation(overrides: Partial<CredereSimulation>): CredereSimulation {
     conditions: [],
     createdAt: "2026-08-11T12:00:00.000Z",
     id: "simulation_1",
+    leadId: null,
+    listingId: null,
     providerRequestId: null,
     reason: null,
     status: "processing",
     success: null,
+    unitId: null,
     ...overrides,
   };
 }

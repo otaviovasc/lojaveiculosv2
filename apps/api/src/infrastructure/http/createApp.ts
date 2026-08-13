@@ -174,6 +174,7 @@ export function createApp(options: CreateAppOptions = {}) {
       contextFactory,
       runtimeServices: {
         crm: options.crmServices,
+        financing: options.financingServices,
         inventory: options.inventoryListingServices,
       },
       ...(options.externalApiServices

@@ -129,6 +129,7 @@ describe("createCredereApi", () => {
       document: "12345678909",
     });
     expect(required).toEqual({
+      applicant: null,
       applicantKnown: true,
       missingFields: ["monthly_income"],
       requirements: { lead: ["monthlyIncomeCents"], vehicle: [] },

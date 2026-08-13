@@ -50,7 +50,7 @@ export function handleCredereFinancing(
   return handleControllerAction(context, action, mapCredereFinancingError);
 }
 
-function mapCredereFinancingError(error: unknown) {
+export function mapCredereFinancingError(error: unknown) {
   if (error instanceof CredereFinancingRequestValidationError) {
     return {
       code: "FINANCING_REQUEST_VALIDATION_FAILED",

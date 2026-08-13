@@ -7,6 +7,7 @@ import {
 describe("readApplicantRequirements", () => {
   it("maps nested provider applicant keys and ignores vehicle fields already collected", () => {
     const result = readApplicantRequirements({
+      applicant: null,
       applicantKnown: false,
       missingFields: [
         "lead.has_cnh",
@@ -23,6 +24,7 @@ describe("readApplicantRequirements", () => {
 
   it("keeps genuinely unsupported provider fields visible to the flow guard", () => {
     const result = readApplicantRequirements({
+      applicant: null,
       applicantKnown: true,
       missingFields: ["lead.profession"],
       requirements: {},

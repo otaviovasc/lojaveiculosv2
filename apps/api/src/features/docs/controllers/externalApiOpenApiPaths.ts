@@ -11,6 +11,7 @@ import {
   requestBody,
   vehicleQueryParameters,
 } from "./externalApiOpenApiSupport.js";
+import { externalApiCrederePaths } from "./externalApiCredereOpenApiPaths.js";
 
 export const externalApiPaths = {
   "/api/v1/external-api/ai-tools": {
@@ -146,6 +147,7 @@ export const externalApiPaths = {
       },
     },
   },
+  ...externalApiCrederePaths,
   "/api/v1/external-api/vehicles": {
     get: runtimeOperation(
       "List vehicles using a clean external DTO",

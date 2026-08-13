@@ -67,16 +67,19 @@ export function SimulationApplicantFields({
   const needsBirthDate = requiredFields.has("birthDate");
   const needsHasCnh = requiredFields.has("hasCnh");
   return (
-    <FeatureFieldGroup>
+    <FeatureFieldGroup className="credere-form-fields">
       <FeatureField label="Nome do proponente">
         <FeatureInput
+          className="credere-form-input"
           autoComplete="name"
           onChange={(event) => onNameChange(event.target.value)}
+          placeholder="Ex.: Ana Souza"
           value={name}
         />
       </FeatureField>
       <FeatureField label="CPF/CNPJ">
         <FeatureInput
+          className="credere-form-input"
           inputMode="numeric"
           onChange={(event) =>
             onCpfCnpjChange(
@@ -84,15 +87,18 @@ export function SimulationApplicantFields({
             )
           }
           onBlur={onCpfCnpjBlur}
+          placeholder="000.000.000-00"
           value={cpfCnpj}
         />
       </FeatureField>
       <FeatureField label="Telefone">
         <FeatureInput
+          className="credere-form-input"
           inputMode="tel"
           onChange={(event) =>
             onPhoneChange(applyInputMask(event.target, formatBrazilianPhone))
           }
+          placeholder="(11) 99999-9999"
           value={phone}
         />
       </FeatureField>
@@ -100,8 +106,10 @@ export function SimulationApplicantFields({
         label={`E-mail${requiredFields.has("email") ? "" : " (opcional)"}`}
       >
         <FeatureInput
+          className="credere-form-input"
           autoComplete="email"
           onChange={(event) => onEmailChange(event.target.value)}
+          placeholder="ana@exemplo.com"
           type="email"
           value={email}
         />
@@ -110,8 +118,10 @@ export function SimulationApplicantFields({
         label={`Renda mensal (R$${requiredFields.has("monthlyIncomeCents") ? "" : ", opcional"})`}
       >
         <FeatureInput
+          className="credere-form-input"
           inputMode="decimal"
           onChange={onIncomeChange}
+          placeholder="Ex.: 5.000,00"
           value={income === null ? "" : formatCurrencyValue(income)}
         />
       </FeatureField>
@@ -129,6 +139,7 @@ export function SimulationApplicantFields({
       {needsHasCnh ? (
         <FeatureField label="Possui CNH">
           <FeatureSelect
+            className="credere-form-select"
             ariaLabel="Possui CNH"
             onChange={(value) => onHasCnhChange(value === "yes" ? true : false)}
             options={[
@@ -172,23 +183,28 @@ export function SimulationTermsFields({
   vehicleValue: number | null;
 }) {
   return (
-    <FeatureFieldGroup>
+    <FeatureFieldGroup className="credere-form-fields">
       <FeatureField label="Valor do veículo (R$)">
         <FeatureInput
+          className="credere-form-input"
           inputMode="decimal"
           onChange={onVehicleValueChange}
+          placeholder="Ex.: 85.000,00"
           value={vehicleValue === null ? "" : formatCurrencyValue(vehicleValue)}
         />
       </FeatureField>
       <FeatureField label="Entrada (R$)">
         <FeatureInput
+          className="credere-form-input"
           inputMode="decimal"
           onChange={onDownPaymentChange}
+          placeholder="Ex.: 20.000,00"
           value={downPayment === null ? "" : formatCurrencyValue(downPayment)}
         />
       </FeatureField>
       <FeatureField label="Parcelas">
         <FeatureSelect
+          className="credere-form-select"
           ariaLabel="Número de parcelas"
           onChange={onInstallmentsChange}
           options={termOptions}
@@ -197,8 +213,10 @@ export function SimulationTermsFields({
       </FeatureField>
       <FeatureField label="Documentação (R$, opcional)">
         <FeatureInput
+          className="credere-form-input"
           inputMode="decimal"
           onChange={onDocumentationValueChange}
+          placeholder="Ex.: 1.500,00"
           value={
             documentationValue === null
               ? ""
@@ -208,8 +226,10 @@ export function SimulationTermsFields({
       </FeatureField>
       <FeatureField label="Acessórios (R$, opcional)">
         <FeatureInput
+          className="credere-form-input"
           inputMode="decimal"
           onChange={onAccessoryValueChange}
+          placeholder="Ex.: 2.000,00"
           value={
             accessoryValue === null ? "" : formatCurrencyValue(accessoryValue)
           }
@@ -217,8 +237,10 @@ export function SimulationTermsFields({
       </FeatureField>
       <FeatureField label="Seguro (R$, opcional)">
         <FeatureInput
+          className="credere-form-input"
           inputMode="decimal"
           onChange={onInsuranceValueChange}
+          placeholder="Ex.: 1.200,00"
           value={
             insuranceValue === null ? "" : formatCurrencyValue(insuranceValue)
           }
@@ -260,26 +282,31 @@ export function SimulationVehicleFields({
     value: city,
   }));
   return (
-    <FeatureFieldGroup>
+    <FeatureFieldGroup className="credere-form-fields">
       <FeatureField label="Ano fabricação">
         <FeatureInput
+          className="credere-form-input"
           inputMode="numeric"
           maxLength={4}
           onChange={(event) => onManufactureYearChange(event.target.value)}
+          placeholder="Ex.: 2023"
           value={manufactureYear}
         />
       </FeatureField>
       <FeatureField label="Ano modelo">
         <FeatureInput
+          className="credere-form-input"
           inputMode="numeric"
           maxLength={4}
           onChange={(event) => onModelYearChange(event.target.value)}
+          placeholder="Ex.: 2024"
           value={modelYear}
         />
       </FeatureField>
       <FeatureField label="Código Molicar">
         <FeatureInput
           aria-describedby="simulation-molicar-hint"
+          className="credere-form-input credere-form-input--locked"
           onChange={(event) => onMolicarCodeChange(event.target.value)}
           placeholder="Confirme primeiro o código FIPE"
           readOnly
@@ -291,6 +318,7 @@ export function SimulationVehicleFields({
       </FeatureField>
       <FeatureField label="UF de licenciamento">
         <FeatureSelect
+          className="credere-form-select"
           ariaLabel="UF de licenciamento"
           onChange={onLicensingUfChange}
           options={stateOptions}
@@ -301,6 +329,7 @@ export function SimulationVehicleFields({
       </FeatureField>
       <FeatureField label="Cidade de licenciamento">
         <FeatureSelect
+          className="credere-form-select"
           ariaLabel="Cidade de licenciamento"
           disabled={!licensingUf}
           onChange={onLicensingCityChange}

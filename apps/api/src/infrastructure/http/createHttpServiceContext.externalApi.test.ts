@@ -52,6 +52,25 @@ describe("createHttpServiceContext external API auth", () => {
     ).rejects.toThrow(HttpContextRequestPolicyError);
   });
 
+  it("does not classify the Credere read-only preflight as a mutation", async () => {
+    const apiKey = "lv2_testprefix_secret";
+    const context = await captureContext(
+      new Request(
+        "https://api.local/api/v1/external-api/financing/credere/preflight",
+        {
+          headers: { "x-api-key": apiKey },
+          method: "POST",
+        },
+      ),
+    );
+
+    await expect(
+      createHttpServiceContext(context, {
+        externalApiRepository: createExternalApiRepository(apiKey),
+      }),
+    ).resolves.toMatchObject({ actor: { kind: "integration" } });
+  });
+
   it("rejects an otherwise valid API key after its add-on is unavailable", async () => {
     const apiKey = "lv2_testprefix_secret";
     const context = await captureContext(
