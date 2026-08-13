@@ -49,6 +49,7 @@ import type {
   CrmWhatsappSessionCountsQuery,
   CrmWhatsappSessionId,
   CrmWhatsappSessionQuery,
+  CrmWhatsappSessionRevisionInput,
   CrmWhatsappScheduledMessage,
   CrmWhatsappStartConversationInput,
   CrmWhatsappStartConversationResult,
@@ -68,6 +69,7 @@ export type CrmWhatsappApi = {
   ) => Promise<CrmWhatsappSession | null>;
   closeSession: (
     sessionId: CrmWhatsappSessionId,
+    input: CrmWhatsappSessionRevisionInput,
   ) => Promise<CrmWhatsappSession | null>;
   authorizeComposioConnection: (
     connectionId: CrmWhatsappConnectionId,
@@ -103,9 +105,11 @@ export type CrmWhatsappApi = {
   ) => Promise<CrmWhatsappSession[]>;
   markSessionRead: (
     sessionId: CrmWhatsappSessionId,
+    input: CrmWhatsappSessionRevisionInput,
   ) => Promise<CrmWhatsappSession | null>;
   markSessionUnread: (
     sessionId: CrmWhatsappSessionId,
+    input: CrmWhatsappSessionRevisionInput,
   ) => Promise<CrmWhatsappSession | null>;
   removeReaction: (
     messageId: CrmWhatsappMessage["id"],

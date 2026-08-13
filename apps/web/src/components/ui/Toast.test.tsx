@@ -2,10 +2,14 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Toast } from "./Toast";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe("Toast", () => {
   it("announces non-blocking feedback politely and atomically", () => {
@@ -37,5 +41,28 @@ describe("Toast", () => {
       screen.getByRole("button", { name: "Fechar notificação" }),
     );
     expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it("dismisses itself after the default three-second duration", async () => {
+    vi.useFakeTimers();
+    const onDismiss = vi.fn();
+    render(<Toast onDismiss={onDismiss} title="Salvo" />);
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    await act(async () => vi.advanceTimersByTime(2_999));
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    await act(async () => vi.advanceTimersByTime(1));
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it("supports persistent notices when duration is disabled", async () => {
+    vi.useFakeTimers();
+    render(<Toast durationMs={null} title="Conectando" />);
+
+    await act(async () => vi.advanceTimersByTime(30_000));
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
   });
 });

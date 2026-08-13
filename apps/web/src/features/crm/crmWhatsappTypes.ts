@@ -341,10 +341,16 @@ export type CrmWhatsappSessionCounts = {
 
 export type CrmWhatsappAssignSessionInput = {
   assignedUserId: string | null;
+  expectedRevision: number;
 };
 
 export type CrmWhatsappInterventionInput = {
   enabled: boolean;
+  expectedRevision: number;
+};
+
+export type CrmWhatsappSessionRevisionInput = {
+  expectedRevision: number;
 };
 
 export type CrmWhatsappMessageQuery = {

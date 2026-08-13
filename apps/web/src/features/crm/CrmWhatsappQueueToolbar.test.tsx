@@ -63,6 +63,12 @@ describe("WhatsappToolbar", () => {
     expect(screen.getByRole("heading", { name: "CRM" })).toBeInTheDocument();
     expect(screen.getByText("3 conversas")).toBeInTheDocument();
     expect(
+      screen.getByRole("group", { name: "Filtros inteligentes" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Filtros rápidos" }),
+    ).toBeInTheDocument();
+    expect(
       screen.queryByLabelText("Filtrar por status"),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Todos os status")).not.toBeInTheDocument();

@@ -5,6 +5,11 @@ export type ApiErrorPayload = {
   requestId?: unknown;
 };
 
+export type ApiErrorRecovery = {
+  kind: "configure" | "refresh" | "retry";
+  label: string;
+};
+
 export class AppApiError extends Error {
   readonly code?: string;
   readonly details?: unknown;
@@ -82,6 +87,35 @@ export function formatApiErrorDisplay(error: unknown, fallback: string) {
     : display.message;
 }
 
+export function getApiErrorRecovery(error: unknown): ApiErrorRecovery | null {
+  if (!(error instanceof AppApiError)) return null;
+  const code = error.code ?? "";
+
+  if (
+    code === "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE" ||
+    code.includes("CONFIGURATION") ||
+    code.includes("CONNECTION_SETUP")
+  ) {
+    return { kind: "configure", label: "Ver conexão" };
+  }
+  if (
+    code === "CRM_WHATSAPP_VALIDATION_ERROR" ||
+    code === "CRM_WHATSAPP_SESSION_REVISION_CONFLICT" ||
+    code === "CRM_WHATSAPP_NOT_FOUND"
+  ) {
+    return { kind: "refresh", label: "Atualizar conversas" };
+  }
+  if (
+    error.status === 429 ||
+    error.status >= 500 ||
+    code.endsWith("_PROVIDER_UNAVAILABLE") ||
+    code.endsWith("_PROVIDER_RATE_LIMITED")
+  ) {
+    return { kind: "retry", label: "Tentar novamente" };
+  }
+  return null;
+}
+
 async function createApiError(
   response: Response,
   options: { endpoint?: string; feature?: string },
@@ -154,6 +188,18 @@ function friendlyMessage(input: {
     case "REQUEST_VALIDATION_ERROR":
     case "VEHICLE_VALIDATION_ERROR":
       return "Revise os campos informados e tente novamente.";
+    case "CRM_WHATSAPP_VALIDATION_ERROR":
+      return "A solicitação do atendimento está incompleta ou desatualizada. Atualize as conversas e tente novamente.";
+    case "CRM_WHATSAPP_SESSION_REVISION_CONFLICT":
+      return "Esta conversa foi alterada em outro atendimento. Atualize as conversas antes de repetir a ação.";
+    case "CRM_WHATSAPP_NOT_FOUND":
+      return "Esta conversa não está mais disponível. Atualize a lista e selecione outro atendimento.";
+    case "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE":
+      return "A conexão atual não oferece esta ação. Verifique a configuração do canal.";
+    case "CRM_WHATSAPP_PROVIDER_RATE_LIMITED":
+      return "O WhatsApp limitou as solicitações por alguns instantes. Aguarde e tente novamente.";
+    case "CRM_WHATSAPP_GATEWAY_ERROR":
+      return "A conexão com o WhatsApp falhou temporariamente. Verifique o canal e tente novamente.";
     case "INVENTORY_ENRICHMENT_PROVIDER_ERROR":
       return "Nao foi possivel consultar o servico de enriquecimento agora. Tente novamente em instantes.";
     case "RATE_LIMIT":

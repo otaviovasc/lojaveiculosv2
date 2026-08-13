@@ -84,9 +84,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).authorizeComposioConnection(connectionId),
-    closeSession: async (sessionId) =>
+    closeSession: async (sessionId, input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
         sessionId,
+        input,
       ),
     completeComposioConnection: async (connectionId) =>
       createCrmWhatsappApi(
@@ -187,14 +188,15 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).listProviderEventIssues(),
-    markSessionRead: async (sessionId) =>
+    markSessionRead: async (sessionId, input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).markSessionRead(
         sessionId,
+        input,
       ),
-    markSessionUnread: async (sessionId) =>
+    markSessionUnread: async (sessionId, input) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).markSessionUnread(sessionId),
+      ).markSessionUnread(sessionId, input),
     listSessions: async (query) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).listSessions(
         query,

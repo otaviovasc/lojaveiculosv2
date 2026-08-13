@@ -56,7 +56,11 @@ export function QueueQuickFilterRow({
         left.name.localeCompare(right.name, "pt-BR"),
     );
   return (
-    <div className="crm-whatsapp-filter-row" aria-label="Filtro rápido">
+    <div
+      className="crm-whatsapp-filter-row"
+      aria-label="Filtros rápidos"
+      role="group"
+    >
       {quickFilterOptions.slice(0, 3).map((option) => (
         <QuickFilterButton
           active={quickFilter === option.value}

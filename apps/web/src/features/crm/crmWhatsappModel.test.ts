@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatContactInitials,
   formatMessageTime,
   formatRelativeSessionTime,
   mergeMessagesFromServer,
@@ -13,6 +14,14 @@ import type {
 } from "./crmWhatsappTypes";
 
 describe("crmWhatsappModel", () => {
+  it("formats deterministic contact initials", () => {
+    expect(formatContactInitials("Otavio Vasconcelos")).toBe("OV");
+    expect(formatContactInitials("  Érica   d'Ávila ")).toBe("ÉD");
+    expect(formatContactInitials("João da Silva")).toBe("JS");
+    expect(formatContactInitials("Ana")).toBe("AN");
+    expect(formatContactInitials(".")).toBe("?");
+    expect(formatContactInitials(null)).toBe("?");
+  });
   it("formats conversation timestamps with the Brazilian 24-hour locale", () => {
     const message = createMessage({ createdAt: "2026-07-03T12:00:00.000Z" });
 

@@ -41,6 +41,7 @@ import {
 } from "../../whatsapp/zapiAdSessionTransition.js";
 import { publishZapiWhatsappAttendanceEnded } from "../../whatsapp/publishZapiWhatsappAttendance.js";
 import { persistZapiCanonicalInbound } from "../../whatsapp/persistZapiCanonicalInbound.js";
+import { ingestZapiProfilePhoto } from "../../whatsapp/zapiProfilePhotoIngestion.js";
 
 const permission = "crm.whatsapp.ingest" as const;
 export type {
@@ -89,6 +90,11 @@ export async function ingestZapiWhatsappWebhook(
     storeId: connection.storeId,
     tenantId: connection.tenantId,
   });
+  const profilePhoto = await ingestZapiProfilePhoto(
+    context,
+    { connection, message: parsed },
+    ports,
+  );
   const auditInput: WhatsappServiceAuditInput = {
     action: "crm.whatsapp.webhook.zapi.received",
     category: "data_change" as const,
@@ -126,6 +132,12 @@ export async function ingestZapiWhatsappWebhook(
           ...(media.mediaUrl ? { mediaUrl: media.mediaUrl } : {}),
           metadata: media.metadata,
           providerTimestamp: parsed.providerTimestamp,
+          ...(profilePhoto.status === "stored"
+            ? {
+                profilePhotoStorageKey: profilePhoto.storageKey,
+                profilePhotoUrl: profilePhoto.profilePhotoUrl,
+              }
+            : {}),
           senderOrigin: parsed.fromMe ? "unknown" : "customer",
           senderType: parsed.fromMe ? "SYSTEM" : "CUSTOMER",
           status: parsed.fromMe ? "SENT" : "DELIVERED",

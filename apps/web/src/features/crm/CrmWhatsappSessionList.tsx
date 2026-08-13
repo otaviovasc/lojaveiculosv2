@@ -8,13 +8,13 @@ import {
   Phone,
   Radio,
   UserPlus,
-  UsersRound,
 } from "lucide-react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { CrmWhatsappHumanAttendanceBadge } from "./CrmWhatsappHumanAttendanceBadge";
 import { readCrmChannelIdentity } from "./crmChannelPresentation";
 import {
   formatRelativeSessionTime,
+  formatSessionAvatarInitials,
   formatSessionName,
   formatSessionPreview,
 } from "./crmWhatsappModel";
@@ -55,8 +55,7 @@ export function SessionList({
         const selected = selectedSessionIds.includes(String(session.id));
         const connectionName = session.connection?.name;
         const adTitle = readAdTitle(session);
-        const avatarUrl =
-          session.profilePhotoUrl ?? session.vehicle?.mainPhotoUrl;
+        const avatarUrl = session.profilePhotoUrl;
         const ownerLabel =
           session.assignedMember?.name ??
           (session.assignedUserId ? "Atribuido" : "Sem dono");
@@ -106,7 +105,7 @@ export function SessionList({
                 {avatarUrl ? (
                   <img alt={formatSessionName(session)} src={avatarUrl} />
                 ) : (
-                  <UsersRound aria-hidden="true" />
+                  formatSessionAvatarInitials(session)
                 )}
               </span>
               <span className="min-w-0 flex-1">

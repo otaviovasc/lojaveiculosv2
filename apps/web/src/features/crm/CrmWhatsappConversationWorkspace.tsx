@@ -26,6 +26,7 @@ export function CrmWhatsappConversationWorkspace({
     () => (readInitialSessionId() ? "chat" : "list"),
   );
   const [selectionMode, setSelectionMode] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [newConversationOpen, setNewConversationOpen] = useState(false);
   const [replyToMessage, setReplyToMessage] =
     useState<CrmWhatsappMessage | null>(null);
@@ -43,6 +44,7 @@ export function CrmWhatsappConversationWorkspace({
 
   useEffect(() => {
     setReplyToMessage(null);
+    setDetailsOpen(false);
   }, [inbox.activeSessionId]);
 
   const focusPane = (pane: "chat" | "context" | "list") => {
@@ -60,15 +62,14 @@ export function CrmWhatsappConversationWorkspace({
 
   return (
     <section
-      aria-keyshortcuts="Alt+1 Alt+2 Alt+3"
+      aria-keyshortcuts="Alt+1 Alt+2"
       className="crm-whatsapp-shell"
+      data-details-open={detailsOpen ? "true" : "false"}
       data-mobile-pane={mobilePane}
       onKeyDown={(event) => {
-        if (!event.altKey || !["1", "2", "3"].includes(event.key)) return;
+        if (!event.altKey || !["1", "2"].includes(event.key)) return;
         event.preventDefault();
-        focusPane(
-          event.key === "1" ? "list" : event.key === "2" ? "chat" : "context",
-        );
+        focusPane(event.key === "1" ? "list" : "chat");
       }}
       ref={shellRef}
     >
@@ -147,6 +148,7 @@ export function CrmWhatsappConversationWorkspace({
           <SessionList
             activeSessionId={inbox.activeSessionId}
             onSelect={(sessionId) => {
+              setDetailsOpen(false);
               inbox.setActiveSessionId(sessionId);
               focusPane("chat");
             }}
@@ -206,7 +208,10 @@ export function CrmWhatsappConversationWorkspace({
               onMarkUnread={() => {
                 void inbox.actions.markSessionUnread(activeSession.id);
               }}
-              onOpenDetails={() => focusPane("context")}
+              onOpenDetails={() => {
+                setDetailsOpen(true);
+                focusPane("context");
+              }}
               onRemoveTag={(tagId) =>
                 inbox.actions.removeSessionTag(activeSession.id, tagId)
               }
@@ -300,22 +305,16 @@ export function CrmWhatsappConversationWorkspace({
           </div>
         )}
       </section>
-      {activeSession ? (
+      {activeSession && detailsOpen ? (
         <CrmWhatsappSessionDetailsPanel
           assignableMembers={inbox.assignableMembers}
-          mobileOnlyClose
-          onClose={() => focusPane("chat")}
+          onClose={() => {
+            setDetailsOpen(false);
+            focusPane("chat");
+          }}
           session={activeSession}
         />
-      ) : (
-        <aside
-          aria-label="Contexto da conversa"
-          className="crm-whatsapp-details-panel crm-whatsapp-details-placeholder"
-          tabIndex={-1}
-        >
-          Selecione uma conversa para consultar lead, responsável e origem.
-        </aside>
-      )}
+      ) : null}
       {newConversationOpen ? (
         <CrmWhatsappNewConversationDialog
           disabled={inbox.isStartingConversation || !inbox.canStartConversation}

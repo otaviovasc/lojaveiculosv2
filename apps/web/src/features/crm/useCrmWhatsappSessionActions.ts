@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { getApiErrorRecovery } from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { asError } from "./crmWhatsappHookSupport";
 import type {
@@ -23,46 +24,77 @@ export function useCrmWhatsappSessionActions({
   sessions,
   setError,
 }: UseCrmWhatsappSessionActionsOptions) {
+  const [hasRetryableSessionAction, setHasRetryableSessionAction] =
+    useState(false);
   const [isMutatingSession, setIsMutatingSession] = useState(false);
+  const retryActionRef = useRef<(() => Promise<boolean>) | null>(null);
+
+  const clearRetryAction = useCallback(() => {
+    retryActionRef.current = null;
+    setHasRetryableSessionAction(false);
+  }, []);
 
   const runSessionAction = useCallback(
-    async (
+    (
       action: () => Promise<CrmWhatsappSession | null>,
       fallback: CrmWhatsappSession,
     ) => {
-      setError(null);
-      setIsMutatingSession(true);
-      try {
-        const updatedSession = await action();
-        patchSession(updatedSession ?? fallback);
-        await refreshSessions({ preserveLocalOnly: true });
-        return true;
-      } catch (caught) {
-        setError(asError(caught));
-        return false;
-      } finally {
-        setIsMutatingSession(false);
+      async function execute(): Promise<boolean> {
+        setError(null);
+        setIsMutatingSession(true);
+        try {
+          const updatedSession = await action();
+          patchSession(updatedSession ?? fallback);
+          await refreshSessions({ preserveLocalOnly: true });
+          clearRetryAction();
+          return true;
+        } catch (caught) {
+          const error = asError(caught);
+          const canRetry = getApiErrorRecovery(error)?.kind === "retry";
+          retryActionRef.current = canRetry ? execute : null;
+          setHasRetryableSessionAction(canRetry);
+          setError(error);
+          return false;
+        } finally {
+          setIsMutatingSession(false);
+        }
       }
+
+      return execute();
     },
-    [patchSession, refreshSessions, setError],
+    [clearRetryAction, patchSession, refreshSessions, setError],
   );
 
   const runBulkSessionAction = useCallback(
-    async (action: () => Promise<unknown>) => {
-      setError(null);
-      setIsMutatingSession(true);
-      try {
-        await action();
-        await refreshSessions({ preserveLocalOnly: true });
-        return true;
-      } catch (caught) {
-        setError(asError(caught));
-        return false;
-      } finally {
-        setIsMutatingSession(false);
+    (action: () => Promise<unknown>) => {
+      async function execute(): Promise<boolean> {
+        setError(null);
+        setIsMutatingSession(true);
+        try {
+          await action();
+          await refreshSessions({ preserveLocalOnly: true });
+          clearRetryAction();
+          return true;
+        } catch (caught) {
+          const error = asError(caught);
+          const canRetry = getApiErrorRecovery(error)?.kind === "retry";
+          retryActionRef.current = canRetry ? execute : null;
+          setHasRetryableSessionAction(canRetry);
+          setError(error);
+          return false;
+        } finally {
+          setIsMutatingSession(false);
+        }
       }
+
+      return execute();
     },
-    [refreshSessions, setError],
+    [clearRetryAction, refreshSessions, setError],
+  );
+
+  const retryLastSessionAction = useCallback(
+    () => retryActionRef.current?.() ?? Promise.resolve(false),
+    [],
   );
 
   const assignSession = useCallback(
@@ -70,7 +102,11 @@ export function useCrmWhatsappSessionActions({
       const session = sessions.find((item) => item.id === sessionId);
       if (!session) return false;
       return runSessionAction(
-        () => api.assignSession(sessionId, { assignedUserId }),
+        () =>
+          api.assignSession(sessionId, {
+            assignedUserId,
+            expectedRevision: readExpectedRevision(session),
+          }),
         {
           ...session,
           assignedMember: assignedUserId
@@ -87,10 +123,16 @@ export function useCrmWhatsappSessionActions({
     async (sessionId: CrmWhatsappSessionId) => {
       const session = sessions.find((item) => item.id === sessionId);
       if (!session) return false;
-      return runSessionAction(() => api.closeSession(sessionId), {
-        ...session,
-        status: "COMPLETED",
-      });
+      return runSessionAction(
+        () =>
+          api.closeSession(sessionId, {
+            expectedRevision: readExpectedRevision(session),
+          }),
+        {
+          ...session,
+          status: "COMPLETED",
+        },
+      );
     },
     [api, runSessionAction, sessions],
   );
@@ -100,7 +142,11 @@ export function useCrmWhatsappSessionActions({
       const session = sessions.find((item) => item.id === sessionId);
       if (!session) return false;
       return runSessionAction(
-        () => api.interveneSession(sessionId, { enabled }),
+        () =>
+          api.interveneSession(sessionId, {
+            enabled,
+            expectedRevision: readExpectedRevision(session),
+          }),
         {
           ...session,
           status: enabled ? "HUMAN_TAKEOVER" : "MINIBOT_ACTIVE",
@@ -114,11 +160,17 @@ export function useCrmWhatsappSessionActions({
     async (sessionId: CrmWhatsappSessionId) => {
       const session = sessions.find((item) => item.id === sessionId);
       if (!session) return false;
-      return runSessionAction(() => api.markSessionRead(sessionId), {
-        ...session,
-        lastReadAt: new Date().toISOString(),
-        unreadCount: 0,
-      });
+      return runSessionAction(
+        () =>
+          api.markSessionRead(sessionId, {
+            expectedRevision: readExpectedRevision(session),
+          }),
+        {
+          ...session,
+          lastReadAt: new Date().toISOString(),
+          unreadCount: 0,
+        },
+      );
     },
     [api, runSessionAction, sessions],
   );
@@ -127,11 +179,17 @@ export function useCrmWhatsappSessionActions({
     async (sessionId: CrmWhatsappSessionId) => {
       const session = sessions.find((item) => item.id === sessionId);
       if (!session) return false;
-      return runSessionAction(() => api.markSessionUnread(sessionId), {
-        ...session,
-        lastReadAt: null,
-        unreadCount: Math.max(1, session.unreadCount ?? 0),
-      });
+      return runSessionAction(
+        () =>
+          api.markSessionUnread(sessionId, {
+            expectedRevision: readExpectedRevision(session),
+          }),
+        {
+          ...session,
+          lastReadAt: null,
+          unreadCount: Math.max(1, session.unreadCount ?? 0),
+        },
+      );
     },
     [api, runSessionAction, sessions],
   );
@@ -179,64 +237,103 @@ export function useCrmWhatsappSessionActions({
     (sessionIds: CrmWhatsappSessionId[], assignedUserId: string | null) =>
       runBulkSessionAction(() =>
         Promise.all(
-          sessionIds.map((sessionId) =>
-            api.assignSession(sessionId, { assignedUserId }),
-          ),
+          sessions
+            .filter((session) => sessionIds.includes(session.id))
+            .map((session) =>
+              api.assignSession(session.id, {
+                assignedUserId,
+                expectedRevision: readExpectedRevision(session),
+              }),
+            ),
         ),
       ),
-    [api, runBulkSessionAction],
+    [api, runBulkSessionAction, sessions],
   );
 
   const bulkCloseSessions = useCallback(
     (sessionIds: CrmWhatsappSessionId[]) =>
       runBulkSessionAction(() =>
-        Promise.all(sessionIds.map((sessionId) => api.closeSession(sessionId))),
+        Promise.all(
+          sessions
+            .filter((session) => sessionIds.includes(session.id))
+            .map((session) =>
+              api.closeSession(session.id, {
+                expectedRevision: readExpectedRevision(session),
+              }),
+            ),
+        ),
       ),
-    [api, runBulkSessionAction],
+    [api, runBulkSessionAction, sessions],
   );
 
   const bulkMarkSessionsRead = useCallback(
     (sessionIds: CrmWhatsappSessionId[]) =>
       runBulkSessionAction(() =>
         Promise.all(
-          sessionIds.map((sessionId) => api.markSessionRead(sessionId)),
+          sessions
+            .filter((session) => sessionIds.includes(session.id))
+            .map((session) =>
+              api.markSessionRead(session.id, {
+                expectedRevision: readExpectedRevision(session),
+              }),
+            ),
         ),
       ),
-    [api, runBulkSessionAction],
+    [api, runBulkSessionAction, sessions],
   );
 
   const bulkMarkSessionsUnread = useCallback(
     (sessionIds: CrmWhatsappSessionId[]) =>
       runBulkSessionAction(() =>
         Promise.all(
-          sessionIds.map((sessionId) => api.markSessionUnread(sessionId)),
+          sessions
+            .filter((session) => sessionIds.includes(session.id))
+            .map((session) =>
+              api.markSessionUnread(session.id, {
+                expectedRevision: readExpectedRevision(session),
+              }),
+            ),
         ),
       ),
-    [api, runBulkSessionAction],
+    [api, runBulkSessionAction, sessions],
   );
 
   const bulkApplySessions = useCallback(
     (sessionIds: CrmWhatsappSessionId[], draft: CrmWhatsappBulkActionDraft) =>
       runBulkSessionAction(async () => {
-        const requests = sessionIds.flatMap((sessionId) => [
-          ...(draft.assignedUserId !== undefined
-            ? [
-                api.assignSession(sessionId, {
-                  assignedUserId: draft.assignedUserId,
-                }),
-              ]
-            : []),
-          ...(draft.tag ? [api.addSessionTag(sessionId, draft.tag)] : []),
-          ...(draft.readState === "read"
-            ? [api.markSessionRead(sessionId)]
-            : draft.readState === "unread"
-              ? [api.markSessionUnread(sessionId)]
-              : []),
-          ...(draft.close ? [api.closeSession(sessionId)] : []),
-        ]);
-        await Promise.all(requests);
+        await Promise.all(
+          sessions
+            .filter((session) => sessionIds.includes(session.id))
+            .map(async (session) => {
+              let current = session;
+              if (draft.assignedUserId !== undefined) {
+                current =
+                  (await api.assignSession(session.id, {
+                    assignedUserId: draft.assignedUserId,
+                    expectedRevision: readExpectedRevision(current),
+                  })) ?? current;
+              }
+              if (draft.tag) await api.addSessionTag(session.id, draft.tag);
+              if (draft.readState === "read") {
+                current =
+                  (await api.markSessionRead(session.id, {
+                    expectedRevision: readExpectedRevision(current),
+                  })) ?? current;
+              } else if (draft.readState === "unread") {
+                current =
+                  (await api.markSessionUnread(session.id, {
+                    expectedRevision: readExpectedRevision(current),
+                  })) ?? current;
+              }
+              if (draft.close) {
+                await api.closeSession(session.id, {
+                  expectedRevision: readExpectedRevision(current),
+                });
+              }
+            }),
+        );
       }),
-    [api, runBulkSessionAction],
+    [api, runBulkSessionAction, sessions],
   );
 
   return {
@@ -254,6 +351,12 @@ export function useCrmWhatsappSessionActions({
       removeSessionTag,
       toggleIntervention,
     },
+    hasRetryableSessionAction,
     isMutatingSession,
+    retryLastSessionAction,
   };
+}
+
+function readExpectedRevision(session: CrmWhatsappSession) {
+  return session.revision ?? 0;
 }

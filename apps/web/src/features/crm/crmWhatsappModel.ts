@@ -19,6 +19,7 @@ const senderOrigins = new Set<CrmWhatsappMessageSenderOrigin>([
   "system",
   "unknown",
 ]);
+const contactNameParticles = new Set(["da", "das", "de", "do", "dos", "e"]);
 
 export function parseCrmWhatsappSession(value: unknown): CrmWhatsappSession {
   const record = asRecord(value);
@@ -51,6 +52,32 @@ export function formatSessionName(session: CrmWhatsappSession) {
   const name = session.buyerName?.trim();
   if (name && name !== ".") return name;
   return session.buyerPhone ?? "Contato sem nome";
+}
+
+export function formatContactInitials(name?: string | null) {
+  const words = (name ?? "")
+    .normalize("NFC")
+    .trim()
+    .split(/\s+/u)
+    .map((word) => word.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(Boolean);
+  if (!words.length) return "?";
+  const meaningfulWords = words.filter(
+    (word, index) =>
+      index === 0 || !contactNameParticles.has(word.toLocaleLowerCase("pt-BR")),
+  );
+  const first = Array.from(meaningfulWords[0] ?? "");
+  const last = Array.from(meaningfulWords.at(-1) ?? "");
+  const initials =
+    meaningfulWords.length > 1
+      ? `${first[0] ?? ""}${last[0] ?? ""}`
+      : first.slice(0, 2).join("");
+  return initials.toLocaleUpperCase("pt-BR") || "?";
+}
+
+export function formatSessionAvatarInitials(session: CrmWhatsappSession) {
+  const name = session.buyerName?.trim();
+  return formatContactInitials(name && name !== "." ? name : null);
 }
 
 export function formatSessionPreview(session: CrmWhatsappSession) {
