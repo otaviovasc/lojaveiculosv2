@@ -5,6 +5,7 @@ import {
 } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
+  CrmConnectionSetupProviderError,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
   type ZapiSetupCredentials,
@@ -50,7 +51,7 @@ export async function requestZapiPairingQr(
         context,
         connection.id,
         "pairing_qr",
-        () => getZapiConnectionSetupProvider(ports).getQrCode(credentials),
+        () => requestQrForDisconnectedInstance(credentials, ports),
       );
       return {
         expiresAt: new Date(
@@ -81,15 +82,42 @@ export async function requestZapiPairingCode(
         connection.id,
         "pairing_code",
         () =>
-          getZapiConnectionSetupProvider(ports).getPairingCode(
-            credentials,
-            input.phone,
-          ),
+          requestCodeForDisconnectedInstance(credentials, input.phone, ports),
       );
       return result.kind === "code"
         ? { code: result.code, requested: true }
         : { requested: true };
     },
+  );
+}
+
+async function requestQrForDisconnectedInstance(
+  credentials: ZapiSetupCredentials,
+  ports: CrmServicePorts,
+) {
+  const provider = getZapiConnectionSetupProvider(ports);
+  await assertInstanceDisconnected(await provider.validateStatus(credentials));
+  return provider.getQrCode(credentials);
+}
+
+async function requestCodeForDisconnectedInstance(
+  credentials: ZapiSetupCredentials,
+  phone: string,
+  ports: CrmServicePorts,
+) {
+  const provider = getZapiConnectionSetupProvider(ports);
+  await assertInstanceDisconnected(await provider.validateStatus(credentials));
+  return provider.getPairingCode(credentials, phone);
+}
+
+function assertInstanceDisconnected(status: {
+  connected: boolean;
+  smartphoneConnected: boolean | null;
+}) {
+  if (!status.connected && status.smartphoneConnected !== true) return;
+  throw new CrmConnectionSetupProviderError(
+    "Disconnect the current WhatsApp device before starting a new pairing.",
+    "pairing_disconnect_required",
   );
 }
 

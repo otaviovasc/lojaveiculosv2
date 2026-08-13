@@ -1,42 +1,52 @@
 import { Loader2, QrCode, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { formatBrazilianWhatsappPhone } from "../../lib/masks";
 
 export type ZapiPairingMethod = "code" | "qr";
+export type ZapiPairingBlock =
+  "disconnect_required" | "waiting_disconnect" | null;
 
 type PairingBusyState =
   "addon" | "code" | "credentials" | "disconnect" | "qr" | "refresh" | null;
 
 export function CrmWhatsappZapiPairingStage({
   busy,
+  canDisconnect,
   canPair,
   codeExpired,
   method,
   now,
   onMethodChange,
+  onDisconnect,
   onPhoneChange,
   onRefresh,
   onRequestCode,
   onRequestQr,
   pairingCode,
+  pairingBlock,
   phone,
   qr,
   qrExpired,
 }: {
   busy: PairingBusyState;
+  canDisconnect: boolean;
   canPair: boolean;
   codeExpired: boolean;
   method: ZapiPairingMethod;
   now: number;
   onMethodChange: (method: ZapiPairingMethod) => void;
+  onDisconnect: () => void;
   onPhoneChange: (phone: string) => void;
   onRefresh: () => void;
   onRequestCode: () => void;
   onRequestQr: () => void;
   pairingCode: { code?: string; expiresAt?: string } | null;
+  pairingBlock: ZapiPairingBlock;
   phone: string;
   qr: { expiresAt: string; qrCode: string } | null;
   qrExpired: boolean;
 }) {
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   return (
     <section
       aria-labelledby="zapi-pairing-title"
@@ -55,6 +65,61 @@ export function CrmWhatsappZapiPairingStage({
           </p>
         </div>
       </div>
+      {pairingBlock ? (
+        <div className="crm-whatsapp-zapi-disconnect-confirm" role="alert">
+          <strong>
+            {pairingBlock === "waiting_disconnect"
+              ? "Aguardando a Z-API confirmar a desconexão"
+              : "Esta instância ainda está conectada a um aparelho"}
+          </strong>
+          <p>
+            {pairingBlock === "waiting_disconnect"
+              ? "O pareamento será liberado somente quando a consulta ao provedor confirmar que o aparelho foi desconectado."
+              : "Desconecte o aparelho atual antes de gerar um novo QR Code ou código de telefone. Os webhooks e o histórico do CRM serão mantidos."}
+          </p>
+          {pairingBlock === "disconnect_required" ? (
+            confirmDisconnect ? (
+              <div className="crm-whatsapp-zapi-inline-actions">
+                <button
+                  className="crm-action crm-action-danger"
+                  disabled={!canDisconnect || busy !== null}
+                  onClick={onDisconnect}
+                  type="button"
+                >
+                  {busy === "disconnect" ? (
+                    <Loader2 aria-hidden="true" className="crm-spin" />
+                  ) : null}
+                  {busy === "disconnect"
+                    ? "Desconectando"
+                    : "Confirmar desconexão"}
+                </button>
+                <button
+                  className="crm-action crm-action-muted"
+                  disabled={busy !== null}
+                  onClick={() => setConfirmDisconnect(false)}
+                  type="button"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button
+                className="crm-action crm-action-muted"
+                disabled={!canDisconnect || busy !== null}
+                onClick={() => setConfirmDisconnect(true)}
+                type="button"
+              >
+                Desconectar WhatsApp da Z-API
+              </button>
+            )
+          ) : null}
+          {!canDisconnect ? (
+            <small className="crm-whatsapp-zapi-permission-note">
+              Peça a um administrador da loja para desconectar o aparelho.
+            </small>
+          ) : null}
+        </div>
+      ) : null}
       <div
         aria-label="Método de pareamento"
         className="crm-whatsapp-pairing-tabs"

@@ -67,6 +67,7 @@ export function createZapiCrmConnectionSetupProvider(
     async getQrCode(credentials) {
       const payload = await request(credentials, "/qr-code");
       const dataUri = normalizeQrDataUri(readString(payload.value));
+      if (payload.connected === true) throw pairingDisconnectRequired();
       if (!dataUri && isPasskeyChallenge(payload.challenge)) {
         throw new CrmConnectionSetupProviderError(
           "Z-API requires another pairing method. Try connecting by phone.",
@@ -102,6 +103,13 @@ function isPasskeyChallenge(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const challenge = value as Record<string, unknown>;
   return Boolean(readString(challenge.challenge) && readString(challenge.rpId));
+}
+
+function pairingDisconnectRequired() {
+  return new CrmConnectionSetupProviderError(
+    "Disconnect the current WhatsApp device before starting a new pairing.",
+    "pairing_disconnect_required",
+  );
 }
 
 function normalizeQrDataUri(value: string | null) {

@@ -7,7 +7,7 @@ import {
   Loader2,
   QrCode,
 } from "lucide-react";
-import { AppApiError, formatApiErrorDisplay } from "../../lib/apiErrors";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { ConnectionSectionCard } from "./CrmWhatsappConnectionAdminParts";
 import {
   CrmWhatsappZapiPairingStage,
@@ -27,6 +27,11 @@ import type {
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
+import {
+  isProviderDisconnected,
+  requiresPhonePairing,
+  requiresProviderDisconnect,
+} from "./crmWhatsappZapiPairingState";
 
 type ZapiCredentialsDraft = {
   instanceId: string;
@@ -40,6 +45,7 @@ const emptyCredentials: ZapiCredentialsDraft = {
 
 type BusyState =
   "addon" | "code" | "credentials" | "disconnect" | "qr" | "refresh";
+type PairingBlock = "disconnect_required" | "waiting_disconnect" | null;
 
 export function CrmWhatsappZapiSetup({
   allowance,
@@ -69,6 +75,7 @@ export function CrmWhatsappZapiSetup({
     expiresAt?: string;
   } | null>(null);
   const [pairingMethod, setPairingMethod] = useState<ZapiPairingMethod>("qr");
+  const [pairingBlock, setPairingBlock] = useState<PairingBlock>(null);
   const [phone, setPhone] = useState("");
   const [pairAgain, setPairAgain] = useState(false);
   const [qr, setQr] = useState<{ expiresAt: string; qrCode: string } | null>(
@@ -98,7 +105,10 @@ export function CrmWhatsappZapiSetup({
         if (step === 4 && connection && handlers.onRefreshZapiStatus) {
           void handlers
             .onRefreshZapiStatus(connection.id)
-            .then(onConnection)
+            .then((refreshed) => {
+              onConnection(refreshed);
+              if (isProviderDisconnected(refreshed)) setPairingBlock(null);
+            })
             .catch(() => undefined);
         } else {
           void handlers.onRefreshConnections();
@@ -168,7 +178,10 @@ export function CrmWhatsappZapiSetup({
         setBusy,
         setError,
       });
-      if (result) onConnection(result);
+      if (result) {
+        onConnection(result);
+        if (isProviderDisconnected(result)) setPairingBlock(null);
+      }
     } else {
       await runAction({
         action: handlers.onRefreshConnections,
@@ -192,6 +205,21 @@ export function CrmWhatsappZapiSetup({
       setError,
     });
     if (result) onConnection(result);
+  };
+
+  const disconnectBeforePairing = async () => {
+    const disconnectZapi = handlers.onDisconnectZapi;
+    if (!connection || !canSetup || !disconnectZapi || busy) return;
+    const result = await runAction({
+      action: () => disconnectZapi(connection.id),
+      busy: "disconnect",
+      fallbackError: "Não foi possível desconectar o aparelho na Z-API.",
+      setBusy,
+      setError,
+    });
+    if (!result) return;
+    onConnection(result);
+    setPairingBlock("waiting_disconnect");
   };
 
   const configureWebhooks = async () => {
@@ -222,6 +250,8 @@ export function CrmWhatsappZapiSetup({
         setError(
           "Este aparelho exige uma verificação adicional. Continue pelo telefone para concluir o pareamento com segurança.",
         );
+      } else if (requiresProviderDisconnect(caught)) {
+        setPairingBlock("disconnect_required");
       } else {
         setError(
           formatApiErrorDisplay(caught, "Não foi possível gerar o QR Code."),
@@ -241,14 +271,24 @@ export function CrmWhatsappZapiSetup({
       return;
     }
     setPairingCode(null);
-    const result = await runAction({
-      action: () => requestPairingCode(connection.id, normalizedPhone),
-      busy: "code",
-      fallbackError: "Não foi possível solicitar o código de pareamento.",
-      setBusy,
-      setError,
-    });
-    if (result) setPairingCode(result);
+    setBusy("code");
+    setError(null);
+    try {
+      setPairingCode(await requestPairingCode(connection.id, normalizedPhone));
+    } catch (caught) {
+      if (requiresProviderDisconnect(caught)) {
+        setPairingBlock("disconnect_required");
+      } else {
+        setError(
+          formatApiErrorDisplay(
+            caught,
+            "Não foi possível solicitar o código de pareamento.",
+          ),
+        );
+      }
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
@@ -292,16 +332,19 @@ export function CrmWhatsappZapiSetup({
         {step === 4 && connection ? (
           <CrmWhatsappZapiPairingStage
             busy={busy}
-            canPair={canPair}
+            canDisconnect={canSetup && Boolean(handlers.onDisconnectZapi)}
+            canPair={canPair && pairingBlock === null}
             codeExpired={codeExpired}
             method={pairingMethod}
             now={now}
             onMethodChange={setPairingMethod}
+            onDisconnect={() => void disconnectBeforePairing()}
             onPhoneChange={setPhone}
             onRefresh={() => void refresh()}
             onRequestCode={() => void requestCode()}
             onRequestQr={() => void requestQr()}
             pairingCode={pairingCode}
+            pairingBlock={pairingBlock}
             phone={phone}
             qr={qr}
             qrExpired={qrExpired}
@@ -327,22 +370,6 @@ export function CrmWhatsappZapiSetup({
         Ver outros canais
       </button>
     </ConnectionSectionCard>
-  );
-}
-
-function requiresPhonePairing(error: unknown) {
-  if (
-    !(error instanceof AppApiError) ||
-    error.code !== "CRM_CONNECTION_SETUP_PAIRING_METHOD_REQUIRED" ||
-    !error.details ||
-    typeof error.details !== "object" ||
-    Array.isArray(error.details)
-  ) {
-    return false;
-  }
-  return (
-    (error.details as Record<string, unknown>).nextAction ===
-    "request_phone_code"
   );
 }
 

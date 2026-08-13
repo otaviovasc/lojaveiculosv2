@@ -41,7 +41,7 @@ describe("CRM WhatsApp connection setup routes", () => {
     expect(response.status).toBe(403);
   });
 
-  it("encrypts authorized first Z-API credentials, rejects duplicates, and enables pairing", async () => {
+  it("encrypts authorized credentials and requires disconnect before pairing", async () => {
     const repository = createMemoryCrmConnectionRepository();
     const getQrCode = vi.fn(async () => ({
       dataUri: "data:image/png;base64,customer-qr",
@@ -178,11 +178,13 @@ describe("CRM WhatsApp connection setup routes", () => {
       `/api/v1/crm/whatsapp/connections/${configuredId}/zapi/pairing/qr`,
       { method: "POST" },
     );
-    expect(pairing.status).toBe(200);
+    expect(pairing.status).toBe(409);
     const pairingBody: unknown = await pairing.json();
-    const pairingRecord = jsonObject(pairingBody);
-    expect(typeof pairingRecord.expiresAt).toBe("string");
-    expect(pairingRecord.qrCode).toBe("data:image/png;base64,customer-qr");
+    expect(pairingBody).toMatchObject({
+      code: "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED",
+      details: { nextAction: "disconnect_connection" },
+    });
+    expect(getQrCode).not.toHaveBeenCalled();
   });
 
   it("first-configures only the uncredentialed Z-API connection in the authenticated scope", async () => {
