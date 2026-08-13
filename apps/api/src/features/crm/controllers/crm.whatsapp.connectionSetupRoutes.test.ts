@@ -30,7 +30,6 @@ describe("CRM WhatsApp connection setup routes", () => {
     );
     const response = await app.request("/api/v1/crm/whatsapp/connections", {
       body: JSON.stringify({
-        clientToken: "client-secret-1",
         instanceId: "instance-1",
         instanceToken: "instance-secret-1",
         provider: "zapi",
@@ -98,7 +97,6 @@ describe("CRM WhatsApp connection setup routes", () => {
       },
     });
     const credentials = {
-      clientToken: "client-secret-1",
       instanceId: "instance-1",
       instanceToken: "instance-secret-1",
       provider: "zapi",
@@ -137,7 +135,6 @@ describe("CRM WhatsApp connection setup routes", () => {
       credentialsRef: {
         mode: "stored",
         stored: {
-          clientToken: "sealed:zapi.client-token:client-secret-1",
           instanceId: "sealed:zapi.instance-id:instance-1",
           instanceToken: "sealed:zapi.instance-token:instance-secret-1",
         },
@@ -210,7 +207,6 @@ describe("CRM WhatsApp connection setup routes", () => {
     });
     const response = await app.request("/api/v1/crm/whatsapp/connections", {
       body: JSON.stringify({
-        clientToken: "client-secret",
         instanceId: "instance-own",
         instanceToken: "instance-secret",
         provider: "zapi",

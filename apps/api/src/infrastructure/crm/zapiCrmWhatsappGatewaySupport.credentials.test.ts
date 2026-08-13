@@ -32,7 +32,12 @@ describe("resolveZapiCredentials stored token", () => {
       }),
     ]);
     connection.credentialsRef = {
-      stored: { instanceId, instanceToken },
+      env: { clientToken: "UNTRUSTED_CONNECTION_CLIENT_TOKEN" },
+      stored: {
+        clientToken: "untrusted-connection-token",
+        instanceId,
+        instanceToken,
+      },
     };
 
     expect(resolveZapiCredentials(connection, env)).toEqual({
@@ -42,6 +47,27 @@ describe("resolveZapiCredentials stored token", () => {
       instanceToken: "instance-secret",
       requestTimeoutMs: 10_000,
     });
+  });
+
+  it("requires the canonical server-owned client token", () => {
+    const connection = createConnection();
+    connection.credentialsRef = {
+      env: {
+        apiBaseUrl: "ZAPI_API_BASE_URL",
+        clientToken: "LEGACY_CLIENT_TOKEN",
+        instanceId: "ZAPI_INSTANCE_ID",
+        instanceToken: "ZAPI_INSTANCE_TOKEN",
+      },
+    };
+
+    expect(() =>
+      resolveZapiCredentials(connection, {
+        LEGACY_CLIENT_TOKEN: "legacy-secret",
+        ZAPI_API_BASE_URL: "https://api.z-api.io",
+        ZAPI_INSTANCE_ID: "instance-1",
+        ZAPI_INSTANCE_TOKEN: "instance-secret",
+      }),
+    ).toThrow("central client authentication is not configured");
   });
 
   it("rejects plaintext stored instance tokens", () => {

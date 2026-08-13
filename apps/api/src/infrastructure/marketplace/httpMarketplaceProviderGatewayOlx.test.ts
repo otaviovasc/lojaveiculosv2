@@ -7,6 +7,21 @@ import {
 } from "./httpMarketplaceProviderGatewayTestSupport.js";
 
 describe("createHttpMarketplaceProviderGateway OLX", () => {
+  it("keeps the requested scopes when OLX omits an unchanged token scope", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(
+        jsonResponse({ access_token: "token_1", token_type: "Bearer" }),
+      );
+
+    const token = await createOlxTestGateway(fetch).exchangeAuthorizationCode({
+      code: "authorization_code",
+      redirectUri: "https://app.example.test/olx/callback",
+    });
+
+    expect(token.scope).toBe("autoservice autoupload basic_user_info chat");
+  });
+
   it("creates OAuth URLs with scope and checks accounts with token body", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
       jsonResponse({

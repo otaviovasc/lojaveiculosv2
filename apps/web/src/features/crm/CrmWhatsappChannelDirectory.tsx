@@ -148,7 +148,7 @@ export function CrmWhatsappChannelDirectory({
               </span>
               <span className="crm-whatsapp-channel-description">
                 {zapiConfigured
-                  ? "Esta loja já possui uma Z-API. Use Gerenciar Z-API acima para parear ou revisar o canal."
+                  ? "Esta loja já possui uma Z-API. Use Gerenciar conexão para parear ou revisar o canal."
                   : readZapiChooserDescription(zapiAddonContract)}
               </span>
               <ChannelIdentity

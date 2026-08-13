@@ -197,7 +197,6 @@ export type CrmWhatsappConnectionAllowance = {
 
 export type CrmWhatsappCreateConnectionInput =
   | {
-      clientToken: string;
       instanceId: string;
       instanceToken: string;
       provider: "zapi";

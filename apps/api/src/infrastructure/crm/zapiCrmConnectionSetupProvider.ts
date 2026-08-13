@@ -66,11 +66,8 @@ export function createZapiCrmConnectionSetupProvider(
     },
     async getQrCode(credentials) {
       const payload = await request(credentials, "/qr-code");
-      const dataUri = readString(payload.value);
-      if (
-        !dataUri ||
-        !/^data:image\/png;base64,[a-z0-9+/=_-]+$/iu.test(dataUri)
-      ) {
+      const dataUri = normalizeQrDataUri(readString(payload.value));
+      if (!dataUri) {
         throw invalidResponse("Z-API did not return a valid QR code");
       }
       return { dataUri, expiresInSeconds: QR_EXPIRES_IN_SECONDS };
@@ -93,6 +90,15 @@ export function createZapiCrmConnectionSetupProvider(
       };
     },
   };
+}
+
+function normalizeQrDataUri(value: string | null) {
+  if (!value) return null;
+  const prefix = "data:image/png;base64,";
+  if (!value.toLowerCase().startsWith(prefix)) return null;
+  const encoded = value.slice(prefix.length).replace(/\s+/gu, "");
+  if (!encoded || !/^[a-z0-9+/_-]+={0,2}$/iu.test(encoded)) return null;
+  return `${prefix}${encoded}`;
 }
 
 async function requestZapi(

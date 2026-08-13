@@ -18,7 +18,6 @@ export const whatsappCreateConnectionSchema = z.discriminatedUnion("provider", [
     .strict(),
   z
     .object({
-      clientToken: z.string().trim().min(1).max(500),
       displayName: z.string().trim().min(1).max(160).optional(),
       instanceId: z.string().trim().min(1).max(191),
       instanceToken: z.string().trim().min(1).max(500),

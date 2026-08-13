@@ -10,7 +10,6 @@ export type CreatableWhatsappConnectionProvider = Extract<
 export type CreateWhatsappConnectionInput =
   | {
       displayName: string;
-      clientToken?: string;
       instanceId: string;
       instanceToken: string;
       provider: "zapi";

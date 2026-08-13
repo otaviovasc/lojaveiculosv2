@@ -22,6 +22,15 @@ const stepLabels: ReadonlyArray<{ label: string; step: ZapiSetupStep }> = [
   { label: "Pronto", step: 5 },
 ];
 
+const webhookLabels: Readonly<Record<string, string>> = {
+  "chat-presence": "Presença no chat",
+  connected: "Aparelho conectado",
+  delivery: "Entrega de mensagens",
+  disconnected: "Aparelho desconectado",
+  received: "Mensagens recebidas",
+  status: "Status das mensagens",
+};
+
 export function readZapiSetupStep({
   connection,
   isEntitled,
@@ -204,9 +213,15 @@ export function ZapiWebhookSetupStatus({
             : "O sistema está substituindo e conferindo cada endpoint necessário. Esta tela atualiza o estado automaticamente."}
         </p>
         {requiredCount > 0 ? (
-          <p className="crm-whatsapp-zapi-setup-count">
-            {completedCount} de {requiredCount} webhooks confirmados
-          </p>
+          <>
+            <p className="crm-whatsapp-zapi-setup-count">
+              {completedCount} de {requiredCount} webhooks confirmados
+            </p>
+            <WebhookStatusList
+              requiredTypes={setup?.requiredTypes ?? []}
+              succeededTypes={setup?.succeededTypes ?? []}
+            />
+          </>
         ) : null}
         <div className="crm-whatsapp-zapi-inline-actions">
           <button
@@ -274,13 +289,19 @@ export function ZapiReadyState({
             ? `O número ${phone} já pode receber e enviar mensagens pelo CRM.`
             : "O provedor confirmou a conexão. O canal já pode receber e enviar mensagens pelo CRM."}
         </p>
+        {connection.setup?.requiredTypes.length ? (
+          <WebhookStatusList
+            requiredTypes={connection.setup.requiredTypes}
+            succeededTypes={connection.setup.succeededTypes}
+          />
+        ) : null}
         {onPairAgain ? (
           <button
             className="crm-action crm-action-secondary"
             onClick={onPairAgain}
             type="button"
           >
-            Parear outro aparelho
+            Reconectar ou trocar aparelho
           </button>
         ) : null}
         {onDisconnect ? (
@@ -325,5 +346,36 @@ export function ZapiReadyState({
         ) : null}
       </div>
     </div>
+  );
+}
+
+function WebhookStatusList({
+  requiredTypes,
+  succeededTypes,
+}: {
+  requiredTypes: readonly string[];
+  succeededTypes: readonly string[];
+}) {
+  const succeeded = new Set(succeededTypes);
+  return (
+    <ul
+      aria-label="Estado dos webhooks Z-API"
+      className="crm-whatsapp-zapi-webhook-status-list"
+    >
+      {requiredTypes.map((type) => {
+        const configured = succeeded.has(type);
+        return (
+          <li data-state={configured ? "configured" : "pending"} key={type}>
+            {configured ? (
+              <CheckCircle2 aria-hidden="true" />
+            ) : (
+              <Circle aria-hidden="true" />
+            )}
+            <span>{webhookLabels[type] ?? type}</span>
+            <strong>{configured ? "Confirmado" : "Pendente"}</strong>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

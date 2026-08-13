@@ -3,7 +3,6 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 
 export const ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE = "zapi.instance-id";
 export const ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE = "zapi.instance-token";
-export const ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE = "zapi.client-token";
 export const ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE = "zapi.webhook-secret";
 export const CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE =
   "crm-bot.webhook-secret";

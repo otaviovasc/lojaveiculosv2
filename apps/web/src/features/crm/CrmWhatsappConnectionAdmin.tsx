@@ -169,6 +169,46 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
               />
             </label>
           ) : null}
+          {selfService ? (
+            <nav
+              aria-label="Gerenciamento de canais"
+              className="crm-whatsapp-connection-view-nav"
+            >
+              <button
+                aria-current={
+                  managementView === "overview" ? "page" : undefined
+                }
+                className="crm-action crm-action-muted"
+                onClick={() => setManagementView("overview")}
+                type="button"
+              >
+                Visão geral
+              </button>
+              {selected.provider === "zapi" ||
+              selected.provider === "composio_whatsapp" ? (
+                <button
+                  aria-current={
+                    managementView === "manage" ? "page" : undefined
+                  }
+                  className="crm-action crm-action-muted"
+                  onClick={() => setManagementView("manage")}
+                  type="button"
+                >
+                  Gerenciar conexão
+                </button>
+              ) : null}
+              <button
+                aria-current={
+                  managementView === "directory" ? "page" : undefined
+                }
+                className="crm-action crm-action-muted"
+                onClick={() => setManagementView("directory")}
+                type="button"
+              >
+                Adicionar canal
+              </button>
+            </nav>
+          ) : null}
           {selfService && managementView !== "overview" ? (
             <ConnectionSetupBoundary>
               <CrmWhatsappSelfServiceSetup
@@ -191,17 +231,6 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
               <ConnectionDashboard {...sharedConnectionProps} />
               {selfService ? (
                 <div className="crm-whatsapp-connection-management-actions">
-                  {selected.provider === "zapi" ||
-                  selected.provider === "composio_whatsapp" ? (
-                    <button
-                      className="crm-action crm-action-secondary"
-                      onClick={() => setManagementView("manage")}
-                      type="button"
-                    >
-                      Gerenciar{" "}
-                      {readCrmWhatsappProviderLabel(selected.provider)}
-                    </button>
-                  ) : null}
                   {selfService.handlers.onSetConnectionPaused ? (
                     <button
                       className="crm-action crm-action-muted"
@@ -222,23 +251,6 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
                 <p className="crm-whatsapp-connection-error" role="alert">
                   {localError}
                 </p>
-              ) : null}
-              {selfService ? (
-                <ConnectionSetupBoundary>
-                  <CrmWhatsappSelfServiceSetup
-                    allowance={selfService.allowance}
-                    availableProviders={selfService.availableProviders}
-                    canPair={selfService.canPair}
-                    canSetup={selfService.canSetup}
-                    connections={connections}
-                    existingConnection={selected}
-                    handlers={selfService.handlers}
-                    startAtDirectory
-                    {...(selfService.zapiAddonContract !== undefined
-                      ? { zapiAddonContract: selfService.zapiAddonContract }
-                      : {})}
-                  />
-                </ConnectionSetupBoundary>
               ) : null}
             </>
           ) : selfService &&
