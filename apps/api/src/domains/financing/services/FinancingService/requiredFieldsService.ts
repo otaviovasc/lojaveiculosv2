@@ -69,6 +69,16 @@ export async function getCredereRequiredFields(
     usableBanks,
   );
   const response = {
+    applicant: result.lead
+      ? {
+          birthDate: result.lead.birthdate,
+          email: result.lead.email,
+          hasCnh: result.lead.hasCnh,
+          monthlyIncomeCents: result.lead.monthlyIncomeCents,
+          name: result.lead.name,
+          phone: result.lead.phoneNumber,
+        }
+      : null,
     knownLead: Boolean(result.lead),
     missingFields: uniqueRequirementFields(requirements),
     requirements,

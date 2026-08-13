@@ -21,9 +21,14 @@ export function createPorts(
       createAuthorizationUrl: async (input) =>
         `https://credere.example.test/oauth?state=${input.state}`,
       createLead: async (input) => ({
+        birthdate: input.lead.birthdate ?? null,
         cpfCnpj: input.lead.cpfCnpj,
+        email: input.lead.email ?? null,
+        hasCnh: input.lead.hasCnh ?? null,
         id: "lead_1",
+        monthlyIncomeCents: input.lead.monthlyIncomeCents ?? null,
         name: input.lead.name,
+        phoneNumber: input.lead.phoneNumber,
       }),
       createSimulation: async () =>
         pendingSimulation("credere_inquiry_default"),
@@ -95,9 +100,14 @@ export function createPorts(
       revokeToken: async () => undefined,
       supportsPkce: false,
       updateLead: async (input) => ({
+        birthdate: input.lead.birthdate ?? null,
         cpfCnpj: input.lead.cpfCnpj,
+        email: input.lead.email ?? null,
+        hasCnh: input.lead.hasCnh ?? null,
         id: "lead_1",
+        monthlyIncomeCents: input.lead.monthlyIncomeCents ?? null,
         name: input.lead.name,
+        phoneNumber: input.lead.phoneNumber,
       }),
       ...gatewayOverrides,
     },

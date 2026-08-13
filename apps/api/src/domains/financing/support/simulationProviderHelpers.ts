@@ -190,6 +190,7 @@ function toCondition(
     metadata: {
       downPaymentCents: condition.downPaymentCents,
       firstInstallmentCents: condition.firstInstallmentCents,
+      preApprovalStatus: condition.preApprovalStatus,
       reasonIdentifier: condition.reasonIdentifier,
     },
     status: condition.status,

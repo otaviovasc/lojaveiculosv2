@@ -56,8 +56,21 @@ export function parseStoreMapping(raw: unknown): CredereStoreMapping {
 
 export function parseRequiredFields(raw: unknown): CredereRequiredFields {
   const record = asRecord(raw);
-  const lead = asRecord(record?.["lead"]);
+  const lead = asRecord(record?.["applicant"] ?? record?.["lead"]);
   return {
+    applicant: lead
+      ? {
+          birthDate: readString(lead, ["birthDate", "birthdate"]),
+          email: readString(lead, ["email"]),
+          hasCnh: readBoolean(lead, ["hasCnh", "has_cnh"]),
+          monthlyIncomeCents: readNumber(lead, [
+            "monthlyIncomeCents",
+            "monthly_income_cents",
+          ]),
+          name: readString(lead, ["name"]),
+          phone: readString(lead, ["phone", "phoneNumber"]),
+        }
+      : null,
     applicantKnown:
       readBoolean(record, ["knownLead", "applicantKnown", "knownApplicant"]) ??
       lead !== null,
@@ -70,6 +83,9 @@ export function parseSimulation(raw: unknown): CredereSimulation {
   const record = asRecord(raw) ?? {};
   return {
     id: readString(record, ["inquiryId", "uuid", "id", "simulationId"]) ?? "",
+    leadId: readString(record, ["leadId", "lead_id"]),
+    listingId: readString(record, ["listingId", "listing_id"]),
+    unitId: readString(record, ["unitId", "unit_id"]),
     status: readString(record, ["status"]) ?? "unknown",
     createdAt: readString(record, ["createdAt", "created_at"]),
     providerRequestId: readString(record, [
@@ -122,6 +138,10 @@ function parseCondition(raw: unknown): CredereSimulationCondition {
     bankCode: readString(record, ["bankCode", "bankFebrabanCode"]),
     bankName: readString(record, ["bankName", "bank"]),
     installments: readNumber(record, ["installments"]),
+    downPaymentCents: readNumber(record, ["downPaymentCents"]),
+    firstInstallmentCents: readNumber(record, ["firstInstallmentCents"]),
+    preApprovalStatus: readNumber(record, ["preApprovalStatus"]),
+    reasonIdentifier: readString(record, ["reasonIdentifier"]),
     reason: readString(record, ["reason", "reasonIdentifier"]),
     status: readString(record, ["status"]) ?? "unknown",
     summary: readString(record, ["summary"]),

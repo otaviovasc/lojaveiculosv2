@@ -1,5 +1,13 @@
-import { Link2, Link2Off, PlugZap, RefreshCw, Unplug } from "lucide-react";
+import {
+  Landmark,
+  Link2,
+  Link2Off,
+  PlugZap,
+  RefreshCw,
+  Unplug,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import "../../styles/credere-panels.css";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import {
   FeatureActionButton,
@@ -130,7 +138,8 @@ export function DirectOwnerCrederePanel({
   return (
     <>
       <FeatureSection
-        className="credere-connection"
+        className="credere-panel-connection"
+        icon={<Landmark aria-hidden="true" className="size-4" />}
         actions={
           <FeatureActionButton
             icon={RefreshCw}
@@ -146,8 +155,8 @@ export function DirectOwnerCrederePanel({
         {actionError ? (
           <FeatureAlert tone="danger">{actionError}</FeatureAlert>
         ) : null}
-        <div className="credere-connection-body">
-          <div className="credere-connection-summary">
+        <div className="credere-panel-connection-body">
+          <div className="credere-panel-connection-summary">
             {connectionState.kind === "loading" ? (
               <FeatureLoadingState
                 density="compact"
@@ -161,7 +170,7 @@ export function DirectOwnerCrederePanel({
             ) : null}
             {connection ? (
               <>
-                <div className="credere-connection-fact">
+                <div className="credere-panel-connection-fact">
                   <span>Status da conta</span>
                   <FeatureStatusBadge
                     size="dense"
@@ -170,7 +179,7 @@ export function DirectOwnerCrederePanel({
                     {connection.connected ? "Conectada" : "Não conectada"}
                   </FeatureStatusBadge>
                 </div>
-                <div className="credere-connection-fact">
+                <div className="credere-panel-connection-fact">
                   <span>Loja vinculada</span>
                   <strong>
                     {connection.storeMapping?.externalStoreAlias ||
@@ -181,7 +190,7 @@ export function DirectOwnerCrederePanel({
             ) : null}
           </div>
 
-          <div className="credere-connection-actions">
+          <div className="credere-panel-connection-actions">
             {!connection?.connected ? (
               <FeatureActionButton
                 icon={PlugZap}
@@ -192,7 +201,7 @@ export function DirectOwnerCrederePanel({
               />
             ) : (
               <>
-                <div className="credere-mapping-actions">
+                <div className="credere-panel-connection-mapping-actions">
                   <FeatureActionButton
                     disabled={busyAction !== null}
                     icon={Link2}
@@ -225,7 +234,7 @@ export function DirectOwnerCrederePanel({
                       cadastro no provedor antes de vincular.
                     </FeatureAlert>
                   ) : (
-                    <div className="credere-store-mapping-control">
+                    <div className="credere-panel-store-mapping">
                       <StoreSelector
                         onChange={setSelectedExternalStoreId}
                         stores={providers}
@@ -295,7 +304,7 @@ function StoreSelector({
   value: string;
 }) {
   return (
-    <label className="credere-store-selector">
+    <label className="credere-panel-store-selector">
       <span>Loja Credere</span>
       <FeatureSelect
         ariaLabel="Loja Credere"

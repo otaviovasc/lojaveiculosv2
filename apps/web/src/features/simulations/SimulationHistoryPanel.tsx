@@ -11,10 +11,12 @@ export function SimulationHistoryPanel({
   error,
   history,
   onSelect,
+  selectedId,
 }: {
   error: string | null;
   history: CredereSimulation[] | null;
   onSelect: (simulation: CredereSimulation) => void;
+  selectedId?: string | null;
 }) {
   return (
     <section
@@ -38,6 +40,7 @@ export function SimulationHistoryPanel({
           {history.map((item) => (
             <li key={item.id}>
               <button
+                aria-current={item.id === selectedId ? "true" : undefined}
                 className="credere-history-row"
                 onClick={() => onSelect(item)}
                 type="button"

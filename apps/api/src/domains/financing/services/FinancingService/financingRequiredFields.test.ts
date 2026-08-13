@@ -9,7 +9,16 @@ describe("Credere required fields", () => {
     repository.seedConnection();
     repository.seedStoreMapping();
     const getRequiredFields = vi.fn(async () => ({
-      lead: { cpfCnpj: "12345678901", id: "lead_1", name: "Ana Cliente" },
+      lead: {
+        birthdate: "1990-05-20",
+        cpfCnpj: "12345678901",
+        email: "ana@example.com",
+        hasCnh: true,
+        id: "lead_1",
+        monthlyIncomeCents: 650_000,
+        name: "Ana Cliente",
+        phoneNumber: "11999999999",
+      },
       requirements: {
         email: ["655"],
         has_cnh: ["BV"],
@@ -25,6 +34,14 @@ describe("Credere required fields", () => {
         createPorts(repository, { getRequiredFields }),
       ),
     ).resolves.toEqual({
+      applicant: {
+        birthDate: "1990-05-20",
+        email: "ana@example.com",
+        hasCnh: true,
+        monthlyIncomeCents: 650_000,
+        name: "Ana Cliente",
+        phone: "11999999999",
+      },
       knownLead: true,
       missingFields: ["email", "has_cnh", "phone_number"],
       requirements: {

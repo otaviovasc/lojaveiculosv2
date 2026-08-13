@@ -3,12 +3,14 @@ import type {
   FinancingFipeVehicleLookupInput,
 } from "./financingFipeModels.js";
 import type { FinancingSimulationCandidate } from "./financingReconciliationModels.js";
+import type { FinancingLead } from "./financingLeadModels.js";
 
 export type {
   FinancingFipeVehicleCandidate,
   FinancingFipeVehicleLookupInput,
 } from "./financingFipeModels.js";
 export type { FinancingSimulationCandidate } from "./financingReconciliationModels.js";
+export type { FinancingLead } from "./financingLeadModels.js";
 
 export type FinancingProvider = "credere";
 
@@ -85,12 +87,6 @@ export type FinancingLeadInput = {
   retrieveGender?: string;
   retrieveOccupation?: string;
   retrieveProfession?: string;
-};
-
-export type FinancingLead = {
-  id: string;
-  cpfCnpj: string;
-  name: string | null;
 };
 
 export type FinancingRequiredFields = {

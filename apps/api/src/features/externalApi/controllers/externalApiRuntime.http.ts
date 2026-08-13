@@ -13,6 +13,7 @@ import {
 } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import { ExternalRuntimeValidationError } from "./externalApiRuntime.support.js";
+import { mapCredereFinancingError } from "../../financing/controllers/credereFinancing.errors.js";
 
 export type RuntimeContextFactory = (
   context: Context,
@@ -53,6 +54,17 @@ export function parseQuery<Schema extends z.ZodType>(
   return parsed.data;
 }
 
+export function parseParams<Schema extends z.ZodType>(
+  context: Context,
+  schema: Schema,
+): z.infer<Schema> {
+  const parsed = schema.safeParse(context.req.param());
+  if (!parsed.success) {
+    throw new ExternalRuntimeValidationError("Request path is invalid.");
+  }
+  return parsed.data;
+}
+
 export async function handleRuntime(
   context: Context,
   action: () => Promise<Response>,
@@ -61,6 +73,8 @@ export async function handleRuntime(
 }
 
 function runtimeErrorResponse(error: unknown): ApiErrorResponseInput | null {
+  const financingError = mapCredereFinancingError(error);
+  if (financingError) return financingError;
   if (error instanceof ExternalRuntimeValidationError) {
     return apiErrorInput(error, "EXTERNAL_API_RUNTIME_REQUEST_ERROR", 400);
   }

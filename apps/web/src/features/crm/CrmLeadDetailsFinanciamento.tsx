@@ -13,6 +13,7 @@ import type {
   ProductCrmLead,
 } from "./productCrmTypes";
 import { CrmLeadFinancialProducts } from "./CrmLeadFinancialProducts";
+import { CrmCredereOfficialPanel } from "./CrmCredereOfficialPanel";
 
 type Props = {
   lead: ProductCrmLead;
@@ -86,13 +87,14 @@ export function CrmLeadDetailsFinanciamento({
 
   return (
     <div className="flex flex-col gap-6">
+      <CrmCredereOfficialPanel lead={lead} />
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-black text-app-text">
-          Simulação de Financiamento
+          Estimativa interna (Tabela Price)
         </h3>
         <p className="text-xs font-bold text-muted">
-          Calcule as condições de financiamento do veículo de interesse do
-          cliente.
+          Faça uma estimativa local para conversa comercial. Nenhum banco é
+          consultado nesta seção.
         </p>
       </div>
 
@@ -189,7 +191,7 @@ export function CrmLeadDetailsFinanciamento({
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />
-            Salvar e Registrar Simulação
+            Registrar estimativa no lead
           </button>
         </div>
       </div>

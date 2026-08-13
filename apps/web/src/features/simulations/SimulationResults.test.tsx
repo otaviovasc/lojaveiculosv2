@@ -88,6 +88,36 @@ describe("SimulationResults", () => {
       screen.getByText("Mesmo motivo em 2 condições."),
     ).toBeInTheDocument();
   });
+
+  it("ranks official offers by the lowest returned installment", () => {
+    renderResult({
+      conditions: [
+        acceptedCondition("Banco A", 48, 320_000),
+        acceptedCondition("Banco B", 36, 245_000),
+      ],
+      status: "completed",
+      success: true,
+    });
+
+    const offers = screen.getAllByRole("listitem");
+    expect(offers[0]).toHaveTextContent("Banco B");
+    expect(offers[0]).toHaveTextContent("R$ 2.450,00");
+    expect(screen.getByText("Melhor parcela")).toBeVisible();
+    expect(screen.queryByText(/aprovação final concedida/i)).toBeNull();
+  });
+
+  it("keeps a single returned offer untagged and still shows the hero stat", () => {
+    renderResult({
+      conditions: [acceptedCondition("Banco Único", 36, 245_000)],
+      status: "completed",
+      success: true,
+    });
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.queryByText("Melhor parcela")).toBeNull();
+    expect(screen.getByText("Menor parcela retornada")).toBeVisible();
+    expect(screen.getAllByText("R$ 2.450,00").length).toBeGreaterThan(0);
+  });
 });
 
 function renderResult(
@@ -113,10 +143,13 @@ function renderResult(
         conditions: [],
         createdAt: "2026-08-11T12:00:00.000Z",
         id: "simulation_1",
+        leadId: null,
+        listingId: null,
         providerRequestId: null,
         reason: null,
         status: "completed",
         success: true,
+        unitId: null,
         ...overrides,
       }}
     />,
@@ -127,10 +160,28 @@ function condition(installments: number, bankName = "Banco BV") {
   return {
     bankCode: bankName === "Banco BV" ? "655" : "623",
     bankName,
+    downPaymentCents: null,
+    firstInstallmentCents: null,
     installments,
+    preApprovalStatus: null,
     reason: "Pré-análise em andamento",
+    reasonIdentifier: null,
     status: "rejected",
     summary: null,
     totalAmountCents: null,
+  };
+}
+
+function acceptedCondition(
+  bankName: string,
+  installments: number,
+  firstInstallmentCents: number,
+) {
+  return {
+    ...condition(installments, bankName),
+    firstInstallmentCents,
+    reason: null,
+    status: "available",
+    totalAmountCents: 7_000_000,
   };
 }

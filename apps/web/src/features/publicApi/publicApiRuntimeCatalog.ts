@@ -15,6 +15,21 @@ export type PublicApiEndpoint = {
 };
 
 const endpointPresentation = {
+  preflightExternalApiCredereSimulation: {
+    description: "Confere prontidão, bancos e dados exigidos pelo Credere.",
+    samplePath: "",
+    title: "Pré-validar simulação Credere",
+  },
+  createExternalApiCredereSimulation: {
+    description: "Cria uma simulação oficial e consentida no Credere.",
+    samplePath: "",
+    title: "Criar simulação Credere",
+  },
+  getExternalApiCredereSimulation: {
+    description: "Consulta o retorno oficial e as condições dos bancos.",
+    samplePath: "",
+    title: "Consultar simulação Credere",
+  },
   listExternalApiVehicles: {
     description: "Lista veículos com um DTO público limpo.",
     samplePath: "?available=true&limit=20",
@@ -74,26 +89,36 @@ export function createCurlExample(
 ) {
   const route = endpoint.path
     .replace("{listingId}", "listing_123")
-    .replace("{leadId}", "lead_123");
+    .replace("{leadId}", "lead_123")
+    .replace("{inquiryId}", "inquiry_123");
   const url = `${deploymentBaseUrl.replace(/\/$/, "")}${externalApiBasePath}${route}${endpoint.samplePath}`;
   const lines = [
     `curl -X ${endpoint.method}`,
     '-H "x-api-key: lv2_..."',
     '-H "content-type: application/json"',
-    ...mutationLines(endpoint.method),
+    ...requestLines(endpoint),
     `"${url}"`,
   ];
   return lines.join(" \\\n  ");
 }
 
-function mutationLines(method: PublicApiEndpoint["method"]) {
-  if (method === "POST") {
+function requestLines(endpoint: PublicApiEndpoint) {
+  if (endpoint.operationId === "preflightExternalApiCredereSimulation") {
+    return [`-d '{"document":"52998224725"}'`];
+  }
+  if (endpoint.operationId === "createExternalApiCredereSimulation") {
+    return [
+      '-H "Idempotency-Key: credere-simulation-001"',
+      `-d '{"applicant":{"document":"52998224725","name":"Ana Silva","phone":"11999990000"},"consent":{"creditSimulation":true,"personalData":true},"terms":{"downPaymentCents":2000000,"installmentCounts":[24,36,48]},"vehicle":{"licensingCity":"Sao Paulo","licensingUf":"SP","manufactureYear":2023,"modelYear":2024,"molicarCode":"001234","priceCents":9000000}}'`,
+    ];
+  }
+  if (endpoint.operationId === "createExternalApiLead") {
     return [
       '-H "Idempotency-Key: lead-import-001"',
       `-d '{"name":"Ana","phone":"+5511999990000","message":"Tenho interesse"}'`,
     ];
   }
-  if (method === "PATCH") {
+  if (endpoint.method === "PATCH") {
     return [
       '-H "Idempotency-Key: lead-update-001"',
       `-d '{"status":"contacted"}'`,

@@ -1,4 +1,5 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
+import { externalApiRuntimeOperations } from "@lojaveiculosv2/shared";
 import type { Context } from "hono";
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import {
@@ -150,7 +151,7 @@ async function enforceExternalApiGovernance(input: {
   }
 
   const method = input.request.method ?? "GET";
-  if (!requiresIdempotencyKey(method)) return;
+  if (!requiresIdempotencyKey(method, input.request.path ?? "/")) return;
   const idempotencyKey = input.request.idempotencyKey;
   if (!idempotencyKey) {
     throw new HttpContextRequestPolicyError(
@@ -189,8 +190,24 @@ function createRequestFingerprint(request: ServiceRequestContext): string {
   return [request.method ?? "GET", request.path ?? "/"].join(":");
 }
 
-function requiresIdempotencyKey(method: string): boolean {
-  return ["DELETE", "PATCH", "POST", "PUT"].includes(method.toUpperCase());
+const nonMutatingExternalApiPostPaths = new Set<string>(
+  externalApiRuntimeOperations
+    .filter(
+      (operation) =>
+        operation.method === "POST" && operation.scope.endsWith(".read"),
+    )
+    .map((operation) => operation.path),
+);
+
+function requiresIdempotencyKey(method: string, path: string): boolean {
+  const normalizedMethod = method.toUpperCase();
+  if (
+    normalizedMethod === "POST" &&
+    nonMutatingExternalApiPostPaths.has(path)
+  ) {
+    return false;
+  }
+  return ["DELETE", "PATCH", "POST", "PUT"].includes(normalizedMethod);
 }
 
 export function readExternalApiKey(context: Context): string | null {

@@ -14,6 +14,7 @@ import {
   type CredereIdempotencyOperation,
 } from "./requestBuilder";
 import type { SimulationPrefill } from "./SimulationForm";
+import { useSimulationRoutePrefill } from "./simulationRoutePrefill";
 import {
   SimulationDisconnectedNotice,
   SimulationLoadingNotice,
@@ -42,6 +43,7 @@ export function SimulationsPage({
   api?: CredereApi | undefined;
   prefill?: SimulationPrefill | undefined;
 }) {
+  const resolvedPrefill = useSimulationRoutePrefill(prefill);
   const session = useAccountSession();
   const activeStore = readSessionActiveStore(session);
   const canManageDirectCredere =
@@ -239,6 +241,7 @@ export function SimulationsPage({
             ? `Loja vinculada: ${statusState.status.mappedStoreAlias}`
             : undefined
         }
+        className="credere-shell-header"
         description="Consulte os bancos autorizados para a loja ativa e acompanhe cada retorno sem confundir pré-análise com aprovação."
         eyebrow={
           <>
@@ -279,7 +282,7 @@ export function SimulationsPage({
           onSubmit={handleSubmit}
           pollError={pollError}
           pollExhausted={pollExhausted}
-          {...(prefill ? { prefill } : {})}
+          {...(resolvedPrefill ? { prefill: resolvedPrefill } : {})}
           status={statusState.status}
           submitError={submitError}
         />

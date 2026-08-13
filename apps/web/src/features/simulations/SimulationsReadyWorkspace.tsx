@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { Landmark } from "lucide-react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { SimulationForm, type SimulationPrefill } from "./SimulationForm";
@@ -43,7 +44,10 @@ export function SimulationsReadyWorkspace({
 }) {
   const formKey = prefill ? createPrefillIdentity(prefill) : "manual";
   return (
-    <FeatureSection className="credere-workspace" padding="none">
+    <FeatureSection
+      className="credere-workspace credere-shell-workspace-enter"
+      padding="none"
+    >
       <div className="credere-workspace-grid">
         <section
           aria-labelledby="credere-new-simulation-title"
@@ -79,7 +83,10 @@ export function SimulationsReadyWorkspace({
             )}
           </div>
         </section>
-        <aside className="credere-response-pane">
+        <aside
+          aria-label="Resultado e histórico"
+          className="credere-response-pane"
+        >
           {current ? (
             <SimulationResults
               isPolling={
@@ -95,6 +102,9 @@ export function SimulationsReadyWorkspace({
             />
           ) : (
             <section className="credere-awaiting-result">
+              <span aria-hidden="true" className="credere-shell-beacon">
+                <Landmark className="size-5" />
+              </span>
               <span className="credere-section-label">Retorno dos bancos</span>
               <h3>Preencha a consulta ao lado</h3>
               <p>
@@ -107,6 +117,7 @@ export function SimulationsReadyWorkspace({
             error={historyError}
             history={history}
             onSelect={onSelectSimulation}
+            selectedId={current?.id ?? null}
           />
         </aside>
       </div>

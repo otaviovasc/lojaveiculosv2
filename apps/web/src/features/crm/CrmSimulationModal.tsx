@@ -120,7 +120,7 @@ export function CrmSimulationModal({
       title={
         <span className="flex items-center gap-2">
           <Calculator aria-hidden="true" className="size-5 text-accent" />
-          <span>Simular financiamento</span>
+          <span>Estimativa interna de financiamento</span>
         </span>
       }
     >

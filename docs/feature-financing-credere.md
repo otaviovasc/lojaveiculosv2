@@ -102,6 +102,12 @@ required lead fields, simulation creation, history, detail, and provider
 refresh. They require the `simulations` entitlement plus
 `financing.simulation.create` or `financing.simulation.read`.
 
+Scoped partner and agent clients use the equivalent Public API routes under
+`/api/v1/external-api/financing/credere`: `POST /preflight`,
+`POST /simulations`, and `GET /simulations/:inquiryId`. API keys receive only
+their configured financing scope, creation still requires explicit consent and
+`Idempotency-Key`, and provider/store authority remains server-owned.
+
 The same store prefix exposes direct-owner-only connection, OAuth,
 provider-store discovery, current-store mapping, and disconnect endpoints.
 Those controls require `membershipRole = owner` and
@@ -114,6 +120,31 @@ context supplies the trusted tenant/store, real store entitlements, and the
 minimum financing permission for the selected action. The bot contract uses
 the same public simulation input as HTTP and recursively rejects provider and
 scope override fields.
+
+These three actions remain available at
+`POST /api/v1/crm/whatsapp/integrations/bot/actions` for the configured bot's
+write-only webhook secret. Every non-Credere legacy action on that route stays
+gone with HTTP 410 and must use the capability-grant bot API instead.
+
+## Operator Experience
+
+The simulation workspace follows four explicit steps: vehicle, applicant,
+conditions, and review. Vehicle input can come from current inventory or the
+shared FIPE brand/model catalog; inventory selection carries the safe listing
+and unit references and fills price/year data. Applicant input can come from a
+CRM lead or manual entry. A Credere preflight may hydrate only empty applicant
+fields and never overwrites operator edits.
+
+All currently usable institutions start selected. The operator may narrow the
+set, but a submission with zero selected institutions is blocked. Result cards
+keep provider status and refusal reasons visible, sort comparable offers by
+first installment, and never label a pre-approval or simulation as final credit
+approval.
+
+In CRM lead details, "Consulta oficial Credere" is visually and textually
+separate from the local Price-table estimate. The local estimate does not call
+a bank; the official panel deep-links with lead/listing references and shows
+only simulations linked to that lead.
 
 ## V1 to V2 Cutover
 

@@ -131,6 +131,18 @@ export const scopeOptions: PublicApiScopeOption[] = [
     "Uploads e documentos financeiros.",
   ),
   option(
+    "Financeiro",
+    "financing.simulation.read",
+    "Consultar Credere",
+    "Prontidão, dados exigidos e retorno oficial das simulações.",
+  ),
+  option(
+    "Financeiro",
+    "financing.simulation.create",
+    "Criar simulação Credere",
+    "Envio consentido aos bancos habilitados da loja.",
+  ),
+  option(
     "CRM",
     "crm.access",
     "Acesso CRM",

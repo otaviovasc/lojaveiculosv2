@@ -1,15 +1,9 @@
-import { getCitiesByStateCode } from "@lojaveiculosv2/shared";
-import { RefreshCw, Send } from "lucide-react";
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { FeatureActionButton } from "../../components/ui/FeatureLayout";
+import { useRef, useState, type FormEvent } from "react";
+import { CircleAlert } from "lucide-react";
 import { FeatureFormSection } from "../../components/ui/FeatureForms";
-import {
-  formatBrazilianDocument,
-  formatBrazilianPhone,
-  parseCurrencyInput,
-} from "../../lib/masks";
-import { SimulationBankSelector } from "./SimulationBankSelector";
+import { formatBrazilianDocument, formatBrazilianPhone } from "../../lib/masks";
 import { SimulationFipeResolver } from "./SimulationFipeResolver";
+import { SimulationReviewStep } from "./SimulationReviewStep";
 import {
   isValidPreflightDocument,
   readApplicantRequirements,
@@ -19,52 +13,44 @@ import {
   SimulationTermsFields,
   SimulationVehicleFields,
 } from "./SimulationFormFields";
+import {
+  SimulationApplicantSource,
+  SimulationVehicleSource,
+  readLeadDocument,
+  useSimulationSources,
+} from "./SimulationSourceSelectors";
+import {
+  SimulationFormStepper,
+  SimulationStepActions,
+  nextSimulationStep,
+  previousSimulationStep,
+  type SimulationFormStep,
+} from "./SimulationFormNavigation";
+import { SimulationApplicantPreflightStatus } from "./SimulationApplicantPreflightStatus";
+import {
+  SimulationSummarySidebar,
+  type SimulationSummaryChecklistItem,
+} from "./SimulationSummarySidebar";
+import { canonicalSimulationCity } from "./simulationLocation";
+import { createCurrencyChange, toggleBankCode } from "./simulationFormSupport";
+import { buildSimulationDraft } from "./simulationDraftBuilder";
+import {
+  simulationStepReadiness,
+  type SimulationStepSnapshot,
+} from "./simulationStepReadiness";
+import { getApiErrorDisplay } from "../../lib/apiErrors";
+import type { ProductCrmLead } from "../crm/productCrmTypes";
+import type {
+  InventoryCatalogSnapshot,
+  InventoryListingSummary,
+} from "../inventory/model/types";
 import type {
   CredereFipeCandidate,
-  CredereFipeResolution,
   CredereApplicantPreflightState,
-  CredereRequiredFields,
-  CredereSimulationDraft,
-  CredereUsableBank,
 } from "./types";
-
-export type SimulationPrefill = {
-  applicantName?: string;
-  channel?: string;
-  credereVehicleModelId?: string;
-  cpfCnpj?: string;
-  email?: string;
-  fipeCode?: string;
-  leadId?: string;
-  listingId?: string;
-  licensingCity?: string;
-  licensingUf?: string;
-  manufactureYear?: number;
-  modelYear?: number;
-  molicarCode?: string;
-  phone?: string;
-  unitId?: string;
-  vehicleValueCents?: number;
-  zeroKm?: boolean;
-};
-
-type SimulationFormProps = {
-  banks: readonly CredereUsableBank[];
-  isSubmitting: boolean;
-  onGetRequiredFields: (input: {
-    bankCodes?: readonly string[] | undefined;
-    cpfCnpj: string;
-  }) => Promise<CredereRequiredFields>;
-  onResolveFipe: (input: {
-    fipeCode: string;
-    modelYear: number;
-    selectedModelId?: string;
-    selectedMolicarCode?: string;
-  }) => Promise<CredereFipeResolution>;
-  onSubmit: (draft: CredereSimulationDraft) => void | Promise<void>;
-  prefill?: SimulationPrefill | undefined;
-  submitError: string | null;
-};
+import type { SimulationFormProps } from "./SimulationForm.types";
+import "../../styles/credere-form.css";
+export type { SimulationPrefill } from "./SimulationForm.types";
 
 export function SimulationForm({
   banks,
@@ -75,6 +61,18 @@ export function SimulationForm({
   prefill,
   submitError,
 }: SimulationFormProps) {
+  const sources = useSimulationSources();
+  const [step, setStep] = useState<SimulationFormStep>("vehicle");
+  const [applicantSource, setApplicantSource] = useState<"existing" | "new">(
+    prefill?.leadId ? "existing" : "new",
+  );
+  const [vehicleSource, setVehicleSource] = useState<"catalog" | "stock">(
+    "stock",
+  );
+  const [leadId, setLeadId] = useState(prefill?.leadId ?? "");
+  const [listingId, setListingId] = useState(prefill?.listingId ?? "");
+  const [unitId, setUnitId] = useState(prefill?.unitId ?? "");
+  const [catalog, setCatalog] = useState<InventoryCatalogSnapshot | null>(null);
   const [name, setName] = useState(prefill?.applicantName ?? "");
   const [cpfCnpj, setCpfCnpj] = useState(
     formatBrazilianDocument(prefill?.cpfCnpj ?? ""),
@@ -111,15 +109,18 @@ export function SimulationForm({
     useState<CredereFipeCandidate | null>(null);
   const initialLicensingUf = prefill?.licensingUf?.trim().toUpperCase() ?? "";
   const [licensingCity, setLicensingCity] = useState(
-    canonicalCity(initialLicensingUf, prefill?.licensingCity ?? ""),
+    canonicalSimulationCity(initialLicensingUf, prefill?.licensingCity ?? ""),
   );
   const [licensingUf, setLicensingUf] = useState(initialLicensingUf);
   const [zeroKm, setZeroKm] = useState(prefill?.zeroKm ?? false);
-  const [bankCodes, setBankCodes] = useState<readonly string[]>([]);
+  const [bankCodes, setBankCodes] = useState<readonly string[]>(() =>
+    banks.map((bank) => bank.code),
+  );
   const [consent, setConsent] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [preflightState, setPreflightState] =
     useState<CredereApplicantPreflightState>({ kind: "idle" });
+  const [preflightErrorId, setPreflightErrorId] = useState<string | null>(null);
   const preflightRequestRef = useRef("");
   const requirements =
     preflightState.kind === "ready"
@@ -130,338 +131,410 @@ export function SimulationForm({
     if (!isValidPreflightDocument(cpfCnpj)) return;
     const requestKey = `${cpfCnpj.replace(/\D/g, "")}:${bankCodes.join(",")}`;
     preflightRequestRef.current = requestKey;
+    setPreflightErrorId(null);
     setPreflightState({ kind: "loading" });
     try {
       const result = await onGetRequiredFields({
-        ...(bankCodes.length ? { bankCodes } : {}),
+        bankCodes,
         cpfCnpj,
       });
       if (preflightRequestRef.current === requestKey) {
+        const applicant = result.applicant;
+        if (applicant) {
+          setName((current) => current.trim() || applicant.name || "");
+          setPhone((current) =>
+            current.replace(/\D/g, "")
+              ? current
+              : formatBrazilianPhone(applicant.phone ?? ""),
+          );
+          setEmail((current) => current.trim() || applicant.email || "");
+          setBirthDate((current) => current || applicant.birthDate || "");
+          setHasCnh((current) => current ?? applicant.hasCnh);
+          setIncome(
+            (current) =>
+              current ??
+              (applicant.monthlyIncomeCents == null
+                ? null
+                : applicant.monthlyIncomeCents / 100),
+          );
+        }
         setPreflightState({ kind: "ready", result });
       }
     } catch (error) {
       if (preflightRequestRef.current === requestKey) {
-        setPreflightState({
-          kind: "error",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Não foi possível conferir os campos exigidos.",
-        });
+        const display = getApiErrorDisplay(
+          error,
+          "Não foi possível conferir os campos exigidos.",
+        );
+        setPreflightErrorId(
+          "requestId" in display ? (display.requestId ?? null) : null,
+        );
+        setPreflightState({ kind: "error", message: display.message });
       }
     }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const vehicleValueCents = Math.round((vehicleValue ?? 0) * 100);
-    const downPaymentCents = Math.round((downPayment ?? 0) * 100);
-    const manYear = Number(manufactureYear);
-    const modYear = Number(modelYear);
-    const fail = (message: string) => setValidationError(message);
-
-    if (!name.trim()) return fail("Informe o nome do proponente.");
-    if (!isValidPreflightDocument(cpfCnpj))
-      return fail("Informe um CPF/CNPJ válido para consultar o Credere.");
-    if (preflightState.kind !== "ready")
-      return fail("Confira os dados exigidos pelo Credere antes de simular.");
-    if (requirements.unsupported.length)
-      return fail(
-        "O Credere exige dados que esta tela ainda não envia. Não foi feita uma operação oficial.",
-      );
-    if (requirements.supported.has("birthDate") && !birthDate)
-      return fail("Informe a data de nascimento exigida pelos bancos.");
-    if (requirements.supported.has("hasCnh") && hasCnh === null)
-      return fail("Informe se o proponente possui CNH.");
-    if (requirements.supported.has("email") && !email.trim())
-      return fail("Informe o e-mail exigido pelos bancos.");
-    if (requirements.supported.has("monthlyIncomeCents") && !income)
-      return fail("Informe a renda mensal exigida pelos bancos.");
-    if (!phone.replace(/\D/g, ""))
-      return fail("Informe o telefone do proponente.");
-    if (vehicleValueCents <= 0) return fail("Informe o valor do veículo.");
-    if (downPaymentCents <= 0)
-      return fail("Informe um valor de entrada válido.");
-    if (downPaymentCents >= vehicleValueCents)
-      return fail("A entrada deve ser menor que o valor do veículo.");
-    if (!manYear || !modYear)
-      return fail("Informe os anos de fabricação e modelo do veículo.");
-    if (!fipeCode.trim() || !molicarCode.trim() || !credereVehicleModelId) {
-      return fail(
-        "Consulte a FIPE e confirme a versão Molicar antes de simular.",
-      );
-    }
-    if (!licensingUf.trim()) return fail("Informe a UF de licenciamento.");
-    if (!licensingCity.trim())
-      return fail("Informe a cidade de licenciamento.");
-    if (!consent)
-      return fail(
-        "Confirme o consentimento do proponente para consultar os bancos.",
-      );
-
-    setValidationError(null);
-    void onSubmit({
-      applicant: {
-        ...(birthDate ? { birthDate } : {}),
-        ...(hasCnh !== null ? { hasCnh } : {}),
-        name,
-        cpfCnpj,
-        phone,
-        ...(email.trim() ? { email } : {}),
-        ...(income && income > 0
-          ? { monthlyIncomeCents: Math.round(income * 100) }
-          : {}),
-      },
-      ...(accessoryValue && accessoryValue > 0
-        ? { accessoryValueCents: Math.round(accessoryValue * 100) }
-        : {}),
-      consent: {
-        acceptedTerms: true,
-        acceptedAt: new Date().toISOString(),
-        channel: prefill?.channel ?? "store_workspace",
-        policyVersion: "v1",
-      },
-      ...(documentationValue && documentationValue > 0
-        ? { documentationValueCents: Math.round(documentationValue * 100) }
-        : {}),
-      downPaymentCents,
-      installments:
-        installments === "all" ? [12, 24, 36, 48, 60] : [Number(installments)],
-      ...(insuranceValue && insuranceValue > 0
-        ? { insuranceValueCents: Math.round(insuranceValue * 100) }
-        : {}),
-      ...(prefill?.leadId ? { leadId: prefill.leadId } : {}),
-      ...(prefill?.listingId ? { listingId: prefill.listingId } : {}),
-      ...(prefill?.unitId ? { unitId: prefill.unitId } : {}),
-      ...(bankCodes.length ? { requestedBankCodes: [...bankCodes] } : {}),
-      vehicle: {
-        credereVehicleModelId,
-        fipeCode,
-        priceCents: vehicleValueCents,
-        manufactureYear: manYear,
-        modelYear: modYear,
-        licensingCity,
-        licensingUf: licensingUf.trim().toUpperCase(),
-        molicarCode,
-        zeroKm,
-      },
+    const result = buildSimulationDraft({
+      accessoryValue,
+      bankCodes,
+      birthDate,
+      channel: prefill?.channel ?? "store_workspace",
+      consent,
+      cpfCnpj,
+      credereVehicleModelId,
+      documentationValue,
+      downPayment,
+      email,
+      fipeCode,
+      hasCnh,
+      income,
+      installments,
+      insuranceValue,
+      leadId,
+      licensingCity,
+      licensingUf,
+      listingId,
+      manufactureYear,
+      modelYear,
+      molicarCode,
+      name,
+      phone,
+      preflightReady: preflightState.kind === "ready",
+      requiredFields: requirements.supported,
+      unitId,
+      unsupportedFieldCount: requirements.unsupported.length,
+      vehicleValue,
+      zeroKm,
     });
+    if (result.error !== null) return setValidationError(result.error);
+    setValidationError(null);
+    void onSubmit(result.draft);
   };
-
-  const currencyChange =
-    (setter: (value: number | null) => void) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const parsed = parseCurrencyInput(event.target.value);
-      setter(parsed ? Number(parsed) : null);
-    };
 
   const toggleBank = (code: string) =>
     setBankCodes((previous) => {
       preflightRequestRef.current = "";
       setPreflightState({ kind: "idle" });
-      return previous.includes(code)
-        ? previous.filter((item) => item !== code)
-        : [...previous, code];
+      setPreflightErrorId(null);
+      return toggleBankCode(previous, code);
     });
+
+  const selectListing = (item: InventoryListingSummary | null) => {
+    if (!item) {
+      setListingId("");
+      setUnitId("");
+      return;
+    }
+    const listing = item.listing;
+    setListingId(listing.id);
+    setUnitId(item.primaryUnit?.id ?? item.units[0]?.id ?? "");
+    setCatalog(listing.catalog);
+    setVehicleValue(
+      listing.priceCents == null ? null : listing.priceCents / 100,
+    );
+    setManufactureYear(
+      listing.manufactureYear == null ? "" : String(listing.manufactureYear),
+    );
+    setModelYear(listing.modelYear == null ? "" : String(listing.modelYear));
+    setFipeCode(listing.catalog?.fipeCode ?? "");
+    setSelectedFipeCandidate(null);
+    setCredereVehicleModelId("");
+    setMolicarCode("");
+  };
+
+  const selectCatalog = (next: InventoryCatalogSnapshot | null) => {
+    setCatalog(next);
+    setListingId("");
+    setUnitId("");
+    setFipeCode(next?.fipeCode ?? "");
+    if (next?.modelYear) setModelYear(String(next.modelYear));
+    if (next?.priceCents) setVehicleValue(next.priceCents / 100);
+    setSelectedFipeCandidate(null);
+    setCredereVehicleModelId("");
+    setMolicarCode("");
+  };
+
+  const selectLead = (lead: ProductCrmLead | null) => {
+    setLeadId(lead?.id ?? "");
+    if (!lead) return;
+    setName(lead.buyerName ?? "");
+    setPhone(formatBrazilianPhone(lead.buyerPhone ?? ""));
+    setEmail(lead.buyerEmail ?? "");
+    const document = readLeadDocument(lead);
+    if (document) setCpfCnpj(formatBrazilianDocument(document));
+    if (lead.listingId) {
+      setListingId(lead.listingId);
+      const item = sources.inventory.find(
+        (candidate) => candidate.listing.id === lead.listingId,
+      );
+      if (item) selectListing(item);
+    }
+    preflightRequestRef.current = "";
+    setPreflightState({ kind: "idle" });
+    setPreflightErrorId(null);
+  };
+
+  const continueStep = () => {
+    const readiness = simulationStepReadiness(step, snapshot);
+    if (!readiness.ready) return setValidationError(readiness.reason);
+    setStep(nextSimulationStep(step));
+    setValidationError(null);
+  };
+
+  const previousStep = () => {
+    setStep(previousSimulationStep(step));
+    setValidationError(null);
+  };
+
+  const snapshot: SimulationStepSnapshot = {
+    cpfCnpj,
+    credereVehicleModelId,
+    downPayment,
+    fipeCode,
+    licensingCity,
+    licensingUf,
+    manufactureYear,
+    modelYear,
+    molicarCode,
+    name,
+    phone,
+    preflightReady: preflightState.kind === "ready",
+    vehicleValue,
+  };
+  const currentReadiness = simulationStepReadiness(step, snapshot);
+  const checklist: SimulationSummaryChecklistItem[] = [
+    {
+      complete: simulationStepReadiness("vehicle", snapshot).ready,
+      label: "Veículo e versão confirmados",
+    },
+    {
+      complete: simulationStepReadiness("applicant", snapshot).ready,
+      label: "Proponente conferido no Credere",
+    },
+    {
+      complete: simulationStepReadiness("terms", snapshot).ready,
+      label: "Condições definidas",
+    },
+    { complete: consent, label: "Consentimento registrado" },
+  ];
+  const versionLabel = selectedFipeCandidate
+    ? selectedFipeCandidate.version || selectedFipeCandidate.name
+    : null;
 
   const visibleError = validationError ?? submitError;
 
   return (
-    <form className="credere-simulation-form" onSubmit={handleSubmit}>
-      <FeatureFormSection
-        description="Identificação e contato usados na consulta consentida."
-        title="Proponente"
-      >
-        <SimulationApplicantFields
-          birthDate={birthDate}
-          cpfCnpj={cpfCnpj}
-          email={email}
-          hasCnh={hasCnh}
-          income={income}
-          name={name}
-          onBirthDateChange={setBirthDate}
-          onCpfCnpjBlur={() => void runApplicantPreflight()}
-          onCpfCnpjChange={(value) => {
-            setCpfCnpj(value);
-            preflightRequestRef.current = "";
-            setPreflightState({ kind: "idle" });
-          }}
-          onEmailChange={setEmail}
-          onHasCnhChange={setHasCnh}
-          onIncomeChange={currencyChange(setIncome)}
-          onNameChange={setName}
-          onPhoneChange={setPhone}
-          phone={phone}
-          requiredFields={requirements.supported}
-        />
-        <ApplicantPreflightStatus
-          canCheck={isValidPreflightDocument(cpfCnpj)}
-          onRetry={() => void runApplicantPreflight()}
-          state={preflightState}
-          unsupportedCount={requirements.unsupported.length}
-        />
-      </FeatureFormSection>
+    <form className="credere-form" onSubmit={handleSubmit}>
+      <div className="credere-form-layout">
+        <div className="credere-form-main">
+          <SimulationFormStepper onChange={setStep} step={step} />
 
-      <FeatureFormSection
-        description="Defina valor, entrada e prazo desejado."
-        title="Condições"
-      >
-        <SimulationTermsFields
-          accessoryValue={accessoryValue}
-          documentationValue={documentationValue}
-          downPayment={downPayment}
-          installments={installments}
-          insuranceValue={insuranceValue}
-          onAccessoryValueChange={currencyChange(setAccessoryValue)}
-          onDocumentationValueChange={currencyChange(setDocumentationValue)}
-          onDownPaymentChange={currencyChange(setDownPayment)}
-          onInsuranceValueChange={currencyChange(setInsuranceValue)}
-          onInstallmentsChange={setInstallments}
-          onVehicleValueChange={currencyChange(setVehicleValue)}
-          vehicleValue={vehicleValue}
-        />
-      </FeatureFormSection>
+          {step === "vehicle" ? (
+            <FeatureFormSection
+              className="credere-form-section"
+              description="Selecione um veículo do estoque ou navegue pelo mesmo catálogo FIPE usado no cadastro."
+              title="Veículo"
+            >
+              <div className="grid gap-5">
+                <SimulationVehicleSource
+                  catalog={catalog}
+                  listingId={listingId}
+                  manufactureYear={manufactureYear}
+                  onCatalogChange={selectCatalog}
+                  onManufactureYearChange={setManufactureYear}
+                  onSelectListing={selectListing}
+                  onSourceChange={(value) => {
+                    setVehicleSource(value);
+                    if (value === "catalog") {
+                      setListingId("");
+                      setUnitId("");
+                    }
+                  }}
+                  onYearChange={(year) => {
+                    setModelYear(year == null ? "" : String(year));
+                    setSelectedFipeCandidate(null);
+                    setCredereVehicleModelId("");
+                    setMolicarCode("");
+                  }}
+                  source={vehicleSource}
+                  sources={sources}
+                />
+                <SimulationVehicleFields
+                  licensingCity={licensingCity}
+                  licensingUf={licensingUf}
+                  manufactureYear={manufactureYear}
+                  modelYear={modelYear}
+                  molicarCode={molicarCode}
+                  onLicensingCityChange={setLicensingCity}
+                  onLicensingUfChange={(value) => {
+                    setLicensingUf(value);
+                    setLicensingCity("");
+                  }}
+                  onManufactureYearChange={setManufactureYear}
+                  onModelYearChange={(value) => {
+                    setModelYear(value);
+                    setSelectedFipeCandidate(null);
+                    setCredereVehicleModelId("");
+                    setMolicarCode("");
+                  }}
+                  onMolicarCodeChange={setMolicarCode}
+                  onZeroKmChange={setZeroKm}
+                  zeroKm={zeroKm}
+                />
+                <SimulationFipeResolver
+                  fipeCode={fipeCode}
+                  key={`${fipeCode}:${modelYear}`}
+                  modelYear={modelYear}
+                  onFipeCodeChange={setFipeCode}
+                  onResolve={onResolveFipe}
+                  onSelect={(candidate) => {
+                    setSelectedFipeCandidate(candidate);
+                    setCredereVehicleModelId(candidate?.modelId ?? "");
+                    setMolicarCode(candidate?.molicarCode ?? "");
+                  }}
+                  selected={selectedFipeCandidate}
+                />
+              </div>
+            </FeatureFormSection>
+          ) : null}
 
-      <FeatureFormSection
-        description="Confirme a FIPE e escolha a versão Molicar exata antes do envio."
-        title="Veículo"
-      >
-        <div className="grid gap-4">
-          <SimulationVehicleFields
-            licensingCity={licensingCity}
-            licensingUf={licensingUf}
-            manufactureYear={manufactureYear}
-            modelYear={modelYear}
-            molicarCode={molicarCode}
-            onLicensingCityChange={setLicensingCity}
-            onLicensingUfChange={(value) => {
-              setLicensingUf(value);
-              setLicensingCity("");
-            }}
-            onManufactureYearChange={setManufactureYear}
-            onModelYearChange={(value) => {
-              setModelYear(value);
-              setSelectedFipeCandidate(null);
-              setCredereVehicleModelId("");
-              setMolicarCode("");
-            }}
-            onMolicarCodeChange={setMolicarCode}
-            onZeroKmChange={setZeroKm}
-            zeroKm={zeroKm}
-          />
-          <SimulationFipeResolver
-            fipeCode={fipeCode}
-            key={`${fipeCode}:${modelYear}`}
-            modelYear={modelYear}
-            onFipeCodeChange={setFipeCode}
-            onResolve={onResolveFipe}
-            onSelect={(candidate) => {
-              setSelectedFipeCandidate(candidate);
-              setCredereVehicleModelId(candidate?.modelId ?? "");
-              setMolicarCode(candidate?.molicarCode ?? "");
-            }}
-            selected={selectedFipeCandidate}
+          {step === "applicant" ? (
+            <FeatureFormSection
+              className="credere-form-section"
+              description="Selecione um lead do CRM ou informe um novo proponente. O Credere completa somente campos vazios."
+              title="Proponente"
+            >
+              <div className="grid gap-5">
+                <SimulationApplicantSource
+                  leadId={leadId}
+                  onSelect={selectLead}
+                  onSourceChange={(value) => {
+                    setApplicantSource(value);
+                    if (value === "new") setLeadId("");
+                  }}
+                  source={applicantSource}
+                  sources={sources}
+                />
+                <SimulationApplicantFields
+                  birthDate={birthDate}
+                  cpfCnpj={cpfCnpj}
+                  email={email}
+                  hasCnh={hasCnh}
+                  income={income}
+                  name={name}
+                  onBirthDateChange={setBirthDate}
+                  onCpfCnpjBlur={() => void runApplicantPreflight()}
+                  onCpfCnpjChange={(value) => {
+                    setCpfCnpj(value);
+                    preflightRequestRef.current = "";
+                    setPreflightState({ kind: "idle" });
+                    setPreflightErrorId(null);
+                  }}
+                  onEmailChange={setEmail}
+                  onHasCnhChange={setHasCnh}
+                  onIncomeChange={createCurrencyChange(setIncome)}
+                  onNameChange={setName}
+                  onPhoneChange={setPhone}
+                  phone={phone}
+                  requiredFields={requirements.supported}
+                />
+                <SimulationApplicantPreflightStatus
+                  canCheck={isValidPreflightDocument(cpfCnpj)}
+                  onRetry={() => void runApplicantPreflight()}
+                  requestId={preflightErrorId}
+                  state={preflightState}
+                  unsupportedCount={requirements.unsupported.length}
+                />
+              </div>
+            </FeatureFormSection>
+          ) : null}
+
+          {step === "terms" ? (
+            <FeatureFormSection
+              className="credere-form-section"
+              description="Defina valor, entrada e prazos desejados."
+              title="Condições"
+            >
+              <SimulationTermsFields
+                accessoryValue={accessoryValue}
+                documentationValue={documentationValue}
+                downPayment={downPayment}
+                installments={installments}
+                insuranceValue={insuranceValue}
+                onAccessoryValueChange={createCurrencyChange(setAccessoryValue)}
+                onDocumentationValueChange={createCurrencyChange(
+                  setDocumentationValue,
+                )}
+                onDownPaymentChange={createCurrencyChange(setDownPayment)}
+                onInsuranceValueChange={createCurrencyChange(setInsuranceValue)}
+                onInstallmentsChange={setInstallments}
+                onVehicleValueChange={createCurrencyChange(setVehicleValue)}
+                vehicleValue={vehicleValue}
+              />
+            </FeatureFormSection>
+          ) : null}
+
+          {step === "review" ? (
+            <SimulationReviewStep
+              applicantName={name}
+              bankCodes={bankCodes}
+              banks={banks}
+              consent={consent}
+              downPayment={downPayment}
+              fipeCode={fipeCode}
+              installments={installments}
+              licensingCity={licensingCity}
+              licensingUf={licensingUf}
+              manufactureYear={manufactureYear}
+              modelYear={modelYear}
+              molicarCode={molicarCode}
+              onConsentChange={setConsent}
+              onToggleBank={toggleBank}
+              preflightReady={preflightState.kind === "ready"}
+              vehicleName={catalog?.modelName ?? null}
+              vehicleValue={vehicleValue}
+              versionLabel={versionLabel}
+              zeroKm={zeroKm}
+            />
+          ) : null}
+
+          {visibleError ? (
+            <p className="credere-form-error" role="alert">
+              <CircleAlert aria-hidden="true" />
+              {visibleError}
+            </p>
+          ) : null}
+
+          <SimulationStepActions
+            isLast={step === "review"}
+            isSubmitting={isSubmitting}
+            nextDisabled={!currentReadiness.ready}
+            nextHint={currentReadiness.ready ? null : currentReadiness.reason}
+            onBack={step === "vehicle" ? null : previousStep}
+            onNext={step === "review" ? null : continueStep}
+            step={step}
           />
         </div>
-      </FeatureFormSection>
 
-      <FeatureFormSection
-        description="A lista já respeita os bancos ativos e autorizados para esta loja."
-        title="Instituições"
-      >
-        <SimulationBankSelector
-          bankCodes={bankCodes}
-          banks={banks}
-          onToggleBank={toggleBank}
-        />
-      </FeatureFormSection>
-
-      <label className="credere-consent">
-        <input
-          checked={consent}
-          className="mt-0.5 size-4"
-          onChange={(event) => setConsent(event.target.checked)}
-          type="checkbox"
-        />
-        O proponente autorizou expressamente a consulta de seus dados junto aos
-        bancos parceiros para esta simulação.
-      </label>
-
-      {visibleError ? (
-        <p className="text-xs font-semibold text-danger" role="alert">
-          {visibleError}
-        </p>
-      ) : null}
-
-      <div className="credere-submit-row">
-        <FeatureActionButton
-          icon={Send}
-          isBusy={isSubmitting}
-          label={isSubmitting ? "Enviando simulação" : "Simular no Credere"}
-          type="submit"
-          variant="primary"
+        <SimulationSummarySidebar
+          applicantName={name}
+          bankCount={bankCodes.length}
+          checklist={checklist}
+          downPayment={downPayment}
+          fipeCode={fipeCode}
+          licensingCity={licensingCity}
+          licensingUf={licensingUf}
+          manufactureYear={manufactureYear}
+          modelYear={modelYear}
+          molicarCode={molicarCode}
+          preflightReady={preflightState.kind === "ready"}
+          vehicleName={catalog?.modelName ?? null}
+          vehicleValue={vehicleValue}
+          versionLabel={versionLabel}
         />
       </div>
     </form>
   );
-}
-
-function ApplicantPreflightStatus({
-  canCheck,
-  onRetry,
-  state,
-  unsupportedCount,
-}: {
-  canCheck: boolean;
-  onRetry: () => void;
-  state: CredereApplicantPreflightState;
-  unsupportedCount: number;
-}) {
-  const text =
-    state.kind === "loading"
-      ? "Conferindo os dados exigidos pelos bancos..."
-      : state.kind === "error"
-        ? state.message
-        : state.kind === "ready" && unsupportedCount > 0
-          ? "O provedor exige dados adicionais que esta tela ainda não envia. A simulação ficará bloqueada."
-          : state.kind === "ready"
-            ? state.result.missingFields.length
-              ? `${state.result.missingFields.length} dado(s) adicional(is) solicitado(s) pelos bancos.`
-              : state.result.applicantKnown
-                ? "Cadastro localizado. Nenhum dado adicional foi solicitado."
-                : "Dados mínimos conferidos para iniciar a simulação."
-            : canCheck
-              ? "Confira os campos exigidos antes de enviar a simulação."
-              : "Informe um CPF/CNPJ válido para conferir os campos exigidos.";
-  return (
-    <div
-      className={`credere-preflight credere-preflight--${state.kind}`}
-      role={state.kind === "error" ? "alert" : "status"}
-    >
-      <p>{text}</p>
-      {state.kind !== "loading" ? (
-        <button disabled={!canCheck} onClick={onRetry} type="button">
-          <RefreshCw aria-hidden="true" className="size-3.5" />
-          {state.kind === "ready" ? "Conferir novamente" : "Conferir agora"}
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function canonicalCity(uf: string, city: string) {
-  const normalized = normalizeLocation(city);
-  return (
-    getCitiesByStateCode(uf).find(
-      (candidate) => normalizeLocation(candidate) === normalized,
-    ) ?? ""
-  );
-}
-
-function normalizeLocation(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLocaleLowerCase("pt-BR");
 }

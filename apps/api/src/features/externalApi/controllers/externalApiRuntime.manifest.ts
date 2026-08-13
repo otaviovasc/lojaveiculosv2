@@ -42,6 +42,63 @@ export function createExternalApiTools(baseUrl: string) {
 const externalApiTools = [
   {
     function: {
+      description:
+        "Check whether Credere is ready and which applicant fields or banks are required before a simulation.",
+      name: "preflight_credere_simulation",
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          bankCodes: { type: "array", items: { type: "string" } },
+          document: { description: "Valid CPF or CNPJ.", type: "string" },
+        },
+        required: ["document"],
+        type: "object",
+      },
+    },
+    type: "function",
+  },
+  {
+    function: {
+      description:
+        "Create an official Credere simulation after explicit personal-data and credit-simulation consent.",
+      name: "create_credere_simulation",
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          applicant: { type: "object" },
+          consent: {
+            description:
+              "Must contain creditSimulation=true and personalData=true.",
+            type: "object",
+          },
+          leadId: { type: "string" },
+          listingId: { type: "string" },
+          terms: { type: "object" },
+          unitId: { type: "string" },
+          vehicle: { type: "object" },
+        },
+        required: ["applicant", "consent", "terms", "vehicle"],
+        type: "object",
+      },
+    },
+    type: "function",
+  },
+  {
+    function: {
+      description:
+        "Read the official Credere status and bank conditions for one inquiry.",
+      name: "get_credere_simulation",
+      parameters: {
+        additionalProperties: false,
+        properties: { inquiryId: { type: "string" } },
+        required: ["inquiryId"],
+        type: "object",
+      },
+    },
+    type: "function",
+  },
+  {
+    function: {
       description: "Find vehicles that match buyer intent.",
       name: "search_vehicles",
       parameters: {

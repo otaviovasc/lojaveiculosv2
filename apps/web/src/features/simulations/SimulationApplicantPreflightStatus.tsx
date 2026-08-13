@@ -1,0 +1,80 @@
+import {
+  CircleCheck,
+  Info,
+  Loader2,
+  RefreshCw,
+  TriangleAlert,
+} from "lucide-react";
+import type { CredereApplicantPreflightState } from "./types";
+
+export function SimulationApplicantPreflightStatus({
+  canCheck,
+  onRetry,
+  requestId = null,
+  state,
+  unsupportedCount,
+}: {
+  canCheck: boolean;
+  onRetry: () => void;
+  requestId?: string | null;
+  state: CredereApplicantPreflightState;
+  unsupportedCount: number;
+}) {
+  const text =
+    state.kind === "loading"
+      ? "Conferindo os dados exigidos pelos bancos..."
+      : state.kind === "error"
+        ? state.message
+        : state.kind === "ready" && unsupportedCount > 0
+          ? "O provedor exige dados adicionais que esta tela ainda não envia. A simulação ficará bloqueada."
+          : state.kind === "ready"
+            ? state.result.missingFields.length
+              ? `Dados mínimos conferidos para iniciar a simulação. ${state.result.missingFields.length} dado(s) adicional(is) solicitado(s) pelos bancos.`
+              : state.result.applicantKnown
+                ? "Cadastro localizado e campos vazios preenchidos. Nenhum dado adicional foi solicitado."
+                : "Dados mínimos conferidos para iniciar a simulação."
+            : canCheck
+              ? "Confira os campos exigidos antes de enviar a simulação."
+              : "Informe um CPF/CNPJ válido para conferir os campos exigidos.";
+  const tone =
+    state.kind === "ready" && unsupportedCount > 0 ? "blocked" : state.kind;
+  const Icon =
+    state.kind === "loading"
+      ? Loader2
+      : state.kind === "error"
+        ? TriangleAlert
+        : tone === "blocked"
+          ? TriangleAlert
+          : state.kind === "ready"
+            ? CircleCheck
+            : Info;
+  return (
+    <div
+      className={`credere-form-preflight credere-form-preflight--${tone}`}
+      role={state.kind === "error" ? "alert" : "status"}
+    >
+      <span aria-hidden="true" className="credere-form-preflight-icon">
+        <Icon />
+      </span>
+      <p className="credere-form-preflight-text">
+        {text}
+        {state.kind === "error" && requestId ? (
+          <span className="credere-form-preflight-error-id">
+            ID do erro: {requestId}
+          </span>
+        ) : null}
+      </p>
+      {state.kind !== "loading" ? (
+        <button
+          className="credere-form-preflight-action"
+          disabled={!canCheck}
+          onClick={onRetry}
+          type="button"
+        >
+          <RefreshCw aria-hidden="true" />
+          {state.kind === "ready" ? "Conferir novamente" : "Conferir agora"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
