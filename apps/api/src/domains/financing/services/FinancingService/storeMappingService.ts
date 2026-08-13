@@ -90,14 +90,17 @@ export async function mapCredereStore(
     },
     ports,
   );
-  const providerStore = toProviderStores(
-    await gateway.listStores({ token: connection.token! }),
+  const listedStore = (
+    await gateway.listStores({ token: connection.token! })
   ).find(
-    (item) => item.id === input.providerStoreId && item.status === "active",
+    (item) =>
+      item.id === input.providerStoreId &&
+      isLinkableProviderStoreStatus(item.status),
   );
-  if (!providerStore) {
+  if (!listedStore) {
     throw new FinancingValidationError("Provider store is not available.");
   }
+  const providerStore = toProviderStores([listedStore])[0]!;
   const conflictingMapping = await ports.repository
     .listStoreMappings({ provider, tenantId: scope.tenantId })
     .then((mappings) =>
@@ -126,6 +129,10 @@ export async function mapCredereStore(
     mapping,
   );
   return mapping;
+}
+
+function isLinkableProviderStoreStatus(status: string | null) {
+  return status === null || status.trim().toLowerCase() === "active";
 }
 
 export async function unmapCredereStore(

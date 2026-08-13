@@ -24,13 +24,18 @@ export function isUsableCredereBank(bank: FinancingIntegratedBank) {
 export function mapStores(payload: Record<string, unknown>): FinancingStore[] {
   return readArray(payload.stores)
     .map(readRecord)
-    .map((store) => ({
-      cnpj: readString(store.cnpj),
-      displayName: readString(store.display_name),
-      id: readString(store.id) ?? "",
-      name: readString(store.name),
-      status: readString(store.status),
-    }))
+    .map((store) => {
+      const active = readBoolean(store.active);
+      return {
+        cnpj: readString(store.cnpj),
+        displayName: readString(store.display_name),
+        id: readString(store.id) ?? "",
+        name: readString(store.name),
+        status:
+          readString(store.status) ??
+          (active === null ? null : active ? "active" : "inactive"),
+      };
+    })
     .filter((store) => store.id);
 }
 
