@@ -16,7 +16,10 @@ import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { ChatAssignmentSelect } from "./CrmWhatsappChatHeaderAssignment";
 import { CrmWhatsappHumanAttendanceBadge } from "./CrmWhatsappHumanAttendanceBadge";
 import { SessionTagRow } from "./CrmWhatsappChatHeaderTags";
-import { formatSessionName } from "./crmWhatsappModel";
+import {
+  formatSessionAvatarInitials,
+  formatSessionName,
+} from "./crmWhatsappModel";
 import {
   readCrmWhatsappChannelLabel,
   readCrmWhatsappProviderLabel,
@@ -104,7 +107,7 @@ export function ChatHeader({
               {session.profilePhotoUrl ? (
                 <img alt="" src={session.profilePhotoUrl} />
               ) : (
-                formatSessionName(session).slice(0, 2).toUpperCase()
+                formatSessionAvatarInitials(session)
               )}
             </span>
             <span className="min-w-0">
@@ -137,132 +140,160 @@ export function ChatHeader({
         </div>
       </div>
       <div className="crm-whatsapp-header-actions">
-        {canMarkRead ? (
-          <button
-            aria-label={
-              session.unreadCount
-                ? "Marcar conversa como lida"
-                : "Marcar conversa como nao lida"
-            }
-            className="crm-icon-action crm-whatsapp-header-action-secondary"
-            disabled={disabled}
-            onClick={session.unreadCount ? onMarkRead : onMarkUnread}
-            title={
-              session.unreadCount ? "Marcar como lida" : "Marcar como nao lida"
-            }
-            type="button"
+        {canMarkRead || canTagSessions ? (
+          <div
+            aria-label="Ações da conversa"
+            className="crm-whatsapp-header-action-group"
+            role="group"
           >
-            {session.unreadCount ? <MailCheck /> : <MailOpen />}
-          </button>
-        ) : null}
-        {canTagSessions ? (
-          <div className="crm-whatsapp-tag-menu-anchor">
-            <button
-              aria-label="Adicionar etiqueta"
-              className="crm-icon-action"
-              disabled={disabled}
-              onClick={() => setTagMenuOpen((open) => !open)}
-              ref={tagButtonRef}
-              title="Adicionar etiqueta"
-              type="button"
-            >
-              <Tag />
-            </button>
-            <FeatureAnchoredPopover
-              align="end"
-              anchorRef={tagButtonRef}
-              className="crm-whatsapp-tag-popover"
-              isOpen={tagMenuOpen}
-              onClose={() => setTagMenuOpen(false)}
-            >
-              <TagMenu
-                activeTags={session.sessionTags ?? []}
-                availableTags={availableTags ?? []}
+            {canMarkRead ? (
+              <button
+                aria-label={
+                  session.unreadCount
+                    ? "Marcar conversa como lida"
+                    : "Marcar conversa como nao lida"
+                }
+                className="crm-icon-action crm-whatsapp-header-action-secondary"
                 disabled={disabled}
-                onAdd={async (input) => {
-                  const accepted = await onAddTag(input);
-                  if (accepted) setTagMenuOpen(false);
-                  return accepted;
-                }}
-              />
-            </FeatureAnchoredPopover>
+                onClick={session.unreadCount ? onMarkRead : onMarkUnread}
+                title={
+                  session.unreadCount
+                    ? "Marcar como lida"
+                    : "Marcar como nao lida"
+                }
+                type="button"
+              >
+                {session.unreadCount ? <MailCheck /> : <MailOpen />}
+              </button>
+            ) : null}
+            {canTagSessions ? (
+              <div className="crm-whatsapp-tag-menu-anchor">
+                <button
+                  aria-label="Adicionar etiqueta"
+                  className="crm-icon-action"
+                  disabled={disabled}
+                  onClick={() => setTagMenuOpen((open) => !open)}
+                  ref={tagButtonRef}
+                  title="Adicionar etiqueta"
+                  type="button"
+                >
+                  <Tag />
+                </button>
+                <FeatureAnchoredPopover
+                  align="end"
+                  anchorRef={tagButtonRef}
+                  className="crm-whatsapp-tag-popover"
+                  isOpen={tagMenuOpen}
+                  onClose={() => setTagMenuOpen(false)}
+                >
+                  <TagMenu
+                    activeTags={session.sessionTags ?? []}
+                    availableTags={availableTags ?? []}
+                    disabled={disabled}
+                    onAdd={async (input) => {
+                      const accepted = await onAddTag(input);
+                      if (accepted) setTagMenuOpen(false);
+                      return accepted;
+                    }}
+                  />
+                </FeatureAnchoredPopover>
+              </div>
+            ) : null}
           </div>
         ) : null}
-        {canScheduleMessages ? (
-          <button
-            aria-label="Abrir agendamentos"
-            className="crm-icon-action crm-whatsapp-header-action-secondary"
-            disabled={disabled}
-            onClick={onScheduleMessage}
-            title="Agendamentos"
-            type="button"
+        {canScheduleMessages || session.leadId || canToggleIntervention ? (
+          <div
+            aria-label="Ferramentas do atendimento"
+            className="crm-whatsapp-header-action-group"
+            role="group"
           >
-            <CalendarClock />
-          </button>
+            {canScheduleMessages ? (
+              <button
+                aria-label="Abrir agendamentos"
+                className="crm-icon-action crm-whatsapp-header-action-secondary"
+                disabled={disabled}
+                onClick={onScheduleMessage}
+                title="Agendamentos"
+                type="button"
+              >
+                <CalendarClock />
+              </button>
+            ) : null}
+            {session.leadId ? (
+              <a
+                aria-label="Abrir lead vinculado"
+                className="crm-icon-action crm-whatsapp-header-action-secondary"
+                href={`#/crm?surface=leads&leadId=${encodeURIComponent(session.leadId)}`}
+                title="Abrir lead vinculado"
+              >
+                <ExternalLink />
+              </a>
+            ) : null}
+            {canToggleIntervention ? (
+              <button
+                aria-label="Alternar atendimento humano"
+                className={
+                  session.status === "HUMAN_TAKEOVER"
+                    ? "crm-icon-action crm-icon-action-active"
+                    : "crm-icon-action"
+                }
+                disabled={disabled}
+                onClick={onToggleIntervention}
+                title="Alternar atendimento humano"
+                type="button"
+              >
+                {session.status === "HUMAN_TAKEOVER" ? <UserRound /> : <Bot />}
+              </button>
+            ) : null}
+          </div>
         ) : null}
-        {session.leadId ? (
-          <a
-            aria-label="Abrir lead vinculado"
-            className="crm-icon-action crm-whatsapp-header-action-secondary"
-            href={`#/crm?surface=leads&leadId=${encodeURIComponent(session.leadId)}`}
-            title="Abrir lead vinculado"
+        {canAssignSession || canCloseSession ? (
+          <div
+            aria-label="Responsabilidade pelo atendimento"
+            className="crm-whatsapp-header-action-group crm-whatsapp-header-action-group-primary"
+            role="group"
           >
-            <ExternalLink />
-          </a>
-        ) : null}
-        {canToggleIntervention ? (
-          <button
-            aria-label="Alternar atendimento humano"
-            className={
-              session.status === "HUMAN_TAKEOVER"
-                ? "crm-icon-action crm-icon-action-active"
-                : "crm-icon-action"
-            }
-            disabled={disabled}
-            onClick={onToggleIntervention}
-            title="Alternar atendimento humano"
-            type="button"
-          >
-            {session.status === "HUMAN_TAKEOVER" ? <UserRound /> : <Bot />}
-          </button>
-        ) : null}
-        {canAssignSession ? (
-          <ChatAssignmentSelect
-            assignableMembers={assignableMembers}
-            disabled={disabled}
-            onAssign={onAssign}
-            session={session}
-          />
-        ) : null}
-        {currentUserId && canAssignSession ? (
-          <button
-            aria-label={assignedToCurrentUser ? "Meu atendimento" : "Assumir"}
-            className={
-              assignedToCurrentUser
-                ? "crm-action crm-action-muted"
-                : "crm-action"
-            }
-            disabled={disabled || assignedToCurrentUser}
-            onClick={() => onAssign(currentUserId)}
-            type="button"
-          >
-            <UserCheck aria-hidden="true" className="size-4" />
-            <span className="crm-whatsapp-action-label">
-              {assignedToCurrentUser ? "Meu atendimento" : "Assumir"}
-            </span>
-          </button>
-        ) : null}
-        {canCloseSession ? (
-          <button
-            aria-label="Concluir"
-            className="crm-action"
-            disabled={disabled}
-            onClick={onClose}
-            type="button"
-          >
-            <CheckCheck aria-hidden="true" className="size-4" />
-            <span className="crm-whatsapp-action-label">Concluir</span>
-          </button>
+            {canAssignSession ? (
+              <ChatAssignmentSelect
+                assignableMembers={assignableMembers}
+                disabled={disabled}
+                onAssign={onAssign}
+                session={session}
+              />
+            ) : null}
+            {currentUserId && canAssignSession ? (
+              <button
+                aria-label={
+                  assignedToCurrentUser ? "Meu atendimento" : "Assumir"
+                }
+                className={
+                  assignedToCurrentUser
+                    ? "crm-action crm-action-muted"
+                    : "crm-action"
+                }
+                disabled={disabled || assignedToCurrentUser}
+                onClick={() => onAssign(currentUserId)}
+                type="button"
+              >
+                <UserCheck aria-hidden="true" className="size-4" />
+                <span className="crm-whatsapp-action-label">
+                  {assignedToCurrentUser ? "Meu atendimento" : "Assumir"}
+                </span>
+              </button>
+            ) : null}
+            {canCloseSession ? (
+              <button
+                aria-label="Concluir"
+                className="crm-action"
+                disabled={disabled}
+                onClick={onClose}
+                type="button"
+              >
+                <CheckCheck aria-hidden="true" className="size-4" />
+                <span className="crm-whatsapp-action-label">Concluir</span>
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </header>

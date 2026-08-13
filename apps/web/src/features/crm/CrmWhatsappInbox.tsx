@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import {
+  formatApiErrorDisplay,
+  getApiErrorRecovery,
+} from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type { ProductCrmApi } from "./productCrmApi";
 import {
@@ -67,6 +70,7 @@ export function CrmWhatsappInbox({
     isLoading: inbox.connectionIsLoading,
     connectionError: inbox.connectionError,
   });
+  const errorRecovery = getApiErrorRecovery(inbox.error);
 
   useEffect(() => {
     setVisitedScopes((current) =>
@@ -128,6 +132,29 @@ export function CrmWhatsappInbox({
     <main className="crm-whatsapp-page">
       {inbox.error ? (
         <WhatsappNotice
+          {...(errorRecovery
+            ? {
+                actionLabel:
+                  errorRecovery.kind === "retry" &&
+                  !inbox.hasRetryableSessionAction
+                    ? "Atualizar e verificar"
+                    : errorRecovery.label,
+                onAction: () => {
+                  if (errorRecovery.kind === "configure") {
+                    setActiveScope("connection");
+                    return;
+                  }
+                  if (
+                    errorRecovery.kind === "retry" &&
+                    inbox.hasRetryableSessionAction
+                  ) {
+                    void inbox.retryLastSessionAction();
+                    return;
+                  }
+                  void inbox.refreshSessions();
+                },
+              }
+            : {})}
           message={formatApiErrorDisplay(
             inbox.error,
             "Não foi possível carregar o WhatsApp.",

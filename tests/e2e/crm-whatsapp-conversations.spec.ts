@@ -79,14 +79,10 @@ test.describe("CRM WhatsApp conversations", () => {
       page.getByText("Tenho interesse no Civic.").first(),
     ).toBeVisible();
     await expect(page.getByText("Quente").first()).toBeVisible();
-    const filterRail = page.getByLabel("Filtro rápido");
-    await expect
-      .poll(() =>
-        filterRail.evaluate(
-          (element) => element.scrollWidth > element.clientWidth,
-        ),
-      )
-      .toBe(true);
+    const filterRail = page.getByRole("group", { name: "Filtros rápidos" });
+    const allFilter = filterRail.getByRole("button", { name: /Todos/ });
+    await allFilter.scrollIntoViewIfNeeded();
+    await expect(allFilter).toBeVisible();
 
     await page.getByRole("button", { name: /Etiquetas/ }).click();
     const repliedTagOption = page.getByRole("button", { name: "Respondeu" });
@@ -132,6 +128,17 @@ test.describe("CRM WhatsApp conversations", () => {
     await expect(page.getByLabel("Detalhe da conversa")).toContainText(
       "Tenho interesse no Civic.",
     );
+    const detailsPanel = page.getByRole("complementary", {
+      exact: true,
+      name: "Detalhes da conversa",
+    });
+    await expect(detailsPanel).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Abrir detalhes da conversa" })
+      .click();
+    await expect(detailsPanel).toBeVisible();
+    await page.getByRole("button", { name: "Fechar detalhes" }).click();
+    await expect(detailsPanel).toHaveCount(0);
     await page.getByRole("button", { name: "Adicionar etiqueta" }).click();
     await expect(page.getByPlaceholder("Buscar etiqueta")).toBeVisible();
     const headerTagMenu = page.locator(".crm-whatsapp-tag-menu");

@@ -2,10 +2,14 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { act } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmWhatsappRealtimeBanner } from "./CrmWhatsappRealtimeBanner";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe("CrmWhatsappRealtimeBanner", () => {
   it("shows a connecting notice as a fixed toast outside the page layout", () => {
@@ -62,5 +66,16 @@ describe("CrmWhatsappRealtimeBanner", () => {
     );
 
     expect(screen.getByText("Sem conexão em tempo real.")).toBeVisible();
+  });
+
+  it("keeps connection state visible beyond transient toast duration", async () => {
+    vi.useFakeTimers();
+    render(
+      <CrmWhatsappRealtimeBanner hasCachedInbox={false} status="connecting" />,
+    );
+
+    await act(async () => vi.advanceTimersByTime(30_000));
+
+    expect(screen.getByRole("status")).toBeVisible();
   });
 });

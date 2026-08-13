@@ -202,8 +202,10 @@
 
 .crm-whatsapp-session-meta {
   flex-wrap: wrap;
+  line-height: 1.25;
   margin-top: 0.25rem;
   min-width: 0;
+  row-gap: 0.125rem;
 }
 
 .crm-whatsapp-session-status,

@@ -6,9 +6,20 @@ import type {
 } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import { shouldBackfillWhatsappPhone } from "../../../domains/crm/whatsapp/whatsappContactIdentity.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+import { toWhatsappSession } from "./drizzleCrmWhatsappMappers.js";
+import { countUnreadMessages } from "./drizzleCrmWhatsappQueries.js";
 
 type WhatsappSessionIdentityInput =
   IngestCrmWhatsappMessageInput | UpsertCrmWhatsappSessionContextInput;
+
+export function createSessionIdentityFinder(db: DrizzleCrmClient) {
+  return async (input: UpsertCrmWhatsappSessionContextInput) => {
+    const row = await findWhatsappSessionByIdentity(db, input);
+    return row
+      ? toWhatsappSession(row, await countUnreadMessages(db, row))
+      : null;
+  };
+}
 
 export async function findWhatsappSessionByIdentity(
   db: DrizzleCrmClient,
@@ -57,11 +68,20 @@ export async function updateWhatsappSessionIdentity(
   const buyerName = session.buyerName ?? input.buyerName ?? null;
   const channelExternalId =
     session.channelExternalId ?? input.channelExternalId ?? null;
+  const profilePhotoUrl = input.profilePhotoUrl ?? session.profilePhotoUrl;
+  const metadata = input.profilePhotoStorageKey
+    ? {
+        ...readMetadata(session.metadata),
+        profilePhoto: { storageKey: input.profilePhotoStorageKey },
+      }
+    : session.metadata;
   if (
     buyerPhone === session.buyerPhone &&
     buyerChatLid === session.buyerChatLid &&
     buyerName === session.buyerName &&
-    channelExternalId === session.channelExternalId
+    channelExternalId === session.channelExternalId &&
+    profilePhotoUrl === session.profilePhotoUrl &&
+    metadata === session.metadata
   ) {
     return session;
   }
@@ -72,6 +92,8 @@ export async function updateWhatsappSessionIdentity(
       buyerName,
       buyerPhone,
       channelExternalId,
+      profilePhotoUrl,
+      metadata,
       revision: sql`${crmWhatsappSessions.revision} + 1`,
       updatedAt: new Date(),
     })
@@ -85,6 +107,12 @@ export async function updateWhatsappSessionIdentity(
     .returning();
   if (!updated) throw new Error("CRM WhatsApp session context was not found.");
   return updated;
+}
+
+function readMetadata(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 async function findScopedSession(

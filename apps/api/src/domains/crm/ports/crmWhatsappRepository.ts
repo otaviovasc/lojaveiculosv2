@@ -158,6 +158,9 @@ export type CrmWhatsappRepository = {
   findMessageById: (
     input: FindCrmWhatsappMessageByIdInput,
   ) => Promise<CrmWhatsappMessage | null>;
+  findSessionByIdentity: (
+    input: UpsertCrmWhatsappSessionContextInput,
+  ) => Promise<CrmWhatsappSession | null>;
   findCampaignById: (
     input: FindCrmWhatsappCampaignInput,
   ) => Promise<CrmWhatsappCampaign | null>;

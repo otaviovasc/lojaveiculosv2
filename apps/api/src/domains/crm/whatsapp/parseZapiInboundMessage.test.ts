@@ -14,6 +14,7 @@ describe("parseZapiInboundMessage", () => {
       messageId: "zapi-image-1",
       phone: "5511999999999",
       senderName: "Ana",
+      senderPhoto: "https://zapi.test/profiles/ana.jpg",
       timestamp: 1783029600,
     });
 
@@ -24,6 +25,7 @@ describe("parseZapiInboundMessage", () => {
       mediaType: "image",
       mediaUrl: "https://zapi.test/media/image-1.jpg",
       phone: "5511999999999",
+      profilePhotoUrl: "https://zapi.test/profiles/ana.jpg",
       type: "IMAGE",
     });
     expect(parsed?.metadata).toMatchObject({
@@ -41,6 +43,7 @@ describe("parseZapiInboundMessage", () => {
       "messageId",
       "phone",
       "senderName",
+      "senderPhoto",
       "timestamp",
     ]);
   });

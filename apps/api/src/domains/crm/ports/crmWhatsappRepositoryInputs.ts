@@ -57,6 +57,8 @@ export type IngestCrmWhatsappMessageInput = {
   mediaUrl?: string;
   metadata: Record<string, unknown>;
   providerTimestamp: Date;
+  profilePhotoUrl?: string;
+  profilePhotoStorageKey?: string;
   senderOrigin: CrmWhatsappMessageSenderOrigin;
   senderType: CrmWhatsappMessageSenderType;
   firstHandledAt?: Date | null;
@@ -75,6 +77,8 @@ export type UpsertCrmWhatsappSessionContextInput = {
   channel: CrmWhatsappChannel;
   channelExternalId?: string;
   connectionId: string;
+  profilePhotoUrl?: string;
+  profilePhotoStorageKey?: string;
   storeId: StoreId;
   tenantId: TenantId;
 };

@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type ToastTone = "danger" | "info" | "success" | "warning";
@@ -7,6 +7,7 @@ export type ToastTone = "danger" | "info" | "success" | "warning";
 export type ToastProps = {
   children?: ReactNode;
   className?: string;
+  durationMs?: number | null;
   icon?: ReactNode;
   onDismiss?: () => void;
   priority?: "assertive" | "polite";
@@ -24,12 +25,27 @@ const toneClasses: Record<ToastTone, string> = {
 export function Toast({
   children,
   className,
+  durationMs = 3_000,
   icon,
   onDismiss,
   priority = "polite",
   title,
   tone = "info",
 }: ToastProps) {
+  const [visible, setVisible] = useState(true);
+  const dismiss = useCallback(() => {
+    setVisible(false);
+    onDismiss?.();
+  }, [onDismiss]);
+
+  useEffect(() => {
+    if (durationMs === null) return;
+    const timeout = window.setTimeout(dismiss, durationMs);
+    return () => window.clearTimeout(timeout);
+  }, [dismiss, durationMs]);
+
+  if (!visible) return null;
+
   return (
     <aside
       aria-atomic="true"
@@ -61,7 +77,7 @@ export function Toast({
         <button
           aria-label="Fechar notificação"
           className="-m-1 inline-flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-app hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-          onClick={onDismiss}
+          onClick={dismiss}
           title="Fechar notificação"
           type="button"
         >

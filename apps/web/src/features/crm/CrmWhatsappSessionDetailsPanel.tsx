@@ -18,12 +18,10 @@ import type {
 
 export function CrmWhatsappSessionDetailsPanel({
   assignableMembers,
-  mobileOnlyClose = false,
   onClose,
   session,
 }: {
   assignableMembers: CrmWhatsappAssignableMember[];
-  mobileOnlyClose?: boolean;
   onClose: () => void;
   session: CrmWhatsappSession;
 }) {
@@ -64,7 +62,6 @@ export function CrmWhatsappSessionDetailsPanel({
         <button
           aria-label="Fechar detalhes"
           className="crm-icon-action"
-          data-mobile-only={mobileOnlyClose ? "true" : "false"}
           onClick={onClose}
           type="button"
         >
