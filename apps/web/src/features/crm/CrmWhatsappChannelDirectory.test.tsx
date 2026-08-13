@@ -94,7 +94,56 @@ describe("CrmWhatsappChannelDirectory", () => {
       await screen.findByText(/escopos de Leads e Estoque/i),
     ).toHaveTextContent(/Chat mantém o estado observado na conexão do CRM/i);
   });
+
+  it("never turns Add Z-API into management of an existing connection", () => {
+    const onChoose = vi.fn();
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[createZapiConnection()]}
+        marketplaceApi={createMarketplaceApi()}
+        onChoose={onChoose}
+        zapiAddonContract={null}
+      />,
+    );
+
+    const zapi = screen.getByRole("button", { name: /Z-API/i });
+    expect(zapi).toBeDisabled();
+    expect(screen.getByText("Já conectado")).toBeVisible();
+    fireEvent.click(zapi);
+    expect(onChoose).not.toHaveBeenCalled();
+  });
 });
+
+function createZapiConnection() {
+  return {
+    credentials: {
+      apiBaseUrlEnv: null,
+      clientTokenEnv: null,
+      instanceIdEnv: null,
+      instanceTokenEnv: null,
+      mode: "stored" as const,
+      storedInstanceConfigured: true,
+    },
+    displayName: "Z-API principal",
+    externalConnectionId: null,
+    externalInstanceId: "instance-1",
+    id: "connection-1",
+    live: {
+      checkedAt: "2026-08-12T12:00:00.000Z",
+      connected: true,
+      connectedPhone: "5511999999999",
+      providerStatus: "connected" as const,
+      smartphoneConnected: true,
+    },
+    phone: "5511999999999",
+    provider: "zapi" as const,
+    ready: true,
+    setup: null,
+    status: "active" as const,
+    webhookUrl: null,
+  };
+}
 
 function createMarketplaceApi(
   failOverview = false,

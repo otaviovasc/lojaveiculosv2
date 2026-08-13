@@ -13,6 +13,10 @@ import {
   requestZapiPairingCode,
   requestZapiPairingQr,
 } from "../../../domains/crm/services/CrmWhatsapp/zapiWhatsappConnectionSetup.js";
+import {
+  disconnectZapiConnection,
+  refreshZapiConnectionStatus,
+} from "../../../domains/crm/services/CrmWhatsapp/zapiConnectionLifecycle.js";
 import { configureWhatsappConnectionWebhooks } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
 import {
   authenticateWhatsappBotSecret,
@@ -41,12 +45,14 @@ type ConnectionBindings = Pick<
   | "createZapiConnectionAsSupport"
   | "configureWhatsappConnectionWebhooks"
   | "createWhatsappConnection"
+  | "disconnectZapiConnection"
   | "executeWhatsappBotAction"
   | "getWhatsappBotIntegration"
   | "getWhatsappConnectionOverview"
   | "listWhatsappConnections"
   | "requestZapiPairingCode"
   | "requestZapiPairingQr"
+  | "refreshZapiConnectionStatus"
   | "requestZapiPairingCodeAsSupport"
   | "requestZapiPairingQrAsSupport"
   | "selectComposioWhatsappSender"
@@ -74,6 +80,8 @@ export const createCrmWhatsappConnectionBindings = (
     configureWhatsappConnectionWebhooks(context, input, ports),
   createWhatsappConnection: (context, input) =>
     createWhatsappConnection(context, input, ports),
+  disconnectZapiConnection: (context, input) =>
+    disconnectZapiConnection(context, input, ports),
   executeWhatsappBotAction: (context, input) =>
     executeWhatsappBotAction(context, input, ports),
   getWhatsappBotIntegration: (context) =>
@@ -85,6 +93,8 @@ export const createCrmWhatsappConnectionBindings = (
     requestZapiPairingCode(context, input, ports),
   requestZapiPairingQr: (context, input) =>
     requestZapiPairingQr(context, input, ports),
+  refreshZapiConnectionStatus: (context, input) =>
+    refreshZapiConnectionStatus(context, input, ports),
   requestZapiPairingCodeAsSupport: (context, input) =>
     requestZapiPairingCodeAsSupport(context, input, ports),
   requestZapiPairingQrAsSupport: (context, input) =>

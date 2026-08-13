@@ -190,6 +190,7 @@ function createTestWhatsappGateway(
   return {
     configureWebhooks: vi.fn(async () => ({ results: [] })),
     deleteMessage: vi.fn(async () => ({ deleted: true })),
+    disconnectConnection: vi.fn(async () => ({ disconnected: true as const })),
     getConnectionStatus: vi.fn(async () => ({
       checkedAt: new Date("2026-07-02T19:00:00.000Z"),
       connected: false,

@@ -4,7 +4,7 @@ import { formatBrazilianWhatsappPhone } from "../../lib/masks";
 export type ZapiPairingMethod = "code" | "qr";
 
 type PairingBusyState =
-  "addon" | "code" | "credentials" | "qr" | "refresh" | null;
+  "addon" | "code" | "credentials" | "disconnect" | "qr" | "refresh" | null;
 
 export function CrmWhatsappZapiPairingStage({
   busy,

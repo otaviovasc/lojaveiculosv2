@@ -177,6 +177,7 @@ function createGatewaySpies(): CrmWhatsappGateway {
   return {
     configureWebhooks: vi.fn<CrmWhatsappGateway["configureWebhooks"]>(),
     deleteMessage: vi.fn<CrmWhatsappGateway["deleteMessage"]>(),
+    disconnectConnection: vi.fn<CrmWhatsappGateway["disconnectConnection"]>(),
     getConnectionStatus: vi.fn<CrmWhatsappGateway["getConnectionStatus"]>(),
     listCatalogProducts: vi.fn<CrmWhatsappGateway["listCatalogProducts"]>(),
     removeReaction: vi.fn<CrmWhatsappGateway["removeReaction"]>(),

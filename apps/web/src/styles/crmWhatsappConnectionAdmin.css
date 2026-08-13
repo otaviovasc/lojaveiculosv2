@@ -205,6 +205,12 @@
   opacity: 0.55;
 }
 
+.crm-whatsapp-connection-management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
 .crm-whatsapp-connection-empty,
 .crm-whatsapp-connection-error,
 .crm-whatsapp-connection-disabled {

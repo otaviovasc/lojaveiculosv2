@@ -392,6 +392,21 @@
   margin-top: 0.35rem;
 }
 
+.crm-whatsapp-zapi-disconnect-confirm {
+  border-left: 3px solid var(--color-danger);
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.crm-whatsapp-zapi-disconnect-confirm p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  margin: 0;
+}
+
 @media (max-width: 720px) {
   .crm-whatsapp-zapi-progress {
     grid-template-columns: 1fr;

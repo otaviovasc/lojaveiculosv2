@@ -70,6 +70,7 @@ export const whatsappUpdateConnectionSchema = z
     catalogPhone: z.string().trim().min(8).max(32).nullable().optional(),
     displayName: z.string().trim().min(1).max(120).optional(),
     purpose: z.string().trim().max(160).nullable().optional(),
+    status: z.enum(["active", "paused"]).optional(),
   })
   .strict()
   .refine((input) => Object.keys(input).length > 0, {

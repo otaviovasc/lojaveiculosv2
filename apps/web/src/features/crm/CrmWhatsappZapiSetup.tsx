@@ -40,7 +40,8 @@ const emptyCredentials: ZapiCredentialsDraft = {
   instanceToken: "",
 };
 
-type BusyState = "addon" | "code" | "credentials" | "qr" | "refresh";
+type BusyState =
+  "addon" | "code" | "credentials" | "disconnect" | "qr" | "refresh";
 
 export function CrmWhatsappZapiSetup({
   allowance,
@@ -71,6 +72,7 @@ export function CrmWhatsappZapiSetup({
   } | null>(null);
   const [pairingMethod, setPairingMethod] = useState<ZapiPairingMethod>("qr");
   const [phone, setPhone] = useState("");
+  const [pairAgain, setPairAgain] = useState(false);
   const [qr, setQr] = useState<{ expiresAt: string; qrCode: string } | null>(
     null,
   );
@@ -78,7 +80,8 @@ export function CrmWhatsappZapiSetup({
   const isEntitled =
     allowance.limit > 0 ||
     ["active", "paid_awaiting_setup"].includes(zapiAddonContract?.status ?? "");
-  const step = readZapiSetupStep({ connection, isEntitled });
+  const resolvedStep = readZapiSetupStep({ connection, isEntitled });
+  const step = pairAgain && resolvedStep === 5 ? 4 : resolvedStep;
   const qrExpired = Boolean(qr && new Date(qr.expiresAt).getTime() <= now);
   const codeExpired = Boolean(
     pairingCode?.expiresAt && new Date(pairingCode.expiresAt).getTime() <= now,
@@ -94,11 +97,18 @@ export function CrmWhatsappZapiSetup({
     if (step !== 3 && step !== 4) return undefined;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") {
-        void handlers.onRefreshConnections();
+        if (step === 4 && connection && handlers.onRefreshZapiStatus) {
+          void handlers
+            .onRefreshZapiStatus(connection.id)
+            .then(onConnection)
+            .catch(() => undefined);
+        } else {
+          void handlers.onRefreshConnections();
+        }
       }
     }, 8_000);
     return () => window.clearInterval(timer);
-  }, [handlers, step]);
+  }, [connection, handlers, onConnection, step]);
 
   const requestAddon = async () => {
     if (!canSetup) return;
@@ -128,13 +138,9 @@ export function CrmWhatsappZapiSetup({
     setBusy("credentials");
     setError(null);
     try {
-      const input: CrmWhatsappCreateConnectionInput = {
-        clientToken: credentials.clientToken.trim(),
-        instanceId: credentials.instanceId.trim(),
-        instanceToken: credentials.instanceToken.trim(),
-        provider: "zapi",
-      };
-      const created = await handlers.onCreate(input);
+      const created = await handlers.onCreate(
+        buildZapiConnectionInput(credentials),
+      );
       if (!created) {
         throw new Error(
           "A conexão não foi criada. Nenhuma credencial foi confirmada.",
@@ -156,13 +162,42 @@ export function CrmWhatsappZapiSetup({
 
   const refresh = async () => {
     if (busy) return;
-    await runAction({
-      action: handlers.onRefreshConnections,
-      busy: "refresh",
-      fallbackError: "Não foi possível atualizar o canal.",
+    const currentConnection = connection;
+    const refreshStatus = currentConnection
+      ? handlers.onRefreshZapiStatus
+      : undefined;
+    if (refreshStatus && currentConnection) {
+      const result = await runAction({
+        action: () => refreshStatus(currentConnection.id),
+        busy: "refresh",
+        fallbackError: "Não foi possível atualizar o canal.",
+        setBusy,
+        setError,
+      });
+      if (result) onConnection(result);
+    } else {
+      await runAction({
+        action: handlers.onRefreshConnections,
+        busy: "refresh",
+        fallbackError: "Não foi possível atualizar o canal.",
+        setBusy,
+        setError,
+      });
+    }
+  };
+
+  const disconnect = async () => {
+    const disconnectZapi = handlers.onDisconnectZapi;
+    if (!connection || !canSetup || !disconnectZapi || busy) return;
+    const result = await runAction({
+      action: () => disconnectZapi(connection.id),
+      busy: "disconnect",
+      fallbackError:
+        "Não foi possível desconectar o WhatsApp da Z-API. A conexão não foi marcada como desligada.",
       setBusy,
       setError,
     });
+    if (result) onConnection(result);
   };
 
   const configureWebhooks = async () => {
@@ -269,7 +304,13 @@ export function CrmWhatsappZapiSetup({
           />
         ) : null}
         {step === 5 && connection ? (
-          <ZapiReadyState connection={connection} />
+          <ZapiReadyState
+            canDisconnect={canSetup && Boolean(handlers.onDisconnectZapi)}
+            connection={connection}
+            isDisconnecting={busy === "disconnect"}
+            onDisconnect={() => void disconnect()}
+            {...(canPair ? { onPairAgain: () => setPairAgain(true) } : {})}
+          />
         ) : null}
         {step !== 2 && error ? (
           <p className="crm-whatsapp-connection-error" role="alert">
@@ -283,6 +324,17 @@ export function CrmWhatsappZapiSetup({
       </button>
     </ConnectionSectionCard>
   );
+}
+
+function buildZapiConnectionInput(
+  credentials: ZapiCredentialsDraft,
+): CrmWhatsappCreateConnectionInput {
+  return {
+    clientToken: credentials.clientToken.trim(),
+    instanceId: credentials.instanceId.trim(),
+    instanceToken: credentials.instanceToken.trim(),
+    provider: "zapi",
+  };
 }
 
 function CredentialsStage({

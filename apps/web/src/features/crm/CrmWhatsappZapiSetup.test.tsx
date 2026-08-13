@@ -260,7 +260,7 @@ describe("CrmWhatsappZapiSetup", () => {
 
   it("advances past pairing when the refreshed connection is configured and connected", async () => {
     const configured = createSetupState("configured");
-    const connected = {
+    const connected: CrmWhatsappProviderConnection = {
       ...createSetupConnection("configured"),
       live: {
         checkedAt: "2026-08-12T12:00:00.000Z",
@@ -307,6 +307,95 @@ describe("CrmWhatsappZapiSetup", () => {
     expect(
       screen.queryByRole("button", { name: "Gerar QR Code" }),
     ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Parear outro aparelho" }),
+    );
+    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
+  });
+
+  it("does not offer device pairing when the actor lacks pairing permission", () => {
+    const connected: CrmWhatsappProviderConnection = {
+      ...createSetupConnection("configured"),
+      live: {
+        checkedAt: "2026-08-12T12:00:00.000Z",
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected",
+        smartphoneConnected: true,
+      },
+      ready: true,
+      status: "active",
+    };
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={false}
+        canSetup={true}
+        connection={connected}
+        handlers={createHandlers()}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Parear outro aparelho" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("requires confirmation before disconnecting at Z-API and returns to pairing", async () => {
+    const connected = {
+      ...createSetupConnection("configured"),
+      live: {
+        checkedAt: "2026-08-12T12:00:00.000Z",
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected" as const,
+        smartphoneConnected: true,
+      },
+      ready: true,
+      status: "active" as const,
+    };
+    const disconnected = createDisconnectedConnection();
+    const handlers = createHandlers();
+    handlers.onDisconnectZapi = vi.fn(async () => disconnected);
+
+    function SetupHarness() {
+      const [connection, setConnection] =
+        useState<CrmWhatsappProviderConnection>(connected);
+      return (
+        <CrmWhatsappZapiSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          canPair={true}
+          canSetup={true}
+          connection={connection}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={setConnection}
+          zapiAddonContract={createZapiContract("active")}
+        />
+      );
+    }
+
+    render(<SetupHarness />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Desconectar WhatsApp da Z-API" }),
+    );
+    expect(handlers.onDisconnectZapi).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/webhooks e o histórico do CRM serão mantidos/i),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar desconexão" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onDisconnectZapi).toHaveBeenCalledWith("connection_1"),
+    );
+    expect(await screen.findByText("Etapa 4 de 5 · Pareamento")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
   });
 });
 

@@ -91,6 +91,7 @@ function createGateway(externalId: string): CrmWhatsappGateway {
   return {
     configureWebhooks: unsupported,
     deleteMessage: unsupported,
+    disconnectConnection: unsupported,
     getConnectionStatus: unsupported,
     listCatalogProducts: unsupported,
     removeReaction: unsupported,

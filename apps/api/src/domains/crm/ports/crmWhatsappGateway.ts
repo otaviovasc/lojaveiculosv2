@@ -21,7 +21,6 @@ export type CrmWhatsappSendTextResult = {
   externalId: string;
   providerTimestamp: Date;
 };
-
 export type CrmWhatsappSendMediaType = "audio" | "document" | "image" | "video";
 
 export type CrmWhatsappSendMediaInput = {
@@ -153,7 +152,6 @@ export type CrmWhatsappRemoveReactionInput = {
 
 export type CrmWhatsappMessageActionResult = CrmWhatsappSendTextResult;
 export type CrmWhatsappDeleteMessageResult = { deleted: boolean };
-
 export type CrmWhatsappWebhookRegistration = {
   type: string;
   url: string;
@@ -185,6 +183,9 @@ export type CrmWhatsappGateway = {
     connection: CrmConnection,
     input: CrmWhatsappDeleteMessageInput,
   ) => Promise<CrmWhatsappDeleteMessageResult>;
+  disconnectConnection: (connection: CrmConnection) => Promise<{
+    disconnected: true;
+  }>;
   getConnectionStatus: (
     connection: CrmConnection,
   ) => Promise<CrmWhatsappProviderStatus>;

@@ -25,6 +25,22 @@ describe("CRM messaging connection selection", () => {
     expect(findFreeTextStartConnection([official])).toBeNull();
   });
 
+  it("prefers an active official connection over a connected but paused Z-API", () => {
+    const pausedZapi = {
+      ...createConnection("zapi", "zapi"),
+      status: "paused" as const,
+    };
+    const official = createConnection("composio_whatsapp", "official");
+
+    expect(findConnectedConnection([pausedZapi, official])).toBe(official);
+    expect(findFreeTextStartConnection([pausedZapi])).toBeNull();
+    expect(readConversationStartCapability(pausedZapi)).toMatchObject({
+      canStart: false,
+      mode: null,
+      provider: "zapi",
+    });
+  });
+
   it("does not offer OLX Chat as a new-conversation channel", () => {
     const olx = createConnection("olx_chat", "olx");
 

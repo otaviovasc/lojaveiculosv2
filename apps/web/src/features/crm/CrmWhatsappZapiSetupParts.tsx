@@ -7,6 +7,7 @@ import {
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
+import { useState } from "react";
 import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 import type { CrmWhatsappZapiAddonContract } from "./crmWhatsappTypes";
 import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
@@ -243,10 +244,19 @@ export function ZapiWebhookSetupStatus({
 }
 
 export function ZapiReadyState({
+  canDisconnect = false,
   connection,
+  isDisconnecting = false,
+  onDisconnect,
+  onPairAgain,
 }: {
+  canDisconnect?: boolean;
   connection: CrmWhatsappProviderConnection;
+  isDisconnecting?: boolean;
+  onDisconnect?: () => void;
+  onPairAgain?: () => void;
 }) {
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const phone =
     connection.live.connectedPhone ??
     connection.metadata?.connectedPhone ??
@@ -264,6 +274,55 @@ export function ZapiReadyState({
             ? `O número ${phone} já pode receber e enviar mensagens pelo CRM.`
             : "O provedor confirmou a conexão. O canal já pode receber e enviar mensagens pelo CRM."}
         </p>
+        {onPairAgain ? (
+          <button
+            className="crm-action crm-action-secondary"
+            onClick={onPairAgain}
+            type="button"
+          >
+            Parear outro aparelho
+          </button>
+        ) : null}
+        {onDisconnect ? (
+          confirmDisconnect ? (
+            <div className="crm-whatsapp-zapi-disconnect-confirm" role="alert">
+              <p>
+                Isso desconecta o aparelho da instância Z-API. Os webhooks e o
+                histórico do CRM serão mantidos para a reconexão.
+              </p>
+              <div className="crm-whatsapp-zapi-inline-actions">
+                <button
+                  className="crm-action crm-action-danger"
+                  disabled={!canDisconnect || isDisconnecting}
+                  onClick={onDisconnect}
+                  type="button"
+                >
+                  {isDisconnecting ? (
+                    <Loader2 aria-hidden="true" className="crm-spin" />
+                  ) : null}
+                  {isDisconnecting ? "Desconectando" : "Confirmar desconexão"}
+                </button>
+                <button
+                  className="crm-action crm-action-muted"
+                  disabled={isDisconnecting}
+                  onClick={() => setConfirmDisconnect(false)}
+                  type="button"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="crm-action crm-action-muted"
+              disabled={!canDisconnect || isDisconnecting}
+              onClick={() => setConfirmDisconnect(true)}
+              type="button"
+            >
+              Desconectar WhatsApp da Z-API
+            </button>
+          )
+        ) : null}
       </div>
     </div>
   );

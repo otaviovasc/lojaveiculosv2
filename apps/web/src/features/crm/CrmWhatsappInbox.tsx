@@ -194,12 +194,15 @@ export function CrmWhatsappInbox({
                         onCompleteComposio: inbox.completeComposioConnection,
                         onConfigureZapiWebhooks: inbox.configureZapiWebhooks,
                         onCreate: inbox.createConnection,
+                        onDisconnectZapi: inbox.disconnectZapiConnection,
                         onRefreshConnections: inbox.refreshConnections,
                         onRequestZapiPairingCode: inbox.requestZapiPairingCode,
                         onRequestZapiPairingQr: inbox.requestZapiPairingQr,
                         onRequestZapiAddon: inbox.requestZapiAddon,
+                        onRefreshZapiStatus: inbox.refreshZapiConnectionStatus,
                         onSelectComposioSender:
                           inbox.selectComposioConnectionSender,
+                        onSetConnectionPaused: inbox.setConnectionPaused,
                       },
                       zapiAddonContract: inbox.zapiAddonContract,
                     }}

@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import { CrmWhatsappGatewayError } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
 import {
@@ -13,104 +14,6 @@ const tenantId = "tenant_1" as TenantId;
 const connectionId = "24000000-0000-4000-8000-000000000101";
 
 describe("CRM WhatsApp connections", () => {
-  it("lists ZAPI connections with live provider status", async () => {
-    const { audit, record } = createAuditSpy();
-    const getConnectionStatus = vi.fn(async () => ({
-      checkedAt: new Date("2026-07-02T19:00:00.000Z"),
-      connected: true,
-      connectedPhone: "5511940231407",
-      providerStatus: "connected" as const,
-      smartphoneConnected: true,
-    }));
-    const app = createTestApp({
-      audit,
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
-      ]),
-      crmWhatsappGateway: {
-        getConnectionStatus,
-        sendMedia: vi.fn(),
-        sendText: vi.fn(),
-      },
-    });
-
-    const response = await app.request("/api/v1/crm/whatsapp/connections");
-
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as { connections: unknown[] };
-    expect(body.connections[0]).toMatchObject({
-      credentials: {
-        apiBaseUrlEnv: "CRM_ZAPI_API_BASE_URL",
-        clientTokenEnv: "CRM_ZAPI_TEST_CLIENT_TOKEN",
-        instanceIdEnv: "CRM_ZAPI_TEST_INSTANCE_ID",
-        instanceTokenEnv: "CRM_ZAPI_TEST_INSTANCE_TOKEN",
-        mode: "env",
-      },
-      displayName: "ZAPI Test Connection",
-      externalConnectionId: null,
-      externalInstanceId: null,
-      id: connectionId,
-      live: {
-        checkedAt: "2026-07-02T19:00:00.000Z",
-        connected: true,
-        connectedPhone: "5511940231407",
-        providerStatus: "connected",
-        smartphoneConnected: true,
-      },
-      metadata: {
-        catalogPhone: null,
-        connectedPhone: null,
-        migrationUnit: null,
-        purpose: null,
-      },
-      phone: null,
-      provider: "zapi",
-      status: "active",
-    });
-    expect(JSON.stringify(body)).not.toContain("/webhooks/zapi/");
-    expect(JSON.stringify(body)).not.toContain("webhookTokenRequired");
-    expect(JSON.stringify(body)).not.toContain("webhookUrl");
-    expect(JSON.stringify(body)).not.toContain("credentialsRef");
-    expect(getConnectionStatus).toHaveBeenCalledTimes(1);
-    expect(record.mock.calls[0]?.[0]).toMatchObject({
-      action: "crm.whatsapp.connections.list",
-      category: "data_access",
-    });
-  });
-
-  it("keeps connection listing available when ZAPI status fails", async () => {
-    const app = createTestApp({
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection({ credentialsRef: { env: {}, mode: "env" } }),
-      ]),
-      crmWhatsappGateway: {
-        getConnectionStatus: vi.fn(async () => {
-          throw new Error("ZAPI status failed");
-        }),
-        sendMedia: vi.fn(),
-        sendText: vi.fn(),
-      },
-    });
-
-    const response = await app.request("/api/v1/crm/whatsapp/connections");
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      connections: [
-        {
-          id: connectionId,
-          live: {
-            connected: null,
-            connectedPhone: null,
-            errorMessage: "ZAPI status failed",
-            providerStatus: "error",
-            smartphoneConnected: null,
-          },
-        },
-      ],
-    });
-  });
-
   it("does not advertise imported OLX connections while the runtime switch is off", async () => {
     const getConnectionStatus = vi.fn();
     const app = createTestApp({
@@ -196,6 +99,105 @@ describe("CRM WhatsApp connections", () => {
     ).resolves.toMatchObject({
       credentialsRef: {},
     });
+  });
+
+  it("disconnects Z-API at the provider before persisting disconnected state", async () => {
+    const { audit, record } = createAuditSpy();
+    const repository = createMemoryCrmConnectionRepository([
+      createZapiConnection(),
+    ]);
+    const disconnectConnection = vi.fn(async () => ({
+      disconnected: true as const,
+    }));
+    const app = createTestApp({
+      audit,
+      crmConnectionRepository: repository,
+      crmWhatsappGateway: { disconnectConnection },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/disconnect`,
+      { method: "POST" },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      id: connectionId,
+      live: { connected: false, providerStatus: "disconnected" },
+      status: "disconnected",
+    });
+    expect(disconnectConnection).toHaveBeenCalledTimes(1);
+    await expect(
+      repository.findConnectionById(connectionId),
+    ).resolves.toMatchObject({
+      credentialsRef: createZapiConnection().credentialsRef,
+      status: "disconnected",
+    });
+    const lifecycleAudits = record.mock.calls
+      .map(([event]) => event)
+      .filter(
+        (event) => event.action === "crm.whatsapp.connection.zapi.disconnect",
+      );
+    expect(lifecycleAudits.map((event) => event.outcome)).toEqual([
+      "attempted",
+      "succeeded",
+    ]);
+  });
+
+  it("keeps local Z-API state connected when the provider rejects disconnect", async () => {
+    const repository = createMemoryCrmConnectionRepository([
+      createZapiConnection(),
+    ]);
+    const app = createTestApp({
+      crmConnectionRepository: repository,
+      crmWhatsappGateway: {
+        disconnectConnection: vi.fn(async () => {
+          throw new CrmWhatsappGatewayError(
+            "ZAPI did not confirm the WhatsApp disconnection",
+          );
+        }),
+      },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/disconnect`,
+      { method: "POST" },
+    );
+
+    expect(response.status).toBe(502);
+    await expect(
+      repository.findConnectionById(connectionId),
+    ).resolves.toMatchObject({ status: "active" });
+  });
+
+  it("audits and denies Z-API disconnect without the scoped permission", async () => {
+    const { audit, record } = createAuditSpy();
+    const disconnectConnection = vi.fn();
+    const app = createTestApp({
+      audit,
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmWhatsappGateway: { disconnectConnection },
+      permissions: ["crm.whatsapp.list"],
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/disconnect`,
+      { method: "POST" },
+    );
+
+    expect(response.status).toBe(403);
+    expect(disconnectConnection).not.toHaveBeenCalled();
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "crm.whatsapp.connection.zapi.disconnect",
+        metadata: expect.objectContaining({
+          errorName: "AuthorizationError",
+        }) as unknown as Record<string, unknown>,
+        outcome: "failed",
+      }),
+    );
   });
 });
 

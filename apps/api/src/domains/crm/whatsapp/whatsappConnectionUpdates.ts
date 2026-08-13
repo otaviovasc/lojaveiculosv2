@@ -12,6 +12,7 @@ export type UpdateWhatsappConnectionInput = {
     webhookSecret?: string;
   };
   purpose?: string | null;
+  status?: "active" | "paused";
   webhookSetupTarget?: {
     basePath: string;
     canonicalApiOrigin: string;

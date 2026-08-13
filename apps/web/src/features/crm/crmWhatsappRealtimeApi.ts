@@ -77,9 +77,6 @@ export function subscribeCrmWhatsappEvents(input: {
     if (closed || generation !== connectGeneration) return;
     const source = new EventSource(
       withTicket(input.eventsRoute, ticket.ticket),
-      {
-        withCredentials: true,
-      },
     );
     eventSource = source;
     source.onopen = () => {

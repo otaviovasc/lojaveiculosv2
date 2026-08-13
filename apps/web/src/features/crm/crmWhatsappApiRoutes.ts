@@ -41,6 +41,11 @@ export const crmWhatsappRoutes = {
     createCrmEndpoint("/crm/whatsapp/integrations/bot", baseUrl),
   connections: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/connections", baseUrl),
+  connection: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}`,
+      baseUrl,
+    ),
   billingOverview: (baseUrl?: string) =>
     createCrmEndpoint("/billing/overview", baseUrl),
   billingZapiRequest: (baseUrl?: string) =>
@@ -71,6 +76,19 @@ export const crmWhatsappRoutes = {
   zapiPairingQr: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/qr`,
+      baseUrl,
+    ),
+  zapiDisconnect: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/disconnect`,
+      baseUrl,
+    ),
+  zapiStatusRefresh: (
+    connectionId: CrmWhatsappConnectionId,
+    baseUrl?: string,
+  ) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/status/refresh`,
       baseUrl,
     ),
   zapiWebhooksConfigure: (

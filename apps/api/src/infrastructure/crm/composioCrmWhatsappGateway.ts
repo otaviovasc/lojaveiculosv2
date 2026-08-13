@@ -34,6 +34,9 @@ export function createComposioCrmWhatsappGateway(
     async deleteMessage(connection) {
       return unsupported(connection, "delete message");
     },
+    async disconnectConnection(connection) {
+      return unsupported(connection, "provider disconnect");
+    },
     async getConnectionStatus(connection) {
       const credentials = credentialsFor(connection);
       const { payload, response } = await fetchComposio(

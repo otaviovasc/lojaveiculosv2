@@ -87,6 +87,7 @@ export function registerCrmWhatsappConnectionRoutes(
           connectionId,
           ...(input.displayName ? { displayName: input.displayName } : {}),
           ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
+          ...(input.status !== undefined ? { status: input.status } : {}),
         },
       );
       return context.json(connection);

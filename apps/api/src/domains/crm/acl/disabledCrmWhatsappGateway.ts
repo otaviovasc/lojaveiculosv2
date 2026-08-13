@@ -12,6 +12,9 @@ export function createDisabledCrmWhatsappGateway(): CrmWhatsappGateway {
     async deleteMessage(): Promise<never> {
       throw new GatewayError("CRM WhatsApp gateway is not configured.");
     },
+    async disconnectConnection(): Promise<never> {
+      throw new GatewayError("CRM WhatsApp gateway is not configured.");
+    },
     async getConnectionStatus(): Promise<CrmWhatsappProviderStatus> {
       return {
         checkedAt: new Date(),

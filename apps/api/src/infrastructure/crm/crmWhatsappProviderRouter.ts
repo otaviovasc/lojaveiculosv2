@@ -38,6 +38,8 @@ export function createCrmWhatsappProviderRouter(
       gatewayFor(connection).configureWebhooks(connection, input),
     deleteMessage: (connection, input) =>
       gatewayFor(connection).deleteMessage(connection, input),
+    disconnectConnection: (connection) =>
+      gatewayFor(connection).disconnectConnection(connection),
     getConnectionStatus: (connection) =>
       gatewayFor(connection).getConnectionStatus(connection),
     listCatalogProducts: (connection, input) =>

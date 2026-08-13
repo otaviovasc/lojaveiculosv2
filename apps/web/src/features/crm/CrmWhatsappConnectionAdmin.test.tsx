@@ -34,6 +34,77 @@ describe("CrmWhatsappConnectionAdmin", () => {
     expect(screen.queryByText(/webhook/i)).not.toBeInTheDocument();
   });
 
+  it("keeps management and other channel choices reachable after Z-API connects", async () => {
+    const setPaused = vi.fn(async () => undefined);
+    render(
+      <CrmWhatsappConnectionAdmin
+        connections={[createConnection("zapi", "connected", true)]}
+        onRefresh={vi.fn(async () => undefined)}
+        selfService={{
+          allowance: { limit: 1, remaining: 0, used: 1 },
+          availableProviders: ["composio_whatsapp"],
+          canPair: true,
+          canSetup: true,
+          handlers: {
+            onAuthorizeComposio: vi.fn(),
+            onCompleteComposio: vi.fn(),
+            onConfigureZapiWebhooks: vi.fn(),
+            onCreate: vi.fn(),
+            onRefreshConnections: vi.fn(async () => undefined),
+            onRequestZapiPairingCode: vi.fn(),
+            onRequestZapiPairingQr: vi.fn(),
+            onSelectComposioSender: vi.fn(),
+            onSetConnectionPaused: setPaused,
+          },
+        }}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("button", { name: "Gerenciar Z-API" }),
+    ).toBeVisible();
+    expect(await screen.findByText("Central de conexões")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: /WhatsApp Oficial/i }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Pausar no CRM" }));
+    expect(setPaused).toHaveBeenCalledWith("zapi-connection", true);
+  });
+
+  it("keeps the selected connection management view open across polling refreshes", async () => {
+    const connection = createConnection("zapi", "connected", true);
+    const selfService = createSelfService();
+    const onRefresh = vi.fn(async () => undefined);
+    const { rerender } = render(
+      <CrmWhatsappConnectionAdmin
+        connections={[connection]}
+        onRefresh={onRefresh}
+        selfService={selfService}
+      />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Gerenciar Z-API" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Parear outro aparelho" }),
+    );
+    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
+
+    rerender(
+      <CrmWhatsappConnectionAdmin
+        connections={[{ ...connection, live: { ...connection.live } }]}
+        onRefresh={onRefresh}
+        selfService={selfService}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Gerenciar Z-API" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows pairing-only controls for an existing disconnected Z-API connection", async () => {
     render(
       <CrmWhatsappConnectionAdmin
@@ -138,5 +209,24 @@ function createConnection(
       : null,
     status: status === "connected" ? "active" : "disconnected",
     webhookUrl: null,
+  };
+}
+
+function createSelfService() {
+  return {
+    allowance: { limit: 1, remaining: 0, used: 1 },
+    availableProviders: ["composio_whatsapp" as const],
+    canPair: true,
+    canSetup: true,
+    handlers: {
+      onAuthorizeComposio: vi.fn(),
+      onCompleteComposio: vi.fn(),
+      onConfigureZapiWebhooks: vi.fn(),
+      onCreate: vi.fn(),
+      onRefreshConnections: vi.fn(async () => undefined),
+      onRequestZapiPairingCode: vi.fn(),
+      onRequestZapiPairingQr: vi.fn(),
+      onSelectComposioSender: vi.fn(),
+    },
   };
 }

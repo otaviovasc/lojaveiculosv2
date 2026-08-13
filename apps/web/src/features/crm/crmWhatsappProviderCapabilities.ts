@@ -49,14 +49,29 @@ const UNKNOWN_PROVIDER_CAPABILITIES: CrmWhatsappProviderCapabilities = {
  */
 export function readCrmWhatsappConnectionCapabilities(
   connection:
-    | Pick<CrmWhatsappProviderConnection, "capabilities" | "provider">
-    | { capabilities?: CrmWhatsappProviderCapabilitiesDto; provider?: string }
+    | Pick<
+        CrmWhatsappProviderConnection,
+        "capabilities" | "provider" | "status"
+      >
+    | {
+        capabilities?: CrmWhatsappProviderCapabilitiesDto;
+        provider?: string;
+        status?: string;
+      }
     | null
     | undefined,
 ): CrmWhatsappProviderCapabilities {
   const dto = connection?.capabilities;
   if (!dto || typeof connection?.provider !== "string") {
     return UNKNOWN_PROVIDER_CAPABILITIES;
+  }
+  if (connection.status === "paused") {
+    return {
+      ...UNKNOWN_PROVIDER_CAPABILITIES,
+      officialWindowNotice:
+        "Este canal está pausado no CRM. Retome a conexão para enviar mensagens.",
+      provider: connection.provider as CrmWhatsappProvider,
+    };
   }
 
   return {
@@ -97,6 +112,17 @@ export function readCrmWhatsappSendReadiness(
     return {
       canSend: false,
       reason: "O canal ainda não foi identificado.",
+    };
+  }
+  if (
+    connection.status === "paused" ||
+    connection.status === "archived" ||
+    connection.status === "disconnected" ||
+    connection.status === "error"
+  ) {
+    return {
+      canSend: false,
+      reason: "Este canal está pausado ou indisponível no CRM.",
     };
   }
   const capabilities = connection.capabilities;

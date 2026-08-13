@@ -168,6 +168,8 @@ describe("CRM WhatsApp API", () => {
       { results: [], setup: { status: "configured" } },
       { qrCode: "data:image/png;base64,qr" },
       { code: "123456", requested: true },
+      { id: "connection_1", status: "disconnected" },
+      { id: "connection_1", status: "active" },
       { redirectUrl: "https://connect.composio.dev/session/test" },
     ]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
@@ -178,6 +180,8 @@ describe("CRM WhatsApp API", () => {
     await api.configureZapiWebhooks("connection_1");
     await api.requestZapiPairingQr("connection_1");
     await api.requestZapiPairingCode("connection_1", "5511999999999");
+    await api.disconnectZapiConnection("connection_1");
+    await api.refreshZapiConnectionStatus("connection_1");
     await api.authorizeComposioConnection("connection_2");
 
     expect(fake.calls[0]).toMatchObject({
@@ -204,7 +208,16 @@ describe("CRM WhatsApp API", () => {
       body: JSON.stringify({ phone: "5511999999999" }),
       method: "POST",
     });
-    expect(fake.calls[4]?.input).toBe(
+    expect(fake.calls[4]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/connections/connection_1/zapi/disconnect",
+      init: { body: "{}", method: "POST" },
+    });
+    expect(fake.calls[5]).toMatchObject({
+      input:
+        "/api/v1/crm/whatsapp/connections/connection_1/zapi/status/refresh",
+      init: { body: "{}", method: "POST" },
+    });
+    expect(fake.calls[6]?.input).toBe(
       "/api/v1/crm/whatsapp/connections/connection_2/composio/authorize",
     );
   });
