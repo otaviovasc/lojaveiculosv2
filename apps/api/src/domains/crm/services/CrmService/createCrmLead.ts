@@ -6,8 +6,10 @@ import type { CrmLead, LeadSource } from "../../ports/crmRepository.js";
 import {
   getCrmRepository,
   requireCrmScope,
+  runCrmTransaction,
   type CrmServicePorts,
 } from "./serviceSupport.js";
+import { ensureLeadPipeline } from "../../pipeline/ensureLeadPipeline.js";
 
 const permission = "lead.create";
 
@@ -37,22 +39,63 @@ export async function createCrmLead(
     }),
   );
 
-  const lead = await getCrmRepository(ports).createLead({
-    ...(input.assignedUserId
-      ? { assignedUserId: input.assignedUserId as UserId }
-      : {}),
-    buyerEmail: input.buyerEmail ?? null,
-    buyerName: input.buyerName ?? null,
-    buyerPhone: input.buyerPhone ?? null,
-    listingId: input.listingId ?? null,
-    metadata: input.metadata ?? {},
-    source: input.source,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
+  const result = await runCrmTransaction(ports, async (transactionPorts) => {
+    const placement = await ensureLeadPipeline(transactionPorts, {
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    const repository = getCrmRepository(transactionPorts);
+    const existing = input.buyerPhone
+      ? await repository.findLeadByPhone({
+          buyerPhone: input.buyerPhone,
+          storeId: scope.storeId as never,
+          tenantId: scope.tenantId as never,
+        })
+      : null;
+    if (existing) {
+      return {
+        created: false,
+        lead: await repository.updateLead({
+          ...(!existing.assignedUserId && input.assignedUserId
+            ? { assignedUserId: input.assignedUserId as UserId }
+            : {}),
+          ...(!existing.buyerEmail && input.buyerEmail
+            ? { buyerEmail: input.buyerEmail }
+            : {}),
+          ...(!existing.buyerName && input.buyerName
+            ? { buyerName: input.buyerName }
+            : {}),
+          leadId: existing.id,
+          ...(!existing.pipelineId || !existing.pipelineStageId
+            ? placement
+            : {}),
+          storeId: scope.storeId as never,
+          tenantId: scope.tenantId as never,
+        }),
+      };
+    }
+    return {
+      created: true,
+      lead: await repository.createLead({
+        ...(input.assignedUserId
+          ? { assignedUserId: input.assignedUserId as UserId }
+          : {}),
+        buyerEmail: input.buyerEmail ?? null,
+        buyerName: input.buyerName ?? null,
+        buyerPhone: input.buyerPhone ?? null,
+        listingId: input.listingId ?? null,
+        metadata: input.metadata ?? {},
+        ...placement,
+        source: input.source,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      }),
+    };
   });
+  const { lead } = result;
 
   await context.audit.record({
-    action: "crm.lead.create",
+    action: result.created ? "crm.lead.create" : "crm.lead.reuse",
     actor: context.actor,
     category: "data_change",
     entityId: lead.id,
@@ -64,12 +107,13 @@ export async function createCrmLead(
       permission,
       source: lead.source,
       status: lead.status,
+      reused: !result.created,
     },
     outcome: "succeeded",
     requestId: context.requestId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
-    summary: "Created CRM lead",
+    summary: result.created ? "Created CRM lead" : "Reused active CRM lead",
   });
 
   return lead;

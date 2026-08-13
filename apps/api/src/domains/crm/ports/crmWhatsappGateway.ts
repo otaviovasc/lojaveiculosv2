@@ -1,5 +1,4 @@
 import type { CrmConnection } from "./crmConnectionRepository.js";
-
 export type CrmWhatsappProviderConnectionStatus =
   "connected" | "disconnected" | "unknown";
 
@@ -10,7 +9,6 @@ export type CrmWhatsappProviderStatus = {
   providerStatus: CrmWhatsappProviderConnectionStatus;
   smartphoneConnected: boolean | null;
 };
-
 export type CrmWhatsappSendTextInput = {
   replyToMessageId?: string;
   phone: string;
@@ -168,6 +166,8 @@ export type CrmWhatsappWebhookConfigResult = {
   status: number | null;
   type: string;
   url: string;
+  /** True only after the provider reports this exact callback back to us. */
+  verified?: boolean;
 };
 
 export type CrmWhatsappConfigureWebhooksResult = {

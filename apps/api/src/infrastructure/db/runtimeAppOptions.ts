@@ -25,6 +25,7 @@ import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternal
 import { createPinoServiceLogger } from "../logging/createPinoServiceLogger.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
 import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
+import { createDrizzleCrmPipelineRepository } from "./crm/drizzleCrmPipelineRepository.js";
 import { createDrizzleCrmCoreRepository } from "./crm/drizzleCrmCoreRepository.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
 import { createDrizzleMarketplaceOAuthStateStore } from "./marketplace/drizzleMarketplaceOAuthStateStore.js";
@@ -188,6 +189,20 @@ export function createRuntimeHttpAppOptions({
     publicStorefrontCrmRepository: createDrizzleCrmRepository(
       db as unknown as DrizzleCrmClient,
     ),
+    publicStorefrontCrmPipelineRepository: createDrizzleCrmPipelineRepository(
+      db as unknown as DrizzleCrmClient,
+    ),
+    publicStorefrontCrmTransaction: async (action) =>
+      crmDb.transaction((tx) =>
+        action({
+          crmPipelineRepository: createDrizzleCrmPipelineRepository(
+            tx as unknown as DrizzleCrmClient,
+          ),
+          crmRepository: createDrizzleCrmRepository(
+            tx as unknown as DrizzleCrmClient,
+          ),
+        }),
+      ),
     roleServices: createRuntimeRoleServices(db),
     salesServices: createRuntimeSalesServices(db, runtimeObjectStorage),
     settingsServices: createRuntimeSettingsServices(db),

@@ -26,6 +26,7 @@ import type { MoveCrmLeadPipelineStageInput } from "../../../domains/crm/service
 import { updateCrmPipeline } from "../../../domains/crm/services/CrmService/updateCrmPipeline.js";
 import type { UpdateCrmPipelineInput } from "../../../domains/crm/services/CrmService/updateCrmPipeline.js";
 import { updateCrmLead } from "../../../domains/crm/services/CrmService/updateCrmLead.js";
+import { setCrmLeadArchived } from "../../../domains/crm/services/CrmService/setCrmLeadArchived.js";
 import type { UpdateCrmLeadInput } from "../../../domains/crm/services/CrmService/updateCrmLead.js";
 import { updateLeadVisit } from "../../../domains/crm/services/CrmService/updateLeadVisit.js";
 import type { CrmPipeline } from "../../../domains/crm/ports/crmPipelineRepository.js";
@@ -42,6 +43,10 @@ import { resolveCrmPorts } from "./crmServicePorts.js";
 import type { CreateCrmServicesOptions } from "./crmServices.types.js";
 export type { CreateCrmServicesOptions } from "./crmServices.types.js";
 export type CrmServices = CrmWhatsappServices & {
+  archiveLead: (
+    context: ServiceContext,
+    input: { leadId: string },
+  ) => Promise<CrmLead>;
   createActivity: (
     context: ServiceContext,
     input: CreateLeadActivityInput,
@@ -95,6 +100,10 @@ export type CrmServices = CrmWhatsappServices & {
     context: ServiceContext,
     input: MoveCrmLeadPipelineStageInput,
   ) => Promise<CrmLead>;
+  restoreLead: (
+    context: ServiceContext,
+    input: { leadId: string },
+  ) => Promise<CrmLead>;
   updatePipeline: (
     context: ServiceContext,
     input: UpdateCrmPipelineInput,
@@ -113,6 +122,8 @@ export function createCrmServices(
 ): CrmServices {
   const ports = resolveCrmPorts(options);
   return {
+    archiveLead: (context, input) =>
+      setCrmLeadArchived(context, { ...input, archived: true }, ports),
     createActivity: (context, input) =>
       createLeadActivity(context, input, ports),
     createLead: (context, input) => createCrmLead(context, input, ports),
@@ -134,6 +145,8 @@ export function createCrmServices(
     listVisits: (context, input) => listLeadVisits(context, input, ports),
     moveLeadPipelineStage: (context, input) =>
       moveCrmLeadPipelineStage(context, input, ports),
+    restoreLead: (context, input) =>
+      setCrmLeadArchived(context, { ...input, archived: false }, ports),
     updatePipeline: (context, input) =>
       updateCrmPipeline(context, input, ports),
     updateVisit: (context, input) => updateLeadVisit(context, input, ports),

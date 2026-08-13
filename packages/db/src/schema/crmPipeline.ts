@@ -37,6 +37,9 @@ export const crmPipelines = pgTable(
   },
   (table) => [
     index("crm_pipelines_store_default_idx").on(table.storeId, table.isDefault),
+    uniqueIndex("crm_pipelines_scope_default_unique")
+      .on(table.tenantId, table.storeId)
+      .where(sql`${table.isDefault} = true AND ${table.isDeleted} = false`),
     index("crm_pipelines_tenant_id_idx").on(table.tenantId),
     uniqueIndex("crm_pipelines_store_name_active_unique")
       .on(table.storeId, table.name)

@@ -7,6 +7,7 @@ import type { CrmCanonicalInboundRepository } from "../ports/crmCanonicalInbound
 import type { CrmWebhookEventRepository } from "../ports/crmWebhookEventRepository.js";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 import { createTestCrmWhatsappSession } from "../testSupportWhatsapp.js";
+import { createTestCrmPipelineRepository } from "../testSupportPipeline.js";
 import type { ParsedOlxChatWebhook } from "./parseOlxChatWebhook.js";
 import { persistOlxChatWebhook } from "./persistOlxChatWebhook.js";
 
@@ -38,8 +39,10 @@ describe("persistOlxChatWebhook", () => {
       tenantId,
     });
     const ports = {
+      crmPipelineRepository: createTestCrmPipelineRepository(),
       crmRepository: {
         findLeadById: vi.fn(async () => lead),
+        updateLead: vi.fn(async () => lead),
       } as unknown as CrmRepository,
       crmWhatsappRepository: {
         ingestMessage,
@@ -112,8 +115,10 @@ function createLegacyPorts(): CrmServicePorts {
     tenantId,
   });
   return {
+    crmPipelineRepository: createTestCrmPipelineRepository(),
     crmRepository: {
       findLeadById: vi.fn(async () => lead),
+      updateLead: vi.fn(async () => lead),
     } as unknown as CrmRepository,
     crmWhatsappRepository: {
       ingestMessage: vi.fn(async () => ({

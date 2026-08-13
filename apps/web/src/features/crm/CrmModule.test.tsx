@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmModule } from "./CrmModule";
 import type { ProductCrmApi } from "./productCrmApi";
 import type { Pipeline } from "./crmPipelineStorage";
+import type { ProductCrmLead } from "./productCrmTypes";
 
 const mocks = vi.hoisted(() => ({
   createInventoryApiOptions: vi.fn(async () => ({})),
@@ -35,6 +36,7 @@ describe("CrmModule", () => {
     cleanup();
     vi.clearAllMocks();
     vi.useRealTimers();
+    window.location.hash = "";
   });
 
   it("does not load lead or inventory data for the WhatsApp surface", () => {
@@ -64,6 +66,38 @@ describe("CrmModule", () => {
       stageLimit: 20,
     });
     expect(api.listActivities).not.toHaveBeenCalled();
+  });
+
+  it("loads a deep-linked lead even when it is absent from the board page", async () => {
+    const lead = createLead();
+    const getLead = vi.fn(async () => lead);
+    const archiveLead = vi.fn(async () => ({
+      ...lead,
+      metadata: { archivedPreviousStatus: lead.status },
+      status: "archived" as const,
+    }));
+    const api = createProductCrmApi({
+      archiveLead,
+      getLead,
+      listActivities: vi.fn(async () => []),
+      listLeadBoard: vi.fn(async () => ({ stages: [] })),
+      listPipelines: vi.fn(async () => [pipeline]),
+    });
+    window.location.hash = `#/crm?surface=leads&leadId=${lead.id}`;
+
+    render(<CrmModule api={api} routeSurface="leads" />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Cliente WhatsApp" }),
+    ).toBeVisible();
+    expect(getLead).toHaveBeenCalledWith(lead.id);
+    const archive = screen.getByRole("button", { name: "Arquivar lead" });
+    expect(archive).toBeVisible();
+    fireEvent.click(archive);
+    await waitFor(() => expect(archiveLead).toHaveBeenCalledWith(lead.id));
+    expect(
+      screen.getByRole("button", { name: "Restaurar lead" }),
+    ).toBeVisible();
   });
 
   it("sends one request for each settled board search term", async () => {
@@ -160,3 +194,26 @@ const pipeline: Pipeline = {
     },
   ],
 };
+
+function createLead(): ProductCrmLead {
+  const timestamp = "2026-08-13T12:00:00.000Z";
+  return {
+    assignedUserId: null,
+    buyerEmail: null,
+    buyerName: "Cliente WhatsApp",
+    buyerPhone: "5511999999999",
+    createdAt: timestamp,
+    id: "33333333-3333-4333-8333-333333333333",
+    lastInteractionAt: timestamp,
+    listingId: null,
+    metadata: {},
+    pipelineId: pipeline.id,
+    pipelineStageId: pipeline.stages[0]?.id ?? null,
+    source: "whatsapp",
+    status: "new",
+    storeId: "store_1",
+    tenantId: "tenant_1",
+    updatedAt: timestamp,
+    vehicleTitle: null,
+  };
+}

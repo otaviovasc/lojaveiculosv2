@@ -21,6 +21,7 @@ export function filterMemoryCrmLeads(
         lead.pipelineStageId === input.pipelineStageId,
     )
     .filter((lead) => !input.source || lead.source === input.source)
+    .filter((lead) => Boolean(input.status) || lead.status !== "archived")
     .filter((lead) => !input.status || lead.status === input.status)
     .filter((lead) => matchesSearch(lead, input.search))
     .sort(compareLeadsDescending);

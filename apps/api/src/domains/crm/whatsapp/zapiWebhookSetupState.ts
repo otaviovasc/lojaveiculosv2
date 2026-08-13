@@ -24,7 +24,7 @@ export type ZapiWebhookSetupState = {
   succeededTypes: readonly string[];
   supportCode: string;
   updatedAt: string;
-  version: 1;
+  version: 2;
 };
 
 export function createZapiWebhookSetupIntent(
@@ -44,7 +44,7 @@ export function createZapiWebhookSetupIntent(
     succeededTypes: [],
     supportCode: zapiSetupSupportCode(connectionId),
     updatedAt: timestamp,
-    version: 1,
+    version: 2,
   };
 }
 
@@ -70,7 +70,9 @@ export function completeZapiWebhookSetupAttempt(
   now = new Date(),
 ): ZapiWebhookSetupState {
   const succeededTypes = requiredZapiWebhookTypes.filter((type) =>
-    results.some((result) => result.type === type && result.ok),
+    results.some(
+      (result) => result.type === type && result.ok && result.verified === true,
+    ),
   );
   const allConfigured =
     succeededTypes.length === requiredZapiWebhookTypes.length;
@@ -118,7 +120,7 @@ export function readZapiWebhookSetupState(
   const requestedAt = readString(value.requestedAt);
   const updatedAt = readString(value.updatedAt);
   if (
-    value.version !== 1 ||
+    (value.version !== 1 && value.version !== 2) ||
     !isSetupStatus(status) ||
     !supportCode ||
     !requestedAt ||
@@ -126,22 +128,27 @@ export function readZapiWebhookSetupState(
   ) {
     return null;
   }
+  const legacyUnverified = value.version === 1;
   return {
     attemptCount:
       typeof value.attemptCount === "number" && value.attemptCount >= 0
         ? Math.floor(value.attemptCount)
         : 0,
-    configuredAt: readString(value.configuredAt),
-    lastErrorCode: readString(value.lastErrorCode),
+    configuredAt: legacyUnverified ? null : readString(value.configuredAt),
+    lastErrorCode: legacyUnverified
+      ? "verification_required"
+      : readString(value.lastErrorCode),
     leaseExpiresAt: readString(value.leaseExpiresAt),
     leaseOwner: readString(value.leaseOwner),
     requestedAt,
     requiredTypes: readStringArray(value.requiredTypes),
-    status,
-    succeededTypes: readStringArray(value.succeededTypes),
+    status: legacyUnverified ? "configuring" : status,
+    succeededTypes: legacyUnverified
+      ? []
+      : readStringArray(value.succeededTypes),
     supportCode,
     updatedAt,
-    version: 1,
+    version: 2,
   };
 }
 
@@ -160,6 +167,15 @@ function classifyWebhookFailure(
   if (failed.some((result) => result.status === null)) return "request_failed";
   if (failed.some((result) => (result.status ?? 0) >= 500)) {
     return "provider_unavailable";
+  }
+  if (
+    failed.some(
+      (result) =>
+        result.status === 200 &&
+        (result.verified === false || result.error?.includes("readback")),
+    )
+  ) {
+    return "verification_failed";
   }
   return "provider_rejected";
 }

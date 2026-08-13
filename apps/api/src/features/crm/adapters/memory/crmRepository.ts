@@ -80,8 +80,8 @@ export function createMemoryCrmRepository(): CrmRepository {
         lastInteractionAt: null,
         listingId: input.listingId ?? null,
         metadata: input.metadata ?? {},
-        pipelineId: null,
-        pipelineStageId: null,
+        pipelineId: input.pipelineId ?? null,
+        pipelineStageId: input.pipelineStageId ?? null,
         source: input.source,
         status: "new",
         storeId: input.storeId,
@@ -139,6 +139,7 @@ export function createMemoryCrmRepository(): CrmRepository {
         leads
           .filter((lead) => lead.storeId === input.storeId)
           .filter((lead) => lead.tenantId === input.tenantId)
+          .filter((lead) => !["won", "lost", "archived"].includes(lead.status))
           .filter((lead) => matchesLeadPhone(lead.buyerPhone, candidates))
           .sort(
             (left, right) =>

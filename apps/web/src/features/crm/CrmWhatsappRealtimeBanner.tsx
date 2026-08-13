@@ -1,4 +1,6 @@
 import { AlertTriangle, Loader2, WifiOff } from "lucide-react";
+import { useState } from "react";
+import { Toast } from "../../components/ui/Toast";
 import type { CrmWhatsappRealtimeStatus } from "./crmWhatsappTypes";
 
 export function CrmWhatsappRealtimeBanner({
@@ -9,6 +11,26 @@ export function CrmWhatsappRealtimeBanner({
   status: CrmWhatsappRealtimeStatus;
 }) {
   if (status === "connected") return null;
+
+  return (
+    <RealtimeStatusToast
+      hasCachedInbox={hasCachedInbox}
+      key={status}
+      status={status}
+    />
+  );
+}
+
+function RealtimeStatusToast({
+  hasCachedInbox,
+  status,
+}: {
+  hasCachedInbox: boolean;
+  status: Exclude<CrmWhatsappRealtimeStatus, "connected">;
+}) {
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
 
   const content = {
     connecting: {
@@ -33,17 +55,16 @@ export function CrmWhatsappRealtimeBanner({
   }[status];
 
   return (
-    <aside
-      aria-live="polite"
-      className="crm-whatsapp-realtime-banner"
-      data-realtime-status={status}
-      role="status"
+    <Toast
+      className="crm-whatsapp-realtime-toast"
+      icon={content.icon}
+      {...(status === "connecting"
+        ? {}
+        : { onDismiss: () => setDismissed(true) })}
+      title={content.label}
+      tone={status === "connecting" ? "warning" : "danger"}
     >
-      {content.icon}
-      <span>
-        <strong>{content.label}</strong>
-        <small>{content.detail}</small>
-      </span>
-    </aside>
+      {content.detail}
+    </Toast>
   );
 }

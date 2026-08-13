@@ -69,6 +69,8 @@ export type CreateCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineId?: string;
+  pipelineStageId?: string;
   source: LeadSource;
   storeId: StoreId;
   tenantId: TenantId;

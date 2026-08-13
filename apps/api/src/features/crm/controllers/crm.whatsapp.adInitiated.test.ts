@@ -17,6 +17,31 @@ const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 
 describe("CRM WhatsApp ad-initiated conversations", () => {
+  it("links a notification-only conversation to its canonical lead", async () => {
+    const { app, whatsappRepository } = createAdTestApp();
+
+    const response = await postZapiWebhook(app, {
+      externalAdReply: adReply(),
+      messageId: "zapi-new-ad-notification-1",
+      notification: true,
+      text: { message: "Mensagem automatica do anuncio" },
+    });
+
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+      session: { id: string; leadId: string | null };
+    };
+    expect(payload.session.leadId).toEqual(expect.any(String));
+    await expect(
+      whatsappRepository.listSessions({
+        limit: 1,
+        offset: 0,
+        storeId,
+        tenantId,
+      }),
+    ).resolves.toMatchObject([{ leadId: payload.session.leadId }]);
+  });
+
   it("resumes automation before forwarding an attributed buyer message", async () => {
     const { app, dispatched, whatsappRepository } = createAdTestApp();
     const sessionId = await startHumanTakeover(app, dispatched);

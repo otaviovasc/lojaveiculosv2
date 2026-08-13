@@ -39,6 +39,7 @@ export type CrmPipelineViewProps = {
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
   onCreateLead: (input: LeadCreateDraft) => Promise<void>;
+  onSetLeadArchived: (leadId: string, archived: boolean) => Promise<void>;
   onLoadMoreStage: (stageId: string) => Promise<void>;
   onMoveLeadPipelineStage: (
     leadId: string,
@@ -63,6 +64,7 @@ export type CrmLeadDetailFullPageProps = {
     leadId: string,
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
+  onSetLeadArchived: (leadId: string, archived: boolean) => Promise<void>;
 };
 
 export type TabOption =
@@ -100,6 +102,7 @@ export type CrmLeadDetailsPageProps = {
     leadId: string,
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
+  onSetLeadArchived: (leadId: string, archived: boolean) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
 };
 

@@ -8,6 +8,7 @@ import {
   getCrmRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
+import { ensureLeadPipeline } from "../pipeline/ensureLeadPipeline.js";
 
 export type FindOrCreateWhatsappLeadInput = {
   buyerEmail?: string | null;
@@ -27,6 +28,10 @@ export async function findOrCreateWhatsappLead(
   input: FindOrCreateWhatsappLeadInput,
 ) {
   const repository = getCrmRepository(ports);
+  const placement = await ensureLeadPipeline(ports, {
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
   const preferred = input.preferredLeadId
     ? await repository.findLeadById({
         leadId: input.preferredLeadId,
@@ -34,8 +39,8 @@ export async function findOrCreateWhatsappLead(
         tenantId: input.tenantId,
       })
     : null;
-  if (preferred) {
-    return enrichExistingWhatsappLead(repository, preferred, input);
+  if (preferred && isActiveLead(preferred)) {
+    return enrichExistingWhatsappLead(repository, preferred, input, placement);
   }
   const existing = input.buyerPhone
     ? await repository.findLeadByPhone({
@@ -44,7 +49,9 @@ export async function findOrCreateWhatsappLead(
         tenantId: input.tenantId,
       })
     : null;
-  if (existing) return enrichExistingWhatsappLead(repository, existing, input);
+  if (existing) {
+    return enrichExistingWhatsappLead(repository, existing, input, placement);
+  }
 
   return repository.createLead({
     ...(input.buyerEmail?.trim()
@@ -53,16 +60,26 @@ export async function findOrCreateWhatsappLead(
     ...(input.buyerName?.trim() ? { buyerName: input.buyerName.trim() } : {}),
     ...(input.buyerPhone ? { buyerPhone: input.buyerPhone } : {}),
     metadata: createWhatsappLeadMetadata(input),
+    ...placement,
     source: input.source ?? "whatsapp",
     storeId: input.storeId,
     tenantId: input.tenantId,
   });
 }
 
+function isActiveLead(lead: CrmLead) {
+  return (
+    lead.status !== "won" &&
+    lead.status !== "lost" &&
+    lead.status !== "archived"
+  );
+}
+
 async function enrichExistingWhatsappLead(
   repository: CrmRepository,
   lead: CrmLead,
   input: FindOrCreateWhatsappLeadInput,
+  placement: Pick<CrmLead, "pipelineId" | "pipelineStageId">,
 ) {
   const buyerName = readEnrichedBuyerName(lead, input.buyerName);
   const buyerEmail = readEnrichedBuyerEmail(lead, input.buyerEmail);
@@ -76,7 +93,9 @@ async function enrichExistingWhatsappLead(
     buyerEmail === undefined &&
     buyerName === undefined &&
     buyerPhone === undefined &&
-    metadata === undefined
+    metadata === undefined &&
+    lead.pipelineId !== null &&
+    lead.pipelineStageId !== null
   ) {
     return lead;
   }
@@ -87,6 +106,7 @@ async function enrichExistingWhatsappLead(
     ...(buyerPhone !== undefined ? { buyerPhone } : {}),
     leadId: lead.id,
     ...(metadata !== undefined ? { metadata } : {}),
+    ...(!lead.pipelineId || !lead.pipelineStageId ? placement : {}),
     storeId: input.storeId,
     tenantId: input.tenantId,
   });

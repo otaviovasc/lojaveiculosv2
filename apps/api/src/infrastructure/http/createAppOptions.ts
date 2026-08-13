@@ -22,6 +22,8 @@ import type { SalesServices } from "../../features/sales/controllers/salesServic
 import type { SettingsServices } from "../../features/settings/controllers/settingsServices.js";
 import type { StorefrontMediaServices } from "../../features/storefront/controllers/storefrontMediaServices.js";
 import type { CrmRepository } from "../../domains/crm/ports/crmRepository.js";
+import type { CrmPipelineRepository } from "../../domains/crm/ports/crmPipelineRepository.js";
+import type { CrmServicePorts } from "../../domains/crm/services/CrmService/types.js";
 import type { CrmCoreRepository } from "../../domains/crm/ports/crmCoreRepository.js";
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
@@ -62,6 +64,8 @@ export type CreateAppOptions = {
   storefrontPageRepository?: StorefrontPageRepository;
   storefrontMediaServices?: StorefrontMediaServices;
   publicStorefrontCrmRepository?: CrmRepository;
+  publicStorefrontCrmPipelineRepository?: CrmPipelineRepository;
+  publicStorefrontCrmTransaction?: CrmServicePorts["transaction"];
   readiness?: () => Promise<ReadinessResult>;
   logger?: ServiceLogger;
   roleServices?: RoleServices;
