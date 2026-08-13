@@ -268,43 +268,64 @@ describe("CRM WhatsApp API", () => {
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await expect(
-      api.assignSession("session_1", { assignedUserId: "user_1" }),
+      api.assignSession("session_1", {
+        assignedUserId: "user_1",
+        expectedRevision: 11,
+      }),
     ).resolves.toMatchObject({ assignedUserId: "user_1" });
-    await expect(api.closeSession("session_1")).resolves.toMatchObject({
-      status: "COMPLETED",
-    });
     await expect(
-      api.interveneSession("session_1", { enabled: true }),
+      api.closeSession("session_1", { expectedRevision: 12 }),
+    ).resolves.toMatchObject({ status: "COMPLETED" });
+    await expect(
+      api.interveneSession("session_1", {
+        enabled: true,
+        expectedRevision: 13,
+      }),
     ).resolves.toMatchObject({ status: "HUMAN_TAKEOVER" });
-    await expect(api.markSessionRead("session_1")).resolves.toMatchObject({
-      unreadCount: 0,
-    });
-    await expect(api.markSessionUnread("session_1")).resolves.toMatchObject({
-      unreadCount: 1,
-    });
+    await expect(
+      api.markSessionRead("session_1", { expectedRevision: 14 }),
+    ).resolves.toMatchObject({ unreadCount: 0 });
+    await expect(
+      api.markSessionUnread("session_1", { expectedRevision: 15 }),
+    ).resolves.toMatchObject({ unreadCount: 1 });
 
     expect(fake.calls[0]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/assign",
       init: {
-        body: JSON.stringify({ assignedUserId: "user_1" }),
+        body: JSON.stringify({
+          assignedUserId: "user_1",
+          expectedRevision: 11,
+        }),
         method: "POST",
       },
     });
     expect(fake.calls[1]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/close",
-      init: { body: JSON.stringify({}), method: "POST" },
+      init: {
+        body: JSON.stringify({ expectedRevision: 12 }),
+        method: "POST",
+      },
     });
     expect(fake.calls[2]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/intervention",
-      init: { body: JSON.stringify({ enabled: true }), method: "POST" },
+      init: {
+        body: JSON.stringify({ enabled: true, expectedRevision: 13 }),
+        method: "POST",
+      },
     });
     expect(fake.calls[3]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/read",
-      init: { body: JSON.stringify({}), method: "POST" },
+      init: {
+        body: JSON.stringify({ expectedRevision: 14 }),
+        method: "POST",
+      },
     });
     expect(fake.calls[4]).toMatchObject({
       input: "/api/v1/crm/whatsapp/sessions/session_1/unread",
-      init: { body: JSON.stringify({}), method: "POST" },
+      init: {
+        body: JSON.stringify({ expectedRevision: 15 }),
+        method: "POST",
+      },
     });
   });
 

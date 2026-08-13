@@ -116,7 +116,10 @@ async function findOrCreateSession(
   input: IngestCrmWhatsappMessageInput,
 ) {
   const existing = await findWhatsappSessionByIdentity(db, input);
-  if (existing) return { ...existing, created: false };
+  if (existing) {
+    const updated = await updateWhatsappSessionIdentity(db, existing, input);
+    return { ...updated, created: false };
+  }
 
   const [inserted] = await db
     .insert(crmWhatsappSessions)
@@ -132,6 +135,8 @@ async function findOrCreateSession(
       lastMessageAt: input.providerTimestamp,
       lastMessageContent: input.content,
       leadId: input.leadId ?? null,
+      profilePhotoUrl: input.profilePhotoUrl ?? null,
+      metadata: sessionMetadata(input),
       storeId: input.storeId,
       tenantId: input.tenantId,
     })
@@ -141,7 +146,8 @@ async function findOrCreateSession(
   if (inserted) return { ...inserted, created: true };
   const raced = await findWhatsappSessionByIdentity(db, input);
   if (!raced) throw new Error("CRM WhatsApp session was not persisted.");
-  return { ...raced, created: false };
+  const updated = await updateWhatsappSessionIdentity(db, raced, input);
+  return { ...updated, created: false };
 }
 
 async function insertSessionContext(
@@ -157,6 +163,8 @@ async function insertSessionContext(
       channel: input.channel,
       channelExternalId: input.channelExternalId ?? null,
       connectionId: input.connectionId,
+      profilePhotoUrl: input.profilePhotoUrl ?? null,
+      metadata: sessionMetadata(input),
       storeId: input.storeId,
       tenantId: input.tenantId,
     })
@@ -167,6 +175,12 @@ async function insertSessionContext(
   if (!raced)
     throw new Error("CRM WhatsApp session context was not persisted.");
   return updateWhatsappSessionIdentity(db, raced, input);
+}
+
+function sessionMetadata(input: UpsertCrmWhatsappSessionContextInput) {
+  return input.profilePhotoStorageKey
+    ? { profilePhoto: { storageKey: input.profilePhotoStorageKey } }
+    : {};
 }
 
 async function insertMessage(

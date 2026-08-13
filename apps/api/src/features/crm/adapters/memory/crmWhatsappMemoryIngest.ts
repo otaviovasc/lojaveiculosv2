@@ -12,6 +12,7 @@ import {
   type MemoryWhatsappTagState,
 } from "./crmWhatsappMemoryTags.js";
 import { updateMemorySessionPreview } from "./crmWhatsappMemorySessionPreview.js";
+import { memoryProfilePhotoMetadata } from "./crmWhatsappMemoryProfilePhoto.js";
 import { reconciledOutboundEchoSender } from "../../../../domains/crm/whatsapp/reconcileWhatsappOutboundEcho.js";
 
 type WhatsappSessionIdentityInput =
@@ -91,8 +92,8 @@ export function createMemorySessionContext(
     lastReadAt: null,
     leadId: null,
     messageCount: 0,
-    metadata: {},
-    profilePhotoUrl: null,
+    metadata: memoryProfilePhotoMetadata(input),
+    profilePhotoUrl: input.profilePhotoUrl ?? null,
     revision: 0,
     sessionTags: [],
     source: null,
@@ -157,6 +158,13 @@ export function upsertMemorySessionContext(
       session.buyerPhone = input.buyerPhone;
       changed = true;
     }
+    if (input.profilePhotoStorageKey) {
+      session.metadata = {
+        ...session.metadata,
+        ...memoryProfilePhotoMetadata(input),
+      };
+      changed = true;
+    }
     if (!session.buyerChatLid && input.buyerChatLid) {
       session.buyerChatLid = input.buyerChatLid;
       changed = true;
@@ -167,6 +175,13 @@ export function upsertMemorySessionContext(
     }
     if (!session.channelExternalId && input.channelExternalId) {
       session.channelExternalId = input.channelExternalId;
+      changed = true;
+    }
+    if (
+      input.profilePhotoUrl &&
+      session.profilePhotoUrl !== input.profilePhotoUrl
+    ) {
+      session.profilePhotoUrl = input.profilePhotoUrl;
       changed = true;
     }
     if (changed) {
@@ -190,6 +205,8 @@ export async function ingestMemoryWhatsappMessage(input: {
     createdSession = true;
     session = createMemorySession(input.message, now);
     input.sessions.push(session);
+  } else {
+    session = upsertMemorySessionContext(input.sessions, input.message);
   }
 
   const existing = input.messages.find(

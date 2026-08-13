@@ -82,6 +82,7 @@ export function createCrmWhatsappApi({
     assignSession: (sessionId, input) =>
       postMaybeJson(crmWhatsappRoutes.assignSession(sessionId, baseUrl), {
         assignedUserId: input.assignedUserId,
+        expectedRevision: input.expectedRevision,
       }),
     authorizeComposioConnection: (connectionId) =>
       postJson(crmWhatsappRoutes.composioAuthorize(connectionId, baseUrl)),
@@ -89,8 +90,8 @@ export function createCrmWhatsappApi({
       deleteMaybeJson(
         crmWhatsappRoutes.scheduledMessage(scheduledMessageId, baseUrl),
       ),
-    closeSession: (sessionId) =>
-      postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl)),
+    closeSession: (sessionId, input) =>
+      postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl), input),
     completeComposioConnection: (connectionId) =>
       postJson(crmWhatsappRoutes.composioComplete(connectionId, baseUrl)),
     cancelCampaign: (campaignId) =>
@@ -177,10 +178,16 @@ export function createCrmWhatsappApi({
           createCrmWhatsappTagsQuery(input),
         ]),
       ),
-    markSessionRead: (sessionId) =>
-      postMaybeJson(crmWhatsappRoutes.markSessionRead(sessionId, baseUrl)),
-    markSessionUnread: (sessionId) =>
-      postMaybeJson(crmWhatsappRoutes.markSessionUnread(sessionId, baseUrl)),
+    markSessionRead: (sessionId, input) =>
+      postMaybeJson(
+        crmWhatsappRoutes.markSessionRead(sessionId, baseUrl),
+        input,
+      ),
+    markSessionUnread: (sessionId, input) =>
+      postMaybeJson(
+        crmWhatsappRoutes.markSessionUnread(sessionId, baseUrl),
+        input,
+      ),
     processDueScheduledMessages: (input = {}) =>
       postJson(crmWhatsappRoutes.scheduledMessagesProcessDue(baseUrl), input),
     pauseCampaign: (campaignId) =>

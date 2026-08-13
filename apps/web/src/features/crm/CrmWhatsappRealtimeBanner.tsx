@@ -57,6 +57,7 @@ function RealtimeStatusToast({
   return (
     <Toast
       className="crm-whatsapp-realtime-toast"
+      durationMs={null}
       icon={content.icon}
       {...(status === "connecting"
         ? {}

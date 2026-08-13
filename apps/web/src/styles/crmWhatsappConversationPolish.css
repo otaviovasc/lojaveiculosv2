@@ -10,11 +10,15 @@
 }
 
 .crm-whatsapp-shell {
+  grid-template-columns: minmax(20rem, 24rem) minmax(27rem, 1fr);
+  max-width: 100%;
+}
+
+.crm-whatsapp-shell[data-details-open="true"] {
   grid-template-columns:
-    minmax(18rem, 22rem)
+    minmax(20rem, 24rem)
     minmax(27rem, 1fr)
     minmax(17rem, 20rem);
-  max-width: 100%;
 }
 
 .crm-whatsapp-list {
@@ -263,7 +267,11 @@
 
 @media (max-width: 1180px) and (min-width: 861px) {
   .crm-whatsapp-shell {
-    grid-template-columns: minmax(17rem, 19rem) minmax(24rem, 1fr) minmax(
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr);
+  }
+
+  .crm-whatsapp-shell[data-details-open="true"] {
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr) minmax(
         15rem,
         17rem
       );

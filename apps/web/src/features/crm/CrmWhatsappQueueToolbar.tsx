@@ -133,7 +133,8 @@ export function WhatsappToolbar({
       </div>
       <div
         className="crm-whatsapp-smart-filters"
-        aria-label="Filtros da conversa"
+        aria-label="Filtros inteligentes"
+        role="group"
       >
         <button
           aria-pressed={unreadOnly}

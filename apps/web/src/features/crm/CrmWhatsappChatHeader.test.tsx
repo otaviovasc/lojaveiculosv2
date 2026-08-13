@@ -134,4 +134,52 @@ describe("CrmWhatsappChatHeader", () => {
       "crm-whatsapp-human-attendance-in-service",
     );
   });
+
+  it("groups conversation, workflow, and attendance actions by purpose", () => {
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        canAssignSession
+        canCloseSession
+        canMarkRead
+        canScheduleMessages
+        canTagSessions
+        canToggleIntervention
+        currentUserId="user-1"
+        onAddTag={vi.fn(async () => false)}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={vi.fn()}
+        onToggleIntervention={vi.fn()}
+        session={{
+          buyerName: "Ana Premium",
+          channel: "WHATSAPP",
+          id: "session-1",
+          leadId: "lead-1",
+          status: "ACTIVE",
+          uuid: "session-1",
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("group", { name: "Ações da conversa" }),
+    ).toContainElement(
+      screen.getByRole("button", { name: "Marcar conversa como nao lida" }),
+    );
+    expect(
+      screen.getByRole("group", { name: "Ferramentas do atendimento" }),
+    ).toContainElement(
+      screen.getByRole("link", { name: "Abrir lead vinculado" }),
+    );
+    expect(
+      screen.getByRole("group", {
+        name: "Responsabilidade pelo atendimento",
+      }),
+    ).toContainElement(screen.getByRole("button", { name: "Concluir" }));
+  });
 });

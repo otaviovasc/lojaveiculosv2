@@ -60,6 +60,7 @@ import {
   updateWhatsappTag,
 } from "./drizzleCrmWhatsappTags.js";
 import { mutateWhatsappSessionTagWithTransaction } from "./drizzleCrmWhatsappSessionTags.js";
+import { createSessionIdentityFinder } from "./drizzleCrmWhatsappSessionIdentity.js";
 
 export function createDrizzleCrmWhatsappRepository(
   db: DrizzleCrmClient,
@@ -79,6 +80,7 @@ export function createDrizzleCrmWhatsappRepository(
     async findMessageById(input) {
       return findWhatsappMessageById(db, input);
     },
+    findSessionByIdentity: createSessionIdentityFinder(db),
     async findOrCreateTag(input) {
       return findOrCreateWhatsappTag(db, input);
     },
@@ -169,8 +171,7 @@ export function createDrizzleCrmWhatsappRepository(
         .orderBy(desc(crmWhatsappSessions.lastMessageAt))
         .offset(input.offset)
         .limit(input.limit);
-
-      const sessions = await Promise.all(
+      return Promise.all(
         rows.map(async (row) =>
           hydrateWhatsappSession(
             db,
@@ -178,7 +179,6 @@ export function createDrizzleCrmWhatsappRepository(
           ),
         ),
       );
-      return sessions;
     },
     async createScheduledMessage(input) {
       return createWhatsappScheduledMessage(db, input);

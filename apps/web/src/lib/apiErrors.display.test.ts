@@ -3,6 +3,7 @@ import {
   AppApiError,
   formatApiErrorDisplay,
   getApiErrorDisplay,
+  getApiErrorRecovery,
 } from "./apiErrors";
 
 describe("API error display helpers", () => {
@@ -61,6 +62,21 @@ describe("API error display helpers", () => {
       "Revise os campos informados e tente novamente.",
     ],
     [
+      "CRM_WHATSAPP_VALIDATION_ERROR",
+      400,
+      "A solicitação do atendimento está incompleta ou desatualizada. Atualize as conversas e tente novamente.",
+    ],
+    [
+      "CRM_WHATSAPP_SESSION_REVISION_CONFLICT",
+      409,
+      "Esta conversa foi alterada em outro atendimento. Atualize as conversas antes de repetir a ação.",
+    ],
+    [
+      "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE",
+      409,
+      "A conexão atual não oferece esta ação. Verifique a configuração do canal.",
+    ],
+    [
       "CRM_PROVIDER_UNAVAILABLE",
       422,
       "Servico temporariamente indisponivel. Tente novamente em instantes.",
@@ -112,4 +128,24 @@ describe("API error display helpers", () => {
     });
     expect(formatApiErrorDisplay(null, "Try again")).toBe("Try again");
   });
+
+  it.each([
+    ["AUTHORIZATION_DENIED", 403, null],
+    ["CRM_WHATSAPP_VALIDATION_ERROR", 400, "refresh"],
+    ["CRM_WHATSAPP_SESSION_REVISION_CONFLICT", 409, "refresh"],
+    ["CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE", 409, "configure"],
+    ["CRM_WHATSAPP_PROVIDER_RATE_LIMITED", 429, "retry"],
+    ["INTERNAL_SERVER_ERROR", 500, "retry"],
+  ] as const)(
+    "classifies recovery for %s without retrying permanent failures",
+    (code, status, expected) => {
+      const error = new AppApiError({
+        code,
+        message: "technical message",
+        status,
+      });
+
+      expect(getApiErrorRecovery(error)?.kind ?? null).toBe(expected);
+    },
+  );
 });

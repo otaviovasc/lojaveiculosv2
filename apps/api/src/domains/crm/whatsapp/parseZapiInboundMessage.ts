@@ -17,6 +17,7 @@ export type ParsedZapiInboundMessage = {
   mediaUrl?: string;
   metadata: Record<string, unknown>;
   phone: string;
+  profilePhotoUrl?: string;
   providerTimestamp: Date;
   type: CrmWhatsappMessageType;
 };
@@ -44,6 +45,9 @@ export function parseZapiInboundMessage(
 
   const content = extractZapiInboundContent(payload);
   if (!content) return null;
+  const profilePhotoUrl = identity.fromMe
+    ? undefined
+    : readProfilePhotoUrl(payload);
   return {
     ...(identity.buyerName ? { buyerName: identity.buyerName } : {}),
     ...(identity.chatLid ? { chatLid: identity.chatLid } : {}),
@@ -54,9 +58,14 @@ export function parseZapiInboundMessage(
     ...(content.mediaUrl ? { mediaUrl: content.mediaUrl } : {}),
     metadata: buildMetadata(payload, identity.chatLid, content.metadata),
     phone: identity.phone,
+    ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
     providerTimestamp: readZapiTimestamp(payload),
     type: content.type,
   };
+}
+
+function readProfilePhotoUrl(payload: Record<string, unknown>) {
+  return readString(payload.senderPhoto) ?? readString(payload.photo);
 }
 
 export function parseZapiContactIdentity(

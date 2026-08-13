@@ -23,6 +23,7 @@ import {
   updateMemoryWhatsappSession,
 } from "./crmWhatsappMemoryMutations.js";
 import {
+  findMemorySession,
   ingestMemoryWhatsappMessage,
   upsertMemorySessionContext,
 } from "./crmWhatsappMemoryIngest.js";
@@ -90,6 +91,9 @@ export function createMemoryCrmWhatsappRepository(
     },
     async findMessageById(input) {
       return findMemoryWhatsappMessageById(messages, input);
+    },
+    async findSessionByIdentity(input) {
+      return findMemorySession(sessions, input) ?? null;
     },
     async findOrCreateTag(input) {
       return findOrCreateMemoryTag(tagState, input);
