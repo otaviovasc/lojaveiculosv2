@@ -15,6 +15,7 @@ import {
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import type { CrmConnectionCredentialVault } from "../../ports/crmConnectionSetupProvider.js";
 import { recoverOlxLeadWebhooks } from "./recoverOlxLeadWebhooks.js";
+import { createTestCrmPipelineRepository } from "../../testSupportPipeline.js";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
 const storeId = "store_1" as StoreId;
@@ -34,6 +35,7 @@ describe("recoverOlxLeadWebhooks", () => {
     const webhookRepository = createOlxLeadRecoveryTestWebhookRepository();
     await recordReceipt(webhookRepository);
     const ports = {
+      crmPipelineRepository: createTestCrmPipelineRepository(),
       crmRepository: crm.repository,
       crmConnectionCredentialVault: vault,
       crmWebhookEventRepository: webhookRepository,
@@ -62,6 +64,7 @@ describe("recoverOlxLeadWebhooks", () => {
     const webhookRepository = createOlxLeadRecoveryTestWebhookRepository();
     await recordReceipt(webhookRepository);
     const ports = {
+      crmPipelineRepository: createTestCrmPipelineRepository(),
       crmRepository: crm.repository,
       crmConnectionCredentialVault: vault,
       crmWebhookEventRepository: webhookRepository,

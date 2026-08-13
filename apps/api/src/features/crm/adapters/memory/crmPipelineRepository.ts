@@ -21,6 +21,20 @@ export function createMemoryCrmPipelineRepository(): CrmPipelineRepository {
       pipelines.splice(pipelines.indexOf(pipeline), 1);
       return true;
     },
+    async ensureDefaultPipeline(input) {
+      const existingDefault = pipelines.find(
+        (pipeline) => pipeline.isDefault && matchesScope(pipeline, input),
+      );
+      if (existingDefault) return existingDefault;
+      const pipeline = buildPipeline({
+        isDefault: true,
+        name: "Pipeline padrão",
+        stages: defaultStages,
+        ...input,
+      });
+      pipelines.push(pipeline);
+      return pipeline;
+    },
     async findPipelineById(input) {
       return findPipeline(pipelines, input.pipelineId, input) ?? null;
     },
@@ -55,6 +69,31 @@ export function createMemoryCrmPipelineRepository(): CrmPipelineRepository {
     },
   };
 }
+
+const defaultStages: CreateCrmPipelineRepositoryInput["stages"] = [
+  {
+    color: "#3b82f6",
+    isSystem: true,
+    leadStatus: "new",
+    name: "Novo Lead",
+    slaDays: 1,
+    status: "open",
+  },
+  {
+    color: "#22c55e",
+    isSystem: true,
+    leadStatus: "won",
+    name: "Ganho",
+    status: "won",
+  },
+  {
+    color: "#ef4444",
+    isSystem: true,
+    leadStatus: "lost",
+    name: "Perdido",
+    status: "lost",
+  },
+];
 
 function buildPipeline(input: CreateCrmPipelineRepositoryInput): CrmPipeline {
   const now = new Date();

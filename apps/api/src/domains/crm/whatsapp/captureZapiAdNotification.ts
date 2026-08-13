@@ -13,6 +13,7 @@ import {
 import { recordWhatsappServiceMutation } from "../services/CrmWhatsapp/serviceSupport.js";
 import { applyZapiAdSessionTransition } from "./zapiAdSessionTransition.js";
 import { humanAttendanceSource } from "./humanAttendanceTransition.js";
+import { findOrCreateWhatsappLead } from "./whatsappLeadLinking.js";
 
 export async function captureZapiAdNotification(
   context: ServiceContext,
@@ -40,7 +41,7 @@ export async function captureZapiAdNotification(
     () =>
       runCrmTransaction(ports, async (transactionPorts) => {
         const repository = getCrmWhatsappRepository(transactionPorts);
-        const session = await repository.upsertSessionContext({
+        const sessionContext = await repository.upsertSessionContext({
           ...(input.identity.chatLid
             ? { buyerChatLid: input.identity.chatLid }
             : {}),
@@ -53,6 +54,33 @@ export async function captureZapiAdNotification(
           storeId: input.connection.storeId,
           tenantId: input.connection.tenantId,
         });
+        const lead = await findOrCreateWhatsappLead(transactionPorts, {
+          buyerName: input.identity.buyerName ?? null,
+          buyerPhone: input.identity.phone,
+          connectionId: input.connection.id,
+          direction: "INBOUND",
+          externalId:
+            input.attribution.adSourceId ??
+            input.attribution.ctwaClid ??
+            `ad-notification:${input.detectedAt.toISOString()}`,
+          preferredLeadId: sessionContext.leadId,
+          storeId: input.connection.storeId,
+          tenantId: input.connection.tenantId,
+        });
+        const session =
+          sessionContext.leadId === lead.id
+            ? sessionContext
+            : await repository.updateSession({
+                leadId: lead.id,
+                sessionId: sessionContext.id,
+                storeId: input.connection.storeId,
+                tenantId: input.connection.tenantId,
+              });
+        if (!session) {
+          throw new Error(
+            "CRM WhatsApp ad session was not linked to its lead.",
+          );
+        }
         return applyZapiAdSessionTransition(repository, {
           actorId: context.actor.id,
           actorKind: "provider",

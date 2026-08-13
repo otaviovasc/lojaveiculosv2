@@ -32,6 +32,7 @@ import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
 import { createBillingWebhookContextFactory } from "./billingWebhookContextFactory.js";
 import { installFiscalRoutes } from "./installFiscalRoutes.js";
 import { installMarketplaceRoutes } from "./installMarketplaceRoutes.js";
+import { createPublicStorefrontFeatureOptions } from "./createAppStorefrontOptions.js";
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
@@ -54,18 +55,7 @@ export function createApp(options: CreateAppOptions = {}) {
       : {}),
     ...(options.logger ? { logger: options.logger } : {}),
   };
-  const storefrontOptions = options.publicStorefrontRepository
-    ? {
-        ...(options.audit ? { audit: options.audit } : {}),
-        ...(options.publicStorefrontCrmRepository
-          ? { crmRepository: options.publicStorefrontCrmRepository }
-          : {}),
-        ...(options.storefrontPageRepository
-          ? { pageRepository: options.storefrontPageRepository }
-          : {}),
-        repository: options.publicStorefrontRepository,
-      }
-    : {};
+  const storefrontOptions = createPublicStorefrontFeatureOptions(options);
   const contextFactory = (c: Context) => createHttpServiceContext(c, ctxConfig);
   const accountContextFactory = createHttpAccountContextFactory(options);
   app.route("/", docsFeature);

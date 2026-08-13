@@ -83,7 +83,9 @@ export async function runZapiWebhookSetupAttempt(
   const now = new Date();
   const leaseOwner = crypto.randomUUID();
   const pending = await repository.claimZapiWebhookSetup({
-    ...(input.forceReconfigure ? { allowConfigured: true } : {}),
+    // Version 1 accepted provider ACKs without readback. Always allow claiming
+    // raw "configured" metadata here; verified version 2 already returned above.
+    allowConfigured: true,
     connectionId: connection.id,
     leaseExpiresAt: new Date(now.getTime() + setupLeaseDurationMs),
     leaseOwner,

@@ -15,6 +15,7 @@ import {
 } from "./crm.olxChat.testSupport.js";
 import { createTestCrmConnectionCredentialVault } from "./crm.whatsapp.connectionFixtures.js";
 import type { CrmConnectionCredentialVault } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
+import { createTestCrmPipelineRepository } from "../../../domains/crm/testSupportPipeline.js";
 
 describe("OLX Leads inbound identity", () => {
   it("deduplicates an official externalId after connection recreation", async () => {
@@ -121,6 +122,7 @@ function identityTestApp(
       crmConnectionCredentialVault,
       crmConnectionRepository: createTestCrmConnectionRepository(connections),
       crmOlxWebhookSecurity: olxSecurity(),
+      crmPipelineRepository: createTestCrmPipelineRepository(),
       crmRepository,
       crmWebhookEventRepository,
       entitlements: ["crm", "marketplace"],
@@ -149,6 +151,7 @@ function recover(
     { limit: 10 },
     {
       crmConnectionCredentialVault,
+      crmPipelineRepository: createTestCrmPipelineRepository(),
       crmRepository,
       crmWebhookEventRepository,
     } as CrmServicePorts,

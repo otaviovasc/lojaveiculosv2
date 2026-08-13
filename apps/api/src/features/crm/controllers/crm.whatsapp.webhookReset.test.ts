@@ -38,6 +38,7 @@ describe("CRM WhatsApp webhook reset", () => {
           status: 200,
           type: webhook.type,
           url: webhook.url,
+          verified: true,
         })),
       }),
     );

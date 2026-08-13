@@ -13,6 +13,46 @@ const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 
 describe("CRM WhatsApp start conversation with an existing lead", () => {
+  it("creates a new attendance when the phone only matches a closed lead", async () => {
+    const crmRepository = createMemoryCrmRepository();
+    const closed = await crmRepository.createLead({
+      buyerPhone: "5511988887777",
+      source: "manual",
+      storeId,
+      tenantId,
+    });
+    await crmRepository.updateLead({
+      leadId: closed.id,
+      status: "won",
+      storeId,
+      tenantId,
+    });
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmRepository,
+      crmWhatsappGateway: {
+        sendText: vi.fn(async () => ({
+          externalId: "zapi-new-attendance",
+          providerTimestamp: new Date("2026-07-03T15:10:00.000Z"),
+          raw: {},
+        })),
+      },
+      crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
+    });
+
+    const response = await requestStartConversation(app, {
+      connectionId,
+      phone: "11 98888-7777",
+      text: "Novo atendimento.",
+    });
+
+    expect(response.status).toBe(201);
+    const body = (await response.json()) as { lead: { id: string } };
+    expect(body.lead.id).not.toBe(closed.id);
+  });
+
   it("reuses an existing lead by normalized phone", async () => {
     const crmRepository = createMemoryCrmRepository();
     const existing = await crmRepository.createLead({

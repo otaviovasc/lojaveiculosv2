@@ -28,16 +28,16 @@ describe("public storefront landing-page lead route", () => {
     });
 
     expect(response.status).toBe(201);
-    expect(crmRepository.createLead).toHaveBeenCalledWith(
-      expect.objectContaining({
-        buyerName: "Ana Cliente",
-        listingId: null,
-        source: "public_site",
-        storeId: "store_1",
-        tenantId: "tenant_1",
-      }),
-    );
     const [leadInput] = vi.mocked(crmRepository.createLead).mock.calls[0] ?? [];
+    expect(leadInput).toMatchObject({
+      buyerName: "Ana Cliente",
+      listingId: null,
+      source: "public_site",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+    expect(typeof leadInput?.pipelineId).toBe("string");
+    expect(typeof leadInput?.pipelineStageId).toBe("string");
     expect(leadInput?.metadata).toEqual(
       expect.objectContaining({
         sourceChannel: "storefront",

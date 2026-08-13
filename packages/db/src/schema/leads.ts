@@ -63,10 +63,12 @@ export const leads = pgTable(
     buyerPhone: varchar("buyer_phone", { length: 40 }),
     lastInteractionAt: timestamp("last_interaction_at", { withTimezone: true }),
     metadata: jsonb("metadata").notNull().default({}),
-    pipelineId: uuid("pipeline_id").references(() => crmPipelines.id),
-    pipelineStageId: uuid("pipeline_stage_id").references(
-      () => crmPipelineStages.id,
-    ),
+    pipelineId: uuid("pipeline_id")
+      .notNull()
+      .references(() => crmPipelines.id),
+    pipelineStageId: uuid("pipeline_stage_id")
+      .notNull()
+      .references(() => crmPipelineStages.id),
     source: leadSource("source").notNull(),
     sourceIdentityKey: varchar("source_identity_key", { length: 64 }),
     status: leadStatus("status").notNull().default("new"),

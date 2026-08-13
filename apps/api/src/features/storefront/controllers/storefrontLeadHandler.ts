@@ -1,6 +1,8 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { Context } from "hono";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
+import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
+import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/types.js";
 import type { PublicStorefrontLeadSink } from "../../../domains/storefront/ports/publicStorefrontLeadSink.js";
 import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 import type { StorefrontPageRepository } from "../../../domains/storefront/ports/storefrontPageRepository.js";
@@ -18,12 +20,15 @@ import {
   parsePublicPageLeadRequest,
   parseStrictPublicLeadRequest,
 } from "./storefrontLeadRequest.js";
+import { createStorefrontCrmLeadSink } from "./storefrontCrmLeadSink.js";
 
 export async function handleCreatePublicStorefrontLead(
   context: Context,
   options: {
     audit?: AuditSink;
     crmRepository: CrmRepository;
+    crmPipelineRepository: CrmPipelineRepository;
+    crmTransaction?: CrmServicePorts["transaction"];
     leadRateLimiter: PublicLeadRateLimiter;
     repository: PublicStorefrontRepository;
     leadSink?: PublicStorefrontLeadSink;
@@ -70,7 +75,13 @@ export async function handleCreatePublicStorefrontLead(
       storeSlug,
     },
     {
-      leadSink: options.leadSink ?? createCrmLeadSink(options.crmRepository),
+      leadSink:
+        options.leadSink ??
+        createStorefrontCrmLeadSink(
+          options.crmRepository,
+          options.crmPipelineRepository,
+          options.crmTransaction,
+        ),
       storefrontRepository: options.repository,
     },
   );
@@ -83,6 +94,8 @@ export async function handleCreatePublicStorefrontSiteLead(
   options: {
     audit?: AuditSink;
     crmRepository: CrmRepository;
+    crmPipelineRepository: CrmPipelineRepository;
+    crmTransaction?: CrmServicePorts["transaction"];
     leadRateLimiter: PublicLeadRateLimiter;
     repository: PublicStorefrontRepository;
     leadSink?: PublicStorefrontLeadSink;
@@ -120,7 +133,13 @@ export async function handleCreatePublicStorefrontSiteLead(
       storeSlug,
     },
     {
-      leadSink: options.leadSink ?? createCrmLeadSink(options.crmRepository),
+      leadSink:
+        options.leadSink ??
+        createStorefrontCrmLeadSink(
+          options.crmRepository,
+          options.crmPipelineRepository,
+          options.crmTransaction,
+        ),
       storefrontRepository: options.repository,
     },
   );
@@ -133,6 +152,8 @@ export async function handleCreatePublicStorefrontPageLead(
   options: {
     audit?: AuditSink;
     crmRepository: CrmRepository;
+    crmPipelineRepository: CrmPipelineRepository;
+    crmTransaction?: CrmServicePorts["transaction"];
     leadRateLimiter: PublicLeadRateLimiter;
     pageRepository: StorefrontPageRepository;
     leadSink?: PublicStorefrontLeadSink;
@@ -179,35 +200,16 @@ export async function handleCreatePublicStorefrontPageLead(
       storeSlug,
     },
     {
-      leadSink: options.leadSink ?? createCrmLeadSink(options.crmRepository),
+      leadSink:
+        options.leadSink ??
+        createStorefrontCrmLeadSink(
+          options.crmRepository,
+          options.crmPipelineRepository,
+          options.crmTransaction,
+        ),
       pageRepository: options.pageRepository,
     },
   );
 
   return context.json(result, result.deduplicated ? 200 : 201);
-}
-
-function createCrmLeadSink(
-  repository: CrmRepository,
-): PublicStorefrontLeadSink {
-  return {
-    createLead: async (input) =>
-      toPublicLead(await repository.createLead(input)),
-    listLeads: async (input) =>
-      (await repository.listLeads(input))
-        .filter((lead) => lead.source === "public_site")
-        .map(toPublicLead),
-  };
-}
-
-function toPublicLead(lead: Awaited<ReturnType<CrmRepository["createLead"]>>) {
-  return {
-    buyerEmail: lead.buyerEmail,
-    buyerPhone: lead.buyerPhone,
-    createdAt: lead.createdAt,
-    id: lead.id,
-    listingId: lead.listingId,
-    source: "public_site" as const,
-    status: lead.status,
-  };
 }

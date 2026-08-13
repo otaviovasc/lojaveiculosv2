@@ -13,7 +13,10 @@ import {
   type LeadFilters,
 } from "./crmPipelineModels";
 import { createRuntimeProductCrmApi } from "./runtimeApi";
-import type { CreateProductCrmActivityInput } from "./productCrmTypes";
+import type {
+  CreateProductCrmActivityInput,
+  ProductCrmLead,
+} from "./productCrmTypes";
 import type {
   LeadActivitiesById,
   LeadVehicleOption,
@@ -46,6 +49,7 @@ export function CrmModule({
   const [activeLeadId, setActiveLeadId] = useState<string | null>(() =>
     readInitialLeadId(),
   );
+  const [linkedLead, setLinkedLead] = useState<ProductCrmLead | null>(null);
   const [filters, setFilters] = useState<LeadFilters>({
     search: "",
     source: "all",
@@ -62,6 +66,9 @@ export function CrmModule({
     canLoadPipeline,
   );
   const leads = board.leads;
+  const visibleLeads = linkedLead
+    ? [linkedLead, ...leads.filter((lead) => lead.id !== linkedLead.id)]
+    : leads;
   const activeActivities = activeLeadId
     ? (activitiesByLeadId[activeLeadId] ?? [])
     : [];
@@ -95,6 +102,26 @@ export function CrmModule({
       isActive = false;
     };
   }, [activeLeadId, activitiesByLeadId, crmApi]);
+
+  useEffect(() => {
+    if (!activeLeadId || leads.some((lead) => lead.id === activeLeadId)) {
+      setLinkedLead(null);
+      return undefined;
+    }
+    let isActive = true;
+    if (!crmApi.getLead) return undefined;
+    void crmApi.getLead(activeLeadId).then(
+      (lead) => {
+        if (isActive) setLinkedLead(lead);
+      },
+      () => {
+        if (isActive) setLinkedLead(null);
+      },
+    );
+    return () => {
+      isActive = false;
+    };
+  }, [activeLeadId, crmApi, leads]);
 
   useEffect(() => {
     if (!canLoadPipeline) return undefined;
@@ -152,6 +179,14 @@ export function CrmModule({
     await board.refresh();
   };
 
+  const setLeadArchived = async (leadId: string, archived: boolean) => {
+    const action = archived ? crmApi.archiveLead : crmApi.restoreLead;
+    if (!action) throw new Error("A ação de arquivamento não está disponível.");
+    const lead = await action(leadId);
+    setLinkedLead(lead);
+    await board.refresh();
+  };
+
   const createActivity = async (
     leadId: string,
     input: CreateProductCrmActivityInput,
@@ -182,12 +217,13 @@ export function CrmModule({
       error={board.error}
       filters={filters}
       isLoading={board.isLoading}
-      leads={leads}
+      leads={visibleLeads}
       loadingStageIds={board.loadingStageIds}
       onChangeFilters={setFilters}
       onChangeViewMode={setViewMode}
       onCreateActivity={createActivity}
       onCreateLead={createLead}
+      onSetLeadArchived={setLeadArchived}
       onLoadMoreStage={board.loadMoreStage}
       onMoveLeadPipelineStage={moveLeadPipelineStage}
       onSelectLead={setActiveLeadId}
@@ -195,7 +231,7 @@ export function CrmModule({
       pipelinesState={pipelinesState}
       stageTotals={board.stageTotals}
       vehicleOptions={vehicleOptions}
-      viewLeads={leads}
+      viewLeads={visibleLeads}
       viewMode={viewMode}
     />
   );

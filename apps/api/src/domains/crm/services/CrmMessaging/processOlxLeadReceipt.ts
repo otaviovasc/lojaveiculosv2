@@ -10,6 +10,7 @@ import {
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
+import { ensureLeadPipeline } from "../../pipeline/ensureLeadPipeline.js";
 import { getCrmConnectionCredentialVault } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   auditWhatsappServiceEvent,
@@ -38,11 +39,16 @@ export async function processOlxLeadReceipt(
   if (!receipt) throw new Error("Invalid durable OLX lead receipt.");
   const result = await runCrmTransaction(ports, async (transactionPorts) => {
     const repository = getCrmRepository(transactionPorts);
+    const placement = await ensureLeadPipeline(transactionPorts, {
+      storeId,
+      tenantId,
+    });
     const lead = await repository.createLeadIdempotently({
       buyerEmail: receipt.buyerEmail,
       buyerName: receipt.buyerName,
       buyerPhone: receipt.buyerPhone,
       metadata: leadMetadata(connectionId, receipt),
+      ...placement,
       source: "olx",
       sourceIdentityKey: receipt.identityKey,
       storeId,

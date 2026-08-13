@@ -161,6 +161,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           lead={activeLead}
           onBack={() => props.onSelectLead(null)}
           onCreateActivity={props.onCreateActivity}
+          onSetLeadArchived={props.onSetLeadArchived}
           onMoveLeadPipelineStage={props.onMoveLeadPipelineStage}
           stages={activePipeline.stages}
           vehicleOptions={props.vehicleOptions}

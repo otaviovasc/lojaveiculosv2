@@ -1,50 +1,30 @@
-.crm-whatsapp-realtime-banner {
-  align-items: flex-start;
-  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-panel));
-  border: 1px solid
-    color-mix(in srgb, var(--color-warning) 35%, var(--color-line));
-  border-radius: var(--radius-md);
-  color: var(--color-warning-strong, var(--color-warning));
-  display: flex;
-  gap: 0.625rem;
-  margin: 0 auto 0.75rem;
-  max-width: var(--layout-content-max);
-  padding: 0.625rem 0.75rem;
-  width: calc(100% - 2rem);
+.crm-whatsapp-realtime-toast {
+  animation: crm-whatsapp-realtime-toast-in 180ms ease-out both;
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-panel));
 }
 
-.crm-whatsapp-realtime-banner > svg {
-  flex: 0 0 auto;
-  height: 1rem;
-  margin-top: 0.1rem;
-  width: 1rem;
-}
-
-.crm-whatsapp-realtime-banner span {
-  display: grid;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.crm-whatsapp-realtime-banner strong {
-  font-size: var(--font-size-xs);
-}
-
-.crm-whatsapp-realtime-banner small {
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  line-height: 1.35;
-}
-
-.crm-whatsapp-realtime-banner[data-realtime-status="degraded"],
-.crm-whatsapp-realtime-banner[data-realtime-status="offline"] {
+.crm-whatsapp-realtime-toast[data-tone="danger"] {
   background: color-mix(in srgb, var(--color-accent) 10%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
-  color: var(--color-accent-strong);
 }
 
 @media (max-width: 640px) {
-  .crm-whatsapp-realtime-banner {
-    width: calc(100% - 1rem);
+  .crm-whatsapp-realtime-toast {
+    inset-inline-end: max(0.5rem, env(safe-area-inset-right));
+    inset-inline-start: max(0.5rem, env(safe-area-inset-left));
+    width: auto;
+  }
+}
+
+@keyframes crm-whatsapp-realtime-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-whatsapp-realtime-toast,
+  .crm-whatsapp-realtime-toast .crm-spin {
+    animation: none;
   }
 }

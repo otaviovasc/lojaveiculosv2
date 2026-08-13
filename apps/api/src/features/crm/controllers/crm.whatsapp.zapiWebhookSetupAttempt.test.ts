@@ -98,6 +98,7 @@ describe("runZapiWebhookSetupAttempt", () => {
             status: 200,
             type: webhook.type,
             url: webhook.url,
+            verified: true,
           })),
         };
       },
@@ -165,6 +166,7 @@ function fixture(input: {
         status: webhook.type === input.failedType ? 400 : 200,
         type: webhook.type,
         url: webhook.url,
+        verified: webhook.type !== input.failedType,
       })),
     }),
   );

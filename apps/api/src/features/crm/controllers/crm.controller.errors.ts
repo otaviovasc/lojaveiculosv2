@@ -17,6 +17,7 @@ import {
   CrmVisitSessionMismatchError,
   CrmVisitVehicleNotFoundError,
 } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import { CrmLeadLinkedSessionError } from "../../../domains/crm/services/CrmService/setCrmLeadArchived.js";
 
 export async function handleCrm(
   context: Context,
@@ -37,6 +38,9 @@ function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
   }
   if (error instanceof CrmLeadNotFoundError) {
     return apiErrorInput(error, "CRM_LEAD_NOT_FOUND", 404);
+  }
+  if (error instanceof CrmLeadLinkedSessionError) {
+    return apiErrorInput(error, "CRM_LEAD_LINKED_SESSION", 409);
   }
   if (error instanceof CrmPipelineNotFoundError) {
     return apiErrorInput(error, "CRM_PIPELINE_NOT_FOUND", 404);

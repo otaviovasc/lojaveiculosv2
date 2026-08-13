@@ -15,6 +15,8 @@ import {
 
 export function createRuntimeProductCrmApi(): ProductCrmApi {
   return {
+    archiveLead: async (leadId) =>
+      (await createRuntimeProductApi()).archiveLead!(leadId),
     createActivity: async (leadId, input) =>
       (await createRuntimeProductApi()).createActivity(leadId, input),
     createFinancialProduct: async (leadId, input) =>
@@ -25,6 +27,8 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
       (await createRuntimeProductApi()).createPipeline(input),
     deletePipeline: async (pipelineId) =>
       (await createRuntimeProductApi()).deletePipeline(pipelineId),
+    getLead: async (leadId) =>
+      (await createRuntimeProductApi()).getLead!(leadId),
     listActivities: async (leadId) =>
       createProductCrmApi(await createProductCrmApiOptions()).listActivities(
         leadId,
@@ -45,6 +49,8 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
       createProductCrmApi(
         await createProductCrmApiOptions(),
       ).moveLeadPipelineStage(leadId, input),
+    restoreLead: async (leadId) =>
+      (await createRuntimeProductApi()).restoreLead!(leadId),
     updatePipeline: async (pipelineId, input) =>
       createProductCrmApi(await createProductCrmApiOptions()).updatePipeline(
         pipelineId,

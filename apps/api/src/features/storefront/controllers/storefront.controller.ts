@@ -6,6 +6,8 @@ import { getPublicStorefrontSite } from "../../../domains/storefront/services/St
 import { getPublicVehicleListing } from "../../../domains/storefront/services/StorefrontService/getPublicVehicleListing.js";
 import { listPublicVehicleListings } from "../../../domains/storefront/services/StorefrontService/listPublicVehicleListings.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
+import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
+import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/types.js";
 import type {
   PublicStorefrontRepository,
   PublicVehicleListing,
@@ -15,6 +17,7 @@ import type { StorefrontPageRepository } from "../../../domains/storefront/ports
 import { createPlaceholderServiceContext } from "../../../infrastructure/http/createPlaceholderServiceContext.js";
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import { createMemoryCrmRepository } from "../../crm/adapters/memory/crmRepository.js";
+import { createMemoryCrmPipelineRepository } from "../../crm/adapters/memory/crmPipelineRepository.js";
 import { createMemoryPublicStorefrontRepository } from "../adapters/memory/publicStorefrontRepository.js";
 import { createMemoryStorefrontPageRepository } from "../adapters/memory/storefrontPageRepository.js";
 import {
@@ -40,6 +43,8 @@ const querySchema = z.object({
 export type CreateStorefrontFeatureOptions = {
   audit?: AuditSink;
   crmRepository?: CrmRepository;
+  crmPipelineRepository?: CrmPipelineRepository;
+  crmTransaction?: CrmServicePorts["transaction"];
   leadRateLimiter?: PublicLeadRateLimiter;
   pageRepository?: StorefrontPageRepository;
   repository?: PublicStorefrontRepository;
@@ -54,6 +59,8 @@ export function createStorefrontFeature(
   const pageRepository =
     options.pageRepository ?? createMemoryStorefrontPageRepository();
   const crmRepository = options.crmRepository ?? createMemoryCrmRepository();
+  const crmPipelineRepository =
+    options.crmPipelineRepository ?? createMemoryCrmPipelineRepository();
   const leadRateLimiter =
     options.leadRateLimiter ?? createMemoryPublicLeadRateLimiter();
 
@@ -135,6 +142,10 @@ export function createStorefrontFeature(
     handleStorefront(context, () =>
       handleCreatePublicStorefrontPageLead(context, {
         crmRepository,
+        crmPipelineRepository,
+        ...(options.crmTransaction
+          ? { crmTransaction: options.crmTransaction }
+          : {}),
         leadRateLimiter,
         pageRepository,
         ...(options.audit ? { audit: options.audit } : {}),
@@ -146,6 +157,10 @@ export function createStorefrontFeature(
     handleStorefront(context, () =>
       handleCreatePublicStorefrontSiteLead(context, {
         crmRepository,
+        crmPipelineRepository,
+        ...(options.crmTransaction
+          ? { crmTransaction: options.crmTransaction }
+          : {}),
         leadRateLimiter,
         repository,
         ...(options.audit ? { audit: options.audit } : {}),
@@ -157,6 +172,10 @@ export function createStorefrontFeature(
     handleStorefront(context, () =>
       handleCreatePublicStorefrontLead(context, {
         crmRepository,
+        crmPipelineRepository,
+        ...(options.crmTransaction
+          ? { crmTransaction: options.crmTransaction }
+          : {}),
         leadRateLimiter,
         repository,
         ...(options.audit ? { audit: options.audit } : {}),

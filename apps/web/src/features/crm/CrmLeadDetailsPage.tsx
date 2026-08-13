@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, ChevronDown } from "lucide-react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { formatLeadName } from "./crmPipelineModels";
 import {
@@ -27,6 +27,7 @@ export function CrmLeadDetailsPage({
   onBack,
   onMoveLeadPipelineStage,
   onCreateActivity,
+  onSetLeadArchived,
   vehicleOptions,
 }: CrmLeadDetailsPageProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>("visao");
@@ -105,6 +106,28 @@ export function CrmLeadDetailsPage({
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
+          <button
+            aria-label={
+              lead.status === "archived" ? "Restaurar lead" : "Arquivar lead"
+            }
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-line/35 bg-panel/40 px-3 text-xs font-bold text-muted transition-colors hover:bg-line/10 hover:text-app-text"
+            onClick={() =>
+              void onSetLeadArchived(lead.id, lead.status !== "archived")
+            }
+            title={
+              lead.status === "archived" ? "Restaurar lead" : "Arquivar lead"
+            }
+            type="button"
+          >
+            {lead.status === "archived" ? (
+              <ArchiveRestore aria-hidden="true" className="size-4" />
+            ) : (
+              <Archive aria-hidden="true" className="size-4" />
+            )}
+            <span className="hidden sm:inline">
+              {lead.status === "archived" ? "Restaurar" : "Arquivar"}
+            </span>
+          </button>
           <span className="rounded-full border border-warning/20 bg-warning/10 px-3 py-1 text-xs font-black text-warning-strong">
             {formatLeadTimelineLabel(lead)}
           </span>

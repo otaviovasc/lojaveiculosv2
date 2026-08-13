@@ -19,6 +19,8 @@ export async function createIdempotentCrmLead(
       buyerName: input.buyerName ?? null,
       buyerPhone: input.buyerPhone ?? null,
       metadata: input.metadata ?? {},
+      pipelineId: requireLeadPlacement(input.pipelineId),
+      pipelineStageId: requireLeadPlacement(input.pipelineStageId),
       source: input.source,
       sourceIdentityKey: input.sourceIdentityKey,
       storeId: input.storeId,
@@ -56,3 +58,8 @@ export async function createIdempotentCrmLead(
 }
 
 const emptyVehicleReference = { listingId: null, vehicleTitle: null };
+
+function requireLeadPlacement(value: string | undefined) {
+  if (!value) throw new Error("CRM lead pipeline placement is required.");
+  return value;
+}

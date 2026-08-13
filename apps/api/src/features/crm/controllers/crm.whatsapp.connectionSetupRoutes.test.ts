@@ -58,6 +58,7 @@ describe("CRM WhatsApp connection setup routes", () => {
           status: 200,
           type: webhook.type,
           url: webhook.url,
+          verified: true,
         })),
       }),
     );

@@ -157,6 +157,7 @@ async function buildCrmLeadFilters(
     filters.push(eq(leads.pipelineStageId, input.pipelineStageId));
   }
   if (input.source) filters.push(eq(leads.source, input.source));
+  if (!input.status) filters.push(sql`${leads.status} <> 'archived'`);
   if (input.status) filters.push(eq(leads.status, input.status));
 
   if (input.search) {

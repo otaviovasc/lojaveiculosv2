@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
+import type { CrmPipeline } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import {
   createAuditSpy,
   createTestApp,
@@ -16,6 +17,95 @@ const permissions = [
 ] satisfies PermissionKey[];
 
 describe("CRM pipeline integrity routes", () => {
+  it("places a newly created lead in the default pipeline", async () => {
+    const app = createTestApp({ permissions });
+
+    const response = await app.request("/api/v1/crm/leads", {
+      body: JSON.stringify({ buyerName: "Ana", source: "manual" }),
+      method: "POST",
+    });
+
+    expect(response.status).toBe(201);
+    const lead = (await response.json()) as {
+      pipelineId: unknown;
+      pipelineStageId: unknown;
+      status: string;
+    };
+    expect(typeof lead.pipelineId).toBe("string");
+    expect(typeof lead.pipelineStageId).toBe("string");
+    expect(lead.status).toBe("new");
+
+    const pipelinesResponse = await app.request("/api/v1/crm/pipelines");
+    const payload = (await pipelinesResponse.json()) as {
+      pipelines: Array<{
+        isDefault: boolean;
+        stages: Array<{ status: string }>;
+      }>;
+    };
+    expect(
+      payload.pipelines.some(
+        (pipeline) =>
+          pipeline.isDefault &&
+          pipeline.stages.some((stage) => stage.status === "open"),
+      ),
+    ).toBe(true);
+  });
+
+  it("archives and restores a lead without deleting its detail", async () => {
+    const { audit, record } = createAuditSpy();
+    const app = createTestApp({ audit, permissions });
+    const lead = await createLead(app);
+
+    const archived = await app.request(`/api/v1/crm/leads/${lead.id}/archive`, {
+      method: "POST",
+    });
+    expect(archived.status).toBe(200);
+    await expect(archived.json()).resolves.toMatchObject({
+      status: "archived",
+    });
+    const list = await app.request("/api/v1/crm/leads");
+    await expect(list.json()).resolves.toMatchObject({ leads: [], total: 0 });
+    const detail = await app.request(`/api/v1/crm/leads/${lead.id}`);
+    expect(detail.status).toBe(200);
+
+    const restored = await app.request(`/api/v1/crm/leads/${lead.id}/restore`, {
+      method: "POST",
+    });
+    expect(restored.status).toBe(200);
+    await expect(restored.json()).resolves.toMatchObject({ status: "new" });
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "crm.lead.archive" }),
+    );
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "crm.lead.restore" }),
+    );
+  });
+
+  it("reuses the active attendance when a manual lead has the same phone", async () => {
+    const app = createTestApp({ permissions });
+    const first = await app.request("/api/v1/crm/leads", {
+      body: JSON.stringify({ buyerPhone: "5511999999999", source: "whatsapp" }),
+      method: "POST",
+    });
+    const whatsappLead = (await first.json()) as { id: string };
+
+    const duplicate = await app.request("/api/v1/crm/leads", {
+      body: JSON.stringify({
+        buyerName: "Ana cadastrada manualmente",
+        buyerPhone: "(11) 99999-9999",
+        source: "manual",
+      }),
+      method: "POST",
+    });
+
+    expect(duplicate.status).toBe(201);
+    await expect(duplicate.json()).resolves.toMatchObject({
+      buyerName: "Ana cadastrada manualmente",
+      id: whatsappLead.id,
+      source: "whatsapp",
+    });
+  });
+
   it("does not move a lead through generic lead update fields", async () => {
     const { audit, record } = createAuditSpy();
     const app = createTestApp({
@@ -39,10 +129,13 @@ describe("CRM pipeline integrity routes", () => {
     });
 
     expect(updated.status).toBe(200);
-    await expect(updated.json()).resolves.toMatchObject({
-      buyerName: "Ana Maria",
-      pipelineStageId: null,
-    });
+    const updatedLead = (await updated.json()) as {
+      buyerName: string;
+      pipelineStageId: string;
+    };
+    expect(updatedLead.buyerName).toBe("Ana Maria");
+    expect(typeof updatedLead.pipelineStageId).toBe("string");
+    expect(updatedLead.pipelineStageId).not.toBe(stageId);
     expect(record).not.toHaveBeenCalledWith(
       expect.objectContaining({ action: "crm.pipeline.lead_move" }),
     );
@@ -148,14 +241,5 @@ async function createPipeline(
     }),
     method: "POST",
   });
-  return (await response.json()) as {
-    id: string;
-    stages: Array<{
-      color: string;
-      id: string;
-      leadStatus: string;
-      name: string;
-      status: string;
-    }>;
-  };
+  return (await response.json()) as Pick<CrmPipeline, "id" | "stages">;
 }

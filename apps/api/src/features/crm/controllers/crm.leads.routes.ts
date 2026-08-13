@@ -111,6 +111,36 @@ export function registerCrmLeadDetailRoutes(
     services,
   } = support;
 
+  crmFeature.get("/leads/:leadId", async (context) =>
+    handleCrm(context, async () =>
+      context.json(
+        await services.getLead(await createContext(context), {
+          leadId: context.req.param("leadId"),
+        }),
+      ),
+    ),
+  );
+
+  crmFeature.post("/leads/:leadId/archive", async (context) =>
+    handleCrm(context, async () =>
+      context.json(
+        await services.archiveLead(await createContext(context), {
+          leadId: context.req.param("leadId"),
+        }),
+      ),
+    ),
+  );
+
+  crmFeature.post("/leads/:leadId/restore", async (context) =>
+    handleCrm(context, async () =>
+      context.json(
+        await services.restoreLead(await createContext(context), {
+          leadId: context.req.param("leadId"),
+        }),
+      ),
+    ),
+  );
+
   crmFeature.patch("/leads/:leadId", async (context) =>
     handleCrm(context, async () => {
       const input = await parseJson(context, updateLeadSchema);

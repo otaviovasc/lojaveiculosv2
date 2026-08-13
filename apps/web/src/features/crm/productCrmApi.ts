@@ -30,6 +30,8 @@ export type ProductCrmApi = {
   ) => Promise<LeadFinancialProductResult>;
   createPipeline: (input: CreateProductCrmPipelineInput) => Promise<Pipeline>;
   deletePipeline: (pipelineId: string) => Promise<{ deleted: true }>;
+  archiveLead?: (leadId: string) => Promise<ProductCrmLead>;
+  getLead?: (leadId: string) => Promise<ProductCrmLead>;
   listActivities: (leadId: string) => Promise<ProductCrmLeadActivity[]>;
   listLeadBoard: (
     query: ProductCrmLeadBoardQuery,
@@ -41,6 +43,7 @@ export type ProductCrmApi = {
     leadId: string,
     input: MoveProductCrmLeadStageInput,
   ) => Promise<ProductCrmLead>;
+  restoreLead?: (leadId: string) => Promise<ProductCrmLead>;
   updatePipeline: (
     pipelineId: string,
     input: UpdateProductCrmPipelineInput,
@@ -144,6 +147,8 @@ export function createProductCrmApi({
     );
 
   return {
+    archiveLead: (leadId) =>
+      postJson(productCrmRoutes.archiveLead(leadId, baseUrl), {}),
     createActivity: (leadId, input) =>
       postJson(productCrmRoutes.activities(leadId, baseUrl), input),
     createLead: (input) => postJson(productCrmRoutes.leads(baseUrl), input),
@@ -156,6 +161,7 @@ export function createProductCrmApi({
         headers: createProductCrmHeaders(auth),
         method: "DELETE",
       }).then(readJson<{ deleted: true }>),
+    getLead: (leadId) => getJson(productCrmRoutes.lead(leadId, baseUrl)),
     listActivities: (leadId) =>
       getJson<{ activities: ProductCrmLeadActivity[] }>(
         productCrmRoutes.activities(leadId, baseUrl),
@@ -169,6 +175,8 @@ export function createProductCrmApi({
       ).then((payload) => payload.pipelines),
     moveLeadPipelineStage: (leadId, input) =>
       patchJson(productCrmRoutes.leadPipelineStage(leadId, baseUrl), input),
+    restoreLead: (leadId) =>
+      postJson(productCrmRoutes.restoreLead(leadId, baseUrl), {}),
     updatePipeline: (pipelineId, input) =>
       patchJson(productCrmRoutes.pipeline(pipelineId, baseUrl), input),
     updateLead: (leadId, input) =>
@@ -189,6 +197,11 @@ export function createProductCrmHeaders(auth: ProductCrmAuth): HeadersInit {
 }
 
 export const productCrmRoutes = {
+  archiveLead: (leadId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/leads/${encodeURIComponent(leadId)}/archive`,
+      baseUrl,
+    ),
   activities: (leadId: string, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/leads/${encodeURIComponent(leadId)}/activities`,
@@ -215,6 +228,11 @@ export const productCrmRoutes = {
       baseUrl,
     ),
   pipelines: (baseUrl?: string) => createCrmEndpoint("/crm/pipelines", baseUrl),
+  restoreLead: (leadId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/leads/${encodeURIComponent(leadId)}/restore`,
+      baseUrl,
+    ),
 } as const;
 
 export function createProductCrmLeadBoardQuery(

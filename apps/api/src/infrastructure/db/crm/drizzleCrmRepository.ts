@@ -71,6 +71,8 @@ export function createDrizzleCrmRepository(
           buyerName: input.buyerName ?? null,
           buyerPhone: input.buyerPhone ?? null,
           metadata: input.metadata ?? {},
+          pipelineId: requireLeadPlacement(input.pipelineId),
+          pipelineStageId: requireLeadPlacement(input.pipelineStageId),
           source: input.source,
           storeId: input.storeId,
           tenantId: input.tenantId,
@@ -159,10 +161,8 @@ export function createDrizzleCrmRepository(
             ? { buyerPhone: input.buyerPhone }
             : {}),
           ...(input.metadata ? { metadata: input.metadata } : {}),
-          ...(input.pipelineId !== undefined
-            ? { pipelineId: input.pipelineId }
-            : {}),
-          ...(input.pipelineStageId !== undefined
+          ...(input.pipelineId ? { pipelineId: input.pipelineId } : {}),
+          ...(input.pipelineStageId
             ? { pipelineStageId: input.pipelineStageId }
             : {}),
           ...(input.status ? { status: input.status } : {}),
@@ -188,4 +188,9 @@ export function createDrizzleCrmRepository(
       );
     },
   };
+}
+
+function requireLeadPlacement(value: string | undefined) {
+  if (!value) throw new Error("CRM lead pipeline placement is required.");
+  return value;
 }

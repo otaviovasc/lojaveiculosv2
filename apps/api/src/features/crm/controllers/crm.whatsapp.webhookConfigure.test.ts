@@ -43,6 +43,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
           status: 200,
           type: webhook.type,
           url: webhook.url,
+          verified: true,
         })),
       }),
     );
@@ -103,6 +104,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
           status: configureWebhooks.mock.calls.length === 1 ? 503 : 200,
           type: webhook.type,
           url: webhook.url,
+          verified: configureWebhooks.mock.calls.length !== 1,
         })),
       }),
     );
@@ -170,6 +172,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
           status: 200,
           type: webhook.type,
           url: webhook.url,
+          verified: webhook.type !== "received",
         })),
       }),
     );
@@ -177,16 +180,16 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       ...secureSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection({
-          metadata: withZapiWebhookSetupState(
-            {},
-            {
+          metadata: {
+            webhookSetup: {
               ...legacy,
               attemptCount: 1,
               configuredAt: legacy.updatedAt,
               status: "configured",
               succeededTypes: requiredZapiWebhookTypes,
+              version: 1,
             },
-          ),
+          },
           storeId: customerStoreId,
           tenantId: customerTenantId,
         }),
