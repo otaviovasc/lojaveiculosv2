@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 import {
   CrmWhatsappSelfServiceSetup,
   type CrmWhatsappSelfServiceHandlers,
@@ -124,6 +131,37 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       screen.getByRole("button", { name: /Autorizar com a Meta/i }),
     ).toBeVisible();
   });
+
+  it.each([
+    ["paused", "Retomar canal", false],
+    ["active", "Pausar no CRM", true],
+  ] as const)(
+    "lets an authorized user change a %s connection lifecycle",
+    async (status, actionLabel, paused) => {
+      const onSetConnectionPaused = vi.fn(async () => undefined);
+      const connection = createZapiConnection(status);
+
+      render(
+        <CrmWhatsappSelfServiceSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          availableProviders={["zapi"]}
+          canPair={true}
+          canSetup={true}
+          existingConnection={connection}
+          handlers={{ ...createHandlers(), onSetConnectionPaused }}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: actionLabel }));
+
+      await waitFor(() => {
+        expect(onSetConnectionPaused).toHaveBeenCalledWith(
+          connection.id,
+          paused,
+        );
+      });
+    },
+  );
 });
 
 function createHandlers(): CrmWhatsappSelfServiceHandlers {
@@ -152,5 +190,29 @@ function createZapiContract(
     status,
     storeId: "store_1",
     supportCode: "ZAPI-TEST",
+  };
+}
+
+function createZapiConnection(
+  status: "active" | "paused",
+): CrmWhatsappProviderConnection {
+  return {
+    displayName: "Z-API principal",
+    externalConnectionId: null,
+    externalInstanceId: "instance-1",
+    id: "connection-1",
+    live: {
+      checkedAt: "2026-08-13T12:00:00.000Z",
+      connected: true,
+      connectedPhone: "5511999999999",
+      providerStatus: "connected",
+      smartphoneConnected: true,
+    },
+    phone: "5511999999999",
+    provider: "zapi",
+    ready: true,
+    setup: null,
+    status,
+    webhookUrl: null,
   };
 }

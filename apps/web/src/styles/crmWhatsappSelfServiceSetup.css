@@ -253,6 +253,7 @@
 }
 
 .crm-channel-operation[data-state="degraded"]::before,
+.crm-channel-operation[data-state="not_connected"]::before,
 .crm-channel-operation[data-state="pending"]::before {
   background: var(--color-warning);
 }

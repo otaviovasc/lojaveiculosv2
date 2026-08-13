@@ -29,7 +29,12 @@ export function readCrmChannelIdentity(input: {
 }
 
 export type CrmChannelOperationState =
-  "active" | "degraded" | "failed" | "indeterminate" | "pending";
+  | "active"
+  | "degraded"
+  | "failed"
+  | "indeterminate"
+  | "not_connected"
+  | "pending";
 
 export type CrmChannelOperation = {
   detail: string;
@@ -192,6 +197,16 @@ function readCapabilityOperation(
 function readAuthorizationFailure(
   state?: MarketplaceProviderState,
 ): Omit<CrmChannelOperation, "label"> | null {
+  if (
+    !state?.accountId ||
+    state.connectionStatus === "not_configured" ||
+    state.connectionStatus === "not_connected"
+  ) {
+    return {
+      detail: "Autorize a conta OLX para habilitar esta capacidade.",
+      state: "not_connected",
+    };
+  }
   if (
     state?.connectionStatus === "reconnect_required" ||
     state?.connectionStatus === "blocked"

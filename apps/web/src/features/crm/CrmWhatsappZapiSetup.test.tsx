@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
+import { AppApiError } from "../../lib/apiErrors";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
 import type {
@@ -152,6 +153,43 @@ describe("CrmWhatsappZapiSetup", () => {
       "connection_1",
     );
     expect(screen.queryByLabelText(/token/i)).not.toBeInTheDocument();
+  });
+
+  it("switches to phone pairing when Z-API requires Passkey", async () => {
+    const handlers = createHandlers();
+    handlers.onRequestZapiPairingQr = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_CONNECTION_SETUP_PAIRING_METHOD_REQUIRED",
+        details: { nextAction: "request_phone_code" },
+        message: "Provider requires another pairing method.",
+        status: 409,
+      });
+    });
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={false}
+        connection={createDisconnectedConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Gerar QR Code" }));
+
+    expect(
+      await screen.findByLabelText("Telefone para pareamento"),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("tab", { name: "Código do telefone" }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /exige uma verificação adicional/i,
+    );
   });
 
   it("requires a user-entered phone before requesting a pairing code", async () => {

@@ -95,7 +95,7 @@ describe("CrmWhatsappChannelDirectory", () => {
     ).toHaveTextContent(/Chat mantém o estado observado na conexão do CRM/i);
   });
 
-  it("never turns Add Z-API into management of an existing connection", () => {
+  it("opens management from an existing Z-API card", () => {
     const onChoose = vi.fn();
     render(
       <CrmWhatsappChannelDirectory
@@ -108,10 +108,34 @@ describe("CrmWhatsappChannelDirectory", () => {
     );
 
     const zapi = screen.getByRole("button", { name: /Z-API/i });
-    expect(zapi).toBeDisabled();
+    expect(zapi).toBeEnabled();
     expect(screen.getByText("Já conectado")).toBeVisible();
     fireEvent.click(zapi);
-    expect(onChoose).not.toHaveBeenCalled();
+    expect(onChoose).toHaveBeenCalledWith("zapi");
+  });
+
+  it("localizes provider requirement copy instead of exposing raw English", async () => {
+    const state = createOlxState();
+    state.connectionStatus = "reconnect_required";
+    state.requirements = [
+      {
+        code: "MARKETPLACE_ACCOUNT_RECONNECT_REQUIRED",
+        message: "Expired credentials.",
+        severity: "blocked",
+        userAction: "Reconnect the provider account.",
+      },
+    ];
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        marketplaceApi={createMarketplaceApi(false, state)}
+        onChoose={vi.fn()}
+        zapiAddonContract={null}
+      />,
+    );
+
+    expect(await screen.findByText("Reconexão necessária")).toBeVisible();
+    expect(screen.queryByText("Expired credentials.")).not.toBeInTheDocument();
   });
 });
 

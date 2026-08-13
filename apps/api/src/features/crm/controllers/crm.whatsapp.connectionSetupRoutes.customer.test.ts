@@ -1,5 +1,6 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
+import { CrmConnectionSetupProviderError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import {
   connectionId,
@@ -76,6 +77,52 @@ describe("CRM WhatsApp customer connection setup routes", () => {
       { method: "POST" },
     );
     expect(response.status).toBe(403);
+  });
+
+  it("returns the safe phone fallback when Z-API requires Passkey", async () => {
+    const app = createTestApp({
+      crmConnectionCredentialVault: {
+        open: vi.fn(async ({ sealed }: { sealed: string }) =>
+          sealed.replace(/^sealed:/, ""),
+        ),
+        seal: vi.fn(),
+      },
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        {
+          ...createConnection("zapi", {
+            mode: "stored",
+            stored: {
+              instanceId: "sealed:instance-secret",
+              instanceToken: "sealed:token-secret",
+            },
+          }),
+          status: "disconnected",
+          storeId: customerStoreId,
+          tenantId: customerTenantId,
+        },
+      ]),
+      zapiConnectionSetupProvider: {
+        getPairingCode: vi.fn(),
+        getQrCode: vi.fn(async () => {
+          throw new CrmConnectionSetupProviderError(
+            "Z-API requires another pairing method. Try connecting by phone.",
+            "pairing_method_required",
+          );
+        }),
+        validateStatus: vi.fn(),
+      },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/pairing/qr`,
+      { method: "POST" },
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_CONNECTION_SETUP_PAIRING_METHOD_REQUIRED",
+      details: { nextAction: "request_phone_code" },
+    });
   });
 
   it("does not let setup-only actors pair an existing connection", async () => {

@@ -10,6 +10,7 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
 import { createMarketplaceRuntimeApi } from "../marketplaces/runtimeApi";
+import { getMarketplaceRequirementCopy } from "../marketplaces/marketplaceLabels";
 import type { MarketplaceProviderState } from "../marketplaces/types";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import {
@@ -39,6 +40,11 @@ export function CrmWhatsappChannelDirectory({
   zapiAddonContract: CrmWhatsappZapiAddonContract | null;
 }) {
   const officialAvailable = availableProviders.includes("composio_whatsapp");
+  const officialConfigured = connections.some(
+    (connection) =>
+      connection.provider === "composio_whatsapp" &&
+      connection.status !== "archived",
+  );
   const zapiConfigured = connections.some(
     (connection) =>
       connection.provider === "zapi" && connection.status !== "archived",
@@ -99,20 +105,9 @@ export function CrmWhatsappChannelDirectory({
     }
   };
   return (
-    <section
-      aria-labelledby="crm-channel-directory-title"
-      className="crm-channel-directory-shell"
-    >
-      <header className="crm-channel-directory-heading">
-        <span>Central de conexões</span>
-        <h2 id="crm-channel-directory-title">Adicionar canal</h2>
-        <p>
-          Confira o canal, o transporte e quem mantém a credencial antes de
-          autorizar.
-        </p>
-      </header>
+    <section aria-label="Canais" className="crm-channel-directory-shell">
       <ol
-        aria-labelledby="crm-channel-directory-title"
+        aria-label="Canais conectados e disponíveis"
         className="crm-whatsapp-channel-directory"
       >
         {!availableProviders.length ? (
@@ -122,10 +117,8 @@ export function CrmWhatsappChannelDirectory({
         ) : null}
         <li>
           <button
-            aria-disabled={zapiConfigured}
             className="crm-whatsapp-channel-row"
-            data-actionable={!zapiConfigured}
-            disabled={zapiConfigured}
+            data-actionable="true"
             onClick={() => onChoose("zapi")}
             type="button"
           >
@@ -148,7 +141,7 @@ export function CrmWhatsappChannelDirectory({
               </span>
               <span className="crm-whatsapp-channel-description">
                 {zapiConfigured
-                  ? "Esta loja já possui uma Z-API. Use Gerenciar conexão para parear ou revisar o canal."
+                  ? "Conexão ativa. Abra para revisar webhooks, desconectar ou trocar o aparelho."
                   : readZapiChooserDescription(zapiAddonContract)}
               </span>
               <ChannelIdentity
@@ -196,7 +189,10 @@ export function CrmWhatsappChannelDirectory({
                 <span className="crm-channel-scope-list" role="note">
                   <strong>Escopos ou requisitos pendentes</strong>
                   {olxState.requirements.map((requirement) => (
-                    <span key={requirement.code}>{requirement.message}</span>
+                    <span key={requirement.code}>
+                      {getMarketplaceRequirementCopy(requirement)?.message ??
+                        "A conta OLX precisa de atenção."}
+                    </span>
                   ))}
                 </span>
               ) : null}
@@ -233,7 +229,7 @@ export function CrmWhatsappChannelDirectory({
           </article>
         </li>
         <li>
-          {officialAvailable ? (
+          {officialAvailable || officialConfigured ? (
             <button
               className="crm-whatsapp-channel-row"
               onClick={() => onChoose("composio_whatsapp")}
@@ -245,10 +241,19 @@ export function CrmWhatsappChannelDirectory({
               <span className="crm-whatsapp-channel-body">
                 <span className="crm-whatsapp-channel-title">
                   WhatsApp Oficial
+                  {officialConfigured ? (
+                    <span
+                      className="crm-whatsapp-channel-badge"
+                      data-tone="muted"
+                    >
+                      Já conectado
+                    </span>
+                  ) : null}
                 </span>
                 <span className="crm-whatsapp-channel-description">
-                  Autorize a conta Meta em uma página segura e escolha o número
-                  remetente.
+                  {officialConfigured
+                    ? "Abra para revisar ou reautorizar a conexão oficial."
+                    : "Autorize a conta Meta em uma página segura e escolha o número remetente."}
                 </span>
                 <ChannelIdentity
                   broker="Composio"
@@ -397,6 +402,8 @@ function readOperationStateLabel(
       return "Falhou";
     case "indeterminate":
       return "Indeterminado";
+    case "not_connected":
+      return "Não conectado";
     case "pending":
       return "Pendente";
   }
