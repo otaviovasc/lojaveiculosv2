@@ -107,7 +107,7 @@ export async function claimOlxWebhookSetup(
         eq(crmConnections.provider, "olx_chat"),
         sql`${crmConnections.status} <> 'archived'`,
         sql`coalesce(${crmConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
-        sql`(${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' is null or ${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null or (${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now})`,
+        sql`(${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' is null or ${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null or (${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz)`,
       ),
     )
     .returning();

@@ -38,17 +38,33 @@ async function captureMetadataUpdate(
   runClaim: (repository: CrmConnectionRepository) => Promise<unknown>,
 ) {
   let metadataUpdate: SQL | undefined;
+  let whereClause: SQL | undefined;
   const db = {
     update: () => ({
       set: (values: { metadata: SQL }) => {
         metadataUpdate = values.metadata;
-        return { where: () => ({ returning: async () => [] }) };
+        return {
+          where: (where: SQL) => {
+            whereClause = where;
+            return { returning: async () => [] };
+          },
+        };
       },
     }),
   } as unknown as DrizzleCrmClient;
   await runClaim(createDrizzleCrmConnectionRepository(db));
   if (!metadataUpdate) throw new Error("CRM metadata update was not captured.");
-  return new PgDialect().sqlToQuery(metadataUpdate).sql.replace(/\s+/g, " ");
+  if (!whereClause) throw new Error("CRM claim predicate was not captured.");
+  const dialect = new PgDialect();
+  const metadataQuery = dialect.sqlToQuery(metadataUpdate);
+  const whereQuery = dialect.sqlToQuery(whereClause);
+  expect(whereQuery.sql.replace(/\s+/g, " ")).toContain(
+    "::timestamptz <= $5::timestamptz",
+  );
+  expect(whereQuery.params.every((value) => !(value instanceof Date))).toBe(
+    true,
+  );
+  return metadataQuery.sql.replace(/\s+/g, " ");
 }
 
 function expectTypedLeaseValues(sql: string) {

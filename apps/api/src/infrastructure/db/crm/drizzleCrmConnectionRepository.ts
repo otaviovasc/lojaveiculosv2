@@ -145,7 +145,7 @@ export function createDrizzleCrmConnectionRepository(
             sql`(
               ${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' is null
               or ${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null
-              or (${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now}
+              or (${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz
             )`,
           ),
         )
