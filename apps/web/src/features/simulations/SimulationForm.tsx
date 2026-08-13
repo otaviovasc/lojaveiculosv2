@@ -388,7 +388,7 @@ export function SimulationForm({
                     setUnitId("");
                   }
                 }}
-                onToast={onToast}
+                onToast={onToast ?? (() => {})}
                 onYearChange={(year) => {
                   setModelYear(year == null ? "" : String(year));
                   setSelectedFipeCandidate(null);

@@ -66,7 +66,6 @@ export function SimulationStockVehicleModal({
         <div className="relative">
           <FeatureInput
             autoFocus
-            className="pl-10"
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por modelo, marca, placa ou número de estoque..."
             value={searchQuery}
@@ -79,8 +78,8 @@ export function SimulationStockVehicleModal({
 
         {status === "loading" ? (
           <FeatureLoadingState
-            density="comfortable"
-            title="Carregando estoque da loja..."
+            density="compact"
+            title="Carregando estoque..."
           />
         ) : status === "error" ? (
           <FeatureEmptyState

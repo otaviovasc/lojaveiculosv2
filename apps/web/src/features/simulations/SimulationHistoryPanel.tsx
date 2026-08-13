@@ -45,7 +45,7 @@ export function SimulationHistoryPanel({
   if (history === null) {
     return (
       <FeatureLoadingState
-        density="comfortable"
+        density="compact"
         title="Carregando histórico de simulações..."
       />
     );
@@ -129,7 +129,6 @@ export function SimulationHistoryPanel({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 min-w-[260px]">
           <FeatureInput
-            className="pl-10"
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filtrar por código da simulação, data ou status..."
             value={search}
