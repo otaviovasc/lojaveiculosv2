@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, CircleAlert, Search } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
@@ -10,6 +10,7 @@ import type { CredereFipeCandidate, CredereFipeResolution } from "./types";
 
 export function SimulationFipeResolver({
   fipeCode,
+  invalid = false,
   modelYear,
   onFipeCodeChange,
   onResolve,
@@ -17,6 +18,7 @@ export function SimulationFipeResolver({
   selected,
 }: {
   fipeCode: string;
+  invalid?: boolean;
   modelYear: string;
   onFipeCodeChange: (value: string) => void;
   onResolve: (input: {
@@ -33,13 +35,21 @@ export function SimulationFipeResolver({
     kind: "idle",
   });
   const isResolving = lookup.kind === "loading";
+  const autoResolvedKeyRef = useRef("");
 
   const failLookup = (message: string, requestId?: string) =>
     setLookup({ kind: "error", message, ...(requestId ? { requestId } : {}) });
 
-  const resolve = async (candidate?: CredereFipeCandidate) => {
-    const year = Number(modelYear);
-    if (!/^\d{6}-\d$/.test(fipeCode.trim())) {
+  const resolve = async (
+    candidate?: CredereFipeCandidate,
+    overrideFipe?: string,
+    overrideYear?: number,
+  ) => {
+    const { normalizedFipe, year } = parseFipeYearParams(
+      overrideFipe ?? fipeCode,
+      overrideYear ?? modelYear,
+    );
+    if (!/^\d{6}-\d$/.test(normalizedFipe)) {
       failLookup("Informe um código FIPE no formato 000000-0.");
       return;
     }
@@ -50,7 +60,7 @@ export function SimulationFipeResolver({
     setLookup({ kind: "loading" });
     try {
       const resolution = await onResolve({
-        fipeCode: fipeCode.trim(),
+        fipeCode: normalizedFipe,
         modelYear: year,
         ...(candidate
           ? {
@@ -74,8 +84,26 @@ export function SimulationFipeResolver({
     }
   };
 
+  useEffect(() => {
+    const { normalizedFipe, year } = parseFipeYearParams(fipeCode, modelYear);
+    const isValidFipe = /^\d{6}-\d$/.test(normalizedFipe);
+    const isValidYear = Number.isInteger(year) && year >= 1900 && year <= 2100;
+
+    if (isValidFipe && isValidYear && !selected) {
+      const key = `${normalizedFipe}:${year}`;
+      if (autoResolvedKeyRef.current !== key && lookup.kind !== "loading") {
+        autoResolvedKeyRef.current = key;
+        void resolve(undefined, normalizedFipe, year);
+      }
+    }
+  }, [fipeCode, modelYear, selected, lookup.kind]);
+
   return (
-    <section aria-labelledby="credere-fipe-title" className="credere-form-fipe">
+    <section
+      aria-labelledby="credere-fipe-title"
+      className={`credere-form-fipe ${invalid ? "credere-form-fipe--invalid" : ""}`}
+      data-invalid={invalid || undefined}
+    >
       <div className="credere-form-fipe-head">
         <h3 id="credere-fipe-title">Correspondência FIPE e Molicar</h3>
         <p>
@@ -85,10 +113,16 @@ export function SimulationFipeResolver({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
-        <FeatureField label="Código FIPE">
+        <FeatureField
+          error={
+            invalid && !selected ? "Confirme a versão FIPE/Molicar" : undefined
+          }
+          label="Código FIPE"
+        >
           <FeatureInput
             aria-describedby="credere-fipe-hint"
             className="credere-form-input credere-form-input--code"
+            data-invalid={invalid && !selected ? "true" : undefined}
             inputMode="numeric"
             maxLength={8}
             onChange={(event) => {
@@ -212,4 +246,13 @@ function applyResolution(
 function yearRange(candidate: CredereFipeCandidate) {
   if (candidate.yearStart === null && candidate.yearEnd === null) return "";
   return ` · Anos ${candidate.yearStart ?? "início não informado"}–${candidate.yearEnd ?? "atual"}`;
+}
+
+function parseFipeYearParams(fipe: string, yearValue: string | number) {
+  const rawFipe = String(fipe).trim();
+  const normalizedFipe = /^\d{7}$/.test(rawFipe)
+    ? `${rawFipe.slice(0, 6)}-${rawFipe.slice(6)}`
+    : rawFipe;
+  const year = Number(yearValue);
+  return { normalizedFipe, year };
 }

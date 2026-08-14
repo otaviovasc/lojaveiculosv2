@@ -1067,3 +1067,48 @@
     animation: none;
   }
 }
+
+/* ── Invalid field & card highlights ────────────────────────────────────── */
+
+.credere-form-input[data-invalid="true"],
+.credere-form-select[data-invalid="true"],
+.custom-select-trigger[data-invalid="true"],
+.datepicker-field-trigger[data-invalid="true"] {
+  border-color: var(--color-danger, #ef4444) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--color-danger, #ef4444) 4%,
+    var(--color-panel)
+  ) !important;
+}
+
+.credere-form-fipe[data-invalid="true"],
+.credere-form-fipe--invalid {
+  border-color: var(--color-danger, #ef4444) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--color-danger, #ef4444) 4%,
+    var(--color-panel)
+  ) !important;
+}
+
+.credere-form-preflight[data-invalid="true"],
+.credere-form-preflight--invalid {
+  border-color: var(--color-danger, #ef4444) !important;
+  border-left-color: var(--color-danger, #ef4444) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--color-danger, #ef4444) 6%,
+    var(--color-panel)
+  ) !important;
+}
+
+.credere-form-consent[data-invalid="true"],
+.credere-form-consent--invalid {
+  border-color: var(--color-danger, #ef4444) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--color-danger, #ef4444) 4%,
+    var(--color-panel)
+  ) !important;
+}

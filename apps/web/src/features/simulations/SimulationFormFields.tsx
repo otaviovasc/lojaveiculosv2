@@ -31,69 +31,97 @@ const stateOptions = BRAZILIAN_STATES.map((state) => ({
 }));
 export function SimulationApplicantFields({
   birthDate,
+  birthDateInvalid = false,
   cpfCnpj,
+  cpfCnpjInvalid = false,
   email,
+  emailInvalid = false,
   hasCnh,
+  hasCnhInvalid = false,
   income,
+  incomeInvalid = false,
   name,
+  nameInvalid = false,
   onBirthDateChange,
-  onCpfCnpjChange,
   onCpfCnpjBlur,
+  onCpfCnpjChange,
   onEmailChange,
   onHasCnhChange,
   onIncomeChange,
   onNameChange,
   onPhoneChange,
   phone,
+  phoneInvalid = false,
   requiredFields,
 }: {
   birthDate: string;
+  birthDateInvalid?: boolean;
   cpfCnpj: string;
+  cpfCnpjInvalid?: boolean;
   email: string;
+  emailInvalid?: boolean;
   hasCnh: boolean | null;
+  hasCnhInvalid?: boolean;
   income: number | null;
+  incomeInvalid?: boolean;
   name: string;
+  nameInvalid?: boolean;
   onBirthDateChange: (value: string) => void;
-  onCpfCnpjChange: (value: string) => void;
   onCpfCnpjBlur: () => void;
+  onCpfCnpjChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onHasCnhChange: (value: boolean | null) => void;
   onIncomeChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onNameChange: (value: string) => void;
   onPhoneChange: (value: string) => void;
   phone: string;
+  phoneInvalid?: boolean;
   requiredFields: ReadonlySet<string>;
 }) {
   const needsBirthDate = requiredFields.has("birthDate");
   const needsHasCnh = requiredFields.has("hasCnh");
   return (
     <FeatureFieldGroup className="credere-form-fields">
-      <FeatureField label="Nome do proponente">
+      <FeatureField
+        error={nameInvalid ? "Nome do proponente é obrigatório" : undefined}
+        label="Nome do proponente"
+      >
         <FeatureInput
-          className="credere-form-input"
           autoComplete="name"
+          className="credere-form-input"
+          data-invalid={nameInvalid ? "true" : undefined}
           onChange={(event) => onNameChange(event.target.value)}
           placeholder="Ex.: Ana Souza"
           value={name}
         />
       </FeatureField>
-      <FeatureField label="CPF/CNPJ">
+      <FeatureField
+        error={cpfCnpjInvalid ? "CPF/CNPJ válido é obrigatório" : undefined}
+        label="CPF/CNPJ"
+      >
         <FeatureInput
           className="credere-form-input"
+          data-invalid={cpfCnpjInvalid ? "true" : undefined}
           inputMode="numeric"
+          onBlur={onCpfCnpjBlur}
           onChange={(event) =>
             onCpfCnpjChange(
               applyInputMask(event.target, formatBrazilianDocument),
             )
           }
-          onBlur={onCpfCnpjBlur}
           placeholder="000.000.000-00"
           value={cpfCnpj}
         />
       </FeatureField>
-      <FeatureField label="Telefone">
+      <FeatureField
+        error={
+          phoneInvalid ? "Telefone do proponente é obrigatório" : undefined
+        }
+        label="Telefone"
+      >
         <FeatureInput
           className="credere-form-input"
+          data-invalid={phoneInvalid ? "true" : undefined}
           inputMode="tel"
           onChange={(event) =>
             onPhoneChange(applyInputMask(event.target, formatBrazilianPhone))
@@ -103,11 +131,13 @@ export function SimulationApplicantFields({
         />
       </FeatureField>
       <FeatureField
+        error={emailInvalid ? "E-mail é obrigatório" : undefined}
         label={`E-mail${requiredFields.has("email") ? "" : " (opcional)"}`}
       >
         <FeatureInput
-          className="credere-form-input"
           autoComplete="email"
+          className="credere-form-input"
+          data-invalid={emailInvalid ? "true" : undefined}
           onChange={(event) => onEmailChange(event.target.value)}
           placeholder="ana@exemplo.com"
           type="email"
@@ -115,10 +145,12 @@ export function SimulationApplicantFields({
         />
       </FeatureField>
       <FeatureField
+        error={incomeInvalid ? "Renda mensal é obrigatória" : undefined}
         label={`Renda mensal (R$${requiredFields.has("monthlyIncomeCents") ? "" : ", opcional"})`}
       >
         <FeatureInput
           className="credere-form-input"
+          data-invalid={incomeInvalid ? "true" : undefined}
           inputMode="decimal"
           onChange={onIncomeChange}
           placeholder="Ex.: 5.000,00"
@@ -126,8 +158,15 @@ export function SimulationApplicantFields({
         />
       </FeatureField>
       {needsBirthDate ? (
-        <FeatureField as="div" label="Data de nascimento">
+        <FeatureField
+          as="div"
+          error={
+            birthDateInvalid ? "Data de nascimento é obrigatória" : undefined
+          }
+          label="Data de nascimento"
+        >
           <FeatureDateField
+            invalid={birthDateInvalid}
             label="Data de nascimento"
             max={new Date().toISOString().slice(0, 10)}
             min="1900-01-01"
@@ -137,10 +176,14 @@ export function SimulationApplicantFields({
         </FeatureField>
       ) : null}
       {needsHasCnh ? (
-        <FeatureField label="Possui CNH">
+        <FeatureField
+          error={hasCnhInvalid ? "Informe se possui CNH" : undefined}
+          label="Possui CNH"
+        >
           <FeatureSelect
-            className="credere-form-select"
             ariaLabel="Possui CNH"
+            className="credere-form-select"
+            invalid={hasCnhInvalid}
             onChange={(value) => onHasCnhChange(value === "yes" ? true : false)}
             options={[
               { label: "Sim", value: "yes" },
@@ -159,6 +202,7 @@ export function SimulationTermsFields({
   accessoryValue,
   documentationValue,
   downPayment,
+  downPaymentInvalid = false,
   installments,
   insuranceValue,
   onAccessoryValueChange,
@@ -168,10 +212,12 @@ export function SimulationTermsFields({
   onInstallmentsChange,
   onVehicleValueChange,
   vehicleValue,
+  vehicleValueInvalid = false,
 }: {
   accessoryValue: number | null;
   documentationValue: number | null;
   downPayment: number | null;
+  downPaymentInvalid?: boolean;
   installments: string;
   insuranceValue: number | null;
   onAccessoryValueChange: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -181,21 +227,36 @@ export function SimulationTermsFields({
   onInstallmentsChange: (value: string) => void;
   onVehicleValueChange: (event: ChangeEvent<HTMLInputElement>) => void;
   vehicleValue: number | null;
+  vehicleValueInvalid?: boolean;
 }) {
   return (
     <FeatureFieldGroup className="credere-form-fields">
-      <FeatureField label="Valor do veículo (R$)">
+      <FeatureField
+        error={
+          vehicleValueInvalid ? "Valor do veículo é obrigatório" : undefined
+        }
+        label="Valor do veículo (R$)"
+      >
         <FeatureInput
           className="credere-form-input"
+          data-invalid={vehicleValueInvalid ? "true" : undefined}
           inputMode="decimal"
           onChange={onVehicleValueChange}
           placeholder="Ex.: 85.000,00"
           value={vehicleValue === null ? "" : formatCurrencyValue(vehicleValue)}
         />
       </FeatureField>
-      <FeatureField label="Entrada (R$)">
+      <FeatureField
+        error={
+          downPaymentInvalid
+            ? "Entrada deve ser maior que zero e menor que o valor do veículo"
+            : undefined
+        }
+        label="Entrada (R$)"
+      >
         <FeatureInput
           className="credere-form-input"
+          data-invalid={downPaymentInvalid ? "true" : undefined}
           inputMode="decimal"
           onChange={onDownPaymentChange}
           placeholder="Ex.: 20.000,00"
@@ -204,8 +265,8 @@ export function SimulationTermsFields({
       </FeatureField>
       <FeatureField label="Parcelas">
         <FeatureSelect
-          className="credere-form-select"
           ariaLabel="Número de parcelas"
+          className="credere-form-select"
           onChange={onInstallmentsChange}
           options={termOptions}
           value={installments}
@@ -252,9 +313,13 @@ export function SimulationTermsFields({
 
 export function SimulationVehicleFields({
   licensingCity,
+  licensingCityInvalid = false,
   licensingUf,
+  licensingUfInvalid = false,
   manufactureYear,
+  manufactureYearInvalid = false,
   modelYear,
+  modelYearInvalid = false,
   molicarCode,
   onLicensingCityChange,
   onLicensingUfChange,
@@ -265,9 +330,13 @@ export function SimulationVehicleFields({
   zeroKm,
 }: {
   licensingCity: string;
+  licensingCityInvalid?: boolean;
   licensingUf: string;
+  licensingUfInvalid?: boolean;
   manufactureYear: string;
+  manufactureYearInvalid?: boolean;
   modelYear: string;
+  modelYearInvalid?: boolean;
   molicarCode: string;
   onLicensingCityChange: (value: string) => void;
   onLicensingUfChange: (value: string) => void;
@@ -283,9 +352,15 @@ export function SimulationVehicleFields({
   }));
   return (
     <FeatureFieldGroup className="credere-form-fields">
-      <FeatureField label="Ano fabricação">
+      <FeatureField
+        error={
+          manufactureYearInvalid ? "Ano de fabricação é obrigatório" : undefined
+        }
+        label="Ano fabricação"
+      >
         <FeatureInput
           className="credere-form-input"
+          data-invalid={manufactureYearInvalid ? "true" : undefined}
           inputMode="numeric"
           maxLength={4}
           onChange={(event) => onManufactureYearChange(event.target.value)}
@@ -293,9 +368,13 @@ export function SimulationVehicleFields({
           value={manufactureYear}
         />
       </FeatureField>
-      <FeatureField label="Ano modelo">
+      <FeatureField
+        error={modelYearInvalid ? "Ano modelo é obrigatório" : undefined}
+        label="Ano modelo"
+      >
         <FeatureInput
           className="credere-form-input"
+          data-invalid={modelYearInvalid ? "true" : undefined}
           inputMode="numeric"
           maxLength={4}
           onChange={(event) => onModelYearChange(event.target.value)}
@@ -316,10 +395,16 @@ export function SimulationVehicleFields({
           Preenchido após a confirmação da versão FIPE na Credere.
         </span>
       </FeatureField>
-      <FeatureField label="UF de licenciamento">
+      <FeatureField
+        error={
+          licensingUfInvalid ? "UF de licenciamento é obrigatória" : undefined
+        }
+        label="UF de licenciamento"
+      >
         <FeatureSelect
-          className="credere-form-select"
           ariaLabel="UF de licenciamento"
+          className="credere-form-select"
+          invalid={licensingUfInvalid}
           onChange={onLicensingUfChange}
           options={stateOptions}
           placeholder="Selecione a UF"
@@ -327,11 +412,19 @@ export function SimulationVehicleFields({
           value={licensingUf}
         />
       </FeatureField>
-      <FeatureField label="Cidade de licenciamento">
+      <FeatureField
+        error={
+          licensingCityInvalid
+            ? "Cidade de licenciamento é obrigatória"
+            : undefined
+        }
+        label="Cidade de licenciamento"
+      >
         <FeatureSelect
-          className="credere-form-select"
           ariaLabel="Cidade de licenciamento"
+          className="credere-form-select"
           disabled={!licensingUf}
+          invalid={licensingCityInvalid}
           onChange={onLicensingCityChange}
           options={cityOptions}
           placeholder={licensingUf ? "Selecione a cidade" : "Escolha a UF"}

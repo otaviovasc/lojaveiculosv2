@@ -8,6 +8,7 @@ export function DatePickerField({
   align = "left",
   disabled,
   displayValue,
+  invalid = false,
   isDisabled = false,
   label,
   maxDate,
@@ -18,6 +19,7 @@ export function DatePickerField({
   align?: "left" | "right";
   disabled?: ((date: Date) => boolean) | undefined;
   displayValue?: string | undefined;
+  invalid?: boolean | undefined;
   isDisabled?: boolean | undefined;
   label: string;
   maxDate?: Date | null | undefined;
@@ -42,7 +44,9 @@ export function DatePickerField({
         className={cn(
           "datepicker-field-trigger group flex min-h-11 w-full items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.98] select-none touch-target whitespace-nowrap",
           "disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-card/60 disabled:active:scale-100",
+          invalid && "!border-danger !bg-danger/5",
         )}
+        data-invalid={invalid ? "true" : undefined}
         disabled={isDisabled}
         onClick={() => {
           if (isDisabled) return;

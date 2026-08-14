@@ -104,8 +104,6 @@ function validateSimulationDraft(input: SimulationDraftInput) {
     return "Informe um CPF/CNPJ válido para consultar o Credere.";
   if (!input.preflightReady)
     return "Confira os dados exigidos pelo Credere antes de simular.";
-  if (input.unsupportedFieldCount)
-    return "O Credere exige dados que esta tela ainda não envia. Não foi feita uma operação oficial.";
   if (input.requiredFields.has("birthDate") && !input.birthDate)
     return "Informe a data de nascimento exigida pelos bancos.";
   if (input.requiredFields.has("hasCnh") && input.hasCnh === null)

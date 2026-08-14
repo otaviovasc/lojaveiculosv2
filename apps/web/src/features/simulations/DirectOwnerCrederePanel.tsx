@@ -306,7 +306,7 @@ function StoreSelector({
   value: string;
 }) {
   return (
-    <label className="credere-owner-store-selector">
+    <div className="credere-owner-store-selector">
       <span>Loja Credere</span>
       <FeatureSelect
         ariaLabel="Loja Credere"
@@ -318,6 +318,6 @@ function StoreSelector({
         placeholder="Selecione uma loja Credere"
         value={value}
       />
-    </label>
+    </div>
   );
 }

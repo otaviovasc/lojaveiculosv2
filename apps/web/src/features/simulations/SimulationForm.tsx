@@ -33,6 +33,7 @@ import {
 } from "./SimulationSummarySidebar";
 import { canonicalSimulationCity } from "./simulationLocation";
 import { createCurrencyChange, toggleBankCode } from "./simulationFormSupport";
+import { createSettingsApi } from "../settings/apiClient";
 import { buildSimulationDraft } from "./simulationDraftBuilder";
 import {
   simulationStepReadiness,
@@ -108,7 +109,21 @@ export function SimulationForm({
     prefill?.credereVehicleModelId ?? "",
   );
   const [selectedFipeCandidate, setSelectedFipeCandidate] =
-    useState<CredereFipeCandidate | null>(null);
+    useState<CredereFipeCandidate | null>(() =>
+      prefill?.credereVehicleModelId && prefill?.molicarCode
+        ? {
+            brand: null,
+            fipeCode: prefill.fipeCode ?? "",
+            fuelType: null,
+            modelId: prefill.credereVehicleModelId,
+            molicarCode: prefill.molicarCode,
+            name: "Versão selecionada",
+            version: null,
+            yearStart: null,
+            yearEnd: null,
+          }
+        : null,
+    );
   const initialLicensingUf = prefill?.licensingUf?.trim().toUpperCase() ?? "";
   const [licensingCity, setLicensingCity] = useState(
     canonicalSimulationCity(initialLicensingUf, prefill?.licensingCity ?? ""),
@@ -128,6 +143,42 @@ export function SimulationForm({
     preflightState.kind === "ready"
       ? readApplicantRequirements(preflightState.result)
       : { supported: new Set<string>(), unsupported: [] as string[] };
+
+  const [attemptedSteps, setAttemptedSteps] = useState<
+    Record<SimulationFormStep, boolean>
+  >({
+    vehicle: false,
+    applicant: false,
+    terms: false,
+    review: false,
+  });
+
+  useEffect(() => {
+    if (initialLicensingUf) return;
+    let mounted = true;
+    void createSettingsApi({ fetch: window.fetch })
+      .getStoreSettings()
+      .then((settings) => {
+        if (!mounted) return;
+        const storeUf = settings.profile?.addressState?.trim().toUpperCase();
+        const storeCity = settings.profile?.addressCity?.trim() ?? "";
+        if (storeUf) {
+          setLicensingUf((current) => current || storeUf);
+          if (storeCity) {
+            setLicensingCity(
+              (current) =>
+                current || canonicalSimulationCity(storeUf, storeCity),
+            );
+          }
+        }
+      })
+      .catch(() => {
+        // Keep licensing UF empty if store settings are unavailable
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [initialLicensingUf]);
 
   const runApplicantPreflight = async () => {
     if (!isValidPreflightDocument(cpfCnpj)) return;
@@ -178,6 +229,11 @@ export function SimulationForm({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const readiness = simulationStepReadiness(step, snapshot);
+    if (!readiness.ready) {
+      setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
+      return setValidationError(readiness.reason);
+    }
     const result = buildSimulationDraft({
       accessoryValue,
       bankCodes,
@@ -210,7 +266,10 @@ export function SimulationForm({
       vehicleValue,
       zeroKm,
     });
-    if (result.error !== null) return setValidationError(result.error);
+    if (result.error !== null) {
+      setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
+      return setValidationError(result.error);
+    }
     setValidationError(null);
     void onSubmit(result.draft);
   };
@@ -280,7 +339,10 @@ export function SimulationForm({
 
   const continueStep = () => {
     const readiness = simulationStepReadiness(step, snapshot);
-    if (!readiness.ready) return setValidationError(readiness.reason);
+    if (!readiness.ready) {
+      setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
+      return setValidationError(readiness.reason);
+    }
     setStep(nextSimulationStep(step));
     setValidationError(null);
   };
@@ -306,6 +368,52 @@ export function SimulationForm({
     vehicleValue,
   };
   const currentReadiness = simulationStepReadiness(step, snapshot);
+
+  // Vehicle step invalid flags
+  const manufactureYearInvalid = attemptedSteps.vehicle && !manufactureYear;
+  const modelYearInvalid = attemptedSteps.vehicle && !modelYear;
+  const fipeInvalid =
+    attemptedSteps.vehicle &&
+    (!fipeCode || !molicarCode || !credereVehicleModelId);
+  const licensingUfInvalid = attemptedSteps.vehicle && !licensingUf;
+  const licensingCityInvalid = attemptedSteps.vehicle && !licensingCity;
+
+  // Applicant step invalid flags
+  const nameInvalid = attemptedSteps.applicant && !name.trim();
+  const cpfCnpjInvalid =
+    attemptedSteps.applicant && !isValidPreflightDocument(cpfCnpj);
+  const phoneInvalid = attemptedSteps.applicant && !phone.replace(/\D/g, "");
+  const preflightInvalid =
+    attemptedSteps.applicant && preflightState.kind !== "ready";
+  const emailInvalid =
+    attemptedSteps.applicant &&
+    requirements.supported.has("email") &&
+    !email.trim();
+  const birthDateInvalid =
+    attemptedSteps.applicant &&
+    requirements.supported.has("birthDate") &&
+    !birthDate;
+  const hasCnhInvalid =
+    attemptedSteps.applicant &&
+    requirements.supported.has("hasCnh") &&
+    hasCnh === null;
+  const incomeInvalid =
+    attemptedSteps.applicant &&
+    requirements.supported.has("monthlyIncomeCents") &&
+    income === null;
+
+  // Terms step invalid flags
+  const vehicleValueInvalid =
+    attemptedSteps.terms && (!vehicleValue || vehicleValue <= 0);
+  const downPaymentInvalid =
+    attemptedSteps.terms &&
+    (!downPayment ||
+      downPayment <= 0 ||
+      (vehicleValue !== null && downPayment >= vehicleValue));
+
+  // Review step invalid flags
+  const consentInvalid = attemptedSteps.review && !consent;
+
   const checklist: SimulationSummaryChecklistItem[] = [
     {
       complete: simulationStepReadiness("vehicle", snapshot).ready,
@@ -400,9 +508,13 @@ export function SimulationForm({
               />
               <SimulationVehicleFields
                 licensingCity={licensingCity}
+                licensingCityInvalid={licensingCityInvalid}
                 licensingUf={licensingUf}
+                licensingUfInvalid={licensingUfInvalid}
                 manufactureYear={manufactureYear}
+                manufactureYearInvalid={manufactureYearInvalid}
                 modelYear={modelYear}
+                modelYearInvalid={modelYearInvalid}
                 molicarCode={molicarCode}
                 onLicensingCityChange={setLicensingCity}
                 onLicensingUfChange={(value) => {
@@ -422,6 +534,7 @@ export function SimulationForm({
               />
               <SimulationFipeResolver
                 fipeCode={fipeCode}
+                invalid={fipeInvalid}
                 key={`${fipeCode}:${modelYear}`}
                 modelYear={modelYear}
                 onFipeCodeChange={setFipeCode}
@@ -461,11 +574,17 @@ export function SimulationForm({
               />
               <SimulationApplicantFields
                 birthDate={birthDate}
+                birthDateInvalid={birthDateInvalid}
                 cpfCnpj={cpfCnpj}
+                cpfCnpjInvalid={cpfCnpjInvalid}
                 email={email}
+                emailInvalid={emailInvalid}
                 hasCnh={hasCnh}
+                hasCnhInvalid={hasCnhInvalid}
                 income={income}
+                incomeInvalid={incomeInvalid}
                 name={name}
+                nameInvalid={nameInvalid}
                 onBirthDateChange={setBirthDate}
                 onCpfCnpjBlur={() => void runApplicantPreflight()}
                 onCpfCnpjChange={(value) => {
@@ -480,10 +599,12 @@ export function SimulationForm({
                 onNameChange={setName}
                 onPhoneChange={setPhone}
                 phone={phone}
+                phoneInvalid={phoneInvalid}
                 requiredFields={requirements.supported}
               />
               <SimulationApplicantPreflightStatus
                 canCheck={isValidPreflightDocument(cpfCnpj)}
+                invalid={preflightInvalid}
                 onRetry={() => void runApplicantPreflight()}
                 requestId={preflightErrorId}
                 state={preflightState}
@@ -503,6 +624,7 @@ export function SimulationForm({
               accessoryValue={accessoryValue}
               documentationValue={documentationValue}
               downPayment={downPayment}
+              downPaymentInvalid={downPaymentInvalid}
               installments={installments}
               insuranceValue={insuranceValue}
               onAccessoryValueChange={createCurrencyChange(setAccessoryValue)}
@@ -514,6 +636,7 @@ export function SimulationForm({
               onInstallmentsChange={setInstallments}
               onVehicleValueChange={createCurrencyChange(setVehicleValue)}
               vehicleValue={vehicleValue}
+              vehicleValueInvalid={vehicleValueInvalid}
             />
           </FeatureFormSection>
         ) : null}
@@ -524,6 +647,7 @@ export function SimulationForm({
             bankCodes={bankCodes}
             banks={banks}
             consent={consent}
+            consentInvalid={consentInvalid}
             downPayment={downPayment}
             fipeCode={fipeCode}
             installments={installments}
@@ -552,7 +676,7 @@ export function SimulationForm({
         <SimulationStepActions
           isLast={step === "review"}
           isSubmitting={isSubmitting}
-          nextDisabled={!currentReadiness.ready}
+          nextDisabled={false}
           nextHint={currentReadiness.ready ? null : currentReadiness.reason}
           onBack={step === "vehicle" ? null : previousStep}
           onNext={step === "review" ? null : continueStep}
