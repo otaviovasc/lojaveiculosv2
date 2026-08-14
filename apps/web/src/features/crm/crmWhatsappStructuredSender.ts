@@ -11,19 +11,24 @@ export async function sendOptimisticStructuredMessage(input: {
   activeSession: CrmWhatsappSession;
   mergeSessions: (nextSessions: CrmWhatsappSession[]) => void;
   optimistic: WhatsappMessageView;
-  request: () => Promise<CrmWhatsappMessage>;
+  request: (idempotencyKey: string) => Promise<CrmWhatsappMessage>;
   setError: (error: Error) => void;
   setIsSending: Dispatch<SetStateAction<boolean>>;
   setMessages: Dispatch<SetStateAction<WhatsappMessageView[]>>;
 }) {
-  input.setMessages((current) => [...current, input.optimistic]);
+  const idempotencyKey = input.optimistic.clientId ?? crypto.randomUUID();
+  const optimistic = {
+    ...input.optimistic,
+    metadata: { ...input.optimistic.metadata, idempotencyKey },
+  };
+  input.setMessages((current) => [...current, optimistic]);
   input.setIsSending(true);
   try {
-    const sent = await input.request();
-    const localClientId = input.optimistic.clientId;
+    const sent = await input.request(idempotencyKey);
+    const localClientId = optimistic.clientId;
     input.setMessages((current) =>
       current.map((message) =>
-        message.clientId === input.optimistic.clientId
+        message.clientId === optimistic.clientId
           ? { ...sent, ...(localClientId ? { clientId: localClientId } : {}) }
           : message,
       ),
@@ -39,8 +44,10 @@ export async function sendOptimisticStructuredMessage(input: {
     return true;
   } catch (caught) {
     input.setMessages((current) =>
-      current.filter(
-        (message) => message.clientId !== input.optimistic.clientId,
+      current.map((message) =>
+        message.clientId === optimistic.clientId
+          ? { ...message, status: readFailureStatus(caught) }
+          : message,
       ),
     );
     input.setError(asError(caught));
@@ -48,4 +55,14 @@ export async function sendOptimisticStructuredMessage(input: {
   } finally {
     input.setIsSending(false);
   }
+}
+
+function readFailureStatus(error: unknown) {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String(error.code).toLocaleLowerCase("en-US")
+      : "";
+  return code.includes("indeterminate") || code.includes("unconfirmed")
+    ? "INDETERMINATE"
+    : "FAILED";
 }

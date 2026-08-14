@@ -3,6 +3,7 @@ import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBo
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { registerCrmWhatsappRealtimeRoutes } from "./crm.whatsapp.realtimeRoutes.js";
+import { registerCrmWhatsappConclusionRoutes } from "./crm.whatsapp.conclusionRoutes.js";
 import { registerCrmWhatsappApiRoutes } from "./crm.whatsapp.routes.js";
 import type { CrmServices } from "./crmServices.js";
 
@@ -20,5 +21,6 @@ export function registerCrmWhatsappRoutes(
   options: RegisterCrmWhatsappRoutesOptions,
 ) {
   registerCrmWhatsappApiRoutes(crmFeature, options);
+  registerCrmWhatsappConclusionRoutes(crmFeature, options);
   registerCrmWhatsappRealtimeRoutes(crmFeature, options);
 }

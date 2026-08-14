@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type SetStateAction,
+} from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { asError } from "./crmWhatsappHookSupport";
 import { readFileAsBase64 } from "./crmWhatsappMediaFiles";
@@ -24,6 +30,7 @@ import { useCrmWhatsappStructuredMessages } from "./useCrmWhatsappStructuredMess
 const MESSAGE_PAGE_SIZE = 50;
 
 type SendTextOptions = {
+  idempotencyKey?: string;
   replyToMessage?: CrmWhatsappMessage | null;
 };
 
@@ -47,9 +54,37 @@ export function useCrmWhatsappMessages({
   setError,
 }: UseCrmWhatsappMessagesOptions) {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [loadedSessionId, setLoadedSessionId] =
+    useState<CrmWhatsappSessionId | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<WhatsappMessageView[]>([]);
+  const messagesBySessionRef = useRef(
+    new Map<CrmWhatsappSessionId, WhatsappMessageView[]>(),
+  );
+  const messagesRef = useRef<WhatsappMessageView[]>([]);
+  messagesRef.current = messages;
+  const activeSessionIdRef = useRef(activeSessionId);
+  activeSessionIdRef.current = activeSessionId;
+  const previousSessionIdRef = useRef<CrmWhatsappSessionId | null>(null);
   const requestGenerationRef = useRef(0);
+  const updateSessionMessages = useCallback(
+    (
+      sessionId: CrmWhatsappSessionId,
+      update: SetStateAction<WhatsappMessageView[]>,
+    ) => {
+      const current = messagesBySessionRef.current.get(sessionId) ?? [];
+      const next = typeof update === "function" ? update(current) : update;
+      messagesBySessionRef.current.set(sessionId, next);
+      if (activeSessionIdRef.current === sessionId) setMessages(next);
+    },
+    [],
+  );
+  const setStructuredMessages = useCallback(
+    (update: SetStateAction<WhatsappMessageView[]>) => {
+      if (activeSessionId) updateSessionMessages(activeSessionId, update);
+    },
+    [activeSessionId, updateSessionMessages],
+  );
   const structuredMessages = useCrmWhatsappStructuredMessages({
     activeSession,
     activeSessionId,
@@ -59,8 +94,25 @@ export function useCrmWhatsappMessages({
     mergeSessions,
     setError,
     setIsSending,
-    setMessages,
+    setMessages: setStructuredMessages,
   });
+
+  useEffect(() => {
+    const previousSessionId = previousSessionIdRef.current;
+    if (previousSessionId && previousSessionId !== activeSessionId) {
+      messagesBySessionRef.current.set(previousSessionId, messagesRef.current);
+    }
+    previousSessionIdRef.current = activeSessionId;
+    if (activeSessionId) {
+      setMessages(messagesBySessionRef.current.get(activeSessionId) ?? []);
+    }
+  }, [activeSessionId]);
+
+  useEffect(() => {
+    if (activeSessionId) {
+      messagesBySessionRef.current.set(activeSessionId, messages);
+    }
+  }, [activeSessionId, messages]);
 
   useEffect(() => {
     const requestGeneration = ++requestGenerationRef.current;
@@ -70,6 +122,7 @@ export function useCrmWhatsappMessages({
       typeof activeSessionId !== "string"
     ) {
       setMessages([]);
+      setLoadedSessionId(null);
       setIsLoadingMessages(false);
       return;
     }
@@ -84,6 +137,7 @@ export function useCrmWhatsappMessages({
         setMessages((current) =>
           mergeMessagesFromServer(current, nextMessages),
         );
+        setLoadedSessionId(activeSessionId);
       }
     };
     void loadMessages()
@@ -136,16 +190,22 @@ export function useCrmWhatsappMessages({
           }
         : undefined,
     );
-    setMessages((current) => [...current, optimistic]);
+    const idempotencyKey =
+      options.idempotencyKey ?? optimistic.clientId ?? crypto.randomUUID();
+    updateSessionMessages(activeSessionId, (current) => [
+      ...current,
+      optimistic,
+    ]);
     setIsSending(true);
     try {
       const sent = await api.sendText({
+        idempotencyKey,
         ...(replyTo?.id ? { replyToMessageId: String(replyTo.id) } : {}),
         sessionId: activeSessionId,
         text: text.trim(),
       });
       const localClientId = optimistic.clientId;
-      setMessages((current) =>
+      updateSessionMessages(activeSessionId, (current) =>
         current.map((message) =>
           message.clientId === optimistic.clientId
             ? { ...sent, ...(localClientId ? { clientId: localClientId } : {}) }
@@ -164,8 +224,16 @@ export function useCrmWhatsappMessages({
       }
       return true;
     } catch (caught) {
-      setMessages((current) =>
-        current.filter((message) => message.clientId !== optimistic.clientId),
+      updateSessionMessages(activeSessionId, (current) =>
+        current.map((message) =>
+          message.clientId === optimistic.clientId
+            ? {
+                ...message,
+                metadata: { ...message.metadata, idempotencyKey },
+                status: readFailedSendStatus(caught),
+              }
+            : message,
+        ),
       );
       setError(asError(caught));
       return false;
@@ -196,7 +264,11 @@ export function useCrmWhatsappMessages({
       mediaType: input.mediaType,
       mimeType: input.file.type,
     });
-    setMessages((current) => [...current, optimistic]);
+    const idempotencyKey = optimistic.clientId ?? crypto.randomUUID();
+    updateSessionMessages(activeSessionId, (current) => [
+      ...current,
+      optimistic,
+    ]);
     setIsSending(true);
     try {
       const base64 = await readFileAsBase64(input.file);
@@ -204,13 +276,14 @@ export function useCrmWhatsappMessages({
         base64,
         ...(caption ? { caption } : {}),
         fileName: input.file.name,
+        idempotencyKey,
         mediaType: input.mediaType,
         mimeType: input.file.type,
         sessionId: activeSessionId,
       });
       URL.revokeObjectURL(localUrl);
       const localClientId = optimistic.clientId;
-      setMessages((current) =>
+      updateSessionMessages(activeSessionId, (current) =>
         current.map((message) =>
           message.clientId === optimistic.clientId
             ? { ...sent, ...(localClientId ? { clientId: localClientId } : {}) }
@@ -227,9 +300,16 @@ export function useCrmWhatsappMessages({
       ]);
       return true;
     } catch (caught) {
-      URL.revokeObjectURL(localUrl);
-      setMessages((current) =>
-        current.filter((message) => message.clientId !== optimistic.clientId),
+      updateSessionMessages(activeSessionId, (current) =>
+        current.map((message) =>
+          message.clientId === optimistic.clientId
+            ? {
+                ...message,
+                metadata: { ...message.metadata, idempotencyKey },
+                status: readFailedSendStatus(caught),
+              }
+            : message,
+        ),
       );
       setError(asError(caught));
       return false;
@@ -303,6 +383,7 @@ export function useCrmWhatsappMessages({
   );
   return {
     isLoadingMessages,
+    hasLoadedActiveMessages: loadedSessionId === activeSessionId,
     isSending,
     deleteMessage,
     listCatalogProducts: structuredMessages.listCatalogProducts,
@@ -319,6 +400,16 @@ export function useCrmWhatsappMessages({
     sendVehicle: structuredMessages.sendVehicle,
     updateRealtimeMessageStatus,
   };
+}
+
+function readFailedSendStatus(error: unknown) {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String(error.code).toLocaleLowerCase("en-US")
+      : "";
+  return code.includes("indeterminate") || code.includes("unconfirmed")
+    ? "INDETERMINATE"
+    : "FAILED";
 }
 
 export function mergeRealtimeMessageIntoHistory(

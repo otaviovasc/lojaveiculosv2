@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  formatApiErrorDisplay,
-  getApiErrorRecovery,
-} from "../../lib/apiErrors";
+import { getApiErrorDisplay, getApiErrorRecovery } from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type { ProductCrmApi } from "./productCrmApi";
 import {
@@ -25,6 +22,7 @@ import { readWhatsappStatus } from "./crmWhatsappConnectionStatus";
 import { totalUnreadSessions } from "./crmWhatsappQueueState";
 import {
   CrmWhatsappScopedNav,
+  type CrmWhatsappConnectionTone,
   type CrmWhatsappScope,
 } from "./CrmWhatsappScopedNav";
 import { CrmWhatsappConversationWorkspace } from "./CrmWhatsappConversationWorkspace";
@@ -36,7 +34,6 @@ import {
 import { CrmWhatsappVisitsPage } from "./CrmWhatsappVisitsPage";
 import { MessageCircle, PlugZap } from "lucide-react";
 import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
-import { CrmWhatsappRealtimeBanner } from "./CrmWhatsappRealtimeBanner";
 
 export function CrmWhatsappInbox({
   api,
@@ -65,12 +62,20 @@ export function CrmWhatsappInbox({
     typeof document === "undefined" ? "CRM" : document.title,
   );
   const unreadCount = totalUnreadSessions(inbox.sessions);
-  const status = readWhatsappStatus({
+  const providerStatus = readWhatsappStatus({
     hasConnection: inbox.hasConnection,
     isLoading: inbox.connectionIsLoading,
     connectionError: inbox.connectionError,
   });
+  const status = readSynchronizedChannelStatus(
+    providerStatus,
+    inbox.realtimeStatus,
+  );
   const errorRecovery = getApiErrorRecovery(inbox.error);
+  const errorDisplay = getApiErrorDisplay(
+    inbox.error,
+    "Não foi possível carregar o WhatsApp.",
+  );
 
   useEffect(() => {
     setVisitedScopes((current) =>
@@ -155,16 +160,10 @@ export function CrmWhatsappInbox({
                 },
               }
             : {})}
-          message={formatApiErrorDisplay(
-            inbox.error,
-            "Não foi possível carregar o WhatsApp.",
-          )}
-        />
-      ) : null}
-      {inbox.permissions.canList && inbox.hasConnection ? (
-        <CrmWhatsappRealtimeBanner
-          hasCachedInbox={inbox.sessions.length > 0}
-          status={inbox.realtimeStatus}
+          message={errorDisplay.message}
+          {...(errorDisplay.requestId
+            ? { requestId: errorDisplay.requestId }
+            : {})}
         />
       ) : null}
       {!inbox.permissions.canList ? (
@@ -296,6 +295,26 @@ export function CrmWhatsappInbox({
       ) : null}
     </main>
   );
+}
+
+export function readSynchronizedChannelStatus(
+  providerStatus: { label: string; tone: CrmWhatsappConnectionTone },
+  realtimeStatus: "connected" | "connecting" | "degraded" | "offline",
+) {
+  if (providerStatus.tone !== "online") return providerStatus;
+  if (realtimeStatus === "connected") {
+    return { label: "Sincronizado", tone: "online" as const };
+  }
+  if (realtimeStatus === "connecting") {
+    return { label: "Reconciliando", tone: "loading" as const };
+  }
+  return {
+    label:
+      realtimeStatus === "degraded"
+        ? "Sincronização indisponível"
+        : "Rede indisponível",
+    tone: "error" as const,
+  };
 }
 
 function WhatsappDisconnectedState({

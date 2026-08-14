@@ -20,6 +20,11 @@ export const crmWhatsappRoutes = {
       `/crm/whatsapp/sessions/${encodeURIComponent(String(sessionId))}/close`,
       baseUrl,
     ),
+  concludeSession: (sessionId: CrmWhatsappSessionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/sessions/${encodeURIComponent(String(sessionId))}/conclusion`,
+      baseUrl,
+    ),
   interveneSession: (sessionId: CrmWhatsappSessionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/whatsapp/sessions/${encodeURIComponent(String(sessionId))}/intervention`,

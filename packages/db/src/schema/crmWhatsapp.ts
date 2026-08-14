@@ -180,6 +180,11 @@ export const crmWhatsappSessions = pgTable(
       table.connectionId,
       table.id,
     ),
+    uniqueIndex("crm_whatsapp_sessions_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
     uniqueIndex("crm_whatsapp_sessions_connection_phone_unique")
       .on(table.connectionId, table.buyerPhone)
       .where(sql`${table.buyerPhone} <> ''`),

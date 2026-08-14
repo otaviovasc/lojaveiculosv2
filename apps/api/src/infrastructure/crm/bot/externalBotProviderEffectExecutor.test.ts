@@ -77,8 +77,8 @@ describe("external bot provider effect executor", () => {
     expect(toggleWhatsappIntervention).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
+        commandId: "effect-1",
         enabled: true,
-        expectedRevision: 8,
         sessionId: "session-1",
         source: "ai_request",
       }),

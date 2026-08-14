@@ -5,53 +5,49 @@ import {
   getCrmWhatsappRepository,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import type { WhatsappSession } from "../../whatsapp/whatsappModels.js";
 import {
   logWhatsappServiceEvent,
   publishWhatsappSessionUpdate,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
-import { closeLinkedWhatsappLead } from "../../whatsapp/updateWhatsappLinkedLead.js";
 import {
-  humanAttendanceReason,
-  humanAttendanceSource,
-  interventionActorKind,
-  humanAttendanceUpdate,
-} from "../../whatsapp/humanAttendanceTransition.js";
-import { persistHumanAttendanceTransition } from "../../whatsapp/persistHumanAttendanceTransition.js";
-import { WhatsappSessionRevisionConflictError } from "../../whatsapp/whatsappSendErrors.js";
-import { notifyScopedInterventionChangedToBot } from "../../whatsapp/whatsappInterventionNotification.js";
-import {
-  findScopedWhatsappSession,
-  sessionWithConnection,
-} from "./whatsappSessionMutationSupport.js";
+  executeWhatsappSessionCommand,
+  reloadScopedWhatsappSession,
+  type WhatsappSessionCommandResponse,
+} from "./executeWhatsappSessionCommand.js";
+import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
 export {
   toggleWhatsappIntervention,
   type ToggleWhatsappInterventionInput,
 } from "./toggleWhatsappIntervention.js";
+export {
+  closeWhatsappSession,
+  type CloseWhatsappSessionInput,
+} from "./closeWhatsappSession.js";
 
 export type AssignWhatsappSessionInput = {
   assignedUserId: string | null;
-  expectedRevision: number;
-  sessionId: string;
-};
-
-export type CloseWhatsappSessionInput = {
-  expectedRevision: number;
+  commandId: string;
   sessionId: string;
 };
 
 const assignPermission = "crm.whatsapp.assign";
-const closePermission = "crm.whatsapp.close";
 
 export async function assignWhatsappSession(
   context: ServiceContext,
   input: AssignWhatsappSessionInput,
   ports: CrmServicePorts,
-): Promise<WhatsappSession> {
+): Promise<WhatsappSessionCommandResponse> {
   assertPermission(context, assignPermission);
+  const managerReassignment = context.permissions.includes(
+    "crm.pipeline.manage",
+  );
+  if (input.assignedUserId !== context.actor.id && !managerReassignment) {
+    assertPermission(context, "crm.pipeline.manage");
+  }
   logWhatsappServiceEvent(context, "crm.whatsapp.session.assign.started", {
     assignedUserId: input.assignedUserId,
+    commandId: input.commandId,
     sessionId: input.sessionId,
   });
   return recordWhatsappServiceMutation(
@@ -61,176 +57,82 @@ export async function assignWhatsappSession(
       category: "data_change",
       entityId: input.sessionId,
       entityType: "crm_whatsapp_session",
-      metadata: { assignedUserId: input.assignedUserId },
+      metadata: {
+        assignedUserId: input.assignedUserId,
+        commandId: input.commandId,
+      },
       permission: assignPermission,
       summary: "Assigned CRM WhatsApp session",
     },
-    () => assignWhatsappSessionUnchecked(context, input, ports),
+    async () => {
+      const command = await executeWhatsappSessionCommand({
+        commandId: input.commandId,
+        commandType: "assign",
+        context,
+        fingerprintInput: { assignedUserId: input.assignedUserId },
+        mutate: (current, transactionPorts, scope) =>
+          applyAssignment(context, input, current, transactionPorts, scope),
+        ports,
+        sessionId: input.sessionId,
+      });
+      if (command.changed) {
+        await publishWhatsappSessionUpdate(ports, command.session, {
+          storeId: context.storeId!,
+          tenantId: context.tenantId!,
+        });
+      }
+      return command;
+    },
+    (result) => ({ result: result.result }),
   );
 }
 
-async function assignWhatsappSessionUnchecked(
+async function applyAssignment(
   context: ServiceContext,
   input: AssignWhatsappSessionInput,
+  initial: CrmWhatsappSession,
   ports: CrmServicePorts,
+  scope: { storeId: string; tenantId: string },
 ) {
-  const { scope, session } = await findScopedWhatsappSession(
-    context,
-    input,
-    ports,
-  );
-  const now = new Date();
-  const updated = await getCrmWhatsappRepository(ports).updateSession({
-    assignedUserId: input.assignedUserId as never,
-    expectedRevision: input.expectedRevision,
-    ...(input.assignedUserId
-      ? {
-          firstHandledAt: session.firstHandledAt ?? now,
-          lastAssignedAt: now,
-        }
-      : {}),
-    sessionId: input.sessionId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (!updated) {
-    throw new WhatsappSessionRevisionConflictError(input.sessionId);
-  }
-  if (session.leadId) {
-    await getCrmRepository(ports).updateLead({
+  let current = initial;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (current.assignedUserId === input.assignedUserId) {
+      return { result: "already_applied" as const, session: current };
+    }
+    const selfClaim = input.assignedUserId === context.actor.id;
+    if (
+      selfClaim &&
+      current.assignedUserId !== null &&
+      !context.permissions.includes("crm.pipeline.manage")
+    ) {
+      return { result: "superseded" as const, session: current };
+    }
+    const now = new Date();
+    const updated = await getCrmWhatsappRepository(ports).updateSession({
       assignedUserId: input.assignedUserId as never,
-      leadId: session.leadId,
+      expectedRevision: current.revision,
+      ...(input.assignedUserId
+        ? {
+            firstHandledAt: current.firstHandledAt ?? now,
+            lastAssignedAt: now,
+          }
+        : {}),
+      sessionId: input.sessionId,
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     });
+    if (updated) {
+      if (current.leadId) {
+        await getCrmRepository(ports).updateLead({
+          assignedUserId: input.assignedUserId as never,
+          leadId: current.leadId,
+          storeId: scope.storeId as never,
+          tenantId: scope.tenantId as never,
+        });
+      }
+      return { result: "applied" as const, session: updated };
+    }
+    current = await reloadScopedWhatsappSession(ports, input.sessionId, scope);
   }
-
-  const realtimeSession = await sessionWithConnection(
-    updated,
-    ports,
-    input.sessionId,
-  );
-  await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
-  return realtimeSession;
-}
-
-export async function closeWhatsappSession(
-  context: ServiceContext,
-  input: CloseWhatsappSessionInput,
-  ports: CrmServicePorts,
-): Promise<WhatsappSession> {
-  assertPermission(context, closePermission);
-  logWhatsappServiceEvent(context, "crm.whatsapp.session.close.started", {
-    sessionId: input.sessionId,
-  });
-  return recordWhatsappServiceMutation(
-    context,
-    {
-      action: "crm.whatsapp.session.close",
-      category: "data_change",
-      entityId: input.sessionId,
-      entityType: "crm_whatsapp_session",
-      permission: closePermission,
-      summary: "Closed CRM WhatsApp session",
-    },
-    () => closeWhatsappSessionUnchecked(context, input, ports),
-  );
-}
-
-async function closeWhatsappSessionUnchecked(
-  context: ServiceContext,
-  input: CloseWhatsappSessionInput,
-  ports: CrmServicePorts,
-) {
-  const { scope, session } = await findScopedWhatsappSession(
-    context,
-    input,
-    ports,
-  );
-  const now = new Date();
-  if (session.revision !== input.expectedRevision) {
-    throw new WhatsappSessionRevisionConflictError(input.sessionId);
-  }
-  const attendanceUpdate = humanAttendanceUpdate(
-    session,
-    { kind: "clear", status: "COMPLETED" },
-    now,
-  );
-  if (!attendanceUpdate) {
-    throw new WhatsappSessionRevisionConflictError(input.sessionId);
-  }
-  const persisted = await persistHumanAttendanceTransition({
-    actorId: context.actor.id,
-    actorKind: interventionActorKind(context.actor.kind, "admin"),
-    current: session,
-    now,
-    reason: humanAttendanceReason(session) ?? "session_closed",
-    repository: getCrmWhatsappRepository(ports),
-    source: humanAttendanceSource(session) ?? "admin",
-    update: {
-      ...attendanceUpdate,
-      assignedUserId: null,
-      firstHandledAt: session.firstHandledAt ?? now,
-      metadata: {
-        ...(attendanceUpdate.metadata ?? session.metadata),
-        lastClosedAt: now.toISOString(),
-        lastClosedByActorId: context.actor.id,
-      },
-    },
-  });
-  if (!persisted) {
-    throw new WhatsappSessionRevisionConflictError(input.sessionId);
-  }
-  const attendanceTransition = {
-    previous: session,
-    session: persisted.session,
-  };
-  const updated = persisted.session;
-
-  if (session.leadId) {
-    await closeLinkedWhatsappLead(context, session.leadId, ports);
-  }
-
-  const realtimeSession = await sessionWithConnection(
-    updated,
-    ports,
-    input.sessionId,
-  );
-  await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
-  if (attendanceTransition.previous.status === "HUMAN_TAKEOVER") {
-    await notifyScopedInterventionChangedToBot(
-      context,
-      {
-        active: false,
-        previousSession: attendanceTransition.previous,
-        reason:
-          humanAttendanceReason(attendanceTransition.previous) ??
-          "session_closed",
-        session: attendanceTransition.session,
-        source: attendanceEventSource(attendanceTransition.previous),
-        window: {
-          endedAt: now,
-          startedAt: attendanceTransition.previous.humanTakeoverAt,
-        },
-      },
-      ports,
-    );
-  }
-  return realtimeSession;
-}
-
-function attendanceEventSource(
-  session: Parameters<typeof humanAttendanceSource>[0],
-) {
-  const source = humanAttendanceSource(session);
-  if (
-    source === "admin" ||
-    source === "ai_request" ||
-    source === "auto" ||
-    source === "bot" ||
-    source === "seller_whatsapp"
-  ) {
-    return source;
-  }
-  return "admin";
+  return { result: "superseded" as const, session: current };
 }

@@ -110,6 +110,9 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
           crmProviderRuntime: {
             olxChatEnabled: options.olxChatEnabled === true,
           },
+          ...(options.crmOutcomeRepository
+            ? { crmOutcomeRepository: options.crmOutcomeRepository }
+            : {}),
           ...(options.crmZapiSetupCompletionReporter
             ? {
                 crmZapiSetupCompletionReporter:

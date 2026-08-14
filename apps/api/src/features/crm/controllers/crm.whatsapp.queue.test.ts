@@ -153,7 +153,7 @@ describe("CRM WhatsApp queue", () => {
         `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
         jsonPost({
           assignedUserId: actorUserId,
-          expectedRevision: inbound.session.revision,
+          commandId: "30000000-0000-4000-8000-000000000001",
         }),
       ),
       "crm.whatsapp.assign",
@@ -161,14 +161,17 @@ describe("CRM WhatsApp queue", () => {
     await expectForbidden(
       app.request(
         `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/close`,
-        jsonPost({ expectedRevision: inbound.session.revision }),
+        jsonPost({ commandId: "30000000-0000-4000-8000-000000000002" }),
       ),
       "crm.whatsapp.close",
     );
     await expectForbidden(
       app.request(
         `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/intervention`,
-        jsonPost({ enabled: true, expectedRevision: inbound.session.revision }),
+        jsonPost({
+          commandId: "30000000-0000-4000-8000-000000000003",
+          enabled: true,
+        }),
       ),
       "crm.whatsapp.toggle_intervention",
     );

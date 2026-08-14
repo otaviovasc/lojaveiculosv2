@@ -1,6 +1,10 @@
 import type { Context } from "hono";
 import { CrmLeadNotFoundError } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import {
+  CrmLeadOutcomeCommandConflictError,
+  CrmLeadOutcomeValidationError,
+} from "../../../domains/crm/services/CrmService/concludeWhatsappAttendance.js";
+import {
   CrmWhatsappCapabilityError,
   CrmWhatsappGatewayError,
 } from "../../../domains/crm/ports/crmWhatsappGateway.js";
@@ -20,6 +24,7 @@ import {
   WhatsappScheduledMessageNotFoundError,
   WhatsappSessionNotFoundError,
   WhatsappSessionRevisionConflictError,
+  WhatsappSessionCommandConflictError,
   WhatsappTagNotFoundError,
 } from "../../../domains/crm/whatsapp/whatsappSendErrors.js";
 import {
@@ -47,6 +52,22 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: 400,
+      });
+    }
+    if (error instanceof CrmLeadOutcomeValidationError) {
+      return jsonApiError(context, {
+        code: "CRM_LEAD_OUTCOME_VALIDATION_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
+    }
+    if (error instanceof CrmLeadOutcomeCommandConflictError) {
+      return jsonApiError(context, {
+        code: "CRM_LEAD_OUTCOME_COMMAND_CONFLICT",
+        error,
+        message: error.message,
+        status: 409,
       });
     }
     if (error instanceof AuthorizationError) {
@@ -104,6 +125,14 @@ export async function handleWhatsapp(
     if (error instanceof WhatsappSessionRevisionConflictError) {
       return jsonApiError(context, {
         code: "CRM_WHATSAPP_SESSION_REVISION_CONFLICT",
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+    if (error instanceof WhatsappSessionCommandConflictError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_SESSION_COMMAND_CONFLICT",
         error,
         message: error.message,
         status: 409,

@@ -197,6 +197,11 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).markSessionUnread(sessionId, input),
+    concludeSession: async (sessionId, input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).concludeSession(
+        sessionId,
+        input,
+      ),
     listSessions: async (query) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).listSessions(
         query,

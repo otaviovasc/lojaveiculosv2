@@ -6,6 +6,7 @@ import { SessionList } from "./CrmWhatsappSessionList";
 import { WhatsappBulkBar } from "./CrmWhatsappBulkBar";
 import { CrmWhatsappReadOnlyComposer } from "./CrmWhatsappReadOnlyComposer";
 import { CrmWhatsappNewConversationDialog } from "./CrmWhatsappNewConversationDialog";
+import { CrmWhatsappConclusionDialog } from "./CrmWhatsappConclusionDialog";
 import { CrmWhatsappSessionDetailsPanel } from "./CrmWhatsappSessionDetailsPanel";
 import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
@@ -28,6 +29,7 @@ export function CrmWhatsappConversationWorkspace({
   const [selectionMode, setSelectionMode] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [newConversationOpen, setNewConversationOpen] = useState(false);
+  const [conclusionOpen, setConclusionOpen] = useState(false);
   const [replyToMessage, setReplyToMessage] =
     useState<CrmWhatsappMessage | null>(null);
   const selectedCount = inbox.selectedSessions.length;
@@ -45,6 +47,7 @@ export function CrmWhatsappConversationWorkspace({
   useEffect(() => {
     setReplyToMessage(null);
     setDetailsOpen(false);
+    setConclusionOpen(false);
   }, [inbox.activeSessionId]);
 
   const focusPane = (pane: "chat" | "context" | "list") => {
@@ -169,6 +172,21 @@ export function CrmWhatsappConversationWorkspace({
           <>
             <ChatHeader
               actionsDisabled={inbox.isMutatingSession}
+              pendingActions={{
+                assign: inbox.isSessionActionPending(
+                  activeSession.id,
+                  "assign",
+                ),
+                intervention: inbox.isSessionActionPending(
+                  activeSession.id,
+                  "intervention",
+                ),
+                read: inbox.isSessionActionPending(
+                  activeSession.id,
+                  activeSession.unreadCount ? "read" : "unread",
+                ),
+                tag: inbox.isSessionActionPending(activeSession.id, "tag"),
+              }}
               assignableMembers={inbox.assignableMembers}
               availableTags={inbox.availableTags}
               canAssignSession={
@@ -199,9 +217,7 @@ export function CrmWhatsappConversationWorkspace({
                   assignedUserId,
                 );
               }}
-              onClose={() => {
-                void inbox.actions.closeSession(activeSession.id);
-              }}
+              onClose={() => setConclusionOpen(true)}
               onMarkRead={() => {
                 void inbox.actions.markSessionRead(activeSession.id);
               }}
@@ -329,6 +345,21 @@ export function CrmWhatsappConversationWorkspace({
               ? "composio_whatsapp"
               : "zapi"
           }
+        />
+      ) : null}
+      {activeSession && conclusionOpen ? (
+        <CrmWhatsappConclusionDialog
+          assignableMembers={inbox.assignableMembers}
+          disabled={
+            inbox.isConcludingSession ||
+            inbox.isMutatingSession ||
+            !inbox.permissions.canClose
+          }
+          onClose={() => setConclusionOpen(false)}
+          onConclude={(input) =>
+            inbox.actions.concludeSession(activeSession.id, input)
+          }
+          session={activeSession}
         />
       ) : null}
     </section>

@@ -27,9 +27,12 @@ environment variables for public smoke-test URLs.
 | `EXTERNAL_API_RATE_LIMIT_PER_MINUTE` | Yes      | staging, production        | No     | Per-minute external API rate limit.                                                                      |
 | `LOG_LEVEL`                          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                                                            |
 | `LOG_HTTP_REQUESTS`                  | No       | local, staging, production | No     | Structured HTTP request logs default on outside tests; set `false` only for an approved noise reduction. |
+| `RAILWAY_GIT_COMMIT_SHA`             | No       | staging, production        | No     | Railway-injected commit used by the API/web build-contract handshake. Do not configure manually.         |
+| `BUILD_COMMIT_SHA`                   | No       | local, staging, production | No     | Optional non-Railway commit override used by the same build-contract handshake.                          |
 
 Railway injects `RAILWAY_PROJECT_ID`, `RAILWAY_ENVIRONMENT_ID`, and
-`RAILWAY_ENVIRONMENT_NAME`; some runtime surfaces also expose
+`RAILWAY_ENVIRONMENT_NAME`; deployments also expose
+`RAILWAY_GIT_COMMIT_SHA`, and some runtime surfaces expose
 `RAILWAY_ENVIRONMENT` as a name or opaque identifier. Do not configure these
 manually. The non-production reset command uses them only as additional
 fail-closed environment signals.

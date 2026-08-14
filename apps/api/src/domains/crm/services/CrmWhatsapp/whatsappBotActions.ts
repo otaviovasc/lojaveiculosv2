@@ -13,7 +13,6 @@ import {
   removeWhatsappSessionTag,
   listWhatsappTags,
 } from "./whatsappSessionTags.js";
-import { closeWhatsappSession } from "./updateWhatsappSession.js";
 import {
   executeBotSendMediaAction,
   executeBotSendTextAction,
@@ -27,7 +26,6 @@ import {
   readOptionalText,
   readRequiredDate,
   readRequiredText,
-  findBotActionSession,
   requireBotActionSessionId,
   resolveBotActionLeadId,
   resolveBotActionTagName,
@@ -46,6 +44,7 @@ import {
   isCredereBotAction,
 } from "./whatsappBotCredereActions.js";
 import { executeBotInterventionAction } from "../../whatsapp/whatsappBotInterventionAction.js";
+import { executeBotCloseSessionAction } from "./whatsappBotCloseAction.js";
 
 export type ExecuteWhatsappBotActionInput = {
   action: WhatsappBotActionName;
@@ -170,15 +169,8 @@ async function dispatchWhatsappBotAction(
       return executeBotInterventionAction(context, input, ports);
     case "update_session":
       return updateBotSession(context, input, ports);
-    case "close_session": {
-      const sessionId = requireBotActionSessionId(input);
-      const session = await findBotActionSession(context, sessionId, ports);
-      return closeWhatsappSession(
-        context,
-        { expectedRevision: session.revision, sessionId },
-        ports,
-      );
-    }
+    case "close_session":
+      return executeBotCloseSessionAction(context, input, ports);
     case "get_session":
       return listWhatsappSessions(
         context,

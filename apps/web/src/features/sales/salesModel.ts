@@ -82,6 +82,7 @@ export function createDraftFromContext(
       source: "lead_or_vehicle_workspace",
     },
     selectedDocumentKinds: [...defaultRequiredDocumentKinds],
+    sellerUserId: context.sellerUserId ?? null,
     unitId: context.unitId ?? null,
   };
 }
@@ -101,6 +102,7 @@ export function parseSaleStartContext(): SaleStartContext {
   setParam(context, "plate", params.get("plate") || params.get("placa"));
   setParam(context, "colorName", params.get("colorName") || params.get("cor"));
   setParam(context, "primaryMediaUrl", params.get("primaryMediaUrl"));
+  setParam(context, "sellerUserId", params.get("sellerUserId"));
   const priceCents = readNumber(params.get("priceCents"));
   if (priceCents !== undefined) context.priceCents = priceCents;
   return context;

@@ -19,7 +19,7 @@ describe("sales model start context", () => {
   it("propagates vehicle media and identifiers into draft creation", () => {
     const mediaUrl = "https://cdn.example.com/vehicles/civic.jpg";
     window.location.hash =
-      `#/sales?leadId=lead_1&listingId=listing_1&unitId=unit_1` +
+      `#/sales?leadId=lead_1&listingId=listing_1&unitId=unit_1&sellerUserId=seller_7` +
       `&listingTitle=${encodeURIComponent("Honda Civic Touring")}` +
       `&unitLabel=EST-42&placa=TRD1E23&cor=Preto` +
       `&primaryMediaUrl=${encodeURIComponent(mediaUrl)}&priceCents=12990000`;
@@ -33,6 +33,7 @@ describe("sales model start context", () => {
       listingId: "listing_1",
       plate: "TRD1E23",
       primaryMediaUrl: mediaUrl,
+      sellerUserId: "seller_7",
       unitId: "unit_1",
     });
     expect(draft).toMatchObject({
@@ -63,6 +64,7 @@ describe("sales model start context", () => {
         "delivery_term",
         "power_of_attorney",
       ],
+      sellerUserId: "seller_7",
       unitId: "unit_1",
     });
   });

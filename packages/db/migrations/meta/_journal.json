@@ -330,6 +330,13 @@
       "when": 1786650616465,
       "tag": "0046_credere_reliability_leases",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1786666673944,
+      "tag": "0047_crm_lead_session_outcomes",
+      "breakpoints": true
     }
   ]
 }

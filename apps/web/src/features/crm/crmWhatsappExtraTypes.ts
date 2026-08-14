@@ -37,6 +37,7 @@ export type CrmWhatsappUpdateQuickMessageInput =
   Partial<CrmWhatsappCreateQuickMessageInput>;
 
 export type CrmWhatsappSendQuickMessageInput = {
+  idempotencyKey?: string;
   quickMessageId: string;
   sessionId: string;
 };
@@ -121,6 +122,7 @@ export type CrmWhatsappStartConversationResult = {
 
 export type CrmWhatsappSendLocationInput = {
   address?: string;
+  idempotencyKey?: string;
   latitude: number;
   longitude: number;
   name?: string;
@@ -132,6 +134,7 @@ export type CrmWhatsappSendCatalogInput = {
   catalogDescription?: string;
   catalogPhone?: string;
   catalogUrl?: string;
+  idempotencyKey?: string;
   message?: string;
   sessionId: string;
   title?: string;
@@ -188,6 +191,7 @@ export type CrmWhatsappReorderTagsInput = {
 
 export type CrmWhatsappSendCatalogProductInput = {
   catalogPhone?: string;
+  idempotencyKey?: string;
   productId: string;
   productName?: string;
   sessionId: string;
@@ -195,6 +199,7 @@ export type CrmWhatsappSendCatalogProductInput = {
 
 export type CrmWhatsappSendVehicleInput = {
   description?: string;
+  idempotencyKey?: string;
   listingId?: string;
   mediaLimit?: number;
   mileageLabel?: string;

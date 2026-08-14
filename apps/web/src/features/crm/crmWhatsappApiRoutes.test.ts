@@ -41,6 +41,9 @@ describe("CRM WhatsApp API routes", () => {
     expect(crmWhatsappRoutes.markSessionUnread("session-uuid")).toBe(
       "/api/v1/crm/whatsapp/sessions/session-uuid/unread",
     );
+    expect(crmWhatsappRoutes.concludeSession("session-uuid")).toBe(
+      "/api/v1/crm/whatsapp/sessions/session-uuid/conclusion",
+    );
     expect(crmWhatsappRoutes.quickMessages()).toBe(
       "/api/v1/crm/whatsapp/quick-messages",
     );

@@ -142,6 +142,20 @@ describe("crmWhatsappModel", () => {
     expect(mergeSessionsFromServer([current], [stale])[0]).toBe(current);
   });
 
+  it("accepts an authoritative mutation snapshot despite a lower revision", () => {
+    const current = createSession({ revision: 8, status: "ACTIVE" });
+    const authoritative = createSession({
+      revision: 7,
+      status: "HUMAN_TAKEOVER",
+    });
+
+    expect(
+      mergeSessionsFromServer([current], [authoritative], {
+        snapshotKind: "mutation",
+      })[0],
+    ).toBe(authoritative);
+  });
+
   it("normalizes API origin, safe numeric revision, and history coverage", () => {
     expect(
       parseCrmWhatsappSession({

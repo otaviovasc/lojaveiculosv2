@@ -2,7 +2,6 @@ import type {
   CrmWhatsappProviderCapabilities as CrmWhatsappProviderCapabilitiesDto,
   CrmWhatsappProvider,
   CrmWhatsappProviderConnection,
-  CrmWhatsappRealtimeStatus,
 } from "./crmWhatsappTypes";
 
 export type CrmWhatsappProviderCapabilities = {
@@ -106,7 +105,6 @@ function readProviderWindowNotice(provider: string) {
 
 export function readCrmWhatsappSendReadiness(
   connection: CrmWhatsappProviderConnection | null,
-  realtimeStatus: CrmWhatsappRealtimeStatus,
 ) {
   if (!connection) {
     return {
@@ -148,15 +146,6 @@ export function readCrmWhatsappSendReadiness(
     return {
       canSend: false,
       reason: "O canal está offline ou a conexão ainda está sendo verificada.",
-    };
-  }
-  if (realtimeStatus !== "connected") {
-    return {
-      canSend: false,
-      reason:
-        realtimeStatus === "degraded"
-          ? "A atualização em tempo real está degradada; enviar está bloqueado por segurança."
-          : "A conexão em tempo real ainda não está pronta para envio.",
     };
   }
   return { canSend: true, reason: null };

@@ -341,17 +341,46 @@ export type CrmWhatsappSessionCounts = {
 
 export type CrmWhatsappAssignSessionInput = {
   assignedUserId: string | null;
-  expectedRevision: number;
+  commandId: string;
 };
 
 export type CrmWhatsappInterventionInput = {
+  commandId: string;
   enabled: boolean;
-  expectedRevision: number;
 };
 
-export type CrmWhatsappSessionRevisionInput = {
-  expectedRevision: number;
+export type CrmWhatsappSessionCommandInput = {
+  commandId: string;
 };
+
+export type CrmWhatsappSessionCommandResult = {
+  result: "already_applied" | "applied" | "superseded";
+  session: CrmWhatsappSession;
+};
+
+export type CrmWhatsappConclusionInput =
+  | {
+      commandId: string;
+      outcome: "follow_up";
+      reminder?: { dueAt: string };
+    }
+  | {
+      commandId: string;
+      note?: string;
+      outcome: "lost";
+      reason: CrmWhatsappLossReason;
+    };
+
+export type CrmWhatsappLossReason =
+  | "bought_elsewhere"
+  | "financing_not_approved"
+  | "invalid_contact"
+  | "no_longer_interested"
+  | "no_response"
+  | "other"
+  | "price"
+  | "trade_in_valuation"
+  | "vehicle_unavailable";
 
 export type CrmWhatsappMessageQuery = {
   connectionId?: CrmWhatsappConnectionId;
@@ -360,6 +389,7 @@ export type CrmWhatsappMessageQuery = {
 };
 
 export type CrmWhatsappSendTextInput = {
+  idempotencyKey?: string;
   replyToMessageId?: string;
   sessionId: string;
   text: string;
@@ -375,6 +405,7 @@ export type CrmWhatsappSendMediaInput = {
   base64: string;
   caption?: string;
   fileName?: string;
+  idempotencyKey?: string;
   mediaType: CrmWhatsappSendMediaType;
   mimeType?: string;
   sessionId: string;

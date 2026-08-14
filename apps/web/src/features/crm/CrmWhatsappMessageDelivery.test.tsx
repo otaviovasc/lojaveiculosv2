@@ -9,10 +9,11 @@ describe("CRM message delivery presentation", () => {
   afterEach(() => cleanup());
 
   it.each([
-    ["PENDING", "Envio pendente"],
-    ["FAILED", "Falha no envio"],
-    ["INDETERMINATE", "Envio não confirmado"],
-  ])("exposes %s as an honest visible state", (status, label) => {
+    ["PENDING", "Envio pendente", "pending"],
+    ["FAILED", "Falha no envio", "failed"],
+    ["INDETERMINATE", "Envio não confirmado", "indeterminate"],
+    ["PROVIDER_UNKNOWN", "Envio não confirmado", "indeterminate"],
+  ])("exposes %s as an honest visible state", (status, label, uiStatus) => {
     const { container } = render(
       <MessageBubble actionsDisabled={false} message={message(status)} />,
     );
@@ -20,7 +21,7 @@ describe("CRM message delivery presentation", () => {
     expect(screen.getByRole("status")).toHaveTextContent(label);
     expect(container.querySelector("article")).toHaveAttribute(
       "data-message-status",
-      status.toLowerCase(),
+      uiStatus,
     );
   });
 

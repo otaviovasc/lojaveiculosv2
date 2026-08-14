@@ -51,6 +51,7 @@ import type {
   ToggleWhatsappInterventionInput,
 } from "../../../domains/crm/services/CrmWhatsapp/updateWhatsappSession.js";
 import type { MarkWhatsappSessionReadInput } from "../../../domains/crm/services/CrmWhatsapp/markWhatsappSessionRead.js";
+import type { WhatsappSessionCommandResponse } from "../../../domains/crm/services/CrmWhatsapp/executeWhatsappSessionCommand.js";
 import type {
   WhatsappMessage,
   WhatsappSession,
@@ -81,11 +82,11 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     >;
     assignWhatsappSession: CrmContextService<
       AssignWhatsappSessionInput,
-      WhatsappSession
+      WhatsappSessionCommandResponse
     >;
     closeWhatsappSession: CrmContextService<
       CloseWhatsappSessionInput,
-      WhatsappSession
+      WhatsappSessionCommandResponse
     >;
     cancelWhatsappScheduledMessage: CrmContextService<
       CancelWhatsappScheduledMessageInput,
@@ -137,7 +138,7 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     >;
     markWhatsappSessionReadState: CrmContextService<
       MarkWhatsappSessionReadInput,
-      WhatsappSession
+      WhatsappSessionCommandResponse
     >;
     processDueWhatsappScheduledMessages: CrmContextService<
       ProcessDueWhatsappScheduledMessagesInput,
@@ -194,7 +195,7 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     >;
     toggleWhatsappIntervention: CrmContextService<
       ToggleWhatsappInterventionInput,
-      WhatsappSession
+      WhatsappSessionCommandResponse
     >;
     updateWhatsappTag: CrmContextService<
       UpdateWhatsappTagInput,

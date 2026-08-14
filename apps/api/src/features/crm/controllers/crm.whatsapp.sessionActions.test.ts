@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
@@ -40,12 +41,15 @@ describe("CRM WhatsApp session actions", () => {
 
     const readResponse = await app.request(
       `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/read`,
-      jsonPost({ expectedRevision: inbound.session.revision }),
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000001" }),
     );
     expect(readResponse.status).toBe(200);
-    const read = (await readResponse.json()) as { revision: number };
+    const read = (await readResponse.json()) as {
+      session: { revision: number };
+    };
     expect(read).toMatchObject({
-      unreadCount: 0,
+      result: "applied",
+      session: { unreadCount: 0 },
     });
 
     const unreadOnlyResponse = await app.request(
@@ -56,15 +60,16 @@ describe("CRM WhatsApp session actions", () => {
 
     const unreadResponse = await app.request(
       `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/unread`,
-      jsonPost({ expectedRevision: read.revision }),
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000002" }),
     );
     expect(unreadResponse.status).toBe(200);
     await expect(unreadResponse.json()).resolves.toMatchObject({
-      unreadCount: 1,
+      result: "applied",
+      session: { unreadCount: 1 },
     });
   });
 
-  it("rejects stale assignment and read revisions", async () => {
+  it("replays commands idempotently and rejects command reuse", async () => {
     const whatsappRepository = createMemoryCrmWhatsappRepository();
     const inbound = await whatsappRepository.ingestMessage({
       buyerPhone: "5511888888888",
@@ -93,33 +98,84 @@ describe("CRM WhatsApp session actions", () => {
       `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
       jsonPost({
         assignedUserId: actorUserId,
-        expectedRevision: inbound.session.revision,
+        commandId: "10000000-0000-4000-8000-000000000003",
       }),
     );
     expect(assigned.status).toBe(200);
 
-    const staleAssign = await app.request(
+    const replay = await app.request(
       `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
-      jsonPost({ assignedUserId: null, expectedRevision: 1 }),
+      jsonPost({
+        assignedUserId: actorUserId,
+        commandId: "10000000-0000-4000-8000-000000000003",
+      }),
     );
-    expect(staleAssign.status).toBe(409);
+    expect(replay.status).toBe(200);
+    await expect(replay.json()).resolves.toMatchObject({
+      result: "already_applied",
+      session: { assignedUserId: actorUserId },
+    });
 
-    const staleRead = await app.request(
-      `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/read`,
-      jsonPost({ expectedRevision: 1 }),
+    const conflictingReuse = await app.request(
+      `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
+      jsonPost({
+        assignedUserId: null,
+        commandId: "10000000-0000-4000-8000-000000000003",
+      }),
     );
-    expect(staleRead.status).toBe(409);
+    expect(conflictingReuse.status).toBe(409);
+  });
 
-    const staleIntervention = await app.request(
-      `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/intervention`,
-      jsonPost({ enabled: true, expectedRevision: 1 }),
-    );
-    expect(staleIntervention.status).toBe(409);
+  it("returns superseded when a seller loses an ordinary claim race", async () => {
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const inbound = await whatsappRepository.ingestMessage({
+      buyerPhone: "5511777777777",
+      channel: "WHATSAPP",
+      connectionId,
+      content: "Claim race",
+      direction: "INBOUND",
+      externalId: "inbound-claim-race-1",
+      metadata: {},
+      providerTimestamp: new Date("2026-07-02T18:00:00.000Z"),
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
+      status: "DELIVERED",
+      storeId,
+      tenantId,
+      type: "TEXT",
+    });
+    await whatsappRepository.updateSession({
+      assignedUserId: "03030303-0303-4303-8303-030303030303" as never,
+      expectedRevision: inbound.session.revision,
+      sessionId: inbound.session.id,
+      storeId,
+      tenantId,
+    });
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmWhatsappRepository: whatsappRepository,
+      permissions: [
+        "crm.whatsapp.assign",
+        "crm.whatsapp.list",
+      ] satisfies PermissionKey[],
+    });
 
-    const staleClose = await app.request(
-      `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/close`,
-      jsonPost({ expectedRevision: 1 }),
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
+      jsonPost({
+        assignedUserId: actorUserId,
+        commandId: "10000000-0000-4000-8000-000000000004",
+      }),
     );
-    expect(staleClose.status).toBe(409);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      result: "superseded",
+      session: {
+        assignedUserId: "03030303-0303-4303-8303-030303030303",
+      },
+    });
   });
 });

@@ -34,6 +34,7 @@ export type CreateCrmWhatsappTestAppOptions = {
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
   crmConnectionRepository?: CrmConnectionRepository;
   crmOlxWebhookSecurity?: CrmServicePorts["crmOlxWebhookSecurity"];
+  crmOutcomeRepository?: CrmServicePorts["crmOutcomeRepository"];
   olxChatEnabled?: boolean;
   crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
