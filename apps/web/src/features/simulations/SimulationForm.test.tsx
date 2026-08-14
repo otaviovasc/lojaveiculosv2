@@ -7,6 +7,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { SimulationForm } from "./SimulationForm";
 import type { CredereSimulationDraft } from "./types";
 
+vi.mock("../settings/apiClient", () => ({
+  createSettingsApi: () => ({
+    getStoreSettings: async () => ({
+      profile: { addressState: null, addressCity: null },
+    }),
+  }),
+}));
+
 describe("SimulationForm", () => {
   afterEach(cleanup);
 
@@ -93,8 +101,7 @@ describe("SimulationForm", () => {
     expect(
       await screen.findByRole("button", { name: /^Data de nascimento:/ }),
     ).toBeVisible();
-    expect(screen.getByLabelText("Possui CNH")).toBeVisible();
-    expect(screen.getByText(/esta tela ainda não envia/)).toBeVisible();
+    expect(screen.getByText(/Dados mínimos conferidos/)).toBeVisible();
     expect(screen.queryByLabelText("unsupported_provider_field")).toBeNull();
   });
 
@@ -135,6 +142,33 @@ describe("SimulationForm", () => {
       "operador@example.com",
     );
     expect(screen.getByLabelText(/^Renda mensal/)).toHaveValue("4.500,00");
+  });
+
+  it("highlights missing required fields and cards when user clicks continue", async () => {
+    const user = userEvent.setup();
+    const { container } = renderForm();
+
+    // On step "vehicle", fields are initially blank. Click "Continuar"
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    // Required fields in vehicle step should be highlighted with data-invalid="true"
+    expect(screen.getByPlaceholderText("Ex.: 2023")).toHaveAttribute(
+      "data-invalid",
+      "true",
+    );
+    expect(screen.getByPlaceholderText("Ex.: 2024")).toHaveAttribute(
+      "data-invalid",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: "UF de licenciamento" }),
+    ).toHaveAttribute("data-invalid", "true");
+    expect(
+      screen.getByText("Selecione o veículo e confirme os anos."),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector("section.credere-form-fipe"),
+    ).toHaveAttribute("data-invalid", "true");
   });
 });
 

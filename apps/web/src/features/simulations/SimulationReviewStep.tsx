@@ -9,6 +9,7 @@ export function SimulationReviewStep({
   bankCodes,
   banks,
   consent,
+  consentInvalid = false,
   downPayment,
   fipeCode,
   installments,
@@ -29,6 +30,7 @@ export function SimulationReviewStep({
   bankCodes: readonly string[];
   banks: readonly CredereUsableBank[];
   consent: boolean;
+  consentInvalid?: boolean;
   downPayment: number | null;
   fipeCode: string;
   installments: string;
@@ -73,24 +75,35 @@ export function SimulationReviewStep({
           banks={banks}
           onToggleBank={onToggleBank}
         />
-        <label
-          className="credere-form-consent"
-          data-checked={consent || undefined}
-        >
-          <input
-            checked={consent}
-            className="credere-form-consent-input"
-            onChange={(event) => onConsentChange(event.target.checked)}
-            type="checkbox"
-          />
-          <span aria-hidden="true" className="credere-form-consent-box">
-            <Check />
-          </span>
-          <span className="credere-form-consent-text">
-            O proponente autorizou expressamente a consulta de seus dados junto
-            aos bancos parceiros para esta simulação.
-          </span>
-        </label>
+        <div>
+          <label
+            className={`credere-form-consent ${consentInvalid ? "credere-form-consent--invalid" : ""}`}
+            data-checked={consent || undefined}
+            data-invalid={consentInvalid || undefined}
+          >
+            <input
+              checked={consent}
+              className="credere-form-consent-input"
+              onChange={(event) => onConsentChange(event.target.checked)}
+              type="checkbox"
+            />
+            <span aria-hidden="true" className="credere-form-consent-box">
+              <Check />
+            </span>
+            <span className="credere-form-consent-text">
+              O proponente autorizou expressamente a consulta de seus dados
+              junto aos bancos parceiros para esta simulação.
+            </span>
+          </label>
+          {consentInvalid ? (
+            <span
+              className="mt-1 block text-xs font-semibold text-danger"
+              role="alert"
+            >
+              O proponente precisa autorizar a consulta antes de enviar.
+            </span>
+          ) : null}
+        </div>
       </div>
     </FeatureFormSection>
   );

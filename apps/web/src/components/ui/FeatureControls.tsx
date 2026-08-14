@@ -66,6 +66,7 @@ export function FeatureSelect<Value extends string = string>({
   className,
   density = "default",
   iconInset = false,
+  invalid = false,
   radius = "default",
   ...props
 }: {
@@ -76,6 +77,7 @@ export function FeatureSelect<Value extends string = string>({
   disabled?: boolean | undefined;
   emptyMessage?: string | undefined;
   iconInset?: boolean;
+  invalid?: boolean | undefined;
   leftIcon?: ReactNode | undefined;
   name?: string | undefined;
   onChange?: (value: Value) => void;
@@ -89,6 +91,7 @@ export function FeatureSelect<Value extends string = string>({
   return (
     <CustomSelect
       {...props}
+      invalid={invalid}
       className={cx(
         "border border-line bg-app px-3 text-sm",
         density === "compact" ? "!min-h-9 !py-1 !text-xs" : "min-h-11",
@@ -105,6 +108,7 @@ export function FeatureDateField({
   align = "left",
   className,
   disabled,
+  invalid = false,
   label,
   max,
   min,
@@ -115,6 +119,7 @@ export function FeatureDateField({
   align?: "left" | "right" | undefined;
   className?: string | undefined;
   disabled?: boolean | undefined;
+  invalid?: boolean | undefined;
   label: string;
   max?: string | undefined;
   min?: string | undefined;
@@ -127,6 +132,7 @@ export function FeatureDateField({
       {name ? <input name={name} type="hidden" value={value} /> : null}
       <DatePickerField
         align={align}
+        invalid={invalid}
         isDisabled={disabled}
         label={label}
         maxDate={parseDateInputValue(max)}

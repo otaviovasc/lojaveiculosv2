@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type ToastTone = "danger" | "info" | "success" | "warning";
@@ -33,16 +33,22 @@ export function Toast({
   tone = "info",
 }: ToastProps) {
   const [visible, setVisible] = useState(true);
-  const dismiss = useCallback(() => {
-    setVisible(false);
-    onDismiss?.();
+  const onDismissRef = useRef(onDismiss);
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
   }, [onDismiss]);
+
+  const handleDismiss = () => {
+    setVisible(false);
+    onDismissRef.current?.();
+  };
 
   useEffect(() => {
     if (durationMs === null) return;
-    const timeout = window.setTimeout(dismiss, durationMs);
+    const timeout = window.setTimeout(handleDismiss, durationMs);
     return () => window.clearTimeout(timeout);
-  }, [dismiss, durationMs]);
+  }, [durationMs]);
 
   if (!visible) return null;
 
@@ -77,7 +83,7 @@ export function Toast({
         <button
           aria-label="Fechar notificação"
           className="-m-1 inline-flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-app hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-          onClick={dismiss}
+          onClick={handleDismiss}
           title="Fechar notificação"
           type="button"
         >

@@ -21,7 +21,7 @@ const candidate: CredereFipeCandidate = {
 describe("SimulationFipeResolver", () => {
   afterEach(cleanup);
 
-  it("requires an explicit choice and confirms it server-side", async () => {
+  it("automatically queries Credere when valid FIPE and year are present, then confirms explicit choice", async () => {
     const user = userEvent.setup();
     const onResolve = vi
       .fn()
@@ -40,12 +40,17 @@ describe("SimulationFipeResolver", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Consultar Credere" }));
-    await user.click(
-      await screen.findByRole("button", {
-        name: /Selecionar 1.0 MPI, Molicar 01906108-0/,
-      }),
-    );
+    // Auto-fetch should have triggered onResolve automatically without clicking "Consultar Credere"
+    const candidateButton = await screen.findByRole("button", {
+      name: /Selecionar 1.0 MPI, Molicar 01906108-0/,
+    });
+    expect(candidateButton).toBeInTheDocument();
+    expect(onResolve).toHaveBeenNthCalledWith(1, {
+      fipeCode: "005340-6",
+      modelYear: 2023,
+    });
+
+    await user.click(candidateButton);
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith(candidate));
     expect(onResolve).toHaveBeenNthCalledWith(2, {
@@ -56,8 +61,7 @@ describe("SimulationFipeResolver", () => {
     });
   });
 
-  it("shows an explicit not-found state instead of guessing", async () => {
-    const user = userEvent.setup();
+  it("shows an explicit not-found state automatically", async () => {
     render(
       <SimulationFipeResolver
         fipeCode="005340-6"
@@ -72,9 +76,30 @@ describe("SimulationFipeResolver", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Consultar Credere" }));
     expect(
       await screen.findByText(/não encontrou uma versão Molicar disponível/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders invalid highlight state when marked invalid", () => {
+    const { container } = render(
+      <SimulationFipeResolver
+        fipeCode=""
+        invalid={true}
+        modelYear=""
+        onFipeCodeChange={vi.fn()}
+        onResolve={vi.fn()}
+        onSelect={vi.fn()}
+        selected={null}
+      />,
+    );
+
+    expect(container.querySelector("section")).toHaveAttribute(
+      "data-invalid",
+      "true",
+    );
+    expect(
+      screen.getByText("Confirme a versão FIPE/Molicar"),
     ).toBeInTheDocument();
   });
 });
