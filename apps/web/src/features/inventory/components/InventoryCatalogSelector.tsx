@@ -190,12 +190,12 @@ export function InventoryCatalogSelector({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-6">
         <CatalogSelect
           label="Tipo"
           required
           value={vehicleType}
-          className="sm:col-span-1 xl:col-span-1"
+          className="md:col-span-2"
           onChange={(value) => {
             setVehicleType(value as InventoryCatalogVehicleType);
             resetCatalog(
@@ -226,7 +226,7 @@ export function InventoryCatalogSelector({
             !brandCode ? (catalog?.brandName ?? undefined) : undefined
           }
           value={brandCode}
-          className="sm:col-span-1 xl:col-span-2"
+          className="md:col-span-2"
           placeholder={!api ? "Carregando..." : "Digite para buscar..."}
           onChange={(value) => {
             setBrandCode(value);
@@ -251,7 +251,7 @@ export function InventoryCatalogSelector({
             !modelFamilyCode ? (catalog?.modelName ?? undefined) : undefined
           }
           value={modelFamilyCode}
-          className="sm:col-span-2 xl:col-span-2"
+          className="md:col-span-2"
           placeholder={
             !brandCode ? "Selecione a marca primeiro" : "Digite para buscar..."
           }
@@ -274,7 +274,9 @@ export function InventoryCatalogSelector({
           disabled={!modelFamilyCode}
           displayValue={!yearCode ? catalogYearDisplay(catalog) : undefined}
           value={yearCode}
-          className="sm:col-span-1 xl:col-span-1"
+          className={
+            manufactureYear !== undefined ? "md:col-span-3" : "md:col-span-6"
+          }
           placeholder={!modelFamilyCode ? "Modelo antes" : "Ex. 2026"}
           onChange={(value) => {
             setYearCode(value);
@@ -295,11 +297,7 @@ export function InventoryCatalogSelector({
           options={years}
         />
         {manufactureYear !== undefined && onManufactureYearChange ? (
-          <InventoryField
-            className="sm:col-span-1 xl:col-span-1"
-            label="Ano Fab."
-            required
-          >
+          <InventoryField className="md:col-span-3" label="Ano Fab." required>
             <InventoryInput
               className="w-full"
               min={0}
@@ -319,7 +317,7 @@ export function InventoryCatalogSelector({
             !versionCode ? (catalog?.modelName ?? undefined) : undefined
           }
           value={versionCode}
-          className="sm:col-span-2 xl:col-span-7"
+          className="md:col-span-6"
           placeholder={
             !yearCode ? "Selecione o ano primeiro" : "Digite para buscar..."
           }

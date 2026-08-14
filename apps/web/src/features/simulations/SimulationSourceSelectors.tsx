@@ -10,6 +10,7 @@ import type { ProductCrmLead } from "../crm/productCrmTypes";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
 import { InventoryCatalogSelector } from "../inventory/components/InventoryCatalogSelector";
+import { SimulationStockVehicleModal } from "./SimulationStockVehicleModal";
 import type {
   InventoryCatalogSnapshot,
   InventoryListingSummary,
@@ -93,6 +94,7 @@ export function SimulationVehicleSource({
   onYearChange,
   source,
   sources,
+  onToast,
 }: {
   catalog: InventoryCatalogSnapshot | null;
   listingId: string;
@@ -104,7 +106,15 @@ export function SimulationVehicleSource({
   onYearChange: (year: number | null) => void;
   source: "catalog" | "stock";
   sources: SimulationSourceData;
+  onToast?: (message: string) => void;
 }) {
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const selectedItem = useMemo(
+    () =>
+      sources.inventory.find((item) => item.listing.id === listingId) ?? null,
+    [sources.inventory, listingId],
+  );
+
   return (
     <div className="credere-form-source grid gap-4">
       <FeatureSegmentedControl
@@ -118,36 +128,101 @@ export function SimulationVehicleSource({
       />
       {source === "stock" ? (
         <FeatureField label="Veículo do estoque">
-          <FeatureSelect
-            ariaLabel="Veículo do estoque"
-            onChange={(value) =>
-              onSelectListing(
-                sources.inventory.find((item) => item.listing.id === value) ??
-                  null,
-              )
-            }
-            options={sources.inventory.map((item) => ({
-              label: listingLabel(item),
-              value: item.listing.id,
-            }))}
-            placeholder={
-              sources.inventoryStatus === "loading"
-                ? "Carregando estoque…"
-                : sources.inventoryStatus === "error"
-                  ? "Estoque indisponível agora"
-                  : sources.inventory.length
-                    ? "Busque por veículo, placa ou estoque"
-                    : "Nenhum veículo disponível"
-            }
-            searchable
-            value={listingId || undefined}
-          />
+          {selectedItem ? (
+            <div className="flex flex-col gap-2 rounded-2xl border border-line bg-panel p-3.5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-12 shrink-0 overflow-hidden rounded-xl bg-app-elevated border border-line/40">
+                    {selectedItem.primaryMediaUrl ? (
+                      <img
+                        alt={selectedItem.listing.title}
+                        className="h-full w-full object-cover"
+                        src={selectedItem.primaryMediaUrl}
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-muted">
+                        <CarFront className="size-5" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="truncate text-sm font-black text-app-text">
+                      {selectedItem.listing.title}
+                    </h4>
+                    <p className="truncate text-xs font-semibold text-muted">
+                      {listingLabel(selectedItem)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    className="rounded-xl border border-line/60 bg-app px-3 py-1.5 text-xs font-bold text-app-text transition-colors hover:border-accent-strong hover:bg-accent-soft hover:text-accent-strong"
+                    onClick={() => setIsStockModalOpen(true)}
+                    type="button"
+                  >
+                    Trocar veículo
+                  </button>
+                  <button
+                    className="rounded-xl border border-line/60 bg-app px-2.5 py-1.5 text-xs font-bold text-muted transition-colors hover:border-danger/40 hover:text-danger-strong"
+                    onClick={() => onSelectListing(null)}
+                    title="Remover seleção"
+                    type="button"
+                  >
+                    Limpar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-line-strong bg-panel/60 p-4 text-left transition-all hover:border-accent-strong hover:bg-panel"
+              onClick={() => setIsStockModalOpen(true)}
+              type="button"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
+                  <CarFront className="size-5" />
+                </span>
+                <div>
+                  <strong className="block text-sm font-black text-app-text">
+                    Clique para selecionar veículo do estoque
+                  </strong>
+                  <span className="text-xs font-medium text-muted">
+                    {sources.inventoryStatus === "loading"
+                      ? "Carregando estoque..."
+                      : sources.inventory.length > 0
+                        ? `${sources.inventory.length} veículos disponíveis no estoque`
+                        : "Nenhum veículo no estoque"}
+                  </span>
+                </div>
+              </div>
+              <span className="rounded-xl bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground">
+                Abrir catálogo
+              </span>
+            </button>
+          )}
+
           {sources.inventoryStatus === "error" ? (
             <span className="text-xs font-bold text-danger" role="alert">
               Não foi possível carregar o estoque. Use o Catálogo FIPE para
               continuar.
             </span>
           ) : null}
+
+          <SimulationStockVehicleModal
+            isOpen={isStockModalOpen}
+            items={sources.inventory}
+            onClose={() => setIsStockModalOpen(false)}
+            onSelect={(item) => {
+              onSelectListing(item);
+              if (onToast) {
+                onToast(
+                  `Veículo "${item.listing.title}" selecionado do estoque.`,
+                );
+              }
+            }}
+            status={sources.inventoryStatus}
+          />
         </FeatureField>
       ) : (
         <InventoryCatalogSelector

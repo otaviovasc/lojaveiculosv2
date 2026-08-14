@@ -262,44 +262,112 @@
 }
 
 /* ------------------------------------------------------------------------- */
-/* Owner connection panel (FeatureSection contents)                           */
+/* Owner connection panel (High-end Billing-inspired design)                  */
 /* ------------------------------------------------------------------------- */
 
-.credere-panel-connection-body {
+.credere-owner-panel {
+  background:
+    radial-gradient(
+      circle at 95% 5%,
+      color-mix(in srgb, var(--color-accent) 8%, transparent),
+      transparent 45%
+    ),
+    var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 1.1rem;
+  overflow: hidden;
+  padding: 1.25rem 1.4rem;
+  position: relative;
+  transition: border-color var(--motion-duration-base)
+    var(--motion-ease-standard);
+}
+
+.credere-owner-panel::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    color-mix(in srgb, var(--color-accent) 25%, transparent)
+  );
+  content: "";
+  height: 2px;
+  inset-block-start: 0;
+  inset-inline: 0;
+  position: absolute;
+}
+
+.credere-owner-header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.credere-owner-title-group {
+  align-items: center;
+  display: flex;
+  gap: 0.9rem;
+}
+
+.credere-owner-icon-box {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 24%, transparent);
+  border-radius: var(--radius-xl);
+  color: var(--color-accent-strong);
+  display: flex;
+  flex: 0 0 auto;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.credere-owner-title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.credere-owner-subtitle {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.credere-owner-top-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.credere-owner-body {
   display: grid;
   gap: 1rem;
-  margin-top: 1rem;
 }
 
-.credere-panel-connection-summary {
-  align-items: stretch;
+.credere-owner-summary-bar {
+  background: color-mix(in srgb, var(--color-app) 55%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+  border-radius: var(--radius-xl);
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
 }
 
-.credere-panel-connection-summary > .feature-alert,
-.credere-panel-connection-summary > .feature-loading-inline {
-  grid-column: 1 / -1;
-}
-
-.credere-panel-connection-fact {
-  align-content: start;
-  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
-  border-radius: var(--radius-lg);
+.credere-owner-fact {
   display: grid;
-  gap: 0.4rem;
-  min-height: 3.75rem;
-  min-width: 0;
-  padding: 0.7rem 0.85rem;
+  gap: 0.2rem;
+  padding: 0.85rem 1.1rem;
 }
 
-.credere-panel-connection-fact > * {
-  justify-self: start;
-}
-
-.credere-panel-connection-fact > span {
+.credere-owner-fact span {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
   font-weight: 900;
@@ -307,76 +375,123 @@
   text-transform: uppercase;
 }
 
-.credere-panel-connection-fact > strong {
+.credere-owner-fact strong {
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 900;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.credere-panel-connection-actions,
-.credere-panel-connection-mapping-actions,
-.credere-panel-store-mapping {
+.credere-owner-top-actions button {
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  transition: all var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.credere-owner-top-actions button:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: var(--color-accent-strong);
+}
+
+.credere-owner-actions-row button {
+  border-radius: var(--radius-xl);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-emphasized),
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.credere-owner-actions-row button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.credere-owner-actions-row button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.credere-owner-mapping-box {
+  align-items: flex-end;
+  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.85rem;
+  padding: 1rem;
 }
 
-.credere-panel-connection-actions {
-  align-content: start;
+.credere-owner-mapping-box button {
+  border-radius: var(--radius-xl);
+  font-weight: 900;
+  min-height: 2.6rem;
+  padding: 0 1.2rem;
 }
 
-.credere-panel-connection-mapping-actions {
-  width: 100%;
-}
-
-.credere-panel-store-mapping {
-  align-items: end;
-  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
-  border-radius: var(--radius-lg);
-  padding: 0.85rem;
-  width: 100%;
-}
-
-.credere-panel-store-selector {
-  color: var(--color-text);
+.credere-owner-store-selector {
   display: grid;
   flex: 1 1 16rem;
   gap: 0.35rem;
   min-width: 0;
 }
 
-.credere-panel-store-selector > span {
+.credere-owner-store-selector span {
+  color: var(--color-text);
   font-size: var(--font-size-xs);
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-@media (min-width: 1180px) {
-  .credere-panel-connection-body {
-    grid-template-columns: minmax(18rem, 1fr) minmax(0, 1.1fr);
+@media (min-width: 768px) {
+  .credere-owner-summary-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .credere-owner-fact + .credere-owner-fact {
+    border-left: 1px solid
+      color-mix(in srgb, var(--color-line) 80%, transparent);
   }
 }
 
 @media (max-width: 767px) {
-  .credere-panel {
-    padding: 1.05rem 1.1rem;
+  .credere-owner-panel {
+    padding: 1rem 1.1rem;
   }
 
-  .credere-panel-cta {
+  .credere-owner-header {
+    flex-direction: column;
+  }
+
+  .credere-owner-top-actions {
     width: 100%;
   }
 
-  .credere-panel-connection-summary {
+  .credere-owner-summary-bar {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .credere-panel-store-mapping > button {
+  .credere-owner-fact + .credere-owner-fact {
+    border-top: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+  }
+
+  .credere-owner-actions-row {
+    flex-direction: column;
+  }
+
+  .credere-owner-actions-row > button {
+    width: 100%;
+  }
+
+  .credere-owner-mapping-box {
+    flex-direction: column;
+  }
+
+  .credere-owner-mapping-box > button {
     width: 100%;
   }
 }
