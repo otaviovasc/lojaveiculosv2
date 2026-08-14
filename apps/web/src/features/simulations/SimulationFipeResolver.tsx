@@ -84,7 +84,7 @@ export function SimulationFipeResolver({
         </p>
       </div>
 
-      <div className="credere-form-fipe-lookup">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
         <FeatureField label="Código FIPE">
           <FeatureInput
             aria-describedby="credere-fipe-hint"
@@ -118,7 +118,10 @@ export function SimulationFipeResolver({
           <p className="credere-form-fipe-candidates-title">
             Escolha a versão correta antes de continuar
           </p>
-          <ul aria-label="Versões Molicar disponíveis">
+          <ul
+            aria-label="Versões Molicar disponíveis"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+          >
             {candidates.map((candidate) => (
               <li key={`${candidate.modelId}:${candidate.molicarCode}`}>
                 <button
