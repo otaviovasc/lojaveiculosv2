@@ -42,8 +42,27 @@ export function findValidationPipelineViolations(input) {
   expectScript("validate", "pnpm run validate:push");
   expectScript("prepare", "husky");
   expectScript(
+    "validate:commit",
+    "node tools/quality/run-scoped-validation.mjs commit",
+  );
+  expectScript(
+    "validate:push",
+    "node tools/quality/run-scoped-validation.mjs push",
+  );
+  expectScript(
     "validate:release",
-    "pnpm run validate:push && pnpm run test:coverage && pnpm run build:deployables",
+    "node tools/quality/run-scoped-validation.mjs release",
+  );
+  expectScript("typecheck:web", "pnpm --filter @lojaveiculosv2/web typecheck");
+  expectScript("lint:web", "pnpm --filter @lojaveiculosv2/web lint");
+  expectScript("test:web", "pnpm --filter @lojaveiculosv2/web test");
+  expectScript(
+    "test:coverage:web",
+    "pnpm --filter @lojaveiculosv2/web test:coverage",
+  );
+  expectScript(
+    "build:web",
+    "pnpm --filter @lojaveiculosv2/web build && pnpm run verify:web-bundle",
   );
   expectScript(
     "build:deployables",
@@ -68,19 +87,6 @@ export function findValidationPipelineViolations(input) {
     "test:smoke:api",
     "pnpm --filter @lojaveiculosv2/api exec vitest run src/infrastructure/http/productionSmoke.test.ts",
   );
-  expectCommandParts("validate:commit", [
-    "pnpm run validate:core-guardrails",
-    "pnpm run test:quality-tools",
-    "pnpm run test:seed-document-pdf",
-  ]);
-  expectCommandParts("validate:push", [
-    "pnpm run validate:core-guardrails",
-    "pnpm run typecheck",
-    "pnpm run lint",
-    "pnpm run test",
-    "pnpm run test:quality-tools",
-    "pnpm run test:seed-document-pdf",
-  ]);
   expectLintStaged();
   expectHook(
     ".husky/pre-commit",

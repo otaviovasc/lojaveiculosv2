@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { CarFront, Check, Search, Sparkles } from "lucide-react";
+import { CarFront, Check, Sparkles } from "lucide-react";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import {
   FeatureEmptyState,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
-import { FeatureInput } from "../../components/ui/FeatureControls";
+import { FeatureSearchField } from "../../components/ui/FeatureControls";
 import { ImageWithFallback } from "../../components/ui/ImageWithFallback";
 import {
   MercosulPlateBadge,
@@ -63,18 +63,13 @@ export function SimulationStockVehicleModal({
       title="Selecionar veículo do estoque"
     >
       <div className="grid gap-4">
-        <div className="relative">
-          <FeatureInput
-            autoFocus
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por modelo, marca, placa ou número de estoque..."
-            value={searchQuery}
-          />
-          <Search
-            aria-hidden="true"
-            className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
-          />
-        </div>
+        <FeatureSearchField
+          autoFocus
+          label="Buscar veículo no estoque"
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar por modelo, marca, placa ou número de estoque..."
+          value={searchQuery}
+        />
 
         {status === "loading" ? (
           <FeatureLoadingState

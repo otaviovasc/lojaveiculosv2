@@ -1,15 +1,13 @@
 import { CarFront, LibraryBig, UserRoundPlus, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import {
-  FeatureSegmentedControl,
-  FeatureSelect,
-} from "../../components/ui/FeatureControls";
+import { FeatureSegmentedControl } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { createRuntimeProductCrmApi } from "../crm/runtimeApi";
 import type { ProductCrmLead } from "../crm/productCrmTypes";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
 import { InventoryCatalogSelector } from "../inventory/components/InventoryCatalogSelector";
+import { SimulationCrmLeadModal } from "./SimulationCrmLeadModal";
 import { SimulationStockVehicleModal } from "./SimulationStockVehicleModal";
 import type {
   InventoryCatalogSnapshot,
@@ -37,6 +35,12 @@ export function SimulationApplicantSource({
   onSourceChange: (value: "existing" | "new") => void;
   sources: SimulationSourceData;
 }) {
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  const selectedLead = useMemo(
+    () => sources.leads.find((lead) => lead.id === leadId) ?? null,
+    [sources.leads, leadId],
+  );
+
   return (
     <div className="credere-form-source grid gap-4">
       <FeatureSegmentedControl
@@ -50,33 +54,85 @@ export function SimulationApplicantSource({
       />
       {source === "existing" ? (
         <FeatureField label="Lead do CRM">
-          <FeatureSelect
-            ariaLabel="Lead do CRM"
-            onChange={(value) =>
-              onSelect(sources.leads.find((lead) => lead.id === value) ?? null)
-            }
-            options={sources.leads.map((lead) => ({
-              label: leadLabel(lead),
-              value: lead.id,
-            }))}
-            placeholder={
-              sources.leadsStatus === "loading"
-                ? "Carregando leads…"
-                : sources.leadsStatus === "error"
-                  ? "Leads indisponíveis agora"
-                  : sources.leads.length
-                    ? "Busque pelo nome ou telefone"
-                    : "Nenhum lead disponível"
-            }
-            searchable
-            value={leadId || undefined}
-          />
+          {selectedLead ? (
+            <div className="flex flex-col gap-2 rounded-2xl border border-line bg-panel p-3.5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-line/40 bg-app-elevated text-muted">
+                    <Users className="size-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="truncate text-sm font-black text-app-text">
+                      {selectedLead.buyerName ?? "Lead sem nome"}
+                    </h4>
+                    <p className="truncate text-xs font-semibold text-muted">
+                      {leadLabel(selectedLead)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    className="rounded-xl border border-line/60 bg-app px-3 py-1.5 text-xs font-bold text-app-text transition-colors hover:border-accent-strong hover:bg-accent-soft hover:text-accent-strong"
+                    onClick={() => setIsLeadModalOpen(true)}
+                    type="button"
+                  >
+                    Trocar lead
+                  </button>
+                  <button
+                    className="rounded-xl border border-line/60 bg-app px-2.5 py-1.5 text-xs font-bold text-muted transition-colors hover:border-danger/40 hover:text-danger-strong"
+                    onClick={() => onSelect(null)}
+                    title="Remover seleção"
+                    type="button"
+                  >
+                    Limpar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-line-strong bg-panel/60 p-4 text-left transition-all hover:border-accent-strong hover:bg-panel"
+              onClick={() => setIsLeadModalOpen(true)}
+              type="button"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
+                  <Users className="size-5" />
+                </span>
+                <div>
+                  <strong className="block text-sm font-black text-app-text">
+                    Clique para selecionar lead do CRM
+                  </strong>
+                  <span className="text-xs font-medium text-muted">
+                    {sources.leadsStatus === "loading"
+                      ? "Carregando leads..."
+                      : sources.leads.length > 0
+                        ? `${sources.leads.length} leads disponíveis no CRM`
+                        : "Nenhum lead disponível"}
+                  </span>
+                </div>
+              </div>
+              <span className="rounded-xl bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground">
+                Abrir leads
+              </span>
+            </button>
+          )}
+
           {sources.leadsStatus === "error" ? (
             <span className="text-xs font-bold text-danger" role="alert">
               Não foi possível carregar os leads. Você ainda pode preencher um
               novo proponente.
             </span>
           ) : null}
+
+          <SimulationCrmLeadModal
+            isOpen={isLeadModalOpen}
+            items={sources.leads}
+            onClose={() => setIsLeadModalOpen(false)}
+            onSelect={onSelect}
+            selectedId={leadId || undefined}
+            status={sources.leadsStatus}
+          />
         </FeatureField>
       ) : null}
     </div>

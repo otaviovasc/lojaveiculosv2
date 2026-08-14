@@ -3,13 +3,9 @@ import {
   formatSimulationCurrency,
   simulationFinancedAmount,
 } from "./simulationStepReadiness";
-import type { CredereUsableBank } from "./types";
 
 export type SimulationReviewDossierProps = {
   applicantName: string;
-  bankCodes: readonly string[];
-  banks: readonly CredereUsableBank[];
-  consent: boolean;
   downPayment: number | null;
   fipeCode: string;
   installments: string;
@@ -27,9 +23,6 @@ export type SimulationReviewDossierProps = {
 
 export function SimulationReviewDossier({
   applicantName,
-  bankCodes,
-  banks,
-  consent,
   downPayment,
   fipeCode,
   installments,
@@ -45,9 +38,6 @@ export function SimulationReviewDossier({
   zeroKm,
 }: SimulationReviewDossierProps) {
   const financedAmount = simulationFinancedAmount(vehicleValue, downPayment);
-  const selectedBankNames = banks
-    .filter((bank) => bankCodes.includes(bank.code))
-    .map((bank) => bank.name ?? bank.code);
   const years =
     manufactureYear && modelYear
       ? `${manufactureYear}/${modelYear}${zeroKm ? " · 0 km" : ""}`
@@ -56,49 +46,74 @@ export function SimulationReviewDossier({
     licensingUf && licensingCity ? `${licensingCity} · ${licensingUf}` : null;
 
   return (
-    <dl className="credere-form-review">
-      <ReviewRow label="Proponente">
-        {applicantName.trim() || "Proponente não informado"}
-        {applicantName.trim()
-          ? ` · ${preflightReady ? "Credere conferido" : "conferência pendente"}`
-          : ""}
-      </ReviewRow>
-      <ReviewRow label="Veículo">
-        {vehicleName ?? "Veículo selecionado"}
-      </ReviewRow>
-      <ReviewRow label="Anos">{years ?? "Anos pendentes"}</ReviewRow>
-      <ReviewRow label="Versão confirmada">
-        {versionLabel
-          ? `${versionLabel} · Molicar ${molicarCode}`
-          : "Versão FIPE/Molicar pendente"}
-      </ReviewRow>
-      <ReviewRow label="FIPE">{fipeCode || "FIPE pendente"}</ReviewRow>
-      <ReviewRow label="Licenciamento">
-        {licensing ?? "UF/cidade pendentes"}
-      </ReviewRow>
-      <ReviewRow label="Valor" value>
-        {formatSimulationCurrency(vehicleValue) ?? "Valor pendente"}
-      </ReviewRow>
-      <ReviewRow label="Entrada">
-        {formatSimulationCurrency(downPayment) ?? "Entrada pendente"}
-      </ReviewRow>
-      <ReviewRow label="Valor financiado">
-        {formatSimulationCurrency(financedAmount) ?? "Financiamento pendente"}
-      </ReviewRow>
-      <ReviewRow label="Parcelas">
-        {installments === "all" ? "Todas (12x a 60x)" : `${installments}x`}
-      </ReviewRow>
-      <ReviewRow label="Bancos">
-        {selectedBankNames.length
-          ? `${selectedBankNames.join(", ")} (${selectedBankNames.length})`
-          : "Nenhum banco selecionado"}
-      </ReviewRow>
-      <ReviewRow label="Consentimento">
-        {consent
-          ? "Autorizado pelo proponente"
-          : "Pendente — marque a autorização abaixo"}
-      </ReviewRow>
-    </dl>
+    <div className="credere-form-review">
+      <div className="credere-form-review-highlight">
+        <span>Valor financiado</span>
+        <strong>
+          {formatSimulationCurrency(financedAmount) ?? "Pendente"}
+        </strong>
+        <small>
+          {installments === "all"
+            ? "Todas as parcelas (12x a 60x)"
+            : `${installments}x`}
+        </small>
+      </div>
+
+      <dl className="credere-form-review-groups">
+        <ReviewGroup label="Proponente">
+          <ReviewRow label="Nome">
+            {applicantName.trim() || "Proponente não informado"}
+          </ReviewRow>
+          <ReviewRow label="Credere">
+            {applicantName.trim()
+              ? preflightReady
+                ? "Conferido"
+                : "Conferência pendente"
+              : "Pendente"}
+          </ReviewRow>
+        </ReviewGroup>
+
+        <ReviewGroup label="Veículo">
+          <ReviewRow label="Modelo">
+            {vehicleName ?? "Veículo selecionado"}
+          </ReviewRow>
+          <ReviewRow label="Anos">{years ?? "Anos pendentes"}</ReviewRow>
+          <ReviewRow label="Versão confirmada">
+            {versionLabel
+              ? `${versionLabel} · Molicar ${molicarCode}`
+              : "Versão FIPE/Molicar pendente"}
+          </ReviewRow>
+          <ReviewRow label="FIPE">{fipeCode || "FIPE pendente"}</ReviewRow>
+          <ReviewRow label="Licenciamento">
+            {licensing ?? "UF/cidade pendentes"}
+          </ReviewRow>
+        </ReviewGroup>
+
+        <ReviewGroup label="Condições">
+          <ReviewRow label="Valor" value>
+            {formatSimulationCurrency(vehicleValue) ?? "Valor pendente"}
+          </ReviewRow>
+          <ReviewRow label="Entrada">
+            {formatSimulationCurrency(downPayment) ?? "Entrada pendente"}
+          </ReviewRow>
+        </ReviewGroup>
+      </dl>
+    </div>
+  );
+}
+
+function ReviewGroup({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <section className="credere-form-review-group">
+      <h4 className="credere-form-review-group-title">{label}</h4>
+      {children}
+    </section>
   );
 }
 

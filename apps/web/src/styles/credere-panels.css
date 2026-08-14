@@ -394,6 +394,12 @@
   color: var(--color-accent-strong);
 }
 
+.credere-owner-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
 .credere-owner-actions-row button {
   border-radius: var(--radius-xl);
   font-weight: 800;
@@ -449,7 +455,7 @@
 
 @media (min-width: 768px) {
   .credere-owner-summary-bar {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .credere-owner-fact + .credere-owner-fact {

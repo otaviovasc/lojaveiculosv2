@@ -114,7 +114,9 @@
 
 .credere-workspace {
   box-shadow: var(--shadow-panel);
-  overflow: hidden;
+  /* clip (not hidden) keeps child backgrounds inside the radius without
+     creating a scroll container, so sticky panes/actions keep working. */
+  overflow: clip;
   position: relative;
 }
 
@@ -323,12 +325,15 @@
 
 @media (min-width: 1180px) {
   .credere-workspace-grid {
+    align-items: start;
     grid-template-columns: minmax(0, 1.12fr) minmax(24rem, 0.88fr);
   }
 
   .credere-response-pane {
     border-left: 1px solid var(--color-line);
     border-top: 0;
+    position: sticky;
+    top: 1rem;
   }
 }
 
