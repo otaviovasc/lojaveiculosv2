@@ -97,9 +97,9 @@ ALTER TABLE "crm_lead_outcomes" ADD CONSTRAINT "crm_lead_outcomes_store_id_store
 ALTER TABLE "crm_lead_outcomes" ADD CONSTRAINT "crm_lead_outcomes_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "crm_whatsapp_session_command_receipts" ADD CONSTRAINT "crm_whatsapp_session_command_receipts_store_id_stores_id_fk" FOREIGN KEY ("store_id") REFERENCES "public"."stores"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "crm_whatsapp_session_command_receipts" ADD CONSTRAINT "crm_whatsapp_session_command_receipts_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "crm_whatsapp_sessions_scope_id_unique" ON "crm_whatsapp_sessions" USING btree ("tenant_id","store_id","id");--> statement-breakpoint
 ALTER TABLE "crm_whatsapp_session_command_receipts" ADD CONSTRAINT "crm_whatsapp_session_command_receipts_scoped_session_fk" FOREIGN KEY ("tenant_id","store_id","session_id") REFERENCES "public"."crm_whatsapp_sessions"("tenant_id","store_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "crm_lead_outcomes_scope_command_unique" ON "crm_lead_outcomes" USING btree ("tenant_id","store_id","command_id");--> statement-breakpoint
 CREATE INDEX "crm_lead_outcomes_lead_history_idx" ON "crm_lead_outcomes" USING btree ("tenant_id","store_id","lead_id","created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "crm_whatsapp_session_command_receipts_scope_command_unique" ON "crm_whatsapp_session_command_receipts" USING btree ("tenant_id","store_id","command_id");--> statement-breakpoint
-CREATE INDEX "crm_whatsapp_session_command_receipts_session_created_idx" ON "crm_whatsapp_session_command_receipts" USING btree ("tenant_id","store_id","session_id","created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "crm_whatsapp_sessions_scope_id_unique" ON "crm_whatsapp_sessions" USING btree ("tenant_id","store_id","id");
+CREATE INDEX "crm_whatsapp_session_command_receipts_session_created_idx" ON "crm_whatsapp_session_command_receipts" USING btree ("tenant_id","store_id","session_id","created_at");
