@@ -57,7 +57,7 @@ describe("validation pipeline rules", () => {
         ".husky/pre-commit must execute pnpm exec lint-staged",
         ".husky/pre-commit must execute pnpm run validate:commit",
         ".husky/pre-commit must not execute pnpm run validate:push",
-        'validate:release must be "pnpm run validate:push && pnpm run test:coverage && pnpm run build:deployables"',
+        'validate:release must be "node tools/quality/run-scoped-validation.mjs release"',
       ]),
     );
   });
@@ -136,15 +136,19 @@ function validPipeline() {
       "test:smoke:api":
         "pnpm --filter @lojaveiculosv2/api exec vitest run src/infrastructure/http/productionSmoke.test.ts",
       typecheck: "pnpm -r typecheck",
+      "typecheck:web": "pnpm --filter @lojaveiculosv2/web typecheck",
+      "lint:web": "pnpm --filter @lojaveiculosv2/web lint",
+      "test:web": "pnpm --filter @lojaveiculosv2/web test",
+      "test:coverage:web": "pnpm --filter @lojaveiculosv2/web test:coverage",
+      "build:web":
+        "pnpm --filter @lojaveiculosv2/web build && pnpm run verify:web-bundle",
       validate: "pnpm run validate:push",
       "validate:release":
-        "pnpm run validate:push && pnpm run test:coverage && pnpm run build:deployables",
-      "validate:commit":
-        "pnpm run validate:core-guardrails && pnpm run test:quality-tools && pnpm run test:seed-document-pdf",
+        "node tools/quality/run-scoped-validation.mjs release",
+      "validate:commit": "node tools/quality/run-scoped-validation.mjs commit",
       "validate:core-guardrails":
         "pnpm run check:format && pnpm run check:sample",
-      "validate:push":
-        "pnpm run validate:core-guardrails && pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run test:quality-tools && pnpm run test:seed-document-pdf",
+      "validate:push": "node tools/quality/run-scoped-validation.mjs push",
       "verify:web-bundle": "node tools/quality/verify-web-bundle-artifacts.mjs",
     },
   };

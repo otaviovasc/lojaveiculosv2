@@ -163,6 +163,14 @@ Run from `lojaveiculosv2/` before handing work back:
 pnpm run validate
 ```
 
+The `validate:commit`, `validate:push`, and `validate:release` tiers run through
+`tools/quality/run-scoped-validation.mjs`. When every changed file is
+frontend-only (`apps/web/**` or `packages/design-system/**`), the tier replaces
+the repo-wide typecheck/lint/test/coverage/build steps with their
+`@lojaveiculosv2/web` equivalents, since backend code cannot be affected by the
+diff. Any change outside those paths runs the full tier. Force the full tier
+with `VALIDATION_SCOPE=full` or `--full`.
+
 For deploy smoke contracts, run:
 
 ```bash

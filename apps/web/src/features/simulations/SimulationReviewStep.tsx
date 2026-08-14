@@ -54,9 +54,6 @@ export function SimulationReviewStep({
       <div className="grid gap-5">
         <SimulationReviewDossier
           applicantName={applicantName}
-          bankCodes={bankCodes}
-          banks={banks}
-          consent={consent}
           downPayment={downPayment}
           fipeCode={fipeCode}
           installments={installments}

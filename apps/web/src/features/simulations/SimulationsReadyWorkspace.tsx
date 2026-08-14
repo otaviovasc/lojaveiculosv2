@@ -81,10 +81,12 @@ export function SimulationsReadyWorkspace({
         </Toast>
       ) : null}
 
-      <div className="flex items-center justify-between gap-4 border-b border-line/40 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/40 pb-4">
         <FeatureTabs
           ariaLabel="Navegação das simulações"
+          className="w-full min-w-0 flex-1"
           onChange={setActiveTab}
+          optionClassName="flex-1 justify-center"
           options={[
             {
               icon: PlusCircle,

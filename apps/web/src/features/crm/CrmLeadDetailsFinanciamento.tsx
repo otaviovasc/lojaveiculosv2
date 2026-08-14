@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Save } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import { CrmSelect } from "./CrmFormControls";
@@ -29,12 +29,23 @@ export function CrmLeadDetailsFinanciamento({
   onCreateActivity,
   vehicleOptions,
 }: Props) {
-  const initialValue =
+  const vehiclePriceCents =
     getPrimaryLeadVehiclePriceCents(lead, vehicleOptions) ?? 0;
-  const [val, setVal] = useState(initialValue / 100);
-  const [down, setDown] = useState((initialValue * 0.3) / 100);
+  const [val, setVal] = useState(vehiclePriceCents / 100);
+  const [down, setDown] = useState((vehiclePriceCents * 0.3) / 100);
   const [rate, setRate] = useState(1.39);
   const [months, setMonths] = useState(48);
+
+  // vehicleOptions/lead can resolve after the tab mounts (async inventory
+  // load) or change when navigating to another lead; resync the defaults
+  // whenever the resolved vehicle price changes.
+  const syncedPriceRef = useRef(vehiclePriceCents);
+  useEffect(() => {
+    if (vehiclePriceCents === syncedPriceRef.current) return;
+    syncedPriceRef.current = vehiclePriceCents;
+    setVal(vehiclePriceCents / 100);
+    setDown((vehiclePriceCents * 0.3) / 100);
+  }, [vehiclePriceCents]);
 
   const [financed, setFinanced] = useState(0);
   const [payment, setPayment] = useState(0);
@@ -143,7 +154,7 @@ export function CrmLeadDetailsFinanciamento({
               </span>
               <FeatureInput
                 max={10}
-                min={0.1}
+                min={0}
                 onChange={(e) => setRate(Number(e.target.value))}
                 step={0.01}
                 type="number"

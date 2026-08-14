@@ -195,10 +195,6 @@ export function DirectOwnerCrederePanel({
                   (connection.storeMapping ? "Loja Credere" : "Nenhuma")}
               </strong>
             </div>
-            <div className="credere-owner-fact">
-              <span>Ambiente</span>
-              <strong>Credere Oficial (Produção/Homologação)</strong>
-            </div>
           </div>
 
           <div className="credere-owner-actions-row">
