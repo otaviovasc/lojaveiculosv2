@@ -41,6 +41,10 @@ export function createMarketplaceRuntimeApi(): MarketplaceApi {
       createMarketplaceApi(
         await createMarketplaceApiOptions(),
       ).previewStockSync(provider, input),
+    reconcileSyncJob: async (jobId) =>
+      createMarketplaceApi(
+        await createMarketplaceApiOptions(),
+      ).reconcileSyncJob(jobId),
     retrySyncJob: async (jobId, input) =>
       createMarketplaceApi(await createMarketplaceApiOptions()).retrySyncJob(
         jobId,

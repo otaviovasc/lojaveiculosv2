@@ -30,11 +30,18 @@ describe("marketplace controller stock sync", () => {
     });
 
     expect(run.status).toBe(200);
-    expect(await run.json()).toMatchObject({
-      createdJobs: [{ jobType: "listing_publish", status: "succeeded" }],
+    const runBody = (await run.json()) as MarketplaceRunBody;
+    expect(runBody).toMatchObject({
+      createdJobs: [{ jobType: "listing_publish", status: "queued" }],
       plan: { publish: 1 },
       provider: "olx",
     });
+    expect(gateway.calls).toHaveLength(0);
+    const queuedJob = runBody.createdJobs[0];
+    if (!queuedJob) throw new Error("Expected queued marketplace job.");
+    const processed = await post(app, `/sync-jobs/${queuedJob.id}/run`, {});
+    expect(processed.status).toBe(200);
+    expect(await processed.json()).toMatchObject({ status: "succeeded" });
     expect(gateway.calls[0]).toMatchObject({
       jobType: "listing_publish",
       metadata: { listingId: "listing_1", stockSync: true },
@@ -152,7 +159,7 @@ describe("marketplace controller stock sync", () => {
   });
 
   it("supports retrying failed sync jobs", async () => {
-    const gateway = createGateway({ failOnceFor: "listing_1" });
+    const gateway = createGateway({ rejectOnceFor: "listing_1" });
     const app = createTestApp({ gateway });
     await connectAccount(app);
     const failedRun = await post(app, "/integrations/olx/stock-sync/run", {
@@ -163,19 +170,27 @@ describe("marketplace controller stock sync", () => {
     const failedJob = failedBody.createdJobs[0];
     expect(failedJob).toBeDefined();
     if (!failedJob) throw new Error("Expected failed marketplace job.");
+    const processed = await post(app, `/sync-jobs/${failedJob.id}/run`, {});
+    expect(await processed.json()).toMatchObject({ status: "failed" });
 
     const retry = await post(app, `/sync-jobs/${failedJob.id}/retry`, {
       reason: "operator requested retry",
     });
 
     expect(retry.status).toBe(200);
-    expect(await retry.json()).toMatchObject({
-      job: { status: "succeeded" },
+    const retryBody = (await retry.json()) as {
+      job: { id: string; status: string };
+      previousJobId: string;
+    };
+    expect(retryBody).toMatchObject({
+      job: { status: "queued" },
       previousJobId: failedJob.id,
     });
+    const retried = await post(app, `/sync-jobs/${retryBody.job.id}/run`, {});
+    expect(await retried.json()).toMatchObject({ status: "succeeded" });
   });
 
-  it("reports partial failure and reuses provider listings idempotently", async () => {
+  it("processes queued jobs independently and reuses provider listings", async () => {
     const gateway = createGateway({ failAlwaysFor: "listing_2" });
     const audit = createMemoryAuditSink();
     const app = createTestApp({ audit, gateway });
@@ -187,10 +202,22 @@ describe("marketplace controller stock sync", () => {
     });
     const partialBody = (await partial.json()) as MarketplaceRunBody;
     expect(partial.status).toBe(200);
-    expect(
-      partialBody.createdJobs.map((job: { status: string }) => job.status),
-    ).toEqual(["succeeded", "failed"]);
-    expect(audit.events.map((event) => event.action)).toContain(
+    expect(partialBody.createdJobs.map((job) => job.status)).toEqual([
+      "queued",
+      "queued",
+    ]);
+    const processed = await Promise.all(
+      partialBody.createdJobs.map((job) =>
+        Promise.resolve(post(app, `/sync-jobs/${job.id}/run`, {})).then(
+          (response) => response.json(),
+        ),
+      ),
+    );
+    expect(processed).toMatchObject([
+      { status: "succeeded" },
+      { status: "submitted" },
+    ]);
+    expect(audit.events.map((event) => event.action)).not.toContain(
       "marketplace.stock_sync.partial_failure",
     );
 
@@ -199,7 +226,7 @@ describe("marketplace controller stock sync", () => {
       provider: "olx",
     });
     expect(await secondRun.json()).toMatchObject({
-      createdJobs: [{ jobType: "listing_update", status: "succeeded" }],
+      createdJobs: [{ jobType: "listing_update", status: "queued" }],
       plan: { update: 1 },
     });
   });

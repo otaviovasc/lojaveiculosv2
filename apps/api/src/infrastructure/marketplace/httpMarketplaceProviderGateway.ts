@@ -9,6 +9,8 @@ import {
   exchangeToken,
 } from "./httpMarketplaceProviderGatewayAuth.js";
 import { runOlxAutouploadSync } from "./httpMarketplaceProviderGatewayOlx.js";
+import { resolveOlxCatalogMapping } from "./httpMarketplaceProviderGatewayOlxCatalog.js";
+import { reconcileOlxListingSync } from "./httpMarketplaceProviderGatewayOlxStatus.js";
 import {
   marketplaceProviderSuccessEvidence,
   readMarketplaceResponsePayload,
@@ -62,6 +64,14 @@ export function createHttpMarketplaceProviderGateway(
         grant_type: "refresh_token",
         refresh_token: refreshToken,
       }),
+    ...(options.provider === "olx"
+      ? {
+          reconcileListingSync: (input) =>
+            reconcileOlxListingSync(fetchImpl, options, input),
+          resolveCatalogMapping: (input) =>
+            resolveOlxCatalogMapping(fetchImpl, options, input),
+        }
+      : {}),
     runListingSync: (input) => runListingSync(fetchImpl, options, input),
   };
 }
@@ -82,6 +92,7 @@ async function runListingSync(
         "Content-Type": "application/json",
       },
       method,
+      redirect: "error",
     });
     const responsePayload = await readMarketplaceResponsePayload(response);
     if (!response.ok) {
@@ -96,6 +107,7 @@ async function runListingSync(
     return {
       externalId,
       metadata: sanitizedResult(externalId, response, providerStatus),
+      operationToken: null,
       providerStatus,
     };
   }
@@ -113,6 +125,7 @@ async function runListingSync(
       "Content-Type": "application/json",
     },
     method,
+    redirect: "error",
   };
   requestInit.body = JSON.stringify(payload.body);
   const response = await fetchImpl(`${baseUrl(options)}${path}`, requestInit);
@@ -145,6 +158,7 @@ async function runListingSync(
       providerRequest: payload.attributes,
       providerResult: sanitizedResult(externalId, response, providerStatus),
     },
+    operationToken: null,
     providerStatus,
   };
 }
@@ -165,6 +179,7 @@ async function updateDuplicateListing(
         "Content-Type": "application/json",
       },
       method: "PUT",
+      redirect: "error",
     },
   );
   const responsePayload = await readMarketplaceResponsePayload(response);
@@ -182,6 +197,7 @@ async function updateDuplicateListing(
       providerRequest: payload.attributes,
       providerResult: sanitizedResult(externalId, response, providerStatus),
     },
+    operationToken: null,
     providerStatus,
   };
 }

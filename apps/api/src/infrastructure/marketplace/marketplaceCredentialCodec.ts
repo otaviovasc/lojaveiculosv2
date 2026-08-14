@@ -67,15 +67,18 @@ function redactAccountConfig(config: Record<string, unknown>) {
 }
 
 function encrypt(value: string, env: Record<string, string | undefined>) {
-  if (value.startsWith(encryptedPrefix) || value.startsWith(localPrefix)) {
-    return value;
-  }
+  if (value.startsWith(encryptedPrefix)) return value;
   const key = readEncryptionKey(env);
-  if (!key) return `${localPrefix}${Buffer.from(value).toString("base64url")}`;
+  if (!key) {
+    return value.startsWith(localPrefix)
+      ? value
+      : `${localPrefix}${Buffer.from(value).toString("base64url")}`;
+  }
+  const plaintext = value.startsWith(localPrefix) ? decodeLocal(value) : value;
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const encrypted = Buffer.concat([
-    cipher.update(value, "utf8"),
+    cipher.update(plaintext, "utf8"),
     cipher.final(),
   ]);
   return [
@@ -88,11 +91,21 @@ function encrypt(value: string, env: Record<string, string | undefined>) {
 
 function decrypt(value: string, env: Record<string, string | undefined>) {
   if (value.startsWith(localPrefix)) {
-    return Buffer.from(value.slice(localPrefix.length), "base64url").toString(
-      "utf8",
-    );
+    if (isProduction(env)) {
+      throw new Error(
+        "Local marketplace credentials are invalid in production.",
+      );
+    }
+    return decodeLocal(value);
   }
-  if (!value.startsWith(encryptedPrefix)) return value;
+  if (!value.startsWith(encryptedPrefix)) {
+    if (isProduction(env)) {
+      throw new Error(
+        "Plain marketplace credentials are invalid in production.",
+      );
+    }
+    return value;
+  }
   const key = readEncryptionKey(env);
   if (!key) throw new Error("Marketplace credential encryption key missing.");
   const [, iv, tag, encrypted] = value.split(".");
@@ -112,7 +125,7 @@ function decrypt(value: string, env: Record<string, string | undefined>) {
 function readEncryptionKey(env: Record<string, string | undefined>) {
   const configured = env.MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY;
   if (!configured) {
-    if (env.APP_ENV === "production" || env.NODE_ENV === "production") {
+    if (isProduction(env)) {
       throw new Error(
         "MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY must be configured.",
       );
@@ -120,6 +133,16 @@ function readEncryptionKey(env: Record<string, string | undefined>) {
     return null;
   }
   return createHash("sha256").update(configured).digest();
+}
+
+function decodeLocal(value: string) {
+  return Buffer.from(value.slice(localPrefix.length), "base64url").toString(
+    "utf8",
+  );
+}
+
+function isProduction(env: Record<string, string | undefined>) {
+  return env.APP_ENV === "production" || env.NODE_ENV === "production";
 }
 
 function toRecord(value: unknown): Record<string, unknown> {

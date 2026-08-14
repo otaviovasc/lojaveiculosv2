@@ -41,4 +41,19 @@ describe("OLX marketplace stock blockers", () => {
       ]),
     );
   });
+
+  it("does not require a provider year id that OLX does not accept", () => {
+    const mapping = {
+      ...createResolvedMarketplaceCatalogMapping("olx"),
+      providerYearCode: null,
+    };
+
+    expect(
+      listListingBlockers(
+        toTestMarketplaceListing("listing_1"),
+        mapping,
+        "olx",
+      ).map((blocker) => blocker.code),
+    ).not.toContain("MARKETPLACE_LISTING_MAPPING_REQUIRED");
+  });
 });

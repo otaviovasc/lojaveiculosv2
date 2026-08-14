@@ -151,7 +151,7 @@ export async function onboardOlxCrmConnection(
     () =>
       provider.configureLeads({
         accessToken: input.accessToken,
-        callbackUrl: `${base}/leads?token=${encodeURIComponent(secret)}`,
+        callbackUrl: `${base}/leads`,
         token: secret,
       }),
   );

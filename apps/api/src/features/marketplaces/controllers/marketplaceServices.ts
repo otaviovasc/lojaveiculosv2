@@ -34,6 +34,15 @@ import type {
   RetryMarketplaceSyncJobInput,
   RetryMarketplaceSyncJobResult,
 } from "../../../domains/marketplace/services/MarketplaceService/retryMarketplaceSyncJob.js";
+import {
+  listMarketplaceProcessableJobScopes,
+  processMarketplaceJobs,
+  reconcileMarketplaceSyncJob,
+} from "../../../domains/marketplace/services/MarketplaceService/reconcileMarketplaceSyncJobs.js";
+import type {
+  ProcessMarketplaceJobsInput,
+  ProcessMarketplaceJobsResult,
+} from "../../../domains/marketplace/services/MarketplaceService/marketplaceJobProcessingTypes.js";
 import { upsertMarketplaceAccount } from "../../../domains/marketplace/services/MarketplaceService/upsertMarketplaceAccount.js";
 import type { UpsertMarketplaceAccountServiceInput } from "../../../domains/marketplace/services/MarketplaceService/upsertMarketplaceAccount.js";
 import type {
@@ -63,6 +72,14 @@ export type MarketplaceServices = {
     input: CreateMarketplaceSyncJobServiceInput,
   ) => Promise<MarketplaceJob>;
   listOverview: (context: ServiceContext) => Promise<MarketplaceOverview>;
+  listProcessableJobScopes: (
+    context: ServiceContext,
+    input: { limit?: number; now?: Date },
+  ) => Promise<readonly { storeId: string; tenantId: string }[]>;
+  processJobs: (
+    context: ServiceContext,
+    input: ProcessMarketplaceJobsInput,
+  ) => Promise<ProcessMarketplaceJobsResult>;
   previewStockSync: (
     context: ServiceContext,
     input: MarketplaceStockSyncPreviewInput,
@@ -75,6 +92,10 @@ export type MarketplaceServices = {
     context: ServiceContext,
     input: ReceiveMarketplaceOAuthCallbackInput,
   ) => Promise<ReceiveMarketplaceOAuthCallbackResult>;
+  reconcileSyncJob: (
+    context: ServiceContext,
+    input: { jobId: string },
+  ) => Promise<MarketplaceJob>;
   runStockSync: (
     context: ServiceContext,
     input: MarketplaceStockSyncRunInput,
@@ -94,6 +115,7 @@ export type CreateMarketplaceServicesOptions =
   | {
       drizzleClient: DrizzleMarketplaceClient;
       gatewayRegistry?: MarketplaceServicePorts["gatewayRegistry"];
+      isMarketplaceEntitled?: MarketplaceServicePorts["isMarketplaceEntitled"];
       oauthRedirectUri?: MarketplaceServicePorts["oauthRedirectUri"];
       oauthStateStore?: MarketplaceServicePorts["oauthStateStore"];
       olxCrmOnboarding?: MarketplaceServicePorts["olxCrmOnboarding"];
@@ -113,12 +135,18 @@ export function createMarketplaceServices(
     createSyncJob: (context, input) =>
       createMarketplaceSyncJob(context, input, ports),
     listOverview: (context) => listMarketplaceOverview(context, ports),
+    listProcessableJobScopes: (context, input) =>
+      listMarketplaceProcessableJobScopes(context, input, ports),
+    processJobs: (context, input) =>
+      processMarketplaceJobs(context, input, ports),
     previewStockSync: (context, input) =>
       previewMarketplaceStockSync(context, input, ports),
     retrySyncJob: (context, input) =>
       retryMarketplaceSyncJob(context, input, ports),
     receiveOAuthCallback: (context, input) =>
       receiveMarketplaceOAuthCallback(context, input, ports),
+    reconcileSyncJob: (context, input) =>
+      reconcileMarketplaceSyncJob(context, input, ports),
     runStockSync: (context, input) =>
       runMarketplaceStockSync(context, input, ports),
     runSyncJob: (context, input) =>
@@ -136,6 +164,9 @@ function resolvePorts(
     return {
       ...(options.gatewayRegistry
         ? { gatewayRegistry: options.gatewayRegistry }
+        : {}),
+      ...(options.isMarketplaceEntitled
+        ? { isMarketplaceEntitled: options.isMarketplaceEntitled }
         : {}),
       ...(options.oauthRedirectUri
         ? { oauthRedirectUri: options.oauthRedirectUri }

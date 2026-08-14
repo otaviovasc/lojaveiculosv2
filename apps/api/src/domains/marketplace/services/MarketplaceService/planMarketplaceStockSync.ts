@@ -5,20 +5,17 @@ import {
 } from "../../../../shared/serviceContext.js";
 import type {
   MarketplaceCatalogMapping,
-  MarketplaceCatalogSnapshot,
   MarketplaceListingProjection,
   MarketplaceProvider,
   MarketplaceProviderListing,
 } from "../../ports/marketplaceRepository.js";
 import {
-  isCompleteCatalog,
   isProviderRelevant,
   listListingBlockers,
   shouldUnpublish,
 } from "./marketplaceStockPlanRules.js";
 import type {
   MarketplaceStockPlan,
-  MarketplaceStockPlanDecision,
   MarketplaceStockPlanItem,
 } from "./marketplaceStockPlanTypes.js";
 import {
@@ -26,8 +23,20 @@ import {
   type MarketplaceServicePorts,
 } from "./serviceSupport.js";
 import { assertMarketplaceAccountPreflightReady } from "./marketplaceAccountPreflight.js";
+import { readMarketplaceAccountToken } from "./marketplaceAccountPreflight.js";
+import {
+  createCatalogMappingResolver,
+  providerMapping,
+} from "../marketplaceCatalogResolution.js";
+import {
+  pendingMarketplaceStockItem,
+  readMarketplaceListingId,
+  removedListingProjection,
+} from "../marketplaceListingReconciliation.js";
+import { summarizeMarketplaceStockPlan } from "./summarizeMarketplaceStockPlan.js";
 
 export { listListingBlockers } from "./marketplaceStockPlanRules.js";
+export { summarizeMarketplaceStockPlan } from "./summarizeMarketplaceStockPlan.js";
 export type {
   MarketplaceListingBlocker,
   MarketplaceListingBlockerCode,
@@ -69,6 +78,17 @@ export async function planMarketplaceStockSync(
       : {}),
     provider: input.provider,
   });
+  const gateway = ports.gatewayRegistry?.getGateway(input.provider);
+  const mappingToken =
+    account && gateway?.resolveCatalogMapping
+      ? readMarketplaceAccountToken(account, input.provider)
+      : null;
+  const resolveCatalogMapping = createCatalogMappingResolver({
+    gateway,
+    ports,
+    provider: input.provider,
+    token: mappingToken,
+  });
   const listingsInput = {
     ...(input.listingIds ? { listingIds: input.listingIds } : {}),
     storeId: scope.storeId as never,
@@ -76,20 +96,51 @@ export async function planMarketplaceStockSync(
   };
   const listings =
     await ports.marketplaceRepository.listListingProjections(listingsInput);
+  const providerListings = account
+    ? await ports.marketplaceRepository.listProviderListings({
+        accountId: account.id,
+        ...(input.listingIds ? { listingIds: input.listingIds } : {}),
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      })
+    : [];
+  const activeJobs = await ports.marketplaceRepository.listActiveSyncJobs({
+    ...(input.listingIds ? { listingIds: input.listingIds } : {}),
+    provider: input.provider,
+    storeId: scope.storeId as never,
+    tenantId: scope.tenantId as never,
+  });
+  const activeJobsByListingId = new Map(
+    activeJobs.flatMap((job) => {
+      const listingId = readMarketplaceListingId(job.metadata.listingId);
+      return listingId ? [[listingId, job] as const] : [];
+    }),
+  );
+  const providerListingsByListingId = new Map(
+    providerListings.map((item) => [item.listingId, item]),
+  );
+  const localListingIds = new Set(listings.map((item) => item.listingId));
+  const candidates = [
+    ...listings,
+    ...providerListings
+      .filter((item) => !localListingIds.has(item.listingId))
+      .map((item) => removedListingProjection(item.listingId)),
+  ];
 
   const items = await Promise.all(
-    listings.map(async (listing) => {
-      const [providerListing, catalogMapping] = await Promise.all([
-        account
-          ? ports.marketplaceRepository.findProviderListing({
-              accountId: account.id,
-              listingId: listing.listingId,
-              storeId: scope.storeId as never,
-              tenantId: scope.tenantId as never,
-            })
-          : Promise.resolve(null),
-        findMappingIfPossible(ports, input.provider, listing.catalog),
-      ]);
+    candidates.map(async (listing) => {
+      const providerListing =
+        providerListingsByListingId.get(listing.listingId) ?? null;
+      if (activeJobsByListingId.has(listing.listingId)) {
+        return pendingMarketplaceStockItem(
+          listing,
+          providerListing,
+          input.provider,
+        );
+      }
+      const catalogMapping = isProviderRelevant(listing)
+        ? await resolveCatalogMapping(listing.catalog)
+        : null;
       return planMarketplaceStockItem({
         catalogMapping,
         listing,
@@ -98,7 +149,7 @@ export async function planMarketplaceStockSync(
       });
     }),
   );
-  const plan = summarizePlan(items);
+  const plan = summarizeMarketplaceStockPlan(items);
 
   await context.audit.record({
     action: "marketplace.stock_sync.preview",
@@ -108,7 +159,8 @@ export async function planMarketplaceStockSync(
     entityType: "marketplace_stock_sync",
     metadata: {
       blocked: plan.blocked,
-      listingCount: listings.length,
+      listingCount: plan.total,
+      pending: plan.pending,
       permission: "marketplace.inventory_sync",
       provider: input.provider,
       publish: plan.publish,
@@ -140,6 +192,7 @@ export function planMarketplaceStockItem(input: {
       jobType: null,
       listing: input.listing,
       provider: input.provider,
+      providerMapping: null,
     };
   }
   if (shouldUnpublish(input.listing)) {
@@ -150,6 +203,7 @@ export function planMarketplaceStockItem(input: {
       jobType: externalId ? "listing_unpublish" : null,
       listing: input.listing,
       provider: input.provider,
+      providerMapping: null,
     };
   }
 
@@ -166,6 +220,7 @@ export function planMarketplaceStockItem(input: {
       jobType: null,
       listing: input.listing,
       provider: input.provider,
+      providerMapping: providerMapping(input.catalogMapping, input.provider),
     };
   }
 
@@ -176,37 +231,6 @@ export function planMarketplaceStockItem(input: {
     jobType: externalId ? "listing_update" : "listing_publish",
     listing: input.listing,
     provider: input.provider,
+    providerMapping: providerMapping(input.catalogMapping, input.provider),
   };
-}
-
-function summarizePlan(
-  items: readonly MarketplaceStockPlanItem[],
-): MarketplaceStockPlan {
-  return {
-    blocked: count(items, "blocked"),
-    items: [...items],
-    noOp: count(items, "no_op"),
-    publish: count(items, "publish"),
-    total: items.length,
-    unpublish: count(items, "unpublish"),
-    update: count(items, "update"),
-  };
-}
-
-async function findMappingIfPossible(
-  ports: MarketplaceServicePorts,
-  provider: MarketplaceProvider,
-  catalog: MarketplaceCatalogSnapshot | null,
-) {
-  if (!catalog || catalog.source !== "fipe" || !isCompleteCatalog(catalog)) {
-    return null;
-  }
-  return ports.marketplaceRepository.findCatalogMapping({ catalog, provider });
-}
-
-function count(
-  items: readonly MarketplaceStockPlanItem[],
-  decision: MarketplaceStockPlanDecision,
-) {
-  return items.filter((item) => item.decision === decision).length;
 }

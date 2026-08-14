@@ -14,7 +14,10 @@ describe("listMarketplaceOverview", () => {
     const repository = createTestMarketplaceRepository();
     await repository.upsertAccount({
       config: {
-        connection: { providerAccountId: "provider_1" },
+        connection: {
+          providerAccountId: "provider_1",
+          scope: "autoupload",
+        },
         credentials: { accessToken: "operational-token" },
       },
       provider: "olx",

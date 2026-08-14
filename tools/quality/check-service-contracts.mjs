@@ -18,14 +18,23 @@ const nonEntrypointFiles = new Set([
   "leadVisitSupport.ts",
   "marketplaceAccountPreflight.ts",
   "marketplaceAccountPreflightMessages.ts",
+  "marketplaceCatalogResolution.ts",
   "marketplaceErrors.ts",
+  "marketplaceJobIdempotency.ts",
+  "marketplaceJobProcessingTypes.ts",
   "marketplaceJobPermissions.ts",
+  "marketplaceListingReconciliation.ts",
+  "marketplaceReconciliationSupport.ts",
   "marketplaceStockPlanRules.ts",
   "marketplaceStockPlanTypes.ts",
   "materializeFinanceAutoEntries.ts",
+  "claimMarketplaceSyncJob.ts",
+  "reconcileMarketplaceClaim.ts",
   "runMarketplaceSyncJobAudit.ts",
+  "runMarketplaceSyncJobSupport.ts",
   "sendWhatsappVehicleSupport.ts",
   "serviceSupport.ts",
+  "summarizeMarketplaceStockPlan.ts",
   "testSupport.ts",
   "types.ts",
   "executeWhatsappSessionCommand.ts",
@@ -60,6 +69,16 @@ function isServiceFile(file) {
 const failures = [];
 const domainFiles = walk(domainsRoot);
 const delegatedContractHelpers = new Map([
+  [
+    "claimMarketplaceSyncJob(",
+    {
+      file: join(
+        domainsRoot,
+        "marketplace/services/MarketplaceService/claimMarketplaceSyncJob.ts",
+      ),
+      requiredContracts: ["assertPermission(", "context.logger."],
+    },
+  ],
   [
     "executeAutomationStepDecision(",
     {

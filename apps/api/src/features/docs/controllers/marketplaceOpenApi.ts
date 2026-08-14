@@ -83,8 +83,12 @@ export const marketplacePaths = {
       operationId: "createMarketplaceSyncJob",
       security: [{ bearerAuth: ["marketplace.inventory_sync"] }],
       parameters: [providerParameter()],
+      requestBody: directMarketplaceJobRequestBody,
       responses: {
-        "200": { description: "Queued sync job." },
+        "200": {
+          description:
+            "Queued the command, or returned its existing durable job when commandId was already accepted.",
+        },
         "400": { description: "Provider connection is missing." },
       },
     },
@@ -111,14 +115,14 @@ export const marketplacePaths = {
   "/api/v1/marketplaces/integrations/{provider}/stock-sync/run": {
     post: {
       tags: ["Marketplaces"],
-      summary: "Queue and run marketplace stock synchronization",
+      summary: "Queue marketplace stock synchronization",
       operationId: "runMarketplaceStockSync",
       security: [{ bearerAuth: ["marketplace.inventory_sync"] }],
       parameters: [providerParameter()],
       responses: {
         "200": {
           description:
-            "Created sync jobs after planning, ran provider listing calls synchronously, and returned job statuses.",
+            "Created durable sync jobs after planning. A bounded worker performs provider calls and reconciles asynchronous status.",
         },
         "400": {
           description:
@@ -147,7 +151,7 @@ export const marketplacePaths = {
       responses: {
         "200": {
           description:
-            "Queued and ran a retry job with sanitized metadata linked to the previous failed job.",
+            "Queued a retry job with sanitized metadata linked to the previous failed job.",
         },
         "400": { description: "Previous job metadata is invalid." },
         "409": { description: "Previous job is not retryable." },
@@ -171,8 +175,31 @@ export const marketplacePaths = {
       responses: {
         "200": {
           description:
-            "Ran the provider call and marked the job succeeded or failed. Listing publish/update sync fails closed before provider IO unless the projection is not deleted, published, public-visible, backed by an eligible unit, and has at least one public photo. Listing unpublish can run from the stored provider external id after the local listing projection is gone.",
+            "Claimed and submitted the queued provider command. Asynchronous OLX acceptance remains submitted until status reconciliation confirms the exact ad and operation. Listing publish/update sync fails closed before provider IO unless the projection is not deleted, published, public-visible, backed by an eligible unit, and has at least one public photo. Listing unpublish can run from the stored provider external id after the local listing projection is gone.",
         },
+      },
+    },
+  },
+  "/api/v1/marketplaces/sync-jobs/{jobId}/reconcile": {
+    post: {
+      tags: ["Marketplaces"],
+      summary: "Refresh one submitted marketplace operation status",
+      operationId: "reconcileMarketplaceSyncJob",
+      security: [{ bearerAuth: ["marketplace.inventory_sync"] }],
+      parameters: [
+        {
+          in: "path",
+          name: "jobId",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        "200": {
+          description:
+            "Returned the durable job after a scoped provider-status check. Sensitive operation tokens are never returned.",
+        },
+        "404": { description: "Scoped marketplace job was not found." },
       },
     },
   },
@@ -186,3 +213,4 @@ function providerParameter() {
     schema: { type: "string", enum: ["olx", "mercado_livre"] },
   };
 }
+import { directMarketplaceJobRequestBody } from "./marketplaceOpenApiSchemas.js";

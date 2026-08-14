@@ -16,6 +16,9 @@ describe("marketplaceLabels", () => {
       "Conta pausada",
     );
     expect(getMarketplaceJobStatusLabel("queued")).toBe("Na fila");
+    expect(getMarketplaceJobStatusLabel("submitted")).toBe(
+      "Enviado; aguardando canal",
+    );
     expect(getMarketplaceJobTypeLabel("listing_unpublish")).toBe(
       "Remover anúncio",
     );

@@ -193,6 +193,7 @@ function createMarketplaceApi(
           tenantId: "tenant_1",
         })),
     previewStockSync: vi.fn(),
+    reconcileSyncJob: vi.fn(),
     retrySyncJob: vi.fn(),
     runSyncJob: vi.fn(),
     runStockSync: vi.fn(),

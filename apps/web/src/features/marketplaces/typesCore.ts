@@ -80,7 +80,7 @@ export type MarketplaceProviderCapability = {
 };
 
 export type MarketplaceJobStatus =
-  "cancelled" | "failed" | "queued" | "running" | "succeeded";
+  "cancelled" | "failed" | "queued" | "running" | "submitted" | "succeeded";
 
 export type MarketplaceSyncJobType =
   "listing_publish" | "listing_unpublish" | "listing_update";
@@ -108,9 +108,15 @@ export type MarketplaceJobMetadata = {
   };
   providerResult?: {
     externalId?: string | null;
+    listingUrl?: string | null;
+    message?: string | null;
+    providerListingId?: string | null;
     providerRequestId?: string | null;
     providerStatus?: string | null;
   };
+  reconciliationLastCheckedAt?: string;
+  reconciliationMessage?: string;
+  reconciliationRequired?: boolean;
   retryOfJobId?: string;
   stockSync?: true;
 };
@@ -137,7 +143,6 @@ export type MarketplaceOverview = {
 };
 
 export type UpsertMarketplaceAccountInput = {
-  config?: Record<string, unknown>;
   provider: MarketplaceProvider;
   status: MarketplaceAccountStatus;
 };

@@ -18,6 +18,7 @@
     "crm:retention:process": "tsx src/jobs/crm-retention.ts",
     "crm:bot:events:process": "tsx src/jobs/processExternalBotEvents.ts",
     "crm:bot:effects:process": "tsx src/jobs/processExternalBotEffects.ts",
+    "marketplace:jobs:process": "tsx src/jobs/processMarketplaceJobs.ts",
     "build": "tsc --noEmit",
     "start": "node --import tsx src/main.ts",
     "typecheck": "tsc --noEmit",

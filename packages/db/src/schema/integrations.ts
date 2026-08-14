@@ -2,6 +2,7 @@ import {
   check,
   foreignKey,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -25,6 +26,7 @@ export const integrationStatus = pgEnum("integration_status", [
 export const integrationJobStatus = pgEnum("integration_job_status", [
   "queued",
   "running",
+  "submitted",
   "succeeded",
   "failed",
   "cancelled",
@@ -156,9 +158,35 @@ export const integrationJobs = pgTable(
       .notNull()
       .references(() => integrationAccounts.id),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    dispatchLeaseExpiresAt: timestamp("dispatch_lease_expires_at", {
+      withTimezone: true,
+    }),
+    dispatchLeaseOwner: varchar("dispatch_lease_owner", { length: 191 }),
     errorMessage: varchar("error_message", { length: 500 }),
+    idempotencyKey: varchar("idempotency_key", { length: 64 }),
     jobType: varchar("job_type", { length: 120 }).notNull(),
     metadata: jsonb("metadata").notNull().default({}),
+    providerOperationExpiresAt: timestamp("provider_operation_expires_at", {
+      withTimezone: true,
+    }),
+    providerOperationTokenCiphertext: text(
+      "provider_operation_token_ciphertext",
+    ),
+    reconciliationAttemptCount: integer("reconciliation_attempt_count")
+      .notNull()
+      .default(0),
+    reconciliationLastCheckedAt: timestamp("reconciliation_last_checked_at", {
+      withTimezone: true,
+    }),
+    reconciliationLeaseExpiresAt: timestamp("reconciliation_lease_expires_at", {
+      withTimezone: true,
+    }),
+    reconciliationLeaseOwner: varchar("reconciliation_lease_owner", {
+      length: 191,
+    }),
+    reconciliationNextAttemptAt: timestamp("reconciliation_next_attempt_at", {
+      withTimezone: true,
+    }),
     status: integrationJobStatus("status").notNull().default("queued"),
     storeId: uuid("store_id")
       .notNull()
@@ -170,6 +198,34 @@ export const integrationJobs = pgTable(
   (table) => [
     index("integration_jobs_account_id_idx").on(table.accountId),
     index("integration_jobs_store_status_idx").on(table.storeId, table.status),
+    index("integration_jobs_stale_dispatch_idx")
+      .on(table.tenantId, table.storeId, table.dispatchLeaseExpiresAt)
+      .where(sql`${table.status} = 'running'`),
+    uniqueIndex("integration_jobs_account_idempotency_unique")
+      .on(table.accountId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
+    index("integration_jobs_reconciliation_due_idx")
+      .on(
+        table.tenantId,
+        table.storeId,
+        table.reconciliationNextAttemptAt,
+        table.reconciliationLeaseExpiresAt,
+      )
+      .where(sql`${table.status} = 'submitted'`),
+    check(
+      "integration_jobs_dispatch_lease_consistent",
+      sql`(
+        (${table.status} = 'running' AND ${table.dispatchLeaseOwner} IS NOT NULL AND ${table.dispatchLeaseExpiresAt} IS NOT NULL)
+        OR (${table.status} <> 'running' AND ${table.dispatchLeaseOwner} IS NULL AND ${table.dispatchLeaseExpiresAt} IS NULL)
+      )`,
+    ),
+    check(
+      "integration_jobs_reconciliation_lease_consistent",
+      sql`(
+        (${table.reconciliationLeaseOwner} IS NULL AND ${table.reconciliationLeaseExpiresAt} IS NULL)
+        OR (${table.status} = 'submitted' AND ${table.reconciliationLeaseOwner} IS NOT NULL AND ${table.reconciliationLeaseExpiresAt} IS NOT NULL)
+      )`,
+    ),
   ],
 );
 

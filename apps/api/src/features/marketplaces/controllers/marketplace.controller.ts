@@ -1,14 +1,11 @@
 import { Hono, type Context } from "hono";
-import type { z } from "zod";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import {
-  createHttpServiceContext,
-  HttpContextAuthenticationError,
-} from "../../../infrastructure/http/createHttpServiceContext.js";
+import { createHttpServiceContext } from "../../../infrastructure/http/createHttpServiceContext.js";
 import {
   createMarketplaceSyncJobSchema,
   completeMarketplaceConnectionSchema,
   createMarketplaceConnectUrlSchema,
+  ensureMarketplaceProviderMatch,
   marketplaceStockSyncPreviewSchema,
   marketplaceStockSyncRunSchema,
   marketplaceSyncJobRetrySchema,
@@ -19,9 +16,10 @@ import {
   type MarketplaceServices,
 } from "./marketplaceServices.js";
 import {
-  marketplaceErrorResponse,
-  MarketplaceRequestValidationError,
-} from "./marketplaceErrorResponses.js";
+  createProtectedMarketplaceContext as createProtectedContext,
+  handleMarketplace,
+  parseMarketplaceJson as parseJson,
+} from "./marketplace.controller.support.js";
 
 export type MarketplaceContextFactory = (
   context: Context,
@@ -83,14 +81,16 @@ export function createMarketplaceFeature(
   feature.put("/integrations/:provider", async (context) =>
     handleMarketplace(context, async () => {
       const input = await parseJson(context, upsertMarketplaceAccountSchema);
-      ensureProviderMatch(context.req.param("provider"), input.provider);
+      ensureMarketplaceProviderMatch(
+        context.req.param("provider"),
+        input.provider,
+      );
       const serviceContext = await createProtectedContext(
         context,
         contextFactory,
       );
       return context.json(
         await services.upsertAccount(serviceContext, {
-          ...(input.config !== undefined ? { config: input.config } : {}),
           provider: input.provider,
           status: input.status,
         }),
@@ -101,7 +101,10 @@ export function createMarketplaceFeature(
   feature.post("/integrations/:provider/sync-jobs", async (context) =>
     handleMarketplace(context, async () => {
       const input = await parseJson(context, createMarketplaceSyncJobSchema);
-      ensureProviderMatch(context.req.param("provider"), input.provider);
+      ensureMarketplaceProviderMatch(
+        context.req.param("provider"),
+        input.provider,
+      );
       const serviceContext = await createProtectedContext(
         context,
         contextFactory,
@@ -119,7 +122,10 @@ export function createMarketplaceFeature(
   feature.post("/integrations/:provider/stock-sync/preview", async (context) =>
     handleMarketplace(context, async () => {
       const input = await parseJson(context, marketplaceStockSyncPreviewSchema);
-      ensureProviderMatch(context.req.param("provider"), input.provider);
+      ensureMarketplaceProviderMatch(
+        context.req.param("provider"),
+        input.provider,
+      );
       const serviceContext = await createProtectedContext(
         context,
         contextFactory,
@@ -136,7 +142,10 @@ export function createMarketplaceFeature(
   feature.post("/integrations/:provider/stock-sync/run", async (context) =>
     handleMarketplace(context, async () => {
       const input = await parseJson(context, marketplaceStockSyncRunSchema);
-      ensureProviderMatch(context.req.param("provider"), input.provider);
+      ensureMarketplaceProviderMatch(
+        context.req.param("provider"),
+        input.provider,
+      );
       const serviceContext = await createProtectedContext(
         context,
         contextFactory,
@@ -167,6 +176,20 @@ export function createMarketplaceFeature(
     }),
   );
 
+  feature.post("/sync-jobs/:jobId/reconcile", async (context) =>
+    handleMarketplace(context, async () => {
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.reconcileSyncJob(serviceContext, {
+          jobId: context.req.param("jobId"),
+        }),
+      );
+    }),
+  );
+
   feature.post("/sync-jobs/:jobId/run", async (context) =>
     handleMarketplace(context, async () => {
       const serviceContext = await createProtectedContext(
@@ -182,59 +205,4 @@ export function createMarketplaceFeature(
   );
 
   return feature;
-}
-
-async function createProtectedContext(
-  context: Context,
-  contextFactory: MarketplaceContextFactory,
-) {
-  const serviceContext = await contextFactory(context);
-  if (serviceContext.actor.kind !== "user") {
-    throw new HttpContextAuthenticationError(
-      "Marketplace requires user context.",
-    );
-  }
-  return serviceContext;
-}
-
-async function parseJson<Schema extends z.ZodType>(
-  context: Context,
-  schema: Schema,
-): Promise<z.infer<Schema>> {
-  let payload: unknown;
-  try {
-    payload = await context.req.json();
-  } catch {
-    throw new MarketplaceRequestValidationError("Request body is invalid.");
-  }
-  const result = schema.safeParse(payload);
-  if (!result.success) {
-    throw new MarketplaceRequestValidationError("Request body is invalid.", {
-      issues: result.error.issues.map((issue) => ({
-        code: issue.code,
-        path: issue.path.join("."),
-      })),
-    });
-  }
-  return result.data;
-}
-
-async function handleMarketplace(
-  context: Context,
-  action: () => Promise<Response>,
-): Promise<Response> {
-  try {
-    return await action();
-  } catch (error) {
-    return marketplaceErrorResponse(context, error);
-  }
-}
-
-function ensureProviderMatch(routeProvider: string, bodyProvider: string) {
-  if (routeProvider !== bodyProvider) {
-    throw new MarketplaceRequestValidationError("Provider route mismatch.", {
-      bodyProvider,
-      routeProvider,
-    });
-  }
 }

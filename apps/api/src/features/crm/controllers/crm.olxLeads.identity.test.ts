@@ -109,6 +109,21 @@ describe("OLX Leads inbound identity", () => {
     );
     expect(await listLeads(crmRepository)).toHaveLength(2);
   });
+
+  it("rejects a changed replay with the same official externalId", async () => {
+    const connection = createOlxConnection();
+    const { app } = identityTestApp([connection]);
+    const payload = { ...validPayload(), externalId: "lead-1" };
+
+    const first = await postLead(app, connection.id, payload);
+    const replay = await postLead(app, connection.id, {
+      ...payload,
+      message: "Conteúdo divergente",
+    });
+
+    expect(first.status).toBe(200);
+    expect(replay.status).toBe(409);
+  });
 });
 
 function identityTestApp(
@@ -186,8 +201,8 @@ function postLead(
     {
       body: JSON.stringify(payload),
       headers: {
+        authorization: `Bearer ${olxWebhookSecret}`,
         "content-type": "application/json",
-        "x-olx-webhook-secret": olxWebhookSecret,
       },
       method: "POST",
     },

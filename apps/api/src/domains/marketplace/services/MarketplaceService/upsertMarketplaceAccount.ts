@@ -35,8 +35,14 @@ export async function upsertMarketplaceAccount(
     }),
   );
 
+  const existing = await ports.marketplaceRepository.findAccount({
+    provider: input.provider,
+    storeId: scope.storeId as never,
+    tenantId: scope.tenantId as never,
+  });
+
   const account = await ports.marketplaceRepository.upsertAccount({
-    config: sanitizeConfig(input.config ?? {}),
+    config: existing?.config ?? sanitizeConfig(input.config ?? {}),
     provider: input.provider,
     status: input.status,
     storeId: scope.storeId as never,

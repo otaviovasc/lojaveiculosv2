@@ -4,6 +4,10 @@ import type {
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
 import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
+  fetchOlx,
+  readBoundedOlxRecord,
+} from "./httpMarketplaceProviderGatewayOlxRequest.js";
+import {
   baseUrl,
   expiresAt,
   MarketplaceProviderGatewayError,
@@ -24,12 +28,20 @@ export async function exchangeToken(
       : {}),
     ...values,
   });
-  const response = await fetchImpl(options.tokenUrl, {
+  const request: RequestInit = {
     body,
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     method: "POST",
-  });
-  const payload = (await response.json()) as Record<string, unknown>;
+    redirect: "error",
+  };
+  const response =
+    options.provider === "olx"
+      ? await fetchOlx(fetchImpl, options.tokenUrl, request)
+      : await fetchImpl(options.tokenUrl, request);
+  const payload =
+    options.provider === "olx"
+      ? await readBoundedOlxRecord(response)
+      : ((await response.json()) as Record<string, unknown>);
   if (!response.ok) {
     throw providerHttpError(options.provider, response, payload, {
       tokenRefresh: values.grant_type === "refresh_token",
@@ -92,6 +104,7 @@ export async function checkAccount(
   const response = await fetchImpl(`${baseUrl(options)}${path}`, {
     headers: { Authorization: `Bearer ${token.accessToken}` },
     method: "GET",
+    redirect: "error",
   });
   const payload = (await response.json().catch(() => ({}))) as Record<
     string,
@@ -138,7 +151,7 @@ async function postOlxAccountCheck(
   token: MarketplaceTokenSet,
   path: string,
 ) {
-  const response = await fetchImpl(`${baseUrl(options)}${path}`, {
+  const response = await fetchOlx(fetchImpl, `${baseUrl(options)}${path}`, {
     body: JSON.stringify({ access_token: token.accessToken }),
     headers: {
       "Content-Type": "application/json;charset=UTF-8",
@@ -146,10 +159,7 @@ async function postOlxAccountCheck(
     },
     method: "POST",
   });
-  const payload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const payload = await readBoundedOlxRecord(response);
   return { payload, response };
 }
 

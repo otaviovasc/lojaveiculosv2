@@ -140,6 +140,23 @@ export function buildOlxLeadProviderReference(identityKey: string) {
   return `olx-lead:${createHash("sha256").update(identityKey).digest("hex")}`;
 }
 
+export function digestOlxLeadReceipt(receipt: OlxLeadReceiptPayload) {
+  const canonical = {
+    ...receipt,
+    adsInfo: Object.fromEntries(
+      Object.entries(receipt.adsInfo).sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
+    ),
+    buyerEmail: receipt.buyerEmail.trim().toLowerCase(),
+    buyerName: receipt.buyerName.trim(),
+    linkAd: receipt.linkAd.trim(),
+    listId: receipt.listId.trim(),
+    message: receipt.message.trim(),
+  };
+  return createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
+}
+
 export function clearOlxLeadReceiptPayload(
   payload: Record<string, unknown>,
   clearedAt: Date,

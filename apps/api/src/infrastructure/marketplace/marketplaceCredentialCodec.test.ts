@@ -29,4 +29,30 @@ describe("createMarketplaceCredentialCodec", () => {
       refreshToken: "[redacted]",
     });
   });
+
+  it("rejects local and plaintext credential rows in production", () => {
+    const codec = createMarketplaceCredentialCodec({
+      APP_ENV: "production",
+      MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY: "test-key",
+    });
+
+    expect(() => codec.decryptSecret("local:c2VjcmV0")).toThrow(
+      /invalid in production/i,
+    );
+    expect(() => codec.decryptSecret("plaintext-secret")).toThrow(
+      /invalid in production/i,
+    );
+  });
+
+  it("re-encrypts a local credential when encoding for production", () => {
+    const codec = createMarketplaceCredentialCodec({
+      APP_ENV: "production",
+      MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY: "test-key",
+    });
+
+    const encrypted = codec.encryptSecret("local:c2VjcmV0");
+
+    expect(encrypted).toMatch(/^enc:/);
+    expect(codec.decryptSecret(encrypted)).toBe("secret");
+  });
 });

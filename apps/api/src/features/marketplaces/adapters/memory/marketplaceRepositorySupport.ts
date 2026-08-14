@@ -8,6 +8,7 @@ import type {
   MarketplaceProviderListing,
 } from "../../../../domains/marketplace/ports/marketplaceRepository.js";
 import { readMarketplaceProviderCapabilities } from "../../../../domains/marketplace/readModels/marketplaceProviderCapabilities.js";
+export { MemoryMarketplaceReconciliation } from "./memoryMarketplaceReconciliation.js";
 
 export const memoryMarketplaceProviders = [
   "olx",

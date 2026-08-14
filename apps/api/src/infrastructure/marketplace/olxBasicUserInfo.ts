@@ -1,8 +1,14 @@
+import {
+  fetchOlx,
+  readBoundedOlxRecord,
+} from "./httpMarketplaceProviderGatewayOlxRequest.js";
+
 export async function fetchOlxBasicUserInfo(
   fetchImpl: typeof fetch,
   input: { accessToken: string; baseUrl: string; signal?: AbortSignal },
 ) {
-  const response = await fetchImpl(
+  const response = await fetchOlx(
+    fetchImpl,
     `${input.baseUrl}/oauth_api/basic_user_info`,
     {
       body: JSON.stringify({ access_token: input.accessToken }),
@@ -14,9 +20,6 @@ export async function fetchOlxBasicUserInfo(
       ...(input.signal ? { signal: input.signal } : {}),
     },
   );
-  const payload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const payload = await readBoundedOlxRecord(response);
   return { payload, response };
 }

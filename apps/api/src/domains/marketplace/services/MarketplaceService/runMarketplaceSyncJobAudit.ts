@@ -8,7 +8,7 @@ import { permissionForMarketplaceJob } from "./marketplaceJobPermissions.js";
 export async function recordRunAudit(
   context: ServiceContext,
   job: MarketplaceJob,
-  outcome: "failed" | "succeeded",
+  outcome: "failed" | "submitted" | "succeeded",
   errorMessage: string | null,
 ) {
   context.logger.info(
@@ -34,7 +34,7 @@ export async function recordRunAudit(
       provider: job.provider,
       status: job.status,
     },
-    outcome,
+    outcome: outcome === "failed" ? "failed" : "succeeded",
     requestId: context.requestId,
     storeId: context.storeId,
     tenantId: context.tenantId,
@@ -43,9 +43,11 @@ export async function recordRunAudit(
 
   await context.audit.record({
     action:
-      outcome === "succeeded"
-        ? "marketplace.sync_job.succeeded"
-        : "marketplace.sync_job.failed",
+      outcome === "submitted"
+        ? "marketplace.sync_job.submitted"
+        : outcome === "succeeded"
+          ? "marketplace.sync_job.succeeded"
+          : "marketplace.sync_job.failed",
     actor: context.actor,
     category: "data_change",
     entityId: job.id,
@@ -56,13 +58,15 @@ export async function recordRunAudit(
       provider: job.provider,
       status: job.status,
     },
-    outcome,
+    outcome: outcome === "failed" ? "failed" : "succeeded",
     requestId: context.requestId,
     storeId: context.storeId,
     tenantId: context.tenantId,
     summary:
-      outcome === "succeeded"
-        ? "Marketplace sync job succeeded"
-        : "Marketplace sync job failed",
+      outcome === "submitted"
+        ? "Marketplace sync job was submitted for provider processing"
+        : outcome === "succeeded"
+          ? "Marketplace sync job succeeded"
+          : "Marketplace sync job failed",
   });
 }

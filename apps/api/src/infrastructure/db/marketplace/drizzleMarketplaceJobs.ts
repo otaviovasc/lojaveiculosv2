@@ -1,22 +1,35 @@
 import { and, eq } from "drizzle-orm";
-import {
-  integrationAccounts,
-  integrationJobs,
-  vehicleProviderListings,
-} from "@lojaveiculosv2/db";
+import { integrationAccounts, integrationJobs } from "@lojaveiculosv2/db";
 import type {
   MarketplaceJob,
   MarketplaceProvider,
 } from "../../../domains/marketplace/ports/marketplaceRepository.js";
-import { createMarketplaceCredentialCodec } from "../../marketplace/marketplaceCredentialCodec.js";
+import type { MarketplaceCredentialCodec } from "../../marketplace/marketplaceCredentialCodec.js";
 import type { DrizzleMarketplaceClient } from "./drizzleMarketplaceRepository.js";
-import { toAccount, toJob } from "./drizzleMarketplaceMappers.js";
+import { toJob } from "./drizzleMarketplaceMappers.js";
+import { sanitizeMarketplaceMetadata } from "./drizzleMarketplaceMetadata.js";
+import { applyProviderListingTransition } from "./drizzleMarketplaceProviderListingTransition.js";
 
 export async function markJobRunning(
   db: DrizzleMarketplaceClient,
-  input: { jobId: string; storeId: string; tenantId: string },
-): Promise<MarketplaceJob> {
-  return updateJob(db, input, { status: "running" });
+  input: {
+    dispatchLeaseExpiresAt: Date;
+    dispatchLeaseOwner: string;
+    jobId: string;
+    storeId: string;
+    tenantId: string;
+  },
+): Promise<MarketplaceJob | null> {
+  const [row] = await db
+    .update(integrationJobs)
+    .set({
+      dispatchLeaseExpiresAt: input.dispatchLeaseExpiresAt,
+      dispatchLeaseOwner: input.dispatchLeaseOwner,
+      status: "running",
+    })
+    .where(and(jobScopeFilter(input), eq(integrationJobs.status, "queued")))
+    .returning();
+  return row ? toPublicJob(db, row, input) : null;
 }
 
 export async function findSyncJob(
@@ -26,42 +39,39 @@ export async function findSyncJob(
   const [row] = await db
     .select()
     .from(integrationJobs)
-    .where(
-      and(
-        eq(integrationJobs.id, input.jobId),
-        eq(integrationJobs.storeId, input.storeId),
-        eq(integrationJobs.tenantId, input.tenantId),
-      ),
-    )
+    .where(jobScopeFilter(input))
     .limit(1);
-  if (!row) return null;
-  const account = await findAccountById(db, row.accountId);
-  return toJob(row, account?.provider ?? "olx");
+  return row ? toPublicJob(db, row, input) : null;
 }
 
 export async function markJobFailed(
   db: DrizzleMarketplaceClient,
   input: {
     completedAt: Date;
+    dispatchLeaseOwner: string;
     errorMessage: string;
     jobId: string;
     metadata?: Record<string, unknown>;
     storeId: string;
     tenantId: string;
   },
-): Promise<MarketplaceJob> {
-  return updateJob(db, input, {
+): Promise<MarketplaceJob | null> {
+  return updateRunningClaim(db, input, {
     completedAt: input.completedAt,
     errorMessage: input.errorMessage,
-    ...(input.metadata ? { metadata: input.metadata } : {}),
+    ...(input.metadata
+      ? { metadata: sanitizeMarketplaceMetadata(input.metadata) }
+      : {}),
+    ...terminalReconciliationValues(input.completedAt),
     status: "failed",
   });
 }
 
-export async function markJobCompleted(
+export function markJobCompleted(
   db: DrizzleMarketplaceClient,
   input: {
     completedAt: Date;
+    dispatchLeaseOwner: string;
     externalId?: string | null;
     jobId: string;
     listingId?: string | null;
@@ -70,38 +80,63 @@ export async function markJobCompleted(
     storeId: string;
     tenantId: string;
   },
-): Promise<MarketplaceJob> {
-  const job = await updateJob(db, input, {
-    completedAt: input.completedAt,
-    ...(input.metadata ? { metadata: input.metadata } : {}),
-    status: "succeeded",
+): Promise<MarketplaceJob | null> {
+  return db.transaction(async (transaction) => {
+    const client = transaction as DrizzleMarketplaceClient;
+    const metadata = sanitizeMarketplaceMetadata(input.metadata ?? {});
+    const job = await updateRunningClaim(client, input, {
+      completedAt: input.completedAt,
+      errorMessage: null,
+      ...(input.metadata ? { metadata } : {}),
+      ...terminalReconciliationValues(input.completedAt),
+      status: "succeeded",
+    });
+    if (!job) return null;
+    await applyProviderListingTransition(client, job, {
+      externalId: input.externalId ?? null,
+      listingId: input.listingId ?? null,
+      metadata,
+      storeId: input.storeId,
+      tenantId: input.tenantId,
+    });
+    return job;
   });
-  if (input.externalId && input.listingId) {
-    await db
-      .insert(vehicleProviderListings)
-      .values({
-        accountId: job.accountId,
-        externalId: input.externalId,
-        listingId: input.listingId,
-        metadata: input.metadata ?? {},
-        storeId: input.storeId,
-        tenantId: input.tenantId,
-      })
-      .onConflictDoUpdate({
-        set: {
-          externalId: input.externalId,
-          metadata: input.metadata ?? {},
-        },
-        target: [
-          vehicleProviderListings.accountId,
-          vehicleProviderListings.listingId,
-        ],
-      });
-  }
-  return job;
 }
 
-async function updateJob(
+export async function markJobSubmitted(
+  db: DrizzleMarketplaceClient,
+  codec: MarketplaceCredentialCodec,
+  input: {
+    dispatchLeaseOwner: string;
+    jobId: string;
+    listingId: string;
+    metadata: Record<string, unknown>;
+    nextAttemptAt: Date;
+    operationExpiresAt: Date | null;
+    operationToken: string | null;
+    provider: MarketplaceProvider;
+    storeId: string;
+    tenantId: string;
+  },
+): Promise<MarketplaceJob | null> {
+  return updateRunningClaim(db, input, {
+    completedAt: null,
+    errorMessage: null,
+    metadata: sanitizeMarketplaceMetadata(input.metadata),
+    providerOperationExpiresAt: input.operationExpiresAt,
+    providerOperationTokenCiphertext: input.operationToken
+      ? codec.encryptSecret(input.operationToken)
+      : null,
+    reconciliationAttemptCount: 0,
+    reconciliationLastCheckedAt: null,
+    reconciliationLeaseExpiresAt: null,
+    reconciliationLeaseOwner: null,
+    reconciliationNextAttemptAt: input.nextAttemptAt,
+    status: "submitted",
+  });
+}
+
+export async function updateJob(
   db: DrizzleMarketplaceClient,
   input: { jobId: string; storeId: string; tenantId: string },
   values: Partial<typeof integrationJobs.$inferInsert>,
@@ -109,32 +144,98 @@ async function updateJob(
   const [row] = await db
     .update(integrationJobs)
     .set(values)
+    .where(jobScopeFilter(input))
+    .returning();
+  if (!row) throw new Error(`Marketplace job not found: ${input.jobId}`);
+  return toPublicJob(db, row, input);
+}
+
+async function updateRunningClaim(
+  db: DrizzleMarketplaceClient,
+  input: {
+    dispatchLeaseOwner: string;
+    jobId: string;
+    storeId: string;
+    tenantId: string;
+  },
+  values: Partial<typeof integrationJobs.$inferInsert>,
+): Promise<MarketplaceJob | null> {
+  const [row] = await db
+    .update(integrationJobs)
+    .set({
+      ...values,
+      dispatchLeaseExpiresAt: null,
+      dispatchLeaseOwner: null,
+    })
     .where(
       and(
-        eq(integrationJobs.id, input.jobId),
-        eq(integrationJobs.storeId, input.storeId),
-        eq(integrationJobs.tenantId, input.tenantId),
+        jobScopeFilter(input),
+        eq(integrationJobs.status, "running"),
+        eq(integrationJobs.dispatchLeaseOwner, input.dispatchLeaseOwner),
       ),
     )
     .returning();
-  if (!row) throw new Error(`Marketplace job not found: ${input.jobId}`);
-  const account = await findAccountById(db, row.accountId);
-  return toJob(row, account?.provider ?? "olx");
+  return row ? toPublicJob(db, row, input) : null;
 }
 
-async function findAccountById(
+export async function toPublicJob(
   db: DrizzleMarketplaceClient,
-  accountId: string,
+  row: typeof integrationJobs.$inferSelect,
+  scope: { storeId: string; tenantId: string },
 ) {
-  const [row] = await db
-    .select()
+  const [account] = await db
+    .select({ provider: integrationAccounts.provider })
     .from(integrationAccounts)
-    .where(eq(integrationAccounts.id, accountId))
+    .where(
+      and(
+        eq(integrationAccounts.id, row.accountId),
+        eq(integrationAccounts.storeId, scope.storeId),
+        eq(integrationAccounts.tenantId, scope.tenantId),
+      ),
+    )
     .limit(1);
-  return row
-    ? toAccount(
-        row,
-        createMarketplaceCredentialCodec(process.env).redactAccountConfig,
-      )
-    : null;
+  if (!account) throw new Error(`Marketplace job account not found: ${row.id}`);
+  return toJob(row, toProvider(account.provider));
+}
+
+export function submittedOwnerFilter(input: {
+  jobId: string;
+  leaseOwner: string;
+  storeId: string;
+  tenantId: string;
+}) {
+  return and(
+    jobScopeFilter(input),
+    eq(integrationJobs.status, "submitted"),
+    eq(integrationJobs.reconciliationLeaseOwner, input.leaseOwner),
+  );
+}
+
+export function jobScopeFilter(input: {
+  jobId: string;
+  storeId: string;
+  tenantId: string;
+}) {
+  return and(
+    eq(integrationJobs.id, input.jobId),
+    eq(integrationJobs.storeId, input.storeId),
+    eq(integrationJobs.tenantId, input.tenantId),
+  );
+}
+
+export function terminalReconciliationValues(checkedAt: Date) {
+  return {
+    dispatchLeaseExpiresAt: null,
+    dispatchLeaseOwner: null,
+    providerOperationExpiresAt: null,
+    providerOperationTokenCiphertext: null,
+    reconciliationLastCheckedAt: checkedAt,
+    reconciliationLeaseExpiresAt: null,
+    reconciliationLeaseOwner: null,
+    reconciliationNextAttemptAt: null,
+  };
+}
+
+function toProvider(value: string): MarketplaceProvider {
+  return value === "mercado_livre" ? value : "olx";
 }

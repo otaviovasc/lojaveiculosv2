@@ -10,6 +10,7 @@ import type {
   MarketplaceTokenSet,
 } from "../../ports/marketplaceProviderGateway.js";
 import { MarketplaceServiceError } from "./marketplaceErrors.js";
+import { normalizedScopes } from "../../marketplaceOlxCapabilitySupport.js";
 import {
   connectionStatusForCode,
   isMarketplaceErrorCode,
@@ -42,6 +43,25 @@ export async function checkMarketplaceAccountPreflight(input: {
     token = readMarketplaceAccountToken(account, input.provider);
   } catch (error) {
     return preflightFromError(error, input.provider);
+  }
+
+  if (
+    input.provider === "olx" &&
+    !normalizedScopes(token.scope).includes("autoupload")
+  ) {
+    return {
+      accountId: token.providerAccountId,
+      requirements: [
+        {
+          code: "MARKETPLACE_ACCOUNT_REQUIREMENT_FAILED",
+          message: "OLX stock access is not authorized for this account.",
+          severity: "blocked",
+          userAction:
+            "Reconnect OLX and authorize the stock (autoupload) permission.",
+        },
+      ],
+      status: "blocked",
+    };
   }
 
   if (!input.gatewayRegistry) {

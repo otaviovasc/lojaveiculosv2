@@ -6,23 +6,25 @@ import {
 } from "../../../shared/serviceContext.js";
 import type { MarketplaceRepository } from "../../../domains/marketplace/ports/marketplaceRepository.js";
 import type {
-  MarketplaceProviderAccountStatus,
   MarketplaceProviderGateway,
   MarketplacePublishInput,
 } from "../../../domains/marketplace/ports/marketplaceProviderGateway.js";
-import {
-  createResolvedMarketplaceCatalogMapping,
-  createTestMarketplaceRepository,
-} from "../../../domains/marketplace/testSupportMarketplaceRepository.js";
+import { createTestMarketplaceRepository } from "../../../domains/marketplace/testSupportMarketplaceRepository.js";
 import { createMarketplaceFeature } from "./marketplace.controller.js";
 import { createMarketplaceOAuthCallbackFeature } from "./marketplace.oauth.controller.js";
 import { createMarketplaceServices } from "./marketplaceServices.js";
 import { createMemoryMarketplaceOAuthStateStore } from "../adapters/memory/marketplaceOAuthStateStore.js";
-import type { MarketplaceServicePorts } from "../../../domains/marketplace/services/MarketplaceService/serviceSupport.js";
+import type {
+  GatewayOptions,
+  TestAppOptions,
+} from "./marketplace.controller.testTypes.js";
+import { resolvedMarketplaceTestRepository } from "./marketplace.controller.repositoryTestSupport.js";
+
+const testRepositories = new WeakMap<Hono, MarketplaceRepository>();
 
 export function createTestApp(options: TestAppOptions = {}) {
   const app = new Hono();
-  const repository = resolvedRepository(
+  const repository = resolvedMarketplaceTestRepository(
     options.repository ?? createTestMarketplaceRepository(),
   );
   const gateway = options.gateway ?? createGateway();
@@ -93,15 +95,24 @@ export function createTestApp(options: TestAppOptions = {}) {
       services,
     }),
   );
+  testRepositories.set(app, repository);
   return app;
 }
 
 export async function connectAccount(app: Hono) {
-  return request(app, "PUT", "/integrations/olx", {
-    config: { credentials: { accessToken: "token_1" } },
+  const repository = testRepositories.get(app);
+  if (!repository) throw new Error("Marketplace test repository is missing.");
+  const account = await repository.upsertAccount({
+    config: {
+      connection: { scope: "autoupload" },
+      credentials: { accessToken: "token_1" },
+    },
     provider: "olx",
     status: "active",
+    storeId: "store_1" as never,
+    tenantId: "tenant_1" as never,
   });
+  return Response.json(account);
 }
 
 export function post(app: Hono, path: string, body: Record<string, unknown>) {
@@ -154,11 +165,27 @@ export function createGateway(options: GatewayOptions = {}) {
       };
     },
     provider: "olx",
+    reconcileListingSync: async (input) => ({
+      externalId: input.externalId,
+      listId: "123456",
+      listingUrl: "https://www.olx.com.br/item/123456",
+      message: null,
+      providerStatus: "accepted",
+      state: "accepted",
+    }),
     runListingSync: async (input) => {
       calls.push(input);
       const listingId = input.listing?.listingId;
       if (listingId && listingId === options.failAlwaysFor) {
-        throw new Error("provider down");
+        throw providerUnavailable();
+      }
+      if (
+        listingId &&
+        listingId === options.rejectOnceFor &&
+        !failedOnce.has(`rejected:${listingId}`)
+      ) {
+        failedOnce.add(`rejected:${listingId}`);
+        throw providerRejected();
       }
       if (
         listingId &&
@@ -166,7 +193,7 @@ export function createGateway(options: GatewayOptions = {}) {
         !failedOnce.has(listingId)
       ) {
         failedOnce.add(listingId);
-        throw new Error("provider down");
+        throw providerUnavailable();
       }
       const externalId = input.externalId ?? `external_${listingId ?? "item"}`;
       return {
@@ -178,12 +205,26 @@ export function createGateway(options: GatewayOptions = {}) {
             providerStatus: "active",
           },
         },
-        providerStatus: "active",
+        operationToken:
+          options.submissionStatus === "submitted" ? "operation_1" : null,
+        providerStatus: options.submissionStatus ?? "active",
       };
     },
     tokenRequests,
   };
   return gateway;
+}
+
+function providerUnavailable() {
+  return Object.assign(new Error("provider down"), {
+    code: "MARKETPLACE_PROVIDER_UNAVAILABLE",
+  });
+}
+
+function providerRejected() {
+  return Object.assign(new Error("provider rejected listing"), {
+    code: "MARKETPLACE_PROVIDER_VALIDATION_FAILED",
+  });
 }
 
 function request(
@@ -198,32 +239,3 @@ function request(
     method,
   });
 }
-
-function resolvedRepository(
-  repository: MarketplaceRepository,
-): MarketplaceRepository {
-  return {
-    ...repository,
-    findCatalogMapping: async (input) =>
-      createResolvedMarketplaceCatalogMapping(input.provider),
-  };
-}
-
-type TestAppOptions = {
-  audit?: ReturnType<typeof createMemoryAuditSink>;
-  entitlements?: string[];
-  gateway?: ReturnType<typeof createGateway>;
-  olxCrmOnboarding?: MarketplaceServicePorts["olxCrmOnboarding"];
-  permissions?: string[];
-  requestId?: string;
-  repository?: MarketplaceRepository;
-};
-
-type GatewayOptions = {
-  accessToken?: string;
-  accountStatus?: MarketplaceProviderAccountStatus;
-  failAlwaysFor?: string;
-  failOnceFor?: string;
-  failTokenExchangeOnce?: boolean;
-  scope?: string | null;
-};
