@@ -1,0 +1,1 @@
+ALTER TYPE "public"."integration_job_status" ADD VALUE 'submitted' BEFORE 'succeeded';

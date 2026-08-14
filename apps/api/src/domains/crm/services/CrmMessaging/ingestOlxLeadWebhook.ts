@@ -10,6 +10,7 @@ import type {
 import {
   buildOlxLeadProviderReference,
   createOlxLeadReceiptPayload,
+  digestOlxLeadReceipt,
   olxLeadReceiptEventType,
   sealOlxLeadReceiptPayload,
 } from "../../messaging/olxLeadReceipt.js";
@@ -107,11 +108,19 @@ export async function ingestOlxLeadWebhook(
     environment: getCrmEnvironment(ports),
     eventType: olxLeadReceiptEventType,
     payload: sealedReceipt,
+    payloadDigest: digestOlxLeadReceipt(receipt),
     provider: "olx_chat",
     providerEventId: buildOlxLeadProviderReference(receipt.identityKey),
     storeId: connection.storeId,
     tenantId: connection.tenantId,
   });
+  if (recorded.divergentReplay) {
+    await auditRejected(context, input.connectionId, "divergent_replay");
+    throw new OlxWebhookRejectedError(
+      "OLX lead webhook replay conflicts with the original event.",
+      409,
+    );
+  }
   context.logger.info("crm.lead.webhook.olx.received", {
     connectionId: connection.id,
     duplicate: !recorded.created,
@@ -137,6 +146,7 @@ async function auditRejected(
   reason:
     | "connection_unavailable"
     | "crm_entitlement_missing"
+    | "divergent_replay"
     | "invalid_payload"
     | "scope_mismatch",
 ) {

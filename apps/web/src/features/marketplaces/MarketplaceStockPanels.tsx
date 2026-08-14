@@ -1,6 +1,6 @@
 import {
   Ban,
-  CheckCircle2,
+  Clock3,
   ClipboardList,
   ListChecks,
   RefreshCcw,
@@ -45,7 +45,7 @@ export function MarketplaceStockPanel({
           <FeatureKpiStrip ariaLabel="Contagens da prévia e do lote">
             <FeatureKpiCard
               icon={ListChecks}
-              label="Total"
+              label="Anúncios na prévia"
               tone="blue"
               value={plan.total}
             />
@@ -68,10 +68,10 @@ export function MarketplaceStockPanel({
               value={plan.unpublish}
             />
             <FeatureKpiCard
-              icon={CheckCircle2}
-              label="Sem ação"
+              icon={Clock3}
+              label="Em processamento"
               tone="blue"
-              value={plan.noOp}
+              value={plan.pending}
             />
             <FeatureKpiCard
               icon={Ban}

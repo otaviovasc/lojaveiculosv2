@@ -27,7 +27,10 @@ export function MarketplaceOperationsOverview({
   const channelsRequiringAttention =
     overview.providers.length - connectedProviders;
   const pendingJobs = overview.jobs.filter(
-    (job) => job.status === "queued" || job.status === "running",
+    (job) =>
+      job.status === "queued" ||
+      job.status === "running" ||
+      job.status === "submitted",
   ).length;
   const failedJobs = overview.jobs.filter(
     (job) => job.status === "failed",
@@ -60,7 +63,7 @@ export function MarketplaceOperationsOverview({
         <FeatureKpiCard
           animationIndex={2}
           icon={Activity}
-          label="Na fila agora"
+          label="Em processamento"
           tone="blue"
           value={pendingJobs}
         />

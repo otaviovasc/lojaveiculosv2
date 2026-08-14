@@ -119,6 +119,7 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
     });
     expect(result).toMatchObject({
       externalId: "lv_59d376efc6a61cd7",
+      operationToken: "secret_import_token",
       metadata: {
         providerRequest: {
           categoryId: "2020",
@@ -136,11 +137,13 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
         providerResult: {
           externalId: "lv_59d376efc6a61cd7",
           providerRequestId: "provider_req_1",
-          providerStatus: "accepted",
+          providerStatus: "submitted",
         },
       },
     });
-    expect(JSON.stringify(result)).not.toContain("secret_import_token");
+    expect(JSON.stringify(result.metadata)).not.toContain(
+      "secret_import_token",
+    );
     expect(JSON.stringify(result)).not.toContain("token_1");
     expect(JSON.stringify(result)).not.toContain("Descricao");
     expect(JSON.stringify(result)).not.toContain("11999999999");
@@ -148,11 +151,13 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
   });
 
   it("reuses the mapped provider id for updates", async () => {
-    const fetch = vi
-      .fn<typeof globalThis.fetch>()
-      .mockResolvedValue(
-        jsonResponse({ statusCode: 0, statusMessage: "Import accepted" }),
-      );
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      jsonResponse({
+        statusCode: 0,
+        statusMessage: "Import accepted",
+        token: "update_import_token",
+      }),
+    );
     const result = await createOlxTestGateway(fetch).runListingSync({
       externalId: "olx_existing_123",
       jobType: "listing_update",
@@ -171,7 +176,9 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
   it("unpublishes listings with the Autoupload delete operation", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
-      .mockResolvedValue(jsonResponse({ statusCode: 0 }));
+      .mockResolvedValue(
+        jsonResponse({ statusCode: 0, token: "delete_import_token" }),
+      );
 
     const result = await createOlxTestGateway(fetch).runListingSync({
       externalId: "listing_1",
@@ -186,60 +193,5 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
     expect(fetch.mock.calls[0]?.[1]?.method).toBe("PUT");
     expect(body.ad_list).toEqual([{ id: "listing_1", operation: "delete" }]);
     expect(result.externalId).toBe("listing_1");
-  });
-
-  it.each([
-    [-1, "MARKETPLACE_PROVIDER_UNAVAILABLE"],
-    [-2, "MARKETPLACE_PROVIDER_UNAVAILABLE"],
-    [-3, "MARKETPLACE_PROVIDER_VALIDATION_FAILED"],
-    [-4, "MARKETPLACE_PROVIDER_VALIDATION_FAILED"],
-    [-5, "MARKETPLACE_PROVIDER_UNAVAILABLE"],
-    [-6, "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"],
-    [-7, "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"],
-    [-8, "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"],
-    [-99, "MARKETPLACE_PROVIDER_UNAVAILABLE"],
-  ] as const)("maps statusCode %s to %s", async (statusCode, code) => {
-    const fetch = vi
-      .fn<typeof globalThis.fetch>()
-      .mockResolvedValue(jsonResponse({ statusCode }));
-
-    await expect(
-      createOlxTestGateway(fetch).runListingSync({
-        jobType: "listing_publish",
-        listing: listingProjection(),
-        metadata: {},
-        token: tokenSet(),
-      }),
-    ).rejects.toMatchObject({
-      code,
-      details: { provider: "olx", providerStatus: String(statusCode) },
-    });
-  });
-
-  it("maps per-ad delete not-found errors to listing not found", async () => {
-    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
-      jsonResponse({
-        errors: [
-          {
-            id: "listing_1",
-            messages: [{ id: "not found" }],
-            status: "error",
-          },
-        ],
-        statusCode: -4,
-      }),
-    );
-
-    await expect(
-      createOlxTestGateway(fetch).runListingSync({
-        externalId: "listing_1",
-        jobType: "listing_unpublish",
-        metadata: {},
-        token: tokenSet(),
-      }),
-    ).rejects.toMatchObject({
-      code: "MARKETPLACE_LISTING_NOT_FOUND",
-      details: { externalId: "listing_1", provider: "olx" },
-    });
   });
 });

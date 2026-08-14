@@ -1,7 +1,23 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { OlxCapabilityResult } from "./marketplaceOlxCrmOnboarding.js";
 import type { MarketplaceServiceErrorCode } from "./marketplaceErrorCodes.js";
+import type {
+  MarketplaceCatalogSnapshot,
+  MarketplaceListingProjection,
+} from "./marketplaceListingProjection.js";
+import type {
+  MarketplaceJobScope,
+  MarketplaceReconciliationRepository,
+} from "./marketplaceReconciliationRepository.js";
+export type {
+  MarketplaceJobScope,
+  MarketplaceReconciliationClaim,
+} from "./marketplaceReconciliationRepository.js";
 export type { MarketplaceServiceErrorCode } from "./marketplaceErrorCodes.js";
+export type {
+  MarketplaceCatalogSnapshot,
+  MarketplaceListingProjection,
+} from "./marketplaceListingProjection.js";
 export { MarketplaceAccountMissingError } from "./marketplaceRepositoryErrors.js";
 export type MarketplaceProvider = "mercado_livre" | "olx";
 export type MarketplaceAccountStatus = "active" | "error" | "inactive";
@@ -15,7 +31,7 @@ export type MarketplaceAccountConnectionStatus =
   | "reconnect_required"
   | "refreshable";
 export type MarketplaceJobStatus =
-  "cancelled" | "failed" | "queued" | "running" | "succeeded";
+  "cancelled" | "failed" | "queued" | "running" | "submitted" | "succeeded";
 export type MarketplaceSyncJobType =
   | "inventory_sync"
   | "lead_sync"
@@ -54,60 +70,6 @@ export type MarketplaceProviderListing = {
   metadata: Record<string, unknown>;
   storeId: StoreId;
   tenantId: TenantId;
-};
-
-export type MarketplaceCatalogSnapshot = {
-  brandCode: string | null;
-  brandName: string | null;
-  fipeCode: string | null;
-  fuel: string | null;
-  modelCode: string | null;
-  modelName: string | null;
-  modelYear: number | null;
-  referenceMonth: string | null;
-  source: "fipe" | null;
-  vehicleType: "cars" | "motorcycles" | "trucks" | null;
-  yearCode: string | null;
-  yearName: string | null;
-};
-
-export type MarketplaceListingProjection = {
-  catalog: MarketplaceCatalogSnapshot | null;
-  condition: "certified_pre_owned" | "new" | "used";
-  contactPhone: string | null;
-  description: string | null;
-  doors: number | null;
-  fuelType:
-    | "diesel"
-    | "electric"
-    | "ethanol"
-    | "flex"
-    | "gasoline"
-    | "hybrid"
-    | "other"
-    | null;
-  isVisibleOnPublicSite: boolean;
-  licensePlate: string | null;
-  listingId: string;
-  locationZipCode: string | null;
-  mediaUrls: readonly string[];
-  mileageKm: number | null;
-  modelYear: number | null;
-  priceCents: number | null;
-  publicSlug: string | null;
-  selectedMedia: readonly { altText: string | null; url: string }[];
-  selectedUnitId: string | null;
-  status:
-    | "archived"
-    | "draft"
-    | "in_preparation"
-    | "published"
-    | "sold_out"
-    | "unpublished";
-  stockLabel: string | null;
-  title: string;
-  trimName: string | null;
-  vehicleType: "cars" | "motorcycles" | "trucks" | null;
 };
 
 export type MarketplaceStockSyncSummary = {
@@ -184,7 +146,7 @@ export type CreateMarketplaceJobInput = {
   tenantId: TenantId;
 };
 
-export type MarketplaceRepository = {
+export type MarketplaceRepository = MarketplaceReconciliationRepository & {
   createSyncJob: (input: CreateMarketplaceJobInput) => Promise<MarketplaceJob>;
   findSyncJob: (input: {
     jobId: string;
@@ -193,6 +155,11 @@ export type MarketplaceRepository = {
   }) => Promise<MarketplaceJob | null>;
   findAccount: (input: {
     provider: MarketplaceProvider;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<MarketplaceAccount | null>;
+  findAccountById: (input: {
+    accountId: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<MarketplaceAccount | null>;
@@ -216,8 +183,21 @@ export type MarketplaceRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<MarketplaceListingProjection[]>;
+  listActiveSyncJobs: (input: {
+    listingIds?: readonly string[];
+    provider: MarketplaceProvider;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<MarketplaceJob[]>;
+  listProviderListings: (input: {
+    accountId: string;
+    listingIds?: readonly string[];
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<MarketplaceProviderListing[]>;
   markJobCompleted: (input: {
     completedAt: Date;
+    dispatchLeaseOwner: string;
     externalId?: string | null;
     jobId: string;
     metadata?: Record<string, unknown>;
@@ -225,20 +205,40 @@ export type MarketplaceRepository = {
     listingId?: string | null;
     storeId: StoreId;
     tenantId: TenantId;
-  }) => Promise<MarketplaceJob>;
+  }) => Promise<MarketplaceJob | null>;
   markJobFailed: (input: {
     completedAt: Date;
+    dispatchLeaseOwner: string;
     errorMessage: string;
     jobId: string;
     metadata?: Record<string, unknown>;
     storeId: StoreId;
     tenantId: TenantId;
-  }) => Promise<MarketplaceJob>;
+  }) => Promise<MarketplaceJob | null>;
   markJobRunning: (input: {
+    dispatchLeaseExpiresAt: Date;
+    dispatchLeaseOwner: string;
     jobId: string;
     storeId: StoreId;
     tenantId: TenantId;
-  }) => Promise<MarketplaceJob>;
+  }) => Promise<MarketplaceJob | null>;
+  markJobSubmitted: (input: {
+    dispatchLeaseOwner: string;
+    jobId: string;
+    metadata: Record<string, unknown>;
+    nextAttemptAt: Date;
+    operationExpiresAt: Date | null;
+    operationToken: string | null;
+    provider: MarketplaceProvider;
+    listingId: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<MarketplaceJob | null>;
+  recoverStaleRunningJobs: (input: {
+    limit: number;
+    now: Date;
+    scope: MarketplaceJobScope;
+  }) => Promise<MarketplaceJob[]>;
   listOverview: (input: {
     storeId: StoreId;
     tenantId: TenantId;

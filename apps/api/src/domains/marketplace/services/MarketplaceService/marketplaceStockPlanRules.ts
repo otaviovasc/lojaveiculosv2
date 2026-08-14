@@ -32,7 +32,7 @@ export function listListingBlockers(
       );
     }
   }
-  if (mappingRequired(listing.catalog, catalogMapping)) {
+  if (mappingRequired(listing.catalog, catalogMapping, provider)) {
     blockers.push(blocker("MARKETPLACE_LISTING_MAPPING_REQUIRED", "catalog"));
   }
   if (provider === "olx") blockers.push(...olxBlockers(listing));
@@ -101,16 +101,24 @@ function catalogBlockers(
 function mappingRequired(
   catalog: MarketplaceCatalogSnapshot | null,
   mapping: MarketplaceCatalogMapping | null,
+  provider: MarketplaceProvider,
 ) {
   if (!catalog || catalog.source !== "fipe") return false;
   if (!isCompleteCatalog(catalog)) return false;
-  return (
-    !mapping ||
-    mapping.status !== "resolved" ||
-    !mapping.providerBrandCode ||
-    !mapping.providerModelCode ||
-    !mapping.providerTrimCode ||
-    !mapping.providerYearCode
+  return !isCatalogMappingResolvedForProvider(mapping, provider);
+}
+
+export function isCatalogMappingResolvedForProvider(
+  mapping: MarketplaceCatalogMapping | null,
+  provider: MarketplaceProvider,
+) {
+  return Boolean(
+    mapping &&
+    mapping.status === "resolved" &&
+    mapping.providerBrandCode &&
+    mapping.providerModelCode &&
+    mapping.providerTrimCode &&
+    (provider === "olx" || mapping.providerYearCode),
   );
 }
 

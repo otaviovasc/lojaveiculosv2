@@ -68,7 +68,14 @@ describe("CRM OLX Chat outbound", () => {
     const publish = vi.fn(async () => undefined);
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createOlxConnection(),
+        {
+          ...createOlxConnection(),
+          metadata: {
+            webhookSetup: {
+              capabilities: { chat: { status: "active" } },
+            },
+          },
+        },
       ]),
       crmRealtimePublisher: { publish },
       crmWhatsappGateway: { sendText },

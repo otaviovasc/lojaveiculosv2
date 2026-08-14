@@ -142,7 +142,6 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     setStatus({ kind: "saving", provider });
     try {
       await marketplaceApi.upsertAccount(provider, {
-        config: { rollout: "v2_stock_sync" },
         provider,
         status: nextStatus,
       });
@@ -231,6 +230,27 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     }
   };
 
+  const reconcileJob = async (job: MarketplaceJob) => {
+    setStatus({ kind: "saving", provider: job.provider });
+    try {
+      const reconciled = await marketplaceApi.reconcileSyncJob(job.id);
+      applyOverview(await marketplaceApi.getOverview());
+      setStatus({
+        kind: "saved",
+        message:
+          reconciled.status === "succeeded"
+            ? `${providerLabels[job.provider]} confirmou a operação.`
+            : reconciled.status === "failed"
+              ? reconciled.metadata.providerResult?.providerStatus === "refused"
+                ? `${providerLabels[job.provider]} recusou a operação. Revise os dados do anúncio antes de tentar novamente.`
+                : `${providerLabels[job.provider]} não concluiu a operação. Revise o detalhe técnico antes de decidir se deve tentar novamente.`
+              : `A operação continua aguardando confirmação do ${providerLabels[job.provider]}. Não é necessário reenviar.`,
+      });
+    } catch (error) {
+      setStatus({ kind: "error", display: errorDisplay(error) });
+    }
+  };
+
   const selectedPreview = selectedProvider
     ? (previews[selectedProvider]?.plan ?? null)
     : null;
@@ -311,7 +331,11 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
               provider={selectedProvider}
             />
           ) : null}
-          <MarketplaceJobList overview={overview} onRetry={retryJob} />
+          <MarketplaceJobList
+            onReconcile={reconcileJob}
+            onRetry={retryJob}
+            overview={overview}
+          />
         </>
       ) : status.kind === "error" ? (
         <FeatureEmptyState

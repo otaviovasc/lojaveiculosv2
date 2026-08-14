@@ -232,6 +232,40 @@ export default defineRailway((context) => {
     },
   );
 
+  const marketplaceReconciliationWorker = service(
+    "lojaveiculosv2-marketplace-reconciliation-worker",
+    {
+      source: appSource,
+      build: "pnpm --filter @lojaveiculosv2/api build",
+      deploy: {
+        cronSchedule: "*/5 * * * *",
+        restartPolicyType: "NEVER",
+      },
+      env: {
+        APP_ENV: appEnvironment,
+        AUDIT_DATABASE_URL: auditDatabase.env.DATABASE_URL,
+        AUDIT_DB_POOL_MAX: "1",
+        DATABASE_URL: productDatabase.env.DATABASE_URL,
+        DB_CLOSE_TIMEOUT_SECONDS: "5",
+        DB_POOL_MAX: "2",
+        LOG_LEVEL: api.env.LOG_LEVEL,
+        MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY:
+          api.env.MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY,
+        MARKETPLACE_JOB_BATCH_SIZE: "25",
+        MARKETPLACE_JOB_SCOPE_LIMIT: "100",
+        MERCADO_LIVRE_ACCOUNT_PATH: api.env.MERCADO_LIVRE_ACCOUNT_PATH,
+        MERCADO_LIVRE_API_BASE_URL: api.env.MERCADO_LIVRE_API_BASE_URL,
+        MERCADO_LIVRE_CLIENT_ID: api.env.MERCADO_LIVRE_CLIENT_ID,
+        MERCADO_LIVRE_CLIENT_SECRET: api.env.MERCADO_LIVRE_CLIENT_SECRET,
+        MERCADO_LIVRE_TOKEN_URL: api.env.MERCADO_LIVRE_TOKEN_URL,
+        NODE_ENV: "production",
+        OLX_CLIENT_ID: api.env.OLX_CLIENT_ID,
+        OLX_CLIENT_SECRET: api.env.OLX_CLIENT_SECRET,
+      },
+      start: "pnpm --filter @lojaveiculosv2/api marketplace:jobs:process",
+    },
+  );
+
   const crmRetentionWorker = service("lojaveiculosv2-crm-retention-worker", {
     source: appSource,
     build: "pnpm --filter @lojaveiculosv2/api build",
@@ -265,6 +299,7 @@ export default defineRailway((context) => {
       web,
       crmScheduleWorker,
       billingReconciliationWorker,
+      marketplaceReconciliationWorker,
       crmRetentionWorker,
     ],
   });

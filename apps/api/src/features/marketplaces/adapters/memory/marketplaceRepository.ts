@@ -7,32 +7,48 @@ import type {
   UpsertMarketplaceAccountInput,
 } from "../../../../domains/marketplace/ports/marketplaceRepository.js";
 import { MarketplaceAccountMissingError } from "../../../../domains/marketplace/ports/marketplaceRepository.js";
+import { marketplaceJobIdempotencyKey } from "../../../../domains/marketplace/services/MarketplaceService/marketplaceJobIdempotency.js";
+import { createInMemoryMarketplaceJobRepository } from "../../../../domains/marketplace/testSupportMarketplaceJobRepository.js";
 import {
-  assertScopedMemoryJob,
-  findMemoryJob,
   findScopedMemoryJob,
+  MemoryMarketplaceReconciliation,
   toMemoryMarketplaceJob,
   toMemoryMarketplaceListing,
   toMemoryMarketplaceOverview,
-  upsertMemoryProviderListing,
 } from "./marketplaceRepositorySupport.js";
 
 export function createMemoryMarketplaceRepository(): MarketplaceRepository {
   let accountSequence = 0;
+  const archivedAccountIds = new Set<string>();
   let accounts: MarketplaceAccount[] = [];
   let catalogMappings: MarketplaceCatalogMapping[] = [];
   let jobs: MarketplaceJob[] = [];
   let providerListings: MarketplaceProviderListing[] = [];
+  const reconciliation = new MemoryMarketplaceReconciliation();
 
   return {
     async createSyncJob(input) {
       const account = accounts.find(
         (item) =>
+          !archivedAccountIds.has(item.id) &&
           item.provider === input.provider &&
           item.storeId === input.storeId &&
           item.tenantId === input.tenantId,
       );
       if (!account) throw new MarketplaceAccountMissingError(input.provider);
+      const idempotencyKey = marketplaceJobIdempotencyKey(input);
+      const existing = idempotencyKey
+        ? jobs.find(
+            (job) =>
+              job.accountId === account.id &&
+              marketplaceJobIdempotencyKey({
+                jobType: job.jobType,
+                metadata: job.metadata,
+                provider: job.provider,
+              }) === idempotencyKey,
+          )
+        : null;
+      if (existing) return existing;
       const job = toMemoryMarketplaceJob(input, account.id, jobs.length + 1);
       jobs = [job, ...jobs].slice(0, 50);
       return job;
@@ -41,7 +57,18 @@ export function createMemoryMarketplaceRepository(): MarketplaceRepository {
       return (
         accounts.find(
           (item) =>
+            !archivedAccountIds.has(item.id) &&
             item.provider === input.provider &&
+            item.storeId === input.storeId &&
+            item.tenantId === input.tenantId,
+        ) ?? null
+      );
+    },
+    async findAccountById(input) {
+      return (
+        accounts.find(
+          (item) =>
+            item.id === input.accountId &&
             item.storeId === input.storeId &&
             item.tenantId === input.tenantId,
         ) ?? null
@@ -82,7 +109,7 @@ export function createMemoryMarketplaceRepository(): MarketplaceRepository {
       return toMemoryMarketplaceOverview(
         input.storeId,
         input.tenantId,
-        accounts,
+        accounts.filter((account) => !archivedAccountIds.has(account.id)),
         jobs,
       );
     },
@@ -92,56 +119,47 @@ export function createMemoryMarketplaceRepository(): MarketplaceRepository {
         : ["listing_memory_1"];
       return ids.map((listingId) => toMemoryMarketplaceListing(listingId));
     },
-    async markJobCompleted(input) {
-      jobs = jobs.map((job) =>
-        job.id === input.jobId
-          ? {
-              ...job,
-              completedAt: input.completedAt,
-              metadata: input.metadata ?? job.metadata,
-              status: "succeeded",
-            }
-          : job,
-      );
-      const job = findMemoryJob(jobs, input.jobId);
-      if (input.externalId && input.listingId) {
-        providerListings = upsertMemoryProviderListing(providerListings, {
-          accountId: job.accountId,
-          externalId: input.externalId,
-          listingId: input.listingId,
-          metadata: input.metadata ?? {},
-          storeId: input.storeId,
-          tenantId: input.tenantId,
-        });
-      }
-      return job;
+    async listActiveSyncJobs(input) {
+      return jobs.filter((job) => {
+        const account = accounts.find((item) => item.id === job.accountId);
+        const listingId = readString(job.metadata.listingId);
+        return (
+          account?.provider === input.provider &&
+          account.storeId === input.storeId &&
+          account.tenantId === input.tenantId &&
+          ["queued", "running", "submitted"].includes(job.status) &&
+          (!input.listingIds?.length ||
+            (listingId !== null && input.listingIds.includes(listingId)))
+        );
+      });
     },
-    async markJobFailed(input) {
-      assertScopedMemoryJob(jobs, accounts, input);
-      jobs = jobs.map((job) =>
-        job.id === input.jobId
-          ? {
-              ...job,
-              completedAt: input.completedAt,
-              errorMessage: input.errorMessage,
-              metadata: input.metadata ?? job.metadata,
-              status: "failed",
-            }
-          : job,
+    async listProviderListings(input) {
+      return providerListings.filter(
+        (item) =>
+          item.accountId === input.accountId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId &&
+          (!input.listingIds?.length ||
+            input.listingIds.includes(item.listingId)),
       );
-      return findMemoryJob(jobs, input.jobId);
     },
-    async markJobRunning(input) {
-      assertScopedMemoryJob(jobs, accounts, input);
-      jobs = jobs.map((job) =>
-        job.id === input.jobId ? { ...job, status: "running" } : job,
-      );
-      return findMemoryJob(jobs, input.jobId);
-    },
+    ...createInMemoryMarketplaceJobRepository({
+      accounts: () => accounts,
+      jobs: () => jobs,
+      providerListings: () => providerListings,
+      reconciliation,
+      setJobs: (next) => {
+        jobs = next;
+      },
+      setProviderListings: (next) => {
+        providerListings = next;
+      },
+    }),
     async upsertAccount(input) {
       const now = new Date();
       const existing = accounts.find(
         (item) =>
+          !archivedAccountIds.has(item.id) &&
           item.provider === input.provider &&
           item.storeId === input.storeId &&
           item.tenantId === input.tenantId,
@@ -163,10 +181,9 @@ export function createMemoryMarketplaceRepository(): MarketplaceRepository {
         tenantId: input.tenantId,
         updatedAt: now,
       };
+      if (existing && !sameIdentity) archivedAccountIds.add(existing.id);
       accounts = [
-        ...accounts.filter(
-          (item) => item.id !== account.id && item.id !== existing?.id,
-        ),
+        ...accounts.filter((item) => item.id !== account.id),
         account,
       ].sort((left, right) => left.provider.localeCompare(right.provider));
       return account;
@@ -185,4 +202,8 @@ function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value ? value : null;
 }

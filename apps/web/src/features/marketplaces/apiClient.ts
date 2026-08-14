@@ -34,6 +34,7 @@ export type MarketplaceApi = {
     provider: MarketplaceProvider,
     input: MarketplaceStockSyncPreviewRequest,
   ) => Promise<MarketplaceStockSyncPreviewResponse>;
+  reconcileSyncJob: (jobId: string) => Promise<MarketplaceJob>;
   retrySyncJob: (
     jobId: string,
     input?: MarketplaceSyncJobRetryRequest,
@@ -89,6 +90,11 @@ export function createMarketplaceApi({
         headers: createMarketplaceHeaders(auth),
         method: "POST",
       }).then(readJson<MarketplaceStockSyncPreviewResponse>),
+    reconcileSyncJob: (jobId) =>
+      fetch(marketplaceRoutes.reconcileJob(jobId, baseUrl), {
+        headers: createMarketplaceHeaders(auth),
+        method: "POST",
+      }).then(readJson<MarketplaceJob>),
     retrySyncJob: (jobId, input = {}) =>
       fetch(marketplaceRoutes.retryJob(jobId, baseUrl), {
         body: JSON.stringify(input),
@@ -127,6 +133,11 @@ export const marketplaceRoutes = {
     createMarketplaceEndpoint("/marketplaces/oauth/complete", baseUrl),
   overview: (baseUrl?: string) =>
     createMarketplaceEndpoint("/marketplaces/overview", baseUrl),
+  reconcileJob: (jobId: string, baseUrl?: string) =>
+    createMarketplaceEndpoint(
+      `/marketplaces/sync-jobs/${jobId}/reconcile`,
+      baseUrl,
+    ),
   runJob: (jobId: string, baseUrl?: string) =>
     createMarketplaceEndpoint(`/marketplaces/sync-jobs/${jobId}/run`, baseUrl),
   retryJob: (jobId: string, baseUrl?: string) =>

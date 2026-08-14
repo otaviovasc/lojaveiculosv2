@@ -43,3 +43,13 @@ export class MarketplaceServiceError extends Error {
     this.userAction = input.userAction;
   }
 }
+
+export function marketplaceJobNotFound(jobId: string) {
+  return new MarketplaceServiceError({
+    code: "MARKETPLACE_SYNC_JOB_STALE",
+    details: { jobId },
+    message: "Marketplace sync job was not found.",
+    status: 404,
+    userAction: "Refresh the marketplace jobs and try again.",
+  });
+}

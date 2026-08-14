@@ -165,6 +165,7 @@ export async function authorizeOlxWebhook(
     }),
     token:
       context.req.header("x-olx-webhook-secret") ??
+      readBearerToken(context.req.header("authorization")) ??
       context.req.query("token") ??
       null,
   });
@@ -183,6 +184,11 @@ export async function authorizeOlxWebhook(
     entitlementGranted: entitlements.includes("crm"),
     serviceContext: { ...scopedContext, entitlements },
   };
+}
+
+function readBearerToken(value: string | undefined): string | null {
+  const match = value?.match(/^Bearer\s+(.+)$/iu);
+  return match?.[1]?.trim() || null;
 }
 
 export async function readWebhookInput(context: Context) {

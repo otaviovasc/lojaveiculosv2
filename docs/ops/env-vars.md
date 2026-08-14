@@ -335,6 +335,8 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `OPENROUTER_DOCUMENTS_MODEL`            | No       | staging, production | No     | Document-builder override. Use an exact OpenRouter slug; defaults to `OPENROUTER_DEFAULT_MODEL`. |
 | `OPENROUTER_INVENTORY_RESALE_MODEL`     | No       | staging, production | No     | Inventory resale override. Use an exact OpenRouter slug; defaults to `OPENROUTER_DEFAULT_MODEL`. |
 | `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.                                                                |
+| `MARKETPLACE_JOB_BATCH_SIZE`            | No       | staging, production | No     | Marketplace worker jobs per store run. Defaults to `25`.                                         |
+| `MARKETPLACE_JOB_SCOPE_LIMIT`           | No       | staging, production | No     | Marketplace store scopes discovered per worker run. Defaults to `100`.                           |
 | `MERCADO_LIVRE_CLIENT_ID`               | Yes      | staging, production | Yes    | Enables Mercado Livre OAuth and stock sync.                                                      |
 | `MERCADO_LIVRE_CLIENT_SECRET`           | No       | staging, production | Yes    | OAuth client secret when required by the provider app.                                           |
 | `MERCADO_LIVRE_AUTHORIZATION_URL`       | No       | staging, production | No     | Defaults to `https://auth.mercadolivre.com.br/authorization`.                                    |

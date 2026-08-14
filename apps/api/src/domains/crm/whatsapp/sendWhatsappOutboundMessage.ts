@@ -8,7 +8,7 @@ import {
   getCrmWhatsappOutboundIntentRepository,
   getCrmWhatsappRepository,
   isCrmOlxChatEnabled,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 import type { WhatsappMessage } from "./whatsappModels.js";
@@ -54,7 +54,7 @@ export async function sendWhatsappOutboundMessage(
   input: SendWhatsappOutboundInput,
   ports: CrmServicePorts,
 ): Promise<WhatsappMessage> {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const whatsappRepository = getCrmWhatsappRepository(ports);
   const [session] = await whatsappRepository.listSessions({
     limit: 1,

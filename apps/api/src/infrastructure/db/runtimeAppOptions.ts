@@ -10,6 +10,7 @@ import {
   createDrizzleAccountProvisioningRepository,
   type DrizzleAccountProvisioningClient,
 } from "./identity/drizzleAccountProvisioningRepository.js";
+import { resolveStoreEntitlements } from "./identity/drizzleStoreEntitlementReads.js";
 import { createDrizzlePublicStorefrontRepository } from "./storefront/drizzlePublicStorefrontRepository.js";
 import type { DrizzlePublicStorefrontClient } from "./storefront/drizzlePublicStorefrontQueryTypes.js";
 import {
@@ -169,6 +170,14 @@ export function createRuntimeHttpAppOptions({
     marketplaceServices: createMarketplaceServices({
       drizzleClient: marketplaceDb,
       gatewayRegistry: createMarketplaceGatewayRegistry(env),
+      isMarketplaceEntitled: async ({ now, storeId }) =>
+        (
+          await resolveStoreEntitlements(
+            db as DrizzleAccountProvisioningClient,
+            storeId,
+            now,
+          )
+        ).includes("marketplace"),
       oauthRedirectUri: createMarketplaceOAuthRedirectUriResolver(env),
       oauthStateStore: createDrizzleMarketplaceOAuthStateStore(
         marketplaceDb,

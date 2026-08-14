@@ -68,7 +68,7 @@ export type MarketplaceListingProjection = {
 };
 
 export type MarketplaceStockPlanDecision =
-  "publish" | "update" | "unpublish" | "no_op" | "blocked";
+  "publish" | "update" | "unpublish" | "no_op" | "pending" | "blocked";
 
 export type MarketplaceListingBlockerCode =
   | "MARKETPLACE_LISTING_NOT_PUBLIC"
@@ -96,12 +96,19 @@ export type MarketplaceStockPlanItem = {
   jobType: "listing_publish" | "listing_update" | "listing_unpublish" | null;
   listing: MarketplaceListingProjection;
   provider: MarketplaceProvider;
+  providerMapping: {
+    providerBrandCode: string;
+    providerModelCode: string;
+    providerTrimCode: string;
+    providerYearCode: string | null;
+  } | null;
 };
 
 export type MarketplaceStockPlan = {
   blocked: number;
   items: MarketplaceStockPlanItem[];
   noOp: number;
+  pending: number;
   publish: number;
   total: number;
   unpublish: number;

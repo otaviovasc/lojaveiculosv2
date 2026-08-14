@@ -28,6 +28,18 @@ export function assertWhatsappProviderEffectAllowed(
       409,
     );
   }
+  if (connection.provider === "olx_chat") {
+    const setup = readRecord(connection.metadata.webhookSetup);
+    const capabilities = readRecord(setup.capabilities);
+    const chat = readRecord(capabilities.chat);
+    if (chat.status !== "active") {
+      throw new WhatsappMessageActionError(
+        "OLX Chat setup is not active for provider operations.",
+        409,
+      );
+    }
+    return;
+  }
   if (connection.provider !== "zapi") return;
   if (!("entitlements" in context)) {
     throw new WhatsappMessageActionError(
@@ -42,4 +54,10 @@ export function assertWhatsappProviderEffectAllowed(
       409,
     );
   }
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

@@ -1,6 +1,7 @@
 import type {
   MarketplaceAccountConnectionStatus,
   MarketplaceAccountRequirement,
+  MarketplaceCatalogSnapshot,
   MarketplaceListingProjection,
   MarketplaceProvider,
   MarketplaceServiceErrorCode,
@@ -49,7 +50,43 @@ export type MarketplacePublishInput = {
 export type MarketplacePublishResult = {
   externalId: string | null;
   metadata: Record<string, unknown>;
+  operationToken: string | null;
   providerStatus: string;
+};
+
+export type MarketplaceListingReconciliationState =
+  | "accepted"
+  | "deleted"
+  | "error"
+  | "pending"
+  | "queued"
+  | "refused"
+  | "unknown";
+
+export type MarketplaceListingReconciliationInput = {
+  externalId: string;
+  jobType: MarketplaceSyncJobType;
+  listId: string | null;
+  operationToken: string | null;
+  token: MarketplaceTokenSet;
+};
+
+export type MarketplaceListingReconciliationResult = {
+  externalId: string;
+  listId: string | null;
+  listingUrl: string | null;
+  message: string | null;
+  providerStatus: string;
+  state: MarketplaceListingReconciliationState;
+};
+
+export type MarketplaceProviderCatalogResolution = {
+  providerBrandCode: string | null;
+  providerModelCode: string | null;
+  providerTrimCode: string | null;
+  providerYearCode: string | null;
+  status: "resolved" | "unresolved";
+  unresolvedReason: string | null;
 };
 
 export type MarketplaceProviderGateway = {
@@ -65,6 +102,13 @@ export type MarketplaceProviderGateway = {
   }) => Promise<MarketplaceTokenSet>;
   provider: MarketplaceProvider;
   refreshToken?: (refreshToken: string) => Promise<MarketplaceTokenSet>;
+  reconcileListingSync?: (
+    input: MarketplaceListingReconciliationInput,
+  ) => Promise<MarketplaceListingReconciliationResult>;
+  resolveCatalogMapping?: (input: {
+    catalog: MarketplaceCatalogSnapshot;
+    token: MarketplaceTokenSet;
+  }) => Promise<MarketplaceProviderCatalogResolution>;
   runListingSync: (
     input: MarketplacePublishInput,
   ) => Promise<MarketplacePublishResult>;

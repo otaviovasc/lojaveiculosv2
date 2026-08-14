@@ -25,6 +25,7 @@ describe("createMarketplaceApi", () => {
     await api.retrySyncJob("job_1", {
       reason: "retry_from_test",
     });
+    await api.reconcileSyncJob("job_1");
 
     expect(fetch.mock.calls[0]?.[0]).toBe("/api/v1/marketplaces/overview");
     expect(fetch.mock.calls[0]?.[1]?.headers).toMatchObject({
@@ -39,6 +40,9 @@ describe("createMarketplaceApi", () => {
     );
     expect(fetch.mock.calls[3]?.[0]).toBe(
       "/api/v1/marketplaces/sync-jobs/job_1/retry",
+    );
+    expect(fetch.mock.calls[4]?.[0]).toBe(
+      "/api/v1/marketplaces/sync-jobs/job_1/reconcile",
     );
   });
 });

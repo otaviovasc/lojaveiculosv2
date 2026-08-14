@@ -12,6 +12,11 @@ import type { MarketplaceOlxCrmOnboarding } from "../../ports/marketplaceOlxCrmO
 export type MarketplaceServicePorts = {
   clock?: () => Date;
   gatewayRegistry?: MarketplaceProviderGatewayRegistry;
+  isMarketplaceEntitled?: (input: {
+    now: Date;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<boolean>;
   marketplaceRepository: MarketplaceRepository;
   olxCrmOnboarding?: MarketplaceOlxCrmOnboarding;
   oauthRedirectUri?: (provider: MarketplaceProvider) => string;

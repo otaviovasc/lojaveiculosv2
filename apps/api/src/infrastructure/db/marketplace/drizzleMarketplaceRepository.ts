@@ -1,21 +1,17 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   integrationAccounts,
-  integrationJobs,
   vehicleProviderListings,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
-  CreateMarketplaceJobInput,
   MarketplaceAccount,
-  MarketplaceJob,
   MarketplaceOverview,
   MarketplaceProvider,
   MarketplaceProviderListing,
   MarketplaceRepository,
 } from "../../../domains/marketplace/ports/marketplaceRepository.js";
-import { MarketplaceAccountMissingError } from "../../../domains/marketplace/ports/marketplaceRepository.js";
 import {
   createMarketplaceCredentialCodec,
   type MarketplaceCredentialCodec,
@@ -30,14 +26,27 @@ import {
   markJobCompleted,
   markJobFailed,
   markJobRunning,
+  markJobSubmitted,
 } from "./drizzleMarketplaceJobs.js";
-import { toAccount, toJob, toRecord } from "./drizzleMarketplaceMappers.js";
-import { buildProviderStates } from "./drizzleMarketplaceOverview.js";
+import { recoverStaleRunningJobs } from "./drizzleMarketplaceDispatchRecovery.js";
+import { listActiveSyncJobs } from "./drizzleMarketplaceActiveJobs.js";
+import {
+  claimSubmittedJobs,
+  listProcessableJobScopes,
+  listQueuedJobIds,
+} from "./drizzleMarketplaceReconciliationClaims.js";
+import {
+  completeSubmittedJob,
+  failSubmittedJob,
+  rescheduleSubmittedJob,
+} from "./drizzleMarketplaceReconciliation.js";
+import { toAccount, toRecord } from "./drizzleMarketplaceMappers.js";
 import { upsertMarketplaceAccount } from "./drizzleMarketplaceAccounts.js";
 
 export type DrizzleMarketplaceClient = PostgresJsDatabase<typeof schema>;
 
-const providers = ["olx", "mercado_livre"] satisfies MarketplaceProvider[];
+import { createSyncJob } from "./drizzleMarketplaceJobCreation.js";
+import { listOverview } from "./drizzleMarketplaceOverviewRead.js";
 
 export function createDrizzleMarketplaceRepository(
   db: DrizzleMarketplaceClient,
@@ -47,18 +56,48 @@ export function createDrizzleMarketplaceRepository(
 ): MarketplaceRepository {
   return {
     createSyncJob: (input) => createSyncJob(db, input),
+    claimSubmittedJobs: (input) => claimSubmittedJobs(db, codec, input),
+    completeSubmittedJob: (input) => completeSubmittedJob(db, input),
+    failSubmittedJob: (input) => failSubmittedJob(db, input),
     findAccount: (input) => findAccount(db, input, codec),
+    findAccountById: (input) => findAccountById(db, input, codec),
     findCatalogMapping: (input) => findCatalogMapping(db, input),
     findListingProjection: (input) => findListingProjection(db, input),
     findProviderListing: (input) => findProviderListing(db, input),
     findSyncJob: (input) => findSyncJob(db, input),
     listListingProjections: (input) => listListingProjections(db, input),
+    listActiveSyncJobs: (input) => listActiveSyncJobs(db, input),
+    listProcessableJobScopes: (input) => listProcessableJobScopes(db, input),
+    listProviderListings: (input) => listProviderListings(db, input),
+    listQueuedJobIds: (input) => listQueuedJobIds(db, input),
     listOverview: (input) => listOverview(db, input),
     markJobCompleted: (input) => markJobCompleted(db, input),
     markJobFailed: (input) => markJobFailed(db, input),
     markJobRunning: (input) => markJobRunning(db, input),
+    markJobSubmitted: (input) => markJobSubmitted(db, codec, input),
+    recoverStaleRunningJobs: (input) => recoverStaleRunningJobs(db, input),
+    rescheduleSubmittedJob: (input) => rescheduleSubmittedJob(db, input),
     upsertAccount: (input) => upsertMarketplaceAccount(db, input, codec),
   };
+}
+
+async function findAccountById(
+  db: DrizzleMarketplaceClient,
+  input: { accountId: string; storeId: string; tenantId: string },
+  codec: MarketplaceCredentialCodec,
+): Promise<MarketplaceAccount | null> {
+  const [row] = await db
+    .select()
+    .from(integrationAccounts)
+    .where(
+      and(
+        eq(integrationAccounts.id, input.accountId),
+        eq(integrationAccounts.storeId, input.storeId),
+        eq(integrationAccounts.tenantId, input.tenantId),
+      ),
+    )
+    .limit(1);
+  return row ? toAccount(row, codec.decodeAccountConfig) : null;
 }
 
 async function findAccount(
@@ -114,83 +153,35 @@ async function findProviderListing(
     : null;
 }
 
-async function listOverview(
+async function listProviderListings(
   db: DrizzleMarketplaceClient,
-  input: { storeId: string; tenantId: string },
-): Promise<MarketplaceOverview> {
-  const [accountRows, jobRows] = await Promise.all([
-    db
-      .select()
-      .from(integrationAccounts)
-      .where(
-        and(
-          eq(integrationAccounts.storeId, input.storeId),
-          eq(integrationAccounts.tenantId, input.tenantId),
-          isNull(integrationAccounts.archivedAt),
-        ),
-      )
-      .limit(50),
-    db
-      .select()
-      .from(integrationJobs)
-      .where(
-        and(
-          eq(integrationJobs.storeId, input.storeId),
-          eq(integrationJobs.tenantId, input.tenantId),
-        ),
-      )
-      .orderBy(desc(integrationJobs.createdAt))
-      .limit(50),
-  ]);
-  const codec = createMarketplaceCredentialCodec(process.env);
-  const accounts = accountRows.map((row) =>
-    toAccount(row, codec.redactAccountConfig),
-  );
-
-  const jobs = jobRows.map((row) => {
-    const account = accounts.find((item) => item.id === row.accountId);
-    return toJob(row, account?.provider ?? "olx");
-  });
-
-  return {
-    accounts,
-    jobs,
-    providerStates: buildProviderStates({ accounts, jobs, providers }),
-    providers,
-    storeId: input.storeId as never,
-    tenantId: input.tenantId as never,
-  };
-}
-
-async function createSyncJob(
-  db: DrizzleMarketplaceClient,
-  input: CreateMarketplaceJobInput,
-): Promise<MarketplaceJob> {
-  const [account] = await db
+  input: {
+    accountId: string;
+    listingIds?: readonly string[];
+    storeId: string;
+    tenantId: string;
+  },
+): Promise<MarketplaceProviderListing[]> {
+  const rows = await db
     .select()
-    .from(integrationAccounts)
+    .from(vehicleProviderListings)
     .where(
       and(
-        eq(integrationAccounts.provider, input.provider),
-        eq(integrationAccounts.storeId, input.storeId),
-        eq(integrationAccounts.tenantId, input.tenantId),
-        isNull(integrationAccounts.archivedAt),
+        eq(vehicleProviderListings.accountId, input.accountId),
+        eq(vehicleProviderListings.storeId, input.storeId),
+        eq(vehicleProviderListings.tenantId, input.tenantId),
+        ...(input.listingIds?.length
+          ? [inArray(vehicleProviderListings.listingId, [...input.listingIds])]
+          : []),
       ),
     )
-    .limit(1);
-  if (!account) throw new MarketplaceAccountMissingError(input.provider);
-
-  const [row] = await db
-    .insert(integrationJobs)
-    .values({
-      accountId: account.id,
-      jobType: input.jobType,
-      metadata: input.metadata,
-      status: "queued",
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-    })
-    .returning();
-  if (!row) throw new Error("Marketplace sync job insert failed.");
-  return toJob(row, input.provider);
+    .limit(500);
+  return rows.map((row) => ({
+    accountId: row.accountId,
+    externalId: row.externalId,
+    listingId: row.listingId,
+    metadata: toRecord(row.metadata),
+    storeId: row.storeId as never,
+    tenantId: row.tenantId as never,
+  }));
 }

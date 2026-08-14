@@ -44,6 +44,7 @@ const jobStatusLabels: Record<MarketplaceJobStatus, string> = {
   failed: "Falhou",
   queued: "Na fila",
   running: "Em andamento",
+  submitted: "Enviado; aguardando canal",
   succeeded: "Concluída",
 };
 
@@ -200,8 +201,9 @@ export function getMarketplaceBlockerCopy(blocker: MarketplaceListingBlocker) {
       };
     case "MARKETPLACE_LISTING_MAPPING_REQUIRED":
       return {
-        action: "Revise a categoria sugerida e gere uma nova prévia.",
-        message: "Categoria do canal precisa de revisão",
+        action:
+          "Confirme a correspondência de marca, modelo e versão e gere uma nova prévia.",
+        message: "Correspondência do veículo com o canal precisa de revisão",
       };
   }
 }

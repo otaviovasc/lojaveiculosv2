@@ -4,7 +4,7 @@ import type {
 } from "../../ports/marketplaceRepository.js";
 
 export type MarketplaceStockPlanDecision =
-  "blocked" | "no_op" | "publish" | "unpublish" | "update";
+  "blocked" | "no_op" | "pending" | "publish" | "unpublish" | "update";
 
 export type MarketplaceListingBlockerCode =
   | "MARKETPLACE_LISTING_CATALOG_FIELD_MISSING"
@@ -34,12 +34,19 @@ export type MarketplaceStockPlanItem = {
   jobType: "listing_publish" | "listing_unpublish" | "listing_update" | null;
   listing: MarketplaceListingProjection;
   provider: MarketplaceProvider;
+  providerMapping: {
+    providerBrandCode: string;
+    providerModelCode: string;
+    providerTrimCode: string;
+    providerYearCode: string | null;
+  } | null;
 };
 
 export type MarketplaceStockPlan = {
   blocked: number;
   items: MarketplaceStockPlanItem[];
   noOp: number;
+  pending: number;
   publish: number;
   total: number;
   unpublish: number;
