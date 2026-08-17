@@ -29,6 +29,5 @@ const pipeline: Pipeline = {
   isDefault: true,
   name: "Vendas",
   rotationActive: false,
-  routingRules: [],
   stages: [],
 };
