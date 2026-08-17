@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRuntimeFetch, normalizeRuntimeApiBaseUrl } from "./runtimeAuth";
 
 type ClerkWindow = Window & {
+  __clerk_internal_ready?: Promise<unknown> & {
+    __resolve?: (clerk: ClerkWindow["Clerk"]) => void;
+  };
   Clerk?: {
+    status?: "ready";
     session?: {
       getToken?: (options?: { skipCache?: boolean }) => Promise<string | null>;
     };
@@ -13,14 +17,36 @@ type ClerkWindow = Window & {
 function stubClerkGetToken(
   getToken: (options?: { skipCache?: boolean }) => Promise<string | null>,
 ) {
-  (window as ClerkWindow).Clerk = { session: { getToken } };
+  (window as ClerkWindow).Clerk = {
+    session: { getToken },
+    status: "ready",
+  };
 }
 
 afterEach(() => {
   delete (window as ClerkWindow).Clerk;
+  delete (window as ClerkWindow).__clerk_internal_ready;
 });
 
 describe("createRuntimeFetch", () => {
+  it("waits for Clerk initialization before sending an authenticated request", async () => {
+    const baseFetch = vi.fn<typeof fetch>(async () => new Response("{}"));
+
+    const request = createRuntimeFetch(baseFetch)("/api/v1/settings/store");
+    await Promise.resolve();
+
+    const clerkWindow = window as ClerkWindow;
+    const ready = clerkWindow.__clerk_internal_ready;
+    expect(ready).toBeDefined();
+
+    stubClerkGetToken(async () => "late-token");
+    ready?.__resolve?.(clerkWindow.Clerk);
+    await request;
+
+    const headers = new Headers(baseFetch.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("Authorization")).toBe("Bearer late-token");
+  });
+
   it("attaches a fresh Clerk token to every request, replacing stale ones", async () => {
     stubClerkGetToken(async () => "fresh-token");
     const baseFetch = vi.fn<typeof fetch>(async () => new Response("{}"));
@@ -40,6 +66,7 @@ describe("createRuntimeFetch", () => {
   });
 
   it("leaves the request untouched when no Clerk token is available", async () => {
+    (window as ClerkWindow).Clerk = { status: "ready" };
     const baseFetch = vi.fn<typeof fetch>(async () => new Response("{}"));
 
     const runtimeFetch = createRuntimeFetch(baseFetch);

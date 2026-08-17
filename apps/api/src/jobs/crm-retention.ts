@@ -10,6 +10,7 @@ import {
 } from "../infrastructure/db/audit/drizzleAuditSink.js";
 import { createDrizzleCrmRetentionRepository } from "../infrastructure/db/crm/drizzleCrmRetentionRepository.js";
 import type { DrizzleCrmClient } from "../infrastructure/db/crm/drizzleCrmRepository.js";
+import { toSafeErrorMetadata } from "../shared/errors/errorDescriptor.js";
 import {
   createConsoleServiceLogger,
   createServiceContext,
@@ -19,6 +20,7 @@ import {
   executeCrmRetentionJob,
   readCrmRetentionJobConfig,
 } from "./crmRetentionJob.js";
+import { waitForCrmRetentionDatabases } from "./crmRetentionStartup.js";
 
 loadLocalEnv();
 
@@ -42,6 +44,7 @@ async function main(): Promise<void> {
   );
   const workerId = `crm_retention_${randomUUID()}`;
   try {
+    await waitForCrmRetentionDatabases({ auditClient, productClient });
     const auditBefore = await deliverCrmRetentionAuditOutbox({
       audit,
       leaseOwner: `${workerId}:audit-before`,
@@ -103,7 +106,10 @@ function requireEnv(name: string): string {
 
 void main().catch((error) => {
   logger.error("job.crm_retention.failed", {
-    errorName: error instanceof Error ? error.name : "UnknownError",
+    ...toSafeErrorMetadata(error, {
+      boundary: "crm_retention_worker",
+      code: "CRM_RETENTION_JOB_FAILED",
+    }),
   });
   process.exitCode = 1;
 });

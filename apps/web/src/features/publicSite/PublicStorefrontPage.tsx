@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { StatusIllustration } from "../../components/ui/StatusIllustration";
+import { readRuntimeApiBaseUrl } from "../account/runtimeAuth";
 import {
   createPublicStorefrontApi,
   listAllPublicStorefrontListings,
@@ -256,19 +257,9 @@ function isEditorUpdateMessage(
 }
 
 function createPublicStorefrontApiOptions(storeSlug?: string) {
-  const baseUrl = getPublicStorefrontApiBaseUrl();
-
   return {
-    ...(baseUrl ? { baseUrl } : {}),
     fetch: window.fetch.bind(window),
+    ...readRuntimeApiBaseUrl(),
     ...(storeSlug ? { storeSlug } : {}),
   };
-}
-
-function getPublicStorefrontApiBaseUrl() {
-  const env = import.meta.env as unknown as {
-    VITE_API_BASE_URL?: string;
-  };
-
-  return env.VITE_API_BASE_URL;
 }
