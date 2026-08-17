@@ -102,6 +102,7 @@ export function createR2ObjectStorage(
     endpoint: options.endpoint,
     forcePathStyle: true,
     region: options.region ?? "auto",
+    requestChecksumCalculation: "WHEN_REQUIRED",
   });
 
   return {
