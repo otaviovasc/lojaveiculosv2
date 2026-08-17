@@ -10,6 +10,7 @@ import {
   parseRequiredFields,
   parseSimulation,
   parseSimulationList,
+  parseSimulationSync,
   parseStoreStatus,
   parseStoreMapping,
 } from "./apiParsers";
@@ -22,6 +23,7 @@ import type {
   CredereRequiredFields,
   CredereSimulation,
   CredereSimulationDraft,
+  CredereSimulationSync,
   CredereStoreMapping,
   CredereStoreStatus,
 } from "./types";
@@ -57,6 +59,7 @@ export type CredereApi = {
     selectedMolicarCode?: string;
   }) => Promise<CredereFipeResolution>;
   startOAuth: () => Promise<CredereOAuthStart>;
+  syncSimulations: () => Promise<CredereSimulationSync>;
   unmapStore: () => Promise<unknown>;
 };
 
@@ -162,6 +165,14 @@ export function createCredereApi({
       })
         .then((response) => readJson<unknown>(response))
         .then(parseOauthStart),
+    syncSimulations: () =>
+      fetch(credereRoutes.syncSimulations(baseUrl), {
+        body: JSON.stringify({}),
+        headers: createCredereHeaders(auth),
+        method: "POST",
+      })
+        .then((response) => readJson<unknown>(response))
+        .then(parseSimulationSync),
     unmapStore: () =>
       fetch(credereRoutes.storeMapping(baseUrl), {
         headers: createCredereHeaders(auth),
@@ -196,6 +207,8 @@ export const credereRoutes = {
   status: (baseUrl?: string) => endpoint("/financing/credere/status", baseUrl),
   storeMapping: (baseUrl?: string) =>
     endpoint("/financing/credere/store-mapping", baseUrl),
+  syncSimulations: (baseUrl?: string) =>
+    endpoint("/financing/credere/simulations/sync", baseUrl),
 } as const;
 
 function createCredereHeaders(

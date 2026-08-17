@@ -6,7 +6,11 @@ import {
   parseSafeJson,
   providerError,
 } from "./credereHttpSupport.js";
-import { mapSimulationCandidates } from "./credereSimulationCandidateMapper.js";
+import { createHash } from "node:crypto";
+import {
+  mapSimulationCandidates,
+  simulationCandidateRowCount,
+} from "./credereSimulationCandidateMapper.js";
 
 type CandidateInput = Parameters<
   FinancingProviderGateway["listSimulationCandidates"]
@@ -16,11 +20,37 @@ export async function listCredereSimulationCandidates(
   fetchImpl: typeof fetch,
   input: CandidateInput,
 ) {
+  const candidates = [];
+  const seenCandidates = new Set<string>();
+  const seenPages = new Set<string>();
+  for (let page = 1; ; page += 1) {
+    const result = await readCandidatePage(fetchImpl, input, page);
+    const fingerprint = pageFingerprint(result.payload);
+    if (seenPages.has(fingerprint)) break;
+    seenPages.add(fingerprint);
+    for (const candidate of result.candidates) {
+      if (seenCandidates.has(candidate.uuid)) continue;
+      seenCandidates.add(candidate.uuid);
+      candidates.push(candidate);
+    }
+    if (result.rowCount < pageSize) break;
+  }
+  return candidates;
+}
+
+const pageSize = 100;
+
+async function readCandidatePage(
+  fetchImpl: typeof fetch,
+  input: CandidateInput,
+  page: number,
+) {
   const response = await fetchWithReadRetry(
     fetchImpl,
     credereApiUrl("/proposal_simulations", {
       after: formatCredereDate(input.createdAfter),
-      per_page: "100",
+      page: String(page),
+      per_page: String(pageSize),
       sort: "created_at_desc",
     }),
     {
@@ -29,7 +59,17 @@ export async function listCredereSimulationCandidates(
     },
   );
   if (!response.ok) throw providerError(response);
-  return mapSimulationCandidates(await parseSafeJson(response));
+  const payload = await parseSafeJson(response);
+  return {
+    candidates: mapSimulationCandidates(payload),
+    payload,
+    rowCount: simulationCandidateRowCount(payload),
+  };
+}
+
+function pageFingerprint(payload: Record<string, unknown>) {
+  const rows = payload.data ?? payload.simulations ?? null;
+  return createHash("sha256").update(JSON.stringify(rows)).digest("hex");
 }
 
 function formatCredereDate(value: Date) {

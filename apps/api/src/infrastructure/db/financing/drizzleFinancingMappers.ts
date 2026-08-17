@@ -137,27 +137,33 @@ export function toInquiry(
     updatedAt: Date;
   },
   conditions: readonly FinancingCondition[],
+  consent: {
+    consentVersion: string;
+    grantedAt: Date;
+  } | null = null,
 ): FinancingInquiry {
   const metadata = toRecord(row.metadata);
   const providerResult = toRecord(row.providerResultSummary);
   return {
-    amountCents: toNumber(metadata.amountCents),
+    amountCents: toOptionalNumber(metadata.amountCents),
     bankCodes: readStringArray(metadata.bankCodes),
     completedAt: row.completedAt,
     conditions,
-    consentEvidence: {
-      acceptedAt: row.createdAt,
-      ipAddress: null,
-      termsVersion: "persisted",
-      userAgent: null,
-    },
+    consentEvidence: consent
+      ? {
+          acceptedAt: consent.grantedAt,
+          ipAddress: null,
+          termsVersion: consent.consentVersion,
+          userAgent: null,
+        }
+      : null,
     createdAt: row.createdAt,
     customerDocumentHash: row.applicantDocumentHash ?? "",
     customerDocumentLast4: row.applicantDocumentLast4 ?? "",
-    downPaymentCents: toNumber(metadata.downPaymentCents),
+    downPaymentCents: toOptionalNumber(metadata.downPaymentCents),
     id: row.id,
     idempotencyKey: row.idempotencyKey ?? "",
-    installments: toNumber(metadata.installments),
+    installments: toOptionalNumber(metadata.installments),
     leadId: row.leadId,
     listingId: row.listingId,
     metadata,
@@ -230,8 +236,8 @@ function readStringArray(value: unknown): string[] {
     : [];
 }
 
-function toNumber(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+function toOptionalNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function toRecord(value: unknown): Record<string, unknown> {

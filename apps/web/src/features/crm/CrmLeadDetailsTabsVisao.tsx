@@ -3,10 +3,10 @@ import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { CrmLeadLinkedRecordsState } from "./crmLeadLinkedRecords";
 import {
   formatBrlCents,
-  formatLeadOwner,
   getLeadStageId,
   getLinkedLeadVehicles,
 } from "./crmLeadData";
+import { useCrmLeadOwnerName } from "./useCrmLeadOwnerName";
 import { formatCents } from "../sales/salesModel";
 import type { SaleStatus } from "../sales/types";
 import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
@@ -28,6 +28,11 @@ export function CrmLeadDetailsTabsVisao({
   vehicleOptions,
 }: Props) {
   const leadVehicles = getLinkedLeadVehicles(lead, vehicleOptions);
+  const ownerName = useCrmLeadOwnerName(lead);
+  const ownerLabel =
+    ownerName === undefined
+      ? "Carregando..."
+      : (ownerName ?? "Sem responsável");
   const valueFormatted = lead.listingId
     ? formatBrlCents(leadVehicles[0]?.priceCents)
     : "Sem veículo vinculado";
@@ -90,7 +95,7 @@ export function CrmLeadDetailsTabsVisao({
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-sm font-black text-app-text">
               <User aria-hidden="true" className="size-3.5 text-blue-start" />
-              <span>{formatLeadOwner(lead)}</span>
+              <span>{ownerLabel}</span>
             </div>
             <div className="h-1 mt-2" />
           </div>

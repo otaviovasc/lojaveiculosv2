@@ -100,6 +100,79 @@ describe("spedyHttpFiscalProviderGateway", () => {
     });
   });
 
+  it("serializes the supported NFSe fields with the Spedy v1 contract names", async () => {
+    const connectionRepository = await readyConnection();
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json({ id: "service_1", status: "enqueued" }),
+    );
+    const gateway = createSpedyHttpFiscalProviderGateway({
+      connectionRepository,
+      env,
+      fetcher,
+    });
+
+    await gateway.issueDocument({
+      documentKind: "nfse",
+      documentType: "nfse",
+      externalReference: "sale_1",
+      integrationId: "local_document_2",
+      metadata: {
+        additionalInformation: "Venda de veiculo seminovo",
+        competence: "2026-08-17",
+        grossAmount: 1_500,
+        recipient: {
+          address: { city: { code: 3550308 } },
+          documentNumber: "123.456.789-09",
+          email: "cliente@example.test",
+          legalName: "Cliente NFSe",
+          phone: "(11) 99999-9999",
+        },
+        sendEmailToCustomer: false,
+        template: {
+          cityServiceCode: "6203100",
+          cnaeCode: "6203-1/00",
+          cstPisCofins: "01",
+          defaultServiceLocation: "companyMunicipality",
+          defaultTaxationType: "taxationInMunicipality",
+          description: "Servico de intermediacao",
+          nationalTaxationCode: "010101",
+          nbsCode: "115012000",
+          serviceNationalCode: "1.05",
+          simplesNacionalAnnex: "III",
+        },
+      },
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+
+    const [requestUrl, request] = fetcher.mock.calls[0] ?? [];
+    expect(requestUrl).toBe("https://api.spedy.test/v1/service-invoices");
+    expect(JSON.parse(String(request?.body))).toEqual({
+      additionalInformation: "Venda de veiculo seminovo",
+      cityServiceCode: "6203100",
+      cnaeCode: "6203-1/00",
+      cstPisCofins: "01",
+      description: "Servico de intermediacao",
+      effectiveDate: "2026-08-17",
+      federalServiceCode: "1.05",
+      integrationId: "local_document_2",
+      nationalTaxationCode: "010101",
+      nbsCode: "115012000",
+      receiver: {
+        address: { city: { code: 3550308 } },
+        email: "cliente@example.test",
+        federalTaxNumber: "12345678909",
+        name: "Cliente NFSe",
+        phoneNumber: "11999999999",
+      },
+      sendEmailToCustomer: false,
+      simplesNacionalAnnex: "III",
+      taxLocation: "companyMunicipality",
+      taxationType: "taxationInMunicipality",
+      total: { invoiceAmount: 1_500 },
+    });
+  });
+
   it("reads status and cancels using kind-specific resources", async () => {
     const connectionRepository = await readyConnection();
     const fetcher = vi
@@ -138,7 +211,7 @@ describe("spedyHttpFiscalProviderGateway", () => {
       "https://api.spedy.test/v1/service-invoices/service_1",
       expect.objectContaining({
         body: JSON.stringify({
-          justification: "Customer requested cancellation",
+          reason: "Customer requested cancellation",
         }),
         method: "DELETE",
       }),

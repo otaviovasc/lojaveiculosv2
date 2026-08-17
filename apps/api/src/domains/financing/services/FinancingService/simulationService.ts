@@ -211,7 +211,7 @@ async function auditSimulationPoll(
   });
 }
 
-function matchesIndeterminateInquiry(
+export function matchesIndeterminateInquiry(
   inquiry: FinancingInquiry,
   candidate: FinancingSimulationCandidate,
 ) {

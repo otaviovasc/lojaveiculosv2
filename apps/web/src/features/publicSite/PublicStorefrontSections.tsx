@@ -11,7 +11,6 @@ import {
   AboutSection,
   BrandMark,
   TestimonialsSection,
-  createVisibleProofItems,
 } from "./PublicStorefrontSubsections";
 import { SplitHeroSection } from "./PublicStorefrontHeroSplit";
 import { PublicVehicleCard } from "./PublicVehicleCard";
@@ -46,7 +45,6 @@ function FullscreenHeroSection({
   copy,
   data,
   onOpenListing,
-  sections,
   tokens,
 }: StorefrontSectionProps) {
   const rawTheme = data.settings.site.theme;
@@ -54,7 +52,6 @@ function FullscreenHeroSection({
     readString(rawTheme.heroSubtitle) ?? data.settings.site.seoDescription;
   const brandName = tokens.brand.displayName ?? data.settings.store.name;
   const brandLine = tokens.brand.displayLine;
-  const visibleProofItems = createVisibleProofItems(sections);
   const revealRef = useStorefrontSectionReveal<HTMLElement>(
     tokens.motion.style,
   );
@@ -157,31 +154,6 @@ function FullscreenHeroSection({
               {copy.ctaLabel}
             </a>
           </div>
-
-          {/* Proof banners */}
-          {visibleProofItems.length > 0 && (
-            <div
-              className="mt-10 grid gap-0 overflow-hidden rounded-xl border border-[var(--sf-chrome-line)] bg-[var(--sf-chrome-glass)] backdrop-blur sm:grid-cols-3"
-              data-sf-reveal
-            >
-              {visibleProofItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    className="flex min-h-12 items-center gap-3 border-b border-[var(--sf-chrome-line)] p-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
-                    key={item.label}
-                  >
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
-                      <Icon aria-hidden="true" className="size-3.5" />
-                    </span>
-                    <span className="text-xs font-bold tracking-wide">
-                      {item.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* Floating Spec Card (Desktop Only) */}

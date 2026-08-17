@@ -6,10 +6,10 @@ import type {
 } from "./crmPipelineModels";
 import type {
   CreateProductCrmActivityInput,
-  CrmLeadStatus,
   ProductCrmLead,
   ProductCrmLeadActivity,
 } from "./productCrmTypes";
+import type { PipelineStage } from "./crmPipelineStorage";
 import type { CrmPipelinesState } from "./useCrmPipelines";
 
 export type LeadActivitiesById = Record<string, ProductCrmLeadActivity[]>;
@@ -54,30 +54,6 @@ export type CrmPipelineViewProps = {
   viewMode: CrmViewMode;
 };
 
-export type CrmLeadDetailFullPageProps = {
-  lead: ProductCrmLead;
-  activities: ProductCrmLeadActivity[];
-  onBack: () => void;
-  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
-  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
-  onCreateActivity: (
-    leadId: string,
-    input: CreateProductCrmActivityInput,
-  ) => Promise<void>;
-  onSetLeadArchived: (leadId: string, archived: boolean) => Promise<void>;
-};
-
-export type TabOption =
-  | "visao_geral"
-  | "timeline"
-  | "casos"
-  | "contratos"
-  | "financeiro"
-  | "anexos"
-  | "portal";
-
-import type { PipelineStage } from "./crmPipelineStorage";
-
 export type DetailTab =
   | "visao"
   | "chat"
@@ -85,9 +61,7 @@ export type DetailTab =
   | "reunioes"
   | "notas"
   | "arquivos"
-  | "financeiro"
-  | "seguro"
-  | "portal";
+  | "financeiro";
 
 export type CrmLeadDetailsPageProps = {
   lead: ProductCrmLead;

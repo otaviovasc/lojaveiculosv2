@@ -67,10 +67,6 @@ export function formatBrlCents(valueCents: number | null | undefined) {
   }).format(valueCents / 100);
 }
 
-export function formatLeadOwner(lead: ProductCrmLead) {
-  return lead.assignedUserId ? "Responsável atribuído" : "Sem responsável";
-}
-
 export function hasAssignedLeadOwner(lead: ProductCrmLead) {
   return Boolean(lead.assignedUserId);
 }

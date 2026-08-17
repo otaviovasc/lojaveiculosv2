@@ -16,6 +16,7 @@ import {
   listCredereSimulations,
   pollCredereSimulation,
 } from "../../domains/financing/services/FinancingService/simulationService.js";
+import { syncCredereSimulations } from "../../domains/financing/services/FinancingService/simulationSyncService.js";
 import {
   discoverCredereProviderStores,
   mapCredereStore,
@@ -91,6 +92,7 @@ export function createRuntimeCredereFinancingServices(
         pollCredereSimulation(context, input, ports),
       resolveFipeVehicle: (context, input) =>
         resolveCredereFipeVehicle(context, input, ports),
+      syncSimulations: (context) => syncCredereSimulations(context, {}, ports),
     },
   };
 }

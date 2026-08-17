@@ -4,6 +4,7 @@ import {
   FeaturePageHeader,
   FeaturePageShell,
 } from "../../components/ui/FeatureLayout";
+import { Toast } from "../../components/ui/Toast";
 import { useAccountSession } from "../account/accountSession";
 import { readSessionActiveStore } from "../account/sessionPermissions";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
@@ -61,6 +62,7 @@ export function SimulationsPage({
   });
   const [history, setHistory] = useState<CredereSimulation[] | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [syncFailed, setSyncFailed] = useState(false);
   const [current, setCurrent] = useState<CredereSimulation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -105,13 +107,27 @@ export function SimulationsPage({
     void loadStatus();
   }, [loadStatus]);
 
+  const historyReady =
+    statusState.kind === "ready" &&
+    statusState.status.configured &&
+    Boolean(statusState.status.mappedStoreAlias);
   useEffect(() => {
+    if (!historyReady) return;
     let cancelled = false;
     void (async () => {
+      const api = await apiPromise;
       try {
-        const api = await apiPromise;
+        await api.syncSimulations();
+        if (!cancelled) setSyncFailed(false);
+      } catch {
+        if (!cancelled) setSyncFailed(true);
+      }
+      try {
         const list = await api.listSimulations();
-        if (!cancelled) setHistory(list);
+        if (!cancelled) {
+          setHistory(list);
+          setHistoryError(null);
+        }
       } catch (error) {
         if (!cancelled) {
           setHistoryError(
@@ -126,7 +142,7 @@ export function SimulationsPage({
     return () => {
       cancelled = true;
     };
-  }, [apiPromise]);
+  }, [apiPromise, historyReady]);
 
   useEffect(() => {
     pollAttemptsRef.current = 0;
@@ -256,6 +272,15 @@ export function SimulationsPage({
           apiPromise={apiPromise}
           onChanged={() => void loadStatus()}
         />
+      ) : null}
+      {syncFailed ? (
+        <Toast
+          onDismiss={() => setSyncFailed(false)}
+          title="Não foi possível sincronizar o histórico com o Credere"
+          tone="warning"
+        >
+          Exibindo as simulações já registradas nesta loja.
+        </Toast>
       ) : null}
       {statusState.kind === "loading" ? (
         <SimulationLoadingNotice />

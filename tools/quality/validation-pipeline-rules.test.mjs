@@ -36,7 +36,7 @@ describe("validation pipeline rules", () => {
     expect(failures).toEqual(
       expect.arrayContaining([
         'typecheck must be "pnpm -r typecheck"',
-        'check:format must be "prettier --check ."',
+        'check:format must be "node tools/quality/check-format-changed.mjs"',
         'test:coverage must be "pnpm -r test:coverage"',
         'test:dashboard-animation must be "pnpm --filter @lojaveiculosv2/web exec vitest run src/features/analytics/dashboardHomeAnimation.test.ts"',
         'test:smoke:api must be "pnpm --filter @lojaveiculosv2/api exec vitest run src/infrastructure/http/productionSmoke.test.ts"',
@@ -117,13 +117,16 @@ function validPipeline() {
     lintStaged: {
       "*": "prettier --ignore-unknown --write",
     },
-    qualityCheckFiles: ["tools/quality/check-sample.mjs"],
+    qualityCheckFiles: [
+      "tools/quality/check-format-changed.mjs",
+      "tools/quality/check-sample.mjs",
+    ],
     scripts: {
       prepare: "husky",
       "build:deployables":
         "pnpm --filter @lojaveiculosv2/web build && pnpm run verify:web-bundle && pnpm --filter @lojaveiculosv2/api build",
       "check:sample": "node tools/quality/check-sample.mjs",
-      "check:format": "prettier --check .",
+      "check:format": "node tools/quality/check-format-changed.mjs",
       lint: "pnpm -r lint",
       test: "pnpm -r test",
       "test:coverage": "pnpm -r test:coverage",

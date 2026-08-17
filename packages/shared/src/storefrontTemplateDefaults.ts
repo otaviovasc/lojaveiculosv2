@@ -25,33 +25,6 @@ export const DEFAULT_STOREFRONT_ABOUT_FEATURES = [
   },
 ] as const;
 
-export const DEFAULT_STOREFRONT_TESTIMONIALS = [
-  {
-    id: "default-testimonial-1",
-    imageSrc: null,
-    name: "Cliente satisfeito",
-    quote:
-      "Atendimento transparente, rápido e cuidadoso em todas as etapas da compra.",
-    role: "Cliente da loja",
-  },
-  {
-    id: "default-testimonial-2",
-    imageSrc: null,
-    name: "Novo proprietário",
-    quote:
-      "Encontrei o veículo ideal e tive todo o suporte necessário para decidir com segurança.",
-    role: "Cliente da loja",
-  },
-  {
-    id: "default-testimonial-3",
-    imageSrc: null,
-    name: "Compra realizada",
-    quote:
-      "A negociação foi clara do primeiro contato até a entrega das chaves.",
-    role: "Cliente da loja",
-  },
-] as const;
-
 export const DEFAULT_STOREFRONT_SECTIONS = [
   { id: "hero", order: 0, type: "hero", visible: true },
   { id: "featured", order: 1, type: "featured", visible: true },
@@ -103,5 +76,4 @@ export const DEFAULT_PUBLIC_STOREFRONT_THEME = {
   heroTitle: "Nossas **Ofertas**",
   sections: DEFAULT_STOREFRONT_SECTIONS,
   templateId: "quadra",
-  testimonials: DEFAULT_STOREFRONT_TESTIMONIALS,
 } as const;

@@ -56,4 +56,41 @@ describe("OLX marketplace stock blockers", () => {
       ).map((blocker) => blocker.code),
     ).not.toContain("MARKETPLACE_LISTING_MAPPING_REQUIRED");
   });
+
+  it("names missing canonical codes and explains that OLX was not queried", () => {
+    const listing = toTestMarketplaceListing("listing_1");
+    const blockers = listListingBlockers(
+      {
+        ...listing,
+        catalog: {
+          ...listing.catalog!,
+          modelCode: null,
+          yearCode: null,
+        },
+      },
+      null,
+      "olx",
+    );
+
+    expect(blockers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "catalog.modelCode",
+          layer: "catalog",
+          message: "Catálogo FIPE incompleto: falta o código do modelo.",
+        }),
+        expect.objectContaining({
+          field: "catalog.yearCode",
+          layer: "catalog",
+          message: "Catálogo FIPE incompleto: falta o código do ano.",
+        }),
+        expect.objectContaining({
+          code: "MARKETPLACE_LISTING_OLX_NOT_QUERIED",
+          layer: "provider",
+          message:
+            "OLX não consultada porque a identidade FIPE está incompleta.",
+        }),
+      ]),
+    );
+  });
 });

@@ -1,7 +1,10 @@
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Car, User, SendHorizontal, Phone, Mail } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
+import { useOptionalAccountSession } from "../account/accountSession";
+import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
+import { createRuntimeCrmWhatsappApi } from "./runtimeApi";
 import type {
   CreateProductCrmActivityInput,
   ProductCrmLead,
@@ -27,6 +30,7 @@ export function CrmLeadDetailsSidebar({
   onCreateActivity,
 }: Props) {
   const [commentText, setCommentText] = useState("");
+  const lastMessageAt = useLeadLastWhatsappMessageAt(lead.id);
 
   const handlePostComment = async () => {
     if (!commentText.trim()) return;
@@ -138,36 +142,8 @@ export function CrmLeadDetailsSidebar({
           <div className="flex justify-between items-center">
             <span className="text-muted font-bold">Última mensagem</span>
             <span className="font-extrabold text-xs">
-              {typeof lead.metadata?.lastMessageAt === "string"
-                ? new Date(lead.metadata.lastMessageAt).toLocaleString(
-                    "pt-BR",
-                    {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    },
-                  )
-                : "—"}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted font-bold">Último recebido</span>
-            <span className="font-extrabold text-xs">
-              {typeof lead.metadata?.lastReceivedAt === "string"
-                ? new Date(lead.metadata.lastReceivedAt).toLocaleString(
-                    "pt-BR",
-                    {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    },
-                  )
-                : "—"}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted font-bold">Último enviado</span>
-            <span className="font-extrabold text-xs">
-              {typeof lead.metadata?.lastSentAt === "string"
-                ? new Date(lead.metadata.lastSentAt).toLocaleString("pt-BR", {
+              {lastMessageAt
+                ? new Date(lastMessageAt).toLocaleString("pt-BR", {
                     dateStyle: "short",
                     timeStyle: "short",
                   })
@@ -214,7 +190,7 @@ export function CrmLeadDetailsSidebar({
             <textarea
               aria-label="Comentário interno"
               className="w-full min-h-[50px] bg-transparent text-xs font-bold text-app-text outline-none resize-none placeholder:text-muted/65"
-              placeholder="Escreva um comentário... use @ para mencionar"
+              placeholder="Escreva um comentário interno..."
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) =>
@@ -244,4 +220,39 @@ export function CrmLeadDetailsSidebar({
       </div>
     </aside>
   );
+}
+
+function useLeadLastWhatsappMessageAt(leadId: string) {
+  const session = useOptionalAccountSession();
+  const permissions = useMemo(
+    () => readCrmWhatsappCapabilities(session),
+    [session],
+  );
+  const [lastMessageAt, setLastMessageAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!permissions.canList) {
+      setLastMessageAt(null);
+      return;
+    }
+    let active = true;
+    void createRuntimeCrmWhatsappApi()
+      .listSessions({ leadId, limit: 5 })
+      .then((sessions) => {
+        if (!active) return;
+        const timestamps = sessions
+          .map((item) => item.lastMessageAt)
+          .filter((value): value is string => Boolean(value))
+          .sort();
+        setLastMessageAt(timestamps[timestamps.length - 1] ?? null);
+      })
+      .catch(() => {
+        if (active) setLastMessageAt(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [leadId, permissions.canList]);
+
+  return lastMessageAt;
 }

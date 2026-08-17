@@ -7,16 +7,19 @@ import {
   type ServiceContext,
   type StoreScopedServiceContext,
 } from "../../../shared/serviceContext.js";
-import { createApiBrasilVehiclePlateProvider } from "../../../infrastructure/vehicleEnrichment/apiBrasilVehiclePlateProvider.js";
-import { createOpenRouterVehicleAnalysisProvider } from "../../../infrastructure/vehicleEnrichment/openRouterVehicleAnalysisProvider.js";
-import { resolveOpenRouterConfig } from "../../../infrastructure/openRouterConfig.js";
 import type { VehiclePlateLookupRepository } from "../../../domains/vehicle/ports/vehicleEnrichmentRepository.js";
+import type { VehicleCatalogRepository } from "../../../domains/vehicle/ports/vehicleCatalogRepository.js";
+import { resolvePlateCatalogIdentity } from "../../../domains/vehicle/catalog/resolvePlateCatalogIdentity.js";
 import type { BillingQuotaGuard } from "../../../domains/billing/ports/billingQuotaGuard.js";
 import type {
   InventoryPlateLookupResponse,
   InventoryResaleAnalysisRequest,
   InventoryResaleAnalysisResponse,
 } from "./inventoryEnrichmentTypes.js";
+import {
+  createDefaultInventoryAnalysisProvider,
+  createDefaultInventoryPlateProvider,
+} from "./inventoryEnrichmentProviders.js";
 
 const permission = "inventory.read";
 const defaultPlateLookupCacheTtlMs = 30 * 24 * 60 * 60 * 1000;
@@ -46,12 +49,14 @@ export type VehiclePlateProvider = {
 
 export function createInventoryEnrichmentServices({
   analysisProvider,
+  catalogRepository,
   plateLookupCacheTtlMs = defaultPlateLookupCacheTtlMs,
   plateLookupRepository,
   plateProvider,
   quotaGuard,
 }: {
   analysisProvider?: VehicleAnalysisProvider;
+  catalogRepository?: VehicleCatalogRepository;
   plateLookupCacheTtlMs?: number;
   plateLookupRepository?: VehiclePlateLookupRepository;
   plateProvider?: VehiclePlateProvider;
@@ -59,10 +64,10 @@ export function createInventoryEnrichmentServices({
 } = {}): InventoryEnrichmentServices {
   const getAnalysisProvider = analysisProvider
     ? () => analysisProvider
-    : lazy(createDefaultAnalysisProvider);
+    : lazy(createDefaultInventoryAnalysisProvider);
   const getPlateProvider = plateProvider
     ? () => plateProvider
-    : lazy(createDefaultPlateProvider);
+    : lazy(createDefaultInventoryPlateProvider);
 
   return {
     analyzeResale: (context, input) =>
@@ -77,6 +82,7 @@ export function createInventoryEnrichmentServices({
         "inventory.enrichment.plate_lookup",
         () =>
           lookupPlateWithCache({
+            catalogRepository,
             context,
             plate: input.plate,
             plateLookupCacheTtlMs,
@@ -143,6 +149,7 @@ function normalizePlate(plate: string) {
 }
 
 async function lookupPlateWithCache({
+  catalogRepository,
   context,
   plate,
   plateLookupCacheTtlMs,
@@ -150,6 +157,7 @@ async function lookupPlateWithCache({
   plateProvider,
   quotaGuard,
 }: {
+  catalogRepository?: VehicleCatalogRepository | undefined;
   context: ServiceContext;
   plate: string;
   plateLookupCacheTtlMs: number;
@@ -167,7 +175,7 @@ async function lookupPlateWithCache({
       storeId: context.storeId,
       tenantId: context.tenantId,
     });
-    if (cached) return cached.response;
+    if (cached?.response.lookupVersion === 2) return cached.response;
   }
 
   if (!context.storeId || !context.tenantId) {
@@ -180,7 +188,35 @@ async function lookupPlateWithCache({
     tenantId: context.tenantId,
   });
 
-  const result = await plateProvider.lookupPlate({ plate: normalizedPlate });
+  const providerResult = await plateProvider.lookupPlate({
+    plate: normalizedPlate,
+  });
+  let result = providerResult;
+  if (catalogRepository) {
+    try {
+      result = {
+        ...providerResult,
+        catalogIdentity: await resolvePlateCatalogIdentity(
+          providerResult,
+          catalogRepository,
+        ),
+      };
+    } catch (error) {
+      context.logger.warn("inventory.enrichment.catalog_identity.failed", {
+        ...createServiceLogMetadata(context),
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      });
+      result = {
+        ...providerResult,
+        catalogIdentity: {
+          candidates: [],
+          catalog: null,
+          reason: "catalog_provider_unavailable",
+          status: "unresolved",
+        },
+      };
+    }
+  }
   if (plateLookupRepository && context.storeId && context.tenantId) {
     await plateLookupRepository.upsert({
       fetchedAt: new Date(),
@@ -192,24 +228,6 @@ async function lookupPlateWithCache({
     });
   }
   return result;
-}
-
-function createDefaultAnalysisProvider(): VehicleAnalysisProvider {
-  return createOpenRouterVehicleAnalysisProvider(
-    resolveOpenRouterConfig(process.env, "inventory_resale"),
-  );
-}
-
-function createDefaultPlateProvider(): VehiclePlateProvider {
-  return createApiBrasilVehiclePlateProvider({
-    ...(process.env.API_PLACA_BASE_URL
-      ? { baseUrl: process.env.API_PLACA_BASE_URL }
-      : {}),
-    ...(process.env.API_PLACA_DADOS_PATH
-      ? { dadosPath: process.env.API_PLACA_DADOS_PATH }
-      : {}),
-    token: process.env.API_PLACA_KEY,
-  });
 }
 
 function lazy<T>(create: () => T): () => T {

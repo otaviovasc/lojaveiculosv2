@@ -43,7 +43,7 @@ export function FiscalDocumentActions({
   const canCorrect = isRejectedLikeStatus(document.status);
   const canCancel =
     !!document.providerDocumentId && isCancellableStatus(document.status);
-  const reasonReady = reason.trim().length >= 5;
+  const reasonReady = reason.trim().length >= 15;
 
   async function run(kind: "cancel" | "repeat" | "sync") {
     setBusy(kind);
@@ -115,7 +115,7 @@ export function FiscalDocumentActions({
             aria-label="Motivo do cancelamento"
             className="!min-h-9 w-56 !text-xs"
             onChange={(event) => setReason(event.target.value)}
-            placeholder="Motivo do cancelamento (mín. 5 caracteres)"
+            placeholder="Motivo do cancelamento (mín. 15 caracteres)"
             value={reason}
           />
           <button

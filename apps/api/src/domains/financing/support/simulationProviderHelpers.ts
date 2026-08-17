@@ -127,10 +127,16 @@ export function completeFromProvider(
   simulation: FinancingSimulation,
   ports: FinancingServicePorts,
 ) {
+  const requestedInstallments = inquiry.installments;
+  if (requestedInstallments === null) {
+    throw new Error(
+      "Cannot reconcile a financing inquiry without requested installments.",
+    );
+  }
   return ports.repository.completeInquiry({
     completedAt: now(ports),
     conditions: simulation.conditions.map((condition) =>
-      toCondition(condition, inquiry.installments),
+      toCondition(condition, requestedInstallments),
     ),
     inquiryId: inquiry.id,
     providerInquiryId: simulation.uuid,

@@ -123,6 +123,13 @@ describe("FiscalDocumentList", () => {
     const confirm = within(table).getByRole("button", {
       name: "Confirmar cancelamento",
     });
+    expect(reason).toHaveAttribute(
+      "placeholder",
+      "Motivo do cancelamento (mín. 15 caracteres)",
+    );
+    expect(confirm).toBeDisabled();
+
+    fireEvent.change(reason, { target: { value: "Breve" } });
     expect(confirm).toBeDisabled();
 
     fireEvent.change(reason, { target: { value: "Erro no destinatário" } });

@@ -1,4 +1,4 @@
-import { Calendar, FileText, Globe, Upload } from "lucide-react";
+import { FileText, Upload } from "lucide-react";
 import { kindLabel, statusLabel } from "../documents/documentLabels";
 import { formatDateTime } from "../documents/documentsWorkspaceModel";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
@@ -105,27 +105,7 @@ export function CrmLeadDetailsTabs({
     );
   }
 
-  if (activeTab === "portal") {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center select-none text-app-text">
-        <div className="size-14 rounded-full bg-line/15 border border-line/25 flex items-center justify-center text-muted mb-4">
-          <Globe className="size-6 text-muted/70" />
-        </div>
-        <span className="text-xs font-bold text-muted">
-          Este cliente ainda não tem atividade registrada no portal.
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center text-muted">
-      <Calendar className="size-8 text-muted/65 mb-2" />
-      <span className="text-xs font-bold">
-        Nenhum registro encontrado nesta aba.
-      </span>
-    </div>
-  );
+  return null;
 }
 
 function LinkedDocumentsPanel({

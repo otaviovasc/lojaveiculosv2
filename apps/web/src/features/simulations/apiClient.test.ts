@@ -208,6 +208,33 @@ describe("createCredereApi", () => {
     });
   });
 
+  it("syncs simulations through the settled route", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      jsonResponse({
+        created: 2,
+        remoteCount: 5,
+        skipped: 1,
+        syncedAt: "2026-08-17T12:00:00.000Z",
+        updated: 2,
+      }),
+    );
+    const api = createCredereApi({ fetch });
+
+    const result = await api.syncSimulations();
+
+    expect(fetch.mock.calls[0]?.[0]).toBe(
+      "/api/v1/financing/credere/simulations/sync",
+    );
+    expect(fetch.mock.calls[0]?.[1]?.method).toBe("POST");
+    expect(result).toEqual({
+      created: 2,
+      remoteCount: 5,
+      skipped: 1,
+      syncedAt: "2026-08-17T12:00:00.000Z",
+      updated: 2,
+    });
+  });
+
   it("surfaces a safe API error carrying the backend requestId", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
       jsonResponse(

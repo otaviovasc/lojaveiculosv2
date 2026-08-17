@@ -15,19 +15,12 @@ export type PipelineStageDraft = Pick<
   "color" | "name" | "slaDays" | "status"
 > & { leadStatus?: CrmLeadStatus };
 
-export type RoutingRule = {
-  id: string;
-  origin: string;
-  storeId: string;
-};
-
 export type Pipeline = {
   id: string;
   name: string;
   description: string;
   isDefault: boolean;
   stages: PipelineStage[];
-  routingRules: RoutingRule[];
   rotationActive: boolean;
 };
 
@@ -143,10 +136,6 @@ export const DEFAULT_PIPELINES: Pipeline[] = [
     description: "Pipeline padrão de vendas de veículos",
     isDefault: true,
     stages: DEFAULT_VENDAS_STAGES,
-    routingRules: [
-      { id: "rule-1", origin: "public_site", storeId: "all" },
-      { id: "rule-2", origin: "whatsapp", storeId: "all" },
-    ],
     rotationActive: true,
   },
   {
@@ -155,7 +144,6 @@ export const DEFAULT_PIPELINES: Pipeline[] = [
     description: "Pipeline de avaliação e captação de novos veículos",
     isDefault: false,
     stages: DEFAULT_CAPTACAO_STAGES,
-    routingRules: [{ id: "rule-3", origin: "manual", storeId: "all" }],
     rotationActive: false,
   },
 ];

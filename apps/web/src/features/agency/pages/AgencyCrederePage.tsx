@@ -1,6 +1,7 @@
 import { Landmark, PlugZap, RefreshCw, Unplug } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "../../../components/ui/confirm-dialog";
+import { Toast, type ToastTone } from "../../../components/ui/Toast";
 import {
   FeatureActionButton,
   FeaturePageHeader,
@@ -24,6 +25,10 @@ export function AgencyCrederePage({
   apiFactory?: AgencyCredereApiFactory;
 } = {}) {
   const [disconnectOpen, setDisconnectOpen] = useState(false);
+  const [toast, setToast] = useState<{
+    title: string;
+    tone: ToastTone;
+  } | null>(null);
   const state = useAgencyCrederePageState(apiFactory);
   const {
     actionError,
@@ -169,8 +174,26 @@ export function AgencyCrederePage({
                     busyKey={busyKey}
                     key={store.storeId}
                     mapping={mappingsByStore.get(store.storeId) ?? null}
-                    onRemove={() => void removeMapping(store.storeId)}
-                    onSave={() => void saveMapping(store.storeId)}
+                    onRemove={() =>
+                      void removeMapping(store.storeId).then((ok) => {
+                        if (ok) {
+                          setToast({
+                            title: `Mapeamento de ${store.storeName} removido.`,
+                            tone: "info",
+                          });
+                        }
+                      })
+                    }
+                    onSave={() =>
+                      void saveMapping(store.storeId).then((ok) => {
+                        if (ok) {
+                          setToast({
+                            title: `Loja ${store.storeName} vinculada ao Credere.`,
+                            tone: "success",
+                          });
+                        }
+                      })
+                    }
                     onSelect={(value) =>
                       setSelections((previous) => ({
                         ...previous,
@@ -194,12 +217,25 @@ export function AgencyCrederePage({
         isOpen={disconnectOpen}
         onClose={() => setDisconnectOpen(false)}
         onConfirm={async () => {
-          await disconnect();
+          const ok = await disconnect();
           setDisconnectOpen(false);
+          if (ok) {
+            setToast({
+              title: "Conta Credere desconectada da agência.",
+              tone: "info",
+            });
+          }
         }}
         title="Desconectar a conta Credere da agência?"
         variant="destructive"
       />
+      {toast ? (
+        <Toast
+          onDismiss={() => setToast(null)}
+          title={toast.title}
+          tone={toast.tone}
+        />
+      ) : null}
     </FeaturePageShell>
   );
 }

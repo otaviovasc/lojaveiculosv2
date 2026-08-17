@@ -143,6 +143,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       hasMore: false,
       items: [
         {
+          leadsCount: 0,
           listing: listingDto(),
           mediaCount: 1,
           primaryPublicMediaUrl: "https://cdn.local/front.jpg",

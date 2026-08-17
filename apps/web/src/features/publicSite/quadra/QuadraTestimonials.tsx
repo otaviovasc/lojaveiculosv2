@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import {
   type CSSProperties,
@@ -129,14 +129,6 @@ export function QuadraTestimonials({
                   ) : null}
                   <div className="quadra-testimonial-card__content">
                     <div className="quadra-modern-divider" />
-                    <div
-                      aria-label="5 de 5 estrelas"
-                      className="quadra-testimonial-card__stars"
-                    >
-                      {Array.from({ length: 5 }, (_, index) => (
-                        <Star aria-hidden="true" key={index} />
-                      ))}
-                    </div>
                     <blockquote title={testimonial.quote}>
                       &quot;{clampText(testimonial.quote, 160)}&quot;
                     </blockquote>

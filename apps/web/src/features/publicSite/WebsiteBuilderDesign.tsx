@@ -39,7 +39,7 @@ export function WebsiteBuilderDesign({
 }: {
   isSaving: boolean;
   onDirty?: () => void;
-  onSave: (input: WebsiteBuilderSaveInput) => Promise<void>;
+  onSave: (input: WebsiteBuilderSaveInput) => Promise<boolean>;
   settings: StoreSettingsSnapshot;
 }) {
   const initialConfig = useMemo(
@@ -77,12 +77,12 @@ export function WebsiteBuilderDesign({
   };
 
   const save = async () => {
-    await onSave({
+    const saved = await onSave({
       config,
       settings: applyWebsiteConfigToSettings(settings, config, templateId),
       templateId,
     });
-    setHasUnsavedChanges(false);
+    if (saved) setHasUnsavedChanges(false);
   };
 
   const isPublished = settings.publicSite.isPublished;
@@ -92,7 +92,7 @@ export function WebsiteBuilderDesign({
       config,
       templateId,
     );
-    await onSave({
+    const saved = await onSave({
       config,
       settings: {
         ...nextSettings,
@@ -103,7 +103,7 @@ export function WebsiteBuilderDesign({
       },
       templateId,
     });
-    setHasUnsavedChanges(false);
+    if (saved) setHasUnsavedChanges(false);
   };
 
   const editorGroups = createWebsiteBuilderEditorGroups({
@@ -184,6 +184,7 @@ export function WebsiteBuilderDesign({
             </a>
           </Button>
           <Button
+            aria-label="Salvar"
             className="relative"
             disabled={isSaving}
             onClick={() => void save()}
@@ -197,7 +198,10 @@ export function WebsiteBuilderDesign({
             )}
             {isSaving ? "Salvando..." : "Salvar"}
             {hasUnsavedChanges && !isSaving ? (
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-card bg-warning" />
+              <span
+                aria-label="Alterações não salvas"
+                className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-card bg-warning"
+              />
             ) : null}
           </Button>
         </div>

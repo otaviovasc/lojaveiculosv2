@@ -174,8 +174,7 @@ async function listProviderListings(
           ? [inArray(vehicleProviderListings.listingId, [...input.listingIds])]
           : []),
       ),
-    )
-    .limit(500);
+    );
   return rows.map((row) => ({
     accountId: row.accountId,
     externalId: row.externalId,

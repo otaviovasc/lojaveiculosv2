@@ -1,4 +1,3 @@
-import { CheckCircle2, Star } from "lucide-react";
 import type { QuadraStorefrontModel } from "../quadra/quadraAdapter";
 
 export function AuroraTestimonials({
@@ -27,19 +26,6 @@ export function AuroraTestimonials({
               className={index === 0 ? "is-featured" : undefined}
               key={testimonial.id}
             >
-              <div className="aurora-testimonials__stars">
-                {Array.from({ length: 5 }, (_, starIndex) => (
-                  <Star
-                    aria-hidden="true"
-                    className="aurora-testimonials__star"
-                    key={starIndex}
-                  />
-                ))}
-                <span className="aurora-testimonials__verified">
-                  <CheckCircle2 aria-hidden="true" /> Cliente Verificado
-                </span>
-              </div>
-
               <span
                 aria-hidden="true"
                 className="aurora-testimonials__quote-mark"

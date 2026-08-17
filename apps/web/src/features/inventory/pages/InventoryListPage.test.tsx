@@ -148,6 +148,7 @@ function summary(
   overrides: { priceCents?: number } = {},
 ): InventoryListingSummary {
   return {
+    leadsCount: 0,
     listing: {
       catalog: null,
       commercialTags: [],

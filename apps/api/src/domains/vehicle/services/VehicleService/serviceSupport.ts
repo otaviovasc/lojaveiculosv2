@@ -23,6 +23,7 @@ import type { VehicleCatalogRepository } from "../../ports/vehicleCatalogReposit
 import type { VehicleMediaStorage } from "../../ports/vehicleMediaStorage.js";
 import type { VehicleInventoryServicePorts } from "./types.js";
 import type { VehicleStoreBrandingReader } from "../../ports/vehicleStoreBrandingReader.js";
+import type { VehicleLeadInterestCounter } from "../../ports/vehicleLeadInterestCounter.js";
 export type { VehicleInventoryServicePorts } from "./types.js";
 export { auditVehicleServiceEvent } from "./auditVehicleServiceEvent.js";
 export class VehicleInventoryRepositoryError extends Error {
@@ -145,6 +146,12 @@ export function getStoreBrandingReader(
   ports: VehicleInventoryServicePorts | undefined,
 ): VehicleStoreBrandingReader | null {
   return ports?.storeBrandingReader ?? null;
+}
+
+export function getLeadInterestCounter(
+  ports: VehicleInventoryServicePorts | undefined,
+): VehicleLeadInterestCounter | null {
+  return ports?.leadInterestCounter ?? null;
 }
 
 function requirePort<T>(port: T | undefined, portName: string): T {

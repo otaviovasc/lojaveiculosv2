@@ -50,6 +50,7 @@ export type CredereFinancingServices = {
         selectedMolicarCode?: string;
       },
     ) => Promise<unknown>;
+    syncSimulations: (context: ServiceContext) => Promise<unknown>;
   };
 };
 
@@ -83,6 +84,7 @@ export function createUnavailableCredereFinancingServices(): CredereFinancingSer
       listSimulations: unavailable,
       refreshSimulation: unavailable,
       resolveFipeVehicle: unavailable,
+      syncSimulations: unavailable,
     },
   };
 }

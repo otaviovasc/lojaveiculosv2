@@ -58,6 +58,7 @@ function summary(
   priceCents: number,
 ) {
   return {
+    leadsCount: 0,
     listing: {
       ...listingDto(),
       id: listingId,

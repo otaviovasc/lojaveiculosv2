@@ -20,6 +20,23 @@ export function createMemoryVehicleCatalogRepository(): VehicleCatalogRepository
     },
   ];
 
+  const snapshot = {
+    brandCode: "21",
+    brandLogoUrl: null,
+    brandName: "Fiat",
+    fipeCode: "001267-0",
+    fuel: "Flex",
+    modelCode: "4828",
+    modelName: "Toro Volcano 2.0 16V 4x4 TB Diesel Aut.",
+    modelYear: 2024,
+    priceCents: 12690000,
+    referenceMonth: "junho de 2026",
+    source: "fipe" as const,
+    vehicleType: "cars" as const,
+    yearCode: "2024-1",
+    yearName: "2024 Gasolina",
+  };
+
   return {
     createSyncRun: async (input) => ({
       id: `sync_${input.vehicleType}`,
@@ -27,21 +44,18 @@ export function createMemoryVehicleCatalogRepository(): VehicleCatalogRepository
     }),
     finishSyncRun: async () => undefined,
     getSnapshot: async (input) => ({
+      ...snapshot,
       brandCode: input.brandCode,
-      brandLogoUrl: null,
-      brandName: "Fiat",
-      fipeCode: "001267-0",
-      fuel: "Flex",
       modelCode: input.versionCode,
-      modelName: "Toro Volcano 2.0 16V 4x4 TB Diesel Aut.",
-      modelYear: 2024,
-      priceCents: 12690000,
-      referenceMonth: "junho de 2026",
-      source: "fipe",
       vehicleType: input.vehicleType,
       yearCode: input.yearCode,
-      yearName: "2024 Gasolina",
     }),
+    listSnapshotsByFipeReference: async (input) =>
+      input.fipeCode === snapshot.fipeCode &&
+      input.vehicleType === snapshot.vehicleType &&
+      (input.modelYear === null || input.modelYear === snapshot.modelYear)
+        ? [snapshot]
+        : [],
     listBrands: async () => brands,
     listModelFamilies: async () => models,
     listVersions: async () => versions,

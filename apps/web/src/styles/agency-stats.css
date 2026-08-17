@@ -7,36 +7,6 @@
   width: 100%;
 }
 
-.agency-stats-header {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.agency-stats-header > span {
-  color: var(--color-accent-strong);
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.agency-stats-header h1 {
-  color: var(--color-text);
-  font-size: var(--font-size-2xl);
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.agency-stats-header p {
-  color: var(--color-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  max-width: 44rem;
-}
-
 .agency-stats-unavailable {
   background: linear-gradient(
     135deg,
@@ -189,10 +159,6 @@
   .agency-stats-page {
     gap: 1.5rem;
     padding: 2rem;
-  }
-
-  .agency-stats-header h1 {
-    font-size: var(--font-size-4xl);
   }
 
   .agency-stats-unavailable__copy h2 {

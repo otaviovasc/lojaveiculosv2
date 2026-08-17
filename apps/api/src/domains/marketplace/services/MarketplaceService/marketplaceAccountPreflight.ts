@@ -87,6 +87,13 @@ export async function assertMarketplaceAccountPreflightReady(input: {
   provider: MarketplaceProvider;
 }) {
   const preflight = await checkMarketplaceAccountPreflight(input);
+  assertMarketplaceAccountPreflightResultReady(preflight, input.provider);
+}
+
+export function assertMarketplaceAccountPreflightResultReady(
+  preflight: MarketplaceAccountPreflight,
+  provider: MarketplaceProvider,
+) {
   const blocker =
     preflight.requirements.find(
       (requirement) => requirement.severity === "blocked",
@@ -94,12 +101,22 @@ export async function assertMarketplaceAccountPreflightReady(input: {
   if (!blocker) return;
   throw new MarketplaceServiceError({
     code: blocker.code,
-    details: { provider: input.provider },
+    details: { provider },
     message: blocker.message,
-    provider: input.provider,
+    provider,
     status: statusForCode(blocker.code),
     userAction: blocker.userAction,
   });
+}
+
+export function isMarketplaceAccountPreflightReady(
+  preflight: MarketplaceAccountPreflight,
+) {
+  return !(
+    preflight.requirements.some(
+      (requirement) => requirement.severity === "blocked",
+    ) || requirementForConnectionStatus(preflight.status)
+  );
 }
 
 export function readMarketplaceAccountToken(

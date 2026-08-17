@@ -48,7 +48,11 @@ export async function previewMarketplaceStockSync(
   assertPermission(context, "marketplace.inventory_sync");
   return {
     batchId: randomUUID(),
-    plan: await planMarketplaceStockSync(context, input, ports),
+    plan: await planMarketplaceStockSync(
+      context,
+      { ...input, allowAccountDiagnostics: true },
+      ports,
+    ),
     provider: input.provider,
   };
 }

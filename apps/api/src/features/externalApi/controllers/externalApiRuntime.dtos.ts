@@ -48,6 +48,7 @@ export function toExternalVehicleDetail(detail: ListingDetail) {
 
   return {
     ...toExternalVehicleListItem({
+      leadsCount: 0,
       listing,
       mediaCount: detail.media.length,
       primaryPublicMediaUrl: publicMedia[0]?.url ?? null,

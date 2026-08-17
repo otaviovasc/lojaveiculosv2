@@ -3,6 +3,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { VehicleListingStatus } from "../../ports/vehicleInventoryRepository.js";
 import {
   auditVehicleServiceEvent,
+  getLeadInterestCounter,
   getListingRepository,
   getMediaRepository,
   getUnitRepository,
@@ -50,6 +51,12 @@ export async function listVehicleListings(
     ...scope,
     unitIds: units.map((unit) => unit.id),
   });
+  const leadsCounts = listingIds.length
+    ? ((await getLeadInterestCounter(ports)?.countLeadsByListingIds({
+        ...scope,
+        listingIds,
+      })) ?? new Map<string, number>())
+    : new Map<string, number>();
 
   logVehicleServiceEvent(context, "vehicle_listing.list.read", {
     count: pageListings.length,
@@ -76,6 +83,7 @@ export async function listVehicleListings(
     hasMore: listings.length > limit,
     items: pageListings.map((listing) =>
       createListingSummary({
+        leadsCount: leadsCounts.get(listing.id) ?? 0,
         listing,
         media: media.filter((item) =>
           units

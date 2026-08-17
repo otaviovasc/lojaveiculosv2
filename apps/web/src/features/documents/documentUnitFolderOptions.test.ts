@@ -80,6 +80,7 @@ function summary(): InventoryListingSummary {
   };
 
   return {
+    leadsCount: 0,
     listing: {
       catalog: null,
       commercialTags: [],

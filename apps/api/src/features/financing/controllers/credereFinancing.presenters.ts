@@ -75,6 +75,19 @@ export function presentSimulationList(value: unknown) {
   return { simulations: simulations.map(presentSimulation) };
 }
 
+export function presentSimulationSync(value: unknown) {
+  const record = asRecord(value);
+  return {
+    created: asCount(record.created),
+    remoteCount: asCount(record.remoteCount),
+    skipped: asCount(record.skipped),
+    ...(presentDate(record.syncedAt)
+      ? { syncedAt: presentDate(record.syncedAt) }
+      : {}),
+    updated: asCount(record.updated),
+  };
+}
+
 export function presentProviderStores(value: unknown) {
   const record = asRecord(value);
   return {
@@ -174,6 +187,10 @@ function presentSimulationCondition(value: unknown) {
 
 function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+function asCount(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

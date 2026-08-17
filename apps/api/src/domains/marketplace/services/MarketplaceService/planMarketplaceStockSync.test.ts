@@ -61,7 +61,7 @@ describe("planMarketplaceStockItem", () => {
     expect(item.jobType).toBeNull();
   });
 
-  it("keeps irrelevant historical listings out of customer-facing preview totals", () => {
+  it("accounts for every local stock listing exactly once", () => {
     const current = planMarketplaceStockItem({
       catalogMapping: resolvedMapping(),
       listing: readyListing(),
@@ -92,12 +92,33 @@ describe("planMarketplaceStockItem", () => {
     expect(
       summarizeMarketplaceStockPlan([current, ...historical, linkedRemoval]),
     ).toMatchObject({
-      noOp: 0,
+      accounting: {
+        excluded: 5,
+        found: 6,
+        needsCorrection: 0,
+        processing: 0,
+        ready: 1,
+      },
+      noOp: 4,
       pending: 0,
       publish: 1,
-      total: 2,
+      total: 6,
       unpublish: 1,
     });
+    const plan = summarizeMarketplaceStockPlan([
+      current,
+      ...historical,
+      linkedRemoval,
+    ]);
+    expect(
+      plan.accounting.ready +
+        plan.accounting.needsCorrection +
+        plan.accounting.excluded +
+        plan.accounting.processing,
+    ).toBe(plan.accounting.found);
+    expect(new Set(plan.items.map((item) => item.listing.listingId)).size).toBe(
+      plan.items.length,
+    );
   });
 
   it("blocks public listings that are missing required sync fields", () => {

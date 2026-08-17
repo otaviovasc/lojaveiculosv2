@@ -1,8 +1,8 @@
-import { Banknote, Bot, Target, TrendingUp } from "lucide-react";
+import { Banknote, MessageCircle, Target, TrendingUp } from "lucide-react";
 import type { AnalyticsDashboard, DashboardStatViewModel } from "./types";
 
 const statTones = ["green", "blue", "violet", "pink"] as const;
-const statIcons = [Banknote, Target, TrendingUp, Bot] as const;
+const statIcons = [Banknote, Target, TrendingUp, MessageCircle] as const;
 
 export const fallbackDashboardStats: DashboardStatViewModel[] = [
   {
@@ -28,8 +28,8 @@ export const fallbackDashboardStats: DashboardStatViewModel[] = [
   },
   {
     deltaLabel: "—",
-    icon: Bot,
-    label: "Leads IA",
+    icon: MessageCircle,
+    label: "Leads WhatsApp",
     tone: "pink",
     value: "—",
   },
@@ -61,7 +61,7 @@ export function createDashboardStats(
     },
     {
       deltaLabel: "origem WhatsApp",
-      label: "Leads IA",
+      label: "Leads WhatsApp",
       value: String(whatsapp?.value ?? 0),
     },
   ];

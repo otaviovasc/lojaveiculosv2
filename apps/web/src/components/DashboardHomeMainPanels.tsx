@@ -38,6 +38,7 @@ export function DashboardHomeMainPanels({
         <DashboardLeadSourcesPanel dashboard={analyticsDashboard} />
       </div>
       <DashboardPromoBanner
+        onNavigate={onNavigate}
         resourceIndex={resourceIndex}
         setResourceIndex={setResourceIndex}
       />
@@ -80,9 +81,11 @@ function DashboardAgendaPanel({ dashboard }: { dashboard: HomeDashboard }) {
 }
 
 function DashboardPromoBanner({
+  onNavigate,
   resourceIndex,
   setResourceIndex,
 }: {
+  onNavigate: (moduleId: ModuleId) => void;
   resourceIndex: number;
   setResourceIndex: (index: number) => void;
 }) {
@@ -154,7 +157,11 @@ function DashboardPromoBanner({
                 <p className="promo-banner-desc max-w-[65%] mt-2">
                   {currentResource.desc}
                 </p>
-                <button className="promo-banner-btn mt-4">
+                <button
+                  className="promo-banner-btn mt-4"
+                  onClick={() => onNavigate(currentResource.moduleId)}
+                  type="button"
+                >
                   <span>{currentResource.buttonLabel}</span>
                   <ArrowRight className="size-3" />
                 </button>

@@ -45,11 +45,10 @@
 @import "./crmWhatsappWorkflows.css";
 @import "./crmWhatsappWorkflowMobile.css";
 @import "./crmWhatsappMobileNav.css";
+@import "./crmLeadChatModal.css";
 @import "./crmPipeline.css";
 @import "./crmPipelineLayout.css";
 @import "./crmLeadViews.css";
 @import "./crmClients.css";
-@import "./crmClientKanban.css";
-@import "./crmClientCards.css";
 @import "./crmClientForms.css";
 @import "./content-layout.css";

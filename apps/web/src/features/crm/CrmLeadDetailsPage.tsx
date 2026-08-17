@@ -78,8 +78,6 @@ export function CrmLeadDetailsPage({
     { id: "notas", label: "Notas" },
     { id: "arquivos", label: "Arquivos" },
     { id: "financeiro", label: "Financiamento" },
-    { id: "seguro", label: "Seguro" },
-    { id: "portal", label: "Portal" },
   ] as const;
 
   return (

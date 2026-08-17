@@ -35,7 +35,7 @@ describe("Credere simulation reconciliation", () => {
     });
 
     expect(fetcher.mock.calls[0]?.[0]).toBe(
-      "https://app.meucredere.com.br/api/v1/proposal_simulations?after=2026-07-27&per_page=100&sort=created_at_desc",
+      "https://app.meucredere.com.br/api/v1/proposal_simulations?after=2026-07-27&page=1&per_page=100&sort=created_at_desc",
     );
     expect(candidates).toEqual([
       {
@@ -52,4 +52,41 @@ describe("Credere simulation reconciliation", () => {
     expect(JSON.stringify(candidates)).not.toContain("123.456.789-01");
     expect(JSON.stringify(candidates)).not.toContain("must-not-leave-adapter");
   });
+
+  it("reads every candidate page instead of stopping at the first 100", async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) =>
+      providerCandidate(`simulation_${index}`, index),
+    );
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ data: firstPage }))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: [providerCandidate("simulation_100", 100)] }),
+      );
+
+    const candidates = await gateway(fetcher).listSimulationCandidates({
+      createdAfter: new Date("2026-07-27T12:00:00.000Z"),
+      credereStoreId: "store_123",
+      token: tokenSet(),
+    });
+
+    expect(candidates).toHaveLength(101);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1]?.[0]).toContain("page=2");
+    expect(candidates.at(-1)?.uuid).toBe("simulation_100");
+  });
 });
+
+function providerCandidate(uuid: string, index: number) {
+  return {
+    assets_value: 6_000_000 + index,
+    created_at: "2026-07-27T12:00:00Z",
+    lead: { cpf_cnpj: String(10_000_000_000 + index) },
+    uuid,
+    vehicle: {
+      manufacture_year: 2022,
+      model_year: 2023,
+      vehicle_model: { molicar_code: "01906108-0" },
+    },
+  };
+}

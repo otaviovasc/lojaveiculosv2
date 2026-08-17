@@ -98,6 +98,14 @@ export type CredereSimulation = {
   conditions: CredereSimulationCondition[];
 };
 
+export type CredereSimulationSync = {
+  created: number;
+  remoteCount: number;
+  skipped: number;
+  syncedAt: string | null;
+  updated: number;
+};
+
 export type CredereConsentEvidence = {
   acceptedTerms: boolean;
   /** ISO timestamp captured at the moment of the deliberate acceptance. */

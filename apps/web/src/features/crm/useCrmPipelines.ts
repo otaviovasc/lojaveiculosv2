@@ -120,7 +120,14 @@ export function useCrmPipelines(
       stages: updated.stages,
     });
     setPipelines((current) =>
-      current.map((pipeline) => (pipeline.id === saved.id ? saved : pipeline)),
+      current.map((pipeline) => {
+        if (pipeline.id === saved.id) return saved;
+        // The backend clears the default flag on sibling pipelines.
+        if (saved.isDefault && pipeline.isDefault) {
+          return { ...pipeline, isDefault: false };
+        }
+        return pipeline;
+      }),
     );
   };
 
@@ -128,8 +135,9 @@ export function useCrmPipelines(
     await api.deletePipeline(id);
     setPipelines((current) => {
       const next = current.filter((pipeline) => pipeline.id !== id);
-      const fallbackId = next[0]?.id ?? "";
-      if (fallbackId) setActivePipelineId(fallbackId);
+      if (id === getActivePipelineId(storeId) && next[0]) {
+        setActivePipelineId(next[0].id);
+      }
       return next;
     });
     callback?.();

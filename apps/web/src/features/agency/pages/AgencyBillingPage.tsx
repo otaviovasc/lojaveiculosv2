@@ -1,4 +1,4 @@
-import { CreditCard, RefreshCcw, Sparkles } from "lucide-react";
+import { CreditCard, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   FeatureActionButton,
@@ -7,8 +7,9 @@ import {
 } from "../../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
-  FeatureEmptyState,
+  FeatureLoadingState,
 } from "../../../components/ui/FeatureStates";
+import { Toast, type ToastTone } from "../../../components/ui/Toast";
 import { FeatureTabs } from "../../../components/ui/FeatureTabs";
 import { BillingEventList } from "../../billing/BillingPanels";
 import { BillingAutomaticBillingPanel } from "../../billing/BillingAutomaticBillingPanel";
@@ -52,6 +53,10 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   });
   const [activeTab, setActiveTab] = useState<AgencyBillingTab>("overview");
   const [zapiRequestSaving, setZapiRequestSaving] = useState(false);
+  const [toast, setToast] = useState<{
+    title: string;
+    tone: ToastTone;
+  } | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const checkoutReturn = readBillingCheckoutReturn("agency");
@@ -60,7 +65,7 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     if (!agencyTenant) {
       setStatus({
         kind: "error",
-        message: "Nenhum tenant de agencia ativo foi encontrado.",
+        message: "Nenhum tenant de agência ativo foi encontrado.",
       });
       return;
     }
@@ -162,6 +167,11 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
         current
           ? withAgencyStoreContract(current, selectedStoreId, response.contract)
           : current,
+      );
+      setToast(
+        action === "request"
+          ? { title: "Solicitação Z-API enviada para a loja.", tone: "success" }
+          : { title: "Solicitação Z-API cancelada.", tone: "info" },
       );
     } catch (error) {
       setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
@@ -272,13 +282,18 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
             <BillingEventList events={overview.entitlementEvents} />
           ) : null}
         </>
-      ) : (
-        <FeatureEmptyState
-          body="Sincronizando assinatura, alocacoes e cobranca consolidada."
-          icon={Sparkles}
-          title="Carregando billing da agencia"
+      ) : status.kind === "loading" || !overview || !panelOverview ? (
+        <FeatureLoadingState title="Carregando cobrança da agência">
+          Sincronizando assinatura, alocações e cobrança consolidada.
+        </FeatureLoadingState>
+      ) : null}
+      {toast ? (
+        <Toast
+          onDismiss={() => setToast(null)}
+          title={toast.title}
+          tone={toast.tone}
         />
-      )}
+      ) : null}
     </FeaturePageShell>
   );
 }

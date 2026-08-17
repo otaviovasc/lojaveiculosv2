@@ -104,16 +104,21 @@ export function useAgencyCrederePageState(
     };
   }, [agencyTenant, apisPromise, connection?.connected]);
 
-  const runAction = async (key: string, action: () => Promise<void>) => {
-    if (busyKey) return;
+  const runAction = async (
+    key: string,
+    action: () => Promise<void>,
+  ): Promise<boolean> => {
+    if (busyKey) return false;
     setBusyKey(key);
     setActionError(null);
     try {
       await action();
+      return true;
     } catch (caught) {
       setActionError(
         formatApiErrorDisplay(caught, "Não foi possível concluir a ação."),
       );
+      return false;
     } finally {
       setBusyKey(null);
     }

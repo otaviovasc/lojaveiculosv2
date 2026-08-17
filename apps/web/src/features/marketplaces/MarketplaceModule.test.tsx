@@ -73,10 +73,10 @@ describe("MarketplaceModule", () => {
       }),
     ).toBeEnabled();
     expect(
-      within(card as HTMLElement).queryByRole("button", {
+      within(card as HTMLElement).getByRole("button", {
         name: /Validar lote.*OLX/i,
       }),
-    ).not.toBeInTheDocument();
+    ).toBeEnabled();
     expect(
       within(card as HTMLElement).queryByRole("button", {
         name: /Enviar lote à OLX/i,
@@ -101,12 +101,54 @@ describe("MarketplaceModule", () => {
     );
 
     expect(await screen.findByText("Honda Civic EXL")).toBeVisible();
-    expect(screen.getByText("Publicar")).toBeVisible();
-    expect(screen.getByText("Bloqueados")).toBeVisible();
+    expect(screen.getByText("BMW 320i")).toBeVisible();
+    expect(screen.getByText("Volvo V40 2013")).toBeVisible();
+    expect(screen.getByText("Estoque encontrado")).toBeVisible();
+    expect(screen.getByText("Prontos para publicar")).toBeVisible();
+    expect(screen.getByText("Precisam de correção")).toBeVisible();
+    expect(screen.getAllByText("Fora da publicação").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Em processamento").length).toBeGreaterThan(0);
     expect(screen.getByText(/Fotos públicas obrigatórias/i)).toBeVisible();
     expect(
       screen.getByText(/Adicione e selecione fotos públicas/i),
     ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Publicar no site: Volvo V40 2013" }),
+    ).toBeEnabled();
+  });
+
+  it("keeps send disabled when the preview has no executable decisions", async () => {
+    const blockedOnlyPlan: MarketplaceStockPlan = {
+      ...plan,
+      accounting: {
+        excluded: 0,
+        found: 1,
+        needsCorrection: 1,
+        processing: 0,
+        ready: 0,
+      },
+      items: [plan.items[0]!],
+      noOp: 0,
+      publish: 0,
+      total: 1,
+    };
+    const api = createApi({
+      previewStockSync: vi.fn(async () => ({
+        batchId: "blocked_batch",
+        plan: blockedOnlyPlan,
+        provider: "olx" as const,
+      })),
+    });
+    const user = userEvent.setup();
+    render(<MarketplaceModule api={api} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Validar lote.*OLX/i }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: /Enviar lote à OLX/i }),
+    ).toBeDisabled();
   });
 
   it("runs a stock sync batch from the latest preview", async () => {
@@ -430,12 +472,21 @@ const bothProvidersOverview: MarketplaceOverview = {
 };
 
 const plan: MarketplaceStockPlan = {
+  accounting: {
+    excluded: 1,
+    found: 3,
+    needsCorrection: 1,
+    processing: 0,
+    ready: 1,
+  },
   blocked: 1,
   items: [
     {
+      accountingStatus: "needs_correction",
       blockers: [
         {
           code: "MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS",
+          layer: "listing",
           message: "Foto publica obrigatoria.",
           userAction: "Adicionar fotos publicas ao veiculo.",
         },
@@ -467,13 +518,90 @@ const plan: MarketplaceStockPlan = {
         trimName: "EXL",
         vehicleType: "cars",
       },
+      origin: "stock",
       provider: "olx",
       providerMapping: null,
+      reason: "O veículo precisa de correções antes de ser enviado ao canal.",
+      userAction: null,
+    },
+    {
+      accountingStatus: "ready",
+      blockers: [],
+      decision: "publish",
+      externalId: null,
+      jobType: "listing_publish",
+      listing: {
+        catalog: null,
+        condition: "used",
+        contactPhone: "5511999999999",
+        description: "BMW pronta para publicação.",
+        doors: 4,
+        fuelType: "gasoline",
+        isVisibleOnPublicSite: true,
+        licensePlate: "ABC1D23",
+        listingId: "listing_2",
+        locationZipCode: "01310100",
+        mediaUrls: ["https://cdn.local/bmw.jpg"],
+        mileageKm: 12000,
+        modelYear: 2024,
+        priceCents: 25000000,
+        publicSlug: "bmw-320i",
+        selectedMedia: [
+          { altText: "BMW 320i", url: "https://cdn.local/bmw.jpg" },
+        ],
+        selectedUnitId: "unit_2",
+        status: "published",
+        stockLabel: "BMW 320i",
+        title: "BMW 320i",
+        trimName: "Sport",
+        vehicleType: "cars",
+      },
+      origin: "stock",
+      provider: "olx",
+      providerMapping: null,
+      reason: "O veículo está pronto para ser publicado no canal.",
+      userAction: "Envie o lote para publicar o anúncio.",
+    },
+    {
+      accountingStatus: "excluded",
+      blockers: [],
+      decision: "no_op",
+      externalId: null,
+      jobType: null,
+      listing: {
+        catalog: null,
+        condition: "used",
+        contactPhone: null,
+        description: null,
+        doors: null,
+        fuelType: null,
+        isVisibleOnPublicSite: false,
+        licensePlate: null,
+        listingId: "listing_3",
+        locationZipCode: null,
+        mediaUrls: [],
+        mileageKm: null,
+        modelYear: 2013,
+        priceCents: 8000000,
+        publicSlug: "volvo-v40",
+        selectedMedia: [],
+        selectedUnitId: null,
+        status: "published",
+        stockLabel: "Volvo V40 2013",
+        title: "Volvo V40",
+        trimName: null,
+        vehicleType: "cars",
+      },
+      origin: "stock",
+      provider: "olx",
+      providerMapping: null,
+      reason: "O anúncio está privado na vitrine da loja.",
+      userAction: "Publique o anúncio e habilite a visibilidade na vitrine.",
     },
   ],
-  noOp: 0,
+  noOp: 1,
   pending: 0,
-  publish: 2,
+  publish: 1,
   total: 3,
   unpublish: 0,
   update: 0,

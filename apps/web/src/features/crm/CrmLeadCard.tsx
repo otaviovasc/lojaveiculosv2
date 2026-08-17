@@ -7,17 +7,15 @@ import {
 } from "lucide-react";
 import type { DragEvent, MouseEvent } from "react";
 import { formatLeadName } from "./crmPipelineModels";
-import {
-  formatLeadOwner,
-  formatLeadTimelineLabel,
-  getLinkedLeadVehicles,
-} from "./crmLeadData";
+import { formatLeadTimelineLabel, getLinkedLeadVehicles } from "./crmLeadData";
+import { useCrmLeadOwnerName } from "./useCrmLeadOwnerName";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { ProductCrmLead } from "./productCrmTypes";
 import { sourceLabels } from "./crmPipelineConfig";
 
 type Props = {
   lead: ProductCrmLead;
+  onChatClick: (lead: ProductCrmLead) => void;
   onDragStart: (leadId: string) => void;
   onSelectLead: (leadId: string) => void;
   onSimulateClick: (lead: ProductCrmLead) => void;
@@ -26,6 +24,7 @@ type Props = {
 
 export function CrmLeadCard({
   lead,
+  onChatClick,
   onDragStart,
   onSelectLead,
   onSimulateClick,
@@ -40,6 +39,10 @@ export function CrmLeadCard({
       .map((word) => word.charAt(0))
       .join("") || "?";
   const vehicles = getLinkedLeadVehicles(lead, vehicleOptions);
+  const hasPhone = Boolean(lead.buyerPhone?.trim());
+  const ownerName = useCrmLeadOwnerName(lead);
+  const ownerLabel =
+    ownerName === undefined ? "…" : (ownerName ?? "Sem responsável");
 
   const displayVehicles = vehicles.slice(0, 2);
   const remainingCount = vehicles.length - displayVehicles.length;
@@ -70,6 +73,23 @@ export function CrmLeadCard({
           {leadName}
         </h4>
         <button
+          aria-label={
+            hasPhone
+              ? `Abrir chat de ${formatLeadName(lead)}`
+              : `${formatLeadName(lead)} não tem telefone para chat`
+          }
+          className="p-1 rounded hover:bg-line/20 text-muted hover:text-app-text cursor-pointer shrink-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
+          disabled={!hasPhone}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (hasPhone) onChatClick(lead);
+          }}
+          title={hasPhone ? "Abrir chat" : "Lead sem telefone cadastrado"}
+          type="button"
+        >
+          <MessageSquare aria-hidden="true" className="size-3.5" />
+        </button>
+        <button
           aria-label={`Abrir detalhes de ${formatLeadName(lead)}`}
           className="p-1 rounded hover:bg-line/20 text-muted hover:text-app-text cursor-pointer shrink-0"
           onClick={(e) => {
@@ -82,8 +102,8 @@ export function CrmLeadCard({
         </button>
       </header>
 
-      {/* SLA warning indicator */}
-      <div className="flex items-center gap-1 text-xs font-bold leading-none text-danger">
+      {/* Last interaction timestamp */}
+      <div className="flex items-center gap-1 text-xs font-bold leading-none text-muted">
         <span>{formatLeadTimelineLabel(lead)}</span>
       </div>
 
@@ -147,7 +167,7 @@ export function CrmLeadCard({
       {/* Bottom Owner and Source Row */}
       <div className="flex items-center justify-between gap-2 border-t border-line/20 pt-2 mt-1">
         <div className="min-w-0 flex items-center gap-1 text-xs font-bold text-muted truncate">
-          <span>{formatLeadOwner(lead)}</span>
+          <span>{ownerLabel}</span>
           <span>·</span>
           <span className="truncate">{sourceLabels[lead.source]}</span>
         </div>

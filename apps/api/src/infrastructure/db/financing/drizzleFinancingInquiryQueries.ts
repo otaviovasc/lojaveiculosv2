@@ -1,5 +1,9 @@
 import { and, desc, eq } from "drizzle-orm";
-import { financingConditions, financingInquiries } from "@lojaveiculosv2/db";
+import {
+  financingConditions,
+  financingCustomerConsents,
+  financingInquiries,
+} from "@lojaveiculosv2/db";
 import { toCondition, toInquiry } from "./drizzleFinancingMappers.js";
 import type { DrizzleFinancingClient } from "./drizzleFinancingRepository.js";
 
@@ -13,7 +17,11 @@ export async function findInquiryById(
     .where(inquiryScope(input))
     .limit(1);
   if (!row) return null;
-  return toInquiry(row, await readConditions(db, row.id));
+  return toInquiry(
+    row,
+    await readConditions(db, row.id),
+    await readConsent(db, row),
+  );
 }
 
 export async function listInquiries(
@@ -32,8 +40,40 @@ export async function listInquiries(
     .orderBy(desc(financingInquiries.createdAt))
     .limit(input.limit ?? 50);
   return Promise.all(
-    rows.map(async (row) => toInquiry(row, await readConditions(db, row.id))),
+    rows.map(async (row) =>
+      toInquiry(
+        row,
+        await readConditions(db, row.id),
+        await readConsent(db, row),
+      ),
+    ),
   );
+}
+
+export async function readConsent(
+  db: DrizzleFinancingClient,
+  input: {
+    consentId: string | null;
+    storeId: string;
+    tenantId: string;
+  },
+) {
+  if (!input.consentId) return null;
+  const [row] = await db
+    .select({
+      consentVersion: financingCustomerConsents.consentVersion,
+      grantedAt: financingCustomerConsents.grantedAt,
+    })
+    .from(financingCustomerConsents)
+    .where(
+      and(
+        eq(financingCustomerConsents.id, input.consentId),
+        eq(financingCustomerConsents.storeId, input.storeId),
+        eq(financingCustomerConsents.tenantId, input.tenantId),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
 }
 
 export async function readConditions(

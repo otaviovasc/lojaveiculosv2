@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { RefreshCcw } from "lucide-react";
+import {
+  FeatureActionButton,
+  FeaturePageShell,
+} from "../../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import {
   type AgencySort,
   type AgencyStore,
@@ -25,6 +32,7 @@ import {
 export function AgencyDashboardPage() {
   const [stores, setStores] = useState<AgencyStore[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<AgencySort>("recent");
   const [statusFilter, setStatusFilter] = useState<AgencyStatusFilter>("all");
@@ -44,6 +52,7 @@ export function AgencyDashboardPage() {
       return;
     }
     setLoading(true);
+    setLoadError(null);
     try {
       const token = await readClerkToken();
       const api = createAgencyApi({
@@ -54,8 +63,13 @@ export function AgencyDashboardPage() {
       const overview = await api.getOverview(agencyTenant.tenantId);
       setStores(mapAgencyOverviewToStores(overview));
     } catch (error) {
-      console.error("Error fetching agency stores:", error);
       setStores([]);
+      setLoadError(
+        formatApiErrorDisplay(
+          error,
+          "Não foi possível carregar as lojas da agência.",
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -160,37 +174,68 @@ export function AgencyDashboardPage() {
     });
 
   return (
-    <div className="content-frame animate-fade-in">
-      <AgencyDashboardHeader
-        onCreate={() => void navigate("/agency/admin/create-store")}
+    <FeaturePageShell
+      className="agency-dashboard-shell relative animate-fade-in"
+      variant="content"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute right-1/4 top-0 h-[300px] w-[500px] rounded-full bg-accent-strong/15 blur-[120px]"
       />
-      <AgencyStatsGrid stores={stores} />
-      <AgencyStoresCard
-        filteredCount={filteredAndSortedStores.length}
-        onPlanEndDateFromChange={setPlanEndDateFrom}
-        onPlanEndDateToChange={setPlanEndDateTo}
-        onSearchTermChange={setSearchTerm}
-        onSortByChange={setSortBy}
-        onStatusFilterChange={setStatusFilter}
-        planEndDateFrom={planEndDateFrom}
-        planEndDateTo={planEndDateTo}
-        searchTerm={searchTerm}
-        sortBy={sortBy}
-        statusFilter={statusFilter}
-      >
-        <AgencyStoresTable
-          loading={loading}
-          navigate={navigate}
-          onClearFilters={() => {
-            setSearchTerm("");
-            setStatusFilter("all");
-            setPlanEndDateFrom("");
-            setPlanEndDateTo("");
-          }}
-          onManageStore={manageStore}
-          stores={filteredAndSortedStores}
+      <div className="relative z-10 space-y-6">
+        <AgencyDashboardHeader
+          storeCount={stores.length}
+          onCreate={() => void navigate("/agency/admin/create-store")}
         />
-      </AgencyStoresCard>
-    </div>
+        {loadError ? (
+          <FeatureAlert
+            action={
+              <FeatureActionButton
+                icon={RefreshCcw}
+                label="Tentar novamente"
+                onClick={() => void fetchData()}
+              />
+            }
+            title="Rede de lojas indisponível"
+            tone="danger"
+          >
+            {loadError}
+          </FeatureAlert>
+        ) : null}
+        <AgencyStatsGrid stores={stores} />
+        <AgencyStoresCard
+          filteredCount={filteredAndSortedStores.length}
+          onPlanEndDateFromChange={setPlanEndDateFrom}
+          onPlanEndDateToChange={setPlanEndDateTo}
+          onSearchTermChange={setSearchTerm}
+          onSortByChange={setSortBy}
+          onStatusFilterChange={setStatusFilter}
+          planEndDateFrom={planEndDateFrom}
+          planEndDateTo={planEndDateTo}
+          searchTerm={searchTerm}
+          sortBy={sortBy}
+          statusFilter={statusFilter}
+        >
+          <AgencyStoresTable
+            hasActiveFilters={
+              searchTerm !== "" ||
+              statusFilter !== "all" ||
+              planEndDateFrom !== "" ||
+              planEndDateTo !== ""
+            }
+            loading={loading}
+            navigate={navigate}
+            onClearFilters={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setPlanEndDateFrom("");
+              setPlanEndDateTo("");
+            }}
+            onManageStore={manageStore}
+            stores={filteredAndSortedStores}
+          />
+        </AgencyStoresCard>
+      </div>
+    </FeaturePageShell>
   );
 }

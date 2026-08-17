@@ -127,7 +127,7 @@ describe("PublicStorefront Aurora landing inventory", () => {
     expect(
       screen.getByRole("img", { name: "Showroom da Loja Demo Motors" }),
     ).toHaveAttribute("src", "/images/storefront/about-showroom.webp");
-    expect(screen.getByText("Cliente satisfeito")).toBeInTheDocument();
+    expect(screen.queryByText("Cliente satisfeito")).not.toBeInTheDocument();
     expect(
       screen.getByText("Configure seu mapa no Personalizar"),
     ).toBeInTheDocument();

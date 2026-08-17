@@ -121,4 +121,37 @@ describe("VehicleService create listing denials", () => {
 
     expect(create).not.toHaveBeenCalled();
   });
+
+  it("rejects incomplete FIPE identities before persistence", async () => {
+    const context = createContext(["inventory.create"]);
+    const ports = createInMemoryVehiclePorts();
+    const create = vi.spyOn(ports.listingRepository, "create");
+
+    await expect(
+      createVehicleListing(
+        context,
+        {
+          catalog: {
+            brandCode: null,
+            brandName: "Volvo",
+            fipeCode: "029039-4",
+            fuel: "Gasolina",
+            modelCode: null,
+            modelName: "V40 T-4 2.0 Aut./Mec.",
+            modelYear: 2013,
+            priceCents: 6552600,
+            referenceMonth: "agosto de 2026",
+            source: "fipe",
+            vehicleType: "cars",
+            yearCode: null,
+            yearName: "2013 Gasolina",
+          },
+          plate: "AXD9H38",
+          title: "Volvo V40 T-4 2.0 Aut./Mec. 2013",
+        },
+        ports,
+      ),
+    ).rejects.toThrow("FIPE catalog identity is incomplete");
+    expect(create).not.toHaveBeenCalled();
+  });
 });

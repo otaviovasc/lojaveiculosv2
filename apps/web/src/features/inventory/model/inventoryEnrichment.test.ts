@@ -15,6 +15,7 @@ describe("inventory enrichment form helpers", () => {
 
     expect(result).toMatchObject({
       colorName: "white",
+      doors: "4",
       engineAspiration: "turbo",
       engineDisplacement: "2.0",
       fuelType: "flex",
@@ -148,37 +149,69 @@ describe("inventory enrichment form helpers", () => {
     });
   });
 
-  it.each([
-    ["motorcycles", "motorcycles"],
-    ["Moto", "motorcycles"],
-    ["trucks", "trucks"],
-    ["Caminhão", "trucks"],
-  ] as const)(
-    "preserves %s plate lookup catalog types",
-    (vehicleType, expected) => {
-      const result = applyPlateLookupToForm(createInitialInventoryForm(), {
-        ...lookupPayload(),
-        vehicle: { ...lookupPayload().vehicle, vehicleType },
-      });
+  it("does not fabricate a FIPE catalog when canonical identity is unresolved", () => {
+    const lookup = {
+      ...lookupPayload(),
+      catalogIdentity: {
+        candidates: [],
+        catalog: null,
+        reason: "catalog_not_found" as const,
+        status: "unresolved" as const,
+      },
+    };
 
-      expect(result.catalog?.vehicleType).toBe(expected);
-    },
-  );
+    const result = applyPlateLookupToForm(createInitialInventoryForm(), lookup);
+
+    expect(result.catalog).toBeNull();
+  });
+
+  it("keeps the backend-confirmed catalog type instead of inferring from raw text", () => {
+    const result = applyPlateLookupToForm(createInitialInventoryForm(), {
+      ...lookupPayload(),
+      vehicle: { ...lookupPayload().vehicle, vehicleType: "Moto" },
+    });
+
+    expect(result.catalog?.vehicleType).toBe("cars");
+  });
 });
 
 function lookupPayload(): InventoryPlateLookupResponse {
+  const catalog = {
+    brandCode: "21",
+    brandName: "Fiat",
+    fipeCode: "001268-0",
+    fuel: "Flex",
+    modelCode: "4828",
+    modelName: "Strada Ranch",
+    modelYear: 2023,
+    priceCents: 10550000,
+    referenceMonth: "junho de 2026",
+    source: "fipe" as const,
+    vehicleType: "cars" as const,
+    yearCode: "2023-1",
+    yearName: "2023 Gasolina",
+  };
+  const fipe = {
+    brandName: "Fiat",
+    code: "001268-0",
+    fuel: "Flex",
+    modelName: "Strada Ranch",
+    modelYear: 2023,
+    priceCents: 10550000,
+    priceLabel: "R$ 105.500,00",
+    referenceMonth: "junho de 2026",
+    score: 101,
+  };
   return {
-    fipe: {
-      brandName: "Fiat",
-      code: "001268-0",
-      fuel: "Flex",
-      modelName: "Strada Ranch",
-      modelYear: 2023,
-      priceCents: 10550000,
-      priceLabel: "R$ 105.500,00",
-      referenceMonth: "junho de 2026",
-      score: 101,
+    catalogIdentity: {
+      candidates: [],
+      catalog,
+      reason: null,
+      status: "resolved",
     },
+    fipe,
+    fipeCandidates: [fipe],
+    lookupVersion: 2,
     metadata: [{ label: "UF", value: "MG" }],
     plate: "ABC1D23",
     source: "apibrasil",
@@ -189,6 +222,7 @@ function lookupPayload(): InventoryPlateLookupResponse {
       chassis: "*****12345",
       city: "Belo Horizonte",
       color: "Branca",
+      doors: 4,
       engine: "1984",
       fuel: "Flex",
       manufactureYear: 2023,
