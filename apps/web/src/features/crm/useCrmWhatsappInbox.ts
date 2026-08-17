@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAccountSession } from "../account/accountSession";
 import { useRemoteSearch } from "../../lib/useRemoteSearch";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import {
   buildStorefrontUrl,
   findConnectedConnection,
+  isConnectedConnection,
   readConversationStartCapability,
 } from "./crmWhatsappConnectionSelection";
 import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
@@ -77,11 +78,30 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   const connections = useCrmWhatsappConnections(api);
   const connectionId = useMemo(
     () =>
-      connectionFilterId ??
+      (connectionFilterId &&
+      connections.connections.some(
+        (connection) =>
+          String(connection.id) === connectionFilterId &&
+          isConnectedConnection(connection),
+      )
+        ? connectionFilterId
+        : null) ??
       findConnectedConnection(connections.connections)?.id ??
       null,
     [connectionFilterId, connections.connections],
   );
+  useEffect(() => {
+    if (
+      connectionFilterId &&
+      !connections.connections.some(
+        (connection) =>
+          String(connection.id) === connectionFilterId &&
+          isConnectedConnection(connection),
+      )
+    ) {
+      setConnectionFilterId(null);
+    }
+  }, [connectionFilterId, connections.connections]);
   const activeConnection = useMemo(
     () =>
       connections.connections.find(

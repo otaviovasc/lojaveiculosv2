@@ -37,6 +37,14 @@ describe("readOlxChannelOperations", () => {
     ).toBeNull();
   });
 
+  it("offers chat reconfiguration when the marketplace is valid but chat is pending", () => {
+    expect(
+      readOlxAuthorizationAction(createMarketplaceState("connected"), {
+        state: "pending",
+      }),
+    ).toMatchObject({ label: "Reconfigurar OLX" });
+  });
+
   it("distinguishes missing scopes from degraded setup actions", () => {
     expect(
       readOlxAuthorizationAction(

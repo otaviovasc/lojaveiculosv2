@@ -6,19 +6,26 @@ import type {
 export function findConnectedConnection(
   connections: CrmWhatsappProviderConnection[],
 ) {
-  const connected = connections.filter(
-    (connection) =>
-      connection.status !== "paused" &&
-      connection.status !== "archived" &&
-      (connection.live.providerStatus === "connected" ||
-        connection.live.connected === true),
-  );
+  const connected = connections.filter(isConnectedConnection);
   return (
     connected.find((connection) => connection.provider === "zapi") ??
     connected.find(
       (connection) => connection.provider === "composio_whatsapp",
     ) ??
     connected[0]
+  );
+}
+
+export function isConnectedConnection(
+  connection: Pick<CrmWhatsappProviderConnection, "live" | "status">,
+) {
+  return (
+    connection.status !== "paused" &&
+    connection.status !== "archived" &&
+    connection.status !== "disconnected" &&
+    connection.status !== "error" &&
+    (connection.live.providerStatus === "connected" ||
+      connection.live.connected === true)
   );
 }
 
@@ -32,13 +39,7 @@ export function findFreeTextStartConnection(
       connection.capabilities?.conversationStart === true &&
       connection.capabilities.templates !== true,
   );
-  return (
-    findConnectedConnection(startableConnections) ??
-    startableConnections.find(
-      (connection) => connection.status !== "archived",
-    ) ??
-    null
-  );
+  return findConnectedConnection(startableConnections) ?? null;
 }
 
 export type CrmConversationStartCapability = {

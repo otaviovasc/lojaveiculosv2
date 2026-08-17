@@ -23,6 +23,8 @@ export async function transitionConfirmedHumanOutboundAttendance(input: {
   repository: CrmWhatsappRepository;
   senderType: CrmWhatsappMessageSenderType;
   senderOrigin: CrmWhatsappMessageSenderOrigin;
+  reason?: string;
+  source?: string;
   session: CrmWhatsappSession;
 }) {
   if (
@@ -37,8 +39,8 @@ export async function transitionConfirmedHumanOutboundAttendance(input: {
     command: {
       interventionId: input.session.interventionId ?? input.interventionId,
       kind: "start",
-      reason: "human_outbound_message",
-      source: "admin",
+      reason: input.reason ?? "human_outbound_message",
+      source: input.source ?? "admin",
       state: "IN_HUMAN_SERVICE",
     },
     now: input.providerTimestamp,

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { crmWhatsappMessages, crmWhatsappSessions } from "@lojaveiculosv2/db";
 import type {
   IngestCrmWhatsappMessageInput,
@@ -67,7 +67,10 @@ async function reconcileOutboundEchoSender(
       and(
         eq(crmWhatsappMessages.id, message.id),
         eq(crmWhatsappMessages.direction, "OUTBOUND"),
-        eq(crmWhatsappMessages.senderOrigin, "unknown"),
+        inArray(crmWhatsappMessages.senderOrigin, [
+          "unknown",
+          "human_whatsapp",
+        ]),
         eq(crmWhatsappMessages.storeId, input.storeId),
         eq(crmWhatsappMessages.tenantId, input.tenantId),
       ),

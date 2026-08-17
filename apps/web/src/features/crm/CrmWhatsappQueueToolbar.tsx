@@ -3,7 +3,6 @@ import {
   CheckSquare,
   Headset,
   Hourglass,
-  Plug,
   Plus,
   Search,
   Tags,
@@ -11,11 +10,11 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { CrmSelect } from "./CrmFormControls";
 import {
   QueueQuickFilterRow,
   QueueTagFilterMenu,
 } from "./CrmWhatsappQueueToolbarParts";
+import { CrmWhatsappConnectionFilter } from "./CrmWhatsappConnectionFilter";
 import type {
   CrmWhatsappAssignableMember,
   CrmWhatsappHumanAttendanceState,
@@ -25,7 +24,6 @@ import type {
   CrmWhatsappStatus,
   CrmWhatsappTag,
 } from "./crmWhatsappTypes";
-import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
 
 export function WhatsappToolbar({
   assignableMembers,
@@ -100,7 +98,6 @@ export function WhatsappToolbar({
   startConversationUnavailableReason?: string | null;
   unreadOnly: boolean;
 }) {
-  const connectionValue = String(connectionFilterId ?? connectionId ?? "");
   return (
     <header className="crm-whatsapp-toolbar">
       <div className="crm-whatsapp-toolbar-top">
@@ -109,6 +106,12 @@ export function WhatsappToolbar({
           <p>{sessionCount} conversas</p>
         </div>
         <div className="crm-whatsapp-toolbar-actions">
+          <CrmWhatsappConnectionFilter
+            connectionFilterId={connectionFilterId}
+            connections={connections}
+            fallbackConnectionId={connectionId}
+            onChange={onConnectionFilterChange}
+          />
           <button
             aria-label="Gerenciar etiquetas"
             className="crm-icon-action"
@@ -219,21 +222,6 @@ export function WhatsappToolbar({
             <span>{sessionCounts.statuses.COMPLETED}</span>
           ) : null}
         </button>
-        {connections.length > 1 ? (
-          <label className="crm-whatsapp-queue-field">
-            <Plug aria-hidden="true" />
-            <CrmSelect
-              ariaLabel="Filtrar por conexão"
-              className="crm-whatsapp-select crm-whatsapp-queue-select"
-              onChange={(value) => onConnectionFilterChange(value || null)}
-              options={connections.map((connection) => ({
-                label: `${connection.displayName} · ${readCrmWhatsappProviderLabel(connection.provider)}`,
-                value: String(connection.id),
-              }))}
-              value={connectionValue}
-            />
-          </label>
-        ) : null}
       </div>
       <div className="crm-whatsapp-search-row">
         <label className="crm-whatsapp-search">

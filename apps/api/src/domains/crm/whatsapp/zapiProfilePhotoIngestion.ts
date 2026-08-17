@@ -1,6 +1,7 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import {
+  getCrmWhatsappGateway,
   getCrmWhatsappMediaStorage,
   getCrmWhatsappRepository,
   type CrmServicePorts,
@@ -18,6 +19,7 @@ export async function ingestZapiProfilePhoto(
   ports: CrmServicePorts,
 ) {
   const { connection, message } = input;
+  const gateway = getCrmWhatsappGateway(ports);
   const result = await mirrorNewZapiProfilePhoto({
     ...(message.chatLid ? { buyerChatLid: message.chatLid } : {}),
     ...(message.buyerName ? { buyerName: message.buyerName } : {}),
@@ -25,6 +27,14 @@ export async function ingestZapiProfilePhoto(
     connectionId: connection.id,
     contactIdentity: message.chatLid ?? message.phone,
     ...(message.profilePhotoUrl ? { photoUrl: message.profilePhotoUrl } : {}),
+    ...(!message.fromMe &&
+    connection.provider === "zapi" &&
+    gateway.getProfilePhotoUrl
+      ? {
+          resolvePhotoUrl: () =>
+            gateway.getProfilePhotoUrl!(connection, { phone: message.phone }),
+        }
+      : {}),
     remoteMediaFetcher: ports.crmWhatsappMediaFetcher ?? null,
     repository: getCrmWhatsappRepository(ports),
     storage: getCrmWhatsappMediaStorage(ports),

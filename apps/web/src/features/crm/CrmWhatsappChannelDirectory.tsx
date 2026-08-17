@@ -60,7 +60,7 @@ export function CrmWhatsappChannelDirectory({
   const [olxLoading, setOlxLoading] = useState(false);
   const operations = readOlxChannelOperations(connections, olxState);
   const olxAction = olxOverviewLoaded
-    ? readOlxAuthorizationAction(olxState)
+    ? readOlxAuthorizationAction(olxState, operations.chat)
     : null;
 
   useEffect(() => {

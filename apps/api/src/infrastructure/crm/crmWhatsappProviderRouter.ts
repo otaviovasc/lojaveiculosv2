@@ -42,6 +42,8 @@ export function createCrmWhatsappProviderRouter(
       gatewayFor(connection).disconnectConnection(connection),
     getConnectionStatus: (connection) =>
       gatewayFor(connection).getConnectionStatus(connection),
+    getProfilePhotoUrl: async (connection, input) =>
+      gatewayFor(connection).getProfilePhotoUrl?.(connection, input) ?? null,
     listCatalogProducts: (connection, input) =>
       gatewayFor(connection).listCatalogProducts(connection, input),
     removeReaction: (connection, input) =>

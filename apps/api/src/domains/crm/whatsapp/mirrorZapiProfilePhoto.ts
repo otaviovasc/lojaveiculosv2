@@ -8,6 +8,7 @@ export type MirrorZapiProfilePhotoInput = {
   connectionId: string;
   contactIdentity: string;
   photoUrl?: string;
+  resolvePhotoUrl?: () => Promise<string | null>;
   remoteMediaFetcher?: CrmRemoteMediaFetcher | null | undefined;
   storage?: ObjectStorage | null | undefined;
   storeId: StoreId;
@@ -34,7 +35,7 @@ export async function mirrorNewZapiProfilePhoto(
     buyerPhone: string;
     repository: CrmWhatsappRepository;
   },
-) {
+): Promise<MirrorZapiProfilePhotoResult> {
   const existingSession = await input.repository.findSessionByIdentity({
     ...(input.buyerChatLid ? { buyerChatLid: input.buyerChatLid } : {}),
     ...(input.buyerName ? { buyerName: input.buyerName } : {}),
@@ -44,17 +45,52 @@ export async function mirrorNewZapiProfilePhoto(
     storeId: input.storeId,
     tenantId: input.tenantId,
   });
-  return mirrorZapiProfilePhoto({
-    connectionId: input.connectionId,
-    contactIdentity: input.contactIdentity,
-    ...(!hasOwnedProfilePhoto(existingSession?.metadata) && input.photoUrl
-      ? { photoUrl: input.photoUrl }
-      : {}),
-    remoteMediaFetcher: input.remoteMediaFetcher,
-    storage: input.storage,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
+  if (hasOwnedProfilePhoto(existingSession?.metadata)) {
+    return { status: "unavailable" };
+  }
+  let lastResult: MirrorZapiProfilePhotoResult = { status: "unavailable" };
+  for (const photoUrl of input.photoUrl ? [input.photoUrl] : []) {
+    const result = await mirrorZapiProfilePhoto({
+      connectionId: input.connectionId,
+      contactIdentity: input.contactIdentity,
+      photoUrl,
+      remoteMediaFetcher: input.remoteMediaFetcher,
+      storage: input.storage,
+      storeId: input.storeId,
+      tenantId: input.tenantId,
+    });
+    if (result.status === "stored") return result;
+    lastResult = result;
+  }
+  const fallbackPhotoUrl = input.resolvePhotoUrl
+    ? await safelyResolvePhotoUrl(input.resolvePhotoUrl)
+    : null;
+  if (
+    fallbackPhotoUrl &&
+    fallbackPhotoUrl.trim() &&
+    fallbackPhotoUrl !== input.photoUrl
+  ) {
+    lastResult = await mirrorZapiProfilePhoto({
+      connectionId: input.connectionId,
+      contactIdentity: input.contactIdentity,
+      photoUrl: fallbackPhotoUrl,
+      remoteMediaFetcher: input.remoteMediaFetcher,
+      storage: input.storage,
+      storeId: input.storeId,
+      tenantId: input.tenantId,
+    });
+  }
+  return lastResult;
+}
+
+async function safelyResolvePhotoUrl(
+  resolvePhotoUrl: () => Promise<string | null>,
+) {
+  try {
+    return await resolvePhotoUrl();
+  } catch {
+    return null;
+  }
 }
 
 export async function mirrorZapiProfilePhoto(

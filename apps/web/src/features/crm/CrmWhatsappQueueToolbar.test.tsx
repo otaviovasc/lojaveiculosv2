@@ -108,8 +108,9 @@ describe("WhatsappToolbar", () => {
     );
 
     await user.click(screen.getByLabelText("Filtrar por conexão"));
+    expect(screen.queryByText("Loja Offline")).not.toBeInTheDocument();
     await user.click(
-      screen.getByRole("option", { name: "Loja Centro · Z-API" }),
+      screen.getByRole("button", { name: /Z-API.*Loja Centro/ }),
     );
     expect(callbacks.onConnectionFilterChange).toHaveBeenCalledWith(
       "connection_2",
@@ -171,6 +172,16 @@ function createConnections(): CrmWhatsappProviderConnection[] {
   return [
     createConnection("connection_1", "Loja Matriz"),
     createConnection("connection_2", "Loja Centro"),
+    {
+      ...createConnection("connection_offline", "Loja Offline"),
+      live: {
+        ...createConnection("connection_offline", "Loja Offline").live,
+        connected: false,
+        providerStatus: "disconnected",
+        smartphoneConnected: false,
+      },
+      status: "disconnected",
+    },
   ];
 }
 
