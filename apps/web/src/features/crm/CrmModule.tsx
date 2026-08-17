@@ -23,7 +23,6 @@ import type {
 } from "./CrmPipelineViewTypes";
 import { createLeadVehicleOption } from "./crmModuleData";
 import { createLeadWithInitialStage } from "./crmLeadCreation";
-import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
 import {
   crmSurfaceHash,
   readCrmLeadIdFromHash,
@@ -32,6 +31,7 @@ import {
 } from "./crmRouteState";
 import { useCrmPipelines } from "./useCrmPipelines";
 import { useCrmLeadBoard } from "./useCrmLeadBoard";
+import { CrmSurfaceBoundary, CrmWhatsappInbox } from "./CrmModuleParts";
 
 export function CrmModule({
   api,
@@ -207,33 +207,39 @@ export function CrmModule({
   };
 
   if (activeSurface === "whatsapp") {
-    return <CrmWhatsappInbox productApi={crmApi} />;
+    return (
+      <CrmSurfaceBoundary>
+        <CrmWhatsappInbox productApi={crmApi} />
+      </CrmSurfaceBoundary>
+    );
   }
 
   return (
-    <CrmPipelineView
-      activities={activeActivities}
-      activeLeadId={activeLeadId}
-      error={board.error}
-      filters={filters}
-      isLoading={board.isLoading}
-      leads={visibleLeads}
-      loadingStageIds={board.loadingStageIds}
-      onChangeFilters={setFilters}
-      onChangeViewMode={setViewMode}
-      onCreateActivity={createActivity}
-      onCreateLead={createLead}
-      onSetLeadArchived={setLeadArchived}
-      onLoadMoreStage={board.loadMoreStage}
-      onMoveLeadPipelineStage={moveLeadPipelineStage}
-      onSelectLead={setActiveLeadId}
-      onUpdateLead={updateLeadContact}
-      pipelinesState={pipelinesState}
-      stageTotals={board.stageTotals}
-      vehicleOptions={vehicleOptions}
-      viewLeads={visibleLeads}
-      viewMode={viewMode}
-    />
+    <CrmSurfaceBoundary>
+      <CrmPipelineView
+        activities={activeActivities}
+        activeLeadId={activeLeadId}
+        error={board.error}
+        filters={filters}
+        isLoading={board.isLoading}
+        leads={visibleLeads}
+        loadingStageIds={board.loadingStageIds}
+        onChangeFilters={setFilters}
+        onChangeViewMode={setViewMode}
+        onCreateActivity={createActivity}
+        onCreateLead={createLead}
+        onSetLeadArchived={setLeadArchived}
+        onLoadMoreStage={board.loadMoreStage}
+        onMoveLeadPipelineStage={moveLeadPipelineStage}
+        onSelectLead={setActiveLeadId}
+        onUpdateLead={updateLeadContact}
+        pipelinesState={pipelinesState}
+        stageTotals={board.stageTotals}
+        vehicleOptions={vehicleOptions}
+        viewLeads={visibleLeads}
+        viewMode={viewMode}
+      />
+    </CrmSurfaceBoundary>
   );
 }
 
