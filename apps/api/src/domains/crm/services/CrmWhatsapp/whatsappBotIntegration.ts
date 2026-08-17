@@ -212,7 +212,9 @@ export class WhatsappBotActionError extends Error {
     readonly code:
       | "CRM_WHATSAPP_BOT_ACTION_BLOCKED"
       | "CRM_WHATSAPP_BOT_ACTION_UNSUPPORTED"
-      | "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR",
+      | "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR"
+      | "CRM_WHATSAPP_BOT_ROUTE_MISMATCH"
+      | "CRM_WHATSAPP_BOT_ROUTE_UNAVAILABLE",
     readonly status: 400 | 403 | 404 | 409 | 422 = 400,
   ) {
     super(message);

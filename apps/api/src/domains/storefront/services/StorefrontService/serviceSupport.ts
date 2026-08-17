@@ -3,7 +3,10 @@ import type { StorefrontMediaRepository } from "../../ports/storefrontMediaRepos
 import type { StorefrontPageRepository } from "../../ports/storefrontPageRepository.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
-import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
+import {
+  isStorageKeyInEnvironment,
+  stripStorageEnvironmentPrefix,
+} from "../../../../shared/storage/storageKeyScope.js";
 
 export class PublicStorefrontRepositoryError extends Error {
   constructor() {
@@ -165,6 +168,7 @@ export function assertStorefrontMediaStorageKey(
 ) {
   const prefix = `${createStorefrontMediaScopeSegments(scope).join("/")}/`;
   if (
+    !isStorageKeyInEnvironment(storageKey, environment) ||
     !stripStorageEnvironmentPrefix(storageKey, environment).startsWith(prefix)
   ) {
     throw new StorefrontMediaValidationError(

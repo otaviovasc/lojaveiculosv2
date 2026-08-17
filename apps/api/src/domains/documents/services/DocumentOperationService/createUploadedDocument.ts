@@ -19,7 +19,10 @@ import {
   validateDocumentTarget,
 } from "./requestDocumentUpload.js";
 import { DocumentOperationPolicyError } from "./serviceSupport.js";
-import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
+import {
+  isStorageKeyInEnvironment,
+  stripStorageEnvironmentPrefix,
+} from "../../../../shared/storage/storageKeyScope.js";
 
 const permission = "documents.upload";
 
@@ -120,7 +123,10 @@ function assertStorageKeyInScope(
     storageKey,
     environment,
   );
-  if (!scopedStorageKey.startsWith(expectedPrefix)) {
+  if (
+    !isStorageKeyInEnvironment(storageKey, environment) ||
+    !scopedStorageKey.startsWith(expectedPrefix)
+  ) {
     throw new DocumentOperationPolicyError(
       "Document storage key is outside the requested scope.",
     );

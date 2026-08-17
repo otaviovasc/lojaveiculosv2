@@ -1,5 +1,6 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { CrmConnectionProvider } from "./crmConnectionRepository.js";
+import type { CrmRoutingChannel } from "./crmRoutingPolicyRepository.js";
 
 export type CrmBotWebhookEvent =
   | "connection_status_changed"
@@ -29,7 +30,9 @@ export type CrmBotWebhookPayload = {
     profilePhotoUrl: string | null;
     whatsappLid: string | null;
   };
+  channel: CrmRoutingChannel;
   connection: {
+    channel: CrmRoutingChannel;
     id: string;
     phone: string | null;
     provider: CrmConnectionProvider;

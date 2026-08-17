@@ -11,6 +11,8 @@ import {
   type CrmBotWebhookDispatcher,
 } from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
+import type { CrmRoutingConnectionRepository } from "../../ports/crmRoutingConnectionRepository.js";
+import type { CrmRoutingPolicyRepository } from "../../ports/crmRoutingPolicyRepository.js";
 import type { CrmOutcomeRepository } from "../../ports/crmOutcomeRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
@@ -146,6 +148,24 @@ export function getCrmConnectionRepository(
     };
   }
   return ports.crmConnectionRepository;
+}
+
+export function getCrmRoutingConnectionRepository(
+  ports: CrmServicePorts,
+): CrmRoutingConnectionRepository {
+  if (!ports.crmRoutingConnectionRepository) {
+    throw new CrmScopeError("crmRoutingConnectionRepository");
+  }
+  return ports.crmRoutingConnectionRepository;
+}
+
+export function getCrmRoutingPolicyRepository(
+  ports: CrmServicePorts,
+): CrmRoutingPolicyRepository {
+  if (!ports.crmRoutingPolicyRepository) {
+    throw new CrmScopeError("crmRoutingPolicyRepository");
+  }
+  return ports.crmRoutingPolicyRepository;
 }
 
 export function getCrmWhatsappGateway(

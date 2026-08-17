@@ -72,8 +72,8 @@ export function CrmPipelineSettingsGeral({
               <span>Pipeline padrão</span>
             </span>
             <span className="text-xs font-bold text-muted">
-              Este é o pipeline padrão do time. Leads sem regra específica
-              entram aqui.
+              Este é o pipeline padrão do time. Leads sem configuração
+              específica entram aqui.
             </span>
           </div>
           <Switch
@@ -114,8 +114,8 @@ export function CrmPipelineSettingsGeral({
                 Excluir pipeline
               </span>
               <span className="text-xs font-bold text-muted max-w-xl leading-relaxed">
-                Remove o pipeline e todas as suas regras de roteamento e
-                configuração de rodízio. Negócios precisam ser movidos antes.
+                Remove o pipeline e sua configuração de rodízio. Negócios
+                precisam ser movidos antes.
               </span>
             </div>
             <button

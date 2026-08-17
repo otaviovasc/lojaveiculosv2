@@ -11,6 +11,7 @@ import {
 } from "../services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { ExecuteWhatsappBotActionInput } from "../services/CrmWhatsapp/whatsappBotActions.js";
 import { normalizeWhatsappPhone } from "./startWhatsappConversationSupport.js";
+import { assertWhatsappBotSessionRoute } from "./resolveWhatsappBotRoute.js";
 
 export async function assertBotSendAllowed(
   context: ServiceContext,
@@ -18,6 +19,7 @@ export async function assertBotSendAllowed(
   ports: CrmServicePorts,
 ) {
   const session = await findBotActionSession(context, sessionId, ports);
+  await assertWhatsappBotSessionRoute(context, session, ports);
   if (session.status === "HUMAN_TAKEOVER") {
     throw new WhatsappBotActionError(
       "Bot sends are blocked while human takeover is active.",
@@ -25,6 +27,7 @@ export async function assertBotSendAllowed(
       409,
     );
   }
+  return session;
 }
 
 export async function assertBotPhoneSendAllowed(
@@ -128,6 +131,14 @@ export function requireBotActionConnectionId(
   if (input.connectionId) return input.connectionId;
   throw new WhatsappBotActionError(
     "connectionId is required when sessionId is not provided.",
+    "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR",
+  );
+}
+
+export function requireBotActionChannel(input: ExecuteWhatsappBotActionInput) {
+  if (input.channel) return input.channel;
+  throw new WhatsappBotActionError(
+    "channel is required when sessionId is not provided.",
     "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR",
   );
 }

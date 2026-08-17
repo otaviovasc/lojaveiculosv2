@@ -9,6 +9,8 @@ import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationR
 import type { CrmBotWebhookDispatcher } from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmCanonicalInboundRepository } from "../../ports/crmCanonicalInboundRepository.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
+import type { CrmRoutingConnectionRepository } from "../../ports/crmRoutingConnectionRepository.js";
+import type { CrmRoutingPolicyRepository } from "../../ports/crmRoutingPolicyRepository.js";
 import type {
   ComposioWhatsappOnboardingProvider,
   CrmConnectionCredentialVault,
@@ -37,6 +39,8 @@ export type CrmServicePorts = {
   crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
   crmCanonicalInboundRepository?: CrmCanonicalInboundRepository;
   crmConnectionRepository?: CrmConnectionRepository;
+  crmRoutingConnectionRepository?: CrmRoutingConnectionRepository;
+  crmRoutingPolicyRepository?: CrmRoutingPolicyRepository;
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
   crmOlxWebhookSecurity?: CrmOlxWebhookSecurity;
   crmOutcomeRepository?: CrmOutcomeRepository;

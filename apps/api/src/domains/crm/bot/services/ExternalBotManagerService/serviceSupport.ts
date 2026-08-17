@@ -30,6 +30,22 @@ export function assertPermission(
   throw error;
 }
 
+export function assertExternalBotChannelProvider(
+  scope: Pick<ExternalBotScope, "channel" | "provider">,
+) {
+  const valid =
+    (scope.provider === "zapi" && scope.channel === "whatsapp") ||
+    (scope.provider === "olx" && scope.channel === "olx_chat") ||
+    (scope.provider === "meta_cloud" &&
+      (scope.channel === "instagram" || scope.channel === "whatsapp"));
+  if (valid) return;
+  throw botError(
+    "CRM_BOT_SCOPE_MISMATCH",
+    "Bot channel does not match its bound provider connection.",
+    403,
+  );
+}
+
 export async function auditBotOperation(
   context: ServiceContext,
   input: {

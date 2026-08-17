@@ -10,6 +10,7 @@ import type {
   CrmBotWebhookPayload,
 } from "../ports/crmBotWebhookDispatcher.js";
 import type { InterventionEventDetails } from "./whatsappBotInterventionDetails.js";
+import type { CrmRoutingChannel } from "../ports/crmRoutingPolicyRepository.js";
 
 export type BuildCrmBotWebhookPayloadInput = {
   connection: CrmConnection;
@@ -33,6 +34,12 @@ export function buildCrmBotWebhookPayload(
   actionApiBaseUrl: string,
   input: BuildCrmBotWebhookPayloadInput,
 ): CrmBotWebhookPayload {
+  if (input.session.connectionId !== input.connection.id) {
+    throw new Error(
+      "CRM bot webhook session connection does not match the provider event connection.",
+    );
+  }
+  const channel = routingChannelForSession(input.session);
   return {
     actionsApi: {
       authentication: "X-Webhook-Secret",
@@ -44,7 +51,9 @@ export function buildCrmBotWebhookPayload(
       profilePhotoUrl: input.session.profilePhotoUrl,
       whatsappLid: input.session.buyerChatLid,
     },
+    channel,
     connection: {
+      channel,
       id: input.connection.id,
       phone: input.connection.phone,
       provider: input.connection.provider,
@@ -113,12 +122,15 @@ export function buildCrmBotConnectionStatusPayload(
   actionApiBaseUrl: string,
   input: BuildCrmBotConnectionStatusPayloadInput,
 ): CrmBotWebhookPayload {
+  const channel = routingChannelForProvider(input.connection.provider);
   return {
     actionsApi: {
       authentication: "X-Webhook-Secret",
       baseUrl: actionApiBaseUrl,
     },
+    channel,
     connection: {
+      channel,
       id: input.connection.id,
       phone: input.connection.phone,
       provider: input.connection.provider,
@@ -135,6 +147,22 @@ export function buildCrmBotConnectionStatusPayload(
     status: input.status,
     timestamp: input.timestamp.toISOString(),
   };
+}
+
+function routingChannelForSession(
+  session: CrmWhatsappSession,
+): CrmRoutingChannel {
+  if (session.channel === "INSTAGRAM") return "instagram";
+  if (session.channel === "OLX_CHAT") return "olx_chat";
+  return "whatsapp";
+}
+
+function routingChannelForProvider(
+  provider: CrmConnection["provider"],
+): CrmRoutingChannel {
+  if (provider === "composio_instagram") return "instagram";
+  if (provider === "olx_chat") return "olx_chat";
+  return "whatsapp";
 }
 
 export function botSenderOrigin(

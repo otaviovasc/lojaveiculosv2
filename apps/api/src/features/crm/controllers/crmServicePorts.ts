@@ -2,6 +2,10 @@ import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/s
 import { createDrizzleBillingQuotaGuard } from "../../../infrastructure/db/billing/drizzleBillingQuotaGuard.js";
 import { createDrizzleCrmBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmBotIntegrationRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
+import {
+  createDrizzleCrmRoutingConnectionRepository,
+  createDrizzleCrmRoutingPolicyRepository,
+} from "../../../infrastructure/db/crm/drizzleCrmRoutingRepository.js";
 import { createDrizzleCrmCanonicalInboundRepository } from "../../../infrastructure/db/crm/drizzleCrmCanonicalInbound.js";
 import { createDrizzleCrmPipelineRepository } from "../../../infrastructure/db/crm/drizzleCrmPipelineRepository.js";
 import { createDrizzleCrmOutcomeRepository } from "../../../infrastructure/db/crm/drizzleCrmOutcomeRepository.js";
@@ -20,6 +24,7 @@ import {
 } from "../../../infrastructure/crm/olxWebhookSecurity.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmRoutingRepositories } from "../adapters/memory/crmRoutingRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createMemoryCrmOutcomeRepository } from "../adapters/memory/crmOutcomeRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
@@ -43,6 +48,7 @@ export function resolveCrmPorts(
   const connectionSetupPorts = createCrmConnectionSetupPorts(
     options.drizzleClient,
   );
+  const memoryRouting = createMemoryCrmRoutingRepositories();
   const defaultPorts = options.drizzleClient
     ? {
         ...connectionSetupPorts,
@@ -53,6 +59,11 @@ export function resolveCrmPorts(
           options.drizzleClient,
         ),
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
+          options.drizzleClient,
+        ),
+        crmRoutingConnectionRepository:
+          createDrizzleCrmRoutingConnectionRepository(options.drizzleClient),
+        crmRoutingPolicyRepository: createDrizzleCrmRoutingPolicyRepository(
           options.drizzleClient,
         ),
         crmCanonicalInboundRepository:
@@ -95,6 +106,8 @@ export function resolveCrmPorts(
         },
         crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
         crmConnectionRepository: createMemoryCrmConnectionRepository(),
+        crmRoutingConnectionRepository: memoryRouting.connectionRepository,
+        crmRoutingPolicyRepository: memoryRouting.policyRepository,
         crmOlxWebhookSecurity,
         crmOutcomeRepository: createMemoryCrmOutcomeRepository(),
         crmPipelineRepository: createMemoryCrmPipelineRepository(),
@@ -122,6 +135,11 @@ export function resolveCrmPorts(
             tx as DrizzleCrmClient,
           ),
           crmConnectionRepository: createDrizzleCrmConnectionRepository(
+            tx as DrizzleCrmClient,
+          ),
+          crmRoutingConnectionRepository:
+            createDrizzleCrmRoutingConnectionRepository(tx as DrizzleCrmClient),
+          crmRoutingPolicyRepository: createDrizzleCrmRoutingPolicyRepository(
             tx as DrizzleCrmClient,
           ),
           crmCanonicalInboundRepository:

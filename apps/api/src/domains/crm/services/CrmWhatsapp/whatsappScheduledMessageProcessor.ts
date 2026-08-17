@@ -15,6 +15,7 @@ import {
   findProcessableCampaignForSchedule,
   recordCampaignScheduledSendResult,
 } from "../../whatsapp/whatsappCampaignDeliveryMetrics.js";
+import { assertWhatsappScheduledConnectionBinding } from "../../whatsapp/assertWhatsappScheduledConnectionBinding.js";
 
 const processPermission = "crm.whatsapp.schedules.process";
 
@@ -129,6 +130,11 @@ async function processDueMessages(
     if (!claimed) continue;
     processed += 1;
     try {
+      await assertWhatsappScheduledConnectionBinding(
+        scheduled,
+        input.scope,
+        repository,
+      );
       const message = await sendWhatsappText(
         context,
         {

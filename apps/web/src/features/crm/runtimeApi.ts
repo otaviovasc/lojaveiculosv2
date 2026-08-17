@@ -149,6 +149,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).getBotIntegration(),
+    getRoutingPolicy: async () =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).getRoutingPolicy(),
     getCampaign: async (campaignId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).getCampaign(
         campaignId,
@@ -161,6 +165,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).updateBotIntegration(input),
+    updateRoutingPolicy: async (input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).updateRoutingPolicy(input),
     listMessages: async (sessionId, query) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).listMessages(
         sessionId,

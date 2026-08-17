@@ -36,6 +36,7 @@ import { AuthorizationError } from "../../../shared/authorization.js";
 import { OlxWebhookRejectedError } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
 import { handleWhatsappConnectionError } from "./crm.whatsapp.connectionErrors.js";
 import { CrmWhatsappValidationError } from "./crm.whatsapp.validationError.js";
+import { CrmRoutingPolicyValidationError } from "../../../domains/crm/services/CrmRoutingService/routingErrors.js";
 
 export { CrmWhatsappValidationError } from "./crm.whatsapp.validationError.js";
 
@@ -52,6 +53,15 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: 400,
+      });
+    }
+    if (error instanceof CrmRoutingPolicyValidationError) {
+      return jsonApiError(context, {
+        code: "CRM_ROUTING_POLICY_BLOCKED",
+        details: { reason: error.reason },
+        error,
+        message: error.message,
+        status: 422,
       });
     }
     if (error instanceof CrmLeadOutcomeValidationError) {

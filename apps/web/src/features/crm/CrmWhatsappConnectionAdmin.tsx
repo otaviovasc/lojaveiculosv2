@@ -12,6 +12,8 @@ import type {
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
+import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
+import type { CrmWhatsappApi } from "./crmWhatsappApi";
 
 const CrmWhatsappSelfServiceSetup = lazy(async () => {
   const module = await import("./CrmWhatsappSelfServiceSetup");
@@ -40,6 +42,8 @@ type ConnectionAdminProps = {
   isLoading?: boolean;
   onClose?: () => void;
   onRefresh: () => Promise<void>;
+  routingApi?: Pick<CrmWhatsappApi, "getRoutingPolicy" | "updateRoutingPolicy">;
+  canManageRouting?: boolean;
   selfService?: {
     allowance: CrmWhatsappConnectionAllowance;
     availableProviders: CrmWhatsappSetupProvider[];
@@ -57,6 +61,8 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
     error,
     isLoading = false,
     onRefresh,
+    routingApi,
+    canManageRouting = false,
     selfService,
   } = props;
   const pendingConnectionId = readInitialConnectionId(connections);
@@ -120,6 +126,13 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
           Nenhuma conexão de mensagens configurada para esta loja.
         </p>
       )}
+      {routingApi ? (
+        <CrmChannelRoutingPanel
+          api={routingApi}
+          canManage={canManageRouting}
+          connections={connections}
+        />
+      ) : null}
     </section>
   );
 }
