@@ -1,8 +1,5 @@
 import { Activity, Calculator, Replace } from "lucide-react";
-import {
-  AutoEntryDomainCard,
-  AutoEntryStat,
-} from "./AutoEntryDomainPrimitives";
+import { AutoEntryStat } from "./AutoEntryDomainPrimitives";
 import { autoEntryCalculationLabel } from "./autoEntryLabels";
 import { findRule } from "./domainModel";
 import type { AutoEntryDomainPanelProps } from "./domainPanelTypes";
@@ -13,12 +10,16 @@ export function SaleRulesPanel(props: AutoEntryDomainPanelProps) {
   const standard = findRule(props.rules, "sale.standard_commission", null);
   return (
     <div className="grid gap-4">
-      <AutoEntryDomainCard
-        description="A receita da venda segue as datas dos pagamentos. Esta regra apenas repassa a comissão registrada na venda."
-        title="Comissão padrão da venda"
-      >
+      <section aria-label="Comissão padrão da venda" className="ae-info-strip">
+        <div className="ae-info-strip__intro">
+          <h3 className="ae-info-strip__title">Comissão padrão da venda</h3>
+          <p className="ae-info-strip__description">
+            A receita da venda segue as datas dos pagamentos. Esta regra apenas
+            repassa a comissão registrada na venda.
+          </p>
+        </div>
         {standard ? (
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="ae-info-strip__stats grid gap-3 sm:grid-cols-3">
             <AutoEntryStat
               icon={Calculator}
               label="Cálculo"
@@ -40,7 +41,7 @@ export function SaleRulesPanel(props: AutoEntryDomainPanelProps) {
             Nenhuma regra padrão foi retornada. Não há valor numérico presumido.
           </p>
         )}
-      </AutoEntryDomainCard>
+      </section>
       <div className="grid items-stretch gap-4 xl:grid-cols-2">
         <SaleSellerOverrideCard {...props} />
         <SaleExtraCommissionCard {...props} />

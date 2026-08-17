@@ -29,12 +29,12 @@ export function AutoEntryDomainPanel({
       <div className="auto-entries-domain__heading">
         <FeatureToneIcon icon={Icon} size="lg" />
         <div className="min-w-0">
-          <p className="auto-entries-domain__eyebrow">{meta.eyebrow}</p>
           <h2 className="auto-entries-domain__title" id={headingId}>
             {meta.title}
           </h2>
           <p className="auto-entries-domain__description">{meta.description}</p>
         </div>
+        <span className="auto-entries-domain__pill">{meta.tab}</span>
       </div>
       {panelForTab(tab, props)}
       <AutoEntryRulesOverview

@@ -65,12 +65,14 @@ function simulation(
     createdAt: "2026-08-13T12:00:00.000Z",
     id,
     leadId,
+    leadName: null,
     listingId: "listing_1",
     providerRequestId: null,
     reason: null,
     status: "completed",
     success: true,
     unitId: null,
+    vehicleTitle: null,
   };
 }
 

@@ -87,8 +87,10 @@ export type CredereSimulationCondition = {
 export type CredereSimulation = {
   id: string;
   leadId: string | null;
+  leadName: string | null;
   listingId: string | null;
   unitId: string | null;
+  vehicleTitle: string | null;
   /** Literal provider status (for example "pending", "completed", "failed"). */
   status: string;
   createdAt: string | null;

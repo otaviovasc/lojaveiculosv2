@@ -47,7 +47,13 @@ describe("Credere financing simulation presenter", () => {
     const services = createServices({
       store: {
         listSimulations: vi.fn(async () => ({
-          simulations: [rawInquiry({ id: "inquiry_list_1" })],
+          simulations: [
+            rawInquiry({
+              id: "inquiry_list_1",
+              leadName: "Ana Souza",
+              vehicleTitle: "Fiat Argo 2023",
+            }),
+          ],
           storeId: "store_1",
           tenantId: "tenant_1",
         })),
@@ -60,7 +66,13 @@ describe("Credere financing simulation presenter", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      simulations: [safeInquiry({ inquiryId: "inquiry_list_1" })],
+      simulations: [
+        safeInquiry({
+          inquiryId: "inquiry_list_1",
+          leadName: "Ana Souza",
+          vehicleTitle: "Fiat Argo 2023",
+        }),
+      ],
     });
   });
 

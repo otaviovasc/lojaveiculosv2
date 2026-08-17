@@ -35,7 +35,7 @@ describe("AutoEntriesWorkspace domain rules", () => {
       />,
     );
 
-    expect(await screen.findAllByText("Bônus fixo")).toHaveLength(2);
+    expect(await screen.findAllByText("Bônus fixo")).toHaveLength(1);
     await user.click(screen.getByRole("tab", { name: "Personalizadas" }));
     expect(screen.getByText("Nenhuma regra configurada")).toBeVisible();
     expect(screen.queryByText("Bônus fixo")).not.toBeInTheDocument();
@@ -107,6 +107,11 @@ describe("AutoEntriesWorkspace domain rules", () => {
     );
 
     const saleOverview = within(await overviewSection());
+    await user.click(
+      saleOverview.getByRole("button", {
+        name: "Expandir visão geral das regras",
+      }),
+    );
     expect(saleOverview.getByText("Bônus fixo")).toBeVisible();
     expect(saleOverview.getByText("Bônus pausado")).toBeVisible();
     expect(saleOverview.getByText("Ana")).toBeVisible();
@@ -118,6 +123,11 @@ describe("AutoEntriesWorkspace domain rules", () => {
 
     await user.click(screen.getByRole("tab", { name: "Financiamento" }));
     const financingOverview = within(await overviewSection());
+    await user.click(
+      financingOverview.getByRole("button", {
+        name: "Expandir visão geral das regras",
+      }),
+    );
     expect(
       financingOverview.getByText("Comissão do vendedor no financiamento R3"),
     ).toBeVisible();
@@ -131,11 +141,11 @@ describe("AutoEntriesWorkspace domain rules", () => {
     expect(financingOverview.queryByText("Bônus fixo")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Seguro" }));
+    expect(await screen.findByText("Divisão do seguro")).toBeVisible();
+    // Sem regras nesta origem, a visão geral não é renderizada.
     expect(
-      await screen.findByText(
-        "Nenhuma regra desta origem foi configurada ainda.",
-      ),
-    ).toBeVisible();
+      screen.queryByRole("heading", { name: "Visão geral das regras" }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Personalizadas" }));
     expect(

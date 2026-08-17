@@ -104,7 +104,8 @@ export function createInquiryRepositoryMethods(
           (item) =>
             item.storeId === input.storeId && item.tenantId === input.tenantId,
         )
-        .slice(0, input.limit ?? 50);
+        .slice(0, input.limit ?? 50)
+        .map((item) => ({ ...item, leadName: null, vehicleTitle: null }));
     },
     async markInquiryIndeterminate(input) {
       return updateInquiryStatus(state, input, "indeterminate", {

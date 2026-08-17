@@ -5,10 +5,12 @@ import { autoEntryTabsMeta } from "./domainMeta";
 import type { AutoEntryRule, AutoEntryWorkspaceTab } from "./types";
 
 export function AutoEntriesTabs({
+  dirtyTabs,
   onChange,
   rules,
   value,
 }: {
+  dirtyTabs?: ReadonlySet<AutoEntryWorkspaceTab>;
   onChange: (value: AutoEntryWorkspaceTab) => void;
   rules: readonly AutoEntryRule[];
   value: AutoEntryWorkspaceTab;
@@ -47,6 +49,7 @@ export function AutoEntriesTabs({
         const Icon = meta.icon;
         const active = meta.value === value;
         const count = countForTab(activeRules, meta.value);
+        const dirty = dirtyTabs?.has(meta.value) ?? false;
         return (
           <button
             aria-selected={active}
@@ -67,13 +70,17 @@ export function AutoEntriesTabs({
           >
             <FeatureToneIcon icon={Icon} size="sm" />
             <span className="ae-tab__label">{meta.tab}</span>
-            <span aria-hidden="true" className="ae-tab__count">
-              {count}
-            </span>
+            {/* The count badge doubles as the readiness indicator: it picks up
+                the origin tone once the tab has at least one active rule. */}
             <span
               aria-hidden="true"
-              className={cx("ae-tab__dot", count > 0 && "is-ready")}
-            />
+              className={cx("ae-tab__count", count > 0 && "is-ready")}
+            >
+              {count}
+            </span>
+            {dirty ? (
+              <span aria-hidden="true" className="ae-tab__dirty" />
+            ) : null}
           </button>
         );
       })}

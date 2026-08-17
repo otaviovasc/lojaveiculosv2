@@ -1,9 +1,13 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   financingConditions,
   financingCustomerConsents,
   financingInquiries,
+  leads,
+  vehicleListings,
+  vehicleUnits,
 } from "@lojaveiculosv2/db";
+import type { FinancingInquiryListItem } from "../../../domains/financing/ports/financingRepository.js";
 import { toCondition, toInquiry } from "./drizzleFinancingMappers.js";
 import type { DrizzleFinancingClient } from "./drizzleFinancingRepository.js";
 
@@ -27,10 +31,42 @@ export async function findInquiryById(
 export async function listInquiries(
   db: DrizzleFinancingClient,
   input: { limit?: number; storeId: string; tenantId: string },
-) {
+): Promise<FinancingInquiryListItem[]> {
   const rows = await db
-    .select()
+    .select({
+      inquiry: financingInquiries,
+      leadName: leads.buyerName,
+      unitListingId: vehicleUnits.listingId,
+      vehicleTitle: vehicleListings.title,
+    })
     .from(financingInquiries)
+    .leftJoin(
+      leads,
+      and(
+        eq(leads.id, financingInquiries.leadId),
+        eq(leads.tenantId, financingInquiries.tenantId),
+        eq(leads.isDeleted, false),
+      ),
+    )
+    .leftJoin(
+      vehicleUnits,
+      and(
+        eq(vehicleUnits.id, financingInquiries.unitId),
+        eq(vehicleUnits.tenantId, financingInquiries.tenantId),
+        eq(vehicleUnits.isDeleted, false),
+      ),
+    )
+    .leftJoin(
+      vehicleListings,
+      and(
+        eq(
+          vehicleListings.id,
+          sql`coalesce(${financingInquiries.listingId}, ${vehicleUnits.listingId})`,
+        ),
+        eq(vehicleListings.tenantId, financingInquiries.tenantId),
+        eq(vehicleListings.isDeleted, false),
+      ),
+    )
     .where(
       and(
         eq(financingInquiries.storeId, input.storeId),
@@ -40,13 +76,15 @@ export async function listInquiries(
     .orderBy(desc(financingInquiries.createdAt))
     .limit(input.limit ?? 50);
   return Promise.all(
-    rows.map(async (row) =>
-      toInquiry(
-        row,
-        await readConditions(db, row.id),
-        await readConsent(db, row),
+    rows.map(async (row) => ({
+      ...toInquiry(
+        row.inquiry,
+        await readConditions(db, row.inquiry.id),
+        await readConsent(db, row.inquiry),
       ),
-    ),
+      leadName: row.leadName,
+      vehicleTitle: row.vehicleTitle,
+    })),
   );
 }
 

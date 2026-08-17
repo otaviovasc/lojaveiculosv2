@@ -6,6 +6,7 @@ import type {
   FinancingBankCredential,
   FinancingConnection,
   FinancingInquiry,
+  FinancingInquiryListItem,
   FinancingOAuthTransaction,
   FinancingProvider,
   FinancingStoreMapping,
@@ -28,6 +29,7 @@ export type {
   FinancingConnectionStatus,
   FinancingConsentEvidence,
   FinancingInquiry,
+  FinancingInquiryListItem,
   FinancingOAuthTransaction,
   FinancingProvider,
   FinancingProviderStore,
@@ -151,7 +153,7 @@ export type FinancingRepository = {
     limit?: number;
     storeId: StoreId;
     tenantId: TenantId;
-  }) => Promise<FinancingInquiry[]>;
+  }) => Promise<FinancingInquiryListItem[]>;
   listStoreMappings: (input: {
     provider: FinancingProvider;
     tenantId: TenantId;

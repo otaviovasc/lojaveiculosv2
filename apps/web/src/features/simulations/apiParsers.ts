@@ -85,8 +85,10 @@ export function parseSimulation(raw: unknown): CredereSimulation {
   return {
     id: readString(record, ["inquiryId", "uuid", "id", "simulationId"]) ?? "",
     leadId: readString(record, ["leadId", "lead_id"]),
+    leadName: readString(record, ["leadName", "lead_name"]),
     listingId: readString(record, ["listingId", "listing_id"]),
     unitId: readString(record, ["unitId", "unit_id"]),
+    vehicleTitle: readString(record, ["vehicleTitle", "vehicle_title"]),
     status: readString(record, ["status"]) ?? "unknown",
     createdAt: readString(record, ["createdAt", "created_at"]),
     providerRequestId: readString(record, [

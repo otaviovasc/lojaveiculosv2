@@ -112,6 +112,11 @@ export type FinancingInquiry = {
   updatedAt: Date;
 };
 
+export type FinancingInquiryListItem = FinancingInquiry & {
+  leadName: string | null;
+  vehicleTitle: string | null;
+};
+
 export type CreateOAuthTransactionInput = {
   codeVerifier: string | null;
   expiresAt: Date;

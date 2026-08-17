@@ -44,6 +44,12 @@ export function presentSimulation(value: unknown) {
   return {
     inquiryId: String(record.inquiryId ?? record.id ?? ""),
     ...(typeof record.leadId === "string" ? { leadId: record.leadId } : {}),
+    ...(typeof record.leadName === "string"
+      ? { leadName: record.leadName }
+      : {}),
+    ...(typeof record.vehicleTitle === "string"
+      ? { vehicleTitle: record.vehicleTitle }
+      : {}),
     ...(typeof record.listingId === "string"
       ? { listingId: record.listingId }
       : {}),

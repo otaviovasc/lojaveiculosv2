@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import {
   Banknote,
   Calendar,
+  Car,
   CheckCircle2,
   Clock,
   Eye,
   History,
-  Landmark,
+  User,
   XCircle,
 } from "lucide-react";
 import {
@@ -146,7 +147,13 @@ export function SimulationHistoryPanel({
     const conditionsMatch = item.conditions.some((c) =>
       (c.bankName ?? "").toLowerCase().includes(query),
     );
-    return statusMatch || dateMatch || conditionsMatch;
+    const clientMatch = (item.leadName ?? "").toLowerCase().includes(query);
+    const vehicleMatch = (item.vehicleTitle ?? "")
+      .toLowerCase()
+      .includes(query);
+    return (
+      statusMatch || dateMatch || conditionsMatch || clientMatch || vehicleMatch
+    );
   });
 
   if (variant === "compact") {
@@ -241,7 +248,7 @@ export function SimulationHistoryPanel({
           <FeatureSearchField
             label="Buscar simulações"
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filtrar por status, data ou propostas..."
+            placeholder="Filtrar por cliente, veículo, data ou propostas..."
             value={search}
           />
         </div>
@@ -277,9 +284,9 @@ export function SimulationHistoryPanel({
                 <thead>
                   <tr className="border-b border-line bg-app-elevated/60 text-xs font-black uppercase tracking-wider text-muted">
                     <th className="p-3.5">Data e Hora</th>
-                    <th className="p-3.5">Status da Análise</th>
+                    <th className="p-3.5">Cliente</th>
+                    <th className="p-3.5">Veículo</th>
                     <th className="p-3.5">Ofertas e Condições</th>
-                    <th className="p-3.5">Provedor</th>
                     <th className="p-3.5 text-right">Ação</th>
                   </tr>
                 </thead>
@@ -315,12 +322,20 @@ export function SimulationHistoryPanel({
                           </div>
                         </td>
                         <td className="p-3.5">
-                          <FeatureStatusBadge
-                            size="dense"
-                            tone={statusTone(item.status)}
-                          >
-                            {simulationStatusLabel(item.status)}
-                          </FeatureStatusBadge>
+                          <div className="inline-flex items-center gap-2">
+                            <User className="size-3.5 text-muted" />
+                            <span className="font-semibold text-app-text">
+                              {item.leadName ?? "—"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="inline-flex items-center gap-2">
+                            <Car className="size-3.5 text-muted" />
+                            <span className="font-semibold text-app-text">
+                              {item.vehicleTitle ?? "—"}
+                            </span>
+                          </div>
                         </td>
                         <td className="p-3.5">
                           {approvedOffers.length > 0 ? (
@@ -348,12 +363,6 @@ export function SimulationHistoryPanel({
                               Sem ofertas aprovadas
                             </span>
                           )}
-                        </td>
-                        <td className="p-3.5">
-                          <span className="inline-flex items-center gap-1.5 rounded-md border border-line/60 bg-app-elevated/50 px-2 py-0.5 text-xs font-bold text-muted">
-                            <Landmark className="size-3 text-accent-strong" />
-                            Credere
-                          </span>
                         </td>
                         <td className="p-3.5 text-right">
                           <button
@@ -404,12 +413,17 @@ export function SimulationHistoryPanel({
                       <Calendar className="size-3.5" />
                       {formatHistoryDate(item.createdAt)}
                     </span>
-                    <FeatureStatusBadge
-                      size="dense"
-                      tone={statusTone(item.status)}
-                    >
-                      {simulationStatusLabel(item.status)}
-                    </FeatureStatusBadge>
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-sm">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-app-text">
+                      <User className="size-3.5 text-muted" />
+                      {item.leadName ?? "—"}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                      <Car className="size-3.5" />
+                      {item.vehicleTitle ?? "—"}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between border-t border-line/40 pt-2 text-xs">
