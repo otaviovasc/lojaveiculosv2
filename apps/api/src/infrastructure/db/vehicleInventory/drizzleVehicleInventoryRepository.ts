@@ -43,6 +43,8 @@ import {
   createDrizzleVehicleAcquisitionRepository,
   type DrizzleVehicleAcquisitionClient,
 } from "./drizzleVehicleAcquisitionRepository.js";
+import { createDrizzleVehicleLeadInterestCounter } from "../crm/drizzleCrmLeadInterestCounter.js";
+import type { VehicleLeadInterestCounter } from "../../../domains/vehicle/ports/vehicleLeadInterestCounter.js";
 
 export type DrizzleVehicleInventoryClient = DrizzleVehicleListingClient &
   DrizzleVehicleDocumentClient &
@@ -58,6 +60,7 @@ export function createDrizzleVehicleInventoryRepositories(
   db: DrizzleVehicleInventoryClient,
 ): {
   acquisitionRepository: VehicleAcquisitionRepository;
+  leadInterestCounter: VehicleLeadInterestCounter;
   listingRepository: VehicleListingRepository;
   mediaRepository: VehicleMediaRepository;
   checklistRepository: VehicleChecklistRepository;
@@ -72,6 +75,7 @@ export function createDrizzleVehicleInventoryRepositories(
   const checklistRepository = createDrizzleVehicleChecklistRepository(db);
   const documentRepository = createDrizzleVehicleDocumentRepository(db);
   const financeRepository = createDrizzleFinanceRepository(db);
+  const leadInterestCounter = createDrizzleVehicleLeadInterestCounter(db);
   const mediaRepository = createDrizzleVehicleMediaRepository(db);
   const operationsRepository = createDrizzleVehicleOperationsRepository(db);
   const salesRepository = createDrizzleVehicleSalesRepository(db);
@@ -81,6 +85,7 @@ export function createDrizzleVehicleInventoryRepositories(
     checklistRepository,
     documentRepository,
     financeRepository,
+    leadInterestCounter,
     listingRepository,
     mediaRepository,
     operationsRepository,

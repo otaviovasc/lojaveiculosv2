@@ -1,5 +1,3 @@
-import { normalizeBrazilianPhoneDigits } from "../../lib/masks";
-import { pipelineStatuses } from "./crmPipelineConfig";
 import type {
   CreateProductCrmActivityInput,
   CreateProductCrmLeadInput,
@@ -36,20 +34,6 @@ export type LeadTaskMetadata = {
   title?: string | undefined;
 };
 
-export function buildLeadContactPatch(
-  lead: Pick<ProductCrmLead, "buyerPhone">,
-  draft: LeadContactPatch,
-): LeadContactPatch {
-  const { buyerPhone, ...patch } = draft;
-  if (!("buyerPhone" in draft)) return patch;
-
-  const currentPhone = normalizeBrazilianPhoneDigits(lead.buyerPhone ?? "");
-  const nextPhone = normalizeBrazilianPhoneDigits(buyerPhone ?? "");
-  return currentPhone === nextPhone
-    ? patch
-    : { ...patch, buyerPhone: nextPhone || null };
-}
-
 export function filterLeads(leads: ProductCrmLead[], filters: LeadFilters) {
   const needle = normalize(filters.search);
 
@@ -71,15 +55,6 @@ export function filterLeads(leads: ProductCrmLead[], filters: LeadFilters) {
 
     return matchesStatus && matchesSource && matchesSearch;
   });
-}
-
-export function groupLeadsByStatus(leads: ProductCrmLead[]) {
-  return Object.fromEntries(
-    pipelineStatuses.map((status) => [
-      status,
-      leads.filter((lead) => lead.status === status),
-    ]),
-  ) as Record<(typeof pipelineStatuses)[number], ProductCrmLead[]>;
 }
 
 export function deriveLeadStats(
@@ -142,10 +117,6 @@ export function isOverdueTask(activity: ProductCrmLeadActivity) {
 
 export function formatLeadName(lead: ProductCrmLead) {
   return lead.buyerName?.trim() || "Lead sem nome";
-}
-
-export function formatLeadContact(lead: ProductCrmLead) {
-  return lead.buyerPhone || lead.buyerEmail || "Contato nao informado";
 }
 
 export function formatRelativeDate(value: string | null) {

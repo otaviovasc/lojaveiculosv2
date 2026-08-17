@@ -6,6 +6,7 @@ import type {
 
 type InventorySummaryOverrides = {
   createdAt?: string;
+  leadsCount?: number;
   listingStatus?: InventoryListingStatus;
   manufactureYear?: number | null;
   mediaCount?: number;
@@ -50,6 +51,7 @@ export function createInventoryListingSummary(
   } satisfies InventoryListingSummary["units"][number];
 
   return {
+    leadsCount: overrides.leadsCount ?? 0,
     listing: {
       catalog: {
         brandCode: "59",

@@ -69,6 +69,7 @@ describe("external API runtime routes", () => {
       hasMore: false,
       items: [
         {
+          leadsCount: 0,
           listing: {
             ...listingDto(),
             catalog: {

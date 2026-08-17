@@ -213,11 +213,6 @@ export function getInventoryFipeComparison(
   };
 }
 
-export function getInventoryLeadsCount(listingId: string): number {
-  const hash = stableHash(listingId);
-  return hash % 9;
-}
-
 export type InventoryLeadInterestLevel =
   "none" | "healthy" | "hot" | "very_hot";
 

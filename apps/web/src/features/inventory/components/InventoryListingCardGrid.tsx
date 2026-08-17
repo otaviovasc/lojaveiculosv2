@@ -19,7 +19,6 @@ import {
   getInventoryDisplayStatus,
   getInventoryFipeComparison,
   getInventoryKm,
-  getInventoryLeadsCount,
   getInventoryPlate,
   getInventoryStockDays,
   getInventoryYearLine,
@@ -109,7 +108,7 @@ function InventoryListingCard({
   const km = getInventoryKm(listing.id, listing.modelYear);
   const days = getInventoryStockDays(listing.createdAt, listing.id);
   const fipe = getInventoryFipeComparison(listing.priceCents, listing.id);
-  const leads = getInventoryLeadsCount(listing.id);
+  const leads = item.leadsCount;
 
   return (
     <motion.article

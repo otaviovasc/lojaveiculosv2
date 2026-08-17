@@ -14,7 +14,6 @@ import {
   getInventoryKm,
   getInventoryStockDays,
   getInventoryFipeComparison,
-  getInventoryLeadsCount,
 } from "../model/listCatalogModel";
 import type { InventoryListSortKey } from "../model/inventoryListSortModel";
 import type { InventoryListingSummary } from "../model/types";
@@ -150,7 +149,7 @@ export function InventoryListingTable({
               listing.priceCents,
               listing.id,
             );
-            const leads = getInventoryLeadsCount(listing.id);
+            const leads = item.leadsCount;
 
             return (
               <tr

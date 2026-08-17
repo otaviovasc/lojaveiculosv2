@@ -211,6 +211,8 @@ export type InventoryListingDetail = {
 };
 
 export type InventoryListingSummary = {
+  /** Distinct non-archived CRM leads interested in this listing (from the API). */
+  leadsCount: number;
   listing: InventoryListing;
   mediaCount: number;
   primaryMediaUrl: string | null;

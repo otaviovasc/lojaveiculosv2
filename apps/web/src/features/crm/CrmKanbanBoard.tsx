@@ -16,6 +16,7 @@ type Props = {
   viewLeads: ProductCrmLead[];
   onQuickAddDeal: (stageId: string) => void;
   onSimulateClick: (lead: ProductCrmLead) => void;
+  onChatClick: (lead: ProductCrmLead) => void;
   onAddStage: () => void;
   onEditStage?: (stage: PipelineStage) => void;
   onLoadMoreStage: (stageId: string) => Promise<void>;
@@ -32,6 +33,7 @@ export function CrmKanbanBoard({
   viewLeads,
   onQuickAddDeal,
   onSimulateClick,
+  onChatClick,
   onAddStage,
   onEditStage,
   onLoadMoreStage,
@@ -250,6 +252,7 @@ export function CrmKanbanBoard({
                   <CrmLeadCard
                     key={lead.id}
                     lead={lead}
+                    onChatClick={onChatClick}
                     onDragStart={setDraggedLeadId}
                     onSelectLead={onSelectLead}
                     onSimulateClick={onSimulateClick}
