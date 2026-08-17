@@ -17,6 +17,7 @@ coverage/
 .DS_Store
 playwright-report/
 test-results/
+.tmp-test/
 *.dump
 *.sql
 !docker/postgres/seed/*.sql

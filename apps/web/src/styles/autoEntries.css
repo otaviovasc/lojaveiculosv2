@@ -271,8 +271,14 @@
   border-radius: var(--surface-radius-xl);
   display: grid;
   gap: var(--app-space-xs);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Mobile: one scrollable tab row with snap points instead of a cramped
+     2-row 3-column grid, so it reads as a horizontal tab bar. */
+  grid-auto-columns: max-content;
+  grid-auto-flow: column;
+  overflow-x: auto;
   padding: var(--app-space-xs);
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
 }
 
 .ae-tab {
@@ -288,6 +294,8 @@
   min-height: 2.75rem;
   min-width: 0;
   padding: var(--app-space-xs) var(--app-space-sm);
+  position: relative;
+  scroll-snap-align: start;
   transition:
     background-color var(--motion-duration-base) var(--motion-ease-standard),
     border-color var(--motion-duration-base) var(--motion-ease-standard),
@@ -332,33 +340,49 @@
   padding-inline: 0.3rem;
 }
 
-.ae-tab__dot {
-  background: var(--color-line-strong);
+/* The readiness dot is merged into the count badge: once a tab has at least
+   one active rule the badge picks up the origin tone instead of showing a
+   separate dot. */
+.ae-tab__count.is-ready {
+  background: var(--tone-soft);
+  border-color: color-mix(in srgb, var(--tone) 45%, var(--color-line));
+  color: var(--tone-strong);
+}
+
+/* Unsaved-changes marker on the tab label (reported via useAutoEntryDirty). */
+.ae-tab__dirty {
+  background: var(--color-warning);
   border-radius: 999px;
   flex: 0 0 auto;
   height: 0.45rem;
   width: 0.45rem;
 }
 
-.ae-tab__dot.is-ready {
-  background: var(--color-green-start);
-}
-
-/* The active tab stays on the neutral panel surface; the origin tone shows up
-   only as a small icon tint and the status dot, keeping the tab row calm. */
+/* The active tab keeps the neutral panel surface; the origin tone shows up as
+   the icon tint, a 2px underline and the badge tint, keeping the row calm. */
 .ae-tab.is-active {
   background: var(--color-panel);
   border-color: color-mix(in srgb, var(--tone) 45%, var(--color-line));
   color: var(--color-text);
 }
 
-.ae-tab.is-active .ae-tab__dot {
+.ae-tab.is-active::after {
   background: var(--tone);
+  border-radius: 999px;
+  bottom: 0.2rem;
+  content: "";
+  height: 2px;
+  left: var(--app-space-sm);
+  position: absolute;
+  right: var(--app-space-sm);
 }
 
 @media (min-width: 64rem) {
   .ae-tabs {
+    grid-auto-columns: unset;
+    grid-auto-flow: unset;
     grid-template-columns: repeat(6, minmax(0, 1fr));
+    overflow-x: visible;
   }
 
   .ae-tab {
@@ -380,13 +404,28 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Coverage summary strip (V1 "Resumo da Automação" pattern)                   */
+/* Coverage summary strip (compact inline bar above the tab bar)               */
 /* -------------------------------------------------------------------------- */
 
-.ae-summary__body {
-  display: grid;
-  gap: var(--app-space-md);
-  margin-top: var(--app-space-md);
+.ae-summary-strip {
+  align-items: center;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-xl);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-sm) var(--app-space-md);
+  padding: var(--app-space-xs) var(--app-space-sm);
+}
+
+.ae-sr-only {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .ae-summary__pills {
@@ -395,19 +434,65 @@
   gap: var(--app-space-xs);
   list-style: none;
   margin: 0;
+  min-width: 0;
   padding: 0;
 }
 
+.ae-summary__pill {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+  transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+    color var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.ae-summary__pill:hover {
+  border-color: var(--color-line-strong);
+  color: var(--color-text);
+}
+
+.ae-summary__pill:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.ae-summary__pill.is-covered {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-success) 45%, var(--color-line));
+  color: var(--color-success-strong);
+}
+
+.ae-summary__pill.is-missing {
+  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-warning) 45%, var(--color-line));
+  color: var(--color-warning-strong);
+}
+
 .ae-summary__meter {
-  display: grid;
-  gap: 0.4rem;
-  min-width: 0;
+  align-items: center;
+  display: flex;
+  flex: 1 1 12rem;
+  gap: var(--app-space-sm);
+  justify-content: flex-end;
+  min-width: 10rem;
 }
 
 .ae-summary__bar {
-  background: var(--color-app-elevated);
+  background: var(--color-panel);
   border-radius: 999px;
+  flex: 1 1 auto;
   height: 0.375rem;
+  max-width: 10rem;
+  min-width: 4rem;
   overflow: hidden;
 }
 
@@ -420,8 +505,10 @@
 
 .ae-summary__stats {
   color: var(--color-muted);
+  flex: 0 0 auto;
   font-size: var(--font-size-xs);
   font-weight: 700;
+  white-space: nowrap;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -441,12 +528,20 @@
   min-width: 0;
 }
 
-.auto-entries-domain__eyebrow {
+/* Domain category pill: the same origin label shown in the tab bar, tinted
+   with the domain tone, replacing the old static "Origem automática" eyebrow. */
+.auto-entries-domain__pill {
+  align-self: flex-start;
+  background: var(--tone-soft);
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--color-line));
+  border-radius: 999px;
   color: var(--tone-strong);
+  flex: 0 0 auto;
   font-size: var(--font-size-xs);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  line-height: 1;
+  margin-inline-start: auto;
+  padding: 0.35rem 0.6rem;
 }
 
 .auto-entries-domain__title {
@@ -462,6 +557,13 @@
   font-size: var(--font-size-sm);
   font-weight: 700;
   margin-top: 0.25rem;
+}
+
+/* Keep the compact one-row header on phones: title + pill only. */
+@media (max-width: 48rem) {
+  .auto-entries-domain__description {
+    display: none;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -799,6 +901,253 @@
   }
 
   .ae-content-enter {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Rules overview disclosure + rule list view toggle (audit items 4 / 10b)     */
+/* -------------------------------------------------------------------------- */
+
+/* Chevron button that expands/collapses the read-only rules overview card. */
+.ae-overview-toggle {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  padding: var(--app-space-xs);
+  transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.ae-overview-toggle:hover {
+  background: var(--color-app-elevated);
+  border-color: var(--color-line-strong);
+  color: var(--color-text);
+}
+
+.ae-overview-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ae-overview-toggle {
+    transition: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Domain panels audit (sale strip, disclosures, rate matrix, previews,       */
+/* tier overlap hints, unsaved-changes dot)                                   */
+/* -------------------------------------------------------------------------- */
+
+/* Sale tab: "Comissão padrão da venda" as a flat read-only info strip — a
+   thin horizontal bar with hairlines instead of full card chrome. */
+.ae-info-strip {
+  border-bottom: 1px solid var(--color-line);
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  gap: var(--app-space-sm);
+  min-width: 0;
+  padding: var(--app-space-sm) 0;
+}
+
+.ae-info-strip__intro {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem var(--app-space-md);
+  min-width: 0;
+}
+
+.ae-info-strip__title {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.ae-info-strip__description {
+  color: var(--color-muted);
+  flex: 1 1 18rem;
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.ae-info-strip__stats {
+  /* stats reuse the flat .ae-stat primitive as-is */
+}
+
+/* Collapsible "Adicionar nova" disclosure (extra commissions add form). */
+.ae-disclosure {
+  border-top: 1px solid var(--color-line);
+  padding-top: var(--app-space-md);
+}
+
+.ae-disclosure__trigger {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.4rem;
+  letter-spacing: 0.06em;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.ae-disclosure__trigger:hover {
+  color: var(--color-text);
+}
+
+.ae-disclosure__trigger:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.ae-disclosure__chevron {
+  transition: transform var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.ae-disclosure__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* Seller override indicator row (count badge + compact name list). */
+.ae-override-indicator {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.4rem;
+}
+
+.ae-override-indicator__count {
+  align-items: center;
+  background: var(--tone-soft);
+  border: 1px solid color-mix(in srgb, var(--tone) 30%, var(--color-line));
+  border-radius: 999px;
+  color: var(--tone-strong);
+  display: inline-flex;
+  font-weight: 900;
+  height: 1.25rem;
+  justify-content: center;
+  min-width: 1.25rem;
+  padding-inline: 0.35rem;
+}
+
+/* Financing R1–R5 rate matrix: compact table, rank labels as column headers,
+   single input row; narrow screens scroll horizontally instead of stacking. */
+.ae-rate-matrix__scroll {
+  overflow-x: auto;
+}
+
+.ae-rate-matrix__table {
+  border-collapse: separate;
+  border-spacing: var(--app-space-xs) 0;
+  min-width: 100%;
+}
+
+.ae-rate-matrix__table th {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  padding: 0 0 0.25rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.ae-rate-matrix__table td {
+  min-width: 5.5rem;
+  vertical-align: top;
+}
+
+/* Stored values get a subtle tone tint; suggestion-only fields stay neutral. */
+.ae-rate-matrix__input--stored {
+  background: color-mix(in srgb, var(--tone) 8%, var(--color-app));
+  border-color: color-mix(in srgb, var(--tone) 35%, var(--color-line));
+}
+
+.ae-rate-matrix__hint {
+  color: var(--tone-strong);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+/* Preview cards (insurance/consortium): gentle <=300ms pulse when the
+   simulated values change. */
+.ae-preview-pulse {
+  animation: ae-preview-in 240ms ease-out;
+}
+
+@keyframes ae-preview-in {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Save action dirty state: pristine (values === stored) is dimmed; a small
+   warning dot flags unsaved changes. */
+.ae-save-action {
+  position: relative;
+  transition: opacity var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.ae-save-action--pristine {
+  opacity: 0.55;
+}
+
+.ae-save-action__dot {
+  background: var(--color-warning);
+  border: 2px solid var(--color-panel);
+  border-radius: 999px;
+  height: 0.6rem;
+  position: absolute;
+  right: -0.2rem;
+  top: -0.2rem;
+  width: 0.6rem;
+}
+
+/* Documentation tiers: row label + real-time overlap hint. */
+.ae-tier-row__label {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ae-tier-input--overlap {
+  border-color: var(--color-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ae-disclosure__chevron,
+  .ae-save-action {
+    transition: none;
+  }
+
+  .ae-preview-pulse {
     animation: none;
   }
 }

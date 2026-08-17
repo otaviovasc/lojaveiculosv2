@@ -53,11 +53,14 @@ export function AutoEntryDomainCard({
 
 export function AutoEntrySaveAction({
   canManage,
+  isDirty,
   isSaving,
   label = "Salvar configuração",
   onClick,
 }: {
   canManage: boolean;
+  /** Card-local dirty flag (draft differs from stored). Undefined = not tracked. */
+  isDirty?: boolean;
   isSaving: boolean;
   label?: string;
   onClick: () => void;
@@ -65,13 +68,26 @@ export function AutoEntrySaveAction({
   if (!canManage) return null;
   return (
     <div className="auto-entry-domain-card__save flex justify-end border-t border-line/50 pt-4">
-      <FeatureActionButton
-        icon={Save}
-        isBusy={isSaving}
-        label={label}
-        onClick={onClick}
-        variant="primary"
-      />
+      <div
+        className={cx(
+          "ae-save-action",
+          isDirty === false && "ae-save-action--pristine",
+        )}
+      >
+        <FeatureActionButton
+          icon={Save}
+          isBusy={isSaving}
+          label={label}
+          onClick={onClick}
+          variant="primary"
+        />
+        {isDirty ? (
+          <>
+            <span aria-hidden="true" className="ae-save-action__dot" />
+            <span className="sr-only">Alterações não salvas</span>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

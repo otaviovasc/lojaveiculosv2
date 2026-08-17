@@ -20,7 +20,9 @@ import {
   readPolicyNumber,
   ruleRateInput,
   toMutation,
+  validMoney,
 } from "./domainModel";
+import { useAutoEntryDirty } from "./autoEntriesDirtyState";
 import type { AutoEntryDomainPanelProps } from "./domainPanelTypes";
 import type { AutoEntryRule } from "./types";
 
@@ -47,8 +49,12 @@ export function InsuranceRulesPanel({
     [seller, store],
   );
   const [values, setValues] = useState(stored);
+  const [basis, setBasis] = useState("");
   const [error, setError] = useState<string | null>(null);
   useEffect(() => setValues(stored), [stored]);
+  const isDirty =
+    values.seller !== stored.seller || values.storeShare !== stored.storeShare;
+  useAutoEntryDirty("insurance_issued", isDirty);
 
   const save = () => {
     const storeSharePpm = parseRatePpm(values.storeShare);
@@ -101,7 +107,7 @@ export function InsuranceRulesPanel({
     ]);
   };
 
-  const preview = previewInsurance(values);
+  const preview = previewInsurance(values, basis);
   return (
     <div className="grid items-stretch gap-4 xl:grid-cols-[2fr_1fr]">
       <AutoEntryDomainCard
@@ -145,25 +151,41 @@ export function InsuranceRulesPanel({
         <AutoEntryInlineError message={error} />
         <AutoEntrySaveAction
           canManage={canManage}
+          isDirty={isDirty}
           isSaving={isSaving}
           onClick={save}
         />
       </AutoEntryDomainCard>
       <AutoEntryDomainCard
-        description="Simulação com prêmio de R$ 5.000 e taxa padrão fixa de 10%."
+        description="Simulação local com a taxa padrão fixa de 10% sobre o prêmio informado."
         title="Prévia"
         tone="neutral"
       >
-        <AutoEntryStat
-          icon={Store}
-          label="Receita da loja"
-          value={preview.store}
-        />
-        <AutoEntryStat
-          icon={UserRound}
-          label="Comissão do vendedor"
-          value={preview.seller}
-        />
+        <FeatureField label="Prêmio da simulação (R$)">
+          <FeatureInput
+            inputMode="decimal"
+            onChange={(event) => setBasis(event.target.value)}
+            placeholder="Ex.: 5.000"
+            value={basis}
+          />
+        </FeatureField>
+        <div
+          className="ae-preview-pulse grid gap-3"
+          key={`${preview.store}|${preview.seller}`}
+        >
+          <AutoEntryStat
+            hint={preview.storeBreakdown}
+            icon={Store}
+            label="Receita da loja"
+            value={preview.store}
+          />
+          <AutoEntryStat
+            hint={preview.sellerBreakdown}
+            icon={UserRound}
+            label="Comissão do vendedor"
+            value={preview.seller}
+          />
+        </div>
       </AutoEntryDomainCard>
     </div>
   );
@@ -195,8 +217,8 @@ function policyRateInput(rule: AutoEntryRule | undefined, key: string) {
   const rate = readPolicyNumber(rule, [key]);
   return rate === null ? "" : formatRatePpm(rate);
 }
-function previewInsurance(values: Values) {
-  const premium = 500_000;
+function previewInsurance(values: Values, basisInput: string) {
+  const premium = validMoney(basisInput) ?? 500_000;
   const share = parseRatePpm(values.storeShare);
   const seller = parseRatePpm(values.seller);
   const money = (cents: number | null) =>
@@ -206,17 +228,20 @@ function previewInsurance(values: Values) {
           currency: "BRL",
           style: "currency",
         }).format(cents / 100);
+  const basisLabel = money(premium);
+  const storeCents =
+    share === null
+      ? null
+      : Math.round(
+          (((premium * appliedCommissionPercentage.default) / 100) * share) /
+            1_000_000,
+        );
+  const sellerCents =
+    seller === null ? null : Math.round((premium * seller) / 1_000_000);
   return {
-    seller: money(
-      seller === null ? null : Math.round((premium * seller) / 1_000_000),
-    ),
-    store: money(
-      share === null
-        ? null
-        : Math.round(
-            (((premium * appliedCommissionPercentage.default) / 100) * share) /
-              1_000_000,
-          ),
-    ),
+    seller: money(sellerCents),
+    sellerBreakdown: `${basisLabel} × ${values.seller || "—"}% = ${money(sellerCents)}`,
+    store: money(storeCents),
+    storeBreakdown: `${basisLabel} × ${appliedCommissionPercentage.default}% × ${values.storeShare || "—"}% = ${money(storeCents)}`,
   };
 }

@@ -29,6 +29,7 @@ describe("AutoEntriesWorkspace", () => {
   it("shows the returned standard commission without inventing a numeric default", async () => {
     const rule = standardCommissionRule();
     const api = autoEntryApi([rule]);
+    const user = userEvent.setup();
 
     render(
       <AutoEntriesWorkspace
@@ -64,6 +65,11 @@ describe("AutoEntriesWorkspace", () => {
       .getByRole("heading", { name: "Visão geral das regras" })
       .closest("section");
     expect(overview).not.toBeNull();
+    await user.click(
+      within(overview as HTMLElement).getByRole("button", {
+        name: "Expandir visão geral das regras",
+      }),
+    );
     expect(
       within(overview as HTMLElement).getByText("Comissão padrão da venda"),
     ).toBeVisible();

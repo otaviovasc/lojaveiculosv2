@@ -1,4 +1,4 @@
-import { Banknote, Trash2, UserRound } from "lucide-react";
+import { Banknote, ChevronDown, Trash2, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   FeatureInput,
@@ -16,6 +16,7 @@ import {
   AutoEntrySaveAction,
 } from "./AutoEntryDomainPrimitives";
 import { autoEntryCalculationLabel } from "./autoEntryLabels";
+import { useAutoEntryDirty } from "./autoEntriesDirtyState";
 import {
   AutoEntryTimingFields,
   buildTiming,
@@ -49,6 +50,11 @@ export function SaleExtraCommissionCard({
     value: "",
   });
   const [error, setError] = useState<string | null>(null);
+  // The add form stays expanded while there is nothing saved yet; once the
+  // list has entries it collapses into a disclosure at the card bottom.
+  const [isFormOpen, setIsFormOpen] = useState(existing.length === 0);
+  const isDirty = Boolean(name.trim() || recipientUserId || amount);
+  useAutoEntryDirty("vehicle_sale_closed", isDirty);
   const save = () => {
     const amountCents = validMoney(amount);
     const parsedTiming = buildTiming(timing);
@@ -133,42 +139,65 @@ export function SaleExtraCommissionCard({
           ))}
         </ul>
       ) : null}
-      <FeatureField
-        hint="Beneficiário fixo; não limita o vendedor que originou a venda."
-        label="Beneficiário"
-      >
-        <FeatureSelect
-          ariaLabel="Beneficiário da comissão extra"
-          onChange={setRecipientUserId}
-          options={sellerSelectOptions(sellers)}
-          placeholder="Selecione o beneficiário"
-          value={recipientUserId || undefined}
-        />
-      </FeatureField>
-      <FeatureFieldGroup>
-        <FeatureField label="Nome da comissão">
-          <FeatureInput
-            onChange={(event) => setName(event.target.value)}
-            value={name}
+      <div className="ae-disclosure">
+        <button
+          aria-expanded={isFormOpen}
+          className="ae-disclosure__trigger"
+          onClick={() => setIsFormOpen((open) => !open)}
+          type="button"
+        >
+          <ChevronDown
+            aria-hidden="true"
+            className={
+              isFormOpen
+                ? "ae-disclosure__chevron is-open size-4"
+                : "ae-disclosure__chevron size-4"
+            }
           />
-        </FeatureField>
-        <FeatureField label="Valor fixo (R$)">
-          <FeatureInput
-            inputMode="decimal"
-            onChange={(event) => setAmount(event.target.value)}
-            placeholder="Ex.: 250,00"
-            value={amount}
-          />
-        </FeatureField>
-      </FeatureFieldGroup>
-      <AutoEntryTimingFields draft={timing} onChange={setTiming} />
-      <AutoEntryInlineError message={error} />
-      <AutoEntrySaveAction
-        canManage={canManage}
-        isSaving={isSaving}
-        label="Adicionar comissão"
-        onClick={save}
-      />
+          Adicionar nova
+        </button>
+        {isFormOpen ? (
+          <div className="ae-disclosure__body grid gap-4 pt-3">
+            <FeatureField
+              hint="Beneficiário fixo; não limita o vendedor que originou a venda."
+              label="Beneficiário"
+            >
+              <FeatureSelect
+                ariaLabel="Beneficiário da comissão extra"
+                onChange={setRecipientUserId}
+                options={sellerSelectOptions(sellers)}
+                placeholder="Selecione o beneficiário"
+                value={recipientUserId || undefined}
+              />
+            </FeatureField>
+            <FeatureFieldGroup>
+              <FeatureField label="Nome da comissão">
+                <FeatureInput
+                  onChange={(event) => setName(event.target.value)}
+                  value={name}
+                />
+              </FeatureField>
+              <FeatureField label="Valor fixo (R$)">
+                <FeatureInput
+                  inputMode="decimal"
+                  onChange={(event) => setAmount(event.target.value)}
+                  placeholder="Ex.: 250,00"
+                  value={amount}
+                />
+              </FeatureField>
+            </FeatureFieldGroup>
+            <AutoEntryTimingFields draft={timing} onChange={setTiming} />
+            <AutoEntryInlineError message={error} />
+            <AutoEntrySaveAction
+              canManage={canManage}
+              isDirty={isDirty}
+              isSaving={isSaving}
+              label="Adicionar comissão"
+              onClick={save}
+            />
+          </div>
+        ) : null}
+      </div>
     </AutoEntryDomainCard>
   );
 }
