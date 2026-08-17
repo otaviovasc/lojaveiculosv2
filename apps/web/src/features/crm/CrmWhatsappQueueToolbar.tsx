@@ -111,6 +111,7 @@ export function WhatsappToolbar({
             connections={connections}
             fallbackConnectionId={connectionId}
             onChange={onConnectionFilterChange}
+            onSetup={onManageConnections}
           />
           <button
             aria-label="Gerenciar etiquetas"

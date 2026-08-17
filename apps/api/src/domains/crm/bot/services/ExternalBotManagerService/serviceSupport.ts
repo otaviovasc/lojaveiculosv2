@@ -89,6 +89,16 @@ export function isProposalCommand(
   );
 }
 
+export function isCanonicalProviderEffectAction(command: ExternalBotCommand) {
+  return (
+    command.action === "message.send_text" ||
+    command.action === "message.send_media" ||
+    command.action === "message.send_template" ||
+    command.action === "message.send" ||
+    command.action === "handoff.request"
+  );
+}
+
 export async function cancelAction(
   id: string,
   code: string,
@@ -172,7 +182,7 @@ export async function finishEffect(
 export async function executeProposalAction(
   id: string,
   input: ExternalBotActionRequest & {
-    command: Extract<ExternalBotCommand, { action: `${string}.propose` }>;
+    command: ExternalBotCommand;
   },
   ports: ExternalBotManagerPorts,
   completionCode?: string,

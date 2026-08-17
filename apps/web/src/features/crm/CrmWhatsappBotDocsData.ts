@@ -1,4 +1,4 @@
-export const botEndpoint = "POST /api/v1/crm/whatsapp/integrations/bot/actions";
+export const botEndpoint = "POST /api/v1/crm/bot/actions";
 
 export const botDocCards = [
   {

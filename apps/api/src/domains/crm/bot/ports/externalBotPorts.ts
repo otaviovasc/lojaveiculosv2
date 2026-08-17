@@ -103,13 +103,7 @@ export interface ExternalBotEffectDispatcher {
 export interface ExternalBotProposalRecorder {
   record(input: {
     actionId: string;
-    command: Extract<
-      ExternalBotCommand,
-      {
-        action:
-          "appointment.propose" | "fact.propose" | "vehicle_interest.propose";
-      }
-    >;
+    command: ExternalBotCommand;
     idempotencyKey: string;
     scope: ExternalBotScope;
   }): Promise<{ kind: "recorded" } | { kind: "failed"; code: string }>;

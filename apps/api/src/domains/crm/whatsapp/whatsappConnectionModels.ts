@@ -3,11 +3,23 @@ import type {
   CrmConnectionConfiguredStatus,
   CrmConnectionProvider,
 } from "../ports/crmConnectionRepository.js";
+import type {
+  CrmChannel,
+  CrmConnectionReadiness,
+  CrmConnectionState,
+} from "@lojaveiculosv2/shared";
 import type { CrmWhatsappProviderStatus } from "../ports/crmWhatsappGateway.js";
 import {
   readZapiWebhookSetupState,
   type ZapiWebhookSetupState,
 } from "./zapiWebhookSetupState.js";
+import {
+  isConnectionReady,
+  readinessFor,
+} from "./whatsappConnectionReadiness.js";
+import { providerCapabilities } from "./whatsappProviderCapabilities.js";
+
+export { providerCapabilities } from "./whatsappProviderCapabilities.js";
 
 export type WhatsappConnectionLiveStatus =
   | (CrmWhatsappProviderStatus & {
@@ -23,6 +35,8 @@ export type WhatsappConnectionLiveStatus =
     };
 
 export type WhatsappConnection = {
+  /** Canonical multi-channel fields. Legacy setup fields below remain adapter-owned. */
+  channel?: CrmChannel;
   capabilities: WhatsappProviderCapabilities;
   credentials: WhatsappConnectionCredentialRefs;
   displayName: string;
@@ -33,7 +47,10 @@ export type WhatsappConnection = {
   metadata: WhatsappConnectionMetadata;
   phone: string | null;
   provider: CrmConnectionProvider;
+  readiness?: CrmConnectionReadiness;
   ready: boolean;
+  state?: CrmConnectionState;
+  isDefault?: boolean;
   setup: ZapiWebhookSetupState | null;
   status: CrmConnectionConfiguredStatus;
 };
@@ -83,7 +100,10 @@ export function toWhatsappConnection(
     connection.provider === "zapi"
       ? readZapiWebhookSetupState(connection.metadata)
       : null;
+  const channel = channelForProvider(connection.provider);
+  const ready = isConnectionReady(connection, live, setup);
   return {
+    channel,
     capabilities: providerCapabilities(connection.provider),
     credentials: readCredentialRefs(connection.credentialsRef),
     displayName: connection.displayName,
@@ -94,95 +114,25 @@ export function toWhatsappConnection(
     metadata: readConnectionMetadata(connection.metadata),
     phone: connection.phone,
     provider: connection.provider,
-    ready:
-      live.connected === true &&
-      (connection.provider !== "zapi" || setup?.status === "configured"),
+    readiness: readinessFor(connection, live, setup, ready),
+    ready,
+    state: connection.status,
+    isDefault: false,
     setup,
     status: connection.status,
   };
 }
 
-export function providerCapabilities(
-  provider: CrmConnectionProvider,
-): WhatsappProviderCapabilities {
-  if (provider === "olx_chat") {
-    return {
-      audio: false,
-      catalog: false,
-      conversationStart: false,
-      delete: false,
-      documents: false,
-      imageCaption: false,
-      images: false,
-      location: false,
-      quickMessages: false,
-      reactions: false,
-      reply: false,
-      scheduling: false,
-      templates: false,
-      text: true,
-      vehicle: false,
-      video: false,
-    };
-  }
-  if (provider === "composio_instagram") {
-    return {
-      audio: false,
-      catalog: false,
-      conversationStart: false,
-      delete: false,
-      documents: false,
-      imageCaption: false,
-      images: true,
-      location: false,
-      quickMessages: false,
-      reactions: false,
-      reply: false,
-      scheduling: false,
-      templates: false,
-      text: true,
-      vehicle: false,
-      video: false,
-    };
-  }
-  if (provider === "composio_whatsapp") {
-    return {
-      audio: true,
-      catalog: false,
-      conversationStart: true,
-      delete: false,
-      documents: true,
-      imageCaption: true,
-      images: true,
-      location: true,
-      quickMessages: true,
-      reactions: false,
-      reply: true,
-      scheduling: false,
-      templates: true,
-      text: true,
-      vehicle: true,
-      video: true,
-    };
-  }
-  return {
-    audio: true,
-    catalog: true,
-    conversationStart: true,
-    delete: true,
-    documents: true,
-    imageCaption: true,
-    images: true,
-    location: true,
-    quickMessages: true,
-    reactions: true,
-    reply: true,
-    scheduling: true,
-    templates: false,
-    text: true,
-    vehicle: true,
-    video: true,
-  };
+function channelForProvider(provider: CrmConnectionProvider): CrmChannel {
+  if (provider === "composio_instagram") return "instagram";
+  if (provider === "olx_chat") return "olx_chat";
+  return "whatsapp";
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function readCredentialRefs(

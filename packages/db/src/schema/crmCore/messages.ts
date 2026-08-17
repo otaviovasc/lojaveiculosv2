@@ -24,7 +24,7 @@ import { revisionCheck, revisionColumn } from "./revision.js";
 import { scopedStoreForeignKey } from "./scoped.js";
 
 export const canonicalMessages = pgTable(
-  "canonical_messages",
+  "crm_messages",
   {
     ...lifecycleColumns,
     content: text("content").notNull().default(""),

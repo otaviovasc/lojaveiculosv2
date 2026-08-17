@@ -295,8 +295,8 @@ describe("CRM WhatsApp extras API", () => {
 
   it("loads and updates the external bot integration through V2", async () => {
     const fake = createFakeFetch([
-      { integration: { enabled: false, secretConfigured: false } },
-      { integration: { enabled: true, secretConfigured: true } },
+      { configuration: { enabled: false, secretConfigured: false } },
+      { configuration: { enabled: true, secretConfigured: true } },
     ]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
@@ -314,11 +314,11 @@ describe("CRM WhatsApp extras API", () => {
     });
 
     expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/whatsapp/integrations/bot",
+      input: "/api/v1/crm/bot/configuration",
       init: { method: "GET" },
     });
     expect(fake.calls[1]).toMatchObject({
-      input: "/api/v1/crm/whatsapp/integrations/bot",
+      input: "/api/v1/crm/bot/configuration",
       init: {
         body: JSON.stringify({
           enabled: true,

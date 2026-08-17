@@ -27,8 +27,8 @@ describe("Drizzle CRM retention adapter", () => {
     expect(readiness.unavailableRelations).toEqual(
       expect.arrayContaining([
         "bot_action_commands",
-        "canonical_messages",
-        "conversation_cycles",
+        "crm_messages",
+        "crm_conversation_cycles",
         "crm_connections",
         "crm_external_bot_event_outbox",
         "crm_external_bot_proposals",

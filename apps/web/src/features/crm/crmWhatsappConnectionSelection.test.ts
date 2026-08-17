@@ -81,11 +81,11 @@ describe("CRM messaging connection selection", () => {
     ).toBeNull();
   });
 
-  it("prefers a connected conversation-start channel over Instagram", () => {
+  it("fails closed when multiple ready channels need an explicit route", () => {
     const instagram = createConnection("composio_instagram", "instagram");
     const official = createConnection("composio_whatsapp", "official");
 
-    expect(findConnectedConnection([instagram, official])).toBe(official);
+    expect(findConnectedConnection([instagram, official])).toBeNull();
   });
 
   it("keeps lead free-text initiation on Z-API when official channels coexist", () => {
@@ -121,7 +121,7 @@ describe("CRM messaging connection selection", () => {
       ...createConnection("composio_whatsapp", "errored"),
       status: "error" as const,
     };
-    expect(findConnectedConnection([disconnected, errored])).toBeUndefined();
+    expect(findConnectedConnection([disconnected, errored])).toBeNull();
     expect(findFreeTextStartConnection([disconnected, errored])).toBeNull();
   });
 

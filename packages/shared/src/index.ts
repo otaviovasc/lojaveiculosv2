@@ -22,6 +22,9 @@ export type PermissionKey =
   | "billing.webhook.ingest"
   | "compliance.manage"
   | "crm.access"
+  | "crm.bot.read"
+  | "crm.bot.manage"
+  | "crm.bot.proposals.decide"
   | "crm.consent.record"
   | "crm.contact.merge"
   | "crm.contact_identity.dispute"
@@ -154,3 +157,4 @@ export * from "./storefrontTemplateDefaults.js";
 export * from "./externalApiContract.js";
 export * from "./financeAutoEntries.js";
 export * from "./salePayments.js";
+export * from "./crmContracts.js";

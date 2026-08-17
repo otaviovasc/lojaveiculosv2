@@ -4,6 +4,7 @@ export type CrmWhatsappProvider =
   | "composio_instagram"
   | "composio_whatsapp"
   | "olx_chat"
+  | "meta_cloud"
   | "zapi"
   | (string & {});
 export type CrmWhatsappConnectionId = number | string;
@@ -85,6 +86,9 @@ export type CrmWhatsappConnectionLiveStatus =
     };
 
 export type CrmWhatsappProviderConnection = {
+  /** Canonical CRM routing fields. They are supplied by the API; the client
+   * must not derive them from provider names or list order. */
+  channel?: "whatsapp" | "instagram" | "olx_chat";
   capabilities?: CrmWhatsappProviderCapabilities;
   credentials?: CrmWhatsappConnectionCredentialRefs;
   displayName: string;
@@ -95,9 +99,16 @@ export type CrmWhatsappProviderConnection = {
   metadata?: CrmWhatsappConnectionMetadata;
   phone: string | null;
   provider: CrmWhatsappProvider;
+  readiness?: {
+    ready: boolean;
+    reasonCode: string | null;
+    reason: string | null;
+  };
   ready?: boolean;
   setup?: CrmWhatsappZapiSetupState | null;
   status: CrmWhatsappConnectionConfiguredStatus;
+  state?: CrmWhatsappConnectionConfiguredStatus;
+  isDefault?: boolean;
   webhookEndpoints?: CrmWhatsappWebhookEndpoint[];
   webhookTokenRequired?: boolean;
   webhookUrl: string | null;

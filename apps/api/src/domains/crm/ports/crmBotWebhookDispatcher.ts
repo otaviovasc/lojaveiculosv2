@@ -127,8 +127,7 @@ export type CrmBotWebhookDispatcher = {
 
 export function createNoopCrmBotWebhookDispatcher(): CrmBotWebhookDispatcher {
   return {
-    actionApiBaseUrl:
-      "http://localhost:8787/api/v1/crm/whatsapp/integrations/bot/actions",
+    actionApiBaseUrl: "http://localhost:8787/api/v1/crm/bot/actions",
     dispatch: async () => undefined,
   };
 }

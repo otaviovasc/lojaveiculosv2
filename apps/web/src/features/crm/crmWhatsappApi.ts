@@ -30,6 +30,7 @@ import type {
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
 import { normalizeCrmRoutingPolicy } from "./crmRoutingTypes";
+import type { CrmWhatsappBotIntegrationResponse } from "./crmWhatsappIntegrationTypes";
 
 export {
   createCrmWhatsappSessionQuery,
@@ -127,7 +128,12 @@ export function createCrmWhatsappApi({
       deleteMaybeJson(crmWhatsappRoutes.tag(tagId, baseUrl)),
     interveneSession: (sessionId, input) =>
       postJson(crmWhatsappRoutes.interveneSession(sessionId, baseUrl), input),
-    getBotIntegration: () => getJson(crmWhatsappRoutes.botIntegration(baseUrl)),
+    getBotIntegration: () =>
+      getJson<{
+        configuration: CrmWhatsappBotIntegrationResponse["integration"];
+      }>(crmWhatsappRoutes.botIntegration(baseUrl)).then((response) => ({
+        integration: response.configuration,
+      })),
     getRoutingPolicy: () =>
       getJson<unknown>(crmWhatsappRoutes.routingPolicy(baseUrl)).then(
         normalizeCrmRoutingPolicy,
@@ -282,7 +288,11 @@ export function createCrmWhatsappApi({
         postJson,
       }),
     updateBotIntegration: (input) =>
-      patchJson(crmWhatsappRoutes.botIntegration(baseUrl), input),
+      patchJson<{
+        configuration: CrmWhatsappBotIntegrationResponse["integration"];
+      }>(crmWhatsappRoutes.botIntegration(baseUrl), input).then((response) => ({
+        integration: response.configuration,
+      })),
     updateRoutingPolicy: (input) =>
       patchJson<unknown>(crmWhatsappRoutes.routingPolicy(baseUrl), input).then(
         normalizeCrmRoutingPolicy,

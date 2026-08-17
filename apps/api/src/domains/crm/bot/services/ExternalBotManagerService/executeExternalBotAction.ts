@@ -15,6 +15,7 @@ import {
   executeProposalAction,
   finishEffect,
   isProposalCommand,
+  isCanonicalProviderEffectAction,
   requireExternalBotScope,
   transitionAction,
 } from "./serviceSupport.js";
@@ -137,11 +138,9 @@ export async function executeExternalBotAction(
       `kill_switch_${disabledAt}`,
       ports,
     );
-  if (
-    !isProposalCommand(input.command) &&
-    input.command.action !== "message.send" &&
-    input.command.action !== "handoff.request"
-  ) {
+  const proposalMode =
+    input.actionClass === "proposal" || isProposalCommand(input.command);
+  if (!proposalMode && !isCanonicalProviderEffectAction(input.command)) {
     return cancelActionAudited(
       context,
       record.id,
@@ -160,7 +159,7 @@ export async function executeExternalBotAction(
   }
   if (snapshot.humanAttendanceActive) {
     const proposalCommand = input.command;
-    if (!isProposalCommand(proposalCommand)) {
+    if (!proposalMode) {
       return cancelActionAudited(
         context,
         record.id,
@@ -176,7 +175,7 @@ export async function executeExternalBotAction(
     );
   }
   const proposalCommand = input.command;
-  if (isProposalCommand(proposalCommand)) {
+  if (proposalMode) {
     return executeProposalAction(
       record.id,
       { ...input, command: proposalCommand },

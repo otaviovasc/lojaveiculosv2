@@ -19,6 +19,7 @@ import { providerConnections } from "./authorization.js";
 import { conversationThreads } from "./conversations.js";
 import { botActionCommands } from "./execution.js";
 import { transportProvider } from "./enums.js";
+import { crmRoutingChannel } from "../crmRouting.js";
 import { revisionCheck, revisionColumn } from "./revision.js";
 import { scopedStoreForeignKey } from "./scoped.js";
 
@@ -177,6 +178,49 @@ export const crmExternalBotProposals = pgTable(
       table.tenantId,
       table.storeId,
       table.idempotencyKey,
+    ),
+  ],
+);
+
+export const crmExternalBotPolicies = pgTable(
+  "crm_external_bot_policies",
+  {
+    ...lifecycleColumns,
+    actionType: varchar("action_type", { length: 120 }).notNull(),
+    channel: crmRoutingChannel("channel").notNull(),
+    connectionRatePerMinute: integer("connection_rate_per_minute")
+      .notNull()
+      .default(30),
+    cooldownSeconds: integer("cooldown_seconds").notNull().default(30),
+    dailyLimit: integer("daily_limit").notNull().default(500),
+    mode: varchar("mode", { length: 16 }).notNull().default("disabled"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+  },
+  (table) => [
+    scopedStoreForeignKey(table, "crm_external_bot_policies_scope_fk"),
+    check(
+      "crm_external_bot_policies_mode_check",
+      sql`${table.mode} IN ('auto','proposal','disabled')`,
+    ),
+    check(
+      "crm_external_bot_policies_limits_check",
+      sql`${table.cooldownSeconds} >= 0 AND ${table.connectionRatePerMinute} >= 0 AND ${table.dailyLimit} >= 0`,
+    ),
+    uniqueIndex("crm_external_bot_policies_action_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.channel,
+      table.actionType,
+    ),
+    index("crm_external_bot_policies_channel_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.channel,
     ),
   ],
 );

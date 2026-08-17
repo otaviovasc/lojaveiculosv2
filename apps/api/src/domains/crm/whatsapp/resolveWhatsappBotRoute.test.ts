@@ -169,7 +169,12 @@ function readyZapi(id: string): CrmConnection {
 
 function canonicalConnection(connection: CrmConnection): CrmRoutingConnection {
   return {
-    capabilities: { inbound: true, outbound: true, templates: false },
+    capabilities: {
+      inbound: true,
+      outbound: true,
+      scheduling: false,
+      templates: false,
+    },
     channel: "whatsapp",
     connected: connection.status === "active",
     credentialBroker: "direct",

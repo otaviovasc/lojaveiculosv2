@@ -118,14 +118,30 @@ export async function listWhatsappConnections(
       ),
     ),
   );
+  const defaultConnectionIds = new Set(
+    ports.crmRoutingPolicyRepository
+      ? (
+          await ports.crmRoutingPolicyRepository.listPolicies({
+            storeId: scope.storeId as never,
+            tenantId: scope.tenantId as never,
+          })
+        )
+          .map((policy) => policy.defaultConnectionId)
+          .filter((id): id is string => Boolean(id))
+      : [],
+  );
+  const canonicalResult = result.map((connection) => ({
+    ...connection,
+    isDefault: defaultConnectionIds.has(connection.id),
+  }));
   await auditWhatsappServiceEvent(context, {
     action: "crm.whatsapp.connections.list",
     category: "data_access",
-    metadata: { connectionCount: result.length },
+    metadata: { connectionCount: canonicalResult.length },
     permission: readPermission,
     summary: "Listed CRM WhatsApp connections",
   });
-  return result;
+  return canonicalResult;
 }
 
 export async function updateWhatsappConnection(

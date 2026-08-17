@@ -26,7 +26,7 @@ async function syncCanonicalMessage(
   db: ExternalBotDb,
   input: { effect: AuthorizedExternalBotEffect; legacyMessageId?: string },
 ) {
-  await db.execute(sql`insert into canonical_messages
+  await db.execute(sql`insert into crm_messages
     (id,created_at,updated_at,content,cycle_id,direction,media_type,media_url,
       message_type,metadata,occurred_at,provider,provider_connection_id,
       provider_message_id,revision,sender,status,thread_id,tenant_id,store_id)
@@ -53,7 +53,7 @@ async function syncCanonicalMessage(
     on conflict do nothing`);
 
   const verified = await db.execute(sql`select canonical.id
-    from canonical_messages canonical
+    from crm_messages canonical
     inner join crm_whatsapp_messages message
       on message.id=${input.legacyMessageId}::uuid
       and message.session_id=${input.effect.legacySessionId}::uuid
@@ -85,7 +85,7 @@ async function syncCanonicalHandoff(
   db: ExternalBotDb,
   effect: AuthorizedExternalBotEffect,
 ) {
-  await db.execute(sql`update conversation_attendances
+  await db.execute(sql`update crm_conversation_attendances
     set state='handoff_requested',revision=revision+1,changed_at=now(),updated_at=now()
     where thread_id=${effect.threadId}::uuid
       and cycle_id=${effect.canonicalCycleId}::uuid

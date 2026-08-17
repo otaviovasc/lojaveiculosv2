@@ -1,4 +1,5 @@
-import { assertPermission } from "../../../../shared/authorization.js";
+import { assertAnyPermission } from "../../../../shared/authorization.js";
+import type { PermissionKey } from "@lojaveiculosv2/shared";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmBotIntegration } from "../../ports/crmBotIntegrationRepository.js";
 import { CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE } from "../../ports/crmConnectionSetupProvider.js";
@@ -23,7 +24,15 @@ import {
 
 export { WhatsappBotIntegrationValidationError };
 
-const permission = "crm.whatsapp.integrations.manage";
+const botReadPermissions = [
+  "crm.bot.read",
+  "crm.bot.manage",
+  "crm.whatsapp.integrations.manage",
+] as const satisfies readonly PermissionKey[];
+const botManagePermissions = [
+  "crm.bot.manage",
+  "crm.whatsapp.integrations.manage",
+] as const satisfies readonly PermissionKey[];
 
 export type UpdateWhatsappBotIntegrationInput = {
   enabled?: boolean;
@@ -61,7 +70,7 @@ export async function getWhatsappBotIntegration(
   context: ServiceContext,
   ports: CrmServicePorts,
 ): Promise<CrmBotIntegration> {
-  assertPermission(context, permission);
+  const permission = assertAnyPermission(context, botReadPermissions);
   const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.integrations.bot.read.start");
   const integration = await getCrmBotIntegrationRepository(
@@ -85,7 +94,7 @@ export async function updateWhatsappBotIntegration(
   input: UpdateWhatsappBotIntegrationInput,
   ports: CrmServicePorts,
 ): Promise<CrmBotIntegration> {
-  assertPermission(context, permission);
+  const permission = assertAnyPermission(context, botManagePermissions);
   const scope = requireCrmWhatsappScope(context);
   const repository = getCrmBotIntegrationRepository(ports);
   const webhookSecretUpdate = normalizeWebhookSecretUpdate(input.webhookSecret);

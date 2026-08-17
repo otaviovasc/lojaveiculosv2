@@ -4,8 +4,8 @@ import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 import { isConnectedConnection } from "./crmWhatsappConnectionSelection";
 import {
+  readCrmWhatsappChannelLabel,
   readCrmWhatsappProviderLabel,
-  readCrmWhatsappProviderIcon,
 } from "./crmWhatsappConnectionStatus";
 
 export function CrmWhatsappConnectionFilter({
@@ -13,47 +13,63 @@ export function CrmWhatsappConnectionFilter({
   connections,
   fallbackConnectionId,
   onChange,
+  onSetup,
 }: {
   connectionFilterId: string | null;
   connections: readonly CrmWhatsappProviderConnection[];
   fallbackConnectionId: string | number | null;
   onChange: (connectionId: string) => void;
+  onSetup?: () => void;
 }) {
   const connectedConnections = connections.filter(isConnectedConnection);
   const selectedId = String(connectionFilterId ?? fallbackConnectionId ?? "");
   const selectedConnection =
     connectedConnections.find(
       (connection) => String(connection.id) === selectedId,
-    ) ?? connectedConnections[0];
+    ) ??
+    connectedConnections.find((connection) => connection.isDefault) ??
+    (connectedConnections.length === 1 ? connectedConnections[0] : null);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
 
-  if (connectedConnections.length <= 1 || !selectedConnection) return null;
-
-  const selectedLabel = readCrmWhatsappProviderLabel(
-    selectedConnection.provider,
-  );
+  const selectedLabel = selectedConnection
+    ? readCrmWhatsappChannelLabel(selectedConnection.channel ?? "")
+    : "Nenhum canal pronto";
   return (
     <div className="crm-whatsapp-connection-filter-anchor">
       <button
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup="listbox"
         aria-label="Filtrar por conexão"
         className={
           connectionFilterId
             ? "crm-icon-action crm-whatsapp-connection-filter-action crm-icon-action-active"
             : "crm-icon-action crm-whatsapp-connection-filter-action"
         }
+        disabled={connectedConnections.length <= 1}
         onClick={() => setOpen((current) => !current)}
         ref={anchorRef}
-        title={`Canal: ${selectedLabel}`}
+        title={
+          connectedConnections.length === 0
+            ? "Nenhum canal pronto. Configure uma conexão."
+            : `Canal: ${selectedLabel}`
+        }
         type="button"
       >
-        <ConnectionIcon provider={selectedConnection.provider} />
-        <ChevronDown
-          aria-hidden="true"
-          className="crm-whatsapp-connection-filter-chevron"
-        />
+        {selectedConnection ? (
+          <ConnectionIcon channel={selectedConnection.channel ?? ""} />
+        ) : (
+          <Plug
+            aria-hidden="true"
+            className="crm-whatsapp-connection-filter-icon"
+          />
+        )}
+        {connectedConnections.length > 1 ? (
+          <ChevronDown
+            aria-hidden="true"
+            className="crm-whatsapp-connection-filter-chevron"
+          />
+        ) : null}
       </button>
       <FeatureAnchoredPopover
         anchorRef={anchorRef}
@@ -61,26 +77,46 @@ export function CrmWhatsappConnectionFilter({
         isOpen={open}
         onClose={() => setOpen(false)}
       >
-        <div aria-label="Canais conectados" role="group">
+        <div aria-label="Canais conectados" role="listbox">
           {connectedConnections.map((connection) => {
             const selected = String(connection.id) === selectedId;
             return (
               <button
-                aria-pressed={selected}
+                aria-selected={selected}
                 className="crm-whatsapp-connection-filter-option"
                 key={connection.id}
                 onClick={() => {
                   onChange(String(connection.id));
                   setOpen(false);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+                    return;
+                  }
+                  event.preventDefault();
+                  const currentIndex = connectedConnections.findIndex(
+                    (item) => String(item.id) === String(connection.id),
+                  );
+                  const offset = event.key === "ArrowDown" ? 1 : -1;
+                  const next =
+                    connectedConnections[
+                      (currentIndex + offset + connectedConnections.length) %
+                        connectedConnections.length
+                    ];
+                  if (next) onChange(String(next.id));
+                }}
+                role="option"
                 type="button"
               >
-                <ConnectionIcon provider={connection.provider} />
+                <ConnectionIcon channel={connection.channel ?? ""} />
                 <span>
                   <strong>
-                    {readCrmWhatsappProviderLabel(connection.provider)}
+                    {readCrmWhatsappChannelLabel(connection.channel ?? "")}
                   </strong>
-                  <small>{connection.displayName}</small>
+                  <small>
+                    {readCrmWhatsappProviderLabel(connection.provider)} ·{" "}
+                    {connection.displayName}
+                  </small>
                 </span>
                 {selected ? <Check aria-hidden="true" /> : null}
               </button>
@@ -88,13 +124,21 @@ export function CrmWhatsappConnectionFilter({
           })}
         </div>
       </FeatureAnchoredPopover>
+      {connectedConnections.length === 0 && onSetup ? (
+        <button
+          className="crm-whatsapp-connection-filter-setup"
+          onClick={onSetup}
+          type="button"
+        >
+          Configurar conexão
+        </button>
+      ) : null}
     </div>
   );
 }
 
-function ConnectionIcon({ provider }: { provider: string }) {
-  const icon = readCrmWhatsappProviderIcon(provider);
-  if (icon === "olx") {
+function ConnectionIcon({ channel }: { channel: string }) {
+  if (channel === "olx_chat") {
     return (
       <img
         alt=""
@@ -103,7 +147,7 @@ function ConnectionIcon({ provider }: { provider: string }) {
       />
     );
   }
-  if (icon === "whatsapp") {
+  if (channel === "whatsapp") {
     return (
       <svg
         aria-hidden="true"

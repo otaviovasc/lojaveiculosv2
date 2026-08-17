@@ -1,4 +1,7 @@
+import { externalBotActionRegistry } from "@lojaveiculosv2/shared";
+
 export const externalBotActionNames = [
+  ...externalBotActionRegistry,
   "message.send",
   "fact.propose",
   "vehicle_interest.propose",
@@ -24,6 +27,27 @@ export type ExternalBotScope = {
 };
 
 export type ExternalBotCommand =
+  | { action: "message.send_text"; payload: { text: string } }
+  | {
+      action: "message.send_media";
+      payload: { mediaType: string; mediaUrl: string; caption?: string };
+    }
+  | {
+      action: "message.send_template";
+      payload: { templateName: string; variables: Record<string, string> };
+    }
+  | {
+      action: "fact.record";
+      payload: { classification: string; summary: string };
+    }
+  | {
+      action: "vehicle_interest.record";
+      payload: { interestLevel: "high" | "low" | "medium"; vehicleRef: string };
+    }
+  | {
+      action: "appointment.create";
+      payload: { startsAt: string; summary?: string };
+    }
   | { action: "message.send"; payload: { text: string } }
   | {
       action: "fact.propose";

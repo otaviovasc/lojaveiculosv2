@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { externalBotActionNames } from "../../../domains/crm/bot/externalBotModels.js";
+import { externalBotActionRegistry } from "@lojaveiculosv2/shared";
 
 const id = z.string().trim().min(1).max(128);
 const scope = {
@@ -14,7 +15,84 @@ const scope = {
   modelVersion: id,
 };
 
+export const botConfigurationUpdateSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    webhookSecret: z.string().trim().min(32).max(256).nullable().optional(),
+    webhookUrl: z.string().trim().url().max(500).nullable().optional(),
+  })
+  .strict();
+
+export const externalBotTestSchema = z
+  .object({
+    action: z.enum(externalBotActionRegistry),
+    channel: z.enum(["instagram", "olx_chat", "whatsapp"]),
+  })
+  .strict();
+
 const commandSchema = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("message.send_text"),
+      payload: z.object({ text: z.string().trim().min(1).max(4_096) }).strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("message.send_media"),
+      payload: z
+        .object({
+          mediaType: z.string().trim().min(1).max(80),
+          mediaUrl: z.string().url().max(2_000),
+          caption: z.string().trim().max(4_096).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("message.send_template"),
+      payload: z
+        .object({
+          templateName: z.string().trim().min(1).max(160),
+          variables: z.record(z.string(), z.string()).default({}),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("fact.record"),
+      payload: z
+        .object({
+          classification: z.string().trim().min(1).max(80),
+          summary: z.string().trim().min(1).max(1_000),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("vehicle_interest.record"),
+      payload: z
+        .object({
+          interestLevel: z.enum(["low", "medium", "high"]),
+          vehicleRef: id,
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("appointment.create"),
+      payload: z
+        .object({
+          startsAt: z.string().datetime({ offset: true }),
+          summary: z.string().trim().max(1_000).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
   z
     .object({
       action: z.literal("message.send"),
@@ -99,6 +177,8 @@ export const externalBotActionSchema = z
     requestDigest: z.string().regex(/^[a-f0-9]{64}$/),
   })
   .strict();
+
+export const canonicalExternalBotActionRegistry = externalBotActionRegistry;
 
 export const externalBotEventSchema = z
   .object({

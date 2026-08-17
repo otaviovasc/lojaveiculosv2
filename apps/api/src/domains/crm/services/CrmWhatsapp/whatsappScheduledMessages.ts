@@ -11,6 +11,7 @@ import {
 } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmWhatsappRepository,
+  getCrmRoutingConnectionRepository,
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -105,6 +106,7 @@ export async function createWhatsappScheduledMessage(
           "Scheduled messages require a WhatsApp conversation with a valid phone.",
         );
       }
+      await assertSchedulingCapability(session.connectionId, scope, ports);
       return getCrmWhatsappRepository(ports).createScheduledMessage({
         connectionId: session.connectionId,
         createdByUserId: context.actor.id as never,
@@ -117,6 +119,29 @@ export async function createWhatsappScheduledMessage(
       });
     },
   );
+}
+
+async function assertSchedulingCapability(
+  connectionId: string,
+  scope: { storeId: string; tenantId: string },
+  ports: CrmServicePorts,
+) {
+  if (!ports.crmRoutingConnectionRepository) return;
+  const connection = (
+    await getCrmRoutingConnectionRepository(ports).listConnections(
+      scope as never,
+    )
+  ).find((item) => item.id === connectionId);
+  if (!connection || connection.state !== "active" || !connection.connected) {
+    throw new WhatsappMessageActionError(
+      "The conversation connection is not ready for scheduled messages.",
+    );
+  }
+  if (connection.capabilities.scheduling !== true) {
+    throw new WhatsappMessageActionError(
+      "This channel connection does not support scheduled messages.",
+    );
+  }
 }
 
 export async function cancelWhatsappScheduledMessage(

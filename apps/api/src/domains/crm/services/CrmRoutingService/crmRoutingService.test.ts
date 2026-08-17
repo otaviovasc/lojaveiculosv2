@@ -183,7 +183,12 @@ function connection(
   id: string,
 ): CrmRoutingConnection {
   return {
-    capabilities: { inbound: true, outbound: true, templates: false },
+    capabilities: {
+      inbound: true,
+      outbound: true,
+      scheduling: true,
+      templates: false,
+    },
     channel,
     connected: true,
     credentialBroker: provider === "meta_cloud" ? "composio" : "direct",

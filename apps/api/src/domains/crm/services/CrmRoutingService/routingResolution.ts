@@ -84,13 +84,17 @@ export function resolveCrmConnectionRoute(input: {
   }
   return {
     blocked: null,
-    connection: toReadModel(connection),
+    connection: toReadModel(connection, true),
     ready: true,
     requiredCapabilities: input.requiredCapabilities,
   };
 }
 
-function toReadModel(connection: CrmRoutingConnection) {
+function toReadModel(connection: CrmRoutingConnection, isDefault = false) {
+  const ready =
+    connection.state === "active" &&
+    !connection.degraded &&
+    connection.connected;
   return {
     active: connection.state === "active" && !connection.degraded,
     capabilities: (
@@ -100,6 +104,14 @@ function toReadModel(connection: CrmRoutingConnection) {
     displayName: connection.displayName,
     id: connection.id,
     provider: connection.provider,
+    channel: connection.channel,
+    readiness: {
+      ready,
+      reason: connection.errorCode,
+      reasonCode: ready ? "ready" : connection.errorCode,
+    },
+    state: connection.state,
+    isDefault,
   };
 }
 
