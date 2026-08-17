@@ -1,6 +1,9 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
+import {
+  isStorageKeyInEnvironment,
+  stripStorageEnvironmentPrefix,
+} from "../../../../shared/storage/storageKeyScope.js";
 import type { VehicleAiStudioTemplateId } from "../../ports/vehicleAiStudioProvider.js";
 import {
   auditVehicleServiceEvent,
@@ -119,7 +122,10 @@ function assertGeneratedStorageScope(
     storageKey,
     context.source?.environment,
   );
-  if (!scopedStorageKey.startsWith(expectedPrefix)) {
+  if (
+    !isStorageKeyInEnvironment(storageKey, context.source?.environment) ||
+    !scopedStorageKey.startsWith(expectedPrefix)
+  ) {
     throw new VehicleAiStudioStorageScopeError();
   }
 }

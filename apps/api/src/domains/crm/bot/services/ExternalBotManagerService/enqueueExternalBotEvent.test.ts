@@ -10,6 +10,7 @@ describe("enqueueExternalBotEvent", () => {
       context(),
       {
         actionClass: "proposal",
+        channel: "olx_chat",
         allowedAction: "fact.propose",
         authorizedCommand: {
           action: "fact.propose",

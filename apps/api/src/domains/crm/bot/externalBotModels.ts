@@ -12,6 +12,7 @@ export const externalBotActionNames = [
 export type ExternalBotActionName = (typeof externalBotActionNames)[number];
 
 export type ExternalBotScope = {
+  channel: "instagram" | "olx_chat" | "whatsapp";
   tenantId: string;
   storeId: string;
   integrationId: string;
@@ -72,7 +73,7 @@ export type ExternalBotEventType =
   | "thread_state_changed";
 
 export type ExternalBotEventPayload = {
-  channel?: "instagram" | "olx_chat" | "whatsapp";
+  channel: ExternalBotScope["channel"];
   classification?: string;
   connectionState?: string;
   contactRef?: string;

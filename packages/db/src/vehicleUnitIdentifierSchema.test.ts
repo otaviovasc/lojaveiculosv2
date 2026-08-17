@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { vehicleUnits } from "./schema/inventory.js";
 
 const migrationSql = readFileSync(
-  new URL("../migrations/0053_complete_valeria_richards.sql", import.meta.url),
+  new URL("../migrations/0054_clever_bushwacker.sql", import.meta.url),
   "utf8",
 );
 

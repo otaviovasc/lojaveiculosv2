@@ -4,6 +4,10 @@ import type {
   CrmWhatsappUpdateBotIntegrationInput,
 } from "./crmWhatsappIntegrationTypes";
 import type {
+  CrmRoutingPolicy,
+  UpdateCrmRoutingPolicyInput,
+} from "./crmRoutingTypes";
+import type {
   CrmWhatsappCampaign,
   CrmWhatsappCampaignDetail,
   CrmWhatsappCreateCampaignInput,
@@ -98,6 +102,7 @@ export type CrmWhatsappApi = {
     input: CrmWhatsappInterventionInput,
   ) => Promise<CrmWhatsappSessionCommandResult>;
   getBotIntegration: () => Promise<CrmWhatsappBotIntegrationResponse>;
+  getRoutingPolicy: () => Promise<CrmRoutingPolicy>;
   listConnections: () => Promise<CrmWhatsappConnectionsResponse>;
   listMessages: (
     sessionId: CrmWhatsappSessionId,
@@ -160,6 +165,9 @@ export type CrmWhatsappApi = {
   updateBotIntegration: (
     input: CrmWhatsappUpdateBotIntegrationInput,
   ) => Promise<CrmWhatsappBotIntegrationResponse>;
+  updateRoutingPolicy: (
+    input: UpdateCrmRoutingPolicyInput,
+  ) => Promise<CrmRoutingPolicy>;
 } & CrmWhatsappExtrasApi;
 
 export type CrmWhatsappExtrasApi = {

@@ -376,8 +376,15 @@
     {
       "idx": 53,
       "version": "7",
-      "when": 1786984997962,
-      "tag": "0053_complete_valeria_richards",
+      "when": 1786982882848,
+      "tag": "0053_tired_jack_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1786989257833,
+      "tag": "0054_clever_bushwacker",
       "breakpoints": true
     }
   ]

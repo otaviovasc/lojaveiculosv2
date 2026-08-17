@@ -34,6 +34,9 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
         <div>
           <h2>Bot externo</h2>
           <p>Encaminhe mensagens para n8n, Typebot ou seu bot proprio.</p>
+          <p className="crm-whatsapp-bot-routing-hint">
+            Ative o bot aqui e defina os canais e contas na área Conexões.
+          </p>
         </div>
         <FeatureStatusBadge
           className="crm-whatsapp-bot-form-status"

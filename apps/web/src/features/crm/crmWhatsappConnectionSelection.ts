@@ -2,6 +2,52 @@ import type {
   CrmWhatsappProvider,
   CrmWhatsappProviderConnection,
 } from "./crmWhatsappTypes";
+import type { CrmRoutingPolicy } from "./crmRoutingTypes";
+
+export function resolveCrmInboxConnectionSelection(input: {
+  activeSessionConnectionId: string | null;
+  connectionFilterId: string | null;
+  connections: readonly CrmWhatsappProviderConnection[];
+  hasActiveSession: boolean;
+  routingPolicy: CrmRoutingPolicy | null;
+}) {
+  const connectedIds = new Set(
+    input.connections
+      .filter(isConnectedConnection)
+      .map((connection) => String(connection.id)),
+  );
+  const filteredId =
+    input.connectionFilterId && connectedIds.has(input.connectionFilterId)
+      ? input.connectionFilterId
+      : null;
+  const whatsappDefault = input.routingPolicy?.channels.find(
+    (channel) => channel.channel === "whatsapp",
+  )?.storeDefault;
+  const defaultId =
+    whatsappDefault?.ready && whatsappDefault.connection?.id
+      ? whatsappDefault.connection.id
+      : null;
+  const viewConnectionId =
+    filteredId ?? (defaultId && connectedIds.has(defaultId) ? defaultId : null);
+
+  if (!input.hasActiveSession) {
+    return {
+      operationalConnectionId: viewConnectionId,
+      viewConnectionId,
+    };
+  }
+  const activeSessionConnectionId = input.activeSessionConnectionId;
+  const activeConnectionExists = input.connections.some(
+    (connection) => String(connection.id) === activeSessionConnectionId,
+  );
+  return {
+    operationalConnectionId:
+      activeSessionConnectionId && activeConnectionExists
+        ? activeSessionConnectionId
+        : null,
+    viewConnectionId,
+  };
+}
 
 export function findConnectedConnection(
   connections: CrmWhatsappProviderConnection[],

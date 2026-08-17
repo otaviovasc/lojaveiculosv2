@@ -24,7 +24,26 @@ export async function inspectExternalBotScope(
       and account.store_id=thread.store_id and account.status='active' and account.provider='crm_whatsapp_bot'
     left join conversation_attendances attendance on attendance.thread_id=thread.id
     where thread.id=${scope.threadId}::uuid and thread.tenant_id=${scope.tenantId}::uuid and thread.store_id=${scope.storeId}::uuid
-      and thread.provider_connection_id=${scope.connectionId}::uuid limit 1`);
+      and thread.provider_connection_id=${scope.connectionId}::uuid
+      and exists (
+        select 1 from provider_connections connection
+        where connection.id=thread.provider_connection_id
+          and connection.channel=${scope.channel}
+          and connection.provider=${scope.provider}
+          and exists (
+            select 1 from crm_channel_routing_policies routing
+            where routing.tenant_id=connection.tenant_id
+              and routing.store_id=connection.store_id
+              and routing.channel=connection.channel
+              and routing.bot_routing_mode <> 'disabled'
+              and (
+                (routing.bot_routing_mode='inherit_store_default'
+                  and routing.default_connection_id=connection.id)
+                or (routing.bot_routing_mode='explicit_connection'
+                  and routing.bot_connection_id=connection.id)
+              )
+          )
+      ) limit 1`);
   const row = (rows as unknown as ExternalBotRow[])[0];
   return {
     humanAttendanceActive: row?.human_active === true,
@@ -70,7 +89,7 @@ export async function enqueueExternalBotProviderEffect(
       ${input.scope.connectionId}::uuid,'{}'::jsonb,'accepted',${input.scope.storeId}::uuid,${input.scope.tenantId}::uuid
     from provider_connections connection where connection.id=${input.scope.connectionId}::uuid
       and connection.tenant_id=${input.scope.tenantId}::uuid and connection.store_id=${input.scope.storeId}::uuid
-      and connection.provider=${input.scope.provider}
+      and connection.provider=${input.scope.provider} and connection.channel=${input.scope.channel}
     on conflict (tenant_id,store_id,provider,idempotency_key) do nothing returning id`);
   if ((rows as unknown as ExternalBotRow[]).length === 0) {
     return {

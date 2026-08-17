@@ -1,7 +1,9 @@
 import type {
   CrmWhatsappConnectionId,
+  CrmWhatsappSession,
   CrmWhatsappSessionId,
 } from "./crmWhatsappTypes";
+import type { CrmWhatsappApi } from "./crmWhatsappApi";
 
 export function asError(caught: unknown) {
   return caught instanceof Error ? caught : new Error(String(caught));
@@ -21,4 +23,16 @@ export function createConnectionQuery(
   connectionId: CrmWhatsappConnectionId | null,
 ) {
   return connectionId ? { connectionId } : {};
+}
+
+export async function loadDeepLinkedSession(
+  api: Pick<CrmWhatsappApi, "listSessions">,
+  sessionId: CrmWhatsappSessionId,
+): Promise<CrmWhatsappSession | null> {
+  const sessions = await api.listSessions({
+    limit: 1,
+    offset: 0,
+    sessionId,
+  });
+  return sessions[0] ?? null;
 }

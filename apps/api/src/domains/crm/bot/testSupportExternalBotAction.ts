@@ -1,5 +1,8 @@
 import { createServiceContext } from "../../../shared/serviceContext.js";
-import { canonicalExternalBotActionRequest } from "./externalBotCanonicalRequest.js";
+import {
+  canonicalExternalBotActionRequest,
+  type ExternalBotActionRequest,
+} from "./externalBotCanonicalRequest.js";
 import type { createMemoryExternalBotManager } from "./testSupportExternalBotManager.js";
 
 export async function createExternalBotActionRequest(
@@ -11,6 +14,7 @@ export async function createExternalBotActionRequest(
   const actionClass = action.endsWith(".propose") ? "proposal" : "effect";
   const base = {
     capabilityGrant: "",
+    channel: "whatsapp" as const,
     command: { action, payload } as never,
     connectionId: "connection-1",
     expectedRevision: 4,
@@ -30,6 +34,7 @@ export async function createExternalBotActionRequest(
     action,
     authorizedRequestDigest,
     actionClass,
+    channel: "whatsapp",
     connectionId: "connection-1",
     expiresAt: new Date(Date.now() + 60_000),
     integrationId: "integration-1",
@@ -45,10 +50,9 @@ export async function createExternalBotActionRequest(
   };
 }
 
-export function withExternalBotActionDigest(
-  manager: ReturnType<typeof createMemoryExternalBotManager>,
-  unsigned: Awaited<ReturnType<typeof createExternalBotActionRequest>>,
-) {
+export function withExternalBotActionDigest<
+  Input extends Omit<ExternalBotActionRequest, "requestDigest">,
+>(manager: ReturnType<typeof createMemoryExternalBotManager>, unsigned: Input) {
   return {
     ...unsigned,
     requestDigest: manager.ports.digest.digest(

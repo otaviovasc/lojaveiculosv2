@@ -1,5 +1,5 @@
 {
-  "id": "67285f7a-ce79-435f-9450-3c0a278449d8",
+  "id": "ee00d300-b1d7-4492-8d87-67daab1b584a",
   "prevId": "08b2ded2-ec84-4633-8856-4287d579064b",
   "version": "7",
   "dialect": "postgresql",
@@ -11210,6 +11210,188 @@
         "crm_retention_scopes_lease_pair_check": {
           "name": "crm_retention_scopes_lease_pair_check",
           "value": "(\"crm_retention_scopes\".\"lease_owner\" is null) = (\"crm_retention_scopes\".\"lease_expires_at\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.crm_channel_routing_policies": {
+      "name": "crm_channel_routing_policies",
+      "schema": "",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "bot_connection_id": {
+          "name": "bot_connection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bot_mode": {
+          "name": "bot_mode",
+          "type": "crm_bot_routing_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'disabled'"
+        },
+        "channel": {
+          "name": "channel",
+          "type": "crm_routing_channel",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "default_connection_id": {
+          "name": "default_connection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "store_id": {
+          "name": "store_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "crm_channel_routing_policies_scope_channel_unique": {
+          "name": "crm_channel_routing_policies_scope_channel_unique",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "store_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "channel",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "crm_channel_routing_policies_default_connection_idx": {
+          "name": "crm_channel_routing_policies_default_connection_idx",
+          "columns": [
+            {
+              "expression": "default_connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "crm_channel_routing_policies_bot_connection_idx": {
+          "name": "crm_channel_routing_policies_bot_connection_idx",
+          "columns": [
+            {
+              "expression": "bot_connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "crm_channel_routing_policies_store_id_stores_id_fk": {
+          "name": "crm_channel_routing_policies_store_id_stores_id_fk",
+          "tableFrom": "crm_channel_routing_policies",
+          "tableTo": "stores",
+          "columnsFrom": ["store_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "crm_channel_routing_policies_tenant_id_tenants_id_fk": {
+          "name": "crm_channel_routing_policies_tenant_id_tenants_id_fk",
+          "tableFrom": "crm_channel_routing_policies",
+          "tableTo": "tenants",
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "crm_channel_routing_policies_store_tenant_fk": {
+          "name": "crm_channel_routing_policies_store_tenant_fk",
+          "tableFrom": "crm_channel_routing_policies",
+          "tableTo": "stores",
+          "columnsFrom": ["store_id", "tenant_id"],
+          "columnsTo": ["id", "tenant_id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "crm_channel_routing_policies_default_connection_fk": {
+          "name": "crm_channel_routing_policies_default_connection_fk",
+          "tableFrom": "crm_channel_routing_policies",
+          "tableTo": "provider_connections",
+          "columnsFrom": ["tenant_id", "store_id", "default_connection_id"],
+          "columnsTo": ["tenant_id", "store_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "crm_channel_routing_policies_bot_connection_fk": {
+          "name": "crm_channel_routing_policies_bot_connection_fk",
+          "tableFrom": "crm_channel_routing_policies",
+          "tableTo": "provider_connections",
+          "columnsFrom": ["tenant_id", "store_id", "bot_connection_id"],
+          "columnsTo": ["tenant_id", "store_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "crm_channel_routing_policies_bot_mode_consistent": {
+          "name": "crm_channel_routing_policies_bot_mode_consistent",
+          "value": "(\"crm_channel_routing_policies\".\"bot_mode\" = 'explicit_connection' and \"crm_channel_routing_policies\".\"bot_connection_id\" is not null) or (\"crm_channel_routing_policies\".\"bot_mode\" <> 'explicit_connection' and \"crm_channel_routing_policies\".\"bot_connection_id\" is null)"
         }
       },
       "isRLSEnabled": false
@@ -23932,12 +24114,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "renavam": {
-          "name": "renavam",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "status": {
           "name": "status",
           "type": "vehicle_unit_status",
@@ -24049,28 +24225,6 @@
             },
             {
               "expression": "plate",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"vehicle_units\".\"is_deleted\" = false AND \"vehicle_units\".\"deleted_at\" IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "vehicle_units_store_renavam_unique": {
-          "name": "vehicle_units_store_renavam_unique",
-          "columns": [
-            {
-              "expression": "store_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "renavam",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -29658,6 +29812,16 @@
       "name": "crm_pipeline_stage_status",
       "schema": "public",
       "values": ["open", "won", "lost"]
+    },
+    "public.crm_bot_routing_mode": {
+      "name": "crm_bot_routing_mode",
+      "schema": "public",
+      "values": ["disabled", "inherit_store_default", "explicit_connection"]
+    },
+    "public.crm_routing_channel": {
+      "name": "crm_routing_channel",
+      "schema": "public",
+      "values": ["whatsapp", "instagram", "olx_chat"]
     },
     "public.crm_whatsapp_channel": {
       "name": "crm_whatsapp_channel",

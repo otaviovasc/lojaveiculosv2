@@ -39,11 +39,11 @@ describe("CrmModule", () => {
     window.location.hash = "";
   });
 
-  it("does not load lead or inventory data for the WhatsApp surface", () => {
+  it("does not load lead or inventory data for the WhatsApp surface", async () => {
     const api = createProductCrmApi();
     render(<CrmModule api={api} routeSurface="whatsapp" />);
 
-    expect(screen.getByText("WhatsApp inbox")).toBeVisible();
+    expect(await screen.findByText("WhatsApp inbox")).toBeVisible();
     expect(api.listLeadBoard).not.toHaveBeenCalled();
     expect(api.listLeadPage).not.toHaveBeenCalled();
     expect(api.listLeads).not.toHaveBeenCalled();

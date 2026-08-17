@@ -29,6 +29,7 @@ import type {
   CrmWhatsappSetupProvider,
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
+import { normalizeCrmRoutingPolicy } from "./crmRoutingTypes";
 
 export {
   createCrmWhatsappSessionQuery,
@@ -127,6 +128,10 @@ export function createCrmWhatsappApi({
     interveneSession: (sessionId, input) =>
       postJson(crmWhatsappRoutes.interveneSession(sessionId, baseUrl), input),
     getBotIntegration: () => getJson(crmWhatsappRoutes.botIntegration(baseUrl)),
+    getRoutingPolicy: () =>
+      getJson<unknown>(crmWhatsappRoutes.routingPolicy(baseUrl)).then(
+        normalizeCrmRoutingPolicy,
+      ),
     getCampaign: (campaignId) =>
       getJson(crmWhatsappCampaignRoutes.campaignDetail(campaignId, baseUrl)),
     listCatalogProducts: (input) =>
@@ -278,6 +283,10 @@ export function createCrmWhatsappApi({
       }),
     updateBotIntegration: (input) =>
       patchJson(crmWhatsappRoutes.botIntegration(baseUrl), input),
+    updateRoutingPolicy: (input) =>
+      patchJson<unknown>(crmWhatsappRoutes.routingPolicy(baseUrl), input).then(
+        normalizeCrmRoutingPolicy,
+      ),
     updateQuickMessage: (quickMessageId, input) =>
       patchJson(crmWhatsappRoutes.quickMessage(quickMessageId, baseUrl), input),
     updateTag: (tagId, input) =>

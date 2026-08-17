@@ -1,6 +1,9 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import { stripStorageEnvironmentPrefix } from "../../../../shared/storage/storageKeyScope.js";
+import {
+  isStorageKeyInEnvironment,
+  stripStorageEnvironmentPrefix,
+} from "../../../../shared/storage/storageKeyScope.js";
 import type {
   DocumentKind,
   LinkedDocument,
@@ -101,6 +104,7 @@ function assertStorageScope(
 ) {
   const prefix = `${financeEntryStoragePrefix(scope, entryId)}/`;
   if (
+    !isStorageKeyInEnvironment(storageKey, environment) ||
     !stripStorageEnvironmentPrefix(storageKey, environment).startsWith(prefix)
   ) {
     throw new FinanceDocumentStorageScopeError();

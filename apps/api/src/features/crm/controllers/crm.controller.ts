@@ -28,6 +28,7 @@ import {
   registerCrmLeadCollectionRoutes,
   registerCrmLeadDetailRoutes,
 } from "./crm.leads.routes.js";
+import { registerCrmRoutingRoutes } from "./crm.routing.routes.js";
 
 export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
@@ -83,6 +84,8 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     parseJson,
     services,
   });
+
+  registerCrmRoutingRoutes(crmFeature, { createContext, services });
 
   if (options.coreRepository) {
     registerCrmCoreRoutes(crmFeature, {

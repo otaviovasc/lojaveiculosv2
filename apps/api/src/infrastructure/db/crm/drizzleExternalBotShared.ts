@@ -15,11 +15,16 @@ export function mapExternalBotCommand(
   row: ExternalBotRow,
 ): ExternalBotActionRecord {
   const input = (row.input ?? {}) as {
+    channel?: ExternalBotActionRecord["channel"];
     command?: ExternalBotActionRecord["command"];
     failureCode?: string;
   };
+  if (!input.channel) {
+    throw new Error("External bot action channel binding is unavailable.");
+  }
   return {
     id: String(row.id),
+    channel: input.channel,
     tenantId: String(row.tenant_id),
     storeId: String(row.store_id),
     integrationId: String(
@@ -45,8 +50,13 @@ export function mapExternalBotCommand(
 }
 
 export function mapExternalBotEvent(row: ExternalBotRow): ExternalBotEvent {
+  const payload = row.payload as ExternalBotEvent["payload"];
+  if (!payload.channel) {
+    throw new Error("External bot event channel binding is unavailable.");
+  }
   return {
     id: String(row.id),
+    channel: payload.channel,
     tenantId: String(row.tenant_id),
     storeId: String(row.store_id),
     integrationId: String(row.integration_id),
@@ -56,7 +66,7 @@ export function mapExternalBotEvent(row: ExternalBotRow): ExternalBotEvent {
     actionClass: row.action_class as ExternalBotEvent["actionClass"],
     modelVersion: String(row.model_version),
     type: row.event_type as ExternalBotEvent["type"],
-    payload: row.payload as ExternalBotEvent["payload"],
+    payload,
     grant: String(row.grant_token),
     authorizedRequestDigest: String(row.authorized_request_digest),
     grantExpiresAt: new Date(String(row.grant_expires_at)),

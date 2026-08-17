@@ -10,7 +10,11 @@ import type { ExternalBotManagerPorts } from "../../ports/externalBotPorts.js";
 import { assertExternalBotPayloadSafe } from "../../externalBotPrivacy.js";
 import { botError } from "../../externalBotErrors.js";
 import { canonicalExternalBotActionRequest } from "../../externalBotCanonicalRequest.js";
-import { assertPermission, requireExternalBotScope } from "./serviceSupport.js";
+import {
+  assertExternalBotChannelProvider,
+  assertPermission,
+  requireExternalBotScope,
+} from "./serviceSupport.js";
 
 export type EnqueueExternalBotEventInput = Omit<
   ExternalBotScope,
@@ -40,10 +44,19 @@ export async function enqueueExternalBotEvent(
     );
   }
   const scope = { ...requireExternalBotScope(context), ...input };
+  assertExternalBotChannelProvider(scope);
+  if (input.payload.channel && input.payload.channel !== scope.channel) {
+    throw botError(
+      "CRM_BOT_SCOPE_MISMATCH",
+      "Bot event payload channel does not match its connection scope.",
+      403,
+    );
+  }
   context.logger.info(
     "crm.bot.event.enqueue.started",
     createServiceLogMetadata(context, {
       actionClass: scope.actionClass,
+      channel: scope.channel,
       connectionId: scope.connectionId,
       integrationId: scope.integrationId,
       provider: scope.provider,
@@ -56,6 +69,7 @@ export async function enqueueExternalBotEvent(
     canonicalExternalBotActionRequest({
       actionClass: scope.actionClass,
       capabilityGrant: "",
+      channel: scope.channel,
       command: input.authorizedCommand,
       connectionId: scope.connectionId,
       expectedRevision: input.expectedRevision,
@@ -72,6 +86,7 @@ export async function enqueueExternalBotEvent(
     action: input.allowedAction,
     authorizedRequestDigest,
     actionClass: scope.actionClass,
+    channel: scope.channel,
     connectionId: scope.connectionId,
     expiresAt: new Date(now.getTime() + 90_000),
     integrationId: scope.integrationId,
@@ -87,7 +102,10 @@ export async function enqueueExternalBotEvent(
     grantExpiresAt: grant.expiresAt,
     id: ports.idGenerator(),
     occurredAt: now,
-    payload: input.payload as ExternalBotEventPayload,
+    payload: {
+      ...input.payload,
+      channel: scope.channel,
+    } as ExternalBotEventPayload,
     type: input.type,
     connectionId: scope.connectionId,
     integrationId: scope.integrationId,
@@ -95,6 +113,7 @@ export async function enqueueExternalBotEvent(
     tenantId: scope.tenantId,
     threadId: scope.threadId,
     actionClass: scope.actionClass,
+    channel: scope.channel,
     modelVersion: scope.modelVersion,
     provider: scope.provider,
   };
@@ -107,6 +126,7 @@ export async function enqueueExternalBotEvent(
     entityType: "crm_external_bot",
     metadata: {
       allowedAction: input.allowedAction,
+      channel: scope.channel,
       connectionId: scope.connectionId,
       integrationId: scope.integrationId,
       threadId: scope.threadId,

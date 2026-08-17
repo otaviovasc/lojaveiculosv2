@@ -5,6 +5,8 @@
       "https://app.lojaveiculos.com.br",
       "https://lojaveiculos.com.br",
       "https://www.lojaveiculos.com.br",
+      "https://staging.lojaveiculos.com.br",
+      "https://lojaveiculosv2-web-staging.up.railway.app",
       "http://localhost:4173",
       "http://127.0.0.1:4173",
       "http://localhost:5173",
@@ -83,7 +85,15 @@
       "http://127.0.0.1:5299"
     ],
     "AllowedMethods": ["PUT", "GET", "HEAD"],
-    "AllowedHeaders": ["Content-Type", "content-type"],
+    "AllowedHeaders": [
+      "Content-Type",
+      "content-type",
+      "x-amz-checksum-crc32",
+      "x-amz-checksum-crc32c",
+      "x-amz-checksum-sha1",
+      "x-amz-checksum-sha256",
+      "x-amz-sdk-checksum-algorithm"
+    ],
     "ExposeHeaders": ["ETag", "Content-Length"],
     "MaxAgeSeconds": 3600
   }

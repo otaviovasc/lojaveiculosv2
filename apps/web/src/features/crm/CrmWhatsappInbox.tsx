@@ -205,11 +205,13 @@ export function CrmWhatsappInbox({
               >
                 <section className="crm-whatsapp-section">
                   <CrmWhatsappConnectionAdmin
+                    canManageRouting={inbox.permissions.canConnectionSetup}
                     connections={inbox.connections}
                     disabled={!inbox.permissions.canConnectionPair}
                     embedded
                     onClose={() => setActiveScope("conversations")}
                     onRefresh={inbox.refreshConnections}
+                    routingApi={whatsappApi}
                     selfService={{
                       allowance: inbox.connectionAllowance,
                       availableProviders: inbox.availableConnectionProviders,

@@ -46,8 +46,17 @@ import {
 } from "./crmWhatsappServiceBindings.js";
 import { resolveCrmPorts } from "./crmServicePorts.js";
 import type { CreateCrmServicesOptions } from "./crmServices.types.js";
+import { getCrmRoutingPolicy } from "../../../domains/crm/services/CrmRoutingService/getCrmRoutingPolicy.js";
+import {
+  updateCrmRoutingPolicy,
+  type UpdateCrmRoutingPolicyInput,
+} from "../../../domains/crm/services/CrmRoutingService/updateCrmRoutingPolicy.js";
+import type { CrmRoutingPolicyReadModel } from "../../../domains/crm/services/CrmRoutingService/routingReadModels.js";
 export type { CreateCrmServicesOptions } from "./crmServices.types.js";
 export type CrmServices = CrmWhatsappServices & {
+  getRoutingPolicy: (
+    context: ServiceContext,
+  ) => Promise<CrmRoutingPolicyReadModel>;
   archiveLead: (
     context: ServiceContext,
     input: { leadId: string },
@@ -125,6 +134,10 @@ export type CrmServices = CrmWhatsappServices & {
     context: ServiceContext,
     input: UpdateCrmLeadInput,
   ) => Promise<CrmLead>;
+  updateRoutingPolicy: (
+    context: ServiceContext,
+    input: UpdateCrmRoutingPolicyInput,
+  ) => Promise<CrmRoutingPolicyReadModel>;
 };
 export function createCrmServices(
   options: CreateCrmServicesOptions = {},
@@ -148,6 +161,7 @@ export function createCrmServices(
     deletePipeline: (context, input) =>
       deleteCrmPipeline(context, input, ports),
     getLead: (context, input) => getCrmLead(context, input, ports),
+    getRoutingPolicy: (context) => getCrmRoutingPolicy(context, ports),
     listActivities: (context, input) =>
       listLeadActivities(context, input, ports),
     listLeadBoard: (context, input) => listCrmLeadBoard(context, input, ports),
@@ -162,6 +176,8 @@ export function createCrmServices(
       updateCrmPipeline(context, input, ports),
     updateVisit: (context, input) => updateLeadVisit(context, input, ports),
     updateLead: (context, input) => updateCrmLead(context, input, ports),
+    updateRoutingPolicy: (context, input) =>
+      updateCrmRoutingPolicy(context, input, ports),
     ...createCrmWhatsappServiceBindings(ports),
   };
 }

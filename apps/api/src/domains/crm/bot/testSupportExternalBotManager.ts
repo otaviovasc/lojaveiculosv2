@@ -190,6 +190,7 @@ function grantMatches(
     grant.tenantId === input.tenantId &&
     grant.storeId === input.storeId &&
     grant.integrationId === input.integrationId &&
+    grant.channel === input.channel &&
     grant.connectionId === input.connectionId &&
     grant.threadId === input.threadId &&
     grant.provider === input.provider &&

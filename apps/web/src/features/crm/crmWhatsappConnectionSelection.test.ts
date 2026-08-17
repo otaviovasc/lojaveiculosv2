@@ -3,13 +3,84 @@ import {
   findConnectedConnection,
   findFreeTextStartConnection,
   readConversationStartCapability,
+  resolveCrmInboxConnectionSelection,
 } from "./crmWhatsappConnectionSelection";
+import type { CrmRoutingPolicy } from "./crmRoutingTypes";
 import type {
   CrmWhatsappProvider,
   CrmWhatsappProviderConnection,
 } from "./crmWhatsappTypes";
 
 describe("CRM messaging connection selection", () => {
+  it("uses the persisted route instead of globally preferring Z-API", () => {
+    const zapi = createConnection("zapi", "zapi");
+    const official = createConnection("composio_whatsapp", "official");
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [zapi, official],
+        hasActiveSession: false,
+        routingPolicy: policyWithWhatsappDefault(official),
+      }),
+    ).toEqual({
+      operationalConnectionId: "official",
+      viewConnectionId: "official",
+    });
+  });
+
+  it("preserves an active session connection independently from the view filter", () => {
+    const zapi = createConnection("zapi", "zapi");
+    const official = createConnection("composio_whatsapp", "official");
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: "official",
+        connectionFilterId: "zapi",
+        connections: [zapi, official],
+        hasActiveSession: true,
+        routingPolicy: policyWithWhatsappDefault(zapi),
+      }),
+    ).toEqual({
+      operationalConnectionId: "official",
+      viewConnectionId: "zapi",
+    });
+  });
+
+  it("fails closed when the route is blocked or the session connection is missing", () => {
+    const zapi = createConnection("zapi", "zapi");
+    const blockedPolicy = policyWithWhatsappDefault(zapi);
+    const route = blockedPolicy.channels[0];
+    if (route) {
+      route.storeDefault.ready = false;
+      route.storeDefault.blocked = {
+        code: "connection_not_connected",
+        message: "blocked",
+        remediation: "reconnect",
+      };
+    }
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [zapi],
+        hasActiveSession: false,
+        routingPolicy: blockedPolicy,
+      }).operationalConnectionId,
+    ).toBeNull();
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: "missing",
+        connectionFilterId: null,
+        connections: [zapi],
+        hasActiveSession: true,
+        routingPolicy: policyWithWhatsappDefault(zapi),
+      }).operationalConnectionId,
+    ).toBeNull();
+  });
+
   it("prefers a connected conversation-start channel over Instagram", () => {
     const instagram = createConnection("composio_instagram", "instagram");
     const official = createConnection("composio_whatsapp", "official");
@@ -95,6 +166,44 @@ describe("CRM messaging connection selection", () => {
     });
   });
 });
+
+function policyWithWhatsappDefault(
+  selected: CrmWhatsappProviderConnection,
+): CrmRoutingPolicy {
+  return {
+    channels: [
+      {
+        bot: {
+          blocked: {
+            code: "route_disabled",
+            message: "disabled",
+            remediation: "enable",
+          },
+          connection: null,
+          mode: "disabled",
+          ready: false,
+          requiredCapabilities: ["text"],
+        },
+        channel: "whatsapp",
+        storeDefault: {
+          blocked: null,
+          connection: {
+            active: true,
+            capabilities: ["text"],
+            connected: true,
+            displayName: selected.displayName,
+            id: String(selected.id),
+            provider: selected.provider,
+          },
+          ready: true,
+          requiredCapabilities: ["text"],
+        },
+      },
+    ],
+    storeId: "store-1",
+    tenantId: "tenant-1",
+  };
+}
 
 function createConnection(
   provider: CrmWhatsappProvider,

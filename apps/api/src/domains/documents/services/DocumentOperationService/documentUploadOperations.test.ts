@@ -108,6 +108,26 @@ describe("document upload operations", () => {
     ).resolves.toBeTruthy();
   });
 
+  it("rejects an unprefixed key when the runtime environment is known", async () => {
+    const repository = createTestDocumentRepository();
+
+    await expect(
+      createUploadedDocument(
+        createContext({ environment: "staging" }),
+        {
+          fileName: "manual.pdf",
+          fileSizeBytes: 2048,
+          kind: "other",
+          mimeType: "application/pdf",
+          storageKey:
+            "tenants/tenant_1/stores/store_1/documents/store/store_1/manual.pdf",
+          title: "Documento manual",
+        },
+        { documentRepository: repository },
+      ),
+    ).rejects.toThrow("Document storage key is outside the requested scope.");
+  });
+
   it("requests and registers uploads for shared sale targets", async () => {
     const repository = createTestDocumentRepository();
     const objectStorage = createTestObjectStorage();
@@ -156,6 +176,7 @@ describe("document upload operations", () => {
 function createContext(
   options: {
     audit?: { record: (event: unknown) => Promise<void> };
+    environment?: string;
     permissions?: string[];
   } = {},
 ) {
@@ -168,6 +189,9 @@ function createContext(
       "documents.upload",
     ],
     request: { requestId: "req_1" },
+    ...(options.environment
+      ? { source: { environment: options.environment, service: "api" } }
+      : {}),
     storeId: "store_1",
     tenantId: "tenant_1",
   });
