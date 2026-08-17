@@ -75,12 +75,71 @@ export type PdfSignatureInfo = {
 
 /* ---------- shared building blocks ---------- */
 
-export function PdfLogo({ src }: { src?: string | undefined }) {
-  if (!src) return null;
+export function PdfLogo({
+  src,
+  storeName,
+}: {
+  src?: string | undefined;
+  storeName?: string | undefined;
+}) {
+  if (src) {
+    return e(
+      View,
+      { style: styles.logoContainer },
+      e(Image, { src, style: styles.logo }),
+    );
+  }
   return e(
     View,
-    { style: styles.logoContainer },
-    e(Image, { src, style: styles.logo }),
+    {
+      style: [
+        styles.logoContainer,
+        {
+          alignItems: "center",
+          flexDirection: "row",
+          gap: 6,
+          justifyContent: "flex-start",
+        },
+      ],
+    },
+    e(
+      View,
+      {
+        style: {
+          alignItems: "center",
+          backgroundColor: "#0F172A",
+          borderRadius: 4,
+          height: 22,
+          justifyContent: "center",
+          width: 22,
+        },
+      },
+      e(
+        Text,
+        {
+          style: {
+            color: "#38BDF8",
+            fontSize: 9,
+            fontWeight: "bold",
+            letterSpacing: 0.5,
+          },
+        },
+        "LV",
+      ),
+    ),
+    e(
+      Text,
+      {
+        style: {
+          color: "#0F172A",
+          fontSize: 11,
+          fontWeight: "bold",
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
+        },
+      },
+      storeName ?? "Loja Veículos",
+    ),
   );
 }
 
@@ -92,12 +151,7 @@ export function PdfLogoOrName({
   logoUrl?: string | undefined;
   storeName: string;
 }) {
-  if (logoUrl) return e(PdfLogo, { src: logoUrl });
-  return e(
-    View,
-    { style: styles.logoContainer },
-    e(Text, { style: [styles.storeName, { fontSize: 14 }] }, storeName),
-  );
+  return e(PdfLogo, { src: logoUrl, storeName });
 }
 
 /** Premium fixed header: centered logo, store info left, doc title right. */
@@ -113,7 +167,11 @@ export function PdfPremiumHeader({
   return e(
     View,
     { fixed: true, style: styles.header },
-    e(View, { style: styles.headerTop }, e(PdfLogo, { src: store.logoUrl })),
+    e(
+      View,
+      { style: styles.headerTop },
+      e(PdfLogo, { src: store.logoUrl, storeName: store.name }),
+    ),
     e(
       View,
       { style: styles.headerBottom },

@@ -201,6 +201,48 @@ export function formatCents(value: number | null | undefined): string {
   });
 }
 
+export function formatPaymentMethodLabel(method: string): string {
+  switch (method) {
+    case "pix":
+      return "PIX";
+    case "credit_card":
+      return "Cartão de Crédito";
+    case "cash":
+      return "Dinheiro em Espécie";
+    case "financing":
+      return "Financiamento Bancário";
+    case "trade_in":
+      return "Veículo na Troca (Trade-in)";
+    case "transfer":
+      return "Transferência (TED/DOC)";
+    case "boleto":
+      return "Boleto Bancário";
+    case "letter_of_credit":
+      return "Carta de Crédito (Consórcio)";
+    default:
+      return method.replace(/_/g, " ").toUpperCase();
+  }
+}
+
+export function formatDocumentKindLabel(kind: string): string {
+  switch (kind) {
+    case "sale_contract":
+      return "Contrato de Compra e Venda";
+    case "sale_receipt":
+      return "Recibo de Venda";
+    case "delivery_term":
+      return "Termo de Entrega e Garantia";
+    case "power_of_attorney":
+      return "Procuração de Transferência";
+    case "buyer_acknowledgment":
+      return "Termo de Recebimento";
+    case "reservation_receipt":
+      return "Recibo de Sinal e Reserva";
+    default:
+      return kind.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}
+
 export function parseCurrencyInput(value: string): number | null {
   const digits = value.replace(/\D/g, "");
   return digits ? Number(digits) : null;

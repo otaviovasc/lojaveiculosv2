@@ -67,23 +67,48 @@ function PdfArtifactViewer(props: ArtifactViewerProps) {
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
+  const [isLoadingBuffer, setIsLoadingBuffer] = useState(true);
   const rootRef = useRef<HTMLElement>(null);
   const [stageNode, setStageNode] = useState<HTMLDivElement | null>(null);
   const stageWidth = useElementWidth(stageNode);
-  const file = useMemo(
-    () =>
-      props.requestHeaders
-        ? { httpHeaders: props.requestHeaders, url: props.url }
-        : props.url,
-    [props.requestHeaders, props.url],
-  );
 
   useEffect(() => {
+    let active = true;
+    setIsLoadingBuffer(true);
+    setError(null);
     setPages(0);
     setPage(1);
-    setZoom(1);
-    setError(null);
-  }, [props.url]);
+
+    fetch(props.url, { headers: props.requestHeaders ?? {} })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then((data) => {
+        if (active) {
+          setPdfData(data);
+          setIsLoadingBuffer(false);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setError(humanizePdfError(err));
+          setIsLoadingBuffer(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [props.url, props.requestHeaders]);
+
+  const fileSource = useMemo(() => {
+    if (pdfData) return { data: pdfData };
+    return props.requestHeaders
+      ? { httpHeaders: props.requestHeaders, url: props.url }
+      : props.url;
+  }, [pdfData, props.requestHeaders, props.url]);
 
   return (
     <section
@@ -106,67 +131,71 @@ function PdfArtifactViewer(props: ArtifactViewerProps) {
         url={props.externalUrl ?? props.url}
         zoomLabel={`${Math.round(zoom * 100)}%`}
       />
-      <Document
-        className="artifact-viewer__document"
-        error={
-          <ArtifactMessage
-            body={error ?? "Não foi possível renderizar este PDF."}
-            icon={<FileWarning aria-hidden="true" />}
-            title="Falha ao abrir o arquivo"
-          >
-            {props.onRefresh ? (
-              <button onClick={props.onRefresh} type="button">
-                Tentar com novo acesso
-              </button>
-            ) : null}
-          </ArtifactMessage>
-        }
-        file={file}
-        loading={<ArtifactLoading />}
-        onLoadError={(loadError) => setError(humanizePdfError(loadError))}
-        onLoadSuccess={(result) => {
-          setPages(result.numPages);
-          setPage((current) => Math.min(current, result.numPages));
-        }}
-      >
-        {pages ? (
-          <aside
-            aria-label="Miniaturas"
-            className="artifact-viewer__thumbnails"
-          >
-            {Array.from({ length: pages }, (_, index) => index + 1).map(
-              (pageNumber) => (
-                <button
-                  aria-current={pageNumber === page ? "page" : undefined}
-                  aria-label={`Ir para página ${pageNumber}`}
-                  className={pageNumber === page ? "is-active" : undefined}
-                  key={pageNumber}
-                  onClick={() => setPage(pageNumber)}
-                  type="button"
-                >
-                  <Page
-                    pageNumber={pageNumber}
-                    renderAnnotationLayer={false}
-                    renderTextLayer={false}
-                    width={92}
-                  />
-                  <span>{pageNumber}</span>
+      {isLoadingBuffer ? (
+        <ArtifactLoading />
+      ) : (
+        <Document
+          className="artifact-viewer__document"
+          error={
+            <ArtifactMessage
+              body={error ?? "Não foi possível renderizar este PDF."}
+              icon={<FileWarning aria-hidden="true" />}
+              title="Falha ao abrir o arquivo"
+            >
+              {props.onRefresh ? (
+                <button onClick={props.onRefresh} type="button">
+                  Tentar com novo acesso
                 </button>
-              ),
-            )}
-          </aside>
-        ) : null}
-        <div className="artifact-viewer__stage" ref={setStageNode}>
-          {pages && stageWidth > 0 ? (
-            <Page
-              pageNumber={page}
-              renderAnnotationLayer={false}
-              renderTextLayer
-              width={artifactPageWidth(stageWidth, zoom)}
-            />
+              ) : null}
+            </ArtifactMessage>
+          }
+          file={fileSource}
+          loading={<ArtifactLoading />}
+          onLoadError={(loadError) => setError(humanizePdfError(loadError))}
+          onLoadSuccess={(result) => {
+            setPages(result.numPages);
+            setPage((current) => Math.min(current, result.numPages));
+          }}
+        >
+          {pages ? (
+            <aside
+              aria-label="Miniaturas"
+              className="artifact-viewer__thumbnails"
+            >
+              {Array.from({ length: pages }, (_, index) => index + 1).map(
+                (pageNumber) => (
+                  <button
+                    aria-current={pageNumber === page ? "page" : undefined}
+                    aria-label={`Ir para página ${pageNumber}`}
+                    className={pageNumber === page ? "is-active" : undefined}
+                    key={pageNumber}
+                    onClick={() => setPage(pageNumber)}
+                    type="button"
+                  >
+                    <Page
+                      pageNumber={pageNumber}
+                      renderAnnotationLayer={false}
+                      renderTextLayer={false}
+                      width={92}
+                    />
+                    <span>{pageNumber}</span>
+                  </button>
+                ),
+              )}
+            </aside>
           ) : null}
-        </div>
-      </Document>
+          <div className="artifact-viewer__stage" ref={setStageNode}>
+            {pages && stageWidth > 0 ? (
+              <Page
+                pageNumber={page}
+                renderAnnotationLayer={false}
+                renderTextLayer
+                width={artifactPageWidth(stageWidth, zoom)}
+              />
+            ) : null}
+          </div>
+        </Document>
+      )}
     </section>
   );
 }

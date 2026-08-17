@@ -1,5 +1,5 @@
 import "../../styles/credere-results.css";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -25,6 +25,8 @@ import {
 } from "../../components/ui/FeatureStates";
 import {
   conditionResultRenderKey,
+  formatBankName,
+  formatCredereReason,
   getCredereReasonGuidance,
   simulationStatusLabel,
   splitSimulationConditions,
@@ -78,7 +80,11 @@ export function SimulationResults({
 }) {
   const [sortBy, setSortBy] = useState<SortOption>("installment_asc");
   const [copiedAll, setCopiedAll] = useState(false);
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+
+  // Automatically scroll to the top of results when loaded/changed
+  useEffect(() => {
+    window.scrollTo({ behavior: "smooth", top: 0 });
+  }, [simulation.id]);
 
   const refreshable = isProcessingStatus(simulation.status);
   const isIndeterminate =
@@ -119,9 +125,9 @@ export function SimulationResults({
     }
   }, [accepted, sortBy]);
 
-  const reasonGuidance = getCredereReasonGuidance(simulation.reason);
   const hasAccepted = accepted.length > 0;
   const isPending = isProcessingStatus(simulation.status);
+  const reasonGuidance = getCredereReasonGuidance(simulation.reason);
 
   const uniqueBanksCount = useMemo(() => {
     const names = new Set(
@@ -135,7 +141,7 @@ export function SimulationResults({
   const handleShareAll = () => {
     if (!sortedAccepted.length) return;
     const lines = sortedAccepted.map((c, i) => {
-      const bank = c.bankName ?? c.bankCode ?? "Banco";
+      const bank = formatBankName(c.bankName, c.bankCode);
       const term = c.installments ? `${c.installments}x de ` : "";
       const val = formatCents(c.firstInstallmentCents);
       const entry = c.downPaymentCents
@@ -152,14 +158,14 @@ export function SimulationResults({
   return (
     <section
       aria-labelledby="credere-result-title"
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-6 rounded-2xl border border-line bg-panel p-5 sm:p-7 md:p-8 shadow-sm transition-all animate-fade-in"
     >
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 pb-5">
         <div className="flex items-center gap-3">
           {onBack ? (
             <button
-              className="inline-flex items-center gap-2 rounded-xl border border-line bg-panel px-3.5 py-2 text-xs font-bold text-app-text transition-all hover:border-line-strong hover:bg-app-elevated/60"
+              className="inline-flex items-center gap-2 rounded-xl border border-line bg-app-elevated/80 px-4 py-2 text-xs font-bold text-app-text transition-all hover:border-line-strong hover:bg-app-elevated"
               onClick={onBack}
               type="button"
             >
@@ -170,7 +176,7 @@ export function SimulationResults({
 
           {onNewSimulation ? (
             <button
-              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3.5 py-2 text-xs font-bold text-app-text transition-all hover:border-accent-strong hover:bg-accent-soft hover:text-accent-strong"
+              className="inline-flex items-center gap-2 rounded-xl border border-line bg-app-elevated/80 px-4 py-2 text-xs font-bold text-app-text transition-all hover:border-accent-strong hover:bg-accent-soft hover:text-accent-strong"
               onClick={onNewSimulation}
               type="button"
             >
@@ -180,10 +186,10 @@ export function SimulationResults({
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {isPolling ? (
             <span
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-600 dark:text-amber-400"
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400"
               role="status"
             >
               <span
@@ -196,22 +202,24 @@ export function SimulationResults({
 
           {hasAccepted ? (
             <button
-              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3.5 py-2 text-xs font-bold text-app-text transition-all hover:border-line-strong hover:bg-app-elevated/60"
+              className={
+                copiedAll
+                  ? "inline-flex items-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/15 px-4 py-2.5 text-xs font-black text-emerald-400 transition-all"
+                  : "inline-flex items-center gap-2 rounded-xl border border-line bg-app-elevated/80 px-4 py-2.5 text-xs font-black text-app-text transition-all hover:border-accent-strong hover:bg-accent-soft hover:text-accent-strong active:scale-98"
+              }
               onClick={handleShareAll}
-              title="Copiar resumo de todas as propostas"
+              title="Copiar resumo de todas as propostas para WhatsApp ou cliente"
               type="button"
             >
               {copiedAll ? (
                 <>
-                  <Check className="size-3.5 text-emerald-500" />
-                  <span className="text-emerald-600 dark:text-emerald-400">
-                    Propostas copiadas!
-                  </span>
+                  <Check className="size-4 text-emerald-400" />
+                  <span>Propostas copiadas!</span>
                 </>
               ) : (
                 <>
-                  <Share2 className="size-3.5 text-muted" />
-                  <span>Copiar todas</span>
+                  <Copy className="size-4" />
+                  <span>Copiar todas as propostas</span>
                 </>
               )}
             </button>
@@ -497,7 +505,7 @@ function ConditionCard({
   position: number;
 }) {
   const [copied, setCopied] = useState(false);
-  const bankName = condition.bankName ?? condition.bankCode ?? "Banco";
+  const bankName = formatBankName(condition.bankName, condition.bankCode);
 
   const handleCopy = () => {
     void navigator.clipboard?.writeText(
@@ -524,6 +532,9 @@ function ConditionCard({
           ? "Crédito Restrito"
           : null;
 
+  const reasonDetail =
+    condition.summary ?? condition.reason ?? condition.reasonIdentifier;
+
   return (
     <li
       className={
@@ -537,11 +548,13 @@ function ConditionCard({
       </span>
       <div className="credere-results-offer-main">
         <div className="credere-results-offer-bank">
-          <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg border border-line/60 bg-app-elevated/60 text-accent-strong">
-              <Landmark className="size-4" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 items-center justify-center rounded-xl border border-line/60 bg-app-elevated/80 text-accent-strong">
+              <Landmark className="size-4.5" />
             </div>
-            <strong>{bankName}</strong>
+            <strong className="text-sm font-black text-app-text">
+              {bankName}
+            </strong>
           </div>
 
           {isBest ? (
@@ -575,13 +588,9 @@ function ConditionCard({
             <dd>{formatCents(condition.totalAmountCents)}</dd>
           </div>
         </dl>
-        {(condition.summary ??
-        condition.reason ??
-        condition.reasonIdentifier) ? (
+        {reasonDetail ? (
           <p className="credere-results-offer-note">
-            {condition.summary ??
-              condition.reason ??
-              condition.reasonIdentifier}
+            {formatCredereReason(reasonDetail)}
           </p>
         ) : null}
       </div>
@@ -595,7 +604,7 @@ function ConditionCard({
               : `em ${condition.installments} parcelas`}
           </small>
         </div>
-        <div className="credere-results-offer-actions">
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
           <FeatureStatusBadge size="dense" tone={statusTone(condition.status)}>
             {simulationStatusLabel(condition.status)}
           </FeatureStatusBadge>
@@ -603,17 +612,23 @@ function ConditionCard({
             aria-label={`Copiar condição de ${bankName}`}
             className={
               copied
-                ? "credere-results-offer-copy credere-results-offer-copy--copied"
-                : "credere-results-offer-copy"
+                ? "inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-400 transition-all"
+                : "inline-flex items-center gap-1.5 rounded-xl border border-line bg-app-elevated/80 px-3 py-1.5 text-xs font-bold text-app-text transition-all hover:border-accent-strong hover:bg-accent-soft hover:text-accent-strong active:scale-98"
             }
             onClick={handleCopy}
-            title="Copiar resumo da condição"
+            title="Copiar resumo da proposta para área de transferência"
             type="button"
           >
             {copied ? (
-              <Check aria-hidden="true" />
+              <>
+                <Check className="size-3.5" />
+                <span>Copiado</span>
+              </>
             ) : (
-              <Copy aria-hidden="true" />
+              <>
+                <Copy className="size-3.5" />
+                <span>Copiar Proposta</span>
+              </>
             )}
           </button>
         </div>
@@ -635,22 +650,33 @@ function RefusedConditions({
       </summary>
       <div className="credere-results-refusal-list">
         {conditions.map((condition, index) => {
-          const detail = condition.reason ?? condition.summary;
-          const guidance = getCredereReasonGuidance(detail);
+          const rawDetail = condition.reason ?? condition.summary;
+          const translatedReason = formatCredereReason(
+            rawDetail,
+            condition.reasonIdentifier,
+          );
+          const guidance = getCredereReasonGuidance(rawDetail);
+          const bankName = formatBankName(
+            condition.bankName,
+            condition.bankCode,
+          );
           return (
             <article
               className="credere-results-refusal"
               key={conditionResultRenderKey(conditions, index, "refused")}
             >
               <div className="credere-results-refusal-body">
-                <strong>
-                  {condition.bankName ?? condition.bankCode ?? "Banco"}
-                </strong>
-                <p>{detail ?? "O banco não informou o motivo."}</p>
+                <div className="flex items-center gap-2">
+                  <Landmark className="size-4 text-muted" />
+                  <strong>{bankName}</strong>
+                </div>
+                <p>{translatedReason}</p>
                 {condition.occurrences > 1 ? (
-                  <small>
-                    Mesmo motivo em {condition.occurrences} condições.
-                  </small>
+                  <div className="mt-1">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-line/60 bg-panel px-2.5 py-0.5 text-xs font-bold text-muted">
+                      Mesmo motivo em {condition.occurrences} condições.
+                    </span>
+                  </div>
                 ) : null}
                 {guidance ? <small>{guidance.body}</small> : null}
               </div>

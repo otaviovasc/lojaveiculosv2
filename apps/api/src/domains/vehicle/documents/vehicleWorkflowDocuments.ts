@@ -235,6 +235,7 @@ function vehicleSnapshot(listing: VehicleListing, unit: VehicleUnit) {
     modelYear: listing.modelYear,
     plate: unit.plate ?? listing.plate,
     priceCents: listing.priceCents,
+    renavam: unit.renavam ?? null,
     title: listing.title,
     trimName: listing.trimName,
     unitId: unit.id,

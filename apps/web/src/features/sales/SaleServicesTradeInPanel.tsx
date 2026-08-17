@@ -26,11 +26,13 @@ import type { SaleRecord } from "./types";
 export function TradeInPanel({
   inventoryApi,
   onChange,
+  onSyncPayment,
   sale,
   tradeIn,
 }: {
   inventoryApi: InventoryApi | null;
   onChange: ServiceChangeHandler;
+  onSyncPayment?: (() => void) | undefined;
   sale: SaleRecord;
   tradeIn: SnapshotRecord;
 }) {
@@ -59,6 +61,7 @@ export function TradeInPanel({
         <TradeInFields
           inventoryApi={inventoryApi}
           onChange={onChange}
+          onSyncPayment={onSyncPayment}
           sale={sale}
           tradeIn={tradeIn}
         />
@@ -82,15 +85,23 @@ export function TradeInPanel({
 function TradeInFields({
   inventoryApi,
   onChange,
+  onSyncPayment,
   sale,
   tradeIn,
 }: {
   inventoryApi: InventoryApi | null;
   onChange: ServiceChangeHandler;
+  onSyncPayment?: (() => void) | undefined;
   sale: SaleRecord;
   tradeIn: SnapshotRecord;
 }) {
   const catalog = readTradeInCatalog(tradeIn);
+  const valuationCents = snapshotNumber(tradeIn.valuationCents) ?? 0;
+  const tradeInPayment = sale.payments.find((p) => p.method === "trade_in");
+  const isPaymentSynced =
+    Boolean(tradeInPayment) &&
+    valuationCents > 0 &&
+    tradeInPayment?.principalCents === valuationCents;
 
   return (
     <div className="flex flex-col gap-5">
@@ -252,7 +263,7 @@ function TradeInFields({
         </div>
       </TradeInFieldGroup>
 
-      <div>
+      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-app/50 p-4">
         <SaleField label="Valor de avaliação / entrada">
           <input
             className="sales-input text-lg font-black text-accent-strong"
@@ -265,9 +276,35 @@ function TradeInFields({
               )
             }
             placeholder="R$ 0,00"
-            value={formatCurrency(snapshotNumber(tradeIn.valuationCents))}
+            value={formatCurrency(valuationCents)}
           />
         </SaleField>
+
+        {valuationCents > 0 && onSyncPayment ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line/40">
+            {isPaymentSynced ? (
+              <span className="text-xs font-black text-success-strong flex items-center gap-1.5 uppercase tracking-wider">
+                <Check className="size-4" />
+                Valor da troca vinculado às condições de pagamento
+              </span>
+            ) : (
+              <span className="text-xs font-bold text-muted">
+                {tradeInPayment
+                  ? "O valor da avaliação difere da parcela de troca lançada."
+                  : "Adicione este valor de troca às parcelas para abater do saldo da venda."}
+              </span>
+            )}
+            <button
+              className="sales-secondary-button !min-h-9 !h-9 text-xs font-black uppercase tracking-wider"
+              onClick={onSyncPayment}
+              type="button"
+            >
+              {isPaymentSynced
+                ? "Re-sincronizar Parcela de Troca"
+                : "Lançar na Tabela de Pagamentos"}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -290,13 +327,18 @@ function TradeInInput({
   tradeIn: SnapshotRecord;
   type?: "number" | "text";
 }) {
-  const rawValue = String(tradeIn[field] ?? "");
+  const rawValue = tradeIn[field];
   const displayValue =
-    field === "mileageKm" && rawValue
-      ? rawValue.includes(".")
-        ? rawValue
-        : Number(rawValue.replace(/\D/g, "")).toLocaleString("pt-BR")
-      : rawValue;
+    field === "mileageKm" &&
+    rawValue !== undefined &&
+    rawValue !== null &&
+    rawValue !== ""
+      ? Number(String(rawValue).replace(/\D/g, "") || "0").toLocaleString(
+          "pt-BR",
+        )
+      : rawValue !== undefined && rawValue !== null
+        ? String(rawValue)
+        : "";
 
   return (
     <InventoryField className={className} label={label}>
@@ -307,10 +349,13 @@ function TradeInInput({
         onChange={(event) => {
           if (field === "mileageKm") {
             const digits = event.target.value.replace(/\D/g, "");
+            onChange("tradeIn", field, digits ? Number(digits) : null);
+          } else if (type === "number") {
+            const num = Number(event.target.value);
             onChange(
               "tradeIn",
               field,
-              digits ? Number(digits).toLocaleString("pt-BR") : "",
+              Number.isFinite(num) && event.target.value !== "" ? num : null,
             );
           } else {
             onChange("tradeIn", field, event.target.value);

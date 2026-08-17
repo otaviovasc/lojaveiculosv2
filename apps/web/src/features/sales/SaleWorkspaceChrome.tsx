@@ -127,18 +127,34 @@ export function SaleWorkspaceMessage({ message }: { message: string | null }) {
 }
 
 export function SaleWorkspaceNavigation({
+  canClose,
+  canReserve,
   currentStep,
+  isSaving,
   onBack,
+  onClose,
   onFinish,
   onNext,
+  onReserve,
+  sale,
 }: {
+  canClose?: boolean;
+  canReserve?: boolean;
   currentStep: number;
+  isSaving?: boolean;
   onBack: () => void;
+  onClose?: () => void;
   onFinish: () => void;
   onNext: () => void;
+  onReserve?: () => void;
+  sale?: SaleRecord;
 }) {
+  const isFinalStep = currentStep === saleWorkspaceSteps.length - 1;
+  const isDraftOrPending =
+    sale && (sale.status === "draft" || sale.status === "pending");
+
   return (
-    <div className="sales-glass-panel p-4 bg-panel border border-line flex justify-between items-center">
+    <div className="sales-glass-panel p-4 bg-panel border border-line flex flex-wrap justify-between items-center gap-3">
       <button
         className="sales-secondary-button"
         disabled={currentStep === 0}
@@ -147,7 +163,8 @@ export function SaleWorkspaceNavigation({
       >
         Voltar
       </button>
-      {currentStep < saleWorkspaceSteps.length - 1 ? (
+
+      {!isFinalStep ? (
         <button
           className="sales-primary-button flex items-center gap-1"
           onClick={onNext}
@@ -157,6 +174,36 @@ export function SaleWorkspaceNavigation({
           <span>Avançar</span>
           <ChevronRight className="size-4" />
         </button>
+      ) : isDraftOrPending ? (
+        <div className="flex items-center gap-2">
+          {canReserve && onReserve ? (
+            <button
+              className="sales-secondary-button"
+              disabled={isSaving}
+              onClick={onReserve}
+              type="button"
+            >
+              Reservar Veículo
+            </button>
+          ) : null}
+
+          {onClose ? (
+            <button
+              className="sales-primary-button flex items-center gap-1.5"
+              disabled={!canClose || isSaving}
+              onClick={onClose}
+              style={{
+                opacity: canClose ? 1 : 0.5,
+                cursor: canClose ? "pointer" : "not-allowed",
+              }}
+              type="button"
+            >
+              <div className="gloss-overlay" />
+              <Check className="size-4 shrink-0" />
+              <span>Fechar Venda</span>
+            </button>
+          ) : null}
+        </div>
       ) : (
         <button
           className="sales-secondary-button border-success/30 text-success-soft-foreground bg-success/5 hover:bg-success/10 hover:border-success/40"
@@ -164,7 +211,7 @@ export function SaleWorkspaceNavigation({
           type="button"
         >
           <Check className="size-4 shrink-0" />
-          <span>Finalizar e Ver Lista</span>
+          <span>Voltar para Lista de Vendas</span>
         </button>
       )}
     </div>

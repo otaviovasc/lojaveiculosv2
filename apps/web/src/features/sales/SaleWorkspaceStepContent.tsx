@@ -12,19 +12,28 @@ import type {
 import type { SaleRecord } from "./types";
 
 export function SaleWorkspaceStepContent({
+  canClose,
   contextMessage,
   contextOptions,
   currentStep,
   inventoryApi,
+  isSaving,
+  onBack,
+  onClose,
   onCreateLead,
   sale,
   update,
 }: {
+  canClose?: boolean | undefined;
   contextMessage: string | null;
   contextOptions: SaleContextOptions;
   currentStep: number;
   inventoryApi: InventoryApi | null;
-  onCreateLead?: (input: CreateSaleLeadInput) => Promise<SaleLeadOption>;
+  isSaving?: boolean | undefined;
+  onBack?: (() => void) | undefined;
+  onClose?: (() => void) | undefined;
+  onCreateLead?:
+    ((input: CreateSaleLeadInput) => Promise<SaleLeadOption>) | undefined;
   sale: SaleRecord;
   update: (updater: (sale: SaleRecord) => SaleRecord) => void;
 }) {
@@ -52,7 +61,13 @@ export function SaleWorkspaceStepContent({
       {currentStep === 3 ? (
         <div className="flex flex-col gap-4">
           <ReviewSection sale={sale} />
-          <FinalizationSection sale={sale} />
+          <FinalizationSection
+            {...(canClose !== undefined && { canClose })}
+            {...(isSaving !== undefined && { isSaving })}
+            {...(onBack && { onBack })}
+            {...(onClose && { onClose })}
+            sale={sale}
+          />
         </div>
       ) : null}
     </div>

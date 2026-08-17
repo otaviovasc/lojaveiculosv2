@@ -51,7 +51,7 @@ export function createSaleContractDocument(model: WorkflowPdfModel) {
       { size: "A4", style: styles.pageContract },
       e(PdfPremiumHeader, {
         store,
-        subtitle: `Venda nº ${model.sale.code} | ${formatPdfDateTime(model.generatedAt)}`,
+        subtitle: formatPdfDateTime(model.generatedAt),
         title,
       }),
       e(PdfRubricaLine),

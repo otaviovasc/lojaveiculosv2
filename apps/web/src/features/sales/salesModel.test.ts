@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   canPersistSaleWorkspaceEdits,
   createDraftFromContext,
+  formatDocumentKindLabel,
+  formatPaymentMethodLabel,
   parseSaleStartContext,
   paymentPrincipalTotal,
   reservationSignalPayment,
@@ -194,6 +196,45 @@ describe("sales model start context", () => {
       metadata: { methodReference: "Visa · autorização 123456" },
       method: "credit_card",
     });
+  });
+
+  it("translates payment method keys to Portuguese labels", () => {
+    expect(formatPaymentMethodLabel("credit_card")).toBe("Cartão de Crédito");
+    expect(formatPaymentMethodLabel("pix")).toBe("PIX");
+    expect(formatPaymentMethodLabel("cash")).toBe("Dinheiro em Espécie");
+    expect(formatPaymentMethodLabel("financing")).toBe(
+      "Financiamento Bancário",
+    );
+    expect(formatPaymentMethodLabel("trade_in")).toBe(
+      "Veículo na Troca (Trade-in)",
+    );
+    expect(formatPaymentMethodLabel("transfer")).toBe(
+      "Transferência (TED/DOC)",
+    );
+    expect(formatPaymentMethodLabel("boleto")).toBe("Boleto Bancário");
+    expect(formatPaymentMethodLabel("letter_of_credit")).toBe(
+      "Carta de Crédito (Consórcio)",
+    );
+    expect(formatPaymentMethodLabel("custom_method")).toBe("CUSTOM METHOD");
+  });
+
+  it("translates document kind keys to Portuguese labels", () => {
+    expect(formatDocumentKindLabel("sale_contract")).toBe(
+      "Contrato de Compra e Venda",
+    );
+    expect(formatDocumentKindLabel("sale_receipt")).toBe("Recibo de Venda");
+    expect(formatDocumentKindLabel("delivery_term")).toBe(
+      "Termo de Entrega e Garantia",
+    );
+    expect(formatDocumentKindLabel("power_of_attorney")).toBe(
+      "Procuração de Transferência",
+    );
+    expect(formatDocumentKindLabel("buyer_acknowledgment")).toBe(
+      "Termo de Recebimento",
+    );
+    expect(formatDocumentKindLabel("reservation_receipt")).toBe(
+      "Recibo de Sinal e Reserva",
+    );
   });
 });
 

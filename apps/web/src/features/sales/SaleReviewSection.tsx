@@ -1,5 +1,10 @@
 import { Car, Check, Coins, FileText, User } from "lucide-react";
-import { formatCents, paymentPrincipalTotal } from "./salesModel";
+import {
+  formatCents,
+  formatDocumentKindLabel,
+  formatPaymentMethodLabel,
+  paymentPrincipalTotal,
+} from "./salesModel";
 import type { SaleRecord } from "./types";
 
 export function ReviewSection({ sale }: { sale: SaleRecord }) {
@@ -145,7 +150,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                     className="flex justify-between items-center text-xs bg-app-elevated/40 px-3 py-2 rounded-lg border border-line/40 font-bold"
                   >
                     <span className="text-app-text">
-                      Parcela #{idx + 1} ({p.method.toUpperCase()})
+                      Parcela #{idx + 1} ({formatPaymentMethodLabel(p.method)})
                     </span>
                     <span className="text-app-text font-black">
                       {formatCents(p.principalCents)}{" "}
@@ -186,19 +191,4 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
       </section>
     </div>
   );
-}
-
-function formatDocumentKindLabel(kind: string): string {
-  switch (kind) {
-    case "sale_contract":
-      return "Contrato de Compra e Venda";
-    case "sale_receipt":
-      return "Recibo de Venda";
-    case "delivery_term":
-      return "Termo de Entrega";
-    case "power_of_attorney":
-      return "Procuração";
-    default:
-      return kind.replace(/_/g, " ").toUpperCase();
-  }
 }

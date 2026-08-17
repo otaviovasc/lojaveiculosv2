@@ -41,10 +41,25 @@ export function readBuyerSnapshot(
 ): VehicleBuyerSnapshot {
   return {
     address: readNullableString(snapshot.address),
-    document: readNullableString(snapshot.document),
+    cep: readNullableString(
+      snapshot.cep ?? snapshot.zipCode ?? snapshot.postalCode,
+    ),
+    city: readNullableString(snapshot.city ?? snapshot.cidade),
+    district: readNullableString(snapshot.district ?? snapshot.bairro),
+    document: readNullableString(snapshot.document ?? snapshot.cpf),
     email: readNullableString(snapshot.email),
+    maritalStatus: readNullableString(
+      snapshot.maritalStatus ?? snapshot.estadoCivil,
+    ),
     name: readRequiredString(snapshot.name, "buyer"),
+    nationality: readNullableString(
+      snapshot.nationality ?? snapshot.nacionalidade,
+    ),
     phone: readNullableString(snapshot.phone),
+    phone2: readNullableString(snapshot.phone2),
+    phone3: readNullableString(snapshot.phone3),
+    profession: readNullableString(snapshot.profession ?? snapshot.profissao),
+    state: readNullableString(snapshot.state ?? snapshot.uf ?? snapshot.estado),
   };
 }
 
