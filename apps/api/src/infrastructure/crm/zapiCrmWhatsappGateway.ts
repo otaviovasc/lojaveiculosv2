@@ -18,7 +18,11 @@ import { disconnectZapiConnection } from "./zapiCrmWhatsappConnectionActions.js"
 import { configureZapiWebhooks } from "./zapiCrmWhatsappWebhookActions.js";
 import {
   assertZapiProvider,
+  buildInstanceUrl,
+  fetchZapi,
+  parseJson,
   resolveZapiCredentials,
+  zapiProviderResponseError,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 
 export function createZapiCrmWhatsappGateway(
@@ -46,6 +50,28 @@ export function createZapiCrmWhatsappGateway(
     },
     async getConnectionStatus(connection) {
       return readZapiConnectionStatus(credentialsFor(connection), fetchImpl);
+    },
+    async getProfilePhotoUrl(connection, input) {
+      const credentials = credentialsFor(connection);
+      const response = await fetchZapi(
+        credentials,
+        fetchImpl,
+        `${buildInstanceUrl(credentials)}/profile-picture?phone=${encodeURIComponent(input.phone)}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Client-Token": credentials.clientToken,
+          },
+          method: "GET",
+        },
+      );
+      const payload = parseJson(await response.text());
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        throw zapiProviderResponseError(response.status, "ZAPI profile photo");
+      }
+      const link = payload.link;
+      return typeof link === "string" && link.trim() ? link.trim() : null;
     },
     async listCatalogProducts(connection, input) {
       return listZapiCatalogProducts(

@@ -3,6 +3,7 @@ import {
   formatContactInitials,
   formatMessageTime,
   formatRelativeSessionTime,
+  getSenderOriginLabel,
   mergeMessagesFromServer,
   mergeSessionsFromServer,
   parseCrmWhatsappMessage,
@@ -173,6 +174,18 @@ describe("crmWhatsappModel", () => {
     expect(parseCrmWhatsappMessage({ id: "message-1" })).toEqual(
       expect.objectContaining({ senderOrigin: "unknown" }),
     );
+  });
+
+  it("labels messages sent directly from WhatsApp clearly", () => {
+    expect(
+      getSenderOriginLabel(
+        createMessage({
+          direction: "OUTBOUND",
+          senderOrigin: "human_whatsapp",
+          senderType: "HUMAN",
+        }),
+      ),
+    ).toBe("Enviado diretamente pelo WhatsApp");
   });
 });
 

@@ -48,6 +48,14 @@ export function readCrmWhatsappProviderLabel(provider: string) {
   }
 }
 
+export function readCrmWhatsappProviderIcon(provider: string) {
+  if (provider === "olx_chat" || provider === "OLX_CHAT") return "olx" as const;
+  if (provider === "zapi" || provider === "composio_whatsapp") {
+    return "whatsapp" as const;
+  }
+  return "unknown" as const;
+}
+
 export function readCrmWhatsappChannelLabel(channel: string) {
   switch (channel) {
     case "WHATSAPP":

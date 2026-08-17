@@ -41,6 +41,19 @@ describe("CRM messaging connection selection", () => {
     });
   });
 
+  it("does not select disconnected or errored connections", () => {
+    const disconnected = {
+      ...createConnection("zapi", "disconnected"),
+      status: "disconnected" as const,
+    };
+    const errored = {
+      ...createConnection("composio_whatsapp", "errored"),
+      status: "error" as const,
+    };
+    expect(findConnectedConnection([disconnected, errored])).toBeUndefined();
+    expect(findFreeTextStartConnection([disconnected, errored])).toBeNull();
+  });
+
   it("does not offer OLX Chat as a new-conversation channel", () => {
     const olx = createConnection("olx_chat", "olx");
 

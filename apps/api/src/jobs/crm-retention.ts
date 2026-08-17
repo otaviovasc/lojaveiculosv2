@@ -20,7 +20,10 @@ import {
   executeCrmRetentionJob,
   readCrmRetentionJobConfig,
 } from "./crmRetentionJob.js";
-import { waitForCrmRetentionDatabases } from "./crmRetentionStartup.js";
+import {
+  assertCrmRetentionSchemaReady,
+  waitForCrmRetentionDatabases,
+} from "./crmRetentionStartup.js";
 
 loadLocalEnv();
 
@@ -44,7 +47,12 @@ async function main(): Promise<void> {
   );
   const workerId = `crm_retention_${randomUUID()}`;
   try {
-    await waitForCrmRetentionDatabases({ auditClient, productClient });
+    await waitForCrmRetentionDatabases({
+      auditClient,
+      productClient,
+      schemaProbe: () =>
+        assertCrmRetentionSchemaReady({ auditClient, productClient }),
+    });
     const auditBefore = await deliverCrmRetentionAuditOutbox({
       audit,
       leaseOwner: `${workerId}:audit-before`,

@@ -18,7 +18,7 @@ export function reconciledOutboundEchoSender(
   if (
     existing.direction !== "OUTBOUND" ||
     incoming.direction !== "OUTBOUND" ||
-    existing.senderOrigin !== "unknown" ||
+    !["unknown", "human_whatsapp"].includes(existing.senderOrigin) ||
     !correlatedOrigins.has(incoming.senderOrigin)
   ) {
     return null;

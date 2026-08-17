@@ -25,8 +25,9 @@ anonymized or purged. Do not override this variable in the dashboard because
 - Scheduled global runs leave `CRM_RETENTION_TENANT_ID` and
   `CRM_RETENTION_STORE_ID` unset.
 - Before claiming any scope or audit-outbox row, the worker probes both
-  databases with bounded backoff so a fresh Railway cron container does not
-  fail on transient private-network readiness.
+  databases and the required product/audit relations with bounded backoff so a
+  fresh Railway cron container does not race API migrations or transient
+  private-network readiness.
 
 The process logs only aggregate counters and identifiers needed for scoped
 operations. Never add message bodies, provider payloads, credentials, or raw

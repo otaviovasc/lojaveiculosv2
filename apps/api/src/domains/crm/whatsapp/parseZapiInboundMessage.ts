@@ -75,15 +75,20 @@ export function parseZapiContactIdentity(
   const phone = resolvePhone(payload, chatLid);
   if (!phone) return null;
   const fromMe = isTruthy(payload.fromMe);
-  const buyerName = fromMe
-    ? readString(payload.chatName)
-    : readString(payload.senderName);
+  const buyerName = readUsableZapiContactName(
+    fromMe ? readString(payload.chatName) : readString(payload.senderName),
+  );
   return {
     ...(buyerName ? { buyerName } : {}),
     ...(chatLid ? { chatLid } : {}),
     fromMe,
     phone,
   };
+}
+
+export function readUsableZapiContactName(value?: string) {
+  if (!value || /@lid\b/i.test(value)) return undefined;
+  return value;
 }
 
 function resolvePhone(

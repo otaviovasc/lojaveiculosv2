@@ -228,6 +228,7 @@ function readAuthorizationFailure(
 
 export function readOlxAuthorizationAction(
   state?: MarketplaceProviderState,
+  chatOperation?: Pick<CrmChannelOperation, "state">,
 ): OlxAuthorizationAction | null {
   if (!state?.accountId || state.connectionStatus === "not_configured") {
     return {
@@ -257,6 +258,17 @@ export function readOlxAuthorizationAction(
   ) {
     return {
       description: "Refaz o setup das capacidades que falharam.",
+      label: "Reconfigurar OLX",
+    };
+  }
+  if (
+    chatOperation?.state === "pending" ||
+    chatOperation?.state === "degraded" ||
+    chatOperation?.state === "failed"
+  ) {
+    return {
+      description:
+        "Refaz o setup do Chat e revalida o callback de recebimento.",
       label: "Reconfigurar OLX",
     };
   }

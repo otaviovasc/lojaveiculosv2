@@ -14,13 +14,11 @@ export type CrmWhatsappSendTextInput = {
   phone: string;
   text: string;
 };
-
 export type CrmWhatsappSendTextResult = {
   externalId: string;
   providerTimestamp: Date;
 };
 export type CrmWhatsappSendMediaType = "audio" | "document" | "image" | "video";
-
 export type CrmWhatsappSendMediaInput = {
   asyncProcessing?: boolean;
   caption?: string;
@@ -30,7 +28,6 @@ export type CrmWhatsappSendMediaInput = {
   mimeType?: string;
   phone: string;
 };
-
 export type CrmWhatsappSendMediaResult = CrmWhatsappSendTextResult;
 
 export type CrmWhatsappTemplateParameter =
@@ -189,6 +186,10 @@ export type CrmWhatsappGateway = {
   getConnectionStatus: (
     connection: CrmConnection,
   ) => Promise<CrmWhatsappProviderStatus>;
+  getProfilePhotoUrl?: (
+    connection: CrmConnection,
+    input: { phone: string },
+  ) => Promise<string | null>;
   listCatalogProducts: (
     connection: CrmConnection,
     input: CrmWhatsappListCatalogProductsInput,
@@ -240,7 +241,6 @@ export class CrmWhatsappGatewayError extends Error {
     this.name = "CrmWhatsappGatewayError";
   }
 }
-
 export class CrmWhatsappCapabilityError extends CrmWhatsappGatewayError {
   constructor(message: string) {
     super(message, 409);

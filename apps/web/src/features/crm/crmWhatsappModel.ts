@@ -366,7 +366,7 @@ export function getSenderOriginLabel(message: CrmWhatsappMessage) {
     case "human_crm":
       return "Atendente CRM";
     case "human_whatsapp":
-      return "Atendente no WhatsApp";
+      return "Enviado diretamente pelo WhatsApp";
     case "bot_api":
       return "Bot/API";
     case "system":

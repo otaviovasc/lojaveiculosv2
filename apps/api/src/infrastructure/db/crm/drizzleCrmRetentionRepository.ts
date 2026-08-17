@@ -11,7 +11,7 @@ import {
   completeDrizzleCrmRetentionScope,
 } from "./drizzleCrmRetentionScopes.js";
 
-const requiredRelations = [
+export const crmRetentionRequiredRelations = [
   "bot_action_commands",
   "canonical_messages",
   "conversation_cycles",
@@ -44,7 +44,7 @@ export function createDrizzleCrmRetentionRepository(
     completeScope: (input) => completeDrizzleCrmRetentionScope(db, input),
     async inspectReadiness(scope) {
       const unavailableRelations: string[] = [];
-      for (const relation of requiredRelations) {
+      for (const relation of crmRetentionRequiredRelations) {
         const rows = await db.execute(
           sql`select to_regclass(${`public.${relation}`})::text as relation`,
         );

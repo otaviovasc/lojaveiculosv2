@@ -3,6 +3,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { CrmRemoteMediaFetcher } from "../ports/crmRemoteMediaFetcher.js";
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import {
+  mirrorNewZapiProfilePhoto,
   mirrorZapiProfilePhoto,
   type MirrorZapiProfilePhotoInput,
 } from "./mirrorZapiProfilePhoto.js";
@@ -69,6 +70,39 @@ describe("mirrorZapiProfilePhoto", () => {
       status: "failed",
     });
     expect(putObject).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the authenticated provider URL when the webhook URL expired", async () => {
+    const fetchMedia = vi
+      .fn<CrmRemoteMediaFetcher["fetchMedia"]>()
+      .mockRejectedValueOnce(new Error("expired temporary URL"))
+      .mockResolvedValueOnce({
+        body: new Uint8Array([4, 5, 6]),
+        contentType: "image/png",
+        finalUrl: "https://zapi.test/current-profile.png",
+      });
+    const putObject = vi.fn(
+      async (_input: Parameters<ObjectStorage["putObject"]>[0]) => ({
+        publicUrl: "https://cdn.local/current-profile.png",
+        storageKey: "test/crm/current-profile.png",
+      }),
+    );
+    const repository = {
+      findSessionByIdentity: vi.fn(async () => null),
+    } as never;
+
+    await expect(
+      mirrorNewZapiProfilePhoto({
+        ...profileInput(fetchMedia, putObject),
+        buyerPhone: "5511999999999",
+        repository,
+        resolvePhotoUrl: async () => "https://zapi.test/current-profile.png",
+      }),
+    ).resolves.toMatchObject({ status: "stored" });
+    expect(fetchMedia).toHaveBeenNthCalledWith(2, {
+      maxBytes: 5 * 1024 * 1024,
+      url: "https://zapi.test/current-profile.png",
+    });
   });
 });
 
