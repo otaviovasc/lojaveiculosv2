@@ -32,7 +32,7 @@ import {
   WhatsappVehiclePartialSendError,
 } from "../../../domains/crm/services/CrmWhatsapp/sendWhatsappVehicle.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
-import { AuthorizationError } from "../../../shared/authorization.js";
+import { commonApiErrorResponse } from "../../../infrastructure/http/commonApiErrorResponse.js";
 import { OlxWebhookRejectedError } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
 import { handleWhatsappConnectionError } from "./crm.whatsapp.connectionErrors.js";
 import { CrmWhatsappValidationError } from "./crm.whatsapp.validationError.js";
@@ -47,6 +47,9 @@ export async function handleWhatsapp(
   try {
     return await action();
   } catch (error) {
+    const commonErrorResponse = commonApiErrorResponse(context, error);
+    if (commonErrorResponse) return commonErrorResponse;
+
     if (error instanceof CrmWhatsappValidationError) {
       return jsonApiError(context, {
         code: "CRM_WHATSAPP_VALIDATION_ERROR",
@@ -78,14 +81,6 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: 409,
-      });
-    }
-    if (error instanceof AuthorizationError) {
-      return jsonApiError(context, {
-        code: "AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
       });
     }
     if (error instanceof OlxWebhookRejectedError) {
