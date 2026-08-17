@@ -110,7 +110,9 @@ function dispatchInput(webhookUrl: string): DispatchCrmBotWebhookInput {
         authentication: "X-Webhook-Secret",
         baseUrl: "https://api.example.com/bot/actions",
       },
+      channel: "whatsapp",
       connection: {
+        channel: "whatsapp",
         id: "connection-1",
         phone: null,
         provider: "zapi",

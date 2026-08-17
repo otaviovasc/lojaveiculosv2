@@ -4,9 +4,9 @@ import { useRemoteSearch } from "../../lib/useRemoteSearch";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import {
   buildStorefrontUrl,
-  findConnectedConnection,
   isConnectedConnection,
   readConversationStartCapability,
+  resolveCrmInboxConnectionSelection,
 } from "./crmWhatsappConnectionSelection";
 import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
 import {
@@ -16,6 +16,7 @@ import {
 import {
   asError,
   createConnectionQuery,
+  loadDeepLinkedSession,
   readInitialSessionId,
 } from "./crmWhatsappHookSupport";
 import { useCrmWhatsappMessages } from "./useCrmWhatsappMessages";
@@ -31,6 +32,7 @@ import { useCrmWhatsappScheduledMessages } from "./useCrmWhatsappScheduledMessag
 import { useCrmWhatsappTags } from "./useCrmWhatsappTags";
 import { useCrmWhatsappVehicleInventory } from "./useCrmWhatsappVehicleInventory";
 import { useCrmWhatsappInboxLifecycle } from "./useCrmWhatsappInboxLifecycle";
+import { useCrmRoutingPolicy } from "./useCrmRoutingPolicy";
 import { readCrmWhatsappSendReadiness } from "./crmWhatsappProviderCapabilities";
 import type {
   CrmWhatsappRealtimeStatus,
@@ -46,6 +48,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   const initialSessionId = readInitialSessionId();
   const [activeSessionId, setActiveSessionId] =
     useState<CrmWhatsappSessionId | null>(initialSessionId);
+  const [initialSessionResolved, setInitialSessionResolved] = useState(
+    initialSessionId === null,
+  );
   const [error, setError] = useState<Error | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [quickFilter, setQuickFilter] =
@@ -76,20 +81,27 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     [activeSessionId, sessions],
   );
   const connections = useCrmWhatsappConnections(api);
-  const connectionId = useMemo(
+  const routing = useCrmRoutingPolicy(api, permissions.canList);
+  const connectionSelection = useMemo(
     () =>
-      (connectionFilterId &&
-      connections.connections.some(
-        (connection) =>
-          String(connection.id) === connectionFilterId &&
-          isConnectedConnection(connection),
-      )
-        ? connectionFilterId
-        : null) ??
-      findConnectedConnection(connections.connections)?.id ??
-      null,
-    [connectionFilterId, connections.connections],
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: activeSession?.connection?.id
+          ? String(activeSession.connection.id)
+          : null,
+        connectionFilterId,
+        connections: connections.connections,
+        hasActiveSession: activeSession !== null,
+        routingPolicy: routing.policy,
+      }),
+    [
+      activeSession,
+      connectionFilterId,
+      connections.connections,
+      routing.policy,
+    ],
   );
+  const connectionId = connectionSelection.viewConnectionId;
+  const operationalConnectionId = connectionSelection.operationalConnectionId;
   useEffect(() => {
     if (
       connectionFilterId &&
@@ -119,6 +131,10 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
         : null,
     [activeSession, connections.connections],
   );
+  const sessionListConnectionId =
+    initialSessionId && activeSession?.id === initialSessionId
+      ? operationalConnectionId
+      : connectionId;
   const conversationStartCapability = useMemo(
     () => readConversationStartCapability(activeConnection),
     [activeConnection],
@@ -178,9 +194,11 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     if (currentRevision === null) return incomingRevision === null;
     return incomingRevision !== null && incomingRevision >= currentRevision;
   }, []);
-  const canLoadMessages = Boolean(connectionId && permissions.canRead);
+  const canLoadMessages = Boolean(
+    operationalConnectionId && activeSession && permissions.canRead,
+  );
   const canSendMessages = Boolean(
-    connectionId && permissions.canSend && sendReadiness.canSend,
+    operationalConnectionId && permissions.canSend && sendReadiness.canSend,
   );
   const messageState = useCrmWhatsappMessages({
     activeSession,
@@ -204,6 +222,37 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     unreadOnly,
   });
 
+  useEffect(() => {
+    if (initialSessionResolved || !initialSessionId || !permissions.canList) {
+      return;
+    }
+    let active = true;
+    setIsLoadingSessions(true);
+    void loadDeepLinkedSession(api, initialSessionId)
+      .then((deepLinked) => {
+        if (!active) return;
+        if (deepLinked) {
+          mergeSessions([deepLinked], { snapshotKind: "reconciled" });
+          setActiveSessionId(deepLinked.id);
+        }
+      })
+      .catch((caught) => {
+        if (active) setError(asError(caught));
+      })
+      .finally(() => {
+        if (active) setInitialSessionResolved(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    api,
+    initialSessionId,
+    initialSessionResolved,
+    mergeSessions,
+    permissions.canList,
+  ]);
+
   const refreshSessions = useCallback(
     async (
       options: {
@@ -211,9 +260,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
         snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
       } = {},
     ) => {
-      if (!connectionId || !permissions.canList) return;
+      if (!sessionListConnectionId || !permissions.canList) return;
       const requestGeneration = ++sessionRequestGenerationRef.current;
-      const connectionQuery = createConnectionQuery(connectionId);
+      const connectionQuery = createConnectionQuery(sessionListConnectionId);
       const nextSessions = await api.listSessions({
         ...connectionQuery,
         ...(quickFilter === "others" && otherAssigneeId
@@ -236,16 +285,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
         initialSessionId &&
         !nextSessions.some((session) => session.id === initialSessionId)
       ) {
-        const deepLinked = await api.listSessions({
-          ...connectionQuery,
-          limit: 1,
-          offset: 0,
-          sessionId: initialSessionId,
-        });
+        const deepLinked = await loadDeepLinkedSession(api, initialSessionId);
         if (requestGeneration !== sessionRequestGenerationRef.current) return;
-        resolved = deepLinked[0]
-          ? [deepLinked[0], ...nextSessions]
-          : nextSessions;
+        resolved = deepLinked ? [deepLinked, ...nextSessions] : nextSessions;
       }
       mergeSessions(resolved, options);
       setActiveSessionId((current) =>
@@ -261,7 +303,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       api,
       initialSessionId,
       mergeSessions,
-      connectionId,
+      sessionListConnectionId,
       humanAttendanceFilter,
       permissions.canList,
       otherAssigneeId,
@@ -347,8 +389,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   useCrmWhatsappRealtime({
     activeSessionId,
     api,
-    connectionId,
-    connectionsError: connections.error,
+    connectionId: operationalConnectionId,
+    connectionsError: connections.error ?? routing.error,
     canMergeSessionSnapshot,
     mergeRealtimeMessage,
     mergeSessions,
@@ -363,7 +405,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   useCrmWhatsappInboxLifecycle({
     activeSession,
     asError,
-    connectionId,
+    connectionId: initialSessionResolved ? sessionListConnectionId : null,
     connections,
     hasLoadedActiveMessages: messageState.hasLoadedActiveMessages,
     manualUnreadSessionIdsRef,
@@ -415,10 +457,10 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     deleteMessage: messageState.deleteMessage,
     deleteQuickMessage: quickMessageState.deleteQuickMessage,
     deleteTag: tagState.deleteTag,
-    error: error ?? connections.error,
-    hasConnection: connections.hasConnectedConnection,
+    error: error ?? connections.error ?? routing.error,
+    hasConnection: Boolean(connectionId),
     hasRetryableSessionAction: sessionActions.hasRetryableSessionAction,
-    isLoading: connections.isLoading || isLoadingSessions,
+    isLoading: connections.isLoading || routing.isLoading || isLoadingSessions,
     humanAttendanceFilter,
     isLoadingMessages: messageState.isLoadingMessages,
     isMutatingSession: sessionActions.isMutatingSession,

@@ -15,6 +15,19 @@ export function stripStorageEnvironmentPrefix(
   return storageKey.slice(2);
 }
 
+/**
+ * Returns whether a storage key belongs to the known runtime environment.
+ * Test and memory adapters may omit APP_ENV, so an unknown environment remains
+ * permissive; configured R2 runtimes always provide it through ServiceContext.
+ */
+export function isStorageKeyInEnvironment(
+  storageKey: string,
+  environment?: string,
+): boolean {
+  const expectedPrefix = environmentPrefix(environment);
+  return expectedPrefix ? storageKey.startsWith(`${expectedPrefix}/`) : true;
+}
+
 function environmentPrefix(environment?: string) {
   const normalized = environment?.trim().toLowerCase();
   if (normalized === "production") return "p";

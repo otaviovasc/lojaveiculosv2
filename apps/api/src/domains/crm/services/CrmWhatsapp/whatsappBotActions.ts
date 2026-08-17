@@ -45,9 +45,11 @@ import {
 } from "./whatsappBotCredereActions.js";
 import { executeBotInterventionAction } from "../../whatsapp/whatsappBotInterventionAction.js";
 import { executeBotCloseSessionAction } from "./whatsappBotCloseAction.js";
+import type { CrmRoutingChannel } from "../../ports/crmRoutingPolicyRepository.js";
 
 export type ExecuteWhatsappBotActionInput = {
   action: WhatsappBotActionName;
+  channel?: CrmRoutingChannel;
   connectionId?: string;
   idempotencyKey?: string;
   leadId?: string;

@@ -9,6 +9,7 @@ import { assertCommandHasNoForbiddenPii } from "../../externalBotPrivacy.js";
 import type { ExternalBotManagerPorts } from "../../ports/externalBotPorts.js";
 import {
   assertPermission,
+  assertExternalBotChannelProvider,
   cancelAction,
   cancelActionAudited,
   executeProposalAction,
@@ -25,11 +26,13 @@ export async function executeExternalBotAction(
 ) {
   assertPermission(context, "crm.bot.actions.execute");
   assertExactContextScope(context, input);
+  assertExternalBotChannelProvider(input);
   context.logger.info(
     "crm.bot.action.execute.started",
     createServiceLogMetadata(context, {
       action: input.command.action,
       actionClass: input.actionClass,
+      channel: input.channel,
       connectionId: input.connectionId,
       integrationId: input.integrationId,
       provider: input.provider,
@@ -41,6 +44,7 @@ export async function executeExternalBotAction(
   const actionRecordInput = {
     capabilityGrant: input.capabilityGrant,
     actionClass: input.actionClass,
+    channel: input.channel,
     command: input.command,
     connectionId: input.connectionId,
     expectedRevision: input.expectedRevision,
@@ -56,6 +60,7 @@ export async function executeExternalBotAction(
   const grantResult = await ports.grantStore.consume({
     action: input.command.action,
     actionClass: input.actionClass,
+    channel: input.channel,
     connectionId: input.connectionId,
     now: (ports.now ?? (() => new Date()))(),
     integrationId: input.integrationId,
@@ -110,7 +115,11 @@ export async function executeExternalBotAction(
     category: "data_change",
     entityId: record.id,
     entityType: "crm_external_bot",
-    metadata: { action: input.command.action },
+    metadata: {
+      action: input.command.action,
+      channel: input.channel,
+      connectionId: input.connectionId,
+    },
     outcome: "attempted",
     requestId: context.requestId,
     storeId: context.storeId,

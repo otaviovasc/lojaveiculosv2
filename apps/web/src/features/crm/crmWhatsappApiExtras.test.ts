@@ -329,4 +329,58 @@ describe("CRM WhatsApp extras API", () => {
       },
     });
   });
+
+  it("loads and updates the typed CRM channel routing policy", async () => {
+    const response = {
+      channels: [
+        {
+          bot: {
+            blocked: null,
+            connection: null,
+            mode: "disabled",
+            ready: false,
+            requiredCapabilities: ["text"],
+          },
+          channel: "instagram",
+          storeDefault: {
+            blocked: {
+              code: "policy_not_configured",
+              message: "missing",
+              remediation: "select",
+            },
+            connection: null,
+            ready: false,
+            requiredCapabilities: ["text"],
+          },
+        },
+      ],
+      storeId: "store-1",
+      tenantId: "tenant-1",
+    };
+    const fake = createFakeFetch([response, response]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(api.getRoutingPolicy()).resolves.toMatchObject(response);
+    await api.updateRoutingPolicy({
+      bot: { mode: "inherit_store_default" },
+      channel: "instagram",
+      defaultConnectionId: "connection-1",
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/routing-policy",
+      init: { method: "GET" },
+    });
+    expect(fake.calls[1]).toMatchObject({
+      input: "/api/v1/crm/routing-policy",
+      init: {
+        body: JSON.stringify({
+          bot: { mode: "inherit_store_default" },
+          channel: "instagram",
+          defaultConnectionId: "connection-1",
+        }),
+        method: "PATCH",
+      },
+    });
+  });
 });

@@ -148,6 +148,7 @@ export const whatsappBotActionNameSchema = z.enum([
 export const whatsappBotActionSchema = z
   .object({
     action: whatsappBotActionNameSchema,
+    channel: z.enum(["instagram", "olx_chat", "whatsapp"]).optional(),
     connectionId: z.string().uuid().optional(),
     idempotencyKey: z.string().trim().min(1).max(120).optional(),
     leadId: z.string().uuid().optional(),

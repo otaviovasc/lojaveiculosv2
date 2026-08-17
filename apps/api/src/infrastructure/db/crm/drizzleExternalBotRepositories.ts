@@ -24,7 +24,7 @@ export function createExternalBotActionRepository(
           (action_type, expected_revision, grant_id, idempotency_key, input, provider,
            provider_connection_id, request_digest, authorization_class, state, thread_id, store_id, tenant_id)
         select ${command.command.action}, ${command.expectedRevision}, grant.id, ${command.idempotencyKey},
-          ${JSON.stringify({ command: command.command, integrationId: command.integrationId, modelVersion: command.modelVersion })}::jsonb, connection.provider,
+          ${JSON.stringify({ channel: command.channel, command: command.command, integrationId: command.integrationId, modelVersion: command.modelVersion })}::jsonb, connection.provider,
           ${command.connectionId}::uuid, ${command.requestDigest},
           ${command.actionClass === "proposal" ? "proposal_only" : "automatic"}, 'accepted',
           ${command.threadId}::uuid, ${command.storeId}::uuid, ${command.tenantId}::uuid
@@ -32,6 +32,7 @@ export function createExternalBotActionRepository(
         inner join provider_connections connection on connection.id = grant.provider_connection_id
           and connection.tenant_id=grant.tenant_id and connection.store_id=grant.store_id
           and connection.provider=grant.provider
+          and connection.channel=${command.channel}
         where grant.token_digest = ${digest(command.capabilityGrant)}
           and grant.authorized_request_digest=${command.requestDigest}
           and grant.tenant_id = ${command.tenantId}::uuid and grant.store_id = ${command.storeId}::uuid

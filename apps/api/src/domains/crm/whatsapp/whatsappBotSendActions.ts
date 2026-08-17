@@ -17,9 +17,10 @@ import {
   readOptionalBotActionSessionId,
   readOptionalText,
   readRequiredText,
-  requireBotActionConnectionId,
+  requireBotActionChannel,
 } from "./whatsappBotActionSupport.js";
 import { forwardWhatsappMessageToBot } from "./whatsappBotWebhookForwarding.js";
+import { resolveWhatsappBotRoute } from "./resolveWhatsappBotRoute.js";
 
 export async function executeBotSendTextAction(
   context: ServiceContext,
@@ -44,7 +45,18 @@ export async function executeBotSendTextAction(
     );
   }
 
-  const connectionId = requireBotActionConnectionId(input);
+  const connection = await resolveWhatsappBotRoute(
+    context,
+    {
+      channel: requireBotActionChannel(input),
+      ...(input.connectionId
+        ? { requestedConnectionId: input.connectionId }
+        : {}),
+      requiredCapabilities: ["outbound"],
+    },
+    ports,
+  );
+  const connectionId = connection.id;
   const phone = await assertBotPhoneSendAllowed(
     context,
     {
@@ -79,6 +91,21 @@ export async function executeBotSendMediaAction(
 ) {
   const sessionId = readOptionalBotActionSessionId(input);
   if (sessionId) await assertBotSendAllowed(context, sessionId, ports);
+  const connectionId = sessionId
+    ? undefined
+    : (
+        await resolveWhatsappBotRoute(
+          context,
+          {
+            channel: requireBotActionChannel(input),
+            ...(input.connectionId
+              ? { requestedConnectionId: input.connectionId }
+              : {}),
+            requiredCapabilities: ["outbound"],
+          },
+          ports,
+        )
+      ).id;
   return sendWhatsappBotMediaByUrl(
     context,
     {
@@ -88,7 +115,7 @@ export async function executeBotSendMediaAction(
       ...(readOptionalText(input.payload, "caption")
         ? { caption: readRequiredText(input.payload, "caption") }
         : {}),
-      ...(input.connectionId ? { connectionId: input.connectionId } : {}),
+      ...(connectionId ? { connectionId } : {}),
       ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
       ...(readOptionalText(input.payload, "fileName")
         ? { fileName: readRequiredText(input.payload, "fileName") }

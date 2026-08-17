@@ -127,6 +127,23 @@ describe("executeExternalBotAction security", () => {
     ).rejects.toMatchObject({ code: "CRM_BOT_GRANT_INVALID" });
   });
 
+  it("does not weaken grants when channel semantics change", async () => {
+    const manager = createMemoryExternalBotManager();
+    const granted = await request(manager, "message.send", { text: "Hello" });
+    const switched = {
+      ...granted,
+      channel: "instagram" as const,
+      provider: "meta_cloud" as const,
+    };
+    await expect(
+      executeExternalBotAction(
+        context(),
+        withDigest(manager, switched),
+        manager.ports,
+      ),
+    ).rejects.toMatchObject({ code: "CRM_BOT_GRANT_INVALID" });
+  });
+
   it("rejects forbidden PII and enforces scoped kill switches", async () => {
     const manager = createMemoryExternalBotManager({
       inspect: async () => ({
