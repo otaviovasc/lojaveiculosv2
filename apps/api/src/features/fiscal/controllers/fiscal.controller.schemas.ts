@@ -3,8 +3,19 @@ import { z } from "zod";
 const metadataSchema = z.record(z.string(), z.unknown());
 const nullableIdSchema = z.string().trim().uuid().nullable().optional();
 
+const recipientAddressSchema = z.object({
+  city: z.string().trim().max(120).optional(),
+  cityCode: z.string().trim().max(10).optional(),
+  complement: z.string().trim().max(191).optional(),
+  district: z.string().trim().max(120).optional(),
+  number: z.string().trim().max(20).optional(),
+  postalCode: z.string().trim().max(12).optional(),
+  state: z.string().trim().max(2).optional(),
+  street: z.string().trim().max(191).optional(),
+});
+
 const recipientBaseSchema = z.object({
-  address: metadataSchema.default({}),
+  address: recipientAddressSchema.default({}),
   defaultServiceTemplateId: nullableIdSchema,
   documentNumber: z.string().trim().min(11).max(32),
   documentType: z.enum(["cnpj", "cpf"]),

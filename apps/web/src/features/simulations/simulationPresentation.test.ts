@@ -118,12 +118,14 @@ function simulation(overrides: Partial<CredereSimulation>): CredereSimulation {
     createdAt: "2026-08-11T12:00:00.000Z",
     id: "simulation_1",
     leadId: null,
+    leadName: null,
     listingId: null,
     providerRequestId: null,
     reason: null,
     status: "processing",
     success: null,
     unitId: null,
+    vehicleTitle: null,
     ...overrides,
   };
 }

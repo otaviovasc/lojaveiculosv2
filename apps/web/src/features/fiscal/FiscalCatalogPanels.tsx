@@ -1,11 +1,4 @@
-import {
-  Building2,
-  FileText,
-  Landmark,
-  Plus,
-  RefreshCcw,
-  Trash2,
-} from "lucide-react";
+import { FileText, Landmark, Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import "../../styles/fiscal-catalog.css";
 import {
@@ -21,6 +14,7 @@ import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { Toast } from "../../components/ui/Toast";
 import { formatBrazilianDocument } from "../../lib/masks";
 import type { FiscalApi } from "./apiClient";
+import { FiscalRecipientDialog } from "./FiscalRecipientDialog";
 import type { FiscalRecipient, FiscalTemplate } from "./types";
 
 type Props = {
@@ -31,12 +25,6 @@ type Props = {
 type ArchiveTarget =
   | { item: FiscalRecipient; kind: "recipient" }
   | { item: FiscalTemplate; kind: "template" };
-
-const emptyRecipientForm = {
-  documentNumber: "",
-  documentType: "cnpj" as const,
-  legalName: "",
-};
 
 const emptyTemplateForm = {
   descriptionTemplate: "",
@@ -57,7 +45,6 @@ export function FiscalCatalogPanels({ api, onError }: Props) {
   );
   const [recipientDialogOpen, setRecipientDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
-  const [recipient, setRecipient] = useState(emptyRecipientForm);
   const [template, setTemplate] = useState(emptyTemplateForm);
   const [toast, setToast] = useState<{ title: string } | null>(null);
 
@@ -81,11 +68,10 @@ export function FiscalCatalogPanels({ api, onError }: Props) {
     void load();
   }, []);
 
-  const createRecipient = async () => {
+  const createRecipient = async (input: Partial<FiscalRecipient>) => {
     setSaving(true);
     try {
-      await api.createRecipient(recipient);
-      setRecipient(emptyRecipientForm);
+      await api.createRecipient(input);
       setRecipientDialogOpen(false);
       setToast({ title: "Tomador cadastrado com sucesso." });
       await load();
@@ -191,6 +177,8 @@ export function FiscalCatalogPanels({ api, onError }: Props) {
                     <span>
                       {item.documentType.toUpperCase()} ·{" "}
                       {formatBrazilianDocument(item.documentNumber)}
+                      {item.email ? ` · ${item.email}` : ""}
+                      {item.phone ? ` · ${item.phone}` : ""}
                     </span>
                   </div>
                   <FeatureStatusBadge
@@ -280,51 +268,12 @@ export function FiscalCatalogPanels({ api, onError }: Props) {
         </CatalogPanel>
       </div>
 
-      <FeatureDialog
-        description="Informe a razão social e o documento da financeira ou tomador de serviço."
-        footer={
-          <FeatureDialogActions
-            confirmDisabled={!recipient.legalName || !recipient.documentNumber}
-            confirmLabel="Salvar tomador"
-            isLoading={saving}
-            onCancel={() => setRecipientDialogOpen(false)}
-            onConfirm={() => void createRecipient()}
-          />
-        }
-        icon={<Building2 aria-hidden="true" />}
+      <FiscalRecipientDialog
         isOpen={recipientDialogOpen}
         onClose={() => setRecipientDialogOpen(false)}
-        title="Novo tomador"
-      >
-        <div className="fiscal-catalog-form">
-          <label className="fiscal-catalog-field">
-            <span>Nome do tomador</span>
-            <FeatureInput
-              aria-label="Nome do tomador"
-              onChange={(event) =>
-                setRecipient({ ...recipient, legalName: event.target.value })
-              }
-              placeholder="Financeira / Tomador"
-              value={recipient.legalName}
-            />
-          </label>
-          <label className="fiscal-catalog-field">
-            <span>CNPJ ou CPF</span>
-            <FeatureInput
-              aria-label="CNPJ ou CPF do tomador"
-              inputMode="numeric"
-              onChange={(event) =>
-                setRecipient({
-                  ...recipient,
-                  documentNumber: formatBrazilianDocument(event.target.value),
-                })
-              }
-              placeholder="CNPJ ou CPF"
-              value={recipient.documentNumber}
-            />
-          </label>
-        </div>
-      </FeatureDialog>
+        onSubmit={createRecipient}
+        saving={saving}
+      />
 
       <FeatureDialog
         description="Defina o tipo de comissão, o código nacional do serviço e a descrição que vai sair na nota."

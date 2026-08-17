@@ -3,6 +3,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type {
   FinancingInquiry,
+  FinancingInquiryListItem,
   FinancingProvider,
 } from "../../ports/financingRepository.js";
 import type { FinancingSimulationCandidate } from "../../ports/financingProviderGateway.js";
@@ -21,7 +22,7 @@ export async function listCredereSimulations(
   context: ServiceContext,
   _input: unknown,
   ports: FinancingServicePorts,
-): Promise<FinancingInquiry[]> {
+): Promise<FinancingInquiryListItem[]> {
   assertPermission(context, financingSimulationReadPermission);
   const scope = requireFinancingScope(context);
   context.logger.info(

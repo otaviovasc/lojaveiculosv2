@@ -84,6 +84,42 @@ export function compact<T extends JsonRecord>(record: T): T {
   ) as T;
 }
 
+/**
+ * Normalizes a stored NFS-e recipient address into the Spedy receiver shape.
+ * Accepts both the structured catalog fields (street/number/district/
+ * postalCode/city/state/cityCode) and legacy Spedy-shaped records where the
+ * city is already a nested { code, name, state } object. Returns undefined
+ * when no address data exists so the receiver omits the address entirely.
+ */
+export function normalizeServiceReceiverAddress(value: unknown) {
+  const address = toRecord(value);
+  if (Object.keys(address).length === 0) return undefined;
+  const legacyCity = toRecord(address.city);
+  const cityName = stringValue(address.city) ?? stringValue(legacyCity.name);
+  const cityCode =
+    numberValue(address.cityCode) ?? numberValue(legacyCity.code);
+  const cityState = stringValue(address.state) ?? stringValue(legacyCity.state);
+  const postalCode = digits(stringValue(address.postalCode));
+  const street = stringValue(address.street);
+  const number = stringValue(address.number);
+  const district = stringValue(address.district);
+  const hasAddressData = Boolean(
+    street || number || district || postalCode || cityName || cityCode,
+  );
+  if (!hasAddressData) return undefined;
+  return compact({
+    city: compact({
+      code: cityCode,
+      name: cityName,
+      state: cityState?.toLowerCase(),
+    }),
+    district: district ?? "Centro",
+    number: number ?? "S/N",
+    postalCode,
+    street: street ?? "Não informado",
+  });
+}
+
 export function toRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonRecord)

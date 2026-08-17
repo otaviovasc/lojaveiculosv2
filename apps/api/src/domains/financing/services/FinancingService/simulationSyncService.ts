@@ -75,7 +75,7 @@ export async function syncCredereSimulations(
     ...scope,
     limit: localLookupLimit,
   });
-  const byProviderId = new Map(
+  const byProviderId = new Map<string, FinancingInquiry>(
     local
       .filter((inquiry) => inquiry.providerInquiryId)
       .map((inquiry) => [inquiry.providerInquiryId!, inquiry]),

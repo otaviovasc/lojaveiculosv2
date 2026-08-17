@@ -8,8 +8,7 @@ const env = {
   SPEDY_API_URL: "https://api.spedy.test/v1/",
   SPEDY_OWNER_API_KEY: "owner-key",
   SPEDY_RUNTIME_IMPLEMENTATION: "http",
-  SPEDY_WEBHOOK_URL:
-    "https://api.example.test/api/v1/fiscal/webhooks/spedy/token",
+  SPEDY_WEBHOOK_URL: "https://api.example.test/webhooks/spedy",
 };
 
 describe("spedyHttpFiscalProviderGateway", () => {
@@ -121,7 +120,7 @@ describe("spedyHttpFiscalProviderGateway", () => {
         competence: "2026-08-17",
         grossAmount: 1_500,
         recipient: {
-          address: { city: { code: 3550308 } },
+          address: { city: "Curitiba", cityCode: "4106902" },
           documentNumber: "123.456.789-09",
           email: "cliente@example.test",
           legalName: "Cliente NFSe",
@@ -159,7 +158,12 @@ describe("spedyHttpFiscalProviderGateway", () => {
       nationalTaxationCode: "010101",
       nbsCode: "115012000",
       receiver: {
-        address: { city: { code: 3550308 } },
+        address: {
+          city: { code: 4106902, name: "Curitiba" },
+          district: "Centro",
+          number: "S/N",
+          street: "Não informado",
+        },
         email: "cliente@example.test",
         federalTaxNumber: "12345678909",
         name: "Cliente NFSe",

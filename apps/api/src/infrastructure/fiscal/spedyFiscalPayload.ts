@@ -6,6 +6,7 @@ import {
   digits,
   type JsonRecord,
   normalizeProductItem,
+  normalizeServiceReceiverAddress,
   numberValue,
   productItemDefaults,
   stringValue,
@@ -107,7 +108,7 @@ function buildServiceInvoice(input: FiscalIssueInput, taxDefaults: JsonRecord) {
     stringValue(input.metadata.renderedDescription) ??
     stringValue(template.description);
   const receiver = compact({
-    address: toRecord(recipient.address),
+    address: normalizeServiceReceiverAddress(recipient.address),
     email: stringValue(recipient.email),
     federalTaxNumber: digits(stringValue(recipient.documentNumber)),
     name: stringValue(recipient.legalName),
