@@ -1,5 +1,5 @@
 import { once } from "node:events";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -29,6 +29,23 @@ describe("production SPA server", () => {
     });
     expect(route.status).toBe(200);
     await expect(route.text()).resolves.toContain("Loja Veiculos");
+  });
+
+  it("serves .mjs assets with a JavaScript MIME type", async () => {
+    const runtime = await startServer({
+      files: {
+        "assets/pdf.worker.min-abc123.mjs": "export {};",
+      },
+    });
+
+    const response = await fetch(
+      `${runtime.origin}/assets/pdf.worker.min-abc123.mjs`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe(
+      "text/javascript; charset=utf-8",
+    );
   });
 
   it("does not return the SPA document for missing assets", async () => {
@@ -81,12 +98,21 @@ describe("production SPA server", () => {
 });
 
 async function startServer(options = {}) {
+  const { files = {}, ...serverOptions } = options;
   const directory = await mkdtemp(join(tmpdir(), "lojaveiculos-web-"));
   await writeFile(
     join(directory, "index.html"),
     "<!doctype html><title>Loja Veiculos</title>",
   );
-  const server = createSpaServer({ ...options, distDirectory: directory });
+  for (const [name, contents] of Object.entries(files)) {
+    const filePath = join(directory, name);
+    await mkdir(join(filePath, ".."), { recursive: true });
+    await writeFile(filePath, contents);
+  }
+  const server = createSpaServer({
+    ...serverOptions,
+    distDirectory: directory,
+  });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const address = server.address();

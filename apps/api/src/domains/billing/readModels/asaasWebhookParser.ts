@@ -96,7 +96,14 @@ function checkoutStatus(
 }
 
 function paymentStatus(eventType: string): BillingPaymentWebhookStatus {
-  if (eventType === "PAYMENT_RECEIVED") return "paid";
+  if (
+    eventType === "PAYMENT_RECEIVED" ||
+    eventType === "PAYMENT_CONFIRMED" ||
+    eventType === "PAYMENT_RECEIVED_IN_CASH" ||
+    eventType === "PAYMENT_DUNNING_RECEIVED"
+  ) {
+    return "paid";
+  }
   if (eventType === "PAYMENT_OVERDUE") return "overdue";
   if (eventType.includes("REFUND")) return "refunded";
   if (
