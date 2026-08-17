@@ -6,6 +6,9 @@ import {
 } from "./resetProductBaseline.js";
 
 const VEHICLE_CATALOG_PREFIX = "vehicle_catalog_";
+const INTERVENTION_LEDGER_TABLE = "crm_whatsapp_intervention_ledger";
+const INTERVENTION_LEDGER_NO_TRUNCATE_TRIGGER =
+  "crm_whatsapp_intervention_ledger_no_truncate_trigger";
 
 type TableNameRow = { table_name: string };
 type CountRow = { count: number };
@@ -73,6 +76,23 @@ export function createTruncateStatement(tableNames: readonly string[]): string {
   return `TRUNCATE TABLE ${tableNames
     .map((tableName) => `"public".${quoteIdentifier(tableName)}`)
     .join(", ")} RESTART IDENTITY`;
+}
+
+export function createResetTruncateStatements(
+  tableNames: readonly string[],
+): string[] {
+  const truncateStatement = createTruncateStatement(tableNames);
+  if (!tableNames.includes(INTERVENTION_LEDGER_TABLE)) {
+    return [truncateStatement];
+  }
+
+  const ledger = `"public".${quoteIdentifier(INTERVENTION_LEDGER_TABLE)}`;
+  const trigger = quoteIdentifier(INTERVENTION_LEDGER_NO_TRUNCATE_TRIGGER);
+  return [
+    `ALTER TABLE ${ledger} DISABLE TRIGGER ${trigger}`,
+    truncateStatement,
+    `ALTER TABLE ${ledger} ENABLE TRIGGER ${trigger}`,
+  ];
 }
 
 async function inspectProductDatabase(sql: Sql) {
@@ -143,7 +163,9 @@ async function truncateTables(
   sql: TransactionSql,
   tableNames: readonly string[],
 ): Promise<void> {
-  await sql.unsafe(createTruncateStatement(tableNames));
+  for (const statement of createResetTruncateStatements(tableNames)) {
+    await sql.unsafe(statement);
+  }
 }
 
 async function countRowsForTables(
