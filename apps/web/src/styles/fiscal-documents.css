@@ -17,7 +17,7 @@
   gap: 0.75rem;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 640px) {
   .fiscal-docs-toolbar {
     align-items: center;
     flex-direction: row;
@@ -54,11 +54,11 @@
   background: var(--color-app-elevated);
   border: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
   border-radius: 999px;
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  max-width: 100%;
   padding: 0.25rem;
+  width: 100%;
 }
 
 .fiscal-status-chip {
@@ -69,11 +69,15 @@
   color: var(--color-muted);
   cursor: pointer;
   display: inline-flex;
+  flex: 1 1 0%;
   font-size: var(--font-size-xs);
   font-weight: 800;
   gap: 0.4rem;
+  justify-content: center;
   min-height: 2rem;
+  min-width: 0;
   padding: 0 0.75rem;
+  text-align: center;
   transition:
     background-color var(--motion-duration-base) var(--motion-ease-standard),
     color var(--motion-duration-base) var(--motion-ease-standard),

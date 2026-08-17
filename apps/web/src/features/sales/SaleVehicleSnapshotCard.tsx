@@ -1,3 +1,4 @@
+import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { Car } from "lucide-react";
 
 export function SaleVehicleSnapshotCard({
@@ -29,7 +30,7 @@ export function SaleVehicleSnapshotCard({
           </h5>
           {listingSnapshot.colorName ? (
             <span className="mt-0.5 block text-xs font-bold uppercase text-muted">
-              Cor: {String(listingSnapshot.colorName)}
+              Cor: {getVehicleColorLabel(String(listingSnapshot.colorName))}
             </span>
           ) : null}
         </div>

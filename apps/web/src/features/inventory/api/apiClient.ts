@@ -87,6 +87,7 @@ export function createInventoryApi({
       {
         colorName: input.colorName,
         plate: input.plate,
+        renavam: input.renavam,
         stockNumber: input.stockNumber,
         vin: input.vin,
       },
@@ -272,6 +273,7 @@ export function createInventoryApi({
       {
         colorName: input.colorName,
         plate: input.plate,
+        renavam: input.renavam,
         status: input.status,
         stockNumber: input.stockNumber,
         vin: input.vin,

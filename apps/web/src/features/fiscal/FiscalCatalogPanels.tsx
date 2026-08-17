@@ -189,7 +189,8 @@ export function FiscalCatalogPanels({ api, onError }: Props) {
                   <div className="fiscal-catalog-row__info">
                     <strong>{item.legalName}</strong>
                     <span>
-                      {item.documentType.toUpperCase()} · {item.documentNumber}
+                      {item.documentType.toUpperCase()} ·{" "}
+                      {formatBrazilianDocument(item.documentNumber)}
                     </span>
                   </div>
                   <FeatureStatusBadge

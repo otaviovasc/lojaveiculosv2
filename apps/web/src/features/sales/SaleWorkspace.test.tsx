@@ -4,6 +4,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SaleWorkspace } from "./SaleWorkspace";
+import type { SaleContextOptions } from "./saleContextOptions";
 import type { SaleRecord } from "./types";
 
 describe("SaleWorkspace", () => {
@@ -263,6 +264,95 @@ describe("SaleWorkspace", () => {
       screen.getByText("Nenhum veículo selecionado ainda."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/unit_sensitive/i)).not.toBeInTheDocument();
+  });
+
+  it("creates and links a CRM lead while filling vehicle identifiers", async () => {
+    const user = userEvent.setup();
+    const onCreateLead = vi.fn(async () => ({
+      buyerEmail: "cliente@example.test",
+      buyerName: "Cliente QA",
+      buyerPhone: "(11) 99999-9999",
+      detail: "Cliente QA",
+      id: "lead_new",
+      label: "Cliente QA",
+      listingId: "listing_1",
+      vehicleTitle: "Audi A4",
+    }));
+    const onSave = vi.fn(async (sale: SaleRecord) => sale);
+    const contextOptions: SaleContextOptions = {
+      leads: [],
+      sellers: [],
+      units: [
+        {
+          colorName: "white",
+          detail: "EST-1 · ABC1D23",
+          id: "unit_1",
+          label: "Audi A4 · EST-1",
+          listingId: "listing_1",
+          listingTitle: "Audi A4",
+          manufactureYear: 2025,
+          mileageKm: 100,
+          modelYear: 2026,
+          plate: "ABC1D23",
+          priceCents: 18990000,
+          primaryMediaUrl: null,
+          renavam: "12345678901",
+          unitLabel: "EST-1",
+          vin: "9BWZZZ377VT004251",
+        },
+      ],
+    };
+
+    render(
+      <SaleWorkspace
+        contextOptions={contextOptions}
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onCreateLead={onCreateLead}
+        onReserve={vi.fn()}
+        onRevert={vi.fn()}
+        onSave={onSave}
+        sale={saleRecord({
+          buyerSnapshot: {
+            email: "cliente@example.test",
+            name: "Cliente QA",
+            phone: "(11) 99999-9999",
+          },
+          leadId: null,
+          listingId: "listing_1",
+          status: "pending",
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Branco")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Criar novo lead" }));
+    await user.click(
+      screen.getByRole("button", { name: "Criar lead e vincular à venda" }),
+    );
+
+    await waitFor(() => expect(onCreateLead).toHaveBeenCalledOnce());
+    expect(onCreateLead).toHaveBeenCalledWith({
+      buyerEmail: "cliente@example.test",
+      buyerName: "Cliente QA",
+      buyerPhone: "(11) 99999-9999",
+      listingId: "listing_1",
+      saleId: "sale_1",
+    });
+    expect(
+      await screen.findByText("Lead criado e vinculado a esta venda."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeEnabled();
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled(), { timeout: 1500 });
+    expect(onSave.mock.calls.at(-1)?.[0]).toMatchObject({
+      leadId: "lead_new",
+      listingSnapshot: {
+        chassi: "9BWZZZ377VT004251",
+        renavam: "12345678901",
+      },
+    });
   });
 
   it("persists only renderable document selections and does not offer warranty", async () => {

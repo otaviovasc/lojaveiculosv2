@@ -20,6 +20,7 @@ export type InventoryEditState = {
   modelYear: string;
   plate: string;
   price: string;
+  renavam: string;
   status: InventoryListing["status"];
   stockNumber: string;
   title: string;
@@ -50,6 +51,7 @@ export function createInventoryEditState(
       listing.priceCents === null
         ? ""
         : String((listing.priceCents / 100).toFixed(2)).replace(".", ","),
+    renavam: unit?.renavam ?? "",
     status: listing.status,
     stockNumber: unit?.stockNumber ?? "",
     title: listing.title,
@@ -143,6 +145,12 @@ export function buildUnitEditInput(
   setChanged(input, "plate", unit.plate, nullablePlate(form.plate));
   setChanged(
     input,
+    "renavam",
+    unit.renavam ?? null,
+    nullableText(form.renavam),
+  );
+  setChanged(
+    input,
     "stockNumber",
     unit.stockNumber,
     nullableText(form.stockNumber),
@@ -189,7 +197,10 @@ function optionalNumberText(value: number | null) {
 function parseOptionalInteger(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  const parsed = Number(trimmed);
+  const normalized = /^\d{1,3}(?:\.\d{3})+$/.test(trimmed)
+    ? trimmed.replace(/\./g, "")
+    : trimmed;
+  const parsed = Number(normalized);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 

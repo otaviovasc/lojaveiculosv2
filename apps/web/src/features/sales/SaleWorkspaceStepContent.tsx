@@ -4,7 +4,11 @@ import { FinalizationSection } from "./SaleFinalizationSection";
 import { ReviewSection } from "./SaleReviewSection";
 import { ServicesSection } from "./SaleServicesSection";
 import type { InventoryApi } from "../inventory/api/apiClient";
-import type { SaleContextOptions } from "./saleContextOptions";
+import type {
+  CreateSaleLeadInput,
+  SaleContextOptions,
+  SaleLeadOption,
+} from "./saleContextOptions";
 import type { SaleRecord } from "./types";
 
 export function SaleWorkspaceStepContent({
@@ -12,6 +16,7 @@ export function SaleWorkspaceStepContent({
   contextOptions,
   currentStep,
   inventoryApi,
+  onCreateLead,
   sale,
   update,
 }: {
@@ -19,6 +24,7 @@ export function SaleWorkspaceStepContent({
   contextOptions: SaleContextOptions;
   currentStep: number;
   inventoryApi: InventoryApi | null;
+  onCreateLead?: (input: CreateSaleLeadInput) => Promise<SaleLeadOption>;
   sale: SaleRecord;
   update: (updater: (sale: SaleRecord) => SaleRecord) => void;
 }) {
@@ -30,6 +36,7 @@ export function SaleWorkspaceStepContent({
           options={contextOptions}
           sale={sale}
           update={update}
+          {...(onCreateLead && { onCreateLead })}
         />
       ) : null}
       {currentStep === 1 ? (

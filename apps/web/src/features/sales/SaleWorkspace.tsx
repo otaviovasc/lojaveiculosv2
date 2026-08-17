@@ -23,7 +23,9 @@ import {
 } from "./saleWorkspacePersistence";
 import {
   emptySaleContextOptions,
+  type CreateSaleLeadInput,
   type SaleContextOptions,
+  type SaleLeadOption,
 } from "./saleContextOptions";
 import type { SaleRecord } from "./types";
 
@@ -33,6 +35,7 @@ export function SaleWorkspace({
   inventoryApi = null,
   onCancel,
   onClose,
+  onCreateLead,
   onReserve,
   onRevert,
   onSave,
@@ -44,6 +47,7 @@ export function SaleWorkspace({
   inventoryApi?: InventoryApi | null;
   onCancel: (sale: SaleRecord, reason: string) => Promise<SaleRecord | void>;
   onClose: (sale: SaleRecord) => Promise<SaleRecord | void>;
+  onCreateLead?: (input: CreateSaleLeadInput) => Promise<SaleLeadOption>;
   onReserve: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onRevert: (sale: SaleRecord, reason: string) => Promise<SaleRecord | void>;
   onSave: (sale: SaleRecord) => Promise<SaleRecord>;
@@ -210,6 +214,7 @@ export function SaleWorkspace({
           inventoryApi={inventoryApi}
           sale={draft}
           update={update}
+          {...(onCreateLead ? { onCreateLead } : {})}
         />
 
         <SaleWorkspaceNavigation

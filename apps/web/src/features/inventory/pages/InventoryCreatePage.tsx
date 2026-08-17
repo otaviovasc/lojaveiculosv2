@@ -174,10 +174,18 @@ export function InventoryCreatePage({
     }
   }, [form, lookup, runtimeApi, setForm]);
 
-  const handleCreated = useCallback((_detail: InventoryListingDetail) => {
-    clearInventoryCreateDraft();
-    setSavedDraft(null);
-  }, []);
+  const handleCreated = useCallback(
+    (_detail: InventoryListingDetail) => {
+      clearInventoryCreateDraft();
+      setSavedDraft(null);
+      if (onBack) {
+        onBack();
+      } else if (typeof window !== "undefined") {
+        window.location.href = "/inventory";
+      }
+    },
+    [onBack],
+  );
 
   const resolveInventoryApi = useCallback(async () => {
     if (api) return api;

@@ -290,14 +290,35 @@ function TradeInInput({
   tradeIn: SnapshotRecord;
   type?: "number" | "text";
 }) {
+  const rawValue = String(tradeIn[field] ?? "");
+  const displayValue =
+    field === "mileageKm" && rawValue
+      ? rawValue.includes(".")
+        ? rawValue
+        : Number(rawValue.replace(/\D/g, "")).toLocaleString("pt-BR")
+      : rawValue;
+
   return (
     <InventoryField className={className} label={label}>
       <InventoryInput
-        inputMode={type === "number" ? "numeric" : undefined}
-        onChange={(event) => onChange("tradeIn", field, event.target.value)}
+        inputMode={
+          type === "number" || field === "mileageKm" ? "numeric" : undefined
+        }
+        onChange={(event) => {
+          if (field === "mileageKm") {
+            const digits = event.target.value.replace(/\D/g, "");
+            onChange(
+              "tradeIn",
+              field,
+              digits ? Number(digits).toLocaleString("pt-BR") : "",
+            );
+          } else {
+            onChange("tradeIn", field, event.target.value);
+          }
+        }}
         placeholder={placeholder}
-        type={type}
-        value={String(tradeIn[field] ?? "")}
+        type={field === "mileageKm" ? "text" : type}
+        value={displayValue}
       />
     </InventoryField>
   );

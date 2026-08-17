@@ -17,6 +17,7 @@ export type AttachVehicleUnitInput = {
   colorName?: VehicleColor | null;
   listingId: string;
   plate?: string | null;
+  renavam?: string | null;
   stockNumber?: string | null;
   vin?: string | null;
 };
@@ -43,6 +44,7 @@ export async function attachVehicleUnit(
     colorName: input.colorName ?? null,
     listingId: listing.id,
     plate: normalizeOptionalText(input.plate ?? listing.plate),
+    renavam: normalizeOptionalText(input.renavam),
     status:
       listing.status === "in_preparation" ? "in_preparation" : "available",
     stockNumber: normalizeOptionalText(input.stockNumber),

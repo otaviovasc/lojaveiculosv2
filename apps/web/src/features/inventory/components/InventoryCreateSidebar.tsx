@@ -65,7 +65,7 @@ export function InventoryCreateSidebar({
 
   return (
     <aside
-      className="flex w-full min-w-0 flex-col self-start"
+      className="flex w-full min-w-0 flex-col self-start xl:sticky xl:top-6"
       data-testid="inventory-create-sidebar"
     >
       <div className="glass-panel-branded overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-panel)] flex flex-col divide-y divide-line/60">

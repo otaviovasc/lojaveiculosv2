@@ -37,6 +37,7 @@ export type DrizzleVehicleUnitClient = DrizzleRepositoryClient<
 
 export const vehicleUnitIdentifierConstraints = {
   plate: "vehicle_units_store_plate_unique",
+  renavam: "vehicle_units_store_renavam_unique",
   stockNumber: "vehicle_units_store_stock_unique",
   vin: "vehicle_units_store_vin_unique",
 } as const satisfies Record<VehicleUnitIdentifier, string>;
@@ -54,6 +55,7 @@ export function createDrizzleVehicleUnitRepository(
             colorName: record.colorName ?? null,
             listingId: record.listingId,
             plate: normalizeOptionalText(record.plate),
+            renavam: normalizeOptionalText(record.renavam),
             status: toDbUnitStatus(record.status),
             stockNumber: normalizeOptionalText(record.stockNumber),
             storeId: scope.storeId,
@@ -206,6 +208,7 @@ function toVehicleUnitUpdate(unit: VehicleUnit): Partial<InsertVehicleUnitRow> {
   return {
     colorName: unit.colorName,
     plate: normalizeOptionalText(unit.plate),
+    renavam: normalizeOptionalText(unit.renavam),
     status: toDbUnitStatus(unit.status),
     stockNumber: normalizeOptionalText(unit.stockNumber),
     updatedAt: unit.updatedAt,

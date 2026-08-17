@@ -14,6 +14,7 @@ export function cleanAttachInput(
 
   if (input.plate !== undefined) result.plate = input.plate;
   if (input.colorName !== undefined) result.colorName = input.colorName;
+  if (input.renavam !== undefined) result.renavam = input.renavam;
   if (input.stockNumber !== undefined) result.stockNumber = input.stockNumber;
   if (input.vin !== undefined) result.vin = input.vin;
 
@@ -125,6 +126,7 @@ export function cleanUpdateUnitInput(
 
   if (input.colorName !== undefined) result.colorName = input.colorName;
   if (input.plate !== undefined) result.plate = input.plate;
+  if (input.renavam !== undefined) result.renavam = input.renavam;
   if (input.status !== undefined) result.status = input.status;
   if (input.stockNumber !== undefined) result.stockNumber = input.stockNumber;
   if (input.vin !== undefined) result.vin = input.vin;

@@ -85,6 +85,24 @@ export function SimulationsPage({
         : upsertSimulation(previous ?? [], next);
     });
   }, []);
+
+  const handleSelectSimulation = useCallback(
+    async (simulation: CredereSimulation | null) => {
+      if (!simulation) {
+        setCurrent(null);
+        return;
+      }
+      storeSimulationSnapshot(simulation);
+      try {
+        const api = await apiPromise;
+        const fresh = await api.getSimulation(simulation.id);
+        storeSimulationSnapshot(fresh);
+      } catch {
+        // Keep optimistic snapshot if API query fails
+      }
+    },
+    [apiPromise, storeSimulationSnapshot],
+  );
   const loadStatus = useCallback(async () => {
     setStatusState((previous) =>
       previous.kind === "ready" ? previous : { kind: "loading" },
@@ -303,7 +321,9 @@ export function SimulationsPage({
           onRefresh={() => void refreshCurrent()}
           onGetRequiredFields={getRequiredFields}
           onResolveFipe={resolveFipeVehicle}
-          onSelectSimulation={setCurrent}
+          onSelectSimulation={(simulation) => {
+            void handleSelectSimulation(simulation);
+          }}
           onSubmit={handleSubmit}
           pollError={pollError}
           pollExhausted={pollExhausted}

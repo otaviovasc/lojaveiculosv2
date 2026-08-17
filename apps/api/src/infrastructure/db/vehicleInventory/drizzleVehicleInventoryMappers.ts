@@ -93,6 +93,7 @@ export function toVehicleUnit(row: VehicleUnitRow): VehicleUnit {
     id: row.id,
     listingId: row.listingId,
     plate: row.plate,
+    renavam: row.renavam,
     status: toDomainUnitStatus(row.status),
     stockNumber: row.stockNumber,
     storeId: row.storeId,
