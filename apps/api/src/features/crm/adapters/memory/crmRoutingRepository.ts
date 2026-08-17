@@ -33,6 +33,25 @@ export function createMemoryCrmRoutingRepositories(
       },
     },
     policyRepository: {
+      async createDefaultIfMissing(next) {
+        const existing = policies.find(
+          (policy) =>
+            policy.channel === next.channel &&
+            policy.storeId === next.storeId &&
+            policy.tenantId === next.tenantId,
+        );
+        if (existing?.defaultConnectionId) return null;
+        if (existing) {
+          existing.defaultConnectionId = next.defaultConnectionId;
+          return existing;
+        }
+        const created: CrmChannelRoutingPolicy = {
+          ...next,
+          id: crypto.randomUUID(),
+        };
+        policies.push(created);
+        return created;
+      },
       async listPolicies(scope) {
         return policies.filter(
           (policy) =>

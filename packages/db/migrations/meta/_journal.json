@@ -393,6 +393,13 @@
       "when": 1786990000000,
       "tag": "0055_canonical_crm_routing_cutover",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1787009000000,
+      "tag": "0056_crm_routing_default_permission",
+      "breakpoints": true
     }
   ]
 }

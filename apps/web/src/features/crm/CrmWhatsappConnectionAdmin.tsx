@@ -47,6 +47,7 @@ type ConnectionAdminProps = {
   isLoading?: boolean;
   onClose?: () => void;
   onRefresh: () => Promise<void>;
+  onRoutingPolicyChange?: () => Promise<void> | void;
   routingApi?: Pick<CrmWhatsappApi, "getRoutingPolicy" | "updateRoutingPolicy">;
   canManageRouting?: boolean;
   selfService?: {
@@ -66,6 +67,7 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
     error,
     isLoading = false,
     onRefresh,
+    onRoutingPolicyChange,
     routingApi,
     canManageRouting = false,
     selfService,
@@ -173,6 +175,9 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
           api={routingApi}
           canManage={canManageRouting}
           connections={connections}
+          {...(onRoutingPolicyChange
+            ? { onPolicyChange: onRoutingPolicyChange }
+            : {})}
         />
       ) : null}
     </section>

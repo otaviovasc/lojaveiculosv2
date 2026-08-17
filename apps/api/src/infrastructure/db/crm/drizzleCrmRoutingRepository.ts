@@ -2,9 +2,12 @@ import {
   crmChannelRoutingPolicies,
   providerConnections,
 } from "@lojaveiculosv2/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { CrmRoutingConnectionRepository } from "../../../domains/crm/ports/crmRoutingConnectionRepository.js";
-import type { CrmRoutingPolicyRepository } from "../../../domains/crm/ports/crmRoutingPolicyRepository.js";
+import type {
+  CrmChannelRoutingPolicy,
+  CrmRoutingPolicyRepository,
+} from "../../../domains/crm/ports/crmRoutingPolicyRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   readRoutingRecord,
@@ -61,6 +64,25 @@ export function createDrizzleCrmRoutingPolicyRepository(
   db: DrizzleCrmClient,
 ): CrmRoutingPolicyRepository {
   return {
+    async createDefaultIfMissing(input) {
+      const [row] = await db
+        .insert(crmChannelRoutingPolicies)
+        .values(input)
+        .onConflictDoUpdate({
+          set: {
+            defaultConnectionId: input.defaultConnectionId,
+            updatedAt: new Date(),
+          },
+          setWhere: isNull(crmChannelRoutingPolicies.defaultConnectionId),
+          target: [
+            crmChannelRoutingPolicies.tenantId,
+            crmChannelRoutingPolicies.storeId,
+            crmChannelRoutingPolicies.channel,
+          ],
+        })
+        .returning();
+      return row ? mapPolicy(row) : null;
+    },
     async listPolicies(input) {
       const rows = await db
         .select({
@@ -79,11 +101,7 @@ export function createDrizzleCrmRoutingPolicyRepository(
             eq(crmChannelRoutingPolicies.tenantId, input.tenantId),
           ),
         );
-      return rows.map((row) => ({
-        ...row,
-        storeId: row.storeId as never,
-        tenantId: row.tenantId as never,
-      }));
+      return rows.map(mapPolicy);
     },
     async upsertPolicy(input) {
       const [row] = await db
@@ -104,15 +122,27 @@ export function createDrizzleCrmRoutingPolicyRepository(
         })
         .returning();
       if (!row) throw new Error("CRM routing policy upsert returned no row.");
-      return {
-        botConnectionId: row.botConnectionId,
-        botMode: row.botMode,
-        channel: row.channel,
-        defaultConnectionId: row.defaultConnectionId,
-        id: row.id,
-        storeId: row.storeId as never,
-        tenantId: row.tenantId as never,
-      };
+      return mapPolicy(row);
     },
+  };
+}
+
+function mapPolicy(row: {
+  botConnectionId: string | null;
+  botMode: CrmChannelRoutingPolicy["botMode"];
+  channel: CrmChannelRoutingPolicy["channel"];
+  defaultConnectionId: string | null;
+  id: string;
+  storeId: string;
+  tenantId: string;
+}): CrmChannelRoutingPolicy {
+  return {
+    botConnectionId: row.botConnectionId,
+    botMode: row.botMode,
+    channel: row.channel,
+    defaultConnectionId: row.defaultConnectionId,
+    id: row.id,
+    storeId: row.storeId as never,
+    tenantId: row.tenantId as never,
   };
 }

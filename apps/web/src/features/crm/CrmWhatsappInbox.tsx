@@ -34,6 +34,7 @@ import {
 import { CrmWhatsappVisitsPage } from "./CrmWhatsappVisitsPage";
 import { MessageCircle, PlugZap } from "lucide-react";
 import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
+import { consumeCrmOlxOauthReturn } from "./crmOlxOauthReturn";
 
 export function CrmWhatsappInbox({
   api,
@@ -53,7 +54,9 @@ export function CrmWhatsappInbox({
   const visitsApi = useMemo(() => createRuntimeCrmVisitsApi(), []);
   const inbox = useCrmWhatsappInbox(whatsappApi);
   const [activeScope, setActiveScope] = useState<CrmWhatsappScope>(() =>
-    readPendingComposioConnectionId() ? "connection" : "conversations",
+    readPendingComposioConnectionId() || consumeCrmOlxOauthReturn()
+      ? "connection"
+      : "conversations",
   );
   const [visitedScopes, setVisitedScopes] = useState<
     ReadonlySet<CrmWhatsappScope>
@@ -205,12 +208,13 @@ export function CrmWhatsappInbox({
               >
                 <section className="crm-whatsapp-section">
                   <CrmWhatsappConnectionAdmin
-                    canManageRouting={inbox.permissions.canConnectionSetup}
+                    canManageRouting={inbox.permissions.canRoutingDefaultManage}
                     connections={inbox.connections}
                     disabled={!inbox.permissions.canConnectionPair}
                     embedded
                     onClose={() => setActiveScope("conversations")}
                     onRefresh={inbox.refreshConnections}
+                    onRoutingPolicyChange={inbox.refreshRoutingPolicy}
                     routingApi={whatsappApi}
                     selfService={{
                       allowance: inbox.connectionAllowance,
@@ -219,17 +223,43 @@ export function CrmWhatsappInbox({
                       canSetup: inbox.permissions.canConnectionSetup,
                       handlers: {
                         onAuthorizeComposio: inbox.authorizeComposioConnection,
-                        onCompleteComposio: inbox.completeComposioConnection,
-                        onConfigureZapiWebhooks: inbox.configureZapiWebhooks,
-                        onCreate: inbox.createConnection,
+                        onCompleteComposio: async (connectionId) => {
+                          const result =
+                            await inbox.completeComposioConnection(
+                              connectionId,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onConfigureZapiWebhooks: async (connectionId) => {
+                          const result =
+                            await inbox.configureZapiWebhooks(connectionId);
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onCreate: async (input) => {
+                          const result = await inbox.createConnection(input);
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
                         onDisconnectZapi: inbox.disconnectZapiConnection,
                         onRefreshConnections: inbox.refreshConnections,
                         onRequestZapiPairingCode: inbox.requestZapiPairingCode,
                         onRequestZapiPairingQr: inbox.requestZapiPairingQr,
                         onRequestZapiAddon: inbox.requestZapiAddon,
                         onRefreshZapiStatus: inbox.refreshZapiConnectionStatus,
-                        onSelectComposioSender:
-                          inbox.selectComposioConnectionSender,
+                        onSelectComposioSender: async (
+                          connectionId,
+                          sender,
+                        ) => {
+                          const result =
+                            await inbox.selectComposioConnectionSender(
+                              connectionId,
+                              sender,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
                         onSetConnectionPaused: inbox.setConnectionPaused,
                       },
                       zapiAddonContract: inbox.zapiAddonContract,

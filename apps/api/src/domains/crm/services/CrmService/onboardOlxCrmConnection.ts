@@ -25,7 +25,11 @@ import {
   readOlxOnboardingResult,
   readRecord,
 } from "../../onboardOlxCrmConnectionSupport.js";
-import type { OlxCrmOnboardingResult } from "../../../marketplace/ports/marketplaceOlxCrmOnboarding.js";
+import {
+  createOlxCapabilityFailureRecorder,
+  type OlxCapabilityFailure,
+  recordOlxOnboardingOutcome,
+} from "../../olxOnboardingDiagnostics.js";
 
 export async function onboardOlxCrmConnection(
   context: ServiceContext,
@@ -144,6 +148,13 @@ export async function onboardOlxCrmConnection(
     tenantId: input.tenantId as never,
   });
   const base = `${input.canonicalApiOrigin}/api/v1/crm/whatsapp/webhooks/olx/${connection.id}`;
+  const failures: Partial<Record<"chat" | "leads", OlxCapabilityFailure>> = {};
+  const recordFailure = createOlxCapabilityFailureRecorder(context, {
+    connectionId: connection.id,
+    failures,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
   const leads = await configureOlxCapability(
     "autoservice",
     input.scopes,
@@ -154,6 +165,7 @@ export async function onboardOlxCrmConnection(
         callbackUrl: `${base}/leads`,
         token: secret,
       }),
+    recordFailure("leads"),
   );
   const chat = await configureOlxCapability(
     "chat",
@@ -164,6 +176,7 @@ export async function onboardOlxCrmConnection(
         accessToken: input.accessToken,
         callbackUrl: `${base}/received?token=${encodeURIComponent(secret)}`,
       }),
+    recordFailure("chat"),
   );
   const capabilities = { chat, leads };
   const capabilityValues = Object.values(capabilities);
@@ -186,6 +199,7 @@ export async function onboardOlxCrmConnection(
       webhookSetup: {
         attemptCount: readRecord(claimed.metadata.webhookSetup).attemptCount,
         capabilities,
+        failures,
         configuredAt: activeCount ? new Date().toISOString() : null,
         lastErrorCode:
           errorCount > 0
@@ -205,43 +219,4 @@ export async function onboardOlxCrmConnection(
   const result = buildOlxOnboardingResult(connection.id, capabilities);
   await recordOlxOnboardingOutcome(context, input, result);
   return result;
-}
-
-async function recordOlxOnboardingOutcome(
-  context: ServiceContext,
-  input: { storeId: string; tenantId: string },
-  result: OlxCrmOnboardingResult,
-) {
-  const outcome = result.status === "active" ? "succeeded" : "failed";
-  const metadata = {
-    actorId: context.actor.id,
-    chatStatus: result.capabilities.chat.status,
-    connectionId: result.connectionId,
-    leadsStatus: result.capabilities.leads.status,
-    provider: "olx_chat",
-    requestId: context.requestId,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  };
-  context.logger.info("crm.connection.olx.onboard.completed", metadata);
-  await context.audit.record({
-    action: "crm.connection.olx.onboard",
-    actor: context.actor,
-    category: "integration",
-    entityId: result.connectionId,
-    entityType: "crm_connection",
-    metadata: {
-      capabilityStatuses: {
-        chat: result.capabilities.chat.status,
-        leads: result.capabilities.leads.status,
-      },
-      permission: OLX_CRM_CONNECTION_SETUP_PERMISSION,
-      provider: "olx_chat",
-    },
-    outcome,
-    requestId: context.requestId,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-    summary: "Configured OLX CRM connection",
-  });
 }

@@ -24,6 +24,7 @@ export async function configureOlxCapability(
   scopes: readonly string[],
   capability: OlxCapabilityResult["capability"],
   configure: () => Promise<void>,
+  onError?: (error: unknown) => void,
 ): Promise<OlxCapabilityResult> {
   if (!scopes.includes(requiredScope)) {
     return {
@@ -41,7 +42,8 @@ export async function configureOlxCapability(
       reason: null,
       status: "active",
     };
-  } catch {
+  } catch (error) {
+    onError?.(error);
     return {
       capability,
       grantState: "granted",

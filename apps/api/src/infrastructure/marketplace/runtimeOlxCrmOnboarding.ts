@@ -1,14 +1,26 @@
 import type { MarketplaceOlxCrmOnboarding } from "../../domains/marketplace/ports/marketplaceOlxCrmOnboarding.js";
 import {
+  assertEntitlement,
+  assertPermission,
+} from "../../shared/authorization.js";
+import type { StoreScopedServiceContext } from "../../shared/serviceContext.js";
+import {
   externalAccountAuthorizationCapabilities,
   externalAccountAuthorizations,
+  crmChannelRoutingPolicies,
   providerConnections,
 } from "@lojaveiculosv2/db";
+import { isNull } from "drizzle-orm";
 import { onboardOlxCrmConnection } from "../../domains/crm/services/CrmService/onboardOlxCrmConnection.js";
+import { OLX_CRM_CONNECTION_SETUP_PERMISSION } from "../../domains/crm/onboardOlxCrmConnectionSupport.js";
 import { createCrmConnectionCredentialVault } from "../crm/crmConnectionCredentialVault.js";
 import { createOlxCrmWebhookSetupProvider } from "../crm/olxCrmWebhookSetupProvider.js";
 import { createDrizzleCrmConnectionRepository } from "../db/crm/drizzleCrmConnectionRepository.js";
 import type { DrizzleCrmClient } from "../db/crm/drizzleCrmRepository.js";
+import {
+  olxProviderConnectionMetadata,
+  recordOlxDefaultOutcome,
+} from "./runtimeOlxCrmOnboardingSupport.js";
 
 export function createRuntimeOlxCrmOnboarding(
   db: DrizzleCrmClient,
@@ -24,14 +36,37 @@ export function createRuntimeOlxCrmOnboarding(
   return {
     onboard: (context, input) =>
       onboardOlxCrmConnection(context, { ...input, canonicalApiOrigin }, ports),
-    persistCapabilities: async (_context, input) => {
+    persistCapabilities: async (context, input) => {
+      assertPermission(context, OLX_CRM_CONNECTION_SETUP_PERMISSION);
+      assertEntitlement(context as StoreScopedServiceContext, "crm");
+      if (
+        context.storeId !== input.storeId ||
+        context.tenantId !== input.tenantId
+      ) {
+        throw new Error("OLX capability persistence scope binding mismatch.");
+      }
       const scopeState = readScopeState(input);
+      const chatReady = input.capabilities.chat.status === "active";
+      const canCreateDefault = context.permissions.includes(
+        "crm.routing.default.manage",
+      );
       const operationalCapabilities = Object.fromEntries(
         Object.entries(input.capabilities).map(([name, capability]) => [
           name,
           { reason: capability.reason, status: capability.status },
         ]),
       );
+      if (chatReady && canCreateDefault && input.connectionId) {
+        await recordOlxDefaultOutcome(
+          context,
+          { ...input, connectionId: input.connectionId },
+          "attempted",
+        );
+      }
+      const connectionMetadata = olxProviderConnectionMetadata(
+        input.capabilities.chat,
+      );
+      let defaultCreated = false;
       await db.transaction(async (transaction) => {
         await transaction
           .insert(externalAccountAuthorizations)
@@ -98,13 +133,7 @@ export function createRuntimeOlxCrmOnboarding(
               displayName: "OLX Chat",
               externalConnectionId: input.providerAccountId,
               id: input.connectionId,
-              metadata: {
-                operationalStatus: {
-                  reason: input.capabilities.chat.reason,
-                  status: input.capabilities.chat.status,
-                },
-                source: "marketplace_oauth",
-              },
+              metadata: connectionMetadata,
               provider: "olx",
               state: providerConnectionState(input.capabilities.chat.status),
               storeId: input.storeId,
@@ -114,20 +143,47 @@ export function createRuntimeOlxCrmOnboarding(
               set: {
                 authorizationId: input.authorizationId,
                 externalConnectionId: input.providerAccountId,
-                metadata: {
-                  operationalStatus: {
-                    reason: input.capabilities.chat.reason,
-                    status: input.capabilities.chat.status,
-                  },
-                  source: "marketplace_oauth",
-                },
+                metadata: connectionMetadata,
                 state: providerConnectionState(input.capabilities.chat.status),
                 updatedAt: new Date(),
               },
               target: providerConnections.id,
             });
+          if (chatReady && canCreateDefault) {
+            const inserted = await transaction
+              .insert(crmChannelRoutingPolicies)
+              .values({
+                botConnectionId: null,
+                botMode: "disabled",
+                channel: "olx_chat",
+                defaultConnectionId: input.connectionId,
+                storeId: input.storeId,
+                tenantId: input.tenantId,
+              })
+              .onConflictDoUpdate({
+                set: {
+                  defaultConnectionId: input.connectionId,
+                  updatedAt: new Date(),
+                },
+                setWhere: isNull(crmChannelRoutingPolicies.defaultConnectionId),
+                target: [
+                  crmChannelRoutingPolicies.tenantId,
+                  crmChannelRoutingPolicies.storeId,
+                  crmChannelRoutingPolicies.channel,
+                ],
+              })
+              .returning({ id: crmChannelRoutingPolicies.id });
+            defaultCreated = inserted.length > 0;
+          }
         }
       });
+      if (defaultCreated && input.connectionId) {
+        await recordOlxDefaultOutcome(
+          context,
+          { ...input, connectionId: input.connectionId },
+          "succeeded",
+        );
+      }
     },
   };
 }

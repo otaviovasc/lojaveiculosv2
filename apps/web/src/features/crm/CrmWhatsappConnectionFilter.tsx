@@ -28,7 +28,7 @@ export function CrmWhatsappConnectionFilter({
       (connection) => String(connection.id) === selectedId,
     ) ??
     connectedConnections.find((connection) => connection.isDefault) ??
-    (connectedConnections.length === 1 ? connectedConnections[0] : null);
+    null;
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
 

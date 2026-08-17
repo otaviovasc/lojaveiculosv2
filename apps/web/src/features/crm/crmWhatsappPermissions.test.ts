@@ -21,6 +21,7 @@ describe("CRM WhatsApp permissions", () => {
       canIntegrationsManage: false,
       canList: true,
       canRead: true,
+      canRoutingDefaultManage: false,
       canScheduleCancel: false,
       canScheduleCreate: false,
       canScheduleProcess: false,
@@ -91,6 +92,17 @@ describe("CRM WhatsApp permissions", () => {
     ).toMatchObject({
       canConnectionPair: true,
       canConnectionSetup: false,
+    });
+  });
+
+  it("maps default routing independently from connection setup", () => {
+    expect(
+      readCrmWhatsappCapabilities(
+        createSession(["crm.routing.default.manage"]),
+      ),
+    ).toMatchObject({
+      canConnectionSetup: false,
+      canRoutingDefaultManage: true,
     });
   });
 

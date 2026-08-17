@@ -23,6 +23,13 @@ export const crmWhatsappPermissionDescriptors = [
     risk: "high",
   },
   {
+    description:
+      "Escolher a conexão padrão usada para operações de saída em cada canal do CRM.",
+    key: "crm.routing.default.manage",
+    label: "Gerenciar rotas padrão",
+    risk: "high",
+  },
+  {
     description: "Abrir e ler mensagens recebidas nos canais do CRM.",
     key: "crm.whatsapp.read",
     label: "Visualizar conversas",
