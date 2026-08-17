@@ -44,14 +44,18 @@ export function FiscalItemsStep({
         description="A NFS-e de comissão é emitida a partir do valor informado na etapa anterior."
         title="Resumo do serviço"
       >
-        <dl className="grid gap-2 text-sm font-semibold text-app-text">
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-muted">Valor da comissão</dt>
-            <dd>{amount > 0 ? formatBrl(amount) : "Não informado"}</dd>
+        <dl className="fiscal-review-summary">
+          <div className="fiscal-review-row">
+            <dt className="fiscal-review-label">Valor da comissão</dt>
+            <dd className="fiscal-review-value fiscal-review-value--total">
+              {amount > 0 ? formatBrl(amount) : "Não informado"}
+            </dd>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-muted">Competência</dt>
-            <dd>{draft.nfse.competence || "Não informada"}</dd>
+          <div className="fiscal-review-row">
+            <dt className="fiscal-review-label">Competência</dt>
+            <dd className="fiscal-review-value">
+              {draft.nfse.competence || "Não informada"}
+            </dd>
           </div>
         </dl>
       </FeatureFormSection>
@@ -98,14 +102,9 @@ export function FiscalItemsStep({
             </p>
           ) : null}
           {draft.items.map((item, index) => (
-            <div
-              className="grid gap-3 rounded-xl border border-line/60 bg-app-elevated/20 p-4"
-              key={index}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-black uppercase tracking-wider text-muted">
-                  Item {index + 1}
-                </span>
+            <div className="fiscal-item-card" key={index}>
+              <div className="fiscal-item-card-header">
+                <span className="fiscal-item-card-title">Item {index + 1}</span>
                 {draft.items.length > 1 ? (
                   <FeatureActionButton
                     disabled={Boolean(disabled)}
@@ -205,11 +204,9 @@ export function FiscalItemsStep({
               </div>
             </div>
           ))}
-          <div className="flex items-center justify-between rounded-lg border border-line bg-app px-3 py-2">
-            <span className="text-xs font-black uppercase tracking-wider text-muted">
-              Total da nota
-            </span>
-            <strong className="text-base text-app-text">
+          <div className="fiscal-total-bar">
+            <span className="fiscal-total-bar-label">Total da nota</span>
+            <strong className="fiscal-total-bar-value">
               {formatBrl(totalCents / 100)}
             </strong>
           </div>

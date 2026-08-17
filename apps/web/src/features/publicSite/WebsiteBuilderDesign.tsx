@@ -1,5 +1,4 @@
 import {
-  Check,
   ExternalLink,
   Eye,
   Globe,
@@ -37,13 +36,11 @@ export function WebsiteBuilderDesign({
   onDirty,
   onSave,
   settings,
-  statusMessage,
 }: {
   isSaving: boolean;
   onDirty?: () => void;
   onSave: (input: WebsiteBuilderSaveInput) => Promise<void>;
   settings: StoreSettingsSnapshot;
-  statusMessage?: { text: string; type: "error" | "success" } | null;
 }) {
   const initialConfig = useMemo(
     () => createWebsiteConfigFromSettings(settings),
@@ -206,7 +203,6 @@ export function WebsiteBuilderDesign({
         </div>
       </div>
 
-      {statusMessage ? <WebsiteBuilderStatus message={statusMessage} /> : null}
       <WebsiteBuilderMobileTabs
         active={mobileTab}
         onChange={handleMobileTabChange}
@@ -277,26 +273,6 @@ export function WebsiteBuilderDesign({
           <Smartphone className="h-5 w-5" />
         </button>
       ) : null}
-    </div>
-  );
-}
-
-function WebsiteBuilderStatus({
-  message,
-}: {
-  message: { text: string; type: "error" | "success" };
-}) {
-  return (
-    <div
-      className={cn(
-        "mx-4 mt-2 flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium",
-        message.type === "success"
-          ? "bg-success/10 text-success-strong"
-          : "bg-destructive/10 text-destructive",
-      )}
-    >
-      {message.type === "success" ? <Check className="h-3.5 w-3.5" /> : null}
-      {message.text}
     </div>
   );
 }

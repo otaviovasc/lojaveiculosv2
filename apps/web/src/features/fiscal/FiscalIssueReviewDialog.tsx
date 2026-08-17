@@ -25,6 +25,7 @@ export function FiscalIssueReviewDialog({
 }) {
   return (
     <FeatureDialog
+      className="feature-dialog--medium fiscal-review-dialog"
       footer={
         <FeatureDialogActions
           cancelDisabled={isSaving}
@@ -46,18 +47,15 @@ export function FiscalIssueReviewDialog({
           A confirmação inicia uma operação fiscal real no provedor e gera
           registro auditável. Revise os dados antes de transmitir.
         </p>
-        <dl className="grid gap-3 rounded-lg border border-line bg-app p-4">
+        <dl className="fiscal-review-summary">
           <ReviewRow label="Tipo de documento" value={summary?.kindLabel} />
           <ReviewRow label="Origem" value={summary?.originLabel} />
           <ReviewRow label="Destinatário" value={summary?.recipientLabel} />
           <ReviewRow label="Itens" value={summary?.itemsLabel} />
           <ReviewRow label="Valor total" value={summary?.totalLabel} strong />
         </dl>
-        <div
-          className="flex items-start gap-3 rounded-lg border border-warning bg-panel p-4 text-sm font-bold text-app-text"
-          role="note"
-        >
-          <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+        <div className="fiscal-review-warning" role="note">
+          <ShieldAlert aria-hidden="true" className="size-5 shrink-0" />
           <p>
             Se algum dado estiver incorreto, cancele e ajuste a emissão antes de
             enviar. Nenhuma nota é emitida sem a confirmação do provedor.
@@ -78,15 +76,13 @@ function ReviewRow({
   value: string | undefined;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <dt className="text-xs font-black uppercase tracking-wider text-muted">
-        {label}
-      </dt>
+    <div className="fiscal-review-row">
+      <dt className="fiscal-review-label">{label}</dt>
       <dd
         className={
           strong
-            ? "break-words text-right text-base font-black text-app-text"
-            : "break-words text-right text-sm font-bold text-app-text"
+            ? "fiscal-review-value fiscal-review-value--total"
+            : "fiscal-review-value"
         }
       >
         {value || "—"}

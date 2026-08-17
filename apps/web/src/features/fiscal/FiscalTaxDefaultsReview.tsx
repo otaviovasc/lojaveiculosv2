@@ -1,19 +1,25 @@
-import { ListChecks, ShieldCheck } from "lucide-react";
+import {
+  FileText,
+  ListChecks,
+  ListPlus,
+  ScrollText,
+  ShieldCheck,
+} from "lucide-react";
 import { useState } from "react";
+import "../../styles/fiscal-setup.css";
 import {
   FeatureInput,
   FeatureSegmentedControl,
   FeatureSelect,
 } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
-import {
-  FeatureActionButton,
-  FeatureSection,
-} from "../../components/ui/FeatureLayout";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
   FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
+import { FeatureTabs } from "../../components/ui/FeatureTabs";
+import { Toast } from "../../components/ui/Toast";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { FiscalApi } from "./apiClient";
 import {
@@ -41,6 +47,8 @@ type Props = {
   onConnectionChange: (connection: FiscalConnection) => void;
 };
 
+type DefaultsGroup = "extras" | "nfe" | "nfse";
+
 export function FiscalTaxDefaultsReview({
   api,
   connection,
@@ -51,9 +59,11 @@ export function FiscalTaxDefaultsReview({
     createTaxDefaultsFormValues(connection.taxDefaults),
   );
   const [acknowledged, setAcknowledged] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<DefaultsGroup>("nfe");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backendMissing, setBackendMissing] = useState<readonly string[]>([]);
+  const [toast, setToast] = useState<{ title: string } | null>(null);
 
   const confirmed = connection.defaultsStatus === "confirmed";
   const reviewedDefaults = buildReviewedTaxDefaults(
@@ -78,6 +88,7 @@ export function FiscalTaxDefaultsReview({
       onConnectionChange(
         await api.confirmDefaults({ taxDefaults: reviewedDefaults }),
       );
+      setToast({ title: "Padrões fiscais confirmados com sucesso." });
     } catch (cause) {
       const missing = getBackendMissingFields(cause);
       setBackendMissing(missing);
@@ -172,33 +183,142 @@ export function FiscalTaxDefaultsReview({
     );
   };
 
-  const renderGroup = (group: "nfe" | "nfse") => (
-    <div className="grid gap-3" key={group}>
-      <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">
-        {FISCAL_DEFAULTS_GROUP_LABELS[group]}
-      </h4>
+  const groupPendingCount = (group: "nfe" | "nfse") =>
+    FISCAL_DEFAULTS_REQUIRED_FIELDS.filter(
+      (field) =>
+        field.group === group &&
+        ((edits[field.path] ?? "").trim() === "" ||
+          backendMissing.includes(field.path)),
+    ).length;
+
+  const groupStatusBadge = (group: "nfe" | "nfse") => {
+    if (!hasImportedDefaults || confirmed) return null;
+    const pending = groupPendingCount(group);
+    return pending > 0 ? (
+      <FeatureStatusBadge size="dense" tone="warning">
+        {pending} pendente{pending === 1 ? "" : "s"}
+      </FeatureStatusBadge>
+    ) : (
+      <FeatureStatusBadge size="dense" tone="success">
+        Completo
+      </FeatureStatusBadge>
+    );
+  };
+
+  const renderRequiredGroup = (group: "nfe" | "nfse") => (
+    <section
+      aria-label={FISCAL_DEFAULTS_GROUP_LABELS[group]}
+      className="fiscal-setup-section"
+      hidden={activeGroup !== group}
+      key={group}
+      role="tabpanel"
+    >
+      <div className="fiscal-setup-section-header">
+        <h4 className="fiscal-setup-section-label">
+          {FISCAL_DEFAULTS_GROUP_LABELS[group]}
+        </h4>
+        {groupStatusBadge(group)}
+      </div>
       <div className="grid gap-3 md:grid-cols-2">
         {FISCAL_DEFAULTS_REQUIRED_FIELDS.filter(
           (field) => field.group === group,
         ).map(renderRequiredField)}
       </div>
-    </div>
+    </section>
+  );
+
+  const extrasGroup = (
+    <section
+      aria-label="Outros valores importados do provedor"
+      className="fiscal-setup-section"
+      hidden={activeGroup !== "extras"}
+      role="tabpanel"
+    >
+      <div className="fiscal-setup-section-header">
+        <h4 className="fiscal-setup-section-label">
+          Outros valores importados do provedor
+        </h4>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {extraEntries.map((entry) => {
+          const label = getFiscalDefaultLabel(
+            entry.path.split(".").at(-1) ?? entry.path,
+          );
+          if (!entry.editable) {
+            return (
+              <FeatureField
+                hint="Valor estruturado importado do provedor; preservado na confirmação."
+                key={entry.path}
+                label={label}
+              >
+                <FeatureInput
+                  aria-label={label}
+                  disabled
+                  readOnly
+                  value={formatFiscalDefaultValue(entry.value)}
+                />
+              </FeatureField>
+            );
+          }
+          return (
+            <FeatureField key={entry.path} label={label}>
+              <FeatureInput
+                aria-label={label}
+                disabled={fieldsDisabled}
+                inputMode={
+                  typeof entry.value === "number" ? "decimal" : undefined
+                }
+                onChange={(event) => updateEdit(entry.path, event.target.value)}
+                value={edits[entry.path] ?? ""}
+              />
+            </FeatureField>
+          );
+        })}
+      </div>
+    </section>
   );
 
   return (
-    <FeatureSection
-      className="feature-panel"
-      description="Valores fiscais padrão importados do provedor. A emissão só é liberada depois da confirmação."
-      icon={<ListChecks aria-hidden="true" className="size-5" />}
-      title="Padrões fiscais da loja"
-    >
-      <div className="mt-4 grid gap-4">
-        <FeatureStatusBadge
-          tone={getFiscalDefaultsStatusTone(connection.defaultsStatus)}
-        >
-          {getFiscalDefaultsStatusLabel(connection.defaultsStatus)}
-        </FeatureStatusBadge>
+    <section className="fiscal-setup-panel">
+      {toast ? (
+        <Toast
+          durationMs={4000}
+          onDismiss={() => setToast(null)}
+          title={toast.title}
+          tone="success"
+        />
+      ) : null}
+      <div aria-hidden="true" className="fiscal-setup-panel__blob" />
+      <span aria-hidden="true" className="fiscal-setup-panel__watermark">
+        <ListChecks />
+      </span>
 
+      <header className="fiscal-setup-panel__header">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="fiscal-setup-panel__icon">
+            <ListChecks aria-hidden="true" className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="fiscal-setup-panel__eyebrow">Revisão do provedor</p>
+            <h3 className="fiscal-setup-panel__title">
+              Padrões fiscais da loja
+            </h3>
+            <p className="fiscal-setup-panel__description">
+              Valores fiscais padrão importados do provedor. A emissão só é
+              liberada depois da confirmação.
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0">
+          <FeatureStatusBadge
+            tone={getFiscalDefaultsStatusTone(connection.defaultsStatus)}
+          >
+            {getFiscalDefaultsStatusLabel(connection.defaultsStatus)}
+          </FeatureStatusBadge>
+        </div>
+      </header>
+
+      <div className="fiscal-setup-panel__body">
         {connection.defaultsStatus === "unconfirmed" ? (
           <FeatureAlert tone="warning">
             Estes valores foram importados da Spedy e ainda não foram
@@ -214,56 +334,28 @@ export function FiscalTaxDefaultsReview({
           </p>
         ) : (
           <>
-            {renderGroup("nfe")}
-            {renderGroup("nfse")}
-
-            {extraEntries.length > 0 ? (
-              <div className="grid gap-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">
-                  Outros valores importados do provedor
-                </h4>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {extraEntries.map((entry) => {
-                    const label = getFiscalDefaultLabel(
-                      entry.path.split(".").at(-1) ?? entry.path,
-                    );
-                    if (!entry.editable) {
-                      return (
-                        <FeatureField
-                          hint="Valor estruturado importado do provedor; preservado na confirmação."
-                          key={entry.path}
-                          label={label}
-                        >
-                          <FeatureInput
-                            aria-label={label}
-                            disabled
-                            readOnly
-                            value={formatFiscalDefaultValue(entry.value)}
-                          />
-                        </FeatureField>
-                      );
-                    }
-                    return (
-                      <FeatureField key={entry.path} label={label}>
-                        <FeatureInput
-                          aria-label={label}
-                          disabled={fieldsDisabled}
-                          inputMode={
-                            typeof entry.value === "number"
-                              ? "decimal"
-                              : undefined
-                          }
-                          onChange={(event) =>
-                            updateEdit(entry.path, event.target.value)
-                          }
-                          value={edits[entry.path] ?? ""}
-                        />
-                      </FeatureField>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
+            <FeatureTabs<DefaultsGroup>
+              ariaLabel="Grupos de padrões fiscais"
+              onChange={setActiveGroup}
+              options={[
+                { icon: FileText, label: "NF-e", value: "nfe" },
+                { icon: ScrollText, label: "NFS-e", value: "nfse" },
+                ...(extraEntries.length > 0
+                  ? [
+                      {
+                        icon: ListPlus,
+                        label: `Outros valores (${extraEntries.length})`,
+                        value: "extras" as const,
+                      },
+                    ]
+                  : []),
+              ]}
+              value={activeGroup}
+              variant="panel"
+            />
+            {renderRequiredGroup("nfe")}
+            {renderRequiredGroup("nfse")}
+            {extraEntries.length > 0 ? extrasGroup : null}
           </>
         )}
 
@@ -276,7 +368,7 @@ export function FiscalTaxDefaultsReview({
         ) : null}
 
         {hasImportedDefaults && !confirmed ? (
-          <label className="flex items-start gap-3 rounded-lg border border-line bg-app p-3 text-sm font-bold text-app-text">
+          <label className="fiscal-setup-ack">
             <input
               aria-label="Confirmo que revisei os padrões fiscais"
               checked={acknowledged}
@@ -321,6 +413,6 @@ export function FiscalTaxDefaultsReview({
           </div>
         ) : null}
       </div>
-    </FeatureSection>
+    </section>
   );
 }

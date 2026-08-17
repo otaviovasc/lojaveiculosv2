@@ -1,4 +1,10 @@
-import { Ban, PencilLine, RefreshCcw, RotateCcw } from "lucide-react";
+import {
+  Ban,
+  PencilLine,
+  RefreshCcw,
+  RotateCcw,
+  TriangleAlert,
+} from "lucide-react";
 import { useState } from "react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import {
@@ -100,7 +106,11 @@ export function FiscalDocumentActions({
         ) : null}
       </FeatureRowActions>
       {cancelOpen && canCancel ? (
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="fiscal-cancel-bar">
+          <span className="fiscal-cancel-bar__hint">
+            <TriangleAlert aria-hidden="true" className="size-3.5" />
+            Cancelamento definitivo no provedor
+          </span>
           <FeatureInput
             aria-label="Motivo do cancelamento"
             className="!min-h-9 w-56 !text-xs"
@@ -110,7 +120,7 @@ export function FiscalDocumentActions({
           />
           <button
             aria-label="Confirmar cancelamento"
-            className="inline-flex min-h-9 items-center rounded-lg border border-danger/40 bg-danger/10 px-3 text-xs font-bold text-danger-soft-foreground transition-colors hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-50"
+            className="fiscal-cancel-bar__confirm"
             disabled={busy !== null || !reasonReady}
             onClick={() => void run("cancel")}
             type="button"
@@ -119,7 +129,7 @@ export function FiscalDocumentActions({
           </button>
           <button
             aria-label="Desistir do cancelamento"
-            className="inline-flex min-h-9 items-center rounded-lg border border-line bg-panel px-3 text-xs font-bold text-muted transition-colors hover:text-app-text disabled:cursor-not-allowed disabled:opacity-50"
+            className="fiscal-cancel-bar__dismiss"
             disabled={busy !== null}
             onClick={() => {
               setCancelOpen(false);

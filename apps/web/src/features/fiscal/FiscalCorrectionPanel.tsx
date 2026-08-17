@@ -1,5 +1,5 @@
-import { X } from "lucide-react";
-import { FeatureAlert } from "../../components/ui/FeatureStates";
+import { TriangleAlert, X } from "lucide-react";
+import "../../styles/fiscal-documents.css";
 import { readDocumentError } from "./fiscalDocumentDisplay";
 import {
   amountFromInput,
@@ -42,49 +42,70 @@ export function FiscalCorrectionPanel({
   const errorMessage = readDocumentError(document);
 
   return (
-    <FeatureAlert
-      action={
+    <section
+      aria-live="polite"
+      className="fiscal-correction"
+      data-tone="warning"
+      role="status"
+    >
+      <span aria-hidden="true" className="fiscal-correction__watermark">
+        <TriangleAlert />
+      </span>
+      <header className="fiscal-correction__header">
+        <div className="fiscal-correction__heading">
+          <span aria-hidden="true" className="fiscal-correction__mark">
+            <TriangleAlert className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="fiscal-correction__eyebrow">Correção de emissão</p>
+            <h3 className="fiscal-correction__title">
+              Corrigir e reenviar{" "}
+              {getFiscalDocumentKindLabel(document.documentKind)}
+            </h3>
+          </div>
+        </div>
         <button
           aria-label="Dispensar dados recuperados"
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line bg-panel px-3 text-xs font-bold text-muted transition-colors hover:text-app-text"
+          className="fiscal-correction__dismiss"
           onClick={onDismiss}
           type="button"
         >
           <X aria-hidden="true" className="size-3.5" />
           Dispensar
         </button>
-      }
-      title={`Corrigir e reenviar ${getFiscalDocumentKindLabel(document.documentKind)}`}
-      tone="warning"
-    >
-      <p>
-        A nota foi registrada como{" "}
-        <strong>{getFiscalDocumentStatusLabel(document.status)}</strong> pelo
-        provedor. Recuperamos abaixo os dados da emissão original — confira cada
-        campo no formulário de emissão, ajuste o que for necessário e transmita
-        novamente.
-      </p>
-      {errorMessage ? (
-        <p className="mt-1 font-bold">Motivo informado: {errorMessage}</p>
-      ) : null}
-      <dl className="mt-3 grid gap-2 text-xs font-semibold sm:grid-cols-2">
-        <div>
-          <dt className="font-black uppercase tracking-wide">Referência</dt>
+      </header>
+      <div className="fiscal-correction__body">
+        <p>
+          A nota foi registrada como{" "}
+          <strong>{getFiscalDocumentStatusLabel(document.status)}</strong> pelo
+          provedor. Recuperamos abaixo os dados da emissão original — confira
+          cada campo no formulário de emissão, ajuste o que for necessário e
+          transmita novamente.
+        </p>
+        {errorMessage ? (
+          <p className="fiscal-correction__reason">
+            Motivo informado: {errorMessage}
+          </p>
+        ) : null}
+      </div>
+      <dl className="fiscal-correction__fields">
+        <div className="fiscal-correction__field">
+          <dt>Referência</dt>
           <dd>{draft.externalReference || "—"}</dd>
         </div>
-        <div>
-          <dt className="font-black uppercase tracking-wide">Destinatário</dt>
+        <div className="fiscal-correction__field">
+          <dt>Destinatário</dt>
           <dd>{recipientLabel || "—"}</dd>
         </div>
-        <div className="sm:col-span-2">
-          <dt className="font-black uppercase tracking-wide">Itens</dt>
+        <div className="fiscal-correction__field sm:col-span-2">
+          <dt>Itens</dt>
           <dd>{itemsLabel}</dd>
         </div>
-        <div>
-          <dt className="font-black uppercase tracking-wide">Total</dt>
+        <div className="fiscal-correction__field">
+          <dt>Total</dt>
           <dd>{total > 0 ? formatBrl(total) : "—"}</dd>
         </div>
       </dl>
-    </FeatureAlert>
+    </section>
   );
 }
