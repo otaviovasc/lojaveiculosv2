@@ -25,7 +25,7 @@ describe("CRM WhatsApp integration security", () => {
     });
 
     const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot",
+      "/api/v1/crm/bot/configuration",
       jsonPost(
         {
           enabled: true,
@@ -65,28 +65,29 @@ describe("CRM WhatsApp integration security", () => {
   ])("rejects an unsafe webhook URL: %s", async (webhookUrl) => {
     const app = createTestApp();
     const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot",
+      "/api/v1/crm/bot/configuration",
       jsonPost({ webhookUrl }, undefined, "PATCH"),
     );
 
     expect(response.status).toBe(400);
     await expectApiError(response, {
-      code: "CRM_WHATSAPP_VALIDATION_ERROR",
-      message: "Request is invalid.",
+      code: "CRM_WHATSAPP_BOT_INTEGRATION_INVALID",
+      message:
+        "Webhook URL must use public HTTPS without embedded credentials.",
     });
   });
 
   it("rejects webhook secrets shorter than the prelaunch minimum", async () => {
     const app = createTestApp();
     const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot",
+      "/api/v1/crm/bot/configuration",
       jsonPost({ webhookSecret: "short-webhook-secret" }, undefined, "PATCH"),
     );
 
     expect(response.status).toBe(400);
     await expectApiError(response, {
       code: "CRM_WHATSAPP_VALIDATION_ERROR",
-      message: "Request is invalid.",
+      message: "Request body is invalid.",
     });
   });
 

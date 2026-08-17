@@ -9,7 +9,7 @@ export const botActionSecretHeader = {
 
 export async function configureBot(app: ReturnType<typeof createTestApp>) {
   const response = await app.request(
-    "/api/v1/crm/whatsapp/integrations/bot",
+    "/api/v1/crm/bot/configuration",
     jsonPost(
       {
         enabled: true,

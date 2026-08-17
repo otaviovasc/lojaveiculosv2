@@ -34,6 +34,7 @@ export function createDrizzleCrmRoutingConnectionRepository(
           capabilities: {
             inbound: capabilities.inbound === true,
             outbound: capabilities.outbound === true,
+            scheduling: capabilities.scheduling === true,
             templates: capabilities.templates === true,
           },
           channel: row.channel,

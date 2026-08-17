@@ -29,7 +29,7 @@ export function createExternalBotActionRepository(
           ${command.actionClass === "proposal" ? "proposal_only" : "automatic"}, 'accepted',
           ${command.threadId}::uuid, ${command.storeId}::uuid, ${command.tenantId}::uuid
         from bot_integration_grants grant
-        inner join provider_connections connection on connection.id = grant.provider_connection_id
+        inner join crm_channel_connections connection on connection.id = grant.provider_connection_id
           and connection.tenant_id=grant.tenant_id and connection.store_id=grant.store_id
           and connection.provider=grant.provider
           and connection.channel=${command.channel}

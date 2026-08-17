@@ -28,7 +28,7 @@ describe.skipIf(!runRawDb)("canonical CRM inbound Postgres adapter", () => {
     const sqlClient = postgres(process.env.DATABASE_URL ?? "", { max: 1 });
     let canonicalSchemaAvailable = true;
     try {
-      await sqlClient`select 1 from provider_connections limit 0`;
+      await sqlClient`select 1 from crm_channel_connections limit 0`;
     } catch (error) {
       if (isMissingRelation(error)) canonicalSchemaAvailable = false;
       else throw error;

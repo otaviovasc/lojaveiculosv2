@@ -19,7 +19,7 @@ export function createExternalBotGrantStore(
       const token = randomBytes(32).toString("base64url");
       const providerRows = await input.db.execute(sql`
         select connection.channel, connection.provider
-        from provider_connections connection
+        from crm_channel_connections connection
         where connection.id=${grant.connectionId}::uuid
           and connection.tenant_id=${grant.tenantId}::uuid
           and connection.store_id=${grant.storeId}::uuid
@@ -66,7 +66,7 @@ export function createExternalBotGrantStore(
           and model_version = ${grant.modelVersion} and authorized_request_digest=${grant.requestDigest}
           and state = 'issued' and expires_at > ${grant.now}
           and exists (
-            select 1 from provider_connections connection
+            select 1 from crm_channel_connections connection
             where connection.id=provider_connection_id
               and connection.provider=${grant.provider}
               and connection.channel=${grant.channel}

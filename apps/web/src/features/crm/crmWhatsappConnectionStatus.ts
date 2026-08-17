@@ -37,6 +37,7 @@ export function readCrmWhatsappProviderLabel(provider: string) {
     case "zapi":
       return "Z-API";
     case "composio_whatsapp":
+    case "meta_cloud":
       return "WhatsApp oficial";
     case "composio_instagram":
       return "Instagram";
@@ -50,7 +51,11 @@ export function readCrmWhatsappProviderLabel(provider: string) {
 
 export function readCrmWhatsappProviderIcon(provider: string) {
   if (provider === "olx_chat" || provider === "OLX_CHAT") return "olx" as const;
-  if (provider === "zapi" || provider === "composio_whatsapp") {
+  if (
+    provider === "zapi" ||
+    provider === "composio_whatsapp" ||
+    provider === "meta_cloud"
+  ) {
     return "whatsapp" as const;
   }
   return "unknown" as const;
@@ -59,8 +64,10 @@ export function readCrmWhatsappProviderIcon(provider: string) {
 export function readCrmWhatsappChannelLabel(channel: string) {
   switch (channel) {
     case "WHATSAPP":
+    case "whatsapp":
       return "WhatsApp";
     case "INSTAGRAM":
+    case "instagram":
       return "Instagram";
     case "OLX_CHAT":
     case "olx_chat":

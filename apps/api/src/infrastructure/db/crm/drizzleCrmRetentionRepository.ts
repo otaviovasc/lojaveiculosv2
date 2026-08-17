@@ -13,8 +13,8 @@ import {
 
 export const crmRetentionRequiredRelations = [
   "bot_action_commands",
-  "canonical_messages",
-  "conversation_cycles",
+  "crm_messages",
+  "crm_conversation_cycles",
   "crm_connections",
   "crm_retention_audit_outbox",
   "crm_retention_legal_holds",

@@ -21,10 +21,19 @@ export type CrmRoutingBlockedCode =
 export type CrmRoutingConnectionReadModel = {
   active: boolean;
   capabilities: readonly CrmRoutingCapability[];
+  channel: CrmRoutingChannel;
   connected: boolean;
   displayName: string;
   id: string;
   provider: CrmTransportProvider;
+  readiness: {
+    ready: boolean;
+    reason: string | null;
+    reasonCode: string | null;
+  };
+  state:
+    "active" | "archived" | "disconnected" | "error" | "paused" | "sandbox";
+  isDefault: boolean;
 };
 
 export type CrmResolvedConnectionRoute = {

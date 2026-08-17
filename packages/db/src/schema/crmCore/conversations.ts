@@ -24,7 +24,7 @@ import { revisionCheck, revisionColumn } from "./revision.js";
 import { scopedStoreForeignKey } from "./scoped.js";
 
 export const conversationThreads = pgTable(
-  "conversation_threads",
+  "crm_conversation_threads",
   {
     ...lifecycleColumns,
     channel: messagingChannel("channel").notNull(),
@@ -89,7 +89,7 @@ export const conversationThreads = pgTable(
 );
 
 export const conversationCycles = pgTable(
-  "conversation_cycles",
+  "crm_conversation_cycles",
   {
     ...lifecycleColumns,
     assignedUserId: uuid("assigned_user_id").references(() => users.id),
@@ -157,7 +157,7 @@ export const conversationCycles = pgTable(
 );
 
 export const conversationAttendances = pgTable(
-  "conversation_attendances",
+  "crm_conversation_attendances",
   {
     ...lifecycleColumns,
     assignedUserId: uuid("assigned_user_id").references(() => users.id),

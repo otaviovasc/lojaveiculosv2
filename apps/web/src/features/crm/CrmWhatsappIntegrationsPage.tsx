@@ -8,6 +8,8 @@ import type {
   CrmWhatsappBotIntegration,
   CrmWhatsappIntegrationView,
 } from "./crmWhatsappIntegrationTypes";
+import type { CrmRoutingChannel, CrmRoutingPolicy } from "./crmRoutingTypes";
+import { CrmExternalBotPolicyOverview } from "./CrmExternalBotPolicyOverview";
 import {
   peekWhatsappScopedCache,
   WHATSAPP_BOT_INTEGRATION_CACHE_KEY,
@@ -50,6 +52,11 @@ export function CrmWhatsappIntegrationsPage({
   const [webhookUrl, setWebhookUrl] = useState(
     initialIntegration?.webhookUrl ?? "",
   );
+  const [activeChannel, setActiveChannel] =
+    useState<CrmRoutingChannel>("whatsapp");
+  const [routingPolicy, setRoutingPolicy] = useState<CrmRoutingPolicy | null>(
+    null,
+  );
 
   const applyIntegration = useCallback((next: CrmWhatsappBotIntegration) => {
     setEnabled(next.enabled);
@@ -73,6 +80,13 @@ export function CrmWhatsappIntegrationsPage({
         response.integration,
       );
       applyIntegration(response.integration);
+      if (typeof api.getRoutingPolicy === "function") {
+        try {
+          setRoutingPolicy(await api.getRoutingPolicy());
+        } catch {
+          setRoutingPolicy(null);
+        }
+      }
     } catch (caught) {
       setError(formatApiErrorDisplay(caught, "Nao foi possivel carregar bot."));
     } finally {
@@ -165,6 +179,11 @@ export function CrmWhatsappIntegrationsPage({
             ) : (
               <PermissionNotice />
             )}
+            <CrmExternalBotPolicyOverview
+              activeChannel={activeChannel}
+              onChannelChange={setActiveChannel}
+              policy={routingPolicy}
+            />
             {error ? (
               <p className="crm-whatsapp-integrations-error" role="alert">
                 {error}

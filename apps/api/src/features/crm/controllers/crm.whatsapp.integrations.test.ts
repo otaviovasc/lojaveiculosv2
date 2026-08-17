@@ -21,11 +21,11 @@ const tenantId = "tenant_1" as TenantId;
 describe("CRM WhatsApp integrations", () => {
   it("returns an unconfigured bot integration without secrets", async () => {
     const app = createTestApp();
-    const response = await app.request("/api/v1/crm/whatsapp/integrations/bot");
+    const response = await app.request("/api/v1/crm/bot/configuration");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      integration: {
+      configuration: {
         enabled: false,
         secretConfigured: false,
         webhookUrl: null,
@@ -36,29 +36,26 @@ describe("CRM WhatsApp integrations", () => {
   it("saves bot webhook settings without returning the secret or hash", async () => {
     const { audit, record } = createAuditSpy();
     const app = createTestApp({ audit });
-    const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot",
-      {
-        body: JSON.stringify({
-          enabled: true,
-          webhookSecret: "bot-webhook-secret-value-32-characters",
-          webhookUrl: "https://bot.example.test/webhook",
-        }),
-        method: "PATCH",
-      },
-    );
+    const response = await app.request("/api/v1/crm/bot/configuration", {
+      body: JSON.stringify({
+        enabled: true,
+        webhookSecret: "bot-webhook-secret-value-32-characters",
+        webhookUrl: "https://bot.example.test/webhook",
+      }),
+      method: "PATCH",
+    });
 
     const body = (await response.json()) as {
-      integration: Record<string, unknown>;
+      configuration: Record<string, unknown>;
     };
     expect(response.status).toBe(200);
-    expect(body.integration).toMatchObject({
+    expect(body.configuration).toMatchObject({
       enabled: true,
       secretConfigured: true,
       webhookUrl: "https://bot.example.test/webhook",
     });
-    expect(body.integration.webhookSecret).toBeUndefined();
-    expect(body.integration.webhookSecretHash).toBeUndefined();
+    expect(body.configuration.webhookSecret).toBeUndefined();
+    expect(body.configuration.webhookSecretHash).toBeUndefined();
     expect(JSON.stringify(record.mock.calls)).not.toContain(
       "bot-webhook-secret-value-32-characters",
     );
@@ -66,13 +63,10 @@ describe("CRM WhatsApp integrations", () => {
 
   it("does not enable bot forwarding until URL and secret are configured", async () => {
     const app = createTestApp();
-    const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot",
-      {
-        body: JSON.stringify({ enabled: true }),
-        method: "PATCH",
-      },
-    );
+    const response = await app.request("/api/v1/crm/bot/configuration", {
+      body: JSON.stringify({ enabled: true }),
+      method: "PATCH",
+    });
 
     expect(response.status).toBe(422);
     await expectApiError(response, {
@@ -84,12 +78,13 @@ describe("CRM WhatsApp integrations", () => {
 
   it("requires the integrations manage permission", async () => {
     const app = createTestApp({ permissions: ["crm.whatsapp.read"] });
-    const response = await app.request("/api/v1/crm/whatsapp/integrations/bot");
+    const response = await app.request("/api/v1/crm/bot/configuration");
 
     expect(response.status).toBe(403);
     await expectApiError(response, {
       code: "AUTHORIZATION_DENIED",
-      message: "Missing permission: crm.whatsapp.integrations.manage",
+      message:
+        "Missing one of required permissions: crm.bot.read, crm.bot.manage, crm.whatsapp.integrations.manage",
     });
   });
 

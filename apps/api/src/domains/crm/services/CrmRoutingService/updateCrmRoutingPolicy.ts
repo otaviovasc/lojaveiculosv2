@@ -1,7 +1,8 @@
 import {
+  assertAnyPermission,
   assertEntitlement,
-  assertPermission,
 } from "../../../../shared/authorization.js";
+import type { PermissionKey } from "@lojaveiculosv2/shared";
 import type {
   ServiceContext,
   StoreScopedServiceContext,
@@ -25,7 +26,10 @@ import type {
 import { resolveCrmConnectionRoute } from "./routingResolution.js";
 import { resolveCrmRoutingPolicy } from "./resolveCrmRoutingPolicy.js";
 
-const permission = "crm.messaging.connection.setup" as const;
+const permissions = [
+  "crm.bot.manage",
+  "crm.messaging.connection.setup",
+] as const satisfies readonly PermissionKey[];
 const requiredCapabilities = ["outbound"] as const;
 
 export type UpdateCrmRoutingPolicyInput = {
@@ -39,7 +43,7 @@ export async function updateCrmRoutingPolicy(
   input: UpdateCrmRoutingPolicyInput,
   ports: CrmServicePorts,
 ): Promise<CrmRoutingPolicyReadModel> {
-  assertPermission(context, permission);
+  const permission = assertAnyPermission(context, permissions);
   assertEntitlement(context as StoreScopedServiceContext, "crm");
   const scope = requireCrmWhatsappScope(context);
   context.logger.info("crm.routing.policy.update.started", {
@@ -130,10 +134,26 @@ export async function updateCrmRoutingPolicy(
       ports,
       requiredCapabilities,
     );
-    await recordOutcome(context, input, scope, "succeeded", undefined, result);
+    await recordOutcome(
+      context,
+      input,
+      scope,
+      "succeeded",
+      undefined,
+      result,
+      permission,
+    );
     return result;
   } catch (error) {
-    await recordOutcome(context, input, scope, "failed", error);
+    await recordOutcome(
+      context,
+      input,
+      scope,
+      "failed",
+      error,
+      undefined,
+      permission,
+    );
     throw error;
   }
 }
@@ -182,6 +202,7 @@ async function recordOutcome(
   outcome: "failed" | "succeeded",
   error?: unknown,
   result?: CrmRoutingPolicyReadModel,
+  permission?: PermissionKey,
 ) {
   const channelReadiness = result?.channels.find(
     (channel) => channel.channel === input.channel,
@@ -201,7 +222,7 @@ async function recordOutcome(
       ...(error
         ? { errorName: error instanceof Error ? error.name : "UnknownError" }
         : {}),
-      permission,
+      permission: permission ?? permissions[0],
       storeDefaultReady: channelReadiness?.storeDefault.ready ?? false,
     },
     outcome,

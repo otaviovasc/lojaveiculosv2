@@ -311,6 +311,12 @@ function legacyConnection(
   ready = true,
 ): CrmWhatsappProviderConnection {
   return {
+    channel:
+      provider === "composio_instagram"
+        ? "instagram"
+        : provider === "olx_chat"
+          ? "olx_chat"
+          : "whatsapp",
     displayName,
     externalConnectionId: ready ? `external-${id}` : null,
     externalInstanceId: null,
@@ -324,6 +330,11 @@ function legacyConnection(
     },
     phone,
     provider,
+    readiness: {
+      ready,
+      reason: ready ? null : "A conexão ainda não está pronta.",
+      reasonCode: ready ? "ready" : "pending_webhook",
+    },
     ready,
     status: ready ? "active" : "disconnected",
     webhookUrl: null,

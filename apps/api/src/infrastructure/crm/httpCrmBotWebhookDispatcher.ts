@@ -191,7 +191,7 @@ export class CrmBotWebhookDestinationError extends Error {
 function resolveActionApiBaseUrl(env: Record<string, string | undefined>) {
   const apiBase =
     trimTrailingSlash(env.API_BASE_URL) ?? "http://localhost:8787";
-  return `${apiBase}/api/v1/crm/whatsapp/integrations/bot/actions`;
+  return `${apiBase}/api/v1/crm/bot/actions`;
 }
 
 function trimTrailingSlash(value: string | undefined) {

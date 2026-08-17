@@ -17,7 +17,10 @@ export function createCrmWebhookContextFactory(audit?: AuditSink) {
 }
 
 export function resolveCrmWebhookActor(pathname: string) {
-  if (pathname.endsWith("/whatsapp/integrations/bot/actions")) {
+  if (
+    pathname.endsWith("/crm/bot/actions") ||
+    pathname.endsWith("/crm/whatsapp/integrations/bot/actions")
+  ) {
     return { actorId: "external_crm_bot", displayName: "External CRM bot" };
   }
   if (pathname.endsWith("/whatsapp/webhooks/meta")) {

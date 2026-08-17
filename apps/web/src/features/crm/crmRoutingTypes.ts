@@ -26,10 +26,13 @@ export type CrmRoutingBlockedCode =
 export type CrmRoutingConnection = {
   active: boolean;
   capabilities: readonly string[];
+  channel?: CrmRoutingChannel;
   connected: boolean;
   displayName: string;
   id: string;
   provider: CrmWhatsappProvider;
+  readiness?: { ready: boolean; reason: string | null };
+  isDefault?: boolean;
 };
 
 export type CrmResolvedRoute = {
@@ -62,6 +65,7 @@ export type UpdateCrmRoutingPolicyInput = {
 };
 
 export type CrmRoutingCandidate = {
+  channel: CrmRoutingChannel;
   connected: boolean;
   displayName: string;
   id: string;
@@ -88,13 +92,22 @@ export function readRoutingCandidates(
 ): CrmRoutingCandidate[] {
   const candidates = new Map<string, CrmRoutingCandidate>();
   for (const connection of connections) {
-    const normalized = normalizeLegacyConnection(connection);
-    if (normalized) candidates.set(normalized.id, normalized);
+    if (!connection.channel || !connection.readiness) continue;
+    candidates.set(String(connection.id), {
+      channel: connection.channel,
+      connected: connection.readiness.ready,
+      displayName: connection.displayName,
+      id: String(connection.id),
+      phone: connection.phone,
+      provider: connection.provider,
+      ready: connection.readiness.ready,
+    });
   }
   for (const channel of policy?.channels ?? []) {
     for (const route of [channel.storeDefault, channel.bot]) {
       if (!route.connection || candidates.has(route.connection.id)) continue;
       candidates.set(route.connection.id, {
+        channel: channel.channel,
         connected: route.connection.connected,
         displayName: route.connection.displayName,
         id: route.connection.id,
@@ -111,16 +124,7 @@ export function isCandidateForChannel(
   candidate: CrmRoutingCandidate,
   channel: CrmRoutingChannel,
 ) {
-  if (channel === "whatsapp") {
-    return (
-      candidate.provider === "zapi" ||
-      candidate.provider === "composio_whatsapp"
-    );
-  }
-  if (channel === "instagram") {
-    return candidate.provider === "composio_instagram";
-  }
-  return candidate.provider === "olx_chat";
+  return candidate.channel === channel;
 }
 
 function normalizeChannel(value: unknown): CrmChannelRouting | null {
@@ -130,13 +134,16 @@ function normalizeChannel(value: unknown): CrmChannelRouting | null {
   const botRecord = asRecord(record.bot);
   const mode = readBotMode(botRecord.mode) ?? "disabled";
   return {
-    bot: { ...normalizeRoute(botRecord), mode },
+    bot: { ...normalizeRoute(botRecord, channel), mode },
     channel,
-    storeDefault: normalizeRoute(record.storeDefault),
+    storeDefault: normalizeRoute(record.storeDefault, channel),
   };
 }
 
-function normalizeRoute(value: unknown): CrmResolvedRoute {
+function normalizeRoute(
+  value: unknown,
+  channel?: CrmRoutingChannel,
+): CrmResolvedRoute {
   const record = asRecord(value);
   const blocked = asRecord(record.blocked);
   const code = readBlockedCode(blocked.code);
@@ -149,7 +156,7 @@ function normalizeRoute(value: unknown): CrmResolvedRoute {
             readString(blocked.remediation) ?? "Selecione outra conexão.",
         }
       : null,
-    connection: normalizeRoutingConnection(record.connection),
+    connection: normalizeRoutingConnection(record.connection, channel),
     ready: record.ready === true,
     requiredCapabilities: readStringArray(record.requiredCapabilities),
   };
@@ -157,6 +164,7 @@ function normalizeRoute(value: unknown): CrmResolvedRoute {
 
 function normalizeRoutingConnection(
   value: unknown,
+  channel?: CrmRoutingChannel,
 ): CrmRoutingConnection | null {
   const record = asRecord(value);
   const id = readString(record.id);
@@ -165,36 +173,17 @@ function normalizeRoutingConnection(
   return {
     active: record.active === true,
     capabilities: readStringArray(record.capabilities),
+    channel: readChannel(record.channel) ?? channel ?? "whatsapp",
     connected: record.connected === true,
     displayName: readString(record.displayName) ?? id,
     id,
+    isDefault: record.isDefault === true,
     provider,
-  };
-}
-
-function normalizeLegacyConnection(value: unknown): CrmRoutingCandidate | null {
-  const record = asRecord(value);
-  const id = readString(record.id);
-  const provider = readProvider(record.provider ?? record.channel);
-  if (!id || !provider) return null;
-  const live = asRecord(record.live);
-  const rawStatus = readString(record.status)?.toLowerCase() ?? "";
-  const connected =
-    live.connected === true ||
-    live.providerStatus === "connected" ||
-    rawStatus === "connected";
-  return {
-    connected,
-    displayName:
-      readString(record.displayName) ?? readString(record.name) ?? id,
-    id,
-    phone: readString(record.phone) ?? readString(live.connectedPhone) ?? null,
-    provider,
-    // `ready` is a server-owned provider capability decision. In particular,
-    // an OLX connection can be active and authenticated while ChatPendente;
-    // inferring readiness from transport status would make that route
-    // selectable before the webhook handshake is confirmed.
-    ready: record.ready === true,
+    readiness: {
+      ready:
+        record.readiness === true || asRecord(record.readiness).ready === true,
+      reason: readString(asRecord(record.readiness).reason),
+    },
   };
 }
 
@@ -207,7 +196,8 @@ function readProvider(value: unknown): CrmWhatsappProvider | null {
     case "composio_whatsapp":
     case "official_whatsapp":
     case "whatsapp_official":
-      return "composio_whatsapp";
+    case "meta_cloud":
+      return "meta_cloud";
     case "composio_instagram":
     case "instagram":
       return "composio_instagram";

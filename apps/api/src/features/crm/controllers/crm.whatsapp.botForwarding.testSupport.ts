@@ -19,8 +19,7 @@ export function createBotDispatcher(
   dispatched: DispatchCrmBotWebhookInput[],
 ): CrmBotWebhookDispatcher {
   return {
-    actionApiBaseUrl:
-      "https://api.example.test/api/v1/crm/whatsapp/integrations/bot/actions",
+    actionApiBaseUrl: "https://api.example.test/api/v1/crm/bot/actions",
     dispatch: vi.fn(async (input) => {
       dispatched.push(input);
     }),
@@ -29,7 +28,7 @@ export function createBotDispatcher(
 
 export async function configureBot(app: ReturnType<typeof createTestApp>) {
   const response = await app.request(
-    "/api/v1/crm/whatsapp/integrations/bot",
+    "/api/v1/crm/bot/configuration",
     jsonRequest(
       {
         enabled: true,

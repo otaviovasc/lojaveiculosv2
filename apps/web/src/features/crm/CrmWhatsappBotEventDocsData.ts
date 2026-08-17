@@ -44,7 +44,7 @@ export const webhookEvents = [
     "mediaUrl": null,
     "providerMessageId": "provider-message-123"
   },
-  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
+  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/bot/actions", "authentication": "X-Webhook-Secret" }
 }`,
     description:
       "Mensagem recebida ou enviada por CRM, WhatsApp humano, bot API ou sistema.",
@@ -76,7 +76,7 @@ export const webhookEvents = [
     "tags": [{ "id": "7d42160d-2174-48c9-bd34-4c506d2f5f1d", "name": "Oferta enviada", "color": "green", "emoji": null }]
   },
   "intervention": { "id": "d34cbfa8-b5b1-43b1-99f4-199319887990", "active": true, "attendanceState": "WAITING_HUMAN", "stateChangedAt": "2026-07-07T12:04:00.000Z", "stateVersion": 1, "source": "bot", "reason": "KEYWORD_TRIGGER", "triggeredBy": "bot", "startedAt": "2026-07-07T12:04:00.000Z", "endedAt": null, "durationSeconds": null, "messageCount": 0, "summary": null },
-  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
+  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/bot/actions", "authentication": "X-Webhook-Secret" }
 }`,
     description:
       "O bot deve pausar respostas automaticas; mensagens regulares deixam de ser encaminhadas.",
@@ -108,7 +108,7 @@ export const webhookEvents = [
     "tags": [{ "id": "7d42160d-2174-48c9-bd34-4c506d2f5f1d", "name": "Oferta enviada", "color": "green", "emoji": null }]
   },
   "intervention": { "id": "d34cbfa8-b5b1-43b1-99f4-199319887990", "active": false, "attendanceState": null, "stateChangedAt": "2026-07-07T12:18:00.000Z", "stateVersion": 3, "source": "bot", "reason": "bot_action", "triggeredBy": "bot", "startedAt": "2026-07-07T12:04:00.000Z", "endedAt": "2026-07-07T12:18:00.000Z", "durationSeconds": 840, "messageCount": 6, "summary": "Cliente combinou visita amanha as 15h." },
-  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
+  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/bot/actions", "authentication": "X-Webhook-Secret" }
 }`,
     description:
       "Inclui handback summary para o bot retomar a conversa com contexto.",
@@ -126,7 +126,7 @@ export const webhookEvents = [
   "previousStatus": "disconnected",
   "status": "active",
   "reason": "connected",
-  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
+  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/bot/actions", "authentication": "X-Webhook-Secret" }
 }`,
     description:
       "Mudança de estado da conexão ZAPI. Não inclui chat nem sessão.",

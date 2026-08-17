@@ -50,21 +50,26 @@ export function resolveCrmInboxConnectionSelection(input: {
 }
 
 export function findConnectedConnection(
-  connections: CrmWhatsappProviderConnection[],
+  connections: readonly CrmWhatsappProviderConnection[],
 ) {
-  const connected = connections.filter(isConnectedConnection);
-  return (
-    connected.find((connection) => connection.provider === "zapi") ??
-    connected.find(
-      (connection) => connection.provider === "composio_whatsapp",
-    ) ??
-    connected[0]
-  );
+  return resolveSingleReadyConnection(connections);
+}
+
+/** A start operation may only use an unambiguous, server-ready route. */
+export function resolveSingleReadyConnection(
+  connections: readonly CrmWhatsappProviderConnection[],
+) {
+  const ready = connections.filter(isConnectedConnection);
+  return ready.length === 1 ? (ready[0] ?? null) : null;
 }
 
 export function isConnectedConnection(
-  connection: Pick<CrmWhatsappProviderConnection, "live" | "status">,
+  connection: Pick<
+    CrmWhatsappProviderConnection,
+    "live" | "status" | "readiness"
+  >,
 ) {
+  if (connection.readiness) return connection.readiness.ready;
   return (
     connection.status !== "paused" &&
     connection.status !== "archived" &&
@@ -85,7 +90,7 @@ export function findFreeTextStartConnection(
       connection.capabilities?.conversationStart === true &&
       connection.capabilities.templates !== true,
   );
-  return findConnectedConnection(startableConnections) ?? null;
+  return resolveSingleReadyConnection(startableConnections);
 }
 
 export type CrmConversationStartCapability = {
@@ -112,6 +117,16 @@ export function readConversationStartCapability(
       mode: null,
       provider: connection.provider,
       unavailableReason: "Este canal está pausado ou indisponível no CRM.",
+    };
+  }
+  if (connection.readiness && !connection.readiness.ready) {
+    return {
+      canStart: false,
+      mode: null,
+      provider: connection.provider,
+      unavailableReason:
+        connection.readiness.reason ??
+        "Este canal ainda não está pronto para o CRM.",
     };
   }
   const capabilities = connection.capabilities;

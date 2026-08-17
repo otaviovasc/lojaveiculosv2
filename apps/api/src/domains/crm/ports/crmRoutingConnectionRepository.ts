@@ -6,7 +6,7 @@ import type {
 } from "../core/models.js";
 
 export type CrmRoutingConnectionCapability =
-  "inbound" | "outbound" | "templates";
+  "inbound" | "outbound" | "scheduling" | "templates";
 
 export type CrmRoutingConnection = {
   capabilities: Readonly<Record<CrmRoutingConnectionCapability, boolean>>;

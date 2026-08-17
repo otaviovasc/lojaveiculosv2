@@ -14,6 +14,7 @@ import {
   conversationAttendances,
   conversationThreads,
   crmExternalBotEventOutbox,
+  crmExternalBotPolicies,
   crmExternalBotProposals,
   integrationEvents,
   providerConnections,
@@ -42,6 +43,13 @@ const providerConsentMigrationSql = readFileSync(
 const identityCandidatesMigrationSql = readFileSync(
   new URL(
     "../migrations/0039_crm_contact_identity_candidates.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const canonicalCutoverMigrationSql = readFileSync(
+  new URL(
+    "../migrations/0055_canonical_crm_routing_cutover.sql",
     import.meta.url,
   ),
   "utf8",
@@ -162,6 +170,21 @@ describe("canonical CRM core schema", () => {
     );
     expect(integrityMigrationSql).toContain(
       'unit."listing_id" = NEW."listing_id"',
+    );
+  });
+
+  it("defines typed per-channel bot policies and a fail-closed cutover", () => {
+    expect(getTableConfig(crmExternalBotPolicies).name).toBe(
+      "crm_external_bot_policies",
+    );
+    expect(canonicalCutoverMigrationSql).toContain(
+      "CRM canonical cutover requires an empty crm_connections table",
+    );
+    expect(canonicalCutoverMigrationSql).toContain(
+      'RENAME TO "crm_channel_connections"',
+    );
+    expect(canonicalCutoverMigrationSql).toContain(
+      "'auto','proposal','disabled'",
     );
   });
 

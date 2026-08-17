@@ -122,6 +122,7 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     ...(options.externalBotManager
       ? { manager: options.externalBotManager }
       : {}),
+    services,
   });
 
   return crmFeature;

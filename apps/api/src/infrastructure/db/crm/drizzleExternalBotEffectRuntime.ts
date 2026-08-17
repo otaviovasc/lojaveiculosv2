@@ -46,29 +46,16 @@ export async function loadAuthorizedExternalBotEffect(
       and command.store_id=effect.store_id
       and command.provider_connection_id=effect.provider_connection_id
       and command.provider=effect.provider
-    inner join conversation_threads thread
+    inner join crm_conversation_threads thread
       on thread.id=command.thread_id and thread.tenant_id=command.tenant_id
       and thread.store_id=command.store_id
       and thread.provider_connection_id=command.provider_connection_id
       and thread.revision=command.expected_revision and thread.state='open'
-    inner join provider_connections connection
+    inner join crm_channel_connections connection
       on connection.id=effect.provider_connection_id
       and connection.tenant_id=effect.tenant_id
       and connection.store_id=effect.store_id
       and connection.provider=effect.provider and connection.state='active'
-    inner join crm_connections legacy_connection
-      on legacy_connection.id=connection.id
-      and legacy_connection.tenant_id=connection.tenant_id
-      and legacy_connection.store_id=connection.store_id
-      and legacy_connection.status='active'
-      and (
-        (effect.provider='zapi' and legacy_connection.provider='zapi')
-        or (effect.provider='olx' and legacy_connection.provider='olx_chat')
-        or (effect.provider='meta_cloud' and connection.channel='whatsapp'
-          and legacy_connection.provider='composio_whatsapp')
-        or (effect.provider='meta_cloud' and connection.channel='instagram'
-          and legacy_connection.provider='composio_instagram')
-      )
     inner join integration_accounts account
       on account.id=(command.input->>'integrationId')::uuid
       and account.tenant_id=effect.tenant_id and account.store_id=effect.store_id
@@ -99,7 +86,7 @@ export async function loadAuthorizedExternalBotEffect(
     ) legacy_session on true
     inner join lateral (
       select cycle.id
-      from conversation_cycles cycle
+      from crm_conversation_cycles cycle
       where cycle.thread_id=thread.id and cycle.tenant_id=thread.tenant_id
         and cycle.store_id=thread.store_id
         and (
@@ -110,7 +97,7 @@ export async function loadAuthorizedExternalBotEffect(
           or (
             cycle.state='active'
             and not exists (
-              select 1 from conversation_cycles mapped_cycle
+              select 1 from crm_conversation_cycles mapped_cycle
               where mapped_cycle.thread_id=thread.id
                 and mapped_cycle.tenant_id=thread.tenant_id
                 and mapped_cycle.store_id=thread.store_id
@@ -122,7 +109,7 @@ export async function loadAuthorizedExternalBotEffect(
                 )
             )
             and 1=(
-              select count(*) from conversation_cycles active_cycle
+              select count(*) from crm_conversation_cycles active_cycle
               where active_cycle.thread_id=thread.id
                 and active_cycle.tenant_id=thread.tenant_id
                 and active_cycle.store_id=thread.store_id
@@ -138,7 +125,7 @@ export async function loadAuthorizedExternalBotEffect(
         else 4 end
       limit 1
     ) canonical_cycle on true
-    left join conversation_attendances attendance
+    left join crm_conversation_attendances attendance
       on attendance.thread_id=thread.id and attendance.tenant_id=thread.tenant_id
       and attendance.store_id=thread.store_id
       and attendance.cycle_id=canonical_cycle.id

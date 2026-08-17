@@ -14,6 +14,11 @@ import type {
 import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
 import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
+import { isConnectedConnection } from "./crmWhatsappConnectionSelection";
+import {
+  readCrmWhatsappChannelLabel,
+  readCrmWhatsappProviderLabel,
+} from "./crmWhatsappConnectionStatus";
 
 const CrmWhatsappSelfServiceSetup = lazy(async () => {
   const module = await import("./CrmWhatsappSelfServiceSetup");
@@ -70,7 +75,10 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
     connections.find(
       (connection) => String(connection.id) === pendingConnectionId,
     ) ??
-    connections[0] ??
+    connections.find(
+      (connection) => connection.isDefault && isConnectedConnection(connection),
+    ) ??
+    (connections.length === 1 ? connections[0] : null) ??
     null;
 
   if (isLoading) {
@@ -87,6 +95,40 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
         <p className="crm-whatsapp-connection-error" role="alert">
           {formatApiErrorDisplay(error, "Não foi possível carregar a conexão.")}
         </p>
+      ) : null}
+      {connections.length > 0 ? (
+        <section
+          aria-label="Canais conectados"
+          className="crm-channel-directory"
+        >
+          <header>
+            <h2>Canais conectados</h2>
+            <p>Rotas de comunicação do CRM, agrupadas por canal.</p>
+          </header>
+          <div className="crm-channel-directory-list">
+            {connections.map((connection) => {
+              const ready = isConnectedConnection(connection);
+              return (
+                <article key={connection.id}>
+                  <div>
+                    <strong>
+                      {readCrmWhatsappChannelLabel(connection.channel ?? "")}
+                    </strong>
+                    <span>
+                      {readCrmWhatsappProviderLabel(connection.provider)} ·{" "}
+                      {connection.displayName}
+                    </span>
+                  </div>
+                  <span role="status">
+                    {ready
+                      ? "Pronto"
+                      : (connection.readiness?.reason ?? "Requer configuração")}
+                  </span>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       ) : null}
       {selfService ? (
         <ConnectionSetupBoundary>

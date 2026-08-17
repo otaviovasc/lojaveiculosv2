@@ -110,7 +110,7 @@ describe("WhatsappToolbar", () => {
     await user.click(screen.getByLabelText("Filtrar por conexão"));
     expect(screen.queryByText("Loja Offline")).not.toBeInTheDocument();
     await user.click(
-      screen.getByRole("button", { name: /Z-API.*Loja Centro/ }),
+      screen.getByRole("option", { name: /WhatsApp.*Z-API.*Loja Centro/ }),
     );
     expect(callbacks.onConnectionFilterChange).toHaveBeenCalledWith(
       "connection_2",
@@ -190,6 +190,7 @@ function createConnection(
   displayName: string,
 ): CrmWhatsappProviderConnection {
   return {
+    channel: "whatsapp",
     displayName,
     externalConnectionId: id,
     externalInstanceId: `instance_${id}`,
@@ -203,7 +204,14 @@ function createConnection(
     },
     phone: "5511999999999",
     provider: "zapi",
+    readiness: {
+      ready: id !== "connection_offline",
+      reasonCode: id === "connection_offline" ? "provider_disconnected" : null,
+      reason: id === "connection_offline" ? "Provider disconnected" : null,
+    },
     status: "active",
+    state: "active",
+    isDefault: id === "connection_1",
     webhookUrl: null,
   };
 }

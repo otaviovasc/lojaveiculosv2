@@ -129,7 +129,7 @@ export const externalAccountAuthorizationCapabilities = pgTable(
 );
 
 export const providerConnections = pgTable(
-  "provider_connections",
+  "crm_channel_connections",
   {
     ...lifecycleColumns,
     authorizationId: uuid("authorization_id"),

@@ -16,17 +16,17 @@ export async function inspectExternalBotScope(
 ) {
   const rows =
     await db.execute(sql`select thread.revision, coalesce(attendance.state <> 'bot_active', false) as human_active
-    from conversation_threads thread
+    from crm_conversation_threads thread
     inner join store_entitlements entitlement on entitlement.tenant_id=thread.tenant_id and entitlement.store_id=thread.store_id
       and entitlement.feature_key='crm' and entitlement.status in ('active','trialing')
       and (entitlement.starts_at is null or entitlement.starts_at<=now()) and (entitlement.ends_at is null or entitlement.ends_at>now())
     inner join integration_accounts account on account.id=${scope.integrationId}::uuid and account.tenant_id=thread.tenant_id
       and account.store_id=thread.store_id and account.status='active' and account.provider='crm_whatsapp_bot'
-    left join conversation_attendances attendance on attendance.thread_id=thread.id
+    left join crm_conversation_attendances attendance on attendance.thread_id=thread.id
     where thread.id=${scope.threadId}::uuid and thread.tenant_id=${scope.tenantId}::uuid and thread.store_id=${scope.storeId}::uuid
       and thread.provider_connection_id=${scope.connectionId}::uuid
       and exists (
-        select 1 from provider_connections connection
+        select 1 from crm_channel_connections connection
         where connection.id=thread.provider_connection_id
           and connection.channel=${scope.channel}
           and connection.provider=${scope.provider}
@@ -87,7 +87,7 @@ export async function enqueueExternalBotProviderEffect(
     (command_id,effect_type,idempotency_key,provider,provider_connection_id,result,state,store_id,tenant_id)
     select ${input.actionId}::uuid,${input.command.action},${input.idempotencyKey},connection.provider,
       ${input.scope.connectionId}::uuid,'{}'::jsonb,'accepted',${input.scope.storeId}::uuid,${input.scope.tenantId}::uuid
-    from provider_connections connection where connection.id=${input.scope.connectionId}::uuid
+    from crm_channel_connections connection where connection.id=${input.scope.connectionId}::uuid
       and connection.tenant_id=${input.scope.tenantId}::uuid and connection.store_id=${input.scope.storeId}::uuid
       and connection.provider=${input.scope.provider} and connection.channel=${input.scope.channel}
     on conflict (tenant_id,store_id,provider,idempotency_key) do nothing returning id`);

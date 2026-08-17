@@ -15,10 +15,8 @@ import { z } from "zod";
 import {
   whatsappBotActionNameSchema,
   whatsappBotActionSchema,
-  whatsappBotIntegrationUpdateSchema,
 } from "./crm.whatsapp.integrationSchemas.js";
 import type { CrmServices } from "./crmServices.js";
-import type { UpdateWhatsappBotIntegrationInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { CrmBotIntegration } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
 
 type RegisterCrmWhatsappIntegrationRoutesOptions = {
@@ -37,15 +35,6 @@ export function registerCrmWhatsappIntegrationRoutes(
     services,
   }: RegisterCrmWhatsappIntegrationRoutesOptions,
 ) {
-  crmFeature.get("/whatsapp/integrations/bot", async (context) =>
-    handleWhatsapp(context, async () => {
-      const serviceContext = await createContext(context);
-      const integration =
-        await services.getWhatsappBotIntegration(serviceContext);
-      return context.json({ integration });
-    }),
-  );
-
   crmFeature.post("/whatsapp/integrations/bot/actions", async (context) =>
     handleWhatsapp(context, async () => {
       const probe = await parseWhatsappJson(
@@ -93,26 +82,6 @@ export function registerCrmWhatsappIntegrationRoutes(
         cleanCredereBotActionInput(input),
       );
       return context.json({ action: input.action, result, success: true });
-    }),
-  );
-
-  crmFeature.patch("/whatsapp/integrations/bot", async (context) =>
-    handleWhatsapp(context, async () => {
-      const input = await parseWhatsappJson(
-        context,
-        whatsappBotIntegrationUpdateSchema,
-      );
-      if (Object.keys(input).length === 0) {
-        throw new CrmWhatsappValidationError(
-          "No integration updates provided.",
-        );
-      }
-      const serviceContext = await createContext(context);
-      const integration = await services.updateWhatsappBotIntegration(
-        serviceContext,
-        cleanBotIntegrationUpdate(input),
-      );
-      return context.json({ integration });
     }),
   );
 }
@@ -204,19 +173,5 @@ function cleanCredereBotActionInput(
     action: input.action,
     ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
     ...(input.payload ? { payload: input.payload } : {}),
-  };
-}
-
-function cleanBotIntegrationUpdate(input: {
-  enabled?: boolean | undefined;
-  webhookSecret?: string | null | undefined;
-  webhookUrl?: string | null | undefined;
-}): UpdateWhatsappBotIntegrationInput {
-  return {
-    ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
-    ...(input.webhookSecret !== undefined
-      ? { webhookSecret: input.webhookSecret }
-      : {}),
-    ...(input.webhookUrl !== undefined ? { webhookUrl: input.webhookUrl } : {}),
   };
 }

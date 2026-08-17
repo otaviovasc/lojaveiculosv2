@@ -46,14 +46,14 @@ export async function listDrizzleCrmRetentionCandidates(
         'canonical_message'::text as resource_type,
         message.id::text as resource_id,
         greatest(cycle.closed_at, activity.last_activity_at) as eligible_at
-      from canonical_messages message
-      inner join conversation_cycles cycle
+      from crm_messages message
+      inner join crm_conversation_cycles cycle
         on cycle.id = message.cycle_id
         and cycle.tenant_id = message.tenant_id
         and cycle.store_id = message.store_id
       inner join lateral (
         select max(cycle_message.occurred_at) as last_activity_at
-        from canonical_messages cycle_message
+        from crm_messages cycle_message
         where cycle_message.tenant_id = message.tenant_id
           and cycle_message.store_id = message.store_id
           and cycle_message.cycle_id = message.cycle_id
