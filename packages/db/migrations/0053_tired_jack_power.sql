@@ -92,5 +92,5 @@ SET "default_connection_id" = eligible."connection_id"
 FROM eligible
 WHERE policy."tenant_id" = eligible."tenant_id"
   AND policy."store_id" = eligible."store_id"
-  AND policy."channel" = eligible."channel"
+  AND policy."channel"::text = eligible."channel"::text
   AND policy."default_connection_id" IS NULL;

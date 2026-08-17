@@ -7,24 +7,25 @@ import {
 describe("validation cache", () => {
   it("reuses only successful steps for the exact fresh fingerprint", () => {
     const fingerprint = `test-${process.pid}-${Date.now()}`;
-    recordValidationStep(fingerprint, "typecheck", { now: 100 });
+    const recordedAt = Date.now();
+    recordValidationStep(fingerprint, "typecheck", { now: recordedAt });
 
     expect(
       hasFreshValidationStep(fingerprint, "typecheck", {
         maxAgeMs: 100,
-        now: 150,
+        now: recordedAt + 50,
       }),
     ).toBe(true);
     expect(
       hasFreshValidationStep(fingerprint, "test", {
         maxAgeMs: 100,
-        now: 150,
+        now: recordedAt + 50,
       }),
     ).toBe(false);
     expect(
       hasFreshValidationStep(fingerprint, "typecheck", {
         maxAgeMs: 100,
-        now: 201,
+        now: recordedAt + 101,
       }),
     ).toBe(false);
   });
