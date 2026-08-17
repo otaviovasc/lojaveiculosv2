@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Gauge,
   Search,
-  ShieldCheck,
   Sparkles,
   Tag,
 } from "lucide-react";
@@ -196,10 +195,6 @@ export function AuroraHero({
             <div className="aurora-hero__quick-meta">
               <span className="aurora-hero__stock-pill">
                 <strong>{listingCount}</strong> veículos disponíveis
-              </span>
-              <span className="aurora-hero__meta-dot">•</span>
-              <span className="aurora-hero__meta-text">
-                <ShieldCheck aria-hidden="true" /> Procedência & Laudo Cautelar
               </span>
             </div>
           </div>

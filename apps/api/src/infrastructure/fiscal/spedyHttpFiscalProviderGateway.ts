@@ -45,7 +45,7 @@ export function createSpedyHttpFiscalProviderGateway({
         apiKey,
         "DELETE",
         documentPath(input.documentKind, input.providerDocumentId),
-        { justification: input.reason },
+        { reason: input.reason },
       );
       return toStatusResult(payload, input.providerDocumentId);
     },

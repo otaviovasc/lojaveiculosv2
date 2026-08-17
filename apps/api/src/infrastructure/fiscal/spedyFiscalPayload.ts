@@ -136,7 +136,13 @@ function buildServiceInvoice(input: FiscalIssueInput, taxDefaults: JsonRecord) {
     ["taxLocation", taxLocation],
   ]);
   return compact({
+    additionalInformation: stringValue(input.metadata.additionalInformation),
     cityServiceCode,
+    cnaeCode:
+      stringValue(template.cnaeCode) ?? stringValue(nfseDefaults.cnaeCode),
+    cstPisCofins:
+      stringValue(template.cstPisCofins) ??
+      stringValue(nfseDefaults.cstPisCofins),
     description,
     effectiveDate: stringValue(input.metadata.competence) ?? today(),
     federalServiceCode,
@@ -144,7 +150,15 @@ function buildServiceInvoice(input: FiscalIssueInput, taxDefaults: JsonRecord) {
     nationalTaxationCode:
       stringValue(template.nationalTaxationCode) ??
       stringValue(nfseDefaults.nationalTaxationCode),
+    nbsCode: stringValue(template.nbsCode) ?? stringValue(nfseDefaults.nbsCode),
     receiver,
+    sendEmailToCustomer:
+      typeof input.metadata.sendEmailToCustomer === "boolean"
+        ? input.metadata.sendEmailToCustomer
+        : Boolean(receiver.email),
+    simplesNacionalAnnex:
+      stringValue(template.simplesNacionalAnnex) ??
+      stringValue(nfseDefaults.simplesNacionalAnnex),
     taxationType,
     taxLocation,
     total: {

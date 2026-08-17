@@ -416,12 +416,12 @@
   margin-top: 0.75rem;
 }
 
-.marketplace-blocked {
+.marketplace-stock-items {
   display: grid;
   gap: 0.75rem;
 }
 
-.marketplace-blocked h4 {
+.marketplace-stock-items > h4 {
   color: var(--color-text);
   font-size: var(--font-size-xs);
   font-weight: 900;
@@ -429,7 +429,7 @@
   text-transform: uppercase;
 }
 
-.marketplace-blocked ul {
+.marketplace-stock-items > ul {
   display: grid;
   gap: 0.625rem;
   list-style: none;
@@ -437,7 +437,7 @@
   padding: 0;
 }
 
-.marketplace-blocked li {
+.marketplace-stock-items > ul > li {
   background: color-mix(in srgb, var(--color-warning) 7%, var(--color-panel));
   border: 1px solid
     color-mix(in srgb, var(--color-warning-strong) 20%, var(--color-line));
@@ -447,12 +447,75 @@
   padding: 0.75rem;
 }
 
-.marketplace-blocked span,
+.marketplace-stock-items > ul > li[data-stock-status="ready"] {
+  background: color-mix(in srgb, var(--color-success) 7%, var(--color-panel));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success-strong) 20%,
+    var(--color-line)
+  );
+}
+
+.marketplace-stock-items > ul > li[data-stock-status="excluded"] {
+  background: var(--color-app);
+  border-color: var(--color-line);
+}
+
+.marketplace-stock-item__header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.marketplace-stock-item__header > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.marketplace-stock-items p,
+.marketplace-stock-item__blockers span,
 .marketplace-job small {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
   font-weight: 750;
   line-height: 1.5;
+}
+
+.marketplace-stock-item__blockers {
+  display: grid;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.marketplace-stock-item__blockers > li {
+  align-items: start;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr);
+}
+
+.marketplace-stock-item__blockers strong {
+  color: var(--color-text);
+  font-weight: 900;
+}
+
+.marketplace-stock-item__layer {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+}
+
+.marketplace-stock-item__next-step {
+  margin: 0;
+}
+
+.marketplace-stock-items .documents-top-bar-action {
+  justify-self: start;
 }
 
 /* Job list */
@@ -561,5 +624,14 @@
 @media (max-width: 47.9375rem) {
   .marketplace-scope-note {
     display: none;
+  }
+
+  .marketplace-stock-item__blockers > li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marketplace-stock-items .documents-top-bar-action {
+    max-width: 100%;
+    white-space: normal;
   }
 }

@@ -73,6 +73,51 @@ export function createDrizzleVehicleCatalogRepository(
         yearName: year.name,
       };
     },
+    async listSnapshotsByFipeReference(input) {
+      const rows = await db
+        .select({
+          brand: vehicleCatalogBrands,
+          version: vehicleCatalogVersions,
+          year: vehicleCatalogYears,
+        })
+        .from(vehicleCatalogYears)
+        .innerJoin(
+          vehicleCatalogVersions,
+          eq(vehicleCatalogVersions.id, vehicleCatalogYears.versionId),
+        )
+        .innerJoin(
+          vehicleCatalogBrands,
+          eq(vehicleCatalogBrands.id, vehicleCatalogVersions.brandId),
+        )
+        .where(
+          and(
+            eq(vehicleCatalogYears.fipeCode, input.fipeCode),
+            eq(vehicleCatalogBrands.vehicleType, input.vehicleType),
+            eq(vehicleCatalogBrands.isActive, true),
+            eq(vehicleCatalogVersions.isActive, true),
+            eq(vehicleCatalogYears.isActive, true),
+            ...(input.modelYear === null
+              ? []
+              : [eq(vehicleCatalogYears.modelYear, input.modelYear)]),
+          ),
+        );
+      return rows.map(({ brand, version, year }) => ({
+        brandCode: brand.fipeCode,
+        brandLogoUrl: brand.logoUrl,
+        brandName: brand.name,
+        fipeCode: year.fipeCode,
+        fuel: year.fuel,
+        modelCode: version.fipeCode,
+        modelName: version.name,
+        modelYear: year.modelYear,
+        priceCents: year.priceCents,
+        referenceMonth: year.referenceMonth,
+        source: "fipe" as const,
+        vehicleType: brand.vehicleType,
+        yearCode: year.fipeYearCode,
+        yearName: year.name,
+      }));
+    },
     async listBrands(input) {
       const rows = await db
         .select()

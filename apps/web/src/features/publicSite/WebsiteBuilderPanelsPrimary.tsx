@@ -116,7 +116,8 @@ export function WebsiteBuilderTemplatePanel({
             <strong>
               {websiteBuilderTemplateInfo[pendingTemplateId].name}
             </strong>{" "}
-            redefine cores, tipografia e seções. Seus textos são mantidos.
+            altera a estrutura visual da vitrine. Seus textos, cores, tipografia
+            e seções são mantidos.
           </p>
           <div className="flex gap-2">
             <Button onClick={confirmSwitch} size="sm" type="button">

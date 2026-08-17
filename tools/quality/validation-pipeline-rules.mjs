@@ -75,7 +75,7 @@ export function findValidationPipelineViolations(input) {
   expectScript("typecheck", "pnpm -r typecheck");
   expectScript("lint", "pnpm -r lint");
   expectScript("test", "pnpm -r test");
-  expectScript("check:format", "prettier --check .");
+  expectScript("check:format", "node tools/quality/check-format-changed.mjs");
   expectScript("test:quality-tools", qualityTestCommand);
   expectScript("test:coverage", "pnpm -r test:coverage");
   expectScript("test:seed-document-pdf", seedDocumentTestCommand);

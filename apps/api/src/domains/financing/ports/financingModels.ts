@@ -82,18 +82,18 @@ export type FinancingCondition = {
 };
 
 export type FinancingInquiry = {
-  amountCents: number;
+  amountCents: number | null;
   bankCodes: readonly string[];
   completedAt: Date | null;
   conditions: readonly FinancingCondition[];
-  consentEvidence: FinancingConsentEvidence;
+  consentEvidence: FinancingConsentEvidence | null;
   createdAt: Date;
   customerDocumentHash: string;
   customerDocumentLast4: string;
-  downPaymentCents: number;
+  downPaymentCents: number | null;
   id: string;
   idempotencyKey: string;
-  installments: number;
+  installments: number | null;
   leadId: string | null;
   listingId: string | null;
   metadata: Record<string, unknown>;
@@ -171,6 +171,37 @@ export type CreateFinancingInquiryInput = {
   storeMappingId: string;
   tenantId: TenantId;
   unitId: string | null;
+};
+
+export type UpsertProviderInquiryInput = {
+  amountCents: number | null;
+  bankCodes: readonly string[];
+  completedAt: Date | null;
+  conditions: readonly Omit<FinancingCondition, "id" | "inquiryId">[];
+  createdAt: Date;
+  customerDocumentHash: string;
+  customerDocumentLast4: string | null;
+  downPaymentCents: number | null;
+  installments: number | null;
+  metadata: Record<string, unknown>;
+  provider: FinancingProvider;
+  providerInquiryId: string;
+  providerRequestId: string | null;
+  providerStoreId: string;
+  reason: string | null;
+  status: Extract<
+    FinancingSimulationStatus,
+    "completed" | "failed" | "submitted"
+  >;
+  storeId: StoreId;
+  storeMappingId: string;
+  success: boolean | null;
+  tenantId: TenantId;
+};
+
+export type UpsertProviderInquiryResult = {
+  created: boolean;
+  inquiry: FinancingInquiry;
 };
 
 export type CompleteFinancingInquiryInput = {

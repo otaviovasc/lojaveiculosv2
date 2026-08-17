@@ -42,6 +42,7 @@ describe("marketplaceLabels", () => {
     expect(
       getMarketplaceBlockerCopy({
         code: "MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS",
+        layer: "listing",
         message: "provider_photo_error",
         userAction: "internal_action",
       }),

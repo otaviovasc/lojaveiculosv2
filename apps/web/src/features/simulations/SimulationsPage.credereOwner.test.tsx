@@ -124,6 +124,13 @@ function createApi(): CredereApi {
     startOAuth: vi.fn(async () => ({
       authorizationUrl: "https://credere.example/auth",
     })),
+    syncSimulations: vi.fn(async () => ({
+      created: 0,
+      remoteCount: 0,
+      skipped: 0,
+      syncedAt: null,
+      updated: 0,
+    })),
     unmapStore: vi.fn(async () => ({ ok: true })),
   };
 }

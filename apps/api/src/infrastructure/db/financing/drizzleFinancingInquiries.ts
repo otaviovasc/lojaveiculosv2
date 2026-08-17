@@ -90,7 +90,7 @@ export async function createInquiry(
         submittedAt: new Date(),
       })
       .where(eq(financingOperationRequests.id, input.operationId));
-    return toInquiry(row, []);
+    return toInquiry(row, [], consent ?? null);
   });
 }
 

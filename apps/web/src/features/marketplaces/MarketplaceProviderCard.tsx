@@ -52,7 +52,9 @@ export function MarketplaceProviderCard({
   const presentation = marketplaceProviderPresentation[provider];
   const providerLabel = providerLabels[provider];
   const statusAction = connection.statusAction;
-  const canPublish = Boolean(preview && preview.total > 0);
+  const canPublish = Boolean(
+    preview && preview.publish + preview.update + preview.unpublish > 0,
+  );
   const hasRequirementAttention = (state?.requirements ?? []).some(
     (requirement) => requirement.severity !== "ok",
   );
@@ -109,24 +111,22 @@ export function MarketplaceProviderCard({
       </details>
 
       <footer className="marketplace-card__footer">
-        {connection.canSync ? (
-          <p className="marketplace-preview-summary">
-            {preview
-              ? `Prévia: ${preview.total} ${preview.total === 1 ? "veículo avaliado" : "veículos avaliados"} · ${preview.blocked} bloqueados`
-              : "Gere a prévia antes de enviar o estoque."}
-          </p>
-        ) : null}
+        <p className="marketplace-preview-summary">
+          {preview
+            ? `Prévia: ${preview.accounting.found} ${preview.accounting.found === 1 ? "veículo encontrado" : "veículos encontrados"} · ${preview.accounting.needsCorrection} precisam de correção`
+            : "Gere a prévia para diagnosticar o estoque antes do envio."}
+        </p>
         <div className="marketplace-actions">
+          <FeatureActionButton
+            icon={SearchCheck}
+            isBusy={isSaving}
+            label={`${presentation.previewLabel} no ${providerLabel}`}
+            onClick={() => void onPreview(provider)}
+          >
+            Gerar prévia
+          </FeatureActionButton>
           {connection.canSync ? (
             <>
-              <FeatureActionButton
-                icon={SearchCheck}
-                isBusy={isSaving}
-                label={`${presentation.previewLabel} no ${providerLabel}`}
-                onClick={() => void onPreview(provider)}
-              >
-                Gerar prévia
-              </FeatureActionButton>
               <FeatureActionButton
                 disabled={!canPublish}
                 icon={Play}

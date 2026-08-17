@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import {
@@ -54,7 +55,78 @@ describe("StorefrontCustomizationModule page deep link", () => {
     ).toBe("page/1");
     expect(readCustomPageIdFromHash("#/custom-pages")).toBeNull();
   });
+
+  it("loads the design editor when optional custom pages are unavailable", async () => {
+    render(
+      <StorefrontCustomizationModule
+        initialTab="design"
+        mediaApi={mediaApiStub()}
+        pagesApi={pagesApiStub({
+          listPages: vi.fn().mockRejectedValue("down"),
+        })}
+        settingsApi={settingsApiStub()}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Personalizar" }),
+    ).toBeVisible();
+  });
+
+  it("retries a failed initial settings load", async () => {
+    const user = userEvent.setup();
+    const getStoreSettings = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("settings unavailable"))
+      .mockResolvedValue(settings);
+
+    render(
+      <StorefrontCustomizationModule
+        initialTab="design"
+        mediaApi={mediaApiStub()}
+        pagesApi={pagesApiStub()}
+        settingsApi={settingsApiStub({ getStoreSettings })}
+      />,
+    );
+
+    expect(
+      await screen.findByText("Não foi possível carregar o site"),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Personalizar" }),
+    ).toBeVisible();
+    expect(getStoreSettings).toHaveBeenCalledTimes(2);
+  });
 });
+
+function mediaApiStub() {
+  return {
+    listAssets: vi.fn(async () => []),
+    uploadImage: vi.fn(),
+  };
+}
+
+function pagesApiStub(overrides: Record<string, unknown> = {}) {
+  return {
+    createOrReuseVehicleVitrine: vi.fn(async () => page),
+    createPage: vi.fn(async () => page),
+    deletePage: vi.fn(async () => undefined),
+    getPage: vi.fn(async () => page),
+    listPages: vi.fn(async () => [page]),
+    updatePage: vi.fn(async () => page),
+    ...overrides,
+  };
+}
+
+function settingsApiStub(overrides: Record<string, unknown> = {}) {
+  return {
+    getStoreSettings: vi.fn(async () => settings),
+    updateStoreSettings: vi.fn(async () => settings),
+    ...overrides,
+  } as never;
+}
 
 const page: StorefrontCustomPage = {
   components: [],

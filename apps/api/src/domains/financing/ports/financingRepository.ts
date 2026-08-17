@@ -14,6 +14,8 @@ import type {
   ReserveSimulationOperationResult,
   RotateFinancingConnectionTokenInput,
   UpsertFinancingConnectionInput,
+  UpsertProviderInquiryInput,
+  UpsertProviderInquiryResult,
 } from "./financingModels.js";
 
 export type {
@@ -36,6 +38,8 @@ export type {
   ReserveSimulationOperationResult,
   RotateFinancingConnectionTokenInput,
   UpsertFinancingConnectionInput,
+  UpsertProviderInquiryInput,
+  UpsertProviderInquiryResult,
 } from "./financingModels.js";
 
 export type FinancingInquiryReferenceInput = {
@@ -185,6 +189,9 @@ export type FinancingRepository = {
   upsertConnection: (
     input: UpsertFinancingConnectionInput,
   ) => Promise<FinancingConnection>;
+  upsertProviderInquiry: (
+    input: UpsertProviderInquiryInput,
+  ) => Promise<UpsertProviderInquiryResult>;
   upsertStoreMapping: (input: {
     provider: FinancingProvider;
     providerStoreId: string;

@@ -84,7 +84,7 @@
     "test:seed-tools": "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/db/push-product-schema.test.mjs tools/db/reset-local-databases-core.test.mjs tools/migration/crm-whatsapp/composio-connection-support.test.mjs tools/qa/local-seed-smoke-policy.test.mjs tools/qa/local-seed-smoke-providers.test.mjs tools/storage/seed-product-media-placeholder.test.mjs tools/storage/storageScriptEnv.test.mjs --root ../..",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api exec vitest run src/infrastructure/http/productionSmoke.test.ts",
     "qa:permissions:local": "node tools/qa/local-permission-smoke.mjs",
-    "check:format": "prettier --check .",
+    "check:format": "node tools/quality/check-format-changed.mjs",
     "check:repository-artifacts": "node tools/quality/check-repository-artifacts.mjs",
     "check:api-errors": "node tools/quality/check-api-error-envelope.mjs",
     "check:lines": "node tools/quality/check-file-lines.mjs",

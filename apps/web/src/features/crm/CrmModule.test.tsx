@@ -181,7 +181,6 @@ const pipeline: Pipeline = {
   isDefault: true,
   name: "Sales",
   rotationActive: false,
-  routingRules: [],
   stages: [
     {
       color: "var(--color-accent)",

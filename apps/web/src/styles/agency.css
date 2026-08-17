@@ -42,7 +42,7 @@
   background: var(--color-panel);
   border-right: 1px solid var(--color-line);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.02);
+  box-shadow: 4px 0 25px color-mix(in srgb, var(--color-text) 2%, transparent);
 }
 
 .agency-menu-item {
@@ -129,7 +129,8 @@
   background: var(--color-accent-soft) !important;
   color: var(--color-accent-soft-foreground) !important;
   border-left-color: var(--color-accent);
-  box-shadow: inset 4px 0 12px -6px rgba(225, 31, 38, 0.15);
+  box-shadow: inset 4px 0 12px -6px
+    color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
 /* Glassmorphism Card and Flat Designs */
@@ -142,10 +143,11 @@
   overflow: hidden;
 }
 
-.agency-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgb(21 21 21 / 0.06);
-  border-color: var(--color-line-strong);
+@media (prefers-reduced-motion: no-preference) {
+  .agency-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-line-strong);
+  }
 }
 
 /* Beautiful Gradients and Badges */
@@ -163,27 +165,122 @@
 }
 
 .badge-active {
-  background-color: var(--color-accent-soft);
-  color: var(--color-accent-strong);
-  border-color: rgba(32, 199, 122, 0.2);
+  background-color: color-mix(in srgb, var(--color-success) 14%, transparent);
+  color: var(--color-success-strong);
+  border-color: color-mix(in srgb, var(--color-success) 24%, transparent);
 }
 
 .badge-expiring {
-  background-color: #fef3c7;
-  color: #d97706;
-  border-color: rgba(217, 119, 6, 0.2);
+  background-color: color-mix(in srgb, var(--color-warning) 16%, transparent);
+  color: var(--color-warning-strong);
+  border-color: color-mix(in srgb, var(--color-warning) 28%, transparent);
 }
 
 .badge-expired {
-  background-color: #fee2e2;
-  color: #dc2626;
-  border-color: rgba(220, 38, 38, 0.2);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 26%, transparent);
 }
 
 .badge-inactive {
   background-color: var(--color-app-elevated);
   color: var(--color-muted);
   border-color: var(--color-line);
+}
+
+/* Network KPI cards with rotated watermark icons */
+.agency-kpi-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .agency-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.agency-kpi-card {
+  --agency-kpi-accent: var(--color-accent-strong);
+  align-items: stretch;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: space-between;
+  min-height: 8.5rem;
+  overflow: hidden;
+  padding: 1rem 1.25rem;
+  position: relative;
+}
+
+.agency-kpi-card--success {
+  --agency-kpi-accent: var(--color-success-strong);
+}
+
+.agency-kpi-card--info {
+  --agency-kpi-accent: var(--color-info);
+}
+
+.agency-kpi-card--warning {
+  --agency-kpi-accent: var(--color-warning-strong);
+}
+
+.agency-kpi-card__watermark {
+  bottom: -2rem;
+  color: var(--agency-kpi-accent);
+  display: block;
+  opacity: 0.1;
+  pointer-events: none;
+  position: absolute;
+  right: -1.5rem;
+  transform: rotate(-12deg);
+  z-index: 0;
+}
+
+.agency-kpi-card__watermark svg {
+  height: 8rem;
+  stroke-width: 1.2;
+  width: 8rem;
+}
+
+.agency-kpi-card__info {
+  display: grid;
+  gap: 0.45rem;
+  position: relative;
+  z-index: 1;
+}
+
+.agency-kpi-card__info small {
+  color: var(--agency-kpi-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agency-kpi-card__info strong {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .agency-kpi-card {
+    transition:
+      border-color 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  .agency-kpi-card:hover {
+    border-color: var(--color-line-strong);
+    transform: translateY(-2px);
+  }
 }
 
 /* Action Buttons with Gradients */
@@ -199,7 +296,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  box-shadow: 0 4px 12px rgba(21, 21, 21, 0.08);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-text) 8%, transparent);
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
@@ -209,7 +306,7 @@
 
 .btn-gradient:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(21, 21, 21, 0.12);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--color-text) 12%, transparent);
 }
 
 .btn-gradient:active {

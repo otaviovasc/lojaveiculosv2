@@ -38,15 +38,20 @@ export function pendingMarketplaceStockItem(
   listing: MarketplaceListingProjection,
   providerListing: MarketplaceProviderListing | null,
   provider: MarketplaceProvider,
+  origin: "provider_only" | "stock" = "stock",
 ): MarketplaceStockPlanItem {
   return {
+    accountingStatus: "processing",
     blockers: [],
     decision: "pending",
     externalId: providerListing?.externalId ?? null,
     jobType: null,
     listing,
+    origin,
     provider,
     providerMapping: null,
+    reason: "O veículo já possui um envio em processamento.",
+    userAction: "Aguarde a confirmação do canal antes de enviar novamente.",
   };
 }
 

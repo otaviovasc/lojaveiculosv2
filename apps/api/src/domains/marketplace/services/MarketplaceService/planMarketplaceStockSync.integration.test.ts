@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { MarketplaceRepository } from "../../ports/marketplaceRepository.js";
 import { createTestMarketplaceRepository } from "../../testSupportMarketplaceRepository.js";
 import {
@@ -27,8 +27,6 @@ describe("planMarketplaceStockSync integration", () => {
         yearCode: "2013-1",
         yearName: "2013 Gasolina",
       },
-      modelYear: 2013,
-      title: "Volvo V40 T-4 2.0 Aut./Mec. 2013",
     });
     const plan = await planMarketplaceStockSync(
       marketplaceContext(),
@@ -74,6 +72,65 @@ describe("planMarketplaceStockSync integration", () => {
       providerModelCode: "11",
       providerTrimCode: "27",
       providerYearCode: null,
+    });
+  });
+
+  it("does not query OLX for incomplete FIPE and still accounts for private stock", async () => {
+    const repository = createTestMarketplaceRepository();
+    await seedOlxAccount(repository);
+    const resolveCatalogMapping = vi.fn();
+    const incomplete = readyListing({
+      catalog: {
+        ...readyListing().catalog!,
+        modelCode: null,
+        yearCode: null,
+      },
+      listingId: "incomplete_fipe",
+      stockLabel: "Volvo 2013",
+    });
+    const privateListing = readyListing({
+      isVisibleOnPublicSite: false,
+      listingId: "private_listing",
+      stockLabel: "Privado 2020",
+    });
+
+    const plan = await planMarketplaceStockSync(
+      marketplaceContext(),
+      { provider: "olx" },
+      {
+        gatewayRegistry: {
+          getGateway: () => ({
+            checkAccount: async () => ({
+              accountId: "seller_1",
+              requirements: [],
+              status: "connected" as const,
+            }),
+            createAuthorizationUrl: async () => "https://provider.test/oauth",
+            exchangeAuthorizationCode: async () => tokenSet(),
+            provider: "olx" as const,
+            resolveCatalogMapping,
+            runListingSync: async () => ({
+              externalId: "olx_1",
+              metadata: {},
+              operationToken: "operation_1",
+              providerStatus: "submitted",
+            }),
+          }),
+        },
+        marketplaceRepository: {
+          ...repository,
+          listListingProjections: async () => [incomplete, privateListing],
+        },
+      },
+    );
+
+    expect(resolveCatalogMapping).not.toHaveBeenCalled();
+    expect(plan.accounting).toEqual({
+      excluded: 1,
+      found: 2,
+      needsCorrection: 1,
+      processing: 0,
+      ready: 0,
     });
   });
 
@@ -178,7 +235,6 @@ describe("planMarketplaceStockSync integration", () => {
     });
   });
 });
-
 function seedOlxAccount(repository: MarketplaceRepository) {
   return repository.upsertAccount({
     config: {

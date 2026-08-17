@@ -25,7 +25,7 @@ export function CustomRoleModal({
 
   return (
     <FeatureDialog
-      description={`Isso salvará a configuração atual de cargo base (${baseRoleLabel}) e as ${exceptionsCount} exceções configuradas como um preset reutilizável na loja.`}
+      description={`Isso salvará a configuração atual de cargo base (${baseRoleLabel}) e as ${exceptionsCount} exceções configuradas como um preset reutilizável neste navegador.`}
       footer={
         <FeatureDialogActions
           confirmLabel="Criar Cargo"

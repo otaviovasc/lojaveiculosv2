@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Car, User, Plus, Sparkles } from "lucide-react";
 import { Combobox } from "../../components/ui/combobox";
 import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
@@ -27,7 +27,6 @@ export function ContextSection({
   const [showAcquisition, setShowAcquisition] = useState(
     !!sale.listingSnapshot?.acquisitionDetails,
   );
-  const [imageLoading, setImageLoading] = useState(false);
 
   const vehicleOptions = options.units.map((unit) => ({
     label: unit.label,
@@ -53,17 +52,6 @@ export function ContextSection({
   const selectedSellerOption = options.sellers.find(
     (seller) => seller.id === sale.sellerUserId,
   );
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (selectedUnitOption?.primaryMediaUrl) {
-      setImageLoading(true);
-      timer = setTimeout(() => setImageLoading(false), 800);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [sale.unitId, selectedUnitOption]);
 
   const handleVehicleChange = (unitId: string) => {
     const unit = options.units.find((u) => u.id === unitId);
@@ -200,7 +188,6 @@ export function ContextSection({
 
           <SaleContextVehicleDetails
             formatCurrency={formatCurrency}
-            imageLoading={imageLoading}
             selectedUnitOption={selectedUnitOption}
           />
         </div>

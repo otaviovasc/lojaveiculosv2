@@ -33,8 +33,7 @@ describe("account provisioning storefront defaults", () => {
         (section) => section.type === "contact" && section.visible,
       ),
     ).toBe(true);
-    expect(storefront.theme.testimonials.length).toBeGreaterThan(0);
-    expect(storefront.theme.testimonials[0]?.quote.length).toBeGreaterThan(0);
+    expect("testimonials" in storefront.theme).toBe(false);
   });
 
   it("returns an independent theme for each provisioned storefront", () => {

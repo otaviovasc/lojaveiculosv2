@@ -23,6 +23,7 @@ import type { CredereFinancingServices } from "./credereFinancingServices.js";
 import {
   presentSimulation,
   presentSimulationList,
+  presentSimulationSync,
   presentStoreStatus,
 } from "./credereFinancing.presenters.js";
 
@@ -117,6 +118,21 @@ export function registerStoreCredereFinancingRoutes(
         presentSimulationList(
           await input.services.store.listSimulations(serviceContext),
         ),
+      );
+    }),
+  );
+
+  feature.post("/credere/simulations/sync", (context) =>
+    handleCredereFinancing(context, async () => {
+      const serviceContext = await createStoreFinancingContext(
+        context,
+        input.contextFactory,
+      );
+      return context.json(
+        presentSimulationSync(
+          await input.services.store.syncSimulations(serviceContext),
+        ),
+        202,
       );
     }),
   );

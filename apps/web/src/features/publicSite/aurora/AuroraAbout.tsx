@@ -1,11 +1,9 @@
 import {
   ArrowDownRight,
   Award,
-  CheckCircle,
   HeartHandshake,
   ShieldCheck,
   Sparkles,
-  Star,
   Zap,
 } from "lucide-react";
 import type { QuadraStorefrontModel } from "../quadra/quadraAdapter";
@@ -28,31 +26,6 @@ export function AuroraAbout({ model }: { model: QuadraStorefrontModel }) {
               <a className="aurora-text-link" href="#contato">
                 {model.about.buttonText} <ArrowDownRight aria-hidden="true" />
               </a>
-            </div>
-
-            {/* Dealership Stats Counter Grid */}
-            <div className="aurora-about__stats-bar">
-              <div className="aurora-about__stat-card">
-                <CheckCircle aria-hidden="true" />
-                <div>
-                  <strong>100%</strong>
-                  <span>Laudo Cautelar</span>
-                </div>
-              </div>
-              <div className="aurora-about__stat-card">
-                <Star aria-hidden="true" />
-                <div>
-                  <strong>5.0 ★</strong>
-                  <span>Avaliação Média</span>
-                </div>
-              </div>
-              <div className="aurora-about__stat-card aurora-about__stat-card--expand">
-                <Award aria-hidden="true" />
-                <div>
-                  <strong>Garantia</strong>
-                  <span>Motor & Câmbio</span>
-                </div>
-              </div>
             </div>
           </div>
 

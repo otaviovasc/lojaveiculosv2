@@ -5,6 +5,7 @@ import type {
   CredereRequiredFields,
   CredereSimulation,
   CredereSimulationCondition,
+  CredereSimulationSync,
   CredereStoreStatus,
   CredereStoreMapping,
   CredereUsableBank,
@@ -104,6 +105,17 @@ export function parseSimulationList(raw: unknown): CredereSimulation[] {
   return readArray(record, ["simulations", "items", "data"]).map(
     parseSimulation,
   );
+}
+
+export function parseSimulationSync(raw: unknown): CredereSimulationSync {
+  const record = asRecord(raw);
+  return {
+    created: readNumber(record, ["created"]) ?? 0,
+    remoteCount: readNumber(record, ["remoteCount"]) ?? 0,
+    skipped: readNumber(record, ["skipped"]) ?? 0,
+    syncedAt: readString(record, ["syncedAt"]),
+    updated: readNumber(record, ["updated"]) ?? 0,
+  };
 }
 
 function parseMapping(raw: unknown) {

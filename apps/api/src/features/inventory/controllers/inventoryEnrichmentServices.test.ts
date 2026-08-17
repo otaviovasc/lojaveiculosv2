@@ -64,7 +64,7 @@ describe("createInventoryEnrichmentServices", () => {
       plate: "lkw8015",
     });
 
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(result).toMatchObject({
       plate: "LKW8015",
       source: "apibrasil",
@@ -74,7 +74,15 @@ describe("createInventoryEnrichmentServices", () => {
 
   it("stores and reuses fresh plate lookup results", async () => {
     const lookup = {
+      catalogIdentity: {
+        candidates: [],
+        catalog: null,
+        reason: "fipe_not_found" as const,
+        status: "unresolved" as const,
+      },
       fipe: null,
+      fipeCandidates: [],
+      lookupVersion: 2 as const,
       metadata: [],
       plate: "ABC1D23",
       source: "apibrasil" as const,
@@ -85,6 +93,7 @@ describe("createInventoryEnrichmentServices", () => {
         chassis: null,
         city: null,
         color: "Branca",
+        doors: null,
         engine: null,
         fuel: "Flex",
         manufactureYear: 2023,

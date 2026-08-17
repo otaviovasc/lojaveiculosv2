@@ -20,15 +20,18 @@ export function parseSpedyWebhook(
     data.companyId,
     dataCompany.id,
   );
+  // Official Spedy envelope: { id: <eventId>, event, data: { id: <invoiceId>, model, status, company } }
+  // Top-level `id` is the EVENT id — never use it as the document id.
   const providerDocumentId = firstString(
-    payload.invoiceId,
-    payload.documentId,
-    payload.id,
+    data.id,
     data.invoiceId,
     data.documentId,
-    data.id,
+    payload.invoiceId,
+    payload.documentId,
   );
   const kindValue = firstString(
+    data.model,
+    payload.model,
     payload.invoiceType,
     payload.documentType,
     payload.type,
@@ -50,7 +53,7 @@ export function parseSpedyWebhook(
     eventType,
     providerDocumentId,
     providerEventId:
-      firstString(payload.eventId, data.eventId) ??
+      firstString(payload.eventId, data.eventId, payload.id) ??
       `${companyId}:${documentKind}:${providerDocumentId}:${status}`.slice(
         0,
         191,

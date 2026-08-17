@@ -4,10 +4,7 @@ import {
   normalizeVehicleEngineDisplacement,
   normalizeVehicleColor,
 } from "@lojaveiculosv2/shared";
-import type {
-  InventoryCatalogSnapshot,
-  InventoryCatalogVehicleType,
-} from "./catalogTypes";
+import type { InventoryCatalogSnapshot } from "./catalogTypes";
 import type { InventoryFormState } from "./formModel";
 import { parsePriceCents } from "./formModel";
 import {
@@ -42,13 +39,18 @@ export function applyPlateLookupToForm(
 ): InventoryFormState {
   const vehicle = lookup.vehicle;
   const catalog =
-    resolvedCatalog ?? createCatalogFromLookup(lookup) ?? form.catalog;
+    resolvedCatalog !== undefined
+      ? resolvedCatalog
+      : lookup.catalogIdentity.status === "resolved"
+        ? lookup.catalogIdentity.catalog
+        : null;
   const title = createTitleFromLookup(lookup) || form.title;
 
   return {
     ...form,
     catalog,
     colorName: normalizeVehicleColor(vehicle.color) || form.colorName,
+    doors: vehicle.doors !== null ? String(vehicle.doors) : form.doors,
     engineAspiration:
       normalizeVehicleEngineAspiration(vehicle.aspiration ?? vehicle.engine) ||
       form.engineAspiration,
@@ -75,8 +77,8 @@ export function applyPlateLookupToForm(
       normalizeTransmission(vehicle.transmission) ?? form.transmission,
     trimName:
       vehicle.version ??
-      vehicle.model ??
       lookup.fipe?.modelName ??
+      cleanRegistryModel(vehicle.model) ??
       form.trimName,
     vin: shouldFillChassis(vehicle.chassis) ? vehicle.chassis : form.vin,
   };
@@ -198,59 +200,30 @@ function isPositiveMoney(value: number | null | undefined) {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
-function createCatalogFromLookup(
-  lookup: InventoryPlateLookupResponse,
-): InventoryCatalogSnapshot | null {
-  const fipe = lookup.fipe;
-  if (!fipe?.priceCents && !fipe?.code) return null;
-  return {
-    brandCode: null,
-    brandName: fipe.brandName ?? lookup.vehicle.brand,
-    fipeCode: fipe.code,
-    fuel: fipe.fuel ?? lookup.vehicle.fuel,
-    modelCode: null,
-    modelName: fipe.modelName ?? lookup.vehicle.model,
-    modelYear: fipe.modelYear ?? lookup.vehicle.modelYear,
-    priceCents: fipe.priceCents,
-    referenceMonth: fipe.referenceMonth,
-    source: "fipe",
-    vehicleType: normalizeCatalogVehicleType(lookup.vehicle.vehicleType),
-    yearCode: null,
-    yearName:
-      fipe.modelYear !== null
-        ? String(fipe.modelYear)
-        : lookup.vehicle.modelYear !== null
-          ? String(lookup.vehicle.modelYear)
-          : null,
-  };
-}
-
-function normalizeCatalogVehicleType(
-  value: string | null,
-): InventoryCatalogVehicleType {
-  const normalized = normalize(value);
-  if (normalized?.includes("moto") || normalized?.includes("cycle")) {
-    return "motorcycles";
-  }
-  if (
-    normalized?.includes("truck") ||
-    normalized?.includes("caminhao") ||
-    normalized?.includes("camion")
-  ) {
-    return "trucks";
-  }
-  return "cars";
-}
-
 function createTitleFromLookup(lookup: InventoryPlateLookupResponse) {
-  const brand = lookup.vehicle.brand ?? lookup.fipe?.brandName ?? null;
-  const model = lookup.vehicle.model ?? lookup.fipe?.modelName ?? null;
+  const catalog =
+    lookup.catalogIdentity.status === "resolved"
+      ? lookup.catalogIdentity.catalog
+      : null;
+  const brand =
+    catalog?.brandName ?? lookup.fipe?.brandName ?? lookup.vehicle.brand;
+  const model =
+    catalog?.modelName ?? lookup.fipe?.modelName ?? lookup.vehicle.model;
   const modelYear = lookup.vehicle.modelYear ?? lookup.fipe?.modelYear ?? null;
-  const version = lookup.vehicle.version;
-  return [brand, removeBrandPrefix(model, brand), version, modelYear]
+  const version = catalog ? null : lookup.vehicle.version;
+  return [
+    brand,
+    removeBrandPrefix(cleanRegistryModel(model), brand),
+    version,
+    modelYear,
+  ]
     .filter((value): value is string | number => value !== null && value !== "")
     .filter((value, index, list) => list.indexOf(value) === index)
     .join(" ");
+}
+
+function cleanRegistryModel(value: string | null) {
+  return value?.replace(/^I\s*\/\s*/i, "").trim() ?? null;
 }
 
 function removeBrandPrefix(value: string | null, brand: string | null) {

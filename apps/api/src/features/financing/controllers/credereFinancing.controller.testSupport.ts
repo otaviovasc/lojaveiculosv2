@@ -146,6 +146,13 @@ export function createServices(
         candidates: [],
         status: "not_found",
       })),
+      syncSimulations: vi.fn(async () => ({
+        created: 0,
+        remoteCount: 0,
+        skipped: 0,
+        syncedAt: "2026-07-27T12:00:00.000Z",
+        updated: 0,
+      })),
       ...overrides.store,
     },
   };

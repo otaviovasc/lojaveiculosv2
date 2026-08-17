@@ -3,11 +3,9 @@ import {
   financingInquiries,
   financingOperationRequests,
 } from "@lojaveiculosv2/db";
-import { toInquiry } from "./drizzleFinancingMappers.js";
 import {
   findInquiryById,
   inquiryScope,
-  readConditions,
 } from "./drizzleFinancingInquiryQueries.js";
 import type { DrizzleFinancingClient } from "./drizzleFinancingRepository.js";
 
@@ -93,6 +91,8 @@ async function updateInquiryStatus(
         })
         .where(eq(financingOperationRequests.id, row.operationRequestId));
     }
-    return toInquiry(row, await readConditions(client, row.id));
+    const updated = await findInquiryById(client, input);
+    if (!updated) throw new Error("Credere inquiry readback failed.");
+    return updated;
   });
 }

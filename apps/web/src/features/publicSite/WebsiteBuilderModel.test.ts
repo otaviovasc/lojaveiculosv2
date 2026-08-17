@@ -16,7 +16,7 @@ describe("WebsiteBuilderModel storefront defaults", () => {
       "/images/storefront/about-showroom.webp",
     );
     expect(config.aboutFeatures).toHaveLength(4);
-    expect(config.testimonials).toHaveLength(3);
+    expect(config.testimonials).toHaveLength(0);
     expect(config.contact.showMap).toBe(true);
     expect(config.contact.businessHours).toContain("Segunda a sexta");
     expect(config.sections.filter((section) => section.visible)).toEqual(

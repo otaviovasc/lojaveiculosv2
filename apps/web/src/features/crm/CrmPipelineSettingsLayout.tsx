@@ -1,17 +1,23 @@
 import { useState } from "react";
-import { ArrowLeft, Settings, Layers, Waypoints, Shuffle } from "lucide-react";
+import { ArrowLeft, Settings, Layers, Shuffle } from "lucide-react";
 import { CrmPipelineSettingsGeral } from "./CrmPipelineSettingsGeral";
 import { CrmPipelineSettingsEtapas } from "./CrmPipelineSettingsEtapas";
-import { CrmPipelineSettingsRoteamento } from "./CrmPipelineSettingsRoteamento";
 import { CrmPipelineSettingsDistribucao } from "./CrmPipelineSettingsDistribucao";
 import type { Pipeline } from "./crmPipelineStorage";
 
-type SettingsTab = "geral" | "etapas" | "roteamento" | "distribucao";
+type SettingsTab = "geral" | "etapas" | "distribuicao";
+
+export type PipelineUpdateFeedback = {
+  successMessage?: string;
+};
 
 type Props = {
   pipeline: Pipeline;
   onBack: () => void;
-  onUpdatePipeline: (updated: Pipeline) => void;
+  onUpdatePipeline: (
+    updated: Pipeline,
+    feedback?: PipelineUpdateFeedback,
+  ) => void;
   onDeletePipeline: (pipelineId: string) => void;
 };
 
@@ -26,8 +32,7 @@ export function CrmPipelineSettingsLayout({
   const sidebarOptions = [
     { id: "geral", label: "Geral", icon: Settings },
     { id: "etapas", label: "Etapas", icon: Layers },
-    { id: "roteamento", label: "Roteamento", icon: Waypoints },
-    { id: "distribucao", label: "Distribuição", icon: Shuffle },
+    { id: "distribuicao", label: "Distribuição", icon: Shuffle },
   ] as const;
 
   return (
@@ -103,13 +108,7 @@ export function CrmPipelineSettingsLayout({
               pipeline={pipeline}
             />
           )}
-          {activeTab === "roteamento" && (
-            <CrmPipelineSettingsRoteamento
-              onUpdate={onUpdatePipeline}
-              pipeline={pipeline}
-            />
-          )}
-          {activeTab === "distribucao" && (
+          {activeTab === "distribuicao" && (
             <CrmPipelineSettingsDistribucao
               onUpdate={onUpdatePipeline}
               pipeline={pipeline}

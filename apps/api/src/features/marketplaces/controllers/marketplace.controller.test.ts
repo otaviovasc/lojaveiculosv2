@@ -95,15 +95,15 @@ describe("marketplace controller stock sync", () => {
     });
   });
 
-  it("returns stable marketplace errors for known account failures", async () => {
+  it("previews inventory diagnostics before requiring a connected account to run", async () => {
     const app = createTestApp();
     const preview = await post(app, "/integrations/olx/stock-sync/preview", {
       listingIds: ["listing_1"],
       provider: "olx",
     });
-    expect(preview.status).toBe(400);
+    expect(preview.status).toBe(200);
     expect(await preview.json()).toMatchObject({
-      code: "MARKETPLACE_ACCOUNT_NOT_CONNECTED",
+      plan: { accounting: { found: 1, needsCorrection: 1 } },
     });
 
     const response = await post(app, "/integrations/olx/stock-sync/run", {
@@ -151,11 +151,12 @@ describe("marketplace controller stock sync", () => {
       listingIds: ["listing_1"],
       provider: "olx",
     });
-    expect(preview.status).toBe(403);
-    expect(await preview.json()).toMatchObject({
-      code: "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED",
-      details: { provider: "olx" },
+    expect(preview.status).toBe(200);
+    const run = await post(app, "/integrations/olx/stock-sync/run", {
+      listingIds: ["listing_1"],
+      provider: "olx",
     });
+    expect(run.status).toBe(403);
   });
 
   it("supports retrying failed sync jobs", async () => {

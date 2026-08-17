@@ -20,6 +20,10 @@ import {
 } from "./serviceSupport.js";
 import { publishCreatedVehicleListing } from "./publishVehicleListing.js";
 import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
+import {
+  assertCompleteFipeCatalogIdentity,
+  VehicleCatalogIdentityValidationError,
+} from "../../catalog/vehicleCatalogIdentity.js";
 
 const permission = "inventory.create";
 const allowedCreateStatuses = [
@@ -64,7 +68,11 @@ function requireStoreScope(context: ServiceContext): {
 
 async function auditPermissionDenial(
   context: ServiceContext,
-  reason: "missing_scope" | "missing_permission" | "invalid_status",
+  reason:
+    | "missing_scope"
+    | "missing_permission"
+    | "invalid_catalog"
+    | "invalid_status",
 ): Promise<void> {
   await auditVehicleServiceEvent(context, {
     action: "vehicle_listing.create",
@@ -99,6 +107,7 @@ export async function createVehicleListing(
   }
 
   try {
+    assertCompleteFipeCatalogIdentity(input.catalog);
     assertGenericListingStatusAllowed(input.status);
     if (
       input.status &&
@@ -109,7 +118,12 @@ export async function createVehicleListing(
       );
     }
   } catch (error) {
-    await auditPermissionDenial(context, "invalid_status");
+    await auditPermissionDenial(
+      context,
+      error instanceof VehicleCatalogIdentityValidationError
+        ? "invalid_catalog"
+        : "invalid_status",
+    );
     throw error;
   }
 

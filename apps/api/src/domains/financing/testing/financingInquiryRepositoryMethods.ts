@@ -12,6 +12,7 @@ import {
   updateInquiryStatus,
 } from "./financingRepositorySupport.js";
 import { validateInquiryReferences } from "./financingReferenceValidation.js";
+import { upsertProviderInquiry } from "./financingProviderInquiryRepositoryMethods.js";
 import type { MemoryFinancingRepositoryState } from "./financingRepositoryState.js";
 
 type InquiryMethods = Pick<
@@ -25,6 +26,7 @@ type InquiryMethods = Pick<
   | "markInquiryIndeterminate"
   | "readStoreBankPolicy"
   | "reserveSimulationOperation"
+  | "upsertProviderInquiry"
   | "validateInquiryReferences"
 >;
 
@@ -116,6 +118,7 @@ export function createInquiryRepositoryMethods(
     async reserveSimulationOperation(input) {
       return reserveSimulationOperation(state, input);
     },
+    upsertProviderInquiry: (input) => upsertProviderInquiry(state, input),
     async validateInquiryReferences(input) {
       return validateInquiryReferences(state, input);
     },

@@ -143,12 +143,14 @@ export function InventoryListingTable({
           {items.map((item) => {
             const listing = item.listing;
             const plate = getInventoryPlate(item);
-            const km = getInventoryKm(listing.id, listing.modelYear);
-            const days = getInventoryStockDays(listing.createdAt, listing.id);
+            const km = getInventoryKm(listing.mileageKm);
+            const days = getInventoryStockDays(listing.createdAt);
             const fipe = getInventoryFipeComparison(
               listing.priceCents,
-              listing.id,
+              listing.catalog?.priceCents ?? null,
             );
+            const fipePercentage = fipe?.percentage ?? 0;
+            const fipeIsBelow = fipe?.isBelow ?? false;
             const leads = item.leadsCount;
 
             return (
@@ -210,18 +212,18 @@ export function InventoryListingTable({
                     <div
                       className={
                         "font-black text-sm " +
-                        (fipe.percentage > 10
+                        (fipePercentage > 10
                           ? "text-accent-strong"
-                          : fipe.percentage > 3
+                          : fipePercentage > 3
                             ? "text-amber-500"
-                            : fipe.percentage > 0 || fipe.isBelow
+                            : fipePercentage > 0 || fipeIsBelow
                               ? "text-emerald-500"
                               : "text-app-text")
                       }
                     >
                       {formatInventoryPrice(listing.priceCents)}
                     </div>
-                    {fipe.percentage !== 0 && (
+                    {fipe && fipe.percentage !== 0 && (
                       <div
                         className={
                           "text-xs font-black mt-0.5 " +

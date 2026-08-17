@@ -10,12 +10,7 @@ import {
 export function mapSimulationCandidates(
   payload: Record<string, unknown>,
 ): FinancingSimulationCandidate[] {
-  const rawData = payload.data;
-  const rows = Array.isArray(rawData)
-    ? rawData.map(readRecord)
-    : Object.keys(readRecord(rawData)).length
-      ? [readRecord(rawData)]
-      : readArray(payload.simulations).map(readRecord);
+  const rows = simulationCandidateRows(payload);
   return rows.flatMap((simulation) => {
     const lead = readRecord(simulation.lead);
     const vehicle = readRecord(simulation.vehicle);
@@ -45,4 +40,19 @@ export function mapSimulationCandidates(
       ? [candidate]
       : [];
   });
+}
+
+export function simulationCandidateRowCount(
+  payload: Record<string, unknown>,
+): number {
+  return simulationCandidateRows(payload).length;
+}
+
+function simulationCandidateRows(payload: Record<string, unknown>) {
+  const rawData = payload.data;
+  return Array.isArray(rawData)
+    ? rawData.map(readRecord)
+    : Object.keys(readRecord(rawData)).length
+      ? [readRecord(rawData)]
+      : readArray(payload.simulations).map(readRecord);
 }

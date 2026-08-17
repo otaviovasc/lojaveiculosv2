@@ -43,7 +43,7 @@ describe("dashboard model", () => {
       "Faturamento",
       "Ticket medio",
       "Conversao",
-      "Leads IA",
+      "Leads WhatsApp",
     ]);
     expect(stats.map((stat) => normalizeSpaces(stat.value))).toEqual([
       "R$ 240.000",

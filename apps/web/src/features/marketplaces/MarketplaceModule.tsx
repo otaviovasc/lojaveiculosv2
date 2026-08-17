@@ -46,8 +46,9 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   const [previews, setPreviews] = useState<Record<string, ProviderPreview>>({});
   const [selectedProvider, setSelectedProvider] =
     useState<MarketplaceProvider | null>(null);
-  const [lastRun, setLastRun] =
-    useState<MarketplaceStockSyncRunResponse | null>(null);
+  const [lastRuns, setLastRuns] = useState<
+    Partial<Record<MarketplaceProvider, MarketplaceStockSyncRunResponse>>
+  >({});
   const oauthCallbackStartedRef = useRef(false);
 
   const applyOverview = (nextOverview: MarketplaceOverview) => {
@@ -198,7 +199,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         ? { batchId: preview.batchId, provider }
         : { provider };
       const result = await marketplaceApi.runStockSync(provider, input);
-      setLastRun(result);
+      setLastRuns((current) => ({ ...current, [provider]: result }));
       setPreviews((current) => ({
         ...current,
         [provider]: { batchId: result.batchId, plan: result.plan },
@@ -253,6 +254,9 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
 
   const selectedPreview = selectedProvider
     ? (previews[selectedProvider]?.plan ?? null)
+    : null;
+  const selectedLastRun = selectedProvider
+    ? (lastRuns[selectedProvider] ?? null)
     : null;
 
   return (
@@ -324,9 +328,9 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
               </AnimatedContent>
             ))}
           </section>
-          {selectedPreview || lastRun ? (
+          {selectedPreview || selectedLastRun ? (
             <MarketplaceStockPanel
-              lastRun={lastRun}
+              lastRun={selectedLastRun}
               plan={selectedPreview}
               provider={selectedProvider}
             />

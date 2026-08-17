@@ -7,7 +7,6 @@ import {
   DEFAULT_PUBLIC_STOREFRONT_THEME,
   DEFAULT_STOREFRONT_ABOUT_FEATURES,
   DEFAULT_STOREFRONT_ABOUT_IMAGES,
-  DEFAULT_STOREFRONT_TESTIMONIALS,
 } from "@lojaveiculosv2/shared";
 import { resolvePublicStorefrontHeroMedia } from "../PublicStorefrontHeroMedia";
 
@@ -97,13 +96,9 @@ export function adaptQuadraStorefront(
   const leadForm = record(theme.lead_form);
   const modernLeadForm = record(theme.leadForm);
   const socialLinks = record(theme.socialLinks);
-  const configuredTestimonials = Array.isArray(theme.testimonials)
+  const testimonials = Array.isArray(theme.testimonials)
     ? theme.testimonials.flatMap(readTestimonial)
     : [];
-  const testimonials =
-    configuredTestimonials.length || Array.isArray(theme.testimonials)
-      ? configuredTestimonials
-      : DEFAULT_STOREFRONT_TESTIMONIALS.flatMap(readTestimonial);
   const featureSource = Array.isArray(theme.aboutFeatures)
     ? theme.aboutFeatures
     : about.features;

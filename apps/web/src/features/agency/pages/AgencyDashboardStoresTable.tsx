@@ -1,19 +1,23 @@
 import { createElement } from "react";
 import { type NavigateFunction } from "react-router-dom";
-import { ExternalLink, Gem, Settings } from "lucide-react";
+import { ExternalLink, Gem, SearchX, Settings, Store } from "lucide-react";
 import { type AgencyStore, getPlanStatus } from "./AgencyDashboardPage.model";
 import {
-  AgencyEmptyStores,
-  AgencyRowButton,
-} from "./AgencyDashboardStoresTableParts";
+  FeatureEmptyState,
+  FeatureLoadingState,
+} from "../../../components/ui/FeatureStates";
+import { FeatureActionButton } from "../../../components/ui/FeatureLayout";
+import { AgencyRowButton } from "./AgencyDashboardStoresTableParts";
 
 export function AgencyStoresTable({
+  hasActiveFilters,
   loading,
   stores,
   onClearFilters,
   onManageStore,
   navigate,
 }: {
+  hasActiveFilters: boolean;
   loading: boolean;
   stores: AgencyStore[];
   onClearFilters: () => void;
@@ -21,18 +25,33 @@ export function AgencyStoresTable({
   navigate: NavigateFunction;
 }) {
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-        <p className="text-xs font-black uppercase tracking-widest text-muted">
-          Carregando Concessionárias...
-        </p>
-      </div>
-    );
+    return <FeatureLoadingState title="Carregando concessionárias" />;
   }
 
   if (stores.length === 0) {
-    return <AgencyEmptyStores onClearFilters={onClearFilters} />;
+    return (
+      <FeatureEmptyState
+        action={
+          hasActiveFilters ? (
+            <FeatureActionButton
+              label="Limpar filtros"
+              onClick={onClearFilters}
+            />
+          ) : undefined
+        }
+        body={
+          hasActiveFilters
+            ? "Não encontramos nenhuma loja que corresponda aos filtros ativos."
+            : "Nenhuma loja vinculada a esta agência ainda. Crie a primeira loja para começar."
+        }
+        icon={hasActiveFilters ? SearchX : Store}
+        title={
+          hasActiveFilters
+            ? "Nenhum resultado encontrado"
+            : "Nenhuma loja na rede"
+        }
+      />
+    );
   }
 
   return (

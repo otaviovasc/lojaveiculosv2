@@ -3,7 +3,6 @@ import {
   DEFAULT_STOREFRONT_ABOUT_FEATURES,
   DEFAULT_STOREFRONT_ABOUT_IMAGES,
   DEFAULT_STOREFRONT_SECTIONS,
-  DEFAULT_STOREFRONT_TESTIMONIALS,
 } from "@lojaveiculosv2/shared";
 import {
   businessHoursToText,
@@ -333,11 +332,7 @@ function isWebsiteSection(value: unknown): value is WebsiteBuilderSection {
 }
 
 function readTestimonials(value: unknown): WebsiteBuilderTestimonial[] {
-  if (!Array.isArray(value)) {
-    return DEFAULT_STOREFRONT_TESTIMONIALS.map((testimonial) => ({
-      ...testimonial,
-    }));
-  }
+  if (!Array.isArray(value)) return [];
   const testimonials = value.filter(
     (item): item is WebsiteBuilderTestimonial => {
       const testimonial = toRecord(item);

@@ -11,6 +11,11 @@
 // Force the full tier with --full or VALIDATION_SCOPE=full.
 
 import { execFileSync, spawnSync } from "node:child_process";
+import {
+  createValidationFingerprint,
+  hasFreshValidationStep,
+  recordValidationStep,
+} from "./validation-cache.mjs";
 
 const tier = process.argv[2];
 if (!["commit", "push", "release"].includes(tier)) {
@@ -40,6 +45,10 @@ if (scoped) {
 } else {
   console.log(`run-scoped-validation: running full ${tier} tier.`);
 }
+
+const validationFingerprint = createValidationFingerprint({
+  scope: scoped ? "web" : "full",
+});
 
 const steps = {
   commit: scoped
@@ -90,11 +99,16 @@ const steps = {
 }[tier];
 
 for (const step of steps) {
+  if (hasFreshValidationStep(validationFingerprint, step)) {
+    console.log(`\n↷ pnpm run ${step} (unchanged snapshot; cached pass)`);
+    continue;
+  }
   console.log(`\n▶ pnpm run ${step}`);
   const result = spawnSync("pnpm", ["run", step], { stdio: "inherit" });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
+  recordValidationStep(validationFingerprint, step);
 }
 
 function changedFiles(currentTier) {

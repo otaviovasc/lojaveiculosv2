@@ -65,7 +65,7 @@ export const issueFiscalDocumentSchema = z.object({
 
 export const cancelFiscalDocumentSchema = z
   .object({
-    reason: z.string().trim().min(5).max(320),
+    reason: z.string().trim().min(15).max(320),
   })
   .strict();
 

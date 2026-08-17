@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRuntimeFetch, normalizeRuntimeApiBaseUrl } from "./runtimeAuth";
 
 type ClerkWindow = Window & {
@@ -23,10 +23,13 @@ function stubClerkGetToken(
   };
 }
 
-afterEach(() => {
+function resetClerkRuntime() {
   delete (window as ClerkWindow).Clerk;
   delete (window as ClerkWindow).__clerk_internal_ready;
-});
+}
+
+beforeEach(resetClerkRuntime);
+afterEach(resetClerkRuntime);
 
 describe("createRuntimeFetch", () => {
   it("waits for Clerk initialization before sending an authenticated request", async () => {

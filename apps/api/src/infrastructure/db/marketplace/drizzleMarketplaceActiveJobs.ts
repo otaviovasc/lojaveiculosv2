@@ -42,7 +42,6 @@ export async function listActiveSyncJobs(
           : []),
       ),
     )
-    .orderBy(desc(integrationJobs.createdAt))
-    .limit(500);
+    .orderBy(desc(integrationJobs.createdAt));
   return rows.map(({ job }) => toJob(job, input.provider));
 }

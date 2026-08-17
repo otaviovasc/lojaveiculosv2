@@ -199,4 +199,37 @@ describe("Credere financing controller", () => {
       details: { field: "document" },
     });
   });
+
+  it("triggers a provider sync and returns redacted counters", async () => {
+    const syncSimulations = vi.fn(async () => ({
+      created: 2,
+      internalScope: { storeId, tenantId },
+      remoteCount: 5,
+      skipped: 1,
+      syncedAt: new Date("2026-08-17T12:00:00.000Z"),
+      token: "secret",
+      updated: 2,
+    }));
+    const services = createServices({ store: { syncSimulations } });
+    const app = createStoreApp(services);
+
+    const response = await app.request(
+      "/api/v1/financing/credere/simulations/sync",
+      {
+        body: JSON.stringify({}),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({
+      created: 2,
+      remoteCount: 5,
+      skipped: 1,
+      syncedAt: "2026-08-17T12:00:00.000Z",
+      updated: 2,
+    });
+    expect(syncSimulations).toHaveBeenCalledTimes(1);
+  });
 });

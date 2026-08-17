@@ -41,6 +41,7 @@ import {
 } from "./drizzleFinancingOauth.js";
 import { reserveOperation } from "./drizzleFinancingOperations.js";
 import { claimRefreshTokenRotation } from "./drizzleFinancingTokenRotationClaim.js";
+import { upsertProviderInquiry } from "./drizzleFinancingInquiryBackfill.js";
 
 export type DrizzleFinancingClient = PostgresJsDatabase<typeof schema>;
 
@@ -87,6 +88,7 @@ export function createDrizzleFinancingRepository(
     saveOAuthExchangeToken: (entry) => saveOAuthExchangeToken(db, entry, codec),
     upsertConnection: (entry) =>
       upsertConnection(db, entry, codec, input.environment),
+    upsertProviderInquiry: (entry) => upsertProviderInquiry(db, entry),
     upsertStoreMapping: (entry) =>
       upsertStoreMapping(db, entry, input.environment),
     validateInquiryReferences: (entry) => validateInquiryReferences(db, entry),

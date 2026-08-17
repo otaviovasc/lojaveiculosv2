@@ -105,9 +105,14 @@ function InventoryListingCard({
 }) {
   const listing = item.listing;
   const plate = getInventoryPlate(item);
-  const km = getInventoryKm(listing.id, listing.modelYear);
-  const days = getInventoryStockDays(listing.createdAt, listing.id);
-  const fipe = getInventoryFipeComparison(listing.priceCents, listing.id);
+  const km = getInventoryKm(listing.mileageKm);
+  const days = getInventoryStockDays(listing.createdAt);
+  const fipe = getInventoryFipeComparison(
+    listing.priceCents,
+    listing.catalog?.priceCents ?? null,
+  );
+  const fipePercentage = fipe?.percentage ?? 0;
+  const fipeIsBelow = fipe?.isBelow ?? false;
   const leads = item.leadsCount;
 
   return (
@@ -210,18 +215,18 @@ function InventoryListingCard({
             <span
               className={
                 "text-sm font-black leading-none " +
-                (fipe.percentage > 10
+                (fipePercentage > 10
                   ? "text-accent-strong"
-                  : fipe.percentage > 3
+                  : fipePercentage > 3
                     ? "text-amber-500"
-                    : fipe.percentage > 0 || fipe.isBelow
+                    : fipePercentage > 0 || fipeIsBelow
                       ? "text-emerald-500"
                       : "text-app-text")
               }
             >
               {formatInventoryPrice(listing.priceCents)}
             </span>
-            {fipe.percentage !== 0 ? (
+            {fipe && fipe.percentage !== 0 ? (
               <span
                 className={
                   "mt-1 text-xs font-black leading-none " +

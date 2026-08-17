@@ -179,5 +179,5 @@ function statusLabel(item: InventoryListingSummary) {
 }
 
 function stockDays(item: InventoryListingSummary) {
-  return getInventoryStockDays(item.listing.createdAt, item.listing.id);
+  return getInventoryStockDays(item.listing.createdAt);
 }

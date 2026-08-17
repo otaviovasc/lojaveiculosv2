@@ -68,7 +68,9 @@ export function StorefrontCustomizationModule({
     try {
       const [settings, nextPages] = await Promise.all([
         runtimeSettingsApi.getStoreSettings(),
-        runtimePagesApi.listPages(),
+        initialTab === "design"
+          ? runtimePagesApi.listPages().catch(() => [])
+          : runtimePagesApi.listPages(),
       ]);
       setSavedSettings(settings);
       setDraftSettings(settings);
@@ -109,8 +111,10 @@ export function StorefrontCustomizationModule({
       setDraftSettings(saved);
       notifyTenantAdminBrandUpdated(saved);
       setStatus({ kind: "saved" });
+      return true;
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
+      return false;
     }
   };
 
@@ -207,7 +211,9 @@ export function StorefrontCustomizationModule({
   };
 
   if (!draftSettings || !builderConfig) {
-    return <StorefrontLoadingState status={status} />;
+    return (
+      <StorefrontLoadingState onRetry={() => void refresh()} status={status} />
+    );
   }
 
   const statusToast = toStatusMessage(status);

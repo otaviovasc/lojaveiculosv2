@@ -219,14 +219,53 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
 
   if (isSettingsOpen && activePipeline) {
     return (
-      <CrmPipelineSettingsLayout
-        onBack={() => setIsSettingsOpen(false)}
-        onDeletePipeline={(id) =>
-          void handleDeletePipeline(id, () => setIsSettingsOpen(false))
-        }
-        onUpdatePipeline={(updated) => void handleUpdatePipeline(updated)}
-        pipeline={activePipeline}
-      />
+      <>
+        <CrmPipelineSettingsLayout
+          onBack={() => setIsSettingsOpen(false)}
+          onDeletePipeline={(id) =>
+            void handleDeletePipeline(id, () => setIsSettingsOpen(false)).then(
+              () =>
+                setToast({
+                  title: "Pipeline excluído com sucesso.",
+                  tone: "success",
+                }),
+              () =>
+                setToast({
+                  title: "Não foi possível excluir o pipeline.",
+                  children:
+                    "Mova os negócios para outro pipeline e tente novamente.",
+                  tone: "danger",
+                }),
+            )
+          }
+          onUpdatePipeline={(updated, feedback) =>
+            void handleUpdatePipeline(updated).then(
+              () => {
+                if (feedback?.successMessage) {
+                  setToast({ title: feedback.successMessage, tone: "success" });
+                }
+              },
+              () =>
+                setToast({
+                  title: "Não foi possível salvar as configurações.",
+                  children: "A alteração não foi aplicada. Tente novamente.",
+                  tone: "danger",
+                }),
+            )
+          }
+          pipeline={activePipeline}
+        />
+        {toast ? (
+          <Toast
+            durationMs={4000}
+            onDismiss={() => setToast(null)}
+            title={toast.title}
+            tone={toast.tone}
+          >
+            {toast.children}
+          </Toast>
+        ) : null}
+      </>
     );
   }
 

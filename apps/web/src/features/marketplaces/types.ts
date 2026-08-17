@@ -22,11 +22,13 @@ export type {
   UpsertMarketplaceAccountInput,
 } from "./typesCore";
 export type {
+  MarketplaceBlockerLayer,
   MarketplaceCatalogSnapshot,
   MarketplaceListingBlocker,
   MarketplaceListingBlockerCode,
   MarketplaceListingProjection,
   MarketplaceStockPlan,
+  MarketplaceStockAccountingStatus,
   MarketplaceStockPlanDecision,
   MarketplaceStockPlanItem,
   MarketplaceStockSyncPreviewRequest,

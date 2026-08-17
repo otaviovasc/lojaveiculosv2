@@ -55,7 +55,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
   };
 
   const handleAddStage = () => {
-    const newId = `stage_${Date.now()}`;
+    const newId = crypto.randomUUID();
     const newStage: PipelineStage = {
       id: newId,
       name: `Nova Etapa ${stages.length + 1}`,

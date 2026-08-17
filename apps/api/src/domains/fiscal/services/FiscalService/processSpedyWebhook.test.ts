@@ -54,6 +54,49 @@ describe("processSpedyWebhook", () => {
     );
   });
 
+  it("parses the official Spedy envelope (data.id + data.model + top-level event id)", async () => {
+    const ports = createFiscalTestPorts();
+    await ports.fiscalConnectionRepository.upsert({
+      companyApiKey: "company-key",
+      companyId: "company_1",
+      defaultsStatus: "confirmed",
+      status: "ready",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+      webhookRegisteredAt: new Date(),
+    });
+    const context = createContext();
+
+    const result = await processSpedyWebhook(
+      context,
+      {
+        payload: {
+          id: "event_9",
+          event: "invoice.status_changed",
+          data: {
+            id: "invoice_9",
+            model: "serviceInvoice",
+            status: "authorized",
+            company: { id: "company_1" },
+          },
+        },
+        token: "valid-token",
+      },
+      ports,
+    );
+    expect(result).toMatchObject({ status: "processed" });
+    await expect(
+      ports.fiscalRepository.getDocument({
+        documentId: result.documentId!,
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    ).resolves.toMatchObject({
+      documentKind: "nfse",
+      providerDocumentId: "invoice_9",
+    });
+  });
+
   it("rejects an invalid opaque token before recording the payload", async () => {
     const ports = createFiscalTestPorts();
     ports.fiscalProviderAdminGateway.verifyWebhookToken = () => false;

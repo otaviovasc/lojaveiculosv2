@@ -213,7 +213,7 @@ describe("adaptQuadraStorefront", () => {
       "/images/storefront/about-showroom.webp",
     );
     expect(model.about.features).toHaveLength(4);
-    expect(model.testimonials).toHaveLength(3);
+    expect(model.testimonials).toHaveLength(0);
     expect(model.contact.showMap).toBe(true);
     expect(model.contact.description1).toContain("Entre em contato");
   });
