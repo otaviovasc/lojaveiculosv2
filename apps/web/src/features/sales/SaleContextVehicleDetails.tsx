@@ -1,3 +1,4 @@
+import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { Car, Image as ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import BorderGlow from "../../components/ui/BorderGlow";
@@ -80,7 +81,8 @@ export function SaleContextVehicleDetails({
               : "Não informado"}
           </VehicleMeta>
           <VehicleMeta label="Cor">
-            {selectedUnitOption.colorName || "Não informado"}
+            {getVehicleColorLabel(selectedUnitOption.colorName) ||
+              "Não informado"}
           </VehicleMeta>
 
           <div className="text-xs col-span-2 md:col-span-3 border-t border-line/30 pt-2 flex items-center justify-between">

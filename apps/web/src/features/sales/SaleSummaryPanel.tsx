@@ -89,7 +89,7 @@ export function StickySaleSummary({
   ];
 
   return (
-    <aside className="sales-glass-panel sales-summary-aside border border-line">
+    <aside className="sales-glass-panel sales-summary-aside border border-line lg:sticky lg:top-6 self-start">
       <div className="flex items-center gap-2 border-b border-line/50 pb-3 mb-2">
         <ShoppingBag className="size-4.5 text-accent" />
         <h3 className="text-sm font-black text-app-text uppercase tracking-wider">

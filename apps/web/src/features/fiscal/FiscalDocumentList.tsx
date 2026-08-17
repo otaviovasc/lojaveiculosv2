@@ -129,7 +129,7 @@ export function FiscalDocumentList({
     <div className="fiscal-docs">
       <div className="fiscal-docs-toolbar">
         <FeatureSearchField
-          className="lg:flex-1"
+          className="min-w-[240px] flex-1 sm:min-w-[320px]"
           label="Buscar documento fiscal"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Buscar por destinatário, chave ou referência"
@@ -137,12 +137,12 @@ export function FiscalDocumentList({
         />
         <FeatureSelect<FiscalTypeFilter>
           ariaLabel="Filtrar por tipo de documento"
-          className="lg:w-44 lg:shrink-0"
+          className="w-full shrink-0 sm:w-48"
           onChange={setTypeFilter}
           options={fiscalTypeFilterOptions}
           value={typeFilter}
         />
-        <span className="fiscal-docs-count lg:ml-auto">
+        <span className="fiscal-docs-count sm:ml-auto">
           <strong>{filtered.length}</strong>
           {filtered.length === 1 ? "documento" : "documentos"}
         </span>

@@ -129,7 +129,7 @@ export function InventoryCreateForm({
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <InventoryField label="Placa">
             <InventoryInput
               className="font-mono uppercase"
@@ -140,9 +140,23 @@ export function InventoryCreateForm({
           </InventoryField>
           <InventoryField label="Chassi / VIN">
             <InventoryInput
+              className="font-mono uppercase"
+              maxLength={17}
               onChange={onChange("vin")}
               placeholder="Chassi ou VIN"
               value={form.vin}
+            />
+          </InventoryField>
+          <InventoryField label="Renavam">
+            <InventoryInput
+              className="font-mono"
+              inputMode="numeric"
+              maxLength={11}
+              onChange={(event) =>
+                onChange("renavam")(event.target.value.replace(/\D/g, ""))
+              }
+              placeholder="11 dígitos"
+              value={form.renavam}
             />
           </InventoryField>
           <InventoryField label="Número de Estoque">
@@ -221,10 +235,13 @@ export function InventoryCreateForm({
           >
             <InventoryInput
               inputMode="numeric"
-              min={0}
-              onChange={onChange("mileageKm")}
-              placeholder="Ex: 32500"
-              type="number"
+              onChange={(event) => {
+                const digits = event.target.value.replace(/\D/g, "");
+                onChange("mileageKm")(
+                  digits ? Number(digits).toLocaleString("pt-BR") : "",
+                );
+              }}
+              placeholder="Ex: 32.500"
               value={form.mileageKm}
             />
           </InventoryField>

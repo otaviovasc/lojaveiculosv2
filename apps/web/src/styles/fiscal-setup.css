@@ -191,7 +191,27 @@
 .fiscal-setup-dropzone:hover,
 .fiscal-setup-dropzone:focus-within {
   background: var(--color-accent-soft);
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-strong);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__title,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__title {
+  color: var(--color-accent-strong);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__hint,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__hint {
+  color: var(--color-text);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__file-name,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__file-name {
+  color: var(--color-accent-strong);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__file-size,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__file-size {
+  color: var(--color-text);
 }
 
 .fiscal-setup-dropzone--dragging {

@@ -146,18 +146,68 @@ function parseBank(raw: unknown): CredereUsableBank {
 
 function parseCondition(raw: unknown): CredereSimulationCondition {
   const record = asRecord(raw) ?? {};
+  const metadata = asRecord(record?.["metadata"]) ?? {};
   return {
-    bankCode: readString(record, ["bankCode", "bankFebrabanCode"]),
-    bankName: readString(record, ["bankName", "bank"]),
-    installments: readNumber(record, ["installments"]),
-    downPaymentCents: readNumber(record, ["downPaymentCents"]),
-    firstInstallmentCents: readNumber(record, ["firstInstallmentCents"]),
-    preApprovalStatus: readNumber(record, ["preApprovalStatus"]),
-    reasonIdentifier: readString(record, ["reasonIdentifier"]),
-    reason: readString(record, ["reason", "reasonIdentifier"]),
+    bankCode: readString(record, [
+      "bankCode",
+      "bankFebrabanCode",
+      "bank_code",
+      "febrabanCode",
+    ]),
+    bankName: readString(record, ["bankName", "bank", "bank_name"]),
+    installments: readNumber(record, [
+      "installments",
+      "installmentCount",
+      "installment_count",
+    ]),
+    downPaymentCents:
+      readNumber(record, [
+        "downPaymentCents",
+        "down_payment_cents",
+        "downPayment",
+        "down_payment",
+      ]) ?? readNumber(metadata, ["downPaymentCents", "down_payment_cents"]),
+    firstInstallmentCents:
+      readNumber(record, [
+        "firstInstallmentCents",
+        "installmentValue",
+        "first_installment_cents",
+        "installment_value",
+      ]) ??
+      readNumber(metadata, [
+        "firstInstallmentCents",
+        "installmentValue",
+        "first_installment_cents",
+        "installment_value",
+      ]),
+    preApprovalStatus:
+      readNumber(record, ["preApprovalStatus", "pre_approval_status"]) ??
+      readNumber(metadata, ["preApprovalStatus", "pre_approval_status"]),
+    reasonIdentifier:
+      readString(record, ["reasonIdentifier", "reason_identifier"]) ??
+      readString(metadata, ["reasonIdentifier", "reason_identifier"]),
+    reason:
+      readString(record, [
+        "reason",
+        "reasonMessage",
+        "refusal_reason",
+        "reasonIdentifier",
+      ]) ??
+      readString(metadata, ["reason", "refusal_reason", "reasonIdentifier"]),
     status: readString(record, ["status"]) ?? "unknown",
-    summary: readString(record, ["summary"]),
-    totalAmountCents: readNumber(record, ["totalAmountCents"]),
+    summary: readString(record, ["summary", "description", "message"]),
+    totalAmountCents:
+      readNumber(record, [
+        "totalAmountCents",
+        "totalValue",
+        "total_amount_cents",
+        "total_amount",
+      ]) ??
+      readNumber(metadata, [
+        "totalAmountCents",
+        "totalValue",
+        "total_amount_cents",
+      ]),
   };
 }
 

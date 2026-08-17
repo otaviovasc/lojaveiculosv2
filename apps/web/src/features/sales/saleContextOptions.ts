@@ -8,6 +8,14 @@ import { createSettingsApiOptions } from "../settings/runtimeApi";
 import type { RoleKey, StoreMemberOptionView } from "../settings/types";
 import type { ProductCrmLead } from "../crm/productCrmTypes";
 
+export type CreateSaleLeadInput = {
+  buyerEmail: string | null;
+  buyerName: string;
+  buyerPhone: string | null;
+  listingId: string | null;
+  saleId: string;
+};
+
 export type SaleLeadOption = {
   buyerEmail: string | null;
   buyerName: string | null;
@@ -29,10 +37,12 @@ export type SaleUnitOption = {
   unitLabel: string;
   primaryMediaUrl: string | null;
   plate: string | null;
+  renavam: string | null;
   colorName: string | null;
   manufactureYear: number | null;
   modelYear: number | null;
   mileageKm: number | null;
+  vin: string | null;
 };
 
 export type SaleSellerOption = {
@@ -119,6 +129,24 @@ export async function loadSellerOptions(seed: SaleSellerOption | null = null) {
   }
 }
 
+export async function createSaleLead(
+  input: CreateSaleLeadInput,
+): Promise<SaleLeadOption> {
+  const api = createProductCrmApi(await createProductCrmApiOptions());
+  const lead = await api.createLead({
+    buyerEmail: input.buyerEmail,
+    buyerName: input.buyerName,
+    buyerPhone: input.buyerPhone,
+    listingId: input.listingId,
+    metadata: {
+      origin: "sale_workspace",
+      saleId: input.saleId,
+    },
+    source: "manual",
+  });
+  return toLeadOption(lead);
+}
+
 function fulfilledOrEmpty<T>(
   result: PromiseSettledResult<readonly T[]>,
 ): readonly T[] {
@@ -176,10 +204,12 @@ function toUnitOptions(item: InventoryListingSummary): SaleUnitOption[] {
         unitLabel,
         primaryMediaUrl: item.primaryMediaUrl ?? null,
         plate: unit.plate || item.listing.plate || null,
+        renavam: unit.renavam ?? null,
         colorName: unit.colorName ?? null,
         manufactureYear: item.listing.manufactureYear ?? null,
         modelYear: item.listing.modelYear ?? null,
         mileageKm: item.listing.mileageKm ?? null,
+        vin: unit.vin ?? null,
       };
     });
 }

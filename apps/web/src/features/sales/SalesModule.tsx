@@ -19,8 +19,11 @@ import {
   toDraftInput,
 } from "./salesModel";
 import {
+  createSaleLead,
   emptySaleContextOptions,
   loadSaleContextOptions,
+  type CreateSaleLeadInput,
+  type SaleLeadOption,
   type SaleContextOptionsState,
 } from "./saleContextOptions";
 import {
@@ -222,6 +225,24 @@ export function SalesModule({
     [runtimeApi],
   );
 
+  const handleCreateLead = useCallback(
+    async (input: CreateSaleLeadInput): Promise<SaleLeadOption> => {
+      const lead = await createSaleLead(input);
+      setContextOptions((current) => ({
+        ...current,
+        options: {
+          ...current.options,
+          leads: [
+            lead,
+            ...current.options.leads.filter((item) => item.id !== lead.id),
+          ],
+        },
+      }));
+      return lead;
+    },
+    [],
+  );
+
   const handleDelete = useCallback(
     async (saleId: string) => {
       if (!runtimeApi) return;
@@ -312,6 +333,7 @@ export function SalesModule({
           contextOptions={contextOptions.options}
           onCancel={(sale, reason) => transition(sale, "cancel", reason)}
           onClose={(sale) => transition(sale, "close")}
+          onCreateLead={handleCreateLead}
           onReserve={(sale) => transition(sale, "reserve")}
           onRevert={revert}
           onSave={saveSale}

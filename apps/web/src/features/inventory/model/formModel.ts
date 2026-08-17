@@ -44,6 +44,7 @@ export type InventoryFormState = {
   modelYear: string;
   plate: string;
   price: string;
+  renavam: string;
   status: InventoryCreateListingStatus;
   stockNumber: string;
   title: string;
@@ -178,6 +179,7 @@ export function createInitialInventoryForm(): InventoryFormState {
     modelYear: "",
     plate: "",
     price: "",
+    renavam: "",
     status: "published",
     stockNumber: "",
     title: "",
@@ -238,8 +240,12 @@ export function validateInventoryForm(form: InventoryFormState): string | null {
   }
 
   if (isZeroKmInventoryForm(form)) {
-    if (createZeroKmUnitsInput(form).length === 0) {
+    const zeroKmUnits = createZeroKmUnitsInput(form);
+    if (zeroKmUnits.length === 0) {
       return "Informe ao menos uma cor com estoque para o veiculo 0 km.";
+    }
+    if (zeroKmUnits.length > 1 && (form.vin.trim() || form.renavam.trim())) {
+      return "Chassi e Renavam so podem ser informados para um estoque 0 km com uma unica unidade.";
     }
   } else if (!normalizeVehicleColor(form.colorName)) {
     return "Informe a cor do veiculo.";
@@ -272,6 +278,7 @@ export function createInventoryUnitsInput(
         {
           colorName: coerceVehicleColor(form.colorName),
           plate: nullablePlate(form.unitPlate || form.plate),
+          renavam: nullableText(form.renavam),
           stockNumber: nullableText(form.stockNumber),
           vin: nullableText(form.vin),
         },
@@ -311,26 +318,53 @@ function createZeroKmUnitsInput(
       colorName,
       plate: null,
       stockNumber: null,
+      renavam: null,
       vin: null,
     }));
   });
 
   const fallbackColor = normalizeVehicleColor(form.colorName);
-  return units.length || !fallbackColor
-    ? units
-    : [{ colorName: fallbackColor, plate: null, stockNumber: null, vin: null }];
+  const result =
+    units.length || !fallbackColor
+      ? units
+      : [
+          {
+            colorName: fallbackColor,
+            plate: null,
+            renavam: null,
+            stockNumber: null,
+            vin: null,
+          },
+        ];
+
+  if (result.length !== 1) return result;
+  return [
+    {
+      ...result[0],
+      plate: nullablePlate(form.unitPlate || form.plate),
+      renavam: nullableText(form.renavam),
+      stockNumber: nullableText(form.stockNumber),
+      vin: nullableText(form.vin),
+    },
+  ];
 }
 
 function nullableNumber(value: string): number | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const number = Number(trimmed);
-  return Number.isInteger(number) ? number : null;
+  return parseIntegerText(value);
 }
 
 function parseRequiredNonNegativeInteger(value: string): number | null {
+  const number = parseIntegerText(value);
+  if (number === null) return null;
+  return Number.isInteger(number) && number >= 0 ? number : null;
+}
+
+function parseIntegerText(value: string): number | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  const number = Number(trimmed);
-  return Number.isInteger(number) && number >= 0 ? number : null;
+  const normalized = /^\d{1,3}(?:\.\d{3})+$/.test(trimmed)
+    ? trimmed.replace(/\./g, "")
+    : trimmed;
+  const number = Number(normalized);
+  return Number.isInteger(number) ? number : null;
 }

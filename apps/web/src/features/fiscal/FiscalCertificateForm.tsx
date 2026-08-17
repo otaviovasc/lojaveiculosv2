@@ -106,7 +106,7 @@ export function FiscalCertificateForm({
   };
 
   return (
-    <section className="fiscal-setup-panel">
+    <section className="fiscal-setup-panel fiscal-certificate-sticky">
       {toast ? (
         <Toast
           durationMs={4000}
@@ -146,7 +146,7 @@ export function FiscalCertificateForm({
           <p className="text-sm font-medium text-muted">{certificate.detail}</p>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="flex flex-col gap-4">
           <FeatureField as="div" label="Arquivo do certificado (.pfx ou .p12)">
             <label
               className={cx(
@@ -212,6 +212,7 @@ export function FiscalCertificateForm({
               autoComplete="off"
               disabled={busy}
               onChange={(event) => setPassword(event.target.value)}
+              placeholder="Digite a senha do certificado A1"
               type="password"
               value={password}
             />

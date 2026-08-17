@@ -183,8 +183,24 @@ function UnitFields({
       </InventoryField>
       <InventoryField label="Chassi">
         <InventoryInput
+          className="font-mono uppercase"
+          maxLength={17}
           onChange={(event) => onChange({ ...form, vin: event.target.value })}
           value={form.vin}
+        />
+      </InventoryField>
+      <InventoryField label="Renavam">
+        <InventoryInput
+          className="font-mono"
+          inputMode="numeric"
+          maxLength={11}
+          onChange={(event) =>
+            onChange({
+              ...form,
+              renavam: event.target.value.replace(/\D/g, ""),
+            })
+          }
+          value={form.renavam}
         />
       </InventoryField>
     </>

@@ -68,6 +68,7 @@ export function hasDraftContent(
     Boolean(
       form.title.trim() ||
       form.plate.trim() ||
+      form.renavam.trim() ||
       form.vin.trim() ||
       form.stockNumber.trim() ||
       form.colorName ||

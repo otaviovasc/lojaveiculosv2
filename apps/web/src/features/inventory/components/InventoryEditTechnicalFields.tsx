@@ -23,12 +23,23 @@ export function InventoryEditTechnicalFields({
       <InventoryField label="Quilometragem">
         <InventoryInput
           inputMode="numeric"
-          min={0}
-          onChange={(event) =>
-            onChange({ ...form, mileageKm: event.target.value })
+          onChange={(event) => {
+            const digits = event.target.value.replace(/\D/g, "");
+            onChange({
+              ...form,
+              mileageKm: digits ? Number(digits).toLocaleString("pt-BR") : "",
+            });
+          }}
+          placeholder="Ex: 32.500"
+          value={
+            form.mileageKm
+              ? form.mileageKm.includes(".")
+                ? form.mileageKm
+                : Number(form.mileageKm.replace(/\D/g, "")).toLocaleString(
+                    "pt-BR",
+                  )
+              : ""
           }
-          type="number"
-          value={form.mileageKm}
         />
       </InventoryField>
       <InventoryField label="Ano do modelo">

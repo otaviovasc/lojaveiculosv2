@@ -137,6 +137,7 @@ export const vehicleUnits = pgTable(
       .notNull()
       .references((): AnyPgColumn => vehicleListings.id),
     plate: varchar("plate", { length: 16 }),
+    renavam: varchar("renavam", { length: 32 }),
     status: vehicleUnitStatus("status").notNull().default("acquired"),
     stockNumber: varchar("stock_number", { length: 80 }),
     storeId: uuid("store_id")
@@ -154,6 +155,9 @@ export const vehicleUnits = pgTable(
     index("vehicle_units_tenant_id_idx").on(table.tenantId),
     uniqueIndex("vehicle_units_store_plate_unique")
       .on(table.storeId, table.plate)
+      .where(sql`${table.isDeleted} = false AND ${table.deletedAt} IS NULL`),
+    uniqueIndex("vehicle_units_store_renavam_unique")
+      .on(table.storeId, table.renavam)
       .where(sql`${table.isDeleted} = false AND ${table.deletedAt} IS NULL`),
     uniqueIndex("vehicle_units_store_stock_unique")
       .on(table.storeId, table.stockNumber)

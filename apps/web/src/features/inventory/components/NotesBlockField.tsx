@@ -49,7 +49,7 @@ export function NotesBlockField({
             "size-6 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer " +
             (isEditing
               ? "bg-accent text-accent-foreground hover:bg-accent-strong hover:text-accent-strong-foreground"
-              : "text-muted hover:text-accent-soft-foreground bg-transparent hover:bg-accent-soft")
+              : "text-muted hover:text-accent-strong bg-transparent hover:bg-accent-soft")
           }
           title={isEditing ? "Salvar" : "Editar"}
         >

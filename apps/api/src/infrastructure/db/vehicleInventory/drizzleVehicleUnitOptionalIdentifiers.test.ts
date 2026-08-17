@@ -10,6 +10,7 @@ describe("Drizzle vehicle unit optional identifiers", () => {
     await unitRepository.create({
       listingId: "listing_1",
       plate: "   ",
+      renavam: "\n",
       status: "inactive",
       stockNumber: "",
       storeId: "store_1",
@@ -20,6 +21,7 @@ describe("Drizzle vehicle unit optional identifiers", () => {
     expect(db.inserted).toEqual([
       expect.objectContaining({
         plate: null,
+        renavam: null,
         stockNumber: null,
         vin: null,
       }),

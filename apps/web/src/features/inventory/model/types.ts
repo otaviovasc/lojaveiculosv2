@@ -154,6 +154,7 @@ export type InventoryUnit = {
   id: string;
   listingId: string;
   plate: string | null;
+  renavam?: string | null;
   status:
     | "acquired"
     | "available"
@@ -255,6 +256,7 @@ export type CreateInventoryListingInput = {
 export type CreateInventoryUnitInput = {
   colorName?: VehicleColor | null;
   plate?: string | null;
+  renavam?: string | null;
   stockNumber?: string | null;
   vin?: string | null;
 };
@@ -310,6 +312,7 @@ export type UpdateInventoryListingInput = {
 export type UpdateInventoryUnitInput = {
   colorName?: VehicleColor | null;
   plate?: string | null;
+  renavam?: string | null;
   status?: InventoryUnit["status"];
   stockNumber?: string | null;
   vin?: string | null;

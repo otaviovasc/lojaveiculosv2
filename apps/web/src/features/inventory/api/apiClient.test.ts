@@ -45,7 +45,11 @@ describe("createInventoryApi", () => {
         status: "draft",
         title: "Inventory title",
       },
-      unit: { stockNumber: "stock_1", vin: "vin_1" },
+      unit: {
+        renavam: "12345678901",
+        stockNumber: "stock_1",
+        vin: "vin_1",
+      },
     });
 
     const listingCall = callAt(fake.calls, 0);
@@ -71,6 +75,7 @@ describe("createInventoryApi", () => {
     );
     expect(unitCall.init?.method).toBe("PUT");
     expect(bodyOf(unitCall)).toEqual({
+      renavam: "12345678901",
       stockNumber: "stock_1",
       vin: "vin_1",
     });
@@ -185,6 +190,7 @@ describe("createInventoryApi", () => {
     });
     await api.updateUnit("unit_1", {
       plate: "DEF4G56",
+      renavam: "10987654321",
       status: "inactive",
       stockNumber: "stock_2",
       vin: "vin_2",
@@ -206,6 +212,7 @@ describe("createInventoryApi", () => {
     expect(callAt(fake.calls, 1).init?.method).toBe("PATCH");
     expect(bodyOf(callAt(fake.calls, 1))).toEqual({
       plate: "DEF4G56",
+      renavam: "10987654321",
       status: "inactive",
       stockNumber: "stock_2",
       vin: "vin_2",

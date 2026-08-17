@@ -170,7 +170,11 @@ export function FiscalIssuerSetupForm({
               aria-label="Inscrição estadual"
               disabled={busy}
               onChange={(event) =>
-                patch({ stateTaxNumber: event.target.value })
+                patch({
+                  stateTaxNumber: event.target.value
+                    .replace(/[^\dA-Za-z.-]/g, "")
+                    .slice(0, 20),
+                })
               }
               value={draft.stateTaxNumber}
             />
@@ -182,7 +186,13 @@ export function FiscalIssuerSetupForm({
             <FeatureInput
               aria-label="Inscrição municipal"
               disabled={busy}
-              onChange={(event) => patch({ cityTaxNumber: event.target.value })}
+              onChange={(event) =>
+                patch({
+                  cityTaxNumber: event.target.value
+                    .replace(/[^\dA-Za-z.-]/g, "")
+                    .slice(0, 20),
+                })
+              }
               value={draft.cityTaxNumber}
             />
           </FeatureField>
@@ -307,7 +317,14 @@ export function FiscalIssuerSetupForm({
               aria-label="UF"
               disabled={busy}
               maxLength={2}
-              onChange={(event) => patch({ cityState: event.target.value })}
+              onChange={(event) =>
+                patch({
+                  cityState: event.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z]/g, "")
+                    .slice(0, 2),
+                })
+              }
               value={draft.cityState}
             />
           </FeatureField>
@@ -320,7 +337,12 @@ export function FiscalIssuerSetupForm({
               aria-label="Código IBGE do município"
               disabled={busy}
               inputMode="numeric"
-              onChange={(event) => patch({ cityCode: event.target.value })}
+              maxLength={7}
+              onChange={(event) =>
+                patch({
+                  cityCode: event.target.value.replace(/\D/g, "").slice(0, 7),
+                })
+              }
               value={draft.cityCode}
             />
           </FeatureField>
@@ -332,8 +354,13 @@ export function FiscalIssuerSetupForm({
               aria-label="CNAE principal"
               disabled={busy}
               inputMode="numeric"
+              maxLength={7}
               onChange={(event) =>
-                patch({ mainActivityCode: event.target.value })
+                patch({
+                  mainActivityCode: event.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 7),
+                })
               }
               value={draft.mainActivityCode}
             />

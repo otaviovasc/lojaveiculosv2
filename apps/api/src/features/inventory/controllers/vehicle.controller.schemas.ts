@@ -77,6 +77,7 @@ export const updateListingDetailsSchema = z.object({
 export const attachUnitSchema = z.object({
   colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
+  renavam: z.string().trim().min(1).max(32).nullable().optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
 });
@@ -84,6 +85,7 @@ export const attachUnitSchema = z.object({
 export const updateUnitSchema = z.object({
   colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
+  renavam: z.string().trim().min(1).max(32).nullable().optional(),
   status: z.enum(unitStatuses).optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),

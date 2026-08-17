@@ -53,7 +53,7 @@ export class VehicleUnitNotFoundError extends Error {
   }
 }
 
-export type VehicleUnitIdentifier = "plate" | "stockNumber" | "vin";
+export type VehicleUnitIdentifier = "plate" | "renavam" | "stockNumber" | "vin";
 
 export class VehicleUnitIdentifierConflictError extends Error {
   constructor(readonly field: VehicleUnitIdentifier) {

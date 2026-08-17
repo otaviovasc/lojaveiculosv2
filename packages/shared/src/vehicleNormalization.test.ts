@@ -22,6 +22,38 @@ describe("vehicle colors", () => {
     expect(new Set(vehicleColorValues).size).toBe(vehicleColorValues.length);
   });
 
+  it("keeps every user-facing color label in Portuguese", () => {
+    expect(
+      Object.fromEntries(
+        vehicleColorOptions.map(({ label, value }) => [value, label]),
+      ),
+    ).toEqual({
+      beige: "Bege",
+      black: "Preto",
+      blue: "Azul",
+      bronze: "Bronze",
+      brown: "Marrom",
+      burgundy: "Vinho",
+      champagne: "Champanhe",
+      coral: "Coral",
+      gold: "Dourado",
+      graphite: "Grafite",
+      gray: "Cinza",
+      green: "Verde",
+      ice: "Gelo",
+      navy: "Azul-marinho",
+      orange: "Laranja",
+      other: "Outra",
+      pearl: "Perolizado",
+      pink: "Rosa",
+      purple: "Roxo",
+      red: "Vermelho",
+      silver: "Prata",
+      white: "Branco",
+      yellow: "Amarelo",
+    });
+  });
+
   it.each([
     ["Branca", "white"],
     ["AZUL MARINHO", "navy"],
@@ -36,6 +68,8 @@ describe("vehicle colors", () => {
     expect(coerceVehicleColor("  ")).toBeNull();
     expect(coerceVehicleColor("custom metallic")).toBe("other");
     expect(getVehicleColorLabel(" Branca ")).toBe("Branco");
+    expect(getVehicleColorLabel("white")).toBe("Branco");
+    expect(getVehicleColorLabel("navy")).toBe("Azul-marinho");
     expect(getVehicleColorLabel("custom metallic")).toBe("custom metallic");
     expect(getVehicleColorSwatch("preta")).toBe("#1a1a1a");
     expect(getVehicleColorSwatch("unknown")).toBeNull();

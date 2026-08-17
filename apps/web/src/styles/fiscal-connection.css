@@ -22,6 +22,11 @@
   .fiscal-connection-setup-grid {
     grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   }
+
+  .fiscal-certificate-sticky {
+    position: sticky;
+    top: 1.25rem;
+  }
 }
 
 /* --- Hero status card ----------------------------------------------------- */
