@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import {
   type CSSProperties,
@@ -120,15 +120,25 @@ export function QuadraTestimonials({
                   key={testimonial.id}
                 >
                   {testimonial.imageUrl ? (
-                    <img
-                      alt={testimonial.name}
-                      className="quadra-testimonial-card__image"
-                      loading="lazy"
-                      src={testimonial.imageUrl}
-                    />
+                    <div className="quadra-testimonial-card__media">
+                      <img
+                        alt={testimonial.name}
+                        className="quadra-testimonial-card__image"
+                        loading="lazy"
+                        src={testimonial.imageUrl}
+                      />
+                    </div>
                   ) : null}
                   <div className="quadra-testimonial-card__content">
                     <div className="quadra-modern-divider" />
+                    <div
+                      aria-hidden="true"
+                      className="quadra-testimonial-card__stars"
+                    >
+                      {Array.from({ length: 5 }, (_, index) => (
+                        <Star key={index} />
+                      ))}
+                    </div>
                     <blockquote title={testimonial.quote}>
                       &quot;{clampText(testimonial.quote, 160)}&quot;
                     </blockquote>

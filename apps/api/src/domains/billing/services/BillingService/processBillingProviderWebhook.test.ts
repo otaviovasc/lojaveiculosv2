@@ -61,6 +61,60 @@ describe("processBillingProviderWebhook", () => {
     );
   });
 
+  it("marks a credit-card PAYMENT_CONFIRMED event as paid so renewal activation fires", async () => {
+    const audit = createAuditSink();
+    const context = createWebhookContext(audit);
+    const webhookRepository = createWebhookRepository();
+    const upsertedStatuses: string[] = [];
+    const capturingRepository = {
+      ...webhookRepository,
+      async upsertProviderPayment(
+        input: Parameters<typeof webhookRepository.upsertProviderPayment>[0],
+      ) {
+        upsertedStatuses.push(input.status);
+        return webhookRepository.upsertProviderPayment(input);
+      },
+    };
+    const payload = {
+      event: "PAYMENT_CONFIRMED",
+      id: "evt_payment_confirmed_1",
+      payment: {
+        confirmedDate: "2026-07-06",
+        customer: "cus_1",
+        dueDate: "2026-07-31",
+        externalReference: "lojaveiculos:tenant_1:2026-07",
+        id: "pay_confirmed_1",
+        subscription: "sub_memory",
+        value: 548.99,
+      },
+    };
+
+    await expect(
+      processBillingProviderWebhook(
+        context,
+        { payload, provider: "asaas", webhookToken: "secret" },
+        {
+          billingRepository: createBillingRepository(),
+          billingWebhookRepository: capturingRepository,
+          environment: "test",
+          paymentProviderGateway: createProviderGateway("secret"),
+        },
+      ),
+    ).resolves.toMatchObject({
+      providerEventId: "evt_payment_confirmed_1",
+      status: "processed",
+    });
+    expect(upsertedStatuses).toEqual(["paid"]);
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "billing.webhook.asaas.processed",
+        outcome: "succeeded",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    );
+  });
+
   it("rejects invalid webhook tokens before recording events", async () => {
     const ports = {
       billingRepository: createBillingRepository(),

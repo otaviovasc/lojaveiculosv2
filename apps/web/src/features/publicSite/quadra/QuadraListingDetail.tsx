@@ -1,5 +1,6 @@
 import { ArrowLeft, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, type ReactNode } from "react";
+import "./quadra-detail.css";
 import type { PublicListingDetailSnapshot } from "../PublicListingDetailPanel";
 import type {
   PublicStorefrontLeadInput,

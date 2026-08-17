@@ -23,31 +23,39 @@ export function QuadraListingContactCard({
   model,
   onOpenContact,
   onSubmitInterest,
+  price,
   showLeadForm,
 }: {
   detail: PublicStorefrontListingDetailData;
   model: QuadraStorefrontModel;
   onOpenContact: () => void;
   onSubmitInterest: SubmitInterest;
+  price: string;
   showLeadForm: boolean;
 }) {
   return (
     <aside className="quadra-detail-contact" id="contact-section">
-      <h2>Interessado nesse veículo?</h2>
-      <QuadraDetailContactActions
-        model={model}
-        onOpenContact={onOpenContact}
-        title={detail.listing.title}
-      />
-      <div className="quadra-detail-contact__status">
-        <span>Status:</span> Disponível
+      <div className="quadra-detail-contact__price">
+        <span>Preço especial</span>
+        <strong>{price}</strong>
       </div>
-      {showLeadForm ? (
-        <QuadraListingInterestForm
-          listingSlug={detail.listing.slug}
-          onSubmitInterest={onSubmitInterest}
+      <div className="quadra-detail-contact__body">
+        <h2>Interessado nesse veículo?</h2>
+        <QuadraDetailContactActions
+          model={model}
+          onOpenContact={onOpenContact}
+          title={detail.listing.title}
         />
-      ) : null}
+        <div className="quadra-detail-contact__status">
+          <span>Status:</span> Disponível
+        </div>
+        {showLeadForm ? (
+          <QuadraListingInterestForm
+            listingSlug={detail.listing.slug}
+            onSubmitInterest={onSubmitInterest}
+          />
+        ) : null}
+      </div>
     </aside>
   );
 }

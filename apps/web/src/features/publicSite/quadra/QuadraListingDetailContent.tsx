@@ -160,6 +160,21 @@ export function QuadraListingDetailContent({
             {detail.listing.trimName ? <p>{detail.listing.trimName}</p> : null}
           </header>
 
+          <div className="quadra-detail-specs">
+            {specs.map((spec, index) => {
+              const SpecIcon = specIcons[index] ?? CarFront;
+              return (
+                <div className="quadra-detail-specs__item" key={spec.label}>
+                  <SpecIcon aria-hidden="true" />
+                  <div>
+                    <span>{spec.label}</span>
+                    <strong>{spec.value}</strong>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           <div className="quadra-detail-tabs" role="tablist">
             <button
               aria-controls={`${tabId}-details-panel`}
@@ -199,24 +214,6 @@ export function QuadraListingDetailContent({
           >
             {activeTab === "details" ? (
               <>
-                <p className="quadra-detail__price">{price}</p>
-                <div className="quadra-detail-specs">
-                  {specs.map((spec, index) => {
-                    const SpecIcon = specIcons[index] ?? CarFront;
-                    return (
-                      <div
-                        className="quadra-detail-specs__item"
-                        key={spec.label}
-                      >
-                        <SpecIcon aria-hidden="true" />
-                        <div>
-                          <span>{spec.label}</span>
-                          <strong>{spec.value}</strong>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
                 <QuadraDetailShare
                   key={detail.listing.slug}
                   price={price}
@@ -240,6 +237,7 @@ export function QuadraListingDetailContent({
           model={model}
           onOpenContact={openContact}
           onSubmitInterest={onSubmitInterest}
+          price={price}
           showLeadForm={showLeadForm}
         />
       </div>

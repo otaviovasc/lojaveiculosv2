@@ -1,15 +1,29 @@
 import { Award, Car, Handshake, ShieldCheck, Star, Users } from "lucide-react";
+import { motion, type Transition, useReducedMotion } from "motion/react";
 import type { ComponentType } from "react";
 import type { QuadraStorefrontModel } from "./quadraAdapter";
 
 const featureIcons = [Car, ShieldCheck, Users, Award, Handshake, Star] as const;
 
+const rowTransition: Transition = { duration: 0.6, ease: [0.21, 1, 0.36, 1] };
+
 export function QuadraAbout({ model }: { model: QuadraStorefrontModel }) {
+  const prefersReducedMotion = useReducedMotion();
+  const reveal = (direction: "left" | "right") =>
+    ({
+      initial: prefersReducedMotion
+        ? false
+        : { opacity: 0, x: direction === "left" ? 40 : -40 },
+      transition: rowTransition,
+      viewport: { amount: 0.25, once: true },
+      whileInView: { opacity: 1, x: 0 },
+    }) as const;
+
   return (
     <section className="quadra-about" id="about">
       <div className="quadra-container">
         <div className="quadra-about__row">
-          <div className="quadra-about__copy">
+          <motion.div className="quadra-about__copy" {...reveal("right")}>
             <span className="quadra-about__eyebrow">
               Conheça a {model.storeName}
             </span>
@@ -27,7 +41,7 @@ export function QuadraAbout({ model }: { model: QuadraStorefrontModel }) {
                 {model.about.buttonText}
               </span>
             </a>
-          </div>
+          </motion.div>
           <AboutImage
             alt={`Fachada e identidade de ${model.storeName}`}
             className="quadra-about__image--primary"
@@ -41,7 +55,7 @@ export function QuadraAbout({ model }: { model: QuadraStorefrontModel }) {
             className="quadra-about__image--secondary"
             src={model.about.image2Url}
           />
-          <div className="quadra-about__why">
+          <motion.div className="quadra-about__why" {...reveal("left")}>
             <h3 data-editor-id="about.why_title">{model.about.whyTitle}</h3>
             <p data-editor-id="about.why_text">{model.about.whyText}</p>
             <div className="quadra-about__features">
@@ -62,7 +76,7 @@ export function QuadraAbout({ model }: { model: QuadraStorefrontModel }) {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
