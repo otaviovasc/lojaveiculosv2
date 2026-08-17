@@ -21,7 +21,6 @@ export type CustomPagesListProps = {
   onDuplicate: (page: StorefrontCustomPage) => void;
   onSelect: (page: StorefrontCustomPage) => void;
   pages: readonly StorefrontCustomPage[];
-  statusMessage?: { text: string; type: "error" | "success" } | null;
   storeSlug: string;
 };
 
@@ -38,7 +37,6 @@ export function CustomPagesList({
   onDuplicate,
   onSelect,
   pages,
-  statusMessage,
   storeSlug,
 }: CustomPagesListProps) {
   const [createOpen, setCreateOpen] = useState(false);
@@ -90,15 +88,6 @@ export function CustomPagesList({
           Nova Página
         </Button>
       </div>
-
-      {statusMessage ? (
-        <FeatureAlert
-          className="feature-alert"
-          tone={statusMessage.type === "error" ? "danger" : "success"}
-        >
-          {statusMessage.text}
-        </FeatureAlert>
-      ) : null}
 
       {pages.length === 0 ? (
         <FeatureEmptyState

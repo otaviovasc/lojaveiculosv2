@@ -1,4 +1,4 @@
-import { Car } from "lucide-react";
+import { Car, FileText, Gauge } from "lucide-react";
 import {
   FeatureInput,
   FeatureSelect,
@@ -63,188 +63,216 @@ export function FiscalVehicleFields({
           </span>
         }
       >
-        <FeatureFieldGroup>
-          <FeatureField error={errors.vehicle} label="Código do veículo">
-            <FeatureInput
-              aria-label="Código do veículo"
-              onChange={(event) => onVehicleChange({ id: event.target.value })}
-              placeholder="Estoque ou anúncio"
-              value={vehicle.id ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Marca">
-            <FeatureInput
-              aria-label="Marca do veículo"
-              onChange={(event) =>
-                onVehicleChange({ brand: event.target.value })
-              }
-              value={vehicle.brand ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Modelo">
-            <FeatureInput
-              aria-label="Modelo do veículo"
-              onChange={(event) =>
-                onVehicleChange({ model: event.target.value })
-              }
-              value={vehicle.model ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Versão">
-            <FeatureInput
-              aria-label="Versão do veículo"
-              onChange={(event) =>
-                onVehicleChange({ version: event.target.value })
-              }
-              value={vehicle.version ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Chassi">
-            <FeatureInput
-              aria-label="Chassi"
-              maxLength={17}
-              onChange={(event) =>
-                onVehicleChange({ chassis: event.target.value.toUpperCase() })
-              }
-              value={vehicle.chassis ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Placa">
-            <FeatureInput
-              aria-label="Placa"
-              maxLength={8}
-              onChange={(event) =>
-                onVehicleChange({ plate: event.target.value.toUpperCase() })
-              }
-              value={vehicle.plate ?? ""}
-            />
-          </FeatureField>
-          <FeatureField
-            hint="O estoque V2 ainda não guarda o Renavam; confira antes de emitir."
-            label="Renavam"
-          >
-            <FeatureInput
-              aria-label="Renavam"
-              inputMode="numeric"
-              onChange={(event) =>
-                onVehicleChange({
-                  renavam: event.target.value.replace(/\D/g, ""),
-                })
-              }
-              value={vehicle.renavam ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Cor">
-            <FeatureInput
-              aria-label="Cor do veículo"
-              onChange={(event) =>
-                onVehicleChange({ color: event.target.value })
-              }
-              value={vehicle.color ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Combustível">
-            <FeatureSelect
-              ariaLabel="Combustível"
-              onChange={(value) => onVehicleChange({ fuelType: value })}
-              options={fuelTypeOptions}
-              value={vehicle.fuelType ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Número do motor">
-            <FeatureInput
-              aria-label="Número do motor"
-              onChange={(event) =>
-                onVehicleChange({ engineNumber: event.target.value })
-              }
-              value={vehicle.engineNumber ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Potência (cv)">
-            <FeatureInput
-              aria-label="Potência"
-              onChange={(event) =>
-                onVehicleChange({ power: event.target.value })
-              }
-              value={vehicle.power ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Cilindrada">
-            <FeatureInput
-              aria-label="Cilindrada"
-              onChange={(event) =>
-                onVehicleChange({ cylinderCapacity: event.target.value })
-              }
-              value={vehicle.cylinderCapacity ?? ""}
-            />
-          </FeatureField>
-          <FeatureField label="Peso líquido (kg)">
-            <FeatureInput
-              aria-label="Peso líquido"
-              inputMode="numeric"
-              onChange={(event) =>
-                onVehicleChange({ netWeight: event.target.value })
-              }
-              value={String(vehicle.netWeight ?? "")}
-            />
-          </FeatureField>
-          <FeatureField label="Peso bruto (kg)">
-            <FeatureInput
-              aria-label="Peso bruto"
-              inputMode="numeric"
-              onChange={(event) =>
-                onVehicleChange({ grossWeight: event.target.value })
-              }
-              value={String(vehicle.grossWeight ?? "")}
-            />
-          </FeatureField>
-          <FeatureField label="Ano modelo">
-            <FeatureInput
-              aria-label="Ano modelo"
-              inputMode="numeric"
-              maxLength={4}
-              onChange={(event) =>
-                onVehicleChange({
-                  modelYear: event.target.value.replace(/\D/g, ""),
-                })
-              }
-              value={String(vehicle.modelYear ?? "")}
-            />
-          </FeatureField>
-          <FeatureField label="Ano fabricação">
-            <FeatureInput
-              aria-label="Ano fabricação"
-              inputMode="numeric"
-              maxLength={4}
-              onChange={(event) =>
-                onVehicleChange({
-                  manufactureYear: event.target.value.replace(/\D/g, ""),
-                })
-              }
-              value={String(vehicle.manufactureYear ?? "")}
-            />
-          </FeatureField>
-          <FeatureField label="Condição">
-            <FeatureSelect
-              ariaLabel="Condição do veículo"
-              onChange={(value) => onVehicleChange({ condition: value })}
-              options={conditionOptions}
-              value={vehicle.condition ?? "used"}
-            />
-          </FeatureField>
-          <FeatureField label="Hodômetro (km)">
-            <FeatureInput
-              aria-label="Hodômetro"
-              inputMode="numeric"
-              onChange={(event) =>
-                onVehicleChange({
-                  odometer: event.target.value.replace(/\D/g, ""),
-                })
-              }
-              value={String(vehicle.odometer ?? "")}
-            />
-          </FeatureField>
-        </FeatureFieldGroup>
+        <div>
+          <div className="fiscal-field-subgroup">
+            <p className="fiscal-field-subgroup-title">
+              <Car aria-hidden="true" />
+              Identificação
+            </p>
+            <FeatureFieldGroup>
+              <FeatureField error={errors.vehicle} label="Código do veículo">
+                <FeatureInput
+                  aria-label="Código do veículo"
+                  onChange={(event) =>
+                    onVehicleChange({ id: event.target.value })
+                  }
+                  placeholder="Estoque ou anúncio"
+                  value={vehicle.id ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Marca">
+                <FeatureInput
+                  aria-label="Marca do veículo"
+                  onChange={(event) =>
+                    onVehicleChange({ brand: event.target.value })
+                  }
+                  value={vehicle.brand ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Modelo">
+                <FeatureInput
+                  aria-label="Modelo do veículo"
+                  onChange={(event) =>
+                    onVehicleChange({ model: event.target.value })
+                  }
+                  value={vehicle.model ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Versão">
+                <FeatureInput
+                  aria-label="Versão do veículo"
+                  onChange={(event) =>
+                    onVehicleChange({ version: event.target.value })
+                  }
+                  value={vehicle.version ?? ""}
+                />
+              </FeatureField>
+            </FeatureFieldGroup>
+          </div>
+          <div className="fiscal-field-subgroup">
+            <p className="fiscal-field-subgroup-title">
+              <FileText aria-hidden="true" />
+              Registro e documentos
+            </p>
+            <FeatureFieldGroup>
+              <FeatureField label="Chassi">
+                <FeatureInput
+                  aria-label="Chassi"
+                  maxLength={17}
+                  onChange={(event) =>
+                    onVehicleChange({
+                      chassis: event.target.value.toUpperCase(),
+                    })
+                  }
+                  value={vehicle.chassis ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Placa">
+                <FeatureInput
+                  aria-label="Placa"
+                  maxLength={8}
+                  onChange={(event) =>
+                    onVehicleChange({ plate: event.target.value.toUpperCase() })
+                  }
+                  value={vehicle.plate ?? ""}
+                />
+              </FeatureField>
+              <FeatureField
+                hint="O estoque V2 ainda não guarda o Renavam; confira antes de emitir."
+                label="Renavam"
+              >
+                <FeatureInput
+                  aria-label="Renavam"
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    onVehicleChange({
+                      renavam: event.target.value.replace(/\D/g, ""),
+                    })
+                  }
+                  value={vehicle.renavam ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Cor">
+                <FeatureInput
+                  aria-label="Cor do veículo"
+                  onChange={(event) =>
+                    onVehicleChange({ color: event.target.value })
+                  }
+                  value={vehicle.color ?? ""}
+                />
+              </FeatureField>
+            </FeatureFieldGroup>
+          </div>
+          <div className="fiscal-field-subgroup">
+            <p className="fiscal-field-subgroup-title">
+              <Gauge aria-hidden="true" />
+              Especificações técnicas
+            </p>
+            <FeatureFieldGroup>
+              <FeatureField label="Combustível">
+                <FeatureSelect
+                  ariaLabel="Combustível"
+                  onChange={(value) => onVehicleChange({ fuelType: value })}
+                  options={fuelTypeOptions}
+                  value={vehicle.fuelType ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Número do motor">
+                <FeatureInput
+                  aria-label="Número do motor"
+                  onChange={(event) =>
+                    onVehicleChange({ engineNumber: event.target.value })
+                  }
+                  value={vehicle.engineNumber ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Potência (cv)">
+                <FeatureInput
+                  aria-label="Potência"
+                  onChange={(event) =>
+                    onVehicleChange({ power: event.target.value })
+                  }
+                  value={vehicle.power ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Cilindrada">
+                <FeatureInput
+                  aria-label="Cilindrada"
+                  onChange={(event) =>
+                    onVehicleChange({ cylinderCapacity: event.target.value })
+                  }
+                  value={vehicle.cylinderCapacity ?? ""}
+                />
+              </FeatureField>
+              <FeatureField label="Peso líquido (kg)">
+                <FeatureInput
+                  aria-label="Peso líquido"
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    onVehicleChange({ netWeight: event.target.value })
+                  }
+                  value={String(vehicle.netWeight ?? "")}
+                />
+              </FeatureField>
+              <FeatureField label="Peso bruto (kg)">
+                <FeatureInput
+                  aria-label="Peso bruto"
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    onVehicleChange({ grossWeight: event.target.value })
+                  }
+                  value={String(vehicle.grossWeight ?? "")}
+                />
+              </FeatureField>
+              <FeatureField label="Ano modelo">
+                <FeatureInput
+                  aria-label="Ano modelo"
+                  inputMode="numeric"
+                  maxLength={4}
+                  onChange={(event) =>
+                    onVehicleChange({
+                      modelYear: event.target.value.replace(/\D/g, ""),
+                    })
+                  }
+                  value={String(vehicle.modelYear ?? "")}
+                />
+              </FeatureField>
+              <FeatureField label="Ano fabricação">
+                <FeatureInput
+                  aria-label="Ano fabricação"
+                  inputMode="numeric"
+                  maxLength={4}
+                  onChange={(event) =>
+                    onVehicleChange({
+                      manufactureYear: event.target.value.replace(/\D/g, ""),
+                    })
+                  }
+                  value={String(vehicle.manufactureYear ?? "")}
+                />
+              </FeatureField>
+              <FeatureField label="Condição">
+                <FeatureSelect
+                  ariaLabel="Condição do veículo"
+                  onChange={(value) => onVehicleChange({ condition: value })}
+                  options={conditionOptions}
+                  value={vehicle.condition ?? "used"}
+                />
+              </FeatureField>
+              <FeatureField label="Hodômetro (km)">
+                <FeatureInput
+                  aria-label="Hodômetro"
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    onVehicleChange({
+                      odometer: event.target.value.replace(/\D/g, ""),
+                    })
+                  }
+                  value={String(vehicle.odometer ?? "")}
+                />
+              </FeatureField>
+            </FeatureFieldGroup>
+          </div>
+        </div>
       </FeatureFormSection>
 
       <FeatureFormSection

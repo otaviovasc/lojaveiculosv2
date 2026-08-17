@@ -1,13 +1,12 @@
 import { CheckCircle2, PlugZap, RefreshCcw, XCircle } from "lucide-react";
 import { useState } from "react";
-import {
-  FeatureActionButton,
-  FeatureSection,
-} from "../../components/ui/FeatureLayout";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
   FeatureStatusBadge,
+  type FeatureStatusTone,
 } from "../../components/ui/FeatureStates";
+import { Toast } from "../../components/ui/Toast";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { FiscalApi } from "./apiClient";
 import {
@@ -35,18 +34,27 @@ export function FiscalConnectionPanel({
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    title: string;
+    children?: string;
+  } | null>(null);
 
   const checklist = buildFiscalReadinessChecklist(connection);
   const capabilities = listFiscalCapabilities(connection.capabilities);
   const certificate = describeFiscalCertificate(
     connection.certificateExpiresAt,
   );
+  const statusTone = getFiscalConnectionStatusTone(connection.status);
 
   const sync = async () => {
     setBusy(true);
     setError(null);
     try {
       onConnectionChange(await api.syncConnection());
+      setToast({
+        title: "Sincronização concluída.",
+        children: "As capacidades e os dados da empresa foram atualizados.",
+      });
     } catch (cause) {
       setError(
         formatApiErrorDisplay(
@@ -60,8 +68,39 @@ export function FiscalConnectionPanel({
   };
 
   return (
-    <FeatureSection
-      actions={
+    <section
+      className={`fiscal-connection-hero fiscal-connection-hero--${heroToneClass(
+        statusTone,
+      )}`}
+    >
+      <span aria-hidden="true" className="fiscal-connection-hero__blob" />
+      <span aria-hidden="true" className="fiscal-connection-hero__watermark">
+        <PlugZap />
+      </span>
+
+      <header className="fiscal-connection-hero__header">
+        <div className="min-w-0">
+          <p className="fiscal-connection-hero__eyebrow">
+            <PlugZap aria-hidden="true" className="size-4" />
+            Conexão com o provedor
+          </p>
+          <h3 className="fiscal-connection-hero__title">
+            {getFiscalConnectionStatusLabel(connection.status)}
+          </h3>
+          <p className="fiscal-connection-hero__description">
+            Situação da conexão da loja com o provedor fiscal Spedy.
+          </p>
+          <div className="fiscal-connection-hero__badges">
+            <FeatureStatusBadge
+              tone={getFiscalDefaultsStatusTone(connection.defaultsStatus)}
+            >
+              {getFiscalDefaultsStatusLabel(connection.defaultsStatus)}
+            </FeatureStatusBadge>
+            <FeatureStatusBadge tone={certificate.tone}>
+              {`Certificado: ${certificate.label}`}
+            </FeatureStatusBadge>
+          </div>
+        </div>
         <FeatureActionButton
           disabled={!connection.companyId}
           icon={RefreshCcw}
@@ -69,39 +108,44 @@ export function FiscalConnectionPanel({
           label="Sincronizar"
           onClick={() => void sync()}
           title="Sincronizar capacidades e dados da empresa com a Spedy"
+          variant="primary"
         />
-      }
-      className="feature-panel"
-      description="Situação da conexão da loja com o provedor fiscal Spedy."
-      icon={<PlugZap aria-hidden="true" className="size-5" />}
-      title="Conexão com o provedor"
-    >
-      <div className="mt-4 grid gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <FeatureStatusBadge
-            tone={getFiscalConnectionStatusTone(connection.status)}
+      </header>
+
+      <div className="fiscal-connection-hero__body">
+        {toast ? (
+          <Toast
+            durationMs={4000}
+            onDismiss={() => setToast(null)}
+            title={toast.title}
+            tone="success"
           >
-            {getFiscalConnectionStatusLabel(connection.status)}
-          </FeatureStatusBadge>
-          <FeatureStatusBadge
-            tone={getFiscalDefaultsStatusTone(connection.defaultsStatus)}
-          >
-            {getFiscalDefaultsStatusLabel(connection.defaultsStatus)}
-          </FeatureStatusBadge>
-          <FeatureStatusBadge tone={certificate.tone}>
-            {`Certificado: ${certificate.label}`}
-          </FeatureStatusBadge>
-        </div>
+            {toast.children}
+          </Toast>
+        ) : null}
+
+        {busy ? (
+          <p className="fiscal-connection-sync-status" role="status">
+            Sincronizando com a Spedy…
+          </p>
+        ) : null}
 
         {connection.status === "ready" ? (
           <FeatureAlert tone="success">
             A conexão está pronta. A emissão de notas está liberada para a loja.
           </FeatureAlert>
         ) : (
-          <ul className="grid gap-2" aria-label="Pendências da conexão fiscal">
+          <ul
+            aria-label="Pendências da conexão fiscal"
+            className="fiscal-connection-checklist"
+          >
             {checklist.map((item) => (
               <li
-                className="flex items-center gap-2 text-sm font-bold"
+                className={
+                  item.done
+                    ? "fiscal-connection-checklist__item fiscal-connection-checklist__item--done"
+                    : "fiscal-connection-checklist__item fiscal-connection-checklist__item--pending"
+                }
                 key={item.label}
               >
                 {item.done ? (
@@ -115,9 +159,7 @@ export function FiscalConnectionPanel({
                     className="size-4 shrink-0 text-warning-strong"
                   />
                 )}
-                <span className={item.done ? "text-muted" : "text-app-text"}>
-                  {item.label}
-                </span>
+                <span>{item.label}</span>
               </li>
             ))}
           </ul>
@@ -132,38 +174,26 @@ export function FiscalConnectionPanel({
 
         {error ? <FeatureAlert>{error}</FeatureAlert> : null}
 
-        <dl className="grid gap-3 text-sm md:grid-cols-2">
+        <dl className="fiscal-connection-meta">
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Empresa no provedor
-            </dt>
-            <dd className="mt-1 font-bold text-app-text">
-              {connection.companyId ?? "Ainda não criada"}
-            </dd>
+            <dt>Empresa no provedor</dt>
+            <dd>{connection.companyId ?? "Ainda não criada"}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Certificado digital
-            </dt>
-            <dd className="mt-1 font-bold text-app-text">
-              {certificate.detail}
-            </dd>
+            <dt>Certificado digital</dt>
+            <dd>{certificate.detail}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Última sincronização
-            </dt>
-            <dd className="mt-1 font-bold text-app-text">
+            <dt>Última sincronização</dt>
+            <dd>
               {connection.lastSyncedAt
                 ? formatFiscalDate(connection.lastSyncedAt)
                 : "Nunca sincronizada"}
             </dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Retorno de eventos
-            </dt>
-            <dd className="mt-1 font-bold text-app-text">
+            <dt>Retorno de eventos</dt>
+            <dd>
               {connection.webhookRegisteredAt
                 ? `Registrado em ${formatFiscalDate(connection.webhookRegisteredAt)}`
                 : "Ainda não registrado"}
@@ -173,10 +203,10 @@ export function FiscalConnectionPanel({
 
         {capabilities.length ? (
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">
+            <h4 className="fiscal-connection-capabilities__title">
               Capacidades disponíveis
             </h4>
-            <ul className="mt-2 flex flex-wrap gap-2">
+            <ul className="fiscal-connection-capabilities__list">
               {capabilities.map((capability) => (
                 <li key={capability.key}>
                   <FeatureStatusBadge tone="blue">
@@ -187,12 +217,19 @@ export function FiscalConnectionPanel({
             </ul>
           </div>
         ) : connection.companyId ? (
-          <p className="text-sm font-medium text-muted">
+          <p className="fiscal-connection-capabilities__empty">
             Nenhuma capacidade informada ainda. Sincronize com o provedor para
             importar os dados mais recentes.
           </p>
         ) : null}
       </div>
-    </FeatureSection>
+    </section>
   );
+}
+
+function heroToneClass(tone: FeatureStatusTone) {
+  if (tone === "success") return "success";
+  if (tone === "warning") return "warning";
+  if (tone === "danger" || tone === "pink") return "danger";
+  return "neutral";
 }

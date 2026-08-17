@@ -141,7 +141,7 @@ export function FiscalOriginStep({
                   <li key={sale.id}>
                     <button
                       aria-pressed={active}
-                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-app px-3 py-2 text-left outline-none focus:shadow-[var(--shadow-focus)]"
+                      className="fiscal-origin-card"
                       disabled={disabled}
                       onClick={() => onSelectSale(sale)}
                       type="button"
@@ -209,7 +209,7 @@ export function FiscalOriginStep({
                   <li key={entry.id}>
                     <button
                       aria-pressed={active}
-                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-app px-3 py-2 text-left outline-none focus:shadow-[var(--shadow-focus)]"
+                      className="fiscal-origin-card"
                       disabled={disabled}
                       onClick={() => onSelectEntry(entry)}
                       type="button"

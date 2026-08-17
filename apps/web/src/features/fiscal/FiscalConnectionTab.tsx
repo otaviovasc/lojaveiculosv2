@@ -1,3 +1,4 @@
+import "../../styles/fiscal-connection.css";
 import type { FiscalApi } from "./apiClient";
 import { FiscalCertificateForm } from "./FiscalCertificateForm";
 import { FiscalConnectionPanel } from "./FiscalConnectionPanel";
@@ -23,23 +24,25 @@ export function FiscalConnectionTab({
 }: Props) {
   const formKey = connection.lastSyncedAt ?? connection.status;
   return (
-    <div className="grid gap-4">
+    <div className="fiscal-connection">
       <FiscalConnectionPanel
         api={api}
         connection={connection}
         onConnectionChange={onConnectionChange}
       />
-      <FiscalIssuerSetupForm
-        api={api}
-        connection={connection}
-        key={`issuer-${formKey}`}
-        onConnectionChange={onConnectionChange}
-      />
-      <FiscalCertificateForm
-        api={api}
-        connection={connection}
-        onConnectionChange={onConnectionChange}
-      />
+      <div className="fiscal-connection-setup-grid">
+        <FiscalIssuerSetupForm
+          api={api}
+          connection={connection}
+          key={`issuer-${formKey}`}
+          onConnectionChange={onConnectionChange}
+        />
+        <FiscalCertificateForm
+          api={api}
+          connection={connection}
+          onConnectionChange={onConnectionChange}
+        />
+      </div>
       <FiscalTaxDefaultsReview
         api={api}
         connection={connection}

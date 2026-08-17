@@ -225,9 +225,8 @@ describe("FiscalConnectionTab", () => {
       certificate,
       password: "super-secret",
     });
-    expect(
-      await screen.findByText("Certificado A1 enviado com sucesso."),
-    ).toBeVisible();
+    const toast = await screen.findByRole("status");
+    expect(toast).toHaveTextContent("Certificado A1 enviado com sucesso.");
     expect(onConnectionChange).toHaveBeenCalledWith(updated);
     // The password field is cleared and nothing touches browser storage.
     expect(passwordInput).toHaveValue("");

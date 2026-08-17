@@ -1,5 +1,6 @@
-import { ArrowLeft, ArrowRight, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ReceiptText, Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import "../../styles/fiscal-issue.css";
 import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import {
   FeatureActionButton,
@@ -59,10 +60,14 @@ export type FiscalIssueComposerProps = {
   salesApi?: Pick<SalesApi, "list">;
 };
 
-const stepOptions: ReadonlyArray<{ label: string; value: IssueStep }> = [
-  { label: "1. Origem", value: "origin" },
-  { label: "2. Destinatário", value: "recipient" },
-  { label: "3. Itens e veículo", value: "items" },
+const stepOptions: ReadonlyArray<{
+  label: string;
+  name: string;
+  value: IssueStep;
+}> = [
+  { label: "1. Origem", name: "Origem", value: "origin" },
+  { label: "2. Destinatário", name: "Destinatário", value: "recipient" },
+  { label: "3. Itens e veículo", name: "Itens e veículo", value: "items" },
 ];
 
 export function FiscalIssueComposer({
@@ -325,32 +330,74 @@ export function FiscalIssueComposer({
     onError?.(message);
   }
 
+  // A visually hidden copy of the full "1. Origem"-style label keeps each
+  // tab's accessible name stable while the visual stepper shows a numbered
+  // badge that swaps to a check on completed steps.
   const renderedSteps = useMemo(
     () =>
-      stepOptions.map((option) => ({
-        label: option.label,
+      stepOptions.map((option, index) => ({
+        label: (
+          <span
+            className={
+              index < stepIndex
+                ? "fiscal-step-label is-done"
+                : "fiscal-step-label"
+            }
+          >
+            <span className="sr-only">{option.label}</span>
+            <span aria-hidden="true" className="fiscal-step-index">
+              <span className="fiscal-step-num">{index + 1}.</span>
+              <Check className="fiscal-step-check" />
+            </span>
+            <span aria-hidden="true" className="fiscal-step-text">
+              {option.name}
+            </span>
+          </span>
+        ),
         value: option.value,
       })),
-    [],
+    [stepIndex],
   );
+
+  const progressPercent = ((stepIndex + 1) / stepOptions.length) * 100;
 
   return (
     <FeatureSection
-      className="feature-panel"
-      description="Monte a nota a partir de uma operação real da loja e revise antes de transmitir ao provedor."
-      title="Emitir documento"
+      className="feature-panel fiscal-issue"
+      padding="comfortable"
     >
+      <header className="fiscal-issue-hero">
+        <span aria-hidden="true" className="fiscal-issue-blob" />
+        <ReceiptText aria-hidden="true" className="fiscal-issue-watermark" />
+        <p className="fiscal-issue-eyebrow">
+          <ReceiptText aria-hidden="true" className="size-3.5" />
+          Emissão fiscal
+        </p>
+        <h3 className="fiscal-issue-title">Emitir documento</h3>
+        <p className="fiscal-issue-subtitle">
+          Monte a nota a partir de uma operação real da loja e revise antes de
+          transmitir ao provedor.
+        </p>
+      </header>
+
       <div className="grid gap-5">
-        <FeatureTabs<IssueStep>
-          activeClassName="!bg-accent !text-accent-foreground"
-          ariaLabel="Etapas da emissão"
-          className="w-full"
-          onChange={setStep}
-          optionClassName="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-xs font-black text-muted transition-all hover:text-app-text"
-          options={renderedSteps}
-          value={step}
-          variant="panel"
-        />
+        <div className="fiscal-stepper">
+          <FeatureTabs<IssueStep>
+            activeClassName="fiscal-step--active"
+            ariaLabel="Etapas da emissão"
+            className="fiscal-stepper-tabs"
+            onChange={setStep}
+            optionClassName="fiscal-step"
+            options={renderedSteps}
+            value={step}
+          />
+          <div aria-hidden="true" className="fiscal-stepper-progress">
+            <span
+              className="fiscal-stepper-progress-fill"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
 
         {formError ? <FeatureAlert>{formError}</FeatureAlert> : null}
         {issuedDocument ? (
@@ -361,55 +408,83 @@ export function FiscalIssueComposer({
         ) : null}
 
         {step === "origin" ? (
-          <FiscalOriginStep
-            disabled={disabled || busy}
-            draft={draft}
-            entries={entries}
-            entriesStatus={entriesStatus}
-            onChange={patchDraft}
-            onSelectEntry={selectEntry}
-            onSelectSale={selectSale}
-            sales={sales}
-            salesStatus={salesStatus}
-          />
+          <div className="fiscal-pane">
+            <div className="fiscal-pane-header">
+              <p className="fiscal-pane-kicker">Etapa 01 de 03 · Origem</p>
+              <p className="fiscal-pane-meta">
+                {draft.kind === "nfe" ? "NF-e (produto)" : "NFS-e (serviço)"}
+              </p>
+            </div>
+            <FiscalOriginStep
+              disabled={disabled || busy}
+              draft={draft}
+              entries={entries}
+              entriesStatus={entriesStatus}
+              onChange={patchDraft}
+              onSelectEntry={selectEntry}
+              onSelectSale={selectSale}
+              sales={sales}
+              salesStatus={salesStatus}
+            />
+          </div>
         ) : null}
 
         {step === "recipient" ? (
-          <FiscalRecipientStep
-            disabled={disabled || busy}
-            draft={draft}
-            errors={errors}
-            isPreviewing={isPreviewing}
-            onChange={(patch) =>
-              setDraft((current) => ({
-                ...current,
-                recipient: { ...current.recipient, ...patch },
-              }))
-            }
-            onNfseChange={(patch) =>
-              setDraft((current) => ({
-                ...current,
-                nfse: { ...current.nfse, ...patch },
-              }))
-            }
-            onPreview={() => void previewTemplate()}
-            preview={preview}
-            previewUnresolved={previewUnresolved}
-            recipients={recipients}
-            templates={templates}
-          />
+          <div className="fiscal-pane">
+            <div className="fiscal-pane-header">
+              <p className="fiscal-pane-kicker">
+                Etapa 02 de 03 · Destinatário
+              </p>
+              <p className="fiscal-pane-meta">
+                {draft.kind === "nfe" ? "NF-e (produto)" : "NFS-e (serviço)"}
+              </p>
+            </div>
+            <FiscalRecipientStep
+              disabled={disabled || busy}
+              draft={draft}
+              errors={errors}
+              isPreviewing={isPreviewing}
+              onChange={(patch) =>
+                setDraft((current) => ({
+                  ...current,
+                  recipient: { ...current.recipient, ...patch },
+                }))
+              }
+              onNfseChange={(patch) =>
+                setDraft((current) => ({
+                  ...current,
+                  nfse: { ...current.nfse, ...patch },
+                }))
+              }
+              onPreview={() => void previewTemplate()}
+              preview={preview}
+              previewUnresolved={previewUnresolved}
+              recipients={recipients}
+              templates={templates}
+            />
+          </div>
         ) : null}
 
         {step === "items" ? (
-          <FiscalItemsStep
-            disabled={disabled || busy}
-            draft={draft}
-            errors={errors}
-            onChange={patchDraft}
-          />
+          <div className="fiscal-pane">
+            <div className="fiscal-pane-header">
+              <p className="fiscal-pane-kicker">
+                Etapa 03 de 03 · Itens e veículo
+              </p>
+              <p className="fiscal-pane-meta">
+                {draft.kind === "nfe" ? "NF-e (produto)" : "NFS-e (serviço)"}
+              </p>
+            </div>
+            <FiscalItemsStep
+              disabled={disabled || busy}
+              draft={draft}
+              errors={errors}
+              onChange={patchDraft}
+            />
+          </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="fiscal-issue-footer">
           <FeatureActionButton
             disabled={disabled || busy || stepIndex === 0}
             icon={ArrowLeft}

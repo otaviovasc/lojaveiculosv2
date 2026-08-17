@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import { notifyTenantAdminBrandUpdated } from "../../app/tenantAdminBranding";
+import { Toast } from "../../components/ui/Toast";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SettingsApi } from "../settings/apiClient";
 import { createStoreSettingsPatch } from "../settings/settingsPatch";
@@ -197,20 +198,37 @@ export function StorefrontCustomizationModule({
       current.kind === "saved" ? { kind: "ready" } : current,
     );
   };
+  const clearFeedbackStatus = () => {
+    setStatus((current) =>
+      current.kind === "saved" || current.kind === "error"
+        ? { kind: "ready" }
+        : current,
+    );
+  };
 
   if (!draftSettings || !builderConfig) {
     return <StorefrontLoadingState status={status} />;
   }
 
+  const statusToast = toStatusMessage(status);
+  const feedbackToast = statusToast ? (
+    <Toast
+      durationMs={4000}
+      onDismiss={clearFeedbackStatus}
+      title={statusToast.text}
+      tone={statusToast.type === "error" ? "danger" : "success"}
+    />
+  ) : null;
+
   if (initialTab === "design") {
     return (
       <StorefrontMediaLibraryProvider api={runtimeMediaApi}>
+        {feedbackToast}
         <WebsiteBuilderDesign
           isSaving={status.kind === "saving"}
           onDirty={clearSavedStatus}
           onSave={(input) => saveSettings(input.settings)}
           settings={draftSettings}
-          statusMessage={toStatusMessage(status)}
         />
       </StorefrontMediaLibraryProvider>
     );
@@ -220,6 +238,7 @@ export function StorefrontCustomizationModule({
     return (
       <div className="website-builder-surface text-foreground">
         <StorefrontMediaLibraryProvider api={runtimeMediaApi}>
+          {feedbackToast}
           <CustomPageEditor
             config={builderConfig}
             isSaving={status.kind === "saving"}
@@ -227,7 +246,6 @@ export function StorefrontCustomizationModule({
             onDirty={clearSavedStatus}
             onSave={savePage}
             page={selectedPage}
-            statusMessage={toStatusMessage(status)}
             storeSlug={draftSettings.identity.publicSlug}
           />
         </StorefrontMediaLibraryProvider>
@@ -237,6 +255,7 @@ export function StorefrontCustomizationModule({
 
   return (
     <div className="website-builder-surface min-h-dvh p-4 text-foreground md:p-6">
+      {feedbackToast}
       <CustomPagesList
         createDescription={createDescription}
         createSlug={createSlug}
@@ -253,7 +272,6 @@ export function StorefrontCustomizationModule({
         onDuplicate={(page) => void duplicatePage(page)}
         onSelect={setSelectedPage}
         pages={pages}
-        statusMessage={toStatusMessage(status)}
         storeSlug={draftSettings.identity.publicSlug}
       />
     </div>

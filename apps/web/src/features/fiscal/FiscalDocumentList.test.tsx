@@ -65,8 +65,7 @@ describe("FiscalDocumentList", () => {
       screen.getByRole("button", { name: "Filtrar por tipo de documento" }),
     );
     fireEvent.click(screen.getByRole("option", { name: "Todos os tipos" }));
-    fireEvent.click(screen.getByRole("button", { name: "Filtrar por status" }));
-    fireEvent.click(screen.getByRole("option", { name: "Rejeitadas" }));
+    fireEvent.click(screen.getByRole("button", { name: /Rejeitadas/ }));
     expect(within(table).queryByText("Maria Silva")).not.toBeInTheDocument();
     expect(within(table).getByText("Loja Parceira")).toBeInTheDocument();
   });

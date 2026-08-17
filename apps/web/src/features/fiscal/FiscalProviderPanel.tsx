@@ -1,5 +1,5 @@
-import { ShieldAlert } from "lucide-react";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { ShieldAlert, ShieldCheck } from "lucide-react";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { getFiscalConfigurationLabels } from "./fiscalLabels";
 import type { FiscalOverview } from "./types";
 
@@ -8,32 +8,37 @@ export function FiscalProviderPanel({
 }: {
   overview: FiscalOverview;
 }) {
+  const configured = overview.provider.configured;
   const missingConfiguration = getFiscalConfigurationLabels(
     overview.provider.missingConfiguration,
   );
 
   return (
-    <FeatureSection
-      className="feature-panel"
-      description={
-        overview.provider.configured
-          ? "Conexão, credencial e retorno de eventos estão prontos para uso."
-          : "A emissão ficará bloqueada até os itens abaixo serem configurados."
+    <FeatureAlert
+      icon={
+        configured ? (
+          <ShieldCheck aria-hidden="true" className="size-4" />
+        ) : (
+          <ShieldAlert aria-hidden="true" className="size-4" />
+        )
       }
-      icon={<ShieldAlert aria-hidden="true" className="size-5" />}
       title={
-        overview.provider.configured
-          ? "Integração fiscal pronta"
-          : "Integração fiscal incompleta"
+        configured ? "Integração fiscal pronta" : "Integração fiscal incompleta"
       }
+      tone={configured ? "success" : "warning"}
     >
-      {!overview.provider.configured ? (
-        <ul className="mt-4 grid gap-2 pl-5 text-sm font-bold text-danger">
+      {configured
+        ? "Conexão, credencial e retorno de eventos estão prontos para uso."
+        : "A emissão ficará bloqueada até os itens abaixo serem configurados."}
+      {!configured ? (
+        <ul className="fiscal-provider-alert__list">
           {missingConfiguration.map((label) => (
-            <li key={label}>{label}</li>
+            <li className="fiscal-provider-alert__item" key={label}>
+              {label}
+            </li>
           ))}
         </ul>
       ) : null}
-    </FeatureSection>
+    </FeatureAlert>
   );
 }

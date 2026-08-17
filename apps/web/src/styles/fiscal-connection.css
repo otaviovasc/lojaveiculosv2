@@ -1,0 +1,334 @@
+/* ==========================================================================
+   Fiscal — connection/setup workspace
+   Hero status card in the billing KPI language (tone variants, rotated
+   low-opacity watermark icon, blurred accent blob, display headings) with
+   the credere hairline/thread details. Color only via design tokens.
+   ========================================================================== */
+
+.fiscal-connection {
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* --- Setup grid: issuer form + certificate side by side ----------------- */
+
+.fiscal-connection-setup-grid {
+  align-items: start;
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .fiscal-connection-setup-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+}
+
+/* --- Hero status card ----------------------------------------------------- */
+
+.fiscal-connection-hero {
+  --fiscal-hero-accent: var(--color-accent-strong);
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  overflow: clip;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  position: relative;
+}
+
+/* Fine accent thread along the top edge — the "speed line". */
+.fiscal-connection-hero::before {
+  background: linear-gradient(
+    90deg,
+    var(--fiscal-hero-accent) 0%,
+    color-mix(in srgb, var(--fiscal-hero-accent) 42%, transparent) 34%,
+    color-mix(in srgb, var(--fiscal-hero-accent) 0%, transparent) 72%
+  );
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.fiscal-connection-hero--success {
+  --fiscal-hero-accent: var(--color-success-strong);
+}
+
+.fiscal-connection-hero--warning {
+  --fiscal-hero-accent: var(--color-warning-strong);
+}
+
+.fiscal-connection-hero--danger {
+  --fiscal-hero-accent: var(--color-danger);
+}
+
+.fiscal-connection-hero--neutral {
+  --fiscal-hero-accent: var(--color-accent-strong);
+}
+
+.fiscal-connection-hero__blob {
+  background: color-mix(in srgb, var(--fiscal-hero-accent) 15%, transparent);
+  border-radius: 999px;
+  filter: blur(120px);
+  height: 16rem;
+  pointer-events: none;
+  position: absolute;
+  right: -4rem;
+  top: -6rem;
+  width: 18rem;
+}
+
+.fiscal-connection-hero__watermark {
+  bottom: -2rem;
+  color: var(--fiscal-hero-accent);
+  opacity: 0.1;
+  pointer-events: none;
+  position: absolute;
+  right: -1.5rem;
+  transform: rotate(-12deg);
+}
+
+.fiscal-connection-hero__watermark svg {
+  height: 9rem;
+  stroke-width: 1.2;
+  width: 9rem;
+}
+
+.fiscal-connection-hero__header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.fiscal-connection-hero__eyebrow {
+  align-items: center;
+  color: var(--fiscal-hero-accent);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fiscal-connection-hero__eyebrow::after {
+  background: linear-gradient(
+    90deg,
+    var(--fiscal-hero-accent),
+    color-mix(in srgb, var(--fiscal-hero-accent) 0%, transparent)
+  );
+  content: "";
+  display: inline-block;
+  height: 1px;
+  width: 3rem;
+}
+
+.fiscal-connection-hero__title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: clamp(var(--font-size-xl), 2.2vw, var(--font-size-2xl));
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-top: 0.35rem;
+}
+
+.fiscal-connection-hero__description {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-top: 0.35rem;
+  max-width: 60ch;
+}
+
+.fiscal-connection-hero__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.fiscal-connection-hero__body {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.fiscal-connection-sync-status {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fiscal-connection-sync-status::before {
+  animation: fiscal-connection-spin 0.9s linear infinite;
+  border: 2px solid var(--color-line);
+  border-top-color: var(--fiscal-hero-accent);
+  border-radius: 999px;
+  content: "";
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fiscal-connection-sync-status::before {
+    animation: none;
+  }
+}
+
+@keyframes fiscal-connection-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Readiness checklist -------------------------------------------------- */
+
+.fiscal-connection-checklist {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .fiscal-connection-checklist {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fiscal-connection-checklist__item {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.fiscal-connection-checklist__item--done {
+  color: var(--color-muted);
+}
+
+.fiscal-connection-checklist__item--pending {
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning-strong) 35%,
+    var(--color-line)
+  );
+  color: var(--color-text);
+}
+
+/* --- Metadata strip (billing auto-summary language) ----------------------- */
+
+.fiscal-connection-meta {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0.5rem;
+}
+
+.fiscal-connection-meta > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.875rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .fiscal-connection-meta {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .fiscal-connection-meta > div + div {
+    border-left: 1px solid var(--color-line);
+  }
+}
+
+@media (max-width: 767px) {
+  .fiscal-connection-meta > div + div {
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+.fiscal-connection-meta dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fiscal-connection-meta dd {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+/* --- Capabilities --------------------------------------------------------- */
+
+.fiscal-connection-capabilities__title {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fiscal-connection-capabilities__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.fiscal-connection-capabilities__empty {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+/* --- Provider misconfiguration alert -------------------------------------- */
+
+.fiscal-provider-alert__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin-top: 0.75rem;
+  padding: 0;
+}
+
+.fiscal-provider-alert__item {
+  background: color-mix(in srgb, var(--color-panel) 75%, var(--color-app));
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.75rem;
+}

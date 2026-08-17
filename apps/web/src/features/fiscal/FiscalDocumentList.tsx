@@ -1,4 +1,4 @@
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, FileText, ReceiptText } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   FeatureSearchField,
@@ -10,6 +10,7 @@ import {
   FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
 import { FeatureTableFrame } from "../../components/ui/FeatureTable";
+import "../../styles/fiscal-documents.css";
 import type { FiscalApi } from "./apiClient";
 import { FiscalDocumentActions } from "./FiscalDocumentActions";
 import {
@@ -97,6 +98,21 @@ export function FiscalDocumentList({
     return () => clearInterval(intervalId);
   }, [api, onRefresh, pollingIds]);
 
+  const statusCounts = useMemo(() => {
+    const counts = new Map<FiscalStatusFilter, number>();
+    for (const option of fiscalStatusFilterOptions) {
+      counts.set(
+        option.value,
+        option.value === "all"
+          ? documents.length
+          : documents.filter((document) =>
+              matchesStatusFilter(document.status, option.value),
+            ).length,
+      );
+    }
+    return counts;
+  }, [documents]);
+
   const filtered = documents.filter((document) => {
     const matchesType =
       typeFilter === "all" || document.documentKind === typeFilter;
@@ -110,8 +126,8 @@ export function FiscalDocumentList({
   const rowProps = { api, onCorrect, onError, onRefresh };
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+    <div className="fiscal-docs">
+      <div className="fiscal-docs-toolbar">
         <FeatureSearchField
           className="lg:flex-1"
           label="Buscar documento fiscal"
@@ -126,16 +142,31 @@ export function FiscalDocumentList({
           options={fiscalTypeFilterOptions}
           value={typeFilter}
         />
-        <FeatureSelect<FiscalStatusFilter>
-          ariaLabel="Filtrar por status"
-          className="lg:w-48 lg:shrink-0"
-          onChange={onStatusFilterChange}
-          options={fiscalStatusFilterOptions}
-          value={statusFilter}
-        />
-        <span className="text-xs font-bold text-muted lg:ml-auto lg:shrink-0">
-          {filtered.length} {filtered.length === 1 ? "documento" : "documentos"}
+        <span className="fiscal-docs-count lg:ml-auto">
+          <strong>{filtered.length}</strong>
+          {filtered.length === 1 ? "documento" : "documentos"}
         </span>
+      </div>
+
+      <div
+        aria-label="Filtrar por status"
+        className="fiscal-status-chips"
+        role="group"
+      >
+        {fiscalStatusFilterOptions.map((option) => (
+          <button
+            aria-pressed={statusFilter === option.value}
+            className="fiscal-status-chip"
+            key={option.value}
+            onClick={() => onStatusFilterChange(option.value)}
+            type="button"
+          >
+            {option.label}
+            <span aria-hidden="true" className="fiscal-status-chip__count">
+              {statusCounts.get(option.value) ?? 0}
+            </span>
+          </button>
+        ))}
       </div>
 
       {filtered.length === 0 ? (
@@ -157,17 +188,17 @@ export function FiscalDocumentList({
         <>
           <FeatureTableFrame className="hidden md:block">
             <table className="w-full min-w-[880px] border-collapse text-left text-sm">
-              <thead className="border-b border-line bg-app/45 text-xs uppercase tracking-wider text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-black">Documento</th>
-                  <th className="px-4 py-3 font-black">Destinatário</th>
-                  <th className="px-4 py-3 font-black">Valor</th>
-                  <th className="px-4 py-3 font-black">Status</th>
-                  <th className="px-4 py-3 font-black">Data</th>
-                  <th className="px-4 py-3 text-right font-black">Ações</th>
+              <thead>
+                <tr className="border-b border-line bg-app-elevated/50 text-xs font-bold uppercase tracking-wider text-muted">
+                  <th className="p-3.5 pl-4">Documento</th>
+                  <th className="p-3.5">Destinatário</th>
+                  <th className="p-3.5">Valor</th>
+                  <th className="p-3.5">Status</th>
+                  <th className="p-3.5">Data</th>
+                  <th className="p-3.5 pr-4 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line/60">
+              <tbody className="divide-y divide-line/40">
                 {filtered.map((document) => (
                   <DocumentTableRow
                     document={document}
@@ -193,19 +224,46 @@ export function FiscalDocumentList({
   );
 }
 
+function DocumentKindIcon({
+  kind,
+  rejected,
+}: {
+  kind: FiscalDocument["documentKind"];
+  rejected: boolean;
+}) {
+  const Icon = kind === "nfse" ? ReceiptText : FileText;
+  return (
+    <span
+      aria-hidden="true"
+      className={cx("fiscal-doc-kind", rejected && "fiscal-doc-kind--danger")}
+    >
+      <Icon className="size-4" />
+    </span>
+  );
+}
+
 function DocumentTableRow({ document, ...actions }: RowProps) {
   const summary = readDocumentSummary(document);
   return (
-    <tr className={cx("transition-colors", summary.rejected && "bg-danger/5")}>
-      <td className="px-4 py-3">
-        <strong className="block text-app-text font-extrabold">
-          {summary.title}
-        </strong>
-        <span className="mt-0.5 block text-xs font-semibold text-muted">
-          {summary.subtitle}
-        </span>
+    <tr
+      className={cx(
+        "group transition-colors hover:bg-app-elevated/40",
+        summary.rejected && "bg-danger/5",
+      )}
+    >
+      <td className="p-3.5 pl-4">
+        <div className="flex items-center gap-3">
+          <DocumentKindIcon
+            kind={document.documentKind}
+            rejected={summary.rejected}
+          />
+          <div className="min-w-0">
+            <strong className="fiscal-doc-title">{summary.title}</strong>
+            <span className="fiscal-doc-subtitle">{summary.subtitle}</span>
+          </div>
+        </div>
       </td>
-      <td className="px-4 py-3">
+      <td className="p-3.5">
         <span className="block font-bold text-app-text">
           {summary.recipientName}
         </span>
@@ -215,23 +273,21 @@ function DocumentTableRow({ document, ...actions }: RowProps) {
           </span>
         ) : null}
       </td>
-      <td className="px-4 py-3 font-bold text-app-text">
-        {summary.totalLabel}
+      <td className="p-3.5">
+        <span className="fiscal-doc-total">{summary.totalLabel}</span>
       </td>
-      <td className="px-4 py-3">
-        <FeatureStatusBadge tone={summary.statusTone}>
+      <td className="p-3.5">
+        <FeatureStatusBadge size="dense" tone={summary.statusTone}>
           {summary.statusLabel}
         </FeatureStatusBadge>
         {summary.errorMessage ? (
-          <span className="mt-1 block max-w-64 text-xs font-semibold text-danger">
-            {summary.errorMessage}
-          </span>
+          <span className="fiscal-doc-error">{summary.errorMessage}</span>
         ) : null}
       </td>
-      <td className="px-4 py-3 text-xs font-bold text-muted">
+      <td className="p-3.5 text-xs font-bold text-muted">
         {summary.dateLabel}
       </td>
-      <td className="px-4 py-3">
+      <td className="p-3.5 pr-4">
         <FiscalDocumentActions document={document} {...actions} />
       </td>
     </tr>
@@ -243,28 +299,28 @@ function DocumentCard({ document, ...actions }: RowProps) {
   return (
     <article
       className={cx(
-        "rounded-2xl border border-line bg-panel p-4 transition-colors",
-        summary.rejected && "border-danger/30 bg-danger/5",
+        "fiscal-doc-card",
+        summary.rejected && "fiscal-doc-card--rejected",
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <strong className="block text-sm text-app-text font-extrabold">
-            {summary.title}
-          </strong>
-          <span className="mt-0.5 block text-xs font-semibold text-muted">
-            {summary.subtitle}
-          </span>
+        <div className="flex min-w-0 items-start gap-3">
+          <DocumentKindIcon
+            kind={document.documentKind}
+            rejected={summary.rejected}
+          />
+          <div className="min-w-0">
+            <strong className="fiscal-doc-title">{summary.title}</strong>
+            <span className="fiscal-doc-subtitle">{summary.subtitle}</span>
+          </div>
         </div>
         <FeatureStatusBadge size="dense" tone={summary.statusTone}>
           {summary.statusLabel}
         </FeatureStatusBadge>
       </div>
-      <div className="mt-3 grid gap-1 text-xs font-semibold text-muted">
+      <div className="fiscal-doc-card__meta">
         <span>
-          <span className="font-bold text-app-text">
-            {summary.recipientName}
-          </span>
+          <strong>{summary.recipientName}</strong>
           {summary.recipientDocument ? ` · ${summary.recipientDocument}` : ""}
         </span>
         <span>
@@ -272,11 +328,9 @@ function DocumentCard({ document, ...actions }: RowProps) {
         </span>
       </div>
       {summary.errorMessage ? (
-        <div className="mt-3 rounded-lg border border-danger/20 bg-danger/10 p-2 text-xs font-semibold text-danger">
-          {summary.errorMessage}
-        </div>
+        <div className="fiscal-doc-card__error">{summary.errorMessage}</div>
       ) : null}
-      <div className="mt-3 border-t border-line/45 pt-3">
+      <div className="fiscal-doc-card__actions">
         <FiscalDocumentActions document={document} {...actions} />
       </div>
     </article>
