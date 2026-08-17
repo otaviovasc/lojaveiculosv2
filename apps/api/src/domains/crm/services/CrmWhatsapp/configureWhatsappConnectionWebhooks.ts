@@ -20,6 +20,9 @@ import {
 } from "./serviceSupport.js";
 import { runZapiWebhookSetupAttempt } from "./runZapiWebhookSetupAttempt.js";
 import type { ZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState.js";
+import { readConnectionLiveStatus } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
+import { toWhatsappConnection } from "../../whatsapp/whatsappConnectionModels.js";
+import { ensureFirstReadyChannelDefault } from "../CrmRoutingService/ensureFirstReadyChannelDefault.js";
 
 const setupPermission = "crm.messaging.connection.setup";
 
@@ -104,6 +107,24 @@ export async function configureWhatsappConnectionWebhooks(
         },
         ports,
       );
+      const updated =
+        (await repository.findConnectionById(connection.id)) ?? connection;
+      const readyConnection = toWhatsappConnection(
+        updated,
+        await readConnectionLiveStatus(context, updated, ports),
+      );
+      if (
+        readyConnection.ready &&
+        context.permissions.includes("crm.routing.default.manage") &&
+        ports.crmRoutingConnectionRepository &&
+        ports.crmRoutingPolicyRepository
+      ) {
+        await ensureFirstReadyChannelDefault(
+          context,
+          { channel: "whatsapp", connectionId: connection.id },
+          ports,
+        );
+      }
 
       logWhatsappServiceEvent(
         context,

@@ -55,7 +55,7 @@ describe("CRM channel routing service", () => {
     const instagram = connection("instagram", "meta_cloud", "ig");
     await expect(
       updateCrmRoutingPolicy(
-        context(["crm.messaging.connection.setup"]),
+        context(["crm.routing.default.manage"]),
         {
           bot: { mode: "disabled" },
           channel: "whatsapp",
@@ -71,7 +71,7 @@ describe("CRM channel routing service", () => {
     };
     await expect(
       updateCrmRoutingPolicy(
-        context(["crm.messaging.connection.setup"]),
+        context(["crm.routing.default.manage"]),
         {
           bot: { mode: "disabled" },
           channel: "whatsapp",
@@ -92,7 +92,7 @@ describe("CRM channel routing service", () => {
     const servicePorts = ports([defaultConnection, botConnection], []);
     servicePorts.transaction = transaction as never;
     const result = await updateCrmRoutingPolicy(
-      context(["crm.messaging.connection.setup"]),
+      context(["crm.routing.default.manage"]),
       {
         bot: { connectionId: botConnection.id, mode: "explicit_connection" },
         channel: "whatsapp",
@@ -118,7 +118,7 @@ describe("CRM channel routing service", () => {
       async () => [];
     await expect(
       updateCrmRoutingPolicy(
-        context(["crm.messaging.connection.setup"]),
+        context(["crm.routing.default.manage"]),
         {
           bot: { mode: "disabled" },
           channel: "whatsapp",
@@ -139,7 +139,7 @@ describe("CRM channel routing service", () => {
       createServiceContext({
         actor: { id: "actor-1", kind: "user" },
         audit: { record: async (event) => void records.push(event as never) },
-        permissions: ["crm.messaging.connection.setup"],
+        permissions: ["crm.routing.default.manage"],
         request: { requestId: "request-1" },
         storeId: "store-1",
         tenantId: "tenant-1",
@@ -224,6 +224,7 @@ function ports(
 ): CrmServicePorts {
   const policies = [...initialPolicies];
   const policyRepository: CrmRoutingPolicyRepository = {
+    createDefaultIfMissing: async () => null,
     listPolicies: async () => policies,
     upsertPolicy: async (input) => {
       const next = { ...input, id: `policy-${input.channel}` };

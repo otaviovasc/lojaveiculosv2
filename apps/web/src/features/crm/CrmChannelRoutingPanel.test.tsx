@@ -50,6 +50,7 @@ describe("CrmChannelRoutingPanel", () => {
         blockedOlxRoute(),
       ]),
     );
+    const onPolicyChange = vi.fn(async () => undefined);
 
     render(
       <CrmChannelRoutingPanel
@@ -72,6 +73,7 @@ describe("CrmChannelRoutingPanel", () => {
             false,
           ),
         ]}
+        onPolicyChange={onPolicyChange}
       />,
     );
 
@@ -97,6 +99,7 @@ describe("CrmChannelRoutingPanel", () => {
       }),
     );
     expect(screen.getByText("Rota salva com sucesso.")).toBeVisible();
+    expect(onPolicyChange).toHaveBeenCalledOnce();
     expect(screen.getByText(/OLX Chat ainda está pendente/)).toBeVisible();
 
     const olx = screen.getByText("OLX Chat").closest("article");
@@ -138,6 +141,32 @@ describe("CrmChannelRoutingPanel", () => {
     expect(
       screen.getByText(/Escolha uma conexão pronta antes de substituir/),
     ).toBeVisible();
+  });
+
+  it("shows failed OLX Chat activation as failed instead of pending", async () => {
+    const failed = legacyConnection(
+      "olx-failed",
+      "olx_chat",
+      "OLX principal",
+      null,
+      false,
+    );
+    failed.state = "error";
+    failed.status = "error";
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(createPolicy([blockedOlxRoute()]), vi.fn())}
+        canManage
+        connections={[failed]}
+      />,
+    );
+
+    expect(
+      await screen.findByText(/A ativação do OLX Chat falhou/),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/OLX Chat ainda está pendente/),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a disconnected selected route without silently changing it", async () => {
@@ -336,7 +365,16 @@ function legacyConnection(
       reasonCode: ready ? "ready" : "pending_webhook",
     },
     ready,
-    status: ready ? "active" : "disconnected",
+    state: ready
+      ? "active"
+      : provider === "olx_chat"
+        ? "paused"
+        : "disconnected",
+    status: ready
+      ? "active"
+      : provider === "olx_chat"
+        ? "paused"
+        : "disconnected",
     webhookUrl: null,
   };
 }

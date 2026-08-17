@@ -32,10 +32,12 @@ export function CrmChannelRoutingPanel({
   api,
   canManage,
   connections,
+  onPolicyChange,
 }: {
   api: Pick<CrmWhatsappApi, "getRoutingPolicy" | "updateRoutingPolicy">;
   canManage: boolean;
   connections: readonly CrmWhatsappProviderConnection[];
+  onPolicyChange?: () => Promise<void> | void;
 }) {
   const [drafts, setDrafts] = useState<Drafts>(() => emptyDrafts());
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +132,7 @@ export function CrmChannelRoutingPanel({
           [channel]: draftFromChannel(savedPolicy),
         }));
       }
+      await onPolicyChange?.();
       setSavedChannel(channel);
     } catch (caught) {
       setRowError((current) => ({
@@ -252,7 +255,16 @@ function RoutingRow({
   ).filter((option) => option.value !== "");
   const pendingOlx =
     channel === "olx_chat" &&
-    channelCandidates.some((candidate) => !candidate.ready);
+    channelCandidates.some(
+      (candidate) =>
+        !candidate.ready &&
+        (candidate.state === "paused" || candidate.state === "sandbox"),
+    );
+  const failedOlx =
+    channel === "olx_chat" &&
+    channelCandidates.some(
+      (candidate) => !candidate.ready && candidate.state === "error",
+    );
   const warnings = routeWarnings(policy);
 
   return (
@@ -317,6 +329,11 @@ function RoutingRow({
         <p className="crm-routing-note">
           O OLX Chat ainda está pendente: conclua a ativação do chat para
           torná-lo selecionável.
+        </p>
+      ) : null}
+      {failedOlx ? (
+        <p className="crm-routing-warning">
+          A ativação do OLX Chat falhou. Revise a conexão e tente novamente.
         </p>
       ) : null}
       {warnings.map((warning) => (

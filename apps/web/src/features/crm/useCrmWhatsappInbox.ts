@@ -444,6 +444,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     configureZapiWebhooks: connections.configureZapiWebhooks,
     disconnectZapiConnection: connections.disconnectZapiConnection,
     refreshConnections: connections.refreshConnections,
+    refreshRoutingPolicy: routing.refresh,
     requestZapiPairingCode: connections.requestZapiPairingCode,
     requestZapiPairingQr: connections.requestZapiPairingQr,
     requestZapiAddon: connections.requestZapiAddon,

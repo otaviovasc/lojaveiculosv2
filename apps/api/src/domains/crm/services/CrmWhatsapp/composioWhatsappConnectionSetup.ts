@@ -28,6 +28,7 @@ import {
   loadComposioSetupTarget,
   readConnectedAccountId,
 } from "../../whatsapp/composioWhatsappConnectionSetupSupport.js";
+import { ensureFirstReadyChannelDefault } from "../CrmRoutingService/ensureFirstReadyChannelDefault.js";
 export type {
   AuthorizeComposioWhatsappInput,
   CompleteComposioWhatsappResult,
@@ -152,13 +153,15 @@ export async function selectComposioWhatsappSender(
         connection.metadata.composioBusinessAccountId ===
           sender.businessAccountId
       ) {
-        return toWhatsappConnection(connection, {
+        const result = toWhatsappConnection(connection, {
           checkedAt: new Date(),
           connected: true,
           connectedPhone: connection.phone,
           providerStatus: "connected",
           smartphoneConnected: null,
         });
+        await persistDefaultForReadyConnection(context, result, ports);
+        return result;
       }
       await provider.subscribeWhatsappApp({
         businessAccountId: sender.businessAccountId,
@@ -187,14 +190,38 @@ export async function selectComposioWhatsappSender(
         tenantId: connection.tenantId,
       });
       if (!updated) throw new WhatsappConnectionNotFoundError(connection.id);
-      return toWhatsappConnection(updated, {
+      const result = toWhatsappConnection(updated, {
         checkedAt: new Date(),
         connected: true,
         connectedPhone: sender.phone,
         providerStatus: "connected",
         smartphoneConnected: null,
       });
+      await persistDefaultForReadyConnection(context, result, ports);
+      return result;
     },
+  );
+}
+
+async function persistDefaultForReadyConnection(
+  context: ServiceContext,
+  connection: WhatsappConnection,
+  ports: CrmServicePorts,
+) {
+  if (
+    !connection.ready ||
+    !context.permissions.includes("crm.routing.default.manage") ||
+    !ports.crmRoutingConnectionRepository ||
+    !ports.crmRoutingPolicyRepository
+  )
+    return;
+  await ensureFirstReadyChannelDefault(
+    context,
+    {
+      channel: connection.channel ?? "whatsapp",
+      connectionId: connection.id,
+    },
+    ports,
   );
 }
 

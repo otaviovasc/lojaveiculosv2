@@ -17,6 +17,7 @@ import {
   readOlxAuthorizationAction,
   readOlxChannelOperations,
 } from "./crmChannelPresentation";
+import { markCrmOlxOauthReturn } from "./crmOlxOauthReturn";
 import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
 import type {
   CrmWhatsappProviderConnection,
@@ -93,6 +94,7 @@ export function CrmWhatsappChannelDirectory({
     setOlxError(null);
     try {
       const result = await api.createConnectUrl({ provider: "olx" });
+      markCrmOlxOauthReturn();
       onRedirect(result.authorizationUrl);
     } catch (caught) {
       setOlxError(

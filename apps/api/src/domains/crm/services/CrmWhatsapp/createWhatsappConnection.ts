@@ -34,6 +34,7 @@ import {
   sealZapiCredentials,
 } from "../../whatsapp/zapiInitialCredentials.js";
 import { readConnectionLiveStatus } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
+import { ensureFirstReadyChannelDefault } from "../CrmRoutingService/ensureFirstReadyChannelDefault.js";
 
 const connectionPermission = "crm.messaging.connection.setup";
 
@@ -171,10 +172,23 @@ export async function createWhatsappConnection(
         (await getCrmConnectionRepository(ports).findConnectionById(
           created.id,
         )) ?? created;
-      return toWhatsappConnection(
+      const result = toWhatsappConnection(
         finalConnection,
         await readConnectionLiveStatus(context, finalConnection, ports),
       );
+      if (
+        result.ready &&
+        context.permissions.includes("crm.routing.default.manage") &&
+        ports.crmRoutingConnectionRepository &&
+        ports.crmRoutingPolicyRepository
+      ) {
+        await ensureFirstReadyChannelDefault(
+          context,
+          { channel: result.channel ?? "whatsapp", connectionId: result.id },
+          ports,
+        );
+      }
+      return result;
     },
   );
 }

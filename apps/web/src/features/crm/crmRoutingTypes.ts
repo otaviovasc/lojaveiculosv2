@@ -72,6 +72,7 @@ export type CrmRoutingCandidate = {
   phone: string | null;
   provider: CrmWhatsappProvider;
   ready: boolean;
+  state: CrmWhatsappProviderConnection["state"];
 };
 
 export function normalizeCrmRoutingPolicy(payload: unknown): CrmRoutingPolicy {
@@ -101,6 +102,7 @@ export function readRoutingCandidates(
       phone: connection.phone,
       provider: connection.provider,
       ready: connection.readiness.ready,
+      state: connection.state,
     });
   }
   for (const channel of policy?.channels ?? []) {
@@ -114,6 +116,7 @@ export function readRoutingCandidates(
         phone: null,
         provider: route.connection.provider,
         ready: route.ready,
+        state: route.connection.active ? "active" : undefined,
       });
     }
   }
