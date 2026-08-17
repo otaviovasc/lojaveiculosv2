@@ -119,6 +119,7 @@ function createWorkerContext(input: {
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
     permissions: [
+      "crm.messaging.connection.setup",
       "crm.whatsapp.ingest",
       "crm.whatsapp.schedules.process",
       "crm.whatsapp.send",

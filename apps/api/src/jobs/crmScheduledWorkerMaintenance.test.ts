@@ -24,6 +24,7 @@ describe("CRM scheduled worker maintenance", () => {
     );
     expect(railway).toContain("crmScheduleWorker,");
     expect(worker).toContain("runCrmScheduledWorkerMaintenance(");
+    expect(worker).toContain('"crm.messaging.connection.setup"');
   });
 
   it("runs bounded connection and outbound-recovery cleanup", async () => {
