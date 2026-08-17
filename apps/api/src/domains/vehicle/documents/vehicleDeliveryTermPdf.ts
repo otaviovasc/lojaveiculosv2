@@ -96,7 +96,7 @@ export function createDeliveryTermDocument(model: WorkflowPdfModel) {
     e(
       DocumentPdfPage,
       { size: "A4", style: styles.pageTerm },
-      e(PdfLogo, { src: store.logoUrl }),
+      e(PdfLogo, { src: store.logoUrl, storeName: store.name }),
       e(
         View,
         { style: termStyles.titleWrapper },

@@ -37,6 +37,23 @@ import type {
   SimulationStatusState,
 } from "./types";
 
+function readSimulationIdFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash.replace(/^#\/?/, "");
+  const hashParts = hash.split("?")[0]?.split("/").filter(Boolean) ?? [];
+  if (hashParts[0] === "simulations" && hashParts[1]) {
+    return hashParts[1];
+  }
+  const pathParts = window.location.pathname.split("/").filter(Boolean);
+  if (pathParts[0] === "simulations" && pathParts[1]) {
+    return pathParts[1];
+  }
+  const params = new URLSearchParams(window.location.search);
+  const idFromParam = params.get("simulationId") ?? params.get("id");
+  if (idFromParam) return idFromParam.trim();
+  return null;
+}
+
 export function SimulationsPage({
   api: apiOverride,
   prefill,
@@ -90,9 +107,19 @@ export function SimulationsPage({
     async (simulation: CredereSimulation | null) => {
       if (!simulation) {
         setCurrent(null);
+        if (
+          typeof window !== "undefined" &&
+          window.location.hash.includes("simulations/")
+        ) {
+          window.location.hash = "/simulations";
+        }
         return;
       }
       storeSimulationSnapshot(simulation);
+      if (typeof window !== "undefined") {
+        window.location.hash = `/simulations/${simulation.id}`;
+        window.scrollTo({ behavior: "smooth", top: 0 });
+      }
       try {
         const api = await apiPromise;
         const fresh = await api.getSimulation(simulation.id);
@@ -103,6 +130,29 @@ export function SimulationsPage({
     },
     [apiPromise, storeSimulationSnapshot],
   );
+
+  useEffect(() => {
+    const targetId = readSimulationIdFromUrl();
+    if (!targetId || current?.id === targetId) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const api = await apiPromise;
+        const found = await api.getSimulation(targetId);
+        if (!cancelled && found) {
+          storeSimulationSnapshot(found);
+          window.scrollTo({ behavior: "smooth", top: 0 });
+        }
+      } catch {
+        // Ignore if simulation cannot be loaded by ID
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiPromise, current?.id, storeSimulationSnapshot]);
   const loadStatus = useCallback(async () => {
     setStatusState((previous) =>
       previous.kind === "ready" ? previous : { kind: "loading" },

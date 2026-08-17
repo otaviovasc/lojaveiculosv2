@@ -26,6 +26,7 @@ export function SaleServicesTabs({
   insurance,
   inventoryApi,
   onChange,
+  onSyncTradeInPayment,
   onTabChange,
   sale,
   tradeIn,
@@ -37,6 +38,7 @@ export function SaleServicesTabs({
   insurance: SnapshotRecord;
   inventoryApi: InventoryApi | null;
   onChange: ServiceChangeHandler;
+  onSyncTradeInPayment?: (() => void) | undefined;
   onTabChange: (tab: ActiveServiceTab) => void;
   sale: SaleRecord;
   tradeIn: SnapshotRecord;
@@ -101,6 +103,7 @@ export function SaleServicesTabs({
           <TradeInPanel
             inventoryApi={inventoryApi}
             onChange={onChange}
+            onSyncPayment={onSyncTradeInPayment}
             sale={sale}
             tradeIn={tradeIn}
           />

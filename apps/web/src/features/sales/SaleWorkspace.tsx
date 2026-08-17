@@ -11,7 +11,7 @@ import {
   SaleWorkspaceNavigation,
 } from "./SaleWorkspaceChrome";
 import { StickySaleSummary } from "./SaleSummaryPanel";
-import { canPersistSaleWorkspaceEdits } from "./salesModel";
+import { canPersistSaleWorkspaceEdits, saleMissingFields } from "./salesModel";
 import {
   clearSaleAutosaveTimer,
   createSaleSaveState,
@@ -66,11 +66,36 @@ export function SaleWorkspace({
 
   useEffect(() => {
     const previousDraftId = draftRef.current?.id;
-    setDraft(sale);
-    draftRef.current = sale;
-    resetSaleSaveState(saveStateRef.current, sale);
-    if (sale?.id !== previousDraftId) {
-      setCurrentStep(0);
+    const previousStatus = draftRef.current?.status;
+    const previousRevision = draftRef.current?.revision;
+
+    const isDifferentSale = sale?.id !== previousDraftId;
+    const isStatusChanged = sale?.status !== previousStatus;
+    const isRevisionChanged = sale?.revision !== previousRevision;
+
+    if (isDifferentSale || isStatusChanged || isRevisionChanged) {
+      setDraft(sale);
+      draftRef.current = sale;
+      resetSaleSaveState(saveStateRef.current, sale);
+      if (isDifferentSale) {
+        setCurrentStep(sale?.status === "closed" ? 3 : 0);
+      } else if (sale?.status === "closed" && previousStatus !== "closed") {
+        setCurrentStep(3);
+      }
+      return;
+    }
+
+    if (sale) {
+      saveStateRef.current.lastResult = sale;
+      saveStateRef.current.saved = serializeSaleDraft(sale);
+      const currentDraft = draftRef.current;
+      if (
+        !currentDraft ||
+        serializeSaleDraft(currentDraft) === saveStateRef.current.saved
+      ) {
+        setDraft(sale);
+        draftRef.current = sale;
+      }
     }
   }, [sale]);
 
@@ -88,7 +113,7 @@ export function SaleWorkspace({
       if (result.submitted) {
         const currentDraft = draftRef.current;
         if (
-          !currentDraft ||
+          currentDraft &&
           serializeSaleDraft(currentDraft) === result.submitted
         ) {
           setDraft(result.sale);
@@ -106,7 +131,8 @@ export function SaleWorkspace({
     setIsSaving(true);
     clearSaleAutosaveTimer(autosaveTimerRef);
     autosaveTimerRef.current = window.setTimeout(() => {
-      void persistDraft(draft)
+      const latestDraft = draftRef.current ?? draft;
+      void persistDraft(latestDraft)
         .then(() => {
           setMessage("Rascunho salvo automaticamente");
         })
@@ -132,7 +158,7 @@ export function SaleWorkspace({
   const update = (updater: (sale: SaleRecord) => SaleRecord) => {
     setDraft((current) => {
       if (!current || !canPersistSaleWorkspaceEdits(current)) return current;
-      const next = current ? updater(current) : current;
+      const next = updater(current);
       draftRef.current = next;
       return next;
     });
@@ -166,7 +192,7 @@ export function SaleWorkspace({
     clearSaleAutosaveTimer(autosaveTimerRef);
     setIsSaving(true);
     try {
-      const saved = await persistDraft(draft);
+      const saved = await persistDraft(draftRef.current ?? draft);
       if (!saved) return;
       const transitioned = await action(saved);
       resetSaleSaveState(saveStateRef.current, transitioned ?? saved);
@@ -194,6 +220,12 @@ export function SaleWorkspace({
     });
   };
 
+  const isCloseReady = saleMissingFields(draft, "close").length === 0;
+  const isReserveReady = saleMissingFields(draft, "reserve").length === 0;
+  const canClose =
+    isCloseReady && (draft.status === "draft" || draft.status === "pending");
+  const canReserve = isReserveReady && draft.status === "draft";
+
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] items-start">
       <div className="flex flex-col gap-4">
@@ -208,20 +240,36 @@ export function SaleWorkspace({
         <SaleWorkspaceReadOnlyNotice sale={draft} />
 
         <SaleWorkspaceStepContent
+          canClose={canClose}
           contextMessage={contextMessage}
           contextOptions={contextOptions}
           currentStep={currentStep}
           inventoryApi={inventoryApi}
+          isSaving={isSaving}
+          onClose={() => void runTransition(onClose)}
           sale={draft}
           update={update}
+          {...(onBack
+            ? {
+                onBack: () => {
+                  void handleBack();
+                },
+              }
+            : {})}
           {...(onCreateLead ? { onCreateLead } : {})}
         />
 
         <SaleWorkspaceNavigation
+          canClose={canClose}
+          canReserve={canReserve}
           currentStep={currentStep}
+          isSaving={isSaving}
           onBack={() => setCurrentStep((step) => step - 1)}
+          onClose={() => void runTransition(onClose)}
           onFinish={() => void handleBack()}
           onNext={() => setCurrentStep((step) => step + 1)}
+          onReserve={() => void runTransition(onReserve)}
+          sale={draft}
         />
       </div>
 

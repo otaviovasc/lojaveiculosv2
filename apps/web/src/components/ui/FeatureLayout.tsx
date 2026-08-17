@@ -17,12 +17,7 @@ export function FeaturePageShell({
   }
 
   return (
-    <div
-      className={cx(
-        "relative min-h-screen store-dashboard overflow-hidden",
-        className,
-      )}
-    >
+    <div className={cx("relative min-h-screen store-dashboard", className)}>
       <main className={cx("dashboard-main relative z-10", mainClassName)}>
         {children}
       </main>

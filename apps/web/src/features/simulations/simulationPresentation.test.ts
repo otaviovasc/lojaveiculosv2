@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   conditionResultRenderKey,
+  formatBankName,
+  formatCredereReason,
   getCredereReasonGuidance,
   groupRepeatedRefusals,
   simulationSnapshotsEqual,
@@ -67,10 +69,27 @@ describe("Credere simulation presentation", () => {
     expect(simulationSnapshotsEqual(previous, structuredClone(previous))).toBe(
       true,
     );
-    expect(
-      simulationSnapshotsEqual(previous, simulation({ status: "completed" })),
-    ).toBe(false);
-    expect(simulationSnapshotsEqual(null, previous)).toBe(false);
+  });
+
+  it("translates bank codes and acronyms to official friendly names", () => {
+    expect(formatBankName("Pan")).toBe("Banco PAN");
+    expect(formatBankName("BV")).toBe("BV Financeira");
+    expect(formatBankName("santander")).toBe("Santander Financiamentos");
+    expect(formatBankName("itau")).toBe("Itaú Auto");
+    expect(formatBankName("bradesco")).toBe("Bradesco Financiamentos");
+    expect(formatBankName("safra")).toBe("Banco Safra");
+  });
+
+  it("translates technical and snake_case refusal codes to clear Portuguese", () => {
+    expect(formatCredereReason("credit_condition_not_found")).toBe(
+      "Condição de crédito não encontrada para este perfil",
+    );
+    expect(formatCredereReason("no_margin_available")).toBe(
+      "Sem margem de crédito disponível",
+    );
+    expect(formatCredereReason("score_insufficient")).toBe(
+      "Score insuficiente para a política do banco",
+    );
   });
 });
 

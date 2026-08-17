@@ -47,11 +47,7 @@ export function createSaleReceiptDocument(model: WorkflowPdfModel) {
       e(
         View,
         { style: receiptStyles.titleHeader },
-        e(
-          Text,
-          { style: receiptStyles.mainTitle },
-          `RECIBO DE VENDA Nº ${model.sale.code}`,
-        ),
+        e(Text, { style: receiptStyles.mainTitle }, "RECIBO DE VENDA"),
       ),
       e(
         View,
@@ -59,7 +55,7 @@ export function createSaleReceiptDocument(model: WorkflowPdfModel) {
         e(
           View,
           { style: receiptStyles.headerTop },
-          e(PdfLogo, { src: store.logoUrl }),
+          e(PdfLogo, { src: store.logoUrl, storeName: store.name }),
         ),
         e(
           View,
@@ -91,8 +87,9 @@ export function createSaleReceiptDocument(model: WorkflowPdfModel) {
             { style: receiptStyles.headerRightDetails },
             headerDetail("DATA DA VENDA:", formatPdfDate(model.generatedAt)),
             headerDetail("HORA DA VENDA:", time),
-            headerDetail("CÓDIGO DO PEDIDO:", model.sale.code),
-            headerDetail("VENDEDOR:", model.sellerName ?? "N/A"),
+            model.sellerName
+              ? headerDetail("VENDEDOR:", model.sellerName)
+              : null,
           ),
         ),
       ),

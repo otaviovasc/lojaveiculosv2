@@ -17,8 +17,13 @@ export type VehicleBuyerSnapshot = {
   district?: string | null | undefined;
   document: string | null;
   email: string | null;
+  maritalStatus?: string | null | undefined;
   name: string;
+  nationality?: string | null | undefined;
   phone: string | null;
+  phone2?: string | null | undefined;
+  phone3?: string | null | undefined;
+  profession?: string | null | undefined;
   state?: string | null | undefined;
 };
 

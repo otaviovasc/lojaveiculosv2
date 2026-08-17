@@ -96,19 +96,19 @@ export function SimulationsReadyWorkspace({
         </Toast>
       ) : null}
 
-      {/* Tab Navigation Selector */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/60 pb-4">
+      {/* Tab Navigation Selector - Full Width */}
+      <div className="w-full">
         <div
           aria-label="Navegação das simulações"
-          className="inline-flex max-w-full items-center gap-1.5 rounded-xl border border-line/60 bg-app-elevated/70 p-1 backdrop-blur-md"
+          className="grid w-full grid-cols-2 gap-1.5 rounded-2xl border border-line/60 bg-app-elevated/70 p-1.5 backdrop-blur-md shadow-sm"
           role="tablist"
         >
           <button
             aria-selected={activeTab === "simulation"}
             className={
               activeTab === "simulation"
-                ? "inline-flex items-center gap-2 rounded-lg border border-line/60 bg-panel px-4 py-2 text-xs font-black text-app-text transition-all sm:text-sm"
-                : "inline-flex items-center gap-2 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-muted transition-all hover:bg-panel/40 hover:text-app-text sm:text-sm"
+                ? "inline-flex items-center justify-center gap-2 rounded-xl border border-line/60 bg-panel px-4 py-2.5 text-xs font-black text-app-text transition-all sm:text-sm"
+                : "inline-flex items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-bold text-muted transition-all hover:bg-panel/40 hover:text-app-text sm:text-sm"
             }
             onClick={() => {
               setActiveTab("simulation");
@@ -125,8 +125,8 @@ export function SimulationsReadyWorkspace({
             aria-selected={activeTab === "history"}
             className={
               activeTab === "history"
-                ? "inline-flex items-center gap-2 rounded-lg border border-line/60 bg-panel px-4 py-2 text-xs font-black text-app-text transition-all sm:text-sm"
-                : "inline-flex items-center gap-2 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-muted transition-all hover:bg-panel/40 hover:text-app-text sm:text-sm"
+                ? "inline-flex items-center justify-center gap-2 rounded-xl border border-line/60 bg-panel px-4 py-2.5 text-xs font-black text-app-text transition-all sm:text-sm"
+                : "inline-flex items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-bold text-muted transition-all hover:bg-panel/40 hover:text-app-text sm:text-sm"
             }
             onClick={() => {
               setActiveTab("history");
@@ -137,23 +137,12 @@ export function SimulationsReadyWorkspace({
             <History className="size-4 text-accent-strong" />
             <span>Histórico</span>
             {history && history.length > 0 ? (
-              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-black text-accent-strong">
+              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-black text-accent-strong">
                 {history.length}
               </span>
             ) : null}
           </button>
         </div>
-
-        {activeTab === "simulation" && current ? (
-          <button
-            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3.5 py-2 text-xs font-bold text-app-text transition-all hover:border-accent-strong hover:bg-accent-soft hover:text-accent-strong"
-            onClick={handleClearCurrent}
-            type="button"
-          >
-            <PlusCircle className="size-3.5" />
-            <span>Nova simulação</span>
-          </button>
-        ) : null}
       </div>
 
       {activeTab === "history" ? (
@@ -166,7 +155,10 @@ export function SimulationsReadyWorkspace({
                 !pollExhausted
               }
               isRefreshing={isRefreshing}
-              onBack={() => setViewingHistorySimulation(null)}
+              onBack={() => {
+                setViewingHistorySimulation(null);
+                onSelectSimulation(null as unknown as CredereSimulation);
+              }}
               onNewSimulation={() => {
                 setViewingHistorySimulation(null);
                 onSelectSimulation(null as unknown as CredereSimulation);

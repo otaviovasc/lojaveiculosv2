@@ -49,7 +49,7 @@ export function createPowerOfAttorneyDocument(model: WorkflowPdfModel) {
         e(
           View,
           { style: procuracaoStyles.headerTop },
-          e(PdfLogo, { src: store.logoUrl }),
+          e(PdfLogo, { src: store.logoUrl, storeName: store.name }),
         ),
         e(
           View,

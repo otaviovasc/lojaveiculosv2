@@ -4,7 +4,11 @@ import {
   type SalePaymentMethod,
 } from "@lojaveiculosv2/shared";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
-import { formatCents, parseCurrencyInput } from "./salesModel";
+import {
+  formatCents,
+  formatPaymentMethodLabel,
+  parseCurrencyInput,
+} from "./salesModel";
 import {
   changePaymentMethod,
   SalePaymentMethodFields,
@@ -61,7 +65,7 @@ export function PaymentRow({
               onChange(changePaymentMethod(payment, method))
             }
             options={salePaymentMethods.map((method) => ({
-              label: formatPaymentMethod(method),
+              label: formatPaymentMethodLabel(method),
               value: method,
             }))}
             value={payment.method}
@@ -148,27 +152,6 @@ function MoneyInput({
       />
     </label>
   );
-}
-
-function formatPaymentMethod(method: SalePaymentMethod): string {
-  switch (method) {
-    case "pix":
-      return "PIX";
-    case "transfer":
-      return "Transferência (TED/DOC)";
-    case "cash":
-      return "Dinheiro em Espécie";
-    case "financing":
-      return "Financiamento Bancário";
-    case "credit_card":
-      return "Cartão de Crédito";
-    case "boleto":
-      return "Boleto Bancário";
-    case "letter_of_credit":
-      return "Carta de Crédito (Consórcio)";
-    case "trade_in":
-      return "Veículo na Troca (Trade-in)";
-  }
 }
 
 type PaymentRowProps = {

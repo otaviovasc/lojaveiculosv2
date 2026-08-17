@@ -34,11 +34,12 @@ export function BuyerDocumentationFields({
     try {
       const addressData = await lookupBrazilianZipCode(cleanCep);
       if (addressData) {
-        onChange("postalCode", formatBrazilianZipCode(cleanCep));
-        const fullAddress = addressData.street
-          ? `${addressData.street}${addressData.neighborhood ? `, ${addressData.neighborhood}` : ""}`
-          : "";
-        if (fullAddress) onChange("address", fullAddress);
+        const formattedZip = formatBrazilianZipCode(cleanCep);
+        onChange("postalCode", formattedZip);
+        onChange("cep", formattedZip);
+        if (addressData.street) onChange("address", addressData.street);
+        if (addressData.neighborhood)
+          onChange("district", addressData.neighborhood);
         if (addressData.city) onChange("city", addressData.city);
         if (addressData.state) onChange("state", addressData.state);
       } else {
@@ -105,13 +106,21 @@ export function BuyerDocumentationFields({
         </SaleField>
       </div>
 
-      <DocumentInput
-        error={errors.buyerAddress}
-        label={`Endereço Completo (Rua, nº, Bairro) ${policy.buyerAddress ? "*" : ""}`}
-        onChange={(value) => onChange("address", value)}
-        placeholder="Rua, número, complemento e bairro"
-        value={String(buyer.address || "")}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <DocumentInput
+          error={errors.buyerAddress}
+          label={`Logradouro / Rua e Número ${policy.buyerAddress ? "*" : ""}`}
+          onChange={(value) => onChange("address", value)}
+          placeholder="Ex: Av. Paulista, 1000, Apto 42"
+          value={String(buyer.address || "")}
+        />
+        <DocumentInput
+          label="Bairro"
+          onChange={(value) => onChange("district", value)}
+          placeholder="Ex: Bela Vista"
+          value={String(buyer.district || buyer.bairro || "")}
+        />
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2">
@@ -270,7 +279,7 @@ function DocumentInput({
   value,
 }: {
   className?: string;
-  error: string | undefined;
+  error?: string | undefined;
   formatter?: (value: string) => string;
   label: string;
   maxLength?: number;

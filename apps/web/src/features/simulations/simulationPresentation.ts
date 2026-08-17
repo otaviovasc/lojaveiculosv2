@@ -113,6 +113,101 @@ export function groupRepeatedRefusals(
   return [...groups.values()];
 }
 
+const BANK_NAMES: Record<string, string> = {
+  pan: "Banco PAN",
+  bancopan: "Banco PAN",
+  bv: "BV Financeira",
+  banco_bv: "BV Financeira",
+  bancobv: "BV Financeira",
+  santander: "Santander Financiamentos",
+  banco_santander: "Santander Financiamentos",
+  itau: "Itaú Auto",
+  banco_itau: "Itaú Auto",
+  bradesco: "Bradesco Financiamentos",
+  banco_bradesco: "Bradesco Financiamentos",
+  safra: "Banco Safra",
+  banco_safra: "Banco Safra",
+  daycoval: "Banco Daycoval",
+  banco_daycoval: "Banco Daycoval",
+  omni: "Omni Financeira",
+  digimais: "Banco Digimais",
+  banco_digimais: "Banco Digimais",
+  c6: "C6 Bank",
+  c6bank: "C6 Bank",
+  volkswagen: "Banco Volkswagen",
+  bb: "Banco do Brasil",
+  bancodobrasil: "Banco do Brasil",
+  caixa: "Caixa Econômica",
+  creditas: "Creditas",
+};
+
+export function formatBankName(
+  bankName: string | null | undefined,
+  bankCode?: string | null | undefined,
+): string {
+  const raw = bankName?.trim() || bankCode?.trim() || "";
+  if (!raw) return "Banco Parceiro";
+  const key = normalizeText(raw).replace(/[\s_-]+/g, "");
+  if (BANK_NAMES[key]) return BANK_NAMES[key];
+  for (const [k, v] of Object.entries(BANK_NAMES)) {
+    if (key.includes(k)) return v;
+  }
+  // Title case fallback
+  return raw
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+const REASON_TRANSLATIONS: Record<string, string> = {
+  creditconditionnotfound:
+    "Condição de crédito não encontrada para este perfil",
+  nomarginavailable: "Sem margem de crédito disponível",
+  scoreinsufficient: "Score insuficiente para a política do banco",
+  insufficientscore: "Score insuficiente para a política do banco",
+  agelimitexceeded: "Idade do veículo ou proponente fora da política do banco",
+  vehiclenoteligible: "Veículo não elegível nesta instituição financeira",
+  policymismatch: "Perfil fora dos critérios de elegibilidade do banco",
+  alreadyinprogress: "Proposta já em andamento nesta instituição",
+  cpfrestricted: "Restrição cadastral informada pelo banco",
+  documentinvalid: "Divergência cadastral nos documentos",
+  systemtimeout: "Tempo limite de resposta do banco parceiro esgotado",
+  integrationerror: "Falha temporária de comunicação com o sistema bancário",
+  unavailable: "Condição indisponível no momento",
+  denied: "Proposta não aprovada pela mesa de crédito",
+  refused: "Proposta recusada pelo banco parceiro",
+  rejected: "Proposta rejeitada pelas regras da instituição",
+};
+
+export function formatCredereReason(
+  reason: string | null | undefined,
+  identifier?: string | null | undefined,
+): string {
+  const candidate = reason?.trim() || identifier?.trim() || "";
+  if (!candidate) return "O banco não informou detalhes do motivo.";
+
+  const normalized = normalizeText(candidate);
+  const key = normalized.replace(/[\s_-]+/g, "");
+
+  if (REASON_TRANSLATIONS[key]) return REASON_TRANSLATIONS[key];
+
+  for (const [k, v] of Object.entries(REASON_TRANSLATIONS)) {
+    if (key === k || key.includes(k)) return v;
+  }
+
+  // If reason is a snake_case or slug code
+  if (/^[a-z0-9_]+$/i.test(candidate)) {
+    const humanized = candidate
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/^\w/, (c) => c.toUpperCase());
+    return humanized;
+  }
+
+  return candidate;
+}
+
 export function getCredereReasonGuidance(reason: string | null) {
   const normalized = normalizeText(reason ?? "");
   if (normalized.includes("pre-analise") && normalized.includes("andamento")) {
@@ -130,6 +225,15 @@ export function getCredereReasonGuidance(reason: string | null) {
     return {
       body: "O banco não validou a identificação do veículo. Revise o modelo Molicar e a compatibilidade dos anos antes de criar outra simulação.",
       title: "Veículo não validado na base Molicar",
+    };
+  }
+  if (
+    normalized.includes("credit_condition_not_found") ||
+    normalized.includes("condicao de credito nao encontrada")
+  ) {
+    return {
+      body: "Nenhuma tabela de financiamento do banco atingiu os critérios com os valores de entrada e prazo informados. Tente ajustar o valor de entrada.",
+      title: "Ajuste de entrada sugerido",
     };
   }
   return null;
