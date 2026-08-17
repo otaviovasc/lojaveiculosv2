@@ -1,3 +1,4 @@
+import { getToken as getClerkToken } from "@clerk/react-router";
 import { readRuntimeStoreSlug } from "./currentStore";
 import { readLocalDevAccount, type LocalDevAuthEnv } from "./localDevAuth";
 
@@ -7,8 +8,7 @@ export type RuntimeAuthHeadersInput = {
 };
 
 export async function readClerkToken(options?: { skipCache?: boolean }) {
-  const clerk = (window as Window & ClerkRuntime).Clerk;
-  return (await clerk?.session?.getToken?.(options)) ?? null;
+  return getClerkToken(options);
 }
 
 /**
@@ -111,14 +111,6 @@ export function createRuntimeActorAuth(
     ...(storeSlug ? { storeSlug } : {}),
   };
 }
-
-type ClerkRuntime = {
-  Clerk?: {
-    session?: {
-      getToken?: (options?: { skipCache?: boolean }) => Promise<string | null>;
-    };
-  };
-};
 
 type RuntimeAuthEnv = LocalDevAuthEnv & {
   VITE_DEV_CLERK_USER_ID?: string;

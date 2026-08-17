@@ -4,6 +4,27 @@ import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
 import { integrationJobs } from "./schema/integrations.js";
 
 describe("marketplace job dispatch persistence", () => {
+  it("replaces the job-status enum before later migrations use submitted", () => {
+    const migration = readFileSync(
+      new URL(
+        "../migrations/0048_concerned_captain_flint.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(migration).not.toContain("ADD VALUE 'submitted'");
+    expect(migration).toContain(
+      `CREATE TYPE "public"."integration_job_status" AS ENUM('queued', 'running', 'submitted', 'succeeded', 'failed', 'cancelled')`,
+    );
+    expect(migration).toContain(
+      'USING "status"::text::"public"."integration_job_status"',
+    );
+    expect(migration).toContain(
+      'DROP TYPE "public"."integration_job_status_legacy"',
+    );
+  });
+
   it("requires paired dispatch leases for running jobs and indexes recovery", () => {
     const config = getTableConfig(integrationJobs);
     const columns = new Map(

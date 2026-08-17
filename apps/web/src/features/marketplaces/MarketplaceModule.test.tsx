@@ -256,7 +256,7 @@ describe("MarketplaceModule", () => {
       screen.queryByText("OLX conectado. Nenhum anúncio foi enviado."),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Revisar conexão do OLX" }),
+      await screen.findByRole("button", { name: "Revisar conexão do OLX" }),
     ).toBeEnabled();
   });
 });

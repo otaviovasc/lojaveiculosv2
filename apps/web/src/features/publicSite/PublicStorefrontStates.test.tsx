@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StatusIllustration } from "../../components/ui/StatusIllustration";
 import { AppApiError } from "../../lib/apiErrors";
 import type { PublicStorefrontApi } from "./apiClient";
@@ -15,7 +15,18 @@ import {
 } from "./PublicStorefrontPageSupport";
 import { derivePublicStorefrontState } from "./state";
 
-afterEach(cleanup);
+type ClerkWindow = Window & {
+  Clerk?: { session: null; status: "ready" };
+};
+
+beforeEach(() => {
+  (window as ClerkWindow).Clerk = { session: null, status: "ready" };
+});
+
+afterEach(() => {
+  cleanup();
+  delete (window as ClerkWindow).Clerk;
+});
 
 vi.mock("./PublicStorefront", () => ({
   PublicStorefront: ({
