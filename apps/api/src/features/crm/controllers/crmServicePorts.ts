@@ -48,6 +48,7 @@ export function resolveCrmPorts(
   const connectionSetupPorts = createCrmConnectionSetupPorts(
     options.drizzleClient,
   );
+  const memoryConnections = createMemoryCrmConnectionRepository();
   const memoryRouting = createMemoryCrmRoutingRepositories();
   const defaultPorts = options.drizzleClient
     ? {
@@ -105,8 +106,9 @@ export function resolveCrmPorts(
           getAllowance: async () => ({ limit: 0, remaining: 0, used: 0 }),
         },
         crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
-        crmConnectionRepository: createMemoryCrmConnectionRepository(),
-        crmRoutingConnectionRepository: memoryRouting.connectionRepository,
+        crmConnectionRepository: memoryConnections,
+        crmRoutingConnectionRepository:
+          memoryConnections.routingConnectionRepository,
         crmRoutingPolicyRepository: memoryRouting.policyRepository,
         crmOlxWebhookSecurity,
         crmOutcomeRepository: createMemoryCrmOutcomeRepository(),

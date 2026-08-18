@@ -5,6 +5,7 @@ import {
   Loader2,
   MessageCircle,
 } from "lucide-react";
+import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
 import type {
@@ -20,6 +21,7 @@ import type {
 } from "./crmWhatsappTypes";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import { CrmWhatsappChannelDirectory } from "./CrmWhatsappChannelDirectory";
+import { CrmConnectionManageDialog } from "./CrmWhatsappConnectionAdminDialog";
 import {
   clearPendingComposioConnection,
   readPendingComposioConnectionId,
@@ -106,13 +108,21 @@ export function CrmWhatsappSelfServiceSetup({
   );
   const [connection, setConnection] =
     useState<CrmWhatsappProviderConnection | null>(existingConnection);
+  const [managedConnectionId, setManagedConnectionId] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
-  const [isLifecycleBusy, setIsLifecycleBusy] = useState(false);
-  const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const [completion, setCompletion] =
     useState<CrmWhatsappComposioCompleteResult | null>(null);
   const completingConnectionRef = useRef<string | null>(null);
+  const setupSessionRef = useRef(0);
+
+  const managedConnection = managedConnectionId
+    ? (connections.find(
+        (candidate) => String(candidate.id) === managedConnectionId,
+      ) ?? null)
+    : null;
 
   useEffect(() => {
     setConnection(existingConnection);
@@ -128,82 +138,51 @@ export function CrmWhatsappSelfServiceSetup({
   }, [existingConnection, startAtDirectory]);
 
   const chooseProvider = (nextProvider: CrmWhatsappSetupProvider) => {
+    setupSessionRef.current += 1;
+    completingConnectionRef.current = null;
+    setCompletion(null);
+    setError(null);
+    setIsBusy(false);
     setConnection(
       connections.find(
         (candidate) =>
           candidate.provider === nextProvider &&
           candidate.status !== "archived",
-      ) ?? null,
+      ) ??
+        (existingConnection?.provider === nextProvider &&
+        existingConnection.status !== "archived"
+          ? existingConnection
+          : null),
     );
     setProvider(nextProvider);
   };
 
-  const togglePaused = async () => {
-    if (
-      !connection ||
-      !canSetup ||
-      !handlers.onSetConnectionPaused ||
-      isLifecycleBusy
-    ) {
-      return;
-    }
-    setIsLifecycleBusy(true);
-    setLifecycleError(null);
-    try {
-      await handlers.onSetConnectionPaused(
-        connection.id,
-        connection.status !== "paused",
-      );
-    } catch (caught) {
-      setLifecycleError(
-        formatApiErrorDisplay(
-          caught,
-          connection.status === "paused"
-            ? "Não foi possível retomar o canal."
-            : "Não foi possível pausar o canal.",
-        ),
-      );
-    } finally {
-      setIsLifecycleBusy(false);
-    }
+  const closeSetup = () => {
+    setupSessionRef.current += 1;
+    completingConnectionRef.current = null;
+    setCompletion(null);
+    setConnection(null);
+    setError(null);
+    setIsBusy(false);
+    setProvider(null);
   };
-
-  const lifecycleActions =
-    connection && handlers.onSetConnectionPaused ? (
-      <div className="crm-whatsapp-connection-management-actions">
-        <button
-          className="crm-action crm-action-muted"
-          disabled={!canSetup || isLifecycleBusy}
-          onClick={() => void togglePaused()}
-          type="button"
-        >
-          {isLifecycleBusy
-            ? "Atualizando canal"
-            : connection.status === "paused"
-              ? "Retomar canal"
-              : "Pausar no CRM"}
-        </button>
-        {lifecycleError ? (
-          <p className="crm-whatsapp-connection-error" role="alert">
-            {lifecycleError}
-          </p>
-        ) : null}
-      </div>
-    ) : null;
 
   const completeOfficialSetup = useCallback(
     async (connectionId: string) => {
       if (completingConnectionRef.current === connectionId) return;
+      const setupSession = setupSessionRef.current;
       completingConnectionRef.current = connectionId;
       setIsBusy(true);
       setError(null);
       try {
         const result = await handlers.onCompleteComposio(connectionId);
+        if (setupSession !== setupSessionRef.current) return;
         setConnection(result.connection);
         setCompletion(result);
         if (!result.senders.length) await handlers.onRefreshConnections();
         clearPendingComposioConnection();
       } catch (caught) {
+        if (setupSession !== setupSessionRef.current) return;
         setError(
           formatApiErrorDisplay(
             caught,
@@ -211,8 +190,10 @@ export function CrmWhatsappSelfServiceSetup({
           ),
         );
       } finally {
-        completingConnectionRef.current = null;
-        setIsBusy(false);
+        if (setupSession === setupSessionRef.current) {
+          completingConnectionRef.current = null;
+          setIsBusy(false);
+        }
       }
     },
     [handlers],
@@ -226,67 +207,82 @@ export function CrmWhatsappSelfServiceSetup({
     }
   }, [completeOfficialSetup, connection, provider]);
 
-  if (!connection && !canSetup) {
-    return (
-      <SetupNotice>
-        Para adicionar um canal, seu usuário precisa das permissões de gerenciar
-        conexões e integrações.
-      </SetupNotice>
-    );
-  }
-
-  if (!provider) {
-    return (
+  return (
+    <>
+      {!canSetup ? (
+        <div className="crm-whatsapp-setup-notice" role="note">
+          {canPair
+            ? "Você pode consultar e parear conexões existentes. Para adicionar ou alterar canais, seu usuário precisa das permissões de gerenciar conexões e integrações."
+            : "Você pode consultar conexões existentes. Para adicionar ou alterar canais, seu usuário precisa das permissões de gerenciar conexões e integrações."}
+        </div>
+      ) : null}
       <CrmWhatsappChannelDirectory
         availableProviders={availableProviders}
         connections={connections}
         {...(marketplaceApi ? { marketplaceApi } : {})}
         onChoose={chooseProvider}
+        onConnectionsChanged={handlers.onRefreshConnections}
+        onManageConnection={(candidate) =>
+          setManagedConnectionId(String(candidate.id))
+        }
         onRedirect={onRedirect}
+        showSetupActions={canSetup}
         zapiAddonContract={zapiAddonContract}
       />
-    );
-  }
-
-  if (provider === "zapi") {
-    return (
-      <>
-        <CrmWhatsappZapiSetup
-          allowance={allowance}
-          canPair={canPair}
-          canSetup={canSetup}
-          connection={connection?.provider === "zapi" ? connection : null}
-          handlers={handlers}
-          onBack={() => setProvider(null)}
-          onConnection={setConnection}
-          zapiAddonContract={zapiAddonContract}
-        />
-        {lifecycleActions}
-      </>
-    );
-  }
-
-  return (
-    <>
-      <OfficialSetup
-        completion={completion}
-        canSetup={canSetup}
-        connection={
-          connection?.provider === "composio_whatsapp" ? connection : null
+      <FeatureDialog
+        className="feature-dialog--medium crm-connection-dialog"
+        isOpen={provider !== null}
+        onClose={closeSetup}
+        title={
+          provider === "zapi"
+            ? "Conectar WhatsApp · Z-API"
+            : "Configurar WhatsApp Oficial"
         }
-        error={error}
-        handlers={handlers}
-        isBusy={isBusy}
-        onBack={() => setProvider(null)}
-        onComplete={() =>
-          connection ? void completeOfficialSetup(String(connection.id)) : null
-        }
-        onConnection={setConnection}
-        onError={setError}
-        onRedirect={onRedirect}
-        onStartBusy={setIsBusy}
+      >
+        {provider === "zapi" ? (
+          <CrmWhatsappZapiSetup
+            allowance={allowance}
+            canPair={canPair}
+            canSetup={canSetup}
+            connection={connection?.provider === "zapi" ? connection : null}
+            handlers={handlers}
+            onBack={closeSetup}
+            onConnection={setConnection}
+            zapiAddonContract={zapiAddonContract}
+          />
+        ) : provider === "composio_whatsapp" ? (
+          <OfficialSetup
+            completion={completion}
+            canSetup={canSetup}
+            connection={
+              connection?.provider === "composio_whatsapp" ? connection : null
+            }
+            error={error}
+            handlers={handlers}
+            isBusy={isBusy}
+            onBack={closeSetup}
+            onComplete={() =>
+              connection
+                ? void completeOfficialSetup(String(connection.id))
+                : null
+            }
+            onConnection={setConnection}
+            onError={setError}
+            onRedirect={onRedirect}
+            onStartBusy={setIsBusy}
+          />
+        ) : null}
+      </FeatureDialog>
+      <CrmConnectionManageDialog
+        canManage={canSetup}
+        connection={managedConnection}
+        isRefreshing={isBusy}
+        onClose={() => setManagedConnectionId(null)}
+        onRefresh={handlers.onRefreshConnections}
+        {...(handlers.onSetConnectionPaused
+          ? { onSetConnectionPaused: handlers.onSetConnectionPaused }
+          : {})}
       />
-      {lifecycleActions}
     </>
   );
 }
@@ -364,12 +360,7 @@ function OfficialSetup({
   };
 
   return (
-    <SetupCard
-      broker="Composio"
-      channel="WhatsApp"
-      title="WhatsApp Oficial"
-      transport="Meta Cloud"
-    >
+    <section className="crm-whatsapp-setup-card crm-whatsapp-setup-card-flat">
       <OfficialSetupRail completion={completion} connection={connection} />
       <p className="crm-whatsapp-setup-intro">
         A autorização abre em página inteira. O canal só será exibido como
@@ -486,33 +477,6 @@ function OfficialSetup({
           Voltar
         </button>
       ) : null}
-    </SetupCard>
-  );
-}
-
-function SetupCard({
-  broker,
-  channel,
-  children,
-  title,
-  transport,
-}: {
-  broker: string;
-  channel: string;
-  children: React.ReactNode;
-  title: string;
-  transport: string;
-}) {
-  return (
-    <section className="crm-whatsapp-setup-card">
-      <header className="crm-whatsapp-setup-card-heading">
-        <span>Configuração do canal</span>
-        <h2>{title}</h2>
-        <p>
-          Canal {channel} · Transporte {transport} · Credencial {broker}
-        </p>
-      </header>
-      {children}
     </section>
   );
 }
@@ -561,14 +525,6 @@ function OfficialSetupRail({
         <dd>{state.evidence}</dd>
       </div>
     </dl>
-  );
-}
-
-function SetupNotice({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="crm-whatsapp-setup-notice" role="note">
-      {children}
-    </div>
   );
 }
 

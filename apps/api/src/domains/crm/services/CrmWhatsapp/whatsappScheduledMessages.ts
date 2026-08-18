@@ -7,7 +7,6 @@ import type {
 import {
   WhatsappMessageActionError,
   WhatsappScheduledMessageNotFoundError,
-  WhatsappSessionNotFoundError,
 } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmWhatsappRepository,
@@ -19,6 +18,11 @@ import {
   logWhatsappServiceEvent,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
+import {
+  findScopedWhatsappSession,
+  resolveScopedWhatsappSession,
+} from "./whatsappSessionMutationSupport.js";
+import { resolveWhatsappQueueVisibility } from "../../whatsapp/whatsappQueueVisibility.js";
 
 export {
   listDueWhatsappScheduledMessageScopes,
@@ -58,7 +62,14 @@ export async function listWhatsappScheduledMessages(
 ): Promise<readonly CrmWhatsappScheduledMessage[]> {
   assertPermission(context, readPermission);
   const scope = requireCrmWhatsappScope(context);
-  return getCrmWhatsappRepository(ports).listScheduledMessages({
+  if (input.sessionId) {
+    await findScopedWhatsappSession(
+      context,
+      { sessionId: input.sessionId },
+      ports,
+    );
+  }
+  const messages = await getCrmWhatsappRepository(ports).listScheduledMessages({
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     limit: input.limit ?? 50,
     ...(input.sessionId ? { sessionId: input.sessionId } : {}),
@@ -66,6 +77,22 @@ export async function listWhatsappScheduledMessages(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
+  if (resolveWhatsappQueueVisibility(context).kind === "global")
+    return messages;
+  const visibleSessionIds = new Set<string>();
+  await Promise.all(
+    [...new Set(messages.map((message) => message.sessionId))].map(
+      async (sessionId) => {
+        const { session } = await resolveScopedWhatsappSession(
+          context,
+          { sessionId },
+          ports,
+        );
+        if (session) visibleSessionIds.add(sessionId);
+      },
+    ),
+  );
+  return messages.filter((message) => visibleSessionIds.has(message.sessionId));
 }
 
 export async function createWhatsappScheduledMessage(
@@ -100,7 +127,11 @@ export async function createWhatsappScheduledMessage(
     },
     async () => {
       const scope = requireCrmWhatsappScope(context);
-      const session = await findScopedSession(input.sessionId, scope, ports);
+      const { session } = await findScopedWhatsappSession(
+        context,
+        { sessionId: input.sessionId },
+        ports,
+      );
       if (session.channel !== "WHATSAPP" || !session.buyerPhone) {
         throw new WhatsappMessageActionError(
           "Scheduled messages require a WhatsApp conversation with a valid phone.",
@@ -162,6 +193,29 @@ export async function cancelWhatsappScheduledMessage(
       summary: "Cancelled CRM WhatsApp scheduled message",
     },
     async () => {
+      const [scheduled] = await getCrmWhatsappRepository(
+        ports,
+      ).listScheduledMessages({
+        limit: 1,
+        scheduledMessageId: input.scheduledMessageId,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
+      if (!scheduled) {
+        throw new WhatsappScheduledMessageNotFoundError(
+          input.scheduledMessageId,
+        );
+      }
+      const { session } = await resolveScopedWhatsappSession(
+        context,
+        { sessionId: scheduled.sessionId },
+        ports,
+      );
+      if (!session) {
+        throw new WhatsappScheduledMessageNotFoundError(
+          input.scheduledMessageId,
+        );
+      }
       const updated = await getCrmWhatsappRepository(
         ports,
       ).updateScheduledMessage({
@@ -180,20 +234,4 @@ export async function cancelWhatsappScheduledMessage(
       return updated;
     },
   );
-}
-
-async function findScopedSession(
-  sessionId: string,
-  scope: { storeId: string; tenantId: string },
-  ports: CrmServicePorts,
-) {
-  const [session] = await getCrmWhatsappRepository(ports).listSessions({
-    limit: 1,
-    offset: 0,
-    sessionId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (!session) throw new WhatsappSessionNotFoundError(sessionId);
-  return session;
 }

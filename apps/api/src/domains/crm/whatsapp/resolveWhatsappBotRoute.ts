@@ -1,5 +1,8 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import type { CrmConnection } from "../ports/crmConnectionRepository.js";
+import type {
+  CrmConnection,
+  CrmConnectionProvider,
+} from "../ports/crmConnectionRepository.js";
 import type {
   CrmRoutingConnection,
   CrmRoutingConnectionRepository,
@@ -81,19 +84,16 @@ export async function resolveWhatsappBotRoute(
         : "The configured bot route is not ready.",
     );
   }
-  const legacyConnection =
+  const transportConnection =
     await ports.crmConnectionRepository?.findConnectionById(
       canonicalConnection.id,
     );
-  if (
-    !legacyConnection ||
-    !isVerifiedLegacyMapping(canonicalConnection, legacyConnection)
-  ) {
+  if (!transportConnection) {
     return unavailable(
-      "The bot route has no verified legacy/canonical connection mapping. Re-save the channel routing policy.",
+      "The configured bot route has no provider transport credentials. Reconnect the channel connection.",
     );
   }
-  return legacyConnection;
+  return withCanonicalRoutingIdentity(canonicalConnection, transportConnection);
 }
 
 export async function assertWhatsappBotSessionRoute(
@@ -120,22 +120,29 @@ function routingChannelForSession(
   return "whatsapp";
 }
 
-function isVerifiedLegacyMapping(
+function withCanonicalRoutingIdentity(
   canonical: CrmRoutingConnection,
-  legacy: CrmConnection,
-) {
-  if (
-    canonical.id !== legacy.id ||
-    canonical.storeId !== legacy.storeId ||
-    canonical.tenantId !== legacy.tenantId
-  ) {
-    return false;
-  }
-  if (canonical.provider === "zapi") return legacy.provider === "zapi";
-  if (canonical.provider === "olx") return legacy.provider === "olx_chat";
-  return canonical.channel === "instagram"
-    ? legacy.provider === "composio_instagram"
-    : legacy.provider === "composio_whatsapp";
+  transport: CrmConnection,
+): CrmConnection {
+  return {
+    ...transport,
+    displayName: canonical.displayName,
+    id: canonical.id,
+    provider: canonicalTransportProvider(canonical),
+    status: canonical.state,
+    storeId: canonical.storeId,
+    tenantId: canonical.tenantId,
+  };
+}
+
+function canonicalTransportProvider(
+  connection: CrmRoutingConnection,
+): CrmConnectionProvider {
+  if (connection.provider === "zapi") return "zapi";
+  if (connection.provider === "olx") return "olx_chat";
+  return connection.channel === "instagram"
+    ? "composio_instagram"
+    : "composio_whatsapp";
 }
 
 function unavailable(message: string): never {

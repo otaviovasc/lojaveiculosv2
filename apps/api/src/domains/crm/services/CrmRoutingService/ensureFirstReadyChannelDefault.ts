@@ -17,7 +17,8 @@ import {
 import { resolveCrmConnectionRoute } from "./routingResolution.js";
 
 const requiredCapabilities = ["outbound"] as const;
-const routingPermission = "crm.routing.default.manage";
+const automaticSetupPermission = "crm.messaging.connection.setup";
+type AutomaticDefaultResult = "already_present" | "created" | "superseded";
 
 /** Persist the first unambiguous ready route; this is not a runtime fallback. */
 export async function ensureFirstReadyChannelDefault(
@@ -25,7 +26,7 @@ export async function ensureFirstReadyChannelDefault(
   input: { channel: CrmRoutingChannel; connectionId: string },
   ports: CrmServicePorts,
 ) {
-  assertPermission(context, routingPermission);
+  assertPermission(context, automaticSetupPermission);
   assertEntitlement(context as StoreScopedServiceContext, "crm");
   const scope = requireCrmWhatsappScope(context);
   await context.audit.record({
@@ -37,7 +38,8 @@ export async function ensureFirstReadyChannelDefault(
     metadata: {
       channel: input.channel,
       connectionId: input.connectionId,
-      permission: routingPermission,
+      permission: automaticSetupPermission,
+      trigger: "connection_setup",
     },
     outcome: "attempted",
     requestId: context.requestId,
@@ -45,67 +47,92 @@ export async function ensureFirstReadyChannelDefault(
     summary: "Create the first ready CRM channel default",
     tenantId: scope.tenantId,
   });
-  const persisted = await runCrmTransaction(ports, async (transactionPorts) => {
-    const connections = getCrmRoutingConnectionRepository(transactionPorts);
-    const mapping = { connectionIds: [input.connectionId], ...scope } as never;
-    await connections.synchronizeLegacyConnections(mapping);
-    const verified = await connections.verifyLegacyMappings?.(mapping);
-    if (!verified?.includes(input.connectionId)) return false;
+  try {
+    const result = await runCrmTransaction(
+      ports,
+      async (transactionPorts): Promise<AutomaticDefaultResult> => {
+        const connections = getCrmRoutingConnectionRepository(transactionPorts);
+        const policies = getCrmRoutingPolicyRepository(transactionPorts);
+        const current = (await policies.listPolicies(scope as never)).find(
+          (policy) => policy.channel === input.channel,
+        );
+        if (current?.defaultConnectionId) return "already_present";
 
-    const policies = getCrmRoutingPolicyRepository(transactionPorts);
-    const current = (await policies.listPolicies(scope as never)).find(
-      (policy) => policy.channel === input.channel,
-    );
-    if (current?.defaultConnectionId) return false;
+        const ready = (
+          await connections.listConnections(scope as never)
+        ).filter(
+          (connection) =>
+            connection.channel === input.channel &&
+            resolveCrmConnectionRoute({
+              channel: input.channel,
+              connection,
+              connectionId: connection.id,
+              requiredCapabilities,
+              scope,
+            }).ready,
+        );
+        if (ready.length !== 1 || ready[0]?.id !== input.connectionId) {
+          return "superseded";
+        }
 
-    const ready = (await connections.listConnections(scope as never)).filter(
-      (connection) =>
-        connection.channel === input.channel &&
-        resolveCrmConnectionRoute({
+        const created = await policies.createDefaultIfMissing({
+          botConnectionId: current?.botConnectionId ?? null,
+          botMode: current?.botMode ?? "disabled",
           channel: input.channel,
-          connection,
-          connectionId: connection.id,
-          requiredCapabilities,
-          scope,
-        }).ready,
+          defaultConnectionId: input.connectionId,
+          ...scope,
+        } as never);
+        return created ? "created" : "superseded";
+      },
     );
-    if (ready.length !== 1 || ready[0]?.id !== input.connectionId) return false;
-
-    return Boolean(
-      await policies.createDefaultIfMissing({
-        botConnectionId: current?.botConnectionId ?? null,
-        botMode: current?.botMode ?? "disabled",
-        channel: input.channel,
-        defaultConnectionId: input.connectionId,
-        ...scope,
-      } as never),
-    );
-  });
-  if (persisted) {
-    context.logger.info("crm.routing.policy.default.created", {
-      channel: input.channel,
-      connectionId: input.connectionId,
-      requestId: context.requestId,
-      storeId: scope.storeId,
-      tenantId: scope.tenantId,
-    });
-    await context.audit.record({
-      action: "crm.routing.policy.default.create",
-      actor: context.actor,
-      category: "data_change",
-      entityId: input.connectionId,
-      entityType: "crm_channel_routing_policy",
-      metadata: {
+    if (result === "created") {
+      context.logger.info("crm.routing.policy.default.created", {
         channel: input.channel,
         connectionId: input.connectionId,
-        permission: routingPermission,
-      },
-      outcome: "succeeded",
-      requestId: context.requestId,
-      storeId: scope.storeId,
-      summary: "Created the first ready CRM channel default",
-      tenantId: scope.tenantId,
-    });
+        requestId: context.requestId,
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+      });
+    }
+    await recordTerminal(context, input, scope, "succeeded", result);
+    return result === "created";
+  } catch (error) {
+    await recordTerminal(context, input, scope, "failed", "failed", error);
+    throw error;
   }
-  return persisted;
+}
+
+async function recordTerminal(
+  context: ServiceContext,
+  input: { channel: CrmRoutingChannel; connectionId: string },
+  scope: { storeId: string; tenantId: string },
+  outcome: "failed" | "succeeded",
+  result: AutomaticDefaultResult | "failed",
+  error?: unknown,
+) {
+  await context.audit.record({
+    action: "crm.routing.policy.default.create",
+    actor: context.actor,
+    category: "data_change",
+    entityId: input.connectionId,
+    entityType: "crm_channel_routing_policy",
+    metadata: {
+      channel: input.channel,
+      connectionId: input.connectionId,
+      ...(error
+        ? { errorName: error instanceof Error ? error.name : "UnknownError" }
+        : {}),
+      permission: automaticSetupPermission,
+      result,
+      trigger: "connection_setup",
+    },
+    outcome,
+    requestId: context.requestId,
+    storeId: scope.storeId,
+    summary:
+      outcome === "failed"
+        ? "Failed to create the first ready CRM channel default"
+        : "Evaluated the first ready CRM channel default",
+    tenantId: scope.tenantId,
+  });
 }

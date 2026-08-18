@@ -29,15 +29,4 @@ export type CrmRoutingConnectionRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }): Promise<readonly CrmRoutingConnection[]>;
-  /** Transitional seam while connection setup still writes crm_connections. */
-  synchronizeLegacyConnections(input: {
-    connectionIds: readonly string[];
-    storeId: StoreId;
-    tenantId: TenantId;
-  }): Promise<void>;
-  verifyLegacyMappings?: (input: {
-    connectionIds: readonly string[];
-    storeId: StoreId;
-    tenantId: TenantId;
-  }) => Promise<readonly string[]>;
 };

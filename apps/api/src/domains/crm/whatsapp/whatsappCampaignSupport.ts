@@ -1,5 +1,6 @@
 import type {
   CrmWhatsappCampaign,
+  CrmWhatsappQueueVisibility,
   CrmWhatsappRepository,
   CrmWhatsappSession,
 } from "../ports/crmWhatsappRepository.js";
@@ -54,12 +55,14 @@ export async function resolveCampaignSessions(
   repository: CrmWhatsappRepository,
   scope: { storeId: string; tenantId: string },
   recipients: readonly WhatsappCampaignRecipientInput[],
+  queueVisibility: CrmWhatsappQueueVisibility,
 ) {
   const sessions: CrmWhatsappSession[] = [];
   for (const recipient of recipients) {
     const [session] = await repository.listSessions({
       limit: 1,
       offset: 0,
+      queueVisibility,
       sessionId: recipient.sessionId,
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,

@@ -76,6 +76,19 @@ export function sessionFilters(input: CountCrmWhatsappSessionsInput): SQL[] {
     eq(crmWhatsappSessions.storeId, input.storeId),
     eq(crmWhatsappSessions.tenantId, input.tenantId),
   ];
+  switch (input.queueVisibility?.kind) {
+    case undefined:
+    case "global":
+      break;
+    case "assigned":
+      filters.push(
+        eq(crmWhatsappSessions.assignedUserId, input.queueVisibility.userId),
+      );
+      break;
+    case "none":
+      filters.push(sql`false`);
+      break;
+  }
   if (input.connectionId) {
     filters.push(eq(crmWhatsappSessions.connectionId, input.connectionId));
   }

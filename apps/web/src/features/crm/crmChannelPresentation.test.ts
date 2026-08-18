@@ -64,6 +64,55 @@ describe("readOlxChannelOperations", () => {
     });
   });
 
+  it("lets canonical readiness false override a connected live provider", () => {
+    const connection = createOlxConnection();
+    connection.live.providerStatus = "connected";
+    connection.live.connected = true;
+    connection.ready = true;
+    connection.readiness = {
+      ready: false,
+      reason: "Setup canônico pendente.",
+      reasonCode: "setup_pending",
+    };
+
+    expect(
+      readOlxChannelOperations(
+        [connection],
+        createMarketplaceState("connected"),
+      ).chat,
+    ).toEqual({
+      detail: "Setup canônico pendente.",
+      label: "Chat",
+      state: "failed",
+    });
+  });
+
+  it("renders an indeterminate provider outcome without enabling retry", async () => {
+    const { readOlxChatRetryTarget } = await import("./crmChannelPresentation");
+    const connection = createOlxConnection();
+    connection.readiness = {
+      ready: false,
+      reason: "Confirmação pendente.",
+      reasonCode: "provider_outcome_indeterminate",
+    };
+    const marketplaceState = createMarketplaceState("connected");
+    const chat = marketplaceState.capabilities?.chat;
+    if (!chat) throw new Error("Expected OLX Chat capability fixture.");
+    (chat as { reason: string | null }).reason =
+      "provider_outcome_indeterminate";
+    chat.status = "active";
+
+    expect(
+      readOlxChannelOperations([connection], marketplaceState).chat,
+    ).toEqual({
+      detail:
+        "O provedor recebeu a solicitação, mas o resultado ainda não foi confirmado.",
+      label: "Chat",
+      state: "indeterminate",
+    });
+    expect(readOlxChatRetryTarget([connection], marketplaceState)).toBeNull();
+  });
+
   it("distinguishes missing scopes from degraded setup actions", () => {
     expect(
       readOlxAuthorizationAction(
@@ -138,6 +187,7 @@ describe("readCrmChannelIdentity", () => {
 function createOlxConnection(): CrmWhatsappProviderConnection {
   return {
     capabilities: textOnlyCapabilities,
+    channel: "olx_chat",
     displayName: "OLX",
     externalConnectionId: "olx_1",
     externalInstanceId: null,
@@ -152,6 +202,7 @@ function createOlxConnection(): CrmWhatsappProviderConnection {
     phone: null,
     provider: "olx_chat",
     ready: true,
+    readiness: { ready: true, reason: null, reasonCode: null },
     status: "active",
     webhookUrl: null,
   };
@@ -215,3 +266,150 @@ const textOnlyCapabilities: CrmWhatsappProviderCapabilities = {
   vehicle: false,
   video: false,
 };
+
+describe("groupCrmConnectionsByChannel", () => {
+  it("groups strictly by the server DTO channel, never by provider", async () => {
+    const { groupCrmConnectionsByChannel } =
+      await import("./crmChannelPresentation");
+    const olxWithoutChannel = {
+      ...createOlxConnection(),
+      id: "olx-no-channel",
+      provider: "olx_chat",
+    };
+    delete (olxWithoutChannel as { channel?: unknown }).channel;
+    const unknownProvider = {
+      ...createOlxConnection(),
+      displayName: "Mystery",
+      id: "mystery",
+      provider: "carrier_pigeon",
+    };
+    delete (unknownProvider as { channel?: unknown }).channel;
+
+    const groups = groupCrmConnectionsByChannel([
+      olxWithoutChannel,
+      unknownProvider,
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      channel: "unknown",
+      invalid: true,
+    });
+    expect(groups[0]?.connections.map((item) => item.id)).toEqual([
+      "olx-no-channel",
+      "mystery",
+    ]);
+  });
+
+  it("keeps valid server channels in their own groups", async () => {
+    const { groupCrmConnectionsByChannel } =
+      await import("./crmChannelPresentation");
+    const whatsapp = {
+      ...createOlxConnection(),
+      channel: "whatsapp" as const,
+      id: "wa-1",
+      provider: "zapi",
+    };
+    const olx = { ...createOlxConnection(), channel: "olx_chat" as const };
+
+    const groups = groupCrmConnectionsByChannel([olx, whatsapp]);
+
+    expect(groups.map((group) => group.channel)).toEqual([
+      "whatsapp",
+      "olx_chat",
+    ]);
+  });
+});
+
+describe("readConnectionReadinessBadge", () => {
+  it("reads Pronto only from server readiness", async () => {
+    const { readConnectionReadinessBadge } =
+      await import("./crmChannelPresentation");
+    const ready = {
+      ...createOlxConnection(),
+      readiness: { ready: true, reason: null, reasonCode: null },
+    };
+    expect(readConnectionReadinessBadge(ready)).toMatchObject({
+      label: "Pronto",
+      tone: "success",
+    });
+
+    const { readiness: _readiness, ...missingReadiness } = ready;
+    expect(readConnectionReadinessBadge(missingReadiness)).toMatchObject({
+      label: "Estado de prontidão indisponível",
+      tone: "warning",
+    });
+  });
+
+  it("surfaces paused and error states honestly", async () => {
+    const { readConnectionReadinessBadge } =
+      await import("./crmChannelPresentation");
+    const paused = { ...createOlxConnection(), status: "paused" as const };
+    expect(readConnectionReadinessBadge(paused).label).toBe("Pausado");
+    const failed = { ...createOlxConnection(), status: "error" as const };
+    expect(readConnectionReadinessBadge(failed)).toMatchObject({
+      label: "Erro",
+      tone: "danger",
+    });
+  });
+});
+
+describe("readOlxChatRetryTarget", () => {
+  it("offers a retry for a provider-internal Chat failure with a valid authorization", async () => {
+    const { readOlxChatRetryTarget } = await import("./crmChannelPresentation");
+    const connection = createOlxConnection();
+    connection.ready = false;
+    connection.readiness = {
+      ready: false,
+      reason: "O provedor recusou o setup.",
+      reasonCode: "provider_rejected",
+    };
+    connection.live.providerStatus = "disconnected";
+    const target = readOlxChatRetryTarget(
+      [connection],
+      createMarketplaceState("connected", {
+        chat: capability("messaging", "error", "provider_rejected"),
+      }),
+    );
+
+    expect(target).toMatchObject({ connectionId: "connection_1" });
+  });
+
+  it("offers retry from canonical not-ready state even when live transport is connected", async () => {
+    const { readOlxChatRetryTarget } = await import("./crmChannelPresentation");
+    const connection = createOlxConnection();
+    connection.live.providerStatus = "connected";
+    connection.live.connected = true;
+    connection.readiness = {
+      ready: false,
+      reason: "Setup canônico pendente.",
+      reasonCode: "setup_pending",
+    };
+
+    expect(
+      readOlxChatRetryTarget([connection], createMarketplaceState("connected")),
+    ).toEqual({
+      connectionId: "connection_1",
+      detail: "Setup canônico pendente.",
+    });
+  });
+
+  it("never offers a retry when scopes are missing or the account is not connected", async () => {
+    const { readOlxChatRetryTarget } = await import("./crmChannelPresentation");
+    const connection = createOlxConnection();
+    expect(
+      readOlxChatRetryTarget(
+        [connection],
+        createMarketplaceState("connected", {
+          chat: capability("messaging", "blocked", "missing_scope"),
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      readOlxChatRetryTarget(
+        [connection],
+        createMarketplaceState("reconnect_required"),
+      ),
+    ).toBeNull();
+  });
+});

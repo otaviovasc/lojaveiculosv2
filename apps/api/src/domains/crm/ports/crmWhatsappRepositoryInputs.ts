@@ -10,7 +10,16 @@ import type {
   CrmWhatsappMessageType,
   CrmWhatsappSessionStatus,
 } from "./crmWhatsappRepositoryTypes.js";
-import type { CrmWhatsappScheduledMessageStatus } from "./crmWhatsappRepositoryModels.js";
+export type {
+  CreateCrmWhatsappScheduledMessageInput,
+  FindDueCrmWhatsappScheduledMessageScopesInput,
+  FindDueCrmWhatsappScheduledMessagesInput,
+  ListCrmWhatsappScheduledMessagesInput,
+  UpdateCrmWhatsappScheduledMessageInput,
+} from "./crmWhatsappRepositoryScheduledInputs.js";
+
+export type CrmWhatsappQueueVisibility =
+  { kind: "assigned"; userId: UserId } | { kind: "global" } | { kind: "none" };
 
 export type CountCrmWhatsappSessionsInput = {
   assignedUserId?: UserId;
@@ -18,6 +27,7 @@ export type CountCrmWhatsappSessionsInput = {
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";
   humanAttendanceState?: CrmWhatsappHumanAttendanceState;
   leadId?: string;
+  queueVisibility?: CrmWhatsappQueueVisibility;
   search?: string;
   selectedAssigneeId?: UserId;
   sessionId?: string;
@@ -193,55 +203,5 @@ export type UpdateCrmWhatsappSessionTagInput = {
   sessionId: string;
   storeId: StoreId;
   tagId: string;
-  tenantId: TenantId;
-};
-
-export type CreateCrmWhatsappScheduledMessageInput = {
-  campaignId?: string | null;
-  campaignMessageType?: string | null;
-  campaignRecipientKey?: string | null;
-  campaignSequence?: number | null;
-  connectionId: string;
-  createdByUserId?: UserId | null;
-  metadata?: Record<string, unknown>;
-  phone: string;
-  scheduledAt: Date;
-  sessionId: string;
-  storeId: StoreId;
-  tenantId: TenantId;
-  text: string;
-};
-
-export type ListCrmWhatsappScheduledMessagesInput = {
-  campaignId?: string;
-  connectionId?: string;
-  limit: number;
-  sessionId?: string;
-  status?: CrmWhatsappScheduledMessageStatus;
-  storeId: StoreId;
-  tenantId: TenantId;
-};
-
-export type FindDueCrmWhatsappScheduledMessagesInput = {
-  dueAt: Date;
-  limit: number;
-  storeId: StoreId;
-  tenantId: TenantId;
-};
-
-export type FindDueCrmWhatsappScheduledMessageScopesInput = {
-  dueAt: Date;
-  limit: number;
-};
-
-export type UpdateCrmWhatsappScheduledMessageInput = {
-  cancelledAt?: Date | null;
-  errorMessage?: string | null;
-  expectedStatus?: CrmWhatsappScheduledMessageStatus;
-  id: string;
-  sentAt?: Date | null;
-  sentMessageId?: string | null;
-  status: CrmWhatsappScheduledMessageStatus;
-  storeId: StoreId;
   tenantId: TenantId;
 };

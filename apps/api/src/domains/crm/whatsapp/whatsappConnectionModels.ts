@@ -3,58 +3,18 @@ import type {
   CrmConnectionConfiguredStatus,
   CrmConnectionProvider,
 } from "../ports/crmConnectionRepository.js";
-import type {
-  CrmChannel,
-  CrmConnectionReadiness,
-  CrmConnectionState,
+import {
+  crmChannelConnectionSchema,
+  type CrmChannelConnectionDto,
 } from "@lojaveiculosv2/shared";
+import type { CrmCredentialBroker } from "../core/models.js";
 import type { CrmWhatsappProviderStatus } from "../ports/crmWhatsappGateway.js";
 import {
   readZapiWebhookSetupState,
   type ZapiWebhookSetupState,
 } from "./zapiWebhookSetupState.js";
-import {
-  isConnectionReady,
-  readinessFor,
-} from "./whatsappConnectionReadiness.js";
-import { providerCapabilities } from "./whatsappProviderCapabilities.js";
 
-export { providerCapabilities } from "./whatsappProviderCapabilities.js";
-
-export type WhatsappConnectionLiveStatus =
-  | (CrmWhatsappProviderStatus & {
-      providerStatus: "connected" | "disconnected" | "unknown";
-    })
-  | {
-      checkedAt: Date;
-      connected: null;
-      connectedPhone: null;
-      errorMessage: string;
-      providerStatus: "error";
-      smartphoneConnected: null;
-    };
-
-export type WhatsappConnection = {
-  /** Canonical multi-channel fields. Legacy setup fields below remain adapter-owned. */
-  channel?: CrmChannel;
-  capabilities: WhatsappProviderCapabilities;
-  credentials: WhatsappConnectionCredentialRefs;
-  displayName: string;
-  externalConnectionId: string | null;
-  externalInstanceId: string | null;
-  id: string;
-  live: WhatsappConnectionLiveStatus;
-  metadata: WhatsappConnectionMetadata;
-  phone: string | null;
-  provider: CrmConnectionProvider;
-  readiness?: CrmConnectionReadiness;
-  ready: boolean;
-  state?: CrmConnectionState;
-  isDefault?: boolean;
-  setup: ZapiWebhookSetupState | null;
-  status: CrmConnectionConfiguredStatus;
-};
-
+/** Provider transport abilities for adapter operations, not connection DTO facts. */
 export type WhatsappProviderCapabilities = {
   audio: boolean;
   catalog: boolean;
@@ -72,6 +32,35 @@ export type WhatsappProviderCapabilities = {
   text: boolean;
   vehicle: boolean;
   video: boolean;
+};
+
+export { providerCapabilities } from "./whatsappProviderCapabilities.js";
+
+export type WhatsappConnectionLiveStatus =
+  | (CrmWhatsappProviderStatus & {
+      providerStatus: "connected" | "disconnected" | "unknown";
+    })
+  | {
+      checkedAt: Date;
+      connected: null;
+      connectedPhone: null;
+      errorMessage: string;
+      providerStatus: "error";
+      smartphoneConnected: null;
+    };
+
+export type WhatsappConnection = CrmChannelConnectionDto & {
+  /** Canonical multi-channel fields. Legacy setup fields below remain adapter-owned. */
+  broker: CrmCredentialBroker;
+  credentials: WhatsappConnectionCredentialRefs;
+  externalConnectionId: string | null;
+  externalInstanceId: string | null;
+  live: WhatsappConnectionLiveStatus;
+  metadata: WhatsappConnectionMetadata;
+  phone: string | null;
+  ready: boolean;
+  setup: ZapiWebhookSetupState | null;
+  status: CrmConnectionConfiguredStatus;
 };
 
 export type WhatsappConnectionCredentialRefs = {
@@ -96,37 +85,57 @@ export function toWhatsappConnection(
   connection: CrmConnection,
   live: WhatsappConnectionLiveStatus,
 ): WhatsappConnection {
+  const canonical = connection.canonical;
+  if (!canonical) {
+    throw new Error("Canonical CRM channel connection projection is missing.");
+  }
   const setup =
     connection.provider === "zapi"
       ? readZapiWebhookSetupState(connection.metadata)
       : null;
-  const channel = channelForProvider(connection.provider);
-  const ready = isConnectionReady(connection, live, setup);
-  return {
-    channel,
-    capabilities: providerCapabilities(connection.provider),
-    credentials: readCredentialRefs(connection.credentialsRef),
+  const canonicalDto = crmChannelConnectionSchema.parse({
+    capabilities: canonical.capabilities,
+    channel: canonical.channel,
     displayName: connection.displayName,
+    id: connection.id,
+    isDefault: false,
+    provider: canonical.provider,
+    readiness: canonical.readiness,
+    state: canonical.state,
+  });
+  return {
+    broker: canonical.broker,
+    ...canonicalDto,
+    credentials: readCredentialRefs(connection.credentialsRef),
     externalConnectionId: connection.externalConnectionId,
     externalInstanceId: connection.externalInstanceId,
-    id: connection.id,
     live,
     metadata: readConnectionMetadata(connection.metadata),
     phone: connection.phone,
-    provider: connection.provider,
-    readiness: readinessFor(connection, live, setup, ready),
-    ready,
-    state: connection.status,
-    isDefault: false,
+    ready: canonical.readiness.ready,
     setup,
     status: connection.status,
   };
 }
 
-function channelForProvider(provider: CrmConnectionProvider): CrmChannel {
-  if (provider === "composio_instagram") return "instagram";
-  if (provider === "olx_chat") return "olx_chat";
-  return "whatsapp";
+export function setupProviderForConnection(
+  connection: Pick<WhatsappConnection, "broker" | "channel" | "provider">,
+): readonly CrmConnectionProvider[] {
+  if (
+    connection.channel === "whatsapp" &&
+    connection.provider === "zapi" &&
+    connection.broker === "direct"
+  ) {
+    return ["zapi"];
+  }
+  if (
+    connection.channel === "whatsapp" &&
+    connection.provider === "meta_cloud" &&
+    connection.broker === "composio"
+  ) {
+    return ["composio_whatsapp"];
+  }
+  return [];
 }
 
 function readRecord(value: unknown): Record<string, unknown> {

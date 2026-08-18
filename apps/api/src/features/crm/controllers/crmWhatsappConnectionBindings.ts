@@ -34,6 +34,7 @@ import {
   requestZapiPairingQrAsSupport,
   updateZapiCredentialsAsSupport,
 } from "../../../domains/crm/services/CrmWhatsapp/manageZapiConnectionAsSupport.js";
+import { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
 
 type ConnectionBindings = Pick<
   CrmWhatsappServices,
@@ -52,6 +53,7 @@ type ConnectionBindings = Pick<
   | "listWhatsappConnections"
   | "requestZapiPairingCode"
   | "requestZapiPairingQr"
+  | "retryOlxChatSetup"
   | "refreshZapiConnectionStatus"
   | "requestZapiPairingCodeAsSupport"
   | "requestZapiPairingQrAsSupport"
@@ -93,6 +95,8 @@ export const createCrmWhatsappConnectionBindings = (
     requestZapiPairingCode(context, input, ports),
   requestZapiPairingQr: (context, input) =>
     requestZapiPairingQr(context, input, ports),
+  retryOlxChatSetup: (context, input) =>
+    retryOlxChatSetup(context, input, ports),
   refreshZapiConnectionStatus: (context, input) =>
     refreshZapiConnectionStatus(context, input, ports),
   requestZapiPairingCodeAsSupport: (context, input) =>

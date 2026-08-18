@@ -13,7 +13,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "./_shared.js";
-import { crmConnections } from "./crm.js";
+import { providerConnections } from "./crmCore/authorization.js";
 import {
   crmWhatsappHumanAttendanceState,
   crmWhatsappSessions,
@@ -74,9 +74,9 @@ export const crmWhatsappInterventionLedger = pgTable(
           foreignKey({
             columns: [table.tenantId, table.storeId, table.connectionId],
             foreignColumns: [
-              crmConnections.tenantId,
-              crmConnections.storeId,
-              crmConnections.id,
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
             ],
             name: "crm_whatsapp_intervention_ledger_scoped_connection_fk",
           }),

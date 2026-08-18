@@ -29,6 +29,7 @@ export function WhatsappToolbar({
   assignableMembers,
   availableTags,
   children,
+  canAssign,
   canManageConnections,
   canManageTags,
   connectionId,
@@ -64,6 +65,7 @@ export function WhatsappToolbar({
   assignableMembers: CrmWhatsappAssignableMember[];
   availableTags: CrmWhatsappTag[];
   children?: ReactNode;
+  canAssign: boolean;
   canManageConnections: boolean;
   canManageTags: boolean;
   canStartConversation: boolean;
@@ -269,6 +271,7 @@ export function WhatsappToolbar({
       {children}
       <QueueQuickFilterRow
         assignableMembers={assignableMembers}
+        canAssign={canAssign}
         currentUserId={currentUserId}
         onOtherAssigneeChange={onOtherAssigneeChange}
         onQuickFilterChange={onQuickFilterChange}

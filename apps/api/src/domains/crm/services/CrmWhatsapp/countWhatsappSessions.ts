@@ -13,6 +13,7 @@ import {
   auditWhatsappServiceEvent,
   logWhatsappServiceEvent,
 } from "./serviceSupport.js";
+import { resolveWhatsappQueueVisibility } from "../../whatsapp/whatsappQueueVisibility.js";
 
 const permission = "crm.whatsapp.list";
 
@@ -34,7 +35,11 @@ const whatsappSessionCountStatuses = [
 
 export type CountWhatsappSessionsInput = Omit<
   CountCrmWhatsappSessionsInput,
-  "assignedUserId" | "selectedAssigneeId" | "storeId" | "tenantId"
+  | "assignedUserId"
+  | "queueVisibility"
+  | "selectedAssigneeId"
+  | "storeId"
+  | "tenantId"
 >;
 
 export type WhatsappSessionCounts = {
@@ -67,6 +72,7 @@ export async function countWhatsappSessions(
     ...(context.actor.kind === "user"
       ? { assignedUserId: context.actor.id as never }
       : {}),
+    queueVisibility: resolveWhatsappQueueVisibility(context),
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   };

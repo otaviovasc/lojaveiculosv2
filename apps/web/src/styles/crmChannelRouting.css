@@ -189,3 +189,43 @@
     width: 100%;
   }
 }
+
+/* Routing summary rows + focused edit dialog */
+.crm-routing-bot-summary {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-routing-dialog-body {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.crm-routing-capability-note {
+  border-left: 2px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+}
+
+.crm-routing-bot {
+  border-top: 1px solid var(--color-line);
+  padding-top: 0.75rem;
+}
+
+.crm-routing-bot > summary {
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+}
+
+.crm-routing-bot-fields {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}

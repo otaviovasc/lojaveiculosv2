@@ -1,5 +1,10 @@
 import { Check, ChevronDown, Tags, UsersRound } from "lucide-react";
-import { useRef, useState } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { countForFilter } from "./crmWhatsappQueueState";
 import type {
@@ -21,6 +26,7 @@ const quickFilterOptions: Array<{
 
 export function QueueQuickFilterRow({
   assignableMembers,
+  canAssign,
   currentUserId,
   onOtherAssigneeChange,
   onQuickFilterChange,
@@ -29,6 +35,7 @@ export function QueueQuickFilterRow({
   sessionCounts,
 }: {
   assignableMembers: CrmWhatsappAssignableMember[];
+  canAssign: boolean;
   currentUserId: string | null;
   onOtherAssigneeChange: (assigneeId: string | null) => void;
   onQuickFilterChange: (filter: CrmWhatsappSessionFilter) => void;
@@ -37,6 +44,9 @@ export function QueueQuickFilterRow({
   sessionCounts: CrmWhatsappSessionCounts;
 }) {
   const othersButtonRef = useRef<HTMLButtonElement>(null);
+  const othersButtonId = useId();
+  const othersListboxId = useId();
+  const othersInitialFocusRef = useRef<"first" | "last">("first");
   const [othersOpen, setOthersOpen] = useState(false);
   const countsByAssignee = new Map(
     sessionCounts.assignees.map((item) => [item.assigneeId, item.count]),
@@ -55,6 +65,22 @@ export function QueueQuickFilterRow({
         (right.activeChatCount ?? 0) - (left.activeChatCount ?? 0) ||
         left.name.localeCompare(right.name, "pt-BR"),
     );
+  if (!canAssign) {
+    return (
+      <div
+        className="crm-whatsapp-filter-row"
+        aria-label="Filtros rápidos"
+        role="group"
+      >
+        <QuickFilterButton
+          active
+          count={countForFilter(sessionCounts, "mine")}
+          label="Meus"
+          onClick={() => onQuickFilterChange("mine")}
+        />
+      </div>
+    );
+  }
   return (
     <div
       className="crm-whatsapp-filter-row"
@@ -72,8 +98,9 @@ export function QueueQuickFilterRow({
       ))}
       <div className="crm-whatsapp-filter-anchor">
         <button
+          aria-controls={othersListboxId}
           aria-expanded={othersOpen}
-          aria-haspopup="menu"
+          aria-haspopup="listbox"
           aria-pressed={quickFilter === "others"}
           className={
             quickFilter === "others"
@@ -81,9 +108,19 @@ export function QueueQuickFilterRow({
               : "crm-whatsapp-filter"
           }
           onClick={() => {
+            othersInitialFocusRef.current = "first";
             onQuickFilterChange("others");
             setOthersOpen((open) => !open);
           }}
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+            event.preventDefault();
+            othersInitialFocusRef.current =
+              event.key === "ArrowUp" ? "last" : "first";
+            onQuickFilterChange("others");
+            setOthersOpen(true);
+          }}
+          id={othersButtonId}
           ref={othersButtonRef}
           type="button"
         >
@@ -93,35 +130,38 @@ export function QueueQuickFilterRow({
         </button>
         <FeatureAnchoredPopover
           anchorRef={othersButtonRef}
+          ariaLabel="Atendentes da loja"
           className="crm-whatsapp-filter-menu"
+          id={othersListboxId}
+          initialFocus={othersInitialFocusRef.current}
           isOpen={othersOpen}
           onClose={() => setOthersOpen(false)}
+          onKeyDown={handlePopupNavigation}
+          role="listbox"
         >
-          <div aria-label="Atendentes da loja" role="listbox">
+          <AssigneeFilterOption
+            active={!otherAssigneeId}
+            count={countForFilter(sessionCounts, "others")}
+            label="Todos os atendentes"
+            onClick={() => {
+              onOtherAssigneeChange(null);
+              setOthersOpen(false);
+            }}
+            subtitle="Outros responsáveis"
+          />
+          {otherMembers.map((member) => (
             <AssigneeFilterOption
-              active={!otherAssigneeId}
-              count={countForFilter(sessionCounts, "others")}
-              label="Todos os atendentes"
+              active={String(member.id) === otherAssigneeId}
+              count={member.activeChatCount ?? 0}
+              key={member.id}
+              label={member.name}
               onClick={() => {
-                onOtherAssigneeChange(null);
+                onOtherAssigneeChange(String(member.id));
                 setOthersOpen(false);
               }}
-              subtitle="Outros responsáveis"
+              subtitle={formatWhatsappMemberRole(member.role)}
             />
-            {otherMembers.map((member) => (
-              <AssigneeFilterOption
-                active={String(member.id) === otherAssigneeId}
-                count={member.activeChatCount ?? 0}
-                key={member.id}
-                label={member.name}
-                onClick={() => {
-                  onOtherAssigneeChange(String(member.id));
-                  setOthersOpen(false);
-                }}
-                subtitle={formatWhatsappMemberRole(member.role)}
-              />
-            ))}
-          </div>
+          ))}
         </FeatureAnchoredPopover>
       </div>
       <QuickFilterButton
@@ -144,12 +184,16 @@ export function QueueTagFilterMenu({
   selectedTagIds: string[];
 }) {
   const anchorRef = useRef<HTMLButtonElement>(null);
+  const buttonId = useId();
+  const menuId = useId();
+  const initialFocusRef = useRef<"first" | "last">("first");
   const [open, setOpen] = useState(false);
   if (availableTags.length === 0) return null;
 
   return (
     <div className="crm-whatsapp-filter-anchor">
       <button
+        aria-controls={menuId}
         aria-expanded={open}
         aria-haspopup="menu"
         className={
@@ -157,7 +201,17 @@ export function QueueTagFilterMenu({
             ? "crm-whatsapp-queue-dropdown crm-whatsapp-queue-dropdown-active"
             : "crm-whatsapp-queue-dropdown"
         }
-        onClick={() => setOpen((current) => !current)}
+        id={buttonId}
+        onClick={() => {
+          initialFocusRef.current = "first";
+          setOpen((current) => !current);
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+          event.preventDefault();
+          initialFocusRef.current = event.key === "ArrowUp" ? "last" : "first";
+          setOpen(true);
+        }}
         ref={anchorRef}
         type="button"
       >
@@ -170,19 +224,24 @@ export function QueueTagFilterMenu({
       </button>
       <FeatureAnchoredPopover
         anchorRef={anchorRef}
+        ariaLabel="Filtrar por etiquetas"
         className="crm-whatsapp-filter-menu"
+        id={menuId}
+        initialFocus={initialFocusRef.current}
         isOpen={open}
         onClose={() => setOpen(false)}
+        onKeyDown={handlePopupNavigation}
       >
-        <div aria-label="Filtrar por etiquetas" role="group">
+        <div aria-label="Etiquetas disponíveis" role="group">
           {availableTags.map((tag) => {
             const selected = selectedTagIds.includes(tag.id);
             return (
               <button
-                aria-pressed={selected}
+                aria-checked={selected}
                 className="crm-whatsapp-filter-menu-option"
                 key={tag.id}
                 onClick={() => onTagFilterToggle(tag.id)}
+                role="menuitemcheckbox"
                 type="button"
               >
                 <span className="crm-whatsapp-filter-menu-check">
@@ -203,6 +262,34 @@ export function QueueTagFilterMenu({
       </FeatureAnchoredPopover>
     </div>
   );
+}
+
+function handlePopupNavigation(event: ReactKeyboardEvent<HTMLDivElement>) {
+  if (
+    event.key !== "ArrowDown" &&
+    event.key !== "ArrowUp" &&
+    event.key !== "Home" &&
+    event.key !== "End"
+  ) {
+    return;
+  }
+  const items = Array.from(
+    event.currentTarget.querySelectorAll<HTMLElement>(
+      '[role="option"]:not([aria-disabled="true"]), [role="menuitemcheckbox"]:not([aria-disabled="true"])',
+    ),
+  );
+  if (items.length === 0) return;
+  event.preventDefault();
+  const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+  let nextIndex = 0;
+  if (event.key === "End") nextIndex = items.length - 1;
+  if (event.key === "ArrowUp") {
+    nextIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+  }
+  if (event.key === "ArrowDown") {
+    nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+  }
+  items[nextIndex]?.focus();
 }
 
 function QuickFilterButton({

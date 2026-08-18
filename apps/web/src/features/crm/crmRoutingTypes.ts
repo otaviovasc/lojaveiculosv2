@@ -31,7 +31,12 @@ export type CrmRoutingConnection = {
   displayName: string;
   id: string;
   provider: CrmWhatsappProvider;
-  readiness?: { ready: boolean; reason: string | null };
+  readiness?: {
+    ready: boolean;
+    reason: string | null;
+    reasonCode: string | null;
+  };
+  state?: CrmWhatsappProviderConnection["state"];
   isDefault?: boolean;
 };
 
@@ -107,16 +112,22 @@ export function readRoutingCandidates(
   }
   for (const channel of policy?.channels ?? []) {
     for (const route of [channel.storeDefault, channel.bot]) {
-      if (!route.connection || candidates.has(route.connection.id)) continue;
+      if (
+        !route.connection ||
+        route.connection.channel !== channel.channel ||
+        candidates.has(route.connection.id)
+      ) {
+        continue;
+      }
       candidates.set(route.connection.id, {
-        channel: channel.channel,
+        channel: route.connection.channel,
         connected: route.connection.connected,
         displayName: route.connection.displayName,
         id: route.connection.id,
         phone: null,
         provider: route.connection.provider,
         ready: route.ready,
-        state: route.connection.active ? "active" : undefined,
+        state: route.connection.state,
       });
     }
   }
@@ -150,18 +161,29 @@ function normalizeRoute(
   const record = asRecord(value);
   const blocked = asRecord(record.blocked);
   const code = readBlockedCode(blocked.code);
+  const connection = normalizeRoutingConnection(record.connection, channel);
+  const hasMalformedConnection =
+    record.connection !== null &&
+    record.connection !== undefined &&
+    connection === null;
   return {
-    blocked: code
+    blocked: hasMalformedConnection
       ? {
-          code,
-          message: readString(blocked.message) ?? "Rota indisponível.",
-          remediation:
-            readString(blocked.remediation) ?? "Selecione outra conexão.",
+          code: "channel_incompatible",
+          message: "A conexão não informou um canal válido.",
+          remediation: "Atualize a rota com uma conexão canônica.",
         }
-      : null,
-    connection: normalizeRoutingConnection(record.connection, channel),
-    ready: record.ready === true,
-    requiredCapabilities: readStringArray(record.requiredCapabilities),
+      : code
+        ? {
+            code,
+            message: readString(blocked.message) ?? "Rota indisponível.",
+            remediation:
+              readString(blocked.remediation) ?? "Selecione outra conexão.",
+          }
+        : null,
+    connection,
+    ready: !hasMalformedConnection && record.ready === true,
+    requiredCapabilities: readStringArray(record.requiredCapabilities) ?? [],
   };
 }
 
@@ -172,43 +194,50 @@ function normalizeRoutingConnection(
   const record = asRecord(value);
   const id = readString(record.id);
   const provider = readProvider(record.provider);
-  if (!id || !provider) return null;
+  const connectionChannel = readChannel(record.channel);
+  const displayName = readString(record.displayName);
+  const capabilities = readStringArray(record.capabilities);
+  const readiness = asRecord(record.readiness);
+  const state = readConnectionState(record.state);
+  if (
+    !id ||
+    !provider ||
+    !connectionChannel ||
+    connectionChannel !== channel ||
+    !displayName ||
+    !capabilities ||
+    typeof record.active !== "boolean" ||
+    typeof record.connected !== "boolean" ||
+    typeof readiness.ready !== "boolean" ||
+    !isNullableString(readiness.reason) ||
+    !isNullableString(readiness.reasonCode) ||
+    !state ||
+    typeof record.isDefault !== "boolean"
+  ) {
+    return null;
+  }
   return {
-    active: record.active === true,
-    capabilities: readStringArray(record.capabilities),
-    channel: readChannel(record.channel) ?? channel ?? "whatsapp",
-    connected: record.connected === true,
-    displayName: readString(record.displayName) ?? id,
+    active: record.active,
+    capabilities,
+    channel: connectionChannel,
+    connected: record.connected,
+    displayName,
     id,
-    isDefault: record.isDefault === true,
+    isDefault: record.isDefault,
     provider,
     readiness: {
-      ready:
-        record.readiness === true || asRecord(record.readiness).ready === true,
-      reason: readString(asRecord(record.readiness).reason),
+      ready: readiness.ready,
+      reason: readiness.reason,
+      reasonCode: readiness.reasonCode,
     },
+    state,
   };
 }
 
 function readProvider(value: unknown): CrmWhatsappProvider | null {
-  if (typeof value !== "string") return null;
-  switch (value.trim().toLowerCase()) {
-    case "zapi":
-    case "z-api":
-      return "zapi";
-    case "composio_whatsapp":
-    case "official_whatsapp":
-    case "whatsapp_official":
-    case "meta_cloud":
-      return "meta_cloud";
-    case "composio_instagram":
-    case "instagram":
-      return "composio_instagram";
-    case "olx_chat":
-      return "olx_chat";
-    default:
-      return null;
-  }
+  return value === "meta_cloud" || value === "zapi" || value === "olx"
+    ? value
+    : null;
 }
 
 function readChannel(value: unknown): CrmRoutingChannel | null {
@@ -251,10 +280,28 @@ function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function readStringArray(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
+function readStringArray(value: unknown): readonly string[] | null {
+  return Array.isArray(value) &&
+    value.every((item): item is string => typeof item === "string")
+    ? value
+    : null;
+}
+
+function readConnectionState(
+  value: unknown,
+): CrmWhatsappProviderConnection["state"] | null {
+  return value === "active" ||
+    value === "archived" ||
+    value === "disconnected" ||
+    value === "error" ||
+    value === "paused" ||
+    value === "sandbox"
+    ? value
+    : null;
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
 }
 
 function isDefined<T>(value: T | null): value is T {

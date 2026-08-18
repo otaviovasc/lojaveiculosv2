@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmRoutingRepositories } from "../adapters/memory/crmRoutingRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import {
   createServiceContext,
@@ -27,7 +28,7 @@ describe("Composio WhatsApp setup", () => {
   });
 
   it("subscribes only the selected sender WABA and is idempotent after persistence", async () => {
-    const { ports, subscribe } = fixture();
+    const { ports, repository, routing, subscribe } = fixture();
 
     await selectComposioWhatsappSender(
       context(),
@@ -45,6 +46,28 @@ describe("Composio WhatsApp setup", () => {
       businessAccountId: "waba-b",
       connectedAccountId: "ca_expected",
     });
+    await expect(
+      repository.routingConnectionRepository.listConnections({
+        storeId: "store" as StoreId,
+        tenantId: "tenant" as TenantId,
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        channel: "whatsapp",
+        connected: true,
+        id: "connection",
+        provider: "meta_cloud",
+        state: "active",
+      }),
+    ]);
+    await expect(
+      routing.policyRepository.listPolicies({
+        storeId: "store" as StoreId,
+        tenantId: "tenant" as TenantId,
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({ defaultConnectionId: "connection" }),
+    ]);
   });
 
   it.each([
@@ -84,6 +107,7 @@ function fixture(
   },
 ) {
   const repository = createMemoryCrmConnectionRepository([connection()]);
+  const routing = createMemoryCrmRoutingRepositories();
   const subscribe = vi.fn(async () => ({ subscribed: true as const }));
   return {
     ports: {
@@ -118,7 +142,11 @@ function fixture(
       },
       crmConnectionRepository: repository,
       crmRepository: createMemoryCrmRepository(),
+      crmRoutingConnectionRepository: repository.routingConnectionRepository,
+      crmRoutingPolicyRepository: routing.policyRepository,
     },
+    repository,
+    routing,
     subscribe,
   };
 }

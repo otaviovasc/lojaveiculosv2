@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { crmChannelConnectionSchema } from "@lojaveiculosv2/shared";
+import { AppApiError } from "../../lib/apiErrors";
 import { createCrmWhatsappApi } from "./crmWhatsappApi";
 
 type FetchCall = {
@@ -44,6 +46,37 @@ describe("CRM WhatsApp API", () => {
       "x-clerk-user-id": "clerk_1",
       "x-store-slug": "test-store",
     });
+  });
+
+  it("posts the OLX Chat setup retry through the canonical route", async () => {
+    const fake = createFakeFetch([
+      {
+        channel: "olx_chat",
+        connectionId: "connection_1",
+        diagnostics: {
+          httpStatus: 200,
+          providerRequestId: "op-1",
+          retryable: false,
+        },
+        provider: "olx",
+        readiness: { ready: true },
+        setup: {
+          attemptCount: 2,
+          configuredAt: "2026-08-17T12:00:00.000Z",
+          status: "configured",
+        },
+      },
+    ]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    const result = await api.retryOlxChatSetup("connection_1");
+
+    expect(fake.calls[0]).toMatchObject({
+      input:
+        "/api/v1/crm/channel-connections/connection_1/olx-chat/setup/retry",
+      init: { body: "{}", method: "POST" },
+    });
+    expect(result.diagnostics.providerRequestId).toBe("op-1");
   });
 
   it("posts quoted text messages through V2", async () => {
@@ -148,17 +181,119 @@ describe("CRM WhatsApp API", () => {
   });
 
   it("loads WhatsApp connections through V2", async () => {
-    const fake = createFakeFetch([{ connections: [{ id: "connection_1" }] }]);
+    const connection = canonicalConnection();
+    const fake = createFakeFetch([{ connections: [connection] }]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await expect(api.listConnections()).resolves.toEqual({
       allowance: { limit: 1, remaining: 0, used: 1 },
-      availableProviders: ["zapi", "composio_whatsapp"],
-      connections: [{ id: "connection_1" }],
+      availableProviders: [],
+      connections: [
+        {
+          ...connection,
+          capabilities: ergonomicCapabilities(),
+        },
+      ],
     });
     expect(fake.calls[0]).toMatchObject({
       input: "/api/v1/crm/whatsapp/connections",
       init: { method: "GET" },
+    });
+  });
+
+  it.each(["zapi", ["zapi", "invented_provider"]])(
+    "fails closed for malformed availableProviders %#",
+    async (availableProviders) => {
+      const fake = createFakeFetch([{ availableProviders, connections: [] }]);
+      const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+      await expect(api.listConnections()).resolves.toMatchObject({
+        availableProviders: [],
+      });
+    },
+  );
+
+  it("uses only explicit valid available providers", async () => {
+    const fake = createFakeFetch([
+      {
+        availableProviders: ["zapi", "composio_whatsapp"],
+        connections: [canonicalConnection()],
+      },
+    ]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(api.listConnections()).resolves.toMatchObject({
+      availableProviders: ["zapi", "composio_whatsapp"],
+    });
+  });
+
+  it.each(["channel", "readiness", "capabilities"] as const)(
+    "rejects a connection DTO missing %s",
+    async (field) => {
+      const connection: Record<string, unknown> = canonicalConnection();
+      delete connection[field];
+      const fake = createFakeFetch([{ connections: [connection] }]);
+      const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+      let error: unknown;
+      try {
+        await api.listConnections();
+      } catch (caught: unknown) {
+        error = caught;
+      }
+
+      expect(error).toBeInstanceOf(AppApiError);
+      expect(error).toMatchObject({
+        code: "CRM_CONNECTION_DTO_INVALID",
+        details: { connectionIndex: 0, fields: [field] },
+        status: 502,
+      });
+    },
+  );
+
+  it.each([
+    ["whatsapp", "zapi", "WhatsApp Z-API"],
+    ["instagram", "meta_cloud", "Instagram"],
+    ["olx_chat", "olx", "OLX Chat"],
+  ] as const)(
+    "accepts a canonical %s/%s connection DTO",
+    async (channel, provider, displayName) => {
+      const connection = canonicalConnection({
+        channel,
+        displayName,
+        provider,
+      });
+      const fake = createFakeFetch([{ connections: [connection] }]);
+      const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+      await expect(api.listConnections()).resolves.toMatchObject({
+        connections: [
+          {
+            channel,
+            displayName,
+            provider,
+            capabilities: ergonomicCapabilities(),
+          },
+        ],
+      });
+    },
+  );
+
+  it("accepts the same canonical fixture enforced by the shared schema", async () => {
+    const connection = canonicalConnection();
+    expect(crmChannelConnectionSchema.parse(connection)).toEqual(connection);
+    const api = createCrmWhatsappApi({
+      fetch: createFakeFetch([{ connections: [connection] }]).fetch,
+    });
+
+    await expect(api.listConnections()).resolves.toMatchObject({
+      connections: [
+        {
+          id: "connection_1",
+          provider: "zapi",
+          capabilities: ergonomicCapabilities(),
+        },
+      ],
     });
   });
 
@@ -388,3 +523,40 @@ describe("CRM WhatsApp API", () => {
     });
   });
 });
+
+function canonicalConnection(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    capabilities: ["inbound", "outbound", "scheduling"],
+    channel: "whatsapp",
+    displayName: "WhatsApp Z-API",
+    id: "connection_1",
+    isDefault: false,
+    provider: "zapi",
+    readiness: { ready: true, reason: null, reasonCode: "ready" },
+    state: "active",
+    ...overrides,
+  };
+}
+
+function ergonomicCapabilities() {
+  return {
+    audio: false,
+    catalog: false,
+    conversationStart: false,
+    delete: false,
+    documents: false,
+    imageCaption: false,
+    images: false,
+    location: false,
+    quickMessages: true,
+    reactions: false,
+    reply: true,
+    scheduling: true,
+    templates: false,
+    text: true,
+    vehicle: false,
+    video: false,
+  };
+}

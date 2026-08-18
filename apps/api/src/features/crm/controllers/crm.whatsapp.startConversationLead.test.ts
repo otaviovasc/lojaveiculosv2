@@ -49,8 +49,13 @@ describe("CRM WhatsApp start conversation from lead", () => {
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
-      lead: { id: existing.id, status: "contacted" },
+      lead: {
+        assignedUserId: "02020202-0202-4202-8202-020202020202",
+        id: existing.id,
+        status: "contacted",
+      },
       session: {
+        assignedUserId: "02020202-0202-4202-8202-020202020202",
         buyerName: "Lead V2",
         buyerPhone: "5511977776666",
         leadId: existing.id,

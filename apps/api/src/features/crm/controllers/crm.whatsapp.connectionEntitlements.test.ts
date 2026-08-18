@@ -74,7 +74,7 @@ describe("CRM WhatsApp connection entitlements", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       id: officialId,
-      provider: "composio_whatsapp",
+      provider: "meta_cloud",
       status: "paused",
     });
     await expect(
@@ -113,7 +113,12 @@ function createOfficialConnection(): CrmConnection {
     externalConnectionId: "phone-number-id",
     externalInstanceId: null,
     id: officialId,
-    metadata: { graphVersion: "v25.0" },
+    metadata: {
+      capabilities: { inbound: true, outbound: true, templates: true },
+      connected: true,
+      graphVersion: "v25.0",
+      providerConnected: true,
+    },
     phone: null,
     provider: "composio_whatsapp",
     status: "active",

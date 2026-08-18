@@ -255,6 +255,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).refreshZapiConnectionStatus(connectionId),
+    retryOlxChatSetup: async (connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).retryOlxChatSetup(connectionId),
     requestZapiAddon: async () => {
       const api = createCrmWhatsappApi(await createProductCrmApiOptions());
       if (!api.requestZapiAddon) {

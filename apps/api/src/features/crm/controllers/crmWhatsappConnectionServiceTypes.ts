@@ -32,6 +32,7 @@ import type {
   requestZapiPairingQrAsSupport,
   updateZapiCredentialsAsSupport,
 } from "../../../domains/crm/services/CrmWhatsapp/manageZapiConnectionAsSupport.js";
+import type { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
 
 type ContextService<Input, Output> = (
   context: ServiceContext,
@@ -91,6 +92,10 @@ export type CrmWhatsappConnectionServices = {
   requestZapiPairingQr: ContextService<
     RequestZapiPairingQrInput,
     { expiresAt: string; qrCode: string }
+  >;
+  retryOlxChatSetup: ContextService<
+    Parameters<typeof retryOlxChatSetup>[1],
+    Awaited<ReturnType<typeof retryOlxChatSetup>>
   >;
   refreshZapiConnectionStatus: ContextService<
     Parameters<typeof refreshZapiConnectionStatus>[1],

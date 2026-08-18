@@ -34,6 +34,7 @@ import {
   resolveCampaignSessions,
   singleCampaignConnectionId,
 } from "../../whatsapp/whatsappCampaignSupport.js";
+import { resolveWhatsappQueueVisibility } from "../../whatsapp/whatsappQueueVisibility.js";
 
 export async function listWhatsappCampaigns(
   context: ServiceContext,
@@ -126,6 +127,7 @@ async function createCampaignRecords(
     repository,
     scope,
     input.recipients,
+    resolveWhatsappQueueVisibility(context),
   );
   const campaign = await repository.createCampaign({
     content: input.content,

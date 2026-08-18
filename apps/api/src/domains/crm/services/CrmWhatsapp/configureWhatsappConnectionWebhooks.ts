@@ -115,7 +115,6 @@ export async function configureWhatsappConnectionWebhooks(
       );
       if (
         readyConnection.ready &&
-        context.permissions.includes("crm.routing.default.manage") &&
         ports.crmRoutingConnectionRepository &&
         ports.crmRoutingPolicyRepository
       ) {

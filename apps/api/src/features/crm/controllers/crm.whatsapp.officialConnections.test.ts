@@ -37,12 +37,14 @@ describe("CRM official messaging connections", () => {
     expect(body.connections).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          channel: "whatsapp",
           id: whatsappId,
-          provider: "composio_whatsapp",
+          provider: "meta_cloud",
         }),
         expect.objectContaining({
+          channel: "instagram",
           id: instagramId,
-          provider: "composio_instagram",
+          provider: "meta_cloud",
         }),
       ]),
     );
@@ -174,7 +176,16 @@ function createConnection(
     externalConnectionId: `${provider}-sender`,
     externalInstanceId: null,
     id,
-    metadata: { graphVersion: "v25.0" },
+    metadata: {
+      capabilities: {
+        inbound: true,
+        outbound: true,
+        templates: provider === "composio_whatsapp",
+      },
+      connected: true,
+      graphVersion: "v25.0",
+      providerConnected: true,
+    },
     phone: null,
     provider,
     status: "active",

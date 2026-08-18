@@ -17,6 +17,7 @@ import {
 import {
   executeWhatsappSessionCommand,
   reloadScopedWhatsappSession,
+  reloadVisibleWhatsappSession,
   type WhatsappSessionCommandResponse,
 } from "./executeWhatsappSessionCommand.js";
 import {
@@ -82,10 +83,10 @@ export async function closeWhatsappSession(
               }
               return { result: "applied", session: updated };
             }
-            candidate = await reloadScopedWhatsappSession(
+            candidate = await reloadVisibleWhatsappSession(
+              context,
               transactionPorts,
               input.sessionId,
-              scope,
             );
           }
           return { result: "superseded", session: candidate };

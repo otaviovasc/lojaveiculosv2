@@ -2,13 +2,25 @@ import type {
   CrmConnection,
   CrmConnectionRepository,
 } from "../../../../domains/crm/ports/crmConnectionRepository.js";
+import {
+  canonicalCrmConnectionMetadata,
+  canonicalCrmConnectionIdentity,
+  projectCanonicalCrmConnectionRow,
+  toCanonicalRoutingConnection,
+} from "../../../../domains/crm/ports/crmChannelConnectionProjection.js";
+import type { CrmRoutingConnectionRepository } from "../../../../domains/crm/ports/crmRoutingConnectionRepository.js";
+import { createMemoryCrmConnectionSetupMethods } from "./crmConnectionRepositorySetup.js";
+
+export type MemoryCrmConnectionRepository = CrmConnectionRepository & {
+  routingConnectionRepository: CrmRoutingConnectionRepository;
+};
 
 export function createMemoryCrmConnectionRepository(
   initialConnections: readonly CrmConnection[] = [],
-): CrmConnectionRepository {
-  const connections = [...initialConnections];
+): MemoryCrmConnectionRepository {
+  const connections = initialConnections.map(normalizeConnection);
 
-  return {
+  const repository: CrmConnectionRepository = {
     async archiveAbandonedZapiConnections(input) {
       const candidates = connections
         .filter(
@@ -51,7 +63,7 @@ export function createMemoryCrmConnectionRepository(
         webhookUrl: input.webhookUrl ?? null,
       };
       connections.push(connection);
-      return connection;
+      return normalizeConnection(connection);
     },
     async upsertOlxConnection(input) {
       const existing = connections.find(
@@ -78,7 +90,10 @@ export function createMemoryCrmConnectionRepository(
           },
         };
         existing.displayName = input.displayName;
-        return { connection: existing, replacedConnectionId: null };
+        return {
+          connection: normalizeConnection(existing),
+          replacedConnectionId: null,
+        };
       }
       if (existing) existing.status = "archived";
       const connection: CrmConnection = {
@@ -97,74 +112,11 @@ export function createMemoryCrmConnectionRepository(
       };
       connections.push(connection);
       return {
-        connection,
+        connection: normalizeConnection(connection),
         replacedConnectionId: existing?.id ?? null,
       };
     },
-    async configureInitialZapiCredentials(input) {
-      const connection = connections.find(
-        (item) =>
-          item.id === input.connectionId &&
-          item.storeId === input.storeId &&
-          item.tenantId === input.tenantId &&
-          item.provider === "zapi" &&
-          item.status !== "archived",
-      );
-      if (!connection) return { status: "not_found" };
-      const state = readZapiCredentialState(connection.credentialsRef);
-      if (state !== "unconfigured") return { status: state };
-      connection.credentialsRef = input.credentialsRef;
-      connection.externalInstanceId = input.externalInstanceId;
-      return { connection, status: "configured" };
-    },
-    async claimZapiWebhookSetup(input) {
-      const connection = connections.find(
-        (item) =>
-          item.id === input.connectionId &&
-          item.storeId === input.storeId &&
-          item.tenantId === input.tenantId &&
-          item.provider === "zapi" &&
-          item.status !== "archived",
-      );
-      if (!connection) return null;
-      const setup = readRecord(connection.metadata.webhookSetup);
-      if (setup.status === "configured" && !input.allowConfigured) return null;
-      const leaseExpiresAt = readDateOrNull(setup.leaseExpiresAt);
-      if (setup.leaseOwner && leaseExpiresAt && leaseExpiresAt > input.now) {
-        return null;
-      }
-      connection.metadata = {
-        ...connection.metadata,
-        webhookSetup: {
-          ...setup,
-          attemptCount:
-            (typeof setup.attemptCount === "number" ? setup.attemptCount : 0) +
-            1,
-          lastErrorCode: null,
-          leaseExpiresAt: input.leaseExpiresAt.toISOString(),
-          leaseOwner: input.leaseOwner,
-          status: "configuring",
-          updatedAt: input.now.toISOString(),
-        },
-      };
-      return connection;
-    },
-    async finishZapiWebhookSetup(input) {
-      const connection = connections.find(
-        (item) =>
-          item.id === input.connectionId &&
-          item.storeId === input.storeId &&
-          item.tenantId === input.tenantId,
-      );
-      if (!connection) return null;
-      const setup = readRecord(connection.metadata.webhookSetup);
-      if (setup.leaseOwner !== input.leaseOwner) return null;
-      connection.metadata = {
-        ...connection.metadata,
-        webhookSetup: readRecord(input.metadata.webhookSetup),
-      };
-      return connection;
-    },
+    ...createMemoryCrmConnectionSetupMethods(connections, normalizeConnection),
     async findConnectionByExternalId(input) {
       return (
         connections.find(
@@ -211,9 +163,44 @@ export function createMemoryCrmConnectionRepository(
       if (input.status) connection.status = input.status;
       if (input.webhookUrl !== undefined)
         connection.webhookUrl = input.webhookUrl;
-      return connection;
+      return normalizeConnection(connection);
     },
   };
+  const routingConnectionRepository: CrmRoutingConnectionRepository = {
+    async listConnections(scope) {
+      return connections
+        .filter(
+          (connection) =>
+            connection.storeId === scope.storeId &&
+            connection.tenantId === scope.tenantId,
+        )
+        .map(toCanonicalRoutingConnection);
+    },
+  };
+  return Object.assign(repository, { routingConnectionRepository });
+}
+
+function normalizeConnection(connection: CrmConnection) {
+  connection.metadata = canonicalCrmConnectionMetadata({
+    metadata: connection.metadata,
+    provider: connection.provider,
+    status: connection.status,
+  });
+  const identity = connection.canonical
+    ? {
+        channel: connection.canonical.channel,
+        credentialBroker: connection.canonical.broker,
+        provider: connection.canonical.provider,
+      }
+    : canonicalCrmConnectionIdentity(connection.provider);
+  connection.canonical = projectCanonicalCrmConnectionRow({
+    broker: identity.credentialBroker,
+    channel: identity.channel,
+    metadata: connection.metadata,
+    provider: identity.provider,
+    state: connection.status,
+  });
+  return connection;
 }
 
 function readDate(value: unknown) {
@@ -221,27 +208,8 @@ function readDate(value: unknown) {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-function readDateOrNull(value: unknown) {
-  if (typeof value !== "string") return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
 function readRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
-}
-
-function readZapiCredentialState(credentialsRef: Record<string, unknown>) {
-  const stored = readRecord(credentialsRef.stored);
-  const instanceId = readConfiguredString(stored.instanceId);
-  const instanceToken = readConfiguredString(stored.instanceToken);
-  if (instanceId && instanceToken) return "already_configured" as const;
-  if (instanceId || instanceToken) return "partial_state" as const;
-  return "unconfigured" as const;
-}
-
-function readConfiguredString(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0;
 }

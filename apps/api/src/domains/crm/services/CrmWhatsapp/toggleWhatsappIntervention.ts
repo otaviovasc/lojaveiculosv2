@@ -21,6 +21,7 @@ import {
 import {
   executeWhatsappSessionCommand,
   reloadScopedWhatsappSession,
+  reloadVisibleWhatsappSession,
   type WhatsappSessionCommandResponse,
 } from "./executeWhatsappSessionCommand.js";
 
@@ -117,10 +118,10 @@ export async function toggleWhatsappIntervention(
             previous = transition.previous;
             return { result: "applied", session: transition.session };
           }
-          candidate = await reloadScopedWhatsappSession(
+          candidate = await reloadVisibleWhatsappSession(
+            context,
             transactionPorts,
             input.sessionId,
-            scope,
           );
           return { result: "superseded", session: candidate };
         },

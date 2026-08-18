@@ -20,6 +20,7 @@ import {
 } from "../CrmService/serviceSupport.js";
 import type { WhatsappServiceAuditInput } from "./serviceSupport.js";
 import { assertWhatsappProviderEffectAllowed } from "../../whatsapp/assertWhatsappProviderEffectAllowed.js";
+import { resolveScopedWhatsappSession } from "./whatsappSessionMutationSupport.js";
 
 const permission = "crm.whatsapp.send";
 
@@ -42,17 +43,13 @@ export async function loadMessageActionTarget(
       409,
     );
   }
-  const [session] = await repository.listSessions({
-    limit: 1,
-    offset: 0,
-    sessionId: message.sessionId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
+  const { session } = await resolveScopedWhatsappSession(
+    context,
+    { sessionId: message.sessionId },
+    ports,
+  );
   if (!session) {
-    throw new WhatsappMessageActionError(
-      "Message session is not available for this action.",
-    );
+    throw new WhatsappMessageNotFoundError(input.messageId);
   }
   const connection = await getCrmConnectionRepository(ports).findConnectionById(
     message.connectionId,

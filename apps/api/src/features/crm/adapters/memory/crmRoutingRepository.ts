@@ -27,10 +27,6 @@ export function createMemoryCrmRoutingRepositories(
             connection.tenantId === scope.tenantId,
         );
       },
-      async synchronizeLegacyConnections() {},
-      async verifyLegacyMappings(input) {
-        return input.connectionIds;
-      },
     },
     policyRepository: {
       async createDefaultIfMissing(next) {

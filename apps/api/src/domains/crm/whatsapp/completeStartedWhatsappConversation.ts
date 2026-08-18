@@ -2,13 +2,15 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnectionProvider } from "../ports/crmConnectionRepository.js";
 import type { CrmLead } from "../ports/crmRepository.js";
 import type { CrmWhatsappMessageSenderType } from "../ports/crmWhatsappRepository.js";
+import type { WhatsappSessionAssignmentResult } from "./whatsappSessionAssignment.js";
 import {
+  getCrmRepository,
   getCrmWhatsappRepository,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import { transitionConfirmedHumanOutboundAttendance } from "./sendWhatsappOutboundAttendance.js";
 import { interventionActorKind } from "./humanAttendanceTransition.js";
+import { transitionConfirmedHumanOutboundAttendance } from "./sendWhatsappOutboundAttendance.js";
 import {
   findConversationSession,
   recordLeadInteraction,
@@ -19,6 +21,7 @@ import {
 export async function completeStartedWhatsappConversation(
   context: ServiceContext,
   input: {
+    assignment: WhatsappSessionAssignmentResult | null;
     content: string;
     createdMessage: boolean;
     interventionId: string;
@@ -33,8 +36,7 @@ export async function completeStartedWhatsappConversation(
   },
   ports: CrmServicePorts,
 ) {
-  return runCrmTransaction(ports, async (transactionPorts) => {
-    const repository = getCrmWhatsappRepository(transactionPorts);
+  const completed = await runCrmTransaction(ports, async (transactionPorts) => {
     const message = await updateStartedConversationMessage(
       context,
       transactionPorts,
@@ -70,16 +72,24 @@ export async function completeStartedWhatsappConversation(
       actorKind: interventionActorKind(context.actor.kind, "admin"),
       interventionId: input.interventionId,
       providerTimestamp: input.providerTimestamp,
-      repository,
-      senderType: input.senderType,
+      repository: getCrmWhatsappRepository(transactionPorts),
       senderOrigin: message.senderOrigin,
+      senderType: input.senderType,
       session: persistedSession,
     });
+    const currentLead = input.assignment
+      ? await getCrmRepository(transactionPorts).findLeadById({
+          leadId: lead.id,
+          storeId: persistedSession.storeId,
+          tenantId: persistedSession.tenantId,
+        })
+      : lead;
     return {
       attendanceChanged: attendance.changed,
-      lead,
+      lead: currentLead ?? lead,
       message,
       session: attendance.session,
     };
   });
+  return completed;
 }

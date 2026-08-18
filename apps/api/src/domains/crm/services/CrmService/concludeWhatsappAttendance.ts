@@ -20,7 +20,7 @@ import {
 import {
   completeOutcomeSessions,
   createFollowUpTask,
-  findOutcomeSession,
+  findVisibleOutcomeSession,
   isActiveSession,
   listActiveLeadSessions,
   moveLeadToOutcomeStage,
@@ -57,6 +57,11 @@ export async function concludeWhatsappAttendance(
   const fingerprint = fingerprintConclusion(input);
 
   const mutation = await runCrmTransaction(ports, async (transactionPorts) => {
+    const initialSession = await findVisibleOutcomeSession(
+      context,
+      transactionPorts,
+      input.sessionId,
+    );
     const outcomeRepository = getCrmOutcomeRepository(transactionPorts);
     const replay = await outcomeRepository.findByCommandId({
       commandId: input.commandId,
@@ -65,19 +70,14 @@ export async function concludeWhatsappAttendance(
     });
     if (replay) {
       assertOutcomeReplay(replay, fingerprint, input.sessionId);
-      const session = await findOutcomeSession(
-        transactionPorts,
-        scope,
-        input.sessionId,
-      );
-      return { changed: [] as CrmWhatsappSession[], replay, session };
+      return {
+        changed: [] as CrmWhatsappSession[],
+        replay,
+        session: initialSession,
+      };
     }
 
-    const session = await findOutcomeSession(
-      transactionPorts,
-      scope,
-      input.sessionId,
-    );
+    const session = initialSession;
     if (!session.leadId) {
       throw new CrmLeadOutcomeValidationError(
         "WhatsApp attendance must be linked to a CRM lead before conclusion.",
@@ -95,9 +95,9 @@ export async function concludeWhatsappAttendance(
     });
     if (lockedReplay) {
       assertOutcomeReplay(lockedReplay, fingerprint, input.sessionId);
-      const authoritative = await findOutcomeSession(
+      const authoritative = await findVisibleOutcomeSession(
+        context,
         transactionPorts,
-        scope,
         input.sessionId,
       );
       return {
@@ -106,9 +106,9 @@ export async function concludeWhatsappAttendance(
         session: authoritative,
       };
     }
-    const lockedSession = await findOutcomeSession(
+    const lockedSession = await findVisibleOutcomeSession(
+      context,
       transactionPorts,
-      scope,
       input.sessionId,
     );
     const repository = getCrmRepository(transactionPorts);
@@ -155,6 +155,7 @@ export async function concludeWhatsappAttendance(
       transactionPorts,
       scope,
       sessions,
+      context,
     );
     const origin =
       changed.find((item) => item.id === lockedSession.id) ?? lockedSession;

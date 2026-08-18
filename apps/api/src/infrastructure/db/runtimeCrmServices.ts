@@ -15,6 +15,7 @@ import type { CrmRealtimePublisher } from "../../domains/crm/ports/crmRealtimePu
 import type { CrmOlxWebhookSecurity } from "../../domains/crm/ports/crmOlxWebhookSecurity.js";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
+import { readOlxCrmCallbackOrigin } from "../crm/olxCrmCallbackOrigin.js";
 
 export function createRuntimeCrmServices(
   db: unknown,
@@ -33,6 +34,7 @@ export function createRuntimeCrmServices(
         ? { crmOlxWebhookSecurity: olxWebhookSecurity }
         : {}),
       crmProviderRuntime: { olxChatEnabled },
+      olxCrmCallbackOrigin: readOlxCrmCallbackOrigin(env),
       ...(realtimePublisher ? { crmRealtimePublisher: realtimePublisher } : {}),
       ...(objectStorage ? { crmWhatsappMediaStorage: objectStorage } : {}),
       crmBotWebhookDispatcher: createNoopCrmBotWebhookDispatcher(),

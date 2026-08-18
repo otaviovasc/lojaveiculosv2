@@ -2,7 +2,6 @@ import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { expect, vi } from "vitest";
-import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { resolveCrmWebhookActor } from "../../../infrastructure/http/crmWebhookContextFactory.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
@@ -11,6 +10,7 @@ import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepos
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createCrmFeature } from "./crm.controller.js";
 import { createTestCrmConnectionCredentialVault } from "./crm.whatsapp.connectionFixtures.js";
+import { createTestWhatsappGateway } from "./crm.whatsapp.gateway.testSupport.js";
 import { createCrmServices } from "./crmServices.js";
 import type { CreateCrmWhatsappTestAppOptions } from "./crm.whatsapp.controller.testSupport.types.js";
 
@@ -111,8 +111,26 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
           crmProviderRuntime: {
             olxChatEnabled: options.olxChatEnabled === true,
           },
+          olxCrmCallbackOrigin:
+            options.olxCrmCallbackOrigin ?? "https://api.example.test",
           ...(options.crmOutcomeRepository
             ? { crmOutcomeRepository: options.crmOutcomeRepository }
+            : {}),
+          ...(options.olxCrmWebhookSetupProvider
+            ? {
+                olxCrmWebhookSetupProvider: options.olxCrmWebhookSetupProvider,
+              }
+            : {}),
+          ...(options.crmRoutingConnectionRepository
+            ? {
+                crmRoutingConnectionRepository:
+                  options.crmRoutingConnectionRepository,
+              }
+            : {}),
+          ...(options.crmRoutingPolicyRepository
+            ? {
+                crmRoutingPolicyRepository: options.crmRoutingPolicyRepository,
+              }
             : {}),
           ...(options.crmZapiSetupCompletionReporter
             ? {
@@ -181,42 +199,6 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
     }),
   );
   return app;
-}
-
-function createTestWhatsappGateway(
-  overrides: Partial<CrmWhatsappGateway>,
-): CrmWhatsappGateway {
-  const send = vi.fn(async () => ({
-    externalId: "test-whatsapp-outbound",
-    providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
-    raw: {},
-  }));
-  return {
-    configureWebhooks: vi.fn(async () => ({ results: [] })),
-    deleteMessage: vi.fn(async () => ({ deleted: true })),
-    disconnectConnection: vi.fn(async () => ({ disconnected: true as const })),
-    getConnectionStatus: vi.fn(async () => ({
-      checkedAt: new Date("2026-07-02T19:00:00.000Z"),
-      connected: false,
-      connectedPhone: null,
-      providerStatus: "unknown" as const,
-      smartphoneConnected: null,
-    })),
-    listCatalogProducts: vi.fn(async () => ({
-      cartEnabled: null,
-      nextCursor: null,
-      products: [],
-      raw: {},
-    })),
-    sendCatalog: send,
-    sendMedia: send,
-    sendProduct: send,
-    removeReaction: send,
-    sendReaction: send,
-    sendText: send,
-    sendTemplate: send,
-    ...overrides,
-  };
 }
 
 export function createAuditSpy() {

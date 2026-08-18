@@ -61,6 +61,7 @@ export function useCrmWhatsappMessages({
   const messagesBySessionRef = useRef(
     new Map<CrmWhatsappSessionId, WhatsappMessageView[]>(),
   );
+  const evictedSessionIdsRef = useRef(new Set<CrmWhatsappSessionId>());
   const messagesRef = useRef<WhatsappMessageView[]>([]);
   messagesRef.current = messages;
   const activeSessionIdRef = useRef(activeSessionId);
@@ -72,10 +73,26 @@ export function useCrmWhatsappMessages({
       sessionId: CrmWhatsappSessionId,
       update: SetStateAction<WhatsappMessageView[]>,
     ) => {
+      if (evictedSessionIdsRef.current.has(sessionId)) return;
       const current = messagesBySessionRef.current.get(sessionId) ?? [];
       const next = typeof update === "function" ? update(current) : update;
       messagesBySessionRef.current.set(sessionId, next);
       if (activeSessionIdRef.current === sessionId) setMessages(next);
+    },
+    [],
+  );
+  const evictSessionMessages = useCallback(
+    (sessionId: CrmWhatsappSessionId) => {
+      evictedSessionIdsRef.current.add(sessionId);
+      messagesBySessionRef.current.delete(sessionId);
+      if (previousSessionIdRef.current === sessionId) {
+        previousSessionIdRef.current = null;
+      }
+      if (activeSessionIdRef.current !== sessionId) return;
+      requestGenerationRef.current += 1;
+      setMessages([]);
+      setLoadedSessionId((current) => (current === sessionId ? null : current));
+      setIsLoadingMessages(false);
     },
     [],
   );
@@ -99,17 +116,25 @@ export function useCrmWhatsappMessages({
 
   useEffect(() => {
     const previousSessionId = previousSessionIdRef.current;
-    if (previousSessionId && previousSessionId !== activeSessionId) {
+    if (
+      previousSessionId &&
+      previousSessionId !== activeSessionId &&
+      !evictedSessionIdsRef.current.has(previousSessionId)
+    ) {
       messagesBySessionRef.current.set(previousSessionId, messagesRef.current);
     }
     previousSessionIdRef.current = activeSessionId;
     if (activeSessionId) {
-      setMessages(messagesBySessionRef.current.get(activeSessionId) ?? []);
+      setMessages(
+        evictedSessionIdsRef.current.has(activeSessionId)
+          ? []
+          : (messagesBySessionRef.current.get(activeSessionId) ?? []),
+      );
     }
   }, [activeSessionId]);
 
   useEffect(() => {
-    if (activeSessionId) {
+    if (activeSessionId && !evictedSessionIdsRef.current.has(activeSessionId)) {
       messagesBySessionRef.current.set(activeSessionId, messages);
     }
   }, [activeSessionId, messages]);
@@ -134,6 +159,7 @@ export function useCrmWhatsappMessages({
         offset: 0,
       });
       if (active && requestGeneration === requestGenerationRef.current) {
+        evictedSessionIdsRef.current.delete(activeSessionId);
         setMessages((current) =>
           mergeMessagesFromServer(current, nextMessages),
         );
@@ -319,11 +345,14 @@ export function useCrmWhatsappMessages({
   };
 
   const mergeRealtimeMessage = useCallback(
-    (message: CrmWhatsappMessage) =>
-      setMessages((current) =>
+    (message: CrmWhatsappMessage) => {
+      const sessionId = activeSessionIdRef.current;
+      if (!sessionId) return;
+      updateSessionMessages(sessionId, (current) =>
         mergeRealtimeMessageIntoHistory(current, message),
-      ),
-    [],
+      );
+    },
+    [updateSessionMessages],
   );
   const deleteMessage = useCallback(
     async (message: CrmWhatsappMessage) => {
@@ -377,11 +406,17 @@ export function useCrmWhatsappMessages({
     [api, canSendMessages, patchMessage, setError],
   );
   const updateRealtimeMessageStatus = useCallback(
-    (input: RealtimeMessageStatusUpdate) =>
-      setMessages((current) => applyRealtimeMessageStatus(current, input)),
-    [],
+    (input: RealtimeMessageStatusUpdate) => {
+      const sessionId = activeSessionIdRef.current;
+      if (!sessionId) return;
+      updateSessionMessages(sessionId, (current) =>
+        applyRealtimeMessageStatus(current, input),
+      );
+    },
+    [updateSessionMessages],
   );
   return {
+    evictSessionMessages,
     isLoadingMessages,
     hasLoadedActiveMessages: loadedSessionId === activeSessionId,
     isSending,

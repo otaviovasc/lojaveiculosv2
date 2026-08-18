@@ -35,12 +35,16 @@ export type CreateCrmWhatsappTestAppOptions = {
   crmConnectionRepository?: CrmConnectionRepository;
   crmOlxWebhookSecurity?: CrmServicePorts["crmOlxWebhookSecurity"];
   crmOutcomeRepository?: CrmServicePorts["crmOutcomeRepository"];
+  olxCrmWebhookSetupProvider?: CrmServicePorts["olxCrmWebhookSetupProvider"];
+  olxCrmCallbackOrigin?: string;
   olxChatEnabled?: boolean;
   crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
   crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimeBroker?: CrmRealtimeBroker;
   crmRealtimePublisher?: CrmRealtimePublisher;
+  crmRoutingConnectionRepository?: CrmServicePorts["crmRoutingConnectionRepository"];
+  crmRoutingPolicyRepository?: CrmServicePorts["crmRoutingPolicyRepository"];
   crmRepository?: CrmRepository;
   crmVisitRepository?: CrmVisitRepository;
   crmWebhookEventRepository?: CrmWebhookEventRepository;

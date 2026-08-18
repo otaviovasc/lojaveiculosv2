@@ -1,4 +1,8 @@
-import { readApiJson } from "../../lib/apiErrors";
+import {
+  crmChannelConnectionSchema,
+  type CrmConnectionCapability,
+} from "@lojaveiculosv2/shared";
+import { AppApiError, readApiJson } from "../../lib/apiErrors";
 import { createProductCrmHeaders } from "./productCrmApi";
 import type {
   CreateCrmWhatsappApiOptions,
@@ -24,8 +28,9 @@ import {
   parseCrmWhatsappSessions,
 } from "./crmWhatsappModel";
 import type {
-  CrmWhatsappConnectionsResponse,
-  CrmWhatsappProviderConnection,
+  CrmCanonicalConnectionsResponse,
+  CrmCanonicalProviderConnection,
+  CrmWhatsappProviderCapabilities,
   CrmWhatsappSetupProvider,
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
@@ -38,6 +43,7 @@ export {
 } from "./crmWhatsappApiRoutes";
 export type {
   CreateCrmWhatsappApiOptions,
+  CrmOlxChatSetupRetryResult,
   CrmWhatsappApi,
   CrmWhatsappExtrasApi,
 } from "./crmWhatsappApiTypes";
@@ -209,6 +215,8 @@ export function createCrmWhatsappApi({
       postJson(crmWhatsappRoutes.zapiPairingQr(connectionId, baseUrl)),
     refreshZapiConnectionStatus: (connectionId) =>
       postJson(crmWhatsappRoutes.zapiStatusRefresh(connectionId, baseUrl)),
+    retryOlxChatSetup: (connectionId) =>
+      postJson(crmWhatsappRoutes.olxChatSetupRetry(connectionId, baseUrl)),
     requestZapiAddon: () =>
       postJson<{ contract: CrmWhatsappZapiAddonContract }>(
         crmWhatsappRoutes.billingZapiRequest(baseUrl),
@@ -306,11 +314,19 @@ export function createCrmWhatsappApi({
 
 export function normalizeConnectionsResponse(
   payload: unknown,
-): CrmWhatsappConnectionsResponse {
+): CrmCanonicalConnectionsResponse {
   const record = asRecord(payload);
-  const connections = Array.isArray(record.connections)
-    ? (record.connections.filter(isRecord) as CrmWhatsappProviderConnection[])
-    : [];
+  if (!Array.isArray(record.connections)) {
+    throwInvalidConnectionContract(null, ["connections"]);
+  }
+  const connections = record.connections.map((connection, index) => {
+    const canonical = parseCanonicalConnection(connection, index);
+    return {
+      ...asRecord(connection),
+      ...canonical,
+      capabilities: toErgonomicCapabilities(canonical.capabilities),
+    } as CrmCanonicalProviderConnection;
+  });
   const allowance = asRecord(record.allowance);
   const limit = readNonNegativeNumber(allowance.limit, connections.length);
   const used = readNonNegativeNumber(allowance.used, connections.length);
@@ -318,21 +334,14 @@ export function normalizeConnectionsResponse(
     allowance.remaining,
     Math.max(0, limit - used),
   );
-  const explicitProviders = Array.isArray(record.availableProviders)
-    ? record.availableProviders.filter(isSetupProvider)
-    : null;
-  const existing = new Set(
-    connections.map((connection) => connection.provider),
-  );
-  const fallbackProviders = (
-    ["zapi", "composio_whatsapp"] as CrmWhatsappSetupProvider[]
-  ).filter((provider) => !existing.has(provider));
-
+  const explicitProviders =
+    Array.isArray(record.availableProviders) &&
+    record.availableProviders.every(isSetupProvider)
+      ? record.availableProviders
+      : [];
   return {
     allowance: { limit, remaining, used },
-    availableProviders: (explicitProviders ?? fallbackProviders).filter(
-      (provider) => !existing.has(provider),
-    ),
+    availableProviders: explicitProviders,
     connections,
   };
 }
@@ -371,6 +380,64 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isSetupProvider(value: unknown): value is CrmWhatsappSetupProvider {
   return value === "zapi" || value === "composio_whatsapp";
+}
+
+function parseCanonicalConnection(
+  value: unknown,
+  connectionIndex: number,
+): ReturnType<typeof crmChannelConnectionSchema.parse> {
+  const parsed = crmChannelConnectionSchema.safeParse(value);
+  if (parsed.success) return parsed.data;
+  const fields = [
+    ...new Set(
+      parsed.error.issues.map((issue) => String(issue.path[0] ?? "connection")),
+    ),
+  ];
+  throwInvalidConnectionContract(connectionIndex, fields);
+}
+
+function toErgonomicCapabilities(
+  canonical: readonly CrmConnectionCapability[],
+): CrmWhatsappProviderCapabilities {
+  const capabilities = new Set(canonical);
+  const media = capabilities.has("media");
+  const outbound = capabilities.has("outbound");
+  const text = capabilities.has("text") || outbound;
+  return {
+    audio: media,
+    catalog: false,
+    conversationStart: capabilities.has("conversation_start"),
+    delete: false,
+    documents: media,
+    imageCaption: media && text,
+    images: media,
+    location: media,
+    quickMessages: text,
+    reactions: false,
+    reply: outbound,
+    scheduling: capabilities.has("scheduling"),
+    templates: capabilities.has("templates"),
+    text,
+    vehicle: media,
+    video: media,
+  };
+}
+
+function throwInvalidConnectionContract(
+  connectionIndex: number | null,
+  fields: readonly string[],
+): never {
+  throw new AppApiError({
+    code: "CRM_CONNECTION_DTO_INVALID",
+    details: {
+      ...(connectionIndex === null ? {} : { connectionIndex }),
+      fields,
+    },
+    message: "CRM connection response violates the canonical DTO.",
+    status: 502,
+    userMessage:
+      "A integração retornou uma conexão CRM inválida. Atualize e tente novamente.",
+  });
 }
 
 function readZapiAddonContract(

@@ -1,9 +1,5 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import {
-  ConnectionDashboard,
-  ConnectionSetupFlow,
-} from "./CrmWhatsappConnectionViews";
 import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
 import type {
   CrmWhatsappConnectionAllowance,
@@ -14,11 +10,8 @@ import type {
 import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
 import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import { isConnectedConnection } from "./crmWhatsappConnectionSelection";
-import {
-  readCrmWhatsappChannelLabel,
-  readCrmWhatsappProviderLabel,
-} from "./crmWhatsappConnectionStatus";
+import { CrmWhatsappChannelDirectory } from "./CrmWhatsappChannelDirectory";
+import { CrmConnectionManageDialog } from "./CrmWhatsappConnectionAdminDialog";
 
 const CrmWhatsappSelfServiceSetup = lazy(async () => {
   const module = await import("./CrmWhatsappSelfServiceSetup");
@@ -72,16 +65,14 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
     canManageRouting = false,
     selfService,
   } = props;
-  const pendingConnectionId = readInitialConnectionId(connections);
-  const selected =
-    connections.find(
-      (connection) => String(connection.id) === pendingConnectionId,
-    ) ??
-    connections.find(
-      (connection) => connection.isDefault && isConnectedConnection(connection),
-    ) ??
-    (connections.length === 1 ? connections[0] : null) ??
-    null;
+  const [managedConnectionId, setManagedConnectionId] = useState<string | null>(
+    null,
+  );
+  const managedConnection = managedConnectionId
+    ? (connections.find(
+        (connection) => String(connection.id) === managedConnectionId,
+      ) ?? null)
+    : null;
 
   if (isLoading) {
     return (
@@ -92,45 +83,11 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
   }
 
   return (
-    <section aria-label="Conexão" className="crm-whatsapp-connection-admin">
+    <section aria-label="Conexões" className="crm-whatsapp-connection-admin">
       {error ? (
         <p className="crm-whatsapp-connection-error" role="alert">
           {formatApiErrorDisplay(error, "Não foi possível carregar a conexão.")}
         </p>
-      ) : null}
-      {connections.length > 0 ? (
-        <section
-          aria-label="Canais conectados"
-          className="crm-channel-directory"
-        >
-          <header>
-            <h2>Canais conectados</h2>
-            <p>Rotas de comunicação do CRM, agrupadas por canal.</p>
-          </header>
-          <div className="crm-channel-directory-list">
-            {connections.map((connection) => {
-              const ready = isConnectedConnection(connection);
-              return (
-                <article key={connection.id}>
-                  <div>
-                    <strong>
-                      {readCrmWhatsappChannelLabel(connection.channel ?? "")}
-                    </strong>
-                    <span>
-                      {readCrmWhatsappProviderLabel(connection.provider)} ·{" "}
-                      {connection.displayName}
-                    </span>
-                  </div>
-                  <span role="status">
-                    {ready
-                      ? "Pronto"
-                      : (connection.readiness?.reason ?? "Requer configuração")}
-                  </span>
-                </article>
-              );
-            })}
-          </div>
-        </section>
       ) : null}
       {selfService ? (
         <ConnectionSetupBoundary>
@@ -140,7 +97,7 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
             canPair={selfService.canPair}
             canSetup={selfService.canSetup}
             connections={connections}
-            existingConnection={selected}
+            existingConnection={readInitialConnection(connections)}
             handlers={selfService.handlers}
             startAtDirectory={!readPendingComposioConnectionId()}
             {...(selfService.zapiAddonContract !== undefined
@@ -148,27 +105,32 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
               : {})}
           />
         </ConnectionSetupBoundary>
-      ) : selected ? (
-        selected.live.providerStatus === "connected" ? (
-          <ConnectionDashboard
-            connection={selected}
-            disabled={disabled}
-            isRefreshing={false}
-            onRefresh={() => void onRefresh()}
-          />
-        ) : (
-          <ConnectionSetupFlow
-            connection={selected}
-            disabled={disabled}
-            isRefreshing={false}
-            localError={null}
-            onRefresh={() => void onRefresh()}
-          />
-        )
       ) : (
-        <p className="crm-whatsapp-connection-empty">
-          Nenhuma conexão de mensagens configurada para esta loja.
-        </p>
+        <>
+          {connections.length ? (
+            <CrmWhatsappChannelDirectory
+              availableProviders={[]}
+              connections={connections}
+              onChoose={() => undefined}
+              onConnectionsChanged={onRefresh}
+              onManageConnection={(connection) =>
+                setManagedConnectionId(String(connection.id))
+              }
+              showSetupActions={false}
+              zapiAddonContract={null}
+            />
+          ) : (
+            <p className="crm-whatsapp-connection-empty">
+              Nenhuma conexão de mensagens configurada para esta loja.
+            </p>
+          )}
+          <CrmConnectionManageDialog
+            connection={managedConnection}
+            disabled={disabled}
+            onClose={() => setManagedConnectionId(null)}
+            onRefresh={onRefresh}
+          />
+        </>
       )}
       {routingApi ? (
         <CrmChannelRoutingPanel
@@ -184,13 +146,13 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
   );
 }
 
-function readInitialConnectionId(connections: CrmWhatsappProviderConnection[]) {
+function readInitialConnection(
+  connections: CrmWhatsappProviderConnection[],
+): CrmWhatsappProviderConnection | null {
   const pendingId = readPendingComposioConnectionId();
-  if (
-    pendingId &&
-    connections.some((connection) => String(connection.id) === pendingId)
-  ) {
-    return pendingId;
-  }
-  return null;
+  if (!pendingId) return null;
+  return (
+    connections.find((connection) => String(connection.id) === pendingId) ??
+    null
+  );
 }

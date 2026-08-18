@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
@@ -9,7 +9,14 @@ import {
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp start conversation recovery", () => {
-  it("starts human attendance when completing a confirmed provider receipt", async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("preserves the session claim time while recovering a confirmed provider receipt", async () => {
+    const sessionClaimedAt = new Date("2026-08-10T14:59:00.000Z");
+    const providerTimestamp = new Date("2026-08-10T15:00:00.000Z");
+    vi.useFakeTimers({ now: sessionClaimedAt });
     const persisted = createMemoryCrmWhatsappRepository();
     let rejectCompletionOnce = true;
     const repository = {
@@ -26,7 +33,7 @@ describe("CRM WhatsApp start conversation recovery", () => {
     };
     const sendText = vi.fn(async () => ({
       externalId: "zapi-start-recovered",
-      providerTimestamp: new Date("2026-08-10T15:00:00.000Z"),
+      providerTimestamp,
       raw: { messageId: "zapi-start-recovered" },
     }));
     const app = createTestApp({
@@ -50,10 +57,16 @@ describe("CRM WhatsApp start conversation recovery", () => {
     expect(failed.status).toBe(500);
     expect(recovered.status).toBe(201);
     await expect(recovered.json()).resolves.toMatchObject({
+      message: {
+        providerTimestamp: providerTimestamp.toISOString(),
+      },
       session: {
-        firstHandledAt: "2026-08-10T15:00:00.000Z",
+        firstHandledAt: sessionClaimedAt.toISOString(),
+        humanAttendanceChangedAt: providerTimestamp.toISOString(),
         humanAttendanceState: "IN_HUMAN_SERVICE",
         humanAttendanceStateVersion: 1,
+        humanHandlingStartedAt: providerTimestamp.toISOString(),
+        humanTakeoverAt: providerTimestamp.toISOString(),
         status: "HUMAN_TAKEOVER",
       },
     });

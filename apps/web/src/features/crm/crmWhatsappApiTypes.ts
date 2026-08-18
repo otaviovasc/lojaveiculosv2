@@ -7,6 +7,24 @@ import type {
   CrmRoutingPolicy,
   UpdateCrmRoutingPolicyInput,
 } from "./crmRoutingTypes";
+
+/** Response contract of POST /crm/channel-connections/:id/olx-chat/setup/retry. */
+export type CrmOlxChatSetupRetryResult = {
+  channel: "olx_chat";
+  connectionId: string;
+  diagnostics: {
+    httpStatus: number;
+    providerRequestId: string | null;
+    retryable: boolean;
+  };
+  provider: "olx";
+  readiness: { ready: boolean };
+  setup: {
+    attemptCount: number;
+    configuredAt: string;
+    status: string;
+  };
+};
 import type {
   CrmWhatsappCampaign,
   CrmWhatsappCampaignDetail,
@@ -135,6 +153,9 @@ export type CrmWhatsappApi = {
   refreshZapiConnectionStatus: (
     connectionId: CrmWhatsappConnectionId,
   ) => Promise<CrmWhatsappProviderConnection>;
+  retryOlxChatSetup: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmOlxChatSetupRetryResult>;
   requestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
   setConnectionPaused?: (
     connectionId: CrmWhatsappConnectionId,

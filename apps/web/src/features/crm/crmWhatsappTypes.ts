@@ -1,3 +1,5 @@
+import type { CrmChannelConnectionDto } from "@lojaveiculosv2/shared";
+
 export type CrmWhatsappChannel =
   "INSTAGRAM" | "OLX_CHAT" | "WEB_CHAT" | "WHATSAPP" | (string & {});
 export type CrmWhatsappProvider =
@@ -177,6 +179,20 @@ export type CrmWhatsappConnectionsResponse = {
   allowance: CrmWhatsappConnectionAllowance;
   availableProviders: CrmWhatsappSetupProvider[];
   connections: CrmWhatsappProviderConnection[];
+};
+
+/** Connection shape guaranteed after the list API boundary validates the
+ * server-owned canonical routing fields. */
+export type CrmCanonicalProviderConnection = CrmWhatsappProviderConnection &
+  Omit<CrmChannelConnectionDto, "capabilities"> & {
+    capabilities: CrmWhatsappProviderCapabilities;
+  };
+
+export type CrmCanonicalConnectionsResponse = Omit<
+  CrmWhatsappConnectionsResponse,
+  "connections"
+> & {
+  connections: CrmCanonicalProviderConnection[];
 };
 
 export type CrmWhatsappSetupProvider = Extract<

@@ -118,6 +118,7 @@ export function mergeSessionsFromServer(
   serverSessions: CrmWhatsappSession[],
   options: {
     preserveLocalOnly?: boolean;
+    pruneLocalOnly?: (session: CrmWhatsappSession) => boolean;
     snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
   } = {},
 ) {
@@ -126,10 +127,7 @@ export function mergeSessionsFromServer(
   const merged = serverSessions.map((serverSession) => {
     const localSession = currentById.get(serverSession.id);
     if (!localSession) return serverSession;
-    if (
-      options.snapshotKind === "mutation" ||
-      options.snapshotKind === "reconciled"
-    ) {
+    if (options.snapshotKind === "mutation") {
       return serverSession;
     }
 
@@ -178,7 +176,10 @@ export function mergeSessionsFromServer(
     };
   });
   const localOnly = options.preserveLocalOnly
-    ? current.filter((session) => !serverIds.has(session.id))
+    ? current.filter(
+        (session) =>
+          !serverIds.has(session.id) && !options.pruneLocalOnly?.(session),
+      )
     : [];
 
   return [...merged, ...localOnly].sort(

@@ -1,25 +1,16 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { assertOfficialMessagingWindow } from "../messaging/assertOfficialMessagingWindow.js";
 import { interventionActorKind } from "./humanAttendanceTransition.js";
 import {
-  getCrmConnectionRepository,
   getCrmRealtimePublisher,
   getCrmWhatsappGateway,
   getCrmWhatsappOutboundIntentRepository,
   getCrmWhatsappRepository,
-  isCrmOlxChatEnabled,
-  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 import type { WhatsappMessage } from "./whatsappModels.js";
 import { toWhatsappMessage, toWhatsappSession } from "./whatsappModels.js";
 import { forwardWhatsappMessageToBot } from "./whatsappBotWebhookForwarding.js";
-import {
-  WhatsappConnectionNotFoundError,
-  WhatsappSessionNotFoundError,
-} from "./whatsappSendErrors.js";
 import { providerAddressForSession } from "../messaging/crmMessagingProvider.js";
-import { assertWhatsappProviderEffectAllowed } from "./assertWhatsappProviderEffectAllowed.js";
 import {
   defaultOutboundSenderType,
   fingerprintOutboundIntent,
@@ -42,6 +33,9 @@ import {
   recordOutboundProviderFailure,
   throwPersistedOutboundFailure,
 } from "./outboundProviderFailure.js";
+import { claimOutboundIntentWithHumanAssignment } from "./claimOutboundIntentWithHumanAssignment.js";
+import { findOutboundWhatsappSession } from "../services/CrmWhatsapp/whatsappSessionMutationSupport.js";
+import { resolveOutboundWhatsappConnection } from "./resolveOutboundWhatsappConnection.js";
 
 export type {
   PreparedOutboundWhatsappMessage,
@@ -54,31 +48,18 @@ export async function sendWhatsappOutboundMessage(
   input: SendWhatsappOutboundInput,
   ports: CrmServicePorts,
 ): Promise<WhatsappMessage> {
-  const scope = requireCrmWhatsappScope(context);
+  const {
+    requiresAssignment,
+    scope,
+    session: initialSession,
+  } = await findOutboundWhatsappSession(context, input, ports);
   const whatsappRepository = getCrmWhatsappRepository(ports);
-  const [session] = await whatsappRepository.listSessions({
-    limit: 1,
-    offset: 0,
-    sessionId: input.sessionId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (!session) throw new WhatsappSessionNotFoundError(input.sessionId);
 
-  const connection = await getCrmConnectionRepository(ports).findConnectionById(
-    session.connectionId,
+  const connection = await resolveOutboundWhatsappConnection(
+    context,
+    initialSession,
+    ports,
   );
-  if (
-    !connection ||
-    connection.storeId !== session.storeId ||
-    connection.tenantId !== session.tenantId
-  ) {
-    throw new WhatsappConnectionNotFoundError(session.connectionId);
-  }
-  assertWhatsappProviderEffectAllowed(context, connection, {
-    olxChatEnabled: isCrmOlxChatEnabled(ports),
-  });
-  await assertOfficialMessagingWindow(connection, session, whatsappRepository);
   const intents = getCrmWhatsappOutboundIntentRepository(ports);
   const now = new Date();
   const senderType = input.senderType ?? defaultOutboundSenderType(context);
@@ -88,22 +69,34 @@ export async function sendWhatsappOutboundMessage(
     senderOrigin: input.senderOrigin,
     senderType,
   });
-  const claimed = await intents.claim({
-    connectionId: connection.id,
-    fingerprint: intentFingerprint,
-    idempotencyKey: requireOutboundIdempotencyKey(
-      input.idempotencyKey ??
-        `${context.correlationId ?? context.requestId}:${intentFingerprint}`,
-    ),
-    now,
-    sessionId: session.id,
-    staleBefore: new Date(now.getTime() - 2 * 60_000),
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
+  const outbound = await claimOutboundIntentWithHumanAssignment({
+    claim: {
+      connectionId: connection.id,
+      fingerprint: intentFingerprint,
+      idempotencyKey: requireOutboundIdempotencyKey(
+        input.idempotencyKey ??
+          `${context.correlationId ?? context.requestId}:${intentFingerprint}`,
+      ),
+      now,
+      sessionId: initialSession.id,
+      staleBefore: new Date(now.getTime() - 2 * 60_000),
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
+    },
+    context,
+    ports,
+    providerTimestamp: now,
+    requiredForAccess: requiresAssignment,
+    scope,
+    senderOrigin: input.senderOrigin,
+    senderType,
+    session: initialSession,
   });
+  const claimed = outbound.claimed;
   if (claimed.kind === "conflict") {
     throw outboundIdempotencyConflictError();
   }
+  const session = outbound.session;
   if (claimed.kind === "completed") {
     if (claimed.intent.messageId) {
       const existing = await whatsappRepository.findMessageById({
@@ -175,8 +168,8 @@ export async function sendWhatsappOutboundMessage(
       interventionId: claimed.intent.id,
       providerTimestamp: prepared.sent.providerTimestamp,
       repository: whatsappRepository,
-      senderType,
       senderOrigin: result.message.senderOrigin,
+      senderType,
       session: result.session,
     },
   );

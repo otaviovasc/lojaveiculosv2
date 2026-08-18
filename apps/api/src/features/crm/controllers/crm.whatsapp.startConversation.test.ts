@@ -11,9 +11,11 @@ import {
   createAuditSpy,
   createTestApp,
 } from "./crm.whatsapp.controller.testSupport.js";
+import { requestStartConversation } from "./crm.whatsapp.startConversation.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
+const actorUserId = "02020202-0202-4202-8202-020202020202";
 type StartConversationBody = { lead: { id: string } };
 
 describe("CRM WhatsApp start conversation", () => {
@@ -123,6 +125,7 @@ describe("CRM WhatsApp start conversation", () => {
     const body = (await response.json()) as StartConversationBody;
     expect(body).toMatchObject({
       lead: {
+        assignedUserId: actorUserId,
         buyerName: "Ana Silva",
         buyerPhone: "5511999999999",
         source: "whatsapp",
@@ -136,6 +139,7 @@ describe("CRM WhatsApp start conversation", () => {
         type: "TEXT",
       },
       session: {
+        assignedUserId: actorUserId,
         buyerName: "Ana Silva",
         buyerPhone: "5511999999999",
         humanAttendanceState: "IN_HUMAN_SERVICE",
@@ -162,10 +166,18 @@ describe("CRM WhatsApp start conversation", () => {
       content: "Ola, tudo bem?",
       direction: "outbound",
     });
-    expect(record.mock.calls.map((call) => call[0].outcome)).toEqual([
-      "attempted",
-      "succeeded",
-    ]);
+    expect(
+      record.mock.calls
+        .map((call) => call[0])
+        .filter((event) => event.action === "crm.whatsapp.conversation.start")
+        .map((event) => event.outcome),
+    ).toEqual(["attempted", "succeeded"]);
+    expect(
+      record.mock.calls
+        .map((call) => call[0])
+        .filter((event) => event.action === "crm.whatsapp.session.auto_assign")
+        .at(-1),
+    ).toMatchObject({ metadata: { result: "applied" } });
   });
 
   it("keeps a failed pending message when provider send fails", async () => {
@@ -197,9 +209,10 @@ describe("CRM WhatsApp start conversation", () => {
       storeId,
       tenantId,
     });
+    expect(session?.firstHandledAt).toBeInstanceOf(Date);
     expect(session).toMatchObject({
+      assignedUserId: actorUserId,
       buyerPhone: "5511977776666",
-      firstHandledAt: null,
       humanAttendanceState: null,
       lastMessageContent: "Mensagem com falha.",
       status: "ACTIVE",
@@ -233,15 +246,4 @@ async function expectNoStartedConversation(
       tenantId,
     }),
   ).resolves.toEqual([]);
-}
-
-function requestStartConversation(
-  app: ReturnType<typeof createTestApp>,
-  body: Record<string, unknown>,
-) {
-  return app.request("/api/v1/crm/whatsapp/conversations/start", {
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
 }

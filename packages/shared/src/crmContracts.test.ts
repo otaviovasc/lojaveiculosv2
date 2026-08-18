@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   crmChannels,
+  crmChannelConnectionSchema,
   crmConnectionCapabilities,
   crmConnectionStates,
   crmProviders,
@@ -32,6 +33,33 @@ describe("canonical CRM contracts", () => {
       "scheduling",
       "conversation_start",
     ]);
+  });
+
+  it("parses only canonical CRM channel connection values", () => {
+    const connection = {
+      capabilities: ["inbound", "outbound"],
+      channel: "whatsapp",
+      displayName: "WhatsApp principal",
+      id: "connection_1",
+      isDefault: true,
+      provider: "zapi",
+      readiness: { ready: true, reason: null, reasonCode: "ready" },
+      state: "active",
+    };
+
+    expect(crmChannelConnectionSchema.parse(connection)).toEqual(connection);
+    expect(
+      crmChannelConnectionSchema.safeParse({
+        ...connection,
+        provider: "composio_whatsapp",
+      }).success,
+    ).toBe(false);
+    expect(
+      crmChannelConnectionSchema.safeParse({
+        ...connection,
+        capabilities: { outbound: true },
+      }).success,
+    ).toBe(false);
   });
 
   it("publishes the typed external-bot action registry", () => {

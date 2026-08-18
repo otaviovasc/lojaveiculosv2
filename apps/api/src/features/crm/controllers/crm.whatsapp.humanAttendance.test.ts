@@ -92,6 +92,7 @@ describe("CRM WhatsApp human attendance", () => {
     const echo = (await echoResponse.json()) as {
       message: { senderOrigin: string; senderType: string };
       session: {
+        assignedUserId: string | null;
         humanAttendanceState: string | null;
         revision: number;
         status: string;
@@ -104,6 +105,7 @@ describe("CRM WhatsApp human attendance", () => {
       senderType: "HUMAN",
     });
     expect(echo.session).toMatchObject({
+      assignedUserId: null,
       humanAttendanceState: "IN_HUMAN_SERVICE",
       revision: inbound.session.revision + 2,
       status: "HUMAN_TAKEOVER",

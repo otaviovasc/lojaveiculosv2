@@ -2,10 +2,6 @@ import { Buffer } from "node:buffer";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type {
-  ObjectStorage,
-  PutStorageObjectInput,
-} from "../../../shared/storage/objectStorage.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
@@ -13,6 +9,7 @@ import {
   createAuditSpy,
   createTestApp,
 } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestObjectStorage } from "./crm.whatsapp.sendMedia.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -112,8 +109,18 @@ describe("CRM WhatsApp send media", () => {
     });
     expect(conflicting.status).toBe(409);
     expect(sendMedia).toHaveBeenCalledTimes(1);
+    expect(
+      record.mock.calls
+        .map((call) => call[0])
+        .filter((event) => event.action === "crm.whatsapp.session.auto_assign"),
+    ).toMatchObject([
+      { metadata: { result: "attempted" }, outcome: "attempted" },
+      { metadata: { result: "applied" }, outcome: "succeeded" },
+    ]);
     expect(record.mock.calls.map((call) => call[0].outcome)).toEqual([
       "attempted",
+      "attempted",
+      "succeeded",
       "succeeded",
       "attempted",
       "failed",
@@ -211,30 +218,4 @@ function createZapiConnection(
     storeId,
     tenantId,
   });
-}
-
-function createTestObjectStorage(): {
-  putObject: ReturnType<
-    typeof vi.fn<
-      (input: PutStorageObjectInput) => Promise<{
-        publicUrl: string;
-        storageKey: string;
-      }>
-    >
-  >;
-  storage: ObjectStorage;
-} {
-  const putObject = vi.fn(async (input: PutStorageObjectInput) => ({
-    publicUrl: `https://cdn.local/crm-whatsapp/${input.fileName}`,
-    storageKey: `crm-whatsapp/${input.fileName}`,
-  }));
-  return {
-    putObject,
-    storage: {
-      createDownload: vi.fn(),
-      createUpload: vi.fn(),
-      getPublicUrl: (storageKey) => `https://cdn.local/${storageKey}`,
-      putObject,
-    },
-  };
 }

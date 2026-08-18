@@ -125,14 +125,17 @@ async function processMessageStatus(
       storeId: connection.storeId,
       tenantId: connection.tenantId,
     });
-    const lastCustomerReadAt = await updateReadSessionState(
+    const realtimeState = await updateReadSessionState(
       repository,
       message,
       input.status,
     );
     await getCrmRealtimePublisher(ports).publish({
+      assignedUserId: realtimeState.assignedUserId,
       connectionId: connection.id,
-      ...(lastCustomerReadAt ? { lastCustomerReadAt } : {}),
+      ...(realtimeState.lastCustomerReadAt
+        ? { lastCustomerReadAt: realtimeState.lastCustomerReadAt }
+        : {}),
       messageId: message.id,
       sessionId: message.sessionId,
       status: input.status,
@@ -199,9 +202,21 @@ async function updateReadSessionState(
   message: CrmWhatsappMessage,
   status: CrmWhatsappMessageStatus,
 ) {
-  if (status !== "READ") return null;
+  if (status !== "READ") {
+    const [session] = await repository.listSessions({
+      limit: 1,
+      offset: 0,
+      sessionId: message.sessionId,
+      storeId: message.storeId,
+      tenantId: message.tenantId,
+    });
+    return {
+      assignedUserId: session?.assignedUserId ?? null,
+      lastCustomerReadAt: null,
+    };
+  }
   const lastCustomerReadAt = new Date();
-  await updateWhatsappSessionWithCas(repository, {
+  const session = await updateWhatsappSessionWithCas(repository, {
     sessionId: message.sessionId,
     storeId: message.storeId,
     tenantId: message.tenantId,
@@ -213,5 +228,8 @@ async function updateReadSessionState(
           : lastCustomerReadAt,
     }),
   });
-  return lastCustomerReadAt.toISOString();
+  return {
+    assignedUserId: session.assignedUserId,
+    lastCustomerReadAt: lastCustomerReadAt.toISOString(),
+  };
 }

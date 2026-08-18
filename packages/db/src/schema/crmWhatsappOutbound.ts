@@ -10,7 +10,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "./_shared.js";
-import { crmConnections } from "./crm.js";
+import { providerConnections } from "./crmCore/authorization.js";
 import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
 import { stores, tenants } from "./identity.js";
 
@@ -34,9 +34,7 @@ export const crmWhatsappOutboundIntents = pgTable(
   {
     ...lifecycleColumns,
     claimToken: uuid("claim_token").notNull(),
-    connectionId: uuid("connection_id")
-      .notNull()
-      .references(() => crmConnections.id),
+    connectionId: uuid("connection_id").notNull(),
     fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
     idempotencyKey: varchar("idempotency_key", { length: 191 }).notNull(),
     messageId: uuid("message_id").references(() => crmWhatsappMessages.id),
@@ -55,14 +53,19 @@ export const crmWhatsappOutboundIntents = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_whatsapp_outbound_intents_connection_fk",
+    }),
     ...(includeCrmScopeForeignKeys
       ? [
           foreignKey({
             columns: [table.tenantId, table.storeId, table.connectionId],
             foreignColumns: [
-              crmConnections.tenantId,
-              crmConnections.storeId,
-              crmConnections.id,
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
             ],
             name: "crm_whatsapp_outbound_intents_scoped_connection_fk",
           }),

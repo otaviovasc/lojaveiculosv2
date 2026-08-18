@@ -14,7 +14,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
     window.sessionStorage.clear();
   });
 
-  it("keeps configured Z-API credentials write-only", () => {
+  it("keeps configured Z-API credentials write-only in the manage dialog", () => {
     render(
       <CrmWhatsappConnectionAdmin
         connections={[createConnection("zapi", "connected", true)]}
@@ -22,7 +22,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
       />,
     );
 
-    expect(screen.getByText("Z-API")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /CRM channel/i }));
     expect(screen.getByText("Z-API: online")).toBeVisible();
     expect(screen.queryByLabelText(/ID da instância/i)).not.toBeInTheDocument();
     expect(
@@ -34,116 +34,74 @@ describe("CrmWhatsappConnectionAdmin", () => {
     expect(screen.queryByText(/webhook/i)).not.toBeInTheDocument();
   });
 
+  it("closes the manage dialog with Escape and restores focus", () => {
+    render(
+      <CrmWhatsappConnectionAdmin
+        connections={[createConnection("zapi", "connected", true)]}
+        onRefresh={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /CRM channel/i }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeVisible();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("keeps management and other channel choices reachable after Z-API connects", async () => {
     render(
       <CrmWhatsappConnectionAdmin
         connections={[createConnection("zapi", "connected", true)]}
         onRefresh={vi.fn(async () => undefined)}
-        selfService={{
-          allowance: { limit: 1, remaining: 0, used: 1 },
-          availableProviders: ["composio_whatsapp"],
-          canPair: true,
-          canSetup: true,
-          handlers: {
-            onAuthorizeComposio: vi.fn(),
-            onCompleteComposio: vi.fn(),
-            onConfigureZapiWebhooks: vi.fn(),
-            onCreate: vi.fn(),
-            onRefreshConnections: vi.fn(async () => undefined),
-            onRequestZapiPairingCode: vi.fn(),
-            onRequestZapiPairingQr: vi.fn(),
-            onSelectComposioSender: vi.fn(),
-          },
-        }}
+        selfService={createSelfService()}
       />,
     );
 
-    const zapiCard = await screen.findByRole("button", { name: /Z-API/i });
+    const zapiCard = await screen.findByRole("button", {
+      name: /Já conectado/i,
+    });
     expect(zapiCard).toBeEnabled();
     expect(screen.getByText("Já conectado")).toBeVisible();
     expect(
       screen.getByRole("button", { name: /WhatsApp Oficial/i }),
     ).toBeVisible();
     fireEvent.click(zapiCard);
+    expect(await screen.findByRole("dialog")).toBeVisible();
     expect(
-      await screen.findByText("WhatsApp conectado e pronto para uso"),
-    ).toBeVisible();
+      screen.getAllByText("Conectar WhatsApp · Z-API").length,
+    ).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Ver outros canais" }));
-    expect(await screen.findByRole("button", { name: /Z-API/i })).toBeEnabled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Já conectado/i }),
+    ).toBeEnabled();
   });
 
   it("keeps the selected connection management view open across polling refreshes", async () => {
     const connection = createConnection("zapi", "connected", true);
-    const selfService = createSelfService();
     const onRefresh = vi.fn(async () => undefined);
     const { rerender } = render(
       <CrmWhatsappConnectionAdmin
         connections={[connection]}
         onRefresh={onRefresh}
-        selfService={selfService}
       />,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: /Z-API/i }));
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Reconectar ou trocar aparelho",
-      }),
-    );
-    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /CRM channel/i }));
+    expect(screen.getByRole("dialog")).toBeVisible();
 
     rerender(
       <CrmWhatsappConnectionAdmin
         connections={[{ ...connection, live: { ...connection.live } }]}
         onRefresh={onRefresh}
-        selfService={selfService}
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
-    expect(
-      screen.queryByRole("button", { name: /Z-API/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("shows pairing-only controls for an existing disconnected Z-API connection", async () => {
-    render(
-      <CrmWhatsappConnectionAdmin
-        connections={[createConnection("zapi", "disconnected", true)]}
-        onRefresh={vi.fn(async () => undefined)}
-        selfService={{
-          allowance: { limit: 1, remaining: 0, used: 1 },
-          availableProviders: [],
-          canPair: true,
-          canSetup: false,
-          handlers: {
-            onAuthorizeComposio: vi.fn(),
-            onCompleteComposio: vi.fn(),
-            onConfigureZapiWebhooks: vi.fn(),
-            onCreate: vi.fn(),
-            onRefreshConnections: vi.fn(async () => undefined),
-            onRequestZapiPairingCode: vi.fn(),
-            onRequestZapiPairingQr: vi.fn(),
-            onSelectComposioSender: vi.fn(),
-          },
-        }}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole("button", { name: /Z-API/i }));
-    expect(
-      await screen.findByRole("heading", { name: "Conectar WhatsApp · Z-API" }),
-    ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
-    fireEvent.click(screen.getByRole("tab", { name: "Código do telefone" }));
-    expect(screen.getByLabelText("Telefone para pareamento")).toBeVisible();
-    expect(screen.queryByLabelText(/ID da instância/i)).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText(/Token da instância/i),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText(/Token do cliente/i),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(screen.getByText("Z-API: online")).toBeVisible();
   });
 
   it("keeps OLX Chat human-readable and exposes no provider setup controls", () => {
@@ -154,7 +112,8 @@ describe("CrmWhatsappConnectionAdmin", () => {
       />,
     );
 
-    expect(screen.getByText("OLX Chat")).toBeVisible();
+    expect(screen.getAllByText("OLX Chat").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: /OLX/i }));
     expect(
       screen.getByRole("heading", { name: "Capacidades do OLX Chat" }),
     ).toBeVisible();
@@ -171,6 +130,12 @@ function createConnection(
   configured: boolean,
 ): CrmWhatsappProviderConnection {
   return {
+    channel:
+      provider === "olx_chat"
+        ? "olx_chat"
+        : provider === "composio_instagram"
+          ? "instagram"
+          : "whatsapp",
     credentials: {
       apiBaseUrlEnv: null,
       clientTokenEnv: null,
@@ -193,6 +158,11 @@ function createConnection(
     phone: status === "connected" ? "5511999999999" : null,
     provider,
     ready: status === "connected",
+    readiness: {
+      ready: status === "connected",
+      reason: status === "connected" ? null : "Aguardando conexão.",
+      reasonCode: status === "connected" ? null : "not_connected",
+    },
     setup: configured
       ? {
           attemptCount: 0,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type {
   CrmWhatsappMessage,
@@ -11,6 +11,7 @@ import type {
 type RealtimeOptions = {
   activeSessionId: CrmWhatsappSessionId | null;
   api: CrmWhatsappApi;
+  canAccessSessionSnapshot?: (session: CrmWhatsappSession) => boolean;
   canMergeSessionSnapshot?: (session: CrmWhatsappSession) => boolean;
   connectionId: string | null;
   connectionsError: Error | null;
@@ -30,6 +31,7 @@ type RealtimeOptions = {
     preserveLocalOnly?: boolean;
     snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
   }) => Promise<void>;
+  removeSession: (sessionId: CrmWhatsappSessionId) => void;
   updateRealtimeMessageStatus: (
     input: Extract<CrmWhatsappRealtimeEvent, { type: "message_status" }>,
   ) => void;
@@ -38,6 +40,7 @@ type RealtimeOptions = {
 export function useCrmWhatsappRealtime({
   activeSessionId,
   api,
+  canAccessSessionSnapshot,
   canMergeSessionSnapshot,
   connectionId,
   connectionsError,
@@ -48,11 +51,55 @@ export function useCrmWhatsappRealtime({
   refreshConnections,
   refreshSessionCounts,
   refreshSessions,
+  removeSession,
   updateRealtimeMessageStatus,
 }: RealtimeOptions) {
   const [status, setStatus] = useState<CrmWhatsappRealtimeStatus>("offline");
-  const handleRealtimeEvent = useCallback(
-    (event: CrmWhatsappRealtimeEvent) => {
+  const hasConnectionsError = connectionsError !== null;
+  const latestHandlersRef = useRef({
+    activeSessionId,
+    canAccessSessionSnapshot,
+    canMergeSessionSnapshot,
+    mergeRealtimeMessage,
+    mergeSessions,
+    onStatus,
+    onVisibleInboundMessage,
+    refreshConnections,
+    refreshSessionCounts,
+    refreshSessions,
+    removeSession,
+    updateRealtimeMessageStatus,
+  });
+  latestHandlersRef.current = {
+    activeSessionId,
+    canAccessSessionSnapshot,
+    canMergeSessionSnapshot,
+    mergeRealtimeMessage,
+    mergeSessions,
+    onStatus,
+    onVisibleInboundMessage,
+    refreshConnections,
+    refreshSessionCounts,
+    refreshSessions,
+    removeSession,
+    updateRealtimeMessageStatus,
+  };
+
+  useEffect(() => {
+    const publishStatus = (nextStatus: CrmWhatsappRealtimeStatus) => {
+      setStatus(nextStatus);
+      latestHandlersRef.current.onStatus?.(nextStatus);
+    };
+    if (hasConnectionsError || !connectionId) {
+      publishStatus("offline");
+      return;
+    }
+    publishStatus("connecting");
+    let active = true;
+    let reconciliationGeneration = 0;
+    const handleRealtimeEvent = (event: CrmWhatsappRealtimeEvent) => {
+      if (!active) return;
+      const latest = latestHandlersRef.current;
       if (event.type === "connected") return;
       if (
         "connectionId" in event &&
@@ -62,127 +109,112 @@ export function useCrmWhatsappRealtime({
         return;
       if (event.type === "session") {
         if (
-          canMergeSessionSnapshot &&
-          !canMergeSessionSnapshot(event.session)
+          latest.canMergeSessionSnapshot &&
+          !latest.canMergeSessionSnapshot(event.session)
         ) {
           return;
         }
-        mergeSessions([event.session], {
+        if (
+          latest.canAccessSessionSnapshot &&
+          !latest.canAccessSessionSnapshot(event.session)
+        ) {
+          latest.removeSession(event.session.id);
+          void latest.refreshSessionCounts().catch(() => undefined);
+          return;
+        }
+        latest.mergeSessions([event.session], {
           preserveLocalOnly: true,
           snapshotKind: "realtime",
         });
-        void refreshSessionCounts().catch(() => undefined);
+        void latest.refreshSessionCounts().catch(() => undefined);
         return;
       }
       if (event.type === "message") {
         if (
-          canMergeSessionSnapshot &&
-          !canMergeSessionSnapshot(event.session)
+          latest.canMergeSessionSnapshot &&
+          !latest.canMergeSessionSnapshot(event.session)
         ) {
           return;
         }
-        mergeSessions([event.session], {
+        if (
+          latest.canAccessSessionSnapshot &&
+          !latest.canAccessSessionSnapshot(event.session)
+        ) {
+          latest.removeSession(event.session.id);
+          void latest.refreshSessionCounts().catch(() => undefined);
+          return;
+        }
+        latest.mergeSessions([event.session], {
           preserveLocalOnly: true,
           snapshotKind: "realtime",
         });
-        void refreshSessionCounts().catch(() => undefined);
-        if (String(event.session.id) === String(activeSessionId)) {
-          mergeRealtimeMessage(event.message);
+        void latest.refreshSessionCounts().catch(() => undefined);
+        if (String(event.session.id) === String(latest.activeSessionId)) {
+          latest.mergeRealtimeMessage(event.message);
           if (
             event.message.direction === "INBOUND" &&
             document.visibilityState === "visible"
           ) {
-            onVisibleInboundMessage?.(event.session);
+            latest.onVisibleInboundMessage?.(event.session);
           }
         }
         return;
       }
       if (event.type === "message_status") {
-        if (String(event.sessionId) === String(activeSessionId)) {
-          updateRealtimeMessageStatus(event);
+        if (String(event.sessionId) === String(latest.activeSessionId)) {
+          latest.updateRealtimeMessageStatus(event);
         }
-        void refreshSessions({ preserveLocalOnly: true }).catch(
-          () => undefined,
-        );
+        void latest
+          .refreshSessions({ preserveLocalOnly: true })
+          .catch(() => undefined);
         return;
       }
       if (event.type === "connection_status") {
-        void refreshConnections().catch(() => undefined);
+        void latest.refreshConnections().catch(() => undefined);
       }
-    },
-    [
-      activeSessionId,
-      canMergeSessionSnapshot,
-      connectionId,
-      mergeRealtimeMessage,
-      mergeSessions,
-      onVisibleInboundMessage,
-      refreshConnections,
-      refreshSessionCounts,
-      refreshSessions,
-      updateRealtimeMessageStatus,
-    ],
-  );
-
-  useEffect(() => {
-    if (connectionsError || !connectionId) {
-      setStatus("offline");
-      onStatus?.("offline");
-      return;
-    }
-    setStatus("connecting");
-    onStatus?.("connecting");
-    let active = true;
-    const reconcileBeforeConnected = async () => {
-      setStatus("connecting");
-      onStatus?.("connecting");
+    };
+    const reconcileBeforeConnected = async (generation: number) => {
+      publishStatus("connecting");
+      const latest = latestHandlersRef.current;
       await Promise.all([
-        refreshConnections(),
-        refreshSessions({
+        latest.refreshConnections(),
+        latest.refreshSessions({
           preserveLocalOnly: true,
           snapshotKind: "reconciled",
         }),
-        refreshSessionCounts(),
+        latest.refreshSessionCounts(),
       ]);
-      if (!active) return;
-      setStatus("connected");
-      onStatus?.("connected");
+      if (!active || generation !== reconciliationGeneration) return;
+      publishStatus("connected");
     };
     const unsubscribe = api.subscribeEvents({
       connectionId,
       onError: (caught) => {
         void caught;
-        setStatus("degraded");
-        onStatus?.("degraded");
+        if (!active) return;
+        reconciliationGeneration += 1;
+        publishStatus("degraded");
       },
       onEvent: handleRealtimeEvent,
       onStatus: (nextStatus) => {
+        if (!active) return;
+        const generation = ++reconciliationGeneration;
         if (nextStatus === "connected") {
-          void reconcileBeforeConnected().catch(() => {
-            if (!active) return;
-            setStatus("degraded");
-            onStatus?.("degraded");
+          void reconcileBeforeConnected(generation).catch(() => {
+            if (!active || generation !== reconciliationGeneration) return;
+            publishStatus("degraded");
           });
           return;
         }
-        setStatus(nextStatus);
-        onStatus?.(nextStatus);
+        publishStatus(nextStatus);
       },
     });
     return () => {
       active = false;
+      reconciliationGeneration += 1;
       unsubscribe();
     };
-  }, [
-    api,
-    connectionsError,
-    connectionId,
-    handleRealtimeEvent,
-    onStatus,
-    refreshConnections,
-    refreshSessionCounts,
-    refreshSessions,
-  ]);
+  }, [api, connectionId, hasConnectionsError]);
 
   return { status };
 }

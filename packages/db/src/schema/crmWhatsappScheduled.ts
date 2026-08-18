@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -9,11 +10,14 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { crmConnections } from "./crm.js";
+import { providerConnections } from "./crmCore/authorization.js";
 import { users, stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
 import { crmWhatsappCampaigns } from "./crmWhatsappCampaigns.js";
+
+const includeCrmScopeForeignKeys =
+  process.env.DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP !== "true";
 
 export const crmWhatsappScheduledMessageStatus = pgEnum(
   "crm_whatsapp_scheduled_message_status",
@@ -29,9 +33,7 @@ export const crmWhatsappScheduledMessages = pgTable(
     campaignMessageType: varchar("campaign_message_type", { length: 40 }),
     campaignRecipientKey: varchar("campaign_recipient_key", { length: 191 }),
     campaignSequence: integer("campaign_sequence"),
-    connectionId: uuid("connection_id")
-      .notNull()
-      .references(() => crmConnections.id),
+    connectionId: uuid("connection_id").notNull(),
     createdByUserId: uuid("created_by_user_id").references(() => users.id),
     errorMessage: text("error_message"),
     metadata: jsonb("metadata").notNull().default({}),
@@ -56,6 +58,24 @@ export const crmWhatsappScheduledMessages = pgTable(
     text: text("text").notNull(),
   },
   (table) => [
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_whatsapp_scheduled_messages_connection_fk",
+    }),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
+            ],
+            name: "crm_whatsapp_scheduled_messages_scoped_connection_fk",
+          }),
+        ]
+      : []),
     index("crm_whatsapp_scheduled_messages_campaign_idx").on(
       table.campaignId,
       table.campaignSequence,

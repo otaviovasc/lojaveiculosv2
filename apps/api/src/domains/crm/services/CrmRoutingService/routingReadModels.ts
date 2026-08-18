@@ -13,7 +13,6 @@ export type CrmRoutingBlockedCode =
   | "connection_inactive"
   | "connection_not_connected"
   | "connection_not_found"
-  | "legacy_mapping_missing"
   | "policy_not_configured"
   | "route_disabled"
   | "scope_mismatch";

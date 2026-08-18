@@ -3,12 +3,14 @@ import type {
   CrmConnectionCredentialVault,
   CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
+  OlxCrmWebhookSetupProvider,
   ZapiConnectionSetupProvider,
 } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createComposioCrmConnectionSetupProvider } from "../../../infrastructure/crm/composioCrmConnectionSetupProvider.js";
 import { createCrmConnectionCredentialVault } from "../../../infrastructure/crm/crmConnectionCredentialVault.js";
 import { createZapiCrmConnectionSetupProvider } from "../../../infrastructure/crm/zapiCrmConnectionSetupProvider.js";
+import { createOlxCrmWebhookSetupProvider } from "../../../infrastructure/crm/olxCrmWebhookSetupProvider.js";
 import { completeZapiAddonSetup } from "../../../domains/billing/services/BillingService/zapiAddonContract.js";
 import { createDrizzleBillingRepository } from "../../../infrastructure/db/billing/drizzleBillingRepository.js";
 import type { DrizzleCrmClient } from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
@@ -20,6 +22,7 @@ type ConnectionSetupPorts = Pick<
   | "crmConnectionCredentialVault"
   | "crmZapiSetupCompletionReporter"
   | "crmZapiSupportAuthorizer"
+  | "olxCrmWebhookSetupProvider"
   | "zapiConnectionSetupProvider"
 >;
 
@@ -51,6 +54,12 @@ export function createCrmConnectionSetupPorts(
       createZapiCrmConnectionSetupProvider().getQrCode(credentials),
     validateStatus: (credentials) =>
       createZapiCrmConnectionSetupProvider().validateStatus(credentials),
+  };
+  const olx: OlxCrmWebhookSetupProvider = {
+    configureChat: (input) =>
+      createOlxCrmWebhookSetupProvider().configureChat(input),
+    configureLeads: (input) =>
+      createOlxCrmWebhookSetupProvider().configureLeads(input),
   };
   const reporter: CrmZapiSetupCompletionReporter | undefined = drizzleClient
     ? {
@@ -86,6 +95,7 @@ export function createCrmConnectionSetupPorts(
   return {
     composioWhatsappOnboardingProvider: composio,
     crmConnectionCredentialVault: credentialVault,
+    olxCrmWebhookSetupProvider: olx,
     ...(reporter ? { crmZapiSetupCompletionReporter: reporter } : {}),
     ...(supportAuthorizer
       ? { crmZapiSupportAuthorizer: supportAuthorizer }
