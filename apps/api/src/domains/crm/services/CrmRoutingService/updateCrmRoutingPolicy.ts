@@ -1,6 +1,6 @@
 import {
-  assertAnyPermission,
   assertEntitlement,
+  assertPermission,
 } from "../../../../shared/authorization.js";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import type {
@@ -26,10 +26,7 @@ import type {
 import { resolveCrmConnectionRoute } from "./routingResolution.js";
 import { resolveCrmRoutingPolicy } from "./resolveCrmRoutingPolicy.js";
 
-const permissions = [
-  "crm.bot.manage",
-  "crm.messaging.connection.setup",
-] as const satisfies readonly PermissionKey[];
+const routingPermission = "crm.routing.default.manage";
 const requiredCapabilities = ["outbound"] as const;
 
 export type UpdateCrmRoutingPolicyInput = {
@@ -43,7 +40,8 @@ export async function updateCrmRoutingPolicy(
   input: UpdateCrmRoutingPolicyInput,
   ports: CrmServicePorts,
 ): Promise<CrmRoutingPolicyReadModel> {
-  const permission = assertAnyPermission(context, permissions);
+  assertPermission(context, routingPermission);
+  const permission = routingPermission;
   assertEntitlement(context as StoreScopedServiceContext, "crm");
   const scope = requireCrmWhatsappScope(context);
   context.logger.info("crm.routing.policy.update.started", {
@@ -222,7 +220,7 @@ async function recordOutcome(
       ...(error
         ? { errorName: error instanceof Error ? error.name : "UnknownError" }
         : {}),
-      permission: permission ?? permissions[0],
+      permission: permission ?? routingPermission,
       storeDefaultReady: channelReadiness?.storeDefault.ready ?? false,
     },
     outcome,

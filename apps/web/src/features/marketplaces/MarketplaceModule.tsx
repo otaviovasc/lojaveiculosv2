@@ -35,6 +35,10 @@ import type {
   MarketplaceStockPlan,
   MarketplaceStockSyncRunResponse,
 } from "./types";
+import {
+  clearCrmOlxOauthReturn,
+  hasCrmOlxOauthReturn,
+} from "../crm/crmOlxOauthReturn";
 
 export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   const marketplaceApi = useMemo(
@@ -83,6 +87,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     }
 
     if (callback.kind === "result-error") {
+      clearCrmOlxOauthReturn();
       clearOauthCallbackLocation();
       try {
         applyOverview(await marketplaceApi.getOverview());
@@ -107,6 +112,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
             : { code: callback.code, state: callback.state },
       );
       if (result.kind === "cancelled") {
+        clearCrmOlxOauthReturn();
         clearOauthCallbackLocation();
         setStatus({
           kind: "error",
@@ -117,8 +123,13 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         });
         return;
       }
-      applyOverview(await marketplaceApi.getOverview());
       clearOauthCallbackLocation();
+      if (result.account.provider === "olx" && hasCrmOlxOauthReturn()) {
+        window.location.assign("/dashboard#/crm?surface=whatsapp");
+        return;
+      }
+      clearCrmOlxOauthReturn();
+      applyOverview(await marketplaceApi.getOverview());
       if (result.kind === "partial") {
         setStatus({
           kind: "partial",
@@ -131,6 +142,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         message: `${providerLabels[result.account.provider]} conectado. Nenhum anúncio foi enviado.`,
       });
     } catch (error) {
+      clearCrmOlxOauthReturn();
       clearOauthCallbackLocation();
       setStatus({ kind: "error", display: errorDisplay(error) });
     }

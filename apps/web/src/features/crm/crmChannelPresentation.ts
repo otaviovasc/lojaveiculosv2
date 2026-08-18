@@ -72,10 +72,21 @@ function readOlxChatOperation(
   if (authorizationFailure) {
     return { ...authorizationFailure, label: "Chat" };
   }
+  const capability = marketplaceState?.capabilities?.chat;
+  if (
+    capability &&
+    (capability.status !== "active" || capability.grantState !== "granted")
+  ) {
+    return readCapabilityOperation(
+      capability,
+      "Chat",
+      "Texto disponível em conversas iniciadas pelo comprador.",
+    );
+  }
   if (!connection) {
-    return marketplaceState?.capabilities?.chat
+    return capability
       ? readCapabilityOperation(
-          marketplaceState.capabilities.chat,
+          capability,
           "Chat",
           "Texto disponível em conversas iniciadas pelo comprador.",
         )

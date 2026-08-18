@@ -212,6 +212,9 @@ function ports(
   ),
 ) {
   const routingPolicies: CrmRoutingPolicyRepository = {
+    createDefaultIfMissing: async () => {
+      throw new Error("Not implemented in route resolution tests.");
+    },
     listPolicies: async () => (configuredPolicy ? [configuredPolicy] : []),
     upsertPolicy: async () => {
       throw new Error("Not implemented in route resolution tests.");

@@ -74,6 +74,7 @@ export function createTestApp(options: TestAppOptions = {}) {
           "marketplace.manage",
           "marketplace.read",
           "crm.messaging.connection.setup",
+          "crm.routing.default.manage",
         ],
         request: { requestId: options.requestId ?? "request_1" },
         storeId: "store_1",

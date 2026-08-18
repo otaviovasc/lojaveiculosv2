@@ -10,7 +10,10 @@ export function olxOnboardingContext() {
     audit: createMemoryAuditSink(),
     entitlements: ["crm"],
     logger: createNoopServiceLogger(),
-    permissions: ["crm.messaging.connection.setup"],
+    permissions: [
+      "crm.messaging.connection.setup",
+      "crm.routing.default.manage",
+    ],
     request: { requestId: "request_1" },
     storeId: "store_1",
     tenantId: "tenant_1",

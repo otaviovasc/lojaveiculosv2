@@ -45,6 +45,25 @@ describe("readOlxChannelOperations", () => {
     ).toMatchObject({ label: "Reconfigurar OLX" });
   });
 
+  it("shows a rejected Chat registration as failed instead of pending", () => {
+    const connection = createOlxConnection();
+    connection.ready = false;
+    connection.live.providerStatus = "disconnected";
+    const operations = readOlxChannelOperations(
+      [connection],
+      createMarketplaceState("connected", {
+        chat: capability("messaging", "error", "provider_rejected"),
+      }),
+    );
+
+    expect(operations.chat).toMatchObject({
+      detail:
+        "O provedor recusou o setup. Revise a conta e tente reconfigurar.",
+      label: "Chat",
+      state: "failed",
+    });
+  });
+
   it("distinguishes missing scopes from degraded setup actions", () => {
     expect(
       readOlxAuthorizationAction(

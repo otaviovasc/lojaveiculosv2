@@ -5,6 +5,7 @@ export const crmWhatsappAdminPermissions = [
   "crm.whatsapp.close",
   "crm.messaging.connection.pair",
   "crm.messaging.connection.setup",
+  "crm.routing.default.manage",
   "crm.whatsapp.list",
   "crm.whatsapp.read",
   "crm.whatsapp.campaigns.manage",

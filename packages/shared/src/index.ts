@@ -41,6 +41,7 @@ export type PermissionKey =
   | "crm.whatsapp.campaigns.read"
   | "crm.messaging.connection.pair"
   | "crm.messaging.connection.setup"
+  | "crm.routing.default.manage"
   | "crm.whatsapp.ingest"
   | "crm.whatsapp.integrations.manage"
   | "crm.whatsapp.list"

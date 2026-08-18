@@ -33,6 +33,9 @@ export type UpsertCrmChannelRoutingPolicyInput = CrmRoutingPolicyScope & {
 };
 
 export type CrmRoutingPolicyRepository = {
+  createDefaultIfMissing: (
+    input: UpsertCrmChannelRoutingPolicyInput,
+  ) => Promise<CrmChannelRoutingPolicy | null>;
   listPolicies: (
     scope: CrmRoutingPolicyScope,
   ) => Promise<readonly CrmChannelRoutingPolicy[]>;

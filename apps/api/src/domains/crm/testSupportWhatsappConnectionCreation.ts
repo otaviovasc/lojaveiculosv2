@@ -8,7 +8,10 @@ export const storeId = "11111111-1111-4111-8111-111111111111";
 export const tenantId = "22222222-2222-4222-8222-222222222222";
 
 export function createContext(
-  permissions = ["crm.messaging.connection.setup"],
+  permissions = [
+    "crm.messaging.connection.setup",
+    "crm.routing.default.manage",
+  ],
   entitlements: ("crm" | "crm_zapi")[] = ["crm", "crm_zapi"],
 ) {
   return createServiceContext({

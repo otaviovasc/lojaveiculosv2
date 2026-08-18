@@ -10,6 +10,7 @@ const permissions = {
   integrationsManage: "crm.whatsapp.integrations.manage",
   list: "crm.whatsapp.list",
   read: "crm.whatsapp.read",
+  routingDefaultManage: "crm.routing.default.manage",
   scheduleCancel: "crm.whatsapp.schedules.cancel",
   scheduleCreate: "crm.whatsapp.schedules.create",
   scheduleProcess: "crm.whatsapp.schedules.process",
@@ -32,6 +33,7 @@ export type CrmWhatsappCapabilities = {
   canIntegrationsManage: boolean;
   canList: boolean;
   canRead: boolean;
+  canRoutingDefaultManage: boolean;
   canScheduleCancel: boolean;
   canScheduleCreate: boolean;
   canScheduleProcess: boolean;
@@ -69,6 +71,10 @@ export function readCrmWhatsappCapabilities(
     ),
     canList: hasWhatsappPermission(session, permissions.list),
     canRead: hasWhatsappPermission(session, permissions.read),
+    canRoutingDefaultManage: hasWhatsappPermission(
+      session,
+      permissions.routingDefaultManage,
+    ),
     canScheduleCancel: hasWhatsappPermission(
       session,
       permissions.scheduleCancel,
