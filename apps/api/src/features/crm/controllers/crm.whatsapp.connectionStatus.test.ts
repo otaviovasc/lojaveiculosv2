@@ -30,7 +30,7 @@ describe("CRM WhatsApp connection status", () => {
       crmWhatsappGateway: { getConnectionStatus },
     });
 
-    const response = await app.request("/api/v1/crm/whatsapp/connections");
+    const response = await app.request("/api/v1/crm/channel-connections");
     const body = (await response.json()) as { connections: unknown[] };
 
     expect(response.status).toBe(200);
@@ -73,7 +73,7 @@ describe("CRM WhatsApp connection status", () => {
       },
     });
 
-    const response = await app.request("/api/v1/crm/whatsapp/connections");
+    const response = await app.request("/api/v1/crm/channel-connections");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
@@ -152,7 +152,7 @@ describe("CRM WhatsApp connection status", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/status/refresh`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/status/refresh`,
       { method: "POST" },
     );
 
@@ -170,7 +170,7 @@ function patchStatus(
   app: ReturnType<typeof createTestApp>,
   status: "active" | "paused",
 ) {
-  return app.request(`/api/v1/crm/whatsapp/connections/${connectionId}`, {
+  return app.request(`/api/v1/crm/channel-connections/${connectionId}`, {
     body: JSON.stringify({ status }),
     headers: { "content-type": "application/json" },
     method: "PATCH",

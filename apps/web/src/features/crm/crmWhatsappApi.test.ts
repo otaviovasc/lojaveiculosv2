@@ -196,7 +196,7 @@ describe("CRM WhatsApp API", () => {
       ],
     });
     expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/whatsapp/connections",
+      input: "/api/v1/crm/channel-connections",
       init: { method: "GET" },
     });
   });
@@ -216,14 +216,14 @@ describe("CRM WhatsApp API", () => {
   it("uses only explicit valid available providers", async () => {
     const fake = createFakeFetch([
       {
-        availableProviders: ["zapi", "composio_whatsapp"],
+        availableProviders: ["zapi", "composio_instagram", "composio_whatsapp"],
         connections: [canonicalConnection()],
       },
     ]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await expect(api.listConnections()).resolves.toMatchObject({
-      availableProviders: ["zapi", "composio_whatsapp"],
+      availableProviders: ["zapi", "composio_instagram", "composio_whatsapp"],
     });
   });
 
@@ -306,6 +306,8 @@ describe("CRM WhatsApp API", () => {
       { id: "connection_1", status: "disconnected" },
       { id: "connection_1", status: "active" },
       { redirectUrl: "https://connect.composio.dev/session/test" },
+      { connection: { id: "connection_2" }, senders: [] },
+      { id: "connection_2", status: "active" },
     ]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
@@ -318,9 +320,11 @@ describe("CRM WhatsApp API", () => {
     await api.disconnectZapiConnection("connection_1");
     await api.refreshZapiConnectionStatus("connection_1");
     await api.authorizeComposioConnection("connection_2");
+    await api.completeComposioConnection("connection_2");
+    await api.selectComposioSender("connection_2", "sender_1");
 
     expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/whatsapp/connections",
+      input: "/api/v1/crm/channel-connections",
       init: {
         body: JSON.stringify({
           provider: "composio_whatsapp",
@@ -330,31 +334,40 @@ describe("CRM WhatsApp API", () => {
     });
     expect(fake.calls[1]).toMatchObject({
       input:
-        "/api/v1/crm/whatsapp/connections/connection_1/zapi/webhooks/configure",
+        "/api/v1/crm/channel-connections/connection_1/zapi/webhooks/configure",
       init: { body: "{}", method: "POST" },
     });
     expect(fake.calls[2]?.input).toBe(
-      "/api/v1/crm/whatsapp/connections/connection_1/zapi/pairing/qr",
+      "/api/v1/crm/channel-connections/connection_1/zapi/pairing/qr",
     );
     expect(fake.calls[3]?.input).toBe(
-      "/api/v1/crm/whatsapp/connections/connection_1/zapi/pairing/code",
+      "/api/v1/crm/channel-connections/connection_1/zapi/pairing/code",
     );
     expect(fake.calls[3]?.init).toMatchObject({
       body: JSON.stringify({ phone: "5511999999999" }),
       method: "POST",
     });
     expect(fake.calls[4]).toMatchObject({
-      input: "/api/v1/crm/whatsapp/connections/connection_1/zapi/disconnect",
+      input: "/api/v1/crm/channel-connections/connection_1/zapi/disconnect",
       init: { body: "{}", method: "POST" },
     });
     expect(fake.calls[5]).toMatchObject({
-      input:
-        "/api/v1/crm/whatsapp/connections/connection_1/zapi/status/refresh",
+      input: "/api/v1/crm/channel-connections/connection_1/zapi/status/refresh",
       init: { body: "{}", method: "POST" },
     });
     expect(fake.calls[6]?.input).toBe(
-      "/api/v1/crm/whatsapp/connections/connection_2/composio/authorize",
+      "/api/v1/crm/channel-connections/connection_2/composio/authorize",
     );
+    expect(fake.calls[7]?.input).toBe(
+      "/api/v1/crm/channel-connections/connection_2/composio/complete",
+    );
+    expect(fake.calls[8]).toMatchObject({
+      input: "/api/v1/crm/channel-connections/connection_2/composio/sender",
+      init: {
+        body: JSON.stringify({ senderId: "sender_1" }),
+        method: "POST",
+      },
+    });
   });
 
   it("loads WhatsApp sessions, counts, and messages through V2", async () => {

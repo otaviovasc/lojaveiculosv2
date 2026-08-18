@@ -23,7 +23,7 @@ export function resolveCrmWebhookActor(pathname: string) {
   ) {
     return { actorId: "external_crm_bot", displayName: "External CRM bot" };
   }
-  if (pathname.endsWith("/whatsapp/webhooks/meta")) {
+  if (pathname.endsWith("/crm/webhooks/meta")) {
     return { actorId: "meta", displayName: "Meta" };
   }
   if (pathname.includes("/whatsapp/webhooks/zapi/")) {

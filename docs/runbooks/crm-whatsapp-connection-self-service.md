@@ -49,9 +49,14 @@ API runtime. Keep local, staging, and production values separate.
 - `COMPOSIO_API_KEY`: the only allowed Composio API-key environment reference.
 - `COMPOSIO_API_BASE_URL`: optional REST proxy origin; defaults to the Composio
   backend origin documented in `docs/ops/env-vars.md`.
-- `COMPOSIO_WHATSAPP_AUTH_CONFIG_ID`: server-owned `ac_` auth-config ID used by
-  official WhatsApp self-service. `COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID` remains
-  operator-only. They are not connected-account IDs.
+- `COMPOSIO_WHATSAPP_AUTH_CONFIG_ID` and
+  `COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID`: distinct server-owned `ac_` auth-config
+  IDs used by customer self-service for each official channel. They are not
+  connected-account IDs.
+- `COMPOSIO_INSTAGRAM_LOGIN_MODE`: exact Instagram auth contract, `facebook`
+  for Facebook Login for Business or `instagram` for Instagram Login. The API
+  fails closed when it is missing because sender discovery and subscription
+  targets differ.
 - `COMPOSIO_META_GRAPH_VERSION`: valid `vN.N` Graph version when a connection
   does not carry an explicit non-secret graph version.
 - `CRM_META_WEBHOOK_VERIFY_TOKEN` and `CRM_META_APP_SECRET`: Meta GET
@@ -121,20 +126,25 @@ Treat the returned per-callback results and persisted setup status as the
 truth; `partial` or `failed` means the reset did not complete. Returned URLs
 are redacted, and operators must not log request credentials or callback URLs.
 
-### Official WhatsApp
+### Official WhatsApp and Instagram
 
 1. Set the Composio and Meta variables above. Keep the auth-config ID (`ac_`)
    separate from the connected-account ID (`ca_`).
 2. Create one short-lived authorization link at a time using the approved
    onboarding surface or the operator diagnostics in
-   [`composio-crm-local-test.md`](composio-crm-local-test.md), or use the
-   approved onboarding surface. Instagram still requires the operator flow.
+   [`composio-crm-local-test.md`](composio-crm-local-test.md). The connection
+   provider selects the channel-specific auth config; never reuse the WhatsApp
+   config for Instagram or vice versa.
 3. Complete provider authorization in the browser, then verify the connected
    account is active. Never commit or paste the resulting `ca_` ID into a
    public document.
-4. Associate the connected-account reference and native Meta sender ID with
-   the store connection. The shared Meta webhook requires the configured
-   challenge token and valid `X-Hub-Signature-256` on every POST.
+4. Select the explicit WhatsApp number or Instagram professional account. For
+   Facebook Login, the Instagram sender and linked Page subscription target
+   are distinct and must both match provider discovery. The connection becomes
+   ready only after Meta confirms the app subscription.
+5. Register `/api/v1/crm/webhooks/meta` as the shared callback URL. It requires
+   the configured challenge token and valid `X-Hub-Signature-256` on every
+   POST.
 
 Official WhatsApp starts new conversations only with an approved template;
 Instagram is customer-initiated. These provider limits are product behavior,

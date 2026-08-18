@@ -1,5 +1,5 @@
 import type {
-  ComposioWhatsappOnboardingProvider,
+  ComposioCrmOnboardingProvider,
   CrmConnectionCredentialVault,
   CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
@@ -33,15 +33,21 @@ export function createCrmConnectionSetupPorts(
     open: (input) => createCrmConnectionCredentialVault().open(input),
     seal: (input) => createCrmConnectionCredentialVault().seal(input),
   };
-  const composio: ComposioWhatsappOnboardingProvider = {
+  const composio: ComposioCrmOnboardingProvider = {
     createConnectLink: (input) =>
       createComposioCrmConnectionSetupProvider().createConnectLink(input),
+    discoverInstagramResources: (connectedAccountId) =>
+      createComposioCrmConnectionSetupProvider().discoverInstagramResources(
+        connectedAccountId,
+      ),
     discoverWhatsappResources: (connectedAccountId) =>
       createComposioCrmConnectionSetupProvider().discoverWhatsappResources(
         connectedAccountId,
       ),
     subscribeWhatsappApp: (input) =>
       createComposioCrmConnectionSetupProvider().subscribeWhatsappApp(input),
+    subscribeInstagramApp: (input) =>
+      createComposioCrmConnectionSetupProvider().subscribeInstagramApp(input),
     verifyConnectedAccount: (connectedAccountId) =>
       createComposioCrmConnectionSetupProvider().verifyConnectedAccount(
         connectedAccountId,

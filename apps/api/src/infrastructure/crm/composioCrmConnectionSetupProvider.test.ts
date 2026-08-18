@@ -26,6 +26,7 @@ describe("createComposioCrmConnectionSetupProvider", () => {
       provider.createConnectLink({
         alias: "Store WhatsApp",
         callbackUrl: "https://app.test/callback",
+        provider: "composio_whatsapp",
         userId: "tenant_1:store_1",
       }),
     ).resolves.toEqual({
@@ -60,12 +61,15 @@ describe("createComposioCrmConnectionSetupProvider", () => {
       fetchImpl,
     );
 
-    await provider.createConnectLink({ userId: "tenant_1:store_1" });
+    await provider.createConnectLink({
+      provider: "composio_whatsapp",
+      userId: "tenant_1:store_1",
+    });
 
     expect(
       JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body)),
     ).toMatchObject({
-      callback_url: "https://app.example.test/#/crm?surface=whatsapp",
+      callback_url: "https://app.example.test/#/crm",
     });
   });
 
@@ -82,7 +86,10 @@ describe("createComposioCrmConnectionSetupProvider", () => {
     );
 
     await expect(
-      provider.createConnectLink({ userId: "tenant_1:store_1" }),
+      provider.createConnectLink({
+        provider: "composio_whatsapp",
+        userId: "tenant_1:store_1",
+      }),
     ).rejects.toMatchObject({ code: "invalid_provider_response" });
   });
 
@@ -93,7 +100,10 @@ describe("createComposioCrmConnectionSetupProvider", () => {
     );
 
     await expect(
-      provider.createConnectLink({ userId: "tenant_1:store_1" }),
+      provider.createConnectLink({
+        provider: "composio_whatsapp",
+        userId: "tenant_1:store_1",
+      }),
     ).rejects.toMatchObject({ code: "invalid_provider_response" });
   });
 

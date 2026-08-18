@@ -149,6 +149,34 @@ describe("CrmWhatsappChannelDirectory", () => {
     expect(onChoose).toHaveBeenCalledWith("zapi");
   });
 
+  it("keeps configured Instagram Official setup actionable when no new setup is offered", () => {
+    const onChoose = vi.fn();
+    const instagram = {
+      ...createZapiConnection(),
+      channel: "instagram" as const,
+      displayName: "Instagram da loja",
+      id: "instagram-1",
+      phone: null,
+      provider: "meta_cloud" as const,
+    };
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[instagram]}
+        marketplaceApi={createMarketplaceApi()}
+        onChoose={onChoose}
+        zapiAddonContract={null}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Instagram OficialJá configurado/i,
+      }),
+    );
+    expect(onChoose).toHaveBeenCalledWith("composio_instagram");
+  });
+
   it.each([
     ["a channel mismatch", { channel: "instagram" as const }],
     [

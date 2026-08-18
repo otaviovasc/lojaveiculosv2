@@ -120,7 +120,7 @@ function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
       : "Não foi possível confirmar o canal. Nenhuma operação oficial foi confirmada.";
   }
   if (connection.live.providerStatus === "connected") {
-    if (connection.provider === "composio_instagram") {
+    if (connection.channel === "instagram") {
       return "Conta profissional conectada com segurança";
     }
     const phone =
@@ -128,7 +128,7 @@ function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
       connection.metadata?.connectedPhone ??
       connection.phone;
     if (phone) return `Conectado - ${phone}`;
-    return connection.provider === "composio_whatsapp"
+    return connection.provider === "meta_cloud"
       ? "Conta oficial conectada com segurança"
       : "Instância conectada; a Z-API não informou o número";
   }

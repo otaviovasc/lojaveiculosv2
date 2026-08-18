@@ -198,7 +198,12 @@ export type CrmCanonicalConnectionsResponse = Omit<
 
 export type CrmWhatsappSetupProvider = Extract<
   CrmWhatsappProvider,
-  "composio_whatsapp" | "zapi"
+  "composio_instagram" | "composio_whatsapp" | "zapi"
+>;
+
+export type CrmWhatsappOfficialSetupProvider = Exclude<
+  CrmWhatsappSetupProvider,
+  "zapi"
 >;
 
 export type CrmWhatsappZapiAddonContractStatus =
@@ -230,7 +235,7 @@ export type CrmWhatsappCreateConnectionInput =
       provider: "zapi";
     }
   | {
-      provider: "composio_whatsapp";
+      provider: CrmWhatsappOfficialSetupProvider;
     };
 
 export type CrmWhatsappZapiPairingQr = {
@@ -250,9 +255,14 @@ export type CrmWhatsappComposioAuthorization = {
 };
 
 export type CrmWhatsappComposioSender = {
+  accountType?: "BUSINESS" | "CREATOR" | null;
   displayName?: string | null;
+  loginMode?: "facebook" | "instagram" | null;
+  pageId?: string | null;
   phone?: string | null;
   senderId: string;
+  subscriptionTargetId?: string | null;
+  username?: string | null;
 };
 
 export type CrmWhatsappComposioCompleteResult = {

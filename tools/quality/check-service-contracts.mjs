@@ -6,6 +6,8 @@ const domainsRoot = new URL("../../apps/api/src/domains", import.meta.url)
 const nonEntrypointFiles = new Set([
   "auditVehicleServiceEvent.ts",
   "composioWhatsappConnectionSetup.types.ts",
+  "composioInstagramConnectionSelection.ts",
+  "composioWhatsappConnectionSelection.ts",
   "crmConnectionSetupSupport.ts",
   "crmLeadOutcomeContracts.ts",
   "crmLeadOutcomeMutationSupport.ts",

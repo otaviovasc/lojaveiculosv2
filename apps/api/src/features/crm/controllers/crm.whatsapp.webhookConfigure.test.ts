@@ -124,11 +124,11 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     });
 
     const failed = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/webhooks/configure`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/webhooks/configure`,
       { method: "POST" },
     );
     const configured = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/webhooks/configure`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/webhooks/configure`,
       { method: "POST" },
     );
 
@@ -202,7 +202,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/webhooks/configure`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/webhooks/configure`,
       { method: "POST" },
     );
     const body = (await response.json()) as {
@@ -233,7 +233,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([target]),
       entitlements: ["crm"],
     });
-    const path = `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/webhooks/configure`;
+    const path = `/api/v1/crm/channel-connections/${connectionId}/zapi/webhooks/configure`;
 
     expect(
       (await withoutPermission.request(path, { method: "POST" })).status,

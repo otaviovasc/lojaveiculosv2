@@ -46,7 +46,7 @@ export async function createWhatsappConnection(
   assertPermission(context, connectionPermission);
   if (context.actor.kind !== "user") {
     throw new AuthorizationError(
-      "CRM WhatsApp connection creation requires an authenticated store user.",
+      "CRM messaging connection creation requires an authenticated store user.",
     );
   }
   const scope = requireCrmWhatsappScope(context);

@@ -27,7 +27,7 @@ describe("CRM official messaging connections", () => {
       },
     });
 
-    const response = await app.request("/api/v1/crm/whatsapp/connections");
+    const response = await app.request("/api/v1/crm/channel-connections");
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
@@ -75,7 +75,7 @@ describe("CRM official messaging connections", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${whatsappId}`,
+      `/api/v1/crm/channel-connections/${whatsappId}`,
       {
         body: JSON.stringify({
           composioCredentials: {
@@ -111,7 +111,7 @@ describe("CRM official messaging connections", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${instagramId}`,
+      `/api/v1/crm/channel-connections/${instagramId}`,
       {
         body: JSON.stringify({
           instanceCredentials: {
@@ -140,7 +140,7 @@ describe("CRM official messaging connections", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${whatsappId}`,
+      `/api/v1/crm/channel-connections/${whatsappId}`,
       {
         body: JSON.stringify({
           composioCredentials: {

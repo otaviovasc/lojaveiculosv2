@@ -15,7 +15,11 @@ describe("getWhatsappConnectionOverview", () => {
     );
 
     expect(overview.allowance).toEqual({ limit: 0, remaining: 0, used: 0 });
-    expect(overview.availableProviders).toEqual(["zapi", "composio_whatsapp"]);
+    expect(overview.availableProviders).toEqual([
+      "zapi",
+      "composio_whatsapp",
+      "composio_instagram",
+    ]);
   });
 
   it("keeps Z-API discoverable without entitlement or capacity", async () => {
@@ -31,10 +35,12 @@ describe("getWhatsappConnectionOverview", () => {
     expect(withoutCapacity.availableProviders).toEqual([
       "zapi",
       "composio_whatsapp",
+      "composio_instagram",
     ]);
     expect(withoutEntitlement.availableProviders).toEqual([
       "zapi",
       "composio_whatsapp",
+      "composio_instagram",
     ]);
   });
 });

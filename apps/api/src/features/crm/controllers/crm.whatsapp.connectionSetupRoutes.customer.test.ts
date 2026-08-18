@@ -50,11 +50,11 @@ describe("CRM WhatsApp customer connection setup routes", () => {
     });
 
     const qr = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/pairing/qr`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/pairing/qr`,
       { method: "POST" },
     );
     const code = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/pairing/code`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/pairing/code`,
       {
         body: JSON.stringify({ phone: "5511999999999" }),
         headers: { "content-type": "application/json" },
@@ -76,7 +76,7 @@ describe("CRM WhatsApp customer connection setup routes", () => {
   it("denies customer pairing without the pairing permission", async () => {
     const app = createTestApp({ permissions: [] });
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/pairing/qr`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/pairing/qr`,
       { method: "POST" },
     );
     expect(response.status).toBe(403);
@@ -87,7 +87,7 @@ describe("CRM WhatsApp customer connection setup routes", () => {
       permissions: ["crm.messaging.connection.setup"],
     });
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/pairing/qr`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/pairing/qr`,
       { method: "POST" },
     );
 
@@ -101,7 +101,7 @@ describe("CRM WhatsApp customer connection setup routes", () => {
         "crm.whatsapp.integrations.manage",
       ],
     });
-    const response = await app.request("/api/v1/crm/whatsapp/connections", {
+    const response = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify({
         instanceId: "instance-1",
         instanceToken: "instance-secret-1",
@@ -132,7 +132,7 @@ describe("CRM WhatsApp customer connection setup routes", () => {
       ]),
     });
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/pairing/qr`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/pairing/qr`,
       { method: "POST" },
     );
     expect(response.status).toBe(404);
@@ -161,7 +161,7 @@ describe("CRM WhatsApp customer connection setup routes", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/composio/authorize`,
+      `/api/v1/crm/channel-connections/${connectionId}/composio/authorize`,
       { method: "POST" },
     );
 

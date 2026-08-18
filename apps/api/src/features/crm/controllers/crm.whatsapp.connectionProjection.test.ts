@@ -51,7 +51,7 @@ describe("CRM connection overview contract", () => {
       ]),
     });
 
-    const response = await app.request("/api/v1/crm/whatsapp/connections");
+    const response = await app.request("/api/v1/crm/channel-connections");
     const body = (await response.json()) as {
       connections: readonly Record<string, unknown>[];
     };

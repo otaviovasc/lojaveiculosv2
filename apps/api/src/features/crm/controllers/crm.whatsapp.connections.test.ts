@@ -36,7 +36,7 @@ describe("CRM WhatsApp connections", () => {
       crmWhatsappGateway: { getConnectionStatus },
     });
 
-    const response = await app.request("/api/v1/crm/whatsapp/connections");
+    const response = await app.request("/api/v1/crm/channel-connections");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ connections: [] });
@@ -71,7 +71,7 @@ describe("CRM WhatsApp connections", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}`,
+      `/api/v1/crm/channel-connections/${connectionId}`,
       {
         body: JSON.stringify({
           instanceCredentials: {
@@ -116,7 +116,7 @@ describe("CRM WhatsApp connections", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/disconnect`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/disconnect`,
       { method: "POST" },
     );
 
@@ -160,7 +160,7 @@ describe("CRM WhatsApp connections", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/disconnect`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/disconnect`,
       { method: "POST" },
     );
 
@@ -183,7 +183,7 @@ describe("CRM WhatsApp connections", () => {
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/disconnect`,
+      `/api/v1/crm/channel-connections/${connectionId}/zapi/disconnect`,
       { method: "POST" },
     );
 

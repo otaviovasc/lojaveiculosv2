@@ -102,6 +102,50 @@ export async function executeComposioSetupTool(
   return payload.data;
 }
 
+export async function executeComposioSetupProxy(
+  client: ComposioSetupClient,
+  input: {
+    body?: Record<string, unknown>;
+    connectedAccountId: string;
+    endpoint: string;
+    method: "GET" | "POST";
+    parameters?: readonly {
+      in: "query";
+      name: string;
+      value: string;
+    }[];
+  },
+) {
+  const payload = await client.request("/api/v3.1/tools/execute/proxy", {
+    body: JSON.stringify({
+      ...(input.body ? { body: input.body } : {}),
+      connected_account_id: input.connectedAccountId,
+      endpoint: input.endpoint,
+      method: input.method,
+      ...(input.parameters ? { parameters: input.parameters } : {}),
+    }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+  const status = readNumber(payload.status);
+  if (status === null || status < 200 || status >= 300) {
+    throw new CrmConnectionSetupProviderError(
+      status === null
+        ? "Composio Meta proxy returned an invalid response"
+        : `Composio Meta proxy was rejected with HTTP ${status}`,
+      status === null ? "invalid_provider_response" : "provider_rejected",
+      status ?? undefined,
+    );
+  }
+  if (!Object.prototype.hasOwnProperty.call(payload, "data")) {
+    throw new CrmConnectionSetupProviderError(
+      "Composio Meta proxy returned no provider evidence",
+      "invalid_provider_response",
+    );
+  }
+  return payload.data;
+}
+
 function parseRecord(text: string) {
   try {
     const value: unknown = JSON.parse(text);
@@ -116,4 +160,8 @@ function parseRecord(text: string) {
 function readRetryAfter(headers: Headers) {
   const value = Number(headers.get("retry-after"));
   return Number.isFinite(value) && value > 0 ? Math.ceil(value) : 1;
+}
+
+function readNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

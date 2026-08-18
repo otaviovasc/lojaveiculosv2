@@ -211,6 +211,7 @@ function createConnection(
 ): CrmWhatsappProviderConnection {
   return {
     capabilities: capabilitiesForProvider(provider),
+    channel: provider === "composio_instagram" ? "instagram" : "whatsapp",
     displayName: id,
     externalConnectionId: id,
     externalInstanceId: null,

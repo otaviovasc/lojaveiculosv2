@@ -8,7 +8,10 @@ import { createCrmWhatsappSessionCountsQuery } from "./crmWhatsappApiRoutes";
 describe("CRM WhatsApp API routes", () => {
   it("builds V2 WhatsApp routes", () => {
     expect(crmWhatsappRoutes.connections()).toBe(
-      "/api/v1/crm/whatsapp/connections",
+      "/api/v1/crm/channel-connections",
+    );
+    expect(crmWhatsappRoutes.connection("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1",
     );
     expect(crmWhatsappRoutes.conversationsStart()).toBe(
       "/api/v1/crm/whatsapp/conversations/start",
@@ -55,6 +58,30 @@ describe("CRM WhatsApp API routes", () => {
     );
     expect(crmWhatsappRoutes.olxChatSetupRetry("connection-1")).toBe(
       "/api/v1/crm/channel-connections/connection-1/olx-chat/setup/retry",
+    );
+    expect(crmWhatsappRoutes.composioAuthorize("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/composio/authorize",
+    );
+    expect(crmWhatsappRoutes.composioComplete("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/composio/complete",
+    );
+    expect(crmWhatsappRoutes.composioSender("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/composio/sender",
+    );
+    expect(crmWhatsappRoutes.zapiDisconnect("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/zapi/disconnect",
+    );
+    expect(crmWhatsappRoutes.zapiPairingCode("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/zapi/pairing/code",
+    );
+    expect(crmWhatsappRoutes.zapiPairingQr("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/zapi/pairing/qr",
+    );
+    expect(crmWhatsappRoutes.zapiStatusRefresh("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/zapi/status/refresh",
+    );
+    expect(crmWhatsappRoutes.zapiWebhooksConfigure("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/zapi/webhooks/configure",
     );
     expect(crmWhatsappRoutes.quickMessage("quick_1")).toBe(
       "/api/v1/crm/whatsapp/quick-messages/quick_1",

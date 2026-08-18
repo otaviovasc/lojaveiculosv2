@@ -8,8 +8,8 @@ import type { SessionBootstrap } from "../account/apiClient";
 import { CrmLeadWhatsappPanel } from "./CrmLeadWhatsappPanel";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type {
+  CrmCanonicalProviderConnection,
   CrmWhatsappMessage,
-  CrmWhatsappProviderConnection,
   CrmWhatsappSession,
 } from "./crmWhatsappTypes";
 import type { ProductCrmLead } from "./productCrmTypes";
@@ -149,8 +149,9 @@ function createWhatsappApi(overrides: Partial<CrmWhatsappApi>): CrmWhatsappApi {
 }
 
 function createConnection(
-  provider: CrmWhatsappProviderConnection["provider"] = "zapi",
-): CrmWhatsappProviderConnection {
+  setupProvider: "composio_whatsapp" | "zapi" = "zapi",
+): CrmCanonicalProviderConnection {
+  const provider = setupProvider === "zapi" ? "zapi" : "meta_cloud";
   return {
     capabilities:
       provider === "zapi"
@@ -197,6 +198,7 @@ function createConnection(
       instanceTokenEnv: null,
       mode: null,
     },
+    channel: "whatsapp",
     displayName: provider === "zapi" ? "ZAPI" : "WhatsApp oficial",
     externalConnectionId: null,
     externalInstanceId: null,
@@ -216,6 +218,9 @@ function createConnection(
     },
     phone: null,
     provider,
+    isDefault: true,
+    readiness: { ready: true, reason: null, reasonCode: "ready" },
+    state: "sandbox",
     status: "sandbox",
     webhookUrl: null,
   };

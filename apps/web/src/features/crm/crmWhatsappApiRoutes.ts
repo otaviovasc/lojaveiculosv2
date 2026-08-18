@@ -49,10 +49,10 @@ export const crmWhatsappRoutes = {
   routingPolicy: (baseUrl?: string) =>
     createCrmEndpoint("/crm/routing-policy", baseUrl),
   connections: (baseUrl?: string) =>
-    createCrmEndpoint("/crm/whatsapp/connections", baseUrl),
+    createCrmEndpoint("/crm/channel-connections", baseUrl),
   connection: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}`,
       baseUrl,
     ),
   billingOverview: (baseUrl?: string) =>
@@ -64,17 +64,17 @@ export const crmWhatsappRoutes = {
     baseUrl?: string,
   ) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/composio/authorize`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/composio/authorize`,
       baseUrl,
     ),
   composioComplete: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/composio/complete`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/composio/complete`,
       baseUrl,
     ),
   composioSender: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/composio/sender`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/composio/sender`,
       baseUrl,
     ),
   olxChatSetupRetry: (
@@ -87,17 +87,17 @@ export const crmWhatsappRoutes = {
     ),
   zapiPairingCode: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/code`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/code`,
       baseUrl,
     ),
   zapiPairingQr: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/qr`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/qr`,
       baseUrl,
     ),
   zapiDisconnect: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/disconnect`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/disconnect`,
       baseUrl,
     ),
   zapiStatusRefresh: (
@@ -105,7 +105,7 @@ export const crmWhatsappRoutes = {
     baseUrl?: string,
   ) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/status/refresh`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/status/refresh`,
       baseUrl,
     ),
   zapiWebhooksConfigure: (
@@ -113,7 +113,7 @@ export const crmWhatsappRoutes = {
     baseUrl?: string,
   ) =>
     createCrmEndpoint(
-      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/webhooks/configure`,
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/webhooks/configure`,
       baseUrl,
     ),
   conversationsStart: (baseUrl?: string) =>

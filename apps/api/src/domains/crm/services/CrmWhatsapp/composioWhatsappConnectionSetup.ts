@@ -1,16 +1,15 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { assertPermission } from "../../../../shared/authorization.js";
-import { CrmConnectionSetupProviderError } from "../../ports/crmConnectionSetupProvider.js";
-import {
-  toWhatsappConnection,
-  type WhatsappConnection,
-} from "../../whatsapp/whatsappConnectionModels.js";
+import { type WhatsappConnection } from "../../whatsapp/whatsappConnectionModels.js";
 import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import { getComposioWhatsappOnboardingProvider } from "../CrmService/crmConnectionSetupSupport.js";
+import {
+  getComposioWhatsappOnboardingProvider,
+  requireComposioInstagramOnboardingProvider,
+} from "../CrmService/crmConnectionSetupSupport.js";
 import {
   logWhatsappServiceEvent,
   recordWhatsappServiceMutation,
@@ -28,7 +27,8 @@ import {
   loadComposioSetupTarget,
   readConnectedAccountId,
 } from "../../whatsapp/composioWhatsappConnectionSetupSupport.js";
-import { ensureFirstReadyChannelDefault } from "../CrmRoutingService/ensureFirstReadyChannelDefault.js";
+import { selectComposioInstagramSender } from "./composioInstagramConnectionSelection.js";
+import { selectComposioWhatsappPhone } from "./composioWhatsappConnectionSelection.js";
 export type {
   AuthorizeComposioWhatsappInput,
   CompleteComposioWhatsappResult,
@@ -45,13 +45,15 @@ export async function authorizeComposioWhatsappConnection(
   return recordWhatsappServiceMutation(
     context,
     composioSetupAudit(
-      "crm.whatsapp.connection.composio.authorize",
+      "crm.channel_connection.composio.authorize",
       connection.id,
+      connection.provider,
     ),
     async () => {
       const provider = getComposioWhatsappOnboardingProvider(ports);
       const link = await provider.createConnectLink({
         alias: `store:${connection.storeId}`,
+        provider: connection.provider,
         userId: `${connection.tenantId}:${connection.storeId}`,
       });
       logWhatsappServiceEvent(
@@ -66,6 +68,10 @@ export async function authorizeComposioWhatsappConnection(
       const updated = await getCrmConnectionRepository(ports).updateConnection({
         connectionId: connection.id,
         credentialsRef: composioCredentialsRef(link.connectedAccountId),
+        externalConnectionId: null,
+        metadata: resetComposioConnectionMetadata(connection.metadata),
+        phone: null,
+        status: "sandbox",
         storeId: connection.storeId,
         tenantId: connection.tenantId,
       });
@@ -73,6 +79,24 @@ export async function authorizeComposioWhatsappConnection(
       return { expiresAt: link.expiresAt, redirectUrl: link.redirectUrl };
     },
   );
+}
+
+function resetComposioConnectionMetadata(
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
+  const reset = { ...metadata };
+  for (const key of [
+    "composioBusinessAccountId",
+    "composioInstagramAccountId",
+    "composioInstagramLoginMode",
+    "composioPageId",
+    "composioSubscriptionEvidence",
+    "connectedPhone",
+    "providerConnected",
+  ]) {
+    delete reset[key];
+  }
+  return reset;
 }
 
 export async function completeComposioWhatsappConnection(
@@ -85,13 +109,50 @@ export async function completeComposioWhatsappConnection(
   return recordWhatsappServiceMutation(
     context,
     composioSetupAudit(
-      "crm.whatsapp.connection.composio.complete",
+      "crm.channel_connection.composio.complete",
       connection.id,
+      connection.provider,
     ),
     async () => {
       const provider = getComposioWhatsappOnboardingProvider(ports);
       const connectedAccountId = readConnectedAccountId(connection);
-      await assertConnectedAccountIsActive(provider, connectedAccountId);
+      await assertConnectedAccountIsActive(
+        provider,
+        connectedAccountId,
+        connection.provider,
+      );
+      if (connection.provider === "composio_instagram") {
+        const instagramProvider =
+          requireComposioInstagramOnboardingProvider(provider);
+        const resources =
+          await instagramProvider.discoverInstagramResources(
+            connectedAccountId,
+          );
+        logWhatsappServiceEvent(
+          context,
+          "crm.provider.composio.operation.completed",
+          {
+            connectionId: connection.id,
+            operation: "discover_instagram_resources",
+            provider: "composio",
+            senderCount: resources.senders.length,
+          },
+        );
+        return {
+          connection: disconnectedConnection(connection),
+          nextAction: resources.senders.length ? "select_sender" : null,
+          senders: resources.senders.map((sender) => ({
+            accountType: sender.accountType,
+            displayName: sender.displayName,
+            loginMode: sender.loginMode,
+            pageId: sender.pageId,
+            phone: null,
+            senderId: sender.senderId,
+            subscriptionTargetId: sender.subscriptionTargetId,
+            username: sender.username,
+          })),
+        };
+      }
       const resources =
         await provider.discoverWhatsappResources(connectedAccountId);
       logWhatsappServiceEvent(
@@ -106,9 +167,14 @@ export async function completeComposioWhatsappConnection(
         },
       );
       const senders = resources.phones.map((phone) => ({
+        accountType: null,
         displayName: phone.displayName,
+        loginMode: null,
+        pageId: null,
         phone: phone.phone,
         senderId: phone.id,
+        subscriptionTargetId: null,
+        username: null,
       }));
       return {
         connection: disconnectedConnection(connection),
@@ -129,99 +195,37 @@ export async function selectComposioWhatsappSender(
   return recordWhatsappServiceMutation(
     context,
     composioSetupAudit(
-      "crm.whatsapp.connection.composio.select_sender",
+      "crm.channel_connection.composio.select_sender",
       connection.id,
+      connection.provider,
     ),
     async () => {
       const provider = getComposioWhatsappOnboardingProvider(ports);
       const connectedAccountId = readConnectedAccountId(connection);
-      await assertConnectedAccountIsActive(provider, connectedAccountId);
-      const resources =
-        await provider.discoverWhatsappResources(connectedAccountId);
-      const sender = resources.phones.find(
-        (phone) => phone.id === input.senderId,
+      await assertConnectedAccountIsActive(
+        provider,
+        connectedAccountId,
+        connection.provider,
       );
-      if (!sender) {
-        throw new CrmConnectionSetupProviderError(
-          "The selected WhatsApp sender is not available for this account",
-          "provider_rejected",
+      if (connection.provider === "composio_instagram") {
+        return selectComposioInstagramSender(
+          context,
+          connection,
+          connectedAccountId,
+          input.senderId,
+          requireComposioInstagramOnboardingProvider(provider),
+          ports,
         );
       }
-      if (
-        connection.status === "active" &&
-        connection.externalConnectionId === sender.id &&
-        connection.metadata.composioBusinessAccountId ===
-          sender.businessAccountId
-      ) {
-        const result = toWhatsappConnection(connection, {
-          checkedAt: new Date(),
-          connected: true,
-          connectedPhone: connection.phone,
-          providerStatus: "connected",
-          smartphoneConnected: null,
-        });
-        await persistDefaultForReadyConnection(context, result, ports);
-        return result;
-      }
-      await provider.subscribeWhatsappApp({
-        businessAccountId: sender.businessAccountId,
-        connectedAccountId,
-      });
-      logWhatsappServiceEvent(
+      return selectComposioWhatsappPhone(
         context,
-        "crm.provider.composio.operation.completed",
-        {
-          connectionId: connection.id,
-          operation: "subscribe_selected_whatsapp_app",
-          provider: "composio",
-        },
+        connection,
+        connectedAccountId,
+        input.senderId,
+        provider,
+        ports,
       );
-      const updated = await getCrmConnectionRepository(ports).updateConnection({
-        connectionId: connection.id,
-        externalConnectionId: sender.id,
-        metadata: {
-          ...connection.metadata,
-          composioBusinessAccountId: sender.businessAccountId,
-          connectedPhone: sender.phone,
-          providerConnected: true,
-        },
-        phone: sender.phone,
-        status: "active",
-        storeId: connection.storeId,
-        tenantId: connection.tenantId,
-      });
-      if (!updated) throw new WhatsappConnectionNotFoundError(connection.id);
-      const result = toWhatsappConnection(updated, {
-        checkedAt: new Date(),
-        connected: true,
-        connectedPhone: sender.phone,
-        providerStatus: "connected",
-        smartphoneConnected: null,
-      });
-      await persistDefaultForReadyConnection(context, result, ports);
-      return result;
     },
-  );
-}
-
-async function persistDefaultForReadyConnection(
-  context: ServiceContext,
-  connection: WhatsappConnection,
-  ports: CrmServicePorts,
-) {
-  if (
-    !connection.ready ||
-    !ports.crmRoutingConnectionRepository ||
-    !ports.crmRoutingPolicyRepository
-  )
-    return;
-  await ensureFirstReadyChannelDefault(
-    context,
-    {
-      channel: connection.channel ?? "whatsapp",
-      connectionId: connection.id,
-    },
-    ports,
   );
 }
 

@@ -22,13 +22,13 @@ describe("CRM WhatsApp connection setup routes", () => {
         getAllowance: vi.fn(async () => ({ limit: 0, remaining: 0, used: 0 })),
       },
     });
-    const overview = await app.request("/api/v1/crm/whatsapp/connections");
+    const overview = await app.request("/api/v1/crm/channel-connections");
     expect(overview.status).toBe(200);
     const overviewBody: unknown = await overview.json();
     expect(jsonObject(overviewBody).availableProviders).toEqual(
       expect.arrayContaining(["zapi"]),
     );
-    const response = await app.request("/api/v1/crm/whatsapp/connections", {
+    const response = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify({
         instanceId: "instance-1",
         instanceToken: "instance-secret-1",
@@ -103,7 +103,7 @@ describe("CRM WhatsApp connection setup routes", () => {
       provider: "zapi",
     } as const;
 
-    const configured = await app.request("/api/v1/crm/whatsapp/connections", {
+    const configured = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify(credentials),
       headers: { "content-type": "application/json" },
       method: "POST",
@@ -152,7 +152,7 @@ describe("CRM WhatsApp connection setup routes", () => {
       status: "active",
     });
 
-    const refreshed = await app.request("/api/v1/crm/whatsapp/connections");
+    const refreshed = await app.request("/api/v1/crm/channel-connections");
     expect(refreshed.status).toBe(200);
     const refreshedBody = jsonObject(await refreshed.json());
     if (!Array.isArray(refreshedBody.connections)) {
@@ -168,7 +168,7 @@ describe("CRM WhatsApp connection setup routes", () => {
       status: "active",
     });
 
-    const duplicate = await app.request("/api/v1/crm/whatsapp/connections", {
+    const duplicate = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify(credentials),
       headers: { "content-type": "application/json" },
       method: "POST",
@@ -176,7 +176,7 @@ describe("CRM WhatsApp connection setup routes", () => {
     expect(duplicate.status).toBe(409);
 
     const pairing = await app.request(
-      `/api/v1/crm/whatsapp/connections/${configuredId}/zapi/pairing/qr`,
+      `/api/v1/crm/channel-connections/${configuredId}/zapi/pairing/qr`,
       { method: "POST" },
     );
     expect(pairing.status).toBe(409);
@@ -208,7 +208,7 @@ describe("CRM WhatsApp connection setup routes", () => {
         getAllowance: vi.fn(async () => ({ limit: 1, remaining: 1, used: 0 })),
       },
     });
-    const response = await app.request("/api/v1/crm/whatsapp/connections", {
+    const response = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify({
         instanceId: "instance-own",
         instanceToken: "instance-secret",

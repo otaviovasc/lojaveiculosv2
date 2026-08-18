@@ -15,23 +15,6 @@ import {
 import { CrmWhatsappValidationError } from "./crm.whatsapp.errors.js";
 import type { CrmServices } from "./crmServices.js";
 
-export function parseMetaWebhookPayload(rawBody: string) {
-  let body: unknown;
-  try {
-    body = JSON.parse(rawBody);
-  } catch {
-    throw new CrmWhatsappValidationError(
-      "Meta webhook body must be valid JSON.",
-    );
-  }
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    throw new CrmWhatsappValidationError(
-      "Meta webhook body must be an object.",
-    );
-  }
-  return body as Record<string, unknown>;
-}
-
 export async function authorizeWebhook(
   context: Context,
   createWebhookContext: (context: Context) => Promise<ServiceContext>,

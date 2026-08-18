@@ -201,6 +201,42 @@ describe("createWhatsappConnection", () => {
     ).toHaveLength(1);
   });
 
+  it("creates an Instagram sandbox with the CRM entitlement", async () => {
+    const ports = createPorts(0);
+
+    await expect(
+      createWhatsappConnection(
+        createContext(),
+        { displayName: "Instagram", provider: "composio_instagram" },
+        ports,
+      ),
+    ).resolves.toMatchObject({
+      broker: "composio",
+      channel: "instagram",
+      provider: "meta_cloud",
+      status: "sandbox",
+    });
+  });
+
+  it("rejects a second non-archived Instagram connection", async () => {
+    const ports = createPorts(0);
+    await createWhatsappConnection(
+      createContext(),
+      { displayName: "Instagram principal", provider: "composio_instagram" },
+      ports,
+    );
+    await expect(
+      createWhatsappConnection(
+        createContext(),
+        {
+          displayName: "Instagram duplicado",
+          provider: "composio_instagram",
+        },
+        ports,
+      ),
+    ).rejects.toBeInstanceOf(WhatsappConnectionProviderAlreadyExistsError);
+  });
+
   it("requires the CRM entitlement for Official WhatsApp", async () => {
     await expect(
       createWhatsappConnection(

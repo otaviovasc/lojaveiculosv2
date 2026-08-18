@@ -161,7 +161,7 @@ function signedRequest(
 ) {
   const body = JSON.stringify(payload);
   const signature = createHmac("sha256", appSecret).update(body).digest("hex");
-  return app.request("/api/v1/crm/whatsapp/webhooks/meta", {
+  return app.request("/api/v1/crm/webhooks/meta", {
     body,
     headers: { "x-hub-signature-256": `sha256=${signature}` },
     method: "POST",

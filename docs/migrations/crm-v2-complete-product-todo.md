@@ -113,7 +113,7 @@ auth configs are enabled, Composio-managed OAuth configs, while the current
 toolkit surface does not expose an inbound customer-message trigger for either
 channel. V2 outbound official messages use the Composio proxy, but inbound
 WhatsApp and Instagram are implemented as direct Meta webhooks at
-`/api/v1/crm/whatsapp/webhooks/meta` and require a Meta app secret owned by the
+`/api/v1/crm/webhooks/meta` and require a Meta app secret owned by the
 callback app. A Composio-managed app secret is not a Loja Veiculos or dealership
 credential; `COMPOSIO_API_KEY`, a customer secret, or an invented value must
 never be used as `CRM_META_APP_SECRET`.
@@ -284,9 +284,12 @@ substitutes for a human/provider acceptance check.
       subscription and callback rehearsal outcomes, expiry/revocation state, and
       retryable work without raw credentials. Expose `pending`, `failed`, and
       `needs_reauthorization`; never synthetic success.
-- [ ] **Complete Instagram parity.** Add creation, authorization/complete,
+- [x] **Complete Instagram parity (code/local contract).** Creation,
+      authorization/complete,
       asset selection, reconnect/remove, permissions, audit, and provider-aware
-      capability handling without WhatsApp-only assumptions.
+      capability handling now use the canonical channel-connection flow without
+      WhatsApp-only routing. Live staging OAuth, subscription, inbound, outbound,
+      reauthorization, and revocation evidence remains a human checkpoint.
 - [ ] **Keep one authoritative inbound.** Direct Meta is the source for
       inbound customer messages unless a future provider spike proves a different
       contract. If another source is introduced, add persisted cross-source
@@ -313,11 +316,14 @@ remain subject to the current module layout and API contract.
       `needs_reauthorization` from server state. Acceptance: refresh/reconnect
       preserves state, no provider is shown active before callback and outbound
       rehearsal evidence, and every failure has a safe retry or support path.
-- [ ] **Instagram onboarding slice.** Add a provider-aware connect action,
+- [x] **Instagram onboarding slice (code/local contract).** The provider-aware
+      connect action,
       Composio authorization redirect, returned Page/professional-account picker,
-      selected-asset confirmation, and reconnect/remove actions. Acceptance:
+      selected-asset confirmation, and reconnect/remove actions are implemented.
+      Acceptance:
       `composio_instagram` is not routed through WhatsApp assumptions, and unknown
-      or multiple assets cannot be silently selected.
+      or multiple assets cannot be silently selected. Live browser/provider
+      acceptance remains pending.
 - [ ] **Capability-driven composer.** Consume the backend capability matrix for
       text/media/reply/reaction/template actions. Acceptance: unsupported controls
       are hidden or disabled with an explanation; forged/unsupported requests are
