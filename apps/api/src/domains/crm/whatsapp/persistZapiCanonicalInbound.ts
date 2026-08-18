@@ -23,7 +23,7 @@ export async function persistZapiCanonicalInbound(
   return persistCanonicalInbound(ports, {
     channel: "whatsapp",
     connectionId: connection.id,
-    contactDisplayName: message.buyerName ?? null,
+    contactDisplayName: message.customerDisplayName ?? null,
     content: message.content,
     customerChatId: message.chatLid ?? null,
     externalThreadId: lidOnly
@@ -54,7 +54,7 @@ export async function persistZapiCanonicalInbound(
     secondaryPhone: lidOnly ? null : message.phone,
     sender: "customer",
     senderOrigin: "customer",
-    sessionMetadata: attribution ?? {},
+    cycleMetadata: attribution ?? {},
     source: "whatsapp",
     storeId: connection.storeId,
     tenantId: connection.tenantId,

@@ -1,0 +1,276 @@
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
+import { Loader2, Reply, Send, X } from "lucide-react";
+import { CrmComposerAttachMenu } from "./CrmComposerAttachMenu";
+import { CrmComposerAudioRecorderButton } from "./CrmComposerAudioRecorderButton";
+import { CatalogDialog } from "./CrmWhatsappCatalogDialog";
+import { LocationDialog } from "./CrmComposerActionDialogs";
+import { VehicleDialog } from "./CrmWhatsappVehicleDialog";
+import { CrmMediaPreviewDialog } from "./CrmMediaPreviewDialog";
+import { CrmQuickMessageManager } from "./CrmQuickMessageManager";
+import { CrmQuickMessagePicker } from "./CrmQuickMessagePicker";
+import { addFiles, formatReplyDraft } from "./crmComposerSupport";
+import type { ComposerDialog, MessageComposerProps } from "./CrmComposerTypes";
+import { useMessageComposerState } from "./CrmComposerState";
+import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
+
+export function MessageComposer({
+  capabilities = readCrmConnectionCapabilities(undefined),
+  catalogUrl,
+  defaultLocationName,
+  disabled = false,
+  onSend,
+  onSendCatalog,
+  onLoadCatalogProducts,
+  onSendLocation,
+  onSendMedia,
+  onLoadVehicles,
+  onSendCatalogProduct,
+  onSendQuickMessage,
+  onSendVehicle,
+  onCreateQuickMessage,
+  onDeleteQuickMessage,
+  onUpdateQuickMessage,
+  quickMessages = [],
+  replyToMessage,
+  onCancelReply,
+}: MessageComposerProps) {
+  const composerState = useMessageComposerState({
+    allowMediaCaption: capabilities.allowImageCaption,
+    allowQuickMessages: capabilities.allowQuickMessages,
+    disabled,
+    onSend,
+    onSendMedia,
+    onSendQuickMessage,
+    quickMessages,
+  });
+  const {
+    activeIndex,
+    applyQuickMessage,
+    canSend,
+    dialog,
+    discardFiles,
+    effectiveDisabled,
+    files,
+    imageInputRef,
+    audioInputRef,
+    documentInputRef,
+    isSubmitting,
+    menuOpen,
+    onTextChange,
+    onTextKeyDown,
+    quickIndex,
+    quickMatches,
+    quickPickerOpen,
+    removeFile,
+    setActiveIndex,
+    setDialog,
+    setFiles,
+    setMenuOpen,
+    submit,
+    text,
+    textareaRef,
+    previewUrls,
+  } = composerState;
+
+  const openDialog = (nextDialog: ComposerDialog) => {
+    setDialog(nextDialog);
+    setMenuOpen(false);
+  };
+
+  return (
+    <form
+      className="crm-composer"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+    >
+      <input
+        accept={capabilities.allowVideo ? "image/*,video/*" : "image/*"}
+        hidden
+        multiple
+        onChange={(event) => {
+          addFiles(event.currentTarget.files, setFiles);
+          event.currentTarget.value = "";
+        }}
+        ref={imageInputRef}
+        type="file"
+      />
+      <input
+        accept="audio/*"
+        hidden
+        multiple
+        onChange={(event) => {
+          addFiles(event.currentTarget.files, setFiles);
+          event.currentTarget.value = "";
+        }}
+        ref={audioInputRef}
+        type="file"
+      />
+      <input
+        accept=".csv,.doc,.docx,.pdf,.txt,.xls,.xlsx,application/pdf,text/plain"
+        hidden
+        multiple
+        onChange={(event) => {
+          addFiles(event.currentTarget.files, setFiles);
+          event.currentTarget.value = "";
+        }}
+        ref={documentInputRef}
+        type="file"
+      />
+
+      {files.length ? (
+        <CrmMediaPreviewDialog
+          activeIndex={activeIndex}
+          allowAudio={capabilities.allowAudio}
+          allowCaption={capabilities.allowImageCaption}
+          allowDocuments={capabilities.allowDocuments}
+          allowVideo={capabilities.allowVideo}
+          caption={text}
+          disabled={effectiveDisabled}
+          files={files}
+          onCaptionChange={onTextChange}
+          onClose={discardFiles}
+          onPickAudio={() => audioInputRef.current?.click()}
+          onPickDocuments={() => documentInputRef.current?.click()}
+          onPickImages={() => imageInputRef.current?.click()}
+          onRemove={removeFile}
+          onSelect={setActiveIndex}
+          onSend={() => void submit()}
+          previewUrls={previewUrls}
+        />
+      ) : null}
+      {dialog === "catalog" && capabilities.allowCatalog ? (
+        <CatalogDialog
+          catalogUrl={catalogUrl}
+          disabled={effectiveDisabled}
+          onClose={() => setDialog(null)}
+          onLoadProducts={onLoadCatalogProducts}
+          onSend={onSendCatalog}
+          onSendProduct={onSendCatalogProduct}
+        />
+      ) : null}
+      {dialog === "location" && capabilities.allowLocation ? (
+        <LocationDialog
+          {...(defaultLocationName ? { defaultName: defaultLocationName } : {})}
+          disabled={effectiveDisabled}
+          onClose={() => setDialog(null)}
+          onSend={onSendLocation}
+        />
+      ) : null}
+      {dialog === "quick" && capabilities.allowQuickMessages ? (
+        <CrmQuickMessageManager
+          disabled={effectiveDisabled}
+          messages={quickMessages}
+          onClose={() => setDialog(null)}
+          onCreate={onCreateQuickMessage}
+          onDelete={onDeleteQuickMessage}
+          onUpdate={onUpdateQuickMessage}
+        />
+      ) : null}
+      {dialog === "vehicle" && capabilities.allowVehicle ? (
+        <VehicleDialog
+          disabled={effectiveDisabled}
+          onClose={() => setDialog(null)}
+          onLoadVehicles={onLoadVehicles}
+          onSend={onSendVehicle}
+        />
+      ) : null}
+
+      {replyToMessage && capabilities.allowReply ? (
+        <div className="crm-reply-draft">
+          <Reply aria-hidden="true" />
+          <span>
+            <strong>Respondendo</strong>
+            <small>{formatReplyDraft(replyToMessage)}</small>
+          </span>
+          <button
+            aria-label="Cancelar resposta"
+            disabled={effectiveDisabled}
+            onClick={onCancelReply}
+            title="Cancelar resposta"
+            type="button"
+          >
+            <X />
+          </button>
+        </div>
+      ) : null}
+
+      <div
+        aria-hidden={files.length ? "true" : undefined}
+        className="crm-composer-row"
+      >
+        <CrmComposerAttachMenu
+          capabilities={capabilities}
+          disabled={effectiveDisabled}
+          onOpenAudio={() => {
+            setMenuOpen(false);
+            audioInputRef.current?.click();
+          }}
+          onOpenCatalog={() => openDialog("catalog")}
+          onOpenDocuments={() => {
+            setMenuOpen(false);
+            documentInputRef.current?.click();
+          }}
+          onOpenImages={() => {
+            setMenuOpen(false);
+            imageInputRef.current?.click();
+          }}
+          onOpenLocation={() => openDialog("location")}
+          onOpenQuickMessages={() => {
+            openDialog("quick");
+          }}
+          onOpenVehicle={() => openDialog("vehicle")}
+          onToggle={() => setMenuOpen((open) => !open)}
+          open={menuOpen}
+        />
+        <div className="crm-composer-textbox">
+          {quickPickerOpen ? (
+            <CrmQuickMessagePicker
+              activeIndex={quickIndex}
+              messages={quickMatches}
+              onPick={applyQuickMessage}
+            />
+          ) : null}
+          <textarea
+            aria-label="Mensagem para enviar"
+            disabled={effectiveDisabled}
+            onChange={(event) => onTextChange(event.target.value)}
+            onKeyDown={onTextKeyDown}
+            placeholder="Digite uma mensagem..."
+            ref={textareaRef}
+            rows={1}
+            value={text}
+          />
+        </div>
+        <AnimatedIconSwap
+          stateKey={isSubmitting ? "submitting" : canSend ? "send" : "audio"}
+          variant="pop"
+        >
+          {isSubmitting || canSend ? (
+            <button
+              aria-label="Enviar mensagem"
+              className="crm-icon-action crm-icon-action-active crm-send-action"
+              disabled={effectiveDisabled || !canSend}
+              title="Enviar"
+              type="submit"
+            >
+              <AnimatedIconSwap
+                stateKey={isSubmitting ? "loading" : "send"}
+                variant="rotate-spin"
+              >
+                {isSubmitting ? <Loader2 className="crm-spin" /> : <Send />}
+              </AnimatedIconSwap>
+            </button>
+          ) : capabilities.allowAudio ? (
+            <CrmComposerAudioRecorderButton
+              disabled={effectiveDisabled}
+              primary
+              onRecorded={(file) => setFiles((current) => [...current, file])}
+            />
+          ) : null}
+        </AnimatedIconSwap>
+      </div>
+    </form>
+  );
+}

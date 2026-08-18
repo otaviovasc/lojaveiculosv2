@@ -1,0 +1,294 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CalendarCheck, Plus, RefreshCw } from "lucide-react";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import type { CrmVehicleOption } from "./crmConversationExtraTypes";
+import type { CrmLeadVisit, LeadVisitStatus } from "./crmVisitsApi";
+import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
+import {
+  peekCrmScopedCache,
+  CRM_VISITS_CACHE_KEY,
+  writeCrmScopedCache,
+} from "./crmScopedCache";
+import {
+  isVisitScheduleValid,
+  visitCreationSteps,
+  VisitCreationStep,
+} from "./CrmVisitCreation";
+import {
+  countVisitsByView,
+  type CrmVisitsPageProps,
+  type VisitView,
+  VisitBoard,
+  visitsForView,
+  visitViewOrder,
+} from "./CrmVisitsPageParts";
+import {
+  CrmModeBar,
+  CrmWorkflowFooter,
+  CrmWorkflowStepper,
+} from "./CrmWorkflow";
+
+export function CrmVisitsPage({
+  activeSession,
+  api,
+  canManage,
+  canRead,
+  listVehicles,
+}: CrmVisitsPageProps) {
+  const visitsApi = useMemo(() => api ?? createRuntimeCrmVisitsApi(), [api]);
+  const [initialVisits] = useState(() =>
+    peekCrmScopedCache<CrmLeadVisit[]>(visitsApi, CRM_VISITS_CACHE_KEY),
+  );
+  const [activeView, setActiveView] = useState<VisitView>("today");
+  const [error, setError] = useState<string | null>(null);
+  const hasVisitsDataRef = useRef(initialVisits !== undefined);
+  const [isLoading, setIsLoading] = useState(initialVisits === undefined);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const [mode, setMode] = useState<"create" | "list">("list");
+  const [notes, setNotes] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [selectedListingId, setSelectedListingId] = useState("");
+  const [step, setStep] = useState(0);
+  const [visits, setVisits] = useState<CrmLeadVisit[]>(initialVisits ?? []);
+  const [vehicleOptions, setVehicleOptions] = useState<
+    readonly CrmVehicleOption[]
+  >([]);
+  const linkedLeadId = activeSession?.leadId ?? null;
+
+  const refresh = useCallback(async () => {
+    if (!canRead) {
+      setIsLoading(false);
+      return;
+    }
+    if (!hasVisitsDataRef.current) setIsLoading(true);
+    setError(null);
+    try {
+      const nextVisits = await visitsApi.listVisits({ limit: 100 });
+      hasVisitsDataRef.current = true;
+      writeCrmScopedCache(visitsApi, CRM_VISITS_CACHE_KEY, nextVisits);
+      setVisits(nextVisits);
+    } catch (caught) {
+      setError(
+        formatApiErrorDisplay(caught, "Nao foi possivel carregar visitas."),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [canRead, visitsApi]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (mode !== "create" || !listVehicles) return;
+    let active = true;
+    setIsLoadingVehicles(true);
+    void listVehicles()
+      .then((options) => {
+        if (active) setVehicleOptions(options);
+      })
+      .catch(() => {
+        if (active) setVehicleOptions([]);
+      })
+      .finally(() => {
+        if (active) setIsLoadingVehicles(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [listVehicles, mode]);
+
+  const resetCreation = () => {
+    setMode("list");
+    setNotes("");
+    setScheduledAt("");
+    setSelectedListingId("");
+    setStep(0);
+    setError(null);
+  };
+
+  const startCreation = () => {
+    setMode("create");
+    setNotes("");
+    setScheduledAt("");
+    setSelectedListingId("");
+    setStep(0);
+    setError(null);
+  };
+
+  const createVisit = async () => {
+    if (
+      !linkedLeadId ||
+      !isVisitScheduleValid(scheduledAt) ||
+      !canManage ||
+      isSaving
+    ) {
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      const visit = await visitsApi.createVisit({
+        leadId: linkedLeadId,
+        listingId: selectedListingId || null,
+        notes: notes.trim() || null,
+        scheduledAt: new Date(scheduledAt).toISOString(),
+        ...(typeof activeSession?.id === "string"
+          ? { cycleId: activeSession.id }
+          : {}),
+      });
+      setVisits((current) => [visit, ...current]);
+      const createdView = visitViewOrder.find(
+        (view) => visitsForView([visit], view).length,
+      );
+      setActiveView(createdView ?? "upcoming");
+      resetCreation();
+    } catch (caught) {
+      setError(formatApiErrorDisplay(caught, "Nao foi possivel criar visita."));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const changeStatus = async (visit: CrmLeadVisit, status: LeadVisitStatus) => {
+    if (!canManage || isSaving) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      const next =
+        status === "cancelled"
+          ? await visitsApi.cancelVisit(visit.id)
+          : status === "completed"
+            ? await visitsApi.completeVisit(visit.id)
+            : await visitsApi.updateVisit(visit.id, { status });
+      setVisits((current) =>
+        current.map((item) => (item.id === next.id ? next : item)),
+      );
+    } catch (caught) {
+      setError(
+        formatApiErrorDisplay(caught, "Nao foi possivel atualizar visita."),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!canRead) {
+    return (
+      <section className="crm-section">
+        <p className="text-sm font-bold text-muted">
+          Seu usuario nao tem permissao para visualizar visitas.
+        </p>
+      </section>
+    );
+  }
+
+  const viewCounts = countVisitsByView(visits);
+  const viewVisits = visitsForView(visits, activeView);
+  const nextDisabled =
+    !canManage ||
+    !linkedLeadId ||
+    (step > 0 && !isVisitScheduleValid(scheduledAt));
+
+  return (
+    <section className="crm-section">
+      <div className="crm-visits-page">
+        <CrmModeBar
+          actions={
+            mode === "list" ? (
+              <>
+                <button
+                  aria-label="Atualizar visitas"
+                  className="crm-icon-action"
+                  disabled={isLoading}
+                  onClick={() => void refresh()}
+                  title="Atualizar visitas"
+                  type="button"
+                >
+                  <RefreshCw aria-hidden="true" />
+                </button>
+                <button
+                  className="crm-action"
+                  disabled={!canManage}
+                  onClick={startCreation}
+                  type="button"
+                >
+                  <Plus aria-hidden="true" />
+                  Nova visita
+                </button>
+              </>
+            ) : null
+          }
+          summary={
+            mode === "list"
+              ? `${visits.length} visitas carregadas`
+              : `Passo ${step + 1} de ${visitCreationSteps.length}`
+          }
+        >
+          <span className="crm-mode-label">
+            <CalendarCheck aria-hidden="true" />
+            {mode === "list" ? "Agenda operacional" : "Novo agendamento"}
+          </span>
+        </CrmModeBar>
+
+        {mode === "create" ? (
+          <div className="crm-workflow">
+            <CrmWorkflowStepper
+              currentStep={step}
+              onStepChange={setStep}
+              steps={visitCreationSteps}
+            />
+            <div className="crm-visit-workflow-main">
+              {error ? (
+                <p className="crm-visits-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <VisitCreationStep
+                activeSession={activeSession}
+                isLoadingVehicles={isLoadingVehicles}
+                notes={notes}
+                onNotesChange={setNotes}
+                onSelectedListingIdChange={setSelectedListingId}
+                onScheduledAtChange={setScheduledAt}
+                scheduledAt={scheduledAt}
+                selectedListingId={selectedListingId}
+                step={step}
+                vehicleOptions={vehicleOptions}
+              />
+            </div>
+            <CrmWorkflowFooter
+              backDisabled={step === 0}
+              confirmIcon={<CalendarCheck aria-hidden="true" />}
+              confirmLabel="Criar visita"
+              isBusy={isSaving}
+              isLastStep={step === visitCreationSteps.length - 1}
+              nextDisabled={nextDisabled}
+              onBack={() => setStep((current) => Math.max(0, current - 1))}
+              onCancel={resetCreation}
+              onNext={() =>
+                step === visitCreationSteps.length - 1
+                  ? void createVisit()
+                  : setStep((current) => current + 1)
+              }
+            />
+          </div>
+        ) : (
+          <VisitBoard
+            activeView={activeView}
+            canManage={canManage}
+            error={error}
+            isLoading={isLoading}
+            isSaving={isSaving}
+            onStatus={(visit, status) => void changeStatus(visit, status)}
+            onViewChange={setActiveView}
+            viewCounts={viewCounts}
+            visits={viewVisits}
+          />
+        )}
+      </div>
+    </section>
+  );
+}

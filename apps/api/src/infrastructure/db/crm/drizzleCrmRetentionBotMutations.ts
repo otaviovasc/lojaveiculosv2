@@ -1,9 +1,9 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import {
-  botActionCommands,
+  crmExternalBotActionCommands,
   crmExternalBotEventOutbox,
   crmExternalBotProposals,
-  providerEffects,
+  crmExternalBotProviderEffects,
 } from "@lojaveiculosv2/db";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
@@ -32,23 +32,23 @@ async function clearBotCommands(
   const ids = retentionCandidateIds(input, "bot_action_command");
   if (ids.length === 0) return 0;
   const rows = await db
-    .update(botActionCommands)
+    .update(crmExternalBotActionCommands)
     .set({ input: {}, updatedAt: input.now })
     .where(
       and(
-        eq(botActionCommands.tenantId, input.tenantId),
-        eq(botActionCommands.storeId, input.storeId),
-        inArray(botActionCommands.id, ids),
-        sql`${botActionCommands.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
+        eq(crmExternalBotActionCommands.tenantId, input.tenantId),
+        eq(crmExternalBotActionCommands.storeId, input.storeId),
+        inArray(crmExternalBotActionCommands.id, ids),
+        sql`${crmExternalBotActionCommands.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
         withoutActiveRetentionHold(
           "bot_interaction",
           "bot_action_command",
-          botActionCommands.id,
+          crmExternalBotActionCommands.id,
           input,
         ),
       ),
     )
-    .returning({ id: botActionCommands.id });
+    .returning({ id: crmExternalBotActionCommands.id });
   return rows.length;
 }
 
@@ -59,23 +59,23 @@ async function clearProviderEffects(
   const ids = retentionCandidateIds(input, "provider_effect");
   if (ids.length === 0) return 0;
   const rows = await db
-    .update(providerEffects)
+    .update(crmExternalBotProviderEffects)
     .set({ result: {}, updatedAt: input.now })
     .where(
       and(
-        eq(providerEffects.tenantId, input.tenantId),
-        eq(providerEffects.storeId, input.storeId),
-        inArray(providerEffects.id, ids),
-        sql`${providerEffects.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
+        eq(crmExternalBotProviderEffects.tenantId, input.tenantId),
+        eq(crmExternalBotProviderEffects.storeId, input.storeId),
+        inArray(crmExternalBotProviderEffects.id, ids),
+        sql`${crmExternalBotProviderEffects.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
         withoutActiveRetentionHold(
           "bot_interaction",
           "provider_effect",
-          providerEffects.id,
+          crmExternalBotProviderEffects.id,
           input,
         ),
       ),
     )
-    .returning({ id: providerEffects.id });
+    .returning({ id: crmExternalBotProviderEffects.id });
   return rows.length;
 }
 

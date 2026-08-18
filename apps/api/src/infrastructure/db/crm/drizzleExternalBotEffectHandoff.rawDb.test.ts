@@ -47,7 +47,7 @@ describe.skipIf(!runRawDb)(
           const threadId = randomUUID();
           const idempotencyKey = `raw-handoff-${randomUUID()}`;
           const requestDigest = randomUUID().replaceAll("-", "");
-          await transaction.insert(schema.providerConnections).values({
+          await transaction.insert(schema.crmChannelConnections).values({
             broker: "direct",
             channel: "whatsapp",
             displayName: "Raw canonical handoff Z-API",
@@ -81,7 +81,7 @@ describe.skipIf(!runRawDb)(
             storeId: scope.storeId,
             tenantId: scope.tenantId,
           });
-          await transaction.insert(schema.botIntegrationGrants).values({
+          await transaction.insert(schema.crmExternalBotGrants).values({
             actionClass: "automatic",
             actionType: "handoff.request",
             authorizedRequestDigest: requestDigest,
@@ -100,9 +100,10 @@ describe.skipIf(!runRawDb)(
             tenantId: scope.tenantId,
             workflowProvider: "external_bot",
           });
-          await transaction.insert(schema.botActionCommands).values({
+          await transaction.insert(schema.crmExternalBotActionCommands).values({
             actionType: "handoff.request",
             authorizationClass: "automatic",
+            expectedAttendanceRevision: 0,
             expectedRevision: 0,
             grantId,
             id: commandId,
@@ -116,17 +117,19 @@ describe.skipIf(!runRawDb)(
             storeId: scope.storeId,
             tenantId: scope.tenantId,
           });
-          await transaction.insert(schema.providerEffects).values({
-            commandId,
-            effectType: "handoff.request",
-            id: effectId,
-            idempotencyKey,
-            provider: "zapi",
-            providerConnectionId: connectionId,
-            state: "executing",
-            storeId: scope.storeId,
-            tenantId: scope.tenantId,
-          });
+          await transaction
+            .insert(schema.crmExternalBotProviderEffects)
+            .values({
+              commandId,
+              effectType: "handoff.request",
+              id: effectId,
+              idempotencyKey,
+              provider: "zapi",
+              providerConnectionId: connectionId,
+              state: "executing",
+              storeId: scope.storeId,
+              tenantId: scope.tenantId,
+            });
           const effect = handoffEffect({
             connectionId,
             cycleId,
@@ -198,6 +201,8 @@ function handoffEffect(input: {
       payload: { reason: "Customer requested a person" },
     },
     connection: {
+      broker: "direct",
+      channel: "whatsapp",
       credentialsRef: {},
       displayName: "Raw canonical handoff Z-API",
       externalConnectionId: null,

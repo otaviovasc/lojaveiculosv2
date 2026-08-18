@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const appSecret = "meta-batch-isolation-secret";
 const storeId = "store_1" as StoreId;
@@ -23,7 +23,7 @@ describe("CRM Meta webhook batch isolation", () => {
   });
 
   it("processes later events before returning a retryable failure", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
+    const repository = createMemoryCrmConversationRepository();
     const webhookEvents = createMemoryCrmWebhookEventRepository();
     const connection = createConnection();
     const app = createTestApp({
@@ -31,7 +31,7 @@ describe("CRM Meta webhook batch isolation", () => {
         connection,
       ]),
       crmWebhookEventRepository: webhookEvents,
-      crmWhatsappRepository: repository,
+      crmConversationRepository: repository,
     });
 
     const response = await signedRequest(app, {
@@ -108,6 +108,8 @@ function signedRequest(
 
 function createConnection(): CrmConnection {
   return {
+    broker: "composio",
+    channel: "whatsapp",
     credentialsRef: {},
     displayName: "WhatsApp oficial",
     externalConnectionId: "phone-number-1",
@@ -115,7 +117,7 @@ function createConnection(): CrmConnection {
     id: "26000000-0000-4000-8000-000000000102",
     metadata: {},
     phone: "5511999999999",
-    provider: "composio_whatsapp",
+    provider: "meta_cloud",
     status: "active",
     storeId,
     tenantId,

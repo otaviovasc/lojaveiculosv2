@@ -1,0 +1,298 @@
+.crm-visits-page {
+  background: color-mix(in srgb, var(--color-panel) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-xl, var(--radius-md));
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.06);
+  display: grid;
+  margin: 0 auto;
+  max-width: 76rem;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.crm-visits-page > .crm-visits-board {
+  background: transparent;
+  box-shadow: none;
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+  padding: 1.5rem;
+}
+
+.crm-visit-workflow-main {
+  background: var(--color-app);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.crm-visits-page .crm-workflow-steps ol {
+  grid-template-columns: repeat(3, minmax(9rem, 1fr));
+}
+
+.crm-visit-contact {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-app) 80%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-visit-contact:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+}
+
+.crm-visit-contact > span {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+  border-radius: 50%;
+  color: var(--color-success-strong, var(--color-success));
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-success) 20%, transparent);
+}
+
+.crm-visit-contact > span svg,
+.crm-visit-contact-links svg {
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.crm-visit-contact > div:not(.crm-visit-contact-links) {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.crm-visit-contact strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.crm-visit-contact small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-visit-contact-links {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.crm-visit-contact-links a {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0 0.75rem;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-visit-contact-links a:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.crm-visit-create-grid {
+  display: grid;
+  gap: 1.15rem;
+  max-width: 46rem;
+}
+
+.crm-visit-create-empty {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-app) 70%, var(--color-panel));
+  border: 1px dashed color-mix(in srgb, var(--color-line) 80%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  min-height: 13rem;
+  padding: 1.75rem;
+  text-align: center;
+}
+
+.crm-visit-create-empty svg {
+  height: 1.75rem;
+  width: 1.75rem;
+  color: var(--color-accent-strong);
+  opacity: 0.8;
+}
+
+.crm-visit-create-empty strong,
+.crm-visit-create-empty p {
+  margin: 0;
+}
+
+.crm-visit-create-empty strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.crm-visit-create-empty p {
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.crm-visit-review {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  overflow: hidden;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
+}
+
+.crm-visit-review > div {
+  align-items: start;
+  background: var(--color-panel);
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: minmax(9rem, 0.35fr) minmax(0, 1fr);
+  padding: 1rem;
+}
+
+.crm-visit-review > div:first-child {
+  border-top: 0;
+}
+
+.crm-visit-review span {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: calc(var(--font-size-xs) * 0.92);
+  font-weight: 950;
+  gap: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crm-visit-review span svg {
+  height: 0.95rem;
+  width: 0.95rem;
+}
+
+.crm-visit-review strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.crm-visits-error {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  margin: 1rem 1.25rem 0;
+  padding: 0.75rem 0.9rem;
+}
+
+.crm-visits-filters {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.35rem 0.25rem;
+  scrollbar-width: none;
+}
+
+.crm-visits-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.crm-visits-filter {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  gap: 0.55rem;
+  min-height: 2.35rem;
+  padding: 0 0.75rem;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-visits-filter:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-app));
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.crm-visits-filter-active {
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-line));
+  color: var(--color-text);
+}
+
+.crm-visits-filter span {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5rem;
+  padding: 0.1rem 0.45rem;
+  text-align: center;
+  font-size: calc(var(--font-size-xs) * 0.92);
+}
+
+.crm-visits-filter-active span {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+@media (max-width: 640px) {
+  .crm-visit-contact {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .crm-visit-contact-links {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .crm-visit-contact-links a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .crm-visit-review > div {
+    grid-template-columns: 1fr;
+  }
+}

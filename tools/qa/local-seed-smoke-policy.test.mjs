@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
+  crmConversationCyclesPath,
+  crmMessagingOperatorPermissions,
   formatBody,
   personas,
   resolveDestination,
@@ -126,6 +128,17 @@ describe("local seed commercial policy", () => {
 });
 
 describe("local permission smoke safety and personas", () => {
+  it("uses the canonical CRM conversation-cycle permission contract", () => {
+    expect(crmConversationCyclesPath).toBe("/crm/conversation-cycles");
+    expect(crmMessagingOperatorPermissions).toEqual([
+      "crm.attendances.manage",
+      "crm.conversations.assign",
+      "crm.conversations.manage",
+      "crm.conversations.read",
+      "crm.messages.send",
+    ]);
+  });
+
   it("covers suspended, branch, and isolation actors", () => {
     expect(personas.map(({ key }) => key)).toEqual(
       expect.arrayContaining([
@@ -193,7 +206,7 @@ describe("local permission smoke safety and personas", () => {
       expect(projection).toContain("crm.messaging.connection.pair");
     }
     expect(localProjection).toContain(
-      '{"agency":101,"admin":95,"owner":101,"investor":14,"salesman":46,"supervisor":75}',
+      '{"agency":108,"admin":102,"owner":108,"investor":14,"salesman":46,"supervisor":78}',
     );
     expect(migration).toContain(
       'DELETE FROM "membership_permission_overrides"',

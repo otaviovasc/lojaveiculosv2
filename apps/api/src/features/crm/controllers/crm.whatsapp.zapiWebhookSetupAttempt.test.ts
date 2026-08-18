@@ -13,7 +13,7 @@ import {
   createZapiWebhookSetupIntent,
   withZapiWebhookSetupState,
 } from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
-import { runZapiWebhookSetupAttempt } from "../../../domains/crm/services/CrmWhatsapp/runZapiWebhookSetupAttempt.js";
+import { runZapiWebhookSetupAttempt } from "../../../domains/crm/services/CrmWhatsappService/runZapiWebhookSetupAttempt.js";
 
 describe("runZapiWebhookSetupAttempt", () => {
   it("persists partial state and never reports setup completion", async () => {
@@ -106,7 +106,7 @@ describe("runZapiWebhookSetupAttempt", () => {
     const ports = {
       ...fixture({}).ports,
       crmConnectionRepository: repository,
-      crmWhatsappGateway: { configureWebhooks: configure } as never,
+      crmMessagingGateway: { configureWebhooks: configure } as never,
     };
 
     const first = runZapiWebhookSetupAttempt(
@@ -179,7 +179,7 @@ function fixture(input: {
     },
     crmConnectionRepository: repository,
     crmRepository: createMemoryCrmRepository(),
-    crmWhatsappGateway: { configureWebhooks: configure } as never,
+    crmMessagingGateway: { configureWebhooks: configure } as never,
     ...(input.report
       ? { crmZapiSetupCompletionReporter: { completeSetup: input.report } }
       : {}),
@@ -200,7 +200,7 @@ function context(audit?: {
     entitlements: ["crm", "crm_zapi"],
     permissions: [
       "crm.messaging.connection.setup",
-      "crm.whatsapp.integrations.manage",
+      "crm.messaging.connection.setup",
     ],
     request: { requestId: "setup-test" },
     storeId: "store_a",
@@ -225,6 +225,8 @@ function input(connectionId: string) {
 function zapiConnection(tenantId: string): CrmConnection {
   const id = "34000000-0000-4000-8000-000000000101";
   return {
+    broker: "direct",
+    channel: "whatsapp",
     credentialsRef: { stored: { webhookSecret: "sealed:webhook-secret" } },
     displayName: "Z-API",
     externalConnectionId: null,

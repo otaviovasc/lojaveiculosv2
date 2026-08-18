@@ -3,7 +3,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmLeadOutcome } from "../../ports/crmOutcomeRepository.js";
 import { crmLeadOutcomeLossReasons } from "../../ports/crmOutcomeRepository.js";
 import type { CrmLead } from "../../ports/crmRepository.js";
-import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
+import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
 import type {
   ConcludeWhatsappAttendanceInput,
   ConcludeWhatsappAttendanceResult,
@@ -40,14 +40,14 @@ export function fingerprintConclusion(input: ConcludeWhatsappAttendanceInput) {
           commandId: input.commandId,
           dueAt: input.reminder?.dueAt ?? null,
           outcome: input.outcome,
-          sessionId: input.sessionId,
+          cycleId: input.cycleId,
         }
       : {
           commandId: input.commandId,
           note: input.note?.trim() ?? null,
           outcome: input.outcome,
           reason: input.reason,
-          sessionId: input.sessionId,
+          cycleId: input.cycleId,
         },
   );
 }
@@ -76,20 +76,20 @@ export function createConclusionOutcomeRecord(
   input: ConcludeWhatsappAttendanceInput,
   requestFingerprint: string,
   lead: CrmLead,
-  session: CrmWhatsappSession,
+  conversationCycle: CrmConversationCycle,
   result: "applied" | "superseded",
   previousPipelineStageId = lead.pipelineStageId,
 ) {
   return {
     actorId: context.actor.id,
     actorKind: context.actor.kind,
-    channel: session.channel,
+    channel: conversationCycle.channel,
     commandId: input.commandId,
     leadId: lead.id,
     lossNote: input.outcome === "lost" ? input.note?.trim() || null : null,
     lossReason: input.outcome === "lost" ? input.reason : null,
     nextPipelineStageId: lead.pipelineStageId,
-    originSessionId: session.id,
+    originSessionId: conversationCycle.id,
     outcome: input.outcome,
     previousPipelineStageId,
     requestFingerprint,
@@ -115,7 +115,7 @@ export async function recordConclusionOutcomeAudit(
       commandId: outcome.commandId,
       leadId: outcome.leadId,
       outcome: outcome.outcome,
-      permission: "crm.whatsapp.close",
+      permission: "crm.conversations.manage",
       result,
     },
     outcome: "succeeded",

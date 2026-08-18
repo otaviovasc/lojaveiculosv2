@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
-  CrmWhatsappConfigureWebhooksInput,
-  CrmWhatsappConfigureWebhooksResult,
-} from "../../../domains/crm/ports/crmWhatsappGateway.js";
+  CrmMessagingConfigureWebhooksInput,
+  CrmMessagingConfigureWebhooksResult,
+} from "../../../domains/crm/ports/crmMessagingGateway.js";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import {
   createZapiWebhookSetupIntent,
@@ -10,11 +10,11 @@ import {
   withZapiWebhookSetupState,
 } from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 import {
   customerStoreId,
   customerTenantId,
-} from "./crm.whatsapp.connectionSetupRoutes.testSupport.js";
+} from "./crm.channelConnections.setupRoutes.testSupport.js";
 import {
   createZapiWebhookTestConnection as createZapiConnection,
   secureWebhookSetupOptions as secureSetupOptions,
@@ -35,8 +35,8 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     const configureWebhooks = vi.fn(
       async (
         _connection: CrmConnection,
-        input: CrmWhatsappConfigureWebhooksInput,
-      ): Promise<CrmWhatsappConfigureWebhooksResult> => ({
+        input: CrmMessagingConfigureWebhooksInput,
+      ): Promise<CrmMessagingConfigureWebhooksResult> => ({
         results: input.webhooks.map((webhook) => ({
           error: null,
           ok: true,
@@ -52,7 +52,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         configureWebhooks,
         getConnectionStatus: vi.fn(),
         sendText: vi.fn(),
@@ -65,7 +65,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     );
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as CrmWhatsappConfigureWebhooksResult;
+    const body = (await response.json()) as CrmMessagingConfigureWebhooksResult;
     expect(body.results).toHaveLength(6);
     for (const result of body.results) {
       expect(result.url).not.toContain("webhook-secret");
@@ -96,8 +96,8 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     const configureWebhooks = vi.fn(
       async (
         _connection: CrmConnection,
-        input: CrmWhatsappConfigureWebhooksInput,
-      ): Promise<CrmWhatsappConfigureWebhooksResult> => ({
+        input: CrmMessagingConfigureWebhooksInput,
+      ): Promise<CrmMessagingConfigureWebhooksResult> => ({
         results: input.webhooks.map((webhook) => ({
           error: configureWebhooks.mock.calls.length === 1 ? "rejected" : null,
           ok: configureWebhooks.mock.calls.length !== 1,
@@ -116,7 +116,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
           tenantId: customerTenantId,
         }),
       ]),
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         configureWebhooks,
         getConnectionStatus: vi.fn(),
         sendText: vi.fn(),
@@ -135,7 +135,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     expect(failed.status).toBe(200);
     expect(configured.status).toBe(200);
     const failedBody = (await failed.json()) as {
-      results: CrmWhatsappConfigureWebhooksResult["results"];
+      results: CrmMessagingConfigureWebhooksResult["results"];
       setup: { attemptCount: number; status: string };
     };
     const configuredBody = (await configured.json()) as typeof failedBody;
@@ -164,8 +164,8 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     const configureWebhooks = vi.fn(
       async (
         _connection: CrmConnection,
-        input: CrmWhatsappConfigureWebhooksInput,
-      ): Promise<CrmWhatsappConfigureWebhooksResult> => ({
+        input: CrmMessagingConfigureWebhooksInput,
+      ): Promise<CrmMessagingConfigureWebhooksResult> => ({
         results: input.webhooks.map((webhook) => ({
           error: webhook.type === "received" ? "not acknowledged" : null,
           ok: webhook.type !== "received",
@@ -194,7 +194,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
           tenantId: customerTenantId,
         }),
       ]),
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         configureWebhooks,
         getConnectionStatus: vi.fn(),
         sendText: vi.fn(),
@@ -206,7 +206,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
       { method: "POST" },
     );
     const body = (await response.json()) as {
-      results: CrmWhatsappConfigureWebhooksResult["results"];
+      results: CrmMessagingConfigureWebhooksResult["results"];
       setup: { attemptCount: number; status: string };
     };
 

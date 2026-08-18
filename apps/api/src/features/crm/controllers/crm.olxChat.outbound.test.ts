@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { ingestOlxChatWebhook } from "../../../domains/crm/services/CrmMessaging/ingestOlxChatWebhook.js";
+import { ingestOlxChatWebhook } from "../../../domains/crm/services/CrmMessagingService/ingestOlxChatWebhook.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import {
   connectionId,
   createOlxConnection,
@@ -12,13 +12,13 @@ import {
   tenantId,
   validPayload,
 } from "./crm.olxChat.testSupport.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM OLX Chat outbound", () => {
   it("rejects direct OLX ingestion without an issued scoped capability", async () => {
     const context = createServiceContext({
       actor: { id: "olx_chat", kind: "integration" },
-      permissions: ["crm.whatsapp.ingest"],
+      permissions: ["crm.messages.ingest"],
       request: { requestId: "direct-misuse" },
       storeId: null,
       tenantId: null,
@@ -42,12 +42,12 @@ describe("CRM OLX Chat outbound", () => {
   });
 
   it("sends OLX text idempotently to the chat id and publishes realtime", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const seeded = await whatsappRepository.ingestMessage({
-      buyerName: "Ana",
-      buyerPhone: "",
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const seeded = await conversationRepository.ingestMessage({
+      customerDisplayName: "Ana",
+      customerPhone: "",
       channel: "OLX_CHAT",
-      channelExternalId: "olx-chat-1",
+      externalThreadId: "olx-chat-1",
       connectionId,
       content: "Olá",
       direction: "INBOUND",
@@ -71,6 +71,9 @@ describe("CRM OLX Chat outbound", () => {
         {
           ...createOlxConnection(),
           metadata: {
+            capabilities: { inbound: true, outbound: true, text: true },
+            connected: true,
+            providerConnected: true,
             webhookSetup: {
               capabilities: { chat: { status: "active" } },
             },
@@ -78,24 +81,26 @@ describe("CRM OLX Chat outbound", () => {
         },
       ]),
       crmRealtimePublisher: { publish },
-      crmWhatsappGateway: { sendText },
-      crmWhatsappRepository: whatsappRepository,
+      crmMessagingGateway: { sendText },
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
       crmOlxWebhookSecurity: olxSecurity(),
       olxChatEnabled: true,
     });
     const request = () =>
-      app.request("/api/v1/crm/whatsapp/send/text", {
-        body: JSON.stringify({
-          sessionId: seeded.session.id,
-          text: "Resposta",
-        }),
-        headers: {
-          "content-type": "application/json",
-          "idempotency-key": "olx-send-1",
+      app.request(
+        `/api/v1/crm/conversation-cycles/${seeded.conversationCycle.id}/messages`,
+        {
+          body: JSON.stringify({
+            content: "Resposta",
+          }),
+          headers: {
+            "content-type": "application/json",
+            "idempotency-key": "olx-send-1",
+          },
+          method: "POST",
         },
-        method: "POST",
-      });
+      );
 
     const first = await request();
     const duplicate = await request();
@@ -104,7 +109,11 @@ describe("CRM OLX Chat outbound", () => {
     expect(duplicate.status).toBe(201);
     expect(sendText).toHaveBeenCalledTimes(1);
     expect(sendText).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: "olx_chat" }),
+      expect.objectContaining({
+        broker: "direct",
+        channel: "olx_chat",
+        provider: "olx",
+      }),
       { phone: "olx-chat-1", text: "Resposta" },
     );
     expect(await first.json()).toMatchObject({ externalId: "olx-outbound-1" });
@@ -114,13 +123,13 @@ describe("CRM OLX Chat outbound", () => {
     expect(publish).toHaveBeenCalledTimes(2);
   });
 
-  it("fails closed for imported OLX sessions while the runtime switch is off", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const seeded = await whatsappRepository.ingestMessage({
-      buyerName: "Ana",
-      buyerPhone: "",
+  it("fails closed for imported OLX cycles while the runtime switch is off", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const seeded = await conversationRepository.ingestMessage({
+      customerDisplayName: "Ana",
+      customerPhone: "",
       channel: "OLX_CHAT",
-      channelExternalId: "olx-chat-disabled",
+      externalThreadId: "olx-chat-disabled",
       connectionId,
       content: "Olá",
       direction: "INBOUND",
@@ -137,18 +146,28 @@ describe("CRM OLX Chat outbound", () => {
     const sendText = vi.fn();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createOlxConnection(),
+        {
+          ...createOlxConnection(),
+          metadata: {
+            capabilities: { inbound: true, outbound: true, text: true },
+            connected: true,
+            providerConnected: true,
+          },
+        },
       ]),
-      crmWhatsappGateway: { sendText },
-      crmWhatsappRepository: whatsappRepository,
+      crmMessagingGateway: { sendText },
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
     });
 
-    const response = await app.request("/api/v1/crm/whatsapp/send/text", {
-      body: JSON.stringify({ sessionId: seeded.session.id, text: "Resposta" }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    });
+    const response = await app.request(
+      `/api/v1/crm/conversation-cycles/${seeded.conversationCycle.id}/messages`,
+      {
+        body: JSON.stringify({ content: "Resposta" }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
 
     expect(response.status).toBe(409);
     expect(sendText).not.toHaveBeenCalled();

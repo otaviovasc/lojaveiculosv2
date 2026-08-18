@@ -8,9 +8,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
-import type { CrmWhatsappZapiAddonContract } from "./crmWhatsappTypes";
-import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
+import type { CrmProviderConnection } from "./crmConversationTypes";
+import type { CrmWhatsappZapiAddonContract } from "./crmConversationTypes";
+import { crmSupportUrl } from "./crmSupport";
 
 export type ZapiSetupStep = 1 | 2 | 3 | 4 | 5;
 
@@ -35,7 +35,7 @@ export function readZapiSetupStep({
   connection,
   isEntitled,
 }: {
-  connection: CrmWhatsappProviderConnection | null;
+  connection: CrmProviderConnection | null;
   isEntitled: boolean;
 }): ZapiSetupStep {
   if (!isEntitled) return 1;
@@ -43,7 +43,7 @@ export function readZapiSetupStep({
   if (connection.setup?.status !== "configured") return 3;
   if (
     connection.ready !== true ||
-    connection.live.providerStatus !== "connected"
+    connection.live?.providerStatus !== "connected"
   ) {
     return 4;
   }
@@ -54,9 +54,9 @@ export function ZapiSetupProgress({ step }: { step: ZapiSetupStep }) {
   return (
     <nav
       aria-label="Progresso da configuração Z-API"
-      className="crm-whatsapp-zapi-progress"
+      className="crm-zapi-progress"
     >
-      <p aria-live="polite" className="crm-whatsapp-zapi-progress-summary">
+      <p aria-live="polite" className="crm-zapi-progress-summary">
         Etapa {step} de 5 · {stepLabels[step - 1]?.label}
       </p>
       <ol>
@@ -101,7 +101,7 @@ export function ZapiContractState({
 }) {
   if (contract?.status === "pending" || contract?.status === "scheduled") {
     return (
-      <div className="crm-whatsapp-connection-protected-note" role="status">
+      <div className="crm-connection-protected-note" role="status">
         <ShieldCheck aria-hidden="true" />
         <div>
           <strong>
@@ -121,7 +121,7 @@ export function ZapiContractState({
 
   if (contract?.status === "paid_awaiting_setup") {
     return (
-      <div className="crm-whatsapp-connection-protected-note" role="status">
+      <div className="crm-connection-protected-note" role="status">
         <CheckCircle2 aria-hidden="true" />
         <div>
           <strong>Pagamento confirmado</strong>
@@ -136,7 +136,7 @@ export function ZapiContractState({
 
   if (contract?.status === "active" || isEntitled) {
     return (
-      <div className="crm-whatsapp-connection-protected-note" role="status">
+      <div className="crm-connection-protected-note" role="status">
         <CheckCircle2 aria-hidden="true" />
         <div>
           <strong>Add-on Z-API ativo</strong>
@@ -147,7 +147,7 @@ export function ZapiContractState({
   }
 
   return (
-    <div className="crm-whatsapp-connection-protected-note">
+    <div className="crm-connection-protected-note">
       <ShieldCheck aria-hidden="true" />
       <div>
         <strong>Integração opcional paga</strong>
@@ -166,7 +166,7 @@ export function ZapiContractState({
           {isBusy ? "Solicitando" : "Solicitar Z-API"}
         </button>
         {!canSetup ? (
-          <small className="crm-whatsapp-zapi-permission-note">
+          <small className="crm-zapi-permission-note">
             Peça a um administrador da loja para gerenciar este add-on.
           </small>
         ) : null}
@@ -182,7 +182,7 @@ export function ZapiWebhookSetupStatus({
   onRefresh,
 }: {
   canConfigure: boolean;
-  connection: CrmWhatsappProviderConnection;
+  connection: CrmProviderConnection;
   isRefreshing: boolean;
   onRefresh: () => void;
 }) {
@@ -195,7 +195,7 @@ export function ZapiWebhookSetupStatus({
   return (
     <section
       aria-labelledby="zapi-webhook-title"
-      className="crm-whatsapp-zapi-automatic-setup"
+      className="crm-zapi-automatic-setup"
       data-state={failed ? "failed" : "working"}
     >
       <span aria-hidden="true">
@@ -214,7 +214,7 @@ export function ZapiWebhookSetupStatus({
         </p>
         {requiredCount > 0 ? (
           <>
-            <p className="crm-whatsapp-zapi-setup-count">
+            <p className="crm-zapi-setup-count">
               {completedCount} de {requiredCount} webhooks confirmados
             </p>
             <WebhookStatusList
@@ -223,7 +223,7 @@ export function ZapiWebhookSetupStatus({
             />
           </>
         ) : null}
-        <div className="crm-whatsapp-zapi-inline-actions">
+        <div className="crm-zapi-inline-actions">
           <button
             className="crm-action crm-action-secondary"
             disabled={isRefreshing || !canConfigure}
@@ -238,14 +238,14 @@ export function ZapiWebhookSetupStatus({
             {isRefreshing ? "Verificando configuração" : "Verificar agora"}
           </button>
           {!canConfigure ? (
-            <small className="crm-whatsapp-zapi-permission-note">
+            <small className="crm-zapi-permission-note">
               Peça a um administrador da loja para verificar esta configuração.
             </small>
           ) : null}
           {failed ? (
             <a
-              className="crm-whatsapp-zapi-support-link"
-              href={crmWhatsappSupportUrl(setup?.supportCode ?? null)}
+              className="crm-zapi-support-link"
+              href={crmSupportUrl(setup?.supportCode ?? null)}
               rel="noreferrer"
               target="_blank"
             >
@@ -266,18 +266,18 @@ export function ZapiReadyState({
   onPairAgain,
 }: {
   canDisconnect?: boolean;
-  connection: CrmWhatsappProviderConnection;
+  connection: CrmProviderConnection;
   isDisconnecting?: boolean;
   onDisconnect?: () => void;
   onPairAgain?: () => void;
 }) {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const phone =
-    connection.live.connectedPhone ??
+    connection.live?.connectedPhone ??
     connection.metadata?.connectedPhone ??
     connection.phone;
   return (
-    <div className="crm-whatsapp-zapi-ready" role="status">
+    <div className="crm-zapi-ready" role="status">
       <span aria-hidden="true">
         <CheckCircle2 />
       </span>
@@ -306,12 +306,12 @@ export function ZapiReadyState({
         ) : null}
         {onDisconnect ? (
           confirmDisconnect ? (
-            <div className="crm-whatsapp-zapi-disconnect-confirm" role="alert">
+            <div className="crm-zapi-disconnect-confirm" role="alert">
               <p>
                 Isso desconecta o aparelho da instância Z-API. Os webhooks e o
                 histórico do CRM serão mantidos para a reconexão.
               </p>
-              <div className="crm-whatsapp-zapi-inline-actions">
+              <div className="crm-zapi-inline-actions">
                 <button
                   className="crm-action crm-action-danger"
                   disabled={!canDisconnect || isDisconnecting}
@@ -360,7 +360,7 @@ function WebhookStatusList({
   return (
     <ul
       aria-label="Estado dos webhooks Z-API"
-      className="crm-whatsapp-zapi-webhook-status-list"
+      className="crm-zapi-webhook-status-list"
     >
       {requiredTypes.map((type) => {
         const configured = succeeded.has(type);

@@ -8,13 +8,13 @@ import type {
   StoreScopedServiceContext,
 } from "../../../../shared/serviceContext.js";
 import type {
-  CrmBotRoutingMode,
-  CrmRoutingChannel,
+  CrmExternalBotRouteMode,
+  CrmMessagingChannel,
 } from "../../ports/crmRoutingPolicyRepository.js";
 import {
   getCrmRoutingConnectionRepository,
   getCrmRoutingPolicyRepository,
-  requireCrmWhatsappScope,
+  requireCrmMessagingScope,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -30,8 +30,8 @@ const routingPermission = "crm.routing.default.manage";
 const requiredCapabilities = ["outbound"] as const;
 
 export type UpdateCrmRoutingPolicyInput = {
-  bot: { connectionId?: string | null; mode: CrmBotRoutingMode };
-  channel: CrmRoutingChannel;
+  bot: { connectionId?: string | null; mode: CrmExternalBotRouteMode };
+  channel: CrmMessagingChannel;
   defaultConnectionId: string | null;
 };
 
@@ -43,9 +43,9 @@ export async function updateCrmRoutingPolicy(
   assertPermission(context, routingPermission);
   const permission = routingPermission;
   assertEntitlement(context as StoreScopedServiceContext, "crm");
-  const scope = requireCrmWhatsappScope(context);
+  const scope = requireCrmMessagingScope(context);
   context.logger.info("crm.routing.policy.update.started", {
-    botMode: input.bot.mode,
+    externalBotMode: input.bot.mode,
     channel: input.channel,
     requestId: context.requestId,
     storeId: scope.storeId,
@@ -58,8 +58,8 @@ export async function updateCrmRoutingPolicy(
     entityId: scope.storeId,
     entityType: "store",
     metadata: {
-      botConnectionId: input.bot.connectionId ?? null,
-      botMode: input.bot.mode,
+      externalBotConnectionId: input.bot.connectionId ?? null,
+      externalBotMode: input.bot.mode,
       channel: input.channel,
       defaultConnectionId: input.defaultConnectionId,
       permission,
@@ -71,7 +71,7 @@ export async function updateCrmRoutingPolicy(
     tenantId: scope.tenantId,
   });
   try {
-    const botConnectionId = normalizeBotConnection(input);
+    const externalBotConnectionId = normalizeBotConnection(input);
     await runCrmTransaction(ports, async (transactionPorts) => {
       const connectionRepository =
         getCrmRoutingConnectionRepository(transactionPorts);
@@ -91,15 +91,15 @@ export async function updateCrmRoutingPolicy(
       if (input.bot.mode === "explicit_connection") {
         assertConnectionReady(
           input.channel,
-          botConnectionId,
+          externalBotConnectionId,
           byId,
           scope,
           requiredCapabilities,
         );
       }
       await getCrmRoutingPolicyRepository(transactionPorts).upsertPolicy({
-        botConnectionId,
-        botMode: input.bot.mode,
+        externalBotConnectionId,
+        externalBotMode: input.bot.mode,
         channel: input.channel,
         defaultConnectionId: input.defaultConnectionId,
         ...scope,
@@ -135,7 +135,7 @@ export async function updateCrmRoutingPolicy(
 }
 
 function assertConnectionReady(
-  channel: CrmRoutingChannel,
+  channel: CrmMessagingChannel,
   connectionId: string | null,
   byId: ReadonlyMap<
     string,
@@ -190,8 +190,8 @@ async function recordOutcome(
     entityId: scope.storeId,
     entityType: "store",
     metadata: {
-      botConnectionId: input.bot.connectionId ?? null,
-      botMode: input.bot.mode,
+      externalBotConnectionId: input.bot.connectionId ?? null,
+      externalBotMode: input.bot.mode,
       botReady: channelReadiness?.bot.ready ?? false,
       channel: input.channel,
       defaultConnectionId: input.defaultConnectionId,

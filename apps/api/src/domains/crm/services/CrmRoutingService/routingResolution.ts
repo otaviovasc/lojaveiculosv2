@@ -1,5 +1,5 @@
 import type { CrmRoutingConnection } from "../../ports/crmRoutingConnectionRepository.js";
-import type { CrmRoutingChannel } from "../../ports/crmRoutingPolicyRepository.js";
+import type { CrmMessagingChannel } from "../../ports/crmRoutingPolicyRepository.js";
 import type {
   CrmResolvedConnectionRoute,
   CrmRoutingBlockedCode,
@@ -7,7 +7,7 @@ import type {
 } from "./routingReadModels.js";
 
 export function resolveCrmConnectionRoute(input: {
-  channel: CrmRoutingChannel;
+  channel: CrmMessagingChannel;
   connection: CrmRoutingConnection | null;
   connectionId: string | null;
   requiredCapabilities: readonly CrmRoutingCapability[];

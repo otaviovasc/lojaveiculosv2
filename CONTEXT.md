@@ -20,6 +20,8 @@ readiness.
 | capability             | A provider feature that is currently operational for a connection. Readiness is not inferred from provider names.                                       |
 | external bot action    | A typed action requested by the external bot and authorized by the server.                                                                              |
 | proposal               | An explicitly queued internal review action. Proposal mode does not execute the provider effect.                                                        |
+| internal effect        | A durable CRM-owned result of an external bot action, separate from provider delivery effects.                                                          |
+| task / appointment     | Canonical CRM work records created by `task.create` and `appointment.create`, scoped to the same tenant, store, thread, and cycle.                      |
 
 Canonical relationship:
 
@@ -32,3 +34,10 @@ external_account_authorization
 Avoid generic `crm_connections`, `session`, and `buyer` names in new
 multi-channel code. `whatsapp` remains valid only when the behavior is truly
 WhatsApp-specific; channel-neutral persistence and services use `channel`.
+
+Canonical persistence is limited to `crm_channel_connections`, the
+`crm_conversation_*` thread/cycle/attendance/message tables, routing policies,
+and the `crm_external_bot_*` action, proposal, attempt, provider-effect, and
+internal-effect tables. Bot-created work uses `crm_tasks` and
+`crm_appointments`; provider effects and internal CRM effects are never
+interchangeable.

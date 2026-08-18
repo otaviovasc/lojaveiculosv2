@@ -9,7 +9,7 @@ import {
   sql,
 } from "drizzle-orm";
 import {
-  providerConnections,
+  crmChannelConnections,
   storeEntitlements,
   stores,
   tenants,
@@ -29,24 +29,24 @@ import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
 export function abandonedZapiConditions(cutoff: Date) {
   return and(
-    eq(providerConnections.provider, "zapi"),
-    eq(providerConnections.channel, "whatsapp"),
-    eq(providerConnections.broker, "direct"),
-    eq(providerConnections.state, "sandbox"),
-    lte(providerConnections.updatedAt, cutoff),
-    sql`not (${providerConnections.metadata} @> '{"supportHold":true}'::jsonb)`,
+    eq(crmChannelConnections.provider, "zapi"),
+    eq(crmChannelConnections.channel, "whatsapp"),
+    eq(crmChannelConnections.broker, "direct"),
+    eq(crmChannelConnections.state, "sandbox"),
+    lte(crmChannelConnections.updatedAt, cutoff),
+    sql`not (${crmChannelConnections.metadata} @> '{"supportHold":true}'::jsonb)`,
   );
 }
 
 export function activeCrmConnectionQuery(db: DrizzleCrmClient, now: Date) {
   return db
-    .select(getTableColumns(providerConnections))
-    .from(providerConnections)
+    .select(getTableColumns(crmChannelConnections))
+    .from(crmChannelConnections)
     .innerJoin(
       stores,
       and(
-        eq(stores.id, providerConnections.storeId),
-        eq(stores.tenantId, providerConnections.tenantId),
+        eq(stores.id, crmChannelConnections.storeId),
+        eq(stores.tenantId, crmChannelConnections.tenantId),
         eq(stores.isDeleted, false),
         isNull(stores.deletedAt),
       ),
@@ -54,7 +54,7 @@ export function activeCrmConnectionQuery(db: DrizzleCrmClient, now: Date) {
     .innerJoin(
       tenants,
       and(
-        eq(tenants.id, providerConnections.tenantId),
+        eq(tenants.id, crmChannelConnections.tenantId),
         eq(tenants.isDeleted, false),
         isNull(tenants.deletedAt),
       ),
@@ -62,8 +62,8 @@ export function activeCrmConnectionQuery(db: DrizzleCrmClient, now: Date) {
     .innerJoin(
       storeEntitlements,
       and(
-        eq(storeEntitlements.storeId, providerConnections.storeId),
-        eq(storeEntitlements.tenantId, providerConnections.tenantId),
+        eq(storeEntitlements.storeId, crmChannelConnections.storeId),
+        eq(storeEntitlements.tenantId, crmChannelConnections.tenantId),
         eq(storeEntitlements.featureKey, "crm"),
         or(
           eq(storeEntitlements.status, "active"),
@@ -79,6 +79,8 @@ export function activeCrmConnectionQuery(db: DrizzleCrmClient, now: Date) {
 }
 
 export function toCanonicalConnectionValues(input: {
+  broker: CrmConnection["broker"];
+  channel: CrmConnection["channel"];
   credentialsRef?: Record<string, unknown>;
   displayName: string;
   externalConnectionId?: string | null;
@@ -91,7 +93,7 @@ export function toCanonicalConnectionValues(input: {
   tenantId: TenantId;
   webhookUrl?: string | null;
 }) {
-  const identity = canonicalCrmConnectionIdentity(input.provider);
+  const identity = canonicalCrmConnectionIdentity(input);
   const status = input.status ?? "sandbox";
   const metadata = canonicalCrmConnectionMetadata({
     metadata: {
@@ -99,8 +101,6 @@ export function toCanonicalConnectionValues(input: {
       credentialsRef: input.credentialsRef ?? {},
       phone: input.phone ?? null,
     },
-    provider: input.provider,
-    status,
   });
   return {
     broker: identity.credentialBroker,
@@ -118,7 +118,7 @@ export function toCanonicalConnectionValues(input: {
 }
 
 export function toCrmConnection(
-  row: typeof providerConnections.$inferSelect,
+  row: typeof crmChannelConnections.$inferSelect,
 ): CrmConnection {
   const metadata = readRecord(row.metadata);
   return {
@@ -129,6 +129,8 @@ export function toCrmConnection(
       provider: row.provider,
       state: row.state,
     }),
+    broker: row.broker,
+    channel: row.channel,
     credentialsRef: readRecord(metadata.credentialsRef),
     displayName: row.displayName,
     externalConnectionId: row.externalConnectionId,
@@ -136,7 +138,7 @@ export function toCrmConnection(
     id: row.id,
     metadata,
     phone: readString(metadata.phone),
-    provider: connectionSetupProvider(row),
+    provider: row.provider,
     status: row.state,
     storeId: row.storeId as StoreId,
     tenantId: row.tenantId as TenantId,
@@ -144,12 +146,16 @@ export function toCrmConnection(
   };
 }
 
-export function canonicalProviderConditions(provider: CrmConnectionProvider) {
-  const identity = canonicalCrmConnectionIdentity(provider);
+export function canonicalProviderConditions(input: {
+  broker: CrmConnection["broker"];
+  channel: CrmConnection["channel"];
+  provider: CrmConnectionProvider;
+}) {
+  const identity = canonicalCrmConnectionIdentity(input);
   return and(
-    eq(providerConnections.channel, identity.channel),
-    eq(providerConnections.provider, identity.provider),
-    eq(providerConnections.broker, identity.credentialBroker),
+    eq(crmChannelConnections.channel, identity.channel),
+    eq(crmChannelConnections.provider, identity.provider),
+    eq(crmChannelConnections.broker, identity.credentialBroker),
   );
 }
 
@@ -159,18 +165,20 @@ export async function updateCanonicalCrmConnection(
 ) {
   const [currentRow] = await db
     .select()
-    .from(providerConnections)
+    .from(crmChannelConnections)
     .where(
       and(
-        eq(providerConnections.id, input.connectionId),
-        eq(providerConnections.storeId, input.storeId),
-        eq(providerConnections.tenantId, input.tenantId),
+        eq(crmChannelConnections.id, input.connectionId),
+        eq(crmChannelConnections.storeId, input.storeId),
+        eq(crmChannelConnections.tenantId, input.tenantId),
       ),
     )
     .limit(1);
   if (!currentRow) return null;
   const current = toCrmConnection(currentRow);
   const next = toCanonicalConnectionValues({
+    broker: current.broker,
+    channel: current.channel,
     credentialsRef: input.credentialsRef ?? current.credentialsRef,
     displayName: input.displayName ?? current.displayName,
     externalConnectionId:
@@ -191,7 +199,7 @@ export async function updateCanonicalCrmConnection(
       input.webhookUrl === undefined ? current.webhookUrl : input.webhookUrl,
   });
   const [row] = await db
-    .update(providerConnections)
+    .update(crmChannelConnections)
     .set({
       displayName: next.displayName,
       externalConnectionId: next.externalConnectionId,
@@ -203,9 +211,9 @@ export async function updateCanonicalCrmConnection(
     })
     .where(
       and(
-        eq(providerConnections.id, input.connectionId),
-        eq(providerConnections.storeId, input.storeId),
-        eq(providerConnections.tenantId, input.tenantId),
+        eq(crmChannelConnections.id, input.connectionId),
+        eq(crmChannelConnections.storeId, input.storeId),
+        eq(crmChannelConnections.tenantId, input.tenantId),
       ),
     )
     .returning();
@@ -220,22 +228,6 @@ export function readRecord(value: unknown): Record<string, unknown> {
 
 export function readConfiguredString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0;
-}
-
-function connectionSetupProvider(
-  row: Pick<
-    typeof providerConnections.$inferSelect,
-    "broker" | "channel" | "provider"
-  >,
-): CrmConnectionProvider {
-  if (row.provider === "zapi" && row.channel === "whatsapp") return "zapi";
-  if (row.provider === "olx" && row.channel === "olx_chat") return "olx_chat";
-  if (row.provider === "meta_cloud" && row.broker === "composio") {
-    return row.channel === "instagram"
-      ? "composio_instagram"
-      : "composio_whatsapp";
-  }
-  throw new Error("Unsupported canonical CRM channel connection identity.");
 }
 
 function readString(value: unknown) {

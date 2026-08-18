@@ -1,7 +1,7 @@
 import type {
   CrmChannel,
   ExternalBotAction,
-  ExternalBotMode,
+  ExternalBotPolicyMode,
 } from "@lojaveiculosv2/shared";
 
 export const externalBotGuardrailMaximums = {
@@ -16,7 +16,7 @@ export type ExternalBotPolicy = {
   connectionRatePerMinute: number;
   cooldownSeconds: number;
   dailyLimit: number;
-  mode: ExternalBotMode;
+  mode: ExternalBotPolicyMode;
 };
 
 export type ExternalBotPolicyInput = Omit<

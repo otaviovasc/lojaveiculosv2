@@ -5,7 +5,7 @@ import {
   createWebhookTestApp,
   createZapiConnection,
   postWebhook,
-  readSessionId,
+  readCycleId,
   storeId,
   tenantId,
 } from "./crm.whatsapp.webhooks.testSupport.js";
@@ -68,7 +68,7 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
     const messages = await whatsappRepository.listMessages({
       limit: 10,
       offset: 0,
-      sessionId: (await readSessionId(whatsappRepository)) ?? "",
+      cycleId: (await readCycleId(whatsappRepository)) ?? "",
       storeId,
       tenantId,
     });
@@ -85,7 +85,7 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
       }) => {
         expect(context).toMatchObject({
           actor: { id: "zapi", kind: "integration" },
-          permissions: ["crm.whatsapp.ingest"],
+          permissions: ["crm.messages.ingest", "crm.conversations.manage"],
           storeId: resolvedStoreId,
           tenantId: resolvedTenantId,
         });
@@ -134,7 +134,7 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
       deliveryError: "video too large",
     });
     expect(auditRecord.mock.calls.map((call) => call[0].action)).toContain(
-      "crm.whatsapp.webhook.zapi.delivery",
+      "crm.provider.zapi.webhook.delivery",
     );
   });
 
@@ -174,7 +174,7 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
 
   it("never processes a Z-API callback through an official connection id", async () => {
     const connectionRepository = createMemoryCrmConnectionRepository([
-      createZapiConnection({ provider: "composio_whatsapp" }),
+      createZapiConnection({ broker: "composio", provider: "meta_cloud" }),
     ]);
     const { app } = await createWebhookTestApp({ connectionRepository });
 

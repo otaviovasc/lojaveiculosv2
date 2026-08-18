@@ -10,7 +10,8 @@ export function upsertTestOlxConnection(
 ) {
   const existing = connections.find(
     (item) =>
-      item.provider === "olx_chat" &&
+      item.channel === "olx_chat" &&
+      item.provider === "olx" &&
       item.storeId === input.storeId &&
       item.tenantId === input.tenantId &&
       item.status !== "archived",
@@ -34,6 +35,8 @@ export function upsertTestOlxConnection(
   }
   if (existing) existing.status = "archived";
   const connection: CrmConnection = {
+    broker: "direct",
+    channel: "olx_chat",
     credentialsRef: input.credentialsRef ?? {},
     displayName: input.displayName,
     externalConnectionId: input.externalConnectionId ?? null,
@@ -41,7 +44,7 @@ export function upsertTestOlxConnection(
     id: crypto.randomUUID(),
     metadata: input.metadata ?? {},
     phone: null,
-    provider: "olx_chat",
+    provider: "olx",
     status: input.status ?? "error",
     storeId: input.storeId,
     tenantId: input.tenantId,

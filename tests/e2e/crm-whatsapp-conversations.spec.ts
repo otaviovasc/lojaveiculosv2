@@ -72,7 +72,7 @@ test.describe("CRM WhatsApp conversations", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
 
     await expect(page.getByRole("heading", { name: "CRM" })).toBeVisible();
     await expect(
@@ -217,7 +217,7 @@ test.describe("CRM WhatsApp conversations", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await expect(
       page.getByLabel("Conversas do WhatsApp").first(),
     ).toBeVisible();
@@ -277,7 +277,7 @@ test.describe("CRM WhatsApp conversations", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
 
     await expect(
       page.getByRole("heading", {

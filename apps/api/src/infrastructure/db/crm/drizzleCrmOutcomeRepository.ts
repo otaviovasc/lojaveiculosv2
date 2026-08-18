@@ -5,7 +5,7 @@ import type {
   CrmOutcomeRepository,
 } from "../../../domains/crm/ports/crmOutcomeRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
-import { toCanonicalChannel } from "./drizzleCrmWhatsappMappers.js";
+import { toCanonicalChannel } from "./drizzleCrmConversationMappers.js";
 
 export function createDrizzleCrmOutcomeRepository(
   db: DrizzleCrmClient,

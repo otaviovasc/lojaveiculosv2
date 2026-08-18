@@ -1,11 +1,11 @@
 import {
-  CrmWhatsappGatewayError,
+  CrmMessagingGatewayError,
   type CrmWhatsappDeleteMessageInput,
   type CrmWhatsappDeleteMessageResult,
-  type CrmWhatsappMessageActionResult,
+  type CrmMessageActionResult,
   type CrmWhatsappRemoveReactionInput,
   type CrmWhatsappSendReactionInput,
-} from "../../domains/crm/ports/crmWhatsappGateway.js";
+} from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   buildInstanceUrl,
   fetchZapi,
@@ -38,7 +38,7 @@ export async function deleteZapiMessage(
   );
   const text = await response.text();
   if (!response.ok) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       `ZAPI delete message failed with HTTP ${response.status}`,
     );
   }
@@ -50,7 +50,7 @@ export async function sendZapiReaction(
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
   input: CrmWhatsappSendReactionInput,
-): Promise<CrmWhatsappMessageActionResult> {
+): Promise<CrmMessageActionResult> {
   return postZapiMessageAction(
     credentials,
     fetchImpl,
@@ -68,7 +68,7 @@ export async function removeZapiReaction(
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
   input: CrmWhatsappRemoveReactionInput,
-): Promise<CrmWhatsappMessageActionResult> {
+): Promise<CrmMessageActionResult> {
   return postZapiMessageAction(
     credentials,
     fetchImpl,
@@ -105,7 +105,7 @@ async function postZapiMessageAction(
   const text = await response.text();
   const payload = parseJson(text);
   if (!response.ok) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       `${label} failed with HTTP ${response.status}`,
     );
   }

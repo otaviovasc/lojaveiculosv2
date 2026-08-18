@@ -458,7 +458,7 @@ function clearOauthCallbackLocation() {
 }
 
 function redirectToCrmConnections() {
-  window.location.assign("/dashboard#/crm?surface=whatsapp");
+  window.location.assign("/dashboard#/crm?surface=conversations");
 }
 
 function oauthErrorDisplay(

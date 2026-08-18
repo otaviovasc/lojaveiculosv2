@@ -7,20 +7,16 @@ import type {
   CrmWebhookEventRepository,
 } from "../ports/crmWebhookEventRepository.js";
 import type {
-  CrmWhatsappMessage,
-  CrmWhatsappSession,
-} from "../ports/crmWhatsappRepository.js";
+  CrmMessage,
+  CrmConversationCycle,
+} from "../ports/crmConversationRepository.js";
 import {
   getCrmRealtimePublisher,
   getCrmWebhookEventRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import { auditWhatsappServiceEvent } from "../services/CrmWhatsapp/serviceSupport.js";
-import { forwardWhatsappMessageToBot } from "../whatsapp/whatsappBotWebhookForwarding.js";
-import {
-  toWhatsappMessage,
-  toWhatsappSession,
-} from "../whatsapp/whatsappModels.js";
+import { auditCrmServiceEvent } from "../services/CrmMessagingService/serviceSupport.js";
+import { enqueueCrmMessageExternalBotEvent } from "../bot/externalBotEventForwarding.js";
 
 export const olxWebhookEffectPolicy = {
   baseRetryDelayMs: 30_000,
@@ -42,9 +38,9 @@ export async function stageOlxWebhookEffects(
   ports: CrmServicePorts,
   input: {
     connection: CrmConnection;
-    message: CrmWhatsappMessage;
+    message: CrmMessage;
     providerEventId: string;
-    session: CrmWhatsappSession;
+    conversationCycle: CrmConversationCycle;
   },
 ) {
   await getCrmWebhookEventRepository(ports).stageEffects({
@@ -52,7 +48,7 @@ export async function stageOlxWebhookEffects(
     effects,
     messageId: input.message.id,
     providerEventId: input.providerEventId,
-    sessionId: input.session.id,
+    cycleId: input.conversationCycle.id,
     storeId: input.connection.storeId,
     tenantId: input.connection.tenantId,
   });
@@ -62,10 +58,10 @@ export async function deliverOlxWebhookEffects(
   context: ServiceContext,
   input: {
     connection: CrmConnection;
-    message: CrmWhatsappMessage;
+    message: CrmMessage;
     providerEventId: string;
     providerEventReference: string;
-    session: CrmWhatsappSession;
+    conversationCycle: CrmConversationCycle;
   },
   ports: CrmServicePorts,
 ) {
@@ -114,15 +110,15 @@ export async function deliverClaimedOlxWebhookEffect(
   effect: Pick<CrmWebhookEffect, "effectType" | "id">,
   input: {
     connection: CrmConnection;
-    message: CrmWhatsappMessage;
+    message: CrmMessage;
     providerEventReference: string;
-    session: CrmWhatsappSession;
+    conversationCycle: CrmConversationCycle;
   },
   ports: CrmServicePorts,
 ) {
   switch (effect.effectType) {
     case "audit_accepted":
-      await auditWhatsappServiceEvent(context, {
+      await auditCrmServiceEvent(context, {
         action: "crm.messaging.webhook.olx.accepted",
         auditId: effect.id,
         category: "data_change",
@@ -130,10 +126,10 @@ export async function deliverClaimedOlxWebhookEffect(
         entityType: "crm_messaging_connection",
         metadata: {
           phase: "accepted",
-          provider: "olx_chat",
+          provider: "olx",
           providerEventId: input.providerEventReference,
         },
-        permission: "crm.whatsapp.ingest",
+        permission: "crm.messages.ingest",
         failureTier: "required",
         storeId: input.connection.storeId,
         summary: "Accepted OLX Chat webhook",
@@ -141,12 +137,12 @@ export async function deliverClaimedOlxWebhookEffect(
       });
       return;
     case "bot_message":
-      await forwardWhatsappMessageToBot(
+      await enqueueCrmMessageExternalBotEvent(
         context,
         {
           connection: input.connection,
           message: input.message,
-          session: input.session,
+          conversationCycle: input.conversationCycle,
         },
         ports,
         { throwOnFailure: true },
@@ -155,8 +151,8 @@ export async function deliverClaimedOlxWebhookEffect(
     case "realtime_message":
       await getCrmRealtimePublisher(ports).publish({
         connectionId: input.connection.id,
-        message: toWhatsappMessage(input.message),
-        session: toWhatsappSession(input.session, input.connection),
+        message: input.message,
+        conversationCycle: input.conversationCycle,
         storeId: input.connection.storeId,
         tenantId: input.connection.tenantId,
         type: "message",
@@ -165,10 +161,10 @@ export async function deliverClaimedOlxWebhookEffect(
     case "realtime_session":
       await getCrmRealtimePublisher(ports).publish({
         connectionId: input.connection.id,
-        session: toWhatsappSession(input.session, input.connection),
+        conversationCycle: input.conversationCycle,
         storeId: input.connection.storeId,
         tenantId: input.connection.tenantId,
-        type: "session",
+        type: "conversationCycle",
       });
   }
 }

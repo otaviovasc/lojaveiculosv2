@@ -1,18 +1,18 @@
-export type CrmSurface = "leads" | "whatsapp";
+export type CrmSurface = "leads" | "conversations";
 
-const crmSurfaces = new Set<CrmSurface>(["leads", "whatsapp"]);
+const crmSurfaces = new Set<CrmSurface>(["leads", "conversations"]);
 
 export function crmSurfaceHash(surface: CrmSurface) {
   return `/crm?surface=${surface}`;
 }
 
-export function crmWhatsappSessionHash(sessionId: string | number) {
-  return `/crm?surface=whatsapp&sessionId=${encodeURIComponent(String(sessionId))}`;
+export function crmConversationCycleHash(cycleId: string | number) {
+  return `/crm?surface=conversations&cycleId=${encodeURIComponent(String(cycleId))}`;
 }
 
 export function readCrmSurfaceFromHash(
   hash: string,
-  fallback: CrmSurface = "whatsapp",
+  fallback: CrmSurface = "conversations",
 ): CrmSurface {
   const query = hash.split("?")[1] ?? "";
   const surface = new URLSearchParams(query).get("surface");

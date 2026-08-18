@@ -8,7 +8,7 @@ import {
   QrCode,
 } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import { ConnectionSectionCard } from "./CrmWhatsappConnectionAdminParts";
+import { ConnectionSectionCard } from "./CrmConnectionAdminParts";
 import {
   CrmWhatsappZapiPairingStage,
   type ZapiPairingMethod,
@@ -21,17 +21,17 @@ import {
   ZapiWebhookSetupStatus,
 } from "./CrmWhatsappZapiSetupParts";
 import type {
-  CrmWhatsappConnectionAllowance,
-  CrmWhatsappCreateConnectionInput,
-  CrmWhatsappProviderConnection,
+  CrmConnectionAllowance,
+  CrmCreateConnectionInput,
+  CrmProviderConnection,
   CrmWhatsappZapiAddonContract,
-} from "./crmWhatsappTypes";
-import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
+} from "./crmConversationTypes";
+import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 import {
   isProviderDisconnected,
   requiresPhonePairing,
   requiresProviderDisconnect,
-} from "./crmWhatsappZapiPairingState";
+} from "./crmZapiPairingState";
 
 type ZapiCredentialsDraft = {
   instanceId: string;
@@ -57,13 +57,13 @@ export function CrmWhatsappZapiSetup({
   onConnection,
   zapiAddonContract,
 }: {
-  allowance: CrmWhatsappConnectionAllowance;
+  allowance: CrmConnectionAllowance;
   canPair: boolean;
   canSetup: boolean;
-  connection: CrmWhatsappProviderConnection | null;
-  handlers: CrmWhatsappSelfServiceHandlers;
+  connection: CrmProviderConnection | null;
+  handlers: CrmConnectionSelfServiceHandlers;
   onBack: () => void;
-  onConnection: (connection: CrmWhatsappProviderConnection) => void;
+  onConnection: (connection: CrmProviderConnection) => void;
   zapiAddonContract: CrmWhatsappZapiAddonContract | null;
 }) {
   const [busy, setBusy] = useState<BusyState | null>(null);
@@ -293,13 +293,13 @@ export function CrmWhatsappZapiSetup({
 
   return (
     <ConnectionSectionCard
-      className="crm-whatsapp-zapi-guided-card"
+      className="crm-zapi-guided-card"
       description="Uma jornada segura do cadastro das credenciais até o primeiro canal pronto."
       icon={<QrCode aria-hidden="true" />}
       title="Conectar WhatsApp · Z-API"
     >
       <ZapiSetupProgress step={step} />
-      <div className="crm-whatsapp-zapi-stage">
+      <div className="crm-zapi-stage">
         {step === 1 ? (
           <ZapiContractState
             canSetup={canSetup}
@@ -360,12 +360,12 @@ export function CrmWhatsappZapiSetup({
           />
         ) : null}
         {step !== 2 && error ? (
-          <p className="crm-whatsapp-connection-error" role="alert">
+          <p className="crm-connection-error" role="alert">
             {error}
           </p>
         ) : null}
       </div>
-      <button className="crm-whatsapp-zapi-back" onClick={onBack} type="button">
+      <button className="crm-zapi-back" onClick={onBack} type="button">
         <ArrowLeft aria-hidden="true" />
         Ver outros canais
       </button>
@@ -375,7 +375,7 @@ export function CrmWhatsappZapiSetup({
 
 function buildZapiConnectionInput(
   credentials: ZapiCredentialsDraft,
-): CrmWhatsappCreateConnectionInput {
+): CrmCreateConnectionInput {
   return {
     instanceId: credentials.instanceId.trim(),
     instanceToken: credentials.instanceToken.trim(),
@@ -406,9 +406,9 @@ function CredentialsStage({
   return (
     <section
       aria-labelledby="zapi-credentials-title"
-      className="crm-whatsapp-zapi-credentials"
+      className="crm-zapi-credentials"
     >
-      <div className="crm-whatsapp-zapi-stage-heading">
+      <div className="crm-zapi-stage-heading">
         <span>
           <KeyRound aria-hidden="true" />
         </span>
@@ -439,7 +439,7 @@ function CredentialsStage({
           )}
         </button>
       </div>
-      <div className="crm-whatsapp-zapi-credential-fields">
+      <div className="crm-zapi-credential-fields">
         <CredentialField
           invalid={invalid}
           label="ID da instância"
@@ -458,17 +458,17 @@ function CredentialsStage({
         />
       </div>
       {error ? (
-        <p className="crm-whatsapp-connection-error" role="alert">
+        <p className="crm-connection-error" role="alert">
           {error}
         </p>
       ) : null}
       {!canSetup ? (
-        <p className="crm-whatsapp-zapi-permission-note">
+        <p className="crm-zapi-permission-note">
           Peça a um administrador da loja para cadastrar as credenciais.
         </p>
       ) : null}
       <button
-        className="crm-whatsapp-connection-save"
+        className="crm-connection-save"
         disabled={busy !== null || !canSetup}
         onClick={onSave}
         type="button"
@@ -499,7 +499,7 @@ function CredentialField({
 }) {
   const inputId = useId();
   return (
-    <div className="crm-whatsapp-connection-field">
+    <div className="crm-connection-field">
       <label htmlFor={inputId}>{label}</label>
       <input
         aria-invalid={invalid}

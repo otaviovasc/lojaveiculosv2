@@ -1,9 +1,9 @@
-import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmMessagingGateway } from "../../../domains/crm/ports/crmMessagingGateway.js";
 import { createTestCrmConnectionRepository } from "../../../domains/crm/testSupportConnections.js";
 import type { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import type { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
 import type { expect } from "vitest";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 import {
   connectionId,
   createOlxConnection,
@@ -69,7 +69,7 @@ export function createOlxLeadsTestApp(options: {
   crmWebhookEventRepository?: ReturnType<
     typeof createMemoryCrmWebhookEventRepository
   >;
-  sendText?: CrmWhatsappGateway["sendText"];
+  sendText?: CrmMessagingGateway["sendText"];
 }) {
   return createTestApp({
     crmConnectionRepository:
@@ -81,7 +81,7 @@ export function createOlxLeadsTestApp(options: {
       ? { crmWebhookEventRepository: options.crmWebhookEventRepository }
       : {}),
     ...(options.sendText
-      ? { crmWhatsappGateway: { sendText: options.sendText } }
+      ? { crmMessagingGateway: { sendText: options.sendText } }
       : {}),
     entitlements: ["crm"],
     olxChatEnabled: true,

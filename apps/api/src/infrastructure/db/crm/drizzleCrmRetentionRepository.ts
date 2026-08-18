@@ -12,7 +12,7 @@ import {
 } from "./drizzleCrmRetentionScopes.js";
 
 export const crmRetentionRequiredRelations = [
-  "bot_action_commands",
+  "crm_external_bot_action_commands",
   "crm_messages",
   "crm_channel_connections",
   "crm_conversation_attendances",
@@ -24,7 +24,7 @@ export const crmRetentionRequiredRelations = [
   "crm_external_bot_event_outbox",
   "crm_external_bot_proposals",
   "integration_events",
-  "provider_effects",
+  "crm_external_bot_provider_effects",
   "provider_events",
 ] as const;
 

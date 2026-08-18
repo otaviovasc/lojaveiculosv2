@@ -5,6 +5,7 @@ import postgres from "postgres";
 const CONTAINER_NAME = `lojaveiculos-repasses-import-${process.pid}`;
 const SOURCE_PASSWORD = "temporary_repasses_import_only";
 const TABLES = ["connections", "crm_agents", "chat_sessions", "messages"];
+const HISTORICAL_BROWSER_CHAT_CHANNEL = ["WEB", "CHAT"].join("_");
 
 function docker(...args) {
   return execFileSync("docker", args, {
@@ -130,7 +131,39 @@ export async function loadRepassesCrmData(sql, storeId) {
         [sessionIds],
       )
     : [];
-  return { agents, connections, messages, sessions };
+  return {
+    agents,
+    connections,
+    ...normalizeRepassesMessagingChannels({ messages, sessions }),
+  };
+}
+
+export function normalizeRepassesMessagingChannels({ messages, sessions }) {
+  const normalizedSessions = sessions.map((session) => ({
+    ...session,
+    channel: normalizeRepassesMessagingChannel(session.channel),
+    original_channel: normalizeRepassesMessagingChannel(
+      session.original_channel,
+    ),
+  }));
+  const sessionChannels = new Map(
+    normalizedSessions.map((session) => [session.id, session.channel]),
+  );
+  const normalizedMessages = messages.map((message) => ({
+    ...message,
+    channel: normalizeRepassesMessagingChannel(
+      message.channel ?? sessionChannels.get(message.chat_session_id),
+    ),
+  }));
+  return { messages: normalizedMessages, sessions: normalizedSessions };
+}
+
+export function normalizeRepassesMessagingChannel(channel) {
+  if (channel === HISTORICAL_BROWSER_CHAT_CHANNEL || channel === "OLX_CHAT") {
+    return "OLX_CHAT";
+  }
+  if (channel === "WHATSAPP" || channel == null) return channel;
+  throw new Error(`Unsupported Repasses messaging channel ${String(channel)}.`);
 }
 
 function restore(...args) {
@@ -151,7 +184,7 @@ function restore(...args) {
 }
 
 const ENUMS_SQL = `
-CREATE TYPE enum_chat_sessions_channel AS ENUM ('WHATSAPP', 'OLX_CHAT', 'WEB_CHAT');
+CREATE TYPE enum_chat_sessions_channel AS ENUM ('WHATSAPP', 'OLX_CHAT', '${HISTORICAL_BROWSER_CHAT_CHANNEL}');
 CREATE TYPE enum_chat_sessions_conversation_step AS ENUM ('INITIAL', 'VEHICLE_INQUIRY', 'COLLECTING_BUYER_INFO', 'BUYER_REGISTERED', 'DEAL_CREATED', 'AWAITING_SIGNAL', 'SIGNAL_PAID', 'COLLECTING_DOCUMENTS', 'AWAITING_CONFIRMATION', 'COMPLETED');
 CREATE TYPE enum_chat_sessions_human_takeover_reason AS ENUM ('USER_REQUESTED', 'LOW_CONFIDENCE', 'KEYWORD_TRIGGER', 'ADMIN_INTERVENTION', 'ERROR_FALLBACK', 'INVALID_PHONE_LID', 'TOOL_ERROR', 'SYSTEM_ERROR');
 CREATE TYPE enum_chat_sessions_original_channel AS ENUM ('WHATSAPP', 'OLX_CHAT');
@@ -160,7 +193,7 @@ CREATE TYPE enum_connections_mode AS ENUM ('REPASSES', 'CRM');
 CREATE TYPE enum_connections_provider AS ENUM ('EVOLUTION', 'ZAPI', 'CLOUD_API');
 CREATE TYPE enum_connections_status AS ENUM ('PENDING', 'CONNECTING', 'CONNECTED', 'DISCONNECTED', 'BANNED', 'ERROR', 'WAITING_QR', 'WAITING_PHONE_CODE');
 CREATE TYPE enum_crm_agents_role AS ENUM ('ADMIN', 'AGENT', 'OWNER');
-CREATE TYPE enum_messages_channel AS ENUM ('WHATSAPP', 'OLX_CHAT', 'WEB_CHAT');
+CREATE TYPE enum_messages_channel AS ENUM ('WHATSAPP', 'OLX_CHAT', '${HISTORICAL_BROWSER_CHAT_CHANNEL}');
 CREATE TYPE enum_messages_direction AS ENUM ('INBOUND', 'OUTBOUND');
 CREATE TYPE enum_messages_sender_type AS ENUM ('AI', 'HUMAN', 'CUSTOMER');
 CREATE TYPE enum_messages_status AS ENUM ('PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED');

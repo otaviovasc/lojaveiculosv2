@@ -127,7 +127,7 @@ export function createDrizzleCrmWebhookEffects(
     async stageEffects(input) {
       const message = await findCanonicalMessageContext(db, {
         connectionId: input.connectionId,
-        cycleId: input.sessionId,
+        cycleId: input.cycleId,
         messageId: input.messageId,
         storeId: input.storeId,
         tenantId: input.tenantId,
@@ -137,7 +137,7 @@ export function createDrizzleCrmWebhookEffects(
         .values(
           input.effects.map((effect) => ({
             connectionId: input.connectionId,
-            cycleId: input.sessionId,
+            cycleId: input.cycleId,
             effectType: effect.effectType,
             messageId: input.messageId,
             providerEventId: input.providerEventId,
@@ -175,7 +175,7 @@ function toWebhookEffect(row: typeof crmWebhookEffectOutbox.$inferSelect) {
     processingToken: row.processingToken,
     providerEventId: row.providerEventId,
     sequence: row.sequence,
-    sessionId: row.cycleId,
+    cycleId: row.cycleId,
     status: row.status,
     storeId: row.storeId as StoreId,
     tenantId: row.tenantId as TenantId,

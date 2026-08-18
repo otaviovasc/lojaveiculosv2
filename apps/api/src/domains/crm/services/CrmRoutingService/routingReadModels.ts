@@ -1,7 +1,7 @@
 import type { CrmRoutingConnectionCapability } from "../../ports/crmRoutingConnectionRepository.js";
 import type {
-  CrmBotRoutingMode,
-  CrmRoutingChannel,
+  CrmExternalBotRouteMode,
+  CrmMessagingChannel,
 } from "../../ports/crmRoutingPolicyRepository.js";
 import type { CrmTransportProvider } from "../../core/models.js";
 
@@ -20,7 +20,7 @@ export type CrmRoutingBlockedCode =
 export type CrmRoutingConnectionReadModel = {
   active: boolean;
   capabilities: readonly CrmRoutingCapability[];
-  channel: CrmRoutingChannel;
+  channel: CrmMessagingChannel;
   connected: boolean;
   displayName: string;
   id: string;
@@ -47,8 +47,8 @@ export type CrmResolvedConnectionRoute = {
 };
 
 export type CrmChannelRoutingReadModel = {
-  bot: CrmResolvedConnectionRoute & { mode: CrmBotRoutingMode };
-  channel: CrmRoutingChannel;
+  bot: CrmResolvedConnectionRoute & { mode: CrmExternalBotRouteMode };
+  channel: CrmMessagingChannel;
   storeDefault: CrmResolvedConnectionRoute;
 };
 

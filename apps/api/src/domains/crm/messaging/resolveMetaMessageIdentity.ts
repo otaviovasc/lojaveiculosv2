@@ -1,8 +1,8 @@
 import type { ParsedMetaWebhookEvent } from "./parseMetaWebhookEvents.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
-import { findOrCreateWhatsappLead } from "../whatsapp/whatsappLeadLinking.js";
+import { findOrCreateCrmMessagingLead } from "./leadLinking.js";
 import {
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 
@@ -13,20 +13,21 @@ export async function resolveMetaMessageIdentity(
   connection: CrmConnection,
   event: MetaMessageEvent,
 ) {
-  const repository = getCrmWhatsappRepository(ports);
-  const isInstagram = event.provider === "composio_instagram";
+  const repository = getCrmConversationRepository(ports);
+  const isInstagram = event.channel === "instagram";
   const instagramSession = isInstagram
-    ? await repository.upsertSessionContext({
-        buyerPhone: "",
+    ? await repository.upsertConversationCycleContext({
+        customerPhone: "",
         channel: "INSTAGRAM",
-        channelExternalId: event.contactExternalId,
+        externalThreadId: event.contactExternalId,
         connectionId: connection.id,
         storeId: connection.storeId,
         tenantId: connection.tenantId,
       })
     : null;
-  const lead = await findOrCreateWhatsappLead(ports, {
+  const lead = await findOrCreateCrmMessagingLead(ports, {
     ...(!isInstagram ? { buyerPhone: event.contactExternalId } : {}),
+    channel: isInstagram ? "INSTAGRAM" : "WHATSAPP",
     connectionId: connection.id,
     direction: event.direction,
     externalId: event.externalMessageId,
@@ -38,7 +39,7 @@ export async function resolveMetaMessageIdentity(
     tenantId: connection.tenantId,
   });
   return {
-    buyerPhone: isInstagram ? "" : event.contactExternalId,
+    customerPhone: isInstagram ? "" : event.contactExternalId,
     channel: isInstagram ? ("INSTAGRAM" as const) : ("WHATSAPP" as const),
     lead,
     repository,

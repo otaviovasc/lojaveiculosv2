@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "../_shared.js";
 import { stores, tenants } from "../identity.js";
-import { providerConnections } from "./authorization.js";
+import { crmChannelConnections } from "./authorization.js";
 import { contactIdentities, contacts, opportunities } from "./contacts.js";
 import { conversationThreads } from "./conversations.js";
 import {
@@ -38,7 +38,7 @@ export const acquisitionTouchpoints = pgTable(
       .notNull()
       .references(() => opportunities.id),
     providerConnectionId: uuid("provider_connection_id").references(
-      () => providerConnections.id,
+      () => crmChannelConnections.id,
     ),
     revision: revisionColumn(),
     source: acquisitionSource("source").notNull(),
@@ -69,9 +69,9 @@ export const acquisitionTouchpoints = pgTable(
     foreignKey({
       columns: [table.tenantId, table.storeId, table.providerConnectionId],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
       ],
       name: "acquisition_touchpoints_scoped_connection_fk",
     }),

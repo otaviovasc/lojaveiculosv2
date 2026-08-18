@@ -202,7 +202,7 @@ export default defineRailway((context) => {
       SPEDY_API_URL: api.env.SPEDY_API_URL,
       SPEDY_RUNTIME_IMPLEMENTATION: api.env.SPEDY_RUNTIME_IMPLEMENTATION,
     },
-    start: "pnpm run crm:whatsapp:schedule:process",
+    start: "pnpm run crm:schedule:process",
   });
 
   const billingReconciliationWorker = service(

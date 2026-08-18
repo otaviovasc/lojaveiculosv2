@@ -1,11 +1,14 @@
 import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import { providerConnections } from "@lojaveiculosv2/db";
+import { crmChannelConnections } from "@lojaveiculosv2/db";
 import { describe, expect, it } from "vitest";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createDrizzleCrmConnectionRepository } from "./drizzleCrmConnectionRepository.js";
-import { toCrmConnection } from "./drizzleCrmConnectionRepositorySupport.js";
+import {
+  canonicalProviderConditions,
+  toCrmConnection,
+} from "./drizzleCrmConnectionRepositorySupport.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
 describe("Drizzle CRM connection repository", () => {
@@ -54,6 +57,21 @@ describe("Drizzle CRM connection repository", () => {
     });
   });
 
+  it("builds connection predicates from the complete persisted identity", () => {
+    const predicate = canonicalProviderConditions({
+      broker: "composio",
+      channel: "olx_chat",
+      provider: "olx",
+    });
+    if (!predicate) throw new Error("Canonical identity predicate is missing.");
+
+    const query = new PgDialect().sqlToQuery(predicate);
+    expect(query.sql.replaceAll(/\s+/g, " ")).toContain(
+      '"crm_channel_connections"."channel" = $1 and "crm_channel_connections"."provider" = $2 and "crm_channel_connections"."broker" = $3',
+    );
+    expect(query.params).toEqual(["olx_chat", "olx", "composio"]);
+  });
+
   it("creates setup connections in the canonical channel table", async () => {
     let insertedTable: unknown;
     const db = {
@@ -65,29 +83,35 @@ describe("Drizzle CRM connection repository", () => {
 
     await expect(
       createDrizzleCrmConnectionRepository(db).createConnection({
+        broker: "direct",
+        channel: "whatsapp",
         displayName: "Canonical Z-API",
         provider: "zapi",
         storeId: claimInput.storeId,
         tenantId: claimInput.tenantId,
       }),
     ).rejects.toThrow("CRM channel connection insert returned no row");
-    expect(insertedTable).toBe(providerConnections);
+    expect(insertedTable).toBe(crmChannelConnections);
   });
 
   it("types bound Z-API webhook lease values", async () => {
     const { metadataSql, updatedTable } = await captureMetadataUpdate(
       (repository) => repository.claimZapiWebhookSetup(claimInput),
     );
-    expect(updatedTable).toBe(providerConnections);
+    expect(updatedTable).toBe(crmChannelConnections);
     expectTypedLeaseValues(metadataSql);
   });
 
   it("types bound OLX webhook lease values", async () => {
-    const { metadataSql, updatedTable } = await captureMetadataUpdate(
-      (repository) => repository.claimOlxWebhookSetup!(claimInput),
-    );
-    expect(updatedTable).toBe(providerConnections);
+    const { metadataSql, updatedTable, whereParams } =
+      await captureMetadataUpdate((repository) =>
+        repository.claimOlxWebhookSetup!(claimInput),
+      );
+    expect(updatedTable).toBe(crmChannelConnections);
     expectTypedLeaseValues(metadataSql);
+    expect(whereParams).toEqual(
+      expect.arrayContaining(["direct", "composio", "olx_chat", "olx"]),
+    );
   });
 
   it("does not claim configured or indeterminate OLX webhook setup", async () => {
@@ -166,6 +190,7 @@ async function captureMetadataUpdate(
   return {
     metadataSql: metadataQuery.sql.replace(/\s+/g, " "),
     updatedTable,
+    whereParams: whereQuery.params,
     whereSql: whereQuery.sql.replace(/\s+/g, " "),
   };
 }

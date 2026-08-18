@@ -2,8 +2,8 @@ export type ParsedOlxLeadWebhook = {
   adId: string | null;
   adsInfo: Record<string, string | number>;
   buyerEmail: string;
-  buyerName: string;
-  buyerPhone: string | null;
+  customerDisplayName: string;
+  customerPhone: string | null;
   createdAt: Date;
   externalId: string | null;
   linkAd: string;
@@ -53,7 +53,7 @@ export function parseOlxLeadWebhook(
   const source = readString(input.source, 32);
   const listId = readString(input.listId, 191);
   const linkAd = readString(input.linkAd, 500);
-  const buyerName = readString(input.name, 191);
+  const customerDisplayName = readString(input.name, 191);
   const buyerEmail = readString(input.email, 254);
   const message = readString(input.message, 10_000);
   const createdAtValue = readString(input.createdAt, 80);
@@ -64,7 +64,7 @@ export function parseOlxLeadWebhook(
     !listId ||
     !linkAd ||
     !isHttpUrl(linkAd) ||
-    !buyerName ||
+    !customerDisplayName ||
     !buyerEmail ||
     !isEmail(buyerEmail) ||
     !message ||
@@ -73,8 +73,8 @@ export function parseOlxLeadWebhook(
   ) {
     return null;
   }
-  const buyerPhone = readPhone(input.phone);
-  if (hasNonEmptyValue(input.phone) && !buyerPhone) {
+  const customerPhone = readPhone(input.phone);
+  if (hasNonEmptyValue(input.phone) && !customerPhone) {
     return null;
   }
   const adsInfo = readAdsInfo(input.adsInfo);
@@ -96,8 +96,8 @@ export function parseOlxLeadWebhook(
     adId: readNullableString(input.adId, 191),
     adsInfo: adsInfo ?? {},
     buyerEmail,
-    buyerName,
-    buyerPhone,
+    customerDisplayName,
+    customerPhone,
     createdAt,
     externalId: readNullableString(input.externalId, 191),
     linkAd,

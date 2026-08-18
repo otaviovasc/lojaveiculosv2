@@ -1,7 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import type { createTestApp } from "./crm.controller.testSupport.js";
 
 export const connectionId = "24000000-0000-4000-8000-000000000101";
 export const storeId = "store_1" as StoreId;
@@ -27,6 +27,8 @@ export function postOlx(
 
 export function olxSecurity(options: { allowed?: boolean } = {}) {
   return {
+    broker: "direct",
+    channel: "olx_chat",
     consume: vi.fn(async () => options.allowed ?? true),
     futureSkewMs: 60_000,
     maxAgeMs: 10 * 60_000,
@@ -51,6 +53,8 @@ export function validPayload() {
 
 export function createOlxConnection(): CrmConnection {
   return {
+    broker: "direct",
+    channel: "olx_chat",
     credentialsRef: {
       stored: { webhookSecret: `sealed:${olxWebhookSecret}` },
     },
@@ -60,7 +64,7 @@ export function createOlxConnection(): CrmConnection {
     id: connectionId,
     metadata: {},
     phone: null,
-    provider: "olx_chat",
+    provider: "olx",
     status: "active",
     storeId,
     tenantId,

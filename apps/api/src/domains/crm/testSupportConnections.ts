@@ -2,22 +2,31 @@ import type {
   CrmConnection,
   CrmConnectionRepository,
 } from "./ports/crmConnectionRepository.js";
+import type { CrmRoutingConnectionRepository } from "./ports/crmRoutingConnectionRepository.js";
+import type { CrmRoutingPolicyRepository } from "./ports/crmRoutingPolicyRepository.js";
+import { createTestCrmRoutingRepositories } from "./testSupportRoutingRepositories.js";
 import {
   normalizeTestCrmConnection,
   readConfiguredString,
   readRecord,
 } from "./testSupportConnectionValues.js";
 import { upsertTestOlxConnection } from "./testSupportOlxConnections.js";
+import { updateTestCrmConnection } from "./testSupportConnectionUpdates.js";
 export function createTestCrmConnectionRepository(
   initialConnections: readonly CrmConnection[] = [],
-): CrmConnectionRepository {
+): CrmConnectionRepository & {
+  routingConnectionRepository: CrmRoutingConnectionRepository;
+  routingPolicyRepository: CrmRoutingPolicyRepository;
+} {
   const connections = initialConnections.map(normalizeTestCrmConnection);
-  return {
+  const repository: CrmConnectionRepository = {
     async archiveAbandonedZapiConnections() {
       return [];
     },
     async createConnection(input) {
       const connection: CrmConnection = {
+        broker: input.broker,
+        channel: input.channel,
         credentialsRef: input.credentialsRef ?? {},
         displayName: input.displayName,
         externalConnectionId: input.externalConnectionId ?? null,
@@ -105,7 +114,8 @@ export function createTestCrmConnectionRepository(
       const connection = connections.find(
         (item) =>
           item.id === input.connectionId &&
-          item.provider === "olx_chat" &&
+          item.channel === "olx_chat" &&
+          item.provider === "olx" &&
           item.storeId === input.storeId &&
           item.tenantId === input.tenantId,
       );
@@ -183,6 +193,9 @@ export function createTestCrmConnectionRepository(
         connections.find(
           (connection) =>
             connection.externalConnectionId === input.externalConnectionId &&
+            input.channels.includes(connection.channel) &&
+            (!input.brokers?.length ||
+              input.brokers.includes(connection.broker)) &&
             input.providers.includes(connection.provider),
         ) ?? null
       );
@@ -195,37 +208,32 @@ export function createTestCrmConnectionRepository(
         (connection) =>
           connection.storeId === input.storeId &&
           connection.tenantId === input.tenantId &&
+          (!input.channels?.length ||
+            input.channels.includes(connection.channel)) &&
+          (!input.brokers?.length ||
+            input.brokers.includes(connection.broker)) &&
           (!input.providers?.length ||
             input.providers.includes(connection.provider)),
       );
     },
     async updateConnection(input) {
-      const connection = connections.find(
-        (item) =>
-          item.id === input.connectionId &&
-          item.storeId === input.storeId &&
-          item.tenantId === input.tenantId,
-      );
-      if (!connection) return null;
-      Object.assign(connection, {
-        ...(input.credentialsRef
-          ? { credentialsRef: input.credentialsRef }
-          : {}),
-        ...(input.displayName ? { displayName: input.displayName } : {}),
-        ...(input.externalConnectionId !== undefined
-          ? { externalConnectionId: input.externalConnectionId }
-          : {}),
-        ...(input.externalInstanceId !== undefined
-          ? { externalInstanceId: input.externalInstanceId }
-          : {}),
-        ...(input.metadata ? { metadata: input.metadata } : {}),
-        ...(input.phone !== undefined ? { phone: input.phone } : {}),
-        ...(input.status ? { status: input.status } : {}),
-        ...(input.webhookUrl !== undefined
-          ? { webhookUrl: input.webhookUrl }
-          : {}),
-      });
-      return normalizeTestCrmConnection(connection);
+      return updateTestCrmConnection(connections, input);
     },
+  };
+  const { routingConnectionRepository, routingPolicyRepository } =
+    createTestCrmRoutingRepositories(connections);
+  return Object.assign(repository, {
+    routingConnectionRepository,
+    routingPolicyRepository,
+  });
+}
+
+export function createTestCrmRoutingPorts(
+  initialConnections: readonly CrmConnection[] = [],
+) {
+  const repository = createTestCrmConnectionRepository(initialConnections);
+  return {
+    crmRoutingConnectionRepository: repository.routingConnectionRepository,
+    crmRoutingPolicyRepository: repository.routingPolicyRepository,
   };
 }

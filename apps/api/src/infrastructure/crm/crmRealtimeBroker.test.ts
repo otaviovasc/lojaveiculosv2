@@ -2,8 +2,7 @@ import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmRealtimeEventEnvelope } from "../../domains/crm/ports/crmRealtimePublisher.js";
-import { createTestCrmWhatsappSession } from "../../domains/crm/testSupportWhatsapp.js";
-import { toWhatsappSession } from "../../domains/crm/whatsapp/whatsappModels.js";
+import { createTestCrmConversationCycle } from "../../domains/crm/testSupportWhatsapp.js";
 import { createCrmRealtimeBroker } from "./crmRealtimeBroker.js";
 
 const storeId = "store-1" as StoreId;
@@ -62,16 +61,16 @@ describe("createCrmRealtimeBroker", () => {
       tenantId,
     });
 
-    await broker.publish(sessionEvent("session-1", actorUserId, 1));
+    await broker.publish(sessionEvent("conversationCycle-1", actorUserId, 1));
     await broker.publish(
-      sessionEvent("session-1", otherUserId, 2, actorUserId),
+      sessionEvent("conversationCycle-1", otherUserId, 2, actorUserId),
     );
-    await broker.publish(sessionEvent("session-unassigned", null));
+    await broker.publish(sessionEvent("conversationCycle-unassigned", null));
 
     expect(actorEvents).toHaveBeenCalledTimes(2);
     expect(actorEvents.mock.calls.at(-1)?.[0].event).toMatchObject({
       revokedUserId: actorUserId,
-      session: { assignedUserId: otherUserId },
+      conversationCycle: { assignedUserId: otherUserId },
     });
     expect(otherEvents).toHaveBeenCalledOnce();
     expect(managerEvents).toHaveBeenCalledTimes(3);
@@ -90,14 +89,14 @@ describe("createCrmRealtimeBroker", () => {
     expect(actorReplay).toHaveLength(1);
     expect(actorReplay[0]?.event).toMatchObject({
       revokedUserId: actorUserId,
-      session: { assignedUserId: otherUserId },
+      conversationCycle: { assignedUserId: otherUserId },
     });
     expect(managerReplay).toHaveLength(3);
   });
 });
 
 function sessionEvent(
-  sessionId: string,
+  cycleId: string,
   assignedUserId: UserId | null,
   revision = 1,
   revokedUserId?: UserId,
@@ -105,20 +104,17 @@ function sessionEvent(
   return {
     connectionId: connection.id,
     ...(revokedUserId ? { revokedUserId } : {}),
-    session: toWhatsappSession(
-      createTestCrmWhatsappSession({
-        assignedUserId,
-        connectionId: connection.id,
-        id: sessionId,
-        storeId,
-        tenantId,
-        revision,
-      }),
-      connection,
-    ),
+    conversationCycle: createTestCrmConversationCycle({
+      assignedUserId,
+      connectionId: connection.id,
+      id: cycleId,
+      storeId,
+      tenantId,
+      revision,
+    }),
     storeId,
     tenantId,
-    type: "session" as const,
+    type: "conversationCycle" as const,
   };
 }
 
@@ -133,6 +129,8 @@ function presenceEvent(state: string) {
 }
 
 const connection: CrmConnection = {
+  broker: "direct",
+  channel: "whatsapp",
   credentialsRef: {},
   displayName: "Realtime connection",
   externalConnectionId: null,

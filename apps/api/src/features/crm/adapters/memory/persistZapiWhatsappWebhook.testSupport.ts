@@ -1,6 +1,6 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { CrmConnection } from "../../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmWhatsappMessage } from "../../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { CrmMessage } from "../../../../domains/crm/ports/crmConversationRepository.js";
 import type { ParsedZapiInboundMessage } from "../../../../domains/crm/whatsapp/parseZapiInboundMessage.js";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import type { createMemoryCrmCanonicalInboundRepository } from "./crmCanonicalInboundRepository.js";
@@ -11,7 +11,7 @@ export function projectedMessage(
         ReturnType<typeof createMemoryCrmCanonicalInboundRepository>["snapshot"]
       >["messages"][number]
     | undefined,
-): CrmWhatsappMessage | null {
+): CrmMessage | null {
   if (!value) return null;
   return {
     channel: "WHATSAPP",
@@ -29,11 +29,11 @@ export function projectedMessage(
     providerTimestamp: value.occurredAt,
     senderOrigin: "customer",
     senderType: "CUSTOMER",
-    sessionId: value.cycleId,
+    cycleId: value.cycleId,
     status: "DELIVERED",
     storeId: connection().storeId,
     tenantId: connection().tenantId,
-    type: value.messageType.toUpperCase() as CrmWhatsappMessage["type"],
+    type: value.messageType.toUpperCase() as CrmMessage["type"],
     updatedAt: value.occurredAt,
   };
 }
@@ -41,7 +41,7 @@ export function projectedMessage(
 export function context() {
   return createServiceContext({
     actor: { id: "zapi", kind: "integration" },
-    permissions: ["crm.whatsapp.ingest"],
+    permissions: ["crm.messages.ingest", "crm.conversations.manage"],
     request: { requestId: "request-1" },
     source: { component: "test", service: "api" },
   });
@@ -72,6 +72,8 @@ export function lead() {
 
 export function connection(): CrmConnection {
   return {
+    broker: "direct",
+    channel: "whatsapp",
     credentialsRef: {},
     displayName: "Z-API",
     externalConnectionId: null,
@@ -91,7 +93,7 @@ export function message(
   overrides: Partial<ParsedZapiInboundMessage> = {},
 ): ParsedZapiInboundMessage {
   return {
-    buyerName: "Comprador",
+    customerDisplayName: "Comprador",
     chatLid: "lid-1@lid",
     content: "Tenho interesse",
     externalId: "zapi-message-1",

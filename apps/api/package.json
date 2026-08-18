@@ -13,7 +13,7 @@
     "billing:asaas:sync-smoke": "tsx src/jobs/syncBillingProviderSubscription.ts",
     "billing:asaas:reconcile": "tsx src/jobs/processBillingProviderReconciliations.ts",
     "billing:catalog:reconcile": "tsx src/jobs/reconcileBillingCatalog.ts",
-    "crm:whatsapp:schedule:process": "tsx src/jobs/processCrmWhatsappScheduledMessages.ts",
+    "crm:schedule:process": "tsx src/jobs/processCrmScheduledMessages.ts",
     "crm:connections:cleanup": "tsx src/jobs/archiveAbandonedCrmConnections.ts",
     "crm:retention:process": "tsx src/jobs/crm-retention.ts",
     "crm:bot:events:process": "tsx src/jobs/processExternalBotEvents.ts",

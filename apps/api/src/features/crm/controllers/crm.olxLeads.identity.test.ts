@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
-import { recoverOlxLeadWebhooks } from "../../../domains/crm/services/CrmMessaging/recoverOlxLeadWebhooks.js";
+import { recoverOlxLeadWebhooks } from "../../../domains/crm/services/CrmMessagingService/recoverOlxLeadWebhooks.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createTestCrmConnectionRepository } from "../../../domains/crm/testSupportConnections.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 import {
   createOlxConnection,
   olxSecurity,
@@ -13,7 +13,7 @@ import {
   storeId,
   tenantId,
 } from "./crm.olxChat.testSupport.js";
-import { createTestCrmConnectionCredentialVault } from "./crm.whatsapp.connectionFixtures.js";
+import { createTestCrmConnectionCredentialVault } from "./crm.channelConnections.testSupport.js";
 import type { CrmConnectionCredentialVault } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import { createTestCrmPipelineRepository } from "../../../domains/crm/testSupportPipeline.js";
 
@@ -160,7 +160,7 @@ function recover(
     createServiceContext({
       actor: { id: "olx-lead-worker", kind: "system" },
       audit: { record: vi.fn(async () => undefined) },
-      permissions: ["crm.whatsapp.ingest"],
+      permissions: ["crm.messages.ingest"],
       request: { requestId: "olx-lead-recovery" },
     }),
     { limit: 10 },

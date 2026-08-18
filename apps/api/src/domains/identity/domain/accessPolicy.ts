@@ -5,10 +5,10 @@ import {
   saleSupervisorPermissions,
 } from "./saleAccessPolicy.js";
 import {
-  crmWhatsappAdminPermissions,
-  crmWhatsappReadPermissions,
-  crmWhatsappSalesPermissions,
-} from "./crmWhatsappAccessPermissions.js";
+  crmAdminPermissions,
+  crmReadPermissions,
+  crmSalesPermissions,
+} from "./crmAccessPermissions.js";
 import { allPermissions } from "./allPermissions.js";
 
 export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
@@ -28,7 +28,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "crm.contact_identity.dispute",
       "crm.contact_identity.verify",
       "crm.manage",
-      ...crmWhatsappAdminPermissions,
+      ...crmAdminPermissions,
       "documents.read",
       "documents.download",
       "documents.preview",
@@ -100,7 +100,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "financing.simulation.read",
       "inventory.checklist_read",
       "inventory.read",
-      ...crmWhatsappReadPermissions,
+      ...crmReadPermissions,
       "lead.read",
       "marketplace.read",
     ],
@@ -109,7 +109,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "automation.read",
       "automation.run",
       "crm.access",
-      ...crmWhatsappSalesPermissions,
+      ...crmSalesPermissions,
       "documents.read",
       "documents.download",
       "documents.preview",
@@ -147,7 +147,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "automation.run",
       "crm.access",
       "crm.manage",
-      ...crmWhatsappAdminPermissions,
+      ...crmAdminPermissions,
       "documents.read",
       "documents.download",
       "documents.preview",

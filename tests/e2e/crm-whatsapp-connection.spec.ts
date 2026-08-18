@@ -59,7 +59,7 @@ test.describe("CRM WhatsApp connection", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
     const connection = page.getByRole("region", { name: "Conexão" });
@@ -147,7 +147,7 @@ test.describe("CRM WhatsApp connection", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
     const connection = page.getByRole("region", { name: "Conexão" });
@@ -194,7 +194,7 @@ test.describe("CRM WhatsApp connection", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
     const connection = page.getByRole("region", { name: "Conexão" });
@@ -328,7 +328,7 @@ test.describe("CRM WhatsApp connection", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
     const connection = page.getByRole("region", { name: "Conexão" });
@@ -444,7 +444,7 @@ test.describe("CRM WhatsApp connection", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("button", { name: "Mais" }).click();
     await page
       .getByRole("group", { name: "Outras áreas do CRM" })

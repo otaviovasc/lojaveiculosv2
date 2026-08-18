@@ -6,7 +6,7 @@ import type {
   conversationThreads,
   factProposals,
   opportunities,
-  providerConnections,
+  crmChannelConnections,
 } from "@lojaveiculosv2/db";
 import type {
   Connection,
@@ -74,7 +74,7 @@ export function mapOpportunity(
 }
 
 export function mapConnection(
-  row: typeof providerConnections.$inferSelect,
+  row: typeof crmChannelConnections.$inferSelect,
 ): Connection {
   const metadata = objectValue(row.metadata);
   const operational = row.state === "active";
@@ -104,7 +104,7 @@ export function mapConnection(
 
 export function mapConversation(
   thread: typeof conversationThreads.$inferSelect,
-  connection: typeof providerConnections.$inferSelect,
+  connection: typeof crmChannelConnections.$inferSelect,
   attendance: typeof conversationAttendances.$inferSelect | null,
 ): Conversation {
   const metadata = objectValue(thread.metadata);

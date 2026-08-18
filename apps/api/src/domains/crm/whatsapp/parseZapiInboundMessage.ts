@@ -1,4 +1,4 @@
-import type { CrmWhatsappMessageType } from "../ports/crmWhatsappRepository.js";
+import type { CrmMessageType } from "../ports/crmConversationRepository.js";
 import {
   isTruthy,
   readNumber,
@@ -8,7 +8,7 @@ import {
 import { extractZapiInboundContent } from "./zapiInboundContent.js";
 
 export type ParsedZapiInboundMessage = {
-  buyerName?: string;
+  customerDisplayName?: string;
   chatLid?: string;
   content: string;
   externalId: string;
@@ -19,12 +19,12 @@ export type ParsedZapiInboundMessage = {
   phone: string;
   profilePhotoUrl?: string;
   providerTimestamp: Date;
-  type: CrmWhatsappMessageType;
+  type: CrmMessageType;
 };
 
 export type ParsedZapiContactIdentity = Pick<
   ParsedZapiInboundMessage,
-  "buyerName" | "chatLid" | "fromMe" | "phone"
+  "customerDisplayName" | "chatLid" | "fromMe" | "phone"
 >;
 
 export function parseZapiInboundMessage(
@@ -49,7 +49,9 @@ export function parseZapiInboundMessage(
     ? undefined
     : readProfilePhotoUrl(payload);
   return {
-    ...(identity.buyerName ? { buyerName: identity.buyerName } : {}),
+    ...(identity.customerDisplayName
+      ? { customerDisplayName: identity.customerDisplayName }
+      : {}),
     ...(identity.chatLid ? { chatLid: identity.chatLid } : {}),
     content: content.content,
     externalId,
@@ -75,11 +77,11 @@ export function parseZapiContactIdentity(
   const phone = resolvePhone(payload, chatLid);
   if (!phone) return null;
   const fromMe = isTruthy(payload.fromMe);
-  const buyerName = readUsableZapiContactName(
+  const customerDisplayName = readUsableZapiContactName(
     fromMe ? readString(payload.chatName) : readString(payload.senderName),
   );
   return {
-    ...(buyerName ? { buyerName } : {}),
+    ...(customerDisplayName ? { customerDisplayName } : {}),
     ...(chatLid ? { chatLid } : {}),
     fromMe,
     phone,

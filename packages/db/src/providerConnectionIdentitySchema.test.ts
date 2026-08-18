@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import { integrationAccounts, providerConnections } from "./index.js";
+import { integrationAccounts, crmChannelConnections } from "./index.js";
 
 const migration = readFileSync(
   new URL(
@@ -30,13 +30,13 @@ describe("provider connection identity boundaries", () => {
 
   it("keeps canonical transport identities scoped and unique", () => {
     expect(
-      getTableConfig(providerConnections).indexes.map(
+      getTableConfig(crmChannelConnections).indexes.map(
         ({ config }) => config.name,
       ),
     ).toEqual(
       expect.arrayContaining([
-        "provider_connections_scope_id_unique",
-        "provider_connections_external_unique",
+        "crm_channel_connections_scope_id_unique",
+        "crm_channel_connections_external_unique",
       ]),
     );
   });

@@ -1,4 +1,4 @@
-import { WhatsappMessageActionError } from "./whatsappSendErrors.js";
+import { CrmMessageActionError } from "../messaging/crmMessagingErrors.js";
 
 export function assertTrustedZapiWebhookDestination(
   webhookUrl: string | null,
@@ -11,7 +11,7 @@ export function assertTrustedZapiWebhookDestination(
   } catch {
     // Invalid URLs are rejected by the stable error below.
   }
-  throw new WhatsappMessageActionError(
+  throw new CrmMessageActionError(
     "A custom webhook origin cannot receive connection authentication.",
     409,
   );

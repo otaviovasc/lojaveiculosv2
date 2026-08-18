@@ -17,7 +17,7 @@ describe("parseOlxChatWebhook", () => {
         senderType: "buyer",
       }),
     ).toMatchObject({
-      buyerPhone: "5511999999999",
+      customerPhone: "5511999999999",
       chatId: "chat-1",
       externalMessageId: "message-1",
       message: "Tenho interesse",

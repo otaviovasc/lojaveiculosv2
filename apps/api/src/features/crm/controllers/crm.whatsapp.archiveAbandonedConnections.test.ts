@@ -4,7 +4,7 @@ import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConne
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import { archiveAbandonedZapiConnections } from "../../../domains/crm/services/CrmWhatsapp/archiveAbandonedZapiConnections.js";
+import { archiveAbandonedZapiConnections } from "../../../domains/crm/services/CrmWhatsappService/archiveAbandonedZapiConnections.js";
 
 const now = new Date("2026-08-10T12:00:00.000Z");
 
@@ -15,14 +15,14 @@ describe("archiveAbandonedZapiConnections", () => {
       connection("young", "zapi", "sandbox", "2026-08-03T13:00:00.000Z"),
       connection(
         "official",
-        "composio_whatsapp",
+        "meta_cloud",
         "sandbox",
         "2026-07-01T00:00:00.000Z",
       ),
       connection("held", "zapi", "sandbox", "2026-07-01T00:00:00.000Z", {
         supportHold: true,
       }),
-      connection("session", "zapi", "sandbox", "2026-07-01T00:00:00.000Z", {
+      connection("cycle", "zapi", "sandbox", "2026-07-01T00:00:00.000Z", {
         hasActiveSession: true,
       }),
       connection("message", "zapi", "sandbox", "2026-07-01T00:00:00.000Z", {
@@ -61,7 +61,7 @@ describe("archiveAbandonedZapiConnections", () => {
       "young",
       "official",
       "held",
-      "session",
+      "cycle",
       "message",
       "recent-retry",
     ]) {
@@ -114,7 +114,7 @@ describe("archiveAbandonedZapiConnections", () => {
       {
         crmConnectionRepository: createMemoryCrmConnectionRepository(),
         crmRepository: createMemoryCrmRepository(),
-        crmWhatsappOutboundIntentRepository: {
+        crmOutboundIntentRepository: {
           claim: vi.fn(),
           complete: vi.fn(),
           markIndeterminate: vi.fn(),
@@ -150,6 +150,8 @@ function connection(
   tenantId = "tenant_a",
 ): CrmConnection {
   return {
+    broker: provider === "zapi" ? "direct" : "composio",
+    channel: "whatsapp",
     credentialsRef: {},
     displayName: id,
     externalConnectionId: null,

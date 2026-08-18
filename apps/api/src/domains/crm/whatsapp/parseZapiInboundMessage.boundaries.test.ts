@@ -240,6 +240,6 @@ describe("parseZapiInboundMessage boundaries", () => {
         fromMe: true,
         senderName: "Operador",
       }),
-    ).toMatchObject({ buyerName: "Loja Cliente", fromMe: true });
+    ).toMatchObject({ customerDisplayName: "Loja Cliente", fromMe: true });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM legacy Meta webhook route", () => {
   it("does not expose the WhatsApp-prefixed alias", async () => {

@@ -27,8 +27,8 @@ vi.mock("../inventory/api/apiClient", () => ({
   createInventoryApi: () => ({ listListings: mocks.listListings }),
 }));
 
-vi.mock("./CrmWhatsappInbox", () => ({
-  CrmWhatsappInbox: () => <div>WhatsApp inbox</div>,
+vi.mock("./CrmInbox", () => ({
+  CrmInbox: () => <div>WhatsApp inbox</div>,
 }));
 
 describe("CrmModule", () => {
@@ -41,7 +41,7 @@ describe("CrmModule", () => {
 
   it("does not load lead or inventory data for the WhatsApp surface", async () => {
     const api = createProductCrmApi();
-    render(<CrmModule api={api} routeSurface="whatsapp" />);
+    render(<CrmModule api={api} routeSurface="conversations" />);
 
     expect(await screen.findByText("WhatsApp inbox")).toBeVisible();
     expect(api.listLeadBoard).not.toHaveBeenCalled();

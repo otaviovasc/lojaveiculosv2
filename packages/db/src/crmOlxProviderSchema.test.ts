@@ -3,7 +3,7 @@ import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
   messagingChannel,
-  providerConnections,
+  crmChannelConnections,
   transportProvider,
 } from "./index.js";
 
@@ -24,8 +24,8 @@ describe("CRM OLX provider schema", () => {
     expect(messagingChannel.enumValues).toContain("olx_chat");
     expect(transportProvider.enumValues).toContain("olx");
     expect(
-      getTableConfig(providerConnections).checks.map(({ name }) => name),
-    ).toContain("provider_connections_supported_triple_check");
+      getTableConfig(crmChannelConnections).checks.map(({ name }) => name),
+    ).toContain("crm_channel_connections_supported_triple_check");
   });
 
   it("retains immutable migration history but drops its legacy provider type", () => {

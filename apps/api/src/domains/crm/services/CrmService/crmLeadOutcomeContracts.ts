@@ -2,26 +2,26 @@ import type {
   CrmLeadOutcome,
   CrmLeadOutcomeLossReason,
 } from "../../ports/crmOutcomeRepository.js";
-import type { WhatsappSession } from "../../whatsapp/whatsappModels.js";
+import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
 
 export type ConcludeWhatsappAttendanceInput =
   | {
       commandId: string;
       outcome: "follow_up";
       reminder?: { dueAt: string };
-      sessionId: string;
+      cycleId: string;
     }
   | {
       commandId: string;
       note?: string;
       outcome: "lost";
       reason: CrmLeadOutcomeLossReason;
-      sessionId: string;
+      cycleId: string;
     };
 
 export type ConcludeWhatsappAttendanceResult = {
   result: "applied" | "already_applied" | "superseded";
-  session: WhatsappSession;
+  conversationCycle: CrmConversationCycle;
 };
 
 export type ApplyWonCrmLeadOutcomeInput = {

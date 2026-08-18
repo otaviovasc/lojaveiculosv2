@@ -1,7 +1,11 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmMessagingGateway } from "../../../domains/crm/ports/crmMessagingGateway.js";
+import {
+  resolveCrmProviderOperation,
+  type CrmProviderOperationPorts,
+} from "../../../domains/crm/services/CrmRoutingService/resolveCrmProviderOperation.js";
 import {
   createServiceContext,
   type ServiceContext,
@@ -12,6 +16,7 @@ import {
   ExternalBotCanonicalSyncIndeterminateError,
   loadAuthorizedExternalBotEffect,
   synchronizeExternalBotEffectOutcome,
+  wasExternalBotProviderAttempted,
   type AuthorizedExternalBotEffect,
 } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
 
@@ -20,40 +25,60 @@ type Db = PostgresJsDatabase<typeof schema>;
 export function createExternalBotProviderEffectExecutor(input: {
   audit?: AuditSink;
   db: Db;
-  gateway: Pick<CrmWhatsappGateway, "sendText">;
+  gateway: Pick<CrmMessagingGateway, "sendMedia" | "sendTemplate" | "sendText">;
   logger: ServiceLogger;
+  providerOperationPorts: CrmProviderOperationPorts;
 }): ExternalBotProviderEffectExecutor {
   return {
     execute: async ({ effectId }) => {
       const effect = await loadAuthorizedExternalBotEffect(input.db, effectId);
-      if (!effect) return permanentFailure("authorization_revoked");
+      if (!effect) {
+        if (await wasExternalBotProviderAttempted(input.db, effectId)) {
+          return {
+            code: "provider_attempt_indeterminate",
+            kind: "indeterminate",
+          };
+        }
+        return permanentFailure("execution_authorization_failed");
+      }
       const context = effectContext(input, effect);
       try {
         await auditEffect(context, effect, "attempted");
-        if (effect.command.action === "message.send") {
-          const providerOperation =
-            effect.providerOperation ??
-            toProviderOperation(
-              await input.gateway.sendText(effect.connection, {
-                phone: effect.providerAddress,
-                text: effect.command.payload.text,
-              }),
-            );
-          await synchronizeExternalBotEffectOutcome(input.db, {
-            effect,
-            providerOperation,
-          });
-          await auditEffect(context, effect, "succeeded", {
-            providerOperationId: providerOperation.id,
-          });
-          return {
-            externalEffectId: providerOperation.id,
-            kind: "succeeded",
-          };
+        if (effect.command.action === "handoff.request") {
+          await synchronizeExternalBotEffectOutcome(input.db, { effect });
+          await auditEffect(context, effect, "succeeded");
+          return { externalEffectId: effect.effectId, kind: "succeeded" };
         }
-        await synchronizeExternalBotEffectOutcome(input.db, { effect });
-        await auditEffect(context, effect, "succeeded");
-        return { externalEffectId: effect.effectId, kind: "succeeded" };
+        let providerOperation = effect.providerOperation;
+        if (!providerOperation) {
+          const capability =
+            effect.command.action === "message.send_text"
+              ? "text"
+              : effect.command.action === "message.send_media"
+                ? "media"
+                : "templates";
+          const connection = await resolveCrmProviderOperation({
+            channel: effectChannel(effect),
+            connectionId: effect.providerConnectionId,
+            ports: input.providerOperationPorts,
+            requiredCapabilities: ["outbound", capability],
+            scope: { storeId: effect.storeId, tenantId: effect.tenantId },
+          });
+          providerOperation = toProviderOperation(
+            await sendProviderCommand(input.gateway, connection, effect),
+          );
+        }
+        await synchronizeExternalBotEffectOutcome(input.db, {
+          effect,
+          providerOperation,
+        });
+        await auditEffect(context, effect, "succeeded", {
+          providerOperationId: providerOperation.id,
+        });
+        return {
+          externalEffectId: providerOperation.id,
+          kind: "succeeded",
+        };
       } catch (error) {
         await auditEffect(context, effect, "failed", {
           errorCode: failureCode(error),
@@ -62,6 +87,59 @@ export function createExternalBotProviderEffectExecutor(input: {
       }
     },
   };
+}
+
+function sendProviderCommand(
+  gateway: Pick<CrmMessagingGateway, "sendMedia" | "sendTemplate" | "sendText">,
+  connection: Parameters<CrmMessagingGateway["sendText"]>[0],
+  effect: AuthorizedExternalBotEffect,
+) {
+  if (effect.command.action === "handoff.request") {
+    throw Object.assign(new Error("Handoff has no provider operation."), {
+      code: "configuration_error",
+    });
+  }
+  if (effect.command.action === "message.send_text") {
+    return gateway.sendText(connection, {
+      phone: effect.providerAddress,
+      text: effect.command.payload.text,
+    });
+  }
+  if (effect.command.action === "message.send_media") {
+    return gateway.sendMedia(connection, {
+      ...(effect.command.payload.caption
+        ? { caption: effect.command.payload.caption }
+        : {}),
+      mediaType: effect.command.payload.mediaType as
+        "audio" | "document" | "image" | "video",
+      mediaUrl: effect.command.payload.mediaUrl,
+      phone: effect.providerAddress,
+    });
+  }
+  return gateway.sendTemplate(connection, {
+    components: [
+      {
+        parameters: Object.entries(effect.command.payload.variables)
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([, value]) => ({ text: value, type: "text" as const })),
+        type: "body",
+      },
+    ],
+    languageCode: "pt_BR",
+    name: effect.command.payload.templateName,
+    phone: effect.providerAddress,
+  });
+}
+
+function effectChannel(effect: AuthorizedExternalBotEffect) {
+  const channel = effect.connection.canonical?.channel;
+  if (!channel) {
+    throw Object.assign(
+      new Error("External bot CRM channel connection is unavailable."),
+      { code: "configuration_error" },
+    );
+  }
+  return channel;
 }
 
 function effectContext(
@@ -76,7 +154,7 @@ function effectContext(
     },
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
-    permissions: ["crm.whatsapp.send", "crm.whatsapp.toggle_intervention"],
+    permissions: ["crm.messages.send", "crm.attendances.manage"],
     request: {
       idempotencyKey: effect.idempotencyKey,
       requestId: `crm_bot_effect_${effect.effectId}`,

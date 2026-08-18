@@ -1,8 +1,4 @@
-import type {
-  CrmConnection,
-  CrmConnectionConfiguredStatus,
-  CrmConnectionProvider,
-} from "./crmConnectionRepository.js";
+import type { CrmConnection } from "./crmConnectionRepository.js";
 import {
   crmConnectionCapabilities,
   type CrmChannel,
@@ -65,49 +61,36 @@ export function projectCanonicalCrmConnectionRow(input: {
 }
 
 export function canonicalCrmConnectionIdentity(
-  provider: CrmConnectionProvider,
+  input: Pick<CrmConnection, "broker" | "channel" | "provider">,
 ): CanonicalCrmConnectionIdentity {
-  if (provider === "zapi") {
-    return {
-      channel: "whatsapp",
-      credentialBroker: "direct",
-      provider: "zapi",
-    };
-  }
-  if (provider === "olx_chat") {
-    return { channel: "olx_chat", credentialBroker: "direct", provider: "olx" };
-  }
   return {
-    channel: provider === "composio_instagram" ? "instagram" : "whatsapp",
-    credentialBroker: "composio",
-    provider: "meta_cloud",
+    channel: input.channel,
+    credentialBroker: input.broker,
+    provider: input.provider,
   };
 }
 
 export function canonicalCrmConnectionMetadata(input: {
   metadata: Record<string, unknown>;
-  provider: CrmConnectionProvider;
-  status: CrmConnectionConfiguredStatus;
 }) {
-  const setup = readRecord(input.metadata.webhookSetup);
-  const providerConnected = providerConnectionState(input, setup);
-  const connected = input.status === "active" && providerConnected;
-  const errorCode = connectionErrorCode(input, setup, connected);
   const storedCapabilities = readRecord(input.metadata.capabilities);
   return {
     ...input.metadata,
-    capabilities:
-      input.metadata.capabilities === undefined
-        ? routingCapabilities(input.provider)
-        : {
-            inbound: storedCapabilities.inbound === true,
-            outbound: storedCapabilities.outbound === true,
-            scheduling: storedCapabilities.scheduling === true,
-            templates: storedCapabilities.templates === true,
-          },
-    connected,
-    degraded: input.status === "error" || errorCode !== null,
-    errorCode,
+    capabilities: {
+      catalog: storedCapabilities.catalog === true,
+      conversation_start: storedCapabilities.conversation_start === true,
+      delete: storedCapabilities.delete === true,
+      inbound: storedCapabilities.inbound === true,
+      media: storedCapabilities.media === true,
+      outbound: storedCapabilities.outbound === true,
+      reactions: storedCapabilities.reactions === true,
+      scheduling: storedCapabilities.scheduling === true,
+      templates: storedCapabilities.templates === true,
+      text: storedCapabilities.text === true,
+    },
+    connected: input.metadata.connected === true,
+    degraded: input.metadata.degraded === true,
+    errorCode: readString(input.metadata.errorCode),
   };
 }
 
@@ -121,10 +104,16 @@ export function toCanonicalRoutingConnection(
   const capabilities = new Set(canonical.capabilities);
   return {
     capabilities: {
+      catalog: capabilities.has("catalog"),
+      conversation_start: capabilities.has("conversation_start"),
+      delete: capabilities.has("delete"),
       inbound: capabilities.has("inbound"),
+      media: capabilities.has("media"),
       outbound: capabilities.has("outbound"),
+      reactions: capabilities.has("reactions"),
       scheduling: capabilities.has("scheduling"),
       templates: capabilities.has("templates"),
+      text: capabilities.has("text"),
     },
     channel: canonical.channel,
     connected: canonical.connected,
@@ -191,49 +180,6 @@ function canonicalUnavailableReason(input: {
     return "disconnected";
   }
   return "not_authorized";
-}
-
-function providerConnectionState(
-  input: {
-    metadata: Record<string, unknown>;
-    provider: CrmConnectionProvider;
-  },
-  setup: Record<string, unknown>,
-) {
-  if (input.provider === "zapi") {
-    return (
-      input.metadata.providerConnected === true && setup.status === "configured"
-    );
-  }
-  if (input.provider === "olx_chat") {
-    return readRecord(readRecord(setup.capabilities).chat).status === "active";
-  }
-  return input.metadata.providerConnected === true;
-}
-
-function connectionErrorCode(
-  input: {
-    metadata: Record<string, unknown>;
-    status: CrmConnectionConfiguredStatus;
-  },
-  setup: Record<string, unknown>,
-  connected: boolean,
-) {
-  if (connected) return null;
-  return (
-    readString(input.metadata.errorCode) ??
-    readString(setup.lastErrorCode) ??
-    (input.status === "error" ? "provider_error" : null)
-  );
-}
-
-function routingCapabilities(provider: CrmConnectionProvider) {
-  return {
-    inbound: true,
-    outbound: true,
-    scheduling: provider === "zapi",
-    templates: provider === "composio_whatsapp",
-  };
 }
 
 function readRecord(value: unknown): Record<string, unknown> {

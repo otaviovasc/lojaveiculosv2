@@ -2,10 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createTestCrmConnectionRepository } from "../../../domains/crm/testSupportConnections.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import {
-  createTestApp,
-  expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp, expectApiError } from "./crm.controller.testSupport.js";
 import {
   createOlxConnection,
   olxSecurity,

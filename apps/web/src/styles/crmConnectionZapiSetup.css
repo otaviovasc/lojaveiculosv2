@@ -1,0 +1,496 @@
+/* CRM-only Z-API setup: quiet service-bay rail and evidence-led states. */
+
+.crm-zapi-guided-card {
+  display: grid;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 54rem;
+  width: 100%;
+}
+
+.crm-zapi-progress {
+  border-block: 1px solid var(--color-line);
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(10rem, 0.65fr) minmax(0, 1.6fr);
+}
+
+.crm-zapi-progress-summary {
+  align-content: center;
+  color: var(--color-accent-strong);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.crm-zapi-progress ol {
+  border-left: 1px solid var(--color-line);
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crm-zapi-progress li {
+  align-items: center;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  min-height: 2.6rem;
+  padding: 0.4rem 0.65rem;
+  text-align: left;
+}
+
+.crm-zapi-progress li + li {
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
+}
+
+.crm-zapi-progress li > span {
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 1.45rem;
+  justify-content: center;
+  width: 1.45rem;
+}
+
+.crm-zapi-progress li > span svg {
+  height: 0.72rem;
+  width: 0.72rem;
+}
+
+.crm-zapi-progress li small,
+.crm-zapi-progress li strong {
+  font-size: var(--font-size-xs);
+  line-height: 1.25;
+}
+
+.crm-zapi-progress li small {
+  color: var(--color-muted);
+  font-weight: 450;
+}
+
+.crm-zapi-progress li strong {
+  font-weight: 600;
+}
+
+.crm-zapi-progress li[data-state="complete"] {
+  color: var(--color-success-strong);
+}
+
+.crm-zapi-progress li[data-state="current"] {
+  background: color-mix(in srgb, var(--color-panel) 70%, transparent);
+  color: var(--color-text);
+}
+
+.crm-zapi-progress li[data-state="current"] > span {
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+}
+
+.crm-zapi-stage,
+.crm-zapi-credentials,
+.crm-zapi-pairing {
+  display: grid;
+  gap: 1rem;
+}
+
+.crm-zapi-stage-heading {
+  align-items: start;
+  border-bottom: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding-bottom: 0.8rem;
+}
+
+.crm-zapi-stage-heading > span {
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.35rem;
+  justify-content: center;
+  width: 2.35rem;
+}
+
+.crm-zapi-stage-heading > span svg {
+  height: 1.1rem;
+  width: 1.1rem;
+}
+
+.crm-zapi-stage-heading > div {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.crm-zapi-stage-heading small {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+}
+
+.crm-zapi-stage-heading h4 {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.crm-zapi-stage-heading p,
+.crm-zapi-permission-note {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-zapi-credential-fields {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.crm-zapi-credential-fields .crm-connection-field small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  letter-spacing: normal;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+.crm-zapi-back {
+  align-items: center;
+  align-self: start;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0;
+}
+
+.crm-zapi-back:hover {
+  color: var(--color-text);
+}
+
+.crm-zapi-back:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.crm-zapi-back svg {
+  height: 0.95rem;
+  width: 0.95rem;
+}
+
+.crm-zapi-automatic-setup,
+.crm-zapi-ready,
+.crm-connection-protected-note {
+  align-items: start;
+  border-left: 2px solid var(--color-warning);
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.55rem 0 0.55rem 0.85rem;
+}
+
+.crm-zapi-automatic-setup[data-state="failed"] {
+  border-color: var(--color-danger);
+}
+
+.crm-zapi-automatic-setup > span,
+.crm-zapi-ready > span,
+.crm-connection-protected-note > span {
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.15rem;
+  justify-content: center;
+  width: 2.15rem;
+}
+
+.crm-zapi-automatic-setup[data-state="failed"] > span {
+  color: var(--color-danger);
+}
+
+.crm-zapi-automatic-setup > span svg,
+.crm-zapi-ready > span svg,
+.crm-connection-protected-note > span svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-zapi-automatic-setup h4,
+.crm-zapi-ready h4,
+.crm-connection-protected-note strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.crm-zapi-automatic-setup p,
+.crm-zapi-ready p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-zapi-setup-count {
+  color: var(--color-accent-strong);
+  font-weight: 650;
+}
+
+.crm-zapi-webhook-status-list {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0;
+}
+
+.crm-zapi-webhook-status-list li {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  font-size: var(--font-size-xs);
+  gap: 0.4rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 0.5rem 0.55rem;
+}
+
+.crm-zapi-webhook-status-list svg {
+  color: var(--color-muted);
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.crm-zapi-webhook-status-list li[data-state="configured"] svg,
+.crm-zapi-webhook-status-list li[data-state="configured"] strong {
+  color: var(--color-success-strong);
+}
+
+.crm-zapi-webhook-status-list li[data-state="pending"] strong {
+  color: var(--color-warning-strong);
+}
+
+.crm-zapi-webhook-status-list strong {
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+}
+
+.crm-zapi-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.crm-zapi-support-link {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  min-height: 2.5rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.crm-zapi-ready {
+  border-color: var(--color-success);
+}
+
+.crm-zapi-ready > span,
+.crm-zapi-ready small {
+  color: var(--color-success-strong);
+}
+
+.crm-zapi-ready small {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.crm-pairing-tabs {
+  border-bottom: 1px solid var(--color-line);
+  display: inline-flex;
+  gap: 0;
+  justify-self: start;
+}
+
+.crm-pairing-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+}
+
+.crm-pairing-tab[data-active="true"] {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.crm-pairing-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.crm-pairing-panel {
+  align-content: start;
+  border: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  min-height: 16rem;
+  padding: 1rem;
+}
+
+.crm-pairing-panel img {
+  aspect-ratio: 1;
+  background: var(--color-text);
+  border-radius: var(--radius-sm);
+  max-width: min(100%, 15rem);
+  padding: 0.5rem;
+  width: 15rem;
+}
+
+.crm-pairing-countdown,
+.crm-pairing-panel > small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  margin: 0;
+}
+
+.crm-pairing-empty {
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.crm-pairing-empty > svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.crm-pairing-empty p {
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 24rem;
+}
+
+.crm-pairing-panel .crm-pairing-phone,
+.crm-pairing-panel .crm-pairing-code {
+  justify-self: stretch;
+  max-width: 22rem;
+}
+
+.crm-zapi-auto-refresh {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+}
+
+.crm-connection-protected-note > div > .crm-action {
+  justify-self: start;
+  margin-top: 0.35rem;
+}
+
+.crm-zapi-disconnect-confirm {
+  border-left: 3px solid var(--color-danger);
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.crm-zapi-disconnect-confirm p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .crm-zapi-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-zapi-progress ol {
+    border-left: 0;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .crm-zapi-progress li[data-state="pending"] {
+    display: none;
+  }
+
+  .crm-zapi-stage-heading {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .crm-zapi-stage-heading > .crm-icon-action {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .crm-pairing-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-self: stretch;
+  }
+
+  .crm-pairing-tab {
+    padding: 0 0.4rem;
+  }
+
+  .crm-zapi-auto-refresh,
+  .crm-zapi-inline-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .crm-zapi-inline-actions .crm-action {
+    width: 100%;
+  }
+
+  .crm-zapi-webhook-status-list {
+    grid-template-columns: 1fr;
+  }
+}

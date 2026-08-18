@@ -7,11 +7,11 @@ import {
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import type { CrmWhatsappApi } from "./crmWhatsappApi";
+import type { CrmConversationApi } from "./crmConversationApi";
 import { readCrmCapabilityLabel } from "./crmChannelPresentation";
-import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
+import { readCrmProviderLabel } from "./crmConnectionStatus";
 import type {
-  CrmBotRoutingMode,
+  CrmExternalBotRouteMode,
   CrmChannelRouting,
   CrmRoutingCandidate,
   CrmRoutingChannel,
@@ -38,7 +38,7 @@ export function CrmChannelRoutingEditDialog({
   onSaved,
   policy,
 }: {
-  api: Pick<CrmWhatsappApi, "updateRoutingPolicy">;
+  api: Pick<CrmConversationApi, "updateRoutingPolicy">;
   candidates: readonly CrmRoutingCandidate[];
   channel: CrmRoutingChannel;
   channelLabel: string;
@@ -52,11 +52,11 @@ export function CrmChannelRoutingEditDialog({
   const [defaultConnectionId, setDefaultConnectionId] = useState(
     () => policy?.storeDefault.connection?.id ?? "",
   );
-  const [botMode, setBotMode] = useState<CrmBotRoutingMode>(
-    () => policy?.bot.mode ?? "disabled",
+  const [botMode, setBotMode] = useState<CrmExternalBotRouteMode>(
+    () => policy?.externalBot.mode ?? "disabled",
   );
   const [botConnectionId, setBotConnectionId] = useState(
-    () => policy?.bot.connection?.id ?? "",
+    () => policy?.externalBot.connection?.id ?? "",
   );
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -85,14 +85,11 @@ export function CrmChannelRoutingEditDialog({
     setError(null);
     try {
       const next = await api.updateRoutingPolicy({
-        bot: {
-          mode: botMode,
-          ...(botMode === "explicit_connection"
-            ? { connectionId: botConnectionId }
-            : {}),
-        },
         channel,
         defaultConnectionId: defaultConnectionId || null,
+        externalBotConnectionId:
+          botMode === "explicit_connection" ? botConnectionId : null,
+        externalBotMode: botMode,
       });
       onSaved(next, channel);
       onClose();
@@ -159,7 +156,9 @@ export function CrmChannelRoutingEditDialog({
               <FeatureSelect
                 ariaLabel={`Modo do bot em ${channelLabel}`}
                 disabled={isSaving}
-                onChange={(value) => setBotMode(value as CrmBotRoutingMode)}
+                onChange={(value) =>
+                  setBotMode(value as CrmExternalBotRouteMode)
+                }
                 options={[...botModeOptions]}
                 value={botMode}
               />
@@ -193,8 +192,5 @@ export function CrmChannelRoutingEditDialog({
 }
 
 function candidateLabel(candidate: CrmRoutingCandidate) {
-  const identity = [candidate.displayName, candidate.phone]
-    .filter(Boolean)
-    .join(" · ");
-  return `${readCrmWhatsappProviderLabel(candidate.provider)} · ${identity || "Conexão sem nome"}`;
+  return `${readCrmProviderLabel(candidate.provider)} · ${candidate.displayName}`;
 }

@@ -4,7 +4,6 @@ import type { ExternalBotManagerPorts } from "../../../domains/crm/bot/ports/ext
 import {
   type ExternalBotDb,
   type ExternalBotRow,
-  isProposalAction,
 } from "./drizzleExternalBotShared.js";
 
 export function createExternalBotGrantStore(
@@ -28,12 +27,12 @@ export function createExternalBotGrantStore(
             where routing.tenant_id=connection.tenant_id
               and routing.store_id=connection.store_id
               and routing.channel=connection.channel
-              and routing.bot_routing_mode <> 'disabled'
+              and routing.external_bot_mode <> 'disabled'
               and (
-                (routing.bot_routing_mode='inherit_store_default'
+                (routing.external_bot_mode='inherit_store_default'
                   and routing.default_connection_id=connection.id)
-                or (routing.bot_routing_mode='explicit_connection'
-                  and routing.bot_connection_id=connection.id)
+                or (routing.external_bot_mode='explicit_connection'
+                  and routing.external_bot_connection_id=connection.id)
               )
           )
         limit 1`);
@@ -42,11 +41,9 @@ export function createExternalBotGrantStore(
       if (!provider || connection?.channel !== grant.channel) {
         throw new Error("External bot provider connection is unavailable.");
       }
-      const actionClass = isProposalAction(grant.action)
-        ? "proposal"
-        : "effect";
+      const actionClass = grant.actionClass;
       await input.db.execute(sql`
-        insert into bot_integration_grants
+        insert into crm_external_bot_grants
           (action_class, action_type, bot_key, expires_at, integration_id, model_version, provider,
            provider_connection_id, request_digest, token_digest, authorized_request_digest, state, thread_id, store_id, tenant_id, workflow_provider)
         values (${actionClass === "proposal" ? "proposal_only" : "automatic"}, ${grant.action},
@@ -57,7 +54,7 @@ export function createExternalBotGrantStore(
     },
     consume: async (grant) => {
       const rows = await input.db.execute(sql`
-        update bot_integration_grants set state = 'consumed', consumed_at = ${grant.now}, authorized_request_digest=${grant.requestDigest},
+        update crm_external_bot_grants set state = 'consumed', consumed_at = ${grant.now}, authorized_request_digest=${grant.requestDigest},
           revision = revision + 1, updated_at = now()
         where token_digest = ${digest(grant.token)} and tenant_id = ${grant.tenantId}::uuid
           and store_id = ${grant.storeId}::uuid and integration_id = ${grant.integrationId}::uuid
@@ -75,19 +72,19 @@ export function createExternalBotGrantStore(
                 where routing.tenant_id=connection.tenant_id
                   and routing.store_id=connection.store_id
                   and routing.channel=connection.channel
-                  and routing.bot_routing_mode <> 'disabled'
+                  and routing.external_bot_mode <> 'disabled'
                   and (
-                    (routing.bot_routing_mode='inherit_store_default'
+                    (routing.external_bot_mode='inherit_store_default'
                       and routing.default_connection_id=connection.id)
-                    or (routing.bot_routing_mode='explicit_connection'
-                      and routing.bot_connection_id=connection.id)
+                    or (routing.external_bot_mode='explicit_connection'
+                      and routing.external_bot_connection_id=connection.id)
                   )
               )
           )
         returning id`);
       if ((rows as unknown as ExternalBotRow[]).length > 0) return "consumed";
       const found = await input.db.execute(
-        sql`select state from bot_integration_grants where token_digest = ${digest(grant.token)} limit 1`,
+        sql`select state from crm_external_bot_grants where token_digest = ${digest(grant.token)} limit 1`,
       );
       return (found as unknown as ExternalBotRow[])[0]?.state === "consumed"
         ? "used"

@@ -28,8 +28,8 @@ const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   checklists: gate(["inventory.checklist_read"], "checklists"),
   commissions: gate(["finance.read"], "comissões"),
   crm: gate(
-    ["crm.access", "crm.whatsapp.list"],
-    "WhatsApp e atendimento",
+    ["crm.access", "crm.conversations.read"],
+    "conversas e atendimento",
     "any",
   ),
   "custom-pages": gate(["store_public_site.manage"], "páginas da vitrine"),

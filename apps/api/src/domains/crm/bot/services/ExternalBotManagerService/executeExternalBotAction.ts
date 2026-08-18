@@ -1,11 +1,8 @@
-import { botError } from "../../externalBotErrors.js";
 import type { ServiceContext } from "../../../../../shared/serviceContext.js";
-import { createServiceLogMetadata } from "../../../../../shared/serviceContext.js";
-import {
-  canonicalExternalBotActionRequest,
-  type ExternalBotActionRequest,
-} from "../../externalBotCanonicalRequest.js";
+import type { ExternalBotActionRequest } from "../../externalBotCanonicalRequest.js";
+import { botError } from "../../externalBotErrors.js";
 import { assertCommandHasNoForbiddenPii } from "../../externalBotPrivacy.js";
+import { assertExternalBotCommandOperationallySafe } from "../../externalBotCommandValidation.js";
 import type { ExternalBotManagerPorts } from "../../ports/externalBotPorts.js";
 import {
   assertPermission,
@@ -14,11 +11,16 @@ import {
   cancelActionAudited,
   executeProposalAction,
   finishEffect,
-  isProposalCommand,
   isCanonicalProviderEffectAction,
-  requireExternalBotScope,
   transitionAction,
 } from "./serviceSupport.js";
+import {
+  assertExactExternalBotContextScope,
+  assertExternalBotRequestDigest,
+  auditCompletedExternalBotAction,
+  logStartedExternalBotAction,
+} from "./executeExternalBotActionSupport.js";
+import { resolveExternalBotExecutionPolicy } from "./resolveExternalBotExecutionPolicy.js";
 
 export async function executeExternalBotAction(
   context: ServiceContext,
@@ -26,28 +28,28 @@ export async function executeExternalBotAction(
   ports: ExternalBotManagerPorts,
 ) {
   assertPermission(context, "crm.bot.actions.execute");
-  assertExactContextScope(context, input);
+  assertExactExternalBotContextScope(context, input);
   assertExternalBotChannelProvider(input);
-  context.logger.info(
-    "crm.bot.action.execute.started",
-    createServiceLogMetadata(context, {
-      action: input.command.action,
-      actionClass: input.actionClass,
-      channel: input.channel,
-      connectionId: input.connectionId,
-      integrationId: input.integrationId,
-      provider: input.provider,
-      threadId: input.threadId,
-    }),
-  );
+  logStartedExternalBotAction(context, input);
   assertCommandHasNoForbiddenPii(input.command);
-  assertRequestDigest(input, ports);
+  assertExternalBotCommandOperationallySafe(input.command);
+  assertExternalBotRequestDigest(input, ports);
+  const authorizationSnapshot = await ports.effectAuthorizer.inspect(input);
+  const policyDecision = await resolveExternalBotExecutionPolicy(
+    input,
+    input.command.action,
+    authorizationSnapshot.humanAttendanceActive,
+    ports,
+  );
+  const actionClass: "effect" | "proposal" =
+    policyDecision.configuredMode === "proposal" ? "proposal" : "effect";
   const actionRecordInput = {
     capabilityGrant: input.capabilityGrant,
-    actionClass: input.actionClass,
+    actionClass,
     channel: input.channel,
     command: input.command,
     connectionId: input.connectionId,
+    expectedAttendanceRevision: input.expectedAttendanceRevision,
     expectedRevision: input.expectedRevision,
     idempotencyKey: input.idempotencyKey,
     integrationId: input.integrationId,
@@ -58,22 +60,8 @@ export async function executeExternalBotAction(
     tenantId: input.tenantId,
     threadId: input.threadId,
   };
-  const grantResult = await ports.grantStore.consume({
-    action: input.command.action,
-    actionClass: input.actionClass,
-    channel: input.channel,
-    connectionId: input.connectionId,
-    now: (ports.now ?? (() => new Date()))(),
-    integrationId: input.integrationId,
-    modelVersion: input.modelVersion,
-    provider: input.provider,
-    requestDigest: input.requestDigest,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-    threadId: input.threadId,
-    token: input.capabilityGrant,
-  });
-  if (grantResult === "invalid") {
+  const accepted = await ports.actionRepository.accept(actionRecordInput);
+  if (accepted.kind === "grant_invalid") {
     await context.audit.record({
       action: "crm.bot.action.grant_denied",
       actor: context.actor,
@@ -93,7 +81,20 @@ export async function executeExternalBotAction(
       403,
     );
   }
-  const accepted = await ports.actionRepository.accept(actionRecordInput);
+  if (accepted.kind === "grant_used") {
+    throw botError(
+      "CRM_BOT_GRANT_REUSED",
+      "Capability grant was already consumed.",
+      409,
+    );
+  }
+  if (accepted.kind === "policy_denied") {
+    throw botError(
+      "CRM_BOT_POLICY_DENIED",
+      `External bot policy denied command acceptance: ${accepted.code}.`,
+      403,
+    );
+  }
   if (accepted.kind === "conflict") {
     throw botError(
       "CRM_BOT_IDEMPOTENCY_CONFLICT",
@@ -101,13 +102,37 @@ export async function executeExternalBotAction(
       409,
     );
   }
-  if (accepted.kind === "existing") return accepted.record;
-  if (grantResult === "used") {
-    throw botError(
-      "CRM_BOT_GRANT_REUSED",
-      "Capability grant was already consumed.",
-      409,
-    );
+  if (accepted.kind === "existing") {
+    if (
+      (accepted.record.status === "executing" ||
+        accepted.record.status === "retryable_failed") &&
+      !isCanonicalProviderEffectAction(accepted.record.command)
+    ) {
+      if (accepted.record.status === "retryable_failed") {
+        const reserved = await ports.actionRepository.transition(
+          accepted.record.id,
+          ["retryable_failed"],
+          "executing",
+        );
+        if (!reserved) return accepted.record;
+      }
+      const effect = await ports.effectDispatcher.dispatch({
+        actionId: accepted.record.id,
+        command: accepted.record.command,
+        idempotencyKey: accepted.record.idempotencyKey,
+        scope: accepted.record,
+      });
+      const completed = await finishEffect(accepted.record.id, effect, ports);
+      if (completed.status === "completed") {
+        await auditCompletedExternalBotAction(
+          context,
+          completed.id,
+          completed.command.action,
+        );
+      }
+      return completed;
+    }
+    return accepted.record;
   }
   const record = accepted.record;
   await context.audit.record({
@@ -130,6 +155,7 @@ export async function executeExternalBotAction(
   const disabledAt = await ports.killSwitches.resolve(
     input,
     input.command.action,
+    actionClass,
   );
   if (disabledAt)
     return cancelActionAudited(
@@ -138,18 +164,21 @@ export async function executeExternalBotAction(
       `kill_switch_${disabledAt}`,
       ports,
     );
-  const proposalMode =
-    input.actionClass === "proposal" || isProposalCommand(input.command);
-  if (!proposalMode && !isCanonicalProviderEffectAction(input.command)) {
+  if (!policyDecision.allowed) {
     return cancelActionAudited(
       context,
       record.id,
-      "action_not_operational",
+      `policy_${policyDecision.code}`,
       ports,
     );
   }
-  const snapshot = await ports.effectAuthorizer.inspect(input);
-  if (!snapshot.scopeExists || snapshot.revision !== input.expectedRevision) {
+  const proposalMode = policyDecision.mode === "proposal";
+  const snapshot = authorizationSnapshot;
+  if (
+    !snapshot.scopeExists ||
+    snapshot.revision !== input.expectedRevision ||
+    snapshot.attendanceRevision !== input.expectedAttendanceRevision
+  ) {
     return cancelActionAudited(
       context,
       record.id,
@@ -188,7 +217,8 @@ export async function executeExternalBotAction(
   if (
     !recheck.scopeExists ||
     recheck.humanAttendanceActive ||
-    recheck.revision !== input.expectedRevision
+    recheck.revision !== input.expectedRevision ||
+    recheck.attendanceRevision !== input.expectedAttendanceRevision
   ) {
     return cancelAction(record.id, "reauthorization_failed", ports, [
       "claimed",
@@ -201,40 +231,13 @@ export async function executeExternalBotAction(
     idempotencyKey: input.idempotencyKey,
     scope: input,
   });
-  return finishEffect(record.id, effect, ports);
-}
-
-function assertExactContextScope(
-  context: ServiceContext,
-  input: ExternalBotActionRequest,
-) {
-  const scope = requireExternalBotScope(context);
-  if (
-    scope.storeId !== input.storeId ||
-    scope.tenantId !== input.tenantId ||
-    context.actor.externalId !== input.integrationId
-  ) {
-    throw botError(
-      "CRM_BOT_SCOPE_MISMATCH",
-      "Bot action scope does not match its credential.",
-      403,
+  const completed = await finishEffect(record.id, effect, ports);
+  if (completed.status === "completed") {
+    await auditCompletedExternalBotAction(
+      context,
+      completed.id,
+      completed.command.action,
     );
   }
-}
-
-function assertRequestDigest(
-  input: ExternalBotActionRequest,
-  ports: ExternalBotManagerPorts,
-) {
-  const { requestDigest: _requestDigest, ...unsigned } = input;
-  const expected = ports.digest.digest(
-    canonicalExternalBotActionRequest(unsigned),
-  );
-  if (!ports.digest.equals(expected, input.requestDigest)) {
-    throw botError(
-      "CRM_BOT_REQUEST_DIGEST_INVALID",
-      "Request digest is invalid.",
-      401,
-    );
-  }
+  return completed;
 }

@@ -1,42 +1,57 @@
-import { mapRepassesConnection } from "./crm-whatsapp-mapping.mjs";
+import {
+  canonicalRepassesMessagingChannel,
+  crmChannelConnectionMapKey,
+  mapRepassesConnection,
+} from "./crm-whatsapp-mapping.mjs";
 import { nullableString, targetId } from "./common.mjs";
 import { createCrmCredentialSealer } from "./crm-credential-sealer.mjs";
 
 export async function seedWhatsappConnections(tx, source, config, ids) {
   const seal = createCrmCredentialSealer();
   for (const connection of source.connections) {
-    const mapped = mapRepassesConnection(connection, {
-      activate: config.activateWhatsappConnections,
-      sealCredential: (input) =>
-        seal({ ...input, storeId: ids.store, tenantId: ids.tenant }),
-    });
-    const displayName = nullableString(
-      connection.name ||
-        connection.instance_name ||
-        `WhatsApp ${connection.id}`,
-      160,
-    );
-    const id = await resolveConnectionId(
-      tx,
-      connection,
-      mapped,
-      displayName,
-      source.connections.length,
-      config,
-      ids,
-    );
-    ids.crmChannelConnections.set(connection.id, id);
-    await tx`INSERT INTO crm_channel_connections
+    const channels = connectionChannels(source, connection.id);
+    for (const channel of channels) {
+      const mapped = mapConnectionForChannel(
+        connection,
+        channel,
+        config,
+        seal,
+        ids,
+      );
+      const displayName = nullableString(
+        connection.name ||
+          connection.instance_name ||
+          `${channel === "olx_chat" ? "OLX Chat" : "WhatsApp"} ${connection.id}`,
+        160,
+      );
+      const id = await resolveConnectionId(
+        tx,
+        connection,
+        mapped,
+        displayName,
+        source.connections.length,
+        channel,
+        config,
+        ids,
+      );
+      ids.crmChannelConnections.set(
+        crmChannelConnectionMapKey(connection.id, channel),
+        id,
+      );
+      if (channel === "whatsapp") {
+        ids.crmChannelConnections.set(connection.id, id);
+      }
+      await tx`INSERT INTO crm_channel_connections
       (id, broker, channel, display_name, external_connection_id,
        external_instance_id, metadata, provider, state, store_id,
        tenant_id, webhook_url, created_at, updated_at)
-      VALUES (${id}, 'direct', 'whatsapp', ${displayName},
-        ${connection.uuid}, ${mapped.externalInstanceId},
+      VALUES (${id}, 'direct', ${channel}, ${displayName},
+        ${channel === "whatsapp" ? connection.uuid : null}, ${mapped.externalInstanceId},
         ${tx.json({
           capabilities: {
-            inbound: true,
-            outbound: true,
-            scheduling: true,
+            inbound: channel === "whatsapp",
+            outbound: channel === "whatsapp",
+            scheduling: channel === "whatsapp",
             templates: false,
           },
           connected: mapped.status === "active",
@@ -49,8 +64,10 @@ export async function seedWhatsappConnections(tx, source, config, ids) {
             sourceUuid: connection.uuid,
           },
           migration: {
+            historicalImportOnly: channel === "olx_chat",
             importedConnectionState: mapped.status,
             mediaStrategy: "keep_legacy_urls",
+            officialOperation: false,
           },
           phone: nullableString(
             connection.connection_phone_number ?? connection.phone,
@@ -66,7 +83,35 @@ export async function seedWhatsappConnections(tx, source, config, ids) {
         metadata=excluded.metadata,
         state=excluded.state,
         updated_at=excluded.updated_at`;
+    }
   }
+}
+
+function connectionChannels(source, connectionId) {
+  const channels = new Set(
+    source.sessions
+      .filter((session) => session.connection_id === connectionId)
+      .map((session) => canonicalRepassesMessagingChannel(session.channel)),
+  );
+  if (channels.size === 0) channels.add("whatsapp");
+  return channels;
+}
+
+function mapConnectionForChannel(connection, channel, config, seal, ids) {
+  if (channel === "olx_chat") {
+    return {
+      credentialsRef: {},
+      externalInstanceId: null,
+      lookupInstanceId: null,
+      provider: "olx",
+      status: "paused",
+    };
+  }
+  return mapRepassesConnection(connection, {
+    activate: config.activateWhatsappConnections,
+    sealCredential: (input) =>
+      seal({ ...input, storeId: ids.store, tenantId: ids.tenant }),
+  });
 }
 
 async function resolveConnectionId(
@@ -75,9 +120,17 @@ async function resolveConnectionId(
   mapped,
   displayName,
   sourceConnectionCount,
+  channel,
   config,
   ids,
 ) {
+  if (channel === "olx_chat") {
+    return targetId(
+      config.legacyStoreId,
+      "RepassesOlxChatConnection",
+      connection.id,
+    );
+  }
   const externalId = String(connection.uuid);
   const [globalExternal] = await tx.unsafe(
     `SELECT id, store_id

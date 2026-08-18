@@ -1,15 +1,21 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type {
+  CrmChannel,
+  CrmCredentialBroker,
+  CrmTransportProvider,
+} from "../core/models.js";
 import type { CrmChannelConnectionProjection } from "./crmChannelConnectionProjection.js";
 
-export type CrmConnectionProvider =
-  "zapi" | "composio_whatsapp" | "composio_instagram" | "olx_chat";
+export type CrmConnectionProvider = CrmTransportProvider;
 
 export type CrmConnectionConfiguredStatus =
   "sandbox" | "active" | "paused" | "disconnected" | "error" | "archived";
 
 export type CrmConnection = {
   /** Canonical read facts. Provider-specific setup fields remain below. */
+  broker: CrmCredentialBroker;
   canonical?: CrmChannelConnectionProjection;
+  channel: CrmChannel;
   credentialsRef: Record<string, unknown>;
   displayName: string;
   externalConnectionId: string | null;
@@ -25,27 +31,30 @@ export type CrmConnection = {
 };
 
 export type ListCrmConnectionsInput = {
+  brokers?: readonly CrmCredentialBroker[];
+  channels?: readonly CrmChannel[];
   providers?: readonly CrmConnectionProvider[];
   storeId: StoreId;
   tenantId: TenantId;
 };
 
 export type FindCrmConnectionByExternalIdInput = {
+  brokers?: readonly CrmCredentialBroker[];
+  channels: readonly CrmChannel[];
   externalConnectionId: string;
   providers: readonly CrmConnectionProvider[];
 };
 
 export type CreateCrmConnectionInput = {
+  broker: CrmCredentialBroker;
+  channel: CrmChannel;
   credentialsRef?: Record<string, unknown>;
   displayName: string;
   externalConnectionId?: string | null;
   externalInstanceId?: string | null;
   metadata?: Record<string, unknown>;
   phone?: string | null;
-  provider: Extract<
-    CrmConnectionProvider,
-    "zapi" | "composio_instagram" | "composio_whatsapp" | "olx_chat"
-  >;
+  provider: CrmConnectionProvider;
   status?: CrmConnectionConfiguredStatus;
   storeId: StoreId;
   tenantId: TenantId;
@@ -82,7 +91,7 @@ export type CrmConnectionRepository = {
   }) => Promise<readonly CrmConnection[]>;
   createConnection: (input: CreateCrmConnectionInput) => Promise<CrmConnection>;
   upsertOlxConnection: (
-    input: Omit<CreateCrmConnectionInput, "provider">,
+    input: Omit<CreateCrmConnectionInput, "broker" | "channel" | "provider">,
   ) => Promise<AuthorizeOlxConnectionResult>;
   configureInitialZapiCredentials: (input: {
     connectionId: string;

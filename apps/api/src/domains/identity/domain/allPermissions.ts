@@ -1,5 +1,5 @@
 import type { PermissionKey } from "@lojaveiculosv2/shared";
-import { crmWhatsappAdminPermissions } from "./crmWhatsappAccessPermissions.js";
+import { crmAdminPermissions } from "./crmAccessPermissions.js";
 import { saleLifecyclePermissions } from "./saleAccessPolicy.js";
 
 export const allPermissions = [
@@ -18,7 +18,7 @@ export const allPermissions = [
   "crm.contact_identity.dispute",
   "crm.contact_identity.verify",
   "crm.manage",
-  ...crmWhatsappAdminPermissions,
+  ...crmAdminPermissions,
   "documents.read",
   "documents.download",
   "documents.preview",

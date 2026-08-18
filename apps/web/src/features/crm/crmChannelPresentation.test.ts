@@ -5,9 +5,9 @@ import {
   readOlxChannelOperations,
 } from "./crmChannelPresentation";
 import type {
-  CrmWhatsappProviderCapabilities,
-  CrmWhatsappProviderConnection,
-} from "./crmWhatsappTypes";
+  CrmProviderCapabilities,
+  CrmProviderConnection,
+} from "./crmConversationTypes";
 import type { MarketplaceProviderState } from "../marketplaces/types";
 
 describe("readOlxChannelOperations", () => {
@@ -48,7 +48,7 @@ describe("readOlxChannelOperations", () => {
   it("shows a rejected Chat registration as failed instead of pending", () => {
     const connection = createOlxConnection();
     connection.ready = false;
-    connection.live.providerStatus = "disconnected";
+    connection.live!.providerStatus = "disconnected";
     const operations = readOlxChannelOperations(
       [connection],
       createMarketplaceState("connected", {
@@ -66,8 +66,8 @@ describe("readOlxChannelOperations", () => {
 
   it("lets canonical readiness false override a connected live provider", () => {
     const connection = createOlxConnection();
-    connection.live.providerStatus = "connected";
-    connection.live.connected = true;
+    connection.live!.providerStatus = "connected";
+    connection.live!.connected = true;
     connection.ready = true;
     connection.readiness = {
       ready: false,
@@ -149,7 +149,7 @@ describe("readOlxChannelOperations", () => {
       capabilities: null,
       connectionStatus: "not_connected",
       lastSyncSummary: null,
-      provider: "olx",
+      provider: "olx" as const,
       requirements: [],
     });
 
@@ -178,8 +178,8 @@ describe("readCrmChannelIdentity", () => {
     expect(
       readCrmChannelIdentity({
         broker: "Gateway Loja",
-        channel: "OLX_CHAT",
-        provider: "olx_chat",
+        channel: "olx_chat",
+        provider: "olx",
       }),
     ).toEqual({
       brokerLabel: "Gateway Loja",
@@ -189,7 +189,7 @@ describe("readCrmChannelIdentity", () => {
   });
 });
 
-function createOlxConnection(): CrmWhatsappProviderConnection {
+function createOlxConnection(): CrmProviderConnection {
   return {
     capabilities: textOnlyCapabilities,
     channel: "olx_chat",
@@ -205,7 +205,7 @@ function createOlxConnection(): CrmWhatsappProviderConnection {
       smartphoneConnected: null,
     },
     phone: null,
-    provider: "olx_chat",
+    provider: "olx",
     ready: true,
     readiness: { ready: true, reason: null, reasonCode: null },
     status: "active",
@@ -254,7 +254,7 @@ function capability(
   };
 }
 
-const textOnlyCapabilities: CrmWhatsappProviderCapabilities = {
+const textOnlyCapabilities: CrmProviderCapabilities = {
   audio: false,
   catalog: false,
   conversationStart: false,
@@ -280,21 +280,10 @@ describe("groupCrmConnectionsByChannel", () => {
     const olxWithoutChannel = {
       ...createOlxConnection(),
       id: "olx-no-channel",
-      provider: "olx_chat",
+      provider: "olx" as const,
     };
     delete (olxWithoutChannel as { channel?: unknown }).channel;
-    const unknownProvider = {
-      ...createOlxConnection(),
-      displayName: "Mystery",
-      id: "mystery",
-      provider: "carrier_pigeon",
-    };
-    delete (unknownProvider as { channel?: unknown }).channel;
-
-    const groups = groupCrmConnectionsByChannel([
-      olxWithoutChannel,
-      unknownProvider,
-    ]);
+    const groups = groupCrmConnectionsByChannel([olxWithoutChannel]);
 
     expect(groups).toHaveLength(1);
     expect(groups[0]).toMatchObject({
@@ -303,7 +292,6 @@ describe("groupCrmConnectionsByChannel", () => {
     });
     expect(groups[0]?.connections.map((item) => item.id)).toEqual([
       "olx-no-channel",
-      "mystery",
     ]);
   });
 
@@ -314,7 +302,7 @@ describe("groupCrmConnectionsByChannel", () => {
       ...createOlxConnection(),
       channel: "whatsapp" as const,
       id: "wa-1",
-      provider: "zapi",
+      provider: "zapi" as const,
     };
     const olx = { ...createOlxConnection(), channel: "olx_chat" as const };
 
@@ -370,7 +358,7 @@ describe("readOlxChatRetryTarget", () => {
       reason: "O provedor recusou o setup.",
       reasonCode: "provider_rejected",
     };
-    connection.live.providerStatus = "disconnected";
+    connection.live!.providerStatus = "disconnected";
     const target = readOlxChatRetryTarget(
       [connection],
       createMarketplaceState("connected", {
@@ -384,8 +372,8 @@ describe("readOlxChatRetryTarget", () => {
   it("offers retry from canonical not-ready state even when live transport is connected", async () => {
     const { readOlxChatRetryTarget } = await import("./crmChannelPresentation");
     const connection = createOlxConnection();
-    connection.live.providerStatus = "connected";
-    connection.live.connected = true;
+    connection.live!.providerStatus = "connected";
+    connection.live!.connected = true;
     connection.readiness = {
       ready: false,
       reason: "Setup canônico pendente.",

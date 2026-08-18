@@ -127,6 +127,40 @@ describe("createRedisCrmRealtimeBroker", () => {
     ]);
   });
 
+  it("uses channel-neutral Redis namespaces for shared CRM realtime state", async () => {
+    const { command, subscriber } = installRedisClients(
+      redisMocks.createClient,
+    );
+    const broker = createRedisCrmRealtimeBroker("redis://available");
+
+    await broker.issueTicket({
+      queueVisibility: { kind: "global" },
+      storeId,
+      tenantId,
+    });
+    await broker.publish(createEvent());
+
+    expect(command.set).toHaveBeenCalledWith(
+      expect.stringMatching(/^crm:sse-ticket:/),
+      expect.any(String),
+      { EX: 60 },
+    );
+    expect(command.sendCommand).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        "XADD",
+        `crm:realtime:stream:${tenantId}:${storeId}`,
+      ]),
+    );
+    expect(command.publish).toHaveBeenCalledWith(
+      "crm:realtime",
+      expect.any(String),
+    );
+    expect(subscriber.subscribe).toHaveBeenCalledWith(
+      "crm:realtime",
+      expect.any(Function),
+    );
+  });
+
   it("delivers published events to subscribers on separate brokers", async () => {
     const listeners: Array<(message: string) => void> = [];
     const createSharedClient = () => {

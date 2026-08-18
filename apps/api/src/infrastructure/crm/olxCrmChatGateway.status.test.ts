@@ -88,6 +88,8 @@ describe("OLX CRM chat connection status", () => {
 
 function connection(): CrmConnection {
   return {
+    broker: "direct",
+    channel: "olx_chat",
     credentialsRef: { stored: { accessToken: sealedAccessToken } },
     displayName: "OLX",
     externalConnectionId: "olx-account",
@@ -100,7 +102,7 @@ function connection(): CrmConnection {
       },
     },
     phone: null,
-    provider: "olx_chat",
+    provider: "olx",
     status: "active",
     storeId: "store_1" as StoreId,
     tenantId: "tenant_1" as TenantId,

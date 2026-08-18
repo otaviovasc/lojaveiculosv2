@@ -16,11 +16,23 @@ export {
 export async function loadAuthorizedExternalBotEffect(
   db: ExternalBotDb,
   effectId: string,
+  options: { markProviderAttempt?: boolean } = {},
 ): Promise<AuthorizedExternalBotEffect | null> {
+  const markProviderAttempt = options.markProviderAttempt ?? true;
+  const attemptRows = markProviderAttempt
+    ? await db.execute(sql`update crm_external_bot_provider_effects
+        set provider_attempted_at=now(), updated_at=now()
+        where id=${effectId}::uuid and state in ('claimed','executing')
+          and provider_attempted_at is null returning id`)
+    : [];
+  const firstAttempt =
+    !markProviderAttempt ||
+    (attemptRows as unknown as ExternalBotRow[]).length === 1;
   const rows = await db.execute(sql`
     select effect.id,effect.idempotency_key,effect.provider,
       effect.provider_connection_id,effect.store_id,effect.tenant_id,
-      command.action_type,command.expected_revision,command.input,
+      command.action_type,command.expected_attendance_revision,
+      command.expected_revision,command.input,
       command.request_digest,
       command.thread_id,cycle.id as canonical_cycle_id,
       connection.broker,connection.channel,connection.display_name,
@@ -33,26 +45,30 @@ export async function loadAuthorizedExternalBotEffect(
       end as provider_address,
       synchronized.provider_message_id as synchronized_provider_operation_id,
       synchronized.occurred_at as synchronized_occurred_at
-    from provider_effects effect
-    inner join bot_action_commands command
+    from crm_external_bot_provider_effects effect
+    inner join crm_external_bot_action_commands command
       on command.id=effect.command_id and command.tenant_id=effect.tenant_id
       and command.store_id=effect.store_id
       and command.provider_connection_id=effect.provider_connection_id
       and command.provider=effect.provider
-    inner join bot_integration_grants grant
+    inner join crm_external_bot_grants grant
       on grant.id=command.grant_id and grant.tenant_id=command.tenant_id
       and grant.store_id=command.store_id and grant.thread_id=command.thread_id
       and grant.provider_connection_id=command.provider_connection_id
       and grant.provider=command.provider and grant.action_type=command.action_type
-      and grant.action_class=command.authorization_class
-      and grant.state='consumed' and grant.expires_at>now()
+      and (grant.action_class=command.authorization_class
+        or (grant.action_class='proposal_only' and command.authorization_class='human_approved'))
+      and grant.state='consumed'
+      and (grant.expires_at>now() or command.authorization_class='human_approved')
       and grant.integration_id=(command.input->>'integrationId')::uuid
       and grant.model_version=command.input->>'modelVersion'
     inner join crm_conversation_threads thread
       on thread.id=command.thread_id and thread.tenant_id=command.tenant_id
       and thread.store_id=command.store_id
       and thread.provider_connection_id=command.provider_connection_id
-      and thread.revision=command.expected_revision and thread.state='open'
+      and thread.state='open'
+    inner join tenants tenant on tenant.id=thread.tenant_id and tenant.deleted_at is null
+    inner join stores store on store.id=thread.store_id and store.tenant_id=thread.tenant_id and store.deleted_at is null
     inner join crm_channel_connections connection
       on connection.id=thread.provider_connection_id
       and connection.tenant_id=thread.tenant_id
@@ -60,15 +76,15 @@ export async function loadAuthorizedExternalBotEffect(
       and connection.provider=effect.provider and connection.channel=thread.channel
     inner join crm_channel_routing_policies routing
       on routing.tenant_id=thread.tenant_id and routing.store_id=thread.store_id
-      and routing.channel=thread.channel and routing.bot_mode<>'disabled'
-      and ((routing.bot_mode='inherit_store_default'
+      and routing.channel=thread.channel and routing.external_bot_mode<>'disabled'
+      and ((routing.external_bot_mode='inherit_store_default'
           and routing.default_connection_id=connection.id)
-        or (routing.bot_mode='explicit_connection'
-          and routing.bot_connection_id=connection.id))
+        or (routing.external_bot_mode='explicit_connection'
+          and routing.external_bot_connection_id=connection.id))
     inner join integration_accounts account
       on account.id=grant.integration_id and account.tenant_id=effect.tenant_id
       and account.store_id=effect.store_id and account.status='active'
-      and account.provider='crm_whatsapp_bot'
+      and account.provider='crm_external_bot'
     inner join store_entitlements entitlement
       on entitlement.tenant_id=effect.tenant_id
       and entitlement.store_id=effect.store_id
@@ -81,6 +97,7 @@ export async function loadAuthorizedExternalBotEffect(
       from crm_conversation_cycles candidate
       where candidate.thread_id=thread.id and candidate.tenant_id=thread.tenant_id
         and candidate.store_id=thread.store_id and candidate.state='active'
+        and candidate.revision=command.expected_revision
         and 1=(select count(*) from crm_conversation_cycles active_cycle
           where active_cycle.thread_id=thread.id
             and active_cycle.tenant_id=thread.tenant_id
@@ -91,6 +108,7 @@ export async function loadAuthorizedExternalBotEffect(
     inner join crm_conversation_attendances attendance
       on attendance.thread_id=thread.id and attendance.tenant_id=thread.tenant_id
       and attendance.store_id=thread.store_id and attendance.cycle_id=cycle.id
+      and attendance.state_version=command.expected_attendance_revision
     left join lateral (
       select message.provider_message_id,message.occurred_at
       from crm_messages message
@@ -105,17 +123,16 @@ export async function loadAuthorizedExternalBotEffect(
     ) synchronized on true
     where effect.id=${effectId}::uuid and effect.state in ('claimed','executing')
       and command.state in ('executing','retryable_failed')
-      and command.authorization_class='automatic'
-      and command.action_type in ('message.send','handoff.request')
+      and command.authorization_class in ('automatic','human_approved')
+      and command.action_type in ('message.send_text','message.send_media','message.send_template')
       and command.input->>'channel'=thread.channel::text
       and nullif(case when connection.channel='whatsapp'
         then coalesce(thread.customer_phone,thread.external_thread_id)
         else coalesce(thread.customer_chat_id,thread.external_thread_id) end,'') is not null
       and (attendance.state='bot_active'
-        or (command.action_type='message.send'
-          and synchronized.provider_message_id is not null)
-        or (command.action_type='handoff.request'
-          and effect.result->>'canonicalHandoffSynchronized'='true'))
+        or synchronized.provider_message_id is not null)
+      and (${firstAttempt}
+        or synchronized.provider_message_id is not null)
       and not exists (
         select 1 from crm_external_bot_kill_switches switch
         where switch.enabled=true and (
@@ -133,5 +150,22 @@ export async function loadAuthorizedExternalBotEffect(
     limit 1
   `);
   const row = (rows as unknown as ExternalBotRow[])[0];
-  return row ? mapAuthorizedExternalBotEffect(row) : null;
+  const effect = row ? mapAuthorizedExternalBotEffect(row) : null;
+  if (!effect && markProviderAttempt && firstAttempt) {
+    await db.execute(sql`update crm_external_bot_provider_effects
+      set provider_attempted_at=null, updated_at=now()
+      where id=${effectId}::uuid and state in ('claimed','executing')`);
+  }
+  return effect;
+}
+
+export async function wasExternalBotProviderAttempted(
+  db: ExternalBotDb,
+  effectId: string,
+) {
+  const rows = await db.execute(sql`select id
+    from crm_external_bot_provider_effects
+    where id=${effectId}::uuid and provider_attempted_at is not null
+    limit 1`);
+  return (rows as unknown as ExternalBotRow[]).length === 1;
 }

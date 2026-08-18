@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM routing policy routes", () => {
   it("returns all channel policies with explicit blocked states", async () => {
@@ -10,6 +10,7 @@ describe("CRM routing policy routes", () => {
     const body = (await response.json()) as {
       channels: Array<{
         bot: { blocked: { code: string } };
+        externalBot: { blocked: { code: string } };
         storeDefault: { blocked: { code: string } };
       }>;
     };
@@ -17,7 +18,7 @@ describe("CRM routing policy routes", () => {
     expect(body.channels[0]?.storeDefault.blocked.code).toBe(
       "policy_not_configured",
     );
-    expect(body.channels[0]?.bot.blocked.code).toBe("route_disabled");
+    expect(body.channels[0]?.externalBot.blocked.code).toBe("route_disabled");
   });
 
   it("updates a disabled channel policy without touching persisted messages", async () => {
@@ -25,7 +26,8 @@ describe("CRM routing policy routes", () => {
       "/api/v1/crm/routing-policy",
       {
         body: JSON.stringify({
-          bot: { mode: "disabled" },
+          externalBotMode: "disabled",
+          externalBotConnectionId: null,
           channel: "instagram",
           defaultConnectionId: null,
         }),
@@ -43,7 +45,7 @@ describe("CRM routing policy routes", () => {
       "/api/v1/crm/routing-policy",
       {
         body: JSON.stringify({
-          bot: { mode: "explicit_connection" },
+          externalBotMode: "explicit_connection",
           channel: "whatsapp",
           defaultConnectionId: null,
         }),
@@ -53,7 +55,7 @@ describe("CRM routing policy routes", () => {
     );
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_VALIDATION_ERROR",
+      code: "CRM_MESSAGING_VALIDATION_ERROR",
     });
   });
 });

@@ -4,7 +4,7 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 export const ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE = "zapi.instance-id";
 export const ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE = "zapi.instance-token";
 export const ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE = "zapi.webhook-secret";
-export const CRM_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE =
+export const CRM_EXTERNAL_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE =
   "crm-bot.webhook-secret";
 
 export type CrmCredentialScope = {
@@ -130,7 +130,7 @@ export type ComposioInstagramDiscovery = {
   senders: readonly ComposioInstagramSender[];
 };
 
-export type ComposioCrmProvider = "composio_instagram" | "composio_whatsapp";
+export type ComposioCrmChannel = "instagram" | "whatsapp";
 
 export type ComposioInstagramLoginMode = "facebook" | "instagram";
 
@@ -149,7 +149,7 @@ export type ComposioCrmOnboardingProvider = {
   createConnectLink: (input: {
     alias?: string;
     callbackUrl?: string;
-    provider: ComposioCrmProvider;
+    channel: ComposioCrmChannel;
     userId: string;
   }) => Promise<ComposioConnectLink>;
   discoverInstagramResources?: (

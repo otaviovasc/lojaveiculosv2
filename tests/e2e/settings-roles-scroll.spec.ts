@@ -135,7 +135,7 @@ test("roles panel exposes provider-neutral CRM connection permissions", async ({
         {
           description:
             "Criar, pausar, retomar e cancelar campanhas de mensagens.",
-          key: "crm.whatsapp.campaigns.manage",
+          key: "crm.campaigns.manage",
           label: "Gerenciar campanhas",
           risk: "high",
         },

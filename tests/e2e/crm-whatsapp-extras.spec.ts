@@ -36,7 +36,7 @@ test.describe("CRM WhatsApp extras", () => {
     const sendState = await installExtrasActionRoutes(page, messageId);
 
     await installLocalOwnerSession(page);
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page
       .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
@@ -169,7 +169,7 @@ test.describe("CRM WhatsApp extras", () => {
     await installProviderEventIssueRoutes(page);
     await installLocalOwnerSession(page);
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: "Integrações" }).click();
     await page.getByRole("tab", { exact: true, name: "Eventos" }).click();
     await expect(

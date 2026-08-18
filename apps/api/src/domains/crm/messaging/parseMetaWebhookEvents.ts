@@ -5,7 +5,7 @@ import {
   readTimestamp,
 } from "./metaWebhookPayloadReaders.js";
 
-export type MetaMessagingProvider = "composio_whatsapp" | "composio_instagram";
+export type MetaMessagingChannel = "instagram" | "whatsapp";
 export type MetaMessageStatus = "SENT" | "DELIVERED" | "READ" | "FAILED";
 export type MetaMediaReference = {
   fileName: string | null;
@@ -15,10 +15,11 @@ export type MetaMediaReference = {
   url: string | null;
 };
 type ParsedMetaEventBase = {
+  channel: MetaMessagingChannel;
   contactExternalId: string;
   externalConnectionId: string;
   externalMessageId: string;
-  provider: MetaMessagingProvider;
+  provider: "meta_cloud";
   providerEventKey: string;
   timestamp: Date | null;
 };
@@ -58,7 +59,7 @@ function parseWhatsappEntries(value: unknown) {
       const connectionId = readString(metadata?.phone_number_id);
       if (change.field !== "messages" || !body || !connectionId) continue;
       for (const message of readRecords(body.messages)) {
-        const parsed = parseWhatsappMessage(message, connectionId);
+        const parsed = parseCrmMessageDto(message, connectionId);
         if (parsed) events.push(parsed);
       }
       for (const status of readRecords(body.statuses)) {
@@ -69,7 +70,7 @@ function parseWhatsappEntries(value: unknown) {
   }
   return events;
 }
-function parseWhatsappMessage(
+function parseCrmMessageDto(
   message: Record<string, unknown>,
   connectionId: string,
 ): MetaMessageEvent | null {
@@ -82,7 +83,7 @@ function parseWhatsappMessage(
   if (!messageId || !contactId) return null;
   return {
     ...eventBase(
-      "composio_whatsapp",
+      "whatsapp",
       "message",
       connectionId,
       messageId,
@@ -105,7 +106,7 @@ function parseWhatsappStatus(
   if (!messageId || !contactId || !status) return null;
   return {
     ...eventBase(
-      "composio_whatsapp",
+      "whatsapp",
       `status:${status}`,
       connectionId,
       messageId,
@@ -145,7 +146,7 @@ function parseInstagramEvent(
     const isEcho = message.is_echo === true || senderId === connectionId;
     return {
       ...eventBase(
-        "composio_instagram",
+        "instagram",
         "message",
         connectionId,
         messageId,
@@ -214,7 +215,7 @@ function mapStatus(value: unknown): MetaMessageStatus | null {
     : null;
 }
 function eventBase(
-  provider: MetaMessagingProvider,
+  channel: MetaMessagingChannel,
   kind: string,
   connectionId: string,
   messageId: string,
@@ -223,10 +224,11 @@ function eventBase(
 ): ParsedMetaEventBase {
   return {
     contactExternalId: contactId,
+    channel,
     externalConnectionId: connectionId,
     externalMessageId: messageId,
-    provider,
-    providerEventKey: `meta:${provider}:${kind}:${connectionId}:${messageId}`,
+    provider: "meta_cloud",
+    providerEventKey: `meta:${channel}:${kind}:${connectionId}:${messageId}`,
     timestamp,
   };
 }

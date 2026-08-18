@@ -1,0 +1,102 @@
+// @vitest-environment jsdom
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { CrmConversationApi } from "./crmConversationApi";
+import { useCrmConnections } from "./useCrmConnections";
+
+describe("useCrmConnections", () => {
+  it("does not let an older refresh failure replace a newer success", async () => {
+    let rejectInitial!: (error: Error) => void;
+    let resolveRefresh!: (
+      payload: ReturnType<typeof connectionPayload>,
+    ) => void;
+    const initial = new Promise<ReturnType<typeof connectionPayload>>(
+      (_, reject) => {
+        rejectInitial = reject;
+      },
+    );
+    const refresh = new Promise<ReturnType<typeof connectionPayload>>(
+      (resolve) => {
+        resolveRefresh = resolve;
+      },
+    );
+    const listConnections = vi
+      .fn()
+      .mockReturnValueOnce(initial)
+      .mockReturnValueOnce(refresh);
+    const api = { listConnections } as unknown as CrmConversationApi;
+    const { result } = renderHook(() => useCrmConnections(api));
+
+    let refreshPromise!: Promise<void>;
+    await act(async () => {
+      refreshPromise = result.current.refreshConnections();
+      resolveRefresh(connectionPayload("newer"));
+      await refreshPromise;
+      rejectInitial(new Error("old failure"));
+    });
+
+    await waitFor(() => {
+      expect(result.current.connections).toEqual([
+        expect.objectContaining({ id: "newer" }),
+      ]);
+    });
+    expect(result.current.error).toBeNull();
+  });
+
+  it("refreshes the connection after configuring Z-API webhooks", async () => {
+    const listConnections = vi
+      .fn()
+      .mockResolvedValueOnce(connectionPayload("connection_1"))
+      .mockResolvedValueOnce(connectionPayload("configured_connection"));
+    const configureZapiWebhooks = vi.fn(async () => ({
+      results: [],
+      setup: {
+        attemptCount: 1,
+        configuredAt: "2026-08-12T12:00:00.000Z",
+        lastErrorCode: null,
+        requestedAt: "2026-08-12T12:00:00.000Z",
+        requiredTypes: [],
+        status: "configured" as const,
+        succeededTypes: [],
+        supportCode: "ZAPI-TEST",
+        updatedAt: "2026-08-12T12:00:00.000Z",
+        version: 1 as const,
+      },
+    }));
+    const api = {
+      configureZapiWebhooks,
+      listConnections,
+    } as unknown as CrmConversationApi;
+    const { result } = renderHook(() => useCrmConnections(api));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.configureZapiWebhooks("connection_1");
+    });
+
+    expect(configureZapiWebhooks).toHaveBeenCalledWith("connection_1");
+    expect(listConnections).toHaveBeenCalledTimes(2);
+    expect(result.current.connections).toEqual([
+      expect.objectContaining({ id: "configured_connection" }),
+    ]);
+  });
+});
+
+function connectionPayload(id: string) {
+  return {
+    allowance: { limit: 1, remaining: 0, used: 1 },
+    availableSetups: [],
+    connections: [
+      {
+        id,
+        live: {
+          checkedAt: "2026-08-10T12:00:00.000Z",
+          connected: false,
+          connectedPhone: null,
+          providerStatus: "disconnected",
+          smartphoneConnected: false,
+        },
+      },
+    ],
+  };
+}

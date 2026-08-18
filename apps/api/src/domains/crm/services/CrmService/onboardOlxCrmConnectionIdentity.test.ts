@@ -79,7 +79,8 @@ describe("OLX CRM connection identity", () => {
     ).rejects.toThrow("authoritatively verified");
     await expect(
       repository.listConnections({
-        providers: ["olx_chat"],
+        channels: ["olx_chat"],
+        providers: ["olx"],
         storeId: "store_1" as never,
         tenantId: "tenant_1" as never,
       }),

@@ -5,7 +5,7 @@ export type CrmOlxWebhookSecurity = {
       | {
           connectionId: string;
           now: Date;
-          provider: "olx_chat";
+          provider: "olx";
           scope: "connection";
           storeId: string;
           tenantId: string;

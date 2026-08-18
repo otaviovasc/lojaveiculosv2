@@ -252,7 +252,7 @@ ON CONFLICT (thread_id, tag_id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
-INSERT INTO crm_whatsapp_campaigns (
+INSERT INTO crm_campaigns (
   id, content, created_by_user_id, initial_tag_id, interval_minutes,
   metadata, name, reply_tag_id, scheduled_end_at, scheduled_start_at,
   secondary_content, secondary_delay_minutes, selected_connection_id,
@@ -285,8 +285,8 @@ ON CONFLICT (id) DO UPDATE SET
   total_recipients = EXCLUDED.total_recipients,
   updated_at = now();
 
-INSERT INTO crm_whatsapp_campaign_recipients (
-  id, campaign_id, connection_id, lead_id, phone, sequence, thread_id,
+INSERT INTO crm_campaign_recipients (
+  id, campaign_id, connection_id, lead_id, recipient_address, sequence, thread_id,
   status, store_id, tenant_id, variables
 )
 VALUES
@@ -299,7 +299,7 @@ ON CONFLICT (campaign_id, thread_id) DO UPDATE SET
   initial_scheduled_message_id = null,
   initial_sent_at = null,
   lead_id = EXCLUDED.lead_id,
-  phone = EXCLUDED.phone,
+  recipient_address = EXCLUDED.recipient_address,
   reply_content_preview = null,
   reply_message_id = null,
   reply_received_at = null,
@@ -313,19 +313,19 @@ ON CONFLICT (campaign_id, thread_id) DO UPDATE SET
   variables = EXCLUDED.variables,
   updated_at = now();
 
-UPDATE crm_whatsapp_campaign_recipients
-SET phone = regexp_replace(phone, '[^0-9]', '', 'g'), updated_at = now()
+UPDATE crm_campaign_recipients
+SET recipient_address = regexp_replace(recipient_address, '[^0-9]', '', 'g'), updated_at = now()
 WHERE id IN (
   '26400000-0000-4000-8000-000000000001',
   '26400000-0000-4000-8000-000000000002',
   '26400000-0000-4000-8000-000000000003'
 );
 
-INSERT INTO crm_whatsapp_scheduled_messages (
+INSERT INTO crm_scheduled_messages (
   id, cancelled_at, campaign_id, campaign_message_type,
   campaign_recipient_key, campaign_sequence, connection_id,
-  created_by_user_id, metadata, phone, scheduled_at, cycle_id, thread_id, status,
-  store_id, tenant_id, text
+  created_by_user_id, metadata, recipient_address, scheduled_at, cycle_id, thread_id, status,
+  store_id, tenant_id, content
 )
 VALUES
   ('26500000-0000-4000-8000-000000000001', now() - interval '2 days', '26300000-0000-4000-8000-000000000002', 'initial', '26400000-0000-4000-8000-000000000003', 1, '24000000-0000-4000-8000-000000000101', '03030303-0303-4303-8303-030303030303', '{"fixture": true, "source": "local_seed", "officialOperation": false, "dispatchEnabled": false}'::jsonb, '+5511966663333', now() + interval '7 days', '26600000-0000-4000-8000-000000000003', '26000000-0000-4000-8000-000000000003', 'cancelled', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Mensagem cancelada antes do horario previsto.'),
@@ -340,7 +340,7 @@ ON CONFLICT (id) DO UPDATE SET
   created_by_user_id = EXCLUDED.created_by_user_id,
   error_message = null,
   metadata = EXCLUDED.metadata,
-  phone = EXCLUDED.phone,
+  recipient_address = EXCLUDED.recipient_address,
   scheduled_at = EXCLUDED.scheduled_at,
   cycle_id = EXCLUDED.cycle_id,
   sent_at = null,
@@ -349,11 +349,11 @@ ON CONFLICT (id) DO UPDATE SET
   status = EXCLUDED.status,
   store_id = EXCLUDED.store_id,
   tenant_id = EXCLUDED.tenant_id,
-  text = EXCLUDED.text,
+  content = EXCLUDED.content,
   updated_at = now();
 
-UPDATE crm_whatsapp_scheduled_messages
-SET phone = regexp_replace(phone, '[^0-9]', '', 'g'), updated_at = now()
+UPDATE crm_scheduled_messages
+SET recipient_address = regexp_replace(recipient_address, '[^0-9]', '', 'g'), updated_at = now()
 WHERE id IN (
   '26500000-0000-4000-8000-000000000001',
   '26500000-0000-4000-8000-000000000002'

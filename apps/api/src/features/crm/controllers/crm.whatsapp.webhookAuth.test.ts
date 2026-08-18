@@ -3,8 +3,8 @@ import type { EntitlementKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -30,7 +30,7 @@ describe("CRM WhatsApp webhook authentication", () => {
     const authorizationAudits = auditRecord.mock.calls
       .map(([event]) => event)
       .filter(
-        (event) => event.action === "crm.whatsapp.webhook.zapi.authorize",
+        (event) => event.action === "crm.provider.zapi.webhook.authorize",
       );
     expect(authorizationAudits).toMatchObject([
       { outcome: "attempted" },
@@ -65,7 +65,7 @@ describe("CRM WhatsApp webhook authentication", () => {
     const authorizationAudits = auditRecord.mock.calls
       .map(([event]) => event)
       .filter(
-        (event) => event.action === "crm.whatsapp.webhook.zapi.authorize",
+        (event) => event.action === "crm.provider.zapi.webhook.authorize",
       );
     expect(authorizationAudits).toMatchObject([
       { outcome: "attempted" },
@@ -103,7 +103,7 @@ function createWebhookAuthApp(
         "tenant_2" as TenantId,
       ),
     ]),
-    crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
+    crmConversationRepository: createMemoryCrmConversationRepository(),
     resolveBotEntitlements: async ({ context, storeId, tenantId }) => {
       expect(context).toMatchObject({ storeId, tenantId });
       return entitlements;
@@ -142,6 +142,8 @@ function createZapiConnection(
   connectionTenantId: TenantId,
 ): CrmConnection {
   return {
+    broker: "direct",
+    channel: "whatsapp",
     credentialsRef: { stored: { webhookSecret: `sealed:${secret}` } },
     displayName: "ZAPI Test Connection",
     externalConnectionId: null,

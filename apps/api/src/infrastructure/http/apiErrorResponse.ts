@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { SafeAuditMetadata } from "@lojaveiculosv2/audit";
+import { crmHttpErrorEnvelopeSchema } from "@lojaveiculosv2/shared";
 import {
   sanitizeDiagnosticString,
   toSafeErrorMetadata,
@@ -18,6 +19,8 @@ export type ApiErrorResponseInput = {
   details?: ApiErrorDetails;
   error?: unknown;
   message: string;
+  providerOperationId?: string | null;
+  retryable?: boolean;
   status: ContentfulStatusCode;
 };
 
@@ -55,15 +58,28 @@ export function jsonApiError(context: Context, input: ApiErrorResponseInput) {
     logInternalApiError(context, input, requestId, normalizedError);
   }
 
+  const body = {
+    message: input.message,
+    code: input.code,
+    requestId,
+    ...(input.details ? { details: input.details } : {}),
+    ...(input.providerOperationId !== undefined
+      ? { providerOperationId: input.providerOperationId }
+      : {}),
+    ...(isCrmRequest(context)
+      ? { retryable: input.retryable ?? false }
+      : input.retryable !== undefined
+        ? { retryable: input.retryable }
+        : {}),
+  };
   return context.json(
-    {
-      message: input.message,
-      code: input.code,
-      requestId,
-      ...(input.details ? { details: input.details } : {}),
-    },
+    isCrmRequest(context) ? crmHttpErrorEnvelopeSchema.parse(body) : body,
     input.status,
   );
+}
+
+function isCrmRequest(context: Context): boolean {
+  return /^\/api\/v1\/crm(?:\/|$)/u.test(context.req.path);
 }
 
 export function readHttpErrorMetadata(

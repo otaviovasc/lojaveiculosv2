@@ -38,7 +38,7 @@ export function createMemoryCrmConnectionSetupMethods(
       return normalize(connection);
     },
     async claimOlxWebhookSetup(input) {
-      const connection = findSetupConnection(connections, input, "olx_chat");
+      const connection = findSetupConnection(connections, input, "olx");
       if (!connection || connection.status === "archived") return null;
       const setup = readRecord(connection.metadata.webhookSetup);
       if (
@@ -53,17 +53,14 @@ export function createMemoryCrmConnectionSetupMethods(
     async finishZapiWebhookSetup(input) {
       const connection = findSetupConnection(connections, input, "zapi");
       if (!connection || !ownsLease(connection, input.leaseOwner)) return null;
-      connection.metadata = {
-        ...connection.metadata,
-        webhookSetup: readRecord(input.metadata.webhookSetup),
-      };
+      connection.metadata = { ...connection.metadata, ...input.metadata };
       return normalize(connection);
     },
     async finishOlxWebhookSetup(input) {
-      const connection = findSetupConnection(connections, input, "olx_chat");
+      const connection = findSetupConnection(connections, input, "olx");
       if (!connection || !ownsLease(connection, input.leaseOwner)) return null;
       const setup = readRecord(input.metadata.webhookSetup);
-      connection.metadata = { ...connection.metadata, webhookSetup: setup };
+      connection.metadata = { ...connection.metadata, ...input.metadata };
       connection.status = ["configured", "partial"].includes(
         String(setup.status),
       )

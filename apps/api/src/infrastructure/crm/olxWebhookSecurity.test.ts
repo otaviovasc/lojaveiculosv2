@@ -115,7 +115,7 @@ describe("createRedisOlxWebhookSecurity", () => {
   it("shares atomic counters across limiter instances", async () => {
     const counts = new Map<string, number>([
       [
-        "crm:olx:webhook:rate:connection:olx_chat:tenant_1:store_1:connection_1",
+        "crm:olx:webhook:rate:connection:olx:tenant_1:store_1:connection_1",
         119,
       ],
     ]);
@@ -138,7 +138,7 @@ describe("createRedisOlxWebhookSecurity", () => {
       expect.arrayContaining([
         "EVAL",
         "1",
-        "crm:olx:webhook:rate:connection:olx_chat:tenant_1:store_1:connection_1",
+        "crm:olx:webhook:rate:connection:olx:tenant_1:store_1:connection_1",
         "60000",
       ]),
     );
@@ -211,7 +211,7 @@ function consumeConnection(
   return security.consume({
     connectionId,
     now,
-    provider: "olx_chat",
+    provider: "olx",
     scope: "connection",
     storeId: "store_1",
     tenantId: "tenant_1",

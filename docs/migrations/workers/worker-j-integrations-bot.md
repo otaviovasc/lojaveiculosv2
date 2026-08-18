@@ -2,14 +2,14 @@
 
 ## Implementation Note
 
-- Added the V2 bot integration configuration foundation over the existing
-  store-scoped `integration_accounts` table with provider `crm_whatsapp_bot`.
-- Backend exposes `GET /crm/whatsapp/integrations/bot` and
-  `PATCH /crm/whatsapp/integrations/bot` for authenticated store actors with
-  `crm.whatsapp.integrations.manage`.
+- Added the V2 external-bot configuration foundation over the existing
+  store-scoped `integration_accounts` table. The bot is not a messaging
+  provider; channel/provider/broker routing remains in CRM channel connections.
+- The current bot configuration routes are for authenticated store actors with
+  `crm.bot.manage`.
 - Bot secrets are write-only: responses expose `secretConfigured` and
   `secretUpdatedAt`, never the submitted secret or stored digest.
-- The WhatsApp Integracoes surface is now a real page for bot URL/secret config
+- The CRM Integracoes surface is now a real page for bot URL/secret config
   and existing ZAPI provider-event health. It no longer renders placeholder
   action cards.
 - Deferred to the next bot slice: outbound event forwarding, `X-Webhook-Secret`

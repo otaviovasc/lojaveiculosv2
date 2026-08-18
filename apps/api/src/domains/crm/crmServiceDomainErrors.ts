@@ -28,7 +28,7 @@ export class CrmVisitNotFoundError extends Error {
 
 export class CrmVisitSessionMismatchError extends Error {
   constructor() {
-    super("WhatsApp session is not linked to the requested lead.");
+    super("WhatsApp conversationCycle is not linked to the requested lead.");
     this.name = "CrmVisitSessionMismatchError";
   }
 }

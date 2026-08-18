@@ -1,8 +1,8 @@
 import type {
-  CrmWhatsappConfigureWebhooksInput,
-  CrmWhatsappConfigureWebhooksResult,
-  CrmWhatsappWebhookConfigResult,
-} from "../../domains/crm/ports/crmWhatsappGateway.js";
+  CrmMessagingConfigureWebhooksInput,
+  CrmMessagingConfigureWebhooksResult,
+  CrmMessagingWebhookConfigResult,
+} from "../../domains/crm/ports/crmMessagingGateway.js";
 import type { ZapiWebhookEndpointType } from "../../domains/crm/whatsapp/whatsappWebhookEndpoints.js";
 import {
   buildInstanceUrl,
@@ -37,13 +37,13 @@ const ZAPI_READBACK_FIELDS: Record<ZapiWebhookEndpointType, string> = {
 export async function configureZapiWebhooks(
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
-  input: CrmWhatsappConfigureWebhooksInput,
-): Promise<CrmWhatsappConfigureWebhooksResult> {
+  input: CrmMessagingConfigureWebhooksInput,
+): Promise<CrmMessagingConfigureWebhooksResult> {
   const instanceUrl = buildInstanceUrl(credentials);
-  const acknowledgements: CrmWhatsappWebhookConfigResult[] = [];
+  const acknowledgements: CrmMessagingWebhookConfigResult[] = [];
 
   for (const webhook of input.webhooks) {
-    let combinedResult: CrmWhatsappWebhookConfigResult | null = null;
+    let combinedResult: CrmMessagingWebhookConfigResult | null = null;
     if (webhook.type === "received") {
       combinedResult = await registerZapiWebhookPath(
         instanceUrl,
@@ -84,7 +84,7 @@ async function registerZapiWebhook(
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
   webhook: { type: string; url: string },
-): Promise<CrmWhatsappWebhookConfigResult> {
+): Promise<CrmMessagingWebhookConfigResult> {
   const { type, url } = webhook;
   const path = ZAPI_WEBHOOK_PATHS[type as ZapiWebhookEndpointType];
   if (!path) {
@@ -114,7 +114,7 @@ async function registerZapiWebhookPath(
   path: string,
   url: string,
   type = "received-combined",
-): Promise<CrmWhatsappWebhookConfigResult> {
+): Promise<CrmMessagingWebhookConfigResult> {
   try {
     const response = await fetchZapi(
       credentials,
@@ -159,8 +159,8 @@ async function verifyZapiWebhooks(
   instanceUrl: string,
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
-  results: readonly CrmWhatsappWebhookConfigResult[],
-): Promise<CrmWhatsappWebhookConfigResult[]> {
+  results: readonly CrmMessagingWebhookConfigResult[],
+): Promise<CrmMessagingWebhookConfigResult[]> {
   let readback: Record<string, unknown> | null = null;
   try {
     const response = await fetchZapi(

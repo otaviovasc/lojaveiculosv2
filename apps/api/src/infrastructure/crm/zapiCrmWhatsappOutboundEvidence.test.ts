@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   sendZapiCatalog,
   sendZapiProduct,
@@ -27,7 +27,7 @@ function response(body: string) {
 
 async function expectMissingEvidence(result: Promise<unknown>) {
   const error = await result.catch((caught: unknown) => caught);
-  expect(error).toBeInstanceOf(CrmWhatsappGatewayError);
+  expect(error).toBeInstanceOf(CrmMessagingGatewayError);
   expect(error).toMatchObject({
     code: "request_failed",
     status: 502,

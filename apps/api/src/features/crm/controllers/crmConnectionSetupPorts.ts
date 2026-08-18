@@ -18,7 +18,7 @@ import { BillingContractUnavailableError } from "../../../domains/billing/ports/
 
 type ConnectionSetupPorts = Pick<
   CrmServicePorts,
-  | "composioWhatsappOnboardingProvider"
+  | "composioChannelOnboardingProvider"
   | "crmConnectionCredentialVault"
   | "crmZapiSetupCompletionReporter"
   | "crmZapiSupportAuthorizer"
@@ -99,7 +99,7 @@ export function createCrmConnectionSetupPorts(
       }
     : undefined;
   return {
-    composioWhatsappOnboardingProvider: composio,
+    composioChannelOnboardingProvider: composio,
     crmConnectionCredentialVault: credentialVault,
     olxCrmWebhookSetupProvider: olx,
     ...(reporter ? { crmZapiSetupCompletionReporter: reporter } : {}),

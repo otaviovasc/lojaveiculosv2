@@ -1,21 +1,21 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type { CrmWhatsappSession } from "./ports/crmWhatsappRepository.js";
+import type { CrmConversationCycle } from "./ports/crmConversationRepository.js";
 
-export function createTestCrmWhatsappSession(
-  overrides: Partial<CrmWhatsappSession> = {},
-): CrmWhatsappSession {
+export function createTestCrmConversationCycle(
+  overrides: Partial<CrmConversationCycle> = {},
+): CrmConversationCycle {
   const now = new Date("2026-08-10T14:00:00.000Z");
   return {
     assignedUserId: null,
-    buyerChatLid: null,
-    buyerName: null,
-    buyerPhone: "5511999999999",
+    customerChatId: null,
+    customerDisplayName: null,
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
-    channelExternalId: null,
+    externalThreadId: null,
     channelMetadata: {},
     connectionId: "connection-1",
     createdAt: now,
-    externalSessionId: null,
+    externalCycleId: null,
     firstHandledAt: null,
     freshLeadAt: null,
     humanAttendanceChangedAt: null,
@@ -23,7 +23,7 @@ export function createTestCrmWhatsappSession(
     humanAttendanceStateVersion: null,
     humanHandlingStartedAt: null,
     humanTakeoverAt: null,
-    id: "session-1",
+    id: "conversationCycle-1",
     interventionId: null,
     lastAssignedAt: null,
     lastCustomerReadAt: null,
@@ -35,7 +35,7 @@ export function createTestCrmWhatsappSession(
     metadata: {},
     profilePhotoUrl: null,
     revision: 0,
-    sessionTags: [],
+    tags: [],
     source: null,
     status: "ACTIVE",
     storeId: "store-1" as StoreId,

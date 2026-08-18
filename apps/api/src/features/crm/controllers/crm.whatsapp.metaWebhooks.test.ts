@@ -1,16 +1,19 @@
-import { createHmac } from "node:crypto";
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
+import {
+  createMetaConnection as createConnection,
+  metaAppSecret as appSecret,
+  metaStoreId as storeId,
+  metaTenantId as tenantId,
+  metaVerifyToken as verifyToken,
+  restoreEnv,
+  signedMetaRequest as signedRequest,
+  whatsappPayload,
+} from "./crm.whatsapp.metaWebhooks.testSupport.js";
 
-const appSecret = "meta-app-secret";
-const verifyToken = "meta-verify-token";
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
 const previousAppSecret = process.env.CRM_META_APP_SECRET;
 const previousVerifyToken = process.env.CRM_META_WEBHOOK_VERIFY_TOKEN;
 
@@ -42,12 +45,12 @@ describe("CRM official Meta webhooks", () => {
   });
 
   it("ingests and deduplicates official WhatsApp messages and statuses", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
+    const repository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_whatsapp", "phone-number-1"),
+        createConnection("whatsapp", "phone-number-1"),
       ]),
-      crmWhatsappRepository: repository,
+      crmConversationRepository: repository,
     });
     const messagePayload = whatsappPayload({
       messages: [
@@ -72,16 +75,16 @@ describe("CRM official Meta webhooks", () => {
     const duplicate = await signedRequest(app, messagePayload);
     await expect(duplicate.json()).resolves.toMatchObject({ duplicates: 1 });
 
-    const [session] = await repository.listSessions({
+    const [cycle] = await repository.listConversationCycles({
       limit: 10,
       offset: 0,
       storeId,
       tenantId,
     });
-    expect(session).toMatchObject({
-      buyerPhone: "5511999999999",
+    expect(cycle).toMatchObject({
+      customerPhone: "5511999999999",
       channel: "WHATSAPP",
-      channelExternalId: "5511999999999",
+      externalThreadId: "5511999999999",
     });
     const status = await signedRequest(
       app,
@@ -100,7 +103,7 @@ describe("CRM official Meta webhooks", () => {
     const [message] = await repository.listMessages({
       limit: 10,
       offset: 0,
-      sessionId: session!.id,
+      cycleId: cycle!.id,
       storeId,
       tenantId,
     });
@@ -112,14 +115,14 @@ describe("CRM official Meta webhooks", () => {
   });
 
   it("ingests Instagram messages without treating provider media URLs as stored media", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
+    const repository = createMemoryCrmConversationRepository();
     const webhookEvents = createMemoryCrmWebhookEventRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_instagram", "ig-business-1"),
+        createConnection("instagram", "ig-business-1"),
       ]),
       crmWebhookEventRepository: webhookEvents,
-      crmWhatsappRepository: repository,
+      crmConversationRepository: repository,
     });
     const response = await signedRequest(app, {
       object: "instagram",
@@ -146,7 +149,7 @@ describe("CRM official Meta webhooks", () => {
       ],
     });
     expect(response.status).toBe(200);
-    const [session] = await repository.listSessions({
+    const [cycle] = await repository.listConversationCycles({
       limit: 10,
       offset: 0,
       storeId,
@@ -155,11 +158,11 @@ describe("CRM official Meta webhooks", () => {
     const [message] = await repository.listMessages({
       limit: 10,
       offset: 0,
-      sessionId: session!.id,
+      cycleId: cycle!.id,
       storeId,
       tenantId,
     });
-    expect(session?.channel).toBe("INSTAGRAM");
+    expect(cycle?.channel).toBe("INSTAGRAM");
     expect(message).toMatchObject({
       content: "[image]",
       mediaType: "image",
@@ -170,12 +173,12 @@ describe("CRM official Meta webhooks", () => {
         type: "image",
         url: null,
       },
-      provider: "composio_instagram",
+      provider: "meta_cloud",
     });
     const [webhookEvent] = await webhookEvents.list({
       limit: 10,
       offset: 0,
-      provider: "composio_instagram",
+      provider: "meta_cloud",
       storeId,
       tenantId,
     });
@@ -187,63 +190,3 @@ describe("CRM official Meta webhooks", () => {
     });
   });
 });
-
-function whatsappPayload(value: Record<string, unknown>) {
-  return {
-    object: "whatsapp_business_account",
-    entry: [
-      {
-        changes: [
-          {
-            field: "messages",
-            value: {
-              metadata: { phone_number_id: "phone-number-1" },
-              ...value,
-            },
-          },
-        ],
-      },
-    ],
-  };
-}
-
-function signedRequest(
-  app: ReturnType<typeof createTestApp>,
-  payload: Record<string, unknown>,
-) {
-  const body = JSON.stringify(payload);
-  const signature = createHmac("sha256", appSecret).update(body).digest("hex");
-  return app.request("/api/v1/crm/webhooks/meta", {
-    body,
-    headers: { "x-hub-signature-256": `sha256=${signature}` },
-    method: "POST",
-  });
-}
-
-function createConnection(
-  provider: "composio_instagram" | "composio_whatsapp",
-  externalConnectionId: string,
-): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: provider,
-    externalConnectionId,
-    externalInstanceId: null,
-    id:
-      provider === "composio_instagram"
-        ? "25000000-0000-4000-8000-000000000202"
-        : "25000000-0000-4000-8000-000000000201",
-    metadata: {},
-    phone: null,
-    provider,
-    status: "active",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-  };
-}
-
-function restoreEnv(key: string, value: string | undefined) {
-  if (value === undefined) delete process.env[key];
-  else process.env[key] = value;
-}

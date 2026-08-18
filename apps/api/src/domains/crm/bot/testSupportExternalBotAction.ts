@@ -4,25 +4,24 @@ import {
   type ExternalBotActionRequest,
 } from "./externalBotCanonicalRequest.js";
 import type { createMemoryExternalBotManager } from "./testSupportExternalBotManager.js";
+import type { ExternalBotActionName } from "./externalBotModels.js";
 
 export async function createExternalBotActionRequest(
   manager: ReturnType<typeof createMemoryExternalBotManager>,
-  action:
-    "conversation.summarize" | "fact.propose" | "message.send" | "task.create",
+  action: ExternalBotActionName,
   payload: Record<string, unknown>,
 ) {
-  const actionClass = action.endsWith(".propose") ? "proposal" : "effect";
   const base = {
     capabilityGrant: "",
     channel: "whatsapp" as const,
     command: { action, payload } as never,
     connectionId: "connection-1",
+    expectedAttendanceRevision: 2,
     expectedRevision: 4,
     idempotencyKey: `idem-${action}`,
     integrationId: "integration-1",
     modelVersion: "model-v1",
     provider: "zapi" as const,
-    actionClass: actionClass as "effect" | "proposal",
     storeId: "store-1",
     tenantId: "tenant-1",
     threadId: "thread-1",
@@ -30,6 +29,9 @@ export async function createExternalBotActionRequest(
   const authorizedRequestDigest = manager.ports.digest.digest(
     canonicalExternalBotActionRequest(base),
   );
+  const policy = await manager.ports.policyResolver.resolve(base, action);
+  const actionClass =
+    policy?.policy.mode === "proposal" ? "proposal" : "effect";
   const grant = await manager.ports.grantStore.issue({
     action,
     authorizedRequestDigest,

@@ -6,7 +6,7 @@ import {
   crmConnectionStates,
   crmProviders,
   externalBotActionRegistry,
-  externalBotModes,
+  externalBotPolicyModes,
 } from "./crmContracts.js";
 
 describe("canonical CRM contracts", () => {
@@ -25,8 +25,11 @@ describe("canonical CRM contracts", () => {
       "archived",
     ]);
     expect(crmConnectionCapabilities).toEqual([
+      "catalog",
+      "delete",
       "inbound",
       "outbound",
+      "reactions",
       "text",
       "media",
       "templates",
@@ -37,7 +40,7 @@ describe("canonical CRM contracts", () => {
 
   it("parses only canonical CRM channel connection values", () => {
     const connection = {
-      capabilities: ["inbound", "outbound"],
+      capabilities: ["catalog", "delete", "inbound", "outbound", "reactions"],
       channel: "whatsapp",
       displayName: "WhatsApp principal",
       id: "connection_1",
@@ -51,7 +54,7 @@ describe("canonical CRM contracts", () => {
     expect(
       crmChannelConnectionSchema.safeParse({
         ...connection,
-        provider: "composio_whatsapp",
+        provider: "legacy_meta_alias",
       }).success,
     ).toBe(false);
     expect(
@@ -78,6 +81,6 @@ describe("canonical CRM contracts", () => {
   });
 
   it("publishes the supported external-bot policy modes", () => {
-    expect(externalBotModes).toEqual(["auto", "proposal", "disabled"]);
+    expect(externalBotPolicyModes).toEqual(["auto", "proposal", "disabled"]);
   });
 });

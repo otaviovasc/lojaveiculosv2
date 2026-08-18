@@ -2,26 +2,27 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const sources = {
-  campaignRecipients: read("drizzleCrmWhatsappCampaignRecipients.ts"),
+  campaignRecipients: read("drizzleCrmCampaignRecipients.ts"),
   leadOutcomes: read("drizzleCrmOutcomeRepository.ts"),
-  outboundIntents: read("drizzleCrmWhatsappOutboundIntentRepository.ts"),
+  outboundIntents: read("drizzleCrmOutboundIntentRepository.ts"),
   references: read("drizzleCrmCanonicalWorkflowReferences.ts"),
-  scheduledMessages: read("drizzleCrmWhatsappScheduledMessages.ts"),
-  sessionCommands: read("drizzleCrmWhatsappSessionCommandRepository.ts"),
+  scheduledMessages: read("drizzleCrmScheduledMessages.ts"),
+  sessionCommands: read("drizzleCrmConversationCycleCommandRepository.ts"),
   webhookEffects: read("drizzleCrmWebhookEffects.ts"),
 };
 
 describe("canonical CRM workflow DB adapters", () => {
-  it("does not reference removed WhatsApp session or message tables", () => {
+  it("does not reference removed legacy WhatsApp session or message tables", () => {
     for (const source of Object.values(sources)) {
-      expect(source).not.toContain("crmWhatsappSessions");
-      expect(source).not.toContain("crmWhatsappMessages");
+      expect(source).not.toMatch(
+        /crmWhatsapp(?:Sessions|Messages|ScheduledMessages|CampaignRecipients|SessionCommandReceipts)|crm_whatsapp_(?:sessions|messages|scheduled_messages|campaign_recipients|session_command_receipts)/,
+      );
     }
   });
 
   it("persists outbound intents with canonical cycle, thread, and message semantics", () => {
-    expect(sources.outboundIntents).toContain("canonicalMessages");
-    expect(sources.outboundIntents).toContain("cycleId: input.sessionId");
+    expect(sources.outboundIntents).toContain("crmMessages");
+    expect(sources.outboundIntents).toContain("cycleId: input.cycleId");
     expect(sources.outboundIntents).toContain("threadId: message.threadId");
     expect(sources.outboundIntents).toContain("messageId: input.messageId");
   });
@@ -33,13 +34,12 @@ describe("canonical CRM workflow DB adapters", () => {
     ]) {
       expect(source).toContain("findCanonicalThreadIdForCycle");
       expect(source).toContain("threadId,");
-      expect(source).toContain("sessionId,");
+      expect(source).toContain("cycleId,");
     }
-    expect(sources.scheduledMessages).not.toContain(
-      "crmWhatsappScheduledMessages.sessionId",
-    );
+    expect(sources.scheduledMessages).toContain("cycleId: input.cycleId");
+    expect(sources.scheduledMessages).toContain("crmScheduledMessages.cycleId");
     expect(sources.campaignRecipients).not.toContain(
-      "crmWhatsappCampaignRecipients.sessionId",
+      "crmCampaignRecipients.sessionId",
     );
     expect(sources.scheduledMessages).toContain("sentMessageId");
     expect(sources.campaignRecipients).toContain("replyMessageId");
@@ -49,22 +49,22 @@ describe("canonical CRM workflow DB adapters", () => {
   });
 
   it("stages webhook effects with canonical message context", () => {
-    expect(sources.references).toContain("canonicalMessages");
+    expect(sources.references).toContain("crmMessages");
     expect(sources.webhookEffects).toContain("findCanonicalMessageContext");
-    expect(sources.webhookEffects).toContain("cycleId: input.sessionId");
+    expect(sources.webhookEffects).toContain("cycleId: input.cycleId");
     expect(sources.webhookEffects).toContain("threadId: message.threadId");
-    expect(sources.webhookEffects).toContain("sessionId: row.cycleId");
+    expect(sources.webhookEffects).toContain("cycleId: row.cycleId");
   });
 
   it("persists command receipts against canonical cycles and threads", () => {
     expect(sources.sessionCommands).toContain("conversationCommandReceipts");
-    expect(sources.sessionCommands).toContain("cycleId: input.sessionId");
+    expect(sources.sessionCommands).toContain("cycleId: input.cycleId");
     expect(sources.sessionCommands).toContain("threadId,");
     expect(sources.sessionCommands).toContain(
-      "cycleRevision: input.sessionRevision",
+      "cycleRevision: input.cycleRevision",
     );
-    expect(sources.sessionCommands).not.toContain(
-      "crmWhatsappSessionCommandReceipts",
+    expect(sources.sessionCommands).not.toMatch(
+      /crmWhatsappSessionCommandReceipts|crm_whatsapp_session_command_receipts/,
     );
   });
 

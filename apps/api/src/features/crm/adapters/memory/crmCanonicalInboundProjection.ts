@@ -4,11 +4,11 @@ import type {
   CanonicalInboundMessageResult,
 } from "../../../../domains/crm/ports/crmCanonicalInboundRepository.js";
 import type {
-  CrmWhatsappChannel,
-  CrmWhatsappMessageType,
-  CrmWhatsappRepository,
-  CrmWhatsappSession,
-} from "../../../../domains/crm/ports/crmWhatsappRepository.js";
+  CrmMessagingChannel,
+  CrmMessageType,
+  CrmConversationRepository,
+  CrmConversationCycle,
+} from "../../../../domains/crm/ports/crmConversationRepository.js";
 
 type MemoryCanonicalIdentity = {
   contactId: string;
@@ -16,7 +16,7 @@ type MemoryCanonicalIdentity = {
 };
 
 export async function ingestProjectedCanonicalInbound(
-  repository: CrmWhatsappRepository,
+  repository: CrmConversationRepository,
   identities: Map<string, MemoryCanonicalIdentity>,
   input: CanonicalInboundMessageInput,
 ): Promise<CanonicalInboundMessageResult> {
@@ -26,19 +26,22 @@ export async function ingestProjectedCanonicalInbound(
     identityId: randomUUID(),
   };
   identities.set(identityKey, identity);
-  const existingSession = await findProjectedSession(repository, input);
-  const buyerPhone = existingSession?.buyerPhone || preferredMemoryPhone(input);
+  const existingCycle = await findProjectedCycle(repository, input);
+  const customerPhone =
+    existingCycle?.customerPhone || preferredMemoryPhone(input);
   const result = await repository.ingestMessage({
-    ...((existingSession?.buyerChatLid ?? input.customerChatId)
-      ? { buyerChatLid: existingSession?.buyerChatLid ?? input.customerChatId! }
+    ...((existingCycle?.customerChatId ?? input.customerChatId)
+      ? {
+          customerChatId:
+            existingCycle?.customerChatId ?? input.customerChatId!,
+        }
       : {}),
     ...(input.contactDisplayName
-      ? { buyerName: input.contactDisplayName }
+      ? { customerDisplayName: input.contactDisplayName }
       : {}),
-    buyerPhone,
+    customerPhone,
     channel: toMemoryChannel(input.channel),
-    channelExternalId:
-      existingSession?.channelExternalId ?? input.externalThreadId,
+    externalThreadId: existingCycle?.externalThreadId ?? input.externalThreadId,
     connectionId: input.connectionId,
     content: input.content,
     direction: "INBOUND",
@@ -63,18 +66,18 @@ export async function ingestProjectedCanonicalInbound(
   });
   return {
     attendanceState:
-      result.session.humanAttendanceState === "IN_HUMAN_SERVICE"
+      result.conversationCycle.humanAttendanceState === "IN_HUMAN_SERVICE"
         ? "human_active"
-        : result.session.humanAttendanceState === "WAITING_HUMAN"
+        : result.conversationCycle.humanAttendanceState === "WAITING_HUMAN"
           ? "handoff_requested"
           : "bot_active",
     contactId: identity.contactId,
     created: result.createdMessage,
-    createdSession: result.createdSession,
-    cycleId: result.session.id,
+    createdConversationCycle: result.createdConversationCycle,
+    cycleId: result.conversationCycle.id,
     identityId: identity.identityId,
     messageId: result.message.id,
-    threadId: result.session.id,
+    threadId: result.conversationCycle.id,
   };
 }
 
@@ -91,11 +94,11 @@ export function scopedCanonicalIdentityKey(
   ].join(":");
 }
 
-async function findProjectedSession(
-  repository: CrmWhatsappRepository,
+async function findProjectedCycle(
+  repository: CrmConversationRepository,
   input: CanonicalInboundMessageInput,
-): Promise<CrmWhatsappSession | null> {
-  const sessions = await repository.listSessions({
+): Promise<CrmConversationCycle | null> {
+  const cycles = await repository.listConversationCycles({
     connectionId: input.connectionId,
     limit: 100,
     offset: 0,
@@ -111,12 +114,11 @@ async function findProjectedSession(
       .map((value) => value.replace(/^phone:/u, "").replace(/\D/gu, ""))
       .filter(Boolean),
   );
-  const matches = sessions.filter(
-    (session) =>
-      (session.channelExternalId &&
-        externalIds.has(session.channelExternalId)) ||
-      (session.buyerChatLid && externalIds.has(session.buyerChatLid)) ||
-      phoneDigits.has(session.buyerPhone.replace(/\D/gu, "")),
+  const matches = cycles.filter(
+    (cycle) =>
+      (cycle.externalThreadId && externalIds.has(cycle.externalThreadId)) ||
+      (cycle.customerChatId && externalIds.has(cycle.customerChatId)) ||
+      phoneDigits.has(cycle.customerPhone.replace(/\D/gu, "")),
   );
   if (matches.length > 1) {
     throw new Error("Canonical CRM memory thread identity is ambiguous.");
@@ -137,15 +139,15 @@ function preferredMemoryPhone(input: CanonicalInboundMessageInput) {
 
 function toMemoryChannel(
   channel: CanonicalInboundMessageInput["channel"],
-): CrmWhatsappChannel {
+): CrmMessagingChannel {
   if (channel === "instagram") return "INSTAGRAM";
   if (channel === "olx_chat") return "OLX_CHAT";
   return "WHATSAPP";
 }
 
-function toMemoryMessageType(messageType: string): CrmWhatsappMessageType {
+function toMemoryMessageType(messageType: string): CrmMessageType {
   const normalized = messageType.toUpperCase();
-  const supported = new Set<CrmWhatsappMessageType>([
+  const supported = new Set<CrmMessageType>([
     "AUDIO",
     "CONTACT",
     "DOCUMENT",
@@ -155,7 +157,7 @@ function toMemoryMessageType(messageType: string): CrmWhatsappMessageType {
     "TEXT",
     "VIDEO",
   ]);
-  return supported.has(normalized as CrmWhatsappMessageType)
-    ? (normalized as CrmWhatsappMessageType)
+  return supported.has(normalized as CrmMessageType)
+    ? (normalized as CrmMessageType)
     : "TEXT";
 }

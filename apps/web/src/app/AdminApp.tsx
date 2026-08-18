@@ -106,7 +106,7 @@ export function AdminApp() {
             ) : activeSurface === "sales" ? (
               <SalesModule />
             ) : activeSurface === "crm-whatsapp" ? (
-              <CrmModule routeSurface="whatsapp" />
+              <CrmModule routeSurface="conversations" />
             ) : activeSurface === "billing" ? (
               <BillingModule />
             ) : activeSurface === "documents" ? (

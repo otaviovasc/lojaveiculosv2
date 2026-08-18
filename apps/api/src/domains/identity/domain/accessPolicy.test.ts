@@ -109,12 +109,11 @@ describe("access policy", () => {
       expect.arrayContaining([
         "crm.messaging.connection.setup",
         "crm.messaging.connection.pair",
-        "crm.whatsapp.list",
-        "crm.whatsapp.read",
-        "crm.whatsapp.send",
-        "crm.whatsapp.assign",
-        "crm.whatsapp.close",
-        "crm.whatsapp.toggle_intervention",
+        "crm.conversations.read",
+        "crm.messages.send",
+        "crm.conversations.assign",
+        "crm.conversations.manage",
+        "crm.attendances.manage",
       ]),
     );
     expect(catalogKeys).not.toContain("crm.whatsapp.connection.manage");
@@ -168,26 +167,25 @@ describe("access policy", () => {
     }
   });
 
-  it("mirrors prior WhatsApp role behavior with explicit CRM permissions", () => {
+  it("preserves operator role behavior with channel-neutral CRM permissions", () => {
     const investor = resolvePermissions({ role: "investor" });
     const owner = resolvePermissions({ role: "owner" });
     const salesman = resolvePermissions({ role: "salesman" });
     const supervisor = resolvePermissions({ role: "supervisor" });
     const operatorPermissions = [
-      "crm.whatsapp.list",
-      "crm.whatsapp.read",
-      "crm.whatsapp.send",
-      "crm.whatsapp.assign",
-      "crm.whatsapp.close",
-      "crm.whatsapp.toggle_intervention",
+      "crm.conversations.read",
+      "crm.messages.send",
+      "crm.conversations.assign",
+      "crm.conversations.manage",
+      "crm.attendances.manage",
     ] as const;
 
-    expect(canAccess(investor, "crm.whatsapp.read")).toEqual({
+    expect(canAccess(investor, "crm.conversations.read")).toEqual({
       allowed: true,
     });
-    expect(canAccess(investor, "crm.whatsapp.send")).toEqual({
+    expect(canAccess(investor, "crm.messages.send")).toEqual({
       allowed: false,
-      reason: "Missing permission: crm.whatsapp.send",
+      reason: "Missing permission: crm.messages.send",
     });
     for (const permissions of [owner, salesman, supervisor]) {
       for (const permission of operatorPermissions) {

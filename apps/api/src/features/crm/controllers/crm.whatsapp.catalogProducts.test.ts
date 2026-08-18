@@ -1,20 +1,20 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmMessagingGateway } from "../../../domains/crm/ports/crmMessagingGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 const connectionId = "24000000-0000-4000-8000-000000000101";
 
 describe("CRM WhatsApp catalog products", () => {
-  it("lists real ZAPI catalog products for the active session connection", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const inbound = await seedSession(whatsappRepository, "catalog-products");
+  it("lists real ZAPI catalog products for the active cycle connection", async () => {
+    const whatsappRepository = createMemoryCrmConversationRepository();
+    const inbound = await seedCycle(whatsappRepository, "catalog-products");
     const listCatalogProducts = vi.fn(async () => ({
       cartEnabled: true,
       nextCursor: "cursor_2",
@@ -37,7 +37,7 @@ describe("CRM WhatsApp catalog products", () => {
     const app = createApp(whatsappRepository, { listCatalogProducts });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/catalog/products?sessionId=${inbound.session.id}`,
+      `/api/v1/crm/whatsapp/catalog/products?cycleId=${inbound.conversationCycle.id}`,
     );
 
     expect(response.status).toBe(200);
@@ -52,8 +52,8 @@ describe("CRM WhatsApp catalog products", () => {
   });
 
   it("sends a ZAPI catalog product through the outbound pipeline", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const inbound = await seedSession(whatsappRepository, "catalog-product");
+    const whatsappRepository = createMemoryCrmConversationRepository();
+    const inbound = await seedCycle(whatsappRepository, "catalog-product");
     const sendProduct = vi.fn(async () => ({
       externalId: "zapi-product-outbound-1",
       providerTimestamp: new Date("2026-07-02T20:03:00.000Z"),
@@ -67,7 +67,7 @@ describe("CRM WhatsApp catalog products", () => {
         body: JSON.stringify({
           productId: "prod_1",
           productName: "Honda Civic EXL",
-          sessionId: inbound.session.id,
+          cycleId: inbound.conversationCycle.id,
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -100,25 +100,30 @@ describe("CRM WhatsApp catalog products", () => {
 });
 
 function createApp(
-  crmWhatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
-  crmWhatsappGateway: Partial<CrmWhatsappGateway>,
+  crmConversationRepository: ReturnType<
+    typeof createMemoryCrmConversationRepository
+  >,
+  crmMessagingGateway: Partial<CrmMessagingGateway>,
 ) {
+  const connectionRepository = createMemoryCrmConnectionRepository([
+    createZapiConnection({ phone: "5511940231407" }),
+  ]);
   return createTestApp({
-    crmConnectionRepository: createMemoryCrmConnectionRepository([
-      createZapiConnection({ phone: "5511940231407" }),
-    ]),
-    crmWhatsappGateway,
-    crmWhatsappRepository,
+    crmConnectionRepository: connectionRepository,
+    crmRoutingConnectionRepository:
+      connectionRepository.routingConnectionRepository,
+    crmMessagingGateway,
+    crmConversationRepository,
   });
 }
 
-function seedSession(
-  whatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
+function seedCycle(
+  whatsappRepository: ReturnType<typeof createMemoryCrmConversationRepository>,
   suffix: string,
 ) {
   return whatsappRepository.ingestMessage({
-    buyerName: "Ana",
-    buyerPhone: "5511999999999",
+    customerDisplayName: "Ana",
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
     connectionId,
     content: "Ola",
@@ -140,7 +145,14 @@ function createZapiConnection(
 ): CrmConnection {
   return createConfiguredZapiTestConnection({
     id: connectionId,
-    overrides,
+    overrides: {
+      ...overrides,
+      metadata: {
+        capabilities: { catalog: true },
+        providerConnected: true,
+        ...overrides.metadata,
+      },
+    },
     storeId,
     tenantId,
   });

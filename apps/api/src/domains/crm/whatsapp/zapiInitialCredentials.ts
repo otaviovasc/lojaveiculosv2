@@ -6,10 +6,10 @@ import {
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
 } from "../ports/crmConnectionSetupProvider.js";
-import type { CreateWhatsappConnectionInput } from "./whatsappConnectionCreation.js";
+import type { CreateCrmChannelConnectionInput } from "../channelConnections/connectionCreation.js";
 
 export async function sealZapiCredentials(
-  input: Extract<CreateWhatsappConnectionInput, { provider: "zapi" }>,
+  input: Extract<CreateCrmChannelConnectionInput, { provider: "zapi" }>,
   scope: { storeId: string; tenantId: string },
   ports: CrmServicePorts,
   currentCredentialsRef: Record<string, unknown> = {},

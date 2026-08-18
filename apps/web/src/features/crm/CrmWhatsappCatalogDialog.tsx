@@ -1,6 +1,6 @@
 import { BookOpen, PackageSearch } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionDialog } from "./CrmWhatsappActionDialogFrame";
+import { ActionDialog } from "./CrmActionDialogFrame";
 import {
   FullCatalogFields,
   ProductPicker,
@@ -12,18 +12,18 @@ import type {
   CrmWhatsappListCatalogProductsInput,
   CrmWhatsappSendCatalogInput,
   CrmWhatsappSendCatalogProductInput,
-} from "./crmWhatsappTypes";
+} from "./crmConversationTypes";
 
 export type CatalogDialogSend = (
-  input: Omit<CrmWhatsappSendCatalogInput, "sessionId">,
+  input: Omit<CrmWhatsappSendCatalogInput, "cycleId">,
 ) => Promise<boolean>;
 
 export type CatalogProductDialogSend = (
-  input: Omit<CrmWhatsappSendCatalogProductInput, "sessionId">,
+  input: Omit<CrmWhatsappSendCatalogProductInput, "cycleId">,
 ) => Promise<boolean>;
 
 export type CatalogProductLoader = (
-  input?: Omit<CrmWhatsappListCatalogProductsInput, "sessionId">,
+  input?: Omit<CrmWhatsappListCatalogProductsInput, "cycleId">,
 ) => Promise<CrmWhatsappCatalogProductsPage | null>;
 
 type CatalogMode = "catalog" | "product";
@@ -152,7 +152,7 @@ export function CatalogDialog({
       }}
       title="Catalogo WhatsApp"
     >
-      <div className="crm-whatsapp-action-segmented" role="tablist">
+      <div className="crm-action-segmented" role="tablist">
         <button
           aria-selected={mode === "product"}
           onClick={() => setMode("product")}

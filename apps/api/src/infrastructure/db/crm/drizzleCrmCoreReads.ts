@@ -7,7 +7,7 @@ import {
   conversationThreads,
   factProposals,
   opportunities,
-  providerConnections,
+  crmChannelConnections,
 } from "@lojaveiculosv2/db";
 import type {
   CrmCoreEntityByResource,
@@ -89,11 +89,11 @@ export async function listDrizzleCrmCore<R extends CrmCoreResource>(
       values = (
         await db
           .select()
-          .from(providerConnections)
-          .where(pagedWhere(providerConnections))
+          .from(crmChannelConnections)
+          .where(pagedWhere(crmChannelConnections))
           .orderBy(
-            asc(providerConnections.createdAt),
-            asc(providerConnections.id),
+            asc(crmChannelConnections.createdAt),
+            asc(crmChannelConnections.id),
           )
           .limit(limit)
       ).map(mapConnection);
@@ -122,19 +122,19 @@ export async function listDrizzleCrmCore<R extends CrmCoreResource>(
       const rows = await db
         .select({
           attendance: conversationAttendances,
-          connection: providerConnections,
+          connection: crmChannelConnections,
           thread: conversationThreads,
         })
         .from(conversationThreads)
         .innerJoin(
-          providerConnections,
+          crmChannelConnections,
           and(
             eq(
-              providerConnections.id,
+              crmChannelConnections.id,
               conversationThreads.providerConnectionId,
             ),
-            eq(providerConnections.tenantId, conversationThreads.tenantId),
-            eq(providerConnections.storeId, conversationThreads.storeId),
+            eq(crmChannelConnections.tenantId, conversationThreads.tenantId),
+            eq(crmChannelConnections.storeId, conversationThreads.storeId),
           ),
         )
         .leftJoin(

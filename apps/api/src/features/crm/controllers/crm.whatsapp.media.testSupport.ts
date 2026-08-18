@@ -5,11 +5,11 @@ import type {
   ObjectStorage,
   PutStorageObjectInput,
 } from "../../../shared/storage/objectStorage.js";
-import type { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import type { createTestApp } from "./crm.controller.testSupport.js";
 import {
   createConfiguredZapiTestConnection,
   withTestZapiWebhookToken,
-} from "./crm.whatsapp.connectionFixtures.js";
+} from "./crm.channelConnections.testSupport.js";
 
 export const mediaTestStoreId = "store_1" as StoreId;
 export const mediaTestTenantId = "tenant_1" as TenantId;

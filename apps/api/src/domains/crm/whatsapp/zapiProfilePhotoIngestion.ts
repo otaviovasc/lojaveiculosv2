@@ -1,12 +1,12 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import {
-  getCrmWhatsappGateway,
-  getCrmWhatsappMediaStorage,
-  getCrmWhatsappRepository,
+  getCrmMessagingGateway,
+  getCrmMediaStorage,
+  getCrmConversationRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import { logWhatsappServiceEvent } from "../services/CrmWhatsapp/serviceSupport.js";
+import { logCrmServiceEvent } from "../services/CrmMessagingService/serviceSupport.js";
 import type { ParsedZapiInboundMessage } from "./parseZapiInboundMessage.js";
 import { mirrorNewZapiProfilePhoto } from "./mirrorZapiProfilePhoto.js";
 
@@ -19,11 +19,13 @@ export async function ingestZapiProfilePhoto(
   ports: CrmServicePorts,
 ) {
   const { connection, message } = input;
-  const gateway = getCrmWhatsappGateway(ports);
+  const gateway = getCrmMessagingGateway(ports);
   const result = await mirrorNewZapiProfilePhoto({
-    ...(message.chatLid ? { buyerChatLid: message.chatLid } : {}),
-    ...(message.buyerName ? { buyerName: message.buyerName } : {}),
-    buyerPhone: message.phone,
+    ...(message.chatLid ? { customerChatId: message.chatLid } : {}),
+    ...(message.customerDisplayName
+      ? { customerDisplayName: message.customerDisplayName }
+      : {}),
+    customerPhone: message.phone,
     connectionId: connection.id,
     contactIdentity: message.chatLid ?? message.phone,
     ...(message.profilePhotoUrl ? { photoUrl: message.profilePhotoUrl } : {}),
@@ -35,16 +37,16 @@ export async function ingestZapiProfilePhoto(
             gateway.getProfilePhotoUrl!(connection, { phone: message.phone }),
         }
       : {}),
-    remoteMediaFetcher: ports.crmWhatsappMediaFetcher ?? null,
-    repository: getCrmWhatsappRepository(ports),
-    storage: getCrmWhatsappMediaStorage(ports),
+    remoteMediaFetcher: ports.crmMediaFetcher ?? null,
+    repository: getCrmConversationRepository(ports),
+    storage: getCrmMediaStorage(ports),
     storeId: connection.storeId,
     tenantId: connection.tenantId,
   });
   if (result.status === "failed") {
-    logWhatsappServiceEvent(
+    logCrmServiceEvent(
       context,
-      "crm.whatsapp.webhook.zapi.profile_photo.mirror_failed",
+      "crm.provider.zapi.webhook.profile_photo.mirror_failed",
       {
         connectionId: connection.id,
         errorName: result.errorName ?? "UnknownError",

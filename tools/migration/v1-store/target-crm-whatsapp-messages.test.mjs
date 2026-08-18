@@ -51,6 +51,23 @@ test("deduplicates provider message ids across cycles on one connection", () => 
   assert.equal(second.provider_message_id, "legacy:second-uuid");
 });
 
+test("maps imported OLX messages to the canonical OLX transport", () => {
+  const row = toCanonicalMessageRow(
+    { json: (value) => value },
+    message({ channel: "OLX_CHAT" }),
+    {
+      ...config(),
+      crmChannelConnectionIds: new Map([["30:olx_chat", "olx-connection"]]),
+    },
+    "cycle-id",
+    "thread-id",
+    new Map(),
+  );
+
+  assert.equal(row.provider, "olx");
+  assert.equal(row.provider_connection_id, "olx-connection");
+});
+
 function config() {
   return {
     crmChannelConnectionIds: new Map([[30, "connection-id"]]),

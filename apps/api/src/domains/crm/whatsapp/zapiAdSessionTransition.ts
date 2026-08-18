@@ -1,37 +1,39 @@
 import type {
-  CrmWhatsappInterventionActorKind,
-  CrmWhatsappRepository,
-  CrmWhatsappSession,
-} from "../ports/crmWhatsappRepository.js";
+  CrmInterventionActorKind,
+  CrmConversationRepository,
+  CrmConversationCycle,
+} from "../ports/crmConversationRepository.js";
 import type { ZapiAdAttribution } from "./zapiAdAttribution.js";
-import { transitionHumanAttendance } from "./humanAttendanceTransition.js";
+import { transitionHumanAttendance } from "../messaging/humanAttendanceTransition.js";
 
 export type ZapiAdSessionTransition = {
   endedAt: Date | null;
   interventionStartedAt: Date | null;
-  previousSession: CrmWhatsappSession;
+  previousSession: CrmConversationCycle;
   resumedIntervention: boolean;
-  session: CrmWhatsappSession;
+  conversationCycle: CrmConversationCycle;
 };
 
 export async function applyZapiAdSessionTransition(
-  repository: CrmWhatsappRepository,
+  repository: CrmConversationRepository,
   input: {
     actorId: string;
-    actorKind: CrmWhatsappInterventionActorKind;
+    actorKind: CrmInterventionActorKind;
     attribution: ZapiAdAttribution;
     detectedAt: Date;
-    session: CrmWhatsappSession;
+    conversationCycle: CrmConversationCycle;
   },
 ): Promise<ZapiAdSessionTransition> {
-  const resumedIntervention = input.session.status === "HUMAN_TAKEOVER";
-  const shouldStoreAttribution = input.session.metadata.isAdInitiated !== true;
+  const resumedIntervention =
+    input.conversationCycle.status === "HUMAN_TAKEOVER";
+  const shouldStoreAttribution =
+    input.conversationCycle.metadata.isAdInitiated !== true;
   if (!resumedIntervention && !shouldStoreAttribution) {
-    return unchanged(input.session);
+    return unchanged(input.conversationCycle);
   }
 
   const interventionStartedAt = resumedIntervention
-    ? input.session.humanTakeoverAt
+    ? input.conversationCycle.humanTakeoverAt
     : null;
   const attendanceTransition = resumedIntervention
     ? await transitionHumanAttendance({
@@ -40,10 +42,11 @@ export async function applyZapiAdSessionTransition(
         command: { kind: "clear", status: "ACTIVE" },
         now: input.detectedAt,
         repository,
-        session: input.session,
+        conversationCycle: input.conversationCycle,
       })
     : null;
-  const currentSession = attendanceTransition?.session ?? input.session;
+  const currentSession =
+    attendanceTransition?.conversationCycle ?? input.conversationCycle;
   const metadata = {
     ...currentSession.metadata,
     ...(shouldStoreAttribution ? input.attribution : {}),
@@ -60,35 +63,38 @@ export async function applyZapiAdSessionTransition(
         }
       : {}),
   };
-  const updated = await repository.updateSession({
+  const updated = await repository.updateConversationCycle({
     expectedRevision: currentSession.revision,
     metadata,
-    sessionId: input.session.id,
-    storeId: input.session.storeId,
-    tenantId: input.session.tenantId,
+    cycleId: input.conversationCycle.id,
+    storeId: input.conversationCycle.storeId,
+    tenantId: input.conversationCycle.tenantId,
   });
-  if (!updated) throw new Error("CRM WhatsApp ad session was not found.");
+  if (!updated)
+    throw new Error("CRM WhatsApp ad conversationCycle was not found.");
   return {
     endedAt: resumedIntervention ? input.detectedAt : null,
     interventionStartedAt,
-    previousSession: attendanceTransition?.previous ?? input.session,
+    previousSession: attendanceTransition?.previous ?? input.conversationCycle,
     resumedIntervention,
-    session: updated,
+    conversationCycle: updated,
   };
 }
 
 export function unchangedZapiAdSession(
-  session: CrmWhatsappSession,
+  conversationCycle: CrmConversationCycle,
 ): ZapiAdSessionTransition {
-  return unchanged(session);
+  return unchanged(conversationCycle);
 }
 
-function unchanged(session: CrmWhatsappSession): ZapiAdSessionTransition {
+function unchanged(
+  conversationCycle: CrmConversationCycle,
+): ZapiAdSessionTransition {
   return {
     endedAt: null,
     interventionStartedAt: null,
-    previousSession: session,
+    previousSession: conversationCycle,
     resumedIntervention: false,
-    session,
+    conversationCycle,
   };
 }

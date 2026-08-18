@@ -10,8 +10,8 @@ export async function synchronizeCanonicalMessage(
   db: ExternalBotDb,
   effect: AuthorizedExternalBotEffect,
   providerOperation: ExternalBotProviderOperation,
-  text: string,
 ) {
+  const message = canonicalMessage(effect);
   const occurredAt = providerOperation.occurredAt.toISOString();
   const metadata = JSON.stringify({
     external_bot_effect_id: effect.effectId,
@@ -22,11 +22,12 @@ export async function synchronizeCanonicalMessage(
   });
   await db.execute(sql`
     insert into crm_messages
-      (id,content,cycle_id,direction,message_type,metadata,occurred_at,provider,
+      (id,content,cycle_id,direction,media_type,media_url,message_type,metadata,occurred_at,provider,
        provider_connection_id,provider_message_id,sender,sender_origin,status,thread_id,
        tenant_id,store_id)
-    values (${effect.effectId}::uuid,${text},
-      ${effect.canonicalCycleId}::uuid,'outbound','text',${metadata}::jsonb,
+    values (${effect.effectId}::uuid,${message.content},
+      ${effect.canonicalCycleId}::uuid,'outbound',${message.mediaType},${message.mediaUrl},
+      ${message.messageType},${metadata}::jsonb,
       ${occurredAt}::timestamptz,${effect.provider},
       ${effect.providerConnectionId}::uuid,${providerOperation.id},'bot','external_bot','sent',
       ${effect.threadId}::uuid,${effect.tenantId}::uuid,${effect.storeId}::uuid)
@@ -34,7 +35,8 @@ export async function synchronizeCanonicalMessage(
 
   await db.execute(sql`
     update crm_messages set
-      content=${text},message_type='text',metadata=metadata || ${metadata}::jsonb,
+      content=${message.content},message_type=${message.messageType},
+      media_type=${message.mediaType},media_url=${message.mediaUrl},metadata=metadata || ${metadata}::jsonb,
       occurred_at=${occurredAt}::timestamptz,sender='bot',sender_origin='external_bot',
       status=case when status in ('delivered','read') then status else 'sent' end,
       updated_at=now()
@@ -67,7 +69,47 @@ export async function synchronizeCanonicalMessage(
     limit 2`);
   assertExactlyOne(verified);
 
-  await synchronizeCanonicalMessagePreview(db, effect, providerOperation, text);
+  await synchronizeCanonicalMessagePreview(
+    db,
+    effect,
+    providerOperation,
+    message.content,
+  );
+}
+
+function canonicalMessage(effect: AuthorizedExternalBotEffect) {
+  if (effect.command.action === "message.send_text") {
+    return {
+      content: effect.command.payload.text,
+      mediaType: null,
+      mediaUrl: null,
+      messageType: "text",
+    };
+  }
+  if (effect.command.action === "message.send_media") {
+    return {
+      content:
+        effect.command.payload.caption?.trim() ||
+        `[${effect.command.payload.mediaType}]`,
+      mediaType: effect.command.payload.mediaType,
+      mediaUrl: effect.command.payload.mediaUrl,
+      messageType: effect.command.payload.mediaType,
+    };
+  }
+  if (effect.command.action === "handoff.request") {
+    return {
+      content: effect.command.payload.reason,
+      mediaType: null,
+      mediaUrl: null,
+      messageType: "text",
+    };
+  }
+  return {
+    content: `Template: ${effect.command.payload.templateName}`,
+    mediaType: null,
+    mediaUrl: null,
+    messageType: "template",
+  };
 }
 
 async function synchronizeCanonicalMessagePreview(

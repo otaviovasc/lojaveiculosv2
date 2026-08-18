@@ -2,13 +2,15 @@ import { financeAutoEntryMaxAmountCents } from "@lojaveiculosv2/shared";
 import { z } from "zod";
 
 export {
-  whatsappMessagesQuerySchema,
-  whatsappSessionCountsQuerySchema,
-  whatsappSessionFilterSchema,
-  whatsappSessionsQuerySchema,
-  whatsappSessionStatusSchema,
-} from "./crm.whatsapp.querySchemas.js";
-export * from "./crm.whatsapp.schemas.js";
+  crmMessagesQuerySchema,
+  conversationCycleCountsQuerySchema,
+  crmConversationCycleFilterSchema,
+  conversationCyclesQuerySchema,
+  crmConversationCycleStateSchema,
+} from "./crm.conversationCycle.schemas.js";
+export * from "./crm.channelConnections.schemas.js";
+export * from "./crm.messaging.extraSchemas.js";
+export * from "./crm.messaging.messageSchemas.js";
 
 export const leadStatusSchema = z.enum([
   "new",
@@ -33,7 +35,7 @@ export const leadSourceSchema = z.enum([
 export const leadActivityTypeSchema = z.enum([
   "note",
   "call",
-  "whatsapp",
+  "message",
   "email",
   "status_change",
   "task",

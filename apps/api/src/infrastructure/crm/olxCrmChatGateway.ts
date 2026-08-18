@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { CrmWhatsappGateway } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmMessagingGateway } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
-  CrmWhatsappCapabilityError,
-  CrmWhatsappGatewayError,
-} from "../../domains/crm/ports/crmWhatsappGateway.js";
+  CrmMessagingCapabilityError,
+  CrmMessagingGatewayError,
+} from "../../domains/crm/ports/crmMessagingGateway.js";
 import { resolveOlxAccessToken } from "./olxCrmChatCredentials.js";
 import { fetchOlxBasicUserInfo } from "../marketplace/olxBasicUserInfo.js";
 
@@ -14,9 +14,9 @@ const requestTimeoutMs = 10_000;
 export function createOlxCrmChatGateway(
   env: Record<string, string | undefined> = process.env,
   fetchImpl: typeof fetch = fetch,
-): CrmWhatsappGateway {
+): CrmMessagingGateway {
   const unsupported = (capability: string): never => {
-    throw new CrmWhatsappCapabilityError(
+    throw new CrmMessagingCapabilityError(
       `OLX Chat supports text replies only; ${capability} is unavailable.`,
     );
   };
@@ -25,8 +25,8 @@ export function createOlxCrmChatGateway(
     deleteMessage: async () => unsupported("message deletion"),
     disconnectConnection: async () => unsupported("provider disconnect"),
     getConnectionStatus: async (connection) => {
-      if (connection.provider !== "olx_chat") {
-        throw new CrmWhatsappGatewayError("Invalid OLX Chat connection.");
+      if (connection.provider !== "olx" || connection.channel !== "olx_chat") {
+        throw new CrmMessagingGatewayError("Invalid OLX Chat connection.");
       }
       const checkedAt = new Date();
       const chatStatus = readOlxChatSetupStatus(connection);
@@ -63,8 +63,8 @@ export function createOlxCrmChatGateway(
     sendReaction: async () => unsupported("reactions"),
     sendTemplate: async () => unsupported("templates"),
     sendText: async (connection, input) => {
-      if (connection.provider !== "olx_chat") {
-        throw new CrmWhatsappGatewayError("Invalid OLX Chat connection.");
+      if (connection.provider !== "olx" || connection.channel !== "olx_chat") {
+        throw new CrmMessagingGatewayError("Invalid OLX Chat connection.");
       }
       if (input.replyToMessageId) unsupported("quoted replies");
       const token = resolveOlxAccessToken(connection, env);
@@ -88,7 +88,7 @@ export function createOlxCrmChatGateway(
         requestTimeoutMs,
       );
       if (response.status >= 300 && response.status < 400) {
-        throw new CrmWhatsappGatewayError(
+        throw new CrmMessagingGatewayError(
           "OLX Chat redirect was rejected.",
           502,
           undefined,
@@ -121,7 +121,7 @@ async function readOlxProviderStatus(
 }
 
 function readOlxChatSetupStatus(
-  connection: Parameters<CrmWhatsappGateway["getConnectionStatus"]>[0],
+  connection: Parameters<CrmMessagingGateway["getConnectionStatus"]>[0],
 ): "active" | "blocked" | "error" | null {
   const setup = readRecord(connection.metadata.webhookSetup);
   const capabilities = readRecord(setup.capabilities);
@@ -149,7 +149,7 @@ async function requestWithTimeout(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       error instanceof DOMException && error.name === "TimeoutError"
         ? "OLX Chat request timed out."
         : "OLX Chat request failed.",
@@ -164,7 +164,7 @@ async function requestWithTimeout(
 
 function providerError(status: number) {
   if (status === 429) {
-    return new CrmWhatsappGatewayError(
+    return new CrmMessagingGatewayError(
       "OLX Chat rate limit was reached.",
       429,
       1,
@@ -172,14 +172,14 @@ function providerError(status: number) {
     );
   }
   if (status >= 500) {
-    return new CrmWhatsappGatewayError(
+    return new CrmMessagingGatewayError(
       "OLX Chat is temporarily unavailable.",
       502,
       undefined,
       "provider_unavailable",
     );
   }
-  return new CrmWhatsappGatewayError(
+  return new CrmMessagingGatewayError(
     "OLX Chat rejected the text message.",
     502,
     undefined,

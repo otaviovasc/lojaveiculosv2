@@ -61,7 +61,7 @@ export async function retryOlxChatSetup(
   if (!connection || connection.status === "archived") {
     throw new OlxChatSetupRetryTargetError("not_found");
   }
-  if (connection.provider !== "olx_chat") {
+  if (connection.channel !== "olx_chat" || connection.provider !== "olx") {
     throw new OlxChatSetupRetryTargetError("wrong_provider");
   }
   assertOlxChatSetupCanBeRetried(connection);
@@ -237,7 +237,7 @@ async function recordOlxChatRetryAttempt(
     entityType: "crm_connection",
     metadata: {
       permission: OLX_CRM_CONNECTION_SETUP_PERMISSION,
-      provider: "olx_chat",
+      provider: "olx",
     },
     outcome: "attempted",
     requestId: context.requestId,

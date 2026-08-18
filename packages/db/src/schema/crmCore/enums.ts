@@ -64,14 +64,10 @@ export const scopeGrantState = pgEnum("scope_grant_state", [
   "denied",
   "revoked",
 ]);
-export const providerConnectionState = pgEnum("provider_connection_state", [
-  "sandbox",
-  "active",
-  "paused",
-  "disconnected",
-  "error",
-  "archived",
-]);
+export const crmChannelConnectionState = pgEnum(
+  "crm_channel_connection_state",
+  ["sandbox", "active", "paused", "disconnected", "error", "archived"],
+);
 export const conversationThreadState = pgEnum("conversation_thread_state", [
   "open",
   "resolved",
@@ -92,25 +88,25 @@ export const conversationAttendanceState = pgEnum(
     "handback_pending",
   ],
 );
-export const canonicalMessageDirection = pgEnum("canonical_message_direction", [
+export const crmMessageDirection = pgEnum("crm_message_direction", [
   "inbound",
   "outbound",
 ]);
-export const canonicalMessageStatus = pgEnum("canonical_message_status", [
+export const crmMessageStatus = pgEnum("crm_message_status", [
   "pending",
   "sent",
   "delivered",
   "read",
   "failed",
 ]);
-export const canonicalMessageSender = pgEnum("canonical_message_sender", [
+export const crmMessageSender = pgEnum("crm_message_sender", [
   "customer",
   "human",
   "bot",
   "system",
   "unknown",
 ]);
-export const canonicalMessageOrigin = pgEnum("canonical_message_origin", [
+export const crmMessageOrigin = pgEnum("crm_message_origin", [
   "customer",
   "human_crm",
   "human_channel",
@@ -145,7 +141,7 @@ export const factProposalState = pgEnum("fact_proposal_state", [
   "rejected",
   "superseded",
 ]);
-export const botGrantState = pgEnum("bot_integration_grant_state", [
+export const crmExternalBotGrantState = pgEnum("crm_external_bot_grant_state", [
   "issued",
   "consumed",
   "revoked",
@@ -158,35 +154,41 @@ export const integrationEventState = pgEnum("integration_event_state", [
   "failed",
   "ignored",
 ]);
-export const botActionCommandState = pgEnum("bot_action_command_state", [
-  "accepted",
-  "authorized",
-  "claimed",
-  "executing",
-  "provider_succeeded",
-  "completed",
-  "retryable_failed",
-  "indeterminate",
-  "dead_letter",
-  "cancelled",
-]);
-export const botAuthorizationClass = pgEnum("bot_authorization_class", [
-  "automatic",
-  "proposal_only",
-  "human_approved",
-]);
-export const providerEffectState = pgEnum("provider_effect_state", [
-  "accepted",
-  "authorized",
-  "claimed",
-  "executing",
-  "provider_succeeded",
-  "completed",
-  "retryable_failed",
-  "indeterminate",
-  "dead_letter",
-  "cancelled",
-]);
+export const crmExternalBotActionCommandState = pgEnum(
+  "crm_external_bot_action_command_state",
+  [
+    "accepted",
+    "pending_approval",
+    "authorized",
+    "claimed",
+    "executing",
+    "provider_succeeded",
+    "completed",
+    "retryable_failed",
+    "indeterminate",
+    "dead_letter",
+    "cancelled",
+  ],
+);
+export const crmExternalBotAuthorizationClass = pgEnum(
+  "crm_external_bot_authorization_class",
+  ["automatic", "proposal_only", "human_approved"],
+);
+export const crmExternalBotProviderEffectState = pgEnum(
+  "crm_external_bot_provider_effect_state",
+  [
+    "accepted",
+    "authorized",
+    "claimed",
+    "executing",
+    "provider_succeeded",
+    "completed",
+    "retryable_failed",
+    "indeterminate",
+    "dead_letter",
+    "cancelled",
+  ],
+);
 export const crmCoreMigrationFindingKind = pgEnum(
   "crm_core_migration_finding_kind",
   [

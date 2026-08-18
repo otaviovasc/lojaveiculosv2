@@ -14,7 +14,7 @@ import { CrmLeadDetailsTabsTarefas } from "./CrmLeadDetailsTabsTarefas";
 import { CrmLeadDetailsTabsReunioes } from "./CrmLeadDetailsTabsReunioes";
 import { CrmLeadDetailsTabsNotas } from "./CrmLeadDetailsTabsNotas";
 import { CrmLeadDetailsTabsVisao } from "./CrmLeadDetailsTabsVisao";
-import { CrmLeadWhatsappPanel } from "./CrmLeadWhatsappPanel";
+import { CrmLeadConversationPanel } from "./CrmLeadConversationPanel";
 
 type Props = {
   activeTab: string;
@@ -51,7 +51,7 @@ export function CrmLeadDetailsTabs({
   }
 
   if (activeTab === "chat") {
-    return <CrmLeadWhatsappPanel lead={lead} />;
+    return <CrmLeadConversationPanel lead={lead} />;
   }
 
   if (activeTab === "tarefas") {

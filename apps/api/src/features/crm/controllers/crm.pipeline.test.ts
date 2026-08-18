@@ -4,7 +4,7 @@ import {
   createAuditSpy,
   createTestApp,
   expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
+} from "./crm.controller.testSupport.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";

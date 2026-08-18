@@ -31,7 +31,7 @@ import {
 } from "./crmRouteState";
 import { useCrmPipelines } from "./useCrmPipelines";
 import { useCrmLeadBoard } from "./useCrmLeadBoard";
-import { CrmSurfaceBoundary, CrmWhatsappInbox } from "./CrmModuleParts";
+import { CrmSurfaceBoundary, CrmInbox } from "./CrmModuleParts";
 
 export function CrmModule({
   api,
@@ -57,7 +57,7 @@ export function CrmModule({
   });
   const [vehicleOptions, setVehicleOptions] = useState<LeadVehicleOption[]>([]);
   const [viewMode, setViewMode] = useState<CrmViewMode>("kanban");
-  const canLoadPipeline = activeSurface !== "whatsapp";
+  const canLoadPipeline = activeSurface !== "conversations";
   const pipelinesState = useCrmPipelines("crm", crmApi, canLoadPipeline);
   const board = useCrmLeadBoard(
     crmApi,
@@ -206,10 +206,10 @@ export function CrmModule({
     }
   };
 
-  if (activeSurface === "whatsapp") {
+  if (activeSurface === "conversations") {
     return (
       <CrmSurfaceBoundary>
-        <CrmWhatsappInbox productApi={crmApi} />
+        <CrmInbox productApi={crmApi} />
       </CrmSurfaceBoundary>
     );
   }
@@ -244,7 +244,7 @@ export function CrmModule({
 }
 
 function readInitialSurface(): CrmSurface {
-  if (typeof window === "undefined") return "whatsapp";
+  if (typeof window === "undefined") return "conversations";
   return readCrmSurfaceFromHash(window.location.hash);
 }
 

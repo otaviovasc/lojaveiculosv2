@@ -5,7 +5,7 @@ import {
   createAuditSpy,
   createTestApp,
   expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
+} from "./crm.controller.testSupport.js";
 
 const permissions = [
   "lead.create",

@@ -8,7 +8,7 @@ import {
   conversationThreads,
   factProposals,
   opportunities,
-  providerConnections,
+  crmChannelConnections,
 } from "@lojaveiculosv2/db";
 import type {
   CrmCoreEntityByResource,
@@ -186,7 +186,7 @@ async function updateRow<R extends CrmCoreResource>(
       });
     }
     case "connections":
-      return updateProjectionRow(db, providerConnections, input);
+      return updateProjectionRow(db, crmChannelConnections, input);
     case "consents":
       return updateProjectionRow(db, consentReceipts, input);
     case "fact-proposals":
@@ -226,7 +226,9 @@ function scopedRevision(
 async function updateProjectionRow(
   db: DrizzleCrmCoreClient,
   table:
-    typeof providerConnections | typeof consentReceipts | typeof factProposals,
+    | typeof crmChannelConnections
+    | typeof consentReceipts
+    | typeof factProposals,
   input: CrmCoreScope & { expectedRevision: number; id: string },
 ): Promise<boolean> {
   const rows = await db

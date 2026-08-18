@@ -1,6 +1,6 @@
 import {
   crmChannelRoutingPolicies,
-  providerConnections,
+  crmChannelConnections,
 } from "@lojaveiculosv2/db";
 import { and, eq, isNull } from "drizzle-orm";
 import type { CrmRoutingConnectionRepository } from "../../../domains/crm/ports/crmRoutingConnectionRepository.js";
@@ -17,11 +17,11 @@ export function createDrizzleCrmRoutingConnectionRepository(
     async listConnections(input) {
       const rows = await db
         .select()
-        .from(providerConnections)
+        .from(crmChannelConnections)
         .where(
           and(
-            eq(providerConnections.storeId, input.storeId),
-            eq(providerConnections.tenantId, input.tenantId),
+            eq(crmChannelConnections.storeId, input.storeId),
+            eq(crmChannelConnections.tenantId, input.tenantId),
           ),
         );
       return rows.map((row) => {
@@ -29,10 +29,13 @@ export function createDrizzleCrmRoutingConnectionRepository(
         const capabilities = readRoutingRecord(metadata.capabilities);
         return {
           capabilities: {
+            conversation_start: capabilities.conversation_start === true,
             inbound: capabilities.inbound === true,
+            media: capabilities.media === true,
             outbound: capabilities.outbound === true,
             scheduling: capabilities.scheduling === true,
             templates: capabilities.templates === true,
+            text: capabilities.text === true,
           },
           channel: row.channel,
           connected: metadata.connected === true,
@@ -77,8 +80,9 @@ export function createDrizzleCrmRoutingPolicyRepository(
     async listPolicies(input) {
       const rows = await db
         .select({
-          botConnectionId: crmChannelRoutingPolicies.botConnectionId,
-          botMode: crmChannelRoutingPolicies.botMode,
+          externalBotConnectionId:
+            crmChannelRoutingPolicies.externalBotConnectionId,
+          externalBotMode: crmChannelRoutingPolicies.externalBotMode,
           channel: crmChannelRoutingPolicies.channel,
           defaultConnectionId: crmChannelRoutingPolicies.defaultConnectionId,
           id: crmChannelRoutingPolicies.id,
@@ -100,8 +104,8 @@ export function createDrizzleCrmRoutingPolicyRepository(
         .values(input)
         .onConflictDoUpdate({
           set: {
-            botConnectionId: input.botConnectionId,
-            botMode: input.botMode,
+            externalBotConnectionId: input.externalBotConnectionId,
+            externalBotMode: input.externalBotMode,
             defaultConnectionId: input.defaultConnectionId,
             updatedAt: new Date(),
           },
@@ -119,8 +123,8 @@ export function createDrizzleCrmRoutingPolicyRepository(
 }
 
 function mapPolicy(row: {
-  botConnectionId: string | null;
-  botMode: CrmChannelRoutingPolicy["botMode"];
+  externalBotConnectionId: string | null;
+  externalBotMode: CrmChannelRoutingPolicy["externalBotMode"];
   channel: CrmChannelRoutingPolicy["channel"];
   defaultConnectionId: string | null;
   id: string;
@@ -128,8 +132,8 @@ function mapPolicy(row: {
   tenantId: string;
 }): CrmChannelRoutingPolicy {
   return {
-    botConnectionId: row.botConnectionId,
-    botMode: row.botMode,
+    externalBotConnectionId: row.externalBotConnectionId,
+    externalBotMode: row.externalBotMode,
     channel: row.channel,
     defaultConnectionId: row.defaultConnectionId,
     id: row.id,

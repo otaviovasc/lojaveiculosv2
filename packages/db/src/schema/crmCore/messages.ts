@@ -12,19 +12,19 @@ import {
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "../_shared.js";
 import { stores, tenants } from "../identity.js";
-import { providerConnections } from "./authorization.js";
+import { crmChannelConnections } from "./authorization.js";
 import { conversationCycles, conversationThreads } from "./conversations.js";
 import {
-  canonicalMessageDirection,
-  canonicalMessageOrigin,
-  canonicalMessageSender,
-  canonicalMessageStatus,
+  crmMessageDirection,
+  crmMessageOrigin,
+  crmMessageSender,
+  crmMessageStatus,
   transportProvider,
 } from "./enums.js";
 import { revisionCheck, revisionColumn } from "./revision.js";
 import { scopedStoreForeignKey } from "./scoped.js";
 
-export const canonicalMessages = pgTable(
+export const crmMessages = pgTable(
   "crm_messages",
   {
     ...lifecycleColumns,
@@ -32,7 +32,7 @@ export const canonicalMessages = pgTable(
     cycleId: uuid("cycle_id")
       .notNull()
       .references(() => conversationCycles.id),
-    direction: canonicalMessageDirection("direction").notNull(),
+    direction: crmMessageDirection("direction").notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     mediaType: varchar("media_type", { length: 120 }),
     mediaUrl: text("media_url"),
@@ -46,14 +46,14 @@ export const canonicalMessages = pgTable(
     provider: transportProvider("provider").notNull(),
     providerConnectionId: uuid("provider_connection_id")
       .notNull()
-      .references(() => providerConnections.id),
+      .references(() => crmChannelConnections.id),
     providerMessageId: varchar("provider_message_id", { length: 191 }),
     revision: revisionColumn(),
-    sender: canonicalMessageSender("sender").notNull().default("unknown"),
-    senderOrigin: canonicalMessageOrigin("sender_origin")
+    sender: crmMessageSender("sender").notNull().default("unknown"),
+    senderOrigin: crmMessageOrigin("sender_origin")
       .notNull()
       .default("unknown"),
-    status: canonicalMessageStatus("status").notNull().default("pending"),
+    status: crmMessageStatus("status").notNull().default("pending"),
     threadId: uuid("thread_id")
       .notNull()
       .references(() => conversationThreads.id),
@@ -65,7 +65,7 @@ export const canonicalMessages = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
-    scopedStoreForeignKey(table, "canonical_messages_store_tenant_fk"),
+    scopedStoreForeignKey(table, "crm_messages_store_tenant_fk"),
     foreignKey({
       columns: [
         table.tenantId,
@@ -74,12 +74,12 @@ export const canonicalMessages = pgTable(
         table.provider,
       ],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
-        providerConnections.provider,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
+        crmChannelConnections.provider,
       ],
-      name: "canonical_messages_semantic_connection_fk",
+      name: "crm_messages_semantic_connection_fk",
     }),
     foreignKey({
       columns: [
@@ -94,7 +94,7 @@ export const canonicalMessages = pgTable(
         conversationThreads.id,
         conversationThreads.providerConnectionId,
       ],
-      name: "canonical_messages_semantic_thread_fk",
+      name: "crm_messages_semantic_thread_fk",
     }),
     foreignKey({
       columns: [table.tenantId, table.storeId, table.cycleId, table.threadId],
@@ -104,25 +104,25 @@ export const canonicalMessages = pgTable(
         conversationCycles.id,
         conversationCycles.threadId,
       ],
-      name: "canonical_messages_semantic_cycle_fk",
+      name: "crm_messages_semantic_cycle_fk",
     }),
-    revisionCheck(table.revision, "canonical_messages_revision_nonnegative"),
-    uniqueIndex("canonical_messages_scope_id_unique").on(
+    revisionCheck(table.revision, "crm_messages_revision_nonnegative"),
+    uniqueIndex("crm_messages_scope_id_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
     ),
-    uniqueIndex("canonical_messages_semantic_id_unique").on(
+    uniqueIndex("crm_messages_semantic_id_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
       table.cycleId,
       table.threadId,
     ),
-    uniqueIndex("canonical_messages_provider_id_unique")
+    uniqueIndex("crm_messages_provider_id_unique")
       .on(table.providerConnectionId, table.providerMessageId)
       .where(sql`${table.providerMessageId} IS NOT NULL`),
-    index("canonical_messages_thread_occurred_idx").on(
+    index("crm_messages_thread_occurred_idx").on(
       table.threadId,
       table.occurredAt,
     ),

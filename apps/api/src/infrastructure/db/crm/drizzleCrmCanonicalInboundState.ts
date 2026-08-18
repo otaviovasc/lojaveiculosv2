@@ -60,9 +60,9 @@ export async function updateCanonicalInboundState(
         metadata: {
           ...cycleMetadata,
           ...(input.leadId ? { leadId: input.leadId } : {}),
-          sessionMetadata: {
-            ...readCanonicalThreadMetadata(cycleMetadata.sessionMetadata),
-            ...input.sessionMetadata,
+          cycleMetadata: {
+            ...readCanonicalThreadMetadata(cycleMetadata.cycleMetadata),
+            ...input.cycleMetadata,
           },
         },
         revision: sql`${conversationCycles.revision} + 1`,

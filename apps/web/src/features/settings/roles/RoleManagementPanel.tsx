@@ -29,12 +29,6 @@ import {
 } from "./roleDraft";
 import { getRoleLabel } from "../settingsLabels";
 
-const RETIRED_PERMISSION = "crm.whatsapp.connection.manage";
-const RETIRED_PERMISSION_REPLACEMENTS = [
-  "crm.messaging.connection.setup",
-  "crm.messaging.connection.pair",
-] as const;
-
 type PermissionOverride = {
   allowed: boolean;
   permission: string;
@@ -56,12 +50,6 @@ export function sanitizePermissionOverrides(
   };
 
   for (const override of overrides) {
-    if (override.permission === RETIRED_PERMISSION) {
-      RETIRED_PERMISSION_REPLACEMENTS.forEach((permission) =>
-        addOverride(permission, override.allowed),
-      );
-      continue;
-    }
     addOverride(override.permission, override.allowed);
   }
 

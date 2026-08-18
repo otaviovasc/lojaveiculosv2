@@ -47,6 +47,8 @@ export async function createOlxConnection(
 export function createFailedOlxConnection(): CrmConnection {
   const id = "olx-connection-1";
   return {
+    broker: "direct",
+    channel: "olx_chat",
     credentialsRef: {
       stored: {
         accessToken: "sealed-access",
@@ -68,7 +70,7 @@ export function createFailedOlxConnection(): CrmConnection {
       },
     },
     phone: null,
-    provider: "olx_chat",
+    provider: "olx",
     status: "active",
     storeId: "store-1" as never,
     tenantId: "tenant-1" as never,

@@ -13,7 +13,7 @@ describe("parseOlxLeadWebhook", () => {
 
     expect(parsed).toMatchObject({
       adsInfo: { subject: "Honda Civic" },
-      buyerPhone: "11999999999",
+      customerPhone: "11999999999",
       externalId: "lead-1",
     });
     expect(parsed).not.toHaveProperty("buyerHistory");
@@ -26,7 +26,7 @@ describe("parseOlxLeadWebhook", () => {
     ["whitespace", "  \t "],
   ])("normalizes an %s phone to null", (_label, phone) => {
     expect(
-      parseOlxLeadWebhook({ ...validPayload(), phone })?.buyerPhone,
+      parseOlxLeadWebhook({ ...validPayload(), phone })?.customerPhone,
     ).toBeNull();
   });
 

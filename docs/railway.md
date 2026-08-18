@@ -76,7 +76,7 @@ Each persistent environment should contain:
 - audit Postgres
 - Redis
 
-Redis supports CRM WhatsApp SSE tickets, fanout, and bounded replay across API
+Redis supports CRM conversation SSE tickets, fanout, and bounded replay across API
 instances. The in-process broker remains the explicit degraded fallback when
 Redis is unavailable. The scheduled-message worker runs as a short-lived
 Railway cron every five minutes and exits after processing due Postgres-backed

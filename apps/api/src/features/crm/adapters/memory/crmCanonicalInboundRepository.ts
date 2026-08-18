@@ -4,7 +4,7 @@ import type {
   CanonicalInboundMessageResult,
   CrmCanonicalInboundRepository,
 } from "../../../../domains/crm/ports/crmCanonicalInboundRepository.js";
-import type { CrmWhatsappRepository } from "../../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { CrmConversationRepository } from "../../../../domains/crm/ports/crmConversationRepository.js";
 import {
   ingestProjectedCanonicalInbound,
   scopedCanonicalIdentityKey,
@@ -52,7 +52,7 @@ export type MemoryCrmCanonicalInboundRepository =
   };
 
 export function createMemoryCrmCanonicalInboundRepository(
-  whatsappRepository?: CrmWhatsappRepository,
+  whatsappRepository?: CrmConversationRepository,
 ): MemoryCrmCanonicalInboundRepository {
   const attendances: MemoryCrmCanonicalInboundSnapshot["attendances"][number][] =
     [];
@@ -118,7 +118,7 @@ export function createMemoryCrmCanonicalInboundRepository(
           candidate.storeId === input.storeId &&
           candidate.state === "active",
       );
-      const createdSession = !cycle;
+      const createdConversationCycle = !cycle;
       if (!cycle) {
         cycle = {
           id: randomUUID(),
@@ -143,7 +143,13 @@ export function createMemoryCrmCanonicalInboundRepository(
         threadId: thread.id,
       };
       messages.push(message);
-      return resultFor(message, identities, attendances, true, createdSession);
+      return resultFor(
+        message,
+        identities,
+        attendances,
+        true,
+        createdConversationCycle,
+      );
     },
     snapshot: () => ({
       attendances: attendances.map((item) => ({ ...item })),
@@ -165,7 +171,7 @@ function resultFor(
   identities: Map<string, { contactId: string; identityId: string }>,
   attendances: MemoryCrmCanonicalInboundSnapshot["attendances"],
   created: boolean,
-  createdSession: boolean,
+  createdConversationCycle: boolean,
 ): CanonicalInboundMessageResult {
   const identity = identities.get(scopedCanonicalIdentityKey(message));
   if (!identity) throw new Error("Canonical CRM memory identity is missing.");
@@ -178,7 +184,7 @@ function resultFor(
     attendanceState: attendance.state,
     contactId: identity.contactId,
     created,
-    createdSession,
+    createdConversationCycle,
     cycleId: message.cycleId,
     identityId: identity.identityId,
     messageId: message.id,

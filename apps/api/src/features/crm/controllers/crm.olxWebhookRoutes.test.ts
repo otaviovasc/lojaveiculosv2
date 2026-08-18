@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { connectionId } from "./crm.olxChat.testSupport.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM OLX webhook routes", () => {
   it("does not expose the legacy WhatsApp-namespaced route", async () => {

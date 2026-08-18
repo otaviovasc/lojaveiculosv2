@@ -131,6 +131,7 @@ export function createRuntimeHttpAppOptions({
       crmRealtimeBroker,
       runtimeObjectStorage,
       crmRealtimeBroker.olxWebhookSecurity,
+      externalBotManager,
     ),
     documentServices: createRuntimeDocumentServices(
       db,

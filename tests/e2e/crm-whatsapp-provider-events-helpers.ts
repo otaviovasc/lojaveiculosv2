@@ -29,7 +29,7 @@ function providerEventIssue(): CrmWhatsappProviderEvent {
     connectionId: "24000000-0000-4000-8000-000000000101",
     createdAt: new Date().toISOString(),
     errorMessage: "timeout na entrega",
-    eventType: "crm.whatsapp.zapi.delivery",
+    eventType: "crm.provider.zapi.delivery",
     id: "event_e2e",
     processedAt: null,
     provider: "zapi",

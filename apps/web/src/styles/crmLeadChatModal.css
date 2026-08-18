@@ -8,7 +8,7 @@
   overflow: hidden;
 }
 
-.crm-lead-chat-shell.crm-whatsapp-shell {
+.crm-lead-chat-shell.crm-shell {
   background: transparent;
   display: flex;
   flex: 1;
@@ -19,14 +19,14 @@
   overflow: hidden;
 }
 
-.crm-lead-chat-shell .crm-whatsapp-messages {
+.crm-lead-chat-shell .crm-messages {
   border: 1px solid var(--color-line);
   border-radius: var(--surface-radius-lg, var(--radius-md));
   flex: 1;
   min-height: 12rem;
 }
 
-.crm-lead-chat-shell .crm-whatsapp-empty {
+.crm-lead-chat-shell .crm-empty {
   flex: 1;
 }
 

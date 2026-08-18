@@ -1,4 +1,4 @@
-import type { CrmWhatsappWebhookConfigResult } from "../ports/crmWhatsappGateway.js";
+import type { CrmMessagingWebhookConfigResult } from "../ports/crmMessagingGateway.js";
 
 export const requiredZapiWebhookTypes = [
   "chat-presence",
@@ -66,7 +66,7 @@ export function markZapiWebhookSetupAttempt(
 
 export function completeZapiWebhookSetupAttempt(
   current: ZapiWebhookSetupState,
-  results: readonly CrmWhatsappWebhookConfigResult[],
+  results: readonly CrmMessagingWebhookConfigResult[],
   now = new Date(),
 ): ZapiWebhookSetupState {
   const succeededTypes = requiredZapiWebhookTypes.filter((type) =>
@@ -160,7 +160,7 @@ export function withZapiWebhookSetupState(
 }
 
 function classifyWebhookFailure(
-  results: readonly CrmWhatsappWebhookConfigResult[],
+  results: readonly CrmMessagingWebhookConfigResult[],
 ) {
   const failed = results.filter((result) => !result.ok);
   if (failed.some((result) => result.status === 429)) return "rate_limited";

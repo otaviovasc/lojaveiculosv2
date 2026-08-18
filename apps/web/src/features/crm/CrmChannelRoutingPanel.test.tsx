@@ -10,8 +10,8 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
-import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
+import type { CrmConversationApi } from "./crmConversationApi";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 import type { CrmChannelRouting, CrmRoutingPolicy } from "./crmRoutingTypes";
 
 describe("CrmChannelRoutingPanel", () => {
@@ -68,7 +68,7 @@ describe("CrmChannelRoutingPanel", () => {
           "instagram-b",
           "Loja Norte",
           "inherit_store_default",
-          "composio_instagram",
+          "meta_cloud",
         ),
       ]),
     );
@@ -79,21 +79,15 @@ describe("CrmChannelRoutingPanel", () => {
         api={createApi(initial, updateRoutingPolicy)}
         canManage
         connections={[
-          legacyConnection("instagram-a", "composio_instagram", "Loja Centro"),
-          legacyConnection("instagram-b", "composio_instagram", "Loja Norte"),
+          legacyConnection("instagram-a", "meta_cloud", "Loja Centro"),
+          legacyConnection("instagram-b", "meta_cloud", "Loja Norte"),
           legacyConnection(
             "zapi-a",
             "zapi",
             "Equipe vendas",
             "+55 11 99999-0000",
           ),
-          legacyConnection(
-            "olx-pending",
-            "olx_chat",
-            "OLX principal",
-            null,
-            false,
-          ),
+          legacyConnection("olx-pending", "olx", "OLX principal", null, false),
         ]}
         onPolicyChange={onPolicyChange}
       />,
@@ -130,9 +124,10 @@ describe("CrmChannelRoutingPanel", () => {
 
     await waitFor(() =>
       expect(updateRoutingPolicy).toHaveBeenCalledWith({
-        bot: { mode: "disabled" },
         channel: "instagram",
         defaultConnectionId: "instagram-b",
+        externalBotConnectionId: null,
+        externalBotMode: "disabled",
       }),
     );
     await waitFor(() =>
@@ -148,7 +143,7 @@ describe("CrmChannelRoutingPanel", () => {
     render(
       <CrmChannelRoutingPanel
         api={createApi(
-          createPolicy([staleWhatsappRoute()]),
+          createPolicy([staleChannelRoute()]),
           updateRoutingPolicy,
         )}
         canManage
@@ -226,7 +221,7 @@ describe("CrmChannelRoutingPanel", () => {
     ).toBeDisabled();
   });
 
-  it("uses a friendly label instead of exposing an unnamed connection id", async () => {
+  it("excludes a malformed unnamed connection instead of exposing its id", async () => {
     const user = userEvent.setup();
     render(
       <CrmChannelRoutingPanel
@@ -244,9 +239,7 @@ describe("CrmChannelRoutingPanel", () => {
       within(dialog).getByLabelText("Conexão padrão de WhatsApp"),
     );
 
-    expect(
-      screen.getByRole("option", { name: /Z-API · Conexão sem nome/ }),
-    ).toBeVisible();
+    expect(screen.getAllByRole("option")).toHaveLength(1);
     expect(screen.queryByText(/internal-id-42/)).not.toBeInTheDocument();
   });
 
@@ -277,9 +270,10 @@ function createApi(
   updateRoutingPolicy: ReturnType<typeof vi.fn>,
 ) {
   return {
+    capabilities: ["text"],
     getRoutingPolicy: vi.fn(async () => policy),
     updateRoutingPolicy,
-  } as Pick<CrmWhatsappApi, "getRoutingPolicy" | "updateRoutingPolicy">;
+  } as Pick<CrmConversationApi, "getRoutingPolicy" | "updateRoutingPolicy">;
 }
 
 function createPolicy(channels: CrmChannelRouting[]): CrmRoutingPolicy {
@@ -290,12 +284,12 @@ function readyRoute(
   channel: CrmChannelRouting["channel"],
   id: string,
   displayName: string,
-  mode: CrmChannelRouting["bot"]["mode"],
-  provider: "composio_instagram" | "zapi" = "composio_instagram",
+  mode: CrmChannelRouting["externalBot"]["mode"],
+  provider: "meta_cloud" | "zapi" = "meta_cloud",
 ): CrmChannelRouting {
-  const selected = connection(id, provider, displayName, true);
+  const selected = connection(id, provider, displayName, true, channel);
   return {
-    bot:
+    externalBot:
       mode === "disabled"
         ? disabledBot()
         : {
@@ -317,7 +311,7 @@ function readyRoute(
 
 function blockedOlxRoute(): CrmChannelRouting {
   return {
-    bot: disabledBot(),
+    externalBot: disabledBot(),
     channel: "olx_chat",
     storeDefault: {
       blocked: blocked("policy_not_configured"),
@@ -328,9 +322,9 @@ function blockedOlxRoute(): CrmChannelRouting {
   };
 }
 
-function staleWhatsappRoute(): CrmChannelRouting {
+function staleChannelRoute(): CrmChannelRouting {
   return {
-    bot: disabledBot(),
+    externalBot: disabledBot(),
     channel: "whatsapp",
     storeDefault: {
       blocked: blocked("connection_not_found"),
@@ -341,7 +335,7 @@ function staleWhatsappRoute(): CrmChannelRouting {
   };
 }
 
-function disabledBot(): CrmChannelRouting["bot"] {
+function disabledBot(): CrmChannelRouting["externalBot"] {
   return {
     blocked: blocked("route_disabled"),
     connection: null,
@@ -359,63 +353,59 @@ function blocked(
 
 function connection(
   id: string,
-  provider: "composio_instagram" | "composio_whatsapp" | "zapi",
+  provider: "meta_cloud" | "zapi",
   displayName: string,
   ready: boolean,
-) {
+  channel: CrmChannelRouting["channel"],
+): NonNullable<CrmChannelRouting["storeDefault"]["connection"]> {
   return {
     active: ready,
     capabilities: ["text"],
+    channel,
     connected: ready,
     displayName,
     id,
+    isDefault: false,
     provider,
+    readiness: {
+      ready,
+      reason: null,
+      reasonCode: ready ? "ready" : "disconnected",
+    },
+    state: ready ? ("active" as const) : ("disconnected" as const),
   };
 }
 
 function legacyConnection(
   id: string,
-  provider: CrmWhatsappProviderConnection["provider"],
+  provider: CrmProviderConnection["provider"],
   displayName: string,
-  phone: string | null = null,
+  _phone: string | null = null,
   ready = true,
-): CrmWhatsappProviderConnection {
+): CrmProviderConnection {
   return {
+    capabilities: capabilitiesForProvider(provider),
     channel:
-      provider === "composio_instagram"
+      provider === "meta_cloud"
         ? "instagram"
-        : provider === "olx_chat"
+        : provider === "olx"
           ? "olx_chat"
           : "whatsapp",
     displayName,
-    externalConnectionId: ready ? `external-${id}` : null,
-    externalInstanceId: null,
     id,
-    live: {
-      checkedAt: "2026-08-17T12:00:00.000Z",
-      connected: ready,
-      connectedPhone: phone,
-      providerStatus: ready ? "connected" : "disconnected",
-      smartphoneConnected: null,
-    },
-    phone,
+    isDefault: provider === "zapi",
     provider,
     readiness: {
       ready,
       reason: ready ? null : "A conexão ainda não está pronta.",
       reasonCode: ready ? "ready" : "pending_webhook",
     },
-    ready,
-    state: ready
-      ? "active"
-      : provider === "olx_chat"
-        ? "paused"
-        : "disconnected",
-    status: ready
-      ? "active"
-      : provider === "olx_chat"
-        ? "paused"
-        : "disconnected",
-    webhookUrl: null,
+    state: ready ? "active" : provider === "olx" ? "paused" : "disconnected",
   };
+}
+
+function capabilitiesForProvider(provider: CrmProviderConnection["provider"]) {
+  return provider === "olx"
+    ? (["inbound", "text"] as const)
+    : (["conversation_start", "media", "outbound", "text"] as const);
 }

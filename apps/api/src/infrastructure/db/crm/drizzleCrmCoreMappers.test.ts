@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type {
   contactIdentities,
-  providerConnections,
+  crmChannelConnections,
 } from "@lojaveiculosv2/db";
 import { mapConnection, mapIdentity } from "./drizzleCrmCoreMappers.js";
 
-const baseRow: typeof providerConnections.$inferSelect = {
+const baseRow: typeof crmChannelConnections.$inferSelect = {
   authorizationId: null,
   broker: "direct",
   channel: "whatsapp",

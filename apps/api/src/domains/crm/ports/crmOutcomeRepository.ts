@@ -1,5 +1,5 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type { CrmWhatsappChannel } from "./crmWhatsappRepository.js";
+import type { CrmMessagingChannel } from "./crmConversationRepository.js";
 
 export const crmLeadOutcomeLossReasons = [
   "no_response",
@@ -20,7 +20,7 @@ export type CrmLeadOutcomeKind = "follow_up" | "lost" | "won";
 export type CrmLeadOutcome = {
   actorId: string;
   actorKind: string;
-  channel: CrmWhatsappChannel | null;
+  channel: CrmMessagingChannel | null;
   commandId: string;
   createdAt: Date;
   id: string;

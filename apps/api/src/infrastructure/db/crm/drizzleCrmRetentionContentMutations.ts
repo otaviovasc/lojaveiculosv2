@@ -1,11 +1,11 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import {
-  canonicalMessages,
+  crmMessages,
   conversationAttendances,
   conversationCycles,
   conversationThreads,
   integrationEvents,
-  providerConnections,
+  crmChannelConnections,
   providerEvents,
 } from "@lojaveiculosv2/db";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
@@ -26,7 +26,7 @@ export async function applyCrmContentRetention(
 
   if (canonicalIds.length > 0) {
     const rows = await db
-      .update(canonicalMessages)
+      .update(crmMessages)
       .set({
         content: "",
         mediaType: null,
@@ -41,32 +41,32 @@ export async function applyCrmContentRetention(
       })
       .where(
         and(
-          eq(canonicalMessages.tenantId, input.tenantId),
-          eq(canonicalMessages.storeId, input.storeId),
-          inArray(canonicalMessages.id, canonicalIds),
+          eq(crmMessages.tenantId, input.tenantId),
+          eq(crmMessages.storeId, input.storeId),
+          inArray(crmMessages.id, canonicalIds),
           sql`exists (
             select 1
             from ${conversationCycles} cycle
             inner join ${conversationThreads} thread
-              on thread.id = ${canonicalMessages.threadId}
-              and thread.tenant_id = ${canonicalMessages.tenantId}
-              and thread.store_id = ${canonicalMessages.storeId}
-              and thread.provider_connection_id = ${canonicalMessages.providerConnectionId}
+              on thread.id = ${crmMessages.threadId}
+              and thread.tenant_id = ${crmMessages.tenantId}
+              and thread.store_id = ${crmMessages.storeId}
+              and thread.provider_connection_id = ${crmMessages.providerConnectionId}
             inner join ${conversationAttendances} attendance
               on attendance.cycle_id = cycle.id
               and attendance.thread_id = thread.id
-              and attendance.tenant_id = ${canonicalMessages.tenantId}
-              and attendance.store_id = ${canonicalMessages.storeId}
-            inner join ${providerConnections} connection
-              on connection.id = ${canonicalMessages.providerConnectionId}
-              and connection.tenant_id = ${canonicalMessages.tenantId}
-              and connection.store_id = ${canonicalMessages.storeId}
-              and connection.provider = ${canonicalMessages.provider}
+              and attendance.tenant_id = ${crmMessages.tenantId}
+              and attendance.store_id = ${crmMessages.storeId}
+            inner join ${crmChannelConnections} connection
+              on connection.id = ${crmMessages.providerConnectionId}
+              and connection.tenant_id = ${crmMessages.tenantId}
+              and connection.store_id = ${crmMessages.storeId}
+              and connection.provider = ${crmMessages.provider}
               and connection.channel = thread.channel
-            where cycle.id = ${canonicalMessages.cycleId}
-              and cycle.tenant_id = ${canonicalMessages.tenantId}
-              and cycle.store_id = ${canonicalMessages.storeId}
-              and cycle.thread_id = ${canonicalMessages.threadId}
+            where cycle.id = ${crmMessages.cycleId}
+              and cycle.tenant_id = ${crmMessages.tenantId}
+              and cycle.store_id = ${crmMessages.storeId}
+              and cycle.thread_id = ${crmMessages.threadId}
               and cycle.closed_at is not null
               and cycle.state in ('completed', 'expired')
               and greatest(
@@ -74,21 +74,21 @@ export async function applyCrmContentRetention(
                 attendance.changed_at,
                 coalesce(thread.last_message_at, cycle.closed_at),
                 (select max(cycle_message.occurred_at)
-                 from ${canonicalMessages} cycle_message
-                 where cycle_message.tenant_id = ${canonicalMessages.tenantId}
-                   and cycle_message.store_id = ${canonicalMessages.storeId}
-                   and cycle_message.cycle_id = ${canonicalMessages.cycleId})
+                 from ${crmMessages} cycle_message
+                 where cycle_message.tenant_id = ${crmMessages.tenantId}
+                   and cycle_message.store_id = ${crmMessages.storeId}
+                   and cycle_message.cycle_id = ${crmMessages.cycleId})
               ) <= ${input.cutoffs.canonicalMessageBefore}
           )`,
           withoutActiveRetentionHold(
             "canonical_message",
             "canonical_message",
-            canonicalMessages.id,
+            crmMessages.id,
             input,
           ),
         ),
       )
-      .returning({ id: canonicalMessages.id });
+      .returning({ id: crmMessages.id });
     affected += rows.length;
   }
 

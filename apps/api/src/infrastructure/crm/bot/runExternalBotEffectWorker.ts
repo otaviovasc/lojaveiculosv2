@@ -30,25 +30,25 @@ export async function runExternalBotEffectWorkerOnce(input: {
 }) {
   const now = input.now ?? new Date();
   const rows = await input.db
-    .execute(sql`update provider_effects set state='claimed', attempt_count=attempt_count+1, updated_at=now()
-    where id=(select id from provider_effects where state in ('accepted','retryable_failed') and next_attempt_at<=${now}
+    .execute(sql`update crm_external_bot_provider_effects set state='claimed', attempt_count=attempt_count+1, updated_at=now()
+    where id=(select id from crm_external_bot_provider_effects where state in ('accepted','retryable_failed') and next_attempt_at<=${now}
       order by next_attempt_at,created_at for update skip locked limit 1) returning *`);
   const row = (rows as unknown as Array<Record<string, unknown>>)[0];
   if (!row) return { kind: "idle" } as const;
   if (!(await input.authorize(String(row.id)))) {
     await input.db.execute(
-      sql`update provider_effects set state='cancelled',last_error_code='authorization_revoked',updated_at=now() where id=${String(row.id)}::uuid and state='claimed'`,
+      sql`update crm_external_bot_provider_effects set state='cancelled',last_error_code='execution_authorization_failed',updated_at=now() where id=${String(row.id)}::uuid and state='claimed'`,
     );
     await input.db.execute(
-      sql`update bot_action_commands set state='cancelled',updated_at=now() where id=${String(row.command_id)}::uuid and state in ('executing','retryable_failed')`,
+      sql`update crm_external_bot_action_commands set state='cancelled',updated_at=now() where id=${String(row.command_id)}::uuid and state in ('executing','retryable_failed')`,
     );
     return { effectId: String(row.id), kind: "cancelled" } as const;
   }
   await input.db.execute(
-    sql`update provider_effects set state='executing',updated_at=now() where id=${String(row.id)}::uuid and state='claimed'`,
+    sql`update crm_external_bot_provider_effects set state='executing',updated_at=now() where id=${String(row.id)}::uuid and state='claimed'`,
   );
   await input.db.execute(
-    sql`update bot_action_commands set state='executing',updated_at=now() where id=${String(row.command_id)}::uuid and state='retryable_failed'`,
+    sql`update crm_external_bot_action_commands set state='executing',updated_at=now() where id=${String(row.command_id)}::uuid and state='retryable_failed'`,
   );
   const result = await input.executor.execute({
     effectId: String(row.id),
@@ -63,10 +63,10 @@ export async function runExternalBotEffectWorkerOnce(input: {
     await finish(input.db, row, "indeterminate", result.code, null);
   } else if (result.retryable) {
     await input.db.execute(
-      sql`update provider_effects set state='retryable_failed',last_error_code=${result.code},next_attempt_at=${new Date(now.getTime() + 30_000)},updated_at=now() where id=${String(row.id)}::uuid`,
+      sql`update crm_external_bot_provider_effects set state='retryable_failed',last_error_code=${result.code},next_attempt_at=${new Date(now.getTime() + 30_000)},updated_at=now() where id=${String(row.id)}::uuid`,
     );
     await input.db.execute(
-      sql`update bot_action_commands set state='retryable_failed',updated_at=now() where id=${String(row.command_id)}::uuid and state in ('executing','retryable_failed')`,
+      sql`update crm_external_bot_action_commands set state='retryable_failed',updated_at=now() where id=${String(row.command_id)}::uuid and state in ('executing','retryable_failed')`,
     );
   } else {
     await finish(input.db, row, "dead_letter", result.code, null);
@@ -83,21 +83,21 @@ async function finish(
 ) {
   const effectState = state === "completed" ? "provider_succeeded" : state;
   await db.execute(
-    sql`update provider_effects set state=${effectState},last_error_code=${code},external_effect_id=${externalId},updated_at=now() where id=${String(row.id)}::uuid`,
+    sql`update crm_external_bot_provider_effects set state=${effectState},last_error_code=${code},external_effect_id=${externalId},updated_at=now() where id=${String(row.id)}::uuid`,
   );
   if (state === "completed") {
     await db.execute(
-      sql`update provider_effects set state='completed',updated_at=now() where id=${String(row.id)}::uuid and state='provider_succeeded'`,
+      sql`update crm_external_bot_provider_effects set state='completed',updated_at=now() where id=${String(row.id)}::uuid and state='provider_succeeded'`,
     );
     await db.execute(
-      sql`update bot_action_commands set state='provider_succeeded',updated_at=now() where id=${String(row.command_id)}::uuid and state='executing'`,
+      sql`update crm_external_bot_action_commands set state='provider_succeeded',updated_at=now() where id=${String(row.command_id)}::uuid and state='executing'`,
     );
     await db.execute(
-      sql`update bot_action_commands set state='completed',updated_at=now() where id=${String(row.command_id)}::uuid and state='provider_succeeded'`,
+      sql`update crm_external_bot_action_commands set state='completed',updated_at=now() where id=${String(row.command_id)}::uuid and state='provider_succeeded'`,
     );
   } else {
     await db.execute(
-      sql`update bot_action_commands set state=${state},updated_at=now() where id=${String(row.command_id)}::uuid and state in ('executing','retryable_failed')`,
+      sql`update crm_external_bot_action_commands set state=${state},updated_at=now() where id=${String(row.command_id)}::uuid and state in ('executing','retryable_failed')`,
     );
   }
 }

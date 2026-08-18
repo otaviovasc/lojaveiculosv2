@@ -7,7 +7,7 @@ import type { StoreScopedServiceContext } from "../../shared/serviceContext.js";
 import {
   externalAccountAuthorizationCapabilities,
   externalAccountAuthorizations,
-  providerConnections,
+  crmChannelConnections,
 } from "@lojaveiculosv2/db";
 import { and, eq, sql } from "drizzle-orm";
 import { onboardOlxCrmConnection } from "../../domains/crm/services/CrmService/onboardOlxCrmConnection.js";
@@ -117,25 +117,25 @@ export function createRuntimeOlxCrmOnboarding(
         }
         if (input.connectionId) {
           const [updated] = await transaction
-            .update(providerConnections)
+            .update(crmChannelConnections)
             .set({
               authorizationId: input.authorizationId,
               externalConnectionId: input.providerAccountId,
-              metadata: sql`${providerConnections.metadata} || ${JSON.stringify(connectionMetadata)}::jsonb`,
+              metadata: sql`${crmChannelConnections.metadata} || ${JSON.stringify(connectionMetadata)}::jsonb`,
               state: providerConnectionState(input.capabilities.chat.status),
               updatedAt: new Date(),
             })
             .where(
               and(
-                eq(providerConnections.id, input.connectionId),
-                eq(providerConnections.storeId, input.storeId),
-                eq(providerConnections.tenantId, input.tenantId),
-                eq(providerConnections.channel, "olx_chat"),
-                eq(providerConnections.provider, "olx"),
-                eq(providerConnections.broker, "direct"),
+                eq(crmChannelConnections.id, input.connectionId),
+                eq(crmChannelConnections.storeId, input.storeId),
+                eq(crmChannelConnections.tenantId, input.tenantId),
+                eq(crmChannelConnections.channel, "olx_chat"),
+                eq(crmChannelConnections.provider, "olx"),
+                eq(crmChannelConnections.broker, "direct"),
               ),
             )
-            .returning({ id: providerConnections.id });
+            .returning({ id: crmChannelConnections.id });
           if (!updated) {
             throw new Error(
               "Canonical OLX CRM channel connection was not persisted by onboarding.",

@@ -13,12 +13,12 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { providerConnections } from "./crmCore/authorization.js";
+import { crmChannelConnections } from "./crmCore/authorization.js";
 import {
   conversationCycles,
   conversationThreads,
 } from "./crmCore/conversations.js";
-import { canonicalMessages } from "./crmCore/messages.js";
+import { crmMessages } from "./crmCore/messages.js";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
@@ -93,9 +93,9 @@ export const providerEvents = pgTable(
           foreignKey({
             columns: [table.tenantId, table.storeId, table.connectionId],
             foreignColumns: [
-              providerConnections.tenantId,
-              providerConnections.storeId,
-              providerConnections.id,
+              crmChannelConnections.tenantId,
+              crmChannelConnections.storeId,
+              crmChannelConnections.id,
             ],
             name: "provider_events_scoped_connection_fk",
           }),
@@ -164,12 +164,12 @@ export const crmWebhookEffectOutbox = pgTable(
   (table) => [
     foreignKey({
       columns: [table.connectionId],
-      foreignColumns: [providerConnections.id],
+      foreignColumns: [crmChannelConnections.id],
       name: "crm_webhook_effect_outbox_connection_fk",
     }),
     foreignKey({
       columns: [table.messageId],
-      foreignColumns: [canonicalMessages.id],
+      foreignColumns: [crmMessages.id],
       name: "crm_webhook_effect_outbox_message_fk",
     }),
     ...(includeCrmScopeForeignKeys
@@ -192,9 +192,9 @@ export const crmWebhookEffectOutbox = pgTable(
           foreignKey({
             columns: [table.tenantId, table.storeId, table.connectionId],
             foreignColumns: [
-              providerConnections.tenantId,
-              providerConnections.storeId,
-              providerConnections.id,
+              crmChannelConnections.tenantId,
+              crmChannelConnections.storeId,
+              crmChannelConnections.id,
             ],
             name: "crm_webhook_effect_outbox_scoped_connection_fk",
           }),
@@ -231,11 +231,11 @@ export const crmWebhookEffectOutbox = pgTable(
               table.threadId,
             ],
             foreignColumns: [
-              canonicalMessages.tenantId,
-              canonicalMessages.storeId,
-              canonicalMessages.id,
-              canonicalMessages.cycleId,
-              canonicalMessages.threadId,
+              crmMessages.tenantId,
+              crmMessages.storeId,
+              crmMessages.id,
+              crmMessages.cycleId,
+              crmMessages.threadId,
             ],
             name: "crm_webhook_effect_outbox_semantic_message_fk",
           }),

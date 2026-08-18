@@ -1,0 +1,89 @@
+import { X } from "lucide-react";
+import type { ReactNode } from "react";
+import { Dialog, DialogContent, DialogTitle } from "../../components/ui/dialog";
+import { cx } from "../../components/ui/featureShared";
+
+export function CrmActionDialogShell({
+  children,
+  onClose,
+  panelClassName,
+  title,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+  panelClassName?: string;
+  title: string;
+}) {
+  return (
+    <Dialog
+      containerClassName="p-4"
+      onOpenChange={(open) => !open && onClose()}
+      open
+    >
+      <DialogContent
+        className={cx("max-w-none crm-action-panel", panelClassName)}
+        padding="none"
+        showCloseButton={false}
+        surface="panel"
+      >
+        <DialogTitle className="sr-only">{title}</DialogTitle>
+        {children}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function ActionDialog({
+  children,
+  disabled,
+  icon,
+  onClose,
+  onSubmit,
+  submitLabel = "Enviar",
+  title,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  icon: ReactNode;
+  onClose: () => void;
+  onSubmit: () => Promise<void>;
+  submitLabel?: string;
+  title: string;
+}) {
+  return (
+    <CrmActionDialogShell onClose={onClose} title={title}>
+      <header>
+        <span>{icon}</span>
+        <h2>{title}</h2>
+        <button
+          aria-label="Fechar"
+          className="crm-icon-action"
+          onClick={onClose}
+          type="button"
+        >
+          <X />
+        </button>
+      </header>
+      <div className="crm-action-fields">{children}</div>
+      <footer>
+        <button
+          className="crm-action crm-action-muted"
+          onClick={onClose}
+          type="button"
+        >
+          Cancelar
+        </button>
+        <button
+          className="crm-action"
+          disabled={disabled}
+          onClick={() => {
+            if (!disabled) void onSubmit();
+          }}
+          type="button"
+        >
+          {submitLabel}
+        </button>
+      </footer>
+    </CrmActionDialogShell>
+  );
+}

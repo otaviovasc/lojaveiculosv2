@@ -4,6 +4,15 @@ const apiBaseUrl =
   process.env.API_BASE_URL?.replace(/\/$/, "") ??
   "http://127.0.0.1:8787/api/v1";
 
+export const crmConversationCyclesPath = "/crm/conversation-cycles";
+export const crmMessagingOperatorPermissions = [
+  "crm.attendances.manage",
+  "crm.conversations.assign",
+  "crm.conversations.manage",
+  "crm.conversations.read",
+  "crm.messages.send",
+];
+
 export const personas = [
   {
     email: "agency.seed@lojaveiculos.com.br",
@@ -84,7 +93,7 @@ async function main() {
   console.log(`Local permission smoke: ${apiBaseUrl}`);
   await waitForApi();
   await verifyBootstrapDestinations();
-  verifyCrmWhatsappPermissions();
+  verifyCrmMessagingPermissions();
   await verifyStoreScopedAccess();
   await verifyIsolationAndEntitlementBoundaries();
   await verifyRoleManagementBoundaries();
@@ -220,7 +229,7 @@ async function verifyIsolationAndEntitlementBoundaries() {
   const crmAllowed = await request(
     persona("owner"),
     "GET",
-    "/crm/whatsapp/sessions",
+    crmConversationCyclesPath,
     { includeStore: true },
   );
   expectStatus("owner: CRM entitlement allowed", crmAllowed, [200]);
@@ -229,7 +238,7 @@ async function verifyIsolationAndEntitlementBoundaries() {
     const response = await request(
       persona(key),
       "GET",
-      "/crm/whatsapp/sessions",
+      crmConversationCyclesPath,
       { includeStore: true },
     );
     expectStatus(`${key}: CRM entitlement denied`, response, [403]);
@@ -312,44 +321,39 @@ async function verifyAgencyStoreAuthorization() {
   expectStatus("owner: agency store creation denied", ownerDenied, [403]);
 }
 
-function verifyCrmWhatsappPermissions() {
+function verifyCrmMessagingPermissions() {
   const connectionPermissions = [
     "crm.messaging.connection.pair",
     "crm.messaging.connection.setup",
   ];
-  const operatorPermissions = [
-    "crm.whatsapp.assign",
-    "crm.whatsapp.close",
-    "crm.whatsapp.list",
-    "crm.whatsapp.read",
-    "crm.whatsapp.send",
-    "crm.whatsapp.toggle_intervention",
-  ];
   for (const key of ["owner", "supervisor", "salesman", "branchSalesperson"]) {
-    expectPermissionSet(`${key}: WhatsApp operator permissions`, key, {
-      includes: operatorPermissions,
+    expectPermissionSet(`${key}: CRM messaging operator permissions`, key, {
+      includes: crmMessagingOperatorPermissions,
     });
   }
   for (const key of ["owner", "supervisor", "isolationOwner"]) {
     expectPermissionSet(`${key}: connection administration permissions`, key, {
-      excludes: ["crm.whatsapp.connection.manage"],
       includes: connectionPermissions,
     });
   }
   for (const key of ["salesman", "investor", "branchSalesperson"]) {
     expectPermissionSet(`${key}: connection administration denied`, key, {
-      excludes: [...connectionPermissions, "crm.whatsapp.connection.manage"],
+      excludes: connectionPermissions,
     });
   }
-  expectPermissionSet("investor: WhatsApp read-only permissions", "investor", {
-    excludes: [
-      "crm.whatsapp.assign",
-      "crm.whatsapp.close",
-      "crm.whatsapp.send",
-      "crm.whatsapp.toggle_intervention",
-    ],
-    includes: ["crm.whatsapp.list", "crm.whatsapp.read"],
-  });
+  expectPermissionSet(
+    "investor: CRM messaging read-only permissions",
+    "investor",
+    {
+      excludes: [
+        "crm.attendances.manage",
+        "crm.conversations.assign",
+        "crm.conversations.manage",
+        "crm.messages.send",
+      ],
+      includes: ["crm.conversations.read"],
+    },
+  );
 }
 
 function expectPermissionSet(name, key, expectation) {

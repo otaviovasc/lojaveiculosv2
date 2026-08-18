@@ -19,7 +19,7 @@ export function persistCanonicalInbound(
     | "profilePhotoUrl"
     | "secondaryPhone"
     | "senderOrigin"
-    | "sessionMetadata"
+    | "cycleMetadata"
     | "source"
   > & {
     customerChatId?: string | null;
@@ -32,7 +32,7 @@ export function persistCanonicalInbound(
     profilePhotoUrl?: string | null;
     secondaryPhone?: string | null;
     senderOrigin?: "customer" | "system";
-    sessionMetadata?: Readonly<Record<string, unknown>>;
+    cycleMetadata?: Readonly<Record<string, unknown>>;
     source?: string | null;
   },
 ): Promise<CanonicalInboundMessageResult> {
@@ -66,7 +66,7 @@ export function persistCanonicalInbound(
     profilePhotoUrl: input.profilePhotoUrl ?? null,
     secondaryPhone: secondaryPhone || null,
     senderOrigin: input.senderOrigin ?? input.sender,
-    sessionMetadata: sanitizeCanonicalMetadata(input.sessionMetadata ?? {}),
+    cycleMetadata: sanitizeCanonicalMetadata(input.cycleMetadata ?? {}),
     source: input.source ?? null,
   });
 }

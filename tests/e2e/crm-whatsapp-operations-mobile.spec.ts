@@ -18,7 +18,7 @@ test.describe("CRM WhatsApp operations mobile", () => {
     await installCampaignApiMocks(page);
     await installOperationsMocks(page);
     await installPairingConnectionMocks(page);
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
 
     await expectMobileNavigation(page);
 

@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "../_shared.js";
 import { storeMemberships, stores, tenants, users } from "../identity.js";
-import { providerConnections } from "./authorization.js";
+import { crmChannelConnections } from "./authorization.js";
 import { contacts, opportunities } from "./contacts.js";
 import {
   conversationCycleState,
@@ -40,7 +40,7 @@ export const conversationThreads = pgTable(
     profilePhotoUrl: text("profile_photo_url"),
     providerConnectionId: uuid("provider_connection_id")
       .notNull()
-      .references(() => providerConnections.id),
+      .references(() => crmChannelConnections.id),
     revision: revisionColumn(),
     source: varchar("source", { length: 80 }),
     state: conversationThreadState("state").notNull().default("open"),
@@ -61,10 +61,10 @@ export const conversationThreads = pgTable(
         table.channel,
       ],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
-        providerConnections.channel,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
+        crmChannelConnections.channel,
       ],
       name: "conversation_threads_semantic_connection_fk",
     }),

@@ -1,4 +1,4 @@
-# V1 Repasses CRM WhatsApp Import
+# V1 Repasses CRM WhatsApp Import (historical source mapping)
 
 Last updated: 2026-07-27
 
@@ -20,21 +20,23 @@ Last updated: 2026-07-27
   WhatsApp lead instead. The importer never reports provider success in those
   states.
 
-This is an anti-corruption import into the existing V2 model. It does not add
+This is an anti-corruption import into the existing V2 model. The source names
+in this document are historical vocabulary only; they are not current V2 table,
+permission, provider, or route names. It does not add
 legacy columns, numeric-id contracts, Repasses agent semantics, or runtime
 compatibility branches to V2.
 
 ## Source To Target Map
 
-| Repasses source             | V2 target                         | Import rule                                                                                                                                                                                                                                                                                                                                          |
-| --------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `connections`               | `crm_connections`                 | Import store-scoped CRM-mode Z-API connections. The legacy UUID becomes the external reference. Stored instance credentials are translated to the existing V2 credential-reference shape; credential values are never logged or copied into migration metadata. Connections remain paused unless the operator explicitly selects cutover activation. |
-| `crm_agents`                | existing `users`                  | No legacy agent row is created. Resolve through Clerk user id first, then a unique normalized email from the already-migrated V1 store access.                                                                                                                                                                                                       |
-| `chat_sessions`             | `crm_whatsapp_sessions`           | Use deterministic V2 UUIDs. Normalize Brazilian phone variants; use the WhatsApp LID as a stable fallback when the phone is empty. Preserve assignment, queue/read timestamps, profile URL, last-message preview, and source/status metadata.                                                                                                        |
-| V1 `Lead` + `chat_sessions` | `crm_whatsapp_sessions.lead_id`   | Prefer V1 `Lead.crm_session_id`, the identity bridge written by the old lead-sync job. Then use a valid Repasses `source_lead_id`, followed by one unambiguous normalized phone alias (including the Brazilian ninth-digit variant). Never guess when identifiers conflict.                                                                          |
-| unmatched `chat_sessions`   | `leads`                           | Create one deterministic V2-native WhatsApp lead for each unmatched normalized session group, then link the session. This covers LID-only contacts without changing V2 or fabricating a phone number.                                                                                                                                                |
-| `messages`                  | `crm_whatsapp_messages`           | Preserve direction, sender kind, type, status, timestamps, content, deletion state, provider ids, and legacy sender-agent reference in sanitized metadata.                                                                                                                                                                                           |
-| `messages.media_url`        | `crm_whatsapp_messages.media_url` | Keep the existing URL. Historical objects are not downloaded or re-uploaded. New V2 media continues through the V2 R2 storage path.                                                                                                                                                                                                                  |
+| Repasses source             | V2 target                                              | Import rule                                                                                                                                                                                                                                                                                                                                                                            |
+| --------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connections`               | `crm_channel_connections`                              | Import store-scoped WhatsApp channel connections with provider `zapi` and broker `direct`. The legacy UUID becomes the external reference. Stored instance credentials are translated to the V2 credential-reference shape; credential values are never logged or copied into migration metadata. Connections remain paused unless the operator explicitly selects cutover activation. |
+| `crm_agents`                | existing `users`                                       | No legacy agent row is created. Resolve through Clerk user id first, then a unique normalized email from the already-migrated V1 store access.                                                                                                                                                                                                                                         |
+| `chat_sessions`             | `crm_conversation_threads` + `crm_conversation_cycles` | Use deterministic V2 UUIDs. Normalize Brazilian phone variants; use the WhatsApp LID as a stable fallback when the phone is empty. Preserve only supported assignment, queue/read timestamps, profile URL, preview, and source/status metadata.                                                                                                                                        |
+| V1 `Lead` + `chat_sessions` | canonical thread/cycle lead link                       | Prefer V1 `Lead.crm_session_id`, the identity bridge written by the old lead-sync job. Then use a valid Repasses `source_lead_id`, followed by one unambiguous normalized phone alias. Never guess when identifiers conflict.                                                                                                                                                          |
+| unmatched `chat_sessions`   | `leads` + canonical contact/thread                     | Create one deterministic V2-native lead/contact for each unmatched normalized source group, then link the canonical conversation records. This covers LID-only contacts without fabricating a phone number.                                                                                                                                                                            |
+| `messages`                  | `crm_messages`                                         | Preserve supported direction, sender kind, type, status, timestamps, content, deletion state, provider ids, and sanitized legacy references.                                                                                                                                                                                                                                           |
+| `messages.media_url`        | canonical message media reference                      | Keep the existing URL as historical metadata. Historical objects are not downloaded or re-uploaded; new V2 media uses the V2 R2 storage path.                                                                                                                                                                                                                                          |
 
 Legacy `WAITING_RESPONSE` maps to V2 `ACTIVE`. A soft-deleted legacy session
 maps to `EXPIRED` with its legacy deletion provenance retained in metadata.
@@ -60,7 +62,7 @@ These counts are a rehearsal baseline, not a production success statement.
 The script checks target parity inside the same transaction and rolls the whole
 run back by default.
 
-## Operator Flow
+## Operator Flow (historical importer; reset-only target)
 
 Run:
 
@@ -68,20 +70,20 @@ Run:
 pnpm run migration:v1-store
 ```
 
-The first prompt selects one or several modules (or `all`). Selecting
-`whatsapp` then asks for both the Loja Veiculos V1 archive and the Repasses CRM
+The first prompt selects one or several modules (or `all`). Selecting the
+historical `whatsapp` source module then asks for both the Loja Veiculos V1 archive and the Repasses CRM
 archive before the remaining store/tenant values. A first import must include
-`leads`; a WhatsApp-only rerun is accepted when the deterministic V1 leads
+`leads`; a source-only rerun is accepted when the deterministic V1 leads
 already exist in V2.
 
 The script restores only the four required Repasses tables into an ephemeral
 local Postgres container. This avoids importing the unrelated Repasses schema
 or requiring its pgvector extension.
 
-The WhatsApp replacement prompt defaults to `yes`. Inside the same migration
-transaction it removes the target store's sessions, messages, session-tag
+The replacement prompt defaults to `yes`. Inside the same migration transaction
+it removes the target store's canonical conversation, message, tag-link,
 links, scheduled messages, campaigns/recipients, and previously generated
-WhatsApp-only leads before recreating source history. It does not delete V2
+source-only leads before recreating source history. It does not delete V2
 quick-message templates, tag definitions, or connection integrations. The
 source connection reuses an existing V2 connection when its external id,
 instance id, display name, or the unambiguous single-Z-API fallback matches;

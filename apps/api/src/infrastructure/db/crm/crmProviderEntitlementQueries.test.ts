@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const providerQueryFiles = [
-  "drizzleCrmBotIntegrationRepository.ts",
+  "drizzleCrmExternalBotIntegrationRepository.ts",
   "drizzleCrmConnectionRepositorySupport.ts",
-  "drizzleCrmWhatsappScheduledMessages.ts",
+  "drizzleCrmScheduledMessages.ts",
 ] as const;
 
 describe("CRM provider entitlement query contracts", () => {

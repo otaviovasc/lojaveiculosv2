@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
+import { createMemoryCrmExternalBotIntegrationRepository } from "../adapters/memory/crmExternalBotIntegrationRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import {
   createOlxConnection,
   olxSecurity,
@@ -11,21 +11,21 @@ import {
   tenantId,
   validPayload,
 } from "./crm.olxChat.testSupport.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 afterEach(() => vi.useRealTimers());
 
 describe("CRM OLX Chat effects", () => {
   it("rate-limits before ingesting or auditing an accepted OLX event", async () => {
     const audit = { record: vi.fn(async () => undefined) };
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       audit,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
       crmOlxWebhookSecurity: olxSecurity({ allowed: false }),
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
       olxChatEnabled: true,
     });
@@ -41,10 +41,12 @@ describe("CRM OLX Chat effects", () => {
   it("recovers only undelivered post-commit effects on provider replay", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-10T12:01:00.000Z"));
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const canonicalRepository = createMemoryCrmCanonicalInboundRepository();
-    const botRepository = createMemoryCrmBotIntegrationRepository();
-    await botRepository.upsertBotIntegration({
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const canonicalRepository = createMemoryCrmCanonicalInboundRepository(
+      conversationRepository,
+    );
+    const botRepository = createMemoryCrmExternalBotIntegrationRepository();
+    await botRepository.upsertExternalBotIntegration({
       enabled: true,
       storeId,
       tenantId,
@@ -56,20 +58,15 @@ describe("CRM OLX Chat effects", () => {
       .fn<(...args: unknown[]) => Promise<void>>()
       .mockRejectedValueOnce(new Error("realtime unavailable"))
       .mockResolvedValue(undefined);
-    const dispatch = vi.fn(async () => undefined);
     const app = createTestApp({
-      crmBotIntegrationRepository: botRepository,
-      crmBotWebhookDispatcher: {
-        actionApiBaseUrl: "https://api.example.test/bot/actions",
-        dispatch,
-      },
+      crmExternalBotIntegrationRepository: botRepository,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
       crmCanonicalInboundRepository: canonicalRepository,
       crmOlxWebhookSecurity: olxSecurity(),
       crmRealtimePublisher: { publish: publish as never },
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
       olxChatEnabled: true,
     });
@@ -83,28 +80,43 @@ describe("CRM OLX Chat effects", () => {
     await expect(recovered.json()).resolves.toMatchObject({
       status: "duplicate",
     });
-    expect(canonicalRepository.snapshot().messages).toHaveLength(1);
     await expect(
-      whatsappRepository.listSessions({
+      conversationRepository.listMessages({
+        cycleId:
+          (
+            await conversationRepository.listConversationCycles({
+              limit: 1,
+              offset: 0,
+              storeId,
+              tenantId,
+            })
+          )[0]?.id ?? "",
         limit: 10,
         offset: 0,
         storeId,
         tenantId,
       }),
-    ).resolves.toEqual([]);
+    ).resolves.toHaveLength(1);
+    await expect(
+      conversationRepository.listConversationCycles({
+        limit: 10,
+        offset: 0,
+        storeId,
+        tenantId,
+      }),
+    ).resolves.toHaveLength(1);
     expect(publish).toHaveBeenCalledTimes(3);
-    expect(dispatch).toHaveBeenCalledTimes(1);
   });
 
   it("rejects inbound OLX webhooks before security or persistence when disabled", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
     const security = olxSecurity();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
       crmOlxWebhookSecurity: security,
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
     });
 
@@ -113,7 +125,7 @@ describe("CRM OLX Chat effects", () => {
     expect(response.status).toBe(403);
     expect(security.consume).not.toHaveBeenCalled();
     await expect(
-      whatsappRepository.listSessions({
+      conversationRepository.listConversationCycles({
         limit: 10,
         offset: 0,
         storeId,

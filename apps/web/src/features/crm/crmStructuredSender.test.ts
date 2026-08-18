@@ -1,0 +1,50 @@
+import { describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
+import { createOptimisticStructuredMessage } from "./crmConversationModel";
+import { sendOptimisticStructuredMessage } from "./crmStructuredSender";
+import type { CrmMessageView } from "./crmConversationModel";
+
+describe("sendOptimisticStructuredMessage", () => {
+  it("keeps an indeterminate bubble with its stable idempotency key", async () => {
+    let messages: CrmMessageView[] = [];
+    const optimistic = createOptimisticStructuredMessage({
+      content: "Catalogo",
+      type: "CATALOG",
+    });
+    const request = vi.fn(async () => {
+      throw new AppApiError({
+        code: "PROVIDER_RESULT_INDETERMINATE",
+        message: "unknown result",
+        status: 502,
+      });
+    });
+
+    await expect(
+      sendOptimisticStructuredMessage({
+        activeSession: {
+          channel: "whatsapp",
+          id: "cycle-1",
+          status: "ACTIVE",
+        },
+        mergeCycles: vi.fn(),
+        optimistic,
+        request,
+        setError: vi.fn(),
+        setIsSending: vi.fn(),
+        setMessages: (update) => {
+          messages = typeof update === "function" ? update(messages) : update;
+        },
+      }),
+    ).resolves.toBe(false);
+
+    expect(request).toHaveBeenCalledWith(optimistic.clientId);
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatchObject({
+      clientId: optimistic.clientId,
+      status: "INDETERMINATE",
+    });
+    expect(messages[0]?.metadata).toMatchObject({
+      idempotencyKey: optimistic.clientId,
+    });
+  });
+});

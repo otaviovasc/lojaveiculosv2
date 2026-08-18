@@ -1,22 +1,22 @@
 import type {
-  CrmWhatsappSendMediaInput,
+  CrmMessagingSendMediaInput,
   CrmWhatsappSendTemplateInput,
-  CrmWhatsappSendTextInput,
-} from "../../domains/crm/ports/crmWhatsappGateway.js";
+  CrmMessagingSendTextInput,
+} from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   createMetaMessagesEndpoint,
   unsupportedComposioCapability,
   type ComposioCrmCredentials,
-} from "./composioCrmWhatsappGatewaySupport.js";
+} from "./composioCrmMessagingGatewaySupport.js";
 import type { ComposioProxyInput } from "./composioCrmProxyClient.js";
 
 export function createComposioTextRequest(
   credentials: ComposioCrmCredentials,
-  input: CrmWhatsappSendTextInput,
+  input: CrmMessagingSendTextInput,
 ): ComposioProxyInput {
   return {
     body:
-      credentials.provider === "composio_whatsapp"
+      credentials.channel === "whatsapp"
         ? createWhatsappTextBody(input)
         : createInstagramTextBody(input),
     endpoint: createMetaMessagesEndpoint(credentials),
@@ -25,11 +25,11 @@ export function createComposioTextRequest(
 
 export function createComposioMediaRequest(
   credentials: ComposioCrmCredentials,
-  input: CrmWhatsappSendMediaInput,
+  input: CrmMessagingSendMediaInput,
 ): ComposioProxyInput {
   return {
     body:
-      credentials.provider === "composio_whatsapp"
+      credentials.channel === "whatsapp"
         ? createWhatsappMediaBody(input)
         : createInstagramMediaBody(input),
     endpoint: createMetaMessagesEndpoint(credentials),
@@ -40,9 +40,9 @@ export function createComposioTemplateRequest(
   credentials: ComposioCrmCredentials,
   input: CrmWhatsappSendTemplateInput,
 ): ComposioProxyInput {
-  if (credentials.provider !== "composio_whatsapp") {
+  if (credentials.channel !== "whatsapp") {
     unsupportedComposioCapability(
-      credentials.provider,
+      credentials.channel,
       "send WhatsApp template",
     );
   }
@@ -61,7 +61,7 @@ export function createComposioTemplateRequest(
   };
 }
 
-function createWhatsappTextBody(input: CrmWhatsappSendTextInput) {
+function createWhatsappTextBody(input: CrmMessagingSendTextInput) {
   return {
     ...(input.replyToMessageId
       ? { context: { message_id: input.replyToMessageId } }
@@ -77,12 +77,9 @@ function createWhatsappTextBody(input: CrmWhatsappSendTextInput) {
   };
 }
 
-function createInstagramTextBody(input: CrmWhatsappSendTextInput) {
+function createInstagramTextBody(input: CrmMessagingSendTextInput) {
   if (input.replyToMessageId) {
-    unsupportedComposioCapability(
-      "composio_instagram",
-      "reply-to-message context",
-    );
+    unsupportedComposioCapability("instagram", "reply-to-message context");
   }
   return {
     message: { text: input.text },
@@ -90,7 +87,7 @@ function createInstagramTextBody(input: CrmWhatsappSendTextInput) {
   };
 }
 
-function createWhatsappMediaBody(input: CrmWhatsappSendMediaInput) {
+function createWhatsappMediaBody(input: CrmMessagingSendMediaInput) {
   const media = {
     ...(input.caption && input.mediaType !== "audio"
       ? { caption: input.caption }
@@ -110,16 +107,13 @@ function createWhatsappMediaBody(input: CrmWhatsappSendMediaInput) {
   };
 }
 
-function createInstagramMediaBody(input: CrmWhatsappSendMediaInput) {
+function createInstagramMediaBody(input: CrmMessagingSendMediaInput) {
   if (input.mediaType !== "image") {
-    unsupportedComposioCapability(
-      "composio_instagram",
-      `send ${input.mediaType}`,
-    );
+    unsupportedComposioCapability("instagram", `send ${input.mediaType}`);
   }
   if (input.caption) {
     unsupportedComposioCapability(
-      "composio_instagram",
+      "instagram",
       "image caption in a single send",
     );
   }

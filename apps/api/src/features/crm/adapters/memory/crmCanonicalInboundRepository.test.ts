@@ -59,7 +59,7 @@ function input(
     secondaryPhone: null,
     sender: "customer",
     senderOrigin: "customer",
-    sessionMetadata: {},
+    cycleMetadata: {},
     source: "whatsapp",
     storeId: "store-1",
     tenantId: "tenant-1",

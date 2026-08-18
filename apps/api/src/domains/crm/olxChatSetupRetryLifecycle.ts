@@ -2,7 +2,7 @@ import type { ServiceContext } from "../../shared/serviceContext.js";
 import type { OlxCapabilityFailure } from "./olxOnboardingDiagnostics.js";
 import type { CrmConnection } from "./ports/crmConnectionRepository.js";
 import { readRecord } from "./onboardOlxCrmConnectionSupport.js";
-import { ensureFirstReadyChannelDefault } from "./services/CrmRoutingService/ensureFirstReadyChannelDefault.js";
+import { persistInitialReadyChannelDefault } from "./services/CrmRoutingService/persistInitialReadyChannelDefault.js";
 import {
   getCrmConnectionRepository,
   runCrmTransaction,
@@ -154,7 +154,7 @@ export async function synchronizeOlxRetryRouting(
     return;
   try {
     if (failure) return;
-    await ensureFirstReadyChannelDefault(
+    await persistInitialReadyChannelDefault(
       context,
       { channel: "olx_chat", connectionId: claimed.id },
       ports,

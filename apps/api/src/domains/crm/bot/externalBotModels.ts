@@ -1,16 +1,6 @@
 import { externalBotActionRegistry } from "@lojaveiculosv2/shared";
 
-export const externalBotActionNames = [
-  ...externalBotActionRegistry,
-  "message.send",
-  "fact.propose",
-  "vehicle_interest.propose",
-  "opportunity.open",
-  "task.create",
-  "appointment.propose",
-  "handoff.request",
-  "conversation.summarize",
-] as const;
+export const externalBotActionNames = [...externalBotActionRegistry] as const;
 
 export type ExternalBotActionName = (typeof externalBotActionNames)[number];
 
@@ -22,7 +12,6 @@ export type ExternalBotScope = {
   connectionId: string;
   threadId: string;
   provider: "meta_cloud" | "olx" | "zapi";
-  actionClass: "effect" | "proposal";
   modelVersion: string;
 };
 
@@ -34,7 +23,11 @@ export type ExternalBotCommand =
     }
   | {
       action: "message.send_template";
-      payload: { templateName: string; variables: Record<string, string> };
+      payload: {
+        language: "pt_BR";
+        templateName: string;
+        variables: Record<string, string>;
+      };
     }
   | {
       action: "fact.record";
@@ -48,26 +41,14 @@ export type ExternalBotCommand =
       action: "appointment.create";
       payload: { startsAt: string; summary?: string };
     }
-  | { action: "message.send"; payload: { text: string } }
-  | {
-      action: "fact.propose";
-      payload: { classification: string; summary: string };
-    }
-  | {
-      action: "vehicle_interest.propose";
-      payload: { interestLevel: "high" | "low" | "medium"; vehicleRef: string };
-    }
   | { action: "opportunity.open"; payload: { summary: string } }
   | { action: "task.create"; payload: { dueAt?: string; title: string } }
-  | {
-      action: "appointment.propose";
-      payload: { startsAt: string; summary?: string };
-    }
   | { action: "handoff.request"; payload: { reason: string } }
   | { action: "conversation.summarize"; payload: { summary: string } };
 
 export type ExternalBotActionStatus =
   | "accepted"
+  | "pending_approval"
   | "authorized"
   | "claimed"
   | "executing"
@@ -79,8 +60,10 @@ export type ExternalBotActionStatus =
   | "cancelled";
 
 export type ExternalBotActionRecord = ExternalBotScope & {
+  actionClass: "effect" | "proposal";
   id: string;
   command: ExternalBotCommand;
+  expectedAttendanceRevision: number;
   expectedRevision: number;
   idempotencyKey: string;
   requestDigest: string;
@@ -88,6 +71,19 @@ export type ExternalBotActionRecord = ExternalBotScope & {
   createdAt: Date;
   updatedAt: Date;
   failureCode?: string;
+};
+
+export type ExternalBotProposalDecision = "approved" | "pending" | "rejected";
+
+export type ExternalBotProposalRecord = ExternalBotScope & {
+  actionId: string;
+  command: ExternalBotCommand;
+  decision: ExternalBotProposalDecision;
+  decidedAt?: Date;
+  decidedByUserId?: string;
+  id: string;
+  idempotencyKey: string;
+  revision: number;
 };
 
 export type ExternalBotEventType =
@@ -110,6 +106,7 @@ export type ExternalBotEventPayload = {
 };
 
 export type ExternalBotEvent = ExternalBotScope & {
+  actionClass: "effect" | "proposal";
   authorizedRequestDigest: string;
   id: string;
   type: ExternalBotEventType;

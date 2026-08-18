@@ -5,12 +5,14 @@ import { readText, repoPath, repoRoot, walkFiles } from "./quality-files.mjs";
 const roots = [
   join(repoRoot, "apps/api/src"),
   join(repoRoot, "apps/web/src"),
-  join(repoRoot, "packages/db/src/schema"),
+  join(repoRoot, "packages/db/src"),
+  join(repoRoot, "packages/shared/src"),
+  join(repoRoot, "docker/postgres/seed/product"),
   join(repoRoot, "tools/db"),
   join(repoRoot, "tools/migration"),
   join(repoRoot, "tools/qa"),
 ];
-const extensions = new Set([".js", ".mjs", ".ts", ".tsx"]);
+const extensions = new Set([".js", ".mjs", ".sql", ".ts", ".tsx"]);
 const productionFiles = walkFiles(roots, { extensions }).filter(
   (file) =>
     !/\.(?:rawDb\.)?test\.[cm]?[jt]sx?$/.test(file) &&

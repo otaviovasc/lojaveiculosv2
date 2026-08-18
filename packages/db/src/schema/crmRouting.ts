@@ -9,16 +9,11 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "./_shared.js";
-import { providerConnections } from "./crmCore/authorization.js";
+import { crmChannelConnections } from "./crmCore/authorization.js";
+import { messagingChannel } from "./crmCore/enums.js";
 import { stores, tenants } from "./identity.js";
 
-export const crmRoutingChannel = pgEnum("crm_routing_channel", [
-  "whatsapp",
-  "instagram",
-  "olx_chat",
-]);
-
-export const crmBotRoutingMode = pgEnum("crm_bot_routing_mode", [
+export const crmExternalBotRouteMode = pgEnum("crm_external_bot_route_mode", [
   "disabled",
   "inherit_store_default",
   "explicit_connection",
@@ -28,9 +23,11 @@ export const crmChannelRoutingPolicies = pgTable(
   "crm_channel_routing_policies",
   {
     ...lifecycleColumns,
-    botConnectionId: uuid("bot_connection_id"),
-    botMode: crmBotRoutingMode("bot_mode").notNull().default("disabled"),
-    channel: crmRoutingChannel("channel").notNull(),
+    externalBotConnectionId: uuid("external_bot_connection_id"),
+    externalBotMode: crmExternalBotRouteMode("external_bot_mode")
+      .notNull()
+      .default("disabled"),
+    channel: messagingChannel("channel").notNull(),
     defaultConnectionId: uuid("default_connection_id"),
     storeId: uuid("store_id")
       .notNull()
@@ -48,24 +45,24 @@ export const crmChannelRoutingPolicies = pgTable(
     foreignKey({
       columns: [table.tenantId, table.storeId, table.defaultConnectionId],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
       ],
       name: "crm_channel_routing_policies_default_connection_fk",
     }),
     foreignKey({
-      columns: [table.tenantId, table.storeId, table.botConnectionId],
+      columns: [table.tenantId, table.storeId, table.externalBotConnectionId],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
       ],
-      name: "crm_channel_routing_policies_bot_connection_fk",
+      name: "crm_channel_routing_policies_external_bot_connection_fk",
     }),
     check(
-      "crm_channel_routing_policies_bot_mode_consistent",
-      sql`(${table.botMode} = 'explicit_connection' and ${table.botConnectionId} is not null) or (${table.botMode} <> 'explicit_connection' and ${table.botConnectionId} is null)`,
+      "crm_channel_routing_policies_external_bot_mode_consistent",
+      sql`(${table.externalBotMode} = 'explicit_connection' and ${table.externalBotConnectionId} is not null) or (${table.externalBotMode} <> 'explicit_connection' and ${table.externalBotConnectionId} is null)`,
     ),
     uniqueIndex("crm_channel_routing_policies_scope_channel_unique").on(
       table.tenantId,
@@ -75,8 +72,8 @@ export const crmChannelRoutingPolicies = pgTable(
     index("crm_channel_routing_policies_default_connection_idx").on(
       table.defaultConnectionId,
     ),
-    index("crm_channel_routing_policies_bot_connection_idx").on(
-      table.botConnectionId,
+    index("crm_channel_routing_policies_external_bot_connection_idx").on(
+      table.externalBotConnectionId,
     ),
   ],
 );

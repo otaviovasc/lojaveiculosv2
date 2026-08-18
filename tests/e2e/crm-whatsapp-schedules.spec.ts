@@ -31,7 +31,7 @@ test.describe("CRM WhatsApp schedules", () => {
       });
     });
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Agendar mensagem/ }).click();
 
     await expect(

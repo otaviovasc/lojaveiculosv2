@@ -2,18 +2,17 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type { ParsedZapiContactIdentity } from "./parseZapiInboundMessage.js";
 import type { ZapiAdAttribution } from "./zapiAdAttribution.js";
-import { notifyWhatsappInterventionChangedToBot } from "./whatsappBotWebhookForwarding.js";
-import { toWhatsappSession } from "./whatsappModels.js";
+import { enqueueCrmAttendanceExternalBotEvent } from "../bot/externalBotEventForwarding.js";
 import {
   getCrmRealtimePublisher,
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import { recordWhatsappServiceMutation } from "../services/CrmWhatsapp/serviceSupport.js";
+import { recordCrmServiceMutation } from "../services/CrmMessagingService/serviceSupport.js";
 import { applyZapiAdSessionTransition } from "./zapiAdSessionTransition.js";
-import { humanAttendanceSource } from "./humanAttendanceTransition.js";
-import { findOrCreateWhatsappLead } from "./whatsappLeadLinking.js";
+import { humanAttendanceSource } from "../messaging/humanAttendanceTransition.js";
+import { findOrCreateCrmMessagingLead } from "../messaging/leadLinking.js";
 
 export async function captureZapiAdNotification(
   context: ServiceContext,
@@ -25,38 +24,39 @@ export async function captureZapiAdNotification(
   },
   ports: CrmServicePorts,
 ) {
-  const transition = await recordWhatsappServiceMutation(
+  const transition = await recordCrmServiceMutation(
     context,
     {
-      action: "crm.whatsapp.webhook.zapi.received",
+      action: "crm.provider.zapi.webhook.received",
       category: "data_change",
       entityId: input.connection.id,
       entityType: "crm_whatsapp_connection",
       metadata: { webhookKind: "ad_notification" },
-      permission: "crm.whatsapp.ingest",
+      permission: "crm.messages.ingest",
       storeId: input.connection.storeId,
       summary: "Captured ZAPI WhatsApp ad notification context",
       tenantId: input.connection.tenantId,
     },
     () =>
       runCrmTransaction(ports, async (transactionPorts) => {
-        const repository = getCrmWhatsappRepository(transactionPorts);
-        const sessionContext = await repository.upsertSessionContext({
+        const repository = getCrmConversationRepository(transactionPorts);
+        const sessionContext = await repository.upsertConversationCycleContext({
           ...(input.identity.chatLid
-            ? { buyerChatLid: input.identity.chatLid }
+            ? { customerChatId: input.identity.chatLid }
             : {}),
-          ...(input.identity.buyerName
-            ? { buyerName: input.identity.buyerName }
+          ...(input.identity.customerDisplayName
+            ? { customerDisplayName: input.identity.customerDisplayName }
             : {}),
-          buyerPhone: input.identity.phone,
+          customerPhone: input.identity.phone,
           channel: "WHATSAPP",
           connectionId: input.connection.id,
           storeId: input.connection.storeId,
           tenantId: input.connection.tenantId,
         });
-        const lead = await findOrCreateWhatsappLead(transactionPorts, {
-          buyerName: input.identity.buyerName ?? null,
+        const lead = await findOrCreateCrmMessagingLead(transactionPorts, {
+          buyerName: input.identity.customerDisplayName ?? null,
           buyerPhone: input.identity.phone,
+          channel: "WHATSAPP",
           connectionId: input.connection.id,
           direction: "INBOUND",
           externalId:
@@ -64,21 +64,22 @@ export async function captureZapiAdNotification(
             input.attribution.ctwaClid ??
             `ad-notification:${input.detectedAt.toISOString()}`,
           preferredLeadId: sessionContext.leadId,
+          source: "whatsapp",
           storeId: input.connection.storeId,
           tenantId: input.connection.tenantId,
         });
-        const session =
+        const conversationCycle =
           sessionContext.leadId === lead.id
             ? sessionContext
-            : await repository.updateSession({
+            : await repository.updateConversationCycle({
                 leadId: lead.id,
-                sessionId: sessionContext.id,
+                cycleId: sessionContext.id,
                 storeId: input.connection.storeId,
                 tenantId: input.connection.tenantId,
               });
-        if (!session) {
+        if (!conversationCycle) {
           throw new Error(
-            "CRM WhatsApp ad session was not linked to its lead.",
+            "CRM WhatsApp ad conversationCycle was not linked to its lead.",
           );
         }
         return applyZapiAdSessionTransition(repository, {
@@ -86,31 +87,33 @@ export async function captureZapiAdNotification(
           actorKind: "provider",
           attribution: input.attribution,
           detectedAt: input.detectedAt,
-          session,
+          conversationCycle,
         });
       }),
   );
-  const session = toWhatsappSession(transition.session, input.connection);
+  const conversationCycle = transition.conversationCycle;
   await getCrmRealtimePublisher(ports).publish({
     connectionId: input.connection.id,
-    session,
+    conversationCycle,
     storeId: input.connection.storeId,
     tenantId: input.connection.tenantId,
-    type: "session",
+    type: "conversationCycle",
   });
   if (transition.resumedIntervention) {
-    await notifyWhatsappInterventionChangedToBot(
+    await enqueueCrmAttendanceExternalBotEvent(
       context,
       {
         active: false,
         connection: input.connection,
         endedAt: transition.endedAt,
-        attendanceChangedAt: transition.session.humanAttendanceChangedAt,
-        attendanceState: transition.session.humanAttendanceState,
-        attendanceStateVersion: transition.session.humanAttendanceStateVersion,
+        attendanceChangedAt:
+          transition.conversationCycle.humanAttendanceChangedAt,
+        attendanceState: transition.conversationCycle.humanAttendanceState,
+        attendanceStateVersion:
+          transition.conversationCycle.humanAttendanceStateVersion,
         interventionId: transition.previousSession.interventionId,
         reason: "ad_initiated_conversation",
-        session: transition.session,
+        conversationCycle: transition.conversationCycle,
         source: humanAttendanceSource(transition.previousSession),
         startedAt: transition.interventionStartedAt,
         triggeredBy: "auto",
@@ -118,5 +121,5 @@ export async function captureZapiAdNotification(
       ports,
     );
   }
-  return { session, status: "captured" as const };
+  return { conversationCycle, status: "captured" as const };
 }

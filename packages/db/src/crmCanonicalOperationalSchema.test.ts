@@ -3,8 +3,8 @@ import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as databaseSchema from "./index.js";
 import {
-  canonicalMessageOrigin,
-  canonicalMessages,
+  crmMessageOrigin,
+  crmMessages,
   conversationAttendanceActorKind,
   conversationAttendanceEvents,
   conversationAttendances,
@@ -15,14 +15,22 @@ import {
   conversationThreadTags,
   crmLeadOutcomes,
   crmWebhookEffectOutbox,
-  crmWhatsappCampaignRecipients,
-  crmWhatsappOutboundIntents,
-  crmWhatsappScheduledMessages,
+  crmCampaignRecipients,
+  crmOutboundIntents,
+  crmScheduledMessages,
+  leadActivityType,
 } from "./index.js";
 
 const migration = readFileSync(
   new URL(
     "../migrations/0058_canonical_crm_operational_cutover.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const deadSchemaCleanupMigration = readFileSync(
+  new URL(
+    "../migrations/0061_canonical_crm_dead_schema_cleanup.sql",
     import.meta.url,
   ),
   "utf8",
@@ -85,7 +93,7 @@ describe("canonical CRM operational schema", () => {
         "handback_requested_at",
       ]),
     );
-    expect(columnNames(canonicalMessages)).toEqual(
+    expect(columnNames(crmMessages)).toEqual(
       expect.arrayContaining([
         "id",
         "thread_id",
@@ -96,7 +104,7 @@ describe("canonical CRM operational schema", () => {
         "deleted_at",
       ]),
     );
-    expect(canonicalMessageOrigin.enumValues).toContain("human_channel");
+    expect(crmMessageOrigin.enumValues).toContain("human_channel");
   });
 
   it("provides scoped thread tags and idempotent cycle command receipts", () => {
@@ -176,37 +184,37 @@ describe("canonical CRM operational schema", () => {
         absent: ["session_id"],
         columns: ["thread_id", "cycle_id", "message_id"],
         foreignKeys: [
-          "crm_whatsapp_outbound_intents_message_fk",
-          "crm_whatsapp_outbound_intents_scoped_thread_fk",
-          "crm_whatsapp_outbound_intents_semantic_cycle_fk",
-          "crm_whatsapp_outbound_intents_semantic_message_fk",
+          "crm_outbound_intents_message_fk",
+          "crm_outbound_intents_scoped_thread_fk",
+          "crm_outbound_intents_semantic_cycle_fk",
+          "crm_outbound_intents_semantic_message_fk",
         ],
-        table: crmWhatsappOutboundIntents,
+        table: crmOutboundIntents,
       },
       {
         absent: ["session_id"],
         columns: ["thread_id", "cycle_id", "sent_message_id"],
         foreignKeys: [
-          "crm_whatsapp_scheduled_messages_sent_message_fk",
-          "crm_whatsapp_scheduled_messages_scoped_campaign_fk",
-          "crm_whatsapp_scheduled_messages_scoped_creator_membership_fk",
-          "crm_whatsapp_scheduled_messages_scoped_sent_message_fk",
-          "crm_whatsapp_scheduled_messages_scoped_thread_fk",
-          "crm_whatsapp_scheduled_messages_semantic_cycle_fk",
+          "crm_scheduled_messages_sent_message_fk",
+          "crm_scheduled_messages_scoped_campaign_fk",
+          "crm_scheduled_messages_scoped_creator_membership_fk",
+          "crm_scheduled_messages_scoped_sent_message_fk",
+          "crm_scheduled_messages_scoped_thread_fk",
+          "crm_scheduled_messages_semantic_cycle_fk",
         ],
-        table: crmWhatsappScheduledMessages,
+        table: crmScheduledMessages,
       },
       {
         absent: ["session_id"],
         columns: ["thread_id"],
         foreignKeys: [
-          "crm_whatsapp_campaign_recipients_scoped_campaign_fk",
-          "crm_whatsapp_campaign_recipients_scoped_lead_fk",
-          "crm_whatsapp_campaign_recipients_scoped_reply_message_fk",
-          "crm_whatsapp_campaign_recipients_scoped_sent_message_fk",
-          "crm_whatsapp_campaign_recipients_scoped_thread_fk",
+          "crm_campaign_recipients_scoped_campaign_fk",
+          "crm_campaign_recipients_scoped_lead_fk",
+          "crm_campaign_recipients_scoped_reply_message_fk",
+          "crm_campaign_recipients_scoped_sent_message_fk",
+          "crm_campaign_recipients_scoped_thread_fk",
         ],
-        table: crmWhatsappCampaignRecipients,
+        table: crmCampaignRecipients,
       },
       {
         absent: ["origin_session_id"],
@@ -252,9 +260,28 @@ describe("canonical CRM operational schema", () => {
       "crmWhatsappSessionCommandReceipts",
       "crmWhatsappSessionCommandResult",
       "crmWhatsappInterventionLedger",
+      "crmSyncEvents",
+      "crmSyncStatus",
     ]) {
       expect(databaseSchema).not.toHaveProperty(exportName);
     }
+  });
+
+  it("drops the unused sync placeholder and stores channel-neutral message activities", () => {
+    expect(leadActivityType.enumValues).toContain("message");
+    expect(leadActivityType.enumValues).not.toContain("whatsapp");
+    expect(deadSchemaCleanupMigration).toContain(
+      "CRM dead-schema cleanup requires an empty crm_sync_events table",
+    );
+    expect(deadSchemaCleanupMigration).toContain(
+      "CRM message-activity cutover requires no whatsapp lead activities",
+    );
+    expect(deadSchemaCleanupMigration).toContain(
+      'DROP TABLE "crm_sync_events"',
+    );
+    expect(deadSchemaCleanupMigration).toContain(
+      `ALTER TYPE "lead_activity_type" RENAME VALUE 'whatsapp' TO 'message'`,
+    );
   });
 
   it("fails before DDL when any reset-only legacy or dependent table has rows", () => {
@@ -324,9 +351,16 @@ describe("canonical CRM operational schema", () => {
   });
 
   it("registers migration 0058 after canonical connection foreign keys", () => {
-    expect(journal.entries.at(-1)).toMatchObject({
+    expect(journal.entries.find(({ idx }) => idx === 58)).toMatchObject({
       idx: 58,
       tag: "0058_canonical_crm_operational_cutover",
+    });
+  });
+
+  it("registers the dead-schema cleanup after external-bot security completion", () => {
+    expect(journal.entries.find(({ idx }) => idx === 61)).toMatchObject({
+      idx: 61,
+      tag: "0061_canonical_crm_dead_schema_cleanup",
     });
   });
 });

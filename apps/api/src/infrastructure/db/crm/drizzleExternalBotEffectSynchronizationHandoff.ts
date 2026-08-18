@@ -66,7 +66,7 @@ export async function synchronizeCanonicalHandoff(
             and attendance.intervention_id=${effect.effectId}::uuid))
       returning attendance.id
     )
-    update provider_effects current_effect
+    update crm_external_bot_provider_effects current_effect
       set result=current_effect.result || jsonb_build_object(
         'canonicalHandoffSynchronized',true,
         'canonicalCycleId',${effect.canonicalCycleId}::text),
@@ -87,7 +87,7 @@ export async function synchronizeCanonicalHandoff(
       and event.thread_id=attendance.thread_id
       and event.cycle_id=attendance.cycle_id
       and event.state_version=attendance.state_version
-    inner join provider_effects current_effect
+    inner join crm_external_bot_provider_effects current_effect
       on current_effect.id=${effect.effectId}::uuid
       and current_effect.tenant_id=attendance.tenant_id
       and current_effect.store_id=attendance.store_id

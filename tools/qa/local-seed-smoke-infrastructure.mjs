@@ -53,7 +53,7 @@ async function assertProviderTruth(db) {
           (direction = 'inbound' and status <> 'delivered')
           or (direction = 'outbound' and status <> 'pending')
           or provider_message_id is not null)) as messages,
-      (select count(*)::int from crm_whatsapp_scheduled_messages
+      (select count(*)::int from crm_scheduled_messages
         where metadata->>'source' = 'local_seed' and status = 'pending'
           and scheduled_at <= now()) as "dueMessages",
       (select count(*)::int from automation_runs where execution_enabled = true

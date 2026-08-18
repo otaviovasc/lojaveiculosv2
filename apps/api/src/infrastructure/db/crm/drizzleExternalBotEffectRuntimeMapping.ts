@@ -13,10 +13,17 @@ export type AuthorizedExternalBotEffect = {
   canonicalCycleId: string;
   command: Extract<
     ExternalBotCommand,
-    { action: "handoff.request" | "message.send" }
+    {
+      action:
+        | "message.send_media"
+        | "message.send_template"
+        | "message.send_text"
+        | "handoff.request";
+    }
   >;
   connection: CrmConnection;
   effectId: string;
+  expectedAttendanceRevision?: number;
   expectedRevision: number;
   idempotencyKey: string;
   integrationId: string;
@@ -39,11 +46,38 @@ export function mapAuthorizedExternalBotEffect(
   const payload = readRecord(commandInput.payload);
   const action = String(row.action_type);
   const command =
-    action === "message.send" && typeof payload.text === "string"
+    action === "message.send_text" && typeof payload.text === "string"
       ? ({ action, payload: { text: payload.text } } as const)
-      : action === "handoff.request" && typeof payload.reason === "string"
-        ? ({ action, payload: { reason: payload.reason } } as const)
-        : null;
+      : action === "message.send_media" &&
+          typeof payload.mediaType === "string" &&
+          typeof payload.mediaUrl === "string"
+        ? ({
+            action,
+            payload: {
+              ...(typeof payload.caption === "string"
+                ? { caption: payload.caption }
+                : {}),
+              mediaType: payload.mediaType,
+              mediaUrl: payload.mediaUrl,
+            },
+          } as const)
+        : action === "message.send_template" &&
+            typeof payload.templateName === "string" &&
+            payload.variables !== null &&
+            typeof payload.variables === "object" &&
+            !Array.isArray(payload.variables)
+          ? ({
+              action,
+              payload: {
+                language:
+                  payload.language === "pt_BR" ? payload.language : "pt_BR",
+                templateName: payload.templateName,
+                variables: payload.variables as Record<string, string>,
+              },
+            } as const)
+          : action === "handoff.request" && typeof payload.reason === "string"
+            ? ({ action, payload: { reason: payload.reason } } as const)
+            : null;
   const connection = mapConnection(row);
   const providerAddress = readString(row.provider_address);
   if (!command || !connection || !providerAddress) return null;
@@ -51,7 +85,15 @@ export function mapAuthorizedExternalBotEffect(
     channel: connection.canonical!.channel,
     connection: toCanonicalRoutingConnection(connection),
     connectionId: connection.id,
-    requiredCapabilities: ["outbound"],
+    requiredCapabilities: [
+      "outbound",
+      command.action === "message.send_text" ||
+      command.action === "handoff.request"
+        ? "text"
+        : command.action === "message.send_media"
+          ? "media"
+          : "templates",
+    ],
     scope: { storeId: connection.storeId, tenantId: connection.tenantId },
   });
   if (!route.ready) return null;
@@ -61,6 +103,7 @@ export function mapAuthorizedExternalBotEffect(
     command,
     connection,
     effectId: String(row.id),
+    expectedAttendanceRevision: Number(row.expected_attendance_revision),
     expectedRevision: Number(row.expected_revision),
     idempotencyKey: String(row.idempotency_key),
     integrationId: String(input.integrationId),
@@ -84,12 +127,12 @@ export function mapAuthorizedExternalBotEffect(
 }
 
 function mapConnection(row: ExternalBotRow): CrmConnection | null {
-  const provider = setupProvider(row);
   const channel = readString(row.channel) as CanonicalChannel | null;
-  if (!provider || !channel) return null;
+  if (!channel || !isCanonicalConnectionIdentity(row, channel)) return null;
   const metadata = readRecord(row.connection_metadata);
   const state = String(row.connection_state) as CrmConnection["status"];
   return {
+    broker: String(row.broker) as "composio" | "direct",
     canonical: projectCanonicalCrmConnectionRow({
       broker: String(row.broker) as "composio" | "direct",
       channel,
@@ -97,6 +140,7 @@ function mapConnection(row: ExternalBotRow): CrmConnection | null {
       provider: row.provider as AuthorizedExternalBotEffect["provider"],
       state,
     }),
+    channel,
     credentialsRef: readRecord(metadata.credentialsRef),
     displayName: String(row.display_name),
     externalConnectionId: readString(row.external_connection_id),
@@ -104,7 +148,7 @@ function mapConnection(row: ExternalBotRow): CrmConnection | null {
     id: String(row.provider_connection_id),
     metadata,
     phone: readString(metadata.phone),
-    provider,
+    provider: row.provider as AuthorizedExternalBotEffect["provider"],
     status: state,
     storeId: String(row.store_id) as never,
     tenantId: String(row.tenant_id) as never,
@@ -112,17 +156,19 @@ function mapConnection(row: ExternalBotRow): CrmConnection | null {
   };
 }
 
-function setupProvider(row: ExternalBotRow): CrmConnection["provider"] | null {
-  if (row.provider === "zapi" && row.channel === "whatsapp") return "zapi";
-  if (row.provider === "olx" && row.channel === "olx_chat") return "olx_chat";
-  if (row.provider === "meta_cloud" && row.broker === "composio") {
-    return row.channel === "instagram"
-      ? "composio_instagram"
-      : row.channel === "whatsapp"
-        ? "composio_whatsapp"
-        : null;
-  }
-  return null;
+function isCanonicalConnectionIdentity(
+  row: ExternalBotRow,
+  channel: CanonicalChannel,
+) {
+  if (row.provider === "zapi")
+    return channel === "whatsapp" && row.broker === "direct";
+  if (row.provider === "olx")
+    return channel === "olx_chat" && row.broker === "direct";
+  return (
+    row.provider === "meta_cloud" &&
+    row.broker === "composio" &&
+    (channel === "instagram" || channel === "whatsapp")
+  );
 }
 
 function readRecord(value: unknown): Record<string, unknown> {

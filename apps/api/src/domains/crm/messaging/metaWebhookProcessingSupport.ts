@@ -1,20 +1,20 @@
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type {
-  CrmWhatsappMessageStatus,
-  CrmWhatsappMessageType,
-} from "../ports/crmWhatsappRepository.js";
+  CrmMessageStatus,
+  CrmMessageType,
+} from "../ports/crmConversationRepository.js";
 import type {
   MetaMediaReference,
   ParsedMetaWebhookEvent,
 } from "./parseMetaWebhookEvents.js";
 import {
   getCrmRealtimePublisher,
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import { updateWhatsappSessionWithCas } from "../whatsapp/updateWhatsappSessionWithCas.js";
+import { updateConversationCycleWithCas } from "./updateConversationCycleWithCas.js";
 
-const statusRank: Record<CrmWhatsappMessageStatus, number> = {
+const statusRank: Record<CrmMessageStatus, number> = {
   FAILED: 5,
   READ: 4,
   DELIVERED: 3,
@@ -27,7 +27,7 @@ export async function applyMetaMessageStatus(
   event: Extract<ParsedMetaWebhookEvent, { kind: "status" }>,
   ports: CrmServicePorts,
 ) {
-  const repository = getCrmWhatsappRepository(ports);
+  const repository = getCrmConversationRepository(ports);
   const message = await repository.findMessageByExternalId({
     connectionId: connection.id,
     externalId: event.externalMessageId,
@@ -53,9 +53,9 @@ export async function applyMetaMessageStatus(
   });
   const lastCustomerReadAt =
     event.status === "READ" ? (event.timestamp ?? new Date()) : null;
-  const session = lastCustomerReadAt
-    ? await updateWhatsappSessionWithCas(repository, {
-        sessionId: message.sessionId,
+  const conversationCycle = lastCustomerReadAt
+    ? await updateConversationCycleWithCas(repository, {
+        cycleId: message.cycleId,
         storeId: connection.storeId,
         tenantId: connection.tenantId,
         update: (current) => ({
@@ -66,22 +66,22 @@ export async function applyMetaMessageStatus(
         }),
       })
     : (
-        await repository.listSessions({
+        await repository.listConversationCycles({
           limit: 1,
           offset: 0,
-          sessionId: message.sessionId,
+          cycleId: message.cycleId,
           storeId: connection.storeId,
           tenantId: connection.tenantId,
         })
       )[0];
   await getCrmRealtimePublisher(ports).publish({
-    assignedUserId: session?.assignedUserId ?? null,
+    assignedUserId: conversationCycle?.assignedUserId ?? null,
     connectionId: connection.id,
     ...(lastCustomerReadAt
       ? { lastCustomerReadAt: lastCustomerReadAt.toISOString() }
       : {}),
     messageId: message.id,
-    sessionId: message.sessionId,
+    cycleId: message.cycleId,
     status: event.status,
     storeId: connection.storeId,
     tenantId: connection.tenantId,
@@ -103,7 +103,7 @@ export function metaMessageContent(
 
 export function metaMessageType(
   event: Extract<ParsedMetaWebhookEvent, { kind: "message" }>,
-): CrmWhatsappMessageType {
+): CrmMessageType {
   const type = event.media?.type.toUpperCase();
   if (
     type === "AUDIO" ||
@@ -133,10 +133,7 @@ export function opaqueMetaMediaReference(media: MetaMediaReference | null) {
   return media ? { ...media, url: null } : null;
 }
 
-function shouldApplyStatus(
-  current: CrmWhatsappMessageStatus,
-  next: CrmWhatsappMessageStatus,
-) {
+function shouldApplyStatus(current: CrmMessageStatus, next: CrmMessageStatus) {
   if (current === "FAILED" && next !== "FAILED") return false;
   if (next === "FAILED") return current === "PENDING" || current === "SENT";
   return statusRank[next] >= statusRank[current];

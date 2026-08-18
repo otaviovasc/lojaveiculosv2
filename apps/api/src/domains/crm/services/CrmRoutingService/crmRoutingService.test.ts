@@ -18,7 +18,7 @@ describe("CRM channel routing service", () => {
     ];
     const policies = connections.map((item) => policy(item.channel, item.id));
     const result = await getCrmRoutingPolicy(
-      context(["crm.whatsapp.list"]),
+      context(["crm.conversations.read"]),
       ports(connections, policies),
     );
     expect(result.channels).toHaveLength(3);
@@ -34,7 +34,7 @@ describe("CRM channel routing service", () => {
       state: "paused",
     } as const;
     const result = await getCrmRoutingPolicy(
-      context(["crm.whatsapp.list"]),
+      context(["crm.conversations.read"]),
       ports([paused], [policy("whatsapp", paused.id)]),
     );
     const whatsapp = result.channels.find(
@@ -204,8 +204,8 @@ function policy(
   connectionId: string,
 ): CrmChannelRoutingPolicy {
   return {
-    botConnectionId: null,
-    botMode: "inherit_store_default",
+    externalBotConnectionId: null,
+    externalBotMode: "inherit_store_default",
     channel,
     defaultConnectionId: connectionId,
     id: `policy-${channel}`,

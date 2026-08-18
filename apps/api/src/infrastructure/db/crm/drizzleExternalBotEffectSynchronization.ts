@@ -18,24 +18,19 @@ export async function synchronizeExternalBotEffectOutcome(
   },
 ) {
   try {
-    if (input.effect.command.action === "message.send") {
-      const providerOperation = input.providerOperation;
-      if (!providerOperation?.id.trim()) {
-        throw new ExternalBotCanonicalSyncIndeterminateError();
-      }
-      await synchronizeCanonicalMessage(
+    if (input.effect.command.action === "handoff.request") {
+      await synchronizeCanonicalHandoff(
         db,
         input.effect,
-        providerOperation,
-        input.effect.command.payload.text,
+        input.effect.command.payload.reason,
       );
       return;
     }
-    await synchronizeCanonicalHandoff(
-      db,
-      input.effect,
-      input.effect.command.payload.reason,
-    );
+    const providerOperation = input.providerOperation;
+    if (!providerOperation?.id.trim()) {
+      throw new ExternalBotCanonicalSyncIndeterminateError();
+    }
+    await synchronizeCanonicalMessage(db, input.effect, providerOperation);
   } catch (error) {
     if (error instanceof ExternalBotCanonicalSyncIndeterminateError) {
       throw error;

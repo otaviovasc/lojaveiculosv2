@@ -1,28 +1,34 @@
 import type { Context, Hono } from "hono";
 import {
-  createServiceContext,
-  type ServiceContext,
-} from "../../../shared/serviceContext.js";
-import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
-import {
-  ExternalBotError,
-  botError,
-} from "../../../domains/crm/bot/externalBotErrors.js";
+  crmExternalBotActionAcceptedResultSchema,
+  crmExternalBotConfigurationPatchSchema,
+  crmExternalBotProposalDecisionInputSchema,
+  crmExternalBotProposalDecisionResultSchema,
+  crmExternalBotTestInputSchema,
+  crmExternalBotTestResultSchema,
+} from "@lojaveiculosv2/shared";
+import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { botError } from "../../../domains/crm/bot/externalBotErrors.js";
 import type { ExternalBotManagerPorts } from "../../../domains/crm/bot/ports/externalBotPorts.js";
 import type { CrmServices } from "./crmServices.js";
-import type { UpdateWhatsappBotIntegrationInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
-import type { ExternalBotActionRequest } from "../../../domains/crm/bot/externalBotCanonicalRequest.js";
+import type { UpdateExternalBotIntegrationInput } from "../../../domains/crm/services/CrmExternalBotService/externalBotIntegration.js";
 import { executeExternalBotAction } from "../../../domains/crm/bot/services/ExternalBotManagerService/executeExternalBotAction.js";
+import { decideExternalBotProposal } from "../../../domains/crm/bot/services/ExternalBotManagerService/decideExternalBotProposal.js";
+import { externalBotActionSchema } from "./crm.bot.schemas.js";
 import {
-  botConfigurationUpdateSchema,
-  externalBotActionSchema,
-  externalBotTestSchema,
-} from "./crm.bot.schemas.js";
-import { handleCrm } from "./crm.controller.errors.js";
+  assertExternalBotManage,
+  assertExternalBotProposalDecide,
+  assertExternalBotRead,
+} from "./crm.messaging.controller.support.js";
 import {
-  CrmWhatsappValidationError,
-  handleWhatsapp,
-} from "./crm.whatsapp.errors.js";
+  bearerCredential,
+  createBotActionContext,
+  handleExternalBot,
+  parseBody,
+  readProviderOperationId,
+  requireManager,
+  toExternalBotConfigurationRead,
+} from "./crm.bot.controllerSupport.js";
 
 export type RegisterExternalBotRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -38,34 +44,40 @@ export function registerExternalBotRoutes(
   crmFeature.get("/bot/configuration", async (context) =>
     handleExternalBot(context, async () => {
       const serviceContext = await options.createContext(context);
+      assertExternalBotRead(serviceContext);
       const integration =
-        await options.services.getWhatsappBotIntegration(serviceContext);
-      return context.json({ configuration: integration });
+        await options.services.getExternalBotConfiguration(serviceContext);
+      return context.json(toExternalBotConfigurationRead(integration));
     }),
   );
 
   crmFeature.patch("/bot/configuration", async (context) =>
     handleExternalBot(context, async () => {
-      const input = await parseBody(context, botConfigurationUpdateSchema);
+      const input = await parseBody(
+        context,
+        crmExternalBotConfigurationPatchSchema,
+      );
       const serviceContext = await options.createContext(context);
-      const update: UpdateWhatsappBotIntegrationInput = {};
+      assertExternalBotManage(serviceContext);
+      const update: UpdateExternalBotIntegrationInput = {};
       if (input.enabled !== undefined) update.enabled = input.enabled;
       if (input.webhookSecret !== undefined) {
         update.webhookSecret = input.webhookSecret;
       }
       if (input.webhookUrl !== undefined) update.webhookUrl = input.webhookUrl;
-      const integration = await options.services.updateWhatsappBotIntegration(
+      const integration = await options.services.updateExternalBotConfiguration(
         serviceContext,
         update,
       );
-      return context.json({ configuration: integration });
+      return context.json(toExternalBotConfigurationRead(integration));
     }),
   );
 
   crmFeature.post("/bot/test", async (context) =>
     handleExternalBot(context, async () => {
-      const input = await parseBody(context, externalBotTestSchema);
+      const input = await parseBody(context, crmExternalBotTestInputSchema);
       const serviceContext = await options.createContext(context);
+      assertExternalBotManage(serviceContext);
       const routing = await options.services.getRoutingPolicy(serviceContext);
       const route = routing.channels.find(
         (item) => item.channel === input.channel,
@@ -75,20 +87,22 @@ export function registerExternalBotRoutes(
         message: "No route is configured for this channel.",
         remediation: "Configure a ready channel connection first.",
       };
-      return context.json({
-        action: input.action,
-        channel: input.channel,
-        diagnostics: {
-          code: route?.ready ? "DRY_RUN_READY" : blocked.code,
-          message: route?.ready
-            ? "Synthetic validation completed; no provider operation occurred."
-            : blocked.message,
-          retryable: false,
-        },
-        officialOperationOccurred: false,
-        requestId: serviceContext.requestId,
-        status: route?.ready ? "dry_run_ready" : "blocked",
-      });
+      return context.json(
+        crmExternalBotTestResultSchema.parse({
+          action: input.action,
+          channel: input.channel,
+          diagnostics: {
+            code: route?.ready ? "DRY_RUN_READY" : blocked.code,
+            message: route?.ready
+              ? "Synthetic validation completed; no provider operation occurred."
+              : blocked.message,
+            retryable: false,
+          },
+          officialOperationOccurred: false,
+          requestId: serviceContext.requestId,
+          status: route?.ready ? "dry_run_ready" : "blocked",
+        }),
+      );
     }),
   );
 
@@ -109,94 +123,51 @@ export function registerExternalBotRoutes(
       const base = await options.createWebhookContext(context);
       const record = await executeExternalBotAction(
         createBotActionContext(base, identity),
-        input as unknown as ExternalBotActionRequest,
+        input,
         manager,
       );
+      const providerOperationId = readProviderOperationId(record);
       return context.json(
-        { actionId: record.id, status: record.status },
+        crmExternalBotActionAcceptedResultSchema.parse({
+          actionId: record.id,
+          ...(providerOperationId ? { providerOperationId } : {}),
+          requestId: base.requestId,
+          status: record.status,
+        }),
         record.status === "completed" ? 200 : 202,
       );
     }),
   );
-}
 
-function createBotActionContext(
-  base: ServiceContext,
-  identity: { integrationId: string; storeId: string; tenantId: string },
-) {
-  return createServiceContext({
-    actor: {
-      externalId: identity.integrationId,
-      id: `external-bot:${identity.integrationId}`,
-      kind: "integration",
-    },
-    audit: base.audit,
-    logger: base.logger,
-    permissions: ["crm.bot.actions.execute"],
-    request: base.request ?? { requestId: base.requestId },
-    ...(base.source ? { source: base.source } : {}),
-    storeId: identity.storeId,
-    tenantId: identity.tenantId,
-  });
-}
-
-function bearerCredential(header: string | undefined) {
-  const match = /^Bearer\s+(.+)$/i.exec(header?.trim() ?? "");
-  if (!match?.[1])
-    throw botError(
-      "CRM_BOT_UNAUTHORIZED",
-      "Bearer credential is required.",
-      401,
-    );
-  return match[1];
-}
-
-function requireManager(manager: ExternalBotManagerPorts | undefined) {
-  if (!manager)
-    throw botError(
-      "CRM_BOT_UNAVAILABLE",
-      "External bot manager is unavailable.",
-      503,
-    );
-  return manager;
-}
-
-async function parseBody<
-  Schema extends {
-    safeParse(value: unknown): { success: boolean; data?: unknown };
-  },
->(context: Context, schema: Schema) {
-  let body: unknown;
-  try {
-    body = await context.req.json();
-  } catch {
-    throw new CrmWhatsappValidationError("Request body must be valid JSON.");
-  }
-  const parsed = schema.safeParse(body);
-  if (!parsed.success)
-    throw new CrmWhatsappValidationError("Request body is invalid.");
-  return parsed.data as ReturnType<Schema["safeParse"]> extends {
-    data?: infer Data;
-  }
-    ? Data
-    : never;
-}
-
-async function handleExternalBot(
-  context: Context,
-  action: () => Promise<Response>,
-) {
-  try {
-    return await handleWhatsapp(context, action);
-  } catch (error) {
-    if (error instanceof ExternalBotError) {
-      return jsonApiError(context, {
-        code: error.code,
-        error,
-        message: error.message,
-        status: error.status,
-      });
-    }
-    throw error;
-  }
+  crmFeature.post("/bot/proposals/:proposalId/decision", async (context) =>
+    handleExternalBot(context, async () => {
+      const manager = requireManager(options.manager);
+      const input = await parseBody(
+        context,
+        crmExternalBotProposalDecisionInputSchema,
+      );
+      const serviceContext = await options.createContext(context);
+      assertExternalBotProposalDecide(serviceContext);
+      const result = await decideExternalBotProposal(
+        serviceContext,
+        {
+          decision: input.decision,
+          expectedRevision: input.expectedRevision,
+          proposalId: context.req.param("proposalId"),
+          ...(input.reason === undefined ? {} : { reason: input.reason }),
+        },
+        manager,
+      );
+      return context.json(
+        crmExternalBotProposalDecisionResultSchema.parse({
+          actionId: result.action.id,
+          actionStatus: result.action.status,
+          decision: result.proposal.decision,
+          proposalId: result.proposal.id,
+          proposalRevision: result.proposal.revision,
+          requestId: serviceContext.requestId,
+        }),
+      );
+    }),
+  );
 }

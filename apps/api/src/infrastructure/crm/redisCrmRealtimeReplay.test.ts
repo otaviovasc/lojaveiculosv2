@@ -2,8 +2,7 @@ import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmRealtimeEvent } from "../../domains/crm/ports/crmRealtimePublisher.js";
-import { createTestCrmWhatsappSession } from "../../domains/crm/testSupportWhatsapp.js";
-import { toWhatsappSession } from "../../domains/crm/whatsapp/whatsappModels.js";
+import { createTestCrmConversationCycle } from "../../domains/crm/testSupportWhatsapp.js";
 import {
   installRedisClients,
   streamRow,
@@ -91,7 +90,7 @@ describe("Redis CRM realtime replay", () => {
       id: "2-0",
       event: {
         revokedUserId: actorUserId,
-        session: { assignedUserId: otherUserId },
+        conversationCycle: { assignedUserId: otherUserId },
       },
     });
   });
@@ -115,24 +114,23 @@ function sessionEvent(
   return {
     connectionId: connection.id,
     ...(revokedUserId ? { revokedUserId } : {}),
-    session: toWhatsappSession(
-      createTestCrmWhatsappSession({
-        assignedUserId,
-        connectionId: connection.id,
-        id: "session-1",
-        revision,
-        storeId,
-        tenantId,
-      }),
-      connection,
-    ),
+    conversationCycle: createTestCrmConversationCycle({
+      assignedUserId,
+      connectionId: connection.id,
+      id: "conversationCycle-1",
+      revision,
+      storeId,
+      tenantId,
+    }),
     storeId,
     tenantId,
-    type: "session",
+    type: "conversationCycle",
   };
 }
 
 const connection: CrmConnection = {
+  broker: "direct",
+  channel: "whatsapp",
   credentialsRef: {},
   displayName: "Realtime connection",
   externalConnectionId: null,

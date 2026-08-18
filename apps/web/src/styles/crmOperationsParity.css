@@ -1,0 +1,180 @@
+.crm-tag-manager-page .crm-tag-manager,
+.crm-schedules-page,
+.crm-visits-page,
+.crm-integrations-page,
+.crm-campaigns-page,
+.crm-connection-admin {
+  max-width: 72rem;
+}
+
+.crm-tag-manager > header,
+.crm-schedules-header,
+.crm-visits-header,
+.crm-integrations-header,
+.crm-campaigns-header,
+.crm-connection-header,
+.crm-bot-form,
+.crm-bot-docs,
+.crm-schedule-form,
+.crm-schedule-results,
+.crm-visit-create,
+.crm-visits-board,
+.crm-campaign-panel,
+.crm-campaign-stats div,
+.crm-connection-card,
+.crm-connection-status-card {
+  box-shadow: 0 0.875rem 2rem
+    color-mix(in srgb, var(--color-text) 4%, transparent);
+}
+
+.crm-tag-manager > header,
+.crm-schedules-header,
+.crm-visits-header,
+.crm-integrations-header,
+.crm-campaigns-header,
+.crm-connection-header {
+  padding: 1rem 1.1rem;
+}
+
+.crm-tag-manager > header div,
+.crm-schedules-header div,
+.crm-visits-header div,
+.crm-integrations-header div,
+.crm-campaigns-header div,
+.crm-connection-header div {
+  min-width: 0;
+}
+
+.crm-tag-manager > header h2,
+.crm-schedules-header h2,
+.crm-visits-header h2,
+.crm-integrations-header h2,
+.crm-campaigns-header h2,
+.crm-connection-header h2 {
+  line-height: 1.1;
+}
+
+.crm-tag-manager > header p,
+.crm-schedules-header p,
+.crm-visits-header p,
+.crm-integrations-header p,
+.crm-campaigns-header p,
+.crm-connection-header p {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 1.15);
+  font-weight: 820;
+  line-height: 1.45;
+  margin: 0.1875rem 0 0;
+}
+
+.crm-page-meta {
+  align-items: center;
+  background: color-mix(
+    in srgb,
+    var(--color-green-soft) 84%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-green-start) 20%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-success-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  justify-self: end;
+  min-height: 1.875rem;
+  padding: 0 0.75rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.crm-tag-manager-page .crm-tag-manager {
+  margin: 0 auto;
+  width: min(62rem, 100%);
+}
+
+.crm-tag-manager-page .crm-tag-manager-body {
+  gap: 1rem;
+}
+
+.crm-tag-draft-preview,
+.crm-tag-draft-group,
+.crm-tag-draft-name input,
+.crm-tag-admin-list {
+  box-shadow: 0 0.625rem 1.5rem
+    color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+
+.crm-tag-admin-row {
+  background: var(--color-panel);
+  min-height: 3.75rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.crm-tag-admin-row button {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+}
+
+.crm-tag-manager footer {
+  justify-content: flex-end;
+}
+
+.crm-tag-manager footer .crm-action,
+.crm-schedule-toolbar .crm-action,
+.crm-connection-save,
+.crm-bot-form-actions .crm-action,
+.crm-visits-header .crm-action {
+  border-radius: 999px;
+}
+
+.crm-schedule-form,
+.crm-schedule-results,
+.crm-visit-create,
+.crm-visits-board,
+.crm-bot-form,
+.crm-bot-docs,
+.crm-campaign-panel,
+.crm-campaign-stats div,
+.crm-connection-card {
+  padding: 1.1rem;
+}
+
+.crm-schedule-tab,
+.crm-visits-filter,
+.crm-tag-filter-row button,
+.crm-filter,
+.crm-bot-copy {
+  border-radius: 999px;
+}
+
+.crm-schedule-tab-active,
+.crm-visits-filter-active {
+  background: color-mix(
+    in srgb,
+    var(--color-green-soft) 86%,
+    var(--color-panel)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 24%,
+    var(--color-line)
+  );
+  color: var(--color-success-strong);
+}
+
+.crm-schedule-toolbar-controls select,
+.crm-bot-form-field > span,
+.crm-campaign-search,
+.crm-campaign-panel input,
+.crm-campaign-panel select,
+.crm-campaign-panel textarea,
+.crm-connection-field input,
+.crm-schedule-form input,
+.crm-schedule-form select,
+.crm-schedule-form textarea,
+.crm-schedule-toolbar select {
+  border-radius: var(--radius-md);
+}

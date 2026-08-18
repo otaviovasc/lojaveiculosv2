@@ -19,7 +19,11 @@ export function requireExternalBotScope(
 
 export function assertPermission(
   context: ServiceContext,
-  permission: "crm.bot.actions.execute" | "crm.bot.events.publish",
+  permission:
+    | "crm.bot.actions.execute"
+    | "crm.bot.events.publish"
+    | "crm.bot.manage"
+    | "crm.bot.proposals.decide",
 ) {
   if (context.permissions.includes(permission)) return;
   const error = botError(
@@ -79,24 +83,16 @@ export async function auditBotOperation(
   });
 }
 
-export function isProposalCommand(
-  command: ExternalBotCommand,
-): command is Extract<ExternalBotCommand, { action: `${string}.propose` }> {
-  return (
-    command.action === "fact.propose" ||
-    command.action === "vehicle_interest.propose" ||
-    command.action === "appointment.propose"
-  );
-}
-
 export function isCanonicalProviderEffectAction(command: ExternalBotCommand) {
   return (
     command.action === "message.send_text" ||
     command.action === "message.send_media" ||
-    command.action === "message.send_template" ||
-    command.action === "message.send" ||
-    command.action === "handoff.request"
+    command.action === "message.send_template"
   );
+}
+
+export function isCanonicalInternalEffectAction(command: ExternalBotCommand) {
+  return !isCanonicalProviderEffectAction(command);
 }
 
 export async function cancelAction(
@@ -190,7 +186,11 @@ export async function executeProposalAction(
   await transitionAction(id, ["accepted"], "authorized", ports);
   await transitionAction(id, ["authorized"], "claimed", ports);
   const recheck = await ports.effectAuthorizer.inspect(input);
-  if (!recheck.scopeExists || recheck.revision !== input.expectedRevision) {
+  if (
+    !recheck.scopeExists ||
+    recheck.revision !== input.expectedRevision ||
+    recheck.attendanceRevision !== input.expectedAttendanceRevision
+  ) {
     return cancelAction(id, "proposal_reauthorization_failed", ports, [
       "claimed",
     ]);
@@ -212,12 +212,11 @@ export async function executeProposalAction(
       ),
     );
   }
-  await transitionProviderSucceeded(id, ports);
   return requireTransition(
     await ports.actionRepository.transition(
       id,
-      ["provider_succeeded"],
-      "completed",
+      ["executing"],
+      "pending_approval",
       completionCode,
     ),
   );

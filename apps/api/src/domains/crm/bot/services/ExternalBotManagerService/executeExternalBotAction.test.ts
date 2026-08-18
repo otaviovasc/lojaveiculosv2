@@ -8,7 +8,7 @@ import {
 import { executeExternalBotAction } from "./executeExternalBotAction.js";
 
 describe("executeExternalBotAction human attendance", () => {
-  it("persists proposal actions without invoking the provider effect", async () => {
+  it("keeps human attendance authoritative over proposal policy", async () => {
     let providerCalls = 0;
     const manager = createMemoryExternalBotManager({
       effectDispatcher: {
@@ -23,7 +23,7 @@ describe("executeExternalBotAction human attendance", () => {
         scopeExists: true,
       }),
     });
-    const unsigned = await request(manager, "fact.propose", {
+    const unsigned = await request(manager, "fact.record", {
       classification: "purchase_intent",
       summary: "Customer expressed purchase intent.",
     });
@@ -32,12 +32,15 @@ describe("executeExternalBotAction human attendance", () => {
       withDigest(manager, unsigned),
       manager.ports,
     );
-    expect(result.status).toBe("completed");
-    expect(manager.proposals).toHaveLength(1);
+    expect(result).toMatchObject({
+      failureCode: "policy_human_takeover",
+      status: "cancelled",
+    });
+    expect(manager.proposals).toHaveLength(0);
     expect(providerCalls).toBe(0);
   });
 
-  it("cancels message.send while human attendance is active", async () => {
+  it("blocks proposal mode without provider effects during human attendance", async () => {
     let providerCalls = 0;
     const manager = createMemoryExternalBotManager({
       effectDispatcher: {
@@ -51,14 +54,20 @@ describe("executeExternalBotAction human attendance", () => {
         revision: 4,
         scopeExists: true,
       }),
+      policyMode: "proposal",
     });
-    const unsigned = await request(manager, "message.send", { text: "Hello" });
+    const unsigned = await request(manager, "message.send_text", {
+      text: "Hello",
+    });
     const result = await executeExternalBotAction(
       context(),
       withDigest(manager, unsigned),
       manager.ports,
     );
-    expect(result.status).toBe("cancelled");
+    expect(result).toMatchObject({
+      failureCode: "policy_human_takeover",
+      status: "cancelled",
+    });
     expect(manager.proposals).toHaveLength(0);
     expect(providerCalls).toBe(0);
   });
@@ -79,8 +88,9 @@ describe("executeExternalBotAction security", () => {
         revision: 4,
         scopeExists: true,
       }),
+      policyMode: "proposal",
     });
-    const command = await request(manager, "fact.propose", {
+    const command = await request(manager, "fact.record", {
       classification: "intent",
       summary: "Interested in vehicle.",
     });
@@ -92,14 +102,16 @@ describe("executeExternalBotAction security", () => {
           manager.ports,
         )
       ).status,
-    ).toBe("completed");
+    ).toBe("pending_approval");
     expect(manager.proposals).toHaveLength(1);
     expect(effects).toBe(0);
   });
 
   it("rejects cross-store scope", async () => {
     const manager = createMemoryExternalBotManager();
-    const unsigned = await request(manager, "message.send", { text: "Hello" });
+    const unsigned = await request(manager, "message.send_text", {
+      text: "Hello",
+    });
     await expect(
       executeExternalBotAction(
         { ...context(), storeId: "other-store" },
@@ -111,7 +123,9 @@ describe("executeExternalBotAction security", () => {
 
   it("rejects grant reuse with a new idempotency key", async () => {
     const manager = createMemoryExternalBotManager();
-    const first = await request(manager, "message.send", { text: "Hello" });
+    const first = await request(manager, "message.send_text", {
+      text: "Hello",
+    });
     await executeExternalBotAction(
       context(),
       withDigest(manager, first),
@@ -129,7 +143,9 @@ describe("executeExternalBotAction security", () => {
 
   it("does not weaken grants when channel semantics change", async () => {
     const manager = createMemoryExternalBotManager();
-    const granted = await request(manager, "message.send", { text: "Hello" });
+    const granted = await request(manager, "message.send_text", {
+      text: "Hello",
+    });
     const switched = {
       ...granted,
       channel: "instagram" as const,
@@ -164,7 +180,9 @@ describe("executeExternalBotAction security", () => {
         manager.ports,
       ),
     ).rejects.toMatchObject({ code: "CRM_BOT_PII_NOT_ALLOWED" });
-    const command = await request(manager, "message.send", { text: "Hello" });
+    const command = await request(manager, "message.send_text", {
+      text: "Hello",
+    });
     const result = await executeExternalBotAction(
       context(),
       withDigest(manager, command),
@@ -178,7 +196,7 @@ describe("executeExternalBotAction security", () => {
 
   it("rejects CPF embedded in a free-text value", async () => {
     const manager = createMemoryExternalBotManager();
-    const command = await request(manager, "message.send", {
+    const command = await request(manager, "message.send_text", {
       text: "CPF 123.456.789-00",
     });
     await expect(
@@ -188,30 +206,5 @@ describe("executeExternalBotAction security", () => {
         manager.ports,
       ),
     ).rejects.toMatchObject({ code: "CRM_BOT_PII_NOT_ALLOWED" });
-  });
-
-  it("cancels typed commands without an operational executor", async () => {
-    let effects = 0;
-    const manager = createMemoryExternalBotManager({
-      effectDispatcher: {
-        dispatch: async () => {
-          effects += 1;
-          return { kind: "succeeded" };
-        },
-      },
-    });
-    const command = await request(manager, "task.create", {
-      title: "Call customer",
-    });
-    const result = await executeExternalBotAction(
-      context(),
-      withDigest(manager, command),
-      manager.ports,
-    );
-    expect(result).toMatchObject({
-      failureCode: "action_not_operational",
-      status: "cancelled",
-    });
-    expect(effects).toBe(0);
   });
 });

@@ -1,4 +1,5 @@
 import { countTargetWhatsappConversations } from "./target-crm-whatsapp.mjs";
+import { countTargetCrmChannelConnections } from "./crm-whatsapp-mapping.mjs";
 
 export async function collectParity(tx, storeId, ids) {
   const tables = [
@@ -31,7 +32,9 @@ export async function collectParity(tx, storeId, ids) {
     );
     counts[table] = row.count;
   }
-  const connectionIds = [...(ids?.crmChannelConnections?.values() ?? [])];
+  const connectionIds = [
+    ...new Set(ids?.crmChannelConnections?.values() ?? []),
+  ];
   const [connections] = connectionIds.length
     ? await tx.unsafe(
         `SELECT count(*)::int AS count
@@ -129,7 +132,7 @@ export function assertParity(data, parity, modules) {
     ).length;
   if (modules.has("whatsapp"))
     Object.assign(expected, {
-      crm_channel_connections: data.whatsapp.connections.length,
+      crm_channel_connections: countTargetCrmChannelConnections(data.whatsapp),
       crm_conversation_threads: countTargetWhatsappConversations(data.whatsapp),
       crm_conversation_cycles: countTargetWhatsappConversations(data.whatsapp),
       crm_conversation_attendances: countTargetWhatsappConversations(

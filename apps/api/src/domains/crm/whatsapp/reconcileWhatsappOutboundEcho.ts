@@ -1,24 +1,21 @@
 import type {
-  CrmWhatsappMessage,
-  IngestCrmWhatsappMessageInput,
-} from "../ports/crmWhatsappRepository.js";
+  CrmMessage,
+  IngestCrmMessageInput,
+} from "../ports/crmConversationRepository.js";
 
-const correlatedOrigins = new Set(["bot_api", "human_crm"]);
+const correlatedOrigins = new Set(["external_bot", "human_crm"]);
 
 export function reconciledOutboundEchoSender(
-  existing: Pick<
-    CrmWhatsappMessage,
-    "direction" | "senderOrigin" | "senderType"
-  >,
+  existing: Pick<CrmMessage, "direction" | "senderOrigin" | "senderType">,
   incoming: Pick<
-    IngestCrmWhatsappMessageInput,
+    IngestCrmMessageInput,
     "direction" | "senderOrigin" | "senderType"
   >,
 ) {
   if (
     existing.direction !== "OUTBOUND" ||
     incoming.direction !== "OUTBOUND" ||
-    !["unknown", "human_whatsapp"].includes(existing.senderOrigin) ||
+    !["unknown", "human_channel"].includes(existing.senderOrigin) ||
     !correlatedOrigins.has(incoming.senderOrigin)
   ) {
     return null;

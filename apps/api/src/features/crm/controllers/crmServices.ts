@@ -3,10 +3,10 @@ import { createLeadActivity } from "../../../domains/crm/services/CrmService/cre
 import type { CreateLeadActivityInput } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
 import { changeLeadVisitStatus } from "../../../domains/crm/services/CrmService/changeLeadVisitStatus.js";
 import {
-  concludeWhatsappAttendance,
+  concludeCrmAttendance,
   type ConcludeWhatsappAttendanceInput,
   type ConcludeWhatsappAttendanceResult,
-} from "../../../domains/crm/services/CrmService/concludeWhatsappAttendance.js";
+} from "../../../domains/crm/services/CrmService/concludeCrmAttendance.js";
 import { createCrmLead } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import type { CreateCrmLeadInput } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import { createCrmPipeline } from "../../../domains/crm/services/CrmService/createCrmPipeline.js";
@@ -41,9 +41,9 @@ import type {
 } from "../../../domains/crm/ports/crmRepository.js";
 import type { CrmLeadVisit } from "../../../domains/crm/ports/crmVisitRepository.js";
 import {
-  createCrmWhatsappServiceBindings,
-  type CrmWhatsappServices,
-} from "./crmWhatsappServiceBindings.js";
+  createCrmMessagingServiceBindings,
+  type CrmMessagingServices,
+} from "./crmMessagingServiceBindings.js";
 import { resolveCrmPorts } from "./crmServicePorts.js";
 import type { CreateCrmServicesOptions } from "./crmServices.types.js";
 import { getCrmRoutingPolicy } from "../../../domains/crm/services/CrmRoutingService/getCrmRoutingPolicy.js";
@@ -53,7 +53,7 @@ import {
 } from "../../../domains/crm/services/CrmRoutingService/updateCrmRoutingPolicy.js";
 import type { CrmRoutingPolicyReadModel } from "../../../domains/crm/services/CrmRoutingService/routingReadModels.js";
 export type { CreateCrmServicesOptions } from "./crmServices.types.js";
-export type CrmServices = CrmWhatsappServices & {
+export type CrmServices = CrmMessagingServices & {
   getRoutingPolicy: (
     context: ServiceContext,
   ) => Promise<CrmRoutingPolicyReadModel>;
@@ -85,7 +85,7 @@ export type CrmServices = CrmWhatsappServices & {
     context: ServiceContext,
     input: { visitId: string },
   ) => Promise<CrmLeadVisit>;
-  concludeWhatsappAttendance: (
+  concludeCrmAttendance: (
     context: ServiceContext,
     input: ConcludeWhatsappAttendanceInput,
   ) => Promise<ConcludeWhatsappAttendanceResult>;
@@ -156,8 +156,8 @@ export function createCrmServices(
       changeLeadVisitStatus(context, { ...input, status: "cancelled" }, ports),
     completeVisit: (context, input) =>
       changeLeadVisitStatus(context, { ...input, status: "completed" }, ports),
-    concludeWhatsappAttendance: (context, input) =>
-      concludeWhatsappAttendance(context, input, ports),
+    concludeCrmAttendance: (context, input) =>
+      concludeCrmAttendance(context, input, ports),
     deletePipeline: (context, input) =>
       deleteCrmPipeline(context, input, ports),
     getLead: (context, input) => getCrmLead(context, input, ports),
@@ -178,7 +178,7 @@ export function createCrmServices(
     updateLead: (context, input) => updateCrmLead(context, input, ports),
     updateRoutingPolicy: (context, input) =>
       updateCrmRoutingPolicy(context, input, ports),
-    ...createCrmWhatsappServiceBindings(ports),
+    ...createCrmMessagingServiceBindings(ports),
   };
 }
 export const crmServices = createCrmServices();

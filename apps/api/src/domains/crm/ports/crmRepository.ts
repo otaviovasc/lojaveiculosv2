@@ -20,7 +20,7 @@ export type LeadSource =
   | "other";
 
 export type LeadActivityType =
-  "note" | "call" | "whatsapp" | "email" | "status_change" | "task";
+  "note" | "call" | "message" | "email" | "status_change" | "task";
 
 export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 

@@ -1,9 +1,9 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { FeatureLoadingState } from "../../components/ui/FeatureStates";
 
-export const CrmWhatsappInbox = lazy(() =>
-  import("./CrmWhatsappInbox").then((module) => ({
-    default: module.CrmWhatsappInbox,
+export const CrmInbox = lazy(() =>
+  import("./CrmInbox").then((module) => ({
+    default: module.CrmInbox,
   })),
 );
 

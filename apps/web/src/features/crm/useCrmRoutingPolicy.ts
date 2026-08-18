@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import type { CrmWhatsappApi } from "./crmWhatsappApi";
+import type { CrmConversationApi } from "./crmConversationApi";
 import type { CrmRoutingPolicy } from "./crmRoutingTypes";
 
 export function useCrmRoutingPolicy(
-  api: Pick<CrmWhatsappApi, "getRoutingPolicy">,
+  api: Pick<CrmConversationApi, "getRoutingPolicy">,
   enabled: boolean,
 ) {
   const [error, setError] = useState<Error | null>(null);

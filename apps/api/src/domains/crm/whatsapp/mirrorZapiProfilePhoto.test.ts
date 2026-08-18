@@ -88,13 +88,13 @@ describe("mirrorZapiProfilePhoto", () => {
       }),
     );
     const repository = {
-      findSessionByIdentity: vi.fn(async () => null),
+      findConversationCycleByIdentity: vi.fn(async () => null),
     } as never;
 
     await expect(
       mirrorNewZapiProfilePhoto({
         ...profileInput(fetchMedia, putObject),
-        buyerPhone: "5511999999999",
+        customerPhone: "5511999999999",
         repository,
         resolvePhotoUrl: async () => "https://zapi.test/current-profile.png",
       }),

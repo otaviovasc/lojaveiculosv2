@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import type { CrmRemoteMediaFetcher } from "../ports/crmRemoteMediaFetcher.js";
-import type { CrmWhatsappRepository } from "../ports/crmWhatsappRepository.js";
+import type { CrmConversationRepository } from "../ports/crmConversationRepository.js";
 
 export type MirrorZapiProfilePhotoInput = {
   connectionId: string;
@@ -30,21 +30,24 @@ const supportedContentTypes = new Map([
 
 export async function mirrorNewZapiProfilePhoto(
   input: MirrorZapiProfilePhotoInput & {
-    buyerChatLid?: string;
-    buyerName?: string;
-    buyerPhone: string;
-    repository: CrmWhatsappRepository;
+    customerChatId?: string;
+    customerDisplayName?: string;
+    customerPhone: string;
+    repository: CrmConversationRepository;
   },
 ): Promise<MirrorZapiProfilePhotoResult> {
-  const existingSession = await input.repository.findSessionByIdentity({
-    ...(input.buyerChatLid ? { buyerChatLid: input.buyerChatLid } : {}),
-    ...(input.buyerName ? { buyerName: input.buyerName } : {}),
-    buyerPhone: input.buyerPhone,
-    channel: "WHATSAPP",
-    connectionId: input.connectionId,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
+  const existingSession =
+    await input.repository.findConversationCycleByIdentity({
+      ...(input.customerChatId ? { customerChatId: input.customerChatId } : {}),
+      ...(input.customerDisplayName
+        ? { customerDisplayName: input.customerDisplayName }
+        : {}),
+      customerPhone: input.customerPhone,
+      channel: "WHATSAPP",
+      connectionId: input.connectionId,
+      storeId: input.storeId,
+      tenantId: input.tenantId,
+    });
   if (hasOwnedProfilePhoto(existingSession?.metadata)) {
     return { status: "unavailable" };
   }

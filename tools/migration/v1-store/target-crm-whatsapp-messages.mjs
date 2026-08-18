@@ -1,4 +1,8 @@
 import { nullableString, targetId } from "./common.mjs";
+import {
+  canonicalRepassesMessagingChannel,
+  resolveCrmChannelConnectionId,
+} from "./crm-whatsapp-mapping.mjs";
 import { progress } from "./log.mjs";
 
 const BATCH_SIZE = 500;
@@ -103,8 +107,11 @@ export function toCanonicalMessageRow(
   threadId,
   providerMessageIds,
 ) {
-  const connectionId = config.crmChannelConnectionIds.get(
+  const channel = canonicalRepassesMessagingChannel(message.channel);
+  const connectionId = resolveCrmChannelConnectionId(
+    config.crmChannelConnectionIds,
     message.connection_id,
+    channel,
   );
   if (!connectionId)
     throw new Error(
@@ -140,7 +147,7 @@ export function toCanonicalMessageRow(
       ...(message.provider_timestamp ? {} : { providerTimestampCleared: true }),
     }),
     occurred_at: message.provider_timestamp ?? message.created_at,
-    provider: "zapi",
+    provider: channel === "olx_chat" ? "olx" : "zapi",
     provider_connection_id: connectionId,
     provider_message_id: providerMessageId,
     sender: mapSender(message),

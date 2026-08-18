@@ -19,7 +19,7 @@ describe("parseZapiInboundMessage", () => {
     });
 
     expect(parsed).toMatchObject({
-      buyerName: "Ana",
+      customerDisplayName: "Ana",
       content: "Foto do documento",
       externalId: "zapi-image-1",
       mediaType: "image",
@@ -87,7 +87,7 @@ describe("parseZapiInboundMessage", () => {
     });
 
     expect(parsed).toMatchObject({
-      buyerName: "Lead WhatsApp",
+      customerDisplayName: "Lead WhatsApp",
       content: "Ola vivo",
       externalId: "live-zapi-text-1",
       phone: "5511999990000",
