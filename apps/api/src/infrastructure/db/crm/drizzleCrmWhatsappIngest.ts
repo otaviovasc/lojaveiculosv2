@@ -1,47 +1,72 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { crmWhatsappMessages, crmWhatsappSessions } from "@lojaveiculosv2/db";
+import { canonicalMessages } from "@lojaveiculosv2/db";
+import type { providerConnections } from "@lojaveiculosv2/db";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type {
   IngestCrmWhatsappMessageInput,
   UpsertCrmWhatsappSessionContextInput,
 } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import { reconciledOutboundEchoSender as reconcileDomainOutboundEchoSender } from "../../../domains/crm/whatsapp/reconcileWhatsappOutboundEcho.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   toWhatsappMessage,
   toWhatsappSession,
+  type CanonicalWhatsappSessionRow,
 } from "./drizzleCrmWhatsappMappers.js";
 import { countUnreadMessages } from "./drizzleCrmWhatsappQueries.js";
-import { findWhatsappMessageBySessionExternalId } from "./drizzleCrmWhatsappMessages.js";
-import { updateSessionPreview } from "./drizzleCrmWhatsappSessionPreview.js";
+import {
+  findWhatsappMessageByConnectionExternalId,
+  findWhatsappMessageBySessionExternalId,
+  toCanonicalDirection,
+  toCanonicalMessageStatus,
+  toCanonicalSender,
+  toCanonicalSenderOrigin,
+} from "./drizzleCrmWhatsappMessages.js";
+import {
+  createCanonicalCycle,
+  updateSessionPreview,
+} from "./drizzleCrmWhatsappSessionPreview.js";
 import {
   findWhatsappSessionByIdentity,
+  insertCanonicalSessionContext,
+  requireCanonicalConnection,
   updateWhatsappSessionIdentity,
 } from "./drizzleCrmWhatsappSessionIdentity.js";
-import { reconciledOutboundEchoSender } from "../../../domains/crm/whatsapp/reconcileWhatsappOutboundEcho.js";
+import { findCanonicalSessionById } from "./drizzleCrmWhatsappTagHydration.js";
 
 export async function ingestMessageInDatabase(
   db: DrizzleCrmClient,
   input: IngestCrmWhatsappMessageInput,
 ) {
+  const connection = await requireCanonicalConnection(db, input);
+  const duplicate = await findWhatsappMessageByConnectionExternalId(db, {
+    connectionId: input.connectionId,
+    externalId: input.externalId,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
+  if (duplicate) return duplicateIngestResult(db, input, duplicate);
   const session = await findOrCreateSession(db, input);
-  const insertedMessage = await insertMessage(db, input, session.id);
-  const createdMessage = Boolean(insertedMessage);
+  const inserted = await insertMessage(db, input, session, connection.provider);
+  const createdMessage = Boolean(inserted);
   let message =
-    insertedMessage ??
+    inserted ??
     (await findWhatsappMessageBySessionExternalId(
       db,
-      session.id,
+      session.cycle.id,
       input.externalId,
     ));
-
-  if (!message) throw new Error("CRM WhatsApp message was not persisted.");
-  if (!createdMessage) {
+  if (!message) throw new Error("Canonical CRM message was not persisted.");
+  if (!createdMessage)
     message = await reconcileOutboundEchoSender(db, message, input);
-  }
   if (createdMessage) await updateSessionPreview(db, input, session);
 
-  const updatedSession = await findSessionById(db, session.id);
-  if (!updatedSession) throw new Error("CRM WhatsApp session was not found.");
-
+  const updatedSession = await findCanonicalSessionById(
+    db,
+    session.cycle.id,
+    input,
+  );
+  if (!updatedSession)
+    throw new Error("Canonical CRM conversation cycle was not found.");
   return {
     createdMessage,
     createdSession: session.created,
@@ -53,30 +78,23 @@ export async function ingestMessageInDatabase(
   };
 }
 
-async function reconcileOutboundEchoSender(
+async function duplicateIngestResult(
   db: DrizzleCrmClient,
-  message: typeof crmWhatsappMessages.$inferSelect,
   input: IngestCrmWhatsappMessageInput,
+  duplicate: NonNullable<
+    Awaited<ReturnType<typeof findWhatsappMessageByConnectionExternalId>>
+  >,
 ) {
-  const reconciled = reconciledOutboundEchoSender(message, input);
-  if (!reconciled) return message;
-  const [updated] = await db
-    .update(crmWhatsappMessages)
-    .set({ ...reconciled, updatedAt: new Date() })
-    .where(
-      and(
-        eq(crmWhatsappMessages.id, message.id),
-        eq(crmWhatsappMessages.direction, "OUTBOUND"),
-        inArray(crmWhatsappMessages.senderOrigin, [
-          "unknown",
-          "human_whatsapp",
-        ]),
-        eq(crmWhatsappMessages.storeId, input.storeId),
-        eq(crmWhatsappMessages.tenantId, input.tenantId),
-      ),
-    )
-    .returning();
-  return updated ?? message;
+  const message = await reconcileOutboundEchoSender(db, duplicate, input);
+  const session = await findCanonicalSessionById(db, message.cycleId, input);
+  if (!session)
+    throw new Error("Canonical CRM duplicate message cycle was not found.");
+  return {
+    createdMessage: false,
+    createdSession: false,
+    message: toWhatsappMessage(message),
+    session: toWhatsappSession(session, await countUnreadMessages(db, session)),
+  };
 }
 
 export function ingestMessageWithTransaction(
@@ -95,10 +113,16 @@ export async function upsertSessionContextInDatabase(
   db: DrizzleCrmClient,
   input: UpsertCrmWhatsappSessionContextInput,
 ) {
+  await requireCanonicalConnection(db, input);
   const existing = await findWhatsappSessionByIdentity(db, input);
-  const row = existing
+  const updated = existing
     ? await updateWhatsappSessionIdentity(db, existing, input)
-    : await insertSessionContext(db, input);
+    : null;
+  const row = updated
+    ? updated.cycle.state === "active"
+      ? updated
+      : await createCanonicalCycle(db, input, updated.thread)
+    : await insertCanonicalSessionContext(db, input);
   return toWhatsappSession(row, await countUnreadMessages(db, row));
 }
 
@@ -119,111 +143,91 @@ async function findOrCreateSession(
   input: IngestCrmWhatsappMessageInput,
 ) {
   const existing = await findWhatsappSessionByIdentity(db, input);
-  if (existing) {
+  if (existing?.cycle.state === "active") {
     const updated = await updateWhatsappSessionIdentity(db, existing, input);
     return { ...updated, created: false };
   }
-
-  const [inserted] = await db
-    .insert(crmWhatsappSessions)
-    .values({
-      buyerChatLid: input.buyerChatLid ?? null,
-      buyerName: input.buyerName ?? null,
-      buyerPhone: input.buyerPhone,
-      channel: input.channel,
-      channelExternalId: input.channelExternalId ?? null,
-      connectionId: input.connectionId,
-      firstHandledAt: input.firstHandledAt ?? null,
-      freshLeadAt: input.freshLeadAt ?? null,
-      lastMessageAt: input.providerTimestamp,
-      lastMessageContent: input.content,
-      leadId: input.leadId ?? null,
-      profilePhotoUrl: input.profilePhotoUrl ?? null,
-      metadata: sessionMetadata(input),
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-    })
-    .onConflictDoNothing()
-    .returning();
-
-  if (inserted) return { ...inserted, created: true };
-  const raced = await findWhatsappSessionByIdentity(db, input);
-  if (!raced) throw new Error("CRM WhatsApp session was not persisted.");
-  const updated = await updateWhatsappSessionIdentity(db, raced, input);
-  return { ...updated, created: false };
-}
-
-async function insertSessionContext(
-  db: DrizzleCrmClient,
-  input: UpsertCrmWhatsappSessionContextInput,
-) {
-  const [inserted] = await db
-    .insert(crmWhatsappSessions)
-    .values({
-      buyerChatLid: input.buyerChatLid ?? null,
-      buyerName: input.buyerName ?? null,
-      buyerPhone: input.buyerPhone,
-      channel: input.channel,
-      channelExternalId: input.channelExternalId ?? null,
-      connectionId: input.connectionId,
-      profilePhotoUrl: input.profilePhotoUrl ?? null,
-      metadata: sessionMetadata(input),
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-    })
-    .onConflictDoNothing()
-    .returning();
-  if (inserted) return inserted;
-  const raced = await findWhatsappSessionByIdentity(db, input);
-  if (!raced)
-    throw new Error("CRM WhatsApp session context was not persisted.");
-  return updateWhatsappSessionIdentity(db, raced, input);
-}
-
-function sessionMetadata(input: UpsertCrmWhatsappSessionContextInput) {
-  return input.profilePhotoStorageKey
-    ? { profilePhoto: { storageKey: input.profilePhotoStorageKey } }
-    : {};
+  if (existing) {
+    const updated = await updateWhatsappSessionIdentity(db, existing, input);
+    return {
+      ...(await createCanonicalCycle(db, input, updated.thread)),
+      created: true,
+    };
+  }
+  return { ...(await insertCanonicalSessionContext(db, input)), created: true };
 }
 
 async function insertMessage(
   db: DrizzleCrmClient,
   input: IngestCrmWhatsappMessageInput,
-  sessionId: string,
+  session: CanonicalWhatsappSessionRow & { created: boolean },
+  provider: typeof providerConnections.$inferSelect.provider,
 ) {
   const [row] = await db
-    .insert(crmWhatsappMessages)
+    .insert(canonicalMessages)
     .values({
-      channel: input.channel,
-      channelMessageId: input.channelMessageId ?? null,
-      connectionId: input.connectionId,
       content: input.content,
-      direction: input.direction,
-      externalId: input.externalId,
+      cycleId: session.cycle.id,
+      direction: toCanonicalDirection(input.direction),
       mediaType: input.mediaType ?? null,
       mediaUrl: input.mediaUrl ?? null,
-      metadata: input.metadata,
-      providerTimestamp: input.providerTimestamp,
-      senderOrigin: input.senderOrigin,
-      senderType: input.senderType,
-      sessionId,
-      status: input.status,
+      messageType: input.type,
+      metadata: {
+        ...(input.channelMessageId
+          ? { channelMessageId: input.channelMessageId }
+          : {}),
+        providerMetadata: input.metadata,
+      },
+      occurredAt: input.providerTimestamp,
+      provider,
+      providerConnectionId: input.connectionId,
+      providerMessageId: input.externalId,
+      sender: toCanonicalSender(input.senderType),
+      senderOrigin: toCanonicalSenderOrigin(input.senderOrigin),
+      status: toCanonicalMessageStatus(input.status),
+      threadId: session.thread.id,
       storeId: input.storeId,
       tenantId: input.tenantId,
-      type: input.type,
     })
     .onConflictDoNothing({
-      target: [crmWhatsappMessages.sessionId, crmWhatsappMessages.externalId],
+      target: [
+        canonicalMessages.providerConnectionId,
+        canonicalMessages.providerMessageId,
+      ],
+      where: sql`${canonicalMessages.providerMessageId} IS NOT NULL`,
     })
     .returning();
-  return row;
+  return row ? { ...row, channel: session.thread.channel } : undefined;
 }
 
-async function findSessionById(db: DrizzleCrmClient, sessionId: string) {
-  const [row] = await db
-    .select()
-    .from(crmWhatsappSessions)
-    .where(eq(crmWhatsappSessions.id, sessionId))
-    .limit(1);
-  return row;
+async function reconcileOutboundEchoSender(
+  db: DrizzleCrmClient,
+  message: NonNullable<
+    Awaited<ReturnType<typeof findWhatsappMessageBySessionExternalId>>
+  >,
+  input: IngestCrmWhatsappMessageInput,
+) {
+  const reconciled = reconcileDomainOutboundEchoSender(
+    toWhatsappMessage(message),
+    input,
+  );
+  if (!reconciled) return message;
+  const [updated] = await db
+    .update(canonicalMessages)
+    .set({
+      sender: toCanonicalSender(reconciled.senderType),
+      senderOrigin: toCanonicalSenderOrigin(reconciled.senderOrigin),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(canonicalMessages.id, message.id),
+        eq(canonicalMessages.direction, "outbound"),
+        inArray(canonicalMessages.senderOrigin, ["unknown", "human_channel"]),
+        eq(canonicalMessages.storeId, input.storeId),
+        eq(canonicalMessages.tenantId, input.tenantId),
+      ),
+    )
+    .returning();
+  return updated ? { ...updated, channel: message.channel } : message;
 }

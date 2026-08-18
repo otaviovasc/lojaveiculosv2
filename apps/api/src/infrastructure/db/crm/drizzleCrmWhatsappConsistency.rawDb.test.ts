@@ -1,142 +1,227 @@
-import { randomUUID } from "node:crypto";
 import * as schema from "@lojaveiculosv2/db";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { loadLocalEnv } from "../../config/loadLocalEnv.js";
 import { createDrizzleCrmWhatsappRepository } from "./drizzleCrmWhatsappRepository.js";
+import {
+  assertRawWhatsappDuplicateAndCas,
+  seedRawWhatsappFixture,
+  seedRawWhatsappMessage,
+  withRawCrmTransaction,
+} from "./drizzleCrmWhatsappConsistency.rawDbTestSupport.js";
 
 loadLocalEnv();
-
 const runRawDb = process.env.RUN_RAW_CRM_DB_TESTS === "true";
 
 describe.skipIf(!runRawDb)("CRM WhatsApp Postgres consistency", () => {
-  it("keeps duplicate state and reconciles a known sender over an earlier echo", async () => {
-    expect(
-      process.env.DATABASE_URL,
-      "DATABASE_URL is required for raw CRM database validation",
-    ).toBeTruthy();
-
-    const sqlClient = postgres(process.env.DATABASE_URL ?? "", { max: 1 });
-    const rollback = new Error("rollback CRM consistency validation");
-    const db = drizzle(sqlClient, { schema });
-
-    try {
-      await db.transaction(async (transaction) => {
-        const [scope] = await transaction
-          .select({
-            connectionId: schema.crmConnections.id,
-            storeId: schema.crmConnections.storeId,
-            tenantId: schema.crmConnections.tenantId,
-          })
-          .from(schema.crmConnections)
-          .limit(1);
-
-        expect(
-          scope,
-          "Seed one local CRM connection before running raw CRM database tests",
-        ).toBeTruthy();
-        if (!scope) throw new Error("Local CRM connection is missing.");
-
-        const repository = createDrizzleCrmWhatsappRepository(transaction, {
-          disableTransactions: true,
-        });
-        const repositoryScope = {
-          connectionId: scope.connectionId,
-          storeId: scope.storeId as never,
-          tenantId: scope.tenantId as never,
-        };
-        const buyerPhone = `55000${Date.now().toString().slice(-8)}`;
-        const providerTimestamp = new Date("2026-08-10T15:00:00.000Z");
-        const echo = {
-          buyerPhone,
-          channel: "WHATSAPP" as const,
-          connectionId: repositoryScope.connectionId,
-          content: "synthetic outbound validation",
-          direction: "OUTBOUND" as const,
-          externalId: `raw-echo-${randomUUID()}`,
-          metadata: { syntheticValidation: true },
-          providerTimestamp,
-          senderOrigin: "unknown" as const,
-          senderType: "SYSTEM" as const,
-          status: "SENT" as const,
-          storeId: repositoryScope.storeId,
-          tenantId: repositoryScope.tenantId,
-          type: "TEXT" as const,
-        };
-
-        const providerFirst = await repository.ingestMessage(echo);
-        const correlated = await repository.ingestMessage({
-          ...echo,
-          senderOrigin: "human_crm",
-          senderType: "HUMAN",
-        });
-        const providerReplay = await repository.ingestMessage(echo);
-
-        expect(providerFirst).toMatchObject({
-          createdMessage: true,
-          message: { senderOrigin: "unknown", senderType: "SYSTEM" },
-        });
-        expect(correlated).toMatchObject({
-          createdMessage: false,
-          message: { senderOrigin: "human_crm", senderType: "HUMAN" },
-        });
-        expect(providerReplay.message).toMatchObject({
-          senderOrigin: "human_crm",
-          senderType: "HUMAN",
-        });
-
-        const inboundExternalId = `raw-inbound-${randomUUID()}`;
-        const inbound = await repository.ingestMessage({
-          ...echo,
-          direction: "INBOUND",
-          externalId: inboundExternalId,
-          senderOrigin: "customer",
-          senderType: "CUSTOMER",
-          status: "DELIVERED",
-        });
-        const completed = await repository.updateSession({
-          expectedRevision: inbound.session.revision,
-          sessionId: inbound.session.id,
-          status: "COMPLETED",
-          storeId: repositoryScope.storeId,
-          tenantId: repositoryScope.tenantId,
-        });
-        expect(completed).toBeTruthy();
-        if (!completed) throw new Error("Synthetic session was not completed.");
-
-        const duplicate = await repository.ingestMessage({
-          ...echo,
-          direction: "INBOUND",
-          externalId: inboundExternalId,
-          senderOrigin: "customer",
-          senderType: "CUSTOMER",
-          status: "DELIVERED",
-        });
-        const staleUpdate = await repository.updateSession({
-          expectedRevision: completed.revision - 1,
-          sessionId: completed.id,
-          status: "ACTIVE",
-          storeId: repositoryScope.storeId,
-          tenantId: repositoryScope.tenantId,
-        });
-
-        expect(duplicate).toMatchObject({
-          createdMessage: false,
-          session: {
-            messageCount: completed.messageCount,
-            revision: completed.revision,
-            status: "COMPLETED",
-          },
-        });
-        expect(staleUpdate).toBeNull();
-
-        throw rollback;
+  it("infers the partial provider-message conflict target and reconciles an outbound echo", async () => {
+    await withRawCrmTransaction(async (transaction) => {
+      const fixture = await seedRawWhatsappFixture(transaction);
+      const repository = createDrizzleCrmWhatsappRepository(transaction, {
+        disableTransactions: true,
       });
-    } catch (error) {
-      if (error !== rollback) throw error;
-    } finally {
-      await sqlClient.end();
-    }
+      await assertRawWhatsappDuplicateAndCas(repository, fixture.primary);
+    });
+  });
+
+  it("covers canonical list/count/messages, filters, isolation, and CAS", async () => {
+    await withRawCrmTransaction(async (transaction) => {
+      const fixture = await seedRawWhatsappFixture(transaction);
+      const repository = createDrizzleCrmWhatsappRepository(transaction, {
+        disableTransactions: true,
+      });
+      const scope = fixture.primary;
+      const alice = await seedRawWhatsappMessage(repository, scope, {
+        buyerName: "Alice Financing",
+        buyerPhone: "5511999000001",
+        content: "Need financing options",
+        providerTimestamp: new Date("2026-08-18T12:01:00.000Z"),
+      });
+      await seedRawWhatsappMessage(repository, scope, {
+        buyerPhone: "5511999000001",
+        content: "Human reply",
+        direction: "OUTBOUND",
+        senderOrigin: "human_crm",
+        senderType: "HUMAN",
+        status: "SENT",
+        providerTimestamp: new Date("2026-08-18T12:02:00.000Z"),
+      });
+      const bruno = await seedRawWhatsappMessage(repository, scope, {
+        buyerName: "Bruno Buyer",
+        buyerPhone: "5511999000002",
+        direction: "OUTBOUND",
+        senderOrigin: "human_crm",
+        senderType: "HUMAN",
+        status: "SENT",
+        providerTimestamp: new Date("2026-08-18T12:03:00.000Z"),
+      });
+      const carla = await seedRawWhatsappMessage(repository, scope, {
+        buyerName: "Carla Buyer",
+        buyerPhone: "5511999000003",
+        content: "Completed trade",
+        providerTimestamp: new Date("2026-08-18T12:04:00.000Z"),
+      });
+      const assigned = await repository.updateSession({
+        assignedUserId: fixture.assigneeId,
+        expectedRevision: bruno.session.revision,
+        sessionId: bruno.session.id,
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+      });
+      expect(assigned?.assignedUserId).toBe(fixture.assigneeId);
+      const completed = await repository.updateSession({
+        assignedUserId: fixture.otherAssigneeId,
+        expectedRevision: carla.session.revision,
+        lastReadAt: new Date(Date.now() + 1_000),
+        sessionId: carla.session.id,
+        status: "COMPLETED",
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+      });
+      expect(completed?.status).toBe("COMPLETED");
+      if (!completed) throw new Error("Synthetic session was not completed.");
+      const sibling = await seedRawWhatsappMessage(
+        repository,
+        fixture.sibling,
+        {
+          buyerPhone: "5511999000004",
+          content: "Sibling store message",
+        },
+      );
+      const foreign = await seedRawWhatsappMessage(
+        repository,
+        fixture.foreign,
+        {
+          buyerPhone: "5511999000005",
+          content: "Foreign tenant message",
+        },
+      );
+      const query = {
+        limit: 10,
+        offset: 0,
+        queueVisibility: { kind: "global" as const },
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+      };
+      const listed = await repository.listSessions(query);
+      expect(listed).toHaveLength(3);
+      expect(listed.map(({ id }) => id)).toEqual(
+        expect.arrayContaining([
+          alice.session.id,
+          bruno.session.id,
+          carla.session.id,
+        ]),
+      );
+      expect(await repository.countSessions(query)).toBe(3);
+      expect(
+        await repository.countSessions({ ...query, unreadOnly: true }),
+      ).toBe(1);
+      expect(
+        (await repository.listSessions({ ...query, search: "financing" })).map(
+          ({ id }) => id,
+        ),
+      ).toEqual([alice.session.id]);
+      expect(
+        await repository.countSessions({ ...query, status: "ACTIVE" }),
+      ).toBe(2);
+      expect(
+        await repository.countSessions({ ...query, status: "COMPLETED" }),
+      ).toBe(1);
+      expect(
+        (
+          await repository.listSessions({
+            ...query,
+            assignedUserId: fixture.assigneeId,
+            filter: "mine",
+          })
+        ).map(({ id }) => id),
+      ).toEqual([bruno.session.id]);
+      expect(await repository.countSessionsByAssignee(query)).toEqual(
+        expect.arrayContaining([
+          { assigneeId: fixture.assigneeId, count: 1 },
+          { assigneeId: fixture.otherAssigneeId, count: 1 },
+        ]),
+      );
+      expect(
+        await repository.listMessages({
+          limit: 10,
+          offset: 0,
+          sessionId: alice.session.id,
+          storeId: scope.storeId,
+          tenantId: scope.tenantId,
+        }),
+      ).toHaveLength(2);
+      expect(
+        await repository.listMessages({
+          direction: "INBOUND",
+          limit: 10,
+          offset: 0,
+          sessionId: alice.session.id,
+          storeId: scope.storeId,
+          tenantId: scope.tenantId,
+        }),
+      ).toHaveLength(1);
+      expect(
+        await repository.findMessageByExternalId({
+          connectionId: scope.connectionId,
+          externalId: alice.message.externalId ?? "",
+          storeId: fixture.sibling.storeId,
+          tenantId: fixture.sibling.tenantId,
+        }),
+      ).toBeNull();
+      expect(
+        (
+          await repository.listSessions({
+            ...query,
+            storeId: fixture.sibling.storeId,
+            tenantId: fixture.sibling.tenantId,
+          })
+        ).map(({ id }) => id),
+      ).toEqual([sibling.session.id]);
+      expect(
+        (
+          await repository.listSessions({
+            ...query,
+            storeId: fixture.foreign.storeId,
+            tenantId: fixture.foreign.tenantId,
+          })
+        ).map(({ id }) => id),
+      ).toEqual([foreign.session.id]);
+      expect(
+        await repository.listSessions({
+          ...query,
+          tenantId: fixture.foreign.tenantId,
+        }),
+      ).toEqual([]);
+      expect(
+        await repository.updateSession({
+          expectedRevision: completed.revision,
+          sessionId: carla.session.id,
+          status: "ACTIVE",
+          storeId: fixture.sibling.storeId,
+          tenantId: fixture.sibling.tenantId,
+        }),
+      ).toBeNull();
+      expect(
+        await repository.updateSession({
+          expectedRevision: carla.session.revision,
+          sessionId: carla.session.id,
+          status: "ACTIVE",
+          storeId: scope.storeId,
+          tenantId: scope.tenantId,
+        }),
+      ).toBeNull();
+      const [canonicalCycle] = await transaction
+        .select({
+          revision: schema.conversationCycles.revision,
+          state: schema.conversationCycles.state,
+        })
+        .from(schema.conversationCycles)
+        .where(eq(schema.conversationCycles.id, carla.session.id));
+      expect(canonicalCycle).toEqual({
+        revision: completed.revision,
+        state: "completed",
+      });
+    });
   });
 });

@@ -11,7 +11,11 @@ import {
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "./_shared.js";
 import { providerConnections } from "./crmCore/authorization.js";
-import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
+import {
+  conversationCycles,
+  conversationThreads,
+} from "./crmCore/conversations.js";
+import { canonicalMessages } from "./crmCore/messages.js";
 import { stores, tenants } from "./identity.js";
 
 const includeCrmScopeForeignKeys =
@@ -37,10 +41,11 @@ export const crmWhatsappOutboundIntents = pgTable(
     connectionId: uuid("connection_id").notNull(),
     fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
     idempotencyKey: varchar("idempotency_key", { length: 191 }).notNull(),
-    messageId: uuid("message_id").references(() => crmWhatsappMessages.id),
+    cycleId: uuid("cycle_id"),
+    messageId: uuid("message_id"),
     providerResult: jsonb("provider_result"),
     recoveryExpiresAt: timestamp("recovery_expires_at", { withTimezone: true }),
-    sessionId: uuid("session_id").references(() => crmWhatsappSessions.id),
+    threadId: uuid("thread_id"),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
     status: crmWhatsappOutboundIntentStatus("status")
       .notNull()
@@ -58,6 +63,11 @@ export const crmWhatsappOutboundIntents = pgTable(
       foreignColumns: [providerConnections.id],
       name: "crm_whatsapp_outbound_intents_connection_fk",
     }),
+    foreignKey({
+      columns: [table.messageId],
+      foreignColumns: [canonicalMessages.id],
+      name: "crm_whatsapp_outbound_intents_message_fk",
+    }),
     ...(includeCrmScopeForeignKeys
       ? [
           foreignKey({
@@ -70,36 +80,45 @@ export const crmWhatsappOutboundIntents = pgTable(
             name: "crm_whatsapp_outbound_intents_scoped_connection_fk",
           }),
           foreignKey({
-            columns: [
-              table.tenantId,
-              table.storeId,
-              table.connectionId,
-              table.sessionId,
-            ],
+            columns: [table.tenantId, table.storeId, table.threadId],
             foreignColumns: [
-              crmWhatsappSessions.tenantId,
-              crmWhatsappSessions.storeId,
-              crmWhatsappSessions.connectionId,
-              crmWhatsappSessions.id,
+              conversationThreads.tenantId,
+              conversationThreads.storeId,
+              conversationThreads.id,
             ],
-            name: "crm_whatsapp_outbound_intents_scoped_session_fk",
+            name: "crm_whatsapp_outbound_intents_scoped_thread_fk",
           }),
           foreignKey({
             columns: [
               table.tenantId,
               table.storeId,
-              table.connectionId,
-              table.sessionId,
-              table.messageId,
+              table.cycleId,
+              table.threadId,
             ],
             foreignColumns: [
-              crmWhatsappMessages.tenantId,
-              crmWhatsappMessages.storeId,
-              crmWhatsappMessages.connectionId,
-              crmWhatsappMessages.sessionId,
-              crmWhatsappMessages.id,
+              conversationCycles.tenantId,
+              conversationCycles.storeId,
+              conversationCycles.id,
+              conversationCycles.threadId,
             ],
-            name: "crm_whatsapp_outbound_intents_scoped_message_fk",
+            name: "crm_whatsapp_outbound_intents_semantic_cycle_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.messageId,
+              table.cycleId,
+              table.threadId,
+            ],
+            foreignColumns: [
+              canonicalMessages.tenantId,
+              canonicalMessages.storeId,
+              canonicalMessages.id,
+              canonicalMessages.cycleId,
+              canonicalMessages.threadId,
+            ],
+            name: "crm_whatsapp_outbound_intents_semantic_message_fk",
           }),
         ]
       : []),

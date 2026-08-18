@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import * as schema from "@lojaveiculosv2/db";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
@@ -17,7 +17,7 @@ const runRawDb = process.env.RUN_RAW_CRM_DB_TESTS === "true";
 describe.skipIf(!runRawDb)(
   "external bot canonical outbound Postgres sync",
   () => {
-    it("maps an independent canonical cycle and persists one replay-safe outbound", async () => {
+    it("persists one replay-safe outbound without legacy conversation rows", async () => {
       expect(process.env.DATABASE_URL).toBeTruthy();
       const sqlClient = postgres(process.env.DATABASE_URL ?? "", { max: 1 });
       const db = drizzle(sqlClient, { schema });
@@ -37,44 +37,23 @@ describe.skipIf(!runRawDb)(
             "Seed one store before raw CRM validation",
           ).toBeTruthy();
           if (!scope) throw new Error("Store scope is missing.");
-          await transaction
-            .update(schema.crmConnections)
-            .set({ status: "archived" })
-            .where(
-              and(
-                eq(schema.crmConnections.storeId, scope.storeId),
-                eq(schema.crmConnections.provider, "zapi"),
-              ),
-            );
 
           const connectionId = randomUUID();
-          const legacySessionId = randomUUID();
           const canonicalCycleId = randomUUID();
+          const effectId = randomUUID();
           const threadId = randomUUID();
-          const messageId = randomUUID();
           const providerMessageId = `raw-bot-${randomUUID()}`;
-          await transaction.insert(schema.crmConnections).values({
-            displayName: "Raw bot sync Z-API",
-            id: connectionId,
-            provider: "zapi",
-            status: "active",
-            storeId: scope.storeId,
-            tenantId: scope.tenantId,
-          });
           await transaction.insert(schema.providerConnections).values({
             broker: "direct",
             channel: "whatsapp",
-            displayName: "Raw bot sync Z-API",
+            displayName: "Raw canonical bot sync Z-API",
             id: connectionId,
+            metadata: {
+              capabilities: { inbound: true, outbound: true },
+              connected: true,
+            },
             provider: "zapi",
             state: "active",
-            storeId: scope.storeId,
-            tenantId: scope.tenantId,
-          });
-          await transaction.insert(schema.crmWhatsappSessions).values({
-            buyerPhone: `5511${Date.now().toString().slice(-9)}`,
-            connectionId,
-            id: legacySessionId,
             storeId: scope.storeId,
             tenantId: scope.tenantId,
           });
@@ -93,53 +72,68 @@ describe.skipIf(!runRawDb)(
             storeId: scope.storeId,
             tenantId: scope.tenantId,
           });
-          await transaction.insert(schema.crmWhatsappMessages).values({
-            connectionId,
-            content: "Provider-confirmed bot outbound",
-            direction: "OUTBOUND",
-            externalId: providerMessageId,
-            id: messageId,
-            senderOrigin: "bot_api",
-            senderType: "AI",
-            sessionId: legacySessionId,
-            status: "SENT",
-            storeId: scope.storeId,
-            tenantId: scope.tenantId,
-          });
           const effect: AuthorizedExternalBotEffect = {
             canonicalCycleId,
             command: {
               action: "message.send",
               payload: { text: "Provider-confirmed bot outbound" },
             },
-            effectId: randomUUID(),
+            connection: {
+              canonical: {
+                broker: "direct",
+                capabilities: ["inbound", "outbound"],
+                channel: "whatsapp",
+                connected: true,
+                degraded: false,
+                errorCode: null,
+                provider: "zapi",
+                readiness: { ready: true, reason: null, reasonCode: "ready" },
+                state: "active",
+              },
+              credentialsRef: {},
+              displayName: "Raw canonical bot sync Z-API",
+              externalConnectionId: null,
+              externalInstanceId: null,
+              id: connectionId,
+              metadata: {},
+              phone: null,
+              provider: "zapi",
+              status: "active",
+              storeId: scope.storeId as never,
+              tenantId: scope.tenantId as never,
+              webhookUrl: null,
+            },
+            effectId,
             expectedRevision: 0,
             idempotencyKey: `raw-idempotency-${randomUUID()}`,
             integrationId: randomUUID(),
-            legacySessionId,
-            legacySessionRevision: 0,
             modelVersion: "raw-test",
             provider: "zapi",
+            providerAddress: "5511999999999",
             providerConnectionId: connectionId,
+            requestDigest: `raw-request-${randomUUID()}`,
             storeId: scope.storeId,
             tenantId: scope.tenantId,
             threadId,
           };
+          const providerOperation = {
+            id: providerMessageId,
+            occurredAt: new Date(),
+          };
 
           await synchronizeExternalBotEffectOutcome(transaction, {
             effect,
-            legacyMessageId: messageId,
+            providerOperation,
           });
           await synchronizeExternalBotEffectOutcome(transaction, {
             effect,
-            legacyMessageId: messageId,
+            providerOperation,
           });
 
           const rows = await transaction
             .select({
               cycleId: schema.canonicalMessages.cycleId,
               metadata: schema.canonicalMessages.metadata,
-              provider: schema.canonicalMessages.provider,
               providerConnectionId:
                 schema.canonicalMessages.providerConnectionId,
               providerMessageId: schema.canonicalMessages.providerMessageId,
@@ -152,16 +146,15 @@ describe.skipIf(!runRawDb)(
           expect(rows).toHaveLength(1);
           expect(rows[0]).toMatchObject({
             cycleId: canonicalCycleId,
-            provider: "zapi",
             providerConnectionId: connectionId,
             providerMessageId,
             threadId,
           });
           expect(rows[0]?.metadata).toMatchObject({
+            external_bot_effect_id: effectId,
             external_bot_idempotency_key: effect.idempotencyKey,
-            legacy_session_id: legacySessionId,
+            provider_operation_id: providerMessageId,
           });
-          expect(canonicalCycleId).not.toBe(legacySessionId);
           throw rollback;
         });
       } catch (error) {

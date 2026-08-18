@@ -7,11 +7,8 @@ import {
   crmTags,
   crmWhatsappCampaignRecipients,
   crmWhatsappCampaigns,
-  crmWhatsappInterventionLedger,
-  crmWhatsappMessages,
   crmWhatsappOutboundIntents,
   crmWhatsappScheduledMessages,
-  crmWhatsappSessions,
   providerEvents,
 } from "./index.js";
 
@@ -30,8 +27,6 @@ const journal = JSON.parse(
 ) as { entries: { idx: number; tag: string }[] };
 
 const connectionReferences = [
-  { column: "connection_id", direct: true, table: crmWhatsappSessions },
-  { column: "connection_id", direct: true, table: crmWhatsappMessages },
   { column: "connection_id", direct: false, table: providerEvents },
   { column: "connection_id", direct: true, table: crmWebhookEffectOutbox },
   {
@@ -51,11 +46,6 @@ const connectionReferences = [
     table: crmWhatsappCampaignRecipients,
   },
   { column: "connection_id", direct: true, table: crmTags },
-  {
-    column: "connection_id",
-    direct: false,
-    table: crmWhatsappInterventionLedger,
-  },
 ] as const;
 
 const legacyConstraintNames = [
@@ -186,7 +176,7 @@ describe("canonical CRM connection foreign keys", () => {
   });
 
   it("registers the forward migration after the routing cutover", () => {
-    expect(journal.entries.at(-1)).toEqual({
+    expect(journal.entries.find(({ idx }) => idx === 57)).toEqual({
       breakpoints: true,
       idx: 57,
       tag: "0057_canonical_crm_connection_foreign_keys",

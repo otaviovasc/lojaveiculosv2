@@ -16,6 +16,7 @@ import { providerConnections } from "./authorization.js";
 import { conversationCycles, conversationThreads } from "./conversations.js";
 import {
   canonicalMessageDirection,
+  canonicalMessageOrigin,
   canonicalMessageSender,
   canonicalMessageStatus,
   transportProvider,
@@ -32,6 +33,7 @@ export const canonicalMessages = pgTable(
       .notNull()
       .references(() => conversationCycles.id),
     direction: canonicalMessageDirection("direction").notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     mediaType: varchar("media_type", { length: 120 }),
     mediaUrl: text("media_url"),
     messageType: varchar("message_type", { length: 40 })
@@ -48,6 +50,9 @@ export const canonicalMessages = pgTable(
     providerMessageId: varchar("provider_message_id", { length: 191 }),
     revision: revisionColumn(),
     sender: canonicalMessageSender("sender").notNull().default("unknown"),
+    senderOrigin: canonicalMessageOrigin("sender_origin")
+      .notNull()
+      .default("unknown"),
     status: canonicalMessageStatus("status").notNull().default("pending"),
     threadId: uuid("thread_id")
       .notNull()
@@ -106,6 +111,13 @@ export const canonicalMessages = pgTable(
       table.tenantId,
       table.storeId,
       table.id,
+    ),
+    uniqueIndex("canonical_messages_semantic_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+      table.cycleId,
+      table.threadId,
     ),
     uniqueIndex("canonical_messages_provider_id_unique")
       .on(table.providerConnectionId, table.providerMessageId)

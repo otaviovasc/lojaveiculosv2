@@ -120,7 +120,7 @@ export async function onboardOlxCrmConnection(
     connectionId: connection.id,
     storeId: input.storeId as never,
     tenantId: input.tenantId as never,
-    webhookUrl: `${input.canonicalApiOrigin}/api/v1/crm/whatsapp/webhooks/olx/${connection.id}/received`,
+    webhookUrl: `${input.canonicalApiOrigin}/api/v1/crm/webhooks/olx/${connection.id}/received`,
   });
   const leaseOwner = randomUUID();
   const now = new Date();
@@ -148,7 +148,7 @@ export async function onboardOlxCrmConnection(
     storeId: input.storeId as never,
     tenantId: input.tenantId as never,
   });
-  const base = `${input.canonicalApiOrigin}/api/v1/crm/whatsapp/webhooks/olx/${connection.id}`;
+  const base = `${input.canonicalApiOrigin}/api/v1/crm/webhooks/olx/${connection.id}`;
   const failures: Partial<Record<"chat" | "leads", OlxCapabilityFailure>> = {};
   const recordFailure = createOlxCapabilityFailureRecorder(context, {
     connectionId: connection.id,

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import {
   createOlxConnection,
@@ -41,6 +42,7 @@ describe("CRM OLX Chat effects", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-10T12:01:00.000Z"));
     const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const canonicalRepository = createMemoryCrmCanonicalInboundRepository();
     const botRepository = createMemoryCrmBotIntegrationRepository();
     await botRepository.upsertBotIntegration({
       enabled: true,
@@ -64,6 +66,7 @@ describe("CRM OLX Chat effects", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
+      crmCanonicalInboundRepository: canonicalRepository,
       crmOlxWebhookSecurity: olxSecurity(),
       crmRealtimePublisher: { publish: publish as never },
       crmWhatsappRepository: whatsappRepository,
@@ -80,21 +83,15 @@ describe("CRM OLX Chat effects", () => {
     await expect(recovered.json()).resolves.toMatchObject({
       status: "duplicate",
     });
-    const [session] = await whatsappRepository.listSessions({
-      limit: 10,
-      offset: 0,
-      storeId,
-      tenantId,
-    });
+    expect(canonicalRepository.snapshot().messages).toHaveLength(1);
     await expect(
-      whatsappRepository.listMessages({
+      whatsappRepository.listSessions({
         limit: 10,
         offset: 0,
-        sessionId: session!.id,
         storeId,
         tenantId,
       }),
-    ).resolves.toHaveLength(1);
+    ).resolves.toEqual([]);
     expect(publish).toHaveBeenCalledTimes(3);
     expect(dispatch).toHaveBeenCalledTimes(1);
   });

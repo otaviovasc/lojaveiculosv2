@@ -151,25 +151,34 @@ async function assertCrm(db) {
     select
       (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}) as leads,
       (select count(*)::int from crm_pipeline_stages where tenant_id = ${seedIds.primaryTenant}) as stages,
-      (select count(*)::int from crm_whatsapp_sessions where tenant_id = ${seedIds.primaryTenant}) as sessions,
-      (select count(*)::int from crm_whatsapp_messages where tenant_id = ${seedIds.primaryTenant}) as messages,
+      (select count(*)::int from crm_conversation_threads
+       where tenant_id = ${seedIds.primaryTenant}) as threads,
+      (select count(*)::int from crm_conversation_cycles
+       where tenant_id = ${seedIds.primaryTenant}) as cycles,
+      (select count(*)::int from crm_conversation_attendances
+       where tenant_id = ${seedIds.primaryTenant}) as attendances,
+      (select count(*)::int from crm_messages
+       where tenant_id = ${seedIds.primaryTenant}) as messages,
       (select count(*)::int from crm_whatsapp_campaigns where tenant_id = ${seedIds.primaryTenant}) as campaigns,
       (select count(*)::int from crm_whatsapp_scheduled_messages
        where tenant_id = ${seedIds.primaryTenant}) as schedules,
-      (select count(*)::int from crm_whatsapp_messages
-       where tenant_id = ${seedIds.primaryTenant} and direction = 'INBOUND'
-         and status = 'DELIVERED') as "inboundDelivered",
-      (select count(*)::int from crm_whatsapp_messages
-       where tenant_id = ${seedIds.primaryTenant} and direction = 'OUTBOUND'
-         and status = 'PENDING') as "outboundPending"
+      (select count(*)::int from crm_messages
+       where tenant_id = ${seedIds.primaryTenant} and direction = 'inbound'
+         and status = 'delivered') as "inboundDelivered",
+      (select count(*)::int from crm_messages
+       where tenant_id = ${seedIds.primaryTenant} and direction = 'outbound'
+         and status = 'pending') as "outboundPending"
   `;
   assert(
     row.leads >= 3 && row.stages >= 5,
     "CRM leads and pipeline stages are incomplete.",
   );
   assert(
-    row.sessions >= 3 && row.messages >= 9,
-    "WhatsApp read fixtures are incomplete.",
+    row.threads >= 3 &&
+      row.cycles >= 3 &&
+      row.attendances >= 3 &&
+      row.messages >= 9,
+    "Canonical CRM conversation fixtures are incomplete.",
   );
   assert(
     row.campaigns >= 2 && row.schedules >= 2,

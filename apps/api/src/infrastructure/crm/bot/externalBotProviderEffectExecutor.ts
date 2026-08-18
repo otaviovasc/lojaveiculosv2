@@ -1,14 +1,18 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "@lojaveiculosv2/db";
-import { createServiceContext } from "../../../shared/serviceContext.js";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import {
+  createServiceContext,
+  type ServiceContext,
+} from "../../../shared/serviceContext.js";
 import type { ServiceLogger } from "../../../shared/serviceLogger.js";
-import type { CrmServices } from "../../../features/crm/controllers/crmServices.js";
 import type { ExternalBotProviderEffectExecutor } from "./runExternalBotEffectWorker.js";
 import {
   ExternalBotCanonicalSyncIndeterminateError,
   loadAuthorizedExternalBotEffect,
   synchronizeExternalBotEffectOutcome,
+  type AuthorizedExternalBotEffect,
 } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
@@ -16,70 +20,123 @@ type Db = PostgresJsDatabase<typeof schema>;
 export function createExternalBotProviderEffectExecutor(input: {
   audit?: AuditSink;
   db: Db;
+  gateway: Pick<CrmWhatsappGateway, "sendText">;
   logger: ServiceLogger;
-  services: CrmServices;
 }): ExternalBotProviderEffectExecutor {
   return {
     execute: async ({ effectId }) => {
       const effect = await loadAuthorizedExternalBotEffect(input.db, effectId);
       if (!effect) return permanentFailure("authorization_revoked");
-      const context = createServiceContext({
-        actor: {
-          externalId: effect.integrationId,
-          id: effect.integrationId,
-          kind: "integration",
-        },
-        ...(input.audit ? { audit: input.audit } : {}),
-        logger: input.logger,
-        permissions: ["crm.whatsapp.send", "crm.whatsapp.toggle_intervention"],
-        request: {
-          idempotencyKey: effect.idempotencyKey,
-          requestId: `crm_bot_effect_${effect.effectId}`,
-        },
-        source: { component: "external-bot-effect-worker", service: "api" },
-        storeId: effect.storeId,
-        tenantId: effect.tenantId,
-      });
+      const context = effectContext(input, effect);
       try {
+        await auditEffect(context, effect, "attempted");
         if (effect.command.action === "message.send") {
-          const message = await input.services.sendWhatsappText(context, {
-            idempotencyKey: effect.idempotencyKey,
-            senderOrigin: "bot_api",
-            senderType: "AI",
-            sessionId: effect.legacySessionId,
-            text: effect.command.payload.text,
-          });
+          const providerOperation =
+            effect.providerOperation ??
+            toProviderOperation(
+              await input.gateway.sendText(effect.connection, {
+                phone: effect.providerAddress,
+                text: effect.command.payload.text,
+              }),
+            );
           await synchronizeExternalBotEffectOutcome(input.db, {
             effect,
-            legacyMessageId: message.id,
+            providerOperation,
+          });
+          await auditEffect(context, effect, "succeeded", {
+            providerOperationId: providerOperation.id,
           });
           return {
-            externalEffectId: message.externalId ?? message.id,
+            externalEffectId: providerOperation.id,
             kind: "succeeded",
           };
         }
-        await input.services.toggleWhatsappIntervention(context, {
-          commandId: effect.effectId,
-          enabled: true,
-          interventionId: effect.effectId,
-          reason: effect.command.payload.reason,
-          sessionId: effect.legacySessionId,
-          source: "ai_request",
-        });
         await synchronizeExternalBotEffectOutcome(input.db, { effect });
+        await auditEffect(context, effect, "succeeded");
         return { externalEffectId: effect.effectId, kind: "succeeded" };
       } catch (error) {
+        await auditEffect(context, effect, "failed", {
+          errorCode: failureCode(error),
+        });
         return providerFailure(error);
       }
     },
   };
 }
 
+function effectContext(
+  input: { audit?: AuditSink; logger: ServiceLogger },
+  effect: AuthorizedExternalBotEffect,
+) {
+  return createServiceContext({
+    actor: {
+      externalId: effect.integrationId,
+      id: effect.integrationId,
+      kind: "integration",
+    },
+    ...(input.audit ? { audit: input.audit } : {}),
+    logger: input.logger,
+    permissions: ["crm.whatsapp.send", "crm.whatsapp.toggle_intervention"],
+    request: {
+      idempotencyKey: effect.idempotencyKey,
+      requestId: `crm_bot_effect_${effect.effectId}`,
+    },
+    source: { component: "external-bot-effect-worker", service: "api" },
+    storeId: effect.storeId,
+    tenantId: effect.tenantId,
+  });
+}
+
+async function auditEffect(
+  context: ServiceContext,
+  effect: AuthorizedExternalBotEffect,
+  outcome: "attempted" | "failed" | "succeeded",
+  metadata: Record<string, string> = {},
+) {
+  await context.audit.record({
+    action: `crm.external_bot.effect.${effect.command.action}`,
+    actor: context.actor,
+    category: "data_change",
+    entityId: effect.effectId,
+    entityType: "provider_effect",
+    metadata: {
+      canonicalCycleId: effect.canonicalCycleId,
+      provider: effect.provider,
+      providerConnectionId: effect.providerConnectionId,
+      threadId: effect.threadId,
+      ...metadata,
+    },
+    outcome,
+    provider: {
+      name: effect.provider,
+      ...(metadata.providerOperationId
+        ? { requestId: metadata.providerOperationId }
+        : {}),
+    },
+    requestId: context.requestId,
+    storeId: context.storeId,
+    summary: `External bot ${effect.command.action} provider effect ${outcome}`,
+    tenantId: context.tenantId,
+  });
+}
+
+function toProviderOperation(input: {
+  externalId: string;
+  providerTimestamp: Date;
+}) {
+  return { id: input.externalId, occurredAt: input.providerTimestamp };
+}
+
+function failureCode(error: unknown) {
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : "effect_failed";
+}
+
 function providerFailure(
   error: unknown,
 ): Awaited<ReturnType<ExternalBotProviderEffectExecutor["execute"]>> {
   const record = error as { code?: unknown; status?: unknown };
-  const code = typeof record.code === "string" ? record.code : "effect_failed";
+  const code = failureCode(error);
   if (
     error instanceof ExternalBotCanonicalSyncIndeterminateError ||
     (error instanceof Error &&

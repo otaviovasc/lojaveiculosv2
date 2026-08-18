@@ -110,6 +110,59 @@ describe("OLX Chat setup retry route", () => {
     expect(configureChat).not.toHaveBeenCalled();
   });
 
+  it("retries a legacy indeterminate classification backed by a documented Chat 500 failure", async () => {
+    const configureChat = vi.fn(async () => ({
+      httpStatus: 200,
+      providerRequestId: "olx-operation-retry",
+    }));
+    const app = createTestApp({
+      crmConnectionCredentialVault: vault(),
+      crmConnectionRepository: createTestCrmConnectionRepository([
+        connection({
+          attemptCount: 1,
+          capabilities: {
+            chat: {
+              reason: "provider_outcome_indeterminate",
+              status: "error",
+            },
+            leads: { status: "active" },
+          },
+          failures: {
+            chat: {
+              code: "provider_outcome_indeterminate",
+              httpStatus: 500,
+              providerRequestId: null,
+              retryable: false,
+            },
+          },
+          lastErrorCode: "registration_failed",
+          status: "partial",
+        }),
+      ]),
+      olxCrmWebhookSetupProvider: {
+        configureChat,
+        configureLeads: vi.fn(),
+      },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/channel-connections/${connectionId}/olx-chat/setup/retry`,
+      { method: "POST" },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      diagnostics: {
+        httpStatus: 200,
+        providerRequestId: "olx-operation-retry",
+        retryable: false,
+      },
+      readiness: { ready: true },
+      setup: { attemptCount: 2, status: "configured" },
+    });
+    expect(configureChat).toHaveBeenCalledOnce();
+  });
+
   it("blocks retry while the provider outcome is indeterminate", async () => {
     const configureChat = vi.fn();
     const app = createTestApp({
@@ -170,7 +223,7 @@ function connection(
     status: "active",
     storeId: "store_1" as never,
     tenantId: "tenant_1" as never,
-    webhookUrl: `https://api.example.test/api/v1/crm/whatsapp/webhooks/olx/${connectionId}/received`,
+    webhookUrl: `https://api.example.test/api/v1/crm/webhooks/olx/${connectionId}/received`,
   };
 }
 

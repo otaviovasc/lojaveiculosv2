@@ -13,8 +13,6 @@ export * from "./schema/crmRetention.js";
 export * from "./schema/crmPipeline.js";
 export * from "./schema/crmWhatsapp.js";
 export * from "./schema/crmLeadOutcomes.js";
-export * from "./schema/crmWhatsappSessionCommands.js";
-export * from "./schema/crmWhatsappInterventions.js";
 export * from "./schema/crmWhatsappOutbound.js";
 export * from "./schema/crmWhatsappCampaigns.js";
 export * from "./schema/crmWhatsappScheduled.js";

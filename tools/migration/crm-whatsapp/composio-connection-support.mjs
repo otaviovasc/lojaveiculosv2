@@ -6,14 +6,12 @@ const channels = {
     authConfigEnv: "COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID",
     displayName: "Instagram oficial",
     id: "24000000-0000-4000-8000-000000000103",
-    provider: "composio_instagram",
     toolkit: "instagram",
   },
   whatsapp: {
     authConfigEnv: "COMPOSIO_WHATSAPP_AUTH_CONFIG_ID",
     displayName: "WhatsApp oficial",
     id: "24000000-0000-4000-8000-000000000102",
-    provider: "composio_whatsapp",
     toolkit: "whatsapp",
   },
 };
@@ -105,6 +103,8 @@ export function buildSeedConnection(channel, flags, env = process.env) {
     throw new Error("--graph-version must use vN.N.");
   }
   return {
+    broker: "composio",
+    channel,
     connectedAccountId,
     credentialsRef: {
       composio: { connectedAccountId },
@@ -112,11 +112,12 @@ export function buildSeedConnection(channel, flags, env = process.env) {
       mode: "composio",
     },
     displayName: config.displayName,
+    externalConnectionId: senderId.trim(),
     graphVersion,
     id: config.id,
     phone: channel === "whatsapp" ? (flags.phone ?? null) : null,
-    provider: config.provider,
-    senderId: senderId.trim(),
+    provider: "meta_cloud",
+    state: "sandbox",
     storeId: primaryStoreId,
     tenantId: primaryTenantId,
     toolkit: config.toolkit,
@@ -125,37 +126,70 @@ export function buildSeedConnection(channel, flags, env = process.env) {
 
 export async function seedLocalComposioConnection(db, connection) {
   const metadata = {
+    capabilities: {
+      inbound: true,
+      outbound: true,
+      scheduling: false,
+      templates: connection.channel === "whatsapp",
+    },
+    connected: false,
+    credentialsRef: connection.credentialsRef,
+    degraded: false,
+    errorCode: null,
     fixture: true,
     graphVersion: connection.graphVersion,
     officialOperation: false,
+    phone: connection.phone,
     purpose: "local_composio_rehearsal",
     safeToReset: true,
     source: "local_operator_command",
   };
-  await db.unsafe(
-    `INSERT INTO crm_connections
-      (id, credentials_ref, display_name, external_connection_id, metadata,
-       phone, provider, status, store_id, tenant_id)
-     VALUES ($1, $2::jsonb, $3, $4, $5::jsonb, $6, $7, 'sandbox', $8, $9)
-     ON CONFLICT (store_id, provider, display_name) DO UPDATE SET
-       credentials_ref=excluded.credentials_ref,
+  const rows = await db.unsafe(
+    `INSERT INTO crm_channel_connections
+      (id, broker, channel, display_name, external_connection_id, metadata,
+       provider, state, store_id, tenant_id)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10)
+     ON CONFLICT (tenant_id, store_id, id) DO UPDATE SET
+       display_name=excluded.display_name,
        external_connection_id=excluded.external_connection_id,
        metadata=excluded.metadata,
-       phone=excluded.phone,
-       status=excluded.status,
-       updated_at=now()`,
+       state=excluded.state,
+       updated_at=now()
+     WHERE crm_channel_connections.broker=excluded.broker
+       AND crm_channel_connections.channel=excluded.channel
+       AND crm_channel_connections.provider=excluded.provider
+     RETURNING id, broker, channel,
+       external_connection_id AS "externalConnectionId", provider, state,
+       store_id AS "storeId", tenant_id AS "tenantId"`,
     [
       connection.id,
-      JSON.stringify(connection.credentialsRef),
+      connection.broker,
+      connection.channel,
       connection.displayName,
-      connection.senderId,
+      connection.externalConnectionId,
       JSON.stringify(metadata),
-      connection.phone,
       connection.provider,
+      connection.state,
       connection.storeId,
       connection.tenantId,
     ],
   );
+  const seeded = rows[0];
+  if (
+    !seeded ||
+    seeded.id !== connection.id ||
+    seeded.broker !== connection.broker ||
+    seeded.channel !== connection.channel ||
+    seeded.provider !== connection.provider ||
+    seeded.state !== connection.state ||
+    seeded.storeId !== connection.storeId ||
+    seeded.tenantId !== connection.tenantId
+  ) {
+    throw new Error(
+      "Canonical CRM channel connection upsert was not confirmed.",
+    );
+  }
+  return seeded;
 }
 
 function readRecord(value) {

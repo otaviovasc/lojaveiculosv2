@@ -41,6 +41,9 @@ describe("sendWhatsappOutboundMessage failure classification", () => {
       );
     });
     const ports = {
+      crmAssigneeMembershipRepository: {
+        isActiveStoreMember: async () => true,
+      },
       crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
       crmConnectionRepository: createTestCrmConnectionRepository([
         connection(),

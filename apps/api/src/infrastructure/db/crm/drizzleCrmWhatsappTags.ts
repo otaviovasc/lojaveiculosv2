@@ -1,5 +1,5 @@
 import { and, asc, eq, ilike, isNull } from "drizzle-orm";
-import { crmTags, crmWhatsappSessionTags } from "@lojaveiculosv2/db";
+import { conversationThreadTags, crmTags } from "@lojaveiculosv2/db";
 import type {
   CreateCrmWhatsappTagInput,
   DeleteCrmWhatsappTagInput,
@@ -55,12 +55,12 @@ export async function deleteWhatsappTag(
   input: DeleteCrmWhatsappTagInput,
 ) {
   await db
-    .delete(crmWhatsappSessionTags)
+    .delete(conversationThreadTags)
     .where(
       and(
-        eq(crmWhatsappSessionTags.tagId, input.id),
-        eq(crmWhatsappSessionTags.storeId, input.storeId as never),
-        eq(crmWhatsappSessionTags.tenantId, input.tenantId as never),
+        eq(conversationThreadTags.tagId, input.id),
+        eq(conversationThreadTags.storeId, input.storeId as never),
+        eq(conversationThreadTags.tenantId, input.tenantId as never),
       ),
     );
   const [row] = await db

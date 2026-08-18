@@ -29,7 +29,6 @@ export type RunCrmRetentionBatchResult = Readonly<{
   cutoffs: ReturnType<typeof calculateCrmRetentionCutoffs>;
   dryRun: boolean;
   legalHoldSkipped: number;
-  legacyCoverageGaps: number;
   nextCursor: string | null;
   status: "blocked" | "completed";
   verified: boolean;
@@ -63,7 +62,6 @@ export async function runCrmRetentionBatch(
       cutoffs,
       dryRun,
       legalHoldSkipped: 0,
-      legacyCoverageGaps: readiness.legacyCoverageGaps,
       nextCursor: null,
       status: "blocked",
       verified: false,
@@ -106,7 +104,6 @@ export async function runCrmRetentionBatch(
     ...processed,
     cutoffs,
     dryRun,
-    legacyCoverageGaps: processed.legacyCoverageGaps,
     status: "completed",
   };
   await recordRetentionAudit(context, result, processed.auditId);
@@ -124,7 +121,6 @@ export async function runCrmRetentionBatch(
       ),
       hasNextCursor: processed.nextCursor !== null,
       legalHoldSkipped: processed.legalHoldSkipped,
-      legacyCoverageGaps: processed.legacyCoverageGaps,
       verified: processed.verified,
     }),
   );
@@ -170,7 +166,6 @@ async function recordRetentionAudit(
       dryRun: result.dryRun,
       eligibleCount: eligible,
       legalHoldSkipped: result.legalHoldSkipped,
-      legacyCoverageGaps: result.legacyCoverageGaps,
       permission: retentionPermission,
       status: result.status,
       unavailableRelationCount: result.blockedBy.length,

@@ -36,6 +36,9 @@ describe("CRM WhatsApp outbound idempotency auto-assignment", () => {
       providerTimestamp: new Date(),
     }));
     const ports = {
+      crmAssigneeMembershipRepository: {
+        isActiveStoreMember: async () => true,
+      },
       crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
       crmConnectionRepository: createTestCrmConnectionRepository([
         connection(),

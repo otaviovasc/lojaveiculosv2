@@ -1,4 +1,5 @@
 export * from "./crmCore/authorization.js";
+export * from "./crmCore/attendance.js";
 export * from "./crmCore/contacts.js";
 export * from "./crmCore/conversations.js";
 export * from "./crmCore/enums.js";
@@ -8,5 +9,6 @@ export * from "./crmCore/externalBot.js";
 export * from "./crmCore/facts.js";
 export * from "./crmCore/intelligence.js";
 export * from "./crmCore/integrationEvents.js";
+export * from "./crmCore/inbox.js";
 export * from "./crmCore/identityCandidates.js";
 export * from "./crmCore/messages.js";

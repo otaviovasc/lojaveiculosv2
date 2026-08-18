@@ -40,6 +40,9 @@ describe("CRM WhatsApp automatic outbound assignment", () => {
     const updateLead = vi.fn();
     const updateSession = vi.fn(async () => null);
     const ports: CrmServicePorts = {
+      crmAssigneeMembershipRepository: {
+        isActiveStoreMember: async () => true,
+      },
       crmRepository: { updateLead } as never,
       crmWhatsappRepository: {
         listSessions: vi.fn(async () => [concurrent]),
@@ -169,6 +172,9 @@ function transactionalPorts(
 ) {
   let transactionCalls = 0;
   const ports: CrmServicePorts & { transactionCalls: () => number } = {
+    crmAssigneeMembershipRepository: {
+      isActiveStoreMember: async () => true,
+    },
     crmRepository: {} as never,
     crmWhatsappRepository,
     transactionCalls: () => transactionCalls,

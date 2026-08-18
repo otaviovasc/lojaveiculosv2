@@ -7,18 +7,14 @@ export type CanonicalInboundIdentity = {
 
 export type CanonicalInboundMessageInput = {
   channel: CrmChannel;
-  connectionCapabilities: {
-    inbound: boolean;
-    outbound: boolean;
-    templates: boolean;
-  };
-  connectionDisplayName: string;
   connectionId: string;
   contactDisplayName: string | null;
   content: string;
+  customerChatId: string | null;
   externalThreadId: string;
   externalThreadAliases: readonly string[];
   identity: CanonicalInboundIdentity;
+  leadId: string | null;
   occurredAt: Date;
   mediaType: string | null;
   mediaUrl: string | null;
@@ -26,15 +22,27 @@ export type CanonicalInboundMessageInput = {
   metadata: Readonly<Record<string, unknown>>;
   provider: CrmTransportProvider;
   providerMessageId: string;
+  profilePhotoStorageKey: string | null;
+  profilePhotoUrl: string | null;
   secondaryPhone: string | null;
   sender: "customer" | "system";
+  senderOrigin: "customer" | "system";
+  sessionMetadata: Readonly<Record<string, unknown>>;
+  source: string | null;
   storeId: string;
   tenantId: string;
 };
 
 export type CanonicalInboundMessageResult = {
+  attendanceState:
+    | "bot_active"
+    | "handback_pending"
+    | "handoff_requested"
+    | "human_active"
+    | "human_claimed";
   contactId: string;
   created: boolean;
+  createdSession: boolean;
   cycleId: string;
   identityId: string;
   messageId: string;

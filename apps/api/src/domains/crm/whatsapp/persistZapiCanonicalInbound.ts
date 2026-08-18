@@ -1,40 +1,37 @@
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
-import type { CrmWhatsappSession } from "../ports/crmWhatsappRepository.js";
+import type { CrmLead } from "../ports/crmRepository.js";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 import { persistCanonicalInbound } from "../messaging/persistCanonicalInbound.js";
 import type { MirrorZapiWhatsappMediaResult } from "./mirrorZapiWhatsappMedia.js";
 import type { ParsedZapiInboundMessage } from "./parseZapiInboundMessage.js";
+import type { ingestZapiProfilePhoto } from "./zapiProfilePhotoIngestion.js";
+import type { parseZapiAdAttribution } from "./zapiAdAttribution.js";
 
 export async function persistZapiCanonicalInbound(
   ports: CrmServicePorts,
   input: {
     connection: CrmConnection;
+    attribution: ReturnType<typeof parseZapiAdAttribution>;
+    lead: CrmLead;
     media: MirrorZapiWhatsappMediaResult;
     message: ParsedZapiInboundMessage;
-    session: CrmWhatsappSession;
+    profilePhoto: Awaited<ReturnType<typeof ingestZapiProfilePhoto>>;
   },
 ) {
-  const { connection, media, message, session } = input;
+  const { attribution, connection, lead, media, message, profilePhoto } = input;
   const lidOnly = isZapiLidOnlyIdentity(message.phone, message.chatLid);
-  await persistCanonicalInbound(ports, {
+  return persistCanonicalInbound(ports, {
     channel: "whatsapp",
-    connectionCapabilities: {
-      inbound: true,
-      outbound: true,
-      templates: false,
-    },
-    connectionDisplayName: connection.displayName,
     connectionId: connection.id,
     contactDisplayName: message.buyerName ?? null,
     content: message.content,
+    customerChatId: message.chatLid ?? null,
     externalThreadId: lidOnly
       ? `lid:${message.chatLid}`
       : `phone:${message.phone}`,
     externalThreadAliases: [
       message.phone,
       ...(message.chatLid ? [message.chatLid] : []),
-      ...(session.channelExternalId ? [session.channelExternalId] : []),
-      ...(session.externalSessionId ? [session.externalSessionId] : []),
     ],
     identity: lidOnly
       ? {
@@ -42,6 +39,7 @@ export async function persistZapiCanonicalInbound(
           normalizedValue: `zapi:${connection.id}:${message.chatLid}`,
         }
       : { kind: "phone", normalizedValue: message.phone },
+    leadId: lead.id,
     occurredAt: message.providerTimestamp,
     mediaType: message.mediaType ?? null,
     mediaUrl: media.mediaUrl ?? null,
@@ -49,7 +47,15 @@ export async function persistZapiCanonicalInbound(
     metadata: media.metadata,
     provider: "zapi",
     providerMessageId: message.externalId,
+    profilePhotoStorageKey:
+      profilePhoto.status === "stored" ? profilePhoto.storageKey : null,
+    profilePhotoUrl:
+      profilePhoto.status === "stored" ? profilePhoto.profilePhotoUrl : null,
+    secondaryPhone: lidOnly ? null : message.phone,
     sender: "customer",
+    senderOrigin: "customer",
+    sessionMetadata: attribution ?? {},
+    source: "whatsapp",
     storeId: connection.storeId,
     tenantId: connection.tenantId,
   });

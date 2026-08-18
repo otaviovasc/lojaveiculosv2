@@ -50,7 +50,7 @@ export async function resolveOlxCatalogMapping(
     input.token.accessToken,
     `${catalogPath}/${encodeURIComponent(brand.code)}/${encodeURIComponent(model.code)}`,
   );
-  const version = exactEntry(versions, input.catalog.modelName);
+  const version = versionEntry(versions, input.catalog.modelName, model.name);
   if (!version) return unresolved("provider_version_not_found");
 
   return {
@@ -113,11 +113,56 @@ function exactEntry(entries: OlxCatalogEntry[], target: string) {
 function modelEntry(entries: OlxCatalogEntry[], target: string) {
   const normalizedTarget = compactName(target);
   return [...entries]
-    .filter((entry) => normalizedTarget.startsWith(compactName(entry.name)))
+    .filter((entry) => {
+      const normalizedEntry = compactName(entry.name);
+      return (
+        normalizedTarget === normalizedEntry ||
+        (normalizedTarget.startsWith(normalizedEntry) &&
+          isNameTokenPrefix(target, entry.name))
+      );
+    })
     .sort(
       (left, right) =>
         compactName(right.name).length - compactName(left.name).length,
     )[0];
+}
+
+function isNameTokenPrefix(target: string, prefix: string) {
+  const targetWords = nameWords(target);
+  const prefixWords = nameWords(prefix);
+  return (
+    prefixWords.length < targetWords.length &&
+    prefixWords.every((word, index) => word === targetWords[index])
+  );
+}
+
+function versionEntry(
+  entries: OlxCatalogEntry[],
+  target: string,
+  providerModelName: string,
+) {
+  const normalizedTarget = compactName(target);
+  const normalizedModel = compactName(providerModelName);
+  const acceptedNames = new Set([normalizedTarget]);
+  if (normalizedTarget.startsWith(normalizedModel)) {
+    const versionOnlyName = normalizedTarget.slice(normalizedModel.length);
+    if (versionOnlyName) acceptedNames.add(versionOnlyName);
+  }
+  const matches = entries.filter((entry) =>
+    acceptedNames.has(compactName(entry.name)),
+  );
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function nameWords(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, " ")
+    .trim()
+    .toUpperCase()
+    .split(/\s+/)
+    .filter(Boolean);
 }
 
 function compactName(value: string) {

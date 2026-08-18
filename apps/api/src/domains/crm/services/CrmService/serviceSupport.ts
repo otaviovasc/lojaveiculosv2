@@ -6,6 +6,7 @@ import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
 import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
+import type { CrmAssigneeMembershipRepository } from "../../ports/crmAssigneeMembershipRepository.js";
 import {
   createNoopCrmBotWebhookDispatcher,
   type CrmBotWebhookDispatcher,
@@ -78,6 +79,15 @@ export function requireCrmWhatsappScope(context: ServiceContext): {
 
 export function getCrmRepository(ports: CrmServicePorts): CrmRepository {
   return ports.crmRepository;
+}
+
+export function getCrmAssigneeMembershipRepository(
+  ports: CrmServicePorts,
+): CrmAssigneeMembershipRepository {
+  if (!ports.crmAssigneeMembershipRepository) {
+    throw new CrmScopeError("crmAssigneeMembershipRepository");
+  }
+  return ports.crmAssigneeMembershipRepository;
 }
 
 export function getCrmOutcomeRepository(

@@ -178,6 +178,6 @@ function connection(): CrmConnection {
     status: "active",
     storeId: "store-1" as never,
     tenantId: "tenant-1" as never,
-    webhookUrl: `https://api.example.test/api/v1/crm/whatsapp/webhooks/olx/${connectionId}/received`,
+    webhookUrl: `https://api.example.test/api/v1/crm/webhooks/olx/${connectionId}/received`,
   };
 }

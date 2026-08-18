@@ -7,13 +7,18 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 import { providerConnections } from "./crmCore/authorization.js";
-import { users, stores, tenants } from "./identity.js";
+import {
+  conversationCycles,
+  conversationThreads,
+} from "./crmCore/conversations.js";
+import { canonicalMessages } from "./crmCore/messages.js";
+import { storeMemberships, stores, tenants, users } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
-import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
 import { crmWhatsappCampaigns } from "./crmWhatsappCampaigns.js";
 
 const includeCrmScopeForeignKeys =
@@ -34,18 +39,15 @@ export const crmWhatsappScheduledMessages = pgTable(
     campaignRecipientKey: varchar("campaign_recipient_key", { length: 191 }),
     campaignSequence: integer("campaign_sequence"),
     connectionId: uuid("connection_id").notNull(),
+    cycleId: uuid("cycle_id").notNull(),
     createdByUserId: uuid("created_by_user_id").references(() => users.id),
     errorMessage: text("error_message"),
     metadata: jsonb("metadata").notNull().default({}),
     phone: varchar("phone", { length: 40 }).notNull(),
     scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
-    sentMessageId: uuid("sent_message_id").references(
-      () => crmWhatsappMessages.id,
-    ),
-    sessionId: uuid("session_id")
-      .notNull()
-      .references(() => crmWhatsappSessions.id),
+    sentMessageId: uuid("sent_message_id"),
+    threadId: uuid("thread_id").notNull(),
     status: crmWhatsappScheduledMessageStatus("status")
       .notNull()
       .default("pending"),
@@ -63,6 +65,11 @@ export const crmWhatsappScheduledMessages = pgTable(
       foreignColumns: [providerConnections.id],
       name: "crm_whatsapp_scheduled_messages_connection_fk",
     }),
+    foreignKey({
+      columns: [table.sentMessageId],
+      foreignColumns: [canonicalMessages.id],
+      name: "crm_whatsapp_scheduled_messages_sent_message_fk",
+    }),
     ...(includeCrmScopeForeignKeys
       ? [
           foreignKey({
@@ -73,6 +80,57 @@ export const crmWhatsappScheduledMessages = pgTable(
               providerConnections.id,
             ],
             name: "crm_whatsapp_scheduled_messages_scoped_connection_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.threadId],
+            foreignColumns: [
+              conversationThreads.tenantId,
+              conversationThreads.storeId,
+              conversationThreads.id,
+            ],
+            name: "crm_whatsapp_scheduled_messages_scoped_thread_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.cycleId,
+              table.threadId,
+            ],
+            foreignColumns: [
+              conversationCycles.tenantId,
+              conversationCycles.storeId,
+              conversationCycles.id,
+              conversationCycles.threadId,
+            ],
+            name: "crm_whatsapp_scheduled_messages_semantic_cycle_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.campaignId],
+            foreignColumns: [
+              crmWhatsappCampaigns.tenantId,
+              crmWhatsappCampaigns.storeId,
+              crmWhatsappCampaigns.id,
+            ],
+            name: "crm_whatsapp_scheduled_messages_scoped_campaign_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.createdByUserId],
+            foreignColumns: [
+              storeMemberships.tenantId,
+              storeMemberships.storeId,
+              storeMemberships.userId,
+            ],
+            name: "crm_whatsapp_scheduled_messages_scoped_creator_membership_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.sentMessageId],
+            foreignColumns: [
+              canonicalMessages.tenantId,
+              canonicalMessages.storeId,
+              canonicalMessages.id,
+            ],
+            name: "crm_whatsapp_scheduled_messages_scoped_sent_message_fk",
           }),
         ]
       : []),
@@ -85,6 +143,12 @@ export const crmWhatsappScheduledMessages = pgTable(
       table.status,
       table.scheduledAt,
     ),
-    index("crm_whatsapp_scheduled_messages_session_idx").on(table.sessionId),
+    index("crm_whatsapp_scheduled_messages_thread_idx").on(table.threadId),
+    index("crm_whatsapp_scheduled_messages_cycle_idx").on(table.cycleId),
+    uniqueIndex("crm_whatsapp_scheduled_messages_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
   ],
 );

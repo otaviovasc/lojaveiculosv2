@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   boolean,
   jsonb,
@@ -135,8 +136,18 @@ export const storeMemberships = pgTable(
       .references(() => users.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "store_memberships_store_tenant_fk",
+    }),
     index("store_memberships_role_template_id_idx").on(table.roleTemplateId),
     index("store_memberships_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("store_memberships_tenant_store_user_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.userId,
+    ),
     uniqueIndex("store_memberships_store_user_unique").on(
       table.storeId,
       table.userId,

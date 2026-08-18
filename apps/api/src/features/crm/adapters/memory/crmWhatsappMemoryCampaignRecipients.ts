@@ -57,6 +57,11 @@ export function listMemoryCampaignRecipients(
     )
     .filter(
       (recipient) =>
+        !input.connectionId || recipient.connectionId === input.connectionId,
+    )
+    .filter((recipient) => !input.phone || recipient.phone === input.phone)
+    .filter(
+      (recipient) =>
         !input.sessionId || recipient.sessionId === input.sessionId,
     )
     .filter(

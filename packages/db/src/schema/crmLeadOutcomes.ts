@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  foreignKey,
   index,
   pgEnum,
   pgTable,
@@ -14,7 +15,8 @@ import { stores, tenants } from "./identity.js";
 import { leads } from "./leads.js";
 import { sales } from "./sales.js";
 import { crmPipelineStages } from "./crmPipeline.js";
-import { crmWhatsappChannel, crmWhatsappSessions } from "./crmWhatsapp.js";
+import { conversationCycles } from "./crmCore/conversations.js";
+import { messagingChannel } from "./crmCore/enums.js";
 
 export const crmLeadOutcomeKind = pgEnum("crm_lead_outcome_kind", [
   "follow_up",
@@ -44,7 +46,7 @@ export const crmLeadOutcomes = pgTable(
     ...lifecycleColumns,
     actorId: varchar("actor_id", { length: 191 }).notNull(),
     actorKind: varchar("actor_kind", { length: 40 }).notNull(),
-    channel: crmWhatsappChannel("channel"),
+    channel: messagingChannel("channel"),
     commandId: varchar("command_id", { length: 191 }).notNull(),
     leadId: uuid("lead_id")
       .notNull()
@@ -54,9 +56,7 @@ export const crmLeadOutcomes = pgTable(
     nextPipelineStageId: uuid("next_pipeline_stage_id").references(
       () => crmPipelineStages.id,
     ),
-    originSessionId: uuid("origin_session_id").references(
-      () => crmWhatsappSessions.id,
-    ),
+    originCycleId: uuid("origin_cycle_id"),
     outcome: crmLeadOutcomeKind("outcome").notNull(),
     previousPipelineStageId: uuid("previous_pipeline_stage_id").references(
       () => crmPipelineStages.id,
@@ -78,6 +78,11 @@ export const crmLeadOutcomes = pgTable(
       "crm_lead_outcomes_loss_fields_consistent",
       sql`(${table.outcome} = 'lost' AND ${table.lossReason} IS NOT NULL) OR (${table.outcome} <> 'lost' AND ${table.lossReason} IS NULL AND ${table.lossNote} IS NULL)`,
     ),
+    foreignKey({
+      columns: [table.originCycleId],
+      foreignColumns: [conversationCycles.id],
+      name: "crm_lead_outcomes_origin_cycle_fk",
+    }),
     check(
       "crm_lead_outcomes_other_note_present",
       sql`${table.lossReason} <> 'other' OR NULLIF(BTRIM(${table.lossNote}), '') IS NOT NULL`,
@@ -88,8 +93,45 @@ export const crmLeadOutcomes = pgTable(
     ),
     check(
       "crm_lead_outcomes_origin_consistent",
-      sql`${table.outcome} = 'won' OR ${table.originSessionId} IS NOT NULL`,
+      sql`${table.outcome} = 'won' OR ${table.originCycleId} IS NOT NULL`,
     ),
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.originCycleId],
+      foreignColumns: [
+        conversationCycles.tenantId,
+        conversationCycles.storeId,
+        conversationCycles.id,
+      ],
+      name: "crm_lead_outcomes_scoped_origin_cycle_fk",
+    }),
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.leadId],
+      foreignColumns: [leads.tenantId, leads.storeId, leads.id],
+      name: "crm_lead_outcomes_scoped_lead_fk",
+    }),
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.saleId],
+      foreignColumns: [sales.tenantId, sales.storeId, sales.id],
+      name: "crm_lead_outcomes_scoped_sale_fk",
+    }),
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.nextPipelineStageId],
+      foreignColumns: [
+        crmPipelineStages.tenantId,
+        crmPipelineStages.storeId,
+        crmPipelineStages.id,
+      ],
+      name: "crm_lead_outcomes_scoped_next_pipeline_stage_fk",
+    }),
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.previousPipelineStageId],
+      foreignColumns: [
+        crmPipelineStages.tenantId,
+        crmPipelineStages.storeId,
+        crmPipelineStages.id,
+      ],
+      name: "crm_lead_outcomes_scoped_previous_pipeline_stage_fk",
+    }),
     uniqueIndex("crm_lead_outcomes_scope_command_unique").on(
       table.tenantId,
       table.storeId,

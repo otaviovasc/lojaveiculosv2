@@ -37,10 +37,10 @@ export async function assertWhatsappLeadCoverage(tx, data, groups, ids) {
     );
 }
 
-export function sessionRow(
+export function conversationRows(
   tx,
   group,
-  id,
+  idsForConversation,
   leadId,
   assignedUserId,
   messageCounts,
@@ -51,31 +51,62 @@ export function sessionRow(
     (total, member) => total + (messageCounts.get(member.id) ?? 0),
     0,
   );
-  return {
-    assigned_user_id: assignedUserId,
-    buyer_chat_lid: nullableString(row.buyer_chat_lid, 191),
-    buyer_name: nullableString(row.buyer_name, 191),
-    buyer_phone: group.buyerPhone,
-    channel: row.channel ?? "WHATSAPP",
-    channel_external_id: nullableString(row.channel_external_id, 191),
+  const sessionStatus = mapRepassesSessionStatus(row);
+  const createdAt = oldest(group.members, "created_at");
+  const updatedAt = newest(group.members, "updated_at") ?? createdAt;
+  const providerConnectionId = ids.crmChannelConnections.get(row.connection_id);
+  if (!providerConnectionId)
+    throw new Error(
+      `Missing WhatsApp connection mapping for Repasses session ${row.id}.`,
+    );
+  const attendance = attendanceRow(
+    row,
+    idsForConversation,
+    assignedUserId,
+    createdAt,
+    updatedAt,
+    ids,
+  );
+  const thread = {
+    channel: "whatsapp",
     channel_metadata: tx.json({
-      legacyRepasses: { originalChannel: row.original_channel ?? null },
+      legacyRepasses: {
+        originalChannel: row.original_channel ?? null,
+        sessionChannel: row.channel ?? "WHATSAPP",
+      },
     }),
-    connection_id: ids.crmConnections.get(row.connection_id),
-    created_at: oldest(group.members, "created_at"),
-    external_session_id: row.uuid,
+    created_at: createdAt,
+    customer_chat_id: nullableString(row.buyer_chat_lid, 191),
+    customer_display_name: nullableString(row.buyer_name, 191),
+    customer_phone: /^\d+$/.test(group.buyerPhone)
+      ? nullableString(group.buyerPhone, 40)
+      : null,
+    external_thread_id: nullableString(row.channel_external_id, 191),
+    id: idsForConversation.threadId,
+    last_message_at: newest(group.members, "last_message_at"),
+    metadata: tx.json({ unreadCount: 0 }),
+    profile_photo_url: nullableString(row.profile_photo_url),
+    provider_connection_id: providerConnectionId,
+    source: nullableString(row.source, 80),
+    state: threadState(sessionStatus),
+    store_id: ids.store,
+    tenant_id: ids.tenant,
+    updated_at: updatedAt,
+  };
+  const cycle = {
+    assigned_user_id: assignedUserId,
+    created_at: createdAt,
+    external_cycle_id: row.uuid,
     first_handled_at: row.first_handled_at,
     fresh_lead_at: row.fresh_lead_at,
-    human_takeover_at: row.human_takeover_at,
-    id,
-    last_assigned_at: row.last_assigned_at,
+    id: idsForConversation.cycleId,
     last_customer_read_at: row.last_customer_read_at,
     last_message_at: newest(group.members, "last_message_at"),
     last_message_content: row.last_message_content,
     last_read_at: row.last_read_at,
-    lead_id: leadId,
     message_count: messageCount,
     metadata: tx.json({
+      leadId,
       legacyRepasses: {
         conversationStep: row.conversation_step,
         deletedAt: row.deleted_at ?? null,
@@ -86,14 +117,71 @@ export function sessionRow(
         sourceUuid: row.uuid,
         status: row.status,
       },
+      sessionMetadata: {},
+      sessionStatus:
+        sessionStatus === "MINIBOT_ACTIVE" ? "MINIBOT_ACTIVE" : "ACTIVE",
     }),
-    profile_photo_url: nullableString(row.profile_photo_url),
-    source: nullableString(row.source, 80),
-    status: mapRepassesSessionStatus(row),
+    state: cycleState(sessionStatus),
     store_id: ids.store,
     tenant_id: ids.tenant,
-    updated_at: newest(group.members, "updated_at"),
+    thread_id: idsForConversation.threadId,
+    updated_at: updatedAt,
   };
+  return { attendance, cycle, thread };
+}
+
+function attendanceRow(
+  row,
+  conversationIds,
+  assignedUserId,
+  createdAt,
+  updatedAt,
+  ids,
+) {
+  const sessionStatus = mapRepassesSessionStatus(row);
+  const humanActive = sessionStatus === "HUMAN_TAKEOVER";
+  const state = humanActive
+    ? assignedUserId
+      ? "human_active"
+      : "handoff_requested"
+    : "bot_active";
+  const handoffAt = humanActive
+    ? (row.human_takeover_at ?? updatedAt ?? createdAt)
+    : null;
+  return {
+    assigned_at: assignedUserId
+      ? (row.last_assigned_at ?? handoffAt ?? createdAt)
+      : null,
+    assigned_user_id: assignedUserId,
+    changed_at: updatedAt,
+    created_at: createdAt,
+    cycle_id: conversationIds.cycleId,
+    handling_started_at:
+      state === "human_active"
+        ? (row.first_handled_at ?? handoffAt ?? createdAt)
+        : null,
+    handoff_requested_at: handoffAt,
+    history_started_at: createdAt,
+    id: conversationIds.attendanceId,
+    state,
+    state_version: 0,
+    store_id: ids.store,
+    tenant_id: ids.tenant,
+    thread_id: conversationIds.threadId,
+    updated_at: updatedAt,
+  };
+}
+
+function cycleState(status) {
+  if (status === "COMPLETED") return "completed";
+  if (status === "EXPIRED") return "expired";
+  return "active";
+}
+
+function threadState(status) {
+  if (status === "COMPLETED") return "resolved";
+  if (status === "EXPIRED") return "archived";
+  return "open";
 }
 
 export function buildAgentUserMap(agents, data, ids, accessEmails = new Map()) {

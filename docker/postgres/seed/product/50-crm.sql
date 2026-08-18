@@ -2,6 +2,31 @@
 -- Leads, visits, pipelines, and CRM sandbox references.
 -- Included by ../product-test-user.sql inside one transaction.
 
+-- Leads require their canonical pipeline scope before scenario enrichment in 55-crm-scenarios.sql.
+INSERT INTO crm_pipelines (
+  id, description, is_default, name, rotation_active, store_id, tenant_id
+)
+VALUES (
+  '25000000-0000-4000-8000-000000000001',
+  'Jornada da primeira resposta ate o fechamento, com reserva explicita.',
+  true,
+  'Vendas de veiculos',
+  true,
+  '66666666-6666-4666-8666-666666666666',
+  '77777777-7777-4777-8777-777777777777'
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO crm_pipeline_stages (
+  id, color, is_system, lead_status, name, pipeline_id, sla_days,
+  sort_order, status, store_id, tenant_id
+)
+VALUES
+  ('25100000-0000-4000-8000-000000000004', '#d97706', false, 'negotiating', 'Em negociacao', '25000000-0000-4000-8000-000000000001', 3, 40, 'open', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('25100000-0000-4000-8000-000000000005', '#ea580c', false, 'negotiating', 'Reserva em andamento', '25000000-0000-4000-8000-000000000001', 2, 50, 'open', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('25100000-0000-4000-8000-000000000006', '#16a34a', true, 'won', 'Venda concluida', '25000000-0000-4000-8000-000000000001', null, 60, 'won', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO leads (
   id,
   assigned_user_id,
@@ -10,15 +35,17 @@ INSERT INTO leads (
   buyer_phone,
   last_interaction_at,
   metadata,
+  pipeline_id,
+  pipeline_stage_id,
   source,
   status,
   store_id,
   tenant_id
 )
 VALUES
-  ('20000000-0000-4000-8000-000000000001', '04040404-0404-4404-8404-040404040404', 'ana.silva@example.com', 'Ana Silva', '+5511988881111', now() - interval '2 hours', '{"fixture": true, "score": 82, "channel": "site", "budgetCents": 13000000}'::jsonb, 'public_site', 'negotiating', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('20000000-0000-4000-8000-000000000002', '04040404-0404-4404-8404-040404040404', 'marcos.lima@example.com', 'Marcos Lima', '+5511977772222', now() - interval '1 day', '{"fixture": true, "score": 68, "channel": "whatsapp", "budgetCents": 10000000}'::jsonb, 'whatsapp', 'qualified', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('20000000-0000-4000-8000-000000000003', '03030303-0303-4303-8303-030303030303', 'carla.rocha@example.com', 'Carla Rocha', '+5511966663333', now() - interval '12 days', '{"fixture": true, "score": 91, "channel": "loja", "payment": "financing"}'::jsonb, 'manual', 'won', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+  ('20000000-0000-4000-8000-000000000001', '04040404-0404-4404-8404-040404040404', 'ana.silva@example.com', 'Ana Silva', '+5511988881111', now() - interval '2 hours', '{"fixture": true, "score": 82, "channel": "site", "budgetCents": 13000000}'::jsonb, '25000000-0000-4000-8000-000000000001', '25100000-0000-4000-8000-000000000004', 'public_site', 'negotiating', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('20000000-0000-4000-8000-000000000002', '04040404-0404-4404-8404-040404040404', 'marcos.lima@example.com', 'Marcos Lima', '+5511977772222', now() - interval '1 day', '{"fixture": true, "score": 68, "channel": "whatsapp", "budgetCents": 10000000}'::jsonb, '25000000-0000-4000-8000-000000000001', '25100000-0000-4000-8000-000000000005', 'whatsapp', 'qualified', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('20000000-0000-4000-8000-000000000003', '03030303-0303-4303-8303-030303030303', 'carla.rocha@example.com', 'Carla Rocha', '+5511966663333', now() - interval '12 days', '{"fixture": true, "score": 91, "channel": "loja", "payment": "financing"}'::jsonb, '25000000-0000-4000-8000-000000000001', '25100000-0000-4000-8000-000000000006', 'manual', 'won', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
 ON CONFLICT (id) DO UPDATE SET
   assigned_user_id = EXCLUDED.assigned_user_id,
   buyer_email = EXCLUDED.buyer_email,
@@ -26,6 +53,8 @@ ON CONFLICT (id) DO UPDATE SET
   buyer_phone = EXCLUDED.buyer_phone,
   last_interaction_at = EXCLUDED.last_interaction_at,
   metadata = EXCLUDED.metadata,
+  pipeline_id = EXCLUDED.pipeline_id,
+  pipeline_stage_id = EXCLUDED.pipeline_stage_id,
   source = EXCLUDED.source,
   status = EXCLUDED.status,
   store_id = EXCLUDED.store_id,
@@ -96,31 +125,24 @@ ON CONFLICT (id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
-INSERT INTO crm_connections (
+INSERT INTO crm_channel_connections (
   id,
-  credentials_ref,
+  broker,
+  channel,
   display_name,
   external_connection_id,
   external_instance_id,
   metadata,
-  phone,
   provider,
-  status,
+  state,
   store_id,
   tenant_id,
   webhook_url
 )
 VALUES (
   '24000000-0000-4000-8000-000000000101',
-  '{
-    "mode": "env",
-    "env": {
-      "apiBaseUrl": "CRM_ZAPI_API_BASE_URL",
-      "instanceId": "CRM_ZAPI_TEST_INSTANCE_ID",
-      "instanceToken": "CRM_ZAPI_TEST_INSTANCE_TOKEN",
-      "clientToken": "CRM_ZAPI_TEST_CLIENT_TOKEN"
-    }
-  }'::jsonb,
+  'direct',
+  'whatsapp',
   'ZAPI Test Connection',
   null,
   null,
@@ -133,22 +155,24 @@ VALUES (
     "safeToReset": true,
     "source": "local_seed"
   }'::jsonb,
-  null,
   'zapi',
   'sandbox',
   '66666666-6666-4666-8666-666666666666',
   '77777777-7777-4777-8777-777777777777',
   null
 )
-ON CONFLICT (store_id, provider)
-WHERE status <> 'archived' AND provider IN ('zapi', 'composio_whatsapp')
+ON CONFLICT (id)
 DO UPDATE SET
-  credentials_ref = EXCLUDED.credentials_ref,
+  broker = EXCLUDED.broker,
+  channel = EXCLUDED.channel,
+  display_name = EXCLUDED.display_name,
   external_connection_id = EXCLUDED.external_connection_id,
   external_instance_id = EXCLUDED.external_instance_id,
   metadata = EXCLUDED.metadata,
-  phone = EXCLUDED.phone,
-  status = EXCLUDED.status,
+  provider = EXCLUDED.provider,
+  state = EXCLUDED.state,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
   webhook_url = EXCLUDED.webhook_url,
   updated_at = now();
 
@@ -156,10 +180,11 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
-    FROM crm_connections
+    FROM crm_channel_connections
     WHERE id = '24000000-0000-4000-8000-000000000101'
       AND store_id = '66666666-6666-4666-8666-666666666666'
       AND provider = 'zapi'
+      AND channel = 'whatsapp'
       AND display_name = 'ZAPI Test Connection'
   ) THEN
     RAISE EXCEPTION 'seed CRM collision: the shared ZAPI fixture must use its canonical connection id; run pnpm run db:reset';

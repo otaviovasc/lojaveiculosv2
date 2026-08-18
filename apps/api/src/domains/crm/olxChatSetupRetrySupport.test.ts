@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildOlxChatCallbackUrl } from "./olxChatSetupRetrySupport.js";
 
 const connectionId = "26000000-0000-4000-8000-000000000001";
-const canonicalPath = `/api/v1/crm/whatsapp/webhooks/olx/${connectionId}/received`;
+const canonicalPath = `/api/v1/crm/webhooks/olx/${connectionId}/received`;
 
 describe("buildOlxChatCallbackUrl", () => {
   it("reconstructs the callback from the server-owned canonical origin", () => {

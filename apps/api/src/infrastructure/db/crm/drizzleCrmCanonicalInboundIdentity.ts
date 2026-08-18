@@ -27,22 +27,10 @@ export async function resolveCanonicalIdentity(
   db: DrizzleCrmClient,
   input: CanonicalInboundMessageInput,
 ) {
-  const primary = await findVerifiedIdentity(
-    db,
-    input,
-    input.identity.kind,
-    input.identity.normalizedValue,
-  );
-  if (primary) {
-    if (!primary.contactId)
-      throw new Error("Verified canonical CRM identity has no contact.");
-    await observeSecondaryPhone(db, input, primary.contactId);
-    return { contactId: primary.contactId, identityId: primary.id };
-  }
-  const observed = await findObservedIdentity(db, input);
-  if (observed) {
-    await observeSecondaryPhone(db, input, observed.contactId);
-    return { contactId: observed.contactId, identityId: observed.identityId };
+  const existing = await findCanonicalIdentity(db, input);
+  if (existing) {
+    await observeSecondaryPhone(db, input, existing.contactId);
+    return existing;
   }
   const contactId = await createContact(db, input);
   if (!contactId) throw new Error("Canonical CRM contact was not persisted.");
@@ -63,6 +51,28 @@ export async function resolveCanonicalIdentity(
   await addCandidate(db, input, identity.id, contactId);
   await observeSecondaryPhone(db, input, contactId);
   return { contactId, identityId: identity.id };
+}
+
+export async function findCanonicalIdentity(
+  db: DrizzleCrmClient,
+  input: CanonicalInboundMessageInput,
+) {
+  const primary = await findVerifiedIdentity(
+    db,
+    input,
+    input.identity.kind,
+    input.identity.normalizedValue,
+  );
+  if (primary) {
+    if (!primary.contactId)
+      throw new Error("Verified canonical CRM identity has no contact.");
+    return { contactId: primary.contactId, identityId: primary.id };
+  }
+  const observed = await findObservedIdentity(db, input);
+  if (observed) {
+    return { contactId: observed.contactId, identityId: observed.identityId };
+  }
+  return null;
 }
 
 async function findObservedIdentity(

@@ -28,7 +28,6 @@ export function createRuntimeCrmFinancialProductTransactionRunner(
         env,
         realtimePublisher,
         objectStorage,
-        undefined,
         olxWebhookSecurity,
       );
       const financePorts = createDrizzleFinancePorts(

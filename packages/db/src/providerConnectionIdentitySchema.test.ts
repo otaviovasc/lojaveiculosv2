@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import { crmConnections, integrationAccounts } from "./index.js";
+import { integrationAccounts, providerConnections } from "./index.js";
 
 const migration = readFileSync(
   new URL(
@@ -28,13 +28,15 @@ describe("provider connection identity boundaries", () => {
     );
   });
 
-  it("keeps active OLX accounts and Z-API instances unique", () => {
+  it("keeps canonical transport identities scoped and unique", () => {
     expect(
-      getTableConfig(crmConnections).indexes.map(({ config }) => config.name),
+      getTableConfig(providerConnections).indexes.map(
+        ({ config }) => config.name,
+      ),
     ).toEqual(
       expect.arrayContaining([
-        "crm_connections_provider_external_active_unique",
-        "crm_connections_provider_instance_active_unique",
+        "provider_connections_scope_id_unique",
+        "provider_connections_external_unique",
       ]),
     );
   });

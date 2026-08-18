@@ -82,18 +82,16 @@ describe("product database schema contract", () => {
     });
   });
 
-  it("supports legacy and official CRM messaging providers and channels", () => {
-    expect(schema.crmConnectionProvider.enumValues).toEqual([
+  it("supports canonical CRM messaging providers and channels", () => {
+    expect(schema.transportProvider.enumValues).toEqual([
+      "meta_cloud",
       "zapi",
-      "composio_whatsapp",
-      "composio_instagram",
-      "olx_chat",
+      "olx",
     ]);
-    expect(schema.crmWhatsappChannel.enumValues).toEqual([
-      "OLX_CHAT",
-      "WEB_CHAT",
-      "WHATSAPP",
-      "INSTAGRAM",
+    expect(schema.messagingChannel.enumValues).toEqual([
+      "whatsapp",
+      "instagram",
+      "olx_chat",
     ]);
     expect(schema.leadSource.enumValues).toContain("instagram");
   });

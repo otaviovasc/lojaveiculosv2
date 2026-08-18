@@ -47,7 +47,6 @@ const nonEntrypointFiles = new Set([
   "routingErrors.ts",
   "routingReadModels.ts",
   "routingResolution.ts",
-  "whatsappBotCloseAction.ts",
   "whatsappMessageActionSupport.ts",
   "whatsappQuickMessageMedia.ts",
   "whatsappQuickMessageModels.ts",

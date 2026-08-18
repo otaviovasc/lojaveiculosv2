@@ -92,16 +92,6 @@ export function registerExternalBotRoutes(
     }),
   );
 
-  crmFeature.post("/bot/events", async (context) =>
-    handleExternalBot(context, async () => {
-      return jsonApiError(context, {
-        code: "CRM_BOT_EVENT_ISSUANCE_INTERNAL_ONLY",
-        message: "Bot events are issued only by canonical CRM workflows.",
-        status: 410,
-      });
-    }),
-  );
-
   crmFeature.post("/bot/actions", async (context) =>
     handleExternalBot(context, async () => {
       const manager = requireManager(options.manager);

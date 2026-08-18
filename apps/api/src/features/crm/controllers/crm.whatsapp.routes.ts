@@ -24,7 +24,6 @@ import {
 import { registerCrmWhatsappConnectionRoutes } from "./crm.whatsapp.connectionRoutes.js";
 import { registerCrmWhatsappCampaignRoutes } from "./crm.whatsapp.campaignRoutes.js";
 import { registerCrmWhatsappExtrasRoutes } from "./crm.whatsapp.extrasRoutes.js";
-import { registerCrmWhatsappIntegrationRoutes } from "./crm.whatsapp.integrationRoutes.js";
 import {
   cleanWhatsappSessionCountsQuery,
   cleanWhatsappSessionsQuery,
@@ -225,12 +224,6 @@ export function registerCrmWhatsappApiRoutes(
   registerCrmWhatsappSessionRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappCampaignRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappScheduledRoutes(crmFeature, { createContext, services });
-  registerCrmWhatsappIntegrationRoutes(crmFeature, {
-    createContext,
-    createWebhookContext,
-    ...(resolveBotEntitlements ? { resolveBotEntitlements } : {}),
-    services,
-  });
   registerCrmWhatsappExtrasRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappWebhookEventRoutes(crmFeature, {
     createContext,

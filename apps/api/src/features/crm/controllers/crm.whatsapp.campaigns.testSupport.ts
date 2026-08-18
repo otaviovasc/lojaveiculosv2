@@ -2,6 +2,7 @@ import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { expect, vi } from "vitest";
 import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmRoutingRepositories } from "../adapters/memory/crmRoutingRepository.js";
 import {
   createConfiguredZapiTestConnection,
   withTestZapiWebhookToken,
@@ -16,10 +17,26 @@ export function createCampaignTestApp(
   whatsappRepository: CrmWhatsappRepository,
   permissions?: PermissionKey[],
 ) {
+  const connections = createMemoryCrmConnectionRepository([
+    createZapiConnection(),
+  ]);
+  const routing = createMemoryCrmRoutingRepositories({
+    policies: [
+      {
+        botConnectionId: null,
+        botMode: "disabled",
+        channel: "whatsapp",
+        defaultConnectionId: campaignConnectionId,
+        id: "campaign-whatsapp-default",
+        storeId: campaignStoreId,
+        tenantId: campaignTenantId,
+      },
+    ],
+  });
   return createTestApp({
-    crmConnectionRepository: createMemoryCrmConnectionRepository([
-      createZapiConnection(),
-    ]),
+    crmConnectionRepository: connections,
+    crmRoutingConnectionRepository: connections.routingConnectionRepository,
+    crmRoutingPolicyRepository: routing.policyRepository,
     crmWhatsappGateway: { sendText: createSendTextSpy() },
     crmWhatsappRepository: whatsappRepository,
     ...(permissions ? { permissions } : {}),
@@ -167,6 +184,7 @@ function createSendTextSpy() {
 function createZapiConnection() {
   return createConfiguredZapiTestConnection({
     id: campaignConnectionId,
+    overrides: { metadata: { providerConnected: true } },
     storeId: campaignStoreId,
     tenantId: campaignTenantId,
   });

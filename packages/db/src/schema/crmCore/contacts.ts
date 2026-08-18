@@ -11,7 +11,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns, softDeleteColumns } from "../_shared.js";
-import { stores, tenants, users } from "../identity.js";
+import { storeMemberships, stores, tenants, users } from "../identity.js";
 import { vehicleListings, vehicleUnits } from "../inventory.js";
 import {
   acquisitionSource,
@@ -155,6 +155,15 @@ export const opportunities = pgTable(
   },
   (table) => [
     scopedStoreForeignKey(table, "opportunities_store_tenant_fk"),
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.assignedUserId],
+      foreignColumns: [
+        storeMemberships.tenantId,
+        storeMemberships.storeId,
+        storeMemberships.userId,
+      ],
+      name: "opportunities_scoped_assignee_membership_fk",
+    }),
     foreignKey({
       columns: [table.tenantId, table.storeId, table.contactId],
       foreignColumns: [contacts.tenantId, contacts.storeId, contacts.id],

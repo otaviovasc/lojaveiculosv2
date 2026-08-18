@@ -68,14 +68,36 @@ async function findUnrepliedRecipient(
   repository: CrmWhatsappRepository,
   session: CrmWhatsappSession,
 ) {
-  const candidates = await repository.listCampaignRecipients({
+  const cycleCandidates = await repository.listCampaignRecipients({
     limit: 10,
     sessionId: session.id,
     statuses: ["sent"],
     storeId: session.storeId,
     tenantId: session.tenantId,
   });
-  return candidates.find((recipient) => !recipient.replyReceivedAt) ?? null;
+  const cycleRecipients = cycleCandidates.filter(
+    (recipient) => !recipient.replyReceivedAt,
+  );
+  if (cycleRecipients.length === 1) return cycleRecipients[0];
+  if (cycleRecipients.length > 1) return null;
+
+  // A reply may start a new cycle for an existing conversation thread. The
+  // canonical DB resolves cycles through that thread, but bounded in-memory
+  // adapters and recovery paths may only have the stable route/customer pair.
+  // Attribute only a unique unreplied recipient so concurrent campaigns for
+  // the same customer can never be guessed.
+  const routeCandidates = await repository.listCampaignRecipients({
+    connectionId: session.connectionId,
+    limit: 2,
+    phone: session.buyerPhone,
+    statuses: ["sent"],
+    storeId: session.storeId,
+    tenantId: session.tenantId,
+  });
+  const unreplied = routeCandidates.filter(
+    (recipient) => !recipient.replyReceivedAt,
+  );
+  return unreplied.length === 1 ? unreplied[0] : null;
 }
 
 async function applyCampaignReply(
@@ -114,7 +136,12 @@ async function applyCampaignReply(
     repliedDelta: 1,
     scheduledDelta: secondary ? 1 : 0,
   });
-  await applyReplyTagTransition(repository, campaign, input.session);
+  await applyReplyTagTransition(
+    repository,
+    campaign,
+    input.session,
+    recipient.sessionId,
+  );
 }
 
 async function createSecondarySchedule(
@@ -150,10 +177,11 @@ async function applyReplyTagTransition(
   repository: CrmWhatsappRepository,
   campaign: CrmWhatsappCampaign,
   session: CrmWhatsappSession,
+  recipientSessionId: string,
 ) {
   if (campaign.initialTagId) {
     await repository.removeSessionTag({
-      sessionId: session.id,
+      sessionId: recipientSessionId,
       storeId: session.storeId,
       tagId: campaign.initialTagId,
       tenantId: session.tenantId,
@@ -161,7 +189,7 @@ async function applyReplyTagTransition(
   }
   if (campaign.replyTagId) {
     await repository.addSessionTag({
-      sessionId: session.id,
+      sessionId: recipientSessionId,
       storeId: session.storeId,
       tagId: campaign.replyTagId,
       tenantId: session.tenantId,

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  createResetTruncateStatements,
   createTruncateStatement,
   partitionProductTables,
+  selectAppendOnlyTruncateTriggers,
 } from "./resetPostgresAdapters.js";
 
 describe("PostgreSQL environment reset", () => {
@@ -30,20 +30,21 @@ describe("PostgreSQL environment reset", () => {
     expect(() => createTruncateStatement([])).toThrow("No PostgreSQL tables");
   });
 
-  it("temporarily bypasses only the intervention ledger truncate guard", () => {
+  it("selects only the canonical append-only truncate guard", () => {
     expect(
-      createResetTruncateStatements([
-        "crm_whatsapp_intervention_ledger",
+      selectAppendOnlyTruncateTriggers([
+        "crm_conversation_attendance_events",
         "stores",
       ]),
     ).toEqual([
-      'ALTER TABLE "public"."crm_whatsapp_intervention_ledger" DISABLE TRIGGER "crm_whatsapp_intervention_ledger_no_truncate_trigger"',
-      'TRUNCATE TABLE "public"."crm_whatsapp_intervention_ledger", "public"."stores" RESTART IDENTITY',
-      'ALTER TABLE "public"."crm_whatsapp_intervention_ledger" ENABLE TRIGGER "crm_whatsapp_intervention_ledger_no_truncate_trigger"',
+      {
+        table: "crm_conversation_attendance_events",
+        trigger: "crm_conversation_attendance_events_no_truncate_trigger",
+      },
     ]);
-
-    expect(createResetTruncateStatements(["audit_events"])).toEqual([
-      'TRUNCATE TABLE "public"."audit_events" RESTART IDENTITY',
-    ]);
+    expect(
+      partitionProductTables(["crm_conversation_attendance_events"]).resettable,
+    ).toEqual(["crm_conversation_attendance_events"]);
+    expect(selectAppendOnlyTruncateTriggers(["audit_events"])).toEqual([]);
   });
 });

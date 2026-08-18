@@ -6,12 +6,17 @@ import {
 } from "./resetProductBaseline.js";
 
 const VEHICLE_CATALOG_PREFIX = "vehicle_catalog_";
-const INTERVENTION_LEDGER_TABLE = "crm_whatsapp_intervention_ledger";
-const INTERVENTION_LEDGER_NO_TRUNCATE_TRIGGER =
-  "crm_whatsapp_intervention_ledger_no_truncate_trigger";
 
 type TableNameRow = { table_name: string };
 type CountRow = { count: number };
+type TriggerRow = { present: boolean };
+
+const appendOnlyTruncateTriggers = [
+  {
+    table: "crm_conversation_attendance_events",
+    trigger: "crm_conversation_attendance_events_no_truncate_trigger",
+  },
+] as const;
 
 export function createProductPostgresResetAdapter(
   databaseUrl: string,
@@ -78,21 +83,12 @@ export function createTruncateStatement(tableNames: readonly string[]): string {
     .join(", ")} RESTART IDENTITY`;
 }
 
-export function createResetTruncateStatements(
+export function selectAppendOnlyTruncateTriggers(
   tableNames: readonly string[],
-): string[] {
-  const truncateStatement = createTruncateStatement(tableNames);
-  if (!tableNames.includes(INTERVENTION_LEDGER_TABLE)) {
-    return [truncateStatement];
-  }
-
-  const ledger = `"public".${quoteIdentifier(INTERVENTION_LEDGER_TABLE)}`;
-  const trigger = quoteIdentifier(INTERVENTION_LEDGER_NO_TRUNCATE_TRIGGER);
-  return [
-    `ALTER TABLE ${ledger} DISABLE TRIGGER ${trigger}`,
-    truncateStatement,
-    `ALTER TABLE ${ledger} ENABLE TRIGGER ${trigger}`,
-  ];
+): (typeof appendOnlyTruncateTriggers)[number][] {
+  return appendOnlyTruncateTriggers.filter(({ table }) =>
+    tableNames.includes(table),
+  );
 }
 
 async function inspectProductDatabase(sql: Sql) {
@@ -163,8 +159,28 @@ async function truncateTables(
   sql: TransactionSql,
   tableNames: readonly string[],
 ): Promise<void> {
-  for (const statement of createResetTruncateStatements(tableNames)) {
-    await sql.unsafe(statement);
+  const disabledTriggers: (typeof appendOnlyTruncateTriggers)[number][] = [];
+  for (const trigger of selectAppendOnlyTruncateTriggers(tableNames)) {
+    const [row] = await sql<TriggerRow[]>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_trigger
+        WHERE tgname = ${trigger.trigger}
+          AND tgrelid = to_regclass(${`public.${trigger.table}`})
+          AND NOT tgisinternal
+      ) AS present
+    `;
+    if (!row?.present) continue;
+    await sql.unsafe(
+      `ALTER TABLE "public".${quoteIdentifier(trigger.table)} DISABLE TRIGGER ${quoteIdentifier(trigger.trigger)}`,
+    );
+    disabledTriggers.push(trigger);
+  }
+  await sql.unsafe(createTruncateStatement(tableNames));
+  for (const trigger of disabledTriggers) {
+    await sql.unsafe(
+      `ALTER TABLE "public".${quoteIdentifier(trigger.table)} ENABLE TRIGGER ${quoteIdentifier(trigger.trigger)}`,
+    );
   }
 }
 

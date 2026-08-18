@@ -196,17 +196,14 @@ function postLead(
   connectionId: string,
   payload: Record<string, unknown>,
 ) {
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/olx/${connectionId}/leads`,
-    {
-      body: JSON.stringify(payload),
-      headers: {
-        authorization: `Bearer ${olxWebhookSecret}`,
-        "content-type": "application/json",
-      },
-      method: "POST",
+  return app.request(`/api/v1/crm/webhooks/olx/${connectionId}/leads`, {
+    body: JSON.stringify(payload),
+    headers: {
+      authorization: `Bearer ${olxWebhookSecret}`,
+      "content-type": "application/json",
     },
-  );
+    method: "POST",
+  });
 }
 
 function validPayload() {

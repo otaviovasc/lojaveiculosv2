@@ -1,9 +1,11 @@
 import type { CrmWhatsappSession } from "../ports/crmWhatsappRepository.js";
 import {
+  getCrmAssigneeMembershipRepository,
   getCrmRepository,
   getCrmWhatsappRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
+import { AuthorizationError } from "../../../shared/authorization.js";
 import { reloadScopedWhatsappSession } from "../services/CrmWhatsapp/executeWhatsappSessionCommand.js";
 
 export type WhatsappSessionAssignmentResult = {
@@ -20,6 +22,20 @@ export async function applyWhatsappSessionAssignment(input: {
   ports: CrmServicePorts;
   scope: { storeId: string; tenantId: string };
 }): Promise<WhatsappSessionAssignmentResult> {
+  if (input.assignedUserId !== null) {
+    const eligible = await getCrmAssigneeMembershipRepository(
+      input.ports,
+    ).isActiveStoreMember({
+      storeId: input.scope.storeId as never,
+      tenantId: input.scope.tenantId as never,
+      userId: input.assignedUserId as never,
+    });
+    if (!eligible) {
+      throw new AuthorizationError(
+        "CRM assignee is not available for this store.",
+      );
+    }
+  }
   let current = input.initialSession;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     if (current.assignedUserId === input.assignedUserId) {

@@ -99,9 +99,9 @@ describe("retryOlxChatSetup failure persistence", () => {
         new CrmConnectionSetupProviderError(
           "OLX webhook registration outcome is indeterminate.",
           "provider_outcome_indeterminate",
-          500,
+          502,
           undefined,
-          "olx-operation-500",
+          "olx-operation-502",
           false,
         ),
       )
@@ -137,8 +137,8 @@ describe("retryOlxChatSetup failure persistence", () => {
       );
     await expect(retry()).rejects.toMatchObject({
       code: "provider_outcome_indeterminate",
-      httpStatus: 500,
-      providerRequestId: "olx-operation-500",
+      httpStatus: 502,
+      providerRequestId: "olx-operation-502",
       retryable: false,
     });
 
@@ -154,8 +154,8 @@ describe("retryOlxChatSetup failure persistence", () => {
           failures: {
             chat: {
               code: "provider_outcome_indeterminate",
-              httpStatus: 500,
-              providerRequestId: "olx-operation-500",
+              httpStatus: 502,
+              providerRequestId: "olx-operation-502",
               retryable: false,
             },
           },

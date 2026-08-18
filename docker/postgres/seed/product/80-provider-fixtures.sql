@@ -98,7 +98,7 @@ VALUES
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
   )
-ON CONFLICT (store_id, provider) DO UPDATE SET
+ON CONFLICT (store_id, provider) WHERE archived_at IS NULL DO UPDATE SET
   config = EXCLUDED.config,
   status = EXCLUDED.status,
   tenant_id = EXCLUDED.tenant_id,

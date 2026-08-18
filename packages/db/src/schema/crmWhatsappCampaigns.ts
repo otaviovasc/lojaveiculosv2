@@ -13,7 +13,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { crmTags } from "./crm.js";
 import { providerConnections } from "./crmCore/authorization.js";
-import { crmWhatsappSessions } from "./crmWhatsapp.js";
+import { conversationThreads } from "./crmCore/conversations.js";
+import { canonicalMessages } from "./crmCore/messages.js";
 import { stores, tenants, users } from "./identity.js";
 import { leads } from "./leads.js";
 import { lifecycleColumns } from "./_shared.js";
@@ -109,6 +110,11 @@ export const crmWhatsappCampaigns = pgTable(
       table.storeId,
       table.scheduledStartAt,
     ),
+    uniqueIndex("crm_whatsapp_campaigns_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
   ],
 );
 
@@ -132,9 +138,7 @@ export const crmWhatsappCampaignRecipients = pgTable(
     secondarySentAt: timestamp("secondary_sent_at", { withTimezone: true }),
     sentMessageId: uuid("sent_message_id"),
     sequence: integer("sequence").notNull(),
-    sessionId: uuid("session_id")
-      .notNull()
-      .references(() => crmWhatsappSessions.id),
+    threadId: uuid("thread_id").notNull(),
     status: crmWhatsappCampaignRecipientStatus("status")
       .notNull()
       .default("pending"),
@@ -163,18 +167,59 @@ export const crmWhatsappCampaignRecipients = pgTable(
             ],
             name: "crm_whatsapp_campaign_recipients_scoped_connection_fk",
           }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.threadId],
+            foreignColumns: [
+              conversationThreads.tenantId,
+              conversationThreads.storeId,
+              conversationThreads.id,
+            ],
+            name: "crm_whatsapp_campaign_recipients_scoped_thread_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.campaignId],
+            foreignColumns: [
+              crmWhatsappCampaigns.tenantId,
+              crmWhatsappCampaigns.storeId,
+              crmWhatsappCampaigns.id,
+            ],
+            name: "crm_whatsapp_campaign_recipients_scoped_campaign_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.leadId],
+            foreignColumns: [leads.tenantId, leads.storeId, leads.id],
+            name: "crm_whatsapp_campaign_recipients_scoped_lead_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.replyMessageId],
+            foreignColumns: [
+              canonicalMessages.tenantId,
+              canonicalMessages.storeId,
+              canonicalMessages.id,
+            ],
+            name: "crm_whatsapp_campaign_recipients_scoped_reply_message_fk",
+          }),
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.sentMessageId],
+            foreignColumns: [
+              canonicalMessages.tenantId,
+              canonicalMessages.storeId,
+              canonicalMessages.id,
+            ],
+            name: "crm_whatsapp_campaign_recipients_scoped_sent_message_fk",
+          }),
         ]
       : []),
-    uniqueIndex("crm_whatsapp_campaign_recipients_campaign_session_unique").on(
+    uniqueIndex("crm_whatsapp_campaign_recipients_campaign_thread_unique").on(
       table.campaignId,
-      table.sessionId,
+      table.threadId,
     ),
     index("crm_whatsapp_campaign_recipients_campaign_idx").on(
       table.campaignId,
       table.sequence,
     ),
-    index("crm_whatsapp_campaign_recipients_session_status_idx").on(
-      table.sessionId,
+    index("crm_whatsapp_campaign_recipients_thread_status_idx").on(
+      table.threadId,
       table.status,
       table.updatedAt,
     ),

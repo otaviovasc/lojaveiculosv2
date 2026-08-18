@@ -4,7 +4,7 @@ import {
   conversationCycles,
   conversationThreads,
 } from "@lojaveiculosv2/db";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type {
   CanonicalInboundMessageInput,
   CanonicalInboundMessageResult,
@@ -13,13 +13,16 @@ import type {
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { assertCanonicalInboundConnection } from "./drizzleCrmCanonicalInboundConnection.js";
 import {
+  findCanonicalIdentity,
   lockCanonicalIdentity,
   resolveCanonicalIdentity,
 } from "./drizzleCrmCanonicalInboundIdentity.js";
 import {
-  readCanonicalUnreadCount,
-  readCanonicalThreadMetadata,
-} from "./drizzleCrmCanonicalInboundSupport.js";
+  readCanonicalInboundAttendanceState,
+  updateCanonicalInboundState,
+} from "./drizzleCrmCanonicalInboundState.js";
+import { scopedCanonicalInboundThread } from "./drizzleCrmCanonicalInboundSupport.js";
+import { resolveCanonicalInboundThread } from "./drizzleCrmCanonicalInboundThread.js";
 
 export function createDrizzleCrmCanonicalInboundRepository(
   db: DrizzleCrmClient,
@@ -39,7 +42,7 @@ async function ingestCanonicalInbound(
   if (duplicate) return { ...duplicate, created: false };
 
   const { contactId, identityId } = await resolveCanonicalIdentity(db, input);
-  const thread = await resolveThread(db, input, contactId);
+  const thread = await resolveCanonicalInboundThread(db, input, contactId);
   const cycle = await resolveCycle(db, input, thread.id);
   const [inserted] = await db
     .insert(canonicalMessages)
@@ -50,12 +53,13 @@ async function ingestCanonicalInbound(
       mediaType: input.mediaType,
       mediaUrl: input.mediaUrl,
       messageType: input.messageType,
-      metadata: input.metadata,
+      metadata: { providerMetadata: input.metadata },
       occurredAt: input.occurredAt,
       provider: input.provider,
       providerConnectionId: input.connectionId,
       providerMessageId: input.providerMessageId,
       sender: input.sender,
+      senderOrigin: input.senderOrigin,
       status: "delivered",
       threadId: thread.id,
       storeId: input.storeId,
@@ -68,82 +72,22 @@ async function ingestCanonicalInbound(
     if (!raced) throw new Error("Canonical CRM message was not persisted.");
     return { ...raced, created: false };
   }
-  const metadata = readCanonicalThreadMetadata(thread.metadata);
-  await db
-    .update(conversationThreads)
-    .set({
-      lastMessageAt: input.occurredAt,
-      metadata: {
-        ...metadata,
-        unreadCount: readCanonicalUnreadCount(metadata) + 1,
-      },
-      revision: sql`${conversationThreads.revision} + 1`,
-      state: "open",
-      updatedAt: new Date(),
-    })
-    .where(scopedThread(input, thread.id));
+  await updateCanonicalInboundState(db, input, thread, cycle);
+  const attendanceState = await readCanonicalInboundAttendanceState(
+    db,
+    input,
+    cycle.id,
+  );
   return {
+    attendanceState,
     contactId,
     created: true,
+    createdSession: cycle.created,
     cycleId: cycle.id,
     identityId,
     messageId: inserted.id,
     threadId: thread.id,
   };
-}
-
-async function resolveThread(
-  db: DrizzleCrmClient,
-  input: CanonicalInboundMessageInput,
-  contactId: string,
-) {
-  const externalThreadIds = [
-    input.externalThreadId,
-    ...input.externalThreadAliases,
-  ];
-  const [existing] = await db
-    .select()
-    .from(conversationThreads)
-    .where(
-      and(
-        eq(conversationThreads.providerConnectionId, input.connectionId),
-        inArray(conversationThreads.externalThreadId, externalThreadIds),
-        eq(conversationThreads.storeId, input.storeId),
-        eq(conversationThreads.tenantId, input.tenantId),
-      ),
-    )
-    .orderBy(asc(conversationThreads.createdAt))
-    .limit(1);
-  if (existing) {
-    if (!existing.contactId) {
-      await db
-        .update(conversationThreads)
-        .set({ contactId, updatedAt: new Date() })
-        .where(
-          and(
-            scopedThread(input, existing.id),
-            isNull(conversationThreads.contactId),
-          ),
-        );
-      return { ...existing, contactId };
-    }
-    return existing;
-  }
-  const [created] = await db
-    .insert(conversationThreads)
-    .values({
-      channel: input.channel,
-      contactId,
-      externalThreadId: input.externalThreadId,
-      metadata: { unreadCount: 0 },
-      providerConnectionId: input.connectionId,
-      state: "open",
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-    })
-    .returning();
-  if (!created) throw new Error("Canonical CRM thread was not persisted.");
-  return created;
 }
 
 async function resolveCycle(
@@ -164,7 +108,7 @@ async function resolveCycle(
     )
     .orderBy(desc(conversationCycles.createdAt))
     .limit(1);
-  if (existing) return existing;
+  if (existing) return { ...existing, created: false };
   const [previous] = await db
     .select({ id: conversationCycles.id })
     .from(conversationCycles)
@@ -195,7 +139,7 @@ async function resolveCycle(
     storeId: input.storeId,
     tenantId: input.tenantId,
   });
-  return created;
+  return { ...created, created: true };
 }
 
 async function findMessage(
@@ -222,25 +166,29 @@ async function findMessage(
   const [thread] = await db
     .select({ contactId: conversationThreads.contactId })
     .from(conversationThreads)
-    .where(scopedThread(input, message.threadId))
+    .where(scopedCanonicalInboundThread(input, message.threadId))
     .limit(1);
   if (!thread?.contactId) {
     throw new Error("Canonical CRM duplicate has incomplete identity scope.");
   }
-  const identity = await resolveCanonicalIdentity(db, input);
+  const identity = await findCanonicalIdentity(db, input);
+  if (!identity || identity.contactId !== thread.contactId) {
+    throw new Error(
+      "Canonical CRM duplicate identity does not match the original message.",
+    );
+  }
+  const attendanceState = await readCanonicalInboundAttendanceState(
+    db,
+    input,
+    message.cycleId,
+  );
   return {
+    attendanceState,
     contactId: thread.contactId,
     cycleId: message.cycleId,
+    createdSession: false,
     identityId: identity.identityId,
     messageId: message.messageId,
     threadId: message.threadId,
   };
-}
-
-function scopedThread(input: CanonicalInboundMessageInput, threadId: string) {
-  return and(
-    eq(conversationThreads.id, threadId),
-    eq(conversationThreads.storeId, input.storeId),
-    eq(conversationThreads.tenantId, input.tenantId),
-  );
 }

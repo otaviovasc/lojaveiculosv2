@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import {
@@ -14,7 +15,8 @@ import {
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM OLX Chat runtime", () => {
-  it("authenticates, links a lead, persists idempotently, and publishes realtime once", async () => {
+  it("authenticates and persists idempotently only in canonical CRM", async () => {
+    const canonicalRepository = createMemoryCrmCanonicalInboundRepository();
     const crmRepository = createMemoryCrmRepository();
     const whatsappRepository = createMemoryCrmWhatsappRepository();
     const publish = vi.fn(async () => undefined);
@@ -22,6 +24,7 @@ describe("CRM OLX Chat runtime", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
+      crmCanonicalInboundRepository: canonicalRepository,
       crmRealtimePublisher: { publish },
       crmRepository,
       crmWhatsappRepository: whatsappRepository,
@@ -44,39 +47,27 @@ describe("CRM OLX Chat runtime", () => {
       storeId,
       tenantId,
     });
-    expect(sessions).toHaveLength(1);
-    expect(sessions[0]).toMatchObject({
-      channel: "OLX_CHAT",
-      channelExternalId: "olx-chat-1",
-    });
-    expect(typeof sessions[0]?.leadId).toBe("string");
-    await expect(
-      whatsappRepository.listMessages({
-        limit: 10,
-        offset: 0,
-        sessionId: sessions[0]!.id,
-        storeId,
-        tenantId,
-      }),
-    ).resolves.toMatchObject([
-      {
-        channel: "OLX_CHAT",
-        content: "Tenho interesse no carro",
-        externalId: "olx-message-1",
-      },
-    ]);
+    expect(sessions).toEqual([]);
     await expect(
       crmRepository.listLeads({ limit: 10, offset: 0, storeId, tenantId }),
     ).resolves.toMatchObject([
       { buyerEmail: "ana@example.com", source: "olx" },
     ]);
+    expect(canonicalRepository.snapshot()).toMatchObject({
+      attendances: [{ state: "bot_active" }],
+      cycles: [{ state: "active" }],
+      messages: [
+        {
+          content: "Tenho interesse no carro",
+          providerMessageId: "olx-message-1",
+          sender: "customer",
+        },
+      ],
+      threads: [{ externalThreadIds: ["olx-chat-1"] }],
+    });
     expect(publish).toHaveBeenCalledTimes(2);
     expect(publish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        storeId,
-        tenantId,
-        type: "message",
-      }),
+      expect.objectContaining({ storeId, tenantId, type: "message" }),
     );
   });
 

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { externalBotActionNames } from "../../../domains/crm/bot/externalBotModels.js";
 import { externalBotActionRegistry } from "@lojaveiculosv2/shared";
 
 const id = z.string().trim().min(1).max(128);
@@ -179,26 +178,3 @@ export const externalBotActionSchema = z
   .strict();
 
 export const canonicalExternalBotActionRegistry = externalBotActionRegistry;
-
-export const externalBotEventSchema = z
-  .object({
-    connectionId: id,
-    integrationId: id,
-    threadId: id,
-    channel: z.enum(["instagram", "olx_chat", "whatsapp"]),
-    provider: z.enum(["meta_cloud", "olx", "zapi"]),
-    actionClass: z.enum(["effect", "proposal"]),
-    modelVersion: id,
-    allowedAction: z.enum(externalBotActionNames),
-    authorizedCommand: commandSchema,
-    expectedRevision: z.number().int().nonnegative(),
-    idempotencyKey: z.string().trim().min(8).max(128),
-    payload: z.record(z.string(), z.unknown()),
-    type: z.enum([
-      "connection_state_changed",
-      "human_attendance_changed",
-      "message_received",
-      "thread_state_changed",
-    ]),
-  })
-  .strict();

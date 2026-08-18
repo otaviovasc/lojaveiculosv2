@@ -15,8 +15,6 @@ export type DrizzleCrmRetentionCandidate = Readonly<{
     | "external_bot_grant"
     | "external_bot_proposal"
     | "integration_event"
-    | "legacy_message"
-    | "legacy_session"
     | "olx_lead_receipt"
     | "provider_effect";
 }>;
@@ -27,7 +25,6 @@ export async function listDrizzleCrmRetentionCandidates(
     botCutoff: Date;
     canonicalCutoff: Date;
     cursor: CrmRetentionCursor | null;
-    includeLegacyWindow: boolean;
     limit: number;
     now: Date;
     providerCutoff: Date;
@@ -45,12 +42,34 @@ export async function listDrizzleCrmRetentionCandidates(
         'canonical_message'::text as category,
         'canonical_message'::text as resource_type,
         message.id::text as resource_id,
-        greatest(cycle.closed_at, activity.last_activity_at) as eligible_at
+        greatest(
+          cycle.closed_at,
+          attendance.changed_at,
+          coalesce(thread.last_message_at, cycle.closed_at),
+          activity.last_activity_at
+        ) as eligible_at
       from crm_messages message
       inner join crm_conversation_cycles cycle
         on cycle.id = message.cycle_id
         and cycle.tenant_id = message.tenant_id
         and cycle.store_id = message.store_id
+        and cycle.thread_id = message.thread_id
+      inner join crm_conversation_threads thread
+        on thread.id = message.thread_id
+        and thread.tenant_id = message.tenant_id
+        and thread.store_id = message.store_id
+        and thread.provider_connection_id = message.provider_connection_id
+      inner join crm_conversation_attendances attendance
+        on attendance.cycle_id = message.cycle_id
+        and attendance.thread_id = message.thread_id
+        and attendance.tenant_id = message.tenant_id
+        and attendance.store_id = message.store_id
+      inner join crm_channel_connections connection
+        on connection.id = message.provider_connection_id
+        and connection.tenant_id = message.tenant_id
+        and connection.store_id = message.store_id
+        and connection.provider = message.provider
+        and connection.channel = thread.channel
       inner join lateral (
         select max(cycle_message.occurred_at) as last_activity_at
         from crm_messages cycle_message
@@ -62,75 +81,13 @@ export async function listDrizzleCrmRetentionCandidates(
         and message.store_id = ${input.storeId}::uuid
         and cycle.closed_at is not null
         and cycle.state in ('completed', 'expired')
-        and greatest(cycle.closed_at, activity.last_activity_at) <= ${input.canonicalCutoff}
+        and greatest(
+          cycle.closed_at,
+          attendance.changed_at,
+          coalesce(thread.last_message_at, cycle.closed_at),
+          activity.last_activity_at
+        ) <= ${input.canonicalCutoff}
         and coalesce(message.metadata -> 'retention' ->> 'anonymizedAt', '') = ''
-
-      union all
-
-      select
-        'canonical_message'::text,
-        'legacy_message'::text,
-        message.id::text,
-        greatest(session.updated_at, activity.last_activity_at)
-      from crm_whatsapp_messages message
-      inner join crm_whatsapp_sessions session
-        on session.id = message.session_id
-        and session.tenant_id = message.tenant_id
-        and session.store_id = message.store_id
-        and session.connection_id = message.connection_id
-      inner join crm_connections connection
-        on connection.id = session.connection_id
-        and connection.tenant_id = session.tenant_id
-        and connection.store_id = session.store_id
-      inner join lateral (
-        select coalesce(max(coalesce(cycle_message.provider_timestamp, cycle_message.created_at)), session.updated_at) as last_activity_at
-        from crm_whatsapp_messages cycle_message
-        where cycle_message.tenant_id = message.tenant_id
-          and cycle_message.store_id = message.store_id
-          and cycle_message.session_id = message.session_id
-      ) activity on true
-      where message.tenant_id = ${input.tenantId}::uuid
-        and message.store_id = ${input.storeId}::uuid
-        and ${input.includeLegacyWindow}
-        and ((connection.provider = 'zapi' and session.channel = 'WHATSAPP')
-          or (connection.provider = 'olx_chat' and session.channel = 'OLX_CHAT'))
-        and session.status in ('COMPLETED', 'EXPIRED')
-        and greatest(session.updated_at, activity.last_activity_at) <= ${input.canonicalCutoff}
-        and (message.content <> '' or message.media_type is not null or message.media_url is not null
-          or coalesce(message.metadata -> 'retention' ->> 'anonymizedAt', '') = '')
-
-      union all
-
-      select
-        'canonical_message'::text,
-        'legacy_session'::text,
-        session.id::text,
-        greatest(session.updated_at, activity.last_activity_at)
-      from crm_whatsapp_sessions session
-      inner join crm_connections connection
-        on connection.id = session.connection_id
-        and connection.tenant_id = session.tenant_id
-        and connection.store_id = session.store_id
-      inner join lateral (
-        select coalesce(max(coalesce(message.provider_timestamp, message.created_at)), session.updated_at) as last_activity_at
-        from crm_whatsapp_messages message
-        where message.tenant_id = session.tenant_id
-          and message.store_id = session.store_id
-          and message.session_id = session.id
-      ) activity on true
-      where session.tenant_id = ${input.tenantId}::uuid
-        and session.store_id = ${input.storeId}::uuid
-        and ${input.includeLegacyWindow}
-        and ((connection.provider = 'zapi' and session.channel = 'WHATSAPP')
-          or (connection.provider = 'olx_chat' and session.channel = 'OLX_CHAT'))
-        and session.status in ('COMPLETED', 'EXPIRED')
-        and greatest(session.updated_at, activity.last_activity_at) <= ${input.canonicalCutoff}
-        and (session.buyer_phone <> '' or session.buyer_name is not null
-          or session.buyer_chat_lid is not null or session.channel_external_id is not null
-          or session.external_session_id is not null or session.last_message_content is not null
-          or session.profile_photo_url is not null
-          or session.channel_metadata <> '{}'::jsonb
-          or coalesce(session.metadata -> 'retention' ->> 'anonymizedAt', '') = '')
 
       union all
 
@@ -210,9 +167,7 @@ export async function listDrizzleCrmRetentionCandidates(
             and (hold.expires_at is null or hold.expires_at > ${input.now})
             and (hold.category is null or hold.category = raw_candidates.category)
             and (hold.resource_type is null
-              or hold.resource_type = raw_candidates.resource_type
-              or (raw_candidates.resource_type = 'legacy_message'
-                and hold.resource_type = 'canonical_message'))
+              or hold.resource_type = raw_candidates.resource_type)
             and (hold.resource_id is null or hold.resource_id::text = raw_candidates.resource_id)
         ) end as held
       from raw_candidates

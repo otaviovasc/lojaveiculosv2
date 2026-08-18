@@ -154,7 +154,7 @@ function createIds(config) {
     entries: new Map(),
     recipients: new Map(),
     fiscal: new Map(),
-    crmConnections: new Map(),
+    crmChannelConnections: new Map(),
   };
 }
 

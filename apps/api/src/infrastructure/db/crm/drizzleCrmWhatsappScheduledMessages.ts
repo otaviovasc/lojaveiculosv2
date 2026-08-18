@@ -22,12 +22,20 @@ import type {
   ListCrmWhatsappScheduledMessagesInput,
   UpdateCrmWhatsappScheduledMessageInput,
 } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import { findCanonicalThreadIdForCycle } from "./drizzleCrmCanonicalWorkflowReferences.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+import { toScheduledMessage } from "./drizzleCrmWhatsappScheduledMessageMapper.js";
 
 export async function createWhatsappScheduledMessage(
   db: DrizzleCrmClient,
   input: CreateCrmWhatsappScheduledMessageInput,
 ) {
+  const threadId = await findCanonicalThreadIdForCycle(db, {
+    connectionId: input.connectionId,
+    cycleId: input.sessionId,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
   const [row] = await db
     .insert(crmWhatsappScheduledMessages)
     .values({
@@ -36,14 +44,15 @@ export async function createWhatsappScheduledMessage(
       campaignRecipientKey: input.campaignRecipientKey ?? null,
       campaignSequence: input.campaignSequence ?? null,
       connectionId: input.connectionId,
+      cycleId: input.sessionId,
       createdByUserId: input.createdByUserId ?? null,
       metadata: input.metadata ?? {},
       phone: input.phone,
       scheduledAt: input.scheduledAt,
-      sessionId: input.sessionId,
       storeId: input.storeId,
       tenantId: input.tenantId,
       text: input.text,
+      threadId,
     })
     .returning();
   if (!row) throw new Error("CRM WhatsApp scheduled message insert failed.");
@@ -70,7 +79,7 @@ export async function listWhatsappScheduledMessages(
     filters.push(eq(crmWhatsappScheduledMessages.id, input.scheduledMessageId));
   }
   if (input.sessionId) {
-    filters.push(eq(crmWhatsappScheduledMessages.sessionId, input.sessionId));
+    filters.push(eq(crmWhatsappScheduledMessages.cycleId, input.sessionId));
   }
   if (input.status) {
     filters.push(eq(crmWhatsappScheduledMessages.status, input.status));
@@ -81,7 +90,7 @@ export async function listWhatsappScheduledMessages(
     .where(and(...filters))
     .orderBy(desc(crmWhatsappScheduledMessages.scheduledAt))
     .limit(input.limit);
-  return rows.map(toScheduledMessage);
+  return hydrateScheduledMessages(db, rows);
 }
 
 export async function findDueWhatsappScheduledMessages(
@@ -105,7 +114,7 @@ export async function findDueWhatsappScheduledMessages(
     )
     .orderBy(asc(crmWhatsappScheduledMessages.scheduledAt))
     .limit(input.limit);
-  return rows.map(toScheduledMessage);
+  return hydrateScheduledMessages(db, rows);
 }
 
 export async function findDueWhatsappScheduledMessageScopes(
@@ -200,39 +209,14 @@ export async function updateWhatsappScheduledMessage(
       ),
     )
     .returning();
-  return row ? toScheduledMessage(row) : null;
+  if (!row) return null;
+  const [scheduled] = await hydrateScheduledMessages(db, [row]);
+  return scheduled ?? null;
 }
 
-function toScheduledMessage(
-  row: typeof crmWhatsappScheduledMessages.$inferSelect,
+async function hydrateScheduledMessages(
+  _db: DrizzleCrmClient,
+  rows: readonly (typeof crmWhatsappScheduledMessages.$inferSelect)[],
 ) {
-  return {
-    cancelledAt: row.cancelledAt,
-    campaignId: row.campaignId,
-    campaignMessageType: row.campaignMessageType,
-    campaignRecipientKey: row.campaignRecipientKey,
-    campaignSequence: row.campaignSequence,
-    connectionId: row.connectionId,
-    createdAt: row.createdAt,
-    createdByUserId: row.createdByUserId as never,
-    errorMessage: row.errorMessage,
-    id: row.id,
-    metadata: readRecord(row.metadata),
-    phone: row.phone,
-    scheduledAt: row.scheduledAt,
-    sentAt: row.sentAt,
-    sentMessageId: row.sentMessageId,
-    sessionId: row.sessionId,
-    status: row.status,
-    storeId: row.storeId as never,
-    tenantId: row.tenantId as never,
-    text: row.text,
-    updatedAt: row.updatedAt,
-  };
-}
-
-function readRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
+  return rows.map((row) => toScheduledMessage(row));
 }

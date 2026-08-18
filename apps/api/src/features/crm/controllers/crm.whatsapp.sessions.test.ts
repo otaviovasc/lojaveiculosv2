@@ -2,6 +2,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
@@ -34,13 +35,17 @@ describe("CRM WhatsApp sessions", () => {
 
   it("ingests a ZAPI webhook into CRM sessions and messages", async () => {
     const crmRepository = createMemoryCrmRepository();
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const canonicalRepository =
+      createMemoryCrmCanonicalInboundRepository(whatsappRepository);
     const app = createTestApp({
+      crmCanonicalInboundRepository: canonicalRepository,
       crmConnectionCredentialVault: testVault(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
       crmRepository,
-      crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
+      crmWhatsappRepository: whatsappRepository,
     });
 
     const firstResponse = await postZapiWebhook(app);
@@ -74,25 +79,21 @@ describe("CRM WhatsApp sessions", () => {
       storeId,
       tenantId,
     });
-    expect(leads).toHaveLength(1);
-    expect(leads[0]).toMatchObject({
-      buyerName: "Ana",
-      buyerPhone: "5511999999999",
-      source: "whatsapp",
-      status: "new",
-    });
-    const activities = await crmRepository.listActivities({
-      leadId: leads[0]?.id ?? "",
-      limit: 10,
-      storeId,
-      tenantId,
-    });
-    expect(activities).toHaveLength(1);
-    expect(activities[0]).toMatchObject({
-      activityType: "whatsapp",
-      content: "Ola, tenho interesse",
-      direction: "inbound",
-    });
+    expect(leads).toMatchObject([
+      {
+        buyerName: "Ana",
+        buyerPhone: "5511999999999",
+        source: "whatsapp",
+      },
+    ]);
+    await expect(
+      whatsappRepository.listSessions({
+        limit: 10,
+        offset: 0,
+        storeId,
+        tenantId,
+      }),
+    ).resolves.toHaveLength(1);
 
     const duplicateResponse = await postZapiWebhook(app);
     expect(duplicateResponse.status).toBe(200);
@@ -100,35 +101,14 @@ describe("CRM WhatsApp sessions", () => {
       status: "duplicate",
     });
     await expect(
-      crmRepository.listActivities({
-        leadId: leads[0]?.id ?? "",
+      whatsappRepository.listMessages({
         limit: 10,
+        offset: 0,
+        sessionId: (firstBody as { session: { id: string } }).session.id,
         storeId,
         tenantId,
       }),
     ).resolves.toHaveLength(1);
-
-    const sessionsResponse = await app.request(
-      `/api/v1/crm/whatsapp/sessions?connectionId=${connectionId}`,
-    );
-    expect(sessionsResponse.status).toBe(200);
-    const sessions = (await sessionsResponse.json()) as Array<{ id: string }>;
-    expect(sessions).toHaveLength(1);
-    expect(sessions[0]).toMatchObject({
-      buyerPhone: "5511999999999",
-      unreadCount: 1,
-    });
-
-    const messagesResponse = await app.request(
-      `/api/v1/crm/whatsapp/messages/${sessions[0]?.id}`,
-    );
-    expect(messagesResponse.status).toBe(200);
-    await expect(messagesResponse.json()).resolves.toMatchObject([
-      {
-        content: "Ola, tenho interesse",
-        externalId: "zapi-message-1",
-      },
-    ]);
   });
 
   it("uses chatPhone instead of LID for session identity", async () => {

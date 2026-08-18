@@ -39,7 +39,7 @@ export async function createOlxConnection(
       connectionId: connection.id,
       storeId: connection.storeId,
       tenantId: connection.tenantId,
-      webhookUrl: `https://api.example.test/api/v1/crm/whatsapp/webhooks/olx/${connection.id}/received`,
+      webhookUrl: `https://api.example.test/api/v1/crm/webhooks/olx/${connection.id}/received`,
     })) ?? connection
   );
 }
@@ -72,7 +72,7 @@ export function createFailedOlxConnection(): CrmConnection {
     status: "active",
     storeId: "store-1" as never,
     tenantId: "tenant-1" as never,
-    webhookUrl: `https://api.example.test/api/v1/crm/whatsapp/webhooks/olx/${id}/received`,
+    webhookUrl: `https://api.example.test/api/v1/crm/webhooks/olx/${id}/received`,
   };
 }
 

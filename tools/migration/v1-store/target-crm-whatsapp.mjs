@@ -8,13 +8,14 @@ import {
 import { nullableString, targetId } from "./common.mjs";
 import { log, progress } from "./log.mjs";
 import { seedWhatsappConnections } from "./target-crm-whatsapp-connections.mjs";
+import { seedCanonicalWhatsappConversations } from "./target-crm-whatsapp-conversations.mjs";
 import { replaceStoreWhatsappHistory } from "./target-crm-whatsapp-replace.mjs";
 import {
   assertWhatsappLeadCoverage,
   buildAgentUserMap,
   countMessagesBySession,
   findAssignedUserId,
-  sessionRow,
+  conversationRows,
 } from "./target-crm-whatsapp-support.mjs";
 import { seedWhatsappMessages } from "./target-crm-whatsapp-messages.mjs";
 
@@ -39,22 +40,29 @@ export async function seedCrmWhatsapp(tx, data, config, ids) {
   log("  CRM WhatsApp: importing connections...");
   await seedWhatsappConnections(tx, source, config, ids);
   log("  CRM WhatsApp: connections imported");
-  const sessionIds = await seedSessions(tx, data, source, groups, config, ids);
+  const conversationIds = await seedSessions(
+    tx,
+    data,
+    source,
+    groups,
+    config,
+    ids,
+  );
   await seedWhatsappMessages(
     tx,
     source,
     {
-      crmConnectionIds: ids.crmConnections,
+      crmChannelConnectionIds: ids.crmChannelConnections,
       legacyStoreId: config.legacyStoreId,
       storeId: ids.store,
       tenantId: ids.tenant,
     },
-    sessionIds,
+    conversationIds,
   );
   log("  CRM WhatsApp done");
 }
 
-export function countTargetWhatsappSessions(source) {
+export function countTargetWhatsappConversations(source) {
   return groupWhatsappSessions(source.sessions).length;
 }
 
@@ -74,7 +82,8 @@ async function seedSessions(tx, data, source, groups, config, ids) {
     config.accessEmails,
   );
   const messageCounts = countMessagesBySession(source.messages);
-  const sessionIds = new Map();
+  const cycleIds = new Map();
+  const threadIds = new Map();
   let linkedAssignments = 0;
   const leadLinks = {
     crm_session_id: 0,
@@ -85,12 +94,28 @@ async function seedSessions(tx, data, source, groups, config, ids) {
   const rows = [];
   for (const group of groups) {
     const canonical = group.canonical;
-    const id = targetId(
+    const cycleId = targetId(
       config.legacyStoreId,
       "RepassesChatSession",
       canonical.id,
     );
-    for (const member of group.members) sessionIds.set(member.id, id);
+    const conversationIds = {
+      attendanceId: targetId(
+        config.legacyStoreId,
+        "RepassesChatSessionAttendance",
+        canonical.id,
+      ),
+      cycleId,
+      threadId: targetId(
+        config.legacyStoreId,
+        "RepassesChatSessionThread",
+        canonical.id,
+      ),
+    };
+    for (const member of group.members) {
+      cycleIds.set(member.id, cycleId);
+      threadIds.set(member.id, conversationIds.threadId);
+    }
     const link = resolveLegacyLeadLink(
       group,
       leadCrmSessionIndex,
@@ -122,83 +147,29 @@ async function seedSessions(tx, data, source, groups, config, ids) {
       );
     }
     rows.push(
-      sessionRow(tx, group, id, leadId, assignedUserId, messageCounts, ids),
+      conversationRows(
+        tx,
+        group,
+        conversationIds,
+        leadId,
+        assignedUserId,
+        messageCounts,
+        ids,
+      ),
     );
     if (rows.length % 25 === 0 || rows.length === groups.length)
       progress("  CRM WhatsApp session planning", rows.length, groups.length);
   }
   source.generatedLeadCount = leadLinks.generated;
 
-  for (let offset = 0; offset < rows.length; offset += SESSION_BATCH_SIZE) {
-    const batch = rows.slice(offset, offset + SESSION_BATCH_SIZE);
-    await tx`INSERT INTO crm_whatsapp_sessions ${tx(
-      batch,
-      "id",
-      "assigned_user_id",
-      "buyer_chat_lid",
-      "buyer_name",
-      "buyer_phone",
-      "channel",
-      "channel_external_id",
-      "channel_metadata",
-      "connection_id",
-      "external_session_id",
-      "first_handled_at",
-      "fresh_lead_at",
-      "human_takeover_at",
-      "last_assigned_at",
-      "last_customer_read_at",
-      "last_message_at",
-      "last_message_content",
-      "last_read_at",
-      "lead_id",
-      "message_count",
-      "metadata",
-      "profile_photo_url",
-      "source",
-      "status",
-      "store_id",
-      "tenant_id",
-      "created_at",
-      "updated_at",
-    )}
-      ON CONFLICT (id) DO UPDATE SET
-        assigned_user_id=excluded.assigned_user_id,
-        buyer_chat_lid=excluded.buyer_chat_lid,
-        buyer_name=excluded.buyer_name,
-        buyer_phone=excluded.buyer_phone,
-        channel=excluded.channel,
-        channel_external_id=excluded.channel_external_id,
-        channel_metadata=excluded.channel_metadata,
-        external_session_id=excluded.external_session_id,
-        first_handled_at=excluded.first_handled_at,
-        fresh_lead_at=excluded.fresh_lead_at,
-        human_takeover_at=excluded.human_takeover_at,
-        last_assigned_at=excluded.last_assigned_at,
-        last_customer_read_at=excluded.last_customer_read_at,
-        last_message_at=excluded.last_message_at,
-        last_message_content=excluded.last_message_content,
-        last_read_at=excluded.last_read_at,
-        lead_id=excluded.lead_id,
-        message_count=excluded.message_count,
-        metadata=excluded.metadata,
-        profile_photo_url=excluded.profile_photo_url,
-        source=excluded.source,
-        status=excluded.status,
-        updated_at=excluded.updated_at`;
-    progress(
-      "  CRM WhatsApp sessions",
-      Math.min(offset + batch.length, rows.length),
-      rows.length,
-    );
-  }
+  await seedCanonicalWhatsappConversations(tx, rows, SESSION_BATCH_SIZE);
   log(
     `  CRM WhatsApp lead links: ${rows.length}/${rows.length} total ` +
       `(${leadLinks.crm_session_id} V1 sync id, ${leadLinks.source_lead_id} source id, ` +
       `${leadLinks.phone} phone, ${leadLinks.generated} generated); ` +
       `${linkedAssignments}/${rows.length} assignment(s).`,
   );
-  return sessionIds;
+  return { cycleIds, threadIds };
 }
 
 async function seedWhatsappOnlyLead(tx, group, assignedUserId, config, ids) {

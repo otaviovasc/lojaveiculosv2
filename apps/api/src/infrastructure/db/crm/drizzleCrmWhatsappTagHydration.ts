@@ -1,19 +1,30 @@
-import { asc, and, eq } from "drizzle-orm";
 import {
+  conversationAttendances,
+  conversationCycles,
+  conversationThreads,
+  conversationThreadTags,
   crmTags,
-  crmWhatsappSessions,
-  crmWhatsappSessionTags,
 } from "@lojaveiculosv2/db";
+import { and, asc, eq } from "drizzle-orm";
 import type { CrmWhatsappSession } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { toWhatsappSession } from "./drizzleCrmWhatsappMappers.js";
-import { countUnreadMessages } from "./drizzleCrmWhatsappQueries.js";
+import {
+  canonicalSessionSelection,
+  countUnreadMessages,
+} from "./drizzleCrmWhatsappQueries.js";
 
 export async function hydrateWhatsappSession(
   db: DrizzleCrmClient,
   session: CrmWhatsappSession,
 ) {
-  return hydrateSessionTags(session, await listTagsForSession(db, session.id));
+  return {
+    ...session,
+    sessionTags: await listTagsForThread(
+      db,
+      await threadIdForCycle(db, session.id, session),
+    ),
+  };
 }
 
 export async function findHydratedSessionById(
@@ -21,22 +32,40 @@ export async function findHydratedSessionById(
   sessionId: string,
   scope: { storeId: string; tenantId: string },
 ) {
+  const row = await findCanonicalSessionById(db, sessionId, scope);
+  if (!row) return null;
+  const session = toWhatsappSession(row, await countUnreadMessages(db, row));
+  return {
+    ...session,
+    sessionTags: await listTagsForThread(db, row.thread.id),
+  };
+}
+
+export async function findCanonicalSessionById(
+  db: DrizzleCrmClient,
+  sessionId: string,
+  scope: { storeId: string; tenantId: string },
+) {
   const [row] = await db
-    .select()
-    .from(crmWhatsappSessions)
+    .select(canonicalSessionSelection())
+    .from(conversationCycles)
+    .innerJoin(
+      conversationThreads,
+      eq(conversationCycles.threadId, conversationThreads.id),
+    )
+    .innerJoin(
+      conversationAttendances,
+      eq(conversationAttendances.cycleId, conversationCycles.id),
+    )
     .where(
       and(
-        eq(crmWhatsappSessions.id, sessionId),
-        eq(crmWhatsappSessions.storeId, scope.storeId as never),
-        eq(crmWhatsappSessions.tenantId, scope.tenantId as never),
+        eq(conversationCycles.id, sessionId),
+        eq(conversationCycles.storeId, scope.storeId as never),
+        eq(conversationCycles.tenantId, scope.tenantId as never),
       ),
     )
     .limit(1);
-  if (!row) return null;
-  return hydrateWhatsappSession(
-    db,
-    toWhatsappSession(row, await countUnreadMessages(db, row)),
-  );
+  return row;
 }
 
 export function toCrmWhatsappTag(row: typeof crmTags.$inferSelect) {
@@ -52,19 +81,32 @@ export function toCrmWhatsappTag(row: typeof crmTags.$inferSelect) {
   };
 }
 
-async function listTagsForSession(db: DrizzleCrmClient, sessionId: string) {
+async function listTagsForThread(db: DrizzleCrmClient, threadId: string) {
   const rows = await db
     .select({ tag: crmTags })
-    .from(crmWhatsappSessionTags)
-    .innerJoin(crmTags, eq(crmWhatsappSessionTags.tagId, crmTags.id))
-    .where(eq(crmWhatsappSessionTags.sessionId, sessionId))
+    .from(conversationThreadTags)
+    .innerJoin(crmTags, eq(conversationThreadTags.tagId, crmTags.id))
+    .where(eq(conversationThreadTags.threadId, threadId))
     .orderBy(asc(crmTags.sortOrder), asc(crmTags.name));
   return rows.map((row) => toCrmWhatsappTag(row.tag));
 }
 
-function hydrateSessionTags(
-  session: CrmWhatsappSession,
-  sessionTags: CrmWhatsappSession["sessionTags"],
+async function threadIdForCycle(
+  db: DrizzleCrmClient,
+  cycleId: string,
+  scope: { storeId: string; tenantId: string },
 ) {
-  return { ...session, sessionTags };
+  const [row] = await db
+    .select({ threadId: conversationCycles.threadId })
+    .from(conversationCycles)
+    .where(
+      and(
+        eq(conversationCycles.id, cycleId),
+        eq(conversationCycles.storeId, scope.storeId as never),
+        eq(conversationCycles.tenantId, scope.tenantId as never),
+      ),
+    )
+    .limit(1);
+  if (!row) throw new Error("Canonical CRM conversation cycle was not found.");
+  return row.threadId;
 }
