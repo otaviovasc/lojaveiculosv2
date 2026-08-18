@@ -65,6 +65,22 @@ describe("CommissionRulesPanel", () => {
     ).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("renders intuitive placeholders and predefined category options", () => {
+    const { container } = render(
+      <CommissionRulesPanel items={[]} onCreate={vi.fn()} />,
+    );
+
+    const nameInput = screen.getByPlaceholderText(
+      "Ex: Comissão Padrão de Vendas",
+    );
+    const percentInput = screen.getByPlaceholderText("1,50");
+    const categoryInput = container.querySelector('input[name="category"]');
+
+    expect(nameInput).toBeInTheDocument();
+    expect(percentInput).toBeInTheDocument();
+    expect(categoryInput).toHaveValue("Venda");
+  });
+
   it("formats every supported rule type without inventing a percentage", () => {
     expect(commissionRuleValue(commissionRule())).toBe("1,25%");
     expect(

@@ -1,4 +1,35 @@
-/* Finance surfaces stay scoped to the finance workspaces and use product tokens. */
+/* ==========================================================================
+   Finance Workspace — module shell + automotive styling
+   Aligned with /fiscal and /billing design language.
+   ========================================================================== */
+
+.finance-shell {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  margin: 0 auto;
+  max-width: var(--layout-content-max);
+  padding: clamp(0.85rem, 2vw, 1.5rem);
+  position: relative;
+}
+
+.finance-shell-blob {
+  background: color-mix(in srgb, var(--color-accent-strong) 15%, transparent);
+  border-radius: 999px;
+  filter: blur(120px);
+  height: 300px;
+  pointer-events: none;
+  position: absolute;
+  right: 12%;
+  top: -1rem;
+  width: 500px;
+  z-index: 0;
+}
+
+.finance-shell > :not(.finance-shell-blob):not(.fiscal-shell-blob) {
+  position: relative;
+  z-index: 1;
+}
 
 /* -------------------------------------------------------------------------- */
 /* Workspace layout                                                            */
@@ -12,14 +43,20 @@
   min-width: 0;
 }
 
+@media (min-width: 64rem) {
+  .finance-bottom-grid {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
-/* Urgency alert (V1-style full-width strip)                                   */
+/* Urgency alert (Automotive alert card)                                       */
 /* -------------------------------------------------------------------------- */
 
 .finance-urgency-alert {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--surface-radius-2xl);
   box-shadow: var(--shadow-panel);
   min-width: 0;
   overflow: hidden;

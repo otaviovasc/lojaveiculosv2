@@ -36,12 +36,20 @@ type CalculationKind = "fixed" | "rate";
 
 export function SaleSellerOverrideCard({
   canManage,
+  initialSellerUserId,
   isSaving,
   onSave,
   rules,
   sellers,
-}: AutoEntryDomainPanelProps) {
-  const [sellerUserId, setSellerUserId] = useState("");
+}: AutoEntryDomainPanelProps & { initialSellerUserId?: string }) {
+  const [sellerUserId, setSellerUserId] = useState(initialSellerUserId ?? "");
+
+  useEffect(() => {
+    if (initialSellerUserId) {
+      setSellerUserId(initialSellerUserId);
+    }
+  }, [initialSellerUserId]);
+
   const existing = useMemo(
     () => findRule(rules, "sale.standard_commission", sellerUserId),
     [rules, sellerUserId],
@@ -173,7 +181,9 @@ export function SaleSellerOverrideCard({
           />
         </FeatureField>
         <FeatureField
-          label={kind === "fixed" ? "Valor (R$)" : "Percentual (%)"}
+          label={
+            kind === "fixed" ? "Valor de comissão (R$)" : "Taxa de comissão (%)"
+          }
         >
           <FeatureInput
             inputMode="decimal"
