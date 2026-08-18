@@ -488,3 +488,72 @@ function clausesToBlocks(clauses: readonly string[]): DocumentTemplateBlock[] {
     type: "clause",
   }));
 }
+
+export function createCustomDocumentTemplate(params: {
+  baseTemplate?: DocumentTemplate | null;
+  category?: string;
+  description?: string;
+  kind?: DocumentKind;
+  title: string;
+}): DocumentTemplate {
+  const base = params.baseTemplate;
+  const kind = params.kind ?? base?.kind ?? "other";
+  const title =
+    params.title.trim() ||
+    (base ? `${base.title} (Personalizado)` : "Novo Modelo Personalizado");
+  const templateKey = base
+    ? `${base.templateKey}_custom_${Date.now()}`
+    : `custom_${kind}_${Date.now()}`;
+
+  const blocks = base
+    ? cloneBlocks(base.blocks)
+    : [
+        createHeadingBlock(title.toUpperCase()),
+        createBuyerFieldsBlock(),
+        createVehicleFieldsBlock(),
+        createClauseBlock(
+          "As partes acordam as seguintes disposições e termos contratuais para a presente operação.",
+          "Disposições Gerais",
+        ),
+        createSignatureBlock(),
+      ];
+
+  const clauses = documentBuilderClauses(blocks);
+
+  return {
+    availableVariables: base?.availableVariables ?? [
+      "{{buyer.name}}",
+      "{{buyer.document}}",
+      "{{buyer.address}}",
+      "{{vehicle.title}}",
+      "{{vehicle.plate}}",
+      "{{vehicle.renavam}}",
+      "{{vehicle.chassis}}",
+      "{{vehicle.km}}",
+      "{{vehicle.color}}",
+      "{{finance.salePrice}}",
+      "{{finance.paymentMethod}}",
+      "{{store.name}}",
+      "{{document.date}}",
+    ],
+    blocks,
+    category: params.category ?? base?.category ?? "Personalizados",
+    clauses,
+    context: base?.context ?? "sale_contract",
+    defaultBlocks: blocks,
+    defaultClauses: clauses,
+    defaultTitle: title,
+    description:
+      params.description ??
+      (base
+        ? `Criado a partir de ${base.title}`
+        : "Modelo personalizado da loja"),
+    isCustomized: true,
+    kind,
+    mode: "editable",
+    source: "store",
+    templateKey,
+    title,
+    updatedAt: new Date().toISOString(),
+  };
+}

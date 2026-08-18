@@ -45,6 +45,51 @@ describe("SaleSellerOverrideCard", () => {
     expect(onSave.mock.calls[0]?.[0]?.[0]?.input).toMatchObject({
       conditions: { standardCommissionEnabled: true },
       family: "sale.standard_commission",
+      timing: { kind: "same_day" },
+    });
+  });
+
+  it("allows changing the timing tab in Momento do lançamento", async () => {
+    const onSave = vi.fn<
+      (mutations: readonly AutoEntryRuleMutation[]) => Promise<void>
+    >(async () => undefined);
+    const user = userEvent.setup();
+    render(
+      <SaleSellerOverrideCard
+        canManage
+        isSaving={false}
+        onDelete={vi.fn()}
+        onSave={onSave}
+        rules={[]}
+        sellers={[
+          {
+            detail: "Vendedor",
+            id: "seller_1",
+            label: "Ana",
+            role: "salesman",
+          },
+        ]}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Vendedor da origem" }),
+    );
+    await user.click(screen.getByRole("option", { name: "Ana · Vendedor" }));
+    await user.type(screen.getByPlaceholderText("Ex.: 1,5"), "2,0");
+
+    // Click "Dias depois" tab in Momento do lançamento
+    await user.click(screen.getByRole("button", { name: "Dias depois" }));
+    expect(screen.getByLabelText("Quantidade de dias")).toBeVisible();
+    await user.type(screen.getByLabelText("Quantidade de dias"), "10");
+
+    await user.click(
+      screen.getByRole("button", { name: "Salvar configuração" }),
+    );
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    expect(onSave.mock.calls[0]?.[0]?.[0]?.input).toMatchObject({
+      timing: { days: 10, kind: "days_after" },
     });
   });
 });

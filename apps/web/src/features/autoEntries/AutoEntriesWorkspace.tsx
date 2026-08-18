@@ -25,9 +25,9 @@ import {
   AutoEntriesDirtyProvider,
   useAutoEntriesDirtyState,
 } from "./autoEntriesDirtyState";
+import { Toast } from "../../components/ui/Toast";
 import { AutoEntriesCommandBar } from "./AutoEntriesCommandBar";
 import { AutoEntriesNotices } from "./AutoEntriesNotices";
-import { AutoEntriesSummary } from "./AutoEntriesSummary";
 import { AutoEntriesTabs } from "./AutoEntriesTabs";
 import { AutoEntryDomainPanel } from "./AutoEntryDomainPanel";
 import { AutoEntryRuleDialog } from "./AutoEntryRuleDialog";
@@ -194,14 +194,8 @@ export function AutoEntriesWorkspace({
       ) : (
         <>
           <AutoEntriesNotices
-            activeSaleTab={activeTab === "vehicle_sale_closed"}
             canManage={capabilities.canManage}
-            feedback={workspace.feedback}
             sellerError={sellerError}
-          />
-          <AutoEntriesSummary
-            onSelectDomain={requestTabChange}
-            rules={workspace.rules}
           />
           <AutoEntriesTabs
             dirtyTabs={dirty.dirtyTabs}
@@ -291,6 +285,14 @@ export function AutoEntriesWorkspace({
         title={`Excluir ${deleteTarget?.name ?? "regra"}?`}
         variant="destructive"
       />
+      {workspace.feedback ? (
+        <Toast
+          key={workspace.feedback.message}
+          onDismiss={workspace.clearFeedback}
+          title={workspace.feedback.message}
+          tone={workspace.feedback.tone}
+        />
+      ) : null}
     </FeaturePageShell>
   );
 }

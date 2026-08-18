@@ -47,10 +47,7 @@ export function AutoEntryTimingSelector({
       <FeatureSegmentedControl
         ariaLabel={legend}
         disabled={disabled}
-        onChange={(nextKind) => {
-          onKindChange(nextKind);
-          onValueChange("");
-        }}
+        onChange={onKindChange}
         options={timingOptions}
         value={kind}
       />

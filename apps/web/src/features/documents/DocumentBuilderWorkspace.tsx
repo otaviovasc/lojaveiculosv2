@@ -1,12 +1,14 @@
-import { Eye, Lock, RotateCcw, Save, Sparkles, X } from "lucide-react";
+import { Copy, Eye, Lock, RotateCcw, Save, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
+import { Toast } from "../../components/ui/Toast";
 import type { DocumentsApi } from "./apiClient";
 import { DocumentBuilderAiPanel } from "./DocumentBuilderAiPanel";
 import { DocumentBuilderBlocks } from "./DocumentBuilderBlocks";
 import { DocumentBuilderSidebar } from "./DocumentBuilderSidebar";
 import { DocumentBuilderHeader } from "./DocumentBuilderWorkspaceChrome";
+import { DocumentCreateTemplateModal } from "./DocumentCreateTemplateModal";
 import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
 import { DocumentsSectionNavigation } from "./DocumentsSectionNavigation";
 import { DocumentsDialogShell } from "./DocumentsDialogShell";
@@ -27,7 +29,7 @@ export function DocumentBuilderWorkspace({
   isSaving,
   onClose,
   onSave,
-  templates,
+  templates: initialTemplates,
 }: {
   api: DocumentsApi | null;
   isSaving: boolean;
@@ -38,15 +40,22 @@ export function DocumentBuilderWorkspace({
   ) => Promise<void>;
   templates: readonly DocumentTemplate[];
 }) {
+  const [localTemplates, setLocalTemplates] =
+    useState<readonly DocumentTemplate[]>(initialTemplates);
+
+  useEffect(() => {
+    setLocalTemplates(initialTemplates);
+  }, [initialTemplates]);
+
   const [selectedKey, setSelectedKey] = useState<string | null>(
-    templates[0]?.templateKey ?? null,
+    localTemplates[0]?.templateKey ?? null,
   );
   const selected = useMemo(
     () =>
-      templates.find((template) => template.templateKey === selectedKey) ??
-      templates[0] ??
+      localTemplates.find((template) => template.templateKey === selectedKey) ??
+      localTemplates[0] ??
       null,
-    [selectedKey, templates],
+    [selectedKey, localTemplates],
   );
   const [draft, setDraft] = useState<DocumentBuilderDraft>(() =>
     createDocumentBuilderDraft(selected),
@@ -60,6 +69,8 @@ export function DocumentBuilderWorkspace({
   const [saveState, setSaveState] = useState<DocumentBuilderSaveState>("idle");
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAiFloatingOpen, setIsAiFloatingOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const onSaveRef = useRef(onSave);
 
   useEffect(() => {
@@ -79,8 +90,8 @@ export function DocumentBuilderWorkspace({
   const isDirty = JSON.stringify(draft) !== savedSnapshot;
   const clauses = useMemo(() => documentBuilderClauses(draft.blocks), [draft]);
   const clauseBank = useMemo(
-    () => collectTemplateClauseBank(templates),
-    [templates],
+    () => collectTemplateClauseBank(localTemplates),
+    [localTemplates],
   );
   const canSave = Boolean(
     selected && canEdit && draft.title.trim() && clauses.length,
@@ -95,11 +106,32 @@ export function DocumentBuilderWorkspace({
         .then(() => {
           setSavedSnapshot(JSON.stringify(draft));
           setSaveState("saved");
+          setToastMessage("Modelo salvo com sucesso.");
         })
         .catch(() => setSaveState("error"));
     }, 1200);
     return () => window.clearTimeout(timer);
   }, [canEdit, canSave, draft, isDirty, selected]);
+
+  const handleManualSave = () => {
+    if (!selected || !canSave) return;
+    setSaveState("saving");
+    void saveSelectedTemplate(selected, draft, onSave)
+      .then(() => {
+        setSavedSnapshot(JSON.stringify(draft));
+        setSaveState("saved");
+        setToastMessage("Modelo salvo com sucesso.");
+      })
+      .catch(() => setSaveState("error"));
+  };
+
+  const handleCreateTemplate = (newTemplate: DocumentTemplate) => {
+    setLocalTemplates((prev) => [newTemplate, ...prev]);
+    setSelectedKey(newTemplate.templateKey);
+    setDraft(createDocumentBuilderDraft(newTemplate));
+    setSavedSnapshot(JSON.stringify(createDocumentBuilderDraft(newTemplate)));
+    setToastMessage(`Modelo "${newTemplate.title}" criado.`);
+  };
 
   if (!selected) {
     return (
@@ -128,36 +160,57 @@ export function DocumentBuilderWorkspace({
         activeSection="templates"
         onOpenDocuments={onClose}
         onOpenTemplates={() => undefined}
-        templateCount={templates.length}
+        templateCount={localTemplates.length}
       />
 
-      <DocumentBuilderHeader status={status} />
+      <DocumentBuilderHeader
+        canSave={canSave && isDirty}
+        isSaving={isSaving || saveState === "saving"}
+        onOpenCreateTemplate={() => setIsCreateModalOpen(true)}
+        onOpenPreview={() => setIsPreviewModalOpen(true)}
+        onSave={handleManualSave}
+        onToggleAi={() => setIsAiFloatingOpen((prev) => !prev)}
+        status={status}
+        templateTitle={draft.title || selected.title}
+      />
 
       <section className="documents-builder-layout documents-builder-layout-wide">
         <DocumentBuilderSidebar
+          onOpenCreateTemplate={() => setIsCreateModalOpen(true)}
           onSelect={setSelectedKey}
           selectedTemplateKey={selected.templateKey}
-          templates={templates}
+          templates={localTemplates}
         />
 
         <main className="documents-builder-editor documents-builder-editor-wide">
           {isSystemLocked ? (
-            <div className="documents-builder-locked-notice">
-              <span
-                aria-hidden="true"
-                className="documents-builder-locked-notice-icon"
-              >
-                <Lock className="size-5" />
-              </span>
-              <div>
-                <strong>Modelo oficial · somente leitura</strong>
-                <p>
-                  Este documento é gerado automaticamente pelo sistema com os
-                  dados da operação. O layout e o conteúdo seguem um padrão fixo
-                  e não podem ser editados como texto. Use o botão "Prévia PDF"
-                  para conferir.
-                </p>
+            <div className="documents-builder-locked-notice flex items-start justify-between gap-4 p-4 rounded-2xl border border-line bg-app-elevated/40">
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  className="documents-builder-locked-notice-icon flex size-8 items-center justify-center rounded-lg bg-neutral-800 text-neutral-400 shrink-0"
+                >
+                  <Lock className="size-4" />
+                </span>
+                <div>
+                  <strong className="text-sm font-black text-app-text">
+                    Modelo oficial · layout fixo do sistema
+                  </strong>
+                  <p className="text-xs text-muted mt-0.5">
+                    Este documento oficial é padronizado e gerado
+                    automaticamente pelo sistema com os dados da operação. Para
+                    personalizar o texto, você pode criar uma cópia editável.
+                  </p>
+                </div>
               </div>
+              <button
+                className="documents-builder-ghost-action text-xs font-bold shrink-0 flex items-center gap-1.5 cursor-pointer"
+                onClick={() => setIsCreateModalOpen(true)}
+                type="button"
+              >
+                <Copy className="size-3.5 text-accent-strong" />
+                <span>Criar cópia editável</span>
+              </button>
             </div>
           ) : null}
 
@@ -304,6 +357,22 @@ export function DocumentBuilderWorkspace({
             preview={preview}
           />
         </DocumentsDialogShell>
+      ) : null}
+
+      <DocumentCreateTemplateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateTemplate}
+        templates={localTemplates}
+      />
+
+      {toastMessage ? (
+        <Toast
+          key={toastMessage}
+          onDismiss={() => setToastMessage(null)}
+          title={toastMessage}
+          tone="success"
+        />
       ) : null}
     </FeaturePageShell>
   );
