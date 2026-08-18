@@ -147,7 +147,7 @@ describe("retryOlxChatSetup failure persistence", () => {
       metadata: {
         webhookSetup: {
           capabilities: {
-            chat: { reason: "runtime_unavailable", status: "error" },
+            chat: { reason: "provider_outcome_indeterminate", status: "error" },
             leads: { marker: "unchanged", status: "active" },
             stock: { marker: "unchanged", status: "active" },
           },

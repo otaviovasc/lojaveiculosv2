@@ -66,6 +66,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   const [realtimeStatus, setRealtimeStatus] =
     useState<CrmWhatsappRealtimeStatus>("offline");
   const [sessions, setSessions] = useState<CrmWhatsappSession[]>([]);
+  const sessionsRef = useRef(sessions);
+  sessionsRef.current = sessions;
   const currentUserId = accountSession?.user.id ?? null;
   const permissions = useMemo(
     () => readCrmWhatsappCapabilities(accountSession),
@@ -366,7 +368,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
                 !authorizedSessionIds.has(session.id))
           : null;
       if (shouldPruneLocalSession) {
-        sessions
+        sessionsRef.current
           .filter(shouldPruneLocalSession)
           .forEach((session) => removeSession(session.id));
       }
@@ -402,7 +404,6 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       refreshSessionCounts,
       removeSession,
       selectedTagIds,
-      sessions,
       statusFilter,
       unreadOnly,
     ],

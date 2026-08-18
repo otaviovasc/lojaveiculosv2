@@ -14,6 +14,7 @@ import { onboardOlxCrmConnection } from "../../domains/crm/services/CrmService/o
 import { OLX_CRM_CONNECTION_SETUP_PERMISSION } from "../../domains/crm/onboardOlxCrmConnectionSupport.js";
 import { createCrmConnectionCredentialVault } from "../crm/crmConnectionCredentialVault.js";
 import { createOlxCrmWebhookSetupProvider } from "../crm/olxCrmWebhookSetupProvider.js";
+import { readOlxCrmCallbackOrigin } from "../crm/olxCrmCallbackOrigin.js";
 import { createDrizzleCrmConnectionRepository } from "../db/crm/drizzleCrmConnectionRepository.js";
 import {
   createDrizzleCrmRoutingConnectionRepository,
@@ -26,7 +27,7 @@ export function createRuntimeOlxCrmOnboarding(
   db: DrizzleCrmClient,
   env: Record<string, string | undefined>,
 ): MarketplaceOlxCrmOnboarding {
-  const canonicalApiOrigin = readCanonicalOrigin(env);
+  const canonicalApiOrigin = readOlxCrmCallbackOrigin(env);
   const ports = {
     crmConnectionCredentialVault: createCrmConnectionCredentialVault(env),
     crmConnectionRepository: createDrizzleCrmConnectionRepository(db),
@@ -163,26 +164,4 @@ function providerConnectionState(status: "active" | "blocked" | "error") {
   if (status === "active") return "active" as const;
   if (status === "error") return "error" as const;
   return "paused" as const;
-}
-
-function readCanonicalOrigin(env: Record<string, string | undefined>) {
-  const configured = env.PUBLIC_APP_URL?.trim();
-  if (
-    !configured &&
-    (env.APP_ENV === "local" ||
-      env.NODE_ENV === "test" ||
-      env.NODE_ENV === "development")
-  ) {
-    return "http://localhost:8787";
-  }
-  if (!configured)
-    throw new Error("PUBLIC_APP_URL is required for OLX CRM callbacks.");
-  const url = new URL(configured);
-  if (
-    url.protocol !== "https:" &&
-    env.APP_ENV !== "local" &&
-    env.NODE_ENV !== "test"
-  )
-    throw new Error("OLX CRM callbacks require an HTTPS PUBLIC_APP_URL.");
-  return url.origin;
 }

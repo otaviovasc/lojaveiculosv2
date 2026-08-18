@@ -365,6 +365,9 @@ OAuth scopes are fixed server contracts. The deployed callback is derived from
 `https://staging.lojaveiculos.com.br` in staging and
 `https://v2.lojaveiculos.com.br` in production. The production web server
 proxies `/api/v1/*` to the server-owned `VITE_API_BASE_URL` API origin.
+OLX Chat and lead webhooks are server callbacks and are registered directly
+against the server-owned `API_BASE_URL`; they do not pass through the web SPA
+or its API proxy.
 
 Local and test runtimes derive the same canonical callback from the local
 `PUBLIC_APP_URL`, normally

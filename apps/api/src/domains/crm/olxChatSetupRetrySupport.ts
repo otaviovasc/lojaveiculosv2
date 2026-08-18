@@ -124,8 +124,9 @@ export async function finishOlxChatSetupAttempt(
     ? {
         capability: "messaging",
         grantState: "granted",
-        reason:
-          providerOutcomeIndeterminate || failure.retryable
+        reason: providerOutcomeIndeterminate
+          ? "provider_outcome_indeterminate"
+          : failure.retryable
             ? "runtime_unavailable"
             : "provider_rejected",
         status: "error",

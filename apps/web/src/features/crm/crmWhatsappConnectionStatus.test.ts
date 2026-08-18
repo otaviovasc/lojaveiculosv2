@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   readCrmWhatsappChannelLabel,
+  readCrmWhatsappProviderIcon,
   readCrmWhatsappProviderLabel,
   readWhatsappStatus,
 } from "./crmWhatsappConnectionStatus";
@@ -41,15 +42,19 @@ describe("readWhatsappStatus", () => {
   });
 
   it("keeps human provider and channel labels for OLX Chat", () => {
+    expect(readCrmWhatsappProviderLabel("olx")).toBe("OLX Chat");
     expect(readCrmWhatsappProviderLabel("olx_chat")).toBe("OLX Chat");
     expect(readCrmWhatsappProviderLabel("OLX_CHAT")).toBe("OLX Chat");
+    expect(readCrmWhatsappProviderIcon("olx")).toBe("olx");
+    expect(readCrmWhatsappProviderIcon("olx_chat")).toBe("olx");
+    expect(readCrmWhatsappProviderIcon("OLX_CHAT")).toBe("olx");
     expect(readCrmWhatsappChannelLabel("OLX_CHAT")).toBe("OLX Chat");
     expect(
       readWhatsappStatus({
         connectionError: null,
         hasConnection: true,
         isLoading: false,
-        provider: "olx_chat",
+        provider: "olx",
       }),
     ).toEqual({ label: "OLX Chat: online", tone: "online" });
   });

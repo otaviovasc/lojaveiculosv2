@@ -5,6 +5,7 @@ export type CrmWhatsappChannel =
 export type CrmWhatsappProvider =
   | "composio_instagram"
   | "composio_whatsapp"
+  | "olx"
   | "olx_chat"
   | "meta_cloud"
   | "zapi"
