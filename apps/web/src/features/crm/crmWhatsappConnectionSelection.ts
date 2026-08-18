@@ -145,7 +145,7 @@ export function readConversationStartCapability(
       mode: null,
       provider: connection.provider,
       unavailableReason:
-        connection.provider === "composio_instagram"
+        connection.channel === "instagram"
           ? "No Instagram, o cliente precisa enviar a primeira mensagem."
           : "Este canal não permite iniciar novas conversas pelo CRM.",
     };

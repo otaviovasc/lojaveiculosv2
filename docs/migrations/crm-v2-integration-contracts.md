@@ -38,11 +38,11 @@ meaning in the active contract.
 
 ## Messaging Provider Contract
 
-| Provider             | Outbound path                                                               | Inbound path                                                       | Current limits                                                                                                                                                                  |
-| -------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `zapi`               | Existing ZAPI HTTP adapter                                                  | Connection-specific ZAPI callbacks                                 | Existing broad WhatsApp behavior remains the regression baseline.                                                                                                               |
-| `composio_whatsapp`  | Composio REST proxy to the official Meta Graph messages endpoint            | Direct signed Meta webhook at `/api/v1/crm/whatsapp/webhooks/meta` | Free-form conversation start is blocked. New conversations use an approved template name and language; templates with variables can supply explicit components through the API. |
-| `composio_instagram` | Composio REST proxy to the Instagram professional-account messages endpoint | Direct signed Meta webhook at `/api/v1/crm/whatsapp/webhooks/meta` | Customer-initiated sessions only. Text and supported image sends are available; delivery/read receipt ingestion remains unsupported pending contract proof.                     |
+| Provider             | Outbound path                                                               | Inbound path                                              | Current limits                                                                                                                                                                  |
+| -------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `zapi`               | Existing ZAPI HTTP adapter                                                  | Connection-specific ZAPI callbacks                        | Existing broad WhatsApp behavior remains the regression baseline.                                                                                                               |
+| `composio_whatsapp`  | Composio REST proxy to the official Meta Graph messages endpoint            | Direct signed Meta webhook at `/api/v1/crm/webhooks/meta` | Free-form conversation start is blocked. New conversations use an approved template name and language; templates with variables can supply explicit components through the API. |
+| `composio_instagram` | Composio REST proxy to the Instagram professional-account messages endpoint | Direct signed Meta webhook at `/api/v1/crm/webhooks/meta` | Customer-initiated sessions only. Text and supported image sends are available; delivery/read receipt ingestion remains unsupported pending contract proof.                     |
 
 Official provider outbound execution uses
 `POST /api/v3.1/tools/execute/proxy` on the configured Composio base URL. V2
@@ -90,8 +90,12 @@ manual CRM follow-up even if later automation is unavailable.
 
 ### Connections
 
-- `GET /crm/whatsapp/connections`
-- `PATCH /crm/whatsapp/connections/:connectionId`
+- `GET /crm/channel-connections`
+- `POST /crm/channel-connections`
+- `PATCH /crm/channel-connections/:connectionId`
+- `POST /crm/channel-connections/:connectionId/composio/authorize`
+- `POST /crm/channel-connections/:connectionId/composio/complete`
+- `POST /crm/channel-connections/:connectionId/composio/sender`
 
 ZAPI connection responses include six generated webhook endpoints:
 
@@ -108,12 +112,13 @@ responses only expose credential reference names plus
 `credentials.storedInstanceConfigured`; stored tokens are never returned.
 Env-reference credentials remain supported for Railway/env-managed deployments.
 
-Official connections may submit `composioCredentials` with
-`connectedAccountId`, `apiKeyEnv`, and an optional connection-specific
-`graphVersion`. Responses expose only configuration status and reference names;
-they never expose the Composio API key or connected-account id. The connection
-`externalConnectionId` is the native Meta phone-number id for
-`composio_whatsapp` or professional-account id for `composio_instagram`.
+Official self-service creates a channel-specific Composio Connect Link and
+stores only the returned connected-account reference. Responses never expose
+the Composio API key, OAuth tokens, Page access tokens, or connected-account
+id. The connection `externalConnectionId` is the native Meta phone-number id
+for `composio_whatsapp` or professional-account id for
+`composio_instagram`. Instagram sender discovery and the provider subscription
+target remain distinct for Facebook Login for Business.
 
 ### Conversations
 
@@ -297,10 +302,10 @@ Outside local/test, callbacks require `CRM_ZAPI_WEBHOOK_TOKEN` via
 
 ### Official Meta Webhook
 
-- `GET /crm/whatsapp/webhooks/meta`
-- `POST /crm/whatsapp/webhooks/meta`
+- `GET /crm/webhooks/meta`
+- `POST /crm/webhooks/meta`
 
-The mounted public path is `/api/v1/crm/whatsapp/webhooks/meta`. The GET route
+The mounted public path is `/api/v1/crm/webhooks/meta`. The GET route
 performs Meta challenge verification with `CRM_META_WEBHOOK_VERIFY_TOKEN`. The
 POST route verifies `X-Hub-Signature-256` against the raw request body with
 `CRM_META_APP_SECRET` before parsing any event.

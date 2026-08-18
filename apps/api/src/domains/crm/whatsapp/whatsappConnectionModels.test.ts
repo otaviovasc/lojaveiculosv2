@@ -1,7 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { providerCapabilities } from "./whatsappConnectionModels.js";
+import {
+  providerCapabilities,
+  setupProviderForConnection,
+} from "./whatsappConnectionModels.js";
 
 describe("CRM provider capabilities", () => {
+  it("maps canonical Meta connections back to their channel setup flow", () => {
+    expect(
+      setupProviderForConnection({
+        broker: "composio",
+        channel: "instagram",
+        provider: "meta_cloud",
+      }),
+    ).toEqual(["composio_instagram"]);
+    expect(
+      setupProviderForConnection({
+        broker: "composio",
+        channel: "whatsapp",
+        provider: "meta_cloud",
+      }),
+    ).toEqual(["composio_whatsapp"]);
+  });
+
   it.each([
     [
       "zapi",

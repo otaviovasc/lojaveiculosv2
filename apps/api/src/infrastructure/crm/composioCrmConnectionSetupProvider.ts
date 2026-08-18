@@ -1,12 +1,17 @@
 import {
   CrmConnectionSetupProviderError,
-  type ComposioWhatsappOnboardingProvider,
+  type ComposioCrmProvider,
+  type ComposioInstagramOnboardingProvider,
 } from "../../domains/crm/ports/crmConnectionSetupProvider.js";
 import { DEFAULT_COMPOSIO_API_BASE_URL } from "./composioCrmWhatsappGatewaySupport.js";
 import {
   createComposioSetupClient,
   executeComposioSetupTool,
 } from "./composioCrmConnectionSetupClient.js";
+import {
+  createComposioInstagramSetup,
+  readInstagramLoginMode,
+} from "./composioCrmInstagramSetup.js";
 import {
   configurationError,
   normalizeAccountStatus,
@@ -33,15 +38,8 @@ function invalidResponse(message: string) {
 export function createComposioCrmConnectionSetupProvider(
   env: Record<string, string | undefined> = process.env,
   fetchImpl: typeof fetch = fetch,
-): ComposioWhatsappOnboardingProvider {
+): ComposioInstagramOnboardingProvider {
   const apiKey = requireValue(env.COMPOSIO_API_KEY ?? "", "Composio API key");
-  const authConfigId = requireValue(
-    env.COMPOSIO_WHATSAPP_AUTH_CONFIG_ID ?? "",
-    "Composio WhatsApp auth config",
-  );
-  if (!authConfigId.startsWith("ac_")) {
-    throw configurationError("Composio WhatsApp auth config ID is invalid");
-  }
   const baseUrl =
     env.COMPOSIO_API_BASE_URL?.trim().replace(/\/+$/u, "") ||
     DEFAULT_COMPOSIO_API_BASE_URL;
@@ -54,9 +52,11 @@ export function createComposioCrmConnectionSetupProvider(
   );
   const toolkitVersion =
     env.COMPOSIO_WHATSAPP_TOOLKIT_VERSION?.trim() || DEFAULT_TOOLKIT_VERSION;
+  const instagramSetup = createComposioInstagramSetup({ client, env });
 
   return {
     async createConnectLink(input) {
+      const authConfigId = resolveAuthConfigId(env, input.provider);
       const callbackUrl = input.callbackUrl ?? readPublicAppUrl(env);
       const payload = await client.request(
         "/api/v3.1/connected_accounts/link",
@@ -80,6 +80,8 @@ export function createComposioCrmConnectionSetupProvider(
       assertTrustedComposioRedirect(redirectUrl);
       return { connectedAccountId, expiresAt, redirectUrl };
     },
+    discoverInstagramResources: (connectedAccountId) =>
+      instagramSetup.discover(connectedAccountId),
     async discoverWhatsappResources(connectedAccountId) {
       const accountId = requireAccountId(connectedAccountId);
       const accountPayload = await executeComposioSetupTool(
@@ -120,6 +122,7 @@ export function createComposioCrmConnectionSetupProvider(
       );
       return { subscribed: true };
     },
+    subscribeInstagramApp: (input) => instagramSetup.subscribe(input),
     async verifyConnectedAccount(connectedAccountId) {
       const accountId = requireAccountId(connectedAccountId);
       const payload = await client.request(
@@ -146,12 +149,32 @@ export function createComposioCrmConnectionSetupProvider(
   };
 }
 
+function resolveAuthConfigId(
+  env: Record<string, string | undefined>,
+  provider: ComposioCrmProvider,
+) {
+  if (provider === "composio_instagram") readInstagramLoginMode(env);
+  const channel = provider === "composio_instagram" ? "Instagram" : "WhatsApp";
+  const value =
+    provider === "composio_instagram"
+      ? env.COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID
+      : env.COMPOSIO_WHATSAPP_AUTH_CONFIG_ID;
+  const authConfigId = requireValue(
+    value ?? "",
+    `Composio ${channel} auth config`,
+  );
+  if (!authConfigId.startsWith("ac_")) {
+    throw configurationError(`Composio ${channel} auth config ID is invalid`);
+  }
+  return authConfigId;
+}
+
 function readPublicAppUrl(env: Record<string, string | undefined>) {
   const value = env.PUBLIC_APP_URL?.trim();
   if (!value) return undefined;
   assertHttpsProviderUrl(value, "Public app callback URL");
   const callback = new URL(value);
-  callback.hash = "/crm?surface=whatsapp";
+  callback.hash = "/crm";
   return callback.toString();
 }
 

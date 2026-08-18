@@ -110,7 +110,7 @@ cron, live provider/storage/realtime evidence, and load/recovery checks remain.
     and generated webhook URLs.
   - Bot Integracoes uses Repasses-style config/docs cards, V2 Action API examples, webhook payload docs, and intervention notes.
 - Added write-only ZAPI instance credential support:
-  - `PATCH /crm/whatsapp/connections/:connectionId` accepts
+  - `PATCH /crm/channel-connections/:connectionId` accepts
     `instanceCredentials.instanceId` and `instanceCredentials.instanceToken`.
   - Responses expose only configured state; tokens are not returned or audited.
 - Ran a live local ZAPI smoke send to the approved phone number. API returned
@@ -310,7 +310,7 @@ focused and full checks passed.
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-masterful/crm-whatsapp-conversation-mobile.png`.
 - Current filtered-lead Campaigns screenshot:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-masterful/crm-whatsapp-campaigns.png`.
-- Live smoke: local `GET /crm/whatsapp/connections` reported the test ZAPI
+- Live smoke: local `GET /crm/channel-connections` reported the test ZAPI
   connection as connected; local `POST /crm/whatsapp/conversations/start`
   returned `201` and `SENT` for the approved phone number.
 - Final gate: `CI=true pnpm run validate` passed on 2026-07-13 with 649 web

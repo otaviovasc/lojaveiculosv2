@@ -205,6 +205,7 @@ function formatProvider(provider: CrmWhatsappProviderEvent["provider"]) {
     composio_instagram: "Instagram oficial",
     composio_whatsapp: "WhatsApp oficial",
     meta_cloud: "WhatsApp oficial",
+    olx: "OLX Chat",
     olx_chat: "OLX Chat",
     zapi: "Z-API",
   };

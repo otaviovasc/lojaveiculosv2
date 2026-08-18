@@ -149,7 +149,7 @@ Official WhatsApp and Instagram sends use Composio's HTTP REST proxy. The API
 does not install the Composio TypeScript SDK because its current Node runtime
 requirement would remove this repository's supported Node 20 path. Official
 inbound messages and WhatsApp delivery statuses arrive directly from Meta at
-`/api/v1/crm/whatsapp/webhooks/meta` and require Meta challenge and signature
+`/api/v1/crm/webhooks/meta` and require Meta challenge and signature
 verification.
 
 Redis is part of the complete CRM messaging migration for ephemeral
@@ -180,8 +180,9 @@ payloads, leads, sessions, messages, activities, and idempotency through
 | `COMPOSIO_REQUEST_TIMEOUT_MS`              | No                                                                    | local, staging, production | No     | Timeout for Composio proxy and connected-account status requests. Defaults to `10000` and is capped at `60000`.                                                                                                                                                                                                                                                                                                                |
 | `COMPOSIO_WHATSAPP_TOOLKIT_VERSION`        | No                                                                    | local, staging, production | No     | Composio toolkit version used to discover official WhatsApp sender actions. Defaults to the server-tested version in code; change only after provider contract verification.                                                                                                                                                                                                                                                   |
 | `COMPOSIO_WHATSAPP_AUTH_CONFIG_ID`         | When official self-service is enabled                                 | local, staging, production | No     | Server-owned `ac_` auth-config ID used by the official WhatsApp onboarding flow and operator diagnostics. It is not a `ca_` connected-account ID.                                                                                                                                                                                                                                                                              |
-| `COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID`        | Operator command only                                                 | local                      | No     | `ac_` auth-config ID used by `crm:composio:diagnose` and `crm:composio:link`. It is not a `ca_` connected-account ID.                                                                                                                                                                                                                                                                                                          |
-| `CRM_META_WEBHOOK_VERIFY_TOKEN`            | When official enabled                                                 | local, staging, production | Yes    | Token used for Meta's GET webhook challenge at `/api/v1/crm/whatsapp/webhooks/meta`.                                                                                                                                                                                                                                                                                                                                           |
+| `COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID`        | When Instagram self-service is enabled                                | local, staging, production | No     | Server-owned `ac_` auth-config ID used by Instagram onboarding and operator diagnostics. It must belong to the same Loja Veiculos-owned Meta app that signs the direct webhook; it is not a `ca_` connected-account ID.                                                                                                                                                                                                        |
+| `COMPOSIO_INSTAGRAM_LOGIN_MODE`            | When Instagram self-service is enabled                                | local, staging, production | No     | Required server-owned contract selector: `facebook` for Facebook Login for Business with a linked Page, or `instagram` for Instagram Login. Missing or unknown values fail closed before OAuth because discovery and webhook subscription targets differ.                                                                                                                                                                      |
+| `CRM_META_WEBHOOK_VERIFY_TOKEN`            | When official enabled                                                 | local, staging, production | Yes    | Token used for Meta's GET webhook challenge at `/api/v1/crm/webhooks/meta`.                                                                                                                                                                                                                                                                                                                                                    |
 | `CRM_META_APP_SECRET`                      | When official enabled                                                 | local, staging, production | Yes    | Meta app secret used to verify the POST webhook `X-Hub-Signature-256` over the raw request body.                                                                                                                                                                                                                                                                                                                               |
 | `CRM_EXTERNAL_BOT_EFFECT_BATCH_SIZE`       | No                                                                    | local, staging, production | No     | Maximum durable external-bot provider effects claimed per worker run. Defaults to `25` and is capped at `100`. The worker remains disabled unless it is explicitly deployed with complete server-owned authorization and executor wiring.                                                                                                                                                                                      |
 | `CRM_CONNECTION_CLEANUP_BATCH_SIZE`        | No                                                                    | local                      | No     | Maximum abandoned-connection and expired outbound-recovery rows handled by a manual cleanup run. Defaults to `100` and is capped at `500`; the deployed scheduled worker uses its own bounded batch.                                                                                                                                                                                                                           |
@@ -213,7 +214,7 @@ the callback; never log, display, or manually reuse the callback URL.
 Official Meta providers use one shared callback:
 
 - Verification and events:
-  `/api/v1/crm/whatsapp/webhooks/meta`
+  `/api/v1/crm/webhooks/meta`
 
 Configure the Meta app with `CRM_META_WEBHOOK_VERIFY_TOKEN`. Every POST must
 carry a valid `X-Hub-Signature-256` generated with `CRM_META_APP_SECRET`; there
@@ -365,6 +366,9 @@ OAuth scopes are fixed server contracts. The deployed callback is derived from
 `https://staging.lojaveiculos.com.br` in staging and
 `https://v2.lojaveiculos.com.br` in production. The production web server
 proxies `/api/v1/*` to the server-owned `VITE_API_BASE_URL` API origin.
+OLX Chat and lead webhooks are server callbacks and are registered directly
+against the server-owned `API_BASE_URL`; they do not pass through the web SPA
+or its API proxy.
 
 Local and test runtimes derive the same canonical callback from the local
 `PUBLIC_APP_URL`, normally

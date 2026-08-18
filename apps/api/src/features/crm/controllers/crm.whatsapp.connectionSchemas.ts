@@ -13,6 +13,12 @@ export const whatsappCreateConnectionSchema = z.discriminatedUnion("provider", [
   z
     .object({
       displayName: z.string().trim().min(1).max(160).optional(),
+      provider: z.literal("composio_instagram"),
+    })
+    .strict(),
+  z
+    .object({
+      displayName: z.string().trim().min(1).max(160).optional(),
       provider: z.literal("composio_whatsapp"),
     })
     .strict(),

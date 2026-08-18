@@ -379,7 +379,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isSetupProvider(value: unknown): value is CrmWhatsappSetupProvider {
-  return value === "zapi" || value === "composio_whatsapp";
+  return (
+    value === "zapi" ||
+    value === "composio_instagram" ||
+    value === "composio_whatsapp"
+  );
 }
 
 function parseCanonicalConnection(

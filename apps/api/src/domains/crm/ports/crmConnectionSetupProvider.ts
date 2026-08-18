@@ -114,15 +114,55 @@ export type ComposioWhatsappDiscovery = {
   phones: readonly ComposioWhatsappPhone[];
 };
 
-export type ComposioWhatsappOnboardingProvider = {
+export type ComposioInstagramSender = {
+  accountType: "BUSINESS" | "CREATOR" | null;
+  displayName: string | null;
+  loginMode: ComposioInstagramLoginMode;
+  pageId: string | null;
+  pageName: string | null;
+  senderId: string;
+  subscriptionFields: readonly string[];
+  subscriptionTargetId: string;
+  username: string | null;
+};
+
+export type ComposioInstagramDiscovery = {
+  senders: readonly ComposioInstagramSender[];
+};
+
+export type ComposioCrmProvider = "composio_instagram" | "composio_whatsapp";
+
+export type ComposioInstagramLoginMode = "facebook" | "instagram";
+
+export const composioInstagramWebhookFields = {
+  facebook: ["messages"],
+  instagram: ["messages", "messaging_postbacks"],
+} as const satisfies Record<ComposioInstagramLoginMode, readonly string[]>;
+
+export type ComposioInstagramSubscriptionEvidence = {
+  fields: readonly string[];
+  subscribed: true;
+  targetId: string;
+};
+
+export type ComposioCrmOnboardingProvider = {
   createConnectLink: (input: {
     alias?: string;
     callbackUrl?: string;
+    provider: ComposioCrmProvider;
     userId: string;
   }) => Promise<ComposioConnectLink>;
+  discoverInstagramResources?: (
+    connectedAccountId: string,
+  ) => Promise<ComposioInstagramDiscovery>;
   discoverWhatsappResources: (
     connectedAccountId: string,
   ) => Promise<ComposioWhatsappDiscovery>;
+  subscribeInstagramApp?: (input: {
+    connectedAccountId: string;
+    senderId: string;
+    subscriptionTargetId: string;
+  }) => Promise<ComposioInstagramSubscriptionEvidence>;
   subscribeWhatsappApp: (input: {
     businessAccountId: string;
     connectedAccountId: string;
@@ -131,6 +171,15 @@ export type ComposioWhatsappOnboardingProvider = {
     connectedAccountId: string,
   ) => Promise<ComposioConnectedAccount>;
 };
+
+export type ComposioInstagramOnboardingProvider =
+  ComposioCrmOnboardingProvider &
+    Required<
+      Pick<
+        ComposioCrmOnboardingProvider,
+        "discoverInstagramResources" | "subscribeInstagramApp"
+      >
+    >;
 
 export type CrmConnectionSetupProviderErrorCode =
   | "configuration_error"

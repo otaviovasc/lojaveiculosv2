@@ -34,7 +34,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/zapi/disconnect",
+    "/channel-connections/:connectionId/zapi/disconnect",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(
@@ -50,7 +50,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/zapi/status/refresh",
+    "/channel-connections/:connectionId/zapi/status/refresh",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(
@@ -66,7 +66,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/zapi/webhooks/configure",
+    "/channel-connections/:connectionId/zapi/webhooks/configure",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(
@@ -84,7 +84,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/zapi/pairing/qr",
+    "/channel-connections/:connectionId/zapi/pairing/qr",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(
@@ -98,7 +98,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/zapi/pairing/code",
+    "/channel-connections/:connectionId/zapi/pairing/code",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(
@@ -119,7 +119,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/composio/authorize",
+    "/channel-connections/:connectionId/composio/authorize",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(
@@ -135,7 +135,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/composio/complete",
+    "/channel-connections/:connectionId/composio/complete",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(
@@ -151,7 +151,7 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   );
 
   crmFeature.post(
-    "/whatsapp/connections/:connectionId/composio/sender",
+    "/channel-connections/:connectionId/composio/sender",
     async (context) =>
       handleWhatsapp(context, async () => {
         const connectionId = readConnectionId(

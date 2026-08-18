@@ -46,8 +46,8 @@ export function CrmLeadWhatsappPanel({ api, lead }: Props) {
   );
   const hasOfficialConnection = connections.some(
     (item) =>
-      item.provider === "composio_whatsapp" ||
-      item.provider === "composio_instagram",
+      item.provider === "meta_cloud" &&
+      (item.channel === "whatsapp" || item.channel === "instagram"),
   );
   const linkedSession = linkedSessions[0] ?? null;
 

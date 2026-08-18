@@ -135,6 +135,13 @@ export function setupProviderForConnection(
   ) {
     return ["composio_whatsapp"];
   }
+  if (
+    connection.channel === "instagram" &&
+    connection.provider === "meta_cloud" &&
+    connection.broker === "composio"
+  ) {
+    return ["composio_instagram"];
+  }
   return [];
 }
 

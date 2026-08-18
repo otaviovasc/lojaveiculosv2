@@ -47,7 +47,7 @@ import type {
   CrmWhatsappMessage,
   CrmWhatsappComposioAuthorization,
   CrmWhatsappComposioCompleteResult,
-  CrmWhatsappConnectionsResponse,
+  CrmCanonicalConnectionsResponse,
   CrmWhatsappConclusionInput,
   CrmWhatsappCreateConnectionInput,
   CrmWhatsappProviderConnection,
@@ -121,7 +121,7 @@ export type CrmWhatsappApi = {
   ) => Promise<CrmWhatsappSessionCommandResult>;
   getBotIntegration: () => Promise<CrmWhatsappBotIntegrationResponse>;
   getRoutingPolicy: () => Promise<CrmRoutingPolicy>;
-  listConnections: () => Promise<CrmWhatsappConnectionsResponse>;
+  listConnections: () => Promise<CrmCanonicalConnectionsResponse>;
   listMessages: (
     sessionId: CrmWhatsappSessionId,
     query?: Omit<CrmWhatsappMessageQuery, "connectionId">,

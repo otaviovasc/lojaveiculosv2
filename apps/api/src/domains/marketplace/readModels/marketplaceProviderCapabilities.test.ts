@@ -8,7 +8,7 @@ describe("marketplace provider capability projection", () => {
     expect(
       readMarketplaceProviderCapabilities("olx", createAccount()),
     ).toMatchObject({
-      chat: { reason: "provider_rejected", status: "error" },
+      chat: { reason: "provider_outcome_indeterminate", status: "error" },
       leads: { reason: null, status: "active" },
       stock: { reason: "missing_scope", status: "blocked" },
     });
@@ -32,7 +32,7 @@ function createAccount(): MarketplaceAccount {
           chat: {
             capability: "messaging",
             grantState: "granted",
-            reason: "provider_rejected",
+            reason: "provider_outcome_indeterminate",
             status: "error",
           },
           leads: {

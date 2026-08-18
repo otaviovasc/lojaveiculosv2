@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  AlertCircle,
-  ExternalLink,
-  Loader2,
-  MessageCircle,
-} from "lucide-react";
+import { Camera, MessageCircle, QrCode } from "lucide-react";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
@@ -14,6 +9,7 @@ import type {
   CrmWhatsappConnectionAllowance,
   CrmWhatsappCreateConnectionInput,
   CrmWhatsappConnectionId,
+  CrmWhatsappOfficialSetupProvider,
   CrmWhatsappProviderConnection,
   CrmWhatsappSetupProvider,
   CrmWhatsappZapiAddonContract,
@@ -22,10 +18,11 @@ import type {
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import { CrmWhatsappChannelDirectory } from "./CrmWhatsappChannelDirectory";
 import { CrmConnectionManageDialog } from "./CrmWhatsappConnectionAdminDialog";
+import { CrmWhatsappOfficialSetup } from "./CrmWhatsappOfficialSetup";
 import {
   clearPendingComposioConnection,
-  readPendingComposioConnectionId,
-  rememberPendingComposioConnection,
+  isComposioConnectionForProvider,
+  readPendingComposioConnection,
 } from "./crmWhatsappComposioOAuth";
 
 export type CrmWhatsappSelfServiceHandlers = {
@@ -98,13 +95,7 @@ export function CrmWhatsappSelfServiceSetup({
   zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
 }) {
   const [provider, setProvider] = useState<CrmWhatsappSetupProvider | null>(
-    startAtDirectory
-      ? null
-      : existingConnection?.provider === "zapi"
-        ? "zapi"
-        : existingConnection?.provider === "composio_whatsapp"
-          ? "composio_whatsapp"
-          : null,
+    startAtDirectory ? null : readSetupProvider(existingConnection),
   );
   const [connection, setConnection] =
     useState<CrmWhatsappProviderConnection | null>(existingConnection);
@@ -126,30 +117,22 @@ export function CrmWhatsappSelfServiceSetup({
 
   useEffect(() => {
     setConnection(existingConnection);
-    if (
-      !startAtDirectory &&
-      (existingConnection?.provider === "zapi" ||
-        existingConnection?.provider === "composio_whatsapp")
-    ) {
-      setProvider(
-        existingConnection.provider === "zapi" ? "zapi" : "composio_whatsapp",
-      );
+    const nextProvider = readSetupProvider(existingConnection);
+    if (!startAtDirectory && nextProvider) {
+      setProvider(nextProvider);
     }
   }, [existingConnection, startAtDirectory]);
 
   const chooseProvider = (nextProvider: CrmWhatsappSetupProvider) => {
-    setupSessionRef.current += 1;
-    completingConnectionRef.current = null;
-    setCompletion(null);
-    setError(null);
-    setIsBusy(false);
+    resetSetupProgress();
     setConnection(
       connections.find(
         (candidate) =>
-          candidate.provider === nextProvider &&
+          isConnectionForSetupProvider(candidate, nextProvider) &&
           candidate.status !== "archived",
       ) ??
-        (existingConnection?.provider === nextProvider &&
+        (existingConnection &&
+        isConnectionForSetupProvider(existingConnection, nextProvider) &&
         existingConnection.status !== "archived"
           ? existingConnection
           : null),
@@ -158,17 +141,24 @@ export function CrmWhatsappSelfServiceSetup({
   };
 
   const closeSetup = () => {
-    setupSessionRef.current += 1;
-    completingConnectionRef.current = null;
-    setCompletion(null);
+    resetSetupProgress();
     setConnection(null);
-    setError(null);
-    setIsBusy(false);
     setProvider(null);
   };
 
+  function resetSetupProgress() {
+    setupSessionRef.current += 1;
+    completingConnectionRef.current = null;
+    setCompletion(null);
+    setError(null);
+    setIsBusy(false);
+  }
+
   const completeOfficialSetup = useCallback(
-    async (connectionId: string) => {
+    async (
+      connectionId: string,
+      officialProvider: CrmWhatsappOfficialSetupProvider,
+    ) => {
       if (completingConnectionRef.current === connectionId) return;
       const setupSession = setupSessionRef.current;
       completingConnectionRef.current = connectionId;
@@ -176,6 +166,14 @@ export function CrmWhatsappSelfServiceSetup({
       setError(null);
       try {
         const result = await handlers.onCompleteComposio(connectionId);
+        if (
+          String(result.connection.id) !== connectionId ||
+          !isComposioConnectionForProvider(result.connection, officialProvider)
+        ) {
+          throw new Error(
+            "O provedor retornou uma conexão diferente da autorização iniciada.",
+          );
+        }
         if (setupSession !== setupSessionRef.current) return;
         setConnection(result.connection);
         setCompletion(result);
@@ -200,10 +198,14 @@ export function CrmWhatsappSelfServiceSetup({
   );
 
   useEffect(() => {
-    if (provider !== "composio_whatsapp" || !connection) return;
-    const pendingId = readPendingComposioConnectionId();
-    if (pendingId === String(connection.id)) {
-      void completeOfficialSetup(pendingId);
+    if (!isOfficialSetupProvider(provider) || !connection) return;
+    const pending = readPendingComposioConnection();
+    if (
+      pending?.connectionId === String(connection.id) &&
+      pending.provider === provider &&
+      isComposioConnectionForProvider(connection, provider)
+    ) {
+      void completeOfficialSetup(pending.connectionId, provider);
     }
   }, [completeOfficialSetup, connection, provider]);
 
@@ -231,12 +233,23 @@ export function CrmWhatsappSelfServiceSetup({
       />
       <FeatureDialog
         className="feature-dialog--medium crm-connection-dialog"
+        icon={
+          provider === "composio_instagram" ? (
+            <Camera />
+          ) : provider === "composio_whatsapp" ? (
+            <MessageCircle />
+          ) : (
+            <QrCode />
+          )
+        }
         isOpen={provider !== null}
         onClose={closeSetup}
         title={
           provider === "zapi"
             ? "Conectar WhatsApp · Z-API"
-            : "Configurar WhatsApp Oficial"
+            : provider === "composio_instagram"
+              ? "Configurar Instagram Oficial"
+              : "Configurar WhatsApp Oficial"
         }
       >
         {provider === "zapi" ? (
@@ -250,12 +263,15 @@ export function CrmWhatsappSelfServiceSetup({
             onConnection={setConnection}
             zapiAddonContract={zapiAddonContract}
           />
-        ) : provider === "composio_whatsapp" ? (
-          <OfficialSetup
+        ) : isOfficialSetupProvider(provider) ? (
+          <CrmWhatsappOfficialSetup
             completion={completion}
             canSetup={canSetup}
             connection={
-              connection?.provider === "composio_whatsapp" ? connection : null
+              connection &&
+              isComposioConnectionForProvider(connection, provider)
+                ? connection
+                : null
             }
             error={error}
             handlers={handlers}
@@ -263,13 +279,14 @@ export function CrmWhatsappSelfServiceSetup({
             onBack={closeSetup}
             onComplete={() =>
               connection
-                ? void completeOfficialSetup(String(connection.id))
+                ? void completeOfficialSetup(String(connection.id), provider)
                 : null
             }
             onConnection={setConnection}
             onError={setError}
             onRedirect={onRedirect}
             onStartBusy={setIsBusy}
+            provider={provider}
           />
         ) : null}
       </FeatureDialog>
@@ -287,252 +304,29 @@ export function CrmWhatsappSelfServiceSetup({
   );
 }
 
-function OfficialSetup({
-  canSetup,
-  completion,
-  connection,
-  error,
-  handlers,
-  isBusy,
-  onBack,
-  onComplete,
-  onConnection,
-  onError,
-  onRedirect,
-  onStartBusy,
-}: {
-  canSetup: boolean;
-  completion: CrmWhatsappComposioCompleteResult | null;
-  connection: CrmWhatsappProviderConnection | null;
-  error: string | null;
-  handlers: CrmWhatsappSelfServiceHandlers;
-  isBusy: boolean;
-  onBack: () => void;
-  onComplete: () => void;
-  onConnection: (connection: CrmWhatsappProviderConnection) => void;
-  onError: (error: string | null) => void;
-  onRedirect: (url: string) => void;
-  onStartBusy: (busy: boolean) => void;
-}) {
-  const authorize = async () => {
-    if (!canSetup) return;
-    onStartBusy(true);
-    onError(null);
-    try {
-      const created =
-        connection ??
-        (await handlers.onCreate({ provider: "composio_whatsapp" }));
-      if (!created) throw new Error("Conexão não criada.");
-      onConnection(created);
-      const authorization = await handlers.onAuthorizeComposio(
-        String(created.id),
-      );
-      rememberPendingComposioConnection(String(created.id));
-      onRedirect(authorization.redirectUrl);
-    } catch (caught) {
-      onError(
-        formatApiErrorDisplay(
-          caught,
-          "Não foi possível iniciar a autorização oficial.",
-        ),
-      );
-      onStartBusy(false);
-    }
-  };
-
-  const selectSender = async (senderId: string) => {
-    if (!canSetup || !connection) return;
-    onStartBusy(true);
-    onError(null);
-    try {
-      await handlers.onSelectComposioSender(String(connection.id), senderId);
-      await handlers.onRefreshConnections();
-    } catch (caught) {
-      onError(
-        formatApiErrorDisplay(
-          caught,
-          "O remetente não foi selecionado. A conexão ainda não está pronta.",
-        ),
-      );
-    } finally {
-      onStartBusy(false);
-    }
-  };
-
-  return (
-    <section className="crm-whatsapp-setup-card crm-whatsapp-setup-card-flat">
-      <OfficialSetupRail completion={completion} connection={connection} />
-      <p className="crm-whatsapp-setup-intro">
-        A autorização abre em página inteira. O canal só será exibido como
-        conectado depois da confirmação do provedor e da escolha do remetente.
-      </p>
-      {completion?.senders.length ? (
-        <div className="crm-whatsapp-official-stage" data-state="senders">
-          <p className="crm-whatsapp-official-stage-label">
-            Autorização confirmada
-          </p>
-          <p className="crm-whatsapp-official-stage-note">
-            O provedor confirmou a autorização. Escolha o número remetente para
-            concluir a conexão do canal.
-          </p>
-          <fieldset className="crm-whatsapp-official-senders">
-            <legend>Escolha o número remetente</legend>
-            {completion.senders.map((sender) => (
-              <button
-                className="crm-action crm-action-secondary justify-start"
-                disabled={isBusy || !canSetup}
-                key={sender.senderId}
-                onClick={() => void selectSender(sender.senderId)}
-                type="button"
-              >
-                <MessageCircle aria-hidden="true" className="size-4" />
-                {sender.displayName || sender.phone || sender.senderId}
-              </button>
-            ))}
-          </fieldset>
-        </div>
-      ) : connection?.live.providerStatus === "connected" ? (
-        <div className="crm-whatsapp-official-stage" data-state="connected">
-          <p className="crm-whatsapp-official-stage-label">Canal conectado</p>
-          <p className="crm-whatsapp-official-stage-note">
-            A conta e o remetente já estão confirmados. Reautorize somente se a
-            Meta pedir uma nova conexão.
-          </p>
-          <button
-            className="crm-action crm-action-secondary"
-            disabled={isBusy || !canSetup}
-            onClick={() => void authorize()}
-            type="button"
-          >
-            <ExternalLink aria-hidden="true" className="size-4" />
-            Reautorizar com a Meta
-          </button>
-        </div>
-      ) : connection ? (
-        <div className="crm-whatsapp-official-stage" data-state="awaiting">
-          <p className="crm-whatsapp-official-stage-label">
-            Aguardando retorno do provedor
-          </p>
-          <p className="crm-whatsapp-official-stage-note">
-            A autorização foi iniciada na página da Meta, mas o canal ainda não
-            está conectado. Nenhuma operação oficial foi concluída até a
-            confirmação do provedor.
-          </p>
-          <div className="crm-whatsapp-official-stage-actions">
-            <button
-              className="crm-action crm-action-primary"
-              disabled={isBusy || !canSetup}
-              onClick={onComplete}
-              type="button"
-            >
-              {isBusy ? (
-                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-              ) : null}
-              Verificar autorização
-            </button>
-            <button
-              className="crm-action crm-action-secondary"
-              disabled={isBusy || !canSetup}
-              onClick={() => void authorize()}
-              type="button"
-            >
-              <ExternalLink aria-hidden="true" className="size-4" />
-              Reabrir autorização com a Meta
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          className="crm-action crm-action-primary"
-          disabled={isBusy || !canSetup}
-          onClick={() => void authorize()}
-          type="button"
-        >
-          {isBusy ? (
-            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-          ) : (
-            <ExternalLink aria-hidden="true" className="size-4" />
-          )}
-          Autorizar com a Meta
-        </button>
-      )}
-      <SetupError error={error} />
-      {connection && error ? (
-        <button
-          className="crm-action crm-action-secondary justify-self-start"
-          disabled={isBusy || !canSetup}
-          onClick={onComplete}
-          type="button"
-        >
-          Verificar autorização novamente
-        </button>
-      ) : null}
-      {!connection ? (
-        <button
-          className="crm-action crm-action-secondary"
-          disabled={isBusy}
-          onClick={onBack}
-          type="button"
-        >
-          Voltar
-        </button>
-      ) : null}
-    </section>
-  );
+function isOfficialSetupProvider(
+  provider: CrmWhatsappSetupProvider | null,
+): provider is CrmWhatsappOfficialSetupProvider {
+  return provider === "composio_instagram" || provider === "composio_whatsapp";
 }
 
-function OfficialSetupRail({
-  completion,
-  connection,
-}: {
-  completion: CrmWhatsappComposioCompleteResult | null;
-  connection: CrmWhatsappProviderConnection | null;
-}) {
-  const state = completion?.senders.length
-    ? {
-        evidence: "A autorização Meta foi confirmada pelo servidor.",
-        next: "Escolher o número que enviará as mensagens.",
-        state: "Remetente pendente",
-      }
-    : connection
-      ? {
-          evidence:
-            "A conexão foi criada; o provedor ainda não confirmou o canal.",
-          next: "Verificar o retorno ou reabrir a autorização.",
-          state: "Confirmação pendente",
-        }
-      : {
-          evidence: "Nenhuma operação oficial foi iniciada.",
-          next: "Abrir a autorização segura da Meta.",
-          state: "Não iniciado",
-        };
-
-  return (
-    <dl
-      className="crm-whatsapp-setup-rail"
-      aria-label="Andamento da configuração"
-    >
-      <div data-kind="state">
-        <dt>Estado atual</dt>
-        <dd>{state.state}</dd>
-      </div>
-      <div data-kind="next">
-        <dt>Próxima ação</dt>
-        <dd>{state.next}</dd>
-      </div>
-      <div data-kind="evidence">
-        <dt>Evidência</dt>
-        <dd>{state.evidence}</dd>
-      </div>
-    </dl>
-  );
+function isConnectionForSetupProvider(
+  connection: CrmWhatsappProviderConnection,
+  provider: CrmWhatsappSetupProvider,
+) {
+  return provider === "zapi"
+    ? connection.provider === "zapi"
+    : isComposioConnectionForProvider(connection, provider);
 }
 
-function SetupError({ error }: { error: string | null }) {
-  return error ? (
-    <p className="crm-whatsapp-official-error" role="alert">
-      <AlertCircle aria-hidden="true" />
-      <span>{error}</span>
-    </p>
-  ) : null;
+function readSetupProvider(
+  connection: CrmWhatsappProviderConnection | null | undefined,
+): CrmWhatsappSetupProvider | null {
+  if (!connection) return null;
+  if (connection?.provider === "zapi") return "zapi";
+  if (isComposioConnectionForProvider(connection, "composio_instagram"))
+    return "composio_instagram";
+  if (isComposioConnectionForProvider(connection, "composio_whatsapp"))
+    return "composio_whatsapp";
+  return null;
 }

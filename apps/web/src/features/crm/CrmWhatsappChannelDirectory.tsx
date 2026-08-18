@@ -1,13 +1,6 @@
-import {
-  ArrowRight,
-  Camera,
-  ExternalLink,
-  QrCode,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowRight, Camera, QrCode, ShieldCheck } from "lucide-react";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
 import { groupCrmConnectionsByChannel } from "./crmChannelPresentation";
-import { crmWhatsappSupportUrl } from "./crmWhatsappSupport";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type {
   CrmWhatsappProviderConnection,
@@ -21,6 +14,7 @@ import {
   ZapiAddonBadge,
 } from "./CrmWhatsappChannelDirectoryParts";
 import { CrmOlxChannelCard } from "./CrmWhatsappChannelDirectoryOlx";
+import { isComposioConnectionForProvider } from "./crmWhatsappComposioOAuth";
 
 export function CrmWhatsappChannelDirectory({
   availableProviders,
@@ -48,8 +42,14 @@ export function CrmWhatsappChannelDirectory({
   const officialAvailable = availableProviders.includes("composio_whatsapp");
   const officialConfigured = connections.some(
     (connection) =>
-      connection.provider === "composio_whatsapp" &&
+      isComposioConnectionForProvider(connection, "composio_whatsapp") &&
       isReadyWhatsappConnection(connection),
+  );
+  const instagramAvailable = availableProviders.includes("composio_instagram");
+  const instagramConfigured = connections.some(
+    (connection) =>
+      isComposioConnectionForProvider(connection, "composio_instagram") &&
+      connection.status !== "archived",
   );
   const zapiConfigured = connections.some(
     (connection) =>
@@ -210,44 +210,81 @@ export function CrmWhatsappChannelDirectory({
           ))}
           {showSetupActions ? (
             <li>
-              <div
-                className="crm-whatsapp-channel-row"
-                data-actionable="false"
-                data-variant="support"
-              >
-                <span aria-hidden="true" className="crm-whatsapp-channel-icon">
-                  <Camera />
-                </span>
-                <span className="crm-whatsapp-channel-body">
-                  <span className="crm-whatsapp-channel-title">
-                    Instagram incluído
-                    <span
-                      className="crm-whatsapp-channel-badge"
-                      data-tone="muted"
-                    >
-                      Com a equipe
-                    </span>
-                  </span>
-                  <span className="crm-whatsapp-channel-description">
-                    Sem custo adicional no CRM. A configuração é feita com ajuda
-                    da nossa equipe.
-                  </span>
-                  <ChannelIdentity
-                    broker="Composio"
-                    channel="Instagram"
-                    transport="Meta Cloud"
-                  />
-                </span>
-                <a
-                  className="crm-whatsapp-channel-support-link"
-                  href={crmWhatsappSupportUrl()}
-                  rel="noreferrer"
-                  target="_blank"
+              {instagramAvailable || instagramConfigured ? (
+                <button
+                  className="crm-whatsapp-channel-row"
+                  data-actionable="true"
+                  onClick={() => onChoose("composio_instagram")}
+                  type="button"
                 >
-                  Pedir ajuda para configurar
-                  <ExternalLink aria-hidden="true" size={12} />
-                </a>
-              </div>
+                  <span
+                    aria-hidden="true"
+                    className="crm-whatsapp-channel-icon"
+                  >
+                    <Camera />
+                  </span>
+                  <span className="crm-whatsapp-channel-body">
+                    <span className="crm-whatsapp-channel-title">
+                      Instagram Oficial
+                      {instagramConfigured ? (
+                        <span
+                          className="crm-whatsapp-channel-badge"
+                          data-tone="muted"
+                        >
+                          Já configurado
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="crm-whatsapp-channel-description">
+                      {instagramConfigured
+                        ? "Abra para revisar ou reautorizar a conta e o perfil oficial."
+                        : "Autorize a conta Meta em uma página segura e escolha o perfil do Instagram."}
+                    </span>
+                    <ChannelIdentity
+                      broker="Composio"
+                      channel="Instagram"
+                      transport="Meta Cloud"
+                    />
+                  </span>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="crm-whatsapp-channel-chevron"
+                  />
+                </button>
+              ) : (
+                <div
+                  aria-disabled="true"
+                  className="crm-whatsapp-channel-row"
+                  data-actionable="false"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="crm-whatsapp-channel-icon"
+                  >
+                    <Camera />
+                  </span>
+                  <span className="crm-whatsapp-channel-body">
+                    <span className="crm-whatsapp-channel-title">
+                      Instagram Oficial
+                      <span
+                        className="crm-whatsapp-channel-badge"
+                        data-tone="muted"
+                      >
+                        Indisponível
+                      </span>
+                    </span>
+                    <span className="crm-whatsapp-channel-description">
+                      A configuração oficial não está disponível para esta loja
+                      no momento. Nenhuma operação oficial foi iniciada.
+                    </span>
+                    <ChannelIdentity
+                      broker="Composio"
+                      channel="Instagram"
+                      transport="Meta Cloud"
+                    />
+                  </span>
+                </div>
+              )}
             </li>
           ) : null}
         </ChannelGroup>

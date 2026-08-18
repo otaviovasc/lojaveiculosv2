@@ -101,5 +101,5 @@ function createPairingApp(
 }
 
 function pairingPath(method: "code" | "qr") {
-  return `/api/v1/crm/whatsapp/connections/${connectionId}/zapi/pairing/${method}`;
+  return `/api/v1/crm/channel-connections/${connectionId}/zapi/pairing/${method}`;
 }

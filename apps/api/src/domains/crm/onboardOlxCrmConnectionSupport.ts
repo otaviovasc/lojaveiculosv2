@@ -45,6 +45,9 @@ export async function configureOlxCapability(
     };
   } catch (error) {
     onError?.(error);
+    const providerOutcomeIndeterminate =
+      error instanceof CrmConnectionSetupProviderError &&
+      error.code === "provider_outcome_indeterminate";
     const unavailable =
       error instanceof CrmConnectionSetupProviderError &&
       (error.retryable === true ||
@@ -54,7 +57,11 @@ export async function configureOlxCapability(
     return {
       capability,
       grantState: "granted",
-      reason: unavailable ? "runtime_unavailable" : "provider_rejected",
+      reason: providerOutcomeIndeterminate
+        ? "provider_outcome_indeterminate"
+        : unavailable
+          ? "runtime_unavailable"
+          : "provider_rejected",
       status: "error",
     };
   }
@@ -130,6 +137,7 @@ function readCapability(value: unknown): OlxCapabilityResult | null {
       null,
       "access_denied",
       "missing_scope",
+      "provider_outcome_indeterminate",
       "provider_rejected",
       "runtime_unavailable",
     ].includes((record.reason ?? null) as null)

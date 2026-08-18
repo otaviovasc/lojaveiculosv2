@@ -50,10 +50,11 @@ export function readCrmWhatsappConnectionCapabilities(
   connection:
     | Pick<
         CrmWhatsappProviderConnection,
-        "capabilities" | "provider" | "status"
+        "capabilities" | "channel" | "provider" | "status"
       >
     | {
         capabilities?: CrmWhatsappProviderCapabilitiesDto;
+        channel?: string;
         provider?: string;
         status?: string;
       }
@@ -88,16 +89,23 @@ export function readCrmWhatsappConnectionCapabilities(
     allowVehicle: dto.vehicle === true,
     allowVideo: dto.video === true,
     officialWindowNotice:
-      dto.officialWindowNotice ?? readProviderWindowNotice(connection.provider),
+      dto.officialWindowNotice ??
+      readProviderWindowNotice(connection.provider, connection.channel),
     provider: connection.provider as CrmWhatsappProvider,
   };
 }
 
-function readProviderWindowNotice(provider: string) {
-  if (provider === "composio_whatsapp") {
+function readProviderWindowNotice(provider: string, channel?: string) {
+  if (
+    provider === "composio_whatsapp" ||
+    (provider === "meta_cloud" && channel === "whatsapp")
+  ) {
     return "WhatsApp oficial: mensagens livres exigem interação recente do cliente. Fora da janela, inicie com um template aprovado.";
   }
-  if (provider === "composio_instagram") {
+  if (
+    provider === "composio_instagram" ||
+    (provider === "meta_cloud" && channel === "instagram")
+  ) {
     return "Instagram oficial: o atendimento só envia texto ou imagem em uma conversa iniciada recentemente pelo cliente.";
   }
   return null;

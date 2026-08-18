@@ -1,6 +1,7 @@
 import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 import type {
-  ComposioWhatsappOnboardingProvider,
+  ComposioCrmOnboardingProvider,
+  ComposioInstagramOnboardingProvider,
   CrmConnectionCredentialVault,
   CrmZapiSetupCompletionReporter,
   ZapiConnectionSetupProvider,
@@ -25,11 +26,24 @@ export function getCrmConnectionCredentialVault(
 
 export function getComposioWhatsappOnboardingProvider(
   ports: CrmServicePorts,
-): ComposioWhatsappOnboardingProvider {
+): ComposioCrmOnboardingProvider {
   if (!ports.composioWhatsappOnboardingProvider) {
     throw new CrmScopeError("composioWhatsappOnboardingProvider");
   }
   return ports.composioWhatsappOnboardingProvider;
+}
+
+export function requireComposioInstagramOnboardingProvider(
+  provider: ComposioCrmOnboardingProvider,
+): ComposioInstagramOnboardingProvider {
+  if (!provider.discoverInstagramResources || !provider.subscribeInstagramApp) {
+    throw new CrmScopeError("composioInstagramOnboardingProvider");
+  }
+  return {
+    ...provider,
+    discoverInstagramResources: provider.discoverInstagramResources,
+    subscribeInstagramApp: provider.subscribeInstagramApp,
+  };
 }
 
 export function getZapiConnectionSetupProvider(

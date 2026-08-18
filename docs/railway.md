@@ -48,7 +48,13 @@ that are not ready to receive provider callbacks:
 
 - Official Meta inbound messaging: `CRM_META_APP_SECRET` and
   `CRM_META_WEBHOOK_VERIFY_TOKEN`. Replace both before registering the shared
-  Meta webhook. The verification token must match the value entered in Meta.
+  Meta webhook at
+  `https://lojaveiculosv2-api-staging.up.railway.app/api/v1/crm/webhooks/meta`.
+  The verification token must match the value entered in Meta.
+- Instagram customer onboarding also requires
+  `COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID` and an explicit
+  `COMPOSIO_INSTAGRAM_LOGIN_MODE` (`facebook` or `instagram`) on the API
+  service. Keep the WhatsApp and Instagram auth-config IDs distinct.
 - Deferred storefront DNS: `PUBLIC_STOREFRONT_ROOT_DOMAIN` and
   `PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET`.
 

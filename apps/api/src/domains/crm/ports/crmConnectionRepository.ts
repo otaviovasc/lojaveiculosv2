@@ -44,7 +44,7 @@ export type CreateCrmConnectionInput = {
   phone?: string | null;
   provider: Extract<
     CrmConnectionProvider,
-    "zapi" | "composio_whatsapp" | "olx_chat"
+    "zapi" | "composio_instagram" | "composio_whatsapp" | "olx_chat"
   >;
   status?: CrmConnectionConfiguredStatus;
   storeId: StoreId;

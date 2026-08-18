@@ -29,6 +29,7 @@ import {
   registerCrmLeadDetailRoutes,
 } from "./crm.leads.routes.js";
 import { registerCrmRoutingRoutes } from "./crm.routing.routes.js";
+import { registerCrmMetaWebhookRoutes } from "./crm.metaWebhookRoutes.js";
 
 export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
@@ -60,6 +61,7 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
   const createContext = (context: Context) =>
     createProtectedServiceContext(context, contextFactory);
+  const createWebhookContext = options.webhookContextFactory ?? createContext;
 
   const leadRouteSupport = {
     createContext,
@@ -97,14 +99,17 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
 
   registerCrmLeadDetailRoutes(crmFeature, leadRouteSupport);
 
+  registerCrmMetaWebhookRoutes(crmFeature, {
+    createWebhookContext,
+    services,
+  });
+
   registerCrmWhatsappRoutes(crmFeature, {
     ...(options.accountContextFactory
       ? { createSupportContext: options.accountContextFactory }
       : {}),
     createContext,
-    ...(options.webhookContextFactory
-      ? { createWebhookContext: options.webhookContextFactory }
-      : {}),
+    createWebhookContext,
     ...(options.realtimeBroker
       ? { realtimeBroker: options.realtimeBroker }
       : {}),

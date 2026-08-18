@@ -87,7 +87,7 @@ function patchStatus(
   app: ReturnType<typeof createTestApp>,
   connectionId: string,
 ) {
-  return app.request(`/api/v1/crm/whatsapp/connections/${connectionId}`, {
+  return app.request(`/api/v1/crm/channel-connections/${connectionId}`, {
     body: JSON.stringify({ status: "paused" }),
     headers: { "content-type": "application/json" },
     method: "PATCH",

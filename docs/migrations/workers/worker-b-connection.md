@@ -2,7 +2,7 @@
 
 ## Implementation Note
 
-- Keep the Conexao surface on existing V2 `GET /crm/whatsapp/connections` and `PATCH /crm/whatsapp/connections/:connectionId` contracts.
+- Keep the Conexao surface on canonical V2 `GET /crm/channel-connections` and `PATCH /crm/channel-connections/:connectionId` contracts.
 - Render only safe ZAPI configuration/status metadata; initial credentials are
   write-only and secret values are never displayed.
 - Show the seeded/test connection, live status refresh, editable metadata, and

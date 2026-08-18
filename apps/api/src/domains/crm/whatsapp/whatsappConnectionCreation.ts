@@ -4,7 +4,7 @@ import type { WhatsappConnection } from "./whatsappConnectionModels.js";
 
 export type CreatableWhatsappConnectionProvider = Extract<
   CrmConnectionProvider,
-  "zapi" | "composio_whatsapp"
+  "zapi" | "composio_instagram" | "composio_whatsapp"
 >;
 
 export type CreateWhatsappConnectionInput =
@@ -20,7 +20,7 @@ export type CreateWhatsappConnectionInput =
     }
   | {
       displayName: string;
-      provider: "composio_whatsapp";
+      provider: "composio_instagram" | "composio_whatsapp";
     };
 
 export type WhatsappConnectionOverview = {

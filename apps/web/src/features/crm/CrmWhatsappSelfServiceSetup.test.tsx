@@ -6,10 +6,14 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { rememberPendingComposioConnection } from "./crmWhatsappComposioOAuth";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
+import type {
+  CrmWhatsappOfficialSetupProvider,
+  CrmWhatsappProviderConnection,
+} from "./crmWhatsappTypes";
 import {
   CrmWhatsappSelfServiceSetup,
   type CrmWhatsappSelfServiceHandlers,
@@ -71,7 +75,7 @@ describe("CrmWhatsappSelfServiceSetup", () => {
     expect(
       screen.getByText(/consultar e parear conexões existentes/i),
     ).toBeVisible();
-    expect(screen.queryByText("Instagram incluído")).not.toBeInTheDocument();
+    expect(screen.queryByText("Instagram Oficial")).not.toBeInTheDocument();
     expect(screen.queryByText("WhatsApp Oficial")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Z-API principal/ }));
@@ -97,22 +101,24 @@ describe("CrmWhatsappSelfServiceSetup", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows included Instagram as support-assisted without inventing OAuth", () => {
+  it("makes Instagram Official actionable when the server offers setup", () => {
     render(
       <CrmWhatsappSelfServiceSetup
         allowance={{ limit: 2, remaining: 2, used: 0 }}
-        availableProviders={["composio_whatsapp"]}
+        availableProviders={["composio_instagram"]}
         canPair={false}
         canSetup={true}
         handlers={createHandlers()}
       />,
     );
 
-    expect(screen.getByText("Instagram incluído")).toBeVisible();
-    expect(screen.getByText(/sem custo adicional no CRM/i)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Instagram Oficial/i }));
     expect(
-      screen.getByRole("link", { name: "Pedir ajuda para configurar" }),
-    ).toHaveAttribute("href", expect.stringContaining("5511940231407"));
+      screen.getByRole("heading", { name: "Configurar Instagram Oficial" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: /Autorizar com a Meta/i }),
+    ).toBeVisible();
   });
 
   it("keeps WhatsApp Oficial visible and honest when it is unavailable", () => {
@@ -126,15 +132,16 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       />,
     );
 
-    expect(screen.getByText("WhatsApp Oficial")).toBeVisible();
-    expect(screen.getByText(/indisponível/i)).toBeVisible();
+    const whatsappGroup = screen.getByRole("region", { name: "WhatsApp" });
+    expect(within(whatsappGroup).getByText("WhatsApp Oficial")).toBeVisible();
+    expect(within(whatsappGroup).getByText(/indisponível/i)).toBeVisible();
     expect(
-      screen.getByText(/nenhuma operação oficial foi iniciada/i),
+      within(whatsappGroup).getByText(/nenhuma operação oficial foi iniciada/i),
     ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /WhatsApp Oficial/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("Instagram incluído")).toBeVisible();
+    expect(screen.getAllByText("Instagram Oficial").length).toBeGreaterThan(0);
   });
 
   it("makes WhatsApp Oficial actionable when it is available", () => {
@@ -148,14 +155,130 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       />,
     );
 
+    const whatsappGroup = screen.getByRole("region", { name: "WhatsApp" });
     expect(
-      screen.queryByText(/nenhuma operação oficial foi iniciada/i),
+      within(whatsappGroup).queryByText(
+        /nenhuma operação oficial foi iniciada/i,
+      ),
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /WhatsApp Oficial/i }));
+    fireEvent.click(
+      within(whatsappGroup).getByRole("button", {
+        name: /WhatsApp Oficial/i,
+      }),
+    );
     expect(
       screen.getByRole("button", { name: /Autorizar com a Meta/i }),
     ).toBeVisible();
   });
+
+  it.each([
+    [
+      "Instagram",
+      "composio_instagram",
+      "Instagram Oficial",
+      "Configurar Instagram Oficial",
+    ],
+    [
+      "WhatsApp",
+      "composio_whatsapp",
+      "WhatsApp Oficial",
+      "Configurar WhatsApp Oficial",
+    ],
+  ] as const)(
+    "starts %s official authorization with the selected provider and connection id",
+    async (_, provider, chooserName, dialogTitle) => {
+      const handlers = createHandlers();
+      const created = createOfficialConnection(provider);
+      handlers.onCreate = vi.fn(async () => created);
+      handlers.onAuthorizeComposio = vi.fn(async () => ({
+        expiresAt: "2026-08-18T13:00:00.000Z",
+        redirectUrl: `https://provider.local/${provider}`,
+      }));
+      const onRedirect = vi.fn();
+
+      render(
+        <CrmWhatsappSelfServiceSetup
+          allowance={{ limit: 2, remaining: 2, used: 0 }}
+          availableProviders={["composio_instagram", "composio_whatsapp"]}
+          canPair={false}
+          canSetup={true}
+          connections={[
+            createOfficialConnection(
+              provider === "composio_instagram"
+                ? "composio_whatsapp"
+                : "composio_instagram",
+            ),
+          ]}
+          handlers={handlers}
+          onRedirect={onRedirect}
+        />,
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", { name: new RegExp(chooserName) }),
+      );
+      expect(screen.getByRole("heading", { name: dialogTitle })).toBeVisible();
+      fireEvent.click(
+        screen.getByRole("button", { name: /Autorizar com a Meta/i }),
+      );
+
+      await waitFor(() => {
+        expect(handlers.onCreate).toHaveBeenCalledWith({ provider });
+        expect(handlers.onAuthorizeComposio).toHaveBeenCalledWith(created.id);
+        expect(onRedirect).toHaveBeenCalledWith(
+          `https://provider.local/${provider}`,
+        );
+      });
+    },
+  );
+
+  it.each([
+    ["Instagram", "composio_instagram", "perfil do Instagram"],
+    ["WhatsApp", "composio_whatsapp", "número do WhatsApp"],
+  ] as const)(
+    "resumes the exact pending %s connection and selects its returned sender",
+    async (_, provider, senderLabel) => {
+      const connection = createOfficialConnection(provider);
+      const otherProvider =
+        provider === "composio_instagram"
+          ? "composio_whatsapp"
+          : "composio_instagram";
+      const handlers = createHandlers();
+      handlers.onCompleteComposio = vi.fn(async () => ({
+        connection,
+        nextAction: "select_sender",
+        senders: [{ displayName: "Perfil Loja", senderId: "sender-1" }],
+      }));
+      handlers.onSelectComposioSender = vi.fn(async () => connection);
+      rememberPendingComposioConnection(connection.id, provider);
+
+      render(
+        <CrmWhatsappSelfServiceSetup
+          allowance={{ limit: 2, remaining: 0, used: 2 }}
+          availableProviders={["composio_instagram", "composio_whatsapp"]}
+          canPair={false}
+          canSetup={true}
+          connections={[createOfficialConnection(otherProvider), connection]}
+          existingConnection={connection}
+          handlers={handlers}
+        />,
+      );
+
+      expect(await screen.findByText("Perfil Loja")).toBeVisible();
+      expect(
+        screen.getByRole("group", { name: new RegExp(senderLabel, "i") }),
+      ).toBeVisible();
+      expect(handlers.onCompleteComposio).toHaveBeenCalledWith(connection.id);
+
+      fireEvent.click(screen.getByRole("button", { name: /Perfil Loja/i }));
+      await waitFor(() =>
+        expect(handlers.onSelectComposioSender).toHaveBeenCalledWith(
+          connection.id,
+          "sender-1",
+        ),
+      );
+    },
+  );
 
   it.each([
     ["paused", "Retomar canal", false],
@@ -240,14 +363,14 @@ describe("CrmWhatsappSelfServiceSetup", () => {
   });
 
   it("clears official completion state when the setup dialog closes", async () => {
-    const connection = createOfficialConnection();
+    const connection = createOfficialConnection("composio_whatsapp");
     const handlers = createHandlers();
     handlers.onCompleteComposio = vi.fn(async () => ({
       connection,
       nextAction: "select_sender",
       senders: [{ displayName: "Equipe antiga", senderId: "sender-1" }],
     }));
-    rememberPendingComposioConnection(connection.id);
+    rememberPendingComposioConnection(connection.id, "composio_whatsapp");
 
     render(
       <CrmWhatsappSelfServiceSetup
@@ -327,12 +450,19 @@ function createZapiConnection(
   };
 }
 
-function createOfficialConnection(): CrmWhatsappProviderConnection {
+function createOfficialConnection(
+  provider: CrmWhatsappOfficialSetupProvider,
+): CrmWhatsappProviderConnection {
   return {
     ...createZapiConnection("active"),
-    displayName: "WhatsApp Oficial principal",
-    externalConnectionId: "composio-1",
-    id: "official-1",
-    provider: "composio_whatsapp",
+    channel: provider === "composio_instagram" ? "instagram" : "whatsapp",
+    displayName:
+      provider === "composio_instagram"
+        ? "Instagram Oficial principal"
+        : "WhatsApp Oficial principal",
+    externalConnectionId: `${provider}-account`,
+    id: `${provider}-connection`,
+    provider: "meta_cloud",
+    readiness: { ready: true, reason: null, reasonCode: null },
   };
 }

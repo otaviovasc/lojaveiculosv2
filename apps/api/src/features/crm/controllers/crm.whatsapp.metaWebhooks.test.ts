@@ -28,12 +28,12 @@ describe("CRM official Meta webhooks", () => {
   it("verifies the Meta challenge and rejects invalid signatures", async () => {
     const app = createTestApp();
     const challenge = await app.request(
-      `/api/v1/crm/whatsapp/webhooks/meta?hub.mode=subscribe&hub.verify_token=${verifyToken}&hub.challenge=challenge-123`,
+      `/api/v1/crm/webhooks/meta?hub.mode=subscribe&hub.verify_token=${verifyToken}&hub.challenge=challenge-123`,
     );
     expect(challenge.status).toBe(200);
     await expect(challenge.text()).resolves.toBe("challenge-123");
 
-    const rejected = await app.request("/api/v1/crm/whatsapp/webhooks/meta", {
+    const rejected = await app.request("/api/v1/crm/webhooks/meta", {
       body: JSON.stringify({ object: "whatsapp_business_account" }),
       headers: { "x-hub-signature-256": "sha256=invalid" },
       method: "POST",
@@ -213,7 +213,7 @@ function signedRequest(
 ) {
   const body = JSON.stringify(payload);
   const signature = createHmac("sha256", appSecret).update(body).digest("hex");
-  return app.request("/api/v1/crm/whatsapp/webhooks/meta", {
+  return app.request("/api/v1/crm/webhooks/meta", {
     body,
     headers: { "x-hub-signature-256": `sha256=${signature}` },
     method: "POST",

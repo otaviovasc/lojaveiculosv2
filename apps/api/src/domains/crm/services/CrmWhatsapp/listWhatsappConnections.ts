@@ -50,6 +50,7 @@ const credentialUpdatePermission = "tenant.manage";
 const creatableProviders = [
   "zapi",
   "composio_whatsapp",
+  "composio_instagram",
 ] as const satisfies readonly CreatableWhatsappConnectionProvider[];
 
 export async function getWhatsappConnectionOverview(
@@ -81,10 +82,7 @@ export async function getWhatsappConnectionOverview(
     availableProviders: creatableProviders.filter((provider) => {
       if (configured.has(provider)) return false;
       if (provider === "zapi") return true;
-      if (provider === "composio_whatsapp") {
-        return entitlements.includes("crm");
-      }
-      return allowance.remaining > 0 && entitlements.includes("crm_zapi");
+      return entitlements.includes("crm");
     }),
     connections,
   };

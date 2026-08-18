@@ -11,6 +11,7 @@ import type {
   CrmWhatsappSession,
   CrmWhatsappSessionCounts,
 } from "./crmWhatsappTypes";
+import type * as CrmWhatsappInboxLifecycleModule from "./useCrmWhatsappInboxLifecycle";
 import { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 
 const hookMocks = vi.hoisted(() => {
@@ -111,6 +112,7 @@ const hookMocks = vi.hoisted(() => {
       },
       refresh: vi.fn(async () => undefined),
     },
+    selectedTagIds: [] as string[],
     sessionActions: {
       actions: {
         addSessionTag: resolveFalse,
@@ -128,6 +130,7 @@ const hookMocks = vi.hoisted(() => {
       isSessionActionPending: vi.fn(() => false),
       retryLastSessionAction: resolveFalse,
     },
+    useRealLifecycle: false,
   };
 });
 
@@ -149,9 +152,17 @@ vi.mock("./useCrmWhatsappConnections", () => ({
 vi.mock("./useCrmWhatsappMessages", () => ({
   useCrmWhatsappMessages: () => hookMocks.messages,
 }));
-vi.mock("./useCrmWhatsappInboxLifecycle", () => ({
-  useCrmWhatsappInboxLifecycle: () => undefined,
-}));
+vi.mock("./useCrmWhatsappInboxLifecycle", async (importOriginal) => {
+  const actual = await importOriginal<typeof CrmWhatsappInboxLifecycleModule>();
+  return {
+    useCrmWhatsappInboxLifecycle: (
+      input: Parameters<typeof actual.useCrmWhatsappInboxLifecycle>[0],
+    ) =>
+      hookMocks.useRealLifecycle
+        ? actual.useCrmWhatsappInboxLifecycle(input)
+        : undefined,
+  };
+});
 vi.mock("./useCrmWhatsappQuickMessages", () => ({
   useCrmWhatsappQuickMessages: () => ({
     createQuickMessage: hookMocks.messages.sendText,
@@ -185,7 +196,7 @@ vi.mock("./useCrmWhatsappTags", () => ({
     deleteTag: hookMocks.messages.sendText,
     refreshTags: vi.fn(async () => []),
     reorderTags: hookMocks.messages.sendText,
-    selectedTagIds: [],
+    selectedTagIds: hookMocks.selectedTagIds,
     toggleTagFilter: vi.fn(),
     updateTag: hookMocks.messages.sendText,
   }),
@@ -197,7 +208,65 @@ vi.mock("./useCrmWhatsappVehicleInventory", () => ({
 describe("useCrmWhatsappInbox realtime queue integration", () => {
   afterEach(() => {
     cleanup();
+    hookMocks.useRealLifecycle = false;
     window.location.hash = "";
+  });
+
+  it("loads sessions once when lifecycle and realtime updates change session state", async () => {
+    hookMocks.useRealLifecycle = true;
+    let onEvent: ((event: CrmWhatsappRealtimeEvent) => void) | undefined;
+    const initial = createSession({ buyerName: "Inicial", revision: 1 });
+    const listSessions = vi
+      .fn<CrmWhatsappApi["listSessions"]>()
+      .mockResolvedValueOnce([initial])
+      .mockImplementation(() => new Promise(() => undefined));
+    const api = {
+      listSessionCounts: vi.fn(async () => defaultWhatsappSessionCounts),
+      listSessions,
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmWhatsappApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmWhatsappApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmWhatsappInbox(api), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.sessions).toEqual([
+        expect.objectContaining({ buyerName: "Inicial", revision: 1 }),
+      ]);
+      expect(onEvent).toBeDefined();
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(listSessions).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-1",
+        session: createSession({ buyerName: "Realtime", revision: 2 }),
+        type: "session",
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.sessions).toEqual([
+        expect.objectContaining({ buyerName: "Realtime", revision: 2 }),
+      ]);
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(listSessions).toHaveBeenCalledTimes(1);
   });
 
   it("moves an auto-assigned session from Novos to Meus without duplication or stale overwrite", async () => {

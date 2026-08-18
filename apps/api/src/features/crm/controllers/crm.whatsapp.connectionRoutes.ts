@@ -25,7 +25,7 @@ export function registerCrmWhatsappConnectionRoutes(
   crmFeature: Hono,
   { createContext, services }: RegisterCrmWhatsappConnectionRoutesOptions,
 ) {
-  crmFeature.get("/whatsapp/connections", async (context) =>
+  crmFeature.get("/channel-connections", async (context) =>
     handleWhatsapp(context, async () => {
       const serviceContext = await createContext(context);
       assertWhatsappList(serviceContext);
@@ -38,7 +38,7 @@ export function registerCrmWhatsappConnectionRoutes(
     }),
   );
 
-  crmFeature.post("/whatsapp/connections", async (context) =>
+  crmFeature.post("/channel-connections", async (context) =>
     handleWhatsapp(context, async () => {
       const input = await parseWhatsappJson(
         context,
@@ -56,15 +56,19 @@ export function registerCrmWhatsappConnectionRoutes(
               webhookSetupTarget: readWebhookRequestBase(context),
             }
           : {
-              displayName: input.displayName ?? "WhatsApp Oficial",
-              provider: "composio_whatsapp",
+              displayName:
+                input.displayName ??
+                (input.provider === "composio_instagram"
+                  ? "Instagram Oficial"
+                  : "WhatsApp Oficial"),
+              provider: input.provider,
             },
       );
       return context.json(connection, 201);
     }),
   );
 
-  crmFeature.patch("/whatsapp/connections/:connectionId", async (context) =>
+  crmFeature.patch("/channel-connections/:connectionId", async (context) =>
     handleWhatsapp(context, async () => {
       const connectionId = context.req.param("connectionId");
       if (!connectionId) {

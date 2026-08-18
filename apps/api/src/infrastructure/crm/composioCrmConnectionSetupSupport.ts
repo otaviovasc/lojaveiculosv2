@@ -1,6 +1,7 @@
 import {
   CrmConnectionSetupProviderError,
   type ComposioConnectedAccount,
+  type ComposioInstagramSender,
   type ComposioWhatsappBusinessAccount,
   type ComposioWhatsappPhone,
 } from "../../domains/crm/ports/crmConnectionSetupProvider.js";
@@ -48,6 +49,66 @@ export function readPhones(
         : [];
     },
   );
+}
+
+export function readFacebookInstagramSenders(
+  payload: unknown,
+): ComposioInstagramSender[] {
+  return readItems(payload, ["data", "items"]).flatMap((item) => {
+    const page = readRecord(item);
+    const pageId = readString(page.id);
+    const account = readRecord(page.instagram_business_account);
+    const senderId = readString(account.id);
+    if (!pageId || !senderId) return [];
+    return [
+      {
+        accountType: null,
+        displayName: readString(account.name),
+        loginMode: "facebook" as const,
+        pageId,
+        pageName: readString(page.name),
+        senderId,
+        subscriptionFields: ["messages"],
+        subscriptionTargetId: pageId,
+        username: readString(account.username),
+      },
+    ];
+  });
+}
+
+export function readInstagramLoginSender(
+  payload: unknown,
+): ComposioInstagramSender[] {
+  const account = readRecord(payload);
+  const senderId = readString(account.user_id);
+  if (!senderId) {
+    throw invalidResponse(
+      "Meta returned no readable Instagram professional account identity",
+    );
+  }
+  return [
+    {
+      accountType: null,
+      displayName: null,
+      loginMode: "instagram",
+      pageId: null,
+      pageName: null,
+      senderId,
+      subscriptionFields: ["messages", "messaging_postbacks"],
+      subscriptionTargetId: senderId,
+      username: readString(account.username),
+    },
+  ];
+}
+
+export function assertMetaSubscriptionSucceeded(payload: unknown) {
+  const success = readRecord(payload).success;
+  if (success !== true && success !== "true") {
+    throw new CrmConnectionSetupProviderError(
+      "Meta did not confirm the webhook subscription",
+      "provider_outcome_indeterminate",
+    );
+  }
 }
 
 export function normalizeAccountStatus(
@@ -101,7 +162,7 @@ function readItems(value: unknown, keys: readonly string[]): unknown[] {
   return [];
 }
 
-function readRecord(value: unknown): Record<string, unknown> {
+export function readRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};

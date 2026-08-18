@@ -12,7 +12,7 @@ import type { CrmConnectionRepository } from "../../ports/crmConnectionRepositor
 import type { CrmRoutingConnectionRepository } from "../../ports/crmRoutingConnectionRepository.js";
 import type { CrmRoutingPolicyRepository } from "../../ports/crmRoutingPolicyRepository.js";
 import type {
-  ComposioWhatsappOnboardingProvider,
+  ComposioCrmOnboardingProvider,
   CrmConnectionCredentialVault,
   CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
@@ -51,7 +51,7 @@ export type CrmServicePorts = {
   };
   crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
-  composioWhatsappOnboardingProvider?: ComposioWhatsappOnboardingProvider;
+  composioWhatsappOnboardingProvider?: ComposioCrmOnboardingProvider;
   crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRepository: CrmRepository;

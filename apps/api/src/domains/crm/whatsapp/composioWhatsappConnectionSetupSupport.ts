@@ -5,7 +5,10 @@ import {
 } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
-import { CrmConnectionSetupProviderError } from "../ports/crmConnectionSetupProvider.js";
+import {
+  CrmConnectionSetupProviderError,
+  type ComposioCrmProvider,
+} from "../ports/crmConnectionSetupProvider.js";
 import { toWhatsappConnection } from "./whatsappConnectionModels.js";
 import { WhatsappConnectionNotFoundError } from "./whatsappSendErrors.js";
 import type { getComposioWhatsappOnboardingProvider } from "../services/CrmService/crmConnectionSetupSupport.js";
@@ -29,13 +32,13 @@ export async function loadComposioSetupTarget(
   assertEntitlement(context as never, "crm");
   if (context.actor.kind !== "user") {
     throw new AuthorizationError(
-      "Official WhatsApp setup requires an authenticated store user.",
+      "Official CRM channel setup requires an authenticated store user.",
     );
   }
   const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(
     context,
-    "crm.whatsapp.connection.composio.setup.started",
+    "crm.channel_connection.composio.setup.started",
     {
       connectionId: input.connectionId,
       operation: "connection_setup",
@@ -47,28 +50,31 @@ export async function loadComposioSetupTarget(
   );
   if (
     !connection ||
-    connection.provider !== "composio_whatsapp" ||
+    !isComposioCrmProvider(connection.provider) ||
     connection.status === "archived" ||
     connection.storeId !== scope.storeId ||
     connection.tenantId !== scope.tenantId
   ) {
     throw new WhatsappConnectionNotFoundError(input.connectionId);
   }
-  return connection;
+  return { ...connection, provider: connection.provider };
 }
 
 export async function assertConnectedAccountIsActive(
   provider: ReturnType<typeof getComposioWhatsappOnboardingProvider>,
   connectedAccountId: string,
+  expectedProvider: ComposioCrmProvider,
 ) {
   const account = await provider.verifyConnectedAccount(connectedAccountId);
+  const expectedToolkit =
+    expectedProvider === "composio_instagram" ? "instagram" : "whatsapp";
   if (
     account.connectedAccountId !== connectedAccountId ||
     account.status !== "active" ||
-    !account.toolkit?.toLowerCase().includes("whatsapp")
+    account.toolkit?.toLowerCase() !== expectedToolkit
   ) {
     throw new CrmConnectionSetupProviderError(
-      "Composio authorization does not match the expected WhatsApp account",
+      `Composio authorization does not match the expected ${expectedToolkit} account`,
       "provider_rejected",
     );
   }
@@ -104,16 +110,29 @@ export function disconnectedConnection(connection: CrmConnection) {
   });
 }
 
-export function composioSetupAudit(action: string, connectionId: string) {
+export function composioSetupAudit(
+  action: string,
+  connectionId: string,
+  provider: ComposioCrmProvider,
+) {
   return {
     action,
     category: "data_change" as const,
     entityId: connectionId,
-    entityType: "crm_whatsapp_connection",
+    entityType: "crm_channel_connection",
     metadata: { connectionId },
     permission: composioConnectionPermission,
-    summary: "Configured official WhatsApp connection",
+    summary:
+      provider === "composio_instagram"
+        ? "Configured official Instagram connection"
+        : "Configured official WhatsApp connection",
   };
+}
+
+function isComposioCrmProvider(
+  provider: CrmConnection["provider"],
+): provider is ComposioCrmProvider {
+  return provider === "composio_instagram" || provider === "composio_whatsapp";
 }
 
 function readRecord(value: unknown): Record<string, unknown> {

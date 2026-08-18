@@ -189,7 +189,7 @@ function readCapabilityOperation(
   if (reason === "provider_outcome_indeterminate") {
     return {
       detail:
-        "O provedor recebeu a solicitação, mas o resultado ainda não foi confirmado.",
+        "A OLX retornou erro interno durante a ativação. Não repita o setup automaticamente; aguarde ou acione o suporte de integração.",
       label,
       state: "indeterminate",
     };

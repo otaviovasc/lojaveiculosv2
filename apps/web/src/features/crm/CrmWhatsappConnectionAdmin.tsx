@@ -7,7 +7,11 @@ import type {
   CrmWhatsappSetupProvider,
   CrmWhatsappZapiAddonContract,
 } from "./crmWhatsappTypes";
-import { readPendingComposioConnectionId } from "./crmWhatsappComposioOAuth";
+import {
+  isComposioConnectionForProvider,
+  readPendingComposioConnection,
+  readPendingComposioConnectionId,
+} from "./crmWhatsappComposioOAuth";
 import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { CrmWhatsappChannelDirectory } from "./CrmWhatsappChannelDirectory";
@@ -149,10 +153,13 @@ export function CrmWhatsappConnectionAdmin(props: ConnectionAdminProps) {
 function readInitialConnection(
   connections: CrmWhatsappProviderConnection[],
 ): CrmWhatsappProviderConnection | null {
-  const pendingId = readPendingComposioConnectionId();
-  if (!pendingId) return null;
+  const pending = readPendingComposioConnection();
+  if (!pending) return null;
   return (
-    connections.find((connection) => String(connection.id) === pendingId) ??
-    null
+    connections.find(
+      (connection) =>
+        String(connection.id) === pending.connectionId &&
+        isComposioConnectionForProvider(connection, pending.provider),
+    ) ?? null
   );
 }

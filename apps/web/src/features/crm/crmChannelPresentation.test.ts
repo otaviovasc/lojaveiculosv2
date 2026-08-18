@@ -102,15 +102,20 @@ describe("readOlxChannelOperations", () => {
       "provider_outcome_indeterminate";
     chat.status = "active";
 
-    expect(
-      readOlxChannelOperations([connection], marketplaceState).chat,
-    ).toEqual({
+    const chatOperation = readOlxChannelOperations(
+      [connection],
+      marketplaceState,
+    ).chat;
+    expect(chatOperation).toEqual({
       detail:
-        "O provedor recebeu a solicitação, mas o resultado ainda não foi confirmado.",
+        "A OLX retornou erro interno durante a ativação. Não repita o setup automaticamente; aguarde ou acione o suporte de integração.",
       label: "Chat",
       state: "indeterminate",
     });
     expect(readOlxChatRetryTarget([connection], marketplaceState)).toBeNull();
+    expect(
+      readOlxAuthorizationAction(marketplaceState, chatOperation),
+    ).toBeNull();
   });
 
   it("distinguishes missing scopes from degraded setup actions", () => {
@@ -235,6 +240,7 @@ function capability(
   reason:
     | "access_denied"
     | "missing_scope"
+    | "provider_outcome_indeterminate"
     | "provider_rejected"
     | "runtime_unavailable"
     | null,

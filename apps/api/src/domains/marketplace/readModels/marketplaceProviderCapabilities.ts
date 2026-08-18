@@ -11,6 +11,7 @@ const reasons = [
   null,
   "access_denied",
   "missing_scope",
+  "provider_outcome_indeterminate",
   "provider_rejected",
   "runtime_unavailable",
 ] as const;
