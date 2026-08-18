@@ -1,6 +1,5 @@
 import { DEFAULT_STOREFRONT_VEHICLE_IMAGE } from "@lojaveiculosv2/shared";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
 import { type MouseEvent, useState } from "react";
 import {
   formatPublicVehicleFuel,
@@ -17,17 +16,10 @@ type QuadraCarsProps = {
 };
 
 export function QuadraCars({ listings, onOpenListing }: QuadraCarsProps) {
-  const prefersReducedMotion = useReducedMotion();
   return (
     <section className="quadra-cars" id="cars">
       <div className="quadra-container">
-        <motion.header
-          className="quadra-cars__heading"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 28 }}
-          transition={{ duration: 0.55, ease: [0.21, 1, 0.36, 1] }}
-          viewport={{ amount: 0.4, once: true }}
-          whileInView={{ opacity: 1, y: 0 }}
-        >
+        <header className="quadra-cars__heading">
           <div>
             <div className="quadra-modern-divider" />
             <span>Veículos disponíveis</span>
@@ -36,39 +28,17 @@ export function QuadraCars({ listings, onOpenListing }: QuadraCarsProps) {
             </h2>
           </div>
           <p>{listings.length} veículos disponíveis</p>
-        </motion.header>
+        </header>
         {listings.length ? (
-          <motion.div
-            className="quadra-cars__grid"
-            initial={prefersReducedMotion ? false : "hidden"}
-            variants={{
-              hidden: {},
-              show: {
-                transition: { delayChildren: 0.1, staggerChildren: 0.08 },
-              },
-            }}
-            viewport={{ amount: 0.1, once: true }}
-            whileInView="show"
-          >
+          <div className="quadra-cars__grid">
             {listings.map((listing) => (
-              <motion.div
+              <QuadraVehicleCard
                 key={listing.slug}
-                variants={{
-                  hidden: { opacity: 0, y: 32 },
-                  show: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.55, ease: [0.21, 1, 0.36, 1] },
-                  },
-                }}
-              >
-                <QuadraVehicleCard
-                  listing={listing}
-                  onOpen={() => onOpenListing(listing.slug)}
-                />
-              </motion.div>
+                listing={listing}
+                onOpen={() => onOpenListing(listing.slug)}
+              />
             ))}
-          </motion.div>
+          </div>
         ) : (
           <div className="quadra-cars__empty">
             <p>Nenhum veículo encontrado.</p>

@@ -1,5 +1,4 @@
 import { Clock3, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
 import type { ComponentType, SVGProps } from "react";
 import { StorefrontLeadCaptureForm } from "../LeadCaptureForm";
 import type {
@@ -20,7 +19,6 @@ export function QuadraContact({
   ) => Promise<PublicStorefrontLeadResult>;
 }) {
   const { contact } = model;
-  const prefersReducedMotion = useReducedMotion();
   const whatsappHref = contact.whatsappUrl
     ? withWhatsappMessage(contact.whatsappUrl)
     : null;
@@ -28,30 +26,16 @@ export function QuadraContact({
   return (
     <section className="quadra-contact" id="contact">
       <div className="quadra-container">
-        <motion.header
-          className="quadra-contact__heading"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 28 }}
-          transition={{ duration: 0.55, ease: [0.21, 1, 0.36, 1] }}
-          viewport={{ amount: 0.4, once: true }}
-          whileInView={{ opacity: 1, y: 0 }}
-        >
+        <header className="quadra-contact__heading">
           <div className="quadra-modern-divider" />
           <span>Fale conosco</span>
           <h2 data-editor-id="contact.title">{contact.title}</h2>
           <p data-editor-id="contact.description1">{contact.description1}</p>
           <p data-editor-id="contact.description2">{contact.description2}</p>
-        </motion.header>
+        </header>
 
-        <motion.div
+        <div
           className={`quadra-contact__layout ${contact.showMap ? "has-map" : ""}`}
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 32 }}
-          transition={{
-            delay: 0.12,
-            duration: 0.6,
-            ease: [0.21, 1, 0.36, 1],
-          }}
-          viewport={{ amount: 0.15, once: true }}
-          whileInView={{ opacity: 1, y: 0 }}
         >
           <div className="quadra-contact__cards">
             {whatsappHref && contact.phone ? (
@@ -145,7 +129,7 @@ export function QuadraContact({
               )}
             </div>
           ) : null}
-        </motion.div>
+        </div>
 
         {model.leadForm.showOnLandingPage ? (
           <div className="quadra-contact__lead-form">

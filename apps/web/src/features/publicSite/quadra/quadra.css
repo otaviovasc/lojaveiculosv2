@@ -1587,11 +1587,10 @@
   .quadra-contact__lead-form {
   background: var(--quadra-surface);
   border: 1px solid var(--quadra-line);
-  border-radius: 3px;
-  box-shadow: 0 32px 56px -36px rgb(10 10 10 / 0.4);
-  margin: 3.5rem auto 0;
+  box-shadow: var(--shadow-panel);
+  margin: 3rem auto 0;
   max-width: 36rem;
-  padding: clamp(1.75rem, 4vw, 2.5rem);
+  padding: clamp(1.5rem, 4vw, 2rem);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -1599,24 +1598,21 @@
   h3 {
   color: var(--quadra-ink);
   font-size: var(--font-size-base);
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-align: center;
   text-transform: uppercase;
 }
 
-/* QUADRA landing page: premium redesign of the client-used V1 Modern template.
-   The classic scope above remains available only to the migrated vehicle
-   detail renderer. */
+/* QUADRA landing page: the client-used V1 Modern template. The classic scope
+   above remains available only to the migrated vehicle detail renderer. */
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"] {
   --quadra-accent: var(--sf-accent);
-  --quadra-ink: #0a0a0a;
-  --quadra-muted: #5b5b57;
+  --quadra-ink: #101010;
+  --quadra-muted: #606060;
   --quadra-surface: #ffffff;
-  --quadra-subtle: #f4f4f1;
-  --quadra-line: rgb(10 10 10 / 0.12);
-  --quadra-dark: #0a0a0a;
-  --quadra-ease: cubic-bezier(0.21, 1, 0.36, 1);
+  --quadra-subtle: #f4f4f2;
+  --quadra-line: rgb(16 16 16 / 0.14);
   background: var(--quadra-surface);
   color: var(--quadra-ink);
   font-family: "Titillium Web", "Space Grotesk", system-ui, sans-serif;
@@ -1632,7 +1628,7 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-container {
   margin-inline: auto;
-  max-width: 1400px;
+  max-width: 1320px;
   padding-inline: clamp(1.25rem, 4vw, 4rem);
   width: 100%;
 }
@@ -1652,31 +1648,28 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-modern-divider {
   background: var(--quadra-accent);
-  height: 4px;
-  margin-bottom: 1.25rem;
-  width: 4rem;
+  height: 3px;
+  margin-bottom: 1rem;
+  width: 3.75rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-modern-button {
   align-items: center;
   border: 2px solid currentColor;
-  border-radius: 3px;
   cursor: pointer;
   display: inline-flex;
   font-size: var(--font-size-sm);
   font-weight: 800;
   justify-content: center;
-  letter-spacing: 0.14em;
-  min-height: 3.5rem;
-  padding: 0.85rem 2.25rem;
+  letter-spacing: 0.12em;
+  min-height: 3.25rem;
+  padding: 0.8rem 1.5rem;
   text-transform: uppercase;
   transition:
-    background-color 200ms ease,
-    border-color 200ms ease,
-    box-shadow 200ms ease,
-    color 200ms ease,
-    transform 200ms var(--quadra-ease);
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -1692,32 +1685,25 @@
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-modern-button--accent:hover {
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header {
   color: #ffffff;
   left: 0;
-  padding-block: 1.25rem;
+  padding-block: 1rem;
   position: fixed;
   right: 0;
   top: 0;
   transition:
-    background-color 240ms ease,
-    border-color 240ms ease,
-    box-shadow 240ms ease,
-    padding 240ms ease;
+    background-color 220ms ease,
+    padding 220ms ease,
+    box-shadow 220ms ease;
   z-index: 70;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header--scrolled {
-  backdrop-filter: blur(16px) saturate(1.2);
-  background: rgb(10 10 10 / 0.85);
-  border-bottom: 1px solid rgb(255 255 255 / 0.08);
-  box-shadow: 0 18px 36px -24px rgb(0 0 0 / 0.55);
-  padding-block: 0.55rem;
+  background: rgb(12 12 12 / 0.94);
+  box-shadow: var(--shadow-panel);
+  padding-block: 0.45rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -1749,18 +1735,12 @@
   flex: none;
   min-height: 3rem;
   max-width: max-content;
-  transition: opacity 180ms ease;
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-header__logo-link:hover {
-  opacity: 0.82;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header__logo {
   filter: brightness(0) invert(1);
-  max-height: 3.75rem;
+  max-height: 4rem;
   max-width: min(15rem, 50vw);
   object-fit: contain;
 }
@@ -1776,64 +1756,51 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header__phones {
-  gap: 1rem;
+  gap: 0.8rem;
   margin-left: auto;
-  padding-inline: 1.25rem;
+  padding-inline: 1rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header__phone {
   align-items: center;
-  color: rgb(255 255 255 / 0.82);
+  color: inherit;
   display: flex;
   font-size: var(--font-size-xs);
   font-weight: 700;
-  gap: 0.4rem;
-  letter-spacing: 0.04em;
-  transition: color 160ms ease;
+  gap: 0.35rem;
+  opacity: 0.88;
   white-space: nowrap;
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-header__phone:hover {
-  color: #ffffff;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header__nav {
   align-items: center;
   display: flex;
-  gap: clamp(1.25rem, 2.6vw, 2.75rem);
+  gap: clamp(1rem, 2.4vw, 2.5rem);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header__nav-link {
-  color: rgb(255 255 255 / 0.85);
-  font-size: var(--font-size-ui-small);
+  color: inherit;
+  font-size: var(--font-size-sm);
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   padding-block: 0.8rem;
-  position: relative;
   text-transform: uppercase;
-  transition: color 180ms ease;
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-header__nav-link:hover {
-  color: #ffffff;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-header__nav-link::after {
   background: var(--quadra-accent);
-  bottom: 0.3rem;
+  bottom: 0.35rem;
   content: "";
   height: 2px;
   left: 0;
   position: absolute;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 220ms var(--quadra-ease);
+  transition: transform 180ms ease;
   width: 100%;
 }
 
@@ -1851,10 +1818,10 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__stage {
-  background: var(--quadra-dark);
+  background: #101010;
   color: #ffffff;
-  height: max(46rem, 88vh);
-  min-height: 46rem;
+  height: max(42rem, 75vh);
+  min-height: 42rem;
   overflow: hidden;
   position: relative;
 }
@@ -1880,14 +1847,12 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__overlay {
-  background:
-    linear-gradient(0deg, rgb(10 10 10 / 0.92) 0%, transparent 32%),
-    linear-gradient(
-      90deg,
-      rgb(0 0 0 / 0.84) 0%,
-      rgb(0 0 0 / 0.46) 48%,
-      rgb(0 0 0 / 0.08) 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0.88) 0%,
+    rgb(0 0 0 / 0.54) 50%,
+    rgb(0 0 0 / 0.14) 100%
+  );
   z-index: 1;
 }
 
@@ -1897,7 +1862,7 @@
   flex-direction: column;
   height: 100%;
   justify-content: center;
-  padding-bottom: 4rem;
+  padding-bottom: 3rem;
   padding-top: 8rem;
   position: relative;
   z-index: 2;
@@ -1908,7 +1873,7 @@
   align-items: center;
   display: grid;
   gap: clamp(2rem, 7vw, 7rem);
-  grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.7fr);
+  grid-template-columns: minmax(0, 1.3fr) minmax(17rem, 0.7fr);
   width: 100%;
 }
 
@@ -1923,12 +1888,12 @@
   color: #ffffff;
   font-size: clamp(
     var(--font-size-4xl),
-    6.2vw,
-    calc(var(--font-size-5xl) * 1.5)
+    6vw,
+    calc(var(--font-size-5xl) * 1.45)
   );
   font-weight: 900;
-  letter-spacing: -0.035em;
-  line-height: 0.94;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
   margin: 0;
   text-transform: uppercase;
 }
@@ -1936,35 +1901,31 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__copy
   p {
-  color: rgb(255 255 255 / 0.75);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  margin: 1.5rem 0 2.5rem;
+  color: rgb(255 255 255 / 0.78);
+  font-size: var(--font-size-lg);
+  margin: 1.25rem 0 2rem;
   max-width: 40rem;
-  text-transform: uppercase;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__specs {
-  backdrop-filter: blur(18px);
-  background: rgb(10 10 10 / 0.42);
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 3px;
-  box-shadow: 0 36px 64px -36px rgb(0 0 0 / 0.75);
+  backdrop-filter: blur(12px);
+  background: rgb(8 8 8 / 0.75);
+  border-left: 3px solid var(--quadra-accent);
+  box-shadow: var(--shadow-raised);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__specs-eyebrow {
   color: var(--quadra-accent);
-  display: block;
   font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  padding: 1.5rem 1.75rem 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.15rem;
   text-transform: uppercase;
 }
 
@@ -1972,10 +1933,17 @@
   .quadra-hero__specs
   > div {
   align-items: center;
-  border-top: 1px solid rgb(255 255 255 / 0.07);
+  border-bottom: 1px solid rgb(255 255 255 / 0.12);
   display: flex;
-  gap: 1rem;
-  padding: 1.25rem 1.75rem;
+  gap: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -1983,21 +1951,16 @@
   > div
   > span {
   align-items: center;
-  background: rgb(255 255 255 / 0.06);
-  border-radius: 3px;
   color: var(--quadra-accent);
   display: flex;
   flex-shrink: 0;
-  height: 2.5rem;
-  justify-content: center;
-  width: 2.5rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__specs
   svg {
-  height: 1.2rem;
-  width: 1.2rem;
+  height: 1.25rem;
+  width: 1.25rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2005,7 +1968,7 @@
   p {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
   margin: 0;
   min-width: 0;
 }
@@ -2013,10 +1976,10 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__specs
   small {
-  color: rgb(255 255 255 / 0.45);
+  color: rgb(255 255 255 / 0.65);
   font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   line-height: 1.2;
   text-transform: uppercase;
 }
@@ -2027,22 +1990,16 @@
   color: #ffffff;
   font-size: var(--font-size-lg);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__specs
-  > div.is-accent {
-  background: rgb(255 255 255 / 0.05);
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-hero__specs
   > div.is-accent
-  > span {
-  background: var(--quadra-accent);
-  color: #ffffff;
+  small {
+  color: var(--quadra-accent);
+  font-weight: 800;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2050,52 +2007,40 @@
   > div.is-accent
   strong {
   color: var(--quadra-accent);
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: 900;
-  letter-spacing: -0.02em;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__arrow {
   align-items: center;
-  backdrop-filter: blur(8px);
-  background: rgb(0 0 0 / 0.32);
-  border: 1px solid rgb(255 255 255 / 0.2);
-  border-radius: 3px;
+  background: rgb(0 0 0 / 0.48);
+  border: 1px solid rgb(255 255 255 / 0.35);
   color: #ffffff;
   display: flex;
-  height: 3.25rem;
+  height: 3rem;
   justify-content: center;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  transition:
-    background-color 180ms ease,
-    border-color 180ms ease;
-  width: 3.25rem;
+  width: 3rem;
   z-index: 4;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-hero__arrow:hover {
-  background: var(--quadra-accent);
-  border-color: var(--quadra-accent);
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__arrow--prev {
-  left: 1.25rem;
+  left: 1rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__arrow--next {
-  right: 1.25rem;
+  right: 1rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__pagination {
-  bottom: 2.25rem;
+  bottom: 2rem;
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
@@ -2105,19 +2050,12 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-hero__pagination
   button {
-  background: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.32);
   border: 0;
-  height: 6px;
+  height: 3px;
   overflow: hidden;
   padding: 0;
-  transition: width 300ms var(--quadra-ease);
-  width: 2.5rem;
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-hero__pagination
-  button.is-active {
-  width: 6rem;
+  width: 3rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2151,11 +2089,6 @@
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-cars {
-  background: var(--quadra-subtle);
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials {
   scroll-margin-top: calc(var(--tenant-header-height, 80px) + 1rem);
 }
@@ -2167,7 +2100,7 @@
   align-items: end;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 3.5rem;
+  margin-bottom: 3rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2180,8 +2113,8 @@
   .quadra-contact__heading
   > span {
   font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.28em;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -2196,31 +2129,23 @@
   h2 {
   font-size: clamp(var(--font-size-3xl), 5vw, var(--font-size-5xl));
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   line-height: 1;
-  margin: 0.5rem 0 0;
+  margin: 0.35rem 0 0;
   text-transform: uppercase;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-cars__heading
-  > p {
-  border: 1px solid var(--quadra-line);
-  border-radius: 3px;
+  p {
   color: var(--quadra-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  margin: 0;
-  padding: 0.6rem 1rem;
-  text-transform: uppercase;
-  white-space: nowrap;
+  margin: 0.8rem 0 0;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-cars__grid {
   display: grid;
-  gap: 1.5rem;
+  gap: 2rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -2228,29 +2153,24 @@
   .quadra-car-card {
   background: var(--quadra-surface);
   border: 1px solid var(--quadra-line);
-  border-radius: 3px;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  box-shadow: var(--shadow-panel);
   overflow: hidden;
   position: relative;
   transition:
-    border-color 240ms ease,
-    box-shadow 240ms ease,
-    transform 240ms var(--quadra-ease);
+    transform 220ms ease,
+    box-shadow 220ms ease;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card:hover {
-  border-color: rgb(10 10 10 / 0.22);
-  box-shadow: 0 32px 48px -32px rgb(10 10 10 / 0.45);
+  box-shadow: var(--shadow-raised);
   transform: translateY(-5px);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__media {
   aspect-ratio: 16 / 10;
-  background: #141414;
+  background: #1b1b1b;
   overflow: hidden;
   position: relative;
 }
@@ -2260,7 +2180,7 @@
   img {
   height: 100%;
   object-fit: cover;
-  transition: transform 600ms var(--quadra-ease);
+  transition: transform 500ms ease;
   width: 100%;
 }
 
@@ -2268,12 +2188,12 @@
   .quadra-car-card:hover
   .quadra-car-card__media
   img {
-  transform: scale(1.04);
+  transform: scale(1.035);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__overlay {
-  background: linear-gradient(180deg, transparent 52%, rgb(0 0 0 / 0.66));
+  background: linear-gradient(180deg, transparent 48%, rgb(0 0 0 / 0.72));
   inset: 0;
   position: absolute;
 }
@@ -2282,30 +2202,24 @@
   .quadra-car-card__badge,
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__fuel {
-  border-radius: 2px;
   font-size: var(--font-size-xs);
   font-weight: 900;
-  letter-spacing: 0.12em;
-  padding: 0.5rem 0.8rem;
+  letter-spacing: 0.08em;
+  padding: 0.45rem 0.65rem;
   position: absolute;
   text-transform: uppercase;
-  z-index: 1;
+  top: 1rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__badge {
   background: var(--quadra-accent);
-  box-shadow: 0 10px 20px -10px rgb(0 0 0 / 0.6);
   color: #fff;
-  left: 0;
-  top: 0;
+  left: 1rem;
 }
-
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__fuel {
-  backdrop-filter: blur(6px);
-  background: rgb(10 10 10 / 0.6);
-  bottom: 1rem;
+  background: rgb(0 0 0 / 0.64);
   color: #fff;
   right: 1rem;
 }
@@ -2313,9 +2227,8 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__arrow {
   align-items: center;
-  background: rgb(0 0 0 / 0.55);
-  border: 1px solid rgb(255 255 255 / 0.24);
-  border-radius: 3px;
+  background: rgb(0 0 0 / 0.56);
+  border: 1px solid rgb(255 255 255 / 0.28);
   color: #fff;
   display: flex;
   height: 2.5rem;
@@ -2324,18 +2237,9 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    opacity 160ms ease;
+  transition: opacity 160ms ease;
   width: 2.5rem;
   z-index: 2;
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-car-card__arrow:hover {
-  background: var(--quadra-accent);
-  border-color: var(--quadra-accent);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2357,7 +2261,7 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__dots {
-  bottom: 0.9rem;
+  bottom: 0.8rem;
   display: flex;
   gap: 0.35rem;
   left: 50%;
@@ -2368,22 +2272,19 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__dots
   span {
-  background: rgb(255 255 255 / 0.45);
-  height: 4px;
-  width: 1.25rem;
+  background: rgb(255 255 255 / 0.55);
+  height: 3px;
+  width: 1rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__dots
   .is-active {
-  background: #ffffff;
+  background: var(--quadra-accent);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__content {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
   padding: 1.4rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2391,7 +2292,6 @@
   h3 {
   font-size: var(--font-size-xl);
   font-weight: 900;
-  letter-spacing: -0.01em;
   line-height: 1.05;
   margin: 0;
   text-transform: uppercase;
@@ -2406,7 +2306,6 @@
   .quadra-car-card__price {
   font-size: var(--font-size-2xl);
   font-weight: 900;
-  letter-spacing: -0.03em;
   margin-top: 1.15rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2415,12 +2314,10 @@
   color: var(--quadra-muted);
   display: flex;
   font-size: var(--font-size-xs);
-  font-weight: 900;
+  font-weight: 700;
   justify-content: space-between;
-  letter-spacing: 0.14em;
   margin-top: 1rem;
   padding-block: 0.8rem;
-  text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-car-card__hint {
@@ -2428,21 +2325,12 @@
   border: 0;
   color: var(--quadra-accent);
   cursor: pointer;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: 900;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   margin-top: 1rem;
   padding: 0;
-  text-align: left;
   text-transform: uppercase;
-  transition: transform 200ms var(--quadra-ease);
-  width: max-content;
-}
-
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-car-card:hover
-  .quadra-car-card__hint {
-  transform: translateX(4px);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2466,26 +2354,16 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-cars__empty {
-  background: var(--quadra-surface);
   border: 1px solid var(--quadra-line);
-  border-radius: 3px;
-  color: var(--quadra-muted);
-  letter-spacing: 0.08em;
   padding: 4rem 2rem;
   text-align: center;
-  text-transform: uppercase;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials {
-  background: var(--quadra-dark);
+  background: #111111;
   color: #ffffff;
   padding-block: clamp(5rem, 9vw, 8rem);
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-testimonials__heading
-  span {
-  color: rgb(255 255 255 / 0.55);
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials__arrows {
@@ -2497,24 +2375,12 @@
   button {
   align-items: center;
   background: transparent;
-  border: 1px solid rgb(255 255 255 / 0.2);
-  border-radius: 3px;
-  color: rgb(255 255 255 / 0.7);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  color: #fff;
   display: flex;
   height: 3rem;
   justify-content: center;
-  transition:
-    background-color 200ms ease,
-    border-color 200ms ease,
-    color 200ms ease;
   width: 3rem;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-testimonials__arrows
-  button:hover {
-  background: var(--quadra-accent);
-  border-color: var(--quadra-accent);
-  color: #ffffff;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials__viewport {
@@ -2524,135 +2390,92 @@
   .quadra-testimonials__track {
   display: flex;
   gap: 2.5rem;
-  transition: transform 550ms var(--quadra-ease);
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card {
-  background: rgb(255 255 255 / 0.04);
-  border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 3px;
+  background: #1a1a1a;
+  border: 1px solid rgb(255 255 255 / 0.12);
   display: flex;
   flex: 0 0 calc((100% - 5rem) / 3);
-  flex-direction: column;
+  min-height: 22rem;
   overflow: hidden;
-  transition: border-color 400ms ease;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-testimonial-card:hover {
-  border-color: color-mix(in srgb, var(--quadra-accent) 40%, transparent);
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-testimonial-card__media {
-  height: 13rem;
-  overflow: hidden;
-  position: relative;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-testimonial-card__media::after {
-  background: linear-gradient(180deg, transparent 40%, var(--quadra-dark));
-  bottom: 0;
-  content: "";
-  height: 45%;
-  left: 0;
-  position: absolute;
-  right: 0;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card__image {
-  height: 100%;
+  height: auto;
   object-fit: cover;
-  transition: transform 600ms var(--quadra-ease);
-  width: 100%;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-testimonial-card:hover
-  .quadra-testimonial-card__image {
-  transform: scale(1.05);
+  width: 36%;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card__content {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 1.75rem;
+  padding: 1.5rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card__stars {
   color: var(--quadra-accent);
   display: flex;
-  gap: 0.3rem;
-  margin-bottom: 1rem;
+  gap: 0.25rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card__stars
   svg {
   fill: currentColor;
-  height: 0.9rem;
-  width: 0.9rem;
+  height: 1rem;
+  width: 1rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card
   blockquote {
-  color: rgb(255 255 255 / 0.72);
+  color: rgb(255 255 255 / 0.82);
   display: -webkit-box;
-  font-size: var(--font-size-sm);
-  line-height: 1.7;
-  margin: 0 0 1.5rem;
+  font-size: var(--font-size-base);
+  line-height: 1.65;
+  margin: 1.25rem 0;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 6;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card
   footer {
-  border-top: 1px solid rgb(255 255 255 / 0.08);
   margin-top: auto;
-  padding-top: 1.25rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card
   h3 {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: var(--font-size-lg);
   margin: 0;
-  text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonial-card
   footer
   span {
-  color: var(--quadra-accent);
-  display: block;
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  margin-top: 0.3rem;
-  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.52);
+  font-size: var(--font-size-sm);
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials__pagination {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
-  margin-top: 2.5rem;
+  margin-top: 2rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials__pagination
   button {
-  background: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.28);
   border: 0;
-  height: 4px;
-  transition:
-    background-color 200ms ease,
-    width 300ms var(--quadra-ease);
+  height: 3px;
   width: 2rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-testimonials__pagination
   .is-active {
   background: var(--quadra-accent);
-  width: 3.25rem;
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2663,7 +2486,7 @@
   .quadra-about__row {
   align-items: center;
   display: grid;
-  gap: clamp(3.5rem, 8vw, 7.5rem);
+  gap: clamp(3rem, 8vw, 8rem);
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2676,7 +2499,7 @@
   color: var(--quadra-accent);
   font-size: var(--font-size-xs);
   font-weight: 900;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2687,9 +2510,9 @@
   h3 {
   font-size: clamp(var(--font-size-3xl), 5vw, var(--font-size-5xl));
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   line-height: 1;
-  margin: 0.75rem 0 1.5rem;
+  margin: 0.6rem 0 1.25rem;
   text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2705,31 +2528,24 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__copy
   .quadra-modern-button {
-  margin-top: 1.75rem;
+  margin-top: 1.5rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__image {
-  min-height: 32rem;
+  min-height: 30rem;
   position: relative;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__image::before {
-  background: color-mix(in srgb, var(--quadra-accent) 9%, transparent);
-  border-radius: 3px;
+  border: 3px solid var(--quadra-accent);
   content: "";
-  inset: 0;
+  inset: 1.4rem -1.4rem -1.4rem 1.4rem;
   position: absolute;
-  transform: translate(-1.5rem, 1.5rem);
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-about__image--secondary::before {
-  transform: translate(1.5rem, -1.5rem);
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__image
   img {
-  border-radius: 3px;
-  box-shadow: 0 40px 64px -40px rgb(10 10 10 / 0.55);
+  box-shadow: var(--shadow-raised);
   height: 100%;
   inset: 0;
   object-fit: cover;
@@ -2739,46 +2555,22 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__features {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 2.5rem;
+  margin-top: 2rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__features
   article {
   background: var(--quadra-surface);
-  border: 1px solid var(--quadra-line);
-  border-radius: 3px;
-  padding: 1.5rem;
-  transition: border-color 240ms ease;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-about__features
-  article:hover {
-  border-color: color-mix(in srgb, var(--quadra-accent) 35%, transparent);
+  border-left: 3px solid var(--quadra-accent);
+  padding: 1.25rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__features
   article
   > span {
-  align-items: center;
-  background: color-mix(in srgb, var(--quadra-accent) 8%, transparent);
-  border-radius: 3px;
   color: var(--quadra-accent);
-  display: flex;
-  height: 3rem;
-  justify-content: center;
-  transition:
-    background-color 240ms ease,
-    color 240ms ease;
-  width: 3rem;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-about__features
-  article:hover
-  > span {
-  background: var(--quadra-accent);
-  color: #ffffff;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-about__features
@@ -2790,9 +2582,7 @@
   .quadra-about__features
   h4 {
   font-size: var(--font-size-base);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  margin: 0.9rem 0 0.3rem;
+  margin: 0.55rem 0 0.25rem;
   text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -2806,13 +2596,8 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact__heading {
-  margin-bottom: 3.5rem;
+  margin-bottom: 3rem;
   max-width: 48rem;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-contact__heading
-  > span {
-  color: var(--quadra-accent);
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact__heading
@@ -2820,7 +2605,7 @@
   color: var(--quadra-muted);
   font-size: var(--font-size-lg);
   line-height: 1.65;
-  margin: 0.9rem 0 0;
+  margin: 0.8rem 0 0;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact__layout {
@@ -2840,24 +2625,22 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact-card {
   align-items: center;
-  background: var(--quadra-surface);
-  border: 1px solid var(--quadra-line);
-  border-radius: 3px;
+  background: var(--quadra-subtle);
+  border-left: 3px solid transparent;
   color: var(--quadra-ink);
   display: flex;
   flex: 1 1 calc(50% - 0.5rem);
   gap: 1rem;
   min-width: 12rem;
-  padding: 1.25rem;
+  padding: 1.2rem;
   transition:
-    border-color 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms var(--quadra-ease);
+    border-color 180ms ease,
+    transform 180ms ease;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   a.quadra-contact-card:hover {
-  border-color: color-mix(in srgb, var(--quadra-accent) 45%, transparent);
-  transform: translateY(-3px);
+  border-left-color: var(--quadra-accent);
+  transform: translateX(3px);
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact-card--wide {
@@ -2867,23 +2650,13 @@
   .quadra-contact-card
   > span {
   align-items: center;
-  background: color-mix(in srgb, var(--quadra-accent) 10%, transparent);
-  border-radius: 3px;
-  color: var(--quadra-accent);
+  background: var(--quadra-accent);
+  color: #fff;
   display: flex;
   flex: none;
-  height: 2.9rem;
+  height: 2.8rem;
   justify-content: center;
-  transition:
-    background-color 200ms ease,
-    color 200ms ease;
-  width: 2.9rem;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  a.quadra-contact-card:hover
-  > span {
-  background: var(--quadra-accent);
-  color: #ffffff;
+  width: 2.8rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact-card
@@ -2910,23 +2683,18 @@
   .quadra-contact-card
   strong {
   font-size: var(--font-size-sm);
-  font-weight: 700;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact-card
   small {
   color: var(--quadra-muted);
-  font-size: var(--font-size-xs);
-  margin-top: 0.25rem;
+  font-size: var(--font-size-sm);
+  margin-top: 0.2rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-contact__map {
   background: var(--quadra-subtle);
-  border: 1px solid var(--quadra-line);
-  border-radius: 3px;
-  box-shadow: 0 32px 48px -36px rgb(10 10 10 / 0.35);
   min-height: 28rem;
   overflow: hidden;
 }
@@ -2967,39 +2735,36 @@
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer {
-  background: var(--quadra-dark);
-  border-top: 3px solid var(--quadra-accent);
+  background: #0d0d0d;
   color: #fff;
-  padding-top: 5.5rem;
+  padding-top: 5rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer__grid {
   display: grid;
   gap: 4rem;
   grid-template-columns: 1.4fr 0.7fr 1fr;
-  padding-bottom: 4.5rem;
+  padding-bottom: 4rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer__identity
   img {
   filter: brightness(0) invert(1);
-  max-height: 4.5rem;
+  max-height: 5rem;
   object-fit: contain;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer__identity
   > strong {
   font-size: var(--font-size-2xl);
-  letter-spacing: -0.02em;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer
   h3 {
   color: var(--quadra-accent);
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  margin: 0 0 1.5rem;
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.12em;
+  margin: 0 0 1.2rem;
   text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
@@ -3008,7 +2773,7 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer__contacts {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.7rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer
@@ -3016,24 +2781,9 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer
   p {
-  color: rgb(255 255 255 / 0.62);
+  color: rgb(255 255 255 / 0.68);
   font-size: var(--font-size-sm);
   margin: 0;
-  transition: color 180ms ease;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-footer
-  a:hover {
-  color: #ffffff;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-footer
-  nav
-  a {
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer__identity
@@ -3060,12 +2810,12 @@
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer__bottom {
   align-items: center;
-  border-top: 1px solid rgb(255 255 255 / 0.1);
-  color: rgb(255 255 255 / 0.45);
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+  color: rgb(255 255 255 / 0.48);
   display: flex;
   font-size: var(--font-size-xs);
   justify-content: space-between;
-  padding-block: 1.75rem;
+  padding-block: 1.5rem;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-footer__bottom
@@ -3085,7 +2835,6 @@
   .quadra-whatsapp-button {
   align-items: center;
   background: #25d366;
-  border-radius: 9999px;
   bottom: 1.5rem;
   color: #fff;
   display: flex;
@@ -3093,40 +2842,13 @@
   justify-content: center;
   position: fixed;
   right: 1.5rem;
-  transition:
-    box-shadow 200ms ease,
-    transform 200ms var(--quadra-ease);
+  transition: transform 180ms ease;
   width: 3.75rem;
   z-index: 60;
 }
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-  .quadra-whatsapp-button::after {
-  animation: quadra-whatsapp-pulse 2.4s var(--quadra-ease) infinite;
-  border: 2px solid #25d366;
-  border-radius: 9999px;
-  content: "";
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-}
-.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
   .quadra-whatsapp-button:hover {
-  transform: translateY(-3px) scale(1.04);
-}
-
-@keyframes quadra-whatsapp-pulse {
-  0% {
-    opacity: 0.55;
-    transform: scale(1);
-  }
-  70% {
-    opacity: 0;
-    transform: scale(1.55);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.55);
-  }
+  transform: translateY(-3px);
 }
 
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"]:has(
@@ -3141,10 +2863,10 @@
    colors (section titles, about copy) stay readable on dark surfaces. */
 .public-storefront[data-preset="quadra"][data-quadra-modern="true"][data-color-scheme="dark"] {
   --quadra-ink: #f5f5f2;
-  --quadra-muted: #a3a29c;
-  --quadra-surface: #121310;
-  --quadra-subtle: #181914;
-  --quadra-line: rgb(255 255 255 / 0.12);
+  --quadra-muted: #aaa9a4;
+  --quadra-surface: #111210;
+  --quadra-subtle: #191a17;
+  --quadra-line: rgb(255 255 255 / 0.13);
   background: var(--quadra-surface) !important;
   color: var(--quadra-ink) !important;
 }
@@ -3185,9 +2907,7 @@
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-header__nav {
     align-items: stretch;
-    backdrop-filter: blur(16px);
-    background: rgb(10 10 10 / 0.96);
-    border-top: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(10 10 10 / 0.98);
     display: none;
     flex-direction: column;
     gap: 0;
@@ -3241,14 +2961,12 @@
 
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-hero__stage {
-    height: 44rem;
-    min-height: 44rem;
+    height: 42rem;
+    min-height: 42rem;
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-hero__overlay {
-    background:
-      linear-gradient(0deg, rgb(10 10 10 / 0.9) 0%, transparent 38%),
-      linear-gradient(180deg, rgb(0 0 0 / 0.42), rgb(0 0 0 / 0.6));
+    background: linear-gradient(180deg, rgb(0 0 0 / 0.44), rgb(0 0 0 / 0.86));
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-hero__copy
@@ -3258,11 +2976,6 @@
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-hero__arrow {
     display: none;
-  }
-  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-    .quadra-hero__pagination
-    button.is-active {
-    width: 3.5rem;
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-cars__heading,
@@ -3279,6 +2992,7 @@
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-testimonial-card {
     flex-basis: 100%;
+    min-height: 20rem;
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-testimonials__track {
@@ -3301,11 +3015,7 @@
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-about__image::before {
-    transform: translate(-0.75rem, 0.75rem);
-  }
-  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
-    .quadra-about__image--secondary::before {
-    transform: translate(0.75rem, -0.75rem);
+    inset: 0.8rem -0.6rem -0.8rem 0.6rem;
   }
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
     .quadra-about__features {
@@ -3337,7 +3047,6 @@
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"] *::before,
   .public-storefront[data-preset="quadra"][data-quadra-modern="true"] *::after {
     animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 1ms !important;
   }
