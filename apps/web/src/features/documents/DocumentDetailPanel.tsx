@@ -9,10 +9,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { DocumentMetadataEditor } from "./DocumentMetadataEditor";
-import { DocumentGeneratedPreview } from "./DocumentGeneratedPreview";
 import { DocumentOriginBadge, DocumentScopeBadge } from "./DocumentBadges";
+import { DocumentGeneratedPreview } from "./DocumentGeneratedPreview";
+import { DocumentMetadataEditor } from "./DocumentMetadataEditor";
 import { DocumentsDialogShell } from "./DocumentsDialogShell";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import {
   documentActorLabel,
   documentScopeLabel,
@@ -117,23 +118,24 @@ export function DocumentDetailPanel({
               previewError={previewError}
             />
           </section>
-          <div className="documents-detail-actions">
-            <ActionButton
+          <div className="documents-detail-actions flex items-center gap-2">
+            <FeatureActionButton
               disabled={isBusy}
-              icon={<FileSearch aria-hidden="true" className="size-4" />}
+              icon={FileSearch}
               label="Visualizar"
               onClick={() => void onPreview(document.id)}
             />
-            <ActionButton
+            <FeatureActionButton
               disabled={isBusy}
-              icon={<Download aria-hidden="true" className="size-4" />}
+              icon={Download}
               label="Baixar"
               onClick={() => void onDownload(document.id)}
+              variant="primary"
             />
             {document.capabilities.canRegenerate ? (
-              <ActionButton
+              <FeatureActionButton
                 disabled={isBusy || isVoided}
-                icon={<RefreshCcw aria-hidden="true" className="size-4" />}
+                icon={RefreshCcw}
                 label="Regenerar"
                 onClick={() => void onRegenerate(document.id)}
               />
@@ -305,25 +307,6 @@ export function DocumentDetailPanel({
         </div>
       </div>
     </DocumentsDialogShell>
-  );
-}
-
-function ActionButton({
-  disabled,
-  icon,
-  label,
-  onClick,
-}: {
-  disabled?: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button disabled={disabled} onClick={onClick} type="button">
-      {icon}
-      {label}
-    </button>
   );
 }
 
