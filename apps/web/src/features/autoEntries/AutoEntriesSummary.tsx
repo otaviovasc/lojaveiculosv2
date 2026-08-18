@@ -35,7 +35,7 @@ export function AutoEntriesSummary({
             className="text-base md:text-lg font-extrabold text-text"
             id={headingId}
           >
-            Regras de Lançamento Automático
+            Cobertura da automação
           </h2>
           <p className="text-xs text-muted mt-0.5">
             Gera lançamentos de comissão, repasses e despesas automaticamente ao
