@@ -322,3 +322,104 @@ export function InventoryListingTable({
     </FeatureTableFrame>
   );
 }
+
+export function InventoryListingLoadingTable({
+  visibleColumns = {
+    fotos: true,
+    placa: true,
+    marcaModelo: true,
+    anoKm: true,
+    preco: true,
+    dias: true,
+    fase: true,
+    leads: true,
+    acoes: true,
+  },
+}: {
+  visibleColumns?: Record<string, boolean>;
+}) {
+  return (
+    <FeatureTableFrame>
+      <table
+        aria-label="Carregando veículos"
+        className="min-w-full border-collapse text-left text-sm"
+        role="status"
+      >
+        <thead className="border-b border-line bg-app/80 text-xs font-black uppercase tracking-wider text-muted">
+          <tr>
+            {visibleColumns.fotos && <th className="px-4 py-3.5">Fotos</th>}
+            {visibleColumns.placa && <th className="px-4 py-3.5">Placa</th>}
+            {visibleColumns.marcaModelo && (
+              <th className="px-4 py-3.5">Marca/Modelo</th>
+            )}
+            {visibleColumns.anoKm && <th className="px-4 py-3.5">Ano/KM</th>}
+            {visibleColumns.preco && <th className="px-4 py-3.5">Preço</th>}
+            {visibleColumns.dias && <th className="px-4 py-3.5">Dias</th>}
+            {visibleColumns.fase && <th className="px-4 py-3.5">Fase</th>}
+            {visibleColumns.leads && <th className="px-4 py-3.5">Leads</th>}
+            {visibleColumns.acoes && (
+              <th className="px-4 py-3.5 text-right">Ações</th>
+            )}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line/40">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <tr aria-hidden="true" key={index}>
+              {visibleColumns.fotos && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-10 w-16 animate-pulse rounded-lg border border-line/40 bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.placa && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-7 w-20 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.marcaModelo && (
+                <td className="min-w-[220px] max-w-[280px] px-4 py-3 align-middle">
+                  <div className="mb-1.5 h-4 w-3/4 animate-pulse rounded bg-app-elevated" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.anoKm && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="mb-1 h-3.5 w-16 animate-pulse rounded bg-app-elevated" />
+                  <div className="h-3 w-12 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.preco && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="mb-1 h-4 w-20 animate-pulse rounded bg-app-elevated" />
+                  <div className="h-3 w-14 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.dias && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-6 w-14 animate-pulse rounded-full bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.fase && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-6 w-20 animate-pulse rounded-full bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.leads && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-6 w-16 animate-pulse rounded-full bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.acoes && (
+                <td className="whitespace-nowrap px-4 py-3 text-right align-middle">
+                  <div className="inline-flex gap-2">
+                    <div className="size-7 animate-pulse rounded-lg bg-app-elevated" />
+                    <div className="size-7 animate-pulse rounded-lg bg-app-elevated" />
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </FeatureTableFrame>
+  );
+}

@@ -206,31 +206,31 @@ function ConfiguredSessionBootstrapPage() {
     );
   }
 
-  return (
-    <main className="account-auth-shell">
-      <div aria-hidden="true" className="account-auth-glow" />
-      <div className="account-glass-card max-w-xl text-center space-y-6">
-        {error ? (
-          <>
-            <FeatureAlert title="Não foi possível carregar sua conta">
-              {error}
-            </FeatureAlert>
-            <FeatureActionButton
-              className="account-primary-button"
-              icon={RefreshCcw}
-              label="Tentar novamente"
-              onClick={() => setAttempt((current) => current + 1)}
-              variant="primary"
-            />
-          </>
-        ) : (
-          <AppBootScreen
-            description="Carregando as informações da sua conta e preferências de acesso."
-            title="Entrando na loja"
+  if (error) {
+    return (
+      <main className="account-auth-shell">
+        <div aria-hidden="true" className="account-auth-glow" />
+        <div className="account-glass-card max-w-xl text-center space-y-6">
+          <FeatureAlert title="Não foi possível carregar sua conta">
+            {error}
+          </FeatureAlert>
+          <FeatureActionButton
+            className="account-primary-button"
+            icon={RefreshCcw}
+            label="Tentar novamente"
+            onClick={() => setAttempt((current) => current + 1)}
+            variant="primary"
           />
-        )}
-      </div>
-    </main>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <AppBootScreen
+      description="Carregando as informações da sua conta e preferências de acesso."
+      title="Entrando na loja"
+    />
   );
 }
 

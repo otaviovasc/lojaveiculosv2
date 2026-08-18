@@ -5,6 +5,7 @@ import type { InventoryApi } from "../inventory/api/apiClient";
 import { createDocumentsApi, type DocumentsApi } from "./apiClient";
 import { createDocumentsApiOptions } from "./runtimeApi";
 import { DocumentBuilderWorkspace } from "./DocumentBuilderWorkspace";
+import { DocumentsFolderCardsGrid } from "./DocumentsFolderCardsGrid";
 import { DocumentsFolderSidebar } from "./DocumentsFolderSidebar";
 import {
   DocumentsKpiSummary,
@@ -70,6 +71,7 @@ export function DocumentsModule({
     EMPTY_DOCUMENT_FILTERS,
   );
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "split">("split");
   const [mobileTab, setMobileTab] = useState<DocumentsMobileTab>("documentos");
   const [linkDocument, setLinkDocument] = useState<WorkspaceDocument | null>(
     null,
@@ -217,11 +219,15 @@ export function DocumentsModule({
         isUploading={!runtimeApi || !uploadTarget}
         onOpenFolders={openMobileFolders}
         onRefresh={() => void state.resetAndReload()}
+        onToggleViewMode={() =>
+          setViewMode((current) => (current === "grid" ? "split" : "grid"))
+        }
         onUpload={() => state.setIsUploadDialogOpen(true)}
         selectedKey={selectedFolderKey}
         showUpload={showUpload}
         unitLabel={selectedUnit ? selectedUnit.label : null}
         uploadTitle={uploadTitle}
+        viewMode={viewMode}
       />
 
       <DocumentsSectionNavigation
@@ -252,53 +258,66 @@ export function DocumentsModule({
         </FeatureAlert>
       ) : null}
 
-      <section className="documents-command-layout">
-        <div className="documents-desktop-folders">
-          <DocumentsFolderSidebar
-            documents={state.documents}
-            isLoading={unitFolders.status === "loading"}
-            onSelect={selectFolder}
-            selectedKey={selectedFolderKey}
-            vehicleOptions={vehicleOptions}
-          />
-        </div>
-
-        <DocumentsWorkspaceBody
-          api={runtimeApi}
-          clearAllFilters={clearAllFilters}
-          errorMessage={errorMessage}
-          filters={filters}
-          folderDocuments={folderDocuments}
-          hasActiveFilters={hasFilters}
-          isLoading={isLoading}
-          onCloseDetail={closeDetail}
-          onDownloadDocument={state.downloadDocument}
-          onDownloadSelected={() => {
-            void onDownloadSelected();
+      {viewMode === "grid" ? (
+        <DocumentsFolderCardsGrid
+          documents={state.documents}
+          isLoading={unitFolders.status === "loading" || isLoading}
+          onSelectFolder={(key) => {
+            selectFolder(key);
+            setViewMode("split");
           }}
-          onKindChange={(value) => setFilter("kind", value)}
-          onOriginSelect={setOriginFilter}
-          onPreviewDocument={state.previewDocument}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSelectDocument={selectDocument}
-          onSetDocumentToDelete={state.setDocumentToDelete}
-          onSetFilter={setFilter}
-          onSetLinkDocument={setLinkDocument}
-          onSortChange={setSortBy}
-          onStatusChange={(value) => setFilter("status", value)}
-          onUploadClick={() => state.setIsUploadDialogOpen(true)}
-          originFilter={originFilter}
-          search={filters.search}
-          selectedFolderKey={selectedFolderKey}
-          showUpload={showUpload}
-          sortBy={sortBy}
-          sortedVisible={sortedVisible}
-          state={state}
-          selection={selection}
-          updateDocument={state.updateDocument}
-          visibleSelectedCount={visibleSelectedCount}
+          selectedKey={selectedFolderKey}
+          vehicleOptions={vehicleOptions as readonly DocumentVehicleOption[]}
         />
-      </section>
+      ) : (
+        <section className="documents-command-layout">
+          <div className="documents-desktop-folders">
+            <DocumentsFolderSidebar
+              documents={state.documents}
+              isLoading={unitFolders.status === "loading"}
+              onSelect={selectFolder}
+              selectedKey={selectedFolderKey}
+              vehicleOptions={vehicleOptions}
+            />
+          </div>
+
+          <DocumentsWorkspaceBody
+            api={runtimeApi}
+            clearAllFilters={clearAllFilters}
+            errorMessage={errorMessage}
+            filters={filters}
+            folderDocuments={folderDocuments}
+            hasActiveFilters={hasFilters}
+            isLoading={isLoading}
+            onCloseDetail={closeDetail}
+            onDownloadDocument={state.downloadDocument}
+            onDownloadSelected={() => {
+              void onDownloadSelected();
+            }}
+            onKindChange={(value) => setFilter("kind", value)}
+            onOriginSelect={setOriginFilter}
+            onPreviewDocument={state.previewDocument}
+            onSearchChange={(value) => setFilter("search", value)}
+            onSelectDocument={selectDocument}
+            onSetDocumentToDelete={state.setDocumentToDelete}
+            onSetFilter={setFilter}
+            onSetLinkDocument={setLinkDocument}
+            onSortChange={setSortBy}
+            onStatusChange={(value) => setFilter("status", value)}
+            onUploadClick={() => state.setIsUploadDialogOpen(true)}
+            originFilter={originFilter}
+            search={filters.search}
+            selectedFolderKey={selectedFolderKey}
+            showUpload={showUpload}
+            sortBy={sortBy}
+            sortedVisible={sortedVisible}
+            state={state}
+            selection={selection}
+            updateDocument={state.updateDocument}
+            visibleSelectedCount={visibleSelectedCount}
+          />
+        </section>
+      )}
 
       <DocumentsWorkspaceDialogs
         deleteDocument={state.deleteDocument}

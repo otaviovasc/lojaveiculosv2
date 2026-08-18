@@ -72,12 +72,29 @@ export function InventoryListingLoadingGrid() {
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
       role="status"
     >
-      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
+      {Array.from({ length: 10 }).map((_, item) => (
         <div
           aria-hidden="true"
-          className="min-h-[280px] animate-pulse rounded-2xl border border-line bg-panel shadow-[var(--shadow-panel)]"
+          className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-sm"
           key={item}
-        />
+        >
+          <div className="aspect-[4/3] w-full animate-pulse bg-app-elevated" />
+          <div className="flex flex-1 flex-col justify-between gap-3 p-3">
+            <div className="space-y-2">
+              <div className="h-4 w-3/4 animate-pulse rounded bg-app-elevated" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-app-elevated" />
+            </div>
+            <div className="flex items-center gap-2 border-t border-line/20 pt-2">
+              <div className="h-5 w-16 animate-pulse rounded bg-app-elevated" />
+              <div className="h-3 w-12 animate-pulse rounded bg-app-elevated" />
+              <div className="h-3 w-12 animate-pulse rounded bg-app-elevated" />
+            </div>
+            <div className="flex items-center justify-between border-t border-line/20 pt-2">
+              <div className="h-5 w-24 animate-pulse rounded bg-app-elevated" />
+              <div className="h-7 w-16 animate-pulse rounded-lg bg-app-elevated" />
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );

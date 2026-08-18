@@ -1,5 +1,6 @@
 import { CarFront, FolderArchive, Link2, Minus, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { InventorySelect } from "../inventory/components/InventoryFormParts";
 import {
   documentScopeLabel,
@@ -142,18 +143,20 @@ export function DocumentManageLinksDialog({
         </p>
       ) : null}
 
-      <footer className="documents-upload-actions">
-        <button onClick={onClose} type="button">
-          Cancelar
-        </button>
-        <button
+      <footer className="documents-upload-actions flex items-center justify-end gap-2.5 pt-4 border-t border-line">
+        <FeatureActionButton
+          disabled={isBusy}
+          label="Cancelar"
+          onClick={onClose}
+        />
+        <FeatureActionButton
           disabled={isBusy || isVoided || !hasChanged}
+          icon={Link2}
+          isBusy={isBusy}
+          label="Salvar vínculos"
           onClick={() => void submit()}
-          type="button"
-        >
-          <Link2 aria-hidden="true" className="size-4" />
-          {isBusy ? "Salvando..." : "Salvar vínculos"}
-        </button>
+          variant="primary"
+        />
       </footer>
     </DocumentsDialogShell>
   );
