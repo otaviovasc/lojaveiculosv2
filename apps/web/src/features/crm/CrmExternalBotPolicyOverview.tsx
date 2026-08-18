@@ -12,12 +12,9 @@ export function CrmExternalBotPolicyOverview({
 }) {
   const route = policy?.channels.find((item) => item.channel === activeChannel);
   const effectiveConnection = route?.storeDefault.connection;
-  const mode = route?.bot.mode === "disabled" ? "disabled" : "auto";
+  const mode = route?.externalBot.mode === "disabled" ? "disabled" : "auto";
   return (
-    <section
-      aria-label="Políticas do External Bot"
-      className="crm-whatsapp-bot-policy"
-    >
+    <section aria-label="Políticas do External Bot" className="crm-bot-policy">
       <header>
         <div>
           <h3>Políticas por canal</h3>
@@ -47,7 +44,7 @@ export function CrmExternalBotPolicyOverview({
           </button>
         ))}
       </div>
-      <div className="crm-whatsapp-bot-action-list">
+      <div className="crm-bot-action-list">
         {externalBotActionRegistry.map((action) => (
           <div key={action}>
             <code>{action}</code>

@@ -8,11 +8,11 @@ import type {
   CrmRealtimeTicket,
 } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import {
-  matchesWhatsappRealtimeQueueVisibility,
-  readWhatsappRealtimeSessionBoundary,
-  updateWhatsappRealtimeAssignmentBoundary,
-  type WhatsappRealtimeAssignmentBoundary,
-} from "../../domains/crm/whatsapp/whatsappQueueVisibility.js";
+  matchesCrmRealtimeQueueVisibility,
+  readCrmRealtimeConversationCycleBoundary,
+  updateCrmRealtimeAssignmentBoundary,
+  type CrmRealtimeAssignmentBoundary,
+} from "../../domains/crm/messaging/crmQueueVisibility.js";
 
 const ticketTtlMs = 60_000;
 const maxBufferedEvents = 500;
@@ -24,10 +24,7 @@ export type LocalCrmRealtimeBroker = CrmRealtimeBroker & {
 export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
   const subscriptions = new Map<string, CrmRealtimeSubscription>();
   const history: CrmRealtimeEventEnvelope[] = [];
-  const assignmentBoundaries = new Map<
-    string,
-    WhatsappRealtimeAssignmentBoundary
-  >();
+  const assignmentBoundaries = new Map<string, CrmRealtimeAssignmentBoundary>();
   const tickets = new Map<string, CrmRealtimeTicket>();
 
   const broker: LocalCrmRealtimeBroker = {
@@ -45,10 +42,7 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
       await broker.publishEnvelope(createEnvelope(event));
     },
     async publishEnvelope(envelope) {
-      updateWhatsappRealtimeAssignmentBoundary(
-        assignmentBoundaries,
-        envelope.event,
-      );
+      updateCrmRealtimeAssignmentBoundary(assignmentBoundaries, envelope.event);
       if (!history.some((event) => event.id === envelope.id)) {
         history.push(envelope);
         trimHistory(history);
@@ -95,12 +89,12 @@ function purgeExpiredTickets(tickets: Map<string, CrmRealtimeTicket>) {
 function matchesSubscription(
   subscription: CrmRealtimeSubscription,
   event: CrmRealtimeEvent,
-  boundaries: Map<string, WhatsappRealtimeAssignmentBoundary>,
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
 ) {
   if (subscription.storeId !== event.storeId) return false;
   if (subscription.tenantId !== event.tenantId) return false;
   if (
-    !matchesWhatsappRealtimeQueueVisibility(
+    !matchesCrmRealtimeQueueVisibility(
       subscription.queueVisibility,
       event,
       resolveBoundary(boundaries, event),
@@ -123,7 +117,7 @@ function createEnvelope(event: CrmRealtimeEvent): CrmRealtimeEventEnvelope {
 function replayFromHistory(
   history: CrmRealtimeEventEnvelope[],
   input: CrmRealtimeReplayInput,
-  boundaries: Map<string, WhatsappRealtimeAssignmentBoundary>,
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
 ) {
   if (!input.sinceEventId) return [];
   const scoped = history.filter((envelope) =>
@@ -146,14 +140,14 @@ function replayFromHistory(
 function matchesReplayScope(
   input: CrmRealtimeReplayInput,
   event: CrmRealtimeEvent,
-  boundaries: Map<string, WhatsappRealtimeAssignmentBoundary>,
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
   checkVisibility: boolean,
 ) {
   if (input.storeId !== event.storeId) return false;
   if (input.tenantId !== event.tenantId) return false;
   if (
     checkVisibility &&
-    !matchesWhatsappRealtimeQueueVisibility(
+    !matchesCrmRealtimeQueueVisibility(
       input.queueVisibility,
       event,
       resolveBoundary(boundaries, event),
@@ -166,11 +160,11 @@ function matchesReplayScope(
 }
 
 function resolveBoundary(
-  boundaries: Map<string, WhatsappRealtimeAssignmentBoundary>,
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
   event: CrmRealtimeEvent,
 ) {
-  const observed = readWhatsappRealtimeSessionBoundary(event);
-  return observed ? boundaries.get(observed.sessionKey) : undefined;
+  const observed = readCrmRealtimeConversationCycleBoundary(event);
+  return observed ? boundaries.get(observed.cycleKey) : undefined;
 }
 
 function selectReplayWindow(
@@ -182,7 +176,8 @@ function selectReplayWindow(
     visibility.kind === "assigned" &&
     events.some(
       ({ event }) =>
-        event.type === "session" && event.revokedUserId === visibility.userId,
+        event.type === "conversationCycle" &&
+        event.revokedUserId === visibility.userId,
     );
   return includesRevocation ? events.slice(-limit) : events.slice(0, limit);
 }

@@ -1,0 +1,167 @@
+.crm-tag-admin-pill {
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill, 999px);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.4rem;
+  inline-size: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.35rem 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-dot {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 0.5rem;
+  width: 0.5rem;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+}
+
+.crm-tag-draft-preview,
+.crm-tag-draft-group {
+  background: color-mix(in srgb, var(--color-panel) 80%, var(--color-app));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.03);
+}
+
+.crm-tag-draft-preview-header {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+  color: var(--color-accent-strong, var(--color-accent));
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.crm-tag-sparkle-icon {
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.crm-tag-draft-preview-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.crm-tag-draft-sample-box {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.crm-tag-draft-sample-title {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 0.93);
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.crm-tag-draft-group > span,
+.crm-tag-custom-color,
+.crm-tag-custom-emoji,
+.crm-tag-draft-name label {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+}
+
+.crm-tag-draft-name label,
+.crm-tag-custom-color,
+.crm-tag-custom-emoji {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.crm-tag-color-grid,
+.crm-tag-emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.crm-tag-color-grid button,
+.crm-tag-emoji-grid button {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.35rem;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  width: 2.35rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-color-grid button:hover:not(:disabled),
+.crm-tag-emoji-grid button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-tag-color-grid button[aria-pressed="true"],
+.crm-tag-emoji-grid button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel));
+}
+
+.crm-tag-color-grid i {
+  border-radius: 999px;
+  display: block;
+  height: 1.25rem;
+  width: 1.25rem;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.crm-tag-color-grid svg {
+  color: #ffffff;
+  drop-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  height: 0.9rem;
+  position: absolute;
+  width: 0.9rem;
+}
+
+.crm-tag-emoji-grid button {
+  font-size: calc(var(--font-size-xs) * 1.47);
+}
+
+.crm-tag-custom-color input,
+.crm-tag-custom-emoji input,
+.crm-tag-draft-name input {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+  padding: 0.625rem 0.75rem;
+  transition: border-color 0.15s ease;
+}
+
+.crm-tag-custom-color input:focus,
+.crm-tag-custom-emoji input:focus,
+.crm-tag-draft-name input:focus {
+  border-color: var(--color-accent);
+  outline: 0;
+}

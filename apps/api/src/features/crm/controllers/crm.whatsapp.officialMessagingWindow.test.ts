@@ -1,10 +1,10 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmWhatsappMessageDirection } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { CrmMessageDirection } from "../../../domains/crm/ports/crmConversationRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const connectionId = "26000000-0000-4000-8000-000000000101";
 const storeId = "store_1" as StoreId;
@@ -12,12 +12,12 @@ const tenantId = "tenant_1" as TenantId;
 
 describe("official messaging customer service window", () => {
   it.each([
-    ["composio_whatsapp", "WHATSAPP"],
-    ["composio_instagram", "INSTAGRAM"],
+    ["whatsapp", "WHATSAPP"],
+    ["instagram", "INSTAGRAM"],
   ] as const)(
     "rejects %s free-form sends without a recent customer message",
-    async (provider, channel) => {
-      const repository = createMemoryCrmWhatsappRepository();
+    async (connectionChannel, channel) => {
+      const repository = createMemoryCrmConversationRepository();
       const seeded = await seedMessage(repository, {
         channel,
         direction: "OUTBOUND",
@@ -26,13 +26,13 @@ describe("official messaging customer service window", () => {
       const sendText = vi.fn();
       const app = createTestApp({
         crmConnectionRepository: createMemoryCrmConnectionRepository([
-          createConnection(provider),
+          createConnection(connectionChannel),
         ]),
-        crmWhatsappGateway: { sendText },
-        crmWhatsappRepository: repository,
+        crmMessagingGateway: { sendText },
+        crmConversationRepository: repository,
       });
 
-      const response = await send(app, seeded.session.id);
+      const response = await send(app, seeded.conversationCycle.id);
 
       expect(response.status).toBe(409);
       await expect(response.json()).resolves.toMatchObject({
@@ -43,12 +43,12 @@ describe("official messaging customer service window", () => {
   );
 
   it.each([
-    ["composio_whatsapp", "WHATSAPP"],
-    ["composio_instagram", "INSTAGRAM"],
+    ["whatsapp", "WHATSAPP"],
+    ["instagram", "INSTAGRAM"],
   ] as const)(
     "allows %s text inside the 24-hour customer window",
-    async (provider, channel) => {
-      const repository = createMemoryCrmWhatsappRepository();
+    async (connectionChannel, channel) => {
+      const repository = createMemoryCrmConversationRepository();
       const seeded = await seedMessage(repository, {
         channel,
         direction: "INBOUND",
@@ -61,13 +61,13 @@ describe("official messaging customer service window", () => {
       }));
       const app = createTestApp({
         crmConnectionRepository: createMemoryCrmConnectionRepository([
-          createConnection(provider),
+          createConnection(connectionChannel),
         ]),
-        crmWhatsappGateway: { sendText },
-        crmWhatsappRepository: repository,
+        crmMessagingGateway: { sendText },
+        crmConversationRepository: repository,
       });
 
-      const response = await send(app, seeded.session.id);
+      const response = await send(app, seeded.conversationCycle.id);
 
       expect(response.status).toBe(201);
       expect(sendText).toHaveBeenCalledOnce();
@@ -75,12 +75,12 @@ describe("official messaging customer service window", () => {
   );
 
   it.each([
-    ["composio_whatsapp", "WHATSAPP"],
-    ["composio_instagram", "INSTAGRAM"],
+    ["whatsapp", "WHATSAPP"],
+    ["instagram", "INSTAGRAM"],
   ] as const)(
     "rejects %s text after the customer window expires",
-    async (provider, channel) => {
-      const repository = createMemoryCrmWhatsappRepository();
+    async (connectionChannel, channel) => {
+      const repository = createMemoryCrmConversationRepository();
       const seeded = await seedMessage(repository, {
         channel,
         direction: "INBOUND",
@@ -89,13 +89,13 @@ describe("official messaging customer service window", () => {
       const sendText = vi.fn();
       const app = createTestApp({
         crmConnectionRepository: createMemoryCrmConnectionRepository([
-          createConnection(provider),
+          createConnection(connectionChannel),
         ]),
-        crmWhatsappGateway: { sendText },
-        crmWhatsappRepository: repository,
+        crmMessagingGateway: { sendText },
+        crmConversationRepository: repository,
       });
 
-      const response = await send(app, seeded.session.id);
+      const response = await send(app, seeded.conversationCycle.id);
 
       expect(response.status).toBe(409);
       expect(sendText).not.toHaveBeenCalled();
@@ -103,28 +103,28 @@ describe("official messaging customer service window", () => {
   );
 });
 
-function send(app: ReturnType<typeof createTestApp>, sessionId: string) {
-  return app.request("/api/v1/crm/whatsapp/send/text", {
-    body: JSON.stringify({ sessionId, text: "Resposta da loja" }),
+function send(app: ReturnType<typeof createTestApp>, cycleId: string) {
+  return app.request(`/api/v1/crm/conversation-cycles/${cycleId}/messages`, {
+    body: JSON.stringify({ content: "Resposta da loja" }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });
 }
 
 function seedMessage(
-  repository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
+  repository: ReturnType<typeof createMemoryCrmConversationRepository>,
   input: {
     channel: "INSTAGRAM" | "WHATSAPP";
-    direction: CrmWhatsappMessageDirection;
+    direction: CrmMessageDirection;
     providerTimestamp: Date;
   },
 ) {
   return repository.ingestMessage({
-    buyerPhone:
+    customerPhone:
       input.channel === "INSTAGRAM" ? "ig-scoped-user-1" : "5511999999999",
     channel: input.channel,
     ...(input.channel === "INSTAGRAM"
-      ? { channelExternalId: "ig-scoped-user-1" }
+      ? { externalThreadId: "ig-scoped-user-1" }
       : {}),
     connectionId,
     content: "Mensagem inicial",
@@ -141,16 +141,22 @@ function seedMessage(
   });
 }
 
-function createConnection(provider: CrmConnection["provider"]): CrmConnection {
+function createConnection(channel: "instagram" | "whatsapp"): CrmConnection {
   return {
+    broker: "composio",
+    channel,
     credentialsRef: {},
-    displayName: provider,
+    displayName: channel,
     externalConnectionId: "meta-sender-1",
     externalInstanceId: null,
     id: connectionId,
-    metadata: {},
+    metadata: {
+      capabilities: { inbound: true, outbound: true, text: true },
+      connected: true,
+      providerConnected: true,
+    },
     phone: null,
-    provider,
+    provider: "meta_cloud",
     status: "active",
     storeId,
     tenantId,

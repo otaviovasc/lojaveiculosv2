@@ -1,4 +1,4 @@
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   buildInstanceUrl,
   fetchZapi,
@@ -29,7 +29,7 @@ export async function disconnectZapiConnection(
     throw zapiProviderResponseError(response.status, "ZAPI disconnect");
   }
   if (payload.value !== true) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       "ZAPI did not confirm the WhatsApp disconnection",
       502,
       undefined,

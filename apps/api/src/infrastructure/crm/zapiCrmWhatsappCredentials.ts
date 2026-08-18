@@ -3,7 +3,7 @@ import {
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
 } from "../../domains/crm/ports/crmConnectionSetupProvider.js";
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import { openSealedCrmConnectionCredential } from "./crmConnectionCredentialVault.js";
 import type { ZapiCredentials } from "./zapiCrmWhatsappGatewaySupport.js";
 
@@ -54,7 +54,7 @@ function readEnvRefs(credentialsRef: Record<string, unknown>) {
 function readCentralClientToken(env: Record<string, string | undefined>) {
   const value = env.CRM_ZAPI_CLIENT_TOKEN?.trim();
   if (value) return value;
-  throw new CrmWhatsappGatewayError(
+  throw new CrmMessagingGatewayError(
     "ZAPI central client authentication is not configured",
     409,
     undefined,
@@ -86,7 +86,7 @@ function readStoredCredentials(
     sealedInstanceToken &&
     (!instanceId || !instanceToken)
   ) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       "Stored ZAPI credentials must use encrypted CRM credential storage",
       409,
       undefined,
@@ -114,7 +114,7 @@ function decryptIfSealed(
       env,
     );
   } catch {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       "Stored ZAPI credential could not be decrypted",
       409,
       undefined,
@@ -136,7 +136,7 @@ function readRequiredEnv(
   credentialName: string,
 ) {
   if (!envName) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       `ZAPI credential reference is missing: ${credentialName}`,
       409,
       undefined,
@@ -145,7 +145,7 @@ function readRequiredEnv(
   }
   const value = env[envName]?.trim();
   if (!value) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       `ZAPI credential env var is not configured: ${envName}`,
       409,
       undefined,

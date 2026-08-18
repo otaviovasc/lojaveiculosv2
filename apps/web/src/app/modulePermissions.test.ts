@@ -72,8 +72,8 @@ describe("module permissions", () => {
 
   it("shows CRM for read-only WhatsApp users", () => {
     const session = sessionForRole("investor", [
-      "crm.whatsapp.list",
-      "crm.whatsapp.read",
+      "crm.conversations.read",
+      "crm.conversations.read",
       "lead.read",
     ]);
 

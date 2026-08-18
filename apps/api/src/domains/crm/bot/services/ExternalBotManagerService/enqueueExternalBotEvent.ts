@@ -15,6 +15,7 @@ import {
   assertPermission,
   requireExternalBotScope,
 } from "./serviceSupport.js";
+import { resolveExternalBotExecutionPolicy } from "./resolveExternalBotExecutionPolicy.js";
 
 export type EnqueueExternalBotEventInput = Omit<
   ExternalBotScope,
@@ -24,6 +25,7 @@ export type EnqueueExternalBotEventInput = Omit<
     ExternalBotManagerPorts["grantStore"]["issue"]
   >[0]["action"];
   authorizedCommand: ExternalBotCommand;
+  expectedAttendanceRevision: number;
   expectedRevision: number;
   idempotencyKey: string;
   payload: Record<string, unknown>;
@@ -55,7 +57,6 @@ export async function enqueueExternalBotEvent(
   context.logger.info(
     "crm.bot.event.enqueue.started",
     createServiceLogMetadata(context, {
-      actionClass: scope.actionClass,
       channel: scope.channel,
       connectionId: scope.connectionId,
       integrationId: scope.integrationId,
@@ -64,14 +65,60 @@ export async function enqueueExternalBotEvent(
     }),
   );
   assertExternalBotPayloadSafe(input.payload);
+  const authorization = await ports.effectAuthorizer.inspect(scope);
+  if (
+    !authorization.scopeExists ||
+    authorization.revision !== input.expectedRevision ||
+    authorization.attendanceRevision !== input.expectedAttendanceRevision
+  ) {
+    throw botError(
+      "CRM_BOT_SCOPE_MISMATCH",
+      "Bot event scope or attendance revision changed.",
+      409,
+    );
+  }
+  if (authorization.humanAttendanceActive) {
+    throw botError(
+      "CRM_BOT_POLICY_DENIED",
+      "Human attendance prevents external bot event enqueueing.",
+      403,
+    );
+  }
+  const policyDecision = await resolveExternalBotExecutionPolicy(
+    scope,
+    input.allowedAction,
+    authorization.humanAttendanceActive,
+    ports,
+  );
+  if (!policyDecision.allowed) {
+    throw botError(
+      "CRM_BOT_POLICY_DENIED",
+      `External bot policy denied the event grant: ${policyDecision.code}.`,
+      403,
+    );
+  }
+  const actionClass: "effect" | "proposal" =
+    policyDecision.mode === "proposal" ? "proposal" : "effect";
+  const disabledAt = await ports.killSwitches.resolve(
+    scope,
+    input.allowedAction,
+    actionClass,
+  );
+  if (disabledAt) {
+    throw botError(
+      "CRM_BOT_POLICY_DENIED",
+      `External bot event enqueueing is disabled by ${disabledAt} kill switch.`,
+      403,
+    );
+  }
   const now = (ports.now ?? (() => new Date()))();
   const authorizedRequestDigest = ports.digest.digest(
     canonicalExternalBotActionRequest({
-      actionClass: scope.actionClass,
       capabilityGrant: "",
       channel: scope.channel,
       command: input.authorizedCommand,
       connectionId: scope.connectionId,
+      expectedAttendanceRevision: input.expectedAttendanceRevision,
       expectedRevision: input.expectedRevision,
       idempotencyKey: input.idempotencyKey,
       integrationId: scope.integrationId,
@@ -85,7 +132,7 @@ export async function enqueueExternalBotEvent(
   const grant = await ports.grantStore.issue({
     action: input.allowedAction,
     authorizedRequestDigest,
-    actionClass: scope.actionClass,
+    actionClass,
     channel: scope.channel,
     connectionId: scope.connectionId,
     expiresAt: new Date(now.getTime() + 90_000),
@@ -112,7 +159,7 @@ export async function enqueueExternalBotEvent(
     storeId: scope.storeId,
     tenantId: scope.tenantId,
     threadId: scope.threadId,
-    actionClass: scope.actionClass,
+    actionClass,
     channel: scope.channel,
     modelVersion: scope.modelVersion,
     provider: scope.provider,
@@ -151,8 +198,9 @@ export async function enqueueExternalBotEvent(
 
 function isSupportedInternalGrant(action: string) {
   return (
-    action === "fact.propose" ||
-    action === "vehicle_interest.propose" ||
-    action === "appointment.propose"
+    action === "appointment.create" ||
+    action === "conversation.summarize" ||
+    action === "fact.record" ||
+    action === "vehicle_interest.record"
   );
 }

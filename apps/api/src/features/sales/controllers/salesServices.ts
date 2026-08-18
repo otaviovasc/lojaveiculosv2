@@ -10,7 +10,7 @@ import {
   createDrizzleCrmRepository,
   type DrizzleCrmClient,
 } from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
-import { createDrizzleCrmWhatsappRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappRepository.js";
+import { createDrizzleCrmConversationRepository } from "../../../infrastructure/db/crm/drizzleCrmConversationRepository.js";
 import type { DrizzleFinanceClient } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
 import type { DrizzleSalesClient } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
 import { createDrizzleSalesRepository } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
@@ -214,9 +214,12 @@ function createDrizzleWorkflowPorts(
       crmOutcomeRepository: createDrizzleCrmOutcomeRepository(crmClient),
       crmPipelineRepository: createDrizzleCrmPipelineRepository(crmClient),
       crmRepository,
-      crmWhatsappRepository: createDrizzleCrmWhatsappRepository(crmClient, {
-        disableTransactions: true,
-      }),
+      crmConversationRepository: createDrizzleCrmConversationRepository(
+        crmClient,
+        {
+          disableTransactions: true,
+        },
+      ),
     }),
     financeAutoEntryRepository: createDrizzleFinanceAutoEntryRepository(
       client as unknown as DrizzleFinanceClient,
@@ -243,5 +246,4 @@ const salesWorkflowStorageAdapter = {
     vehiclePorts: { ...ports.vehiclePorts, mediaStorage },
   }),
 };
-
 export const salesServices = createSalesServices();

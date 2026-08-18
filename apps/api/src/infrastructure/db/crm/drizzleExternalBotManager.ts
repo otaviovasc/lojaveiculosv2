@@ -2,7 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 import type { ExternalBotManagerPorts } from "../../../domains/crm/bot/ports/externalBotPorts.js";
 import { createExternalBotActionAuthenticator } from "./drizzleExternalBotAuthentication.js";
 import {
-  enqueueExternalBotProviderEffect,
+  dispatchExternalBotEffect,
+  createExternalBotProposalDecider,
   inspectExternalBotScope,
   recordExternalBotProposal,
   resolveExternalBotKillSwitch,
@@ -16,6 +17,7 @@ import {
   type ExternalBotDb,
   safeDigestEqual,
 } from "./drizzleExternalBotShared.js";
+import { createExternalBotPolicyResolver } from "./drizzleExternalBotPolicies.js";
 
 export function createDrizzleExternalBotManager(input: {
   db: ExternalBotDb;
@@ -31,16 +33,19 @@ export function createDrizzleExternalBotManager(input: {
       inspect: (scope) => inspectExternalBotScope(input.db, scope),
     },
     effectDispatcher: {
-      dispatch: (effect) => enqueueExternalBotProviderEffect(input.db, effect),
+      dispatch: (effect) => dispatchExternalBotEffect(input.db, effect),
     },
     eventOutbox: createExternalBotEventOutbox(input.db),
     grantStore: createExternalBotGrantStore(input, digest),
     idGenerator: randomUUID,
     killSwitches: {
-      resolve: (scope, action) =>
-        resolveExternalBotKillSwitch(input.db, scope, action),
+      resolve: (scope, action, actionClass) =>
+        resolveExternalBotKillSwitch(input.db, scope, action, actionClass),
     },
+    modelVersion: input.modelVersion,
+    policyResolver: createExternalBotPolicyResolver(input.db),
     proposalRecorder: {
+      decide: createExternalBotProposalDecider(input.db),
       record: (proposal) => recordExternalBotProposal(input.db, proposal),
     },
   };

@@ -1,7 +1,7 @@
 import {
-  CrmWhatsappGatewayError,
-  type CrmWhatsappProviderStatus,
-} from "../../domains/crm/ports/crmWhatsappGateway.js";
+  CrmMessagingGatewayError,
+  type CrmMessagingProviderStatus,
+} from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
@@ -45,7 +45,7 @@ export async function fetchZapi(
   try {
     return await fetchImpl(url, { ...init, signal: controller.signal });
   } catch {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       controller.signal.aborted
         ? "ZAPI request timed out"
         : "ZAPI request failed before receiving a response",
@@ -87,7 +87,7 @@ export function requireProviderMessageId(
   const providerMessageId = readProviderMessageId(payload);
   if (providerMessageId) return providerMessageId;
 
-  throw new CrmWhatsappGatewayError(
+  throw new CrmMessagingGatewayError(
     `${label} returned without a provider message id`,
     502,
     undefined,
@@ -106,7 +106,7 @@ function readProviderId(value: unknown): string | null {
 
 export function toProviderStatus(
   payload: Record<string, unknown>,
-): CrmWhatsappProviderStatus {
+): CrmMessagingProviderStatus {
   const connected = payload.connected === true;
   const smartphoneConnected =
     typeof payload.smartphoneConnected === "boolean"
@@ -133,7 +133,7 @@ export function isZapiProviderConnected(payload: Record<string, unknown>) {
 
 export function assertZapiProvider(provider: string) {
   if (provider !== "zapi") {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       `Unsupported CRM WhatsApp provider: ${provider}`,
       409,
       undefined,
@@ -143,7 +143,7 @@ export function assertZapiProvider(provider: string) {
 }
 
 export function zapiProviderResponseError(status: number, label: string) {
-  return new CrmWhatsappGatewayError(
+  return new CrmMessagingGatewayError(
     `${label} failed with HTTP ${status}`,
     status === 429 ? 429 : 502,
     status === 429 ? 1 : undefined,

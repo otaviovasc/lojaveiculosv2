@@ -15,13 +15,13 @@ export async function expectCanonicalZapiState(
 ) {
   const [connection] = await transaction
     .select({
-      broker: schema.providerConnections.broker,
-      channel: schema.providerConnections.channel,
-      metadata: schema.providerConnections.metadata,
-      provider: schema.providerConnections.provider,
+      broker: schema.crmChannelConnections.broker,
+      channel: schema.crmChannelConnections.channel,
+      metadata: schema.crmChannelConnections.metadata,
+      provider: schema.crmChannelConnections.provider,
     })
-    .from(schema.providerConnections)
-    .where(eq(schema.providerConnections.id, input.connectionId));
+    .from(schema.crmChannelConnections)
+    .where(eq(schema.crmChannelConnections.id, input.connectionId));
   expect(connection).toEqual({
     broker: "direct",
     channel: "whatsapp",
@@ -84,16 +84,14 @@ export async function expectCanonicalZapiState(
 
   const messages = await transaction
     .select({
-      id: schema.canonicalMessages.id,
-      mediaType: schema.canonicalMessages.mediaType,
-      mediaUrl: schema.canonicalMessages.mediaUrl,
-      messageType: schema.canonicalMessages.messageType,
-      metadata: schema.canonicalMessages.metadata,
+      id: schema.crmMessages.id,
+      mediaType: schema.crmMessages.mediaType,
+      mediaUrl: schema.crmMessages.mediaUrl,
+      messageType: schema.crmMessages.messageType,
+      metadata: schema.crmMessages.metadata,
     })
-    .from(schema.canonicalMessages)
-    .where(
-      eq(schema.canonicalMessages.providerConnectionId, input.connectionId),
-    );
+    .from(schema.crmMessages)
+    .where(eq(schema.crmMessages.providerConnectionId, input.connectionId));
   expect(messages).toHaveLength(2);
   expect(messages).toContainEqual(
     expect.objectContaining({

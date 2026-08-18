@@ -12,12 +12,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { AppApiError } from "../../lib/apiErrors";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
-import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
+import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 import type {
-  CrmWhatsappProviderConnection,
+  CrmProviderConnection,
   CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiSetupState,
-} from "./crmWhatsappTypes";
+} from "./crmConversationTypes";
 
 describe("CrmWhatsappZapiSetup", () => {
   afterEach(cleanup);
@@ -322,7 +322,7 @@ describe("CrmWhatsappZapiSetup", () => {
 
   it("advances past pairing when the refreshed connection is configured and connected", async () => {
     const configured = createSetupState("configured");
-    const connected: CrmWhatsappProviderConnection = {
+    const connected: CrmProviderConnection = {
       ...createSetupConnection("configured"),
       live: {
         checkedAt: "2026-08-12T12:00:00.000Z",
@@ -378,7 +378,7 @@ describe("CrmWhatsappZapiSetup", () => {
   });
 
   it("does not offer device pairing when the actor lacks pairing permission", () => {
-    const connected: CrmWhatsappProviderConnection = {
+    const connected: CrmProviderConnection = {
       ...createSetupConnection("configured"),
       live: {
         checkedAt: "2026-08-12T12:00:00.000Z",
@@ -430,7 +430,7 @@ describe("CrmWhatsappZapiSetup", () => {
 
     function SetupHarness() {
       const [connection, setConnection] =
-        useState<CrmWhatsappProviderConnection>(connected);
+        useState<CrmProviderConnection>(connected);
       return (
         <CrmWhatsappZapiSetup
           allowance={{ limit: 1, remaining: 0, used: 1 }}
@@ -465,7 +465,7 @@ describe("CrmWhatsappZapiSetup", () => {
   });
 });
 
-function createHandlers(): CrmWhatsappSelfServiceHandlers {
+function createHandlers(): CrmConnectionSelfServiceHandlers {
   return {
     onAuthorizeComposio: vi.fn(),
     onCompleteComposio: vi.fn(),
@@ -497,7 +497,7 @@ function createZapiContract(
   };
 }
 
-function createDisconnectedConnection(): CrmWhatsappProviderConnection {
+function createDisconnectedConnection(): CrmProviderConnection {
   return {
     displayName: "Z-API Matriz",
     externalConnectionId: null,
@@ -538,7 +538,7 @@ function createDisconnectedConnection(): CrmWhatsappProviderConnection {
 
 function createSetupConnection(
   status: CrmWhatsappZapiSetupState["status"],
-): CrmWhatsappProviderConnection {
+): CrmProviderConnection {
   return {
     ...createDisconnectedConnection(),
     ready: false,

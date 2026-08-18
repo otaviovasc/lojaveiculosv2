@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
-  CrmWhatsappConfigureWebhooksInput,
-  CrmWhatsappConfigureWebhooksResult,
-} from "../../../domains/crm/ports/crmWhatsappGateway.js";
+  CrmMessagingConfigureWebhooksInput,
+  CrmMessagingConfigureWebhooksResult,
+} from "../../../domains/crm/ports/crmMessagingGateway.js";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import {
   createZapiWebhookSetupIntent,
   withZapiWebhookSetupState,
 } from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 import {
   createZapiWebhookTestConnection,
   secureWebhookSetupOptions,
@@ -30,8 +30,8 @@ describe("CRM WhatsApp webhook reset", () => {
     const configureWebhooks = vi.fn(
       async (
         _connection: CrmConnection,
-        input: CrmWhatsappConfigureWebhooksInput,
-      ): Promise<CrmWhatsappConfigureWebhooksResult> => ({
+        input: CrmMessagingConfigureWebhooksInput,
+      ): Promise<CrmMessagingConfigureWebhooksResult> => ({
         results: input.webhooks.map((webhook) => ({
           error: null,
           ok: true,
@@ -61,7 +61,7 @@ describe("CRM WhatsApp webhook reset", () => {
     const app = createTestApp({
       ...secureWebhookSetupOptions(),
       crmConnectionRepository: repository,
-      crmWhatsappGateway: { configureWebhooks },
+      crmMessagingGateway: { configureWebhooks },
     });
 
     const response = await app.request(
@@ -71,7 +71,7 @@ describe("CRM WhatsApp webhook reset", () => {
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
-      results: CrmWhatsappConfigureWebhooksResult["results"];
+      results: CrmMessagingConfigureWebhooksResult["results"];
       setup: { attemptCount: number; status: string };
     };
     expect(body.results).toHaveLength(6);
@@ -99,9 +99,12 @@ describe("CRM WhatsApp webhook reset", () => {
     const officialApp = createTestApp({
       ...secureWebhookSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiWebhookTestConnection({ provider: "composio_whatsapp" }),
+        createZapiWebhookTestConnection({
+          broker: "composio",
+          provider: "meta_cloud",
+        }),
       ]),
-      crmWhatsappGateway: { configureWebhooks },
+      crmMessagingGateway: { configureWebhooks },
     });
     const untrustedApp = createTestApp({
       ...secureWebhookSetupOptions(),
@@ -110,7 +113,7 @@ describe("CRM WhatsApp webhook reset", () => {
           webhookUrl: "https://attacker.example/callbacks",
         }),
       ]),
-      crmWhatsappGateway: { configureWebhooks },
+      crmMessagingGateway: { configureWebhooks },
     });
 
     const official = await officialApp.request(

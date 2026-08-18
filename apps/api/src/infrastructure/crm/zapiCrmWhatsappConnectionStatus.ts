@@ -1,4 +1,4 @@
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   buildInstanceUrl,
   fetchZapi,
@@ -26,7 +26,7 @@ export async function readZapiConnectionStatus(
   const text = await response.text();
 
   if (!response.ok) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       `ZAPI status failed with HTTP ${response.status}`,
     );
   }

@@ -2,7 +2,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -13,10 +13,10 @@ describe("CRM official messaging connections", () => {
   it("lists official providers without exposing Z-API webhook endpoints", async () => {
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_whatsapp", whatsappId),
-        createConnection("composio_instagram", instagramId),
+        createConnection("whatsapp", whatsappId),
+        createConnection("instagram", instagramId),
       ]),
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         getConnectionStatus: vi.fn(async () => ({
           checkedAt: new Date("2026-07-27T12:00:00.000Z"),
           connected: true,
@@ -56,14 +56,14 @@ describe("CRM official messaging connections", () => {
 
   it("rejects customer attempts to store Composio provider references", async () => {
     const repository = createMemoryCrmConnectionRepository([
-      createConnection("composio_whatsapp", whatsappId, {
+      createConnection("whatsapp", whatsappId, {
         credentialsRef: {},
         externalConnectionId: null,
       }),
     ]);
     const app = createTestApp({
       crmConnectionRepository: repository,
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         getConnectionStatus: vi.fn(async () => ({
           checkedAt: new Date("2026-07-27T12:00:00.000Z"),
           connected: false,
@@ -92,7 +92,7 @@ describe("CRM official messaging connections", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_VALIDATION_ERROR",
+      code: "CRM_MESSAGING_VALIDATION_ERROR",
       message: "Request is invalid.",
     });
     await expect(
@@ -106,7 +106,7 @@ describe("CRM official messaging connections", () => {
   it("rejects provider-mismatched credential shapes", async () => {
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_instagram", instagramId),
+        createConnection("instagram", instagramId),
       ]),
     });
 
@@ -126,7 +126,7 @@ describe("CRM official messaging connections", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_VALIDATION_ERROR",
+      code: "CRM_MESSAGING_VALIDATION_ERROR",
       message: "Request is invalid.",
     });
   });
@@ -134,7 +134,7 @@ describe("CRM official messaging connections", () => {
   it("does not expose credential mutation even with integration permission", async () => {
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_whatsapp", whatsappId),
+        createConnection("whatsapp", whatsappId),
       ]),
       permissions: ["crm.messaging.connection.setup"],
     });
@@ -155,39 +155,41 @@ describe("CRM official messaging connections", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_VALIDATION_ERROR",
+      code: "CRM_MESSAGING_VALIDATION_ERROR",
       message: "Request is invalid.",
     });
   });
 });
 
 function createConnection(
-  provider: "composio_instagram" | "composio_whatsapp",
+  channel: "instagram" | "whatsapp",
   id: string,
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
   return {
+    broker: "composio",
+    channel,
     credentialsRef: {
       composio: { connectedAccountId: "ca_private" },
       env: { apiKey: "COMPOSIO_API_KEY" },
       mode: "composio",
     },
-    displayName: provider,
-    externalConnectionId: `${provider}-sender`,
+    displayName: channel,
+    externalConnectionId: `${channel}-sender`,
     externalInstanceId: null,
     id,
     metadata: {
       capabilities: {
         inbound: true,
         outbound: true,
-        templates: provider === "composio_whatsapp",
+        templates: channel === "whatsapp",
       },
       connected: true,
       graphVersion: "v25.0",
       providerConnected: true,
     },
     phone: null,
-    provider,
+    provider: "meta_cloud",
     status: "active",
     storeId,
     tenantId,

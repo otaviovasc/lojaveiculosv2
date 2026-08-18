@@ -3,7 +3,7 @@ import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
 import { buildZapiProviderEventId } from "../../../domains/crm/whatsapp/zapiWebhookEventKey.js";
-import { processZapiWhatsappWebhookEvent } from "../../../domains/crm/services/CrmWhatsapp/processZapiWhatsappWebhookEvent.js";
+import { processZapiWhatsappWebhookEvent } from "../../../domains/crm/services/CrmWhatsappService/processZapiWhatsappWebhookEvent.js";
 
 describe("processZapiWhatsappWebhookEvent", () => {
   it("reclaims an event left received by a crashed delivery", async () => {
@@ -31,7 +31,7 @@ describe("processZapiWhatsappWebhookEvent", () => {
         createServiceContext({
           actor: { id: "zapi", kind: "integration" },
           audit: { record: vi.fn(async () => undefined) },
-          permissions: ["crm.whatsapp.ingest"],
+          permissions: ["crm.messages.ingest"],
           request: { requestId: "request-1" },
           source: { component: "test", service: "api" },
         }),

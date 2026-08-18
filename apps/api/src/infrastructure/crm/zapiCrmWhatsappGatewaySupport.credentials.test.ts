@@ -104,6 +104,8 @@ describe("Z-API canonical connected predicate", () => {
 
 function createConnection(): CrmConnection {
   return {
+    broker: "direct",
+    channel: "whatsapp",
     credentialsRef: {},
     displayName: "Z-API",
     externalConnectionId: null,

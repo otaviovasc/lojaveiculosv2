@@ -2,9 +2,9 @@ import type { Context, Hono } from "hono";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
-  CrmWhatsappValidationError,
-  handleWhatsapp,
-} from "./crm.whatsapp.errors.js";
+  CrmMessagingValidationError,
+  handleCrmMessaging,
+} from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
 import {
   verifyMetaWebhookChallenge,
@@ -21,7 +21,7 @@ export function registerCrmMetaWebhookRoutes(
   { createWebhookContext, services }: RegisterCrmMetaWebhookRoutesOptions,
 ) {
   crmFeature.get("/webhooks/meta", (context) =>
-    handleWhatsapp(context, async () => {
+    handleCrmMessaging(context, async () => {
       const expectedVerifyToken =
         process.env.CRM_META_WEBHOOK_VERIFY_TOKEN?.trim();
       if (!expectedVerifyToken) {
@@ -46,7 +46,7 @@ export function registerCrmMetaWebhookRoutes(
   );
 
   crmFeature.post("/webhooks/meta", (context) =>
-    handleWhatsapp(context, async () => {
+    handleCrmMessaging(context, async () => {
       const appSecret = process.env.CRM_META_APP_SECRET?.trim();
       if (!appSecret) {
         throw new AuthorizationError(
@@ -78,12 +78,12 @@ function parseMetaWebhookPayload(rawBody: string) {
   try {
     body = JSON.parse(rawBody);
   } catch {
-    throw new CrmWhatsappValidationError(
+    throw new CrmMessagingValidationError(
       "Meta webhook body must be valid JSON.",
     );
   }
   if (!body || typeof body !== "object" || Array.isArray(body)) {
-    throw new CrmWhatsappValidationError(
+    throw new CrmMessagingValidationError(
       "Meta webhook body must be an object.",
     );
   }

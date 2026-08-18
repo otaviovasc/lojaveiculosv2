@@ -48,11 +48,8 @@ export function CrmWhatsappZapiPairingStage({
 }) {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   return (
-    <section
-      aria-labelledby="zapi-pairing-title"
-      className="crm-whatsapp-zapi-pairing"
-    >
-      <div className="crm-whatsapp-zapi-stage-heading">
+    <section aria-labelledby="zapi-pairing-title" className="crm-zapi-pairing">
+      <div className="crm-zapi-stage-heading">
         <span>
           <QrCode aria-hidden="true" />
         </span>
@@ -66,7 +63,7 @@ export function CrmWhatsappZapiPairingStage({
         </div>
       </div>
       {pairingBlock ? (
-        <div className="crm-whatsapp-zapi-disconnect-confirm" role="alert">
+        <div className="crm-zapi-disconnect-confirm" role="alert">
           <strong>
             {pairingBlock === "waiting_disconnect"
               ? "Aguardando a Z-API confirmar a desconexão"
@@ -79,7 +76,7 @@ export function CrmWhatsappZapiPairingStage({
           </p>
           {pairingBlock === "disconnect_required" ? (
             confirmDisconnect ? (
-              <div className="crm-whatsapp-zapi-inline-actions">
+              <div className="crm-zapi-inline-actions">
                 <button
                   className="crm-action crm-action-danger"
                   disabled={!canDisconnect || busy !== null}
@@ -114,7 +111,7 @@ export function CrmWhatsappZapiPairingStage({
             )
           ) : null}
           {!canDisconnect ? (
-            <small className="crm-whatsapp-zapi-permission-note">
+            <small className="crm-zapi-permission-note">
               Peça a um administrador da loja para desconectar o aparelho.
             </small>
           ) : null}
@@ -122,7 +119,7 @@ export function CrmWhatsappZapiPairingStage({
       ) : null}
       <div
         aria-label="Método de pareamento"
-        className="crm-whatsapp-pairing-tabs"
+        className="crm-pairing-tabs"
         onKeyDown={(event) => {
           if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
           event.preventDefault();
@@ -148,19 +145,19 @@ export function CrmWhatsappZapiPairingStage({
       {method === "qr" ? (
         <div
           aria-labelledby="zapi-pairing-tab-qr"
-          className="crm-whatsapp-pairing-panel"
+          className="crm-pairing-panel"
           id="zapi-pairing-qr"
           role="tabpanel"
         >
           {qr && !qrExpired ? (
             <>
               <img alt="QR Code para conectar o WhatsApp" src={qr.qrCode} />
-              <p className="crm-whatsapp-pairing-countdown">
+              <p className="crm-pairing-countdown">
                 Expira em {formatRemainingTime(qr.expiresAt, now)}
               </p>
             </>
           ) : (
-            <div className="crm-whatsapp-pairing-empty">
+            <div className="crm-pairing-empty">
               <QrCode aria-hidden="true" />
               <p>
                 Abra o WhatsApp no telefone e leia o código que será exibido
@@ -185,11 +182,11 @@ export function CrmWhatsappZapiPairingStage({
       ) : (
         <div
           aria-labelledby="zapi-pairing-tab-code"
-          className="crm-whatsapp-pairing-panel"
+          className="crm-pairing-panel"
           id="zapi-pairing-code"
           role="tabpanel"
         >
-          <label className="crm-whatsapp-pairing-phone">
+          <label className="crm-pairing-phone">
             Telefone para pareamento
             <input
               autoComplete="tel"
@@ -215,7 +212,7 @@ export function CrmWhatsappZapiPairingStage({
             Solicitar código
           </button>
           {pairingCode && !codeExpired ? (
-            <output aria-live="polite" className="crm-whatsapp-pairing-code">
+            <output aria-live="polite" className="crm-pairing-code">
               {pairingCode.code ?? "Código solicitado. Confira o telefone."}
             </output>
           ) : null}
@@ -227,11 +224,11 @@ export function CrmWhatsappZapiPairingStage({
         </div>
       )}
       {!canPair ? (
-        <p className="crm-whatsapp-zapi-permission-note">
+        <p className="crm-zapi-permission-note">
           Peça a um administrador da loja para parear o telefone.
         </p>
       ) : null}
-      <div className="crm-whatsapp-zapi-auto-refresh" role="status">
+      <div className="crm-zapi-auto-refresh" role="status">
         <span>Atualização automática ativa</span>
         <button
           className="crm-action crm-action-secondary"
@@ -266,7 +263,7 @@ function PairingTab({
     <button
       aria-controls={`zapi-pairing-${method}`}
       aria-selected={active}
-      className="crm-whatsapp-pairing-tab"
+      className="crm-pairing-tab"
       data-active={active}
       id={`zapi-pairing-tab-${method}`}
       onClick={() => onSelect(method)}

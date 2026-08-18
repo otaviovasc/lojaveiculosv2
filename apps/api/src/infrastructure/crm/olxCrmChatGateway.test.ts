@@ -2,7 +2,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import { OLX_ACCESS_TOKEN_CREDENTIAL_PURPOSE } from "../../domains/crm/ports/crmOlxCredentials.js";
-import { CrmWhatsappCapabilityError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingCapabilityError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import { createCrmConnectionCredentialVault } from "./crmConnectionCredentialVault.js";
 import { createOlxCrmChatGateway } from "./olxCrmChatGateway.js";
 
@@ -118,7 +118,7 @@ describe("OLX CRM chat gateway", () => {
         replyToMessageId: "message-1",
         text: "Oi",
       }),
-    ).rejects.toBeInstanceOf(CrmWhatsappCapabilityError);
+    ).rejects.toBeInstanceOf(CrmMessagingCapabilityError);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
@@ -153,13 +153,15 @@ describe("OLX CRM chat gateway", () => {
   ])("fails closed for OLX %s", async (_label, invoke) => {
     const gateway = createOlxCrmChatGateway({});
     await expect(invoke(gateway)).rejects.toBeInstanceOf(
-      CrmWhatsappCapabilityError,
+      CrmMessagingCapabilityError,
     );
   });
 });
 
 function createConnection(): CrmConnection {
   return {
+    broker: "direct",
+    channel: "olx_chat",
     credentialsRef: {
       mode: "stored",
       stored: { accessToken: sealedAccessToken },
@@ -175,7 +177,7 @@ function createConnection(): CrmConnection {
       },
     },
     phone: null,
-    provider: "olx_chat",
+    provider: "olx",
     status: "active",
     storeId: "store_1" as StoreId,
     tenantId: "tenant_1" as TenantId,

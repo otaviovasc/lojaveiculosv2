@@ -34,15 +34,16 @@ describe("parseMetaWebhookEvents", () => {
 
     expect(events).toEqual([
       {
+        channel: "whatsapp",
         contactExternalId: "5511999999999",
         direction: "INBOUND",
         externalConnectionId: "phone-number-1",
         externalMessageId: "wamid.message-1",
         kind: "message",
         media: null,
-        provider: "composio_whatsapp",
+        provider: "meta_cloud",
         providerEventKey:
-          "meta:composio_whatsapp:message:phone-number-1:wamid.message-1",
+          "meta:whatsapp:message:phone-number-1:wamid.message-1",
         text: "Tenho interesse no carro",
         timestamp: new Date("2026-07-27T18:00:00.000Z"),
       },
@@ -85,7 +86,7 @@ describe("parseMetaWebhookEvents", () => {
       events.map((event) => event.kind === "status" && event.status),
     ).toEqual(["SENT", "DELIVERED", "READ", "FAILED"]);
     expect(events[1]?.providerEventKey).toBe(
-      "meta:composio_whatsapp:status:DELIVERED:phone-number-1:wamid.delivered",
+      "meta:whatsapp:status:DELIVERED:phone-number-1:wamid.delivered",
     );
   });
 
@@ -147,7 +148,8 @@ describe("parseMetaWebhookEvents", () => {
       externalMessageId: "ig-mid-1",
       direction: "INBOUND",
       kind: "message",
-      provider: "composio_instagram",
+      channel: "instagram",
+      provider: "meta_cloud",
       text: "Ainda está disponível?",
     });
     expect(events[1]).toMatchObject({

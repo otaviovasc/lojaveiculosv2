@@ -1,11 +1,11 @@
-import { providerConnections } from "@lojaveiculosv2/db";
+import { crmChannelConnections } from "@lojaveiculosv2/db";
 import { and, eq } from "drizzle-orm";
 import { projectCanonicalCrmConnectionRow } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
 import type { CanonicalInboundMessageInput } from "../../../domains/crm/ports/crmCanonicalInboundRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
 type CanonicalInboundConnectionRow = Pick<
-  typeof providerConnections.$inferSelect,
+  typeof crmChannelConnections.$inferSelect,
   "broker" | "channel" | "metadata" | "provider" | "state"
 >;
 
@@ -15,18 +15,18 @@ export async function assertCanonicalInboundConnection(
 ) {
   const [connection] = await db
     .select({
-      broker: providerConnections.broker,
-      channel: providerConnections.channel,
-      metadata: providerConnections.metadata,
-      provider: providerConnections.provider,
-      state: providerConnections.state,
+      broker: crmChannelConnections.broker,
+      channel: crmChannelConnections.channel,
+      metadata: crmChannelConnections.metadata,
+      provider: crmChannelConnections.provider,
+      state: crmChannelConnections.state,
     })
-    .from(providerConnections)
+    .from(crmChannelConnections)
     .where(
       and(
-        eq(providerConnections.id, input.connectionId),
-        eq(providerConnections.storeId, input.storeId),
-        eq(providerConnections.tenantId, input.tenantId),
+        eq(crmChannelConnections.id, input.connectionId),
+        eq(crmChannelConnections.storeId, input.storeId),
+        eq(crmChannelConnections.tenantId, input.tenantId),
       ),
     )
     .limit(1);

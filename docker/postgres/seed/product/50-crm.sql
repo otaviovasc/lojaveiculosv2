@@ -149,7 +149,7 @@ VALUES (
   '{
     "fixture": true,
     "officialOperation": false,
-    "purpose": "crm_whatsapp_migration_rehearsal",
+    "purpose": "crm_conversation_migration_rehearsal",
     "migrationUnit": "test-store-zapi",
     "runRealE2EFlag": "RUN_ZAPI_E2E",
     "safeToReset": true,
@@ -191,11 +191,3 @@ BEGIN
   END IF;
 END
 $$;
-
--- Seed v1 used processed provider-like sync events. Remove only those fixture ids;
--- real sandbox evidence is created by the explicit ZAPI rehearsal command.
-DELETE FROM crm_sync_events
-WHERE id IN (
-  '28000000-0000-4000-8000-000000000001',
-  '28000000-0000-4000-8000-000000000002'
-);

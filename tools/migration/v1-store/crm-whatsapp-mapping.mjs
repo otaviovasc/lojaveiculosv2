@@ -63,7 +63,7 @@ export function groupWhatsappSessions(sessions) {
   const grouped = new Map();
   for (const session of sessions) {
     const identity = sessionIdentity(session);
-    const key = `${session.connection_id}:${identity}`;
+    const key = `${session.connection_id}:${canonicalRepassesMessagingChannel(session.channel)}:${identity}`;
     const members = grouped.get(key) ?? [];
     members.push(session);
     grouped.set(key, members);
@@ -74,6 +74,43 @@ export function groupWhatsappSessions(sessions) {
     key,
     members,
   }));
+}
+
+export function canonicalRepassesMessagingChannel(channel) {
+  return channel === "OLX_CHAT" || channel === "olx_chat"
+    ? "olx_chat"
+    : "whatsapp";
+}
+
+export function crmChannelConnectionMapKey(connectionId, channel) {
+  return `${String(connectionId)}:${canonicalRepassesMessagingChannel(channel)}`;
+}
+
+export function resolveCrmChannelConnectionId(
+  connectionIds,
+  connectionId,
+  channel,
+) {
+  return (
+    connectionIds.get(crmChannelConnectionMapKey(connectionId, channel)) ??
+    (canonicalRepassesMessagingChannel(channel) === "whatsapp"
+      ? connectionIds.get(connectionId)
+      : undefined)
+  );
+}
+
+export function countTargetCrmChannelConnections(source) {
+  const keys = new Set();
+  for (const connection of source.connections) {
+    const channels = source.sessions
+      .filter((session) => session.connection_id === connection.id)
+      .map((session) => canonicalRepassesMessagingChannel(session.channel));
+    if (channels.length === 0) channels.push("whatsapp");
+    for (const channel of channels) {
+      keys.add(crmChannelConnectionMapKey(connection.id, channel));
+    }
+  }
+  return keys.size;
 }
 
 export function resolveLegacyLeadLink(

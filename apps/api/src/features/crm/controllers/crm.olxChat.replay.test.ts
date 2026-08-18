@@ -2,7 +2,7 @@ import type { AuditEvent } from "@lojaveiculosv2/audit";
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import {
   createOlxConnection,
   olxSecurity,
@@ -11,19 +11,19 @@ import {
   tenantId,
   validPayload,
 } from "./crm.olxChat.testSupport.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM OLX Chat runtime", () => {
   it("rejects and audits a divergent replay for the same provider message id", async () => {
     const auditEvents: AuditEvent[] = [];
     const webhookEventRepository = createMemoryCrmWebhookEventRepository();
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       audit: { record: vi.fn(async (event) => void auditEvents.push(event)) },
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       crmWebhookEventRepository: webhookEventRepository,
       entitlements: ["crm"],
       crmOlxWebhookSecurity: olxSecurity(),
@@ -60,17 +60,17 @@ describe("CRM OLX Chat runtime", () => {
     expect(event?.payloadDigest).toMatch(/^[0-9a-f]{64}$/u);
     expect(JSON.stringify(event)).not.toContain("another@example.com");
     expect(JSON.stringify(event)).not.toContain("A different message");
-    const [session] = await whatsappRepository.listSessions({
+    const [cycle] = await conversationRepository.listConversationCycles({
       limit: 10,
       offset: 0,
       storeId,
       tenantId,
     });
     await expect(
-      whatsappRepository.listMessages({
+      conversationRepository.listMessages({
         limit: 10,
         offset: 0,
-        sessionId: session!.id,
+        cycleId: cycle!.id,
         storeId,
         tenantId,
       }),

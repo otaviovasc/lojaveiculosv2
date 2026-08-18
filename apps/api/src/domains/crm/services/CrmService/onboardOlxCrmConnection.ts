@@ -25,12 +25,17 @@ import {
   readOlxOnboardingResult,
   readRecord,
 } from "../../onboardOlxCrmConnectionSupport.js";
-import { ensureFirstReadyChannelDefault } from "../CrmRoutingService/ensureFirstReadyChannelDefault.js";
+import { persistInitialReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
 import {
   createOlxCapabilityFailureRecorder,
   type OlxCapabilityFailure,
   recordOlxOnboardingOutcome,
 } from "../../olxOnboardingDiagnostics.js";
+import { crmChannelConnectionCapabilityFacts } from "../../channelConnections/connectionCreation.js";
+import {
+  logOlxOnboardingStarted,
+  requireOlxOnboardingProviderAccount,
+} from "./onboardOlxCrmConnectionValidation.js";
 
 export async function onboardOlxCrmConnection(
   context: ServiceContext,
@@ -46,21 +51,8 @@ export async function onboardOlxCrmConnection(
 ) {
   assertPermission(context, OLX_CRM_CONNECTION_SETUP_PERMISSION);
   assertEntitlement(context as StoreScopedServiceContext, "crm");
-  context.logger.info("crm.connection.olx.onboard.started", {
-    actorId: context.actor.id,
-    provider: "olx_chat",
-    requestId: context.requestId,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
-  if (context.storeId !== input.storeId || context.tenantId !== input.tenantId)
-    throw new Error("OLX CRM OAuth scope binding mismatch.");
-  const providerAccountId = input.providerAccountId?.trim();
-  if (!providerAccountId) {
-    throw new Error(
-      "OLX account identity could not be authoritatively verified.",
-    );
-  }
+  logOlxOnboardingStarted(context, input);
+  const providerAccountId = requireOlxOnboardingProviderAccount(context, input);
   const repository = getCrmConnectionRepository(ports);
   const vault = getCrmConnectionCredentialVault(ports);
   const provider = ports.olxCrmWebhookSetupProvider;
@@ -89,7 +81,16 @@ export async function onboardOlxCrmConnection(
       credentialsRef: { stored: { accessToken, webhookSecret } },
       displayName: "OLX Chat",
       externalConnectionId: providerAccountId,
-      metadata: {},
+      metadata: {
+        capabilities: crmChannelConnectionCapabilityFacts({
+          broker: "direct",
+          channel: "olx_chat",
+          provider: "olx",
+        }),
+        connected: false,
+        degraded: false,
+        errorCode: null,
+      },
       status: "error",
       storeId: input.storeId as never,
       tenantId: input.tenantId as never,
@@ -107,7 +108,7 @@ export async function onboardOlxCrmConnection(
       metadata: {
         permission: OLX_CRM_CONNECTION_SETUP_PERMISSION,
         previousConnectionId: authorization.replacedConnectionId,
-        provider: "olx_chat",
+        provider: "olx",
       },
       outcome: "succeeded",
       requestId: context.requestId,
@@ -197,6 +198,19 @@ export async function onboardOlxCrmConnection(
     connectionId: connection.id,
     leaseOwner,
     metadata: {
+      capabilities: crmChannelConnectionCapabilityFacts({
+        broker: "direct",
+        channel: "olx_chat",
+        provider: "olx",
+      }),
+      connected: chat.status === "active",
+      degraded: errorCount > 0,
+      errorCode:
+        errorCount > 0
+          ? "registration_failed"
+          : activeCount < capabilityValues.length
+            ? "scope_missing"
+            : null,
       webhookSetup: {
         attemptCount: readRecord(claimed.metadata.webhookSetup).attemptCount,
         capabilities,
@@ -223,7 +237,7 @@ export async function onboardOlxCrmConnection(
     ports.crmRoutingConnectionRepository &&
     ports.crmRoutingPolicyRepository
   ) {
-    await ensureFirstReadyChannelDefault(
+    await persistInitialReadyChannelDefault(
       context,
       { channel: "olx_chat", connectionId: connection.id },
       ports,

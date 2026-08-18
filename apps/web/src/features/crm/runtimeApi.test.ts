@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createProductCrmAuthFromEnv } from "./runtimeApi";
 
 describe("CRM runtime API auth", () => {
-  it("uses Clerk session tokens when available", () => {
+  it("uses Clerk cycle tokens when available", () => {
     expect(
       createProductCrmAuthFromEnv("real-clerk-token", {
         VITE_DEV_CLERK_USER_ID: "clerk_1",
@@ -27,7 +27,7 @@ describe("CRM runtime API auth", () => {
     });
   });
 
-  it("does not invent a token without an explicit session token", () => {
+  it("does not invent a token without an explicit cycle token", () => {
     expect(
       createProductCrmAuthFromEnv(null, {
         VITE_DEV_CLERK_USER_ID: "clerk_local",
@@ -39,7 +39,7 @@ describe("CRM runtime API auth", () => {
     });
   });
 
-  it("accepts an explicit dev session token for production preview QA", () => {
+  it("accepts an explicit dev cycle token for production preview QA", () => {
     expect(
       createProductCrmAuthFromEnv(null, {
         VITE_DEV_CLERK_SESSION_TOKEN: "local-preview-token",

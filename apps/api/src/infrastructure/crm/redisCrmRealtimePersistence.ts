@@ -7,16 +7,16 @@ import type {
   CrmRealtimeTicket,
 } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import {
-  matchesWhatsappRealtimeQueueVisibility,
-  readWhatsappRealtimeSessionBoundary,
-  updateWhatsappRealtimeAssignmentBoundary,
-  type WhatsappRealtimeAssignmentBoundary,
-} from "../../domains/crm/whatsapp/whatsappQueueVisibility.js";
+  matchesCrmRealtimeQueueVisibility,
+  readCrmRealtimeConversationCycleBoundary,
+  updateCrmRealtimeAssignmentBoundary,
+  type CrmRealtimeAssignmentBoundary,
+} from "../../domains/crm/messaging/crmQueueVisibility.js";
 
-const channel = "crm:whatsapp:realtime";
-const streamKeyPrefix = "crm:whatsapp:realtime:stream:";
+const channel = "crm:realtime";
+const streamKeyPrefix = "crm:realtime:stream:";
 const streamMaxEvents = 2_000;
-const ticketKeyPrefix = "crm:whatsapp:sse-ticket:";
+const ticketKeyPrefix = "crm:sse-ticket:";
 const ticketTtlSeconds = 60;
 
 type RedisCommandClient = {
@@ -93,9 +93,9 @@ export function createRedisCrmRealtimePersistence(
           break;
         cursor = nextCursor;
       }
-      const boundaries = new Map<string, WhatsappRealtimeAssignmentBoundary>();
+      const boundaries = new Map<string, CrmRealtimeAssignmentBoundary>();
       retained.forEach(({ event }) =>
-        updateWhatsappRealtimeAssignmentBoundary(boundaries, event),
+        updateCrmRealtimeAssignmentBoundary(boundaries, event),
       );
       const cursorIndex = retained.findIndex(
         (item) => item.id === input.sinceEventId,
@@ -193,16 +193,16 @@ function parseStreamEvent(value: unknown) {
 function matchesReplayScope(
   input: CrmRealtimeReplayInput,
   event: CrmRealtimeEvent,
-  boundaries: Map<string, WhatsappRealtimeAssignmentBoundary>,
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
 ) {
   if (input.storeId !== event.storeId) return false;
   if (input.tenantId !== event.tenantId) return false;
-  const observed = readWhatsappRealtimeSessionBoundary(event);
+  const observed = readCrmRealtimeConversationCycleBoundary(event);
   if (
-    !matchesWhatsappRealtimeQueueVisibility(
+    !matchesCrmRealtimeQueueVisibility(
       input.queueVisibility,
       event,
-      observed ? boundaries.get(observed.sessionKey) : undefined,
+      observed ? boundaries.get(observed.cycleKey) : undefined,
     )
   ) {
     return false;
@@ -220,7 +220,8 @@ function selectReplayWindow(
     visibility.kind === "assigned" &&
     events.some(
       ({ event }) =>
-        event.type === "session" && event.revokedUserId === visibility.userId,
+        event.type === "conversationCycle" &&
+        event.revokedUserId === visibility.userId,
     );
   return includesRevocation ? events.slice(-limit) : events.slice(0, limit);
 }

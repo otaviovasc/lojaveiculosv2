@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Pencil, RefreshCw, Waypoints } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import { readCrmWhatsappProviderLabel } from "./crmWhatsappConnectionStatus";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
+import type { CrmConversationApi } from "./crmConversationApi";
+import { readCrmProviderLabel } from "./crmConnectionStatus";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 import { CrmChannelRoutingEditDialog } from "./CrmChannelRoutingPanelDialog";
 import {
   crmRoutingChannels,
@@ -26,9 +26,9 @@ export function CrmChannelRoutingPanel({
   connections,
   onPolicyChange,
 }: {
-  api: Pick<CrmWhatsappApi, "getRoutingPolicy" | "updateRoutingPolicy">;
+  api: Pick<CrmConversationApi, "getRoutingPolicy" | "updateRoutingPolicy">;
   canManage: boolean;
-  connections: readonly CrmWhatsappProviderConnection[];
+  connections: readonly CrmProviderConnection[];
   onPolicyChange?: () => Promise<void> | void;
 }) {
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export function CrmChannelRoutingPanel({
   }, [refresh]);
 
   const candidates = useMemo(
-    () => readRoutingCandidates(connections, policy),
+    () => readRoutingCandidates(connections),
     [connections, policy],
   );
 
@@ -223,12 +223,12 @@ function readRouteSummary(policy: CrmChannelRouting | null) {
   if (!route?.connection) {
     return "Nenhuma conexão padrão definida.";
   }
-  const label = `${readCrmWhatsappProviderLabel(route.connection.provider)} · ${route.connection.displayName}`;
+  const label = `${readCrmProviderLabel(route.connection.provider)} · ${route.connection.displayName}`;
   return route.ready ? `${label} — pronta` : `${label} — indisponível`;
 }
 
 function readBotSummary(policy: CrmChannelRouting | null) {
-  const bot = policy?.bot;
+  const bot = policy?.externalBot;
   if (!bot || bot.mode === "disabled") {
     return "Bot externo desativado neste canal.";
   }
@@ -236,7 +236,7 @@ function readBotSummary(policy: CrmChannelRouting | null) {
     return "Bot externo segue o padrão do CRM.";
   }
   if (bot.connection) {
-    return `Bot externo atende por ${readCrmWhatsappProviderLabel(bot.connection.provider)} · ${bot.connection.displayName}.`;
+    return `Bot externo atende por ${readCrmProviderLabel(bot.connection.provider)} · ${bot.connection.displayName}.`;
   }
   return "Bot externo sem conexão válida neste canal.";
 }

@@ -53,7 +53,7 @@ as a break-glass path when the GitHub auto-deploy is unhealthy.
 - Web start: `pnpm --filter @lojaveiculosv2/web start`.
 - Web healthcheck: `/health`.
 - CRM schedule worker build: `pnpm --filter @lojaveiculosv2/api build`.
-- CRM schedule worker start: `pnpm run crm:whatsapp:schedule:process`.
+- CRM schedule worker start: `pnpm run crm:schedule:process`.
 - CRM schedule worker cron: `*/5 * * * *` UTC. It must close database, audit,
   Redis, and storage clients and exit; an active prior run causes Railway to
   skip the next occurrence.

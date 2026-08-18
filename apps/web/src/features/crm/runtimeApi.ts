@@ -3,7 +3,10 @@ import {
   type CreateProductCrmApiOptions,
   type ProductCrmApi,
 } from "./productCrmApi";
-import { createCrmWhatsappApi, type CrmWhatsappApi } from "./crmWhatsappApi";
+import {
+  createCrmConversationApi,
+  type CrmConversationApi,
+} from "./crmConversationApi";
 import type { ProductCrmAuth } from "./productCrmTypes";
 import { readRuntimeStoreSlug } from "../account/currentStore";
 import {
@@ -68,255 +71,261 @@ async function createRuntimeProductApi() {
   return createProductCrmApi(await createProductCrmApiOptions());
 }
 
-export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
+export function createRuntimeCrmConversationApi(): CrmConversationApi {
   return {
-    addSessionTag: async (sessionId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).addSessionTag(
-        sessionId,
+    addCycleTag: async (cycleId, input) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).addCycleTag(
+        cycleId,
         input,
       ),
-    assignSession: async (sessionId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).assignSession(
-        sessionId,
+    assignCycle: async (cycleId, input) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).assignCycle(
+        cycleId,
         input,
       ),
     authorizeComposioConnection: async (connectionId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).authorizeComposioConnection(connectionId),
-    closeSession: async (sessionId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
-        sessionId,
+    closeCycle: async (cycleId, input) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).closeCycle(
+        cycleId,
         input,
       ),
     completeComposioConnection: async (connectionId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).completeComposioConnection(connectionId),
     cancelCampaign: async (campaignId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).cancelCampaign(
-        campaignId,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).cancelCampaign(campaignId),
     createCampaign: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).createCampaign(
-        input,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).createCampaign(input),
     createConnection: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).createConnection(
-        input,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).createConnection(input),
     disconnectZapiConnection: async (connectionId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).disconnectZapiConnection(connectionId),
     configureZapiWebhooks: async (connectionId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).configureZapiWebhooks(connectionId),
     getZapiAddonContract: async () => {
-      const api = createCrmWhatsappApi(await createProductCrmApiOptions());
+      const api = createCrmConversationApi(await createProductCrmApiOptions());
       if (!api.getZapiAddonContract) {
         throw new Error("A consulta do add-on Z-API não está disponível.");
       }
       return api.getZapiAddonContract();
     },
     createQuickMessage: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).createQuickMessage(input),
     createScheduledMessage: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).createScheduledMessage(input),
     createTag: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).createTag(input),
+      createCrmConversationApi(await createProductCrmApiOptions()).createTag(
+        input,
+      ),
     deleteQuickMessage: async (quickMessageId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).deleteQuickMessage(quickMessageId),
     deleteTag: async (tagId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).deleteTag(tagId),
+      createCrmConversationApi(await createProductCrmApiOptions()).deleteTag(
+        tagId,
+      ),
     deleteMessage: async (messageId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).deleteMessage(
-        messageId,
-      ),
-    interveneSession: async (sessionId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).interveneSession(
-        sessionId,
-        input,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).deleteMessage(messageId),
+    updateCycleAttendance: async (cycleId, input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).updateCycleAttendance(cycleId, input),
     getBotIntegration: async () =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).getBotIntegration(),
     getRoutingPolicy: async () =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).getRoutingPolicy(),
     getCampaign: async (campaignId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).getCampaign(
+      createCrmConversationApi(await createProductCrmApiOptions()).getCampaign(
         campaignId,
       ),
     listConnections: async () =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listConnections(),
     updateBotIntegration: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).updateBotIntegration(input),
     updateRoutingPolicy: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).updateRoutingPolicy(input),
-    listMessages: async (sessionId, query) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).listMessages(
-        sessionId,
+    listMessages: async (cycleId, query) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).listMessages(
+        cycleId,
         query,
       ),
     listCatalogProducts: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listCatalogProducts(input),
     listCampaigns: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).listCampaigns(
-        input,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listCampaigns(input),
     listQuickMessages: async () =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listQuickMessages(),
     listScheduledMessages: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listScheduledMessages(input),
     listTags: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).listTags(input),
+      createCrmConversationApi(await createProductCrmApiOptions()).listTags(
+        input,
+      ),
     listProviderEventIssues: async () =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listProviderEventIssues(),
-    markSessionRead: async (sessionId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).markSessionRead(
-        sessionId,
-        input,
-      ),
-    markSessionUnread: async (sessionId, input) =>
-      createCrmWhatsappApi(
+    markCycleRead: async (cycleId, input) =>
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
-      ).markSessionUnread(sessionId, input),
-    concludeSession: async (sessionId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).concludeSession(
-        sessionId,
-        input,
-      ),
-    listSessions: async (query) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).listSessions(
-        query,
-      ),
-    listSessionCounts: async (query) =>
-      createCrmWhatsappApi(
+      ).markCycleRead(cycleId, input),
+    markCycleUnread: async (cycleId, input) =>
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
-      ).listSessionCounts(query),
-    removeSessionTag: async (sessionId, tagId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).removeSessionTag(
-        sessionId,
-        tagId,
-      ),
+      ).markCycleUnread(cycleId, input),
+    concludeCycle: async (cycleId, input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).concludeCycle(cycleId, input),
+    listConversationCycles: async (query) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listConversationCycles(query),
+    listConversationCycleCounts: async (query) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listConversationCycleCounts(query),
+    removeCycleTag: async (cycleId, tagId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).removeCycleTag(cycleId, tagId),
     cancelScheduledMessage: async (scheduledMessageId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).cancelScheduledMessage(scheduledMessageId),
     processDueScheduledMessages: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).processDueScheduledMessages(input),
     pauseCampaign: async (campaignId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).pauseCampaign(
-        campaignId,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).pauseCampaign(campaignId),
     reorderTags: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).reorderTags(
+      createCrmConversationApi(await createProductCrmApiOptions()).reorderTags(
         input,
       ),
     removeReaction: async (messageId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).removeReaction(
-        messageId,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).removeReaction(messageId),
     requestZapiPairingCode: async (connectionId, phone) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).requestZapiPairingCode(connectionId, phone),
     requestZapiPairingQr: async (connectionId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).requestZapiPairingQr(connectionId),
     refreshZapiConnectionStatus: async (connectionId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).refreshZapiConnectionStatus(connectionId),
     retryOlxChatSetup: async (connectionId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).retryOlxChatSetup(connectionId),
     requestZapiAddon: async () => {
-      const api = createCrmWhatsappApi(await createProductCrmApiOptions());
+      const api = createCrmConversationApi(await createProductCrmApiOptions());
       if (!api.requestZapiAddon) {
         throw new Error("A solicitação do add-on Z-API não está disponível.");
       }
       return api.requestZapiAddon();
     },
     retryProviderEvent: async (eventId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).retryProviderEvent(eventId),
     resumeCampaign: async (campaignId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).resumeCampaign(
-        campaignId,
-      ),
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).resumeCampaign(campaignId),
     sendCatalog: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).sendCatalog(
+      createCrmConversationApi(await createProductCrmApiOptions()).sendCatalog(
         input,
       ),
     sendCatalogProduct: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).sendCatalogProduct(input),
     sendLocation: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).sendLocation(
+      createCrmConversationApi(await createProductCrmApiOptions()).sendLocation(
         input,
       ),
     sendMedia: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).sendMedia(input),
+      createCrmConversationApi(await createProductCrmApiOptions()).sendMedia(
+        input,
+      ),
     sendReaction: async (messageId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).sendReaction(
+      createCrmConversationApi(await createProductCrmApiOptions()).sendReaction(
         messageId,
         input,
       ),
     selectComposioSender: async (connectionId, senderId) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).selectComposioSender(connectionId, senderId),
     sendQuickMessage: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).sendQuickMessage(
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).sendQuickMessage(input),
+    sendText: async (input) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).sendText(
         input,
       ),
-    sendText: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).sendText(input),
     sendVehicle: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).sendVehicle(
+      createCrmConversationApi(await createProductCrmApiOptions()).sendVehicle(
         input,
       ),
     startConversation: async (input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).startConversation(input),
     updateQuickMessage: async (quickMessageId, input) =>
-      createCrmWhatsappApi(
+      createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).updateQuickMessage(quickMessageId, input),
     updateTag: async (tagId, input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).updateTag(
+      createCrmConversationApi(await createProductCrmApiOptions()).updateTag(
         tagId,
         input,
       ),
@@ -326,7 +335,8 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       void createProductCrmApiOptions()
         .then((options) => {
           if (closed) return;
-          unsubscribe = createCrmWhatsappApi(options).subscribeEvents(input);
+          unsubscribe =
+            createCrmConversationApi(options).subscribeEvents(input);
         })
         .catch((error) => {
           input.onError?.(

@@ -71,7 +71,8 @@ contract so seeds cannot silently drift from authorization behavior.
 
 Permissions and entitlements are both mandatory for paid add-on operations:
 
-- CRM WhatsApp: `crm` plus the relevant `crm.whatsapp.*` permission.
+- CRM messaging: `crm` plus the relevant `crm.conversations.*`,
+  `crm.messages.*`, `crm.attendances.*`, or `crm.bot.*` permission.
 - NF-e: `nfe` plus the relevant `fiscal.*` permission.
 - Marketplaces: `marketplace` plus the relevant `marketplace.*` permission.
 - Public API management and key authentication: `external_api` plus
@@ -109,32 +110,32 @@ the proposal digest must match before a decision is persisted.
 ## CRM Messaging Contract
 
 External messaging channels are CRM features, but they do not inherit lead
-permissions. Operators manage these explicit permissions in the CRM group. The
-existing `crm.whatsapp.*` key namespace remains an internal authorization
-identifier for the migrated operational capabilities; labels and descriptions
-shown to store users are provider-neutral:
+permissions. Operators manage these explicit channel-neutral permissions in the
+CRM group:
 
-- `crm.whatsapp.list`: bootstrap, connection, agent, and session-list reads.
-- `crm.whatsapp.read`: message reads and read-state changes.
-- `crm.whatsapp.send`: create conversations and send outbound messages.
-- `crm.whatsapp.assign`: assign conversations.
-- `crm.whatsapp.close`: close conversations.
-- `crm.whatsapp.toggle_intervention`: toggle manual intervention.
-- `crm.whatsapp.tags.assign`: attach and remove existing tags on sessions.
-- `crm.whatsapp.tags.manage`: create, edit, delete, and reorder tags.
-- `crm.whatsapp.schedules.read`: list scheduled channel messages.
-- `crm.whatsapp.schedules.create`: schedule a channel text message.
-- `crm.whatsapp.schedules.cancel`: cancel a pending scheduled message.
-- `crm.whatsapp.schedules.process`: process due scheduled messages.
+- `crm.conversations.read`: bootstrap, connection, agent, thread, cycle, and
+  message reads, including read-state changes.
+- `crm.conversations.assign`: assign conversation attendance.
+- `crm.conversations.manage`: close or otherwise manage conversation cycles.
+- `crm.messages.send`: create conversations and send outbound messages.
+- `crm.messages.ingest`: persist authenticated provider inbound messages.
+- `crm.attendances.manage`: transition bot and human handling state.
+- `crm.tags.assign`: attach and remove existing tags on conversation threads.
+- `crm.tags.manage`: create, edit, delete, and reorder tags.
+- `crm.scheduled_messages.read`: list scheduled channel messages.
+- `crm.scheduled_messages.create`: schedule a supported channel message.
+- `crm.scheduled_messages.cancel`: cancel a pending scheduled message.
+- `crm.scheduled_messages.process`: process due scheduled messages.
 - `crm.messaging.connection.setup`: configure a new channel and submit its
   initial write-only credentials.
 - `crm.messaging.connection.pair`: request pairing by QR Code or phone code and
   refresh channel connection state.
-- `crm.whatsapp.campaigns.read`: view messaging campaigns and metrics.
-- `crm.whatsapp.campaigns.manage`: create, pause, resume, and cancel messaging
+- `crm.campaigns.read`: view messaging campaigns and metrics.
+- `crm.campaigns.manage`: create, pause, resume, and cancel messaging
   campaigns.
-- `crm.whatsapp.integrations.manage`: configure external bot integrations and
-  write-only webhook secrets.
+- `crm.bot.read`: inspect external bot configuration, policies, and diagnostics.
+- `crm.bot.manage`: configure the external bot and write-only webhook secret.
+- `crm.bot.proposals.decide`: explicitly approve or reject queued proposals.
 
 V2 asserts these permissions, tenant/store scope, CRM entitlement context, and
 audit metadata before every messaging operation. Pre-launch CRM code should not

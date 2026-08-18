@@ -9,7 +9,7 @@ import {
   factProposals,
   observedFacts,
   opportunities,
-  providerConnections,
+  crmChannelConnections,
 } from "@lojaveiculosv2/db";
 import { and, eq } from "drizzle-orm";
 import type {
@@ -107,7 +107,7 @@ export async function createDrizzleCrmCore<R extends CrmCoreResource>(
       value = mapConnection(
         required(
           await db
-            .insert(providerConnections)
+            .insert(crmChannelConnections)
             .values({
               broker: data.credentialBroker,
               channel: data.channel,
@@ -222,12 +222,12 @@ export async function createDrizzleCrmCore<R extends CrmCoreResource>(
         );
         const [connection] = await tx
           .select()
-          .from(providerConnections)
+          .from(crmChannelConnections)
           .where(
             and(
-              eq(providerConnections.id, data.connectionId),
-              eq(providerConnections.storeId, scope.storeId),
-              eq(providerConnections.tenantId, scope.tenantId),
+              eq(crmChannelConnections.id, data.connectionId),
+              eq(crmChannelConnections.storeId, scope.storeId),
+              eq(crmChannelConnections.tenantId, scope.tenantId),
             ),
           )
           .limit(1);

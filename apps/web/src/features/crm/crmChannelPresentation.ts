@@ -2,11 +2,11 @@ import type {
   MarketplaceProviderCapability,
   MarketplaceProviderState,
 } from "../marketplaces/types";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 import {
-  readCrmWhatsappChannelLabel,
-  readCrmWhatsappProviderLabel,
-} from "./crmWhatsappConnectionStatus";
+  readCrmChannelLabel,
+  readCrmProviderLabel,
+} from "./crmConnectionStatus";
 
 export type CrmChannelIdentity = {
   brokerLabel: string | null;
@@ -21,10 +21,8 @@ export function readCrmChannelIdentity(input: {
 }): CrmChannelIdentity {
   return {
     brokerLabel: input.broker?.trim() || null,
-    channelLabel: readCrmWhatsappChannelLabel(input.channel),
-    providerLabel: input.provider
-      ? readCrmWhatsappProviderLabel(input.provider)
-      : null,
+    channelLabel: readCrmChannelLabel(input.channel),
+    providerLabel: input.provider ? readCrmProviderLabel(input.provider) : null,
   };
 }
 
@@ -48,7 +46,7 @@ export type OlxAuthorizationAction = {
 };
 
 export function readOlxChannelOperations(
-  connections: readonly CrmWhatsappProviderConnection[],
+  connections: readonly CrmProviderConnection[],
   marketplaceState?: MarketplaceProviderState,
 ): {
   chat: CrmChannelOperation;
@@ -65,7 +63,7 @@ export function readOlxChannelOperations(
 }
 
 function readOlxChatOperation(
-  connection?: CrmWhatsappProviderConnection,
+  connection?: CrmProviderConnection,
   marketplaceState?: MarketplaceProviderState,
 ): CrmChannelOperation {
   const authorizationFailure = readAuthorizationFailure(marketplaceState);
@@ -114,7 +112,7 @@ function readOlxChatOperation(
       state: "failed",
     };
   }
-  if (connection.live.providerStatus === "error") {
+  if (connection.live?.providerStatus === "error") {
     return {
       detail:
         "O Chat está configurado, mas a checagem atual falhou. Tente novamente.",
@@ -133,7 +131,7 @@ function readOlxChatOperation(
     detail: "A conexão existe, mas o recebimento ainda não foi confirmado.",
     label: "Chat",
     state:
-      connection.live.providerStatus === "unknown"
+      connection.live?.providerStatus === "unknown"
         ? "indeterminate"
         : "pending",
   };
@@ -274,7 +272,7 @@ export type CrmChannelGroupChannel = (typeof crmChannelGroupOrder)[number];
 export type CrmChannelConnectionGroup = {
   channel: CrmChannelGroupChannel | "unknown";
   channelLabel: string;
-  connections: CrmWhatsappProviderConnection[];
+  connections: CrmProviderConnection[];
   invalid?: boolean;
 };
 
@@ -284,13 +282,13 @@ export type CrmChannelConnectionGroup = {
  * provider name is never used to guess a channel (ADR 0061).
  */
 export function groupCrmConnectionsByChannel(
-  connections: readonly CrmWhatsappProviderConnection[],
+  connections: readonly CrmProviderConnection[],
 ): CrmChannelConnectionGroup[] {
   const groups: CrmChannelConnectionGroup[] = crmChannelGroupOrder.map(
     (channel) => ({
       channel,
-      channelLabel: readCrmWhatsappChannelLabel(channel),
-      connections: [] as CrmWhatsappProviderConnection[],
+      channelLabel: readCrmChannelLabel(channel),
+      connections: [] as CrmProviderConnection[],
     }),
   );
   const invalid: CrmChannelConnectionGroup = {
@@ -322,7 +320,7 @@ export type CrmConnectionReadinessBadge = {
 };
 
 export function readConnectionReadinessBadge(
-  connection: CrmWhatsappProviderConnection,
+  connection: CrmProviderConnection,
 ): CrmConnectionReadinessBadge {
   const status = connection.state ?? connection.status;
   if (status === "paused") {
@@ -382,15 +380,12 @@ export function readCrmCapabilityLabel(capability: string) {
 }
 
 export function readConnectionCapabilityLabels(
-  connection: CrmWhatsappProviderConnection,
+  connection: CrmProviderConnection,
   limit = 4,
 ): string[] {
   const capabilities = connection.capabilities;
-  if (!capabilities) return [];
-  return Object.entries(capabilityLabelMap)
-    .filter(([key]) => capabilities[key as keyof typeof capabilityLabelMap])
-    .map(([, label]) => label)
-    .slice(0, limit);
+  if (!Array.isArray(capabilities)) return [];
+  return capabilities.map(readCrmCapabilityLabel).slice(0, limit);
 }
 
 export type OlxChatRetryTarget = {
@@ -405,7 +400,7 @@ export type OlxChatRetryTarget = {
  * decide a new OAuth authorization.
  */
 export function readOlxChatRetryTarget(
-  connections: readonly CrmWhatsappProviderConnection[],
+  connections: readonly CrmProviderConnection[],
   marketplaceState?: MarketplaceProviderState,
 ): OlxChatRetryTarget | null {
   const connection = connections.find(

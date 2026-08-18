@@ -61,8 +61,8 @@ BEGIN
         ('agency'::role_template_key, 101),
         ('admin'::role_template_key, 95),
         ('owner'::role_template_key, 101),
-        ('investor'::role_template_key, 14),
-        ('salesman'::role_template_key, 46),
+        ('investor'::role_template_key, 15),
+        ('salesman'::role_template_key, 47),
         ('supervisor'::role_template_key, 75)
     )
     SELECT 1
@@ -79,11 +79,11 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM role_template_permissions
-    WHERE permission_key = 'crm.whatsapp.connection.manage'
+    WHERE permission_key ~ '^crm[.]whatsapp[.]'
   ) OR EXISTS (
     SELECT 1
     FROM membership_permission_overrides
-    WHERE permission_key = 'crm.whatsapp.connection.manage'
+    WHERE permission_key ~ '^crm[.]whatsapp[.]'
   ) THEN
     RAISE EXCEPTION 'seed invariant: legacy CRM connection permission remains';
   END IF;

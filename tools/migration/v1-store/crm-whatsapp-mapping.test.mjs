@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   buildLeadCrmSessionIndex,
   buildLeadPhoneIndex,
+  canonicalRepassesMessagingChannel,
+  countTargetCrmChannelConnections,
   findLegacyLeadId,
   groupWhatsappSessions,
   mapRepassesConnection,
@@ -35,6 +37,23 @@ test("groups duplicate sessions and preserves LID-only identities", () => {
   assert.equal(groups[0].members.length, 2);
   assert.equal(groups[0].canonical.id, 2);
   assert.equal(groups[1].buyerPhone, "lid:private-lid");
+});
+
+test("keeps equal customer identities separate across messaging channels", () => {
+  const groups = groupWhatsappSessions([
+    session({ id: 1, buyer_phone: "5544999990000", channel: "WHATSAPP" }),
+    session({ id: 2, buyer_phone: "5544999990000", channel: "OLX_CHAT" }),
+  ]);
+
+  assert.equal(groups.length, 2);
+  assert.equal(canonicalRepassesMessagingChannel("OLX_CHAT"), "olx_chat");
+  assert.equal(
+    countTargetCrmChannelConnections({
+      connections: [{ id: 30 }],
+      sessions: groups.flatMap((group) => group.members),
+    }),
+    2,
+  );
 });
 
 test("links a session to one unambiguous lead through phone aliases", () => {

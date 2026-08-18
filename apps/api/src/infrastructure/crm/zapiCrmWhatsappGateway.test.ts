@@ -60,6 +60,8 @@ describe("Z-API profile photo gateway", () => {
 
 function connection(): CrmConnection {
   return {
+    broker: "direct",
+    channel: "whatsapp",
     credentialsRef: {
       env: {
         apiBaseUrl: "ZAPI_API_BASE_URL",

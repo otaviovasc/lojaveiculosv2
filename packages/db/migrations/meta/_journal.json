@@ -414,6 +414,34 @@
       "when": 1787090400000,
       "tag": "0058_canonical_crm_operational_cutover",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1787094000000,
+      "tag": "0059_canonical_crm_multichannel_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1787101200000,
+      "tag": "0060_external_bot_security_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1787104800000,
+      "tag": "0061_canonical_crm_dead_schema_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1787112000000,
+      "tag": "0062_external_bot_action_registry_effects",
+      "breakpoints": true
     }
   ]
 }

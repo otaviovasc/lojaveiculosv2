@@ -19,7 +19,7 @@ export function CrmSelect<Value extends string = string>({
   placeholder?: string | undefined;
   value?: Value | undefined;
 }) {
-  const triggerClassName = className?.includes("crm-whatsapp-select")
+  const triggerClassName = className?.includes("crm-select")
     ? className
     : ["crm-input", className].filter(Boolean).join(" ");
 

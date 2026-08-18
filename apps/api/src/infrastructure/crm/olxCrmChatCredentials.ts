@@ -1,6 +1,6 @@
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import { OLX_ACCESS_TOKEN_CREDENTIAL_PURPOSE } from "../../domains/crm/ports/crmOlxCredentials.js";
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import { openSealedCrmConnectionCredential } from "./crmConnectionCredentialVault.js";
 
 export function resolveOlxAccessToken(
@@ -29,7 +29,7 @@ export function resolveOlxAccessToken(
 }
 
 function configurationError() {
-  return new CrmWhatsappGatewayError(
+  return new CrmMessagingGatewayError(
     "OLX Chat access-token credential reference is not configured.",
     502,
     undefined,

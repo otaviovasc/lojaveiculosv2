@@ -4,8 +4,8 @@ import { eq } from "drizzle-orm";
 import { expect } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
-import { projectZapiCanonicalInbound } from "../../../domains/crm/whatsapp/persistZapiCanonicalProjection.js";
-import { createDrizzleCrmWhatsappRepository } from "./drizzleCrmWhatsappRepository.js";
+import { hydrateCanonicalInbound } from "../../../domains/crm/messaging/hydrateCanonicalInbound.js";
+import { createDrizzleCrmConversationRepository } from "./drizzleCrmConversationRepository.js";
 import type { CrmCanonicalInboundRepository } from "../../../domains/crm/ports/crmCanonicalInboundRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { canonicalInbound } from "./drizzleCrmCanonicalInbound.rawDbTestSupport.js";
@@ -65,11 +65,15 @@ export async function validateCanonicalInboundRegressions(
   };
   const older = await repository.ingestInboundMessage(olderInput);
   expect(newer).toMatchObject({
-    createdSession: false,
+    createdConversationCycle: false,
     cycleId,
     threadId,
   });
-  expect(older).toMatchObject({ createdSession: false, cycleId, threadId });
+  expect(older).toMatchObject({
+    createdConversationCycle: false,
+    cycleId,
+    threadId,
+  });
 
   const [preview] = await db
     .select({
@@ -173,9 +177,9 @@ async function validateHydratedProjection(
     tenantId: input.scope.tenantId,
     webhookUrl: null,
   } as CrmConnection;
-  const projection = await projectZapiCanonicalInbound(
+  const projection = await hydrateCanonicalInbound(
     {
-      crmWhatsappRepository: createDrizzleCrmWhatsappRepository(db, {
+      crmConversationRepository: createDrizzleCrmConversationRepository(db, {
         disableTransactions: true,
       }),
     } as CrmServicePorts,
@@ -183,13 +187,13 @@ async function validateHydratedProjection(
   );
   expect(projection).toMatchObject({
     createdMessage: true,
-    createdSession: false,
+    createdConversationCycle: false,
     message: { id: canonical.messageId },
-    session: {
+    conversationCycle: {
       assignedUserId: userId,
       messageCount: 2,
       revision: 11,
-      sessionTags: [{ id: tagId, name: "VIP" }],
+      tags: [{ id: tagId, name: "VIP" }],
       unreadCount: 2,
     },
   });

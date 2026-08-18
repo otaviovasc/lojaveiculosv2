@@ -10,7 +10,7 @@ describe("memory CRM webhook event claims", () => {
       eventType: "crm.messaging.olx.received",
       payload: { schemaVersion: 1 },
       payloadDigest: "a".repeat(64),
-      provider: "olx_chat" as const,
+      provider: "olx" as const,
       providerEventId: "olx:message-1",
     };
 

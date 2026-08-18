@@ -15,6 +15,8 @@ export function createZapiWebhookTestConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
   return {
+    broker: "direct",
+    channel: "whatsapp",
     credentialsRef: {
       mode: "stored",
       stored: {

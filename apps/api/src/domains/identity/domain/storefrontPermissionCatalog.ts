@@ -1,4 +1,4 @@
-import { crmWhatsappPermissionDescriptors } from "./crmWhatsappPermissionCatalog.js";
+import { crmPermissionDescriptors } from "./crmPermissionCatalog.js";
 import { permission, type PermissionGroup } from "./permissionCatalogTypes.js";
 
 export const crmPermissionGroup: PermissionGroup = {
@@ -41,7 +41,7 @@ export const crmPermissionGroup: PermissionGroup = {
       "Confirmar uma identidade de contato com evidência auditável.",
       "high",
     ),
-    ...crmWhatsappPermissionDescriptors,
+    ...crmPermissionDescriptors,
     permission(
       "lead.read",
       "Visualizar contatos",

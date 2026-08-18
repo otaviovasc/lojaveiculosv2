@@ -4,8 +4,10 @@ import type {
   ExternalBotCommand,
   ExternalBotEvent,
   ExternalBotKillSwitchLevel,
+  ExternalBotProposalRecord,
   ExternalBotScope,
 } from "../externalBotModels.js";
+import type { ExternalBotPolicy } from "../policies/externalBotPolicy.js";
 
 export type BotIdentity = {
   integrationId: string;
@@ -24,6 +26,7 @@ export interface ExternalBotDigest {
 
 export type CapabilityGrant = ExternalBotScope & {
   action: ExternalBotActionName;
+  actionClass: "effect" | "proposal";
   authorizedRequestDigest: string;
   expiresAt: Date;
   token: string;
@@ -34,6 +37,7 @@ export interface ExternalBotGrantStore {
   consume(
     input: ExternalBotScope & {
       action: ExternalBotActionName;
+      actionClass: "effect" | "proposal";
       now: Date;
       requestDigest: string;
       token: string;
@@ -51,6 +55,18 @@ export interface ExternalBotActionRepository {
     | { kind: "accepted"; record: ExternalBotActionRecord }
     | { kind: "existing"; record: ExternalBotActionRecord }
     | { kind: "conflict" }
+    | { kind: "grant_invalid" }
+    | { kind: "grant_used" }
+    | {
+        kind: "policy_denied";
+        code:
+          | "connection_not_ready"
+          | "cooldown_active"
+          | "daily_limit_reached"
+          | "human_takeover"
+          | "policy_disabled"
+          | "rate_limit_reached";
+      }
   >;
   transition(
     id: string,
@@ -69,6 +85,7 @@ export interface ExternalBotEventOutbox {
 }
 
 export type BotAuthorizationSnapshot = {
+  attendanceRevision: number;
   humanAttendanceActive: boolean;
   revision: number;
   scopeExists: boolean;
@@ -82,7 +99,23 @@ export interface ExternalBotKillSwitchResolver {
   resolve(
     scope: ExternalBotScope,
     action: ExternalBotActionName,
+    actionClass: "effect" | "proposal",
   ): Promise<ExternalBotKillSwitchLevel | null>;
+}
+
+export type ExternalBotPolicySnapshot = {
+  actionsToday: number;
+  connectionActionsInLastMinute: number;
+  connectionReady: boolean;
+  policy: ExternalBotPolicy;
+  secondsSinceLastAction: number | null;
+};
+
+export interface ExternalBotPolicyResolver {
+  resolve(
+    scope: ExternalBotScope,
+    action: ExternalBotActionName,
+  ): Promise<ExternalBotPolicySnapshot | null>;
 }
 
 export type ExternalBotEffectResult =
@@ -96,7 +129,10 @@ export interface ExternalBotEffectDispatcher {
     actionId: string;
     command: ExternalBotCommand;
     idempotencyKey: string;
-    scope: ExternalBotScope;
+    scope: ExternalBotScope & {
+      expectedAttendanceRevision: number;
+      expectedRevision: number;
+    };
   }): Promise<ExternalBotEffectResult>;
 }
 
@@ -107,6 +143,28 @@ export interface ExternalBotProposalRecorder {
     idempotencyKey: string;
     scope: ExternalBotScope;
   }): Promise<{ kind: "recorded" } | { kind: "failed"; code: string }>;
+  decide(input: {
+    actorUserId: string;
+    decision: "approved" | "rejected";
+    expectedRevision: number;
+    proposalId: string;
+    reason?: string;
+    storeId: string;
+    tenantId: string;
+  }): Promise<
+    | {
+        kind: "decided";
+        proposal: ExternalBotProposalRecord;
+        action: ExternalBotActionRecord;
+      }
+    | {
+        kind: "existing";
+        proposal: ExternalBotProposalRecord;
+        action: ExternalBotActionRecord;
+      }
+    | { kind: "conflict" }
+    | { kind: "not_found" }
+  >;
 }
 
 export type ExternalBotManagerPorts = {
@@ -119,6 +177,8 @@ export type ExternalBotManagerPorts = {
   grantStore: ExternalBotGrantStore;
   idGenerator: () => string;
   killSwitches: ExternalBotKillSwitchResolver;
+  modelVersion: string;
+  policyResolver: ExternalBotPolicyResolver;
   proposalRecorder: ExternalBotProposalRecorder;
   now?: () => Date;
 };

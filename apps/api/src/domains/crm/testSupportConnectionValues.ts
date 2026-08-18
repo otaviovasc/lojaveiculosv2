@@ -11,8 +11,6 @@ export function readConfiguredString(value: unknown) {
 export function normalizeTestCrmConnection(connection: CrmConnection) {
   connection.metadata = canonicalCrmConnectionMetadata({
     metadata: connection.metadata,
-    provider: connection.provider,
-    status: connection.status,
   });
   const identity = connection.canonical
     ? {
@@ -20,7 +18,7 @@ export function normalizeTestCrmConnection(connection: CrmConnection) {
         credentialBroker: connection.canonical.broker,
         provider: connection.canonical.provider,
       }
-    : canonicalCrmConnectionIdentity(connection.provider);
+    : canonicalCrmConnectionIdentity(connection);
   connection.canonical = projectCanonicalCrmConnectionRow({
     broker: identity.credentialBroker,
     channel: identity.channel,

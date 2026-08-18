@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
-import { createWhatsappConnection } from "../../../../domains/crm/services/CrmWhatsapp/createWhatsappConnection.js";
-import { listWhatsappConnections } from "../../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import { createCrmChannelConnection } from "../../../../domains/crm/services/CrmChannelConnectionService/createCrmChannelConnection.js";
+import { listCrmChannelConnections } from "../../../../domains/crm/services/CrmChannelConnectionService/crmChannelConnections.js";
 import { createMemoryCrmConnectionRepository } from "./crmConnectionRepository.js";
 import { createMemoryCrmRoutingRepositories } from "./crmRoutingRepository.js";
 
@@ -34,7 +34,7 @@ describe("canonical CRM connection setup persistence", () => {
       crmRoutingConnectionRepository:
         connectionRepository.routingConnectionRepository,
       crmRoutingPolicyRepository: routing.policyRepository,
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         configureWebhooks: vi.fn(
           async (
             _connection,
@@ -63,9 +63,10 @@ describe("canonical CRM connection setup persistence", () => {
       },
     };
 
-    const created = await createWhatsappConnection(
+    const created = await createCrmChannelConnection(
       context(),
       {
+        channel: "whatsapp",
         displayName: "WhatsApp principal",
         instanceId: "instance-1",
         instanceToken: "token-1",
@@ -83,7 +84,7 @@ describe("canonical CRM connection setup persistence", () => {
         storeId: storeId as never,
         tenantId: tenantId as never,
       });
-    const [listed] = await listWhatsappConnections(context(), ports);
+    const [listed] = await listCrmChannelConnections(context(), ports);
     const [policy] = await routing.policyRepository.listPolicies({
       storeId: storeId as never,
       tenantId: tenantId as never,
@@ -91,6 +92,18 @@ describe("canonical CRM connection setup persistence", () => {
 
     expect(created).toMatchObject({ ready: true, state: "active" });
     expect(canonical).toMatchObject({
+      capabilities: {
+        catalog: true,
+        conversation_start: true,
+        delete: true,
+        inbound: true,
+        media: true,
+        outbound: true,
+        reactions: true,
+        scheduling: true,
+        templates: false,
+        text: true,
+      },
       channel: "whatsapp",
       connected: true,
       id: created.id,
@@ -113,7 +126,7 @@ function context() {
   return createServiceContext({
     actor: { id: "user-1", kind: "user" },
     entitlements: ["crm", "crm_zapi"],
-    permissions: ["crm.messaging.connection.setup", "crm.whatsapp.list"],
+    permissions: ["crm.messaging.connection.setup", "crm.conversations.read"],
     request: { requestId: "canonical-setup-test" },
     storeId,
     tenantId,

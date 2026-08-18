@@ -104,13 +104,13 @@ test("maps a legacy session to canonical thread, cycle, and attendance rows", ()
     null,
     new Map([[44, 2]]),
     {
-      crmChannelConnections: new Map([[30, "connection"]]),
+      crmChannelConnections: new Map([["30:olx_chat", "connection"]]),
       store: "store",
       tenant: "tenant",
     },
   );
 
-  assert.equal(rows.thread.channel, "whatsapp");
+  assert.equal(rows.thread.channel, "olx_chat");
   assert.equal(rows.thread.provider_connection_id, "connection");
   assert.equal(rows.cycle.id, "cycle");
   assert.equal(rows.cycle.message_count, 2);

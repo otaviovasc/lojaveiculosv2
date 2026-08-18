@@ -8,10 +8,10 @@ import {
 } from "../ports/crmConnectionSetupProvider.js";
 import { getCrmConnectionCredentialVault } from "../services/CrmService/crmConnectionSetupSupport.js";
 import {
-  getCrmWhatsappGateway,
+  getCrmMessagingGateway,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import type { WhatsappConnectionLiveStatus } from "./whatsappConnectionModels.js";
+import type { CrmChannelConnectionLiveStatus } from "../channelConnections/channelConnectionModels.js";
 import { readZapiWebhookSetupState } from "./zapiWebhookSetupState.js";
 
 export async function sealUpdatedZapiCredentials(
@@ -53,7 +53,7 @@ export async function readConnectionLiveStatus(
   context: ServiceContext,
   connection: CrmConnection,
   ports: CrmServicePorts,
-): Promise<WhatsappConnectionLiveStatus> {
+): Promise<CrmChannelConnectionLiveStatus> {
   const zapiConfigured =
     connection.provider !== "zapi" ||
     ("entitlements" in context &&
@@ -69,9 +69,9 @@ export async function readConnectionLiveStatus(
       smartphoneConnected: null,
     };
   }
-  return getCrmWhatsappGateway(ports)
+  return getCrmMessagingGateway(ports)
     .getConnectionStatus(connection)
-    .catch((error: unknown): WhatsappConnectionLiveStatus => ({
+    .catch((error: unknown): CrmChannelConnectionLiveStatus => ({
       checkedAt: new Date(),
       connected: null,
       connectedPhone: null,

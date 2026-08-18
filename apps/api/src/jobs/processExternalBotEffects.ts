@@ -8,10 +8,15 @@ import {
   type DrizzleAuditSinkClient,
 } from "../infrastructure/db/audit/drizzleAuditSink.js";
 import { createExternalBotProviderEffectExecutor } from "../infrastructure/crm/bot/externalBotProviderEffectExecutor.js";
-import { createRuntimeCrmWhatsappProviderGateway } from "../infrastructure/crm/crmWhatsappProviderRouter.js";
+import { createRuntimeCrmMessagingProviderGateway } from "../infrastructure/crm/crmMessagingProviderRouter.js";
 import { runExternalBotEffectWorkerOnce } from "../infrastructure/crm/bot/runExternalBotEffectWorker.js";
 import { loadAuthorizedExternalBotEffect } from "../infrastructure/db/crm/drizzleExternalBotEffectRuntime.js";
 import { createConsoleServiceLogger } from "../shared/serviceContext.js";
+import { createDrizzleCrmConnectionRepository } from "../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
+import {
+  createDrizzleCrmRoutingConnectionRepository,
+  createDrizzleCrmRoutingPolicyRepository,
+} from "../infrastructure/db/crm/drizzleCrmRoutingRepository.js";
 
 loadLocalEnv();
 
@@ -33,15 +38,25 @@ async function main() {
     const executor = createExternalBotProviderEffectExecutor({
       audit,
       db,
-      gateway: createRuntimeCrmWhatsappProviderGateway(process.env),
+      gateway: createRuntimeCrmMessagingProviderGateway(process.env),
       logger,
+      providerOperationPorts: {
+        crmConnectionRepository: createDrizzleCrmConnectionRepository(db),
+        crmRoutingConnectionRepository:
+          createDrizzleCrmRoutingConnectionRepository(db),
+        crmRoutingPolicyRepository: createDrizzleCrmRoutingPolicyRepository(db),
+      },
     });
     const limit = readBatchSize();
     let processed = 0;
     for (; processed < limit; processed += 1) {
       const result = await runExternalBotEffectWorkerOnce({
         authorize: async (effectId) =>
-          Boolean(await loadAuthorizedExternalBotEffect(db, effectId)),
+          Boolean(
+            await loadAuthorizedExternalBotEffect(db, effectId, {
+              markProviderAttempt: false,
+            }),
+          ),
         db,
         executor,
       });

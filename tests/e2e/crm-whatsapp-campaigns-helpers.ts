@@ -88,8 +88,8 @@ function createWhatsappRoleManagement() {
   const permissions = [
     "crm.messaging.connection.pair",
     "crm.messaging.connection.setup",
-    "crm.whatsapp.assign",
-    "crm.whatsapp.list",
+    "crm.conversations.assign",
+    "crm.conversations.read",
   ];
   return {
     actor: {

@@ -28,19 +28,19 @@ export const crmScopeForeignKeyNames = [
   "crm_webhook_effect_outbox_scoped_thread_fk",
   "crm_webhook_effect_outbox_semantic_cycle_fk",
   "crm_webhook_effect_outbox_semantic_message_fk",
-  "crm_whatsapp_outbound_intents_scoped_connection_fk",
-  "crm_whatsapp_outbound_intents_scoped_thread_fk",
-  "crm_whatsapp_outbound_intents_semantic_cycle_fk",
-  "crm_whatsapp_outbound_intents_semantic_message_fk",
-  "crm_whatsapp_scheduled_messages_scoped_connection_fk",
-  "crm_whatsapp_scheduled_messages_scoped_thread_fk",
-  "crm_whatsapp_campaigns_scoped_connection_fk",
-  "crm_whatsapp_campaign_recipients_scoped_connection_fk",
-  "crm_whatsapp_campaign_recipients_scoped_thread_fk",
+  "crm_outbound_intents_scoped_connection_fk",
+  "crm_outbound_intents_scoped_thread_fk",
+  "crm_outbound_intents_semantic_cycle_fk",
+  "crm_outbound_intents_semantic_message_fk",
+  "crm_scheduled_messages_scoped_connection_fk",
+  "crm_scheduled_messages_scoped_thread_fk",
+  "crm_campaigns_scoped_connection_fk",
+  "crm_campaign_recipients_scoped_connection_fk",
+  "crm_campaign_recipients_scoped_thread_fk",
 ];
 
 export const canonicalCrmForeignKeyNames = [
-  "provider_connections_store_tenant_fk",
+  "crm_channel_connections_store_tenant_fk",
   "conversation_threads_store_tenant_fk",
   "conversation_threads_semantic_connection_fk",
   "conversation_cycles_store_tenant_fk",
@@ -48,20 +48,20 @@ export const canonicalCrmForeignKeyNames = [
   "conversation_attendances_store_tenant_fk",
   "conversation_attendances_scoped_thread_fk",
   "conversation_attendances_semantic_cycle_fk",
-  "canonical_messages_store_tenant_fk",
-  "canonical_messages_semantic_connection_fk",
-  "canonical_messages_semantic_thread_fk",
-  "canonical_messages_semantic_cycle_fk",
+  "crm_messages_store_tenant_fk",
+  "crm_messages_semantic_connection_fk",
+  "crm_messages_semantic_thread_fk",
+  "crm_messages_semantic_cycle_fk",
   "crm_lead_outcomes_scoped_origin_cycle_fk",
 ];
 
 export const crmScopeIndexNames = [
   "stores_id_tenant_unique",
-  "provider_connections_scope_id_unique",
+  "crm_channel_connections_scope_id_unique",
   "conversation_threads_scope_id_unique",
   "conversation_cycles_scope_id_unique",
   "conversation_cycles_thread_id_unique",
-  "canonical_messages_semantic_id_unique",
+  "crm_messages_semantic_id_unique",
   "provider_events_scope_id_unique",
 ];
 
@@ -237,25 +237,25 @@ async function detachScopeForeignKeys() {
         DROP CONSTRAINT IF EXISTS "automation_approvals_step_run_scope_fk";
       ALTER TABLE "automation_steps"
         DROP CONSTRAINT IF EXISTS "automation_steps_run_scope_fk";
-      ALTER TABLE IF EXISTS "crm_whatsapp_outbound_intents"
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_outbound_intents_semantic_message_fk",
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_outbound_intents_semantic_cycle_fk",
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_outbound_intents_scoped_thread_fk",
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_outbound_intents_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_outbound_intents"
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_semantic_message_fk",
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_semantic_cycle_fk",
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_scoped_thread_fk",
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_scoped_connection_fk";
       ALTER TABLE IF EXISTS "crm_webhook_effect_outbox"
         DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_semantic_message_fk",
         DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_semantic_cycle_fk",
         DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_scoped_thread_fk",
         DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_scoped_connection_fk",
         DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_scoped_provider_event_fk";
-      ALTER TABLE IF EXISTS "crm_whatsapp_scheduled_messages"
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_scheduled_messages_scoped_thread_fk",
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_scheduled_messages_scoped_connection_fk";
-      ALTER TABLE IF EXISTS "crm_whatsapp_campaign_recipients"
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_campaign_recipients_scoped_thread_fk",
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_campaign_recipients_scoped_connection_fk";
-      ALTER TABLE IF EXISTS "crm_whatsapp_campaigns"
-        DROP CONSTRAINT IF EXISTS "crm_whatsapp_campaigns_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_scheduled_messages"
+        DROP CONSTRAINT IF EXISTS "crm_scheduled_messages_scoped_thread_fk",
+        DROP CONSTRAINT IF EXISTS "crm_scheduled_messages_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_campaign_recipients"
+        DROP CONSTRAINT IF EXISTS "crm_campaign_recipients_scoped_thread_fk",
+        DROP CONSTRAINT IF EXISTS "crm_campaign_recipients_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_campaigns"
+        DROP CONSTRAINT IF EXISTS "crm_campaigns_scoped_connection_fk";
       ALTER TABLE IF EXISTS "crm_tags"
         DROP CONSTRAINT IF EXISTS "crm_tags_scoped_connection_fk";
       ALTER TABLE IF EXISTS "provider_events"
@@ -301,7 +301,7 @@ async function ensureCrmScopeIndexes() {
   await sql.unsafe(`
     CREATE UNIQUE INDEX IF NOT EXISTS "stores_id_tenant_unique"
       ON "stores" ("id", "tenant_id");
-    CREATE UNIQUE INDEX IF NOT EXISTS "provider_connections_scope_id_unique"
+    CREATE UNIQUE INDEX IF NOT EXISTS "crm_channel_connections_scope_id_unique"
       ON "crm_channel_connections" ("tenant_id", "store_id", "id");
     CREATE UNIQUE INDEX IF NOT EXISTS "conversation_threads_scope_id_unique"
       ON "crm_conversation_threads" ("tenant_id", "store_id", "id");
@@ -309,7 +309,7 @@ async function ensureCrmScopeIndexes() {
       ON "crm_conversation_cycles" ("tenant_id", "store_id", "id");
     CREATE UNIQUE INDEX IF NOT EXISTS "conversation_cycles_thread_id_unique"
       ON "crm_conversation_cycles" ("tenant_id", "store_id", "id", "thread_id");
-    CREATE UNIQUE INDEX IF NOT EXISTS "canonical_messages_semantic_id_unique"
+    CREATE UNIQUE INDEX IF NOT EXISTS "crm_messages_semantic_id_unique"
       ON "crm_messages" ("tenant_id", "store_id", "id", "cycle_id", "thread_id");
     CREATE UNIQUE INDEX IF NOT EXISTS "provider_events_scope_id_unique"
       ON "provider_events" ("tenant_id", "store_id", "connection_id", "id");
@@ -389,35 +389,35 @@ async function installScopeForeignKeys() {
         ADD CONSTRAINT "crm_webhook_effect_outbox_semantic_message_fk"
         FOREIGN KEY ("tenant_id", "store_id", "message_id", "cycle_id", "thread_id")
         REFERENCES "crm_messages" ("tenant_id", "store_id", "id", "cycle_id", "thread_id");
-      ALTER TABLE "crm_whatsapp_outbound_intents"
-        ADD CONSTRAINT "crm_whatsapp_outbound_intents_scoped_connection_fk"
+      ALTER TABLE "crm_outbound_intents"
+        ADD CONSTRAINT "crm_outbound_intents_scoped_connection_fk"
         FOREIGN KEY ("tenant_id", "store_id", "connection_id")
         REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id"),
-        ADD CONSTRAINT "crm_whatsapp_outbound_intents_scoped_thread_fk"
+        ADD CONSTRAINT "crm_outbound_intents_scoped_thread_fk"
         FOREIGN KEY ("tenant_id", "store_id", "thread_id")
         REFERENCES "crm_conversation_threads" ("tenant_id", "store_id", "id"),
-        ADD CONSTRAINT "crm_whatsapp_outbound_intents_semantic_cycle_fk"
+        ADD CONSTRAINT "crm_outbound_intents_semantic_cycle_fk"
         FOREIGN KEY ("tenant_id", "store_id", "cycle_id", "thread_id")
         REFERENCES "crm_conversation_cycles" ("tenant_id", "store_id", "id", "thread_id"),
-        ADD CONSTRAINT "crm_whatsapp_outbound_intents_semantic_message_fk"
+        ADD CONSTRAINT "crm_outbound_intents_semantic_message_fk"
         FOREIGN KEY ("tenant_id", "store_id", "message_id", "cycle_id", "thread_id")
         REFERENCES "crm_messages" ("tenant_id", "store_id", "id", "cycle_id", "thread_id");
-      ALTER TABLE "crm_whatsapp_scheduled_messages"
-        ADD CONSTRAINT "crm_whatsapp_scheduled_messages_scoped_connection_fk"
+      ALTER TABLE "crm_scheduled_messages"
+        ADD CONSTRAINT "crm_scheduled_messages_scoped_connection_fk"
         FOREIGN KEY ("tenant_id", "store_id", "connection_id")
         REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id"),
-        ADD CONSTRAINT "crm_whatsapp_scheduled_messages_scoped_thread_fk"
+        ADD CONSTRAINT "crm_scheduled_messages_scoped_thread_fk"
         FOREIGN KEY ("tenant_id", "store_id", "thread_id")
         REFERENCES "crm_conversation_threads" ("tenant_id", "store_id", "id");
-      ALTER TABLE "crm_whatsapp_campaigns"
-        ADD CONSTRAINT "crm_whatsapp_campaigns_scoped_connection_fk"
+      ALTER TABLE "crm_campaigns"
+        ADD CONSTRAINT "crm_campaigns_scoped_connection_fk"
         FOREIGN KEY ("tenant_id", "store_id", "selected_connection_id")
         REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id");
-      ALTER TABLE "crm_whatsapp_campaign_recipients"
-        ADD CONSTRAINT "crm_whatsapp_campaign_recipients_scoped_connection_fk"
+      ALTER TABLE "crm_campaign_recipients"
+        ADD CONSTRAINT "crm_campaign_recipients_scoped_connection_fk"
         FOREIGN KEY ("tenant_id", "store_id", "connection_id")
         REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id"),
-        ADD CONSTRAINT "crm_whatsapp_campaign_recipients_scoped_thread_fk"
+        ADD CONSTRAINT "crm_campaign_recipients_scoped_thread_fk"
         FOREIGN KEY ("tenant_id", "store_id", "thread_id")
         REFERENCES "crm_conversation_threads" ("tenant_id", "store_id", "id");
       ALTER TABLE "billing_provider_reconciliations"

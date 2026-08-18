@@ -8,14 +8,21 @@ const WHATSAPP_CYCLES = `
     FROM crm_conversation_cycles AS cycle
     JOIN crm_conversation_threads AS thread ON thread.id=cycle.thread_id
    WHERE cycle.store_id=$1 AND thread.store_id=$1 AND thread.channel='whatsapp'`;
+const WHATSAPP_CONNECTIONS = `
+  SELECT id FROM crm_channel_connections
+   WHERE store_id=$1 AND channel='whatsapp'`;
 
 export const WHATSAPP_HISTORY_TABLES = [
+  "crm_external_bot_provider_effects",
+  "crm_external_bot_proposals",
+  "crm_external_bot_action_commands",
+  "crm_external_bot_grants",
   "crm_webhook_effect_outbox",
   "crm_external_bot_event_outbox",
-  "crm_whatsapp_outbound_intents",
-  "crm_whatsapp_scheduled_messages",
-  "crm_whatsapp_campaign_recipients",
-  "crm_whatsapp_campaigns",
+  "crm_outbound_intents",
+  "crm_scheduled_messages",
+  "crm_campaign_recipients",
+  "crm_campaigns",
   "crm_conversation_thread_tags",
   "crm_conversation_command_receipts",
   "crm_conversation_attendance_events",
@@ -26,12 +33,16 @@ export const WHATSAPP_HISTORY_TABLES = [
 ];
 
 const HISTORY_DELETIONS = [
+  commandDelete("crm_external_bot_provider_effects"),
+  commandDelete("crm_external_bot_proposals"),
+  threadDelete("crm_external_bot_action_commands"),
+  threadDelete("crm_external_bot_grants"),
   threadDelete("crm_webhook_effect_outbox"),
   threadDelete("crm_external_bot_event_outbox"),
-  threadDelete("crm_whatsapp_outbound_intents"),
-  threadDelete("crm_whatsapp_scheduled_messages"),
-  threadDelete("crm_whatsapp_campaign_recipients"),
-  storeDelete("crm_whatsapp_campaigns"),
+  threadDelete("crm_outbound_intents"),
+  threadDelete("crm_scheduled_messages"),
+  threadDelete("crm_campaign_recipients"),
+  connectionDelete("crm_campaigns", "selected_connection_id"),
   threadDelete("crm_conversation_thread_tags"),
   threadDelete("crm_conversation_command_receipts"),
   cycleDelete("crm_conversation_attendance_events"),
@@ -97,8 +108,23 @@ function cycleDelete(table, column = "cycle_id") {
   };
 }
 
-function storeDelete(table) {
-  return { query: `DELETE FROM ${table} WHERE store_id=$1`, table };
+function commandDelete(table) {
+  return {
+    query: `DELETE FROM ${table}
+             WHERE store_id=$1 AND command_id IN (
+               SELECT id FROM crm_external_bot_action_commands
+                WHERE store_id=$1 AND thread_id IN (${WHATSAPP_THREADS})
+             )`,
+    table,
+  };
+}
+
+function connectionDelete(table, column = "connection_id") {
+  return {
+    query: `DELETE FROM ${table}
+             WHERE store_id=$1 AND ${column} IN (${WHATSAPP_CONNECTIONS})`,
+    table,
+  };
 }
 
 function elapsed(startedAt) {

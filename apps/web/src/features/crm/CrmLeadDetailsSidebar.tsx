@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Car, User, SendHorizontal, Phone, Mail } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import { useOptionalAccountSession } from "../account/accountSession";
-import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
-import { createRuntimeCrmWhatsappApi } from "./runtimeApi";
+import { readCrmCapabilities } from "./crmPermissions";
+import { createRuntimeCrmConversationApi } from "./runtimeApi";
 import type {
   CreateProductCrmActivityInput,
   ProductCrmLead,
@@ -30,7 +30,7 @@ export function CrmLeadDetailsSidebar({
   onCreateActivity,
 }: Props) {
   const [commentText, setCommentText] = useState("");
-  const lastMessageAt = useLeadLastWhatsappMessageAt(lead.id);
+  const lastMessageAt = useLeadLastCrmMessageAt(lead.id);
 
   const handlePostComment = async () => {
     if (!commentText.trim()) return;
@@ -222,12 +222,9 @@ export function CrmLeadDetailsSidebar({
   );
 }
 
-function useLeadLastWhatsappMessageAt(leadId: string) {
-  const session = useOptionalAccountSession();
-  const permissions = useMemo(
-    () => readCrmWhatsappCapabilities(session),
-    [session],
-  );
+function useLeadLastCrmMessageAt(leadId: string) {
+  const cycle = useOptionalAccountSession();
+  const permissions = useMemo(() => readCrmCapabilities(cycle), [cycle]);
   const [lastMessageAt, setLastMessageAt] = useState<string | null>(null);
 
   useEffect(() => {
@@ -236,11 +233,11 @@ function useLeadLastWhatsappMessageAt(leadId: string) {
       return;
     }
     let active = true;
-    void createRuntimeCrmWhatsappApi()
-      .listSessions({ leadId, limit: 5 })
-      .then((sessions) => {
+    void createRuntimeCrmConversationApi()
+      .listConversationCycles({ leadId, limit: 5 })
+      .then((conversationCycles) => {
         if (!active) return;
-        const timestamps = sessions
+        const timestamps = conversationCycles
           .map((item) => item.lastMessageAt)
           .filter((value): value is string => Boolean(value))
           .sort();

@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
-import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
-import { completeZapiWebhookAuthorization } from "../../../domains/crm/services/CrmWhatsapp/authorizeZapiWebhook.js";
+import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessagingService/authorizeOlxChatWebhook.js";
+import { completeZapiWebhookAuthorization } from "../../../domains/crm/services/CrmWhatsappService/authorizeZapiWebhook.js";
 import {
   createOlxWebhookSourceFingerprint,
   isOlxWebhookSourceAllowed,
@@ -12,7 +12,7 @@ import {
   type ServiceContext,
   type StoreScopedServiceContext,
 } from "../../../shared/serviceContext.js";
-import { CrmWhatsappValidationError } from "./crm.whatsapp.errors.js";
+import { CrmMessagingValidationError } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
 
 export async function authorizeWebhook(
@@ -24,7 +24,7 @@ export async function authorizeWebhook(
   const serviceContext = await createWebhookContext(context);
   const connectionId = context.req.param("connectionId");
   if (!connectionId) {
-    throw new CrmWhatsappValidationError("Webhook connectionId is required.");
+    throw new CrmMessagingValidationError("Webhook connectionId is required.");
   }
   const token =
     context.req.header("x-crm-webhook-token") ??
@@ -132,7 +132,7 @@ export async function authorizeOlxWebhook(
   const serviceContext = await createWebhookContext(context);
   const connectionId = context.req.param("connectionId");
   if (!connectionId) {
-    throw new CrmWhatsappValidationError("Webhook connectionId is required.");
+    throw new CrmMessagingValidationError("Webhook connectionId is required.");
   }
   // This header is authoritative only when deployment explicitly enables the
   // Railway edge contract. x-forwarded-for is never used for authorization.
@@ -177,7 +177,7 @@ function readBearerToken(value: string | undefined): string | null {
 export async function readWebhookInput(context: Context) {
   const connectionId = context.req.param("connectionId");
   if (!connectionId) {
-    throw new CrmWhatsappValidationError("Webhook connectionId is required.");
+    throw new CrmMessagingValidationError("Webhook connectionId is required.");
   }
   return {
     connectionId,
@@ -190,10 +190,10 @@ async function parseWebhookPayload(context: Context) {
   try {
     body = await context.req.json();
   } catch {
-    throw new CrmWhatsappValidationError("Webhook body must be valid JSON.");
+    throw new CrmMessagingValidationError("Webhook body must be valid JSON.");
   }
   if (!body || typeof body !== "object" || Array.isArray(body)) {
-    throw new CrmWhatsappValidationError("Webhook body must be an object.");
+    throw new CrmMessagingValidationError("Webhook body must be an object.");
   }
   return body as Record<string, unknown>;
 }

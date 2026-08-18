@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CrmConnectionSetupProviderError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createTestCrmConnectionRepository } from "../../../domains/crm/testSupportConnections.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("OLX Chat setup retry route", () => {
   it("exposes the canonical route and typed success diagnostics", async () => {
@@ -207,6 +207,8 @@ function connection(
   },
 ): CrmConnection {
   return {
+    broker: "direct",
+    channel: "olx_chat",
     credentialsRef: {
       stored: {
         accessToken: "sealed-access",
@@ -219,7 +221,7 @@ function connection(
     id: connectionId,
     metadata: { webhookSetup },
     phone: null,
-    provider: "olx_chat",
+    provider: "olx",
     status: "active",
     storeId: "store_1" as never,
     tenantId: "tenant_1" as never,

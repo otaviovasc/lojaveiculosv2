@@ -67,7 +67,7 @@ describe("App module navigation", () => {
     expect(parseModuleHash("#/settings?tab=roles")).toBe("settings");
     expect(parseModuleHash("#/settings?tab=domain")).toBe("settings");
     expect(parseModuleHash("#/crm?surface=leads")).toBe("customers");
-    expect(parseModuleHash("#/crm?surface=whatsapp")).toBe("crm");
+    expect(parseModuleHash("#/crm?surface=conversations")).toBe("crm");
     expect(parseModuleHash("#unknown")).toBe("dashboard");
   });
 
@@ -98,10 +98,12 @@ describe("App module navigation", () => {
 
   it("keeps CRM surfaces deterministic for visual QA routes", () => {
     expect(crmSurfaceHash("leads")).toBe("/crm?surface=leads");
-    expect(crmSurfaceHash("whatsapp")).toBe("/crm?surface=whatsapp");
+    expect(crmSurfaceHash("conversations")).toBe("/crm?surface=conversations");
     expect(readCrmSurfaceFromHash("#/crm?surface=leads")).toBe("leads");
-    expect(readCrmSurfaceFromHash("#/crm?surface=whatsapp")).toBe("whatsapp");
-    expect(readCrmSurfaceFromHash("#/crm")).toBe("whatsapp");
+    expect(readCrmSurfaceFromHash("#/crm?surface=conversations")).toBe(
+      "conversations",
+    );
+    expect(readCrmSurfaceFromHash("#/crm")).toBe("conversations");
   });
 
   it("keeps dashboard stats aligned with the Loja visual direction", () => {

@@ -43,7 +43,7 @@ describe.skipIf(!runRawDb)(
           const effectId = randomUUID();
           const threadId = randomUUID();
           const providerMessageId = `raw-bot-${randomUUID()}`;
-          await transaction.insert(schema.providerConnections).values({
+          await transaction.insert(schema.crmChannelConnections).values({
             broker: "direct",
             channel: "whatsapp",
             displayName: "Raw canonical bot sync Z-API",
@@ -75,10 +75,11 @@ describe.skipIf(!runRawDb)(
           const effect: AuthorizedExternalBotEffect = {
             canonicalCycleId,
             command: {
-              action: "message.send",
+              action: "message.send_text",
               payload: { text: "Provider-confirmed bot outbound" },
             },
             connection: {
+              broker: "direct",
               canonical: {
                 broker: "direct",
                 capabilities: ["inbound", "outbound"],
@@ -90,6 +91,7 @@ describe.skipIf(!runRawDb)(
                 readiness: { ready: true, reason: null, reasonCode: "ready" },
                 state: "active",
               },
+              channel: "whatsapp",
               credentialsRef: {},
               displayName: "Raw canonical bot sync Z-API",
               externalConnectionId: null,
@@ -132,17 +134,14 @@ describe.skipIf(!runRawDb)(
 
           const rows = await transaction
             .select({
-              cycleId: schema.canonicalMessages.cycleId,
-              metadata: schema.canonicalMessages.metadata,
-              providerConnectionId:
-                schema.canonicalMessages.providerConnectionId,
-              providerMessageId: schema.canonicalMessages.providerMessageId,
-              threadId: schema.canonicalMessages.threadId,
+              cycleId: schema.crmMessages.cycleId,
+              metadata: schema.crmMessages.metadata,
+              providerConnectionId: schema.crmMessages.providerConnectionId,
+              providerMessageId: schema.crmMessages.providerMessageId,
+              threadId: schema.crmMessages.threadId,
             })
-            .from(schema.canonicalMessages)
-            .where(
-              eq(schema.canonicalMessages.providerMessageId, providerMessageId),
-            );
+            .from(schema.crmMessages)
+            .where(eq(schema.crmMessages.providerMessageId, providerMessageId));
           expect(rows).toHaveLength(1);
           expect(rows[0]).toMatchObject({
             cycleId: canonicalCycleId,

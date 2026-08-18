@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CrmServicePorts } from "../../../../domains/crm/services/CrmService/serviceSupport.js";
-import { createTestCrmWhatsappSession } from "../../../../domains/crm/testSupportWhatsapp.js";
+import { createTestCrmConversationCycle } from "../../../../domains/crm/testSupportWhatsapp.js";
 import { persistZapiCanonicalInbound } from "../../../../domains/crm/whatsapp/persistZapiCanonicalInbound.js";
 import { persistZapiWhatsappWebhook } from "../../../../domains/crm/whatsapp/persistZapiWhatsappWebhook.js";
 import { createMemoryCrmCanonicalInboundRepository } from "./crmCanonicalInboundRepository.js";
 import { createMemoryCrmPipelineRepository } from "./crmPipelineRepository.js";
 import { createMemoryCrmRepository } from "./crmRepository.js";
-import { createMemoryCrmWhatsappRepository } from "./crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "./crmConversationRepository.js";
 import {
   connection,
   context,
@@ -19,24 +19,24 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
   it("persists media, cycle, attendance, and message without legacy writes", async () => {
     const canonical = createMemoryCrmCanonicalInboundRepository();
     const crmRepository = createMemoryCrmRepository();
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const whatsappRepository = createMemoryCrmConversationRepository();
     const ingestMessage = vi.spyOn(whatsappRepository, "ingestMessage");
-    const upsertSessionContext = vi.spyOn(
+    const upsertConversationCycleContext = vi.spyOn(
       whatsappRepository,
-      "upsertSessionContext",
+      "upsertConversationCycleContext",
     );
     const canonicalRepository = {
       async ingestInboundMessage(
         input: Parameters<typeof canonical.ingestInboundMessage>[0],
       ) {
         const result = await canonical.ingestInboundMessage(input);
-        return { ...result, createdSession: result.created };
+        return { ...result, createdConversationCycle: result.created };
       },
     };
     vi.spyOn(whatsappRepository, "findMessageByExternalId").mockImplementation(
       async () => projectedMessage(canonical.snapshot().messages[0]),
     );
-    vi.spyOn(whatsappRepository, "listSessions").mockImplementation(
+    vi.spyOn(whatsappRepository, "listConversationCycles").mockImplementation(
       async () => {
         const [persistedLead] = await crmRepository.listLeads({
           limit: 1,
@@ -44,13 +44,13 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
           tenantId: connection().tenantId,
         });
         return canonical.snapshot().cycles.map((cycle) =>
-          createTestCrmWhatsappSession({
+          createTestCrmConversationCycle({
             assignedUserId: "assigned-user" as never,
             id: cycle.id,
             leadId: persistedLead?.id ?? null,
             messageCount: canonical.snapshot().messages.length,
             revision: 7,
-            sessionTags: [
+            tags: [
               {
                 color: "#64748b",
                 connectionId: null,
@@ -71,7 +71,7 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
       crmCanonicalInboundRepository: canonicalRepository,
       crmPipelineRepository: createMemoryCrmPipelineRepository(),
       crmRepository,
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: whatsappRepository,
     } satisfies CrmServicePorts;
     const input = {
       attribution: null,
@@ -94,12 +94,12 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
     expect(first.result.createdMessage).toBe(true);
     expect(duplicate.result.createdMessage).toBe(false);
     expect(first.result).toMatchObject({
-      createdSession: true,
-      session: {
+      createdConversationCycle: true,
+      conversationCycle: {
         assignedUserId: "assigned-user",
         messageCount: 1,
         revision: 7,
-        sessionTags: [{ name: "VIP" }],
+        tags: [{ name: "VIP" }],
         unreadCount: 1,
       },
     });
@@ -119,10 +119,10 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
     });
     expect(snapshot.threads).toHaveLength(1);
     expect(ingestMessage).not.toHaveBeenCalled();
-    expect(upsertSessionContext).not.toHaveBeenCalled();
+    expect(upsertConversationCycleContext).not.toHaveBeenCalled();
     await expect(
       crmRepository.listActivities({
-        leadId: first.result.session.leadId ?? "",
+        leadId: first.result.conversationCycle.leadId ?? "",
         limit: 10,
         storeId: connection().storeId,
         tenantId: connection().tenantId,
@@ -135,7 +135,7 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
       attendanceState: "bot_active" as const,
       contactId: "contact-1",
       created: true,
-      createdSession: true,
+      createdConversationCycle: true,
       cycleId: "cycle-1",
       identityId: "identity-1",
       messageId: "message-1",

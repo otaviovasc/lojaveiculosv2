@@ -5,7 +5,7 @@ import type { CrmLead } from "../../ports/crmRepository.js";
 import {
   CrmLeadNotFoundError,
   getCrmRepository,
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
   requireCrmScope,
   type CrmServicePorts,
 } from "./serviceSupport.js";
@@ -34,7 +34,9 @@ export async function setCrmLeadArchived(
     }),
   );
   if (input.archived) {
-    const linkedSessions = await getCrmWhatsappRepository(ports).listSessions({
+    const linkedSessions = await getCrmConversationRepository(
+      ports,
+    ).listConversationCycles({
       leadId: input.leadId,
       limit: 1,
       offset: 0,

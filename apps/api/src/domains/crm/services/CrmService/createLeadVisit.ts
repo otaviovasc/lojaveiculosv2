@@ -24,7 +24,7 @@ export type CreateLeadVisitInput = {
   listingId?: string | null;
   notes?: string | null;
   scheduledAt: Date;
-  sessionId?: string;
+  cycleId?: string;
 };
 
 export async function createLeadVisit(
@@ -39,7 +39,7 @@ export async function createLeadVisit(
     "crm.visit.create.started",
     createServiceLogMetadata(context, {
       hasAssignedUser: Boolean(input.assignedUserId),
-      hasSession: Boolean(input.sessionId),
+      hasSession: Boolean(input.cycleId),
       hasVehicleInterest: Boolean(input.listingId),
       leadId: input.leadId,
       scheduledAt: input.scheduledAt.toISOString(),
@@ -74,7 +74,7 @@ export async function createLeadVisit(
       direction: "internal",
       leadId: created.leadId,
       metadata: visitActivityMetadata(created, {
-        sessionId: input.sessionId ?? null,
+        cycleId: input.cycleId ?? null,
       }),
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,

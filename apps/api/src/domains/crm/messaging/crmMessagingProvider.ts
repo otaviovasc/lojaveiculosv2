@@ -1,12 +1,12 @@
 import type { CrmConnectionProvider } from "../ports/crmConnectionRepository.js";
-import type { CrmWhatsappChannel } from "../ports/crmWhatsappRepositoryTypes.js";
-import type { CrmWhatsappSession } from "../ports/crmWhatsappRepositoryModels.js";
+import type { CrmMessagingChannel } from "../ports/crmConversationRepositoryTypes.js";
+import type { CrmConversationCycle } from "../ports/crmConversationRepositoryModels.js";
 
 export function channelForCrmProvider(
-  provider: CrmConnectionProvider,
-): CrmWhatsappChannel {
-  if (provider === "olx_chat") return "OLX_CHAT";
-  return provider === "composio_instagram" ? "INSTAGRAM" : "WHATSAPP";
+  channel: "instagram" | "olx_chat" | "whatsapp",
+): CrmMessagingChannel {
+  if (channel === "olx_chat") return "OLX_CHAT";
+  return channel === "instagram" ? "INSTAGRAM" : "WHATSAPP";
 }
 
 export function supportsStartingTextConversation(
@@ -15,13 +15,18 @@ export function supportsStartingTextConversation(
   return provider === "zapi";
 }
 
-export function providerAddressForSession(session: CrmWhatsappSession) {
+export function providerAddressForSession(
+  conversationCycle: CrmConversationCycle,
+) {
   const address =
-    session.channel === "INSTAGRAM" || session.channel === "OLX_CHAT"
-      ? session.channelExternalId
-      : session.buyerPhone;
+    conversationCycle.channel === "INSTAGRAM" ||
+    conversationCycle.channel === "OLX_CHAT"
+      ? conversationCycle.externalThreadId
+      : conversationCycle.customerPhone;
   if (!address) {
-    throw new Error("CRM messaging session is missing its provider address.");
+    throw new Error(
+      "CRM messaging conversationCycle is missing its provider address.",
+    );
   }
   return address;
 }

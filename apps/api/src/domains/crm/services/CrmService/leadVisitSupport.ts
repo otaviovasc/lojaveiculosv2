@@ -7,7 +7,7 @@ import {
   CrmVisitVehicleNotFoundError,
   getCrmRepository,
   getCrmVehicleInventory,
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
   requireCrmScope,
   type CrmServicePorts,
 } from "./serviceSupport.js";
@@ -29,30 +29,32 @@ export async function findVisitLeadOrThrow(
 
 export async function resolveVisitSessionLeadId(
   context: ServiceContext,
-  sessionId: string,
+  cycleId: string,
   ports: CrmServicePorts,
 ): Promise<string> {
   const scope = requireCrmScope(context);
-  const [session] = await getCrmWhatsappRepository(ports).listSessions({
+  const [conversationCycle] = await getCrmConversationRepository(
+    ports,
+  ).listConversationCycles({
     limit: 1,
     offset: 0,
-    sessionId,
+    cycleId,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
-  if (!session?.leadId) throw new CrmVisitSessionMismatchError();
-  return session.leadId;
+  if (!conversationCycle?.leadId) throw new CrmVisitSessionMismatchError();
+  return conversationCycle.leadId;
 }
 
 export async function assertVisitSessionMatchesLead(
   context: ServiceContext,
-  input: { leadId: string; sessionId?: string },
+  input: { leadId: string; cycleId?: string },
   ports: CrmServicePorts,
 ) {
-  if (!input.sessionId) return;
+  if (!input.cycleId) return;
   const sessionLeadId = await resolveVisitSessionLeadId(
     context,
-    input.sessionId,
+    input.cycleId,
     ports,
   );
   if (sessionLeadId !== input.leadId) throw new CrmVisitSessionMismatchError();

@@ -1,6 +1,6 @@
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const permissions = [
   "lead.create",

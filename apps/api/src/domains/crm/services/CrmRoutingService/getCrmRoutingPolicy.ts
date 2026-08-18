@@ -8,7 +8,7 @@ import type {
   StoreScopedServiceContext,
 } from "../../../../shared/serviceContext.js";
 import {
-  requireCrmWhatsappScope,
+  requireCrmMessagingScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import type {
@@ -20,7 +20,7 @@ import { resolveCrmRoutingPolicy } from "./resolveCrmRoutingPolicy.js";
 const permissions = [
   "crm.bot.read",
   "crm.bot.manage",
-  "crm.whatsapp.list",
+  "crm.conversations.read",
 ] as const satisfies readonly PermissionKey[];
 const defaultCapabilities = ["outbound"] as const;
 
@@ -31,7 +31,7 @@ export async function getCrmRoutingPolicy(
 ): Promise<CrmRoutingPolicyReadModel> {
   const permission = assertAnyPermission(context, permissions);
   assertEntitlement(context as StoreScopedServiceContext, "crm");
-  const scope = requireCrmWhatsappScope(context);
+  const scope = requireCrmMessagingScope(context);
   context.logger.info("crm.routing.policy.read.started", {
     requestId: context.requestId,
     storeId: scope.storeId,

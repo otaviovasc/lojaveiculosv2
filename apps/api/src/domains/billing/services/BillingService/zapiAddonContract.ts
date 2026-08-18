@@ -149,7 +149,7 @@ export async function completeZapiAddonSetup(
   input: { connectionId: string },
   ports: BillingServicePorts,
 ): Promise<BillingAddonContract> {
-  assertPermission(context, "crm.whatsapp.integrations.manage");
+  assertPermission(context, "crm.messaging.connection.setup");
   logContractAction(context, "setup_completion.started");
   const repository = requireAddonContractRepository(ports);
   const scope = requireBillingScope(context);

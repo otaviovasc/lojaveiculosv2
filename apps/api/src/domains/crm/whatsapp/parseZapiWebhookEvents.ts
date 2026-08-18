@@ -1,5 +1,5 @@
 import type { CrmConnectionConfiguredStatus } from "../ports/crmConnectionRepository.js";
-import type { CrmWhatsappMessageStatus } from "../ports/crmWhatsappRepository.js";
+import type { CrmMessageStatus } from "../ports/crmConversationRepository.js";
 import { readNumber, readRecord, readString } from "./zapiPayloadRead.js";
 
 export type ParsedZapiDelivery = {
@@ -11,7 +11,7 @@ export type ParsedZapiDelivery = {
 export type ParsedZapiStatus = {
   externalIds: string[];
   providerStatus: string | null;
-  status: CrmWhatsappMessageStatus | "READ_BY_ME" | null;
+  status: CrmMessageStatus | "READ_BY_ME" | null;
 };
 
 export type ParsedZapiConnectionEvent = {
@@ -88,8 +88,8 @@ function readExternalIds(payload: Record<string, unknown>) {
 
 function mapZapiMessageStatus(
   status: string,
-): CrmWhatsappMessageStatus | "READ_BY_ME" | null {
-  const statusMap: Record<string, CrmWhatsappMessageStatus | "READ_BY_ME"> = {
+): CrmMessageStatus | "READ_BY_ME" | null {
+  const statusMap: Record<string, CrmMessageStatus | "READ_BY_ME"> = {
     DELIVERED: "DELIVERED",
     ERROR: "FAILED",
     FAILED: "FAILED",

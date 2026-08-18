@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "../_shared.js";
 import { stores, tenants } from "../identity.js";
-import { providerConnections } from "./authorization.js";
+import { crmChannelConnections } from "./authorization.js";
 import { integrationEventState, transportProvider } from "./enums.js";
 import { revisionCheck, revisionColumn } from "./revision.js";
 import { scopedStoreForeignKey } from "./scoped.js";
@@ -28,7 +28,7 @@ export const integrationEvents = pgTable(
     payload: jsonb("payload").notNull().default({}),
     provider: transportProvider("provider").notNull(),
     providerConnectionId: uuid("provider_connection_id").references(
-      () => providerConnections.id,
+      () => crmChannelConnections.id,
     ),
     providerEventId: varchar("provider_event_id", { length: 191 }),
     revision: revisionColumn(),
@@ -50,10 +50,10 @@ export const integrationEvents = pgTable(
         table.provider,
       ],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
-        providerConnections.provider,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
+        crmChannelConnections.provider,
       ],
       name: "integration_events_semantic_connection_fk",
     }),

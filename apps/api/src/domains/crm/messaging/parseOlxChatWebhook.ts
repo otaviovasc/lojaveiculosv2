@@ -1,7 +1,7 @@
 type ParsedOlxChatWebhookBase = {
   buyerEmail: string | null;
-  buyerName: string | null;
-  buyerPhone: string;
+  customerDisplayName: string | null;
+  customerPhone: string;
   chatId: string;
   externalMessageId: string;
   listId: string;
@@ -62,8 +62,8 @@ export function parseOlxChatWebhook(
   }
   const parsedBase: ParsedOlxChatWebhookBase = {
     buyerEmail: optionalString(input.email, 320),
-    buyerName: optionalString(input.name, 160),
-    buyerPhone: normalizePhone(input.phone),
+    customerDisplayName: optionalString(input.name, 160),
+    customerPhone: normalizePhone(input.phone),
     chatId,
     externalMessageId,
     listId,

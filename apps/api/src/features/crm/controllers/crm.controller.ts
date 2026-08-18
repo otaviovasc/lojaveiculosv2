@@ -18,7 +18,7 @@ import {
   handleCrm,
 } from "./crm.controller.errors.js";
 import { crmServices, type CrmServices } from "./crmServices.js";
-import { registerCrmWhatsappRoutes } from "./crm.whatsapp.controller.js";
+import { registerCrmMessagingRoutes } from "./crm.messaging.controller.js";
 import type { CrmCoreRepository } from "../../../domains/crm/ports/crmCoreRepository.js";
 import { registerCrmCoreRoutes } from "./crm.core.routes.js";
 import { handleCrmCore } from "./crm.core.errors.js";
@@ -104,7 +104,7 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     services,
   });
 
-  registerCrmWhatsappRoutes(crmFeature, {
+  registerCrmMessagingRoutes(crmFeature, {
     ...(options.accountContextFactory
       ? { createSupportContext: options.accountContextFactory }
       : {}),

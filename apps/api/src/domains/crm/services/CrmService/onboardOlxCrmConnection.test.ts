@@ -45,7 +45,8 @@ describe("onboardOlxCrmConnection", () => {
       ports,
     );
     const [created] = await repository.listConnections({
-      providers: ["olx_chat"],
+      channels: ["olx_chat"],
+      providers: ["olx"],
       storeId: "store_1" as never,
       tenantId: "tenant_1" as never,
     });
@@ -56,7 +57,8 @@ describe("onboardOlxCrmConnection", () => {
       ports,
     );
     const [reconnected] = await repository.listConnections({
-      providers: ["olx_chat"],
+      channels: ["olx_chat"],
+      providers: ["olx"],
       storeId: "store_1" as never,
       tenantId: "tenant_1" as never,
     });
@@ -124,7 +126,8 @@ describe("onboardOlxCrmConnection", () => {
       status: "degraded",
     });
     const [connection] = await repository.listConnections({
-      providers: ["olx_chat"],
+      channels: ["olx_chat"],
+      providers: ["olx"],
       storeId: "store_1" as never,
       tenantId: "tenant_1" as never,
     });
@@ -226,7 +229,8 @@ describe("onboardOlxCrmConnection", () => {
       ).rejects.toThrow("setup lease was lost");
       expect(repository.finishOlxWebhookSetup).toHaveBeenCalled();
       const [connection] = await repository.listConnections({
-        providers: ["olx_chat"],
+        channels: ["olx_chat"],
+        providers: ["olx"],
         storeId: "store_1" as never,
         tenantId: "tenant_1" as never,
       });

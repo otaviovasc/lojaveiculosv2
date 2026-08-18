@@ -1,5 +1,5 @@
 import {
-  canonicalMessages,
+  crmMessages,
   conversationAttendances,
   conversationCycles,
   conversationThreads,
@@ -45,7 +45,7 @@ async function ingestCanonicalInbound(
   const thread = await resolveCanonicalInboundThread(db, input, contactId);
   const cycle = await resolveCycle(db, input, thread.id);
   const [inserted] = await db
-    .insert(canonicalMessages)
+    .insert(crmMessages)
     .values({
       content: input.content,
       cycleId: cycle.id,
@@ -66,7 +66,7 @@ async function ingestCanonicalInbound(
       tenantId: input.tenantId,
     })
     .onConflictDoNothing()
-    .returning({ id: canonicalMessages.id });
+    .returning({ id: crmMessages.id });
   if (!inserted) {
     const raced = await findMessage(db, input);
     if (!raced) throw new Error("Canonical CRM message was not persisted.");
@@ -82,7 +82,7 @@ async function ingestCanonicalInbound(
     attendanceState,
     contactId,
     created: true,
-    createdSession: cycle.created,
+    createdConversationCycle: cycle.created,
     cycleId: cycle.id,
     identityId,
     messageId: inserted.id,
@@ -148,17 +148,17 @@ async function findMessage(
 ) {
   const [message] = await db
     .select({
-      cycleId: canonicalMessages.cycleId,
-      messageId: canonicalMessages.id,
-      threadId: canonicalMessages.threadId,
+      cycleId: crmMessages.cycleId,
+      messageId: crmMessages.id,
+      threadId: crmMessages.threadId,
     })
-    .from(canonicalMessages)
+    .from(crmMessages)
     .where(
       and(
-        eq(canonicalMessages.providerConnectionId, input.connectionId),
-        eq(canonicalMessages.providerMessageId, input.providerMessageId),
-        eq(canonicalMessages.storeId, input.storeId),
-        eq(canonicalMessages.tenantId, input.tenantId),
+        eq(crmMessages.providerConnectionId, input.connectionId),
+        eq(crmMessages.providerMessageId, input.providerMessageId),
+        eq(crmMessages.storeId, input.storeId),
+        eq(crmMessages.tenantId, input.tenantId),
       ),
     )
     .limit(1);
@@ -186,7 +186,7 @@ async function findMessage(
     attendanceState,
     contactId: thread.contactId,
     cycleId: message.cycleId,
-    createdSession: false,
+    createdConversationCycle: false,
     identityId: identity.identityId,
     messageId: message.messageId,
     threadId: message.threadId,

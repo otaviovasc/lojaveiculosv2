@@ -1,14 +1,47 @@
 import type { SQL } from "drizzle-orm";
-import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import {
   ExternalBotCanonicalSyncIndeterminateError,
   loadAuthorizedExternalBotEffect,
   synchronizeExternalBotEffectOutcome,
-  type AuthorizedExternalBotEffect,
+  wasExternalBotProviderAttempted,
 } from "./drizzleExternalBotEffectRuntime.js";
+import {
+  authorizedExternalBotEffectRow as authorizedRow,
+  externalBotEffect as effect,
+  externalBotEffectIds as ids,
+  externalBotProviderOperation as providerOperation,
+  renderSql as render,
+} from "./drizzleExternalBotEffectRuntime.testSupport.js";
 
 describe("external bot canonical effect runtime", () => {
+  it("keeps authorization prechecks read-only", async () => {
+    const execute = vi.fn().mockResolvedValue([authorizedRow()]);
+
+    await expect(
+      loadAuthorizedExternalBotEffect({ execute } as never, ids.effect, {
+        markProviderAttempt: false,
+      }),
+    ).resolves.toMatchObject({ effectId: ids.effect });
+
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(render(execute.mock.calls[0]![0] as SQL)).not.toContain(
+      "set provider_attempted_at=now()",
+    );
+  });
+
+  it("detects a previous provider attempt without changing it", async () => {
+    const execute = vi.fn().mockResolvedValue([{ id: ids.effect }]);
+
+    await expect(
+      wasExternalBotProviderAttempted({ execute } as never, ids.effect),
+    ).resolves.toBe(true);
+
+    const query = render(execute.mock.calls[0]![0] as SQL);
+    expect(query).toContain("provider_attempted_at is not null");
+    expect(query).not.toContain("update crm_external_bot_provider_effects");
+  });
+
   it("authorizes the scoped automatic effect through canonical route facts only", async () => {
     const execute = vi.fn().mockResolvedValue([authorizedRow()]);
 
@@ -25,16 +58,18 @@ describe("external bot canonical effect runtime", () => {
       tenantId: ids.tenant,
       threadId: ids.thread,
     });
-    const query = render(execute.mock.calls[0]![0] as SQL);
+    const query = render(execute.mock.calls[1]![0] as SQL);
     expect(query).not.toContain("crm_whatsapp_sessions");
     expect(query).not.toContain("crm_whatsapp_messages");
-    expect(query).toContain("inner join bot_integration_grants grant");
+    expect(query).toContain("inner join crm_external_bot_grants grant");
     expect(query).toContain("grant.state='consumed'");
     expect(query).toContain("inner join crm_channel_routing_policies routing");
-    expect(query).toContain("routing.bot_mode<>'disabled'");
+    expect(query).toContain("routing.external_bot_mode<>'disabled'");
     expect(query).toContain("candidate.state='active'");
     expect(query).toContain("attendance.state='bot_active'");
-    expect(query).toContain("command.authorization_class='automatic'");
+    expect(query).toContain(
+      "command.authorization_class in ('automatic','human_approved')",
+    );
   });
 
   it("fails readiness closed through the shared canonical resolver", async () => {
@@ -50,6 +85,10 @@ describe("external bot canonical effect runtime", () => {
     await expect(
       loadAuthorizedExternalBotEffect({ execute } as never, ids.effect),
     ).resolves.toBeNull();
+    expect(execute).toHaveBeenCalledTimes(3);
+    expect(render(execute.mock.calls[2]![0] as SQL)).toContain(
+      "set provider_attempted_at=null",
+    );
   });
 
   it("recovers synchronized provider evidence without another provider call", async () => {
@@ -70,7 +109,7 @@ describe("external bot canonical effect runtime", () => {
       id: "provider-message-1",
       occurredAt,
     });
-    const query = render(execute.mock.calls[0]![0] as SQL);
+    const query = render(execute.mock.calls[1]![0] as SQL);
     expect(query).toContain("from crm_messages message");
     expect(query).toContain("external_bot_idempotency_key");
     expect(query).toContain("synchronized.provider_message_id is not null");
@@ -150,100 +189,3 @@ describe("external bot canonical effect runtime", () => {
     ).rejects.toBeInstanceOf(ExternalBotCanonicalSyncIndeterminateError);
   });
 });
-
-const ids = {
-  connection: "00000000-0000-4000-8000-000000000003",
-  cycle: "00000000-0000-4000-8000-000000000006",
-  effect: "00000000-0000-4000-8000-000000000001",
-  integration: "00000000-0000-4000-8000-000000000002",
-  store: "00000000-0000-4000-8000-000000000004",
-  tenant: "00000000-0000-4000-8000-000000000007",
-  thread: "00000000-0000-4000-8000-000000000008",
-};
-
-function authorizedRow(overrides: Record<string, unknown> = {}) {
-  return {
-    action_type: "message.send",
-    broker: "direct",
-    canonical_cycle_id: ids.cycle,
-    channel: "whatsapp",
-    connection_metadata: {
-      capabilities: { inbound: true, outbound: true },
-      connected: true,
-      credentialsRef: { env: { instanceId: "ZAPI_INSTANCE_ID" } },
-    },
-    connection_state: "active",
-    display_name: "Canonical Z-API",
-    expected_revision: 3,
-    id: ids.effect,
-    idempotency_key: "bot-effect-key",
-    input: {
-      command: { payload: { text: "Hello" } },
-      integrationId: ids.integration,
-      modelVersion: "v1",
-    },
-    provider: "zapi",
-    provider_address: "5511999999999",
-    provider_connection_id: ids.connection,
-    request_digest: "request-digest-1",
-    store_id: ids.store,
-    tenant_id: ids.tenant,
-    thread_id: ids.thread,
-    ...overrides,
-  };
-}
-
-const effect = {
-  ...authorizedRow(),
-  canonicalCycleId: ids.cycle,
-  command: { action: "message.send", payload: { text: "Hello" } },
-  connection: {
-    canonical: {
-      broker: "direct",
-      capabilities: ["inbound", "outbound"],
-      channel: "whatsapp",
-      connected: true,
-      degraded: false,
-      errorCode: null,
-      provider: "zapi",
-      readiness: { ready: true, reason: null, reasonCode: "ready" },
-      state: "active",
-    },
-    credentialsRef: {},
-    displayName: "Canonical Z-API",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: ids.connection,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "active",
-    storeId: ids.store as never,
-    tenantId: ids.tenant as never,
-    webhookUrl: null,
-  },
-  effectId: ids.effect,
-  expectedRevision: 3,
-  idempotencyKey: "bot-effect-key",
-  integrationId: ids.integration,
-  modelVersion: "v1",
-  provider: "zapi",
-  providerAddress: "5511999999999",
-  providerConnectionId: ids.connection,
-  requestDigest: "request-digest-1",
-  storeId: ids.store,
-  tenantId: ids.tenant,
-  threadId: ids.thread,
-} satisfies AuthorizedExternalBotEffect;
-
-const providerOperation = {
-  id: "provider-message-1",
-  occurredAt: new Date("2026-08-18T12:00:00.000Z"),
-};
-
-function render(statement: SQL) {
-  return new PgDialect()
-    .sqlToQuery(statement)
-    .sql.toLowerCase()
-    .replaceAll(/\s+/g, " ");
-}

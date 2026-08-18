@@ -23,7 +23,7 @@ export type CrmWebhookEffect = {
   processingToken: string | null;
   providerEventId: string;
   sequence: number;
-  sessionId: string;
+  cycleId: string;
   status: "dead_letter" | "delivered" | "failed" | "pending" | "processing";
   storeId: StoreId;
   tenantId: TenantId;
@@ -155,7 +155,7 @@ export type CrmWebhookEventRepository = {
     effects: readonly { effectType: CrmWebhookEffectType; sequence: number }[];
     messageId: string;
     providerEventId: string;
-    sessionId: string;
+    cycleId: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<readonly CrmWebhookEffect[]>;

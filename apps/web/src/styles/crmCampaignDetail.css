@@ -1,0 +1,223 @@
+.crm-campaign-overview {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(18rem, 0.95fr) minmax(22rem, 1.35fr);
+}
+
+.crm-campaign-detail {
+  gap: 1rem;
+}
+
+.crm-campaign-detail header {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.crm-campaign-detail header > div {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.crm-campaign-progress {
+  background: var(--color-panel);
+  border-radius: var(--radius-pill);
+  block-size: 0.5rem;
+  overflow: hidden;
+}
+
+.crm-campaign-progress span {
+  background: var(--color-primary);
+  block-size: 100%;
+  display: block;
+}
+
+.crm-campaign-detail-metrics,
+.crm-campaign-detail-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.crm-campaign-detail-metrics > div,
+.crm-campaign-detail-grid article,
+.crm-campaign-recipient-preview article {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
+
+.crm-campaign-detail-metrics > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.crm-campaign-detail-metrics svg,
+.crm-campaign-detail-grid svg {
+  color: var(--color-primary);
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-campaign-detail-metrics strong {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 950;
+}
+
+.crm-campaign-detail-metrics span,
+.crm-campaign-detail-grid dt,
+.crm-campaign-detail-grid dd {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+}
+
+.crm-campaign-detail-grid h4,
+.crm-campaign-recipient-preview h4 {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  gap: 0.375rem;
+  margin: 0 0 0.5rem;
+}
+
+.crm-campaign-detail-grid p {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.crm-campaign-detail-grid dl {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.crm-campaign-detail-grid dl > div {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.crm-campaign-detail-grid dd {
+  color: var(--color-text);
+  margin: 0;
+}
+
+.crm-campaign-recipient-preview {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crm-campaign-recipient-preview-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.crm-campaign-recipient-preview-header > div:first-child {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.crm-campaign-recipient-filters {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.crm-campaign-recipient-search {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.625rem;
+}
+
+.crm-campaign-recipient-search svg {
+  color: var(--color-muted);
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.crm-campaign-recipient-search input,
+.crm-campaign-recipient-filters select {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  min-block-size: 2rem;
+}
+
+.crm-campaign-recipient-search input {
+  border: 0;
+  min-inline-size: 10rem;
+  padding: 0;
+}
+
+.crm-campaign-recipient-filters select {
+  padding: 0 0.625rem;
+}
+
+.crm-campaign-recipient-preview > div:last-child {
+  display: grid;
+  gap: 0.5rem;
+  max-block-size: 22rem;
+  overflow: auto;
+}
+
+.crm-campaign-recipient-preview article {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.crm-campaign-recipient-preview article > div {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.crm-campaign-recipient-preview p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  margin: 0;
+}
+
+.crm-campaign-recipient-empty {
+  background: var(--color-app);
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
+
+@media (max-width: 680px) {
+  .crm-campaign-recipient-preview-header,
+  .crm-campaign-recipient-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .crm-campaign-recipient-search input {
+    min-inline-size: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .crm-campaign-overview {
+    grid-template-columns: 1fr;
+  }
+}

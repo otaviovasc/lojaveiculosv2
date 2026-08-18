@@ -11,13 +11,13 @@ const permissionCatalog = new Set([
 ]);
 
 describe("role management permission sanitization", () => {
-  it("migrates the retired connection permission and filters unknown keys", () => {
+  it("keeps canonical permissions and filters unknown keys", () => {
     expect(
       sanitizePermissionOverrides(
         [
           {
             allowed: true,
-            permission: "crm.whatsapp.connection.manage",
+            permission: "crm.messaging.connection.setup",
           },
           { allowed: true, permission: "permissions.from_an_old_catalog" },
           {
@@ -30,18 +30,17 @@ describe("role management permission sanitization", () => {
       ),
     ).toEqual([
       { allowed: false, permission: "crm.messaging.connection.setup" },
-      { allowed: true, permission: "crm.messaging.connection.pair" },
       { allowed: true, permission: "inventory.read" },
     ]);
   });
 
-  it("uses deny-wins semantics when the retired permission maps to replacements", () => {
+  it("uses deny-wins semantics for duplicate canonical permissions", () => {
     expect(
       sanitizePermissionOverrides(
         [
           {
             allowed: false,
-            permission: "crm.whatsapp.connection.manage",
+            permission: "crm.messaging.connection.setup",
           },
           { allowed: true, permission: "crm.messaging.connection.setup" },
           { allowed: true, permission: "crm.messaging.connection.pair" },
@@ -50,7 +49,7 @@ describe("role management permission sanitization", () => {
       ),
     ).toEqual([
       { allowed: false, permission: "crm.messaging.connection.setup" },
-      { allowed: false, permission: "crm.messaging.connection.pair" },
+      { allowed: true, permission: "crm.messaging.connection.pair" },
     ]);
   });
 
@@ -65,7 +64,7 @@ describe("role management permission sanitization", () => {
             overrides: [
               {
                 allowed: true,
-                permission: "crm.whatsapp.connection.manage",
+                permission: "crm.messaging.connection.setup",
               },
               { allowed: false, permission: "crm.messaging.connection.setup" },
               { allowed: true, permission: "permission.removed" },
@@ -81,7 +80,6 @@ describe("role management permission sanitization", () => {
         name: "Atendimento legado",
         overrides: [
           { allowed: false, permission: "crm.messaging.connection.setup" },
-          { allowed: true, permission: "crm.messaging.connection.pair" },
         ],
       },
     ]);

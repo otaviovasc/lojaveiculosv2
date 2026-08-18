@@ -1,8 +1,10 @@
 import {
   buildLeadCrmSessionIndex,
   buildLeadPhoneIndex,
+  canonicalRepassesMessagingChannel,
   mapRepassesSessionStatus,
   resolveLegacyLeadLink,
+  resolveCrmChannelConnectionId,
 } from "./crm-whatsapp-mapping.mjs";
 import { json, nullableString } from "./common.mjs";
 
@@ -54,7 +56,12 @@ export function conversationRows(
   const sessionStatus = mapRepassesSessionStatus(row);
   const createdAt = oldest(group.members, "created_at");
   const updatedAt = newest(group.members, "updated_at") ?? createdAt;
-  const providerConnectionId = ids.crmChannelConnections.get(row.connection_id);
+  const channel = canonicalRepassesMessagingChannel(row.channel);
+  const providerConnectionId = resolveCrmChannelConnectionId(
+    ids.crmChannelConnections,
+    row.connection_id,
+    channel,
+  );
   if (!providerConnectionId)
     throw new Error(
       `Missing WhatsApp connection mapping for Repasses session ${row.id}.`,
@@ -68,7 +75,7 @@ export function conversationRows(
     ids,
   );
   const thread = {
-    channel: "whatsapp",
+    channel,
     channel_metadata: tx.json({
       legacyRepasses: {
         originalChannel: row.original_channel ?? null,

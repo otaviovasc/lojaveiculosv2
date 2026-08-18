@@ -4,13 +4,9 @@ import type {
 } from "../../../../shared/serviceContext.js";
 import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
-import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
-import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
+import { createDisabledCrmMessagingGateway } from "../../acl/disabledCrmMessagingGateway.js";
+import type { CrmExternalBotIntegrationRepository } from "../../ports/crmExternalBotIntegrationRepository.js";
 import type { CrmAssigneeMembershipRepository } from "../../ports/crmAssigneeMembershipRepository.js";
-import {
-  createNoopCrmBotWebhookDispatcher,
-  type CrmBotWebhookDispatcher,
-} from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
 import type { CrmRoutingConnectionRepository } from "../../ports/crmRoutingConnectionRepository.js";
 import type { CrmRoutingPolicyRepository } from "../../ports/crmRoutingPolicyRepository.js";
@@ -24,10 +20,10 @@ import type { CrmRepository } from "../../ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
 import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
-import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
-import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
-import type { CrmWhatsappSessionCommandRepository } from "../../ports/crmWhatsappSessionCommandRepository.js";
-import type { CrmWhatsappOutboundIntentRepository } from "../../ports/crmWhatsappOutboundIntentRepository.js";
+import type { CrmMessagingGateway } from "../../ports/crmMessagingGateway.js";
+import type { CrmConversationRepository } from "../../ports/crmConversationRepository.js";
+import type { CrmConversationCycleCommandRepository } from "../../ports/crmConversationCycleCommandRepository.js";
+import type { CrmOutboundIntentRepository } from "../../ports/crmOutboundIntentRepository.js";
 import { CrmScopeError } from "../../crmScopeError.js";
 import type { CrmServicePorts } from "./types.js";
 export type { CrmServicePorts } from "./types.js";
@@ -51,13 +47,13 @@ export function isCrmOlxChatEnabled(ports: CrmServicePorts): boolean {
   return ports.crmProviderRuntime?.olxChatEnabled === true;
 }
 
-export function getCrmWhatsappOutboundIntentRepository(
+export function getCrmOutboundIntentRepository(
   ports: CrmServicePorts,
-): CrmWhatsappOutboundIntentRepository {
-  if (!ports.crmWhatsappOutboundIntentRepository) {
-    throw new Error("CRM WhatsApp outbound intent repository is unavailable.");
+): CrmOutboundIntentRepository {
+  if (!ports.crmOutboundIntentRepository) {
+    throw new Error("CRM outbound intent repository is unavailable.");
   }
-  return ports.crmWhatsappOutboundIntentRepository;
+  return ports.crmOutboundIntentRepository;
 }
 
 export function requireCrmScope(context: ServiceContext): {
@@ -69,7 +65,7 @@ export function requireCrmScope(context: ServiceContext): {
   return { storeId: context.storeId, tenantId: context.tenantId };
 }
 
-export function requireCrmWhatsappScope(context: ServiceContext): {
+export function requireCrmMessagingScope(context: ServiceContext): {
   storeId: string;
   tenantId: string;
 } {
@@ -98,19 +94,13 @@ export function getCrmOutcomeRepository(
   return ports.crmOutcomeRepository;
 }
 
-export function getCrmBotIntegrationRepository(
+export function getCrmExternalBotIntegrationRepository(
   ports: CrmServicePorts,
-): CrmBotIntegrationRepository {
-  if (!ports.crmBotIntegrationRepository) {
-    throw new CrmScopeError("crmBotIntegrationRepository");
+): CrmExternalBotIntegrationRepository {
+  if (!ports.crmExternalBotIntegrationRepository) {
+    throw new CrmScopeError("crmExternalBotIntegrationRepository");
   }
-  return ports.crmBotIntegrationRepository;
-}
-
-export function getCrmBotWebhookDispatcher(
-  ports: CrmServicePorts,
-): CrmBotWebhookDispatcher {
-  return ports.crmBotWebhookDispatcher ?? createNoopCrmBotWebhookDispatcher();
+  return ports.crmExternalBotIntegrationRepository;
 }
 
 export function getCrmVisitRepository(
@@ -137,7 +127,7 @@ export function getCrmRealtimePublisher(
   return ports.crmRealtimePublisher ?? createNoopCrmRealtimePublisher();
 }
 export function getCrmConnectionRepository(
-  ports: CrmServicePorts,
+  ports: Pick<CrmServicePorts, "crmConnectionRepository">,
 ): CrmConnectionRepository {
   if (!ports.crmConnectionRepository) {
     return {
@@ -161,7 +151,7 @@ export function getCrmConnectionRepository(
 }
 
 export function getCrmRoutingConnectionRepository(
-  ports: CrmServicePorts,
+  ports: Pick<CrmServicePorts, "crmRoutingConnectionRepository">,
 ): CrmRoutingConnectionRepository {
   if (!ports.crmRoutingConnectionRepository) {
     throw new CrmScopeError("crmRoutingConnectionRepository");
@@ -170,7 +160,7 @@ export function getCrmRoutingConnectionRepository(
 }
 
 export function getCrmRoutingPolicyRepository(
-  ports: CrmServicePorts,
+  ports: Pick<CrmServicePorts, "crmRoutingPolicyRepository">,
 ): CrmRoutingPolicyRepository {
   if (!ports.crmRoutingPolicyRepository) {
     throw new CrmScopeError("crmRoutingPolicyRepository");
@@ -178,34 +168,34 @@ export function getCrmRoutingPolicyRepository(
   return ports.crmRoutingPolicyRepository;
 }
 
-export function getCrmWhatsappGateway(
+export function getCrmMessagingGateway(
   ports: CrmServicePorts,
-): CrmWhatsappGateway {
-  return ports.crmWhatsappGateway ?? createDisabledCrmWhatsappGateway();
+): CrmMessagingGateway {
+  return ports.crmMessagingGateway ?? createDisabledCrmMessagingGateway();
 }
 
-export function getCrmWhatsappMediaStorage(
+export function getCrmMediaStorage(
   ports: CrmServicePorts,
 ): ObjectStorage | null {
-  return ports.crmWhatsappMediaStorage ?? null;
+  return ports.crmMediaStorage ?? null;
 }
 
-export function getCrmWhatsappRepository(
+export function getCrmConversationRepository(
   ports: CrmServicePorts,
-): CrmWhatsappRepository {
-  if (!ports.crmWhatsappRepository) {
-    throw new CrmScopeError("crmWhatsappRepository");
+): CrmConversationRepository {
+  if (!ports.crmConversationRepository) {
+    throw new CrmScopeError("crmConversationRepository");
   }
-  return ports.crmWhatsappRepository;
+  return ports.crmConversationRepository;
 }
 
-export function getCrmWhatsappSessionCommandRepository(
+export function getCrmConversationCycleCommandRepository(
   ports: CrmServicePorts,
-): CrmWhatsappSessionCommandRepository {
-  if (!ports.crmWhatsappSessionCommandRepository) {
-    throw new CrmScopeError("crmWhatsappSessionCommandRepository");
+): CrmConversationCycleCommandRepository {
+  if (!ports.crmConversationCycleCommandRepository) {
+    throw new CrmScopeError("crmConversationCycleCommandRepository");
   }
-  return ports.crmWhatsappSessionCommandRepository;
+  return ports.crmConversationCycleCommandRepository;
 }
 
 export function getCrmWebhookEventRepository(

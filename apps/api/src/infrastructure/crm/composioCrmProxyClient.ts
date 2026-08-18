@@ -1,9 +1,9 @@
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   readRecord,
   readString,
   type ComposioCrmCredentials,
-} from "./composioCrmWhatsappGatewaySupport.js";
+} from "./composioCrmMessagingGatewaySupport.js";
 
 const DEFAULT_MAX_RETRIES = 2;
 const BASE_DELAY_MS = 1_000;
@@ -116,7 +116,7 @@ export async function fetchComposio(
     const payload = parseJson(await response.text());
     return { payload, response };
   } catch {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       controller.signal.aborted
         ? "Composio request timed out"
         : "Composio request failed before receiving a response",
@@ -135,14 +135,14 @@ function assertSuccessfulProxyResponse(
 ) {
   if (result.status >= 200 && result.status < 300) return;
   if (result.status === 429) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       "Composio or Meta rate limit exhausted",
       429,
       retryAfterSeconds ?? 1,
     );
   }
 
-  throw new CrmWhatsappGatewayError(
+  throw new CrmMessagingGatewayError(
     `Composio proxy failed with HTTP ${result.status}`,
     502,
     undefined,

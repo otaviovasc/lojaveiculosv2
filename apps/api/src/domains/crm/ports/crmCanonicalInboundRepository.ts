@@ -27,7 +27,7 @@ export type CanonicalInboundMessageInput = {
   secondaryPhone: string | null;
   sender: "customer" | "system";
   senderOrigin: "customer" | "system";
-  sessionMetadata: Readonly<Record<string, unknown>>;
+  cycleMetadata: Readonly<Record<string, unknown>>;
   source: string | null;
   storeId: string;
   tenantId: string;
@@ -42,7 +42,7 @@ export type CanonicalInboundMessageResult = {
     | "human_claimed";
   contactId: string;
   created: boolean;
-  createdSession: boolean;
+  createdConversationCycle: boolean;
   cycleId: string;
   identityId: string;
   messageId: string;

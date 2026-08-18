@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 import {
   crmWebhookEffectOutbox,
   crmTags,
-  crmWhatsappCampaignRecipients,
-  crmWhatsappCampaigns,
-  crmWhatsappOutboundIntents,
-  crmWhatsappScheduledMessages,
+  crmCampaignRecipients,
+  crmCampaigns,
+  crmOutboundIntents,
+  crmScheduledMessages,
   providerEvents,
 } from "./index.js";
 
@@ -32,21 +32,28 @@ const connectionReferences = [
   {
     column: "connection_id",
     direct: true,
-    table: crmWhatsappScheduledMessages,
+    table: crmScheduledMessages,
   },
-  { column: "connection_id", direct: true, table: crmWhatsappOutboundIntents },
+  { column: "connection_id", direct: true, table: crmOutboundIntents },
   {
     column: "selected_connection_id",
     direct: true,
-    table: crmWhatsappCampaigns,
+    table: crmCampaigns,
   },
   {
     column: "connection_id",
     direct: true,
-    table: crmWhatsappCampaignRecipients,
+    table: crmCampaignRecipients,
   },
   { column: "connection_id", direct: true, table: crmTags },
 ] as const;
+
+const pre0059TableNames = new Map([
+  ["crm_campaign_recipients", "crm_whatsapp_campaign_recipients"],
+  ["crm_campaigns", "crm_whatsapp_campaigns"],
+  ["crm_outbound_intents", "crm_whatsapp_outbound_intents"],
+  ["crm_scheduled_messages", "crm_whatsapp_scheduled_messages"],
+]);
 
 const legacyConstraintNames = [
   "crm_tags_connection_id_crm_connections_id_fk",
@@ -167,7 +174,10 @@ describe("canonical CRM connection foreign keys", () => {
     expect(addedConstraints).toEqual(canonicalConstraintNames);
     expect(validatedConstraints).toEqual(canonicalConstraintNames);
     for (const { column, table } of connectionReferences) {
-      expect(migration).toContain(`('${getTableName(table)}', '${column}')`);
+      const currentTableName = getTableName(table);
+      const migrationTableName =
+        pre0059TableNames.get(currentTableName) ?? currentTableName;
+      expect(migration).toContain(`('${migrationTableName}', '${column}')`);
     }
     expect(migration).not.toMatch(
       /ADD CONSTRAINT[^;]+REFERENCES "public"\."crm_connections"/u,

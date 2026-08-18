@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import { sendZapiMedia } from "./zapiCrmWhatsappMediaActions.js";
 import type { ZapiCredentials } from "./zapiCrmWhatsappGatewaySupport.js";
 
@@ -59,7 +59,7 @@ describe("sendZapiMedia rate limit handling", () => {
       sleep,
     }).catch((caught: unknown) => caught);
 
-    expect(error).toBeInstanceOf(CrmWhatsappGatewayError);
+    expect(error).toBeInstanceOf(CrmMessagingGatewayError);
     expect(error).toMatchObject({
       retryAfterSeconds: 3,
       status: 429,
@@ -78,7 +78,7 @@ describe("sendZapiMedia rate limit handling", () => {
       sleep,
     }).catch((caught: unknown) => caught);
 
-    expect(error).toBeInstanceOf(CrmWhatsappGatewayError);
+    expect(error).toBeInstanceOf(CrmMessagingGatewayError);
     expect(error).toMatchObject({ status: 502 });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(sleep).not.toHaveBeenCalled();

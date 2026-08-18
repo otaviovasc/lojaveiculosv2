@@ -1,24 +1,24 @@
-import { ingestZapiWhatsappWebhook } from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
+import { ingestZapiWhatsappWebhook } from "../../../domains/crm/services/CrmWhatsappService/ingestZapiWhatsappWebhook.js";
 import {
   processZapiWhatsappChatPresenceWebhook,
   processZapiWhatsappConnectedWebhook,
   processZapiWhatsappDisconnectedWebhook,
-} from "../../../domains/crm/services/CrmWhatsapp/processZapiWhatsappConnectionWebhook.js";
+} from "../../../domains/crm/services/CrmWhatsappService/processZapiWhatsappConnectionWebhook.js";
 import {
   processZapiWhatsappDeliveryWebhook,
   processZapiWhatsappStatusWebhook,
-} from "../../../domains/crm/services/CrmWhatsapp/processZapiWhatsappMessageWebhook.js";
-import { processZapiWhatsappWebhookEvent } from "../../../domains/crm/services/CrmWhatsapp/processZapiWhatsappWebhookEvent.js";
+} from "../../../domains/crm/services/CrmWhatsappService/processZapiWhatsappMessageWebhook.js";
+import { processZapiWhatsappWebhookEvent } from "../../../domains/crm/services/CrmWhatsappService/processZapiWhatsappWebhookEvent.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
-import type { CrmWhatsappServices } from "./crmWhatsappServiceBindings.types.js";
-import { processMetaMessagingWebhook } from "../../../domains/crm/services/CrmMessaging/processMetaMessagingWebhook.js";
-import { authorizeZapiWebhook } from "../../../domains/crm/services/CrmWhatsapp/authorizeZapiWebhook.js";
-import { authorizeOlxChatWebhook } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
-import { ingestOlxChatWebhook } from "../../../domains/crm/services/CrmMessaging/ingestOlxChatWebhook.js";
-import { ingestOlxLeadWebhook } from "../../../domains/crm/services/CrmMessaging/ingestOlxLeadWebhook.js";
+import type { CrmMessagingServices } from "./crmMessagingServiceBindings.types.js";
+import { processMetaMessagingWebhook } from "../../../domains/crm/services/CrmMessagingService/processMetaMessagingWebhook.js";
+import { authorizeZapiWebhook } from "../../../domains/crm/services/CrmWhatsappService/authorizeZapiWebhook.js";
+import { authorizeOlxChatWebhook } from "../../../domains/crm/services/CrmMessagingService/authorizeOlxChatWebhook.js";
+import { ingestOlxChatWebhook } from "../../../domains/crm/services/CrmMessagingService/ingestOlxChatWebhook.js";
+import { ingestOlxLeadWebhook } from "../../../domains/crm/services/CrmMessagingService/ingestOlxLeadWebhook.js";
 
 type WebhookBindings = Pick<
-  CrmWhatsappServices,
+  CrmMessagingServices,
   | "ingestZapiWhatsappWebhook"
   | "ingestOlxChatWebhook"
   | "ingestOlxLeadWebhook"

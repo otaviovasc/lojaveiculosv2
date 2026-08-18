@@ -5,21 +5,21 @@ import type { parseZapiAdAttribution } from "./zapiAdAttribution.js";
 import type { mirrorZapiWhatsappMedia } from "./mirrorZapiWhatsappMedia.js";
 import type { ingestZapiProfilePhoto } from "./zapiProfilePhotoIngestion.js";
 import {
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
   runCrmTransaction,
 } from "../services/CrmService/serviceSupport.js";
-import { trackWhatsappCampaignReply } from "../services/CrmWhatsapp/whatsappCampaignReplyTracking.js";
-import { createWhatsappMessageActivity } from "./createWhatsappMessageActivity.js";
+import { trackCrmCampaignReply } from "../services/CrmMessagingService/crmCampaignReplyTracking.js";
+import { createCrmMessageActivity } from "../messaging/createCrmMessageActivity.js";
 import { resolveZapiWhatsappLead } from "./resolveZapiWhatsappLead.js";
-import { findOrCreateWhatsappLead } from "./whatsappLeadLinking.js";
+import { findOrCreateCrmMessagingLead } from "../messaging/leadLinking.js";
 import {
   applyZapiAdSessionTransition,
   unchangedZapiAdSession,
 } from "./zapiAdSessionTransition.js";
 import { persistZapiCanonicalInbound } from "./persistZapiCanonicalInbound.js";
-import { projectZapiCanonicalInbound } from "./persistZapiCanonicalProjection.js";
-import { interventionActorKind } from "./humanAttendanceTransition.js";
-import { transitionConfirmedHumanOutboundAttendance } from "./sendWhatsappOutboundAttendance.js";
+import { hydrateCanonicalInbound } from "../messaging/hydrateCanonicalInbound.js";
+import { interventionActorKind } from "../messaging/humanAttendanceTransition.js";
+import { transitionConfirmedHumanOutboundAttendance } from "../messaging/outboundAttendance.js";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 import type { ParsedZapiInboundMessage } from "./parseZapiInboundMessage.js";
 
@@ -39,7 +39,7 @@ export async function persistZapiWhatsappWebhook(
     input;
   const directHumanOutbound = isDirectHumanOutbound(parsed);
   const senderOrigin = directHumanOutbound
-    ? "human_whatsapp"
+    ? "human_channel"
     : parsed.fromMe
       ? "unknown"
       : "customer";
@@ -50,25 +50,27 @@ export async function persistZapiWhatsappWebhook(
       : "CUSTOMER";
   return runCrmTransaction(ports, async (transactionPorts) => {
     if (!parsed.fromMe) {
-      const existingSession = await getCrmWhatsappRepository(
+      const existingSession = await getCrmConversationRepository(
         transactionPorts,
-      ).findSessionByIdentity({
-        ...(parsed.chatLid ? { buyerChatLid: parsed.chatLid } : {}),
-        buyerPhone: parsed.phone,
+      ).findConversationCycleByIdentity({
+        ...(parsed.chatLid ? { customerChatId: parsed.chatLid } : {}),
+        customerPhone: parsed.phone,
         channel: "WHATSAPP",
         connectionId: connection.id,
         storeId: connection.storeId,
         tenantId: connection.tenantId,
       });
-      const lead = await findOrCreateWhatsappLead(transactionPorts, {
-        buyerName: parsed.buyerName ?? null,
+      const lead = await findOrCreateCrmMessagingLead(transactionPorts, {
+        buyerName: parsed.customerDisplayName ?? null,
         buyerPhone: parsed.phone,
+        channel: "WHATSAPP",
         connectionId: connection.id,
         direction: "INBOUND",
         externalId: parsed.externalId,
         ...(existingSession?.leadId
           ? { preferredLeadId: existingSession.leadId }
           : {}),
+        source: "whatsapp",
         storeId: connection.storeId,
         tenantId: connection.tenantId,
       });
@@ -80,13 +82,13 @@ export async function persistZapiWhatsappWebhook(
         message: parsed,
         profilePhoto,
       });
-      const result = await projectZapiCanonicalInbound(transactionPorts, {
+      const result = await hydrateCanonicalInbound(transactionPorts, {
         canonical,
         connection,
         message: parsed,
       });
       if (result.createdMessage) {
-        await createWhatsappMessageActivity(transactionPorts, {
+        await createCrmMessageActivity(transactionPorts, {
           connectionId: connection.id,
           content: parsed.content,
           direction: "inbound",
@@ -94,46 +96,49 @@ export async function persistZapiWhatsappWebhook(
           messageExternalId: parsed.externalId,
           occurredAt: parsed.providerTimestamp,
           provider: connection.provider,
-          sessionId: canonical.cycleId,
+          cycleId: canonical.cycleId,
           storeId: connection.storeId,
           tenantId: connection.tenantId,
         });
-        await trackWhatsappCampaignReply(
+        await trackCrmCampaignReply(
           context,
-          { message: result.message, session: result.session },
+          {
+            message: result.message,
+            conversationCycle: result.conversationCycle,
+          },
           transactionPorts,
         );
       }
       const transition =
         attribution && canonical.attendanceState !== "bot_active"
           ? await applyZapiAdSessionTransition(
-              getCrmWhatsappRepository(transactionPorts),
+              getCrmConversationRepository(transactionPorts),
               {
                 actorId: context.actor.id,
                 actorKind: "provider",
                 attribution,
                 detectedAt,
-                session: result.session,
+                conversationCycle: result.conversationCycle,
               },
             )
-          : unchangedZapiAdSession(result.session);
+          : unchangedZapiAdSession(result.conversationCycle);
       return {
-        result: { ...result, session: transition.session },
+        result: { ...result, conversationCycle: transition.conversationCycle },
         attendanceTransition: null,
         transition,
       };
     }
-    const repository = getCrmWhatsappRepository(transactionPorts);
+    const repository = getCrmConversationRepository(transactionPorts);
     const lead = await resolveZapiWhatsappLead(transactionPorts, {
       connection,
       message: parsed,
     });
     const result = await repository.ingestMessage({
-      ...(parsed.chatLid ? { buyerChatLid: parsed.chatLid } : {}),
-      ...((lead.buyerName ?? parsed.buyerName)
-        ? { buyerName: lead.buyerName ?? parsed.buyerName }
+      ...(parsed.chatLid ? { customerChatId: parsed.chatLid } : {}),
+      ...((lead.buyerName ?? parsed.customerDisplayName)
+        ? { customerDisplayName: lead.buyerName ?? parsed.customerDisplayName }
         : {}),
-      buyerPhone: parsed.phone,
+      customerPhone: parsed.phone,
       channel: "WHATSAPP",
       connectionId: connection.id,
       content: parsed.content,
@@ -160,7 +165,7 @@ export async function persistZapiWhatsappWebhook(
       type: parsed.type,
     });
     if (result.createdMessage) {
-      await createWhatsappMessageActivity(transactionPorts, {
+      await createCrmMessageActivity(transactionPorts, {
         connectionId: connection.id,
         content: parsed.content,
         direction: parsed.fromMe ? "outbound" : "inbound",
@@ -168,14 +173,17 @@ export async function persistZapiWhatsappWebhook(
         messageExternalId: parsed.externalId,
         occurredAt: parsed.providerTimestamp,
         provider: connection.provider,
-        sessionId: result.session.id,
+        cycleId: result.conversationCycle.id,
         storeId: connection.storeId,
         tenantId: connection.tenantId,
       });
       if (!parsed.fromMe) {
-        await trackWhatsappCampaignReply(
+        await trackCrmCampaignReply(
           context,
-          { message: result.message, session: result.session },
+          {
+            message: result.message,
+            conversationCycle: result.conversationCycle,
+          },
           transactionPorts,
         );
       }
@@ -187,28 +195,31 @@ export async function persistZapiWhatsappWebhook(
             actorKind: "provider",
             attribution,
             detectedAt,
-            session: result.session,
+            conversationCycle: result.conversationCycle,
           })
-        : unchangedZapiAdSession(result.session);
+        : unchangedZapiAdSession(result.conversationCycle);
     const attendanceTransition =
-      result.createdMessage && result.message.senderOrigin === "human_whatsapp"
+      result.createdMessage && result.message.senderOrigin === "human_channel"
         ? await transitionConfirmedHumanOutboundAttendance({
             actorId: context.actor.id,
             actorKind: interventionActorKind(context.actor.kind, "provider"),
-            interventionId: result.session.interventionId ?? randomUUID(),
+            interventionId:
+              result.conversationCycle.interventionId ?? randomUUID(),
             providerTimestamp: parsed.providerTimestamp,
-            reason: "human_whatsapp_message",
+            reason: "human_channel_message",
             repository,
             senderOrigin: result.message.senderOrigin,
             senderType: result.message.senderType,
             source: "seller_whatsapp",
-            session: result.session,
+            conversationCycle: result.conversationCycle,
           })
         : null;
     return {
       result: {
         ...result,
-        session: attendanceTransition?.session ?? transition.session,
+        conversationCycle:
+          attendanceTransition?.conversationCycle ??
+          transition.conversationCycle,
       },
       attendanceTransition,
       transition,

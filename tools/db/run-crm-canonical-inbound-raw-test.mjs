@@ -28,7 +28,9 @@ const fixtureIds = {
   lead: "32000000-0000-4000-8000-000000000058",
   leadOutcome: "33000000-0000-4000-8000-000000000058",
 };
-const expectedGuardedTables = [
+// Historical 0058 fixtures intentionally use the exact pre-cutover catalog.
+// Current-state assertions live in assert0059PostMigrationCatalog below.
+const historical0058GuardedTables = [
   "crm_connections",
   "crm_whatsapp_sessions",
   "crm_whatsapp_messages",
@@ -41,7 +43,7 @@ const expectedGuardedTables = [
   "crm_whatsapp_campaign_recipients",
   "crm_lead_outcomes",
 ];
-const droppedLegacyTables = [
+const historical0058DroppedTables = [
   "crm_whatsapp_intervention_ledger",
   "crm_whatsapp_session_command_receipts",
   "crm_whatsapp_session_tags",
@@ -49,7 +51,7 @@ const droppedLegacyTables = [
   "crm_whatsapp_sessions",
   "crm_connections",
 ];
-const droppedLegacyTypes = [
+const historical0058DroppedTypes = [
   "crm_whatsapp_session_command_result",
   "crm_whatsapp_human_attendance_state",
   "crm_whatsapp_session_status",
@@ -62,7 +64,7 @@ const droppedLegacyTypes = [
   "crm_connection_provider",
   "crm_connection_status",
 ];
-const droppedLegacyFunctions = [
+const historical0058DroppedFunctions = [
   "guard_crm_connection_provider_identity",
   "crm_whatsapp_session_transition_has_ledger",
   "crm_whatsapp_ledger_revision_not_future",
@@ -86,7 +88,7 @@ try {
   prepareDatabaseRoles();
   await applyMigrationsThrough0057();
   await seedScope(databaseUrl);
-  await verifyFailFastAndApply0058();
+  await verifyFailFastAndApplyCanonicalCutover();
   runCanonicalInboundTest(databaseUrl);
 } finally {
   stopDatabase();
@@ -183,7 +185,7 @@ async function applyMigrationsThrough0057() {
   }
 }
 
-async function verifyFailFastAndApply0058() {
+async function verifyFailFastAndApplyCanonicalCutover() {
   const migration = await readFile(
     new URL(
       "../../packages/db/migrations/0058_canonical_crm_operational_cutover.sql",
@@ -196,7 +198,7 @@ async function verifyFailFastAndApply0058() {
   const guardedTables = getGuardedTables(guardBlock);
   assertEqual(
     guardedTables,
-    expectedGuardedTables,
+    historical0058GuardedTables,
     "Migration 0058 guard table list",
   );
 
@@ -233,6 +235,28 @@ async function verifyFailFastAndApply0058() {
   `);
   runPsql(migration);
   assert0058PostMigrationCatalog();
+
+  const canonicalNamesMigration = await readFile(
+    new URL(
+      "../../packages/db/migrations/0059_canonical_crm_multichannel_names.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  runPsql(canonicalNamesMigration);
+  assert0059PostMigrationCatalog();
+
+  for (const migrationName of [
+    "0060_external_bot_security_completion.sql",
+    "0061_canonical_crm_dead_schema_cleanup.sql",
+    "0062_external_bot_action_registry_effects.sql",
+  ]) {
+    const followUpMigration = await readFile(
+      new URL(`../../packages/db/migrations/${migrationName}`, import.meta.url),
+      "utf8",
+    );
+    runPsql(followUpMigration);
+  }
 }
 
 function getGuardBlock(migration) {
@@ -462,7 +486,7 @@ function assertNo0058DdlLeakedAfterFailure() {
 }
 
 function assert0058PostMigrationCatalog() {
-  const tableChecks = droppedLegacyTables
+  const tableChecks = historical0058DroppedTables
     .map(
       (table) => `
       IF to_regclass('public.${table}') IS NOT NULL THEN
@@ -470,7 +494,7 @@ function assert0058PostMigrationCatalog() {
       END IF;`,
     )
     .join("\n");
-  const typeChecks = droppedLegacyTypes
+  const typeChecks = historical0058DroppedTypes
     .map(
       (type) => `
       IF to_regtype('public.${type}') IS NOT NULL THEN
@@ -478,7 +502,7 @@ function assert0058PostMigrationCatalog() {
       END IF;`,
     )
     .join("\n");
-  const functionChecks = droppedLegacyFunctions
+  const functionChecks = historical0058DroppedFunctions
     .map(
       (name) => `
       IF to_regprocedure('public.${name}()') IS NOT NULL THEN
@@ -676,6 +700,91 @@ function assert0058PostMigrationCatalog() {
       ${rewiredForeignKeys}
     END $$;
 
+  `);
+}
+
+function assert0059PostMigrationCatalog() {
+  runPsql(`
+    DO $$
+    DECLARE
+      current_table text;
+      legacy_table text;
+    BEGIN
+      FOREACH current_table IN ARRAY ARRAY[
+        'crm_channel_connections',
+        'crm_messages',
+        'crm_quick_messages',
+        'crm_outbound_intents',
+        'crm_scheduled_messages',
+        'crm_campaigns',
+        'crm_campaign_recipients',
+        'crm_external_bot_grants',
+        'crm_external_bot_action_commands',
+        'crm_external_bot_provider_effects'
+      ] LOOP
+        IF to_regclass('public.' || current_table) IS NULL THEN
+          RAISE EXCEPTION '0059 missing canonical table %', current_table;
+        END IF;
+      END LOOP;
+
+      FOREACH legacy_table IN ARRAY ARRAY[
+        'crm_whatsapp_quick_messages',
+        'crm_whatsapp_outbound_intents',
+        'crm_whatsapp_scheduled_messages',
+        'crm_whatsapp_campaigns',
+        'crm_whatsapp_campaign_recipients',
+        'bot_integration_grants',
+        'bot_action_commands',
+        'provider_effects'
+      ] LOOP
+        IF to_regclass('public.' || legacy_table) IS NOT NULL THEN
+          RAISE EXCEPTION '0059 left legacy table % present', legacy_table;
+        END IF;
+      END LOOP;
+
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'crm_scheduled_messages'
+          AND column_name = 'recipient_address'
+      ) OR NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'crm_scheduled_messages'
+          AND column_name = 'content'
+      ) OR EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'crm_scheduled_messages'
+          AND column_name IN ('phone', 'text')
+      ) THEN
+        RAISE EXCEPTION '0059 scheduled-message columns are not canonical';
+      END IF;
+
+      IF EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE connamespace = 'public'::regnamespace
+          AND conname ~ '^(crm_whatsapp_(quick_messages|outbound_intents|scheduled_messages|campaigns|campaign_recipients)|bot_integration_grants|bot_action_commands|provider_effects|canonical_messages|provider_connections)'
+      ) THEN
+        RAISE EXCEPTION '0059 left a legacy CRM constraint identifier';
+      END IF;
+
+      IF EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND indexname ~ '^(crm_whatsapp_(quick_messages|outbound_intents|scheduled_messages|campaigns|campaign_recipients)|bot_integration_grants|bot_action_commands|provider_effects|canonical_messages|provider_connections)'
+      ) THEN
+        RAISE EXCEPTION '0059 left a legacy CRM index identifier';
+      END IF;
+
+      IF EXISTS (
+        SELECT 1 FROM pg_proc
+        WHERE pronamespace = 'public'::regnamespace
+          AND pg_get_functiondef(oid) ~ '"(crm_whatsapp_(quick_messages|outbound_intents|scheduled_messages|campaigns|campaign_recipients)|bot_integration_grants|bot_action_commands|provider_effects|canonical_messages|provider_connections)"'
+      ) THEN
+        RAISE EXCEPTION '0059 left a legacy CRM name in a function body';
+      END IF;
+    END $$;
   `);
 }
 

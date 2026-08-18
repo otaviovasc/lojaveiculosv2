@@ -1,0 +1,171 @@
+.crm-visits-group {
+  display: grid;
+  gap: 1rem;
+}
+
+.crm-visits-board > .crm-visits-error {
+  margin: 0;
+}
+
+.crm-visits-group > header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.crm-visits-group > header > span {
+  background: var(--color-accent-strong);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 0.75rem;
+  width: 0.75rem;
+  box-shadow: 0 0 10px var(--color-accent);
+}
+
+.crm-visits-group h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.crm-visits-timeline {
+  display: grid;
+  gap: 1rem;
+  padding-left: 1.75rem;
+  position: relative;
+}
+
+.crm-visits-timeline::before {
+  background: color-mix(in srgb, var(--color-line) 80%, transparent);
+  bottom: 0.75rem;
+  content: "";
+  left: 0.4rem;
+  position: absolute;
+  top: 0.75rem;
+  width: 2px;
+  border-radius: 999px;
+}
+
+.crm-visit-row {
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  min-width: 0;
+  padding: 1.15rem;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.03);
+}
+
+.crm-visit-row:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  box-shadow: 0 6px 20px -4px
+    color-mix(in srgb, var(--color-accent) 10%, transparent);
+  transform: translateX(2px);
+}
+
+.crm-visit-marker {
+  background: var(--color-accent);
+  border-radius: 999px;
+  box-shadow: 0 0 0 0.25rem
+    color-mix(in srgb, var(--color-accent) 25%, transparent);
+  height: 0.85rem;
+  left: -1.75rem;
+  position: absolute;
+  top: 1.35rem;
+  width: 0.85rem;
+  transition: transform 0.2s ease;
+}
+
+.crm-visit-row:hover .crm-visit-marker {
+  transform: scale(1.25);
+}
+
+.crm-visit-row-main {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+}
+
+.crm-visit-row-copy,
+.crm-visit-actions {
+  min-width: 0;
+}
+
+.crm-visit-badges,
+.crm-visit-actions,
+.crm-visit-row-copy a {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.crm-visit-badges span {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  gap: 0.3rem;
+  min-height: 1.65rem;
+  padding: 0 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+.crm-visit-row-copy strong {
+  color: var(--color-text);
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  margin-top: 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.crm-visit-row-copy a {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  text-decoration: none;
+  margin-top: 0.35rem;
+  transition: opacity 0.2s ease;
+}
+
+.crm-visit-row-copy a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.crm-visit-row-copy p {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  line-height: 1.5;
+  margin: 0.6rem 0 0;
+  background: color-mix(in srgb, var(--color-panel) 60%, var(--color-app));
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--color-line) 40%, transparent);
+}
+
+.crm-visit-empty {
+  background: color-mix(in srgb, var(--color-app) 70%, var(--color-panel));
+  border: 1px dashed color-mix(in srgb, var(--color-line) 80%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+  padding: 2.5rem;
+  text-align: center;
+}
+
+@media (min-width: 860px) {
+  .crm-visit-row-main {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

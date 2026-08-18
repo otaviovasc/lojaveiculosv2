@@ -1,5 +1,5 @@
-import { and, eq, sql } from "drizzle-orm";
-import { providerConnections } from "@lojaveiculosv2/db";
+import { and, eq, or, sql } from "drizzle-orm";
+import { crmChannelConnections } from "@lojaveiculosv2/db";
 import { canonicalCrmConnectionMetadata } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
@@ -16,13 +16,13 @@ export async function upsertOlxConnection(
 ) {
   const [existing] = await db
     .select()
-    .from(providerConnections)
+    .from(crmChannelConnections)
     .where(
       and(
-        eq(providerConnections.storeId, input.storeId),
-        eq(providerConnections.tenantId, input.tenantId),
-        canonicalProviderConditions("olx_chat"),
-        sql`${providerConnections.state} <> 'archived'`,
+        eq(crmChannelConnections.storeId, input.storeId),
+        eq(crmChannelConnections.tenantId, input.tenantId),
+        olxConnectionConditions(),
+        sql`${crmChannelConnections.state} <> 'archived'`,
       ),
     )
     .limit(1);
@@ -45,11 +45,13 @@ export async function upsertOlxConnection(
         },
       },
       metadata: { ...current.metadata, ...(input.metadata ?? {}) },
-      provider: "olx_chat",
+      broker: current.broker,
+      channel: current.channel,
+      provider: current.provider,
       status: input.status ?? current.status,
     });
     const [updated] = await db
-      .update(providerConnections)
+      .update(crmChannelConnections)
       .set({
         displayName: values.displayName,
         metadata: values.metadata,
@@ -57,7 +59,7 @@ export async function upsertOlxConnection(
         updatedAt: new Date(),
         webhookUrl: values.webhookUrl,
       })
-      .where(eq(providerConnections.id, existing.id))
+      .where(eq(crmChannelConnections.id, existing.id))
       .returning();
     if (!updated) throw new Error("OLX CRM connection update returned no row.");
     return {
@@ -67,22 +69,24 @@ export async function upsertOlxConnection(
   }
   if (existing) {
     await db
-      .update(providerConnections)
+      .update(crmChannelConnections)
       .set({ state: "archived", updatedAt: new Date() })
       .where(
         and(
-          eq(providerConnections.id, existing.id),
-          eq(providerConnections.storeId, input.storeId),
-          eq(providerConnections.tenantId, input.tenantId),
+          eq(crmChannelConnections.id, existing.id),
+          eq(crmChannelConnections.storeId, input.storeId),
+          eq(crmChannelConnections.tenantId, input.tenantId),
         ),
       );
   }
   const [created] = await db
-    .insert(providerConnections)
+    .insert(crmChannelConnections)
     .values(
       toCanonicalConnectionValues({
         ...input,
-        provider: "olx_chat",
+        broker: "direct",
+        channel: "olx_chat",
+        provider: "olx",
         status: input.status ?? "error",
       }),
     )
@@ -101,20 +105,20 @@ export async function claimOlxWebhookSetup(
   >[0],
 ) {
   const [row] = await db
-    .update(providerConnections)
+    .update(crmChannelConnections)
     .set({
-      metadata: sql`${providerConnections.metadata} || jsonb_build_object('connected', false, 'webhookSetup', coalesce(${providerConnections.metadata}->'webhookSetup', '{}'::jsonb) || jsonb_build_object('attemptCount', coalesce((${providerConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1, 'lastErrorCode', null, 'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text, 'leaseOwner', ${input.leaseOwner}::text, 'status', 'configuring', 'updatedAt', ${input.now.toISOString()}::text))`,
+      metadata: sql`${crmChannelConnections.metadata} || jsonb_build_object('connected', false, 'webhookSetup', coalesce(${crmChannelConnections.metadata}->'webhookSetup', '{}'::jsonb) || jsonb_build_object('attemptCount', coalesce((${crmChannelConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1, 'lastErrorCode', null, 'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text, 'leaseOwner', ${input.leaseOwner}::text, 'status', 'configuring', 'updatedAt', ${input.now.toISOString()}::text))`,
       updatedAt: input.now,
     })
     .where(
       and(
-        eq(providerConnections.id, input.connectionId),
-        eq(providerConnections.storeId, input.storeId),
-        eq(providerConnections.tenantId, input.tenantId),
-        canonicalProviderConditions("olx_chat"),
-        sql`${providerConnections.state} <> 'archived'`,
-        sql`coalesce(${providerConnections.metadata}->'webhookSetup'->>'status', '') not in ('configured', 'indeterminate')`,
-        sql`(${providerConnections.metadata}->'webhookSetup'->>'leaseOwner' is null or ${providerConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null or (${providerConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz)`,
+        eq(crmChannelConnections.id, input.connectionId),
+        eq(crmChannelConnections.storeId, input.storeId),
+        eq(crmChannelConnections.tenantId, input.tenantId),
+        olxConnectionConditions(),
+        sql`${crmChannelConnections.state} <> 'archived'`,
+        sql`coalesce(${crmChannelConnections.metadata}->'webhookSetup'->>'status', '') not in ('configured', 'indeterminate')`,
+        sql`(${crmChannelConnections.metadata}->'webhookSetup'->>'leaseOwner' is null or ${crmChannelConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null or (${crmChannelConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz)`,
       ),
     )
     .returning();
@@ -132,14 +136,12 @@ export async function finishOlxWebhookSetup(
     ? ("active" as const)
     : ("error" as const);
   const projected = canonicalCrmConnectionMetadata({
-    metadata: { webhookSetup: setup },
-    provider: "olx_chat",
-    status,
+    metadata: input.metadata,
   });
   const [row] = await db
-    .update(providerConnections)
+    .update(crmChannelConnections)
     .set({
-      metadata: sql`${providerConnections.metadata} || ${JSON.stringify({
+      metadata: sql`${crmChannelConnections.metadata} || ${JSON.stringify({
         capabilities: projected.capabilities,
         connected: projected.connected,
         degraded: projected.degraded,
@@ -151,13 +153,28 @@ export async function finishOlxWebhookSetup(
     })
     .where(
       and(
-        eq(providerConnections.id, input.connectionId),
-        eq(providerConnections.storeId, input.storeId),
-        eq(providerConnections.tenantId, input.tenantId),
-        canonicalProviderConditions("olx_chat"),
-        sql`${providerConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
+        eq(crmChannelConnections.id, input.connectionId),
+        eq(crmChannelConnections.storeId, input.storeId),
+        eq(crmChannelConnections.tenantId, input.tenantId),
+        olxConnectionConditions(),
+        sql`${crmChannelConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
       ),
     )
     .returning();
   return row ? toCrmConnection(row) : null;
+}
+
+function olxConnectionConditions() {
+  return or(
+    canonicalProviderConditions({
+      broker: "direct",
+      channel: "olx_chat",
+      provider: "olx",
+    }),
+    canonicalProviderConditions({
+      broker: "composio",
+      channel: "olx_chat",
+      provider: "olx",
+    }),
+  );
 }

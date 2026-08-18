@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM canonical Instagram connection routes", () => {
   it("creates Instagram with its provider and authorizes Composio canonically", async () => {
@@ -8,10 +8,10 @@ describe("CRM canonical Instagram connection routes", () => {
     const createConnectLink = vi.fn(async () => ({
       connectedAccountId: "ca_instagram_test",
       expiresAt: "2026-08-18T18:00:00.000Z",
-      redirectUrl: "https://connect.composio.dev/session/instagram-test",
+      redirectUrl: "https://connect.composio.dev/cycle/instagram-test",
     }));
     const app = createTestApp({
-      composioWhatsappOnboardingProvider: {
+      composioChannelOnboardingProvider: {
         createConnectLink,
         discoverInstagramResources: vi.fn(),
         discoverWhatsappResources: vi.fn(),
@@ -23,7 +23,7 @@ describe("CRM canonical Instagram connection routes", () => {
     });
 
     const created = await app.request("/api/v1/crm/channel-connections", {
-      body: JSON.stringify({ provider: "composio_instagram" }),
+      body: JSON.stringify({ channel: "instagram", provider: "meta_cloud" }),
       headers: { "content-type": "application/json" },
       method: "POST",
     });
@@ -32,7 +32,7 @@ describe("CRM canonical Instagram connection routes", () => {
     const createdBody = asJsonObject(await created.json());
     expect(createdBody).toMatchObject({
       channel: "instagram",
-      displayName: "Instagram Oficial",
+      displayName: "Instagram",
       provider: "meta_cloud",
     });
     const connectionId = createdBody.id;
@@ -48,16 +48,18 @@ describe("CRM canonical Instagram connection routes", () => {
 
     expect(authorized.status).toBe(200);
     await expect(authorized.json()).resolves.toMatchObject({
-      redirectUrl: "https://connect.composio.dev/session/instagram-test",
+      redirectUrl: "https://connect.composio.dev/cycle/instagram-test",
     });
     expect(createConnectLink).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: "composio_instagram" }),
+      expect.objectContaining({ channel: "instagram" }),
     );
     await expect(
       repository.findConnectionById(connectionId),
     ).resolves.toMatchObject({
-      displayName: "Instagram Oficial",
-      provider: "composio_instagram",
+      displayName: "Instagram",
+      broker: "composio",
+      channel: "instagram",
+      provider: "meta_cloud",
     });
   });
 });

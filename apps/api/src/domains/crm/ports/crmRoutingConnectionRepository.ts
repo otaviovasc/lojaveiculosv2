@@ -6,10 +6,21 @@ import type {
 } from "../core/models.js";
 
 export type CrmRoutingConnectionCapability =
-  "inbound" | "outbound" | "scheduling" | "templates";
+  | "catalog"
+  | "conversation_start"
+  | "delete"
+  | "inbound"
+  | "media"
+  | "outbound"
+  | "reactions"
+  | "scheduling"
+  | "templates"
+  | "text";
 
 export type CrmRoutingConnection = {
-  capabilities: Readonly<Record<CrmRoutingConnectionCapability, boolean>>;
+  capabilities: Readonly<
+    Partial<Record<CrmRoutingConnectionCapability, boolean>>
+  >;
   channel: CrmChannel;
   connected: boolean;
   credentialBroker: CrmCredentialBroker;

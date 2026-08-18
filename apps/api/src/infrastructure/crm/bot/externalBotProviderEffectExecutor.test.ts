@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createNoopServiceLogger } from "../../../shared/serviceContext.js";
-import type { AuthorizedExternalBotEffect } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
-import { createExternalBotProviderEffectExecutor } from "./externalBotProviderEffectExecutor.js";
+import {
+  createExternalBotEffectExecutor as createExecutor,
+  externalBotConnectionFixture as fixtureConnection,
+  externalBotEffectFixture as fixture,
+  externalBotProviderResult as providerResult,
+  externalBotWorkerInput as workerInput,
+} from "./externalBotProviderEffectExecutor.testSupport.js";
 
 vi.mock("../../db/crm/drizzleExternalBotEffectRuntime.js", () => ({
   ExternalBotCanonicalSyncIndeterminateError: class extends Error {
@@ -9,23 +13,38 @@ vi.mock("../../db/crm/drizzleExternalBotEffectRuntime.js", () => ({
   },
   loadAuthorizedExternalBotEffect: vi.fn(),
   synchronizeExternalBotEffectOutcome: vi.fn(),
+  wasExternalBotProviderAttempted: vi.fn(),
 }));
 
+vi.mock(
+  "../../../domains/crm/services/CrmRoutingService/resolveCrmProviderOperation.js",
+  () => ({ resolveCrmProviderOperation: vi.fn() }),
+);
+
 import {
-  ExternalBotCanonicalSyncIndeterminateError,
   loadAuthorizedExternalBotEffect,
   synchronizeExternalBotEffectOutcome,
+  wasExternalBotProviderAttempted,
 } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
+import { resolveCrmProviderOperation } from "../../../domains/crm/services/CrmRoutingService/resolveCrmProviderOperation.js";
 
 describe("external bot provider effect executor", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(synchronizeExternalBotEffectOutcome).mockResolvedValue(undefined);
+    vi.mocked(wasExternalBotProviderAttempted).mockResolvedValue(false);
+    vi.mocked(resolveCrmProviderOperation).mockImplementation(async (input) =>
+      fixtureConnection({
+        id: input.connectionId ?? "connection-default",
+        storeId: input.scope.storeId as never,
+        tenantId: input.scope.tenantId as never,
+      }),
+    );
   });
 
   it("sends through the provider-bound canonical connection and synchronizes evidence", async () => {
     const effect = fixture({
-      action: "message.send",
+      action: "message.send_text",
       payload: { text: "Hello" },
     });
     vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
@@ -36,10 +55,24 @@ describe("external bot provider effect executor", () => {
       externalEffectId: "provider-message-1",
       kind: "succeeded",
     });
-    expect(sendText).toHaveBeenCalledWith(effect.connection, {
-      phone: "5511999999999",
-      text: "Hello",
+    expect(
+      vi.mocked(resolveCrmProviderOperation).mock.calls[0]?.[0],
+    ).toMatchObject({
+      channel: "whatsapp",
+      connectionId: "connection-1",
+      requiredCapabilities: ["outbound", "text"],
+      scope: { storeId: "store-1", tenantId: "tenant-1" },
     });
+    expect(sendText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayName: "Execution-time connection",
+        id: "connection-1",
+      }),
+      {
+        phone: "5511999999999",
+        text: "Hello",
+      },
+    );
     expect(synchronizeExternalBotEffectOutcome).toHaveBeenCalledWith(
       expect.anything(),
       {
@@ -54,7 +87,7 @@ describe("external bot provider effect executor", () => {
 
   it("reuses canonical provider evidence on idempotent replay", async () => {
     const effect = {
-      ...fixture({ action: "message.send", payload: { text: "Hello" } }),
+      ...fixture({ action: "message.send_text", payload: { text: "Hello" } }),
       providerOperation: {
         id: "provider-message-existing",
         occurredAt: new Date("2026-08-18T11:00:00.000Z"),
@@ -70,10 +103,83 @@ describe("external bot provider effect executor", () => {
       kind: "succeeded",
     });
     expect(sendText).not.toHaveBeenCalled();
+    expect(resolveCrmProviderOperation).not.toHaveBeenCalled();
     expect(synchronizeExternalBotEffectOutcome).toHaveBeenCalledWith(
       expect.anything(),
       { effect, providerOperation: effect.providerOperation },
     );
+  });
+
+  it("sends media with outbound and media capabilities", async () => {
+    const effect = fixture({
+      action: "message.send_media",
+      payload: {
+        caption: "Vehicle photo",
+        mediaType: "image",
+        mediaUrl: "https://cdn.example.com/vehicle.jpg",
+      },
+    });
+    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
+    const sendMedia = vi.fn().mockResolvedValue(providerResult);
+    const executor = createExecutor(vi.fn(), { sendMedia });
+
+    await expect(executor.execute(workerInput())).resolves.toMatchObject({
+      kind: "succeeded",
+    });
+    expect(resolveCrmProviderOperation).toHaveBeenCalledWith(
+      expect.objectContaining({ requiredCapabilities: ["outbound", "media"] }),
+    );
+    expect(sendMedia).toHaveBeenCalledWith(expect.anything(), {
+      caption: "Vehicle photo",
+      mediaType: "image",
+      mediaUrl: "https://cdn.example.com/vehicle.jpg",
+      phone: "5511999999999",
+    });
+    expect(
+      vi.mocked(synchronizeExternalBotEffectOutcome).mock.calls[0]?.[1],
+    ).toMatchObject({
+      effect,
+      providerOperation: {
+        id: providerResult.externalId,
+      },
+    });
+  });
+
+  it("sends templates with stable variable ordering and template capabilities", async () => {
+    const effect = fixture({
+      action: "message.send_template",
+      payload: {
+        language: "pt_BR",
+        templateName: "vehicle_follow_up",
+        variables: { second: "B", first: "A" },
+      },
+    });
+    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
+    const sendTemplate = vi.fn().mockResolvedValue(providerResult);
+    const executor = createExecutor(vi.fn(), { sendTemplate });
+
+    await expect(executor.execute(workerInput())).resolves.toMatchObject({
+      kind: "succeeded",
+    });
+    expect(resolveCrmProviderOperation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requiredCapabilities: ["outbound", "templates"],
+      }),
+    );
+    expect(sendTemplate).toHaveBeenCalledWith(expect.anything(), {
+      components: [
+        {
+          parameters: [
+            { text: "A", type: "text" },
+            { text: "B", type: "text" },
+          ],
+          type: "body",
+        },
+      ],
+      languageCode: "pt_BR",
+      name: "vehicle_follow_up",
+      phone: "5511999999999",
+    });
   });
 
   it("requests handoff only through canonical synchronization", async () => {
@@ -96,123 +202,4 @@ describe("external bot provider effect executor", () => {
       { effect },
     );
   });
-
-  it("fails closed when last-moment canonical authorization is unavailable", async () => {
-    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(null);
-
-    await expect(
-      createExecutor(vi.fn()).execute(workerInput()),
-    ).resolves.toEqual({
-      code: "authorization_revoked",
-      kind: "failed",
-      retryable: false,
-    });
-  });
-
-  it("keeps provider success indeterminate when canonical synchronization needs reconciliation", async () => {
-    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(
-      fixture({ action: "message.send", payload: { text: "Hello" } }),
-    );
-    vi.mocked(synchronizeExternalBotEffectOutcome).mockRejectedValue(
-      new ExternalBotCanonicalSyncIndeterminateError(),
-    );
-
-    await expect(
-      createExecutor(vi.fn().mockResolvedValue(providerResult)).execute(
-        workerInput(),
-      ),
-    ).resolves.toEqual({
-      code: "delivery_indeterminate",
-      kind: "indeterminate",
-    });
-  });
-
-  it("does not retry a deterministic provider rejection", async () => {
-    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(
-      fixture({ action: "message.send", payload: { text: "Hello" } }),
-    );
-    const sendText = vi.fn().mockRejectedValue(
-      Object.assign(new Error("rejected"), {
-        code: "provider_rejected",
-        status: 502,
-      }),
-    );
-
-    await expect(
-      createExecutor(sendText).execute(workerInput()),
-    ).resolves.toEqual({
-      code: "provider_rejected",
-      kind: "failed",
-      retryable: false,
-    });
-  });
 });
-
-function createExecutor(sendText: ReturnType<typeof vi.fn>) {
-  return createExternalBotProviderEffectExecutor({
-    db: {} as never,
-    gateway: { sendText } as never,
-    logger: createNoopServiceLogger(),
-  });
-}
-
-function fixture(
-  command: AuthorizedExternalBotEffect["command"],
-): AuthorizedExternalBotEffect {
-  return {
-    canonicalCycleId: "cycle-1",
-    command,
-    connection: {
-      canonical: {
-        broker: "direct",
-        capabilities: ["inbound", "outbound"],
-        channel: "whatsapp",
-        connected: true,
-        degraded: false,
-        errorCode: null,
-        provider: "zapi",
-        readiness: { ready: true, reason: null, reasonCode: "ready" },
-        state: "active",
-      },
-      credentialsRef: {},
-      displayName: "Canonical Z-API",
-      externalConnectionId: null,
-      externalInstanceId: null,
-      id: "connection-1",
-      metadata: {},
-      phone: null,
-      provider: "zapi",
-      status: "active",
-      storeId: "store-1" as never,
-      tenantId: "tenant-1" as never,
-      webhookUrl: null,
-    },
-    effectId: "effect-1",
-    expectedRevision: 4,
-    idempotencyKey: "idem-1",
-    integrationId: "integration-1",
-    modelVersion: "model-1",
-    provider: "zapi",
-    providerAddress: "5511999999999",
-    providerConnectionId: "connection-1",
-    requestDigest: "request-digest-1",
-    storeId: "store-1",
-    tenantId: "tenant-1",
-    threadId: "thread-1",
-  };
-}
-
-const providerResult = {
-  externalId: "provider-message-1",
-  providerTimestamp: new Date("2026-08-18T12:00:00.000Z"),
-};
-
-function workerInput() {
-  return {
-    effectId: "effect-1",
-    effectType: "message.send",
-    idempotencyKey: "idem-1",
-    provider: "zapi",
-    providerConnectionId: "connection-1",
-  };
-}

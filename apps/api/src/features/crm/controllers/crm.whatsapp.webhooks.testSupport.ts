@@ -3,11 +3,8 @@ import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBo
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createZapiWebhookSetupIntent } from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import {
-  createAuditSpy,
-  createTestApp,
-} from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createAuditSpy, createTestApp } from "./crm.controller.testSupport.js";
 
 export const storeId = "store_1" as StoreId;
 export const tenantId = "tenant_1" as TenantId;
@@ -22,10 +19,10 @@ export async function createWebhookTestApp(
   } = {},
 ) {
   const { audit, record } = createAuditSpy();
-  const whatsappRepository = createMemoryCrmWhatsappRepository();
+  const whatsappRepository = createMemoryCrmConversationRepository();
   await whatsappRepository.ingestMessage({
-    buyerName: "Ana",
-    buyerPhone: "5511999999999",
+    customerDisplayName: "Ana",
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
     connectionId,
     content: "Mensagem enviada",
@@ -46,7 +43,7 @@ export async function createWebhookTestApp(
     crmConnectionRepository:
       input.connectionRepository ??
       createMemoryCrmConnectionRepository([createZapiConnection()]),
-    crmWhatsappRepository: whatsappRepository,
+    crmConversationRepository: whatsappRepository,
     ...(input.resolveBotEntitlements
       ? { resolveBotEntitlements: input.resolveBotEntitlements }
       : {}),
@@ -54,16 +51,16 @@ export async function createWebhookTestApp(
   return { app, auditRecord: record, whatsappRepository };
 }
 
-export async function readSessionId(
-  whatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
+export async function readCycleId(
+  whatsappRepository: ReturnType<typeof createMemoryCrmConversationRepository>,
 ) {
-  const sessions = await whatsappRepository.listSessions({
+  const cycles = await whatsappRepository.listConversationCycles({
     limit: 1,
     offset: 0,
     storeId,
     tenantId,
   });
-  return sessions[0]?.id ?? null;
+  return cycles[0]?.id ?? null;
 }
 
 export function postWebhook(
@@ -88,6 +85,8 @@ export function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
   return {
+    broker: "direct",
+    channel: "whatsapp",
     credentialsRef: { stored: { webhookSecret: "sealed:webhook-secret" } },
     displayName: "ZAPI Test Connection",
     externalConnectionId: null,

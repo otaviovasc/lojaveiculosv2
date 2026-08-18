@@ -4,7 +4,6 @@ import type {
 } from "../../../../domains/crm/ports/crmConnectionRepository.js";
 import {
   canonicalCrmConnectionMetadata,
-  canonicalCrmConnectionIdentity,
   projectCanonicalCrmConnectionRow,
   toCanonicalRoutingConnection,
 } from "../../../../domains/crm/ports/crmChannelConnectionProjection.js";
@@ -42,6 +41,7 @@ export function createMemoryCrmConnectionRepository(
       const duplicate = connections.some(
         (connection) =>
           connection.storeId === input.storeId &&
+          connection.channel === input.channel &&
           connection.provider === input.provider &&
           connection.status !== "archived",
       );
@@ -49,6 +49,8 @@ export function createMemoryCrmConnectionRepository(
         throw new Error("CRM_CONNECTION_PROVIDER_ALREADY_EXISTS");
       }
       const connection: CrmConnection = {
+        broker: input.broker,
+        channel: input.channel,
         credentialsRef: input.credentialsRef ?? {},
         displayName: input.displayName,
         externalConnectionId: input.externalConnectionId ?? null,
@@ -68,7 +70,8 @@ export function createMemoryCrmConnectionRepository(
     async upsertOlxConnection(input) {
       const existing = connections.find(
         (item) =>
-          item.provider === "olx_chat" &&
+          item.channel === "olx_chat" &&
+          item.provider === "olx" &&
           item.storeId === input.storeId &&
           item.tenantId === input.tenantId &&
           item.status !== "archived",
@@ -97,6 +100,8 @@ export function createMemoryCrmConnectionRepository(
       }
       if (existing) existing.status = "archived";
       const connection: CrmConnection = {
+        broker: "direct",
+        channel: "olx_chat",
         credentialsRef: input.credentialsRef ?? {},
         displayName: input.displayName,
         externalConnectionId: input.externalConnectionId ?? null,
@@ -104,7 +109,7 @@ export function createMemoryCrmConnectionRepository(
         id: crypto.randomUUID(),
         metadata: input.metadata ?? {},
         phone: null,
-        provider: "olx_chat",
+        provider: "olx",
         status: input.status ?? "error",
         storeId: input.storeId,
         tenantId: input.tenantId,
@@ -122,7 +127,10 @@ export function createMemoryCrmConnectionRepository(
         connections.find(
           (connection) =>
             connection.externalConnectionId === input.externalConnectionId &&
-            input.providers.includes(connection.provider),
+            input.channels.includes(connection.channel) &&
+            input.providers.includes(connection.provider) &&
+            (!input.brokers?.length ||
+              input.brokers.includes(connection.broker)),
         ) ?? null
       );
     },
@@ -139,6 +147,15 @@ export function createMemoryCrmConnectionRepository(
           (connection) =>
             !input.providers?.length ||
             input.providers.includes(connection.provider),
+        )
+        .filter(
+          (connection) =>
+            !input.channels?.length ||
+            input.channels.includes(connection.channel),
+        )
+        .filter(
+          (connection) =>
+            !input.brokers?.length || input.brokers.includes(connection.broker),
         );
     },
     async updateConnection(input) {
@@ -183,21 +200,12 @@ export function createMemoryCrmConnectionRepository(
 function normalizeConnection(connection: CrmConnection) {
   connection.metadata = canonicalCrmConnectionMetadata({
     metadata: connection.metadata,
-    provider: connection.provider,
-    status: connection.status,
   });
-  const identity = connection.canonical
-    ? {
-        channel: connection.canonical.channel,
-        credentialBroker: connection.canonical.broker,
-        provider: connection.canonical.provider,
-      }
-    : canonicalCrmConnectionIdentity(connection.provider);
   connection.canonical = projectCanonicalCrmConnectionRow({
-    broker: identity.credentialBroker,
-    channel: identity.channel,
+    broker: connection.broker,
+    channel: connection.channel,
     metadata: connection.metadata,
-    provider: identity.provider,
+    provider: connection.provider,
     state: connection.status,
   });
   return connection;

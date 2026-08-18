@@ -1,8 +1,8 @@
 import {
-  createRuntimeCrmWhatsappProviderGateway,
+  createRuntimeCrmMessagingProviderGateway,
   isOlxChatRuntimeEnabled,
-} from "../crm/crmWhatsappProviderRouter.js";
-import { createNoopCrmBotWebhookDispatcher } from "../../domains/crm/ports/crmBotWebhookDispatcher.js";
+} from "../crm/crmMessagingProviderRouter.js";
+import type { ExternalBotManagerPorts } from "../../domains/crm/bot/ports/externalBotPorts.js";
 import { createSafeCrmRemoteMediaFetcher } from "../crm/safeCrmRemoteMediaFetcher.js";
 import {
   createCrmServices,
@@ -20,6 +20,7 @@ export function createRuntimeCrmServices(
   realtimePublisher?: CrmRealtimePublisher,
   objectStorage?: ObjectStorage | null,
   olxWebhookSecurity?: CrmOlxWebhookSecurity,
+  externalBotManager?: ExternalBotManagerPorts,
 ): CrmServices {
   const olxChatEnabled = isOlxChatRuntimeEnabled(env);
   return createCrmServices({
@@ -32,10 +33,10 @@ export function createRuntimeCrmServices(
       crmProviderRuntime: { olxChatEnabled },
       olxCrmCallbackOrigin: readOlxCrmCallbackOrigin(env),
       ...(realtimePublisher ? { crmRealtimePublisher: realtimePublisher } : {}),
-      ...(objectStorage ? { crmWhatsappMediaStorage: objectStorage } : {}),
-      crmBotWebhookDispatcher: createNoopCrmBotWebhookDispatcher(),
-      crmWhatsappMediaFetcher: createSafeCrmRemoteMediaFetcher(),
-      crmWhatsappGateway: createRuntimeCrmWhatsappProviderGateway(env),
+      ...(objectStorage ? { crmMediaStorage: objectStorage } : {}),
+      ...(externalBotManager ? { externalBotManager } : {}),
+      crmMediaFetcher: createSafeCrmRemoteMediaFetcher(),
+      crmMessagingGateway: createRuntimeCrmMessagingProviderGateway(env),
     },
   });
 }

@@ -9,7 +9,7 @@ export function createCrmWebhookContextFactory(audit?: AuditSink) {
       context,
       {
         ...actor,
-        permissions: ["crm.whatsapp.ingest"],
+        permissions: ["crm.messages.ingest", "crm.conversations.manage"],
       },
       { ...(audit ? { audit } : {}) },
     );

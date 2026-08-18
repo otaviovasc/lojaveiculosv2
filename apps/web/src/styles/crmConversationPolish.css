@@ -1,0 +1,311 @@
+.crm-page,
+.crm-shell,
+.crm-list {
+  background: var(--color-panel);
+}
+
+.crm-page {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.crm-shell {
+  grid-template-columns: minmax(20rem, 24rem) minmax(27rem, 1fr);
+  max-width: 100%;
+}
+
+.crm-shell[data-details-open="true"] {
+  grid-template-columns:
+    minmax(20rem, 24rem)
+    minmax(27rem, 1fr)
+    minmax(17rem, 20rem);
+}
+
+.crm-list {
+  height: 100%;
+}
+
+.crm-toolbar {
+  max-height: none;
+  overflow: visible;
+}
+
+.crm-queue-controls,
+.crm-filter-row {
+  scrollbar-color: var(--color-line) transparent;
+}
+
+.crm-session-heading {
+  align-items: baseline;
+  display: flex;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.crm-session-heading strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.crm-session-time {
+  color: var(--color-muted);
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 450;
+}
+
+.crm-session-tags {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.crm-chat-header {
+  align-items: center;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: space-between;
+  max-width: 100%;
+  min-height: 3.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.crm-chat-header-main,
+.crm-chat-identity {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.crm-chat-header-main {
+  flex: 1;
+  gap: 0.5rem;
+}
+
+.crm-chat-identity {
+  flex: 1;
+  gap: 0.625rem;
+}
+
+.crm-chat-title {
+  align-items: center;
+  display: flex;
+  flex: 0 1 auto;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.crm-chat-title .crm-avatar-lg {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.crm-chat-title h3 {
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+.crm-chat-title p {
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  max-width: 22rem;
+}
+
+.crm-chat-channel-pill {
+  align-items: center;
+  border-left: 2px solid var(--color-success-strong);
+  color: var(--color-success-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  padding: 0 0.5rem;
+}
+
+.crm-header-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.crm-header-actions .crm-icon-action,
+.crm-header-actions .crm-action {
+  border-radius: var(--radius-xs);
+}
+
+.crm-header-actions .crm-action {
+  flex: 0 0 auto;
+  min-height: 2.375rem;
+  padding-inline: 0.625rem;
+}
+
+.crm-header-actions .custom-select {
+  min-width: 9.5rem;
+}
+
+.crm-header-actions > .crm-action:last-child,
+.crm-send-action:not(.crm-audio-action) {
+  background: var(--color-green-start);
+  border-color: var(--color-green-start);
+  color: var(--color-inverse);
+}
+
+.crm-mobile-back {
+  display: none;
+  flex: 0 0 auto;
+}
+
+.crm-messages {
+  background: color-mix(in srgb, var(--color-app) 94%, var(--color-panel));
+  isolation: isolate;
+  padding: 1rem clamp(0.75rem, 2vw, 1.75rem);
+  position: relative;
+}
+
+.crm-messages::before {
+  background-image: url("/images/crm-chat-wallpaper.jpg");
+  background-position: center;
+  background-repeat: repeat;
+  background-size: 32rem 32rem;
+  content: "";
+  inset: 0;
+  opacity: 0.12;
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+}
+
+:root[data-theme="dark"] .crm-messages::before {
+  filter: invert(1);
+  opacity: 0.035;
+}
+
+.crm-message-day {
+  align-self: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xs);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  position: sticky;
+  top: 0.5rem;
+  z-index: 2;
+}
+
+.crm-bubble {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  max-width: min(38rem, 82%);
+}
+
+.crm-bubble-out {
+  background: color-mix(
+    in srgb,
+    var(--color-green-start) 12%,
+    var(--color-panel)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 26%,
+    var(--color-line)
+  );
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .crm-bubble,
+:root[data-theme="dark"] .crm-bubble-out {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .crm-bubble-out {
+  background: color-mix(
+    in srgb,
+    var(--color-green-start) 18%,
+    var(--color-panel)
+  );
+}
+
+.crm-bubble-out strong,
+.crm-bubble-out footer,
+.crm-bubble-out .crm-rich-card strong,
+.crm-bubble-out .crm-rich-card small,
+.crm-bubble-out .crm-attachment strong,
+.crm-bubble-out .crm-attachment small {
+  color: var(--color-text);
+}
+
+/* Context remains a structural pane, not a floating inspector card. */
+.crm-details-panel {
+  background: var(--color-panel);
+  box-shadow: none;
+}
+
+.crm-details-row,
+.crm-details-lead,
+.crm-details-empty,
+.crm-ad-attribution {
+  background: transparent;
+  border-left: 2px solid var(--color-line);
+  border-radius: 0;
+}
+
+@media (max-width: 1180px) and (min-width: 861px) {
+  .crm-shell {
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr);
+  }
+
+  .crm-shell[data-details-open="true"] {
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr) minmax(
+        15rem,
+        17rem
+      );
+  }
+}
+
+@media (max-width: 860px) {
+  .crm-shell {
+    display: block;
+    height: 100%;
+  }
+
+  .crm-mobile-back {
+    display: inline-flex;
+  }
+
+  .crm-chat-header {
+    gap: 0.375rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .crm-chat-title {
+    max-width: calc(100vw - 4rem);
+  }
+
+  .crm-header-actions {
+    justify-content: flex-start;
+  }
+
+  .crm-messages {
+    padding: 0.75rem 0.625rem;
+  }
+
+  .crm-bubble {
+    max-width: 88%;
+  }
+}

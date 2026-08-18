@@ -3,17 +3,17 @@ import { MessageSquare, Send } from "lucide-react";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { useOptionalAccountSession } from "../account/accountSession";
-import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import { createRuntimeCrmWhatsappApi } from "./runtimeApi";
-import { findFreeTextStartConnection } from "./crmWhatsappConnectionSelection";
-import { readCrmWhatsappCapabilities } from "./crmWhatsappPermissions";
-import { MessageList } from "./CrmWhatsappMessageParts";
+import type { CrmConversationApi } from "./crmConversationApi";
+import { createRuntimeCrmConversationApi } from "./runtimeApi";
+import { findDefaultFreeTextStartConnection } from "./crmConnectionSelection";
+import { readCrmCapabilities } from "./crmPermissions";
+import { MessageList } from "./CrmMessageParts";
 import { formatLeadName } from "./crmPipelineModels";
 import type {
-  CrmWhatsappProviderConnection,
-  CrmWhatsappSession,
-} from "./crmWhatsappTypes";
-import type { WhatsappMessageView } from "./crmWhatsappModel";
+  CrmProviderConnection,
+  CrmConversationCycle,
+} from "./crmConversationTypes";
+import type { CrmMessageView } from "./crmConversationModel";
 import type { ProductCrmLead } from "./productCrmTypes";
 
 const MESSAGE_PAGE_SIZE = 50;
@@ -30,20 +30,18 @@ export function CrmLeadChatModal({
   onClose,
   onConversationStarted,
 }: Props) {
-  const whatsappApi = useMemo<CrmWhatsappApi>(
-    () => createRuntimeCrmWhatsappApi(),
+  const conversationApi = useMemo<CrmConversationApi>(
+    () => createRuntimeCrmConversationApi(),
     [],
   );
   const accountSession = useOptionalAccountSession();
   const permissions = useMemo(
-    () => readCrmWhatsappCapabilities(accountSession),
+    () => readCrmCapabilities(accountSession),
     [accountSession],
   );
-  const [connections, setConnections] = useState<
-    CrmWhatsappProviderConnection[]
-  >([]);
-  const [session, setSession] = useState<CrmWhatsappSession | null>(null);
-  const [messages, setMessages] = useState<WhatsappMessageView[]>([]);
+  const [connections, setConnections] = useState<CrmProviderConnection[]>([]);
+  const [cycle, setSession] = useState<CrmConversationCycle | null>(null);
+  const [messages, setMessages] = useState<CrmMessageView[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +49,7 @@ export function CrmLeadChatModal({
   const [isSending, setIsSending] = useState(false);
 
   const startConnection = useMemo(
-    () => findFreeTextStartConnection(connections),
+    () => findDefaultFreeTextStartConnection(connections),
     [connections],
   );
 
@@ -64,12 +62,12 @@ export function CrmLeadChatModal({
     setIsLoading(true);
     setError(null);
     void Promise.all([
-      whatsappApi.listSessions({ leadId: lead.id, limit: 5 }),
-      whatsappApi.listConnections(),
+      conversationApi.listConversationCycles({ leadId: lead.id, limit: 5 }),
+      conversationApi.listConnections(),
     ])
-      .then(([sessions, nextConnections]) => {
+      .then(([conversationCycles, nextConnections]) => {
         if (!active) return;
-        setSession(sessions[0] ?? null);
+        setSession(conversationCycles[0] ?? null);
         setConnections(nextConnections.connections);
       })
       .catch((caught) => {
@@ -84,19 +82,19 @@ export function CrmLeadChatModal({
     return () => {
       active = false;
     };
-  }, [lead.id, permissions.canList, whatsappApi]);
+  }, [lead.id, permissions.canList, conversationApi]);
 
   const loadMessages = useCallback(async () => {
-    if (!session) return;
-    const nextMessages = await whatsappApi.listMessages(session.id, {
+    if (!cycle) return;
+    const nextMessages = await conversationApi.listMessages(cycle.id, {
       limit: MESSAGE_PAGE_SIZE,
       offset: 0,
     });
     setMessages(nextMessages);
-  }, [session, whatsappApi]);
+  }, [cycle, conversationApi]);
 
   useEffect(() => {
-    if (!session || !permissions.canList) return;
+    if (!cycle || !permissions.canList) return;
     let active = true;
     setIsLoadingMessages(true);
     setMessages([]);
@@ -121,7 +119,7 @@ export function CrmLeadChatModal({
       active = false;
       window.clearInterval(interval);
     };
-  }, [session, permissions.canList, loadMessages]);
+  }, [cycle, permissions.canList, loadMessages]);
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -129,21 +127,21 @@ export function CrmLeadChatModal({
     setIsSending(true);
     setError(null);
     try {
-      if (session) {
-        const sent = await whatsappApi.sendText({
+      if (cycle) {
+        const sent = await conversationApi.sendText({
           idempotencyKey: crypto.randomUUID(),
-          sessionId: String(session.id),
+          cycleId: String(cycle.id),
           text,
         });
         setMessages((current) => [...current, sent]);
       } else {
         if (!startConnection) return;
-        const result = await whatsappApi.startConversation({
+        const result = await conversationApi.startConversation({
           connectionId: startConnection.id,
           leadId: lead.id,
           text,
         });
-        setSession(result.session);
+        setSession(result.cycle);
         onConversationStarted?.(lead);
       }
       setDraft("");
@@ -151,7 +149,7 @@ export function CrmLeadChatModal({
       setError(
         formatApiErrorDisplay(
           caught,
-          session
+          cycle
             ? "Não foi possível enviar a mensagem."
             : "Não foi possível iniciar a conversa.",
         ),
@@ -165,14 +163,14 @@ export function CrmLeadChatModal({
     Boolean(draft.trim()) &&
     !isSending &&
     permissions.canSend &&
-    (session !== null || startConnection !== undefined);
+    (cycle !== null || startConnection !== undefined);
 
   return (
     <FeatureDialog
       className="feature-dialog--large max-w-4xl crm-lead-chat-dialog"
       description={
-        session
-          ? `${session.buyerPhone || lead.buyerPhone || "Sem telefone"} · ${session.status}`
+        cycle
+          ? `${cycle.customerPhone || lead.buyerPhone || "Sem telefone"} · ${cycle.status}`
           : "Nenhuma conversa vinculada a este lead ainda."
       }
       icon={<MessageSquare aria-hidden="true" />}
@@ -180,21 +178,21 @@ export function CrmLeadChatModal({
       onClose={onClose}
       title={`Chat · ${formatLeadName(lead)}`}
     >
-      <div className="crm-whatsapp-shell crm-lead-chat-shell">
+      <div className="crm-shell crm-lead-chat-shell">
         {!permissions.canList ? (
-          <div className="crm-whatsapp-empty">
+          <div className="crm-empty">
             Seu usuário não tem permissão para visualizar conversas.
           </div>
         ) : isLoading ? (
-          <div className="crm-whatsapp-empty">Carregando conversa...</div>
-        ) : session ? (
+          <div className="crm-empty">Carregando conversa...</div>
+        ) : cycle ? (
           <MessageList
             actionsDisabled={isSending}
             isLoading={isLoadingMessages}
             messages={messages}
           />
         ) : (
-          <div className="crm-whatsapp-empty">
+          <div className="crm-empty">
             Nenhuma conversa vinculada. Envie a primeira mensagem para iniciar o
             atendimento com este lead.
           </div>
@@ -206,13 +204,13 @@ export function CrmLeadChatModal({
           </p>
         ) : null}
 
-        {!session && !isLoading && permissions.canList && !startConnection ? (
+        {!cycle && !isLoading && permissions.canList && !startConnection ? (
           <p className="text-xs font-bold text-muted">
             Nenhuma conexão de WhatsApp disponível para iniciar a conversa.
           </p>
         ) : null}
 
-        {permissions.canList && (session || !isLoading) ? (
+        {permissions.canList && (cycle || !isLoading) ? (
           <form
             className="crm-lead-chat-composer"
             onSubmit={(event) => {
@@ -232,21 +230,21 @@ export function CrmLeadChatModal({
                 }
               }}
               placeholder={
-                session
+                cycle
                   ? "Escreva uma mensagem"
                   : "Mensagem inicial para iniciar a conversa"
               }
               value={draft}
             />
             <button
-              aria-label={session ? "Enviar mensagem" : "Iniciar conversa"}
+              aria-label={cycle ? "Enviar mensagem" : "Iniciar conversa"}
               className="crm-action crm-action-primary self-end"
               disabled={!canSubmit}
-              title={session ? "Enviar mensagem" : "Iniciar conversa"}
+              title={cycle ? "Enviar mensagem" : "Iniciar conversa"}
               type="submit"
             >
               <Send aria-hidden="true" className="size-4" />
-              {isSending ? "Enviando" : session ? "Enviar" : "Iniciar conversa"}
+              {isSending ? "Enviando" : cycle ? "Enviar" : "Iniciar conversa"}
             </button>
           </form>
         ) : null}

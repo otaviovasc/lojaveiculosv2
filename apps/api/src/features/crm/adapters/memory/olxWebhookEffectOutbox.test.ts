@@ -18,7 +18,7 @@ describe("OLX webhook durable effects", () => {
       environment: "test",
       eventType: "crm.messaging.olx.received",
       payload: {},
-      provider: "olx_chat",
+      provider: "olx",
       providerEventId: "olx:event-1",
       storeId: "store-1" as never,
       tenantId: "tenant-1" as never,
@@ -31,7 +31,7 @@ describe("OLX webhook durable effects", () => {
       ],
       messageId: "message-1",
       providerEventId: event.event.id,
-      sessionId: "session-1",
+      cycleId: "cycle-1",
       storeId: "store-1" as never,
       tenantId: "tenant-1" as never,
     });
@@ -72,7 +72,7 @@ describe("OLX webhook durable effects", () => {
     const audit = { record: vi.fn(async () => Promise.reject(auditFailure)) };
     const context = createServiceContext({
       audit,
-      permissions: ["crm.whatsapp.ingest"],
+      permissions: ["crm.messages.ingest"],
       request: { requestId: "olx-audit-test" },
     });
 
@@ -88,7 +88,7 @@ describe("OLX webhook durable effects", () => {
           } as never,
           message: {} as never,
           providerEventReference: "olx:event-1",
-          session: {} as never,
+          conversationCycle: {} as never,
         },
         { crmRepository: {} as never },
       ),

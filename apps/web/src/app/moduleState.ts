@@ -80,7 +80,7 @@ export function useModuleState() {
 
 function moduleHash(moduleId: ModuleId) {
   if (moduleId === "customers") return crmSurfaceHash("leads");
-  if (moduleId === "crm") return crmSurfaceHash("whatsapp");
+  if (moduleId === "crm") return crmSurfaceHash("conversations");
   if (moduleId === "public-site") return "/customize";
   return `/${moduleId}`;
 }

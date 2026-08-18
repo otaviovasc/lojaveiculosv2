@@ -1,57 +1,57 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { CrmWhatsappApi } from "./crmWhatsappApi";
+import type { CrmConversationApi } from "./crmConversationApi";
 import {
   createOptimisticStructuredMessage,
-  type WhatsappMessageView,
-} from "./crmWhatsappModel";
-import { createOptimisticQuickMessage } from "./crmWhatsappQuickMessageOptimistic";
-import { sendOptimisticStructuredMessage } from "./crmWhatsappStructuredSender";
+  type CrmMessageView,
+} from "./crmConversationModel";
+import { createOptimisticQuickMessage } from "./crmQuickMessageOptimistic";
+import { sendOptimisticStructuredMessage } from "./crmStructuredSender";
 import type {
   CrmWhatsappCatalogProductsPage,
   CrmWhatsappListCatalogProductsInput,
-  CrmWhatsappMessage,
-  CrmWhatsappQuickMessage,
+  CrmMessage,
+  CrmQuickMessage,
   CrmWhatsappSendCatalogInput,
   CrmWhatsappSendCatalogProductInput,
   CrmWhatsappSendLocationInput,
   CrmWhatsappSendVehicleInput,
-  CrmWhatsappSession,
-  CrmWhatsappSessionId,
-} from "./crmWhatsappTypes";
+  CrmConversationCycle,
+  CrmConversationCycleId,
+} from "./crmConversationTypes";
 
 type StructuredOptions = {
-  activeSession: CrmWhatsappSession | null;
-  activeSessionId: CrmWhatsappSessionId | null;
-  api: CrmWhatsappApi;
+  activeSession: CrmConversationCycle | null;
+  activeCycleId: CrmConversationCycleId | null;
+  api: CrmConversationApi;
   canLoadMessages: boolean;
   canSendMessages: boolean;
-  mergeSessions: (nextSessions: CrmWhatsappSession[]) => void;
+  mergeCycles: (nextSessions: CrmConversationCycle[]) => void;
   setError: (error: Error) => void;
   setIsSending: Dispatch<SetStateAction<boolean>>;
-  setMessages: Dispatch<SetStateAction<WhatsappMessageView[]>>;
+  setMessages: Dispatch<SetStateAction<CrmMessageView[]>>;
 };
 
 export function useCrmWhatsappStructuredMessages({
   activeSession,
-  activeSessionId,
+  activeCycleId,
   api,
   canLoadMessages,
   canSendMessages,
-  mergeSessions,
+  mergeCycles,
   setError,
   setIsSending,
   setMessages,
 }: StructuredOptions) {
   const canSendStructured = Boolean(
-    activeSessionId && activeSession && canLoadMessages && canSendMessages,
+    activeCycleId && activeSession && canLoadMessages && canSendMessages,
   );
   const sendStructuredMessage = (input: {
-    optimistic: WhatsappMessageView;
-    request: (idempotencyKey: string) => Promise<CrmWhatsappMessage>;
+    optimistic: CrmMessageView;
+    request: (idempotencyKey: string) => Promise<CrmMessage>;
   }) =>
     sendOptimisticStructuredMessage({
       activeSession: activeSession!,
-      mergeSessions,
+      mergeCycles,
       optimistic: input.optimistic,
       request: input.request,
       setError,
@@ -60,7 +60,7 @@ export function useCrmWhatsappStructuredMessages({
     });
 
   const sendLocation = async (
-    input: Omit<CrmWhatsappSendLocationInput, "sessionId">,
+    input: Omit<CrmWhatsappSendLocationInput, "cycleId">,
   ) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
@@ -68,7 +68,7 @@ export function useCrmWhatsappStructuredMessages({
         api.sendLocation({
           ...input,
           idempotencyKey,
-          sessionId: String(activeSessionId),
+          cycleId: String(activeCycleId),
         }),
       optimistic: createOptimisticStructuredMessage({
         content: input.name ?? "Localizacao",
@@ -87,7 +87,7 @@ export function useCrmWhatsappStructuredMessages({
   };
 
   const sendCatalog = async (
-    input: Omit<CrmWhatsappSendCatalogInput, "sessionId">,
+    input: Omit<CrmWhatsappSendCatalogInput, "cycleId">,
   ) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
@@ -95,7 +95,7 @@ export function useCrmWhatsappStructuredMessages({
         api.sendCatalog({
           ...input,
           idempotencyKey,
-          sessionId: String(activeSessionId),
+          cycleId: String(activeCycleId),
         }),
       optimistic: createOptimisticStructuredMessage({
         content: input.title ?? "Catalogo",
@@ -112,17 +112,17 @@ export function useCrmWhatsappStructuredMessages({
   };
 
   const listCatalogProducts = async (
-    input: Omit<CrmWhatsappListCatalogProductsInput, "sessionId"> = {},
+    input: Omit<CrmWhatsappListCatalogProductsInput, "cycleId"> = {},
   ): Promise<CrmWhatsappCatalogProductsPage | null> => {
     if (!canSendStructured) return null;
     return api.listCatalogProducts({
       ...input,
-      sessionId: String(activeSessionId),
+      cycleId: String(activeCycleId),
     });
   };
 
   const sendCatalogProduct = async (
-    input: Omit<CrmWhatsappSendCatalogProductInput, "sessionId">,
+    input: Omit<CrmWhatsappSendCatalogProductInput, "cycleId">,
   ) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
@@ -130,7 +130,7 @@ export function useCrmWhatsappStructuredMessages({
         api.sendCatalogProduct({
           ...input,
           idempotencyKey,
-          sessionId: String(activeSessionId),
+          cycleId: String(activeCycleId),
         }),
       optimistic: createOptimisticStructuredMessage({
         content: input.productName ?? "Produto do catalogo",
@@ -147,7 +147,7 @@ export function useCrmWhatsappStructuredMessages({
   };
 
   const sendVehicle = async (
-    input: Omit<CrmWhatsappSendVehicleInput, "sessionId">,
+    input: Omit<CrmWhatsappSendVehicleInput, "cycleId">,
   ) => {
     if (!canSendStructured) return false;
     const title = input.title ?? "Veiculo";
@@ -156,7 +156,7 @@ export function useCrmWhatsappStructuredMessages({
         api.sendVehicle({
           ...input,
           idempotencyKey,
-          sessionId: String(activeSessionId),
+          cycleId: String(activeCycleId),
         }),
       optimistic: createOptimisticStructuredMessage({
         content: title,
@@ -178,14 +178,14 @@ export function useCrmWhatsappStructuredMessages({
     });
   };
 
-  const sendQuickMessage = async (quickMessage: CrmWhatsappQuickMessage) => {
+  const sendQuickMessage = async (quickMessage: CrmQuickMessage) => {
     if (!canSendStructured) return false;
     return sendStructuredMessage({
       request: (idempotencyKey) =>
         api.sendQuickMessage({
           idempotencyKey,
           quickMessageId: quickMessage.id,
-          sessionId: String(activeSessionId),
+          cycleId: String(activeCycleId),
         }),
       optimistic: createOptimisticQuickMessage(quickMessage),
     });

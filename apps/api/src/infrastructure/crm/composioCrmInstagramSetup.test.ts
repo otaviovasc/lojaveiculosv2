@@ -24,7 +24,7 @@ describe("Composio Instagram setup", () => {
     );
 
     await provider.createConnectLink({
-      provider: "composio_instagram",
+      channel: "instagram",
       userId: "tenant:store",
     });
 
@@ -45,7 +45,7 @@ describe("Composio Instagram setup", () => {
 
     await expect(
       provider.createConnectLink({
-        provider: "composio_instagram",
+        channel: "instagram",
         userId: "tenant:store",
       }),
     ).rejects.toMatchObject({ code: "configuration_error" });

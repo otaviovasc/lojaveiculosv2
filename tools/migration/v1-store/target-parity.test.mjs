@@ -102,6 +102,36 @@ test("WhatsApp parity uses normalized target sessions and media URL counts", () 
   );
 });
 
+test("connection parity counts distinct canonical channels without dropping rows", () => {
+  const data = {
+    accesses: [],
+    whatsapp: {
+      connections: [{ id: 30 }],
+      messages: [],
+      sessions: [
+        session({ id: 1, channel: "WHATSAPP" }),
+        session({ id: 2, channel: "OLX_CHAT" }),
+      ],
+    },
+  };
+
+  assert.doesNotThrow(() =>
+    assertParity(
+      data,
+      {
+        crm_conversation_attendances: 2,
+        crm_conversation_cycles: 2,
+        crm_conversation_threads: 2,
+        crm_channel_connections: 2,
+        crm_messages: 0,
+        crm_messages_with_media: 0,
+        users: 0,
+      },
+      new Set(["whatsapp"]),
+    ),
+  );
+});
+
 test("WhatsApp parity reports a target mismatch", () => {
   const data = {
     accesses: [],

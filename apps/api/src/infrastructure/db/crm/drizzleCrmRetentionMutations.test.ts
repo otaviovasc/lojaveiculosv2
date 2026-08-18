@@ -1,4 +1,4 @@
-import { canonicalMessages, crmRetentionAuditOutbox } from "@lojaveiculosv2/db";
+import { crmMessages, crmRetentionAuditOutbox } from "@lojaveiculosv2/db";
 import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
@@ -28,7 +28,7 @@ describe("canonical CRM retention mutations", () => {
         };
       },
       update: (table: unknown) => {
-        expect(table).toBe(canonicalMessages);
+        expect(table).toBe(crmMessages);
         return {
           set: (values: Record<string, unknown>) => {
             mutationValues = values;

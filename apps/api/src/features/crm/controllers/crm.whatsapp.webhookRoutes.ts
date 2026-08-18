@@ -1,7 +1,7 @@
 import type { Context, Hono } from "hono";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { handleWhatsapp } from "./crm.whatsapp.errors.js";
+import { handleCrmMessaging } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
 import {
   authorizeOlxWebhook,
@@ -24,7 +24,7 @@ export function registerCrmWhatsappWebhookRoutes(
   }: RegisterCrmWhatsappWebhookRoutesOptions,
 ) {
   crmFeature.post("/webhooks/olx/:connectionId/leads", async (context) =>
-    handleWhatsapp(context, async () => {
+    handleCrmMessaging(context, async () => {
       const authorized = await authorizeOlxWebhook(
         context,
         createWebhookContext,
@@ -44,7 +44,7 @@ export function registerCrmWhatsappWebhookRoutes(
   );
 
   crmFeature.post("/webhooks/olx/:connectionId/received", async (context) =>
-    handleWhatsapp(context, async () => {
+    handleCrmMessaging(context, async () => {
       const authorized = await authorizeOlxWebhook(
         context,
         createWebhookContext,
@@ -66,7 +66,7 @@ export function registerCrmWhatsappWebhookRoutes(
   crmFeature.post(
     "/whatsapp/webhooks/zapi/:connectionId/received",
     async (context) =>
-      handleWhatsapp(context, async () => {
+      handleCrmMessaging(context, async () => {
         const serviceContext = await authorizeWebhook(
           context,
           createWebhookContext,
@@ -85,7 +85,7 @@ export function registerCrmWhatsappWebhookRoutes(
   crmFeature.post(
     "/whatsapp/webhooks/zapi/:connectionId/delivery",
     async (context) =>
-      handleWhatsapp(context, async () => {
+      handleCrmMessaging(context, async () => {
         const serviceContext = await authorizeWebhook(
           context,
           createWebhookContext,
@@ -103,7 +103,7 @@ export function registerCrmWhatsappWebhookRoutes(
   crmFeature.post(
     "/whatsapp/webhooks/zapi/:connectionId/status",
     async (context) =>
-      handleWhatsapp(context, async () => {
+      handleCrmMessaging(context, async () => {
         const serviceContext = await authorizeWebhook(
           context,
           createWebhookContext,
@@ -121,7 +121,7 @@ export function registerCrmWhatsappWebhookRoutes(
   crmFeature.post(
     "/whatsapp/webhooks/zapi/:connectionId/disconnected",
     async (context) =>
-      handleWhatsapp(context, async () => {
+      handleCrmMessaging(context, async () => {
         const serviceContext = await authorizeWebhook(
           context,
           createWebhookContext,
@@ -139,7 +139,7 @@ export function registerCrmWhatsappWebhookRoutes(
   crmFeature.post(
     "/whatsapp/webhooks/zapi/:connectionId/connected",
     async (context) =>
-      handleWhatsapp(context, async () => {
+      handleCrmMessaging(context, async () => {
         const serviceContext = await authorizeWebhook(
           context,
           createWebhookContext,
@@ -157,7 +157,7 @@ export function registerCrmWhatsappWebhookRoutes(
   crmFeature.post(
     "/whatsapp/webhooks/zapi/:connectionId/chat-presence",
     async (context) =>
-      handleWhatsapp(context, async () => {
+      handleCrmMessaging(context, async () => {
         const serviceContext = await authorizeWebhook(
           context,
           createWebhookContext,

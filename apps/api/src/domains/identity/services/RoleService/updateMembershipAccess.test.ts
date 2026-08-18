@@ -58,7 +58,7 @@ describe("updateMembershipAccess", () => {
         overrides: [
           {
             allowed: true,
-            permission: "crm.whatsapp.send",
+            permission: "crm.messages.send",
             reason: "approved",
           },
         ],
@@ -72,7 +72,7 @@ describe("updateMembershipAccess", () => {
         overrides: [
           {
             allowed: true,
-            permission: "crm.whatsapp.send",
+            permission: "crm.messages.send",
             reason: "approved",
           },
         ],
@@ -82,7 +82,7 @@ describe("updateMembershipAccess", () => {
       result.permissionGroups
         .find((group) => group.key === "crm")
         ?.permissions.map((permission) => permission.key),
-    ).toEqual(expect.arrayContaining(["crm.whatsapp.send"]));
+    ).toEqual(expect.arrayContaining(["crm.messages.send"]));
   });
 
   it("keeps CRM setup allowed while persisting an explicit pairing denial", async () => {

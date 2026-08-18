@@ -1,19 +1,19 @@
 import { Car, ImageIcon, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionDialog } from "./CrmWhatsappActionDialogFrame";
+import { ActionDialog } from "./CrmActionDialogFrame";
 import type {
   CrmWhatsappSendVehicleInput,
-  CrmWhatsappVehicleOption,
-  CrmWhatsappVehicleQuery,
-} from "./crmWhatsappTypes";
+  CrmVehicleOption,
+  CrmVehicleQuery,
+} from "./crmConversationTypes";
 
 export type VehicleDialogSend = (
-  input: Omit<CrmWhatsappSendVehicleInput, "sessionId">,
+  input: Omit<CrmWhatsappSendVehicleInput, "cycleId">,
 ) => Promise<boolean>;
 
 export type VehicleDialogLoader = (
-  input?: CrmWhatsappVehicleQuery,
-) => Promise<readonly CrmWhatsappVehicleOption[]>;
+  input?: CrmVehicleQuery,
+) => Promise<readonly CrmVehicleOption[]>;
 
 const blockedStatuses = new Set(["sold", "delivered", "inactive"]);
 
@@ -32,9 +32,7 @@ export function VehicleDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
-  const [vehicles, setVehicles] = useState<readonly CrmWhatsappVehicleOption[]>(
-    [],
-  );
+  const [vehicles, setVehicles] = useState<readonly CrmVehicleOption[]>([]);
   const loadRef = useRef(onLoadVehicles);
   const filteredVehicles = useMemo(
     () => filterVehicles(vehicles, query),
@@ -111,7 +109,7 @@ export function VehicleDialog({
       }}
       title="Enviar veiculo"
     >
-      <label className="crm-whatsapp-search-field">
+      <label className="crm-search-field">
         Buscar no estoque
         <span>
           <Search aria-hidden="true" />
@@ -125,12 +123,12 @@ export function VehicleDialog({
       </label>
 
       {isLoading ? (
-        <div className="crm-whatsapp-catalog-loading">
+        <div className="crm-catalog-loading">
           <Loader2 className="crm-spin" />
           Carregando estoque
         </div>
       ) : (
-        <div className="crm-whatsapp-vehicle-picker">
+        <div className="crm-vehicle-picker">
           {filteredVehicles.map((vehicle) => (
             <VehicleOptionButton
               key={vehicle.unitId ?? vehicle.listingId}
@@ -140,7 +138,7 @@ export function VehicleDialog({
             />
           ))}
           {!filteredVehicles.length ? (
-            <p className="crm-whatsapp-action-error">
+            <p className="crm-action-error">
               Nenhum veiculo encontrado no estoque.
             </p>
           ) : null}
@@ -157,7 +155,7 @@ function VehicleOptionButton({
 }: {
   onSelect: (id: string) => void;
   selected: boolean;
-  vehicle: CrmWhatsappVehicleOption;
+  vehicle: CrmVehicleOption;
 }) {
   const disabled = blockedStatuses.has(vehicle.status);
   const detail = [
@@ -168,19 +166,19 @@ function VehicleOptionButton({
   return (
     <button
       aria-pressed={selected}
-      className="crm-whatsapp-vehicle-option"
+      className="crm-vehicle-option"
       disabled={disabled}
       onClick={() => onSelect(vehicle.unitId ?? vehicle.listingId)}
       type="button"
     >
-      <span className="crm-whatsapp-vehicle-thumb">
+      <span className="crm-vehicle-thumb">
         {vehicle.thumbnailUrl ? (
           <img alt="" src={vehicle.thumbnailUrl} />
         ) : (
           <ImageIcon aria-hidden="true" />
         )}
       </span>
-      <span className="crm-whatsapp-vehicle-copy">
+      <span className="crm-vehicle-copy">
         <strong>{vehicle.title}</strong>
         <small>{detail.join(" · ") || "Veiculo do estoque"}</small>
         <small>
@@ -189,7 +187,7 @@ function VehicleOptionButton({
             .join(" · ") || "Sem placa cadastrada"}
         </small>
       </span>
-      <span className="crm-whatsapp-vehicle-meta">
+      <span className="crm-vehicle-meta">
         <span data-status={vehicle.status}>{statusLabel(vehicle.status)}</span>
         <small>{vehicle.mediaCount} foto(s)</small>
       </span>
@@ -197,10 +195,7 @@ function VehicleOptionButton({
   );
 }
 
-function filterVehicles(
-  vehicles: readonly CrmWhatsappVehicleOption[],
-  query: string,
-) {
+function filterVehicles(vehicles: readonly CrmVehicleOption[], query: string) {
   const needle = query.trim().toLocaleLowerCase("pt-BR");
   if (!needle) return vehicles;
   return vehicles.filter((vehicle) =>

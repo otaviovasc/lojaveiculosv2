@@ -18,7 +18,7 @@ import {
   credentialBroker,
   integrationCapability,
   messagingChannel,
-  providerConnectionState,
+  crmChannelConnectionState,
   scopeGrantState,
   transportProvider,
 } from "./enums.js";
@@ -128,7 +128,7 @@ export const externalAccountAuthorizationCapabilities = pgTable(
   ],
 );
 
-export const providerConnections = pgTable(
+export const crmChannelConnections = pgTable(
   "crm_channel_connections",
   {
     ...lifecycleColumns,
@@ -141,7 +141,7 @@ export const providerConnections = pgTable(
     metadata: jsonb("metadata").notNull().default({}),
     provider: transportProvider("provider").notNull(),
     revision: revisionColumn(),
-    state: providerConnectionState("state").notNull().default("sandbox"),
+    state: crmChannelConnectionState("state").notNull().default("sandbox"),
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
@@ -151,10 +151,13 @@ export const providerConnections = pgTable(
     webhookUrl: varchar("webhook_url", { length: 500 }),
   },
   (table) => [
-    scopedStoreForeignKey(table, "provider_connections_store_tenant_fk"),
-    revisionCheck(table.revision, "provider_connections_revision_nonnegative"),
+    scopedStoreForeignKey(table, "crm_channel_connections_store_tenant_fk"),
+    revisionCheck(
+      table.revision,
+      "crm_channel_connections_revision_nonnegative",
+    ),
     check(
-      "provider_connections_supported_triple_check",
+      "crm_channel_connections_supported_triple_check",
       sql`(${table.channel} = 'whatsapp' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'instagram' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'whatsapp' AND ${table.provider} = 'zapi' AND ${table.broker} = 'direct') OR (${table.channel} = 'olx_chat' AND ${table.provider} = 'olx' AND ${table.broker} = 'direct')`,
     ),
     foreignKey({
@@ -172,26 +175,26 @@ export const providerConnections = pgTable(
         externalAccountAuthorizations.provider,
         externalAccountAuthorizations.broker,
       ],
-      name: "provider_connections_semantic_authorization_fk",
+      name: "crm_channel_connections_semantic_authorization_fk",
     }),
-    uniqueIndex("provider_connections_scope_id_unique").on(
+    uniqueIndex("crm_channel_connections_scope_id_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
     ),
-    uniqueIndex("provider_connections_provider_id_unique").on(
+    uniqueIndex("crm_channel_connections_provider_id_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
       table.provider,
     ),
-    uniqueIndex("provider_connections_channel_id_unique").on(
+    uniqueIndex("crm_channel_connections_channel_id_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
       table.channel,
     ),
-    uniqueIndex("provider_connections_external_unique")
+    uniqueIndex("crm_channel_connections_external_unique")
       .on(
         table.tenantId,
         table.storeId,
@@ -199,7 +202,7 @@ export const providerConnections = pgTable(
         table.externalConnectionId,
       )
       .where(sql`${table.externalConnectionId} IS NOT NULL`),
-    index("provider_connections_store_state_idx").on(
+    index("crm_channel_connections_store_state_idx").on(
       table.storeId,
       table.state,
     ),

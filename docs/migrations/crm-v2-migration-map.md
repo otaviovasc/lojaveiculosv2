@@ -25,7 +25,8 @@ It reconciles current V2 code, `docs/migration.md`, `v2-plan.html`,
 
 Already V2-owned:
 
-- ZAPI connection/session/message runtime.
+- Channel/provider/broker routing over `crm_channel_connections`.
+- Canonical contacts, conversation threads, cycles, attendances, and messages.
 - ZAPI received, delivery, status, connected, disconnected, and chat-presence
   webhooks.
 - Durable `provider_events` capture and retry surface.
@@ -34,20 +35,20 @@ Already V2-owned:
 - Text, media, location, catalog/product, vehicle sends.
 - Quick messages.
 - Session assignment, close, read/unread, human intervention.
-- Normalized WhatsApp tags with `crm_tags` and
-  `crm_whatsapp_session_tags`.
+- Channel-neutral tags and canonical conversation/tag links with `crm_tags`.
 - One-off scheduled messages.
 - Scheduled-message backend routes, services, persistence, store-wide operations
   page, and campaign linkage are present.
 - DB-backed CRM pipelines and stages with audited lead stage movement.
-- Lead detail Chat tab resolves WhatsApp sessions by V2 `leadId` and can start
-  a V2-native WhatsApp conversation by `leadId`.
+- Lead detail Chat tab resolves canonical conversations by V2 `leadId` and can
+  start a V2-native conversation by `leadId`.
 - V2 visits operations over `lead_visits` with backend services/controllers,
   audited status changes, lead activities, and a Repasses-style Visitas timeline.
-- Bot integration config page, action API, and write-only secret state.
+- External-bot configuration page, action API, and write-only secret state;
+  one external bot is configured per store.
 - Outbound bot webhook forwarding with Repasses-style message and intervention
   events, handback summaries, dispatch audit, and system-origin scheduled sends.
-- Persistent WhatsApp campaigns with recipient rows, scheduled-message linkage,
+- Persistent channel-neutral campaigns with recipient rows, scheduled-message linkage,
   send/reply metrics, and reply-triggered secondary messages.
 - Filtered V2 lead campaign audiences resolved to linked WhatsApp sessions.
 - Atomic campaign reply claiming that prevents duplicate metrics and secondary

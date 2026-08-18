@@ -16,7 +16,7 @@ import { lifecycleColumns } from "../_shared.js";
 import { stores, tenants, users } from "../identity.js";
 import { contacts } from "./contacts.js";
 import { factProposalState } from "./enums.js";
-import { canonicalMessages } from "./messages.js";
+import { crmMessages } from "./messages.js";
 import { revisionCheck, revisionColumn } from "./revision.js";
 import { scopedStoreForeignKey } from "./scoped.js";
 
@@ -34,9 +34,7 @@ export const observedFacts = pgTable(
       .notNull()
       .defaultNow(),
     revision: revisionColumn(),
-    sourceMessageId: uuid("source_message_id").references(
-      () => canonicalMessages.id,
-    ),
+    sourceMessageId: uuid("source_message_id").references(() => crmMessages.id),
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
@@ -54,9 +52,9 @@ export const observedFacts = pgTable(
     foreignKey({
       columns: [table.tenantId, table.storeId, table.sourceMessageId],
       foreignColumns: [
-        canonicalMessages.tenantId,
-        canonicalMessages.storeId,
-        canonicalMessages.id,
+        crmMessages.tenantId,
+        crmMessages.storeId,
+        crmMessages.id,
       ],
       name: "observed_facts_scoped_message_fk",
     }),

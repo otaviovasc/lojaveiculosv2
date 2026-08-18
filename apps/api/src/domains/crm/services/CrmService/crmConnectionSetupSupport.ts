@@ -24,13 +24,13 @@ export function getCrmConnectionCredentialVault(
   return ports.crmConnectionCredentialVault;
 }
 
-export function getComposioWhatsappOnboardingProvider(
+export function getComposioChannelOnboardingProvider(
   ports: CrmServicePorts,
 ): ComposioCrmOnboardingProvider {
-  if (!ports.composioWhatsappOnboardingProvider) {
-    throw new CrmScopeError("composioWhatsappOnboardingProvider");
+  if (!ports.composioChannelOnboardingProvider) {
+    throw new CrmScopeError("composioChannelOnboardingProvider");
   }
-  return ports.composioWhatsappOnboardingProvider;
+  return ports.composioChannelOnboardingProvider;
 }
 
 export function requireComposioInstagramOnboardingProvider(

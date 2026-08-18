@@ -26,7 +26,7 @@ describe("createComposioCrmConnectionSetupProvider", () => {
       provider.createConnectLink({
         alias: "Store WhatsApp",
         callbackUrl: "https://app.test/callback",
-        provider: "composio_whatsapp",
+        channel: "whatsapp",
         userId: "tenant_1:store_1",
       }),
     ).resolves.toEqual({
@@ -62,7 +62,7 @@ describe("createComposioCrmConnectionSetupProvider", () => {
     );
 
     await provider.createConnectLink({
-      provider: "composio_whatsapp",
+      channel: "whatsapp",
       userId: "tenant_1:store_1",
     });
 
@@ -87,7 +87,7 @@ describe("createComposioCrmConnectionSetupProvider", () => {
 
     await expect(
       provider.createConnectLink({
-        provider: "composio_whatsapp",
+        channel: "whatsapp",
         userId: "tenant_1:store_1",
       }),
     ).rejects.toMatchObject({ code: "invalid_provider_response" });
@@ -101,7 +101,7 @@ describe("createComposioCrmConnectionSetupProvider", () => {
 
     await expect(
       provider.createConnectLink({
-        provider: "composio_whatsapp",
+        channel: "whatsapp",
         userId: "tenant_1:store_1",
       }),
     ).rejects.toMatchObject({ code: "invalid_provider_response" });

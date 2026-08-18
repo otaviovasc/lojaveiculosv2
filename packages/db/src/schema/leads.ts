@@ -41,7 +41,7 @@ export const leadSource = pgEnum("lead_source", [
 export const leadActivityType = pgEnum("lead_activity_type", [
   "note",
   "call",
-  "whatsapp",
+  "message",
   "email",
   "status_change",
   "task",

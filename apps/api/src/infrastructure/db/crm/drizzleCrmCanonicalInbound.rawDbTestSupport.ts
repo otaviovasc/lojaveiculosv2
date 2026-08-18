@@ -21,10 +21,10 @@ export async function seedCanonicalInboundConnection(
     connectionId: string;
     inbound?: boolean;
     scope: TestScope;
-    state?: typeof schema.providerConnections.$inferInsert.state;
+    state?: typeof schema.crmChannelConnections.$inferInsert.state;
   },
 ) {
-  await transaction.insert(schema.providerConnections).values({
+  await transaction.insert(schema.crmChannelConnections).values({
     broker: "direct",
     channel: input.channel,
     displayName: `Raw canonical ${input.provider} inbound`,
@@ -141,13 +141,13 @@ export async function validateOlxCanonicalInbound(
 
   const [olxConnection] = await transaction
     .select({
-      broker: schema.providerConnections.broker,
-      channel: schema.providerConnections.channel,
-      metadata: schema.providerConnections.metadata,
-      provider: schema.providerConnections.provider,
+      broker: schema.crmChannelConnections.broker,
+      channel: schema.crmChannelConnections.channel,
+      metadata: schema.crmChannelConnections.metadata,
+      provider: schema.crmChannelConnections.provider,
     })
-    .from(schema.providerConnections)
-    .where(eq(schema.providerConnections.id, olxConnectionId));
+    .from(schema.crmChannelConnections)
+    .where(eq(schema.crmChannelConnections.id, olxConnectionId));
   expect(olxConnection).toEqual({
     broker: "direct",
     channel: "olx_chat",
@@ -190,7 +190,7 @@ export function canonicalInbound(input: {
     secondaryPhone: null,
     sender: "customer",
     senderOrigin: "customer",
-    sessionMetadata: {},
+    cycleMetadata: {},
     source: input.provider === "olx" ? "olx" : "whatsapp",
     storeId: input.scope.storeId,
     tenantId: input.scope.tenantId,

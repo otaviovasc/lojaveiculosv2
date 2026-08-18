@@ -1,4 +1,4 @@
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import { readZapiCatalogProducts } from "./zapiCrmWhatsappCatalogPayload.js";
 import {
   buildInstanceUrl,
@@ -13,7 +13,7 @@ import type {
   CrmWhatsappListCatalogProductsInput,
   CrmWhatsappSendCatalogInput,
   CrmWhatsappSendProductInput,
-} from "../../domains/crm/ports/crmWhatsappGateway.js";
+} from "../../domains/crm/ports/crmMessagingGateway.js";
 
 export async function listZapiCatalogProducts(
   credentials: ZapiCredentials,
@@ -43,7 +43,7 @@ export async function listZapiCatalogProducts(
   const payload = parseJson(text);
 
   if (!response.ok) {
-    throw new CrmWhatsappGatewayError(
+    throw new CrmMessagingGatewayError(
       `ZAPI catalog list failed with HTTP ${response.status}`,
     );
   }

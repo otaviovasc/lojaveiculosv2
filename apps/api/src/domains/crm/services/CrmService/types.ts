@@ -5,9 +5,8 @@ import type {
   VehicleMediaRepository,
   VehicleUnitRepository,
 } from "../../../vehicle/ports/vehicleInventoryRepository.js";
-import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
+import type { CrmExternalBotIntegrationRepository } from "../../ports/crmExternalBotIntegrationRepository.js";
 import type { CrmAssigneeMembershipRepository } from "../../ports/crmAssigneeMembershipRepository.js";
-import type { CrmBotWebhookDispatcher } from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmCanonicalInboundRepository } from "../../ports/crmCanonicalInboundRepository.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
 import type { CrmRoutingConnectionRepository } from "../../ports/crmRoutingConnectionRepository.js";
@@ -28,16 +27,17 @@ import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js
 import type { CrmRepository } from "../../ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
-import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
-import type { CrmWhatsappOutboundIntentRepository } from "../../ports/crmWhatsappOutboundIntentRepository.js";
-import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
-import type { CrmWhatsappSessionCommandRepository } from "../../ports/crmWhatsappSessionCommandRepository.js";
+import type { CrmMessagingGateway } from "../../ports/crmMessagingGateway.js";
+import type { CrmOutboundIntentRepository } from "../../ports/crmOutboundIntentRepository.js";
+import type { CrmConversationRepository } from "../../ports/crmConversationRepository.js";
+import type { CrmConversationCycleCommandRepository } from "../../ports/crmConversationCycleCommandRepository.js";
+import type { ExternalBotManagerPorts } from "../../bot/ports/externalBotPorts.js";
 
 export type CrmServicePorts = {
   crmAssigneeMembershipRepository?: CrmAssigneeMembershipRepository;
   billingQuotaGuard?: BillingQuotaGuard;
-  crmBotIntegrationRepository?: CrmBotIntegrationRepository;
-  crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
+  crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
+  externalBotManager?: ExternalBotManagerPorts;
   crmCanonicalInboundRepository?: CrmCanonicalInboundRepository;
   crmConnectionRepository?: CrmConnectionRepository;
   crmRoutingConnectionRepository?: CrmRoutingConnectionRepository;
@@ -52,18 +52,18 @@ export type CrmServicePorts = {
   };
   crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
-  composioWhatsappOnboardingProvider?: ComposioCrmOnboardingProvider;
+  composioChannelOnboardingProvider?: ComposioCrmOnboardingProvider;
   crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRepository: CrmRepository;
   crmVisitRepository?: CrmVisitRepository;
   crmWebhookEventRepository?: CrmWebhookEventRepository;
-  crmWhatsappGateway?: CrmWhatsappGateway;
-  crmWhatsappMediaFetcher?: CrmRemoteMediaFetcher;
-  crmWhatsappMediaStorage?: ObjectStorage;
-  crmWhatsappOutboundIntentRepository?: CrmWhatsappOutboundIntentRepository;
-  crmWhatsappRepository?: CrmWhatsappRepository;
-  crmWhatsappSessionCommandRepository?: CrmWhatsappSessionCommandRepository;
+  crmMessagingGateway?: CrmMessagingGateway;
+  crmMediaFetcher?: CrmRemoteMediaFetcher;
+  crmMediaStorage?: ObjectStorage;
+  crmOutboundIntentRepository?: CrmOutboundIntentRepository;
+  crmConversationRepository?: CrmConversationRepository;
+  crmConversationCycleCommandRepository?: CrmConversationCycleCommandRepository;
   environment?: string;
   transaction?: <T>(
     action: (ports: CrmServicePorts) => Promise<T>,

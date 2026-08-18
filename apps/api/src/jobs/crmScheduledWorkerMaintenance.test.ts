@@ -10,7 +10,7 @@ describe("CRM scheduled worker maintenance", () => {
       "utf8",
     );
     const worker = readFileSync(
-      new URL("./processCrmWhatsappScheduledMessages.ts", import.meta.url),
+      new URL("./processCrmScheduledMessages.ts", import.meta.url),
       "utf8",
     );
 
@@ -19,9 +19,7 @@ describe("CRM scheduled worker maintenance", () => {
     );
     expect(railway).toContain('cronSchedule: "*/5 * * * *"');
     expect(railway).toContain('restartPolicyType: "NEVER"');
-    expect(railway).toContain(
-      'start: "pnpm run crm:whatsapp:schedule:process"',
-    );
+    expect(railway).toContain('start: "pnpm run crm:schedule:process"');
     expect(railway).toContain("crmScheduleWorker,");
     expect(worker).toContain("runCrmScheduledWorkerMaintenance(");
     expect(worker).toContain('"crm.messaging.connection.setup"');

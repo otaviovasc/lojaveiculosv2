@@ -5,10 +5,10 @@ import {
   whatsappZapiSupportCredentialsSchema,
   whatsappZapiSupportPairingCodeSchema,
   whatsappZapiSupportScopeSchema,
-} from "./crm.whatsapp.connectionSchemas.js";
-import { parseWhatsappJson } from "./crm.whatsapp.controller.support.js";
-import { handleWhatsapp } from "./crm.whatsapp.errors.js";
-import { readWebhookRequestBase } from "./crm.whatsapp.webhookRequestBase.js";
+} from "./crm.channelConnections.schemas.js";
+import { parseCrmMessagingJson } from "./crm.messaging.controller.support.js";
+import { handleCrmMessaging } from "./crm.messaging.errors.js";
+import { readWebhookRequestBase } from "./crm.webhookRequestBase.js";
 import type { CrmServices } from "./crmServices.js";
 
 export function registerCrmWhatsappZapiSupportRoutes(
@@ -19,8 +19,8 @@ export function registerCrmWhatsappZapiSupportRoutes(
   },
 ) {
   crmFeature.post("/whatsapp/support/zapi/connections", async (context) =>
-    handleWhatsapp(context, async () => {
-      const input = await parseWhatsappJson(
+    handleCrmMessaging(context, async () => {
+      const input = await parseCrmMessagingJson(
         context,
         whatsappZapiSupportCredentialsSchema,
       );
@@ -41,8 +41,8 @@ export function registerCrmWhatsappZapiSupportRoutes(
   crmFeature.patch(
     "/whatsapp/support/zapi/connections/:connectionId/credentials",
     async (context) =>
-      handleWhatsapp(context, async () => {
-        const input = await parseWhatsappJson(
+      handleCrmMessaging(context, async () => {
+        const input = await parseCrmMessagingJson(
           context,
           whatsappZapiSupportCredentialsSchema.omit({ displayName: true }),
         );
@@ -65,8 +65,8 @@ export function registerCrmWhatsappZapiSupportRoutes(
   crmFeature.post(
     "/whatsapp/support/zapi/connections/:connectionId/webhooks/configure",
     async (context) =>
-      handleWhatsapp(context, async () => {
-        const input = await parseWhatsappJson(
+      handleCrmMessaging(context, async () => {
+        const input = await parseCrmMessagingJson(
           context,
           whatsappZapiSupportScopeSchema,
         );
@@ -87,8 +87,8 @@ export function registerCrmWhatsappZapiSupportRoutes(
   crmFeature.post(
     "/whatsapp/support/zapi/connections/:connectionId/webhooks/reset",
     async (context) =>
-      handleWhatsapp(context, async () => {
-        const input = await parseWhatsappJson(
+      handleCrmMessaging(context, async () => {
+        const input = await parseCrmMessagingJson(
           context,
           whatsappZapiSupportScopeSchema,
         );
@@ -110,8 +110,8 @@ export function registerCrmWhatsappZapiSupportRoutes(
   crmFeature.post(
     "/whatsapp/support/zapi/connections/:connectionId/pairing/qr",
     async (context) =>
-      handleWhatsapp(context, async () => {
-        const input = await parseWhatsappJson(
+      handleCrmMessaging(context, async () => {
+        const input = await parseCrmMessagingJson(
           context,
           whatsappZapiSupportScopeSchema,
         );
@@ -128,8 +128,8 @@ export function registerCrmWhatsappZapiSupportRoutes(
   crmFeature.post(
     "/whatsapp/support/zapi/connections/:connectionId/pairing/code",
     async (context) =>
-      handleWhatsapp(context, async () => {
-        const input = await parseWhatsappJson(
+      handleCrmMessaging(context, async () => {
+        const input = await parseCrmMessagingJson(
           context,
           whatsappZapiSupportPairingCodeSchema,
         );

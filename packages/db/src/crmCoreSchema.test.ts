@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
-  botActionCommandState,
-  botActionCommands,
-  canonicalMessages,
+  crmExternalBotActionCommandState,
+  crmExternalBotActionCommands,
+  crmMessages,
   consentReceipts,
   contactIdentities,
   contactIdentityCandidates,
@@ -17,8 +17,8 @@ import {
   crmExternalBotPolicies,
   crmExternalBotProposals,
   integrationEvents,
-  providerConnections,
-  providerEffectState,
+  crmChannelConnections,
+  crmExternalBotProviderEffectState,
   transportProvider,
 } from "./index.js";
 
@@ -64,9 +64,11 @@ describe("canonical CRM core schema", () => {
     ]);
     expect(transportProvider.enumValues).toEqual(["meta_cloud", "zapi", "olx"]);
     expect(credentialBroker.enumValues).toEqual(["composio", "direct"]);
-    expect(botActionCommandState.enumValues).toEqual(
-      providerEffectState.enumValues,
-    );
+    expect(crmExternalBotActionCommandState.enumValues).toEqual([
+      "accepted",
+      "pending_approval",
+      ...crmExternalBotProviderEffectState.enumValues.slice(1),
+    ]);
   });
 
   it("supports unlinked observed identities and CAS revisions", () => {
@@ -74,9 +76,9 @@ describe("canonical CRM core schema", () => {
     for (const table of [
       contactIdentities,
       opportunities,
-      providerConnections,
-      canonicalMessages,
-      botActionCommands,
+      crmChannelConnections,
+      crmMessages,
+      crmExternalBotActionCommands,
     ]) {
       const revision = getTableConfig(table).columns.find(
         ({ name }) => name === "revision",
@@ -126,11 +128,11 @@ describe("canonical CRM core schema", () => {
 
   it("rejects cross-linked provider, thread, cycle, grant, and effect graphs", () => {
     const foreignKeyNames = [
-      providerConnections,
+      crmChannelConnections,
       conversationThreads,
-      canonicalMessages,
+      crmMessages,
       conversationAttendances,
-      botActionCommands,
+      crmExternalBotActionCommands,
     ].flatMap((table) =>
       getTableConfig(table).foreignKeys.map((foreignKey) =>
         foreignKey.getName(),
@@ -139,13 +141,13 @@ describe("canonical CRM core schema", () => {
 
     expect(foreignKeyNames).toEqual(
       expect.arrayContaining([
-        "provider_connections_semantic_authorization_fk",
+        "crm_channel_connections_semantic_authorization_fk",
         "conversation_threads_semantic_connection_fk",
-        "canonical_messages_semantic_connection_fk",
-        "canonical_messages_semantic_thread_fk",
-        "canonical_messages_semantic_cycle_fk",
+        "crm_messages_semantic_connection_fk",
+        "crm_messages_semantic_thread_fk",
+        "crm_messages_semantic_cycle_fk",
         "conversation_attendances_semantic_cycle_fk",
-        "bot_action_commands_semantic_grant_fk",
+        "crm_external_bot_action_commands_semantic_grant_fk",
       ]),
     );
     expect(integrityMigrationSql).toContain(
@@ -198,8 +200,8 @@ describe("canonical CRM core schema", () => {
       ),
     ).toContain("crm_external_bot_event_outbox_semantic_connection_fk");
     expect(
-      getTableConfig(providerConnections).checks.map((check) => check.name),
-    ).toContain("provider_connections_supported_triple_check");
+      getTableConfig(crmChannelConnections).checks.map((check) => check.name),
+    ).toContain("crm_channel_connections_supported_triple_check");
   });
 
   it("requires explicit consent provenance and scopes identity to its contact", () => {

@@ -1,19 +1,19 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 
-export const crmRoutingChannels = [
+export const crmMessagingChannels = [
   "whatsapp",
   "instagram",
   "olx_chat",
 ] as const;
 
-export type CrmRoutingChannel = (typeof crmRoutingChannels)[number];
-export type CrmBotRoutingMode =
+export type CrmMessagingChannel = (typeof crmMessagingChannels)[number];
+export type CrmExternalBotRouteMode =
   "disabled" | "inherit_store_default" | "explicit_connection";
 
 export type CrmChannelRoutingPolicy = {
-  botConnectionId: string | null;
-  botMode: CrmBotRoutingMode;
-  channel: CrmRoutingChannel;
+  externalBotConnectionId: string | null;
+  externalBotMode: CrmExternalBotRouteMode;
+  channel: CrmMessagingChannel;
   defaultConnectionId: string | null;
   id: string;
   storeId: StoreId;
@@ -26,9 +26,9 @@ export type CrmRoutingPolicyScope = {
 };
 
 export type UpsertCrmChannelRoutingPolicyInput = CrmRoutingPolicyScope & {
-  botConnectionId: string | null;
-  botMode: CrmBotRoutingMode;
-  channel: CrmRoutingChannel;
+  externalBotConnectionId: string | null;
+  externalBotMode: CrmExternalBotRouteMode;
+  channel: CrmMessagingChannel;
   defaultConnectionId: string | null;
 };
 

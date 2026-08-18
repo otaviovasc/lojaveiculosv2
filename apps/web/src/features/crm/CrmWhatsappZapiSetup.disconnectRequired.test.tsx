@@ -11,8 +11,8 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppApiError } from "../../lib/apiErrors";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
-import type { CrmWhatsappSelfServiceHandlers } from "./CrmWhatsappSelfServiceSetup";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
+import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 
 describe("CrmWhatsappZapiSetup disconnect-required pairing", () => {
   afterEach(cleanup);
@@ -40,7 +40,7 @@ describe("CrmWhatsappZapiSetup disconnect-required pairing", () => {
 
       function Harness() {
         const [connection, setConnection] =
-          useState<CrmWhatsappProviderConnection>(providerDisconnected);
+          useState<CrmProviderConnection>(providerDisconnected);
         return (
           <CrmWhatsappZapiSetup
             allowance={{ limit: 1, remaining: 0, used: 1 }}
@@ -125,7 +125,7 @@ function pairingButton(method: "code" | "qr") {
   });
 }
 
-function createHandlers(): CrmWhatsappSelfServiceHandlers {
+function createHandlers(): CrmConnectionSelfServiceHandlers {
   return {
     onAuthorizeComposio: vi.fn(),
     onCompleteComposio: vi.fn(),
@@ -136,7 +136,7 @@ function createHandlers(): CrmWhatsappSelfServiceHandlers {
   };
 }
 
-function createConnection(connected: boolean): CrmWhatsappProviderConnection {
+function createConnection(connected: boolean): CrmProviderConnection {
   const webhookTypes = [
     "received",
     "delivery",

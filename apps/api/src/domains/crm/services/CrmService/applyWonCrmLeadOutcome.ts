@@ -3,9 +3,9 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
-import { publishWhatsappSessionUpdate } from "../CrmWhatsapp/serviceSupport.js";
-import { sessionWithConnection } from "../CrmWhatsapp/whatsappSessionMutationSupport.js";
+import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
+import { publishConversationCycleUpdate } from "../CrmMessagingService/serviceSupport.js";
+import { sessionWithConnection } from "../CrmMessagingService/conversationCycleMutationSupport.js";
 import type {
   ApplyWonCrmLeadOutcomeInput,
   ApplyWonCrmLeadOutcomeResult,
@@ -53,7 +53,7 @@ export async function applyWonCrmLeadOutcome(
     if (replay) {
       assertOutcomeReplay(replay, fingerprint, input.originSessionId ?? null);
       return {
-        changed: [] as CrmWhatsappSession[],
+        changed: [] as CrmConversationCycle[],
         outcome: replay,
         result: "already_applied" as const,
       };
@@ -89,7 +89,7 @@ export async function applyWonCrmLeadOutcome(
       lead,
       "won",
     );
-    const sessions = await listActiveLeadSessions(
+    const conversationCycles = await listActiveLeadSessions(
       transactionPorts,
       scope,
       lead.id,
@@ -97,12 +97,12 @@ export async function applyWonCrmLeadOutcome(
     const changed = await completeOutcomeSessions(
       transactionPorts,
       scope,
-      sessions,
+      conversationCycles,
     );
     const outcome = await outcomes.create({
       actorId: context.actor.id,
       actorKind: context.actor.kind,
-      channel: origin?.channel ?? sessions[0]?.channel ?? null,
+      channel: origin?.channel ?? null,
       commandId: input.commandId,
       leadId: lead.id,
       lossNote: null,
@@ -126,7 +126,7 @@ export async function applyWonCrmLeadOutcome(
       ports,
       changed.id,
     );
-    await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
+    await publishConversationCycleUpdate(ports, realtimeSession, scope);
   }
   await context.audit.record({
     action: "crm.lead.outcome.apply_won",

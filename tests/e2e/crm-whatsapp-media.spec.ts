@@ -72,7 +72,7 @@ test.describe("CRM WhatsApp media", () => {
 
     await installConnectedWhatsappConnectionStub(page, connectionId);
     await installLocalOwnerSession(page);
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page
       .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
@@ -166,7 +166,7 @@ test.describe("CRM WhatsApp media", () => {
 
     await installConnectedWhatsappConnectionStub(page, connectionId);
     await installLocalOwnerSession(page);
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page
       .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
@@ -220,7 +220,7 @@ test.describe("CRM WhatsApp media", () => {
 
       await installConnectedWhatsappConnectionStub(page, connectionId);
       await installLocalOwnerSession(page);
-      await page.goto("/crm#/crm?surface=whatsapp");
+      await page.goto("/crm#/crm?surface=conversations");
       await page
         .getByPlaceholder("Pesquisar por nome ou telefone")
         .fill(contactName);

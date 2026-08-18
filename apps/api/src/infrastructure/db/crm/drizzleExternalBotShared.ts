@@ -39,6 +39,7 @@ export function mapExternalBotCommand(
       (row.input as { modelVersion?: string })?.modelVersion ?? "unknown",
     ),
     command: input.command!,
+    expectedAttendanceRevision: Number(row.expected_attendance_revision),
     expectedRevision: Number(row.expected_revision),
     idempotencyKey: String(row.idempotency_key),
     requestDigest: String(row.request_digest),
@@ -72,14 +73,6 @@ export function mapExternalBotEvent(row: ExternalBotRow): ExternalBotEvent {
     grantExpiresAt: new Date(String(row.grant_expires_at)),
     occurredAt: new Date(String(row.occurred_at)),
   };
-}
-
-export function isProposalAction(action: ExternalBotActionName) {
-  return (
-    action === "fact.propose" ||
-    action === "vehicle_interest.propose" ||
-    action === "appointment.propose"
-  );
 }
 
 export function safeDigestEqual(left: string, right: string) {

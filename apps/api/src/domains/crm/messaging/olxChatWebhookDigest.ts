@@ -4,8 +4,8 @@ import type { ParsedOlxChatWebhook } from "./parseOlxChatWebhook.js";
 export function digestOlxChatWebhook(parsed: ParsedOlxChatWebhook) {
   const canonicalPayload = [
     parsed.buyerEmail,
-    parsed.buyerName,
-    parsed.buyerPhone,
+    parsed.customerDisplayName,
+    parsed.customerPhone,
     parsed.chatId,
     parsed.externalMessageId,
     parsed.listId,

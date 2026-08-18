@@ -1,29 +1,24 @@
-import {
-  createHash,
-  randomBytes,
-  randomUUID,
-  timingSafeEqual,
-} from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type {
   ExternalBotActionRecord,
-  ExternalBotKillSwitchLevel,
-  ExternalBotScope,
+  ExternalBotProposalRecord,
 } from "./externalBotModels.js";
 import type {
-  BotAuthorizationSnapshot,
-  BotIdentity,
   CapabilityGrant,
-  ExternalBotEffectDispatcher,
   ExternalBotManagerPorts,
 } from "./ports/externalBotPorts.js";
+import {
+  createMemoryProposalRecorder,
+  grantMatches,
+  hashExternalBotCredential,
+  idempotencyScopeKey,
+  policyFor,
+  safeEqual,
+  type MemoryExternalBotManagerOptions,
+} from "./testSupportExternalBotManagerHelpers.js";
 
-export type MemoryExternalBotManagerOptions = {
-  credentials?: ReadonlyMap<string, BotIdentity>;
-  effectDispatcher?: ExternalBotEffectDispatcher;
-  inspect?: (scope: ExternalBotScope) => Promise<BotAuthorizationSnapshot>;
-  killSwitch?: ExternalBotKillSwitchLevel | null;
-  now?: () => Date;
-};
+export { hashExternalBotCredential };
+export type { MemoryExternalBotManagerOptions };
 
 export function createMemoryExternalBotManager(
   options: MemoryExternalBotManagerOptions = {},
@@ -37,7 +32,7 @@ export function createMemoryExternalBotManager(
     retryAt: Date;
     status: "dead_letter" | "delivered" | "pending" | "processing";
   }> = [];
-  const proposals: Array<unknown> = [];
+  const proposals: ExternalBotProposalRecord[] = [];
   const digest = (value: string) =>
     createHash("sha256").update(value).digest("hex");
   const ports: ExternalBotManagerPorts = {
@@ -47,7 +42,6 @@ export function createMemoryExternalBotManager(
     },
     actionRepository: {
       accept: async (input) => {
-        const { capabilityGrant: _capabilityGrant, ...recordInput } = input;
         const key = idempotencyScopeKey(input);
         const existingId = idempotency.get(key);
         const existing = existingId ? actions.get(existingId) : undefined;
@@ -57,6 +51,72 @@ export function createMemoryExternalBotManager(
             : { kind: "conflict" };
         }
         const now = (options.now ?? (() => new Date()))();
+        const grant = grants.get(digest(input.capabilityGrant));
+        if (
+          !grant ||
+          !grantMatches(grant, {
+            ...input,
+            action: input.command.action,
+          }) ||
+          grant.authorizedRequestDigest !== input.requestDigest ||
+          grant.expiresAt <= now
+        ) {
+          return { kind: "grant_invalid" };
+        }
+        if (grant.used) return { kind: "grant_used" };
+        const policy = policyFor(options);
+        if (policy.mode === "disabled") {
+          return { kind: "policy_denied", code: "policy_disabled" };
+        }
+        if (
+          (policy.mode === "proposal" ? "proposal" : "effect") !==
+          input.actionClass
+        ) {
+          return { kind: "policy_denied", code: "policy_disabled" };
+        }
+        const records = [...actions.values()];
+        const lastConversationAction = records
+          .filter(
+            (record) =>
+              record.tenantId === input.tenantId &&
+              record.storeId === input.storeId &&
+              record.threadId === input.threadId,
+          )
+          .sort(
+            (left, right) =>
+              right.createdAt.getTime() - left.createdAt.getTime(),
+          )[0];
+        if (
+          lastConversationAction &&
+          now.getTime() - lastConversationAction.createdAt.getTime() <
+            policy.cooldownSeconds * 1_000
+        ) {
+          return { kind: "policy_denied", code: "cooldown_active" };
+        }
+        if (
+          records.filter(
+            (record) =>
+              record.tenantId === input.tenantId &&
+              record.storeId === input.storeId &&
+              record.connectionId === input.connectionId &&
+              record.createdAt >= new Date(now.getTime() - 60_000),
+          ).length >= policy.connectionRatePerMinute
+        ) {
+          return { kind: "policy_denied", code: "rate_limit_reached" };
+        }
+        const day = new Date(now);
+        day.setUTCHours(0, 0, 0, 0);
+        if (
+          records.filter(
+            (record) =>
+              record.tenantId === input.tenantId &&
+              record.storeId === input.storeId &&
+              record.createdAt >= day,
+          ).length >= policy.dailyLimit
+        ) {
+          return { kind: "policy_denied", code: "daily_limit_reached" };
+        }
+        const { capabilityGrant: _capabilityGrant, ...recordInput } = input;
         const record: ExternalBotActionRecord = {
           ...recordInput,
           createdAt: now,
@@ -66,6 +126,7 @@ export function createMemoryExternalBotManager(
         };
         actions.set(record.id, record);
         idempotency.set(key, record.id);
+        grant.used = true;
         return { kind: "accepted", record: structuredClone(record) };
       },
       transition: async (id, expected, status, failureCode) => {
@@ -82,13 +143,17 @@ export function createMemoryExternalBotManager(
       equals: (left, right) => safeEqual(left, right),
     },
     effectAuthorizer: {
-      inspect:
-        options.inspect ??
-        (async () => ({
-          humanAttendanceActive: false,
-          revision: 1,
-          scopeExists: true,
-        })),
+      inspect: options.inspect
+        ? async (scope) => ({
+            attendanceRevision: 2,
+            ...(await options.inspect!(scope)),
+          })
+        : async () => ({
+            attendanceRevision: 2,
+            humanAttendanceActive: false,
+            revision: 1,
+            scopeExists: true,
+          }),
     },
     effectDispatcher:
       options.effectDispatcher ??
@@ -155,55 +220,30 @@ export function createMemoryExternalBotManager(
     },
     idGenerator: randomUUID,
     killSwitches: { resolve: async () => options.killSwitch ?? null },
-    proposalRecorder: {
-      record: async (input) => {
-        proposals.push(structuredClone(input));
-        return { kind: "recorded" };
-      },
+    modelVersion: "model-v1",
+    policyResolver: {
+      resolve: async (scope, action) => ({
+        actionsToday: 0,
+        connectionActionsInLastMinute: 0,
+        connectionReady: true,
+        policy: {
+          action,
+          channel: scope.channel,
+          connectionRatePerMinute:
+            options.policy?.connectionRatePerMinute ?? 30,
+          cooldownSeconds: options.policy?.cooldownSeconds ?? 0,
+          dailyLimit: options.policy?.dailyLimit ?? 500,
+          mode: options.policyMode ?? "auto",
+        },
+        secondsSinceLastAction: null,
+      }),
     },
+    proposalRecorder: createMemoryProposalRecorder(
+      actions,
+      proposals,
+      options.now,
+    ),
     ...(options.now ? { now: options.now } : {}),
   };
   return { actions, events, ports, proposals };
-}
-
-export function hashExternalBotCredential(credential: string) {
-  return createHash("sha256").update(credential).digest("hex");
-}
-
-function idempotencyScopeKey(
-  input: ExternalBotScope & { idempotencyKey: string },
-) {
-  return [
-    input.tenantId,
-    input.storeId,
-    input.integrationId,
-    input.idempotencyKey,
-  ].join(":");
-}
-
-function grantMatches(
-  grant: CapabilityGrant,
-  input: ExternalBotScope & { action: string },
-) {
-  return (
-    grant.action === input.action &&
-    grant.tenantId === input.tenantId &&
-    grant.storeId === input.storeId &&
-    grant.integrationId === input.integrationId &&
-    grant.channel === input.channel &&
-    grant.connectionId === input.connectionId &&
-    grant.threadId === input.threadId &&
-    grant.provider === input.provider &&
-    grant.actionClass === input.actionClass &&
-    grant.modelVersion === input.modelVersion
-  );
-}
-
-function safeEqual(left: string, right: string) {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  return (
-    leftBuffer.length === rightBuffer.length &&
-    timingSafeEqual(leftBuffer, rightBuffer)
-  );
 }

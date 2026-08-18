@@ -5,7 +5,7 @@ const domainsRoot = new URL("../../apps/api/src/domains", import.meta.url)
   .pathname;
 const nonEntrypointFiles = new Set([
   "auditVehicleServiceEvent.ts",
-  "composioWhatsappConnectionSetup.types.ts",
+  "composioChannelConnectionSetup.types.ts",
   "composioInstagramConnectionSelection.ts",
   "composioWhatsappConnectionSelection.ts",
   "crmConnectionSetupSupport.ts",
@@ -42,16 +42,21 @@ const nonEntrypointFiles = new Set([
   "summarizeMarketplaceStockPlan.ts",
   "testSupport.ts",
   "types.ts",
-  "executeWhatsappSessionCommand.ts",
+  "executeExternalBotActionSupport.ts",
+  "resolveExternalBotExecutionPolicy.ts",
   "resolveCrmRoutingPolicy.ts",
   "routingErrors.ts",
   "routingReadModels.ts",
   "routingResolution.ts",
-  "whatsappMessageActionSupport.ts",
-  "whatsappQuickMessageMedia.ts",
-  "whatsappQuickMessageModels.ts",
-  "whatsappQuickMessageServiceSupport.ts",
-  "whatsappSessionMutationSupport.ts",
+  "crmMessageActionSupport.ts",
+  "crmQuickMessageModels.ts",
+  "crmQuickMessageMedia.ts",
+  "crmQuickMessageServiceSupport.ts",
+  "conversationCycleMutationSupport.ts",
+  "executeCrmConversationCycleCommand.ts",
+  "resolveCrmProviderOperation.ts",
+  "onboardOlxCrmConnectionValidation.ts",
+  "applyWonCrmLeadOutcome.testSupport.ts",
 ]);
 
 function walk(dir, files = []) {
@@ -148,6 +153,10 @@ for (const file of domainFiles.filter(isServiceFile)) {
   if (
     !source.includes("context.audit.record(") &&
     !source.includes("input.audit.record(") &&
+    !source.includes("auditCrmServiceEvent(") &&
+    !source.includes("auditBotOperation(") &&
+    !source.includes("auditCompletedExternalBotAction(") &&
+    !source.includes("recordCrmServiceMutation(") &&
     !source.includes("auditFinanceServiceEvent(") &&
     !source.includes("auditWhatsappServiceEvent(") &&
     !source.includes("auditZapiWebhook(") &&
@@ -164,6 +173,10 @@ for (const file of domainFiles.filter(isServiceFile)) {
   if (
     !source.includes("context.logger.") &&
     !source.includes("input.logger.") &&
+    !source.includes("logCrmServiceEvent(") &&
+    !source.includes("auditBotOperation(") &&
+    !source.includes("logStartedExternalBotAction(") &&
+    !source.includes("logOlxOnboardingStarted(") &&
     !source.includes("logFinanceServiceEvent(") &&
     !source.includes("logWhatsappServiceEvent(") &&
     !source.includes("logSalesServiceEvent(") &&

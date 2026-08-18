@@ -12,3 +12,4 @@ export * from "./crmCore/integrationEvents.js";
 export * from "./crmCore/inbox.js";
 export * from "./crmCore/identityCandidates.js";
 export * from "./crmCore/messages.js";
+export * from "./crmCore/work.js";

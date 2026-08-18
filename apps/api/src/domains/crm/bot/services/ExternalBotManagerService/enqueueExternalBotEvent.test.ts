@@ -5,21 +5,21 @@ import { enqueueExternalBotEvent } from "./enqueueExternalBotEvent.js";
 
 describe("enqueueExternalBotEvent", () => {
   it("durably queues a minimal event projection and scoped grant", async () => {
-    const manager = createMemoryExternalBotManager();
+    const manager = createMemoryExternalBotManager({ policyMode: "proposal" });
     const event = await enqueueExternalBotEvent(
       context(),
       {
-        actionClass: "proposal",
         channel: "olx_chat",
-        allowedAction: "fact.propose",
+        allowedAction: "fact.record",
         authorizedCommand: {
-          action: "fact.propose",
+          action: "fact.record",
           payload: {
             classification: "purchase_intent",
             summary: "Interested.",
           },
         },
         connectionId: "connection-1",
+        expectedAttendanceRevision: 2,
         expectedRevision: 1,
         idempotencyKey: "event-action-1",
         integrationId: "integration-1",

@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const appSecret = "meta-ordering-secret";
 const externalMessageId = "wamid.status-before-message-1";
@@ -24,14 +24,14 @@ describe("CRM Meta status ordering", () => {
   });
 
   it("keeps an early status retryable until the outbound message exists", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
+    const repository = createMemoryCrmConversationRepository();
     const webhookEvents = createMemoryCrmWebhookEventRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createConnection(),
       ]),
       crmWebhookEventRepository: webhookEvents,
-      crmWhatsappRepository: repository,
+      crmConversationRepository: repository,
     });
     const payload = statusPayload();
 
@@ -41,19 +41,19 @@ describe("CRM Meta status ordering", () => {
     const [failedEvent] = await webhookEvents.list({
       limit: 10,
       offset: 0,
-      provider: "composio_whatsapp",
+      provider: "meta_cloud",
       status: "failed",
       storeId,
       tenantId,
     });
     expect(failedEvent).toMatchObject({
       eventType: "meta.status",
-      providerEventId: `meta:composio_whatsapp:status:READ:phone-number-1:${externalMessageId}`,
+      providerEventId: `meta:whatsapp:status:READ:phone-number-1:${externalMessageId}`,
       status: "failed",
     });
 
     const seeded = await repository.ingestMessage({
-      buyerPhone: "5511999999999",
+      customerPhone: "5511999999999",
       channel: "WHATSAPP",
       connectionId: createConnection().id,
       content: "Template enviado",
@@ -76,7 +76,7 @@ describe("CRM Meta status ordering", () => {
     const [message] = await repository.listMessages({
       limit: 10,
       offset: 0,
-      sessionId: seeded.session.id,
+      cycleId: seeded.conversationCycle.id,
       storeId,
       tenantId,
     });
@@ -91,7 +91,7 @@ describe("CRM Meta status ordering", () => {
     const [processedEvent] = await webhookEvents.list({
       limit: 10,
       offset: 0,
-      provider: "composio_whatsapp",
+      provider: "meta_cloud",
       status: "processed",
       storeId,
       tenantId,
@@ -100,16 +100,16 @@ describe("CRM Meta status ordering", () => {
   });
 
   it("does not replace a read message with a late failed status", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
+    const repository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createConnection(),
       ]),
       crmWebhookEventRepository: createMemoryCrmWebhookEventRepository(),
-      crmWhatsappRepository: repository,
+      crmConversationRepository: repository,
     });
     const seeded = await repository.ingestMessage({
-      buyerPhone: "5511999999999",
+      customerPhone: "5511999999999",
       channel: "WHATSAPP",
       connectionId: createConnection().id,
       content: "Mensagem lida",
@@ -132,7 +132,7 @@ describe("CRM Meta status ordering", () => {
     const [message] = await repository.listMessages({
       limit: 10,
       offset: 0,
-      sessionId: seeded.session.id,
+      cycleId: seeded.conversationCycle.id,
       storeId,
       tenantId,
     });
@@ -142,6 +142,8 @@ describe("CRM Meta status ordering", () => {
 
 function statusPayload(status = "read") {
   return {
+    broker: "composio",
+    channel: "whatsapp",
     object: "whatsapp_business_account",
     entry: [
       {
@@ -181,6 +183,8 @@ function signedRequest(
 
 function createConnection(): CrmConnection {
   return {
+    broker: "composio",
+    channel: "whatsapp",
     credentialsRef: {},
     displayName: "WhatsApp oficial",
     externalConnectionId: "phone-number-1",
@@ -188,7 +192,7 @@ function createConnection(): CrmConnection {
     id: "26000000-0000-4000-8000-000000000102",
     metadata: {},
     phone: "5511999999999",
-    provider: "composio_whatsapp",
+    provider: "meta_cloud",
     status: "active",
     storeId,
     tenantId,

@@ -1,4 +1,4 @@
-import { CrmWhatsappGatewayError } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import { CrmMessagingGatewayError } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   buildInstanceUrl,
   fetchZapi,
@@ -7,7 +7,7 @@ import {
   type ZapiCredentials,
   zapiProviderResponseError,
 } from "./zapiCrmWhatsappGatewaySupport.js";
-import type { CrmWhatsappSendTextInput } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmMessagingSendTextInput } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   fetchZapiWithRateLimitRetry,
   readRetryAfterSeconds,
@@ -17,7 +17,7 @@ import {
 export async function sendZapiText(
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
-  input: CrmWhatsappSendTextInput,
+  input: CrmMessagingSendTextInput,
   retryOptions: ZapiRateLimitRetryOptions = {},
 ) {
   const response = await fetchZapiWithRateLimitRetry(
@@ -49,7 +49,7 @@ export async function sendZapiText(
 
   if (!response.ok) {
     if (response.status === 429) {
-      throw new CrmWhatsappGatewayError(
+      throw new CrmMessagingGatewayError(
         "ZAPI send text rate limited",
         429,
         readRetryAfterSeconds(response.headers),

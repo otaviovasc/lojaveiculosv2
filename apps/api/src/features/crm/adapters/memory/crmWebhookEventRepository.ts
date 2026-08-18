@@ -216,7 +216,7 @@ export function createMemoryCrmWebhookEventRepository(
           processingToken: null,
           providerEventId: input.providerEventId,
           sequence: staged.sequence,
-          sessionId: input.sessionId,
+          cycleId: input.cycleId,
           status: "pending",
           storeId: input.storeId,
           tenantId: input.tenantId,

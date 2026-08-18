@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
-  canonicalMessages,
+  crmMessages,
   conversationCycles,
   conversationThreads,
 } from "@lojaveiculosv2/db";
@@ -47,15 +47,15 @@ export async function findCanonicalMessageContext(
   },
 ) {
   const [row] = await db
-    .select({ threadId: canonicalMessages.threadId })
-    .from(canonicalMessages)
+    .select({ threadId: crmMessages.threadId })
+    .from(crmMessages)
     .where(
       and(
-        eq(canonicalMessages.id, input.messageId),
-        eq(canonicalMessages.cycleId, input.cycleId),
-        eq(canonicalMessages.providerConnectionId, input.connectionId),
-        eq(canonicalMessages.storeId, input.storeId),
-        eq(canonicalMessages.tenantId, input.tenantId),
+        eq(crmMessages.id, input.messageId),
+        eq(crmMessages.cycleId, input.cycleId),
+        eq(crmMessages.providerConnectionId, input.connectionId),
+        eq(crmMessages.storeId, input.storeId),
+        eq(crmMessages.tenantId, input.tenantId),
       ),
     )
     .limit(1);

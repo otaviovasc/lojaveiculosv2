@@ -20,7 +20,7 @@ export function logOlxRecoveredEffect(
       effectType: effect.effectType,
       ...(errorName ? { errorName } : {}),
       processingAttempts: effect.processingAttempts,
-      provider: "olx_chat",
+      provider: "olx",
       providerEventId: effect.providerEventId,
       status,
     }),

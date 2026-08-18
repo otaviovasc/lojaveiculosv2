@@ -6,8 +6,8 @@ import type {
 } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import { testNow } from "../../../domains/vehicle/testSupportVehicleServiceFixtures.js";
 import { createInMemoryVehiclePorts } from "../../../domains/vehicle/testSupportVehicleServiceInventoryPorts.js";
-import type { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createConfiguredZapiTestConnection } from "./crm.whatsapp.connectionFixtures.js";
+import type { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
 
 export const storeId = "store_1" as StoreId;
 export const tenantId = "tenant_1" as TenantId;
@@ -26,13 +26,13 @@ export function createVehicleInventory(
   return vehiclePorts;
 }
 
-export function seedSession(
-  whatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
+export function seedCycle(
+  whatsappRepository: ReturnType<typeof createMemoryCrmConversationRepository>,
   suffix: string,
 ) {
   return whatsappRepository.ingestMessage({
-    buyerName: "Ana",
-    buyerPhone: "5511999999999",
+    customerDisplayName: "Ana",
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
     connectionId,
     content: "Ola",

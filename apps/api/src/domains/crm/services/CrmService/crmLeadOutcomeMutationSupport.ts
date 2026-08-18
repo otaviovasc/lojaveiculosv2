@@ -1,7 +1,7 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { ensureCrmPipelineIntegrity } from "../../pipeline/ensureCrmPipelineIntegrity.js";
 import type { CrmLead } from "../../ports/crmRepository.js";
-import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
+import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
 import type { CrmServicePorts } from "./types.js";
 import {
   CrmLeadOutcomeCommandConflictError,
@@ -9,10 +9,10 @@ import {
 } from "./crmLeadOutcomeContracts.js";
 import {
   getCrmRepository,
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
 } from "./serviceSupport.js";
 import { hashCrmOutcome } from "./crmLeadOutcomePersistence.js";
-import { resolveScopedWhatsappSession } from "../CrmWhatsapp/whatsappSessionMutationSupport.js";
+import { resolveScopedConversationCycle } from "../CrmMessagingService/conversationCycleMutationSupport.js";
 
 export async function moveLeadToOutcomeStage(
   ports: CrmServicePorts,
@@ -41,18 +41,22 @@ export async function moveLeadToOutcomeStage(
 export async function findOutcomeSession(
   ports: CrmServicePorts,
   scope: { storeId: string; tenantId: string },
-  sessionId: string,
+  cycleId: string,
 ) {
-  const [session] = await getCrmWhatsappRepository(ports).listSessions({
+  const [conversationCycle] = await getCrmConversationRepository(
+    ports,
+  ).listConversationCycles({
     limit: 1,
     offset: 0,
-    sessionId,
+    cycleId,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
-  if (!session)
-    throw new CrmLeadOutcomeValidationError("WhatsApp session was not found.");
-  return session;
+  if (!conversationCycle)
+    throw new CrmLeadOutcomeValidationError(
+      "WhatsApp conversationCycle was not found.",
+    );
+  return conversationCycle;
 }
 
 export async function listActiveLeadSessions(
@@ -60,40 +64,43 @@ export async function listActiveLeadSessions(
   scope: { storeId: string; tenantId: string },
   leadId: string,
 ) {
-  const repository = getCrmWhatsappRepository(ports);
-  const sessions: CrmWhatsappSession[] = [];
+  const repository = getCrmConversationRepository(ports);
+  const conversationCycles: CrmConversationCycle[] = [];
   const pageSize = 200;
   for (let offset = 0; ; offset += pageSize) {
-    const page = await repository.listSessions({
+    const page = await repository.listConversationCycles({
       leadId,
       limit: pageSize,
       offset,
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     });
-    sessions.push(...page);
+    conversationCycles.push(...page);
     if (page.length < pageSize) break;
   }
-  return sessions.filter(isActiveSession);
+  return conversationCycles.filter(isActiveSession);
 }
 
-export function isActiveSession(session: CrmWhatsappSession) {
-  return session.status !== "COMPLETED" && session.status !== "EXPIRED";
+export function isActiveSession(conversationCycle: CrmConversationCycle) {
+  return (
+    conversationCycle.status !== "COMPLETED" &&
+    conversationCycle.status !== "EXPIRED"
+  );
 }
 
 export async function completeOutcomeSessions(
   ports: CrmServicePorts,
   scope: { storeId: string; tenantId: string },
-  sessions: readonly CrmWhatsappSession[],
+  conversationCycles: readonly CrmConversationCycle[],
   context?: ServiceContext,
 ) {
-  const repository = getCrmWhatsappRepository(ports);
-  const changed: CrmWhatsappSession[] = [];
-  for (const session of sessions) {
-    let candidate = session;
+  const repository = getCrmConversationRepository(ports);
+  const changed: CrmConversationCycle[] = [];
+  for (const conversationCycle of conversationCycles) {
+    let candidate = conversationCycle;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       if (!isActiveSession(candidate)) break;
-      const updated = await repository.updateSession({
+      const updated = await repository.updateConversationCycle({
         assignedUserId: null,
         expectedRevision: candidate.revision,
         humanAttendanceChangedAt: null,
@@ -102,7 +109,7 @@ export async function completeOutcomeSessions(
         humanHandlingStartedAt: null,
         humanTakeoverAt: null,
         interventionId: null,
-        sessionId: candidate.id,
+        cycleId: candidate.id,
         status: "COMPLETED",
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
@@ -117,7 +124,7 @@ export async function completeOutcomeSessions(
     }
     if (
       isActiveSession(candidate) &&
-      !changed.some((row) => row.id === session.id)
+      !changed.some((row) => row.id === conversationCycle.id)
     ) {
       throw new CrmLeadOutcomeCommandConflictError(
         "CRM attendance kept changing while its conclusion was being applied.",
@@ -130,17 +137,19 @@ export async function completeOutcomeSessions(
 export async function findVisibleOutcomeSession(
   context: ServiceContext,
   ports: CrmServicePorts,
-  sessionId: string,
+  cycleId: string,
 ) {
-  const { session } = await resolveScopedWhatsappSession(
+  const { conversationCycle } = await resolveScopedConversationCycle(
     context,
-    { sessionId },
+    { cycleId },
     ports,
   );
-  if (!session) {
-    throw new CrmLeadOutcomeValidationError("WhatsApp session was not found.");
+  if (!conversationCycle) {
+    throw new CrmLeadOutcomeValidationError(
+      "WhatsApp conversationCycle was not found.",
+    );
   }
-  return session;
+  return conversationCycle;
 }
 
 export async function createFollowUpTask(
@@ -148,7 +157,7 @@ export async function createFollowUpTask(
   context: ServiceContext,
   scope: { storeId: string; tenantId: string },
   leadId: string,
-  sessionId: string,
+  cycleId: string,
   commandId: string,
   dueAtValue: string,
 ) {
@@ -162,7 +171,7 @@ export async function createFollowUpTask(
     idempotencyFingerprint: hashCrmOutcome({
       dueAt: dueAt.toISOString(),
       leadId,
-      sessionId,
+      cycleId,
     }),
     idempotencyKey: `crm-outcome:${commandId}:follow-up-task`,
     leadId,
@@ -170,7 +179,7 @@ export async function createFollowUpTask(
       task: {
         dueAt: dueAt.toISOString(),
         kind: "follow_up",
-        originSessionId: sessionId,
+        originSessionId: cycleId,
       },
     },
     occurredAt: dueAt,

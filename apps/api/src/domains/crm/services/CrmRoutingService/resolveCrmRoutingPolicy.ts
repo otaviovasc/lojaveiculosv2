@@ -1,4 +1,4 @@
-import { crmRoutingChannels } from "../../ports/crmRoutingPolicyRepository.js";
+import { crmMessagingChannels } from "../../ports/crmRoutingPolicyRepository.js";
 import {
   getCrmRoutingConnectionRepository,
   getCrmRoutingPolicyRepository,
@@ -24,7 +24,7 @@ export async function resolveCrmRoutingPolicy(
   const byId = new Map(
     connections.map((connection) => [connection.id, connection]),
   );
-  const channels = crmRoutingChannels.map(
+  const channels = crmMessagingChannels.map(
     (channel): CrmChannelRoutingReadModel => {
       const policy = byChannel.get(channel);
       const defaultConnectionId = policy?.defaultConnectionId ?? null;
@@ -37,8 +37,8 @@ export async function resolveCrmRoutingPolicy(
         requiredCapabilities,
         scope,
       });
-      const botMode = policy?.botMode ?? "disabled";
-      if (botMode === "disabled") {
+      const externalBotMode = policy?.externalBotMode ?? "disabled";
+      if (externalBotMode === "disabled") {
         return {
           bot: {
             blocked: {
@@ -47,7 +47,7 @@ export async function resolveCrmRoutingPolicy(
               remediation: "Enable inherited or explicit bot routing.",
             },
             connection: null,
-            mode: botMode,
+            mode: externalBotMode,
             ready: false,
             requiredCapabilities,
           },
@@ -55,22 +55,22 @@ export async function resolveCrmRoutingPolicy(
           storeDefault,
         };
       }
-      const botConnectionId =
-        botMode === "inherit_store_default"
+      const externalBotConnectionId =
+        externalBotMode === "inherit_store_default"
           ? defaultConnectionId
-          : (policy?.botConnectionId ?? null);
+          : (policy?.externalBotConnectionId ?? null);
       return {
         bot: {
           ...resolveCrmConnectionRoute({
             channel,
-            connection: botConnectionId
-              ? (byId.get(botConnectionId) ?? null)
+            connection: externalBotConnectionId
+              ? (byId.get(externalBotConnectionId) ?? null)
               : null,
-            connectionId: botConnectionId,
+            connectionId: externalBotConnectionId,
             requiredCapabilities,
             scope,
           }),
-          mode: botMode,
+          mode: externalBotMode,
         },
         channel,
         storeDefault,

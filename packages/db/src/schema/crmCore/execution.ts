@@ -13,23 +13,23 @@ import {
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "../_shared.js";
 import { stores, tenants, users } from "../identity.js";
-import { providerConnections } from "./authorization.js";
+import { crmChannelConnections } from "./authorization.js";
 import { conversationThreads } from "./conversations.js";
 import {
-  botActionCommandState,
-  botAuthorizationClass,
-  botGrantState,
+  crmExternalBotActionCommandState,
+  crmExternalBotAuthorizationClass,
+  crmExternalBotGrantState,
   transportProvider,
   workflowProvider,
 } from "./enums.js";
 import { revisionCheck, revisionColumn } from "./revision.js";
 import { scopedStoreForeignKey } from "./scoped.js";
 
-export const botIntegrationGrants = pgTable(
-  "bot_integration_grants",
+export const crmExternalBotGrants = pgTable(
+  "crm_external_bot_grants",
   {
     ...lifecycleColumns,
-    actionClass: botAuthorizationClass("action_class").notNull(),
+    actionClass: crmExternalBotAuthorizationClass("action_class").notNull(),
     actionType: varchar("action_type", { length: 120 }).notNull(),
     botKey: varchar("bot_key", { length: 120 }).notNull(),
     consumedAt: timestamp("consumed_at", { withTimezone: true }),
@@ -39,7 +39,7 @@ export const botIntegrationGrants = pgTable(
     modelVersion: varchar("model_version", { length: 120 }).notNull(),
     providerConnectionId: uuid("provider_connection_id")
       .notNull()
-      .references(() => providerConnections.id),
+      .references(() => crmChannelConnections.id),
     provider: transportProvider("provider").notNull(),
     requestDigest: varchar("request_digest", { length: 128 }).notNull(),
     tokenDigest: varchar("token_digest", { length: 128 }),
@@ -47,7 +47,7 @@ export const botIntegrationGrants = pgTable(
       length: 128,
     }),
     revision: revisionColumn(),
-    state: botGrantState("state").notNull().default("issued"),
+    state: crmExternalBotGrantState("state").notNull().default("issued"),
     threadId: uuid("thread_id")
       .notNull()
       .references(() => conversationThreads.id),
@@ -60,7 +60,7 @@ export const botIntegrationGrants = pgTable(
     workflowProvider: workflowProvider("workflow_provider").notNull(),
   },
   (table) => [
-    scopedStoreForeignKey(table, "bot_integration_grants_store_tenant_fk"),
+    scopedStoreForeignKey(table, "crm_external_bot_grants_store_tenant_fk"),
     foreignKey({
       columns: [
         table.tenantId,
@@ -69,12 +69,12 @@ export const botIntegrationGrants = pgTable(
         table.provider,
       ],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
-        providerConnections.provider,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
+        crmChannelConnections.provider,
       ],
-      name: "bot_integration_grants_semantic_connection_fk",
+      name: "crm_external_bot_grants_semantic_connection_fk",
     }),
     foreignKey({
       columns: [
@@ -89,26 +89,26 @@ export const botIntegrationGrants = pgTable(
         conversationThreads.id,
         conversationThreads.providerConnectionId,
       ],
-      name: "bot_integration_grants_semantic_thread_fk",
+      name: "crm_external_bot_grants_semantic_thread_fk",
     }),
     check(
-      "bot_integration_grants_expiry_check",
+      "crm_external_bot_grants_expiry_check",
       sql`${table.expiresAt} > ${table.createdAt}`,
     ),
     check(
-      "bot_integration_grants_consumption_check",
+      "crm_external_bot_grants_consumption_check",
       sql`(${table.state} = 'consumed') = (${table.consumedAt} IS NOT NULL)`,
     ),
     revisionCheck(
       table.revision,
-      "bot_integration_grants_revision_nonnegative",
+      "crm_external_bot_grants_revision_nonnegative",
     ),
-    uniqueIndex("bot_integration_grants_scope_id_unique").on(
+    uniqueIndex("crm_external_bot_grants_scope_id_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
     ),
-    uniqueIndex("bot_integration_grants_command_scope_unique").on(
+    uniqueIndex("crm_external_bot_grants_command_scope_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
@@ -118,39 +118,58 @@ export const botIntegrationGrants = pgTable(
       table.actionType,
       table.actionClass,
     ),
-    uniqueIndex("bot_integration_grants_request_digest_unique").on(
+    uniqueIndex("crm_external_bot_grants_approval_scope_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+      table.providerConnectionId,
+      table.threadId,
+      table.provider,
+      table.actionType,
+    ),
+    uniqueIndex("crm_external_bot_grants_request_digest_unique").on(
       table.tenantId,
       table.storeId,
       table.requestDigest,
     ),
-    uniqueIndex("bot_integration_grants_token_digest_unique")
+    uniqueIndex("crm_external_bot_grants_token_digest_unique")
       .on(table.tokenDigest)
       .where(sql`${table.tokenDigest} IS NOT NULL`),
-    index("bot_integration_grants_expiry_idx").on(table.state, table.expiresAt),
+    index("crm_external_bot_grants_expiry_idx").on(
+      table.state,
+      table.expiresAt,
+    ),
   ],
 );
 
-export const botActionCommands = pgTable(
-  "bot_action_commands",
+export const crmExternalBotActionCommands = pgTable(
+  "crm_external_bot_action_commands",
   {
     ...lifecycleColumns,
     actionType: varchar("action_type", { length: 120 }).notNull(),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     approvedByUserId: uuid("approved_by_user_id").references(() => users.id),
+    expectedAttendanceRevision: integer(
+      "expected_attendance_revision",
+    ).notNull(),
     expectedRevision: integer("expected_revision").notNull(),
     grantId: uuid("grant_id")
       .notNull()
-      .references(() => botIntegrationGrants.id),
+      .references(() => crmExternalBotGrants.id),
     idempotencyKey: varchar("idempotency_key", { length: 191 }).notNull(),
     input: jsonb("input").notNull().default({}),
     provider: transportProvider("provider").notNull(),
     providerConnectionId: uuid("provider_connection_id")
       .notNull()
-      .references(() => providerConnections.id),
+      .references(() => crmChannelConnections.id),
     requestDigest: varchar("request_digest", { length: 128 }).notNull(),
     revision: revisionColumn(),
-    authorizationClass: botAuthorizationClass("authorization_class").notNull(),
-    state: botActionCommandState("state").notNull().default("accepted"),
+    authorizationClass: crmExternalBotAuthorizationClass(
+      "authorization_class",
+    ).notNull(),
+    state: crmExternalBotActionCommandState("state")
+      .notNull()
+      .default("accepted"),
     threadId: uuid("thread_id")
       .notNull()
       .references(() => conversationThreads.id),
@@ -162,7 +181,10 @@ export const botActionCommands = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
-    scopedStoreForeignKey(table, "bot_action_commands_store_tenant_fk"),
+    scopedStoreForeignKey(
+      table,
+      "crm_external_bot_action_commands_store_tenant_fk",
+    ),
     foreignKey({
       columns: [
         table.tenantId,
@@ -172,28 +194,26 @@ export const botActionCommands = pgTable(
         table.threadId,
         table.provider,
         table.actionType,
-        table.authorizationClass,
       ],
       foreignColumns: [
-        botIntegrationGrants.tenantId,
-        botIntegrationGrants.storeId,
-        botIntegrationGrants.id,
-        botIntegrationGrants.providerConnectionId,
-        botIntegrationGrants.threadId,
-        botIntegrationGrants.provider,
-        botIntegrationGrants.actionType,
-        botIntegrationGrants.actionClass,
+        crmExternalBotGrants.tenantId,
+        crmExternalBotGrants.storeId,
+        crmExternalBotGrants.id,
+        crmExternalBotGrants.providerConnectionId,
+        crmExternalBotGrants.threadId,
+        crmExternalBotGrants.provider,
+        crmExternalBotGrants.actionType,
       ],
-      name: "bot_action_commands_semantic_grant_fk",
+      name: "crm_external_bot_action_commands_semantic_grant_fk",
     }),
     foreignKey({
       columns: [table.tenantId, table.storeId, table.providerConnectionId],
       foreignColumns: [
-        providerConnections.tenantId,
-        providerConnections.storeId,
-        providerConnections.id,
+        crmChannelConnections.tenantId,
+        crmChannelConnections.storeId,
+        crmChannelConnections.id,
       ],
-      name: "bot_action_commands_scoped_connection_fk",
+      name: "crm_external_bot_action_commands_scoped_connection_fk",
     }),
     foreignKey({
       columns: [table.tenantId, table.storeId, table.threadId],
@@ -202,45 +222,52 @@ export const botActionCommands = pgTable(
         conversationThreads.storeId,
         conversationThreads.id,
       ],
-      name: "bot_action_commands_scoped_thread_fk",
+      name: "crm_external_bot_action_commands_scoped_thread_fk",
     }),
     check(
-      "bot_action_commands_expected_revision_nonnegative",
+      "crm_external_bot_action_commands_expected_attendance_revision_nonnegative",
+      sql`${table.expectedAttendanceRevision} >= 0`,
+    ),
+    check(
+      "crm_external_bot_action_commands_expected_revision_nonnegative",
       sql`${table.expectedRevision} >= 0`,
     ),
     check(
-      "bot_action_commands_request_digest_nonempty",
+      "crm_external_bot_action_commands_request_digest_nonempty",
       sql`btrim(${table.requestDigest}) <> ''`,
     ),
     check(
-      "bot_action_commands_approval_check",
+      "crm_external_bot_action_commands_approval_check",
       sql`(${table.authorizationClass} IN ('automatic', 'proposal_only') AND ${table.approvedAt} IS NULL AND ${table.approvedByUserId} IS NULL) OR (${table.authorizationClass} = 'human_approved' AND ${table.approvedAt} IS NOT NULL AND ${table.approvedByUserId} IS NOT NULL)`,
     ),
-    revisionCheck(table.revision, "bot_action_commands_revision_nonnegative"),
-    uniqueIndex("bot_action_commands_scope_id_unique").on(
+    revisionCheck(
+      table.revision,
+      "crm_external_bot_action_commands_revision_nonnegative",
+    ),
+    uniqueIndex("crm_external_bot_action_commands_scope_id_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
     ),
-    uniqueIndex("bot_action_commands_effect_scope_unique").on(
+    uniqueIndex("crm_external_bot_action_commands_effect_scope_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
       table.providerConnectionId,
       table.provider,
     ),
-    uniqueIndex("bot_action_commands_proposal_scope_unique").on(
+    uniqueIndex("crm_external_bot_action_commands_proposal_scope_unique").on(
       table.tenantId,
       table.storeId,
       table.id,
       table.actionType,
     ),
-    uniqueIndex("bot_action_commands_idempotency_unique").on(
+    uniqueIndex("crm_external_bot_action_commands_idempotency_unique").on(
       table.tenantId,
       table.storeId,
       table.idempotencyKey,
     ),
-    index("bot_action_commands_processing_idx").on(
+    index("crm_external_bot_action_commands_processing_idx").on(
       table.state,
       table.createdAt,
     ),

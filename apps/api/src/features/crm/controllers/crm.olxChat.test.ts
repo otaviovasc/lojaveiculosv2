@@ -3,7 +3,7 @@ import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBo
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import {
   createOlxConnection,
   olxSecurity,
@@ -12,13 +12,15 @@ import {
   tenantId,
   validPayload,
 } from "./crm.olxChat.testSupport.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM OLX Chat runtime", () => {
   it("authenticates and persists idempotently only in canonical CRM", async () => {
-    const canonicalRepository = createMemoryCrmCanonicalInboundRepository();
     const crmRepository = createMemoryCrmRepository();
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const canonicalRepository = createMemoryCrmCanonicalInboundRepository(
+      conversationRepository,
+    );
     const publish = vi.fn(async () => undefined);
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
@@ -27,7 +29,7 @@ describe("CRM OLX Chat runtime", () => {
       crmCanonicalInboundRepository: canonicalRepository,
       crmRealtimePublisher: { publish },
       crmRepository,
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
       crmOlxWebhookSecurity: olxSecurity(),
       olxChatEnabled: true,
@@ -41,29 +43,23 @@ describe("CRM OLX Chat runtime", () => {
     await expect(duplicate.json()).resolves.toMatchObject({
       status: "duplicate",
     });
-    const sessions = await whatsappRepository.listSessions({
+    const cycles = await conversationRepository.listConversationCycles({
       limit: 10,
       offset: 0,
       storeId,
       tenantId,
     });
-    expect(sessions).toEqual([]);
+    expect(cycles).toHaveLength(1);
     await expect(
       crmRepository.listLeads({ limit: 10, offset: 0, storeId, tenantId }),
     ).resolves.toMatchObject([
       { buyerEmail: "ana@example.com", source: "olx" },
     ]);
     expect(canonicalRepository.snapshot()).toMatchObject({
-      attendances: [{ state: "bot_active" }],
-      cycles: [{ state: "active" }],
-      messages: [
-        {
-          content: "Tenho interesse no carro",
-          providerMessageId: "olx-message-1",
-          sender: "customer",
-        },
-      ],
-      threads: [{ externalThreadIds: ["olx-chat-1"] }],
+      attendances: [],
+      cycles: [],
+      messages: [],
+      threads: [],
     });
     expect(publish).toHaveBeenCalledTimes(2);
     expect(publish).toHaveBeenCalledWith(
@@ -72,12 +68,12 @@ describe("CRM OLX Chat runtime", () => {
   });
 
   it("rejects another connection secret before parsing or persistence", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
       crmOlxWebhookSecurity: olxSecurity(),
       olxChatEnabled: true,
@@ -87,7 +83,7 @@ describe("CRM OLX Chat runtime", () => {
 
     expect(response.status).toBe(403);
     await expect(
-      whatsappRepository.listSessions({
+      conversationRepository.listConversationCycles({
         limit: 10,
         offset: 0,
         storeId,
@@ -97,7 +93,7 @@ describe("CRM OLX Chat runtime", () => {
   });
 
   it("binds the authenticated connection scope before entitlement resolution", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
     const resolveBotEntitlements = vi.fn<ResolveCrmBotEntitlements>(
       async ({
         context,
@@ -106,7 +102,7 @@ describe("CRM OLX Chat runtime", () => {
       }) => {
         expect(context).toMatchObject({
           actor: { id: "olx_chat", kind: "integration" },
-          permissions: ["crm.whatsapp.ingest"],
+          permissions: ["crm.messages.ingest", "crm.conversations.manage"],
           storeId: resolvedStoreId,
           tenantId: resolvedTenantId,
         });
@@ -118,7 +114,7 @@ describe("CRM OLX Chat runtime", () => {
         createOlxConnection(),
       ]),
       crmOlxWebhookSecurity: olxSecurity(),
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       olxChatEnabled: true,
       resolveBotEntitlements,
     });
@@ -132,13 +128,13 @@ describe("CRM OLX Chat runtime", () => {
   });
 
   it("fails closed before ingestion when the authenticated store lacks CRM", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
       crmOlxWebhookSecurity: olxSecurity(),
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       olxChatEnabled: true,
       resolveBotEntitlements: async ({ context }) => {
         expect(context).toMatchObject({ storeId, tenantId });
@@ -150,7 +146,7 @@ describe("CRM OLX Chat runtime", () => {
 
     expect(response.status).toBe(403);
     await expect(
-      whatsappRepository.listSessions({
+      conversationRepository.listConversationCycles({
         limit: 10,
         offset: 0,
         storeId,
@@ -159,13 +155,13 @@ describe("CRM OLX Chat runtime", () => {
     ).resolves.toEqual([]);
   });
 
-  it("ignores seller events without creating a CRM session", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+  it("ignores seller events without creating a CRM cycle", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
       crmOlxWebhookSecurity: olxSecurity(),
       olxChatEnabled: true,
@@ -188,7 +184,7 @@ describe("CRM OLX Chat runtime", () => {
         createOlxConnection(),
       ]),
       crmOlxWebhookSecurity: olxSecurity(),
-      crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
+      crmConversationRepository: createMemoryCrmConversationRepository(),
       entitlements: ["crm"],
       olxChatEnabled: true,
     });
@@ -205,13 +201,13 @@ describe("CRM OLX Chat runtime", () => {
     ["stale", "2026-08-10T11:50:00.000Z"],
     ["future", "2026-08-10T12:02:01.000Z"],
   ])("rejects a %s OLX event before persistence", async (_label, timestamp) => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const conversationRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createOlxConnection(),
       ]),
       crmOlxWebhookSecurity: olxSecurity(),
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: conversationRepository,
       entitlements: ["crm"],
       olxChatEnabled: true,
     });
@@ -223,7 +219,7 @@ describe("CRM OLX Chat runtime", () => {
 
     expect(response.status).toBe(400);
     await expect(
-      whatsappRepository.listSessions({
+      conversationRepository.listConversationCycles({
         limit: 10,
         offset: 0,
         storeId,

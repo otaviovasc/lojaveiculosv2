@@ -1,0 +1,291 @@
+.crm-tag-manager {
+  background: color-mix(in srgb, var(--color-panel) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-xl, var(--radius-md));
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  width: 100%;
+  transition: all 0.25s ease;
+}
+
+.crm-tag-manager-page {
+  display: grid;
+  margin: 0 auto;
+  max-width: 76rem;
+  width: 100%;
+}
+
+.crm-tag-manager-page .crm-tag-manager {
+  box-shadow: none;
+  max-width: none;
+  min-height: 0;
+  width: 100%;
+}
+
+.crm-tag-list-surface {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.crm-tag-list-heading,
+.crm-tag-editor-column {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.crm-tag-list-heading strong,
+.crm-tag-list-heading p {
+  margin: 0;
+}
+
+.crm-tag-list-heading strong {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.crm-tag-list-heading p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  margin-top: 0.2rem;
+  line-height: 1.45;
+}
+
+.crm-tag-editor-actions {
+  display: flex;
+  gap: 0.625rem;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.crm-tag-editor-actions .crm-action {
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 950;
+  padding: 0 1rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-editor-actions .crm-action-muted {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+  box-shadow: none;
+}
+
+.crm-tag-editor-actions .crm-action-muted:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-panel));
+  box-shadow: none;
+}
+
+.crm-tag-editor-actions .crm-action:not(.crm-action-muted) {
+  background: var(--color-success-strong);
+  border-color: var(--color-success-strong);
+  color: var(--color-success-strong-foreground);
+  box-shadow: none;
+}
+
+.crm-tag-editor-actions .crm-action:not(.crm-action-muted):hover {
+  background: var(--color-success-strong);
+  color: var(--color-success-strong-foreground);
+  transform: scale(1.03);
+  box-shadow: none;
+}
+
+.crm-tag-editor-actions .crm-action:not(.crm-action-muted):hover {
+  transform: translateY(-1px);
+}
+
+.crm-tag-manager-note,
+.crm-tag-manager-empty,
+.crm-tag-manager-error,
+.crm-tag-manager-status {
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+}
+
+.crm-tag-manager-note,
+.crm-tag-manager-empty,
+.crm-tag-manager-status {
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+
+.crm-tag-manager-error {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  color: var(--color-accent-strong);
+}
+
+.crm-tag-admin-list {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  overflow: hidden;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
+}
+
+.crm-tag-admin-row {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 3.5rem;
+  padding: 0.65rem 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.crm-tag-admin-row:first-child {
+  border-top: 0;
+}
+
+.crm-tag-admin-row:hover {
+  background: color-mix(in srgb, var(--color-accent) 4%, var(--color-panel));
+}
+
+.crm-tag-admin-label {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.crm-tag-admin-label strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-tag-admin-label small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-tag-admin-row button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.crm-tag-admin-row button:hover:not(:disabled) {
+  color: var(--color-accent-strong);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.crm-tag-confirm {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-overlay, #000) 60%, transparent);
+  backdrop-filter: blur(8px);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1.25rem;
+  position: fixed;
+  z-index: 80;
+}
+
+.crm-tag-confirm-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-xl, var(--radius-md));
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.3);
+  color: var(--color-text);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  max-width: min(27rem, 100%);
+  padding: 1.25rem;
+}
+
+.crm-tag-confirm-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.crm-tag-confirm-icon svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.crm-tag-confirm-panel strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.crm-tag-confirm-panel p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+}
+
+.crm-tag-confirm-panel footer {
+  display: flex;
+  gap: 0.625rem;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.crm-action-danger {
+  background: var(--color-danger);
+  color: var(--color-inverse, #ffffff);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  font-weight: 950;
+  padding: 0.5rem 1rem;
+}
+
+@media (max-width: 640px) {
+  .crm-tag-list-surface {
+    padding: 0.85rem;
+  }
+
+  .crm-tag-admin-row {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .crm-template-actions {
+    justify-content: flex-end;
+  }
+
+  .crm-tag-editor-actions .crm-action {
+    flex: 1 1 0;
+  }
+}

@@ -1,22 +1,22 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type {
-  ConfigureWhatsappConnectionWebhooksInput,
-  ConfigureWhatsappConnectionWebhooksResult,
-} from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
+  ConfigureCrmChannelConnectionWebhooksInput,
+  ConfigureCrmChannelConnectionWebhooksResult,
+} from "../../../domains/crm/services/CrmWhatsappService/configureWhatsappConnectionWebhooks.js";
 import type {
   IngestZapiWhatsappWebhookInput,
   IngestZapiWhatsappWebhookResult,
-} from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
+} from "../../../domains/crm/services/CrmWhatsappService/ingestZapiWhatsappWebhook.js";
 import type {
-  ListWhatsappWebhookEventIssuesInput,
-  RetryWhatsappWebhookEventInput,
-  RetryWhatsappWebhookEventResult,
-  WhatsappWebhookEventSummary,
-} from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
-import type { ProcessMetaMessagingWebhookResult } from "../../../domains/crm/services/CrmMessaging/processMetaMessagingWebhook.js";
-import type { IngestOlxChatWebhookResult } from "../../../domains/crm/services/CrmMessaging/ingestOlxChatWebhook.js";
-import type { IngestOlxLeadWebhookResult } from "../../../domains/crm/services/CrmMessaging/ingestOlxLeadWebhook.js";
-import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessaging/authorizeOlxChatWebhook.js";
+  ListProviderEventIssuesInput,
+  RetryProviderEventInput,
+  RetryProviderEventResult,
+  ProviderEventIssueSummary,
+} from "../../../domains/crm/services/CrmMessagingService/providerEventIssues.js";
+import type { ProcessMetaMessagingWebhookResult } from "../../../domains/crm/services/CrmMessagingService/processMetaMessagingWebhook.js";
+import type { IngestOlxChatWebhookResult } from "../../../domains/crm/services/CrmMessagingService/ingestOlxChatWebhook.js";
+import type { IngestOlxLeadWebhookResult } from "../../../domains/crm/services/CrmMessagingService/ingestOlxLeadWebhook.js";
+import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessagingService/authorizeOlxChatWebhook.js";
 
 type CrmContextService<Input, Output> = (
   context: ServiceContext,
@@ -47,8 +47,8 @@ export type CrmWhatsappWebhookServices = {
     { authorized: true; storeId: string; tenantId: string }
   >;
   configureWhatsappConnectionWebhooks: CrmContextService<
-    ConfigureWhatsappConnectionWebhooksInput,
-    ConfigureWhatsappConnectionWebhooksResult
+    ConfigureCrmChannelConnectionWebhooksInput,
+    ConfigureCrmChannelConnectionWebhooksResult
   >;
   ingestZapiWhatsappWebhook: CrmContextService<
     IngestZapiWhatsappWebhookInput,
@@ -72,9 +72,9 @@ export type CrmWhatsappWebhookServices = {
     },
     IngestOlxLeadWebhookResult
   >;
-  listWhatsappWebhookEventIssues: CrmContextService<
-    ListWhatsappWebhookEventIssuesInput,
-    readonly WhatsappWebhookEventSummary[]
+  listProviderEventIssues: CrmContextService<
+    ListProviderEventIssuesInput,
+    readonly ProviderEventIssueSummary[]
   >;
   processMetaMessagingWebhook: CrmContextService<
     Record<string, unknown>,
@@ -85,8 +85,8 @@ export type CrmWhatsappWebhookServices = {
   processZapiWhatsappDeliveryWebhook: ZapiWebhookProcessor;
   processZapiWhatsappDisconnectedWebhook: ZapiWebhookProcessor;
   processZapiWhatsappStatusWebhook: ZapiWebhookProcessor;
-  retryWhatsappWebhookEvent: CrmContextService<
-    RetryWhatsappWebhookEventInput,
-    RetryWhatsappWebhookEventResult
+  retryProviderEvent: CrmContextService<
+    RetryProviderEventInput,
+    RetryProviderEventResult
   >;
 };

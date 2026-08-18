@@ -89,7 +89,7 @@ async function openWhatsappConversation(
   },
 ) {
   await page.goto(
-    `/crm#/crm?surface=whatsapp&crm_session=${encodeURIComponent(
+    `/crm#/crm?surface=conversations&cycleId=${encodeURIComponent(
       input.sessionId,
     )}`,
   );

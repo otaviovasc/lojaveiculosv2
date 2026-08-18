@@ -1,8 +1,8 @@
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type { ParsedZapiInboundMessage } from "./parseZapiInboundMessage.js";
-import { findOrCreateWhatsappLead } from "./whatsappLeadLinking.js";
+import { findOrCreateCrmMessagingLead } from "../messaging/leadLinking.js";
 import {
-  getCrmWhatsappRepository,
+  getCrmConversationRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 
@@ -13,22 +13,28 @@ export async function resolveZapiWhatsappLead(
     message: ParsedZapiInboundMessage;
   },
 ) {
-  const session = await getCrmWhatsappRepository(ports).upsertSessionContext({
-    ...(input.message.chatLid ? { buyerChatLid: input.message.chatLid } : {}),
-    ...(input.message.buyerName ? { buyerName: input.message.buyerName } : {}),
-    buyerPhone: input.message.phone,
+  const conversationCycle = await getCrmConversationRepository(
+    ports,
+  ).upsertConversationCycleContext({
+    ...(input.message.chatLid ? { customerChatId: input.message.chatLid } : {}),
+    ...(input.message.customerDisplayName
+      ? { customerDisplayName: input.message.customerDisplayName }
+      : {}),
+    customerPhone: input.message.phone,
     channel: "WHATSAPP",
     connectionId: input.connection.id,
     storeId: input.connection.storeId,
     tenantId: input.connection.tenantId,
   });
-  return findOrCreateWhatsappLead(ports, {
-    buyerName: input.message.buyerName ?? null,
+  return findOrCreateCrmMessagingLead(ports, {
+    buyerName: input.message.customerDisplayName ?? null,
     buyerPhone: input.message.phone,
+    channel: "WHATSAPP",
     connectionId: input.connection.id,
     direction: input.message.fromMe ? "OUTBOUND" : "INBOUND",
     externalId: input.message.externalId,
-    preferredLeadId: session.leadId,
+    preferredLeadId: conversationCycle.leadId,
+    source: "whatsapp",
     storeId: input.connection.storeId,
     tenantId: input.connection.tenantId,
   });

@@ -113,7 +113,7 @@ export async function listDrizzleCrmRetentionCandidates(
       union all
 
       select 'bot_interaction', 'bot_action_command', command.id::text, command.created_at
-      from bot_action_commands command
+      from crm_external_bot_action_commands command
       where command.tenant_id = ${input.tenantId}::uuid
         and command.store_id = ${input.storeId}::uuid
         and command.created_at <= ${input.botCutoff}
@@ -122,7 +122,7 @@ export async function listDrizzleCrmRetentionCandidates(
       union all
 
       select 'bot_interaction', 'provider_effect', effect.id::text, effect.created_at
-      from provider_effects effect
+      from crm_external_bot_provider_effects effect
       where effect.tenant_id = ${input.tenantId}::uuid
         and effect.store_id = ${input.storeId}::uuid
         and effect.created_at <= ${input.botCutoff}

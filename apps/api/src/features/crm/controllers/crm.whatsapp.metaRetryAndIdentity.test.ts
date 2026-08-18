@@ -5,8 +5,8 @@ import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepo
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const appSecret = "meta-retry-identity-secret";
 const storeId = "store_1" as StoreId;
@@ -25,13 +25,13 @@ describe("CRM Meta webhook retry and channel identity", () => {
 
   it("keeps Instagram scoped IDs out of buyer phone identity", async () => {
     const leads = createMemoryCrmRepository();
-    const sessions = createMemoryCrmWhatsappRepository();
+    const cycles = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_instagram", "ig-business-1"),
+        createConnection("instagram", "ig-business-1"),
       ]),
       crmRepository: leads,
-      crmWhatsappRepository: sessions,
+      crmConversationRepository: cycles,
     });
 
     const response = await signedRequest(
@@ -40,17 +40,18 @@ describe("CRM Meta webhook retry and channel identity", () => {
     );
 
     expect(response.status).toBe(200);
-    const storedSessions = await sessions.listSessions({
+    const storedCycles = await cycles.listConversationCycles({
       limit: 10,
       offset: 0,
       storeId,
       tenantId,
     });
-    expect(storedSessions).toHaveLength(2);
-    expect(
-      storedSessions.map((session) => session.channelExternalId).sort(),
-    ).toEqual(["ig-contact-1", "ig-contact-2"]);
-    expect(storedSessions.every((session) => session.buyerPhone === "")).toBe(
+    expect(storedCycles).toHaveLength(2);
+    expect(storedCycles.map((cycle) => cycle.externalThreadId).sort()).toEqual([
+      "ig-contact-1",
+      "ig-contact-2",
+    ]);
+    expect(storedCycles.every((cycle) => cycle.customerPhone === "")).toBe(
       true,
     );
 
@@ -66,7 +67,7 @@ describe("CRM Meta webhook retry and channel identity", () => {
   });
 
   it("retries side effects after the message was already persisted", async () => {
-    const repository = createMemoryCrmWhatsappRepository();
+    const repository = createMemoryCrmConversationRepository();
     const webhookEvents = createMemoryCrmWebhookEventRepository();
     const publish = vi
       .fn()
@@ -74,11 +75,11 @@ describe("CRM Meta webhook retry and channel identity", () => {
       .mockResolvedValue(undefined);
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createConnection("composio_whatsapp", "phone-number-1"),
+        createConnection("whatsapp", "phone-number-1"),
       ]),
       crmRealtimePublisher: { publish },
       crmWebhookEventRepository: webhookEvents,
-      crmWhatsappRepository: repository,
+      crmConversationRepository: repository,
     });
     const payload = whatsappPayload();
 
@@ -88,7 +89,7 @@ describe("CRM Meta webhook retry and channel identity", () => {
     expect(retry.status).toBe(200);
     await expect(retry.json()).resolves.toMatchObject({ processed: 1 });
     expect(publish).toHaveBeenCalledTimes(3);
-    const [session] = await repository.listSessions({
+    const [cycle] = await repository.listConversationCycles({
       limit: 10,
       offset: 0,
       storeId,
@@ -97,7 +98,7 @@ describe("CRM Meta webhook retry and channel identity", () => {
     const messages = await repository.listMessages({
       limit: 10,
       offset: 0,
-      sessionId: session!.id,
+      cycleId: cycle!.id,
       storeId,
       tenantId,
     });
@@ -169,21 +170,23 @@ function signedRequest(
 }
 
 function createConnection(
-  provider: "composio_instagram" | "composio_whatsapp",
+  channel: "instagram" | "whatsapp",
   externalConnectionId: string,
 ): CrmConnection {
   return {
+    broker: "composio",
+    channel,
     credentialsRef: {},
-    displayName: provider,
+    displayName: channel,
     externalConnectionId,
     externalInstanceId: null,
     id:
-      provider === "composio_instagram"
+      channel === "instagram"
         ? "25000000-0000-4000-8000-000000000302"
         : "25000000-0000-4000-8000-000000000301",
     metadata: {},
     phone: null,
-    provider,
+    provider: "meta_cloud",
     status: "active",
     storeId,
     tenantId,

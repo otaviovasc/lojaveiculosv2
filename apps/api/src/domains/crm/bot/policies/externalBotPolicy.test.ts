@@ -49,4 +49,17 @@ describe("external bot policy", () => {
       }),
     ).toEqual({ allowed: true, mode: "proposal" });
   });
+
+  it("blocks proposal mode during human attendance", () => {
+    expect(
+      evaluateExternalBotPolicy({
+        actionsToday: 0,
+        connectionActionsInLastMinute: 0,
+        connectionReady: true,
+        humanTakeover: true,
+        policy: { ...policy, mode: "proposal" },
+        secondsSinceLastAction: null,
+      }),
+    ).toEqual({ allowed: false, code: "human_takeover" });
+  });
 });

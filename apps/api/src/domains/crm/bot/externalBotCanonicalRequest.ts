@@ -6,6 +6,7 @@ import type {
 export type ExternalBotActionRequest = ExternalBotScope & {
   capabilityGrant: string;
   command: ExternalBotCommand;
+  expectedAttendanceRevision: number;
   expectedRevision: number;
   idempotencyKey: string;
   requestDigest: string;

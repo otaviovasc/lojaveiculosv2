@@ -186,6 +186,8 @@ describe("retryOlxChatSetup", () => {
     const repository = createTestCrmConnectionRepository();
     const olx = await createOlxConnection(repository);
     const zapi = await repository.createConnection({
+      broker: "direct",
+      channel: "whatsapp",
       displayName: "Z-API",
       provider: "zapi",
       storeId: "store_1" as never,

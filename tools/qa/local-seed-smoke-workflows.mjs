@@ -159,8 +159,8 @@ async function assertCrm(db) {
        where tenant_id = ${seedIds.primaryTenant}) as attendances,
       (select count(*)::int from crm_messages
        where tenant_id = ${seedIds.primaryTenant}) as messages,
-      (select count(*)::int from crm_whatsapp_campaigns where tenant_id = ${seedIds.primaryTenant}) as campaigns,
-      (select count(*)::int from crm_whatsapp_scheduled_messages
+      (select count(*)::int from crm_campaigns where tenant_id = ${seedIds.primaryTenant}) as campaigns,
+      (select count(*)::int from crm_scheduled_messages
        where tenant_id = ${seedIds.primaryTenant}) as schedules,
       (select count(*)::int from crm_messages
        where tenant_id = ${seedIds.primaryTenant} and direction = 'inbound'

@@ -26,7 +26,7 @@ describe("Drizzle CRM retention adapter", () => {
     });
     expect(readiness.unavailableRelations).toEqual(
       expect.arrayContaining([
-        "bot_action_commands",
+        "crm_external_bot_action_commands",
         "crm_messages",
         "crm_channel_connections",
         "crm_conversation_attendances",
@@ -38,7 +38,7 @@ describe("Drizzle CRM retention adapter", () => {
         "crm_retention_legal_holds",
         "crm_retention_scopes",
         "integration_events",
-        "provider_effects",
+        "crm_external_bot_provider_effects",
         "provider_events",
       ]),
     );

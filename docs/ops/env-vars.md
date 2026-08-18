@@ -135,15 +135,18 @@ service.
 
 ## CRM Messaging Development
 
-The seeded local database creates a sandbox `crm_connections` row for a ZAPI
-test connection; it stores only env var names in `credentials_ref`, not
+The seeded local database creates a sandbox `crm_channel_connections` row for a
+Z-API test route. Credential references are server-owned and never contain raw
 secrets.
 
-V2 recognizes three messaging providers:
+V2 recognizes three canonical transport providers:
 
 - `zapi`
-- `composio_whatsapp`
-- `composio_instagram`
+- `meta_cloud`
+- `olx`
+
+Composio is a credential broker for `meta_cloud`; it is not a provider or
+channel alias.
 
 Official WhatsApp and Instagram sends use Composio's HTTP REST proxy. The API
 does not install the Composio TypeScript SDK because its current Node runtime
@@ -155,8 +158,8 @@ verification.
 Redis is part of the complete CRM messaging migration for ephemeral
 coordination: ticketed SSE fanout, future rate limits, distributed locks, and
 queue scheduling. Postgres remains the durable source of truth for webhook
-payloads, leads, sessions, messages, activities, and idempotency through
-`provider_events`.
+payloads, leads, conversation threads/cycles, messages, activities, and
+idempotency through `provider_events`.
 
 | Name                                       | Required                                                              | Environments               | Secret | Notes                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------------------------------ | --------------------------------------------------------------------- | -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -218,7 +221,8 @@ Official Meta providers use one shared callback:
 
 Configure the Meta app with `CRM_META_WEBHOOK_VERIFY_TOKEN`. Every POST must
 carry a valid `X-Hub-Signature-256` generated with `CRM_META_APP_SECRET`; there
-is no query-token bypass. The `crm_connections.external_connection_id` stores
+is no query-token bypass. The
+`crm_channel_connections.external_connection_id` stores
 the native Meta phone-number id or Instagram professional-account id used to
 route the event. Composio connected-account ids and API-key env references live
 in `credentials_ref`; raw provider secrets must not be stored in connection
@@ -230,7 +234,7 @@ explicit HTTP 429 is retried with bounded `Retry-After`; ambiguous timeouts and
 5xx responses are returned as provider failures without automatic replay.
 
 CRM messaging scheduled messages are stored durably in Postgres. Run
-`pnpm run crm:whatsapp:schedule:process` from a local shell or Railway cron
+`pnpm run crm:schedule:process` from a local shell or Railway cron
 worker to process due messages. The worker discovers due store scopes, then
 sends through the same scoped CRM service path used by authenticated requests.
 Railway runs the worker every five minutes in UTC. Because it composes the API
@@ -239,7 +243,7 @@ DB, audit DB, and Redis configuration. Do not set
 `CRM_WHATSAPP_SCHEDULE_DUE_AT` on Railway.
 
 For the self-service connection workflow, follow
-[`docs/runbooks/crm-whatsapp-connection-self-service.md`](../runbooks/crm-whatsapp-connection-self-service.md).
+[`docs/runbooks/crm-channel-connection-self-service.md`](../runbooks/crm-channel-connection-self-service.md).
 The runbook covers setup, re-authentication, key rotation, provider webhook
 diagnostics, degraded state, and rollback. It does not contain provider
 secrets or customer message data.
@@ -266,7 +270,7 @@ in feature-level `scopeSegments`; the R2 adapter owns it.
 
 ZAPI CRM WhatsApp inbound media is mirrored best-effort through the shared
 object storage adapter. Successful mirrors store the public R2 URL on
-`crm_whatsapp_messages.media_url` and persist provider URL, storage key, content
+`crm_messages.media_url` and persist provider URL, storage key, content
 type, byte size, and mirror timestamp under `metadata.media`. Failed mirrors
 keep the provider URL and set `metadata.media.mirrorStatus=failed`. The
 downloader accepts only public HTTPS destinations, validates and pins DNS
@@ -276,7 +280,7 @@ policy are not persisted as displayable media or thumbnail URLs.
 
 Official Meta WhatsApp and Instagram inbound media is different: the webhook
 stores an opaque provider media reference and leaves
-`crm_whatsapp_messages.media_url` empty. It does not fetch or mirror a remote
+`crm_messages.media_url` empty. It does not fetch or mirror a remote
 provider URL. A future authenticated media-resolution flow must be designed and
 verified before that reference can become displayable media.
 
