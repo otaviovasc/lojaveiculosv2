@@ -153,6 +153,7 @@ function outboundPorts(
   sendText: ReturnType<typeof vi.fn>,
 ): CrmServicePorts {
   return {
+    crmAssigneeMembershipRepository: activeMembershipRepository(),
     crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
     crmConnectionRepository: createTestCrmConnectionRepository([connection()]),
     crmRepository: createMemoryCrmRepository(),
@@ -161,6 +162,10 @@ function outboundPorts(
     crmWhatsappRepository: repository,
     transaction: transactional.transaction,
   };
+}
+
+function activeMembershipRepository() {
+  return { isActiveStoreMember: async () => true };
 }
 
 function transactionalIntentPorts(

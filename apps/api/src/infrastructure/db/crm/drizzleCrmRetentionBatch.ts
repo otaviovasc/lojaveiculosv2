@@ -19,19 +19,10 @@ export async function processDrizzleCrmRetentionBatch(
 ): Promise<ProcessCrmRetentionBatchResult> {
   const cursor = decodeCrmRetentionCursor(input.cursor);
   const process = async (client: DrizzleCrmClient) => {
-    const coverage = await client.execute(sql`
-      select coalesce(sum(unreconciled_rows), 0)::integer as gaps
-      from crm_retention_legacy_coverage
-      where tenant_id = ${input.scope.tenantId}::uuid
-        and store_id = ${input.scope.storeId}::uuid
-    `);
-    const [coverageRow] = coverage as unknown as Array<{ gaps: number }>;
-    const legacyCoverageGaps = Number(coverageRow?.gaps ?? 0);
     const listed = await listDrizzleCrmRetentionCandidates(client, {
       botCutoff: input.cutoffs.botInteractionBefore,
       canonicalCutoff: input.cutoffs.canonicalMessageBefore,
       cursor,
-      includeLegacyWindow: legacyCoverageGaps === 0,
       limit: input.limit + 1,
       now: input.now,
       providerCutoff: input.cutoffs.providerRawPayloadBefore,
@@ -56,7 +47,6 @@ export async function processDrizzleCrmRetentionBatch(
       ...(mutation.auditId ? { auditId: mutation.auditId } : {}),
       categories: categoryResults(actionable, input.dryRun),
       legalHoldSkipped,
-      legacyCoverageGaps,
       nextCursor:
         listed.length > input.limit && page.length > 0
           ? encodeCrmRetentionCursor(page[page.length - 1]!)

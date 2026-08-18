@@ -10,23 +10,36 @@ export function persistCanonicalInbound(
   input: Omit<
     CanonicalInboundMessageInput,
     | "externalThreadAliases"
+    | "customerChatId"
+    | "leadId"
     | "mediaType"
     | "mediaUrl"
     | "metadata"
+    | "profilePhotoStorageKey"
+    | "profilePhotoUrl"
     | "secondaryPhone"
+    | "senderOrigin"
+    | "sessionMetadata"
+    | "source"
   > & {
+    customerChatId?: string | null;
     externalThreadAliases?: readonly string[];
+    leadId?: string | null;
     mediaType?: string | null;
     mediaUrl?: string | null;
     metadata?: Readonly<Record<string, unknown>>;
+    profilePhotoStorageKey?: string | null;
+    profilePhotoUrl?: string | null;
     secondaryPhone?: string | null;
+    senderOrigin?: "customer" | "system";
+    sessionMetadata?: Readonly<Record<string, unknown>>;
+    source?: string | null;
   },
-): Promise<CanonicalInboundMessageResult | null> {
+): Promise<CanonicalInboundMessageResult> {
   const repository = ports.crmCanonicalInboundRepository;
-  // One rolling-deploy window only: older in-memory/test compositions may not
-  // expose the new port. Runtime DB composition always does; remove this null
-  // fallback after the canonical ingress deployment has completed.
-  if (!repository) return Promise.resolve(null);
+  if (!repository) {
+    throw new Error("Canonical CRM inbound repository is unavailable.");
+  }
   const normalizedIdentity = normalizeContactIdentity(
     input.identity.kind,
     input.identity.normalizedValue,
@@ -39,15 +52,22 @@ export function persistCanonicalInbound(
     : null;
   return repository.ingestInboundMessage({
     ...input,
+    customerChatId: input.customerChatId ?? null,
     externalThreadAliases: normalizeThreadAliases(
       input.externalThreadId,
       input.externalThreadAliases ?? [],
     ),
     identity: { ...input.identity, normalizedValue: normalizedIdentity },
+    leadId: input.leadId ?? null,
     mediaType: input.mediaType ?? null,
     mediaUrl: input.mediaUrl ?? null,
     metadata: sanitizeCanonicalMetadata(input.metadata ?? {}),
+    profilePhotoStorageKey: input.profilePhotoStorageKey ?? null,
+    profilePhotoUrl: input.profilePhotoUrl ?? null,
     secondaryPhone: secondaryPhone || null,
+    senderOrigin: input.senderOrigin ?? input.sender,
+    sessionMetadata: sanitizeCanonicalMetadata(input.sessionMetadata ?? {}),
+    source: input.source ?? null,
   });
 }
 
@@ -69,7 +89,7 @@ function normalizeThreadAliases(
 }
 
 const sensitiveMetadataKey =
-  /(?:authorization|cookie|credential|password|secret|token|url)/iu;
+  /(?:authorization|cookie|credential|password|secret|token)/iu;
 
 export function sanitizeCanonicalMetadata(
   metadata: Readonly<Record<string, unknown>>,
@@ -87,10 +107,25 @@ function sanitizeRecord(
       .filter(([key]) => !sensitiveMetadataKey.test(key))
       .slice(0, 40)
       .flatMap(([key, item]) => {
-        const sanitized = sanitizeValue(item, depth + 1);
+        const sanitized =
+          typeof item === "string" && /url$/iu.test(key)
+            ? sanitizeMetadataUrl(item)
+            : sanitizeValue(item, depth + 1);
         return sanitized === undefined ? [] : [[key, sanitized]];
       }),
   );
+}
+
+function sanitizeMetadataUrl(value: string): string | undefined {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" || parsed.search || parsed.hash) {
+      return undefined;
+    }
+    return parsed.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function sanitizeValue(value: unknown, depth: number): unknown {

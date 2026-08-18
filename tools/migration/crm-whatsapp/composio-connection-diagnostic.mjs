@@ -114,8 +114,9 @@ async function seedLocal(flags) {
 
   assertSafeLocalDatabaseOperation("crm:composio:seed:local", ["DATABASE_URL"]);
   const db = postgres(process.env.DATABASE_URL ?? localDatabaseUrl, { max: 1 });
+  let seeded;
   try {
-    await seedLocalComposioConnection(db, connection);
+    seeded = await seedLocalComposioConnection(db, connection);
   } finally {
     await db.end({ timeout: 5 });
   }
@@ -124,9 +125,10 @@ async function seedLocal(flags) {
       {
         channel,
         connectedAccountId: connection.connectedAccountId,
+        connectionId: seeded.id,
+        externalConnectionId: seeded.externalConnectionId,
         seeded: true,
-        senderId: connection.senderId,
-        status: "sandbox",
+        state: seeded.state,
       },
       null,
       2,

@@ -29,8 +29,7 @@ function readTrustedOlxCallback(input: {
   connectionId: string;
   storedWebhookUrl: string;
 }) {
-  let canonical: URL;
-  let stored: URL;
+  let canonical: URL, stored: URL;
   try {
     canonical = new URL(input.canonicalApiOrigin);
     stored = new URL(input.storedWebhookUrl);
@@ -42,7 +41,7 @@ function readTrustedOlxCallback(input: {
     canonical.protocol === "http:" &&
     canonical.hostname === "localhost";
   const publicHttps = canonical.protocol === "https:" && !canonical.port;
-  const expectedPath = `/api/v1/crm/whatsapp/webhooks/olx/${input.connectionId}/received`;
+  const expectedPath = `/api/v1/crm/webhooks/olx/${input.connectionId}/received`;
   if (
     (!publicHttps && !localHttp) ||
     canonical.username ||
@@ -90,10 +89,14 @@ export function assertOlxChatSetupCanBeRetried(connection: CrmConnection) {
     throw new OlxChatSetupRetryTargetError("already_configured");
   }
   const chatFailure = readRecord(readRecord(setup.failures).chat);
+  const documentedChatActivationFailure =
+    chatFailure.code === "provider_outcome_indeterminate" &&
+    chatFailure.httpStatus === 500;
   if (
     setup.status === "indeterminate" ||
-    setup.lastErrorCode === "provider_outcome_indeterminate" ||
-    chatFailure.code === "provider_outcome_indeterminate"
+    (!documentedChatActivationFailure &&
+      (setup.lastErrorCode === "provider_outcome_indeterminate" ||
+        chatFailure.code === "provider_outcome_indeterminate"))
   ) {
     throw new CrmConnectionSetupProviderError(
       "OLX webhook registration outcome is indeterminate. Reconcile it before retrying.",

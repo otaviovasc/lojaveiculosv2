@@ -9,9 +9,7 @@ import {
   CrmWhatsappGatewayError,
 } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import {
-  WhatsappBotActionError,
   WhatsappBotIntegrationIncompleteError,
-  WhatsappBotIntegrationUnauthorizedError,
   WhatsappBotIntegrationValidationError,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import { WhatsappQuickMessageError } from "../../../domains/crm/services/CrmWhatsapp/whatsappQuickMessageServiceSupport.js";
@@ -184,22 +182,6 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: 400,
-      });
-    }
-    if (error instanceof WhatsappBotIntegrationUnauthorizedError) {
-      return jsonApiError(context, {
-        code: "CRM_WHATSAPP_BOT_UNAUTHORIZED",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
-    if (error instanceof WhatsappBotActionError) {
-      return jsonApiError(context, {
-        code: error.code,
-        error,
-        message: error.message,
-        status: error.status,
       });
     }
     if (error instanceof WhatsappVehiclePartialSendError) {

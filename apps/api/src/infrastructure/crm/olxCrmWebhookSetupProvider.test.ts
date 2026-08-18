@@ -33,7 +33,7 @@ describe("createOlxCrmWebhookSetupProvider", () => {
     });
   });
 
-  it("performs only one POST when OLX returns an ambiguous server failure", async () => {
+  it("treats the documented Chat 500 activation error as retryable failure", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
@@ -46,9 +46,9 @@ describe("createOlxCrmWebhookSetupProvider", () => {
         callbackUrl: "https://api.example/chat",
       }),
     ).rejects.toMatchObject({
-      code: "provider_outcome_indeterminate",
+      code: "request_failed",
       httpStatus: 500,
-      retryable: false,
+      retryable: true,
     });
     expect(fetch).toHaveBeenCalledOnce();
   });
@@ -152,7 +152,7 @@ describe("createOlxCrmWebhookSetupProvider", () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
-  it("classifies OLX 500 as indeterminate and keeps safe request ids only", async () => {
+  it("keeps safe request ids on the documented Chat 500 failure", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
       new Response("token=customer-secret", {
         headers: {
@@ -172,12 +172,12 @@ describe("createOlxCrmWebhookSetupProvider", () => {
       .catch((caught: unknown) => caught);
 
     expect(error).toMatchObject({
-      code: "provider_outcome_indeterminate",
+      code: "request_failed",
       httpStatus: 500,
       providerRequestId: "olx-operation-500",
-      retryable: false,
+      retryable: true,
     });
-    expect(String(error)).toContain("indeterminate");
+    expect(String(error)).toContain("temporarily unavailable");
     expect(JSON.stringify(error)).not.toContain("customer-secret");
     expect(JSON.stringify(error)).not.toContain("access-secret");
     expect(JSON.stringify(error)).not.toContain("callback-secret");

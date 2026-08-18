@@ -194,24 +194,6 @@ describe("CRM retention policy", () => {
     );
   });
 
-  it("surfaces legacy reconciliation gaps without blocking safe retention", async () => {
-    const repository = createMemoryCrmRetentionRepository({
-      items: [item("message", "canonical_message", "2020-01-01", true)],
-      legacyCoverageGaps: 2,
-    });
-    const result = await runCrmRetentionBatch(
-      context(),
-      { dryRun: false, now },
-      repository,
-    );
-
-    expect(result).toMatchObject({
-      legacyCoverageGaps: 2,
-      status: "completed",
-      verified: true,
-    });
-  });
-
   it("inspects readiness only for the explicit service scope", async () => {
     const repository = createMemoryCrmRetentionRepository();
     const inspectReadiness = vi.spyOn(repository, "inspectReadiness");

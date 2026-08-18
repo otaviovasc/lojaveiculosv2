@@ -1,8 +1,11 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import {
   canonicalMessages,
+  conversationAttendances,
   conversationCycles,
+  conversationThreads,
   integrationEvents,
+  providerConnections,
   providerEvents,
 } from "@lojaveiculosv2/db";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
@@ -26,6 +29,7 @@ export async function applyCrmContentRetention(
       .update(canonicalMessages)
       .set({
         content: "",
+        mediaType: null,
         mediaUrl: null,
         metadata: sql`jsonb_build_object(
           'retention', jsonb_build_object(
@@ -41,14 +45,34 @@ export async function applyCrmContentRetention(
           eq(canonicalMessages.storeId, input.storeId),
           inArray(canonicalMessages.id, canonicalIds),
           sql`exists (
-            select 1 from ${conversationCycles} cycle
+            select 1
+            from ${conversationCycles} cycle
+            inner join ${conversationThreads} thread
+              on thread.id = ${canonicalMessages.threadId}
+              and thread.tenant_id = ${canonicalMessages.tenantId}
+              and thread.store_id = ${canonicalMessages.storeId}
+              and thread.provider_connection_id = ${canonicalMessages.providerConnectionId}
+            inner join ${conversationAttendances} attendance
+              on attendance.cycle_id = cycle.id
+              and attendance.thread_id = thread.id
+              and attendance.tenant_id = ${canonicalMessages.tenantId}
+              and attendance.store_id = ${canonicalMessages.storeId}
+            inner join ${providerConnections} connection
+              on connection.id = ${canonicalMessages.providerConnectionId}
+              and connection.tenant_id = ${canonicalMessages.tenantId}
+              and connection.store_id = ${canonicalMessages.storeId}
+              and connection.provider = ${canonicalMessages.provider}
+              and connection.channel = thread.channel
             where cycle.id = ${canonicalMessages.cycleId}
               and cycle.tenant_id = ${canonicalMessages.tenantId}
               and cycle.store_id = ${canonicalMessages.storeId}
+              and cycle.thread_id = ${canonicalMessages.threadId}
               and cycle.closed_at is not null
               and cycle.state in ('completed', 'expired')
               and greatest(
                 cycle.closed_at,
+                attendance.changed_at,
+                coalesce(thread.last_message_at, cycle.closed_at),
                 (select max(cycle_message.occurred_at)
                  from ${canonicalMessages} cycle_message
                  where cycle_message.tenant_id = ${canonicalMessages.tenantId}

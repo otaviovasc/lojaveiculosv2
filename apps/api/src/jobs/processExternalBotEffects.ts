@@ -3,12 +3,12 @@ import * as productSchema from "@lojaveiculosv2/db";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { loadLocalEnv } from "../infrastructure/config/loadLocalEnv.js";
-import { createRuntimeCrmServices } from "../infrastructure/db/runtimeCrmServices.js";
 import {
   createDrizzleAuditSink,
   type DrizzleAuditSinkClient,
 } from "../infrastructure/db/audit/drizzleAuditSink.js";
 import { createExternalBotProviderEffectExecutor } from "../infrastructure/crm/bot/externalBotProviderEffectExecutor.js";
+import { createRuntimeCrmWhatsappProviderGateway } from "../infrastructure/crm/crmWhatsappProviderRouter.js";
 import { runExternalBotEffectWorkerOnce } from "../infrastructure/crm/bot/runExternalBotEffectWorker.js";
 import { loadAuthorizedExternalBotEffect } from "../infrastructure/db/crm/drizzleExternalBotEffectRuntime.js";
 import { createConsoleServiceLogger } from "../shared/serviceContext.js";
@@ -30,12 +30,11 @@ async function main() {
     const audit = createDrizzleAuditSink(
       auditDb as unknown as DrizzleAuditSinkClient,
     );
-    const services = createRuntimeCrmServices(db, process.env);
     const executor = createExternalBotProviderEffectExecutor({
       audit,
       db,
+      gateway: createRuntimeCrmWhatsappProviderGateway(process.env),
       logger,
-      services,
     });
     const limit = readBatchSize();
     let processed = 0;

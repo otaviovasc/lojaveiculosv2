@@ -9,17 +9,62 @@ test("billing entitlement parity ignores stale migration projections", async () 
       queries.push(query);
       if (query.includes("AS legacy"))
         return Promise.resolve([{ attachments: 0, legacy: 0 }]);
+      if (query.includes("AS crm_conversation_threads"))
+        return Promise.resolve([
+          {
+            crm_conversation_attendances: 0,
+            crm_conversation_cycles: 0,
+            crm_conversation_threads: 0,
+            crm_messages: 0,
+            crm_messages_with_media: 0,
+          },
+        ]);
       return Promise.resolve([{ count: 0 }]);
     },
   };
 
   await collectParity(tx, "00000000-0000-4000-8000-000000000001", {
-    crmConnections: new Map(),
+    crmChannelConnections: new Map(),
   });
 
   assert.ok(
     queries.some((query) =>
       query.includes("metadata->>'migrationSelected'='true'"),
+    ),
+  );
+});
+
+test("canonical WhatsApp parity is limited to imported connections", async () => {
+  const queries = [];
+  const tx = {
+    unsafe(query) {
+      queries.push(query);
+      if (query.includes("AS legacy")) return [{ attachments: 0, legacy: 0 }];
+      if (query.includes("AS crm_conversation_threads"))
+        return [
+          {
+            crm_conversation_attendances: 1,
+            crm_conversation_cycles: 1,
+            crm_conversation_threads: 1,
+            crm_messages: 2,
+            crm_messages_with_media: 1,
+          },
+        ];
+      return [{ count: query.includes("crm_channel_connections") ? 1 : 0 }];
+    },
+  };
+
+  const parity = await collectParity(tx, "store-id", {
+    crmChannelConnections: new Map([[30, "connection-id"]]),
+  });
+
+  assert.equal(parity.crm_conversation_threads, 1);
+  assert.equal(parity.crm_messages, 2);
+  assert.ok(
+    queries.some(
+      (query) =>
+        query.includes("provider_connection_id=ANY($2::uuid[])") &&
+        query.includes("crm_conversation_attendances"),
     ),
   );
 });
@@ -44,10 +89,12 @@ test("WhatsApp parity uses normalized target sessions and media URL counts", () 
     assertParity(
       data,
       {
-        crm_connections: 1,
-        crm_whatsapp_media_messages: 1,
-        crm_whatsapp_messages: 2,
-        crm_whatsapp_sessions: 2,
+        crm_conversation_attendances: 2,
+        crm_conversation_cycles: 2,
+        crm_conversation_threads: 2,
+        crm_channel_connections: 1,
+        crm_messages: 2,
+        crm_messages_with_media: 1,
         users: 1,
       },
       new Set(["whatsapp"]),
@@ -65,15 +112,17 @@ test("WhatsApp parity reports a target mismatch", () => {
       assertParity(
         data,
         {
-          crm_connections: 0,
-          crm_whatsapp_media_messages: 0,
-          crm_whatsapp_messages: 0,
-          crm_whatsapp_sessions: 1,
+          crm_conversation_attendances: 1,
+          crm_conversation_cycles: 0,
+          crm_conversation_threads: 0,
+          crm_channel_connections: 0,
+          crm_messages: 0,
+          crm_messages_with_media: 0,
           users: 0,
         },
         new Set(["whatsapp"]),
       ),
-    /crm_whatsapp_sessions expected=0 actual=1/,
+    /crm_conversation_attendances expected=0 actual=1/,
   );
 });
 
@@ -94,10 +143,12 @@ test("lead parity includes deterministic WhatsApp-only coverage leads", () => {
     assertParity(
       data,
       {
-        crm_connections: 0,
-        crm_whatsapp_media_messages: 0,
-        crm_whatsapp_messages: 0,
-        crm_whatsapp_sessions: 0,
+        crm_conversation_attendances: 0,
+        crm_conversation_cycles: 0,
+        crm_conversation_threads: 0,
+        crm_channel_connections: 0,
+        crm_messages: 0,
+        crm_messages_with_media: 0,
         lead_activities: 0,
         leads: 2,
         users: 0,

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createNoopServiceLogger } from "../../../shared/serviceContext.js";
 import type { AuthorizedExternalBotEffect } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
 import { createExternalBotProviderEffectExecutor } from "./externalBotProviderEffectExecutor.js";
@@ -18,81 +18,91 @@ import {
 } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
 
 describe("external bot provider effect executor", () => {
-  it("sends text through the provider-locked CRM service", async () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(synchronizeExternalBotEffectOutcome).mockResolvedValue(undefined);
+  });
+
+  it("sends through the provider-bound canonical connection and synchronizes evidence", async () => {
     const effect = fixture({
       action: "message.send",
       payload: { text: "Hello" },
     });
     vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
-    const sendWhatsappText = vi.fn().mockResolvedValue({
-      externalId: "provider-message-1",
-      id: "message-1",
-    });
-    const executor = createExternalBotProviderEffectExecutor({
-      db: {} as never,
-      logger: createNoopServiceLogger(),
-      services: { sendWhatsappText } as never,
-    });
+    const sendText = vi.fn().mockResolvedValue(providerResult);
+    const executor = createExecutor(sendText);
 
     await expect(executor.execute(workerInput())).resolves.toEqual({
       externalEffectId: "provider-message-1",
       kind: "succeeded",
     });
-    expect(sendWhatsappText).toHaveBeenCalledWith(
-      expect.objectContaining({
-        storeId: "store-1",
-        tenantId: "tenant-1",
-      }),
-      {
-        idempotencyKey: "idem-1",
-        senderOrigin: "bot_api",
-        senderType: "AI",
-        sessionId: "session-1",
-        text: "Hello",
-      },
-    );
+    expect(sendText).toHaveBeenCalledWith(effect.connection, {
+      phone: "5511999999999",
+      text: "Hello",
+    });
     expect(synchronizeExternalBotEffectOutcome).toHaveBeenCalledWith(
       expect.anything(),
-      { effect, legacyMessageId: "message-1" },
+      {
+        effect,
+        providerOperation: {
+          id: "provider-message-1",
+          occurredAt: providerResult.providerTimestamp,
+        },
+      },
     );
   });
 
-  it("requests handoff through the attended conversation service", async () => {
+  it("reuses canonical provider evidence on idempotent replay", async () => {
+    const effect = {
+      ...fixture({ action: "message.send", payload: { text: "Hello" } }),
+      providerOperation: {
+        id: "provider-message-existing",
+        occurredAt: new Date("2026-08-18T11:00:00.000Z"),
+      },
+    };
+    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
+    const sendText = vi.fn();
+
+    await expect(
+      createExecutor(sendText).execute(workerInput()),
+    ).resolves.toEqual({
+      externalEffectId: "provider-message-existing",
+      kind: "succeeded",
+    });
+    expect(sendText).not.toHaveBeenCalled();
+    expect(synchronizeExternalBotEffectOutcome).toHaveBeenCalledWith(
+      expect.anything(),
+      { effect, providerOperation: effect.providerOperation },
+    );
+  });
+
+  it("requests handoff only through canonical synchronization", async () => {
     const effect = fixture({
       action: "handoff.request",
       payload: { reason: "Customer asked for a person" },
     });
     vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
-    const toggleWhatsappIntervention = vi.fn().mockResolvedValue({});
-    const executor = createExternalBotProviderEffectExecutor({
-      db: {} as never,
-      logger: createNoopServiceLogger(),
-      services: { toggleWhatsappIntervention } as never,
-    });
+    const sendText = vi.fn();
 
-    await expect(executor.execute(workerInput())).resolves.toEqual({
+    await expect(
+      createExecutor(sendText).execute(workerInput()),
+    ).resolves.toEqual({
       externalEffectId: "effect-1",
       kind: "succeeded",
     });
-    expect(toggleWhatsappIntervention).toHaveBeenCalledWith(
+    expect(sendText).not.toHaveBeenCalled();
+    expect(synchronizeExternalBotEffectOutcome).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({
-        commandId: "effect-1",
-        enabled: true,
-        sessionId: "session-1",
-        source: "ai_request",
-      }),
+      { effect },
     );
   });
 
-  it("fails closed when last-moment authorization is unavailable", async () => {
+  it("fails closed when last-moment canonical authorization is unavailable", async () => {
     vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(null);
-    const executor = createExternalBotProviderEffectExecutor({
-      db: {} as never,
-      logger: createNoopServiceLogger(),
-      services: {} as never,
-    });
-    await expect(executor.execute(workerInput())).resolves.toEqual({
+
+    await expect(
+      createExecutor(vi.fn()).execute(workerInput()),
+    ).resolves.toEqual({
       code: "authorization_revoked",
       kind: "failed",
       retryable: false,
@@ -100,26 +110,18 @@ describe("external bot provider effect executor", () => {
   });
 
   it("keeps provider success indeterminate when canonical synchronization needs reconciliation", async () => {
-    const effect = fixture({
-      action: "message.send",
-      payload: { text: "Hello" },
-    });
-    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
+    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(
+      fixture({ action: "message.send", payload: { text: "Hello" } }),
+    );
     vi.mocked(synchronizeExternalBotEffectOutcome).mockRejectedValue(
       new ExternalBotCanonicalSyncIndeterminateError(),
     );
-    const executor = createExternalBotProviderEffectExecutor({
-      db: {} as never,
-      logger: createNoopServiceLogger(),
-      services: {
-        sendWhatsappText: vi.fn().mockResolvedValue({
-          externalId: "provider-message-1",
-          id: "message-1",
-        }),
-      } as never,
-    });
 
-    await expect(executor.execute(workerInput())).resolves.toEqual({
+    await expect(
+      createExecutor(vi.fn().mockResolvedValue(providerResult)).execute(
+        workerInput(),
+      ),
+    ).resolves.toEqual({
       code: "delivery_indeterminate",
       kind: "indeterminate",
     });
@@ -129,20 +131,16 @@ describe("external bot provider effect executor", () => {
     vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(
       fixture({ action: "message.send", payload: { text: "Hello" } }),
     );
-    const executor = createExternalBotProviderEffectExecutor({
-      db: {} as never,
-      logger: createNoopServiceLogger(),
-      services: {
-        sendWhatsappText: vi.fn().mockRejectedValue(
-          Object.assign(new Error("rejected"), {
-            code: "provider_rejected",
-            status: 502,
-          }),
-        ),
-      } as never,
-    });
+    const sendText = vi.fn().mockRejectedValue(
+      Object.assign(new Error("rejected"), {
+        code: "provider_rejected",
+        status: 502,
+      }),
+    );
 
-    await expect(executor.execute(workerInput())).resolves.toEqual({
+    await expect(
+      createExecutor(sendText).execute(workerInput()),
+    ).resolves.toEqual({
       code: "provider_rejected",
       kind: "failed",
       retryable: false,
@@ -150,26 +148,64 @@ describe("external bot provider effect executor", () => {
   });
 });
 
+function createExecutor(sendText: ReturnType<typeof vi.fn>) {
+  return createExternalBotProviderEffectExecutor({
+    db: {} as never,
+    gateway: { sendText } as never,
+    logger: createNoopServiceLogger(),
+  });
+}
+
 function fixture(
   command: AuthorizedExternalBotEffect["command"],
 ): AuthorizedExternalBotEffect {
   return {
     canonicalCycleId: "cycle-1",
     command,
+    connection: {
+      canonical: {
+        broker: "direct",
+        capabilities: ["inbound", "outbound"],
+        channel: "whatsapp",
+        connected: true,
+        degraded: false,
+        errorCode: null,
+        provider: "zapi",
+        readiness: { ready: true, reason: null, reasonCode: "ready" },
+        state: "active",
+      },
+      credentialsRef: {},
+      displayName: "Canonical Z-API",
+      externalConnectionId: null,
+      externalInstanceId: null,
+      id: "connection-1",
+      metadata: {},
+      phone: null,
+      provider: "zapi",
+      status: "active",
+      storeId: "store-1" as never,
+      tenantId: "tenant-1" as never,
+      webhookUrl: null,
+    },
     effectId: "effect-1",
     expectedRevision: 4,
     idempotencyKey: "idem-1",
     integrationId: "integration-1",
-    legacySessionId: "session-1",
-    legacySessionRevision: 8,
     modelVersion: "model-1",
     provider: "zapi",
+    providerAddress: "5511999999999",
     providerConnectionId: "connection-1",
+    requestDigest: "request-digest-1",
     storeId: "store-1",
     tenantId: "tenant-1",
     threadId: "thread-1",
   };
 }
+
+const providerResult = {
+  externalId: "provider-message-1",
+  providerTimestamp: new Date("2026-08-18T12:00:00.000Z"),
+};
 
 function workerInput() {
   return {

@@ -26,69 +26,68 @@ describe("persistOlxChatWebhook", () => {
   });
 
   it("keeps system sender semantics while buyer origin controls direction", async () => {
-    const stopAfterCapture = new Error("stop after capture");
-    const ingestMessage = vi.fn(async () => {
-      throw stopAfterCapture;
-    });
-    const lead = createLead();
-    const session = createTestCrmWhatsappSession({
-      channel: "OLX_CHAT",
-      connectionId: "connection-1",
-      leadId: lead.id,
-      storeId,
-      tenantId,
-    });
+    const canonical = vi.fn(async () => canonicalResult());
+    const legacy = createLegacyPorts();
     const ports = {
-      crmPipelineRepository: createTestCrmPipelineRepository(),
-      crmRepository: {
-        findLeadById: vi.fn(async () => lead),
-        updateLead: vi.fn(async () => lead),
-      } as unknown as CrmRepository,
-      crmWhatsappRepository: {
-        ingestMessage,
-        upsertSessionContext: vi.fn(async () => session),
-      } as unknown as CrmWhatsappRepository,
+      ...legacy,
+      crmCanonicalInboundRepository: { ingestInboundMessage: canonical },
     } satisfies CrmServicePorts;
 
-    await expect(
-      persistOlxChatWebhook(ports, {
-        connection: connection(),
-        parsed: parsed({ origin: "buyer", senderType: "system" }),
-        providerEventId: "event-1",
-      }),
-    ).rejects.toBe(stopAfterCapture);
-    expect(ingestMessage).toHaveBeenCalledWith(
+    const result = await persistOlxChatWebhook(ports, {
+      connection: connection(),
+      parsed: parsed({ origin: "buyer", senderType: "system" }),
+      providerEventId: "event-1",
+    });
+    expect(canonical).toHaveBeenCalledWith(
       expect.objectContaining({
-        direction: "INBOUND",
-        senderOrigin: "system",
-        senderType: "SYSTEM",
+        sender: "system",
       }),
     );
+    expect(result.message).toMatchObject({
+      direction: "INBOUND",
+      senderOrigin: "system",
+      senderType: "SYSTEM",
+    });
+    expect(legacy.crmWhatsappRepository?.ingestMessage).not.toHaveBeenCalled();
   });
 
   it("writes OLX Chat to the canonical provider-scoped thread", async () => {
-    const canonical = vi.fn(async () => ({
-      contactId: "contact-1",
-      created: true,
-      cycleId: "cycle-1",
-      identityId: "identity-1",
-      messageId: "canonical-message-1",
-      threadId: "thread-1",
-    }));
+    const canonical = vi
+      .fn()
+      .mockResolvedValueOnce({
+        attendanceState: "bot_active" as const,
+        contactId: "contact-1",
+        created: true,
+        createdSession: true,
+        cycleId: "cycle-1",
+        identityId: "identity-1",
+        messageId: "canonical-message-1",
+        threadId: "thread-1",
+      })
+      .mockResolvedValueOnce({
+        attendanceState: "bot_active" as const,
+        contactId: "contact-1",
+        created: false,
+        createdSession: false,
+        cycleId: "cycle-1",
+        identityId: "identity-1",
+        messageId: "canonical-message-1",
+        threadId: "thread-1",
+      });
     const legacy = createLegacyPorts();
-    await persistOlxChatWebhook(
-      {
-        ...legacy,
-        crmCanonicalInboundRepository: {
-          ingestInboundMessage: canonical,
-        } satisfies CrmCanonicalInboundRepository,
-      },
-      {
-        connection: connection(),
-        parsed: parsed({ origin: "buyer", senderType: "buyer" }),
-        providerEventId: "event-1",
-      },
-    );
+    const ports = {
+      ...legacy,
+      crmCanonicalInboundRepository: {
+        ingestInboundMessage: canonical,
+      } satisfies CrmCanonicalInboundRepository,
+    };
+    const input = {
+      connection: connection(),
+      parsed: parsed({ origin: "buyer", senderType: "buyer" }),
+      providerEventId: "event-1",
+    };
+    await persistOlxChatWebhook(ports, input);
+    await persistOlxChatWebhook(ports, input);
     expect(canonical).toHaveBeenCalledWith(
       expect.objectContaining({
         channel: "olx_chat",
@@ -102,8 +101,29 @@ describe("persistOlxChatWebhook", () => {
         providerMessageId: "message-1",
       }),
     );
+    expect(legacy.crmWhatsappRepository?.ingestMessage).not.toHaveBeenCalled();
+    expect(
+      legacy.crmWhatsappRepository?.upsertSessionContext,
+    ).not.toHaveBeenCalled();
+    expect(legacy.crmRepository.createActivity).toHaveBeenCalledOnce();
+    expect(
+      legacy.crmWebhookEventRepository?.stageEffects,
+    ).toHaveBeenCalledOnce();
   });
 });
+
+function canonicalResult() {
+  return {
+    attendanceState: "bot_active" as const,
+    contactId: "contact-1",
+    created: true,
+    createdSession: true,
+    cycleId: "cycle-1",
+    identityId: "identity-1",
+    messageId: "canonical-message-1",
+    threadId: "thread-1",
+  };
+}
 
 function createLegacyPorts(): CrmServicePorts {
   const lead = createLead();
@@ -117,6 +137,9 @@ function createLegacyPorts(): CrmServicePorts {
   return {
     crmPipelineRepository: createTestCrmPipelineRepository(),
     crmRepository: {
+      createActivity: vi.fn(async () => ({})),
+      createLead: vi.fn(async () => lead),
+      findLeadByPhone: vi.fn(async () => null),
       findLeadById: vi.fn(async () => lead),
       updateLead: vi.fn(async () => lead),
     } as unknown as CrmRepository,

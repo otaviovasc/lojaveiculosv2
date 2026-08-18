@@ -19,11 +19,9 @@ import {
 } from "../../../domains/crm/services/CrmWhatsapp/zapiConnectionLifecycle.js";
 import { configureWhatsappConnectionWebhooks } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
 import {
-  authenticateWhatsappBotSecret,
   getWhatsappBotIntegration,
   updateWhatsappBotIntegration,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
-import { executeWhatsappBotAction } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import type { CrmWhatsappServices } from "./crmWhatsappServiceBindings.types.js";
 import { archiveAbandonedZapiConnections } from "../../../domains/crm/services/CrmWhatsapp/archiveAbandonedZapiConnections.js";
@@ -38,7 +36,6 @@ import { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retr
 
 type ConnectionBindings = Pick<
   CrmWhatsappServices,
-  | "authenticateWhatsappBotSecret"
   | "archiveAbandonedZapiConnections"
   | "authorizeComposioWhatsappConnection"
   | "completeComposioWhatsappConnection"
@@ -47,7 +44,6 @@ type ConnectionBindings = Pick<
   | "configureWhatsappConnectionWebhooks"
   | "createWhatsappConnection"
   | "disconnectZapiConnection"
-  | "executeWhatsappBotAction"
   | "getWhatsappBotIntegration"
   | "getWhatsappConnectionOverview"
   | "listWhatsappConnections"
@@ -68,8 +64,6 @@ export const createCrmWhatsappConnectionBindings = (
 ): ConnectionBindings => ({
   archiveAbandonedZapiConnections: (context, input) =>
     archiveAbandonedZapiConnections(context, input, ports),
-  authenticateWhatsappBotSecret: (context, input) =>
-    authenticateWhatsappBotSecret(context, input, ports),
   authorizeComposioWhatsappConnection: (context, input) =>
     authorizeComposioWhatsappConnection(context, input, ports),
   completeComposioWhatsappConnection: (context, input) =>
@@ -84,8 +78,6 @@ export const createCrmWhatsappConnectionBindings = (
     createWhatsappConnection(context, input, ports),
   disconnectZapiConnection: (context, input) =>
     disconnectZapiConnection(context, input, ports),
-  executeWhatsappBotAction: (context, input) =>
-    executeWhatsappBotAction(context, input, ports),
   getWhatsappBotIntegration: (context) =>
     getWhatsappBotIntegration(context, ports),
   getWhatsappConnectionOverview: (context) =>

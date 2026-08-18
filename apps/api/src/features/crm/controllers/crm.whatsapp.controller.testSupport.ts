@@ -5,6 +5,7 @@ import { expect, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { resolveCrmWebhookActor } from "../../../infrastructure/http/crmWebhookContextFactory.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
+import { createMemoryCrmAssigneeMembershipRepository } from "../adapters/memory/crmAssigneeMembershipRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
@@ -42,6 +43,8 @@ export const defaultWhatsappPermissions = [
 
 export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
   const app = new Hono();
+  const assigneeMembershipRepository =
+    createMemoryCrmAssigneeMembershipRepository();
   app.route(
     "/api/v1/crm",
     createCrmFeature({
@@ -99,8 +102,15 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
           crmBotIntegrationRepository:
             options.crmBotIntegrationRepository ??
             createMemoryCrmBotIntegrationRepository(),
+          crmAssigneeMembershipRepository: assigneeMembershipRepository,
           ...(options.crmBotWebhookDispatcher
             ? { crmBotWebhookDispatcher: options.crmBotWebhookDispatcher }
+            : {}),
+          ...(options.crmCanonicalInboundRepository
+            ? {
+                crmCanonicalInboundRepository:
+                  options.crmCanonicalInboundRepository,
+              }
             : {}),
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
@@ -156,7 +166,18 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
           crmRepository: options.crmRepository ?? createMemoryCrmRepository(),
           crmVisitRepository:
             options.crmVisitRepository ?? createMemoryCrmVisitRepository(),
-          ...(options.transaction ? { transaction: options.transaction } : {}),
+          ...(options.transaction
+            ? {
+                transaction: (action) =>
+                  options.transaction!(async (transactionPorts) =>
+                    action({
+                      crmAssigneeMembershipRepository:
+                        assigneeMembershipRepository,
+                      ...transactionPorts,
+                    }),
+                  ),
+              }
+            : {}),
           ...(options.crmWhatsappRepository
             ? { crmWhatsappRepository: options.crmWhatsappRepository }
             : {}),
@@ -175,9 +196,6 @@ export function createTestApp(options: CreateCrmWhatsappTestAppOptions = {}) {
             : {}),
           ...(options.crmWhatsappMediaFetcher
             ? { crmWhatsappMediaFetcher: options.crmWhatsappMediaFetcher }
-            : {}),
-          ...(options.financingBotActions
-            ? { financingBotActions: options.financingBotActions }
             : {}),
           ...(options.vehicleInventory
             ? { vehicleInventory: options.vehicleInventory }

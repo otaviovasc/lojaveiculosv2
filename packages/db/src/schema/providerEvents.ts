@@ -14,7 +14,11 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { providerConnections } from "./crmCore/authorization.js";
-import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
+import {
+  conversationCycles,
+  conversationThreads,
+} from "./crmCore/conversations.js";
+import { canonicalMessages } from "./crmCore/messages.js";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
@@ -134,9 +138,7 @@ export const crmWebhookEffectOutbox = pgTable(
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     effectType: crmWebhookEffectType("effect_type").notNull(),
     lastErrorCode: varchar("last_error_code", { length: 120 }),
-    messageId: uuid("message_id")
-      .notNull()
-      .references(() => crmWhatsappMessages.id),
+    cycleId: uuid("cycle_id").notNull(),
     nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -149,9 +151,7 @@ export const crmWebhookEffectOutbox = pgTable(
       .notNull()
       .references(() => providerEvents.id, { onDelete: "cascade" }),
     sequence: integer("sequence").notNull(),
-    sessionId: uuid("session_id")
-      .notNull()
-      .references(() => crmWhatsappSessions.id),
+    messageId: uuid("message_id").notNull(),
     status: crmWebhookEffectStatus("status").notNull().default("pending"),
     storeId: uuid("store_id")
       .notNull()
@@ -159,12 +159,18 @@ export const crmWebhookEffectOutbox = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
+    threadId: uuid("thread_id").notNull(),
   },
   (table) => [
     foreignKey({
       columns: [table.connectionId],
       foreignColumns: [providerConnections.id],
       name: "crm_webhook_effect_outbox_connection_fk",
+    }),
+    foreignKey({
+      columns: [table.messageId],
+      foreignColumns: [canonicalMessages.id],
+      name: "crm_webhook_effect_outbox_message_fk",
     }),
     ...(includeCrmScopeForeignKeys
       ? [
@@ -193,36 +199,45 @@ export const crmWebhookEffectOutbox = pgTable(
             name: "crm_webhook_effect_outbox_scoped_connection_fk",
           }),
           foreignKey({
-            columns: [
-              table.tenantId,
-              table.storeId,
-              table.connectionId,
-              table.sessionId,
-            ],
+            columns: [table.tenantId, table.storeId, table.threadId],
             foreignColumns: [
-              crmWhatsappSessions.tenantId,
-              crmWhatsappSessions.storeId,
-              crmWhatsappSessions.connectionId,
-              crmWhatsappSessions.id,
+              conversationThreads.tenantId,
+              conversationThreads.storeId,
+              conversationThreads.id,
             ],
-            name: "crm_webhook_effect_outbox_scoped_session_fk",
+            name: "crm_webhook_effect_outbox_scoped_thread_fk",
           }),
           foreignKey({
             columns: [
               table.tenantId,
               table.storeId,
-              table.connectionId,
-              table.sessionId,
-              table.messageId,
+              table.cycleId,
+              table.threadId,
             ],
             foreignColumns: [
-              crmWhatsappMessages.tenantId,
-              crmWhatsappMessages.storeId,
-              crmWhatsappMessages.connectionId,
-              crmWhatsappMessages.sessionId,
-              crmWhatsappMessages.id,
+              conversationCycles.tenantId,
+              conversationCycles.storeId,
+              conversationCycles.id,
+              conversationCycles.threadId,
             ],
-            name: "crm_webhook_effect_outbox_scoped_message_fk",
+            name: "crm_webhook_effect_outbox_semantic_cycle_fk",
+          }),
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.messageId,
+              table.cycleId,
+              table.threadId,
+            ],
+            foreignColumns: [
+              canonicalMessages.tenantId,
+              canonicalMessages.storeId,
+              canonicalMessages.id,
+              canonicalMessages.cycleId,
+              canonicalMessages.threadId,
+            ],
+            name: "crm_webhook_effect_outbox_semantic_message_fk",
           }),
         ]
       : []),

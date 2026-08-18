@@ -53,6 +53,16 @@ async function post(
     return { httpStatus: response.status, providerRequestId };
   }
   const retryAfterSeconds = readRetryAfterSeconds(response);
+  if (path === "/autoservice/v1/chat" && response.status === 500) {
+    throw new CrmConnectionSetupProviderError(
+      "OLX webhook registration is temporarily unavailable.",
+      "request_failed",
+      response.status,
+      retryAfterSeconds,
+      providerRequestId ?? undefined,
+      true,
+    );
+  }
   const provesRejection = PROVEN_REJECTION_STATUSES.has(response.status);
   throw new CrmConnectionSetupProviderError(
     provesRejection

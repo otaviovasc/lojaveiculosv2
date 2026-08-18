@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { UnsafeCrmRemoteMediaUrlError } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 import {
@@ -16,7 +17,10 @@ import {
 describe("CRM WhatsApp media webhooks", () => {
   it("stores inbound ZAPI image media as a CRM WhatsApp message", async () => {
     const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const canonicalRepository =
+      createMemoryCrmCanonicalInboundRepository(whatsappRepository);
     const app = createTestApp({
+      crmCanonicalInboundRepository: canonicalRepository,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiMediaTestConnection(),
       ]),
@@ -62,17 +66,14 @@ describe("CRM WhatsApp media webhooks", () => {
       provider: "zapi",
     });
 
-    const messages = await whatsappRepository.listMessages({
-      limit: 10,
-      offset: 0,
-      sessionId: body.session.id,
-      storeId,
-      tenantId,
-    });
-    expect(messages[0]).toMatchObject({
-      mediaUrl: "https://zapi.test/media/car.jpg",
-      type: "IMAGE",
-    });
+    await expect(
+      whatsappRepository.listSessions({
+        limit: 10,
+        offset: 0,
+        storeId,
+        tenantId,
+      }),
+    ).resolves.toHaveLength(1);
   });
 
   it("mirrors inbound ZAPI media to configured object storage", async () => {

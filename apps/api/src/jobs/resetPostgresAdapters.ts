@@ -9,6 +9,14 @@ const VEHICLE_CATALOG_PREFIX = "vehicle_catalog_";
 
 type TableNameRow = { table_name: string };
 type CountRow = { count: number };
+type TriggerRow = { present: boolean };
+
+const appendOnlyTruncateTriggers = [
+  {
+    table: "crm_conversation_attendance_events",
+    trigger: "crm_conversation_attendance_events_no_truncate_trigger",
+  },
+] as const;
 
 export function createProductPostgresResetAdapter(
   databaseUrl: string,
@@ -143,7 +151,30 @@ async function truncateTables(
   sql: TransactionSql,
   tableNames: readonly string[],
 ): Promise<void> {
+  const disabledTriggers: (typeof appendOnlyTruncateTriggers)[number][] = [];
+  for (const trigger of appendOnlyTruncateTriggers) {
+    if (!tableNames.includes(trigger.table)) continue;
+    const [row] = await sql<TriggerRow[]>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_trigger
+        WHERE tgname = ${trigger.trigger}
+          AND tgrelid = to_regclass(${`public.${trigger.table}`})
+          AND NOT tgisinternal
+      ) AS present
+    `;
+    if (!row?.present) continue;
+    await sql.unsafe(
+      `ALTER TABLE "public".${quoteIdentifier(trigger.table)} DISABLE TRIGGER ${quoteIdentifier(trigger.trigger)}`,
+    );
+    disabledTriggers.push(trigger);
+  }
   await sql.unsafe(createTruncateStatement(tableNames));
+  for (const trigger of disabledTriggers) {
+    await sql.unsafe(
+      `ALTER TABLE "public".${quoteIdentifier(trigger.table)} ENABLE TRIGGER ${quoteIdentifier(trigger.trigger)}`,
+    );
+  }
 }
 
 async function countRowsForTables(

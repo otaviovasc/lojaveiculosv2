@@ -17,22 +17,23 @@ export async function assertSeedInfrastructure(db) {
 
 async function assertProviderTruth(db) {
   const [zapi] = await db`
-    select status, credentials_ref->>'mode' as mode,
+    select state, broker,
       metadata->>'officialOperation' as "officialOperation",
-      phone, external_connection_id as "externalConnectionId"
-    from crm_connections where id = ${seedIds.zapiConnection}
+      external_connection_id as "externalConnectionId",
+      external_instance_id as "externalInstanceId"
+    from crm_channel_connections where id = ${seedIds.zapiConnection}
   `;
   assert(
-    zapi?.mode === "env",
-    "Seed ZAPI connection must reference environment credentials.",
+    zapi?.broker === "direct",
+    "Seed ZAPI connection must use the canonical direct broker.",
   );
-  assert(zapi.status === "sandbox", "ZAPI fixture must remain sandbox-only.");
+  assert(zapi.state === "sandbox", "ZAPI fixture must remain sandbox-only.");
   assert(
     zapi.officialOperation === "false",
     "ZAPI seed must not claim an official operation.",
   );
   assert(
-    !zapi.phone && !zapi.externalConnectionId,
+    !zapi.externalConnectionId && !zapi.externalInstanceId,
     "ZAPI provider evidence must come from rehearsal.",
   );
 
@@ -47,12 +48,11 @@ async function assertProviderTruth(db) {
       (select count(*)::int from fiscal_documents where metadata->>'fixture' = 'true'
         and (status = 'issued' or issued_at is not null or access_key is not null
           or provider_document_id is not null)) as fiscal,
-      (select count(*)::int from crm_whatsapp_messages
+      (select count(*)::int from crm_messages
         where metadata->>'source' = 'local_seed' and (
-          (direction = 'INBOUND' and status <> 'DELIVERED')
-          or (direction = 'OUTBOUND' and status <> 'PENDING')
-          or channel_message_id is not null or external_id is not null
-          or provider_timestamp is not null)) as messages,
+          (direction = 'inbound' and status <> 'delivered')
+          or (direction = 'outbound' and status <> 'pending')
+          or provider_message_id is not null)) as messages,
       (select count(*)::int from crm_whatsapp_scheduled_messages
         where metadata->>'source' = 'local_seed' and status = 'pending'
           and scheduled_at <= now()) as "dueMessages",
@@ -67,7 +67,7 @@ async function assertProviderTruth(db) {
       `Synthetic provider/execution state: ${key}`,
     );
   }
-  return { unsafe, zapi: { mode: zapi.mode, status: zapi.status } };
+  return { unsafe, zapi: { broker: zapi.broker, state: zapi.state } };
 }
 
 async function assertRedis() {

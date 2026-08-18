@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, isNotNull, lte, sql } from "drizzle-orm";
-import { crmWhatsappOutboundIntents } from "@lojaveiculosv2/db";
+import {
+  canonicalMessages,
+  crmWhatsappOutboundIntents,
+} from "@lojaveiculosv2/db";
 import type { CrmWhatsappOutboundIntentRepository } from "../../../domains/crm/ports/crmWhatsappOutboundIntentRepository.js";
+import { findCanonicalThreadIdForCycle } from "./drizzleCrmCanonicalWorkflowReferences.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
 export function createDrizzleCrmWhatsappOutboundIntentRepository(
@@ -10,17 +14,26 @@ export function createDrizzleCrmWhatsappOutboundIntentRepository(
   return {
     async claim(input) {
       const claimToken = randomUUID();
+      const threadId = input.sessionId
+        ? await findCanonicalThreadIdForCycle(db, {
+            connectionId: input.connectionId,
+            cycleId: input.sessionId,
+            storeId: input.storeId,
+            tenantId: input.tenantId,
+          })
+        : null;
       const [inserted] = await db
         .insert(crmWhatsappOutboundIntents)
         .values({
           claimToken,
           connectionId: input.connectionId,
+          cycleId: input.sessionId,
           fingerprint: input.fingerprint,
           idempotencyKey: input.idempotencyKey,
-          sessionId: input.sessionId,
           startedAt: input.now,
           storeId: input.storeId,
           tenantId: input.tenantId,
+          threadId,
         })
         .onConflictDoNothing()
         .returning();
@@ -98,9 +111,11 @@ export function createDrizzleCrmWhatsappOutboundIntentRepository(
       };
     },
     async complete(input) {
+      const message = await findOwnedMessageContext(db, input);
       await db
         .update(crmWhatsappOutboundIntents)
         .set({
+          cycleId: input.sessionId,
           messageId: input.messageId,
           providerResult: sql`jsonb_build_object(
           'externalId', coalesce(
@@ -113,8 +128,8 @@ export function createDrizzleCrmWhatsappOutboundIntentRepository(
           )
         )`,
           recoveryExpiresAt: null,
-          sessionId: input.sessionId,
           status: "completed",
+          threadId: message.threadId,
         })
         .where(owned(input));
     },
@@ -177,6 +192,40 @@ export function createDrizzleCrmWhatsappOutboundIntentRepository(
       return cleared.length;
     },
   };
+}
+async function findOwnedMessageContext(
+  db: DrizzleCrmClient,
+  input: {
+    claimToken: string;
+    id: string;
+    messageId: string;
+    sessionId: string;
+  },
+) {
+  const [row] = await db
+    .select({ threadId: canonicalMessages.threadId })
+    .from(canonicalMessages)
+    .innerJoin(
+      crmWhatsappOutboundIntents,
+      and(
+        eq(crmWhatsappOutboundIntents.tenantId, canonicalMessages.tenantId),
+        eq(crmWhatsappOutboundIntents.storeId, canonicalMessages.storeId),
+        eq(
+          crmWhatsappOutboundIntents.connectionId,
+          canonicalMessages.providerConnectionId,
+        ),
+      ),
+    )
+    .where(
+      and(
+        owned(input),
+        eq(canonicalMessages.id, input.messageId),
+        eq(canonicalMessages.cycleId, input.sessionId),
+      ),
+    )
+    .limit(1);
+  if (!row) throw new Error("Canonical CRM outbound message was not found.");
+  return row;
 }
 
 function owned(input: { claimToken: string; id: string }) {

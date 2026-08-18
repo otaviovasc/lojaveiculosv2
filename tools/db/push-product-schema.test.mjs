@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   billingScopeForeignKeyNames,
+  canonicalCrmForeignKeyNames,
   crmScopeForeignKeyNames,
   crmScopeIndexNames,
   pushProductSchema,
@@ -13,27 +14,48 @@ const requireFromDbWorkspace = createRequire(
 const { getTableConfig } = requireFromDbWorkspace("drizzle-orm/pg-core");
 
 const expectedCrmScopeForeignKeyNames = [
-  "crm_connections_store_tenant_fk",
+  "crm_tags_scoped_connection_fk",
   "provider_events_store_tenant_fk",
   "provider_events_scoped_connection_fk",
-  "crm_whatsapp_sessions_scoped_connection_fk",
-  "crm_whatsapp_messages_scoped_session_fk",
-  "crm_whatsapp_outbound_intents_scoped_connection_fk",
-  "crm_whatsapp_outbound_intents_scoped_session_fk",
-  "crm_whatsapp_outbound_intents_scoped_message_fk",
-  "crm_whatsapp_intervention_ledger_scoped_connection_fk",
-  "crm_whatsapp_intervention_ledger_scoped_session_fk",
   "crm_webhook_effect_outbox_scoped_provider_event_fk",
   "crm_webhook_effect_outbox_scoped_connection_fk",
-  "crm_webhook_effect_outbox_scoped_session_fk",
-  "crm_webhook_effect_outbox_scoped_message_fk",
+  "crm_webhook_effect_outbox_scoped_thread_fk",
+  "crm_webhook_effect_outbox_semantic_cycle_fk",
+  "crm_webhook_effect_outbox_semantic_message_fk",
+  "crm_whatsapp_outbound_intents_scoped_connection_fk",
+  "crm_whatsapp_outbound_intents_scoped_thread_fk",
+  "crm_whatsapp_outbound_intents_semantic_cycle_fk",
+  "crm_whatsapp_outbound_intents_semantic_message_fk",
+  "crm_whatsapp_scheduled_messages_scoped_connection_fk",
+  "crm_whatsapp_scheduled_messages_scoped_thread_fk",
+  "crm_whatsapp_campaigns_scoped_connection_fk",
+  "crm_whatsapp_campaign_recipients_scoped_connection_fk",
+  "crm_whatsapp_campaign_recipients_scoped_thread_fk",
+];
+
+const expectedCanonicalCrmForeignKeyNames = [
+  "provider_connections_store_tenant_fk",
+  "conversation_threads_store_tenant_fk",
+  "conversation_threads_semantic_connection_fk",
+  "conversation_cycles_store_tenant_fk",
+  "conversation_cycles_scoped_thread_fk",
+  "conversation_attendances_store_tenant_fk",
+  "conversation_attendances_scoped_thread_fk",
+  "conversation_attendances_semantic_cycle_fk",
+  "canonical_messages_store_tenant_fk",
+  "canonical_messages_semantic_connection_fk",
+  "canonical_messages_semantic_thread_fk",
+  "canonical_messages_semantic_cycle_fk",
+  "crm_lead_outcomes_scoped_origin_cycle_fk",
 ];
 
 const expectedCrmScopeIndexNames = [
   "stores_id_tenant_unique",
-  "crm_connections_scope_id_unique",
-  "crm_whatsapp_sessions_scope_connection_id_unique",
-  "crm_whatsapp_messages_scope_connection_session_id_unique",
+  "provider_connections_scope_id_unique",
+  "conversation_threads_scope_id_unique",
+  "conversation_cycles_scope_id_unique",
+  "conversation_cycles_thread_id_unique",
+  "canonical_messages_semantic_id_unique",
   "provider_events_scope_id_unique",
 ];
 
@@ -43,26 +65,78 @@ afterEach(() => {
 });
 
 describe("product schema push bootstrap", () => {
+  it("uses the canonical CRM operational tables and attendance relationships", async () => {
+    const { providerConnections } =
+      await import("../../packages/db/src/schema/crmCore/authorization.ts");
+    const { conversationAttendances } =
+      await import("../../packages/db/src/schema/crmCore/attendance.ts");
+    const { conversationCycles, conversationThreads } =
+      await import("../../packages/db/src/schema/crmCore/conversations.ts");
+    const { canonicalMessages } =
+      await import("../../packages/db/src/schema/crmCore/messages.ts");
+    const { crmLeadOutcomes } =
+      await import("../../packages/db/src/schema/crmLeadOutcomes.ts");
+
+    expect([
+      tableName(providerConnections),
+      tableName(conversationThreads),
+      tableName(conversationCycles),
+      tableName(conversationAttendances),
+      tableName(canonicalMessages),
+    ]).toEqual([
+      "crm_channel_connections",
+      "crm_conversation_threads",
+      "crm_conversation_cycles",
+      "crm_conversation_attendances",
+      "crm_messages",
+    ]);
+    expect(foreignKeyNames(conversationAttendances)).toEqual(
+      expect.arrayContaining([
+        "conversation_attendances_scoped_thread_fk",
+        "conversation_attendances_semantic_cycle_fk",
+      ]),
+    );
+    const canonicalForeignKeys = [
+      ...foreignKeyNames(providerConnections),
+      ...foreignKeyNames(conversationThreads),
+      ...foreignKeyNames(conversationCycles),
+      ...foreignKeyNames(conversationAttendances),
+      ...foreignKeyNames(canonicalMessages),
+      ...foreignKeyNames(crmLeadOutcomes),
+    ];
+    expect(canonicalCrmForeignKeyNames).toEqual(
+      expectedCanonicalCrmForeignKeyNames,
+    );
+    expect(canonicalForeignKeys).toEqual(
+      expect.arrayContaining(expectedCanonicalCrmForeignKeyNames),
+    );
+  });
+
   it("gates CRM composite foreign keys during the bootstrap push", async () => {
     vi.stubEnv("DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP", "true");
     vi.resetModules();
 
-    const { crmConnections } =
-      await import("../../packages/db/src/schema/crm.ts");
-    const { crmWhatsappMessages, crmWhatsappSessions } =
-      await import("../../packages/db/src/schema/crmWhatsapp.ts");
-    const { crmWhatsappInterventionLedger } =
-      await import("../../packages/db/src/schema/crmWhatsappInterventions.ts");
+    const { crmTags } = await import("../../packages/db/src/schema/crm.ts");
+    const { providerConnections } =
+      await import("../../packages/db/src/schema/crmCore/authorization.ts");
+    const { conversationCycles, conversationThreads } =
+      await import("../../packages/db/src/schema/crmCore/conversations.ts");
+    const { canonicalMessages } =
+      await import("../../packages/db/src/schema/crmCore/messages.ts");
     const { crmWhatsappOutboundIntents } =
       await import("../../packages/db/src/schema/crmWhatsappOutbound.ts");
+    const { crmWhatsappScheduledMessages } =
+      await import("../../packages/db/src/schema/crmWhatsappScheduled.ts");
+    const { crmWhatsappCampaignRecipients, crmWhatsappCampaigns } =
+      await import("../../packages/db/src/schema/crmWhatsappCampaigns.ts");
     const { crmWebhookEffectOutbox, providerEvents } =
       await import("../../packages/db/src/schema/providerEvents.ts");
     const bootstrapForeignKeys = [
-      ...foreignKeyNames(crmConnections),
-      ...foreignKeyNames(crmWhatsappSessions),
-      ...foreignKeyNames(crmWhatsappMessages),
+      ...foreignKeyNames(crmTags),
       ...foreignKeyNames(crmWhatsappOutboundIntents),
-      ...foreignKeyNames(crmWhatsappInterventionLedger),
+      ...foreignKeyNames(crmWhatsappScheduledMessages),
+      ...foreignKeyNames(crmWhatsappCampaigns),
+      ...foreignKeyNames(crmWhatsappCampaignRecipients),
       ...foreignKeyNames(providerEvents),
       ...foreignKeyNames(crmWebhookEffectOutbox),
     ];
@@ -72,14 +146,20 @@ describe("product schema push bootstrap", () => {
     }
     expect(crmScopeForeignKeyNames).toEqual(expectedCrmScopeForeignKeyNames);
     expect(crmScopeIndexNames).toEqual(expectedCrmScopeIndexNames);
-    expect(indexNames(crmConnections)).toContain(
-      "crm_connections_scope_id_unique",
+    expect(indexNames(providerConnections)).toContain(
+      "provider_connections_scope_id_unique",
     );
-    expect(indexNames(crmWhatsappSessions)).toContain(
-      "crm_whatsapp_sessions_scope_connection_id_unique",
+    expect(indexNames(conversationThreads)).toContain(
+      "conversation_threads_scope_id_unique",
     );
-    expect(indexNames(crmWhatsappMessages)).toContain(
-      "crm_whatsapp_messages_scope_connection_session_id_unique",
+    expect(indexNames(conversationCycles)).toContain(
+      "conversation_cycles_scope_id_unique",
+    );
+    expect(indexNames(conversationCycles)).toContain(
+      "conversation_cycles_thread_id_unique",
+    );
+    expect(indexNames(canonicalMessages)).toContain(
+      "canonical_messages_semantic_id_unique",
     );
     expect(indexNames(providerEvents)).toContain(
       "provider_events_scope_id_unique",
@@ -90,22 +170,21 @@ describe("product schema push bootstrap", () => {
     vi.stubEnv("DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP", "false");
     vi.resetModules();
 
-    const { crmConnections } =
-      await import("../../packages/db/src/schema/crm.ts");
-    const { crmWhatsappMessages, crmWhatsappSessions } =
-      await import("../../packages/db/src/schema/crmWhatsapp.ts");
-    const { crmWhatsappInterventionLedger } =
-      await import("../../packages/db/src/schema/crmWhatsappInterventions.ts");
+    const { crmTags } = await import("../../packages/db/src/schema/crm.ts");
     const { crmWhatsappOutboundIntents } =
       await import("../../packages/db/src/schema/crmWhatsappOutbound.ts");
+    const { crmWhatsappScheduledMessages } =
+      await import("../../packages/db/src/schema/crmWhatsappScheduled.ts");
+    const { crmWhatsappCampaignRecipients, crmWhatsappCampaigns } =
+      await import("../../packages/db/src/schema/crmWhatsappCampaigns.ts");
     const { crmWebhookEffectOutbox, providerEvents } =
       await import("../../packages/db/src/schema/providerEvents.ts");
     const finalForeignKeys = [
-      ...foreignKeyNames(crmConnections),
-      ...foreignKeyNames(crmWhatsappSessions),
-      ...foreignKeyNames(crmWhatsappMessages),
+      ...foreignKeyNames(crmTags),
       ...foreignKeyNames(crmWhatsappOutboundIntents),
-      ...foreignKeyNames(crmWhatsappInterventionLedger),
+      ...foreignKeyNames(crmWhatsappScheduledMessages),
+      ...foreignKeyNames(crmWhatsappCampaigns),
+      ...foreignKeyNames(crmWhatsappCampaignRecipients),
       ...foreignKeyNames(providerEvents),
       ...foreignKeyNames(crmWebhookEffectOutbox),
     ];
@@ -171,8 +250,6 @@ describe("product schema push bootstrap", () => {
       ensureCrmScopeIndexes: async () => events.push("ensure-crm-indexes"),
       ensureFinancingScopeIndexes: async () =>
         events.push("ensure-financing-indexes"),
-      installCrmWhatsappSessionIdentityParity: async () =>
-        events.push("install-crm-parity"),
       installFinanceAutoEntryParity: async () =>
         events.push("install-finance-parity"),
       installFiscalCatalogParity: async () =>
@@ -186,7 +263,6 @@ describe("product schema push bootstrap", () => {
 
     expect(events).toEqual([
       "drizzle-bootstrap",
-      "install-crm-parity",
       "install-finance-parity",
       "install-fiscal-parity",
       "ensure-automation-indexes",
@@ -240,6 +316,10 @@ describe("product schema push bootstrap", () => {
 
 function indexNames(table) {
   return getTableConfig(table).indexes.map(({ config }) => config.name);
+}
+
+function tableName(table) {
+  return getTableConfig(table).name;
 }
 
 function foreignKeyNames(table) {

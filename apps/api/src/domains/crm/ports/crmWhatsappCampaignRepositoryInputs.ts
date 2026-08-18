@@ -61,7 +61,9 @@ export type IncrementCrmWhatsappCampaignCountsInput =
 export type ListCrmWhatsappCampaignRecipientsInput = {
   campaignId?: string;
   campaignSequence?: number;
+  connectionId?: string;
   limit: number;
+  phone?: string;
   sessionId?: string;
   statuses?: readonly CrmWhatsappCampaignRecipientStatus[];
   storeId: StoreId;

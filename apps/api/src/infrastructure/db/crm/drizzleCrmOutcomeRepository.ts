@@ -5,15 +5,21 @@ import type {
   CrmOutcomeRepository,
 } from "../../../domains/crm/ports/crmOutcomeRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+import { toCanonicalChannel } from "./drizzleCrmWhatsappMappers.js";
 
 export function createDrizzleCrmOutcomeRepository(
   db: DrizzleCrmClient,
 ): CrmOutcomeRepository {
   return {
     async create(input) {
+      const { channel, originSessionId, ...outcome } = input;
       const [row] = await db
         .insert(crmLeadOutcomes)
-        .values(input)
+        .values({
+          ...outcome,
+          channel: channel ? toCanonicalChannel(channel) : null,
+          originCycleId: originSessionId,
+        })
         .onConflictDoNothing()
         .returning();
       if (row) return toOutcome(row);
@@ -58,7 +64,7 @@ function toOutcome(row: typeof crmLeadOutcomes.$inferSelect): CrmLeadOutcome {
   return {
     actorId: row.actorId,
     actorKind: row.actorKind,
-    channel: row.channel,
+    channel: fromCanonicalChannel(row.channel),
     commandId: row.commandId,
     createdAt: row.createdAt,
     id: row.id,
@@ -66,7 +72,7 @@ function toOutcome(row: typeof crmLeadOutcomes.$inferSelect): CrmLeadOutcome {
     lossNote: row.lossNote,
     lossReason: row.lossReason,
     nextPipelineStageId: row.nextPipelineStageId,
-    originSessionId: row.originSessionId,
+    originSessionId: row.originCycleId,
     outcome: row.outcome,
     previousPipelineStageId: row.previousPipelineStageId,
     requestFingerprint: row.requestFingerprint,
@@ -75,4 +81,19 @@ function toOutcome(row: typeof crmLeadOutcomes.$inferSelect): CrmLeadOutcome {
     storeId: row.storeId as CrmLeadOutcome["storeId"],
     tenantId: row.tenantId as CrmLeadOutcome["tenantId"],
   };
+}
+
+function fromCanonicalChannel(
+  channel: typeof crmLeadOutcomes.$inferSelect.channel,
+) {
+  switch (channel) {
+    case "instagram":
+      return "INSTAGRAM" as const;
+    case "olx_chat":
+      return "OLX_CHAT" as const;
+    case "whatsapp":
+      return "WHATSAPP" as const;
+    case null:
+      return null;
+  }
 }

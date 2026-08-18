@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
@@ -88,44 +87,6 @@ describe("CRM WhatsApp integration security", () => {
     await expectApiError(response, {
       code: "CRM_WHATSAPP_VALIDATION_ERROR",
       message: "Request body is invalid.",
-    });
-  });
-
-  it("fails closed when the same secret matches more than one store", async () => {
-    const webhookSecret = "shared-bot-webhook-secret-32-characters";
-    const webhookSecretHash = `sha256:${createHash("sha256")
-      .update(webhookSecret)
-      .digest("hex")}`;
-    const repository = createMemoryCrmBotIntegrationRepository();
-    await repository.upsertBotIntegration({
-      enabled: true,
-      storeId,
-      tenantId,
-      webhookSecretHash,
-      webhookSecretSealed: `sealed:${webhookSecret}`,
-      webhookUrl: "https://bot.example.test/webhook",
-    });
-    await repository.upsertBotIntegration({
-      enabled: true,
-      storeId: "store_2" as StoreId,
-      tenantId: "tenant_2" as TenantId,
-      webhookSecretHash,
-      webhookSecretSealed: `sealed:${webhookSecret}`,
-      webhookUrl: "https://bot.example.test/webhook",
-    });
-    const app = createTestApp({ crmBotIntegrationRepository: repository });
-
-    const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot/actions",
-      jsonPost(
-        { action: "credere_readiness" },
-        { "X-Webhook-Secret": webhookSecret },
-      ),
-    );
-
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_BOT_UNAUTHORIZED",
     });
   });
 });

@@ -17,10 +17,7 @@ export function createCrmWebhookContextFactory(audit?: AuditSink) {
 }
 
 export function resolveCrmWebhookActor(pathname: string) {
-  if (
-    pathname.endsWith("/crm/bot/actions") ||
-    pathname.endsWith("/crm/whatsapp/integrations/bot/actions")
-  ) {
+  if (pathname.endsWith("/crm/bot/actions")) {
     return { actorId: "external_crm_bot", displayName: "External CRM bot" };
   }
   if (pathname.endsWith("/crm/webhooks/meta")) {
@@ -29,7 +26,7 @@ export function resolveCrmWebhookActor(pathname: string) {
   if (pathname.includes("/whatsapp/webhooks/zapi/")) {
     return { actorId: "zapi", displayName: "Z-API" };
   }
-  if (pathname.includes("/whatsapp/webhooks/olx/")) {
+  if (pathname.includes("/crm/webhooks/olx/")) {
     return { actorId: "olx_chat", displayName: "OLX Chat" };
   }
   throw new Error("Unknown CRM webhook provider path.");

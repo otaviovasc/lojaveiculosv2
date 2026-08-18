@@ -1,7 +1,10 @@
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
+import type {
+  CrmWhatsappMessage,
+  CrmWhatsappSession,
+} from "../ports/crmWhatsappRepository.js";
 import type { ParsedOlxChatWebhook } from "./parseOlxChatWebhook.js";
 import {
-  getCrmWhatsappRepository,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
@@ -23,16 +26,6 @@ export function persistOlxChatWebhook(
   }
   return runCrmTransaction(ports, async (transactionPorts) => {
     const { connection, parsed } = input;
-    const repository = getCrmWhatsappRepository(transactionPorts);
-    const session = await repository.upsertSessionContext({
-      ...(parsed.buyerName ? { buyerName: parsed.buyerName } : {}),
-      buyerPhone: parsed.buyerPhone,
-      channel: "OLX_CHAT",
-      channelExternalId: parsed.chatId,
-      connectionId: connection.id,
-      storeId: connection.storeId,
-      tenantId: connection.tenantId,
-    });
     const lead = await findOrCreateWhatsappLead(transactionPorts, {
       buyerEmail: parsed.buyerEmail,
       buyerName: parsed.buyerName,
@@ -40,61 +33,22 @@ export function persistOlxChatWebhook(
       connectionId: connection.id,
       direction: "INBOUND",
       externalId: parsed.externalMessageId,
-      preferredLeadId: session.leadId,
       source: "olx",
       storeId: connection.storeId,
       tenantId: connection.tenantId,
     });
-    if (session.leadId !== lead.id) {
-      await repository.updateSession({
-        leadId: lead.id,
-        sessionId: session.id,
-        storeId: connection.storeId,
-        tenantId: connection.tenantId,
-      });
-    }
-    const persisted = await repository.ingestMessage({
-      ...(parsed.buyerName ? { buyerName: parsed.buyerName } : {}),
-      buyerPhone: parsed.buyerPhone,
-      channel: "OLX_CHAT",
-      channelExternalId: parsed.chatId,
-      channelMessageId: parsed.externalMessageId,
-      connectionId: connection.id,
-      content: parsed.message,
-      direction: "INBOUND",
-      externalId: parsed.externalMessageId,
-      firstHandledAt: null,
-      freshLeadAt: parsed.timestamp,
-      leadId: lead.id,
-      metadata: {
-        chatId: parsed.chatId,
-        listId: parsed.listId,
-        provider: "olx_chat",
-      },
-      providerTimestamp: parsed.timestamp,
-      senderOrigin: parsed.senderType === "system" ? "system" : "customer",
-      senderType: parsed.senderType === "system" ? "SYSTEM" : "CUSTOMER",
-      status: "DELIVERED",
-      storeId: connection.storeId,
-      tenantId: connection.tenantId,
-      type: "TEXT",
-    });
-    await persistCanonicalInbound(transactionPorts, {
+    const canonical = await persistCanonicalInbound(transactionPorts, {
       channel: "olx_chat",
-      connectionCapabilities: {
-        inbound: true,
-        outbound: true,
-        templates: false,
-      },
-      connectionDisplayName: connection.displayName,
       connectionId: connection.id,
       contactDisplayName: parsed.buyerName ?? null,
       content: parsed.message,
+      customerChatId: parsed.chatId,
       externalThreadId: parsed.chatId,
       identity: {
         kind: "provider_subject",
         normalizedValue: `olx:${connection.id}:${parsed.chatId}`,
       },
+      leadId: lead.id,
       occurredAt: parsed.timestamp,
       messageType: "text",
       metadata: {
@@ -107,10 +61,18 @@ export function persistOlxChatWebhook(
       providerMessageId: parsed.externalMessageId,
       secondaryPhone: parsed.buyerPhone || null,
       sender: parsed.senderType === "system" ? "system" : "customer",
+      senderOrigin: parsed.senderType === "system" ? "system" : "customer",
+      source: "olx",
       storeId: connection.storeId,
       tenantId: connection.tenantId,
     });
-    if (persisted.createdMessage) {
+    const persisted = projectOlxCanonicalInbound(
+      connection,
+      parsed,
+      canonical,
+      lead.id,
+    );
+    if (canonical.created) {
       await createWhatsappMessageActivity(transactionPorts, {
         connectionId: connection.id,
         content: parsed.message,
@@ -119,17 +81,105 @@ export function persistOlxChatWebhook(
         messageExternalId: parsed.externalMessageId,
         occurredAt: parsed.timestamp,
         provider: "olx_chat",
-        sessionId: persisted.session.id,
+        sessionId: canonical.cycleId,
         storeId: connection.storeId,
         tenantId: connection.tenantId,
       });
+      await stageOlxWebhookEffects(transactionPorts, {
+        connection,
+        message: persisted.message,
+        providerEventId: input.providerEventId,
+        session: persisted.session,
+      });
     }
-    await stageOlxWebhookEffects(transactionPorts, {
-      connection,
-      message: persisted.message,
-      providerEventId: input.providerEventId,
-      session: persisted.session,
-    });
     return persisted;
   });
+}
+
+function projectOlxCanonicalInbound(
+  connection: CrmConnection,
+  parsed: ParsedOlxChatWebhook,
+  canonical: Awaited<ReturnType<typeof persistCanonicalInbound>>,
+  leadId: string,
+) {
+  const metadata = {
+    chatId: parsed.chatId,
+    listId: parsed.listId,
+    provider: "olx_chat",
+    senderType: parsed.senderType,
+  };
+  const message: CrmWhatsappMessage = {
+    channel: "OLX_CHAT",
+    channelMessageId: parsed.externalMessageId,
+    connectionId: connection.id,
+    content: parsed.message,
+    createdAt: parsed.timestamp,
+    deletedAt: null,
+    direction: "INBOUND",
+    externalId: parsed.externalMessageId,
+    id: canonical.messageId,
+    mediaType: null,
+    mediaUrl: null,
+    metadata,
+    providerTimestamp: parsed.timestamp,
+    senderOrigin: parsed.senderType === "system" ? "system" : "customer",
+    senderType: parsed.senderType === "system" ? "SYSTEM" : "CUSTOMER",
+    sessionId: canonical.cycleId,
+    status: "DELIVERED",
+    storeId: connection.storeId,
+    tenantId: connection.tenantId,
+    type: "TEXT",
+    updatedAt: parsed.timestamp,
+  };
+  const session: CrmWhatsappSession = {
+    assignedUserId: null,
+    buyerChatLid: null,
+    buyerName: parsed.buyerName,
+    buyerPhone: parsed.buyerPhone,
+    channel: "OLX_CHAT",
+    channelExternalId: parsed.chatId,
+    channelMetadata: {},
+    connectionId: connection.id,
+    createdAt: parsed.timestamp,
+    externalSessionId: parsed.chatId,
+    firstHandledAt: null,
+    freshLeadAt: parsed.timestamp,
+    humanAttendanceChangedAt: null,
+    humanAttendanceState:
+      canonical.attendanceState === "human_active"
+        ? "IN_HUMAN_SERVICE"
+        : canonical.attendanceState === "bot_active"
+          ? null
+          : "WAITING_HUMAN",
+    humanAttendanceStateVersion:
+      canonical.attendanceState === "bot_active" ? null : 0,
+    humanHandlingStartedAt: null,
+    humanTakeoverAt: null,
+    interventionId: null,
+    id: canonical.cycleId,
+    lastAssignedAt: null,
+    lastCustomerReadAt: null,
+    lastMessageAt: parsed.timestamp,
+    lastMessageContent: parsed.message,
+    lastReadAt: null,
+    leadId,
+    messageCount: 1,
+    metadata: { canonicalThreadId: canonical.threadId, ...metadata },
+    profilePhotoUrl: null,
+    revision: 1,
+    sessionTags: [],
+    source: "olx",
+    status:
+      canonical.attendanceState === "bot_active" ? "ACTIVE" : "HUMAN_TAKEOVER",
+    storeId: connection.storeId,
+    tenantId: connection.tenantId,
+    unreadCount: 1,
+    updatedAt: parsed.timestamp,
+  };
+  return {
+    createdMessage: canonical.created,
+    createdSession: false,
+    message,
+    session,
+  };
 }

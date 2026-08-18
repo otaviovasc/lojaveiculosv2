@@ -130,7 +130,6 @@ export function createRuntimeHttpAppOptions({
       env,
       crmRealtimeBroker,
       runtimeObjectStorage,
-      financingServices,
       crmRealtimeBroker.olxWebhookSecurity,
     ),
     documentServices: createRuntimeDocumentServices(

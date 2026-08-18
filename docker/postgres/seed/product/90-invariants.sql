@@ -569,28 +569,26 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1
-    FROM crm_connections
+    FROM crm_channel_connections
     WHERE id = '24000000-0000-4000-8000-000000000101'
       AND provider = 'zapi'
-      AND status = 'sandbox'
-      AND credentials_ref->>'mode' = 'env'
+      AND channel = 'whatsapp'
+      AND broker = 'direct'
+      AND state = 'sandbox'
       AND metadata->>'officialOperation' = 'false'
-      AND phone IS NULL
       AND external_connection_id IS NULL
   ) THEN
-    RAISE EXCEPTION 'seed invariant: ZAPI must remain an unverified env-backed sandbox';
+    RAISE EXCEPTION 'seed invariant: ZAPI must remain an unverified direct sandbox';
   END IF;
 
   IF EXISTS (
     SELECT 1
-    FROM crm_whatsapp_messages
+    FROM crm_messages
     WHERE metadata->>'source' = 'local_seed'
       AND (
-        (direction = 'INBOUND' AND status <> 'DELIVERED')
-        OR (direction = 'OUTBOUND' AND status <> 'PENDING')
-        OR channel_message_id IS NOT NULL
-        OR external_id IS NOT NULL
-        OR provider_timestamp IS NOT NULL
+        (direction = 'inbound' AND status <> 'delivered')
+        OR (direction = 'outbound' AND status <> 'pending')
+        OR provider_message_id IS NOT NULL
       )
   ) THEN
     RAISE EXCEPTION 'seed invariant: WhatsApp fixture status/evidence is unsafe';

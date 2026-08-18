@@ -15,17 +15,14 @@ export function postOlx(
   payload: Record<string, unknown>,
   secret = olxWebhookSecret,
 ) {
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/olx/${connectionId}/received`,
-    {
-      body: JSON.stringify(payload),
-      headers: {
-        "content-type": "application/json",
-        "x-olx-webhook-secret": secret,
-      },
-      method: "POST",
+  return app.request(`/api/v1/crm/webhooks/olx/${connectionId}/received`, {
+    body: JSON.stringify(payload),
+    headers: {
+      "content-type": "application/json",
+      "x-olx-webhook-secret": secret,
     },
-  );
+    method: "POST",
+  });
 }
 
 export function olxSecurity(options: { allowed?: boolean } = {}) {

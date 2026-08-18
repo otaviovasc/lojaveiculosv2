@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import {
@@ -11,75 +11,9 @@ import {
   createBotDispatcher,
   jsonRequest,
 } from "./crm.whatsapp.botForwarding.testSupport.js";
-import {
-  createTestApp,
-  expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
-
-const legacyBotActionsPath = "/api/v1/crm/whatsapp/integrations/bot/actions";
-const gone = {
-  code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
-  message: "Use POST /api/v1/crm/bot/actions with a one-time capability grant.",
-} as const;
+import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp bot outbound parity", () => {
-  it("does not start a bot-authored conversation through the legacy route", async () => {
-    const sendText = vi.fn();
-    const dispatch = vi.fn();
-    const app = createBotActionApp({
-      crmBotWebhookDispatcher: createBotDispatcher([]),
-      crmWhatsappGateway: { sendText },
-    });
-    await configureBot(app);
-
-    const response = await app.request(
-      legacyBotActionsPath,
-      jsonRequest(
-        {
-          action: "send_text",
-          connectionId,
-          payload: { phone: "5511999999999", text: "Resposta automatica" },
-        },
-        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
-      ),
-    );
-
-    expect(response.status).toBe(410);
-    await expectApiError(response, gone);
-    expect(sendText).not.toHaveBeenCalled();
-    expect(dispatch).not.toHaveBeenCalled();
-  });
-
-  it("does not bypass human takeover through the legacy route", async () => {
-    const sendText = vi.fn();
-    const dispatch = vi.fn();
-    const app = createBotActionApp({
-      crmBotWebhookDispatcher: {
-        actionApiBaseUrl: "https://api.example.test",
-        dispatch,
-      },
-      crmWhatsappGateway: { sendText },
-    });
-    await configureBot(app);
-
-    const response = await app.request(
-      legacyBotActionsPath,
-      jsonRequest(
-        {
-          action: "send_text",
-          connectionId,
-          payload: { phone: "5511999999999", text: "Nao enviar" },
-        },
-        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
-      ),
-    );
-
-    expect(response.status).toBe(410);
-    await expectApiError(response, gone);
-    expect(sendText).not.toHaveBeenCalled();
-    expect(dispatch).not.toHaveBeenCalled();
-  });
-
   it("forwards ZAPI connection status changes to the configured bot", async () => {
     const dispatched: Array<{ payload: Record<string, unknown> }> = [];
     const app = createBotActionApp({

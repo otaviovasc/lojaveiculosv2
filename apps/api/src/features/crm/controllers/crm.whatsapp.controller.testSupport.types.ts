@@ -9,7 +9,6 @@ import type {
   CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
 } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
-import type { CrmFinancingBotActions } from "../../../domains/crm/ports/crmFinancingBotActions.js";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type {
   CrmRealtimeBroker,
@@ -31,6 +30,7 @@ export type CreateCrmWhatsappTestAppOptions = {
   composioWhatsappOnboardingProvider?: CrmServicePorts["composioWhatsappOnboardingProvider"];
   crmBotIntegrationRepository?: CrmBotIntegrationRepository;
   crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
+  crmCanonicalInboundRepository?: CrmServicePorts["crmCanonicalInboundRepository"];
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
   crmConnectionRepository?: CrmConnectionRepository;
   crmOlxWebhookSecurity?: CrmServicePorts["crmOlxWebhookSecurity"];
@@ -53,7 +53,6 @@ export type CreateCrmWhatsappTestAppOptions = {
   crmWhatsappMediaStorage?: ObjectStorage;
   crmWhatsappRepository?: CrmWhatsappRepository;
   entitlements?: EntitlementKey[];
-  financingBotActions?: CrmFinancingBotActions;
   logger?: ServiceLogger;
   permissions?: PermissionKey[];
   supportPermissions?: PermissionKey[];

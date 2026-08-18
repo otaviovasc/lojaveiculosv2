@@ -12,7 +12,6 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { providerConnections } from "./crmCore/authorization.js";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
@@ -26,80 +25,6 @@ export const crmSyncStatus = pgEnum("crm_sync_status", [
   "failed",
   "ignored",
 ]);
-
-export const crmConnectionProvider = pgEnum("crm_connection_provider", [
-  "zapi",
-  "composio_whatsapp",
-  "composio_instagram",
-  "olx_chat",
-]);
-
-export const crmConnectionStatus = pgEnum("crm_connection_status", [
-  "sandbox",
-  "active",
-  "paused",
-  "disconnected",
-  "error",
-  "archived",
-]);
-
-export const crmConnections = pgTable(
-  "crm_connections",
-  {
-    ...lifecycleColumns,
-    credentialsRef: jsonb("credentials_ref").notNull().default({}),
-    displayName: varchar("display_name", { length: 160 }).notNull(),
-    externalConnectionId: varchar("external_connection_id", { length: 191 }),
-    externalInstanceId: varchar("external_instance_id", { length: 191 }),
-    metadata: jsonb("metadata").notNull().default({}),
-    phone: varchar("phone", { length: 40 }),
-    provider: crmConnectionProvider("provider").notNull(),
-    status: crmConnectionStatus("status").notNull().default("sandbox"),
-    storeId: uuid("store_id")
-      .notNull()
-      .references(() => stores.id),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id),
-    webhookUrl: varchar("webhook_url", { length: 500 }),
-  },
-  (table) => [
-    ...(includeCrmScopeForeignKeys
-      ? [
-          foreignKey({
-            columns: [table.storeId, table.tenantId],
-            foreignColumns: [stores.id, stores.tenantId],
-            name: "crm_connections_store_tenant_fk",
-          }),
-        ]
-      : []),
-    index("crm_connections_store_status_idx").on(table.storeId, table.status),
-    uniqueIndex("crm_connections_scope_id_unique").on(
-      table.tenantId,
-      table.storeId,
-      table.id,
-    ),
-    index("crm_connections_zapi_sandbox_cleanup_idx")
-      .on(table.updatedAt)
-      .where(sql`${table.provider} = 'zapi' and ${table.status} = 'sandbox'`),
-    // Instagram can retain multiple accounts; every other provider is single-active.
-    uniqueIndex("crm_connections_store_provider_active_unique")
-      .on(table.storeId, table.provider)
-      .where(
-        sql`${table.status} <> 'archived' and ${table.provider} <> 'composio_instagram'`,
-      ),
-    uniqueIndex("crm_connections_provider_external_active_unique")
-      .on(table.provider, table.externalConnectionId)
-      .where(
-        sql`${table.status} <> 'archived' and ${table.externalConnectionId} is not null`,
-      ),
-    uniqueIndex("crm_connections_provider_instance_active_unique")
-      .on(table.provider, table.externalInstanceId)
-      .where(
-        sql`${table.provider} = 'zapi' and ${table.status} <> 'archived' and ${table.externalInstanceId} is not null`,
-      ),
-  ],
-);
 
 export const crmTags = pgTable(
   "crm_tags",
@@ -137,6 +62,11 @@ export const crmTags = pgTable(
         ]
       : []),
     index("crm_tags_store_idx").on(table.storeId, table.sortOrder),
+    uniqueIndex("crm_tags_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
     uniqueIndex("crm_tags_store_connection_name_unique").on(
       table.storeId,
       table.connectionId,

@@ -1,4 +1,4 @@
-import { countTargetWhatsappSessions } from "./target-crm-whatsapp.mjs";
+import { countTargetWhatsappConversations } from "./target-crm-whatsapp.mjs";
 
 export async function collectParity(tx, storeId, ids) {
   const tables = [
@@ -16,8 +16,6 @@ export async function collectParity(tx, storeId, ids) {
     "subscription_items",
     "subscriptions",
     "billing_customers",
-    "crm_whatsapp_sessions",
-    "crm_whatsapp_messages",
   ];
   const counts = {};
   for (const table of tables) {
@@ -33,16 +31,26 @@ export async function collectParity(tx, storeId, ids) {
     );
     counts[table] = row.count;
   }
-  const connectionIds = [...(ids?.crmConnections?.values() ?? [])];
+  const connectionIds = [...(ids?.crmChannelConnections?.values() ?? [])];
   const [connections] = connectionIds.length
     ? await tx.unsafe(
         `SELECT count(*)::int AS count
-           FROM crm_connections
+           FROM crm_channel_connections
           WHERE store_id=$1 AND id=ANY($2::uuid[])`,
         [storeId, connectionIds],
       )
     : [{ count: 0 }];
-  counts.crm_connections = connections.count;
+  counts.crm_channel_connections = connections.count;
+  const canonicalCounts = connectionIds.length
+    ? await collectCanonicalWhatsappParity(tx, storeId, connectionIds)
+    : {
+        crm_conversation_attendances: 0,
+        crm_conversation_cycles: 0,
+        crm_conversation_threads: 0,
+        crm_messages: 0,
+        crm_messages_with_media: 0,
+      };
+  Object.assign(counts, canonicalCounts);
   const [documents] = await tx.unsafe(
     `SELECT count(*) FILTER (WHERE kind <> 'invoice')::int AS legacy,
             count(*) FILTER (WHERE kind = 'invoice')::int AS attachments
@@ -51,13 +59,36 @@ export async function collectParity(tx, storeId, ids) {
   );
   counts.documents = documents.legacy;
   counts.documents_attachments = documents.attachments;
-  const [whatsappMedia] = await tx.unsafe(
-    `SELECT count(*) FILTER (WHERE media_url IS NOT NULL)::int AS count
-       FROM crm_whatsapp_messages WHERE store_id=$1`,
-    [storeId],
-  );
-  counts.crm_whatsapp_media_messages = whatsappMedia.count;
   return counts;
+}
+
+async function collectCanonicalWhatsappParity(tx, storeId, connectionIds) {
+  const [row] = await tx.unsafe(
+    `SELECT
+       (SELECT count(*)::int FROM crm_conversation_threads
+         WHERE store_id=$1 AND provider_connection_id=ANY($2::uuid[]))
+         AS crm_conversation_threads,
+       (SELECT count(*)::int FROM crm_conversation_cycles AS cycle
+          JOIN crm_conversation_threads AS thread ON thread.id=cycle.thread_id
+         WHERE cycle.store_id=$1
+           AND thread.provider_connection_id=ANY($2::uuid[]))
+         AS crm_conversation_cycles,
+       (SELECT count(*)::int FROM crm_conversation_attendances AS attendance
+          JOIN crm_conversation_threads AS thread
+            ON thread.id=attendance.thread_id
+         WHERE attendance.store_id=$1
+           AND thread.provider_connection_id=ANY($2::uuid[]))
+         AS crm_conversation_attendances,
+       (SELECT count(*)::int FROM crm_messages
+         WHERE store_id=$1 AND provider_connection_id=ANY($2::uuid[]))
+         AS crm_messages,
+       (SELECT count(*) FILTER (WHERE media_url IS NOT NULL)::int
+          FROM crm_messages
+         WHERE store_id=$1 AND provider_connection_id=ANY($2::uuid[]))
+         AS crm_messages_with_media`,
+    [storeId, connectionIds],
+  );
+  return row;
 }
 
 export function assertParity(data, parity, modules) {
@@ -98,10 +129,14 @@ export function assertParity(data, parity, modules) {
     ).length;
   if (modules.has("whatsapp"))
     Object.assign(expected, {
-      crm_connections: data.whatsapp.connections.length,
-      crm_whatsapp_sessions: countTargetWhatsappSessions(data.whatsapp),
-      crm_whatsapp_messages: data.whatsapp.messages.length,
-      crm_whatsapp_media_messages: data.whatsapp.messages.filter(
+      crm_channel_connections: data.whatsapp.connections.length,
+      crm_conversation_threads: countTargetWhatsappConversations(data.whatsapp),
+      crm_conversation_cycles: countTargetWhatsappConversations(data.whatsapp),
+      crm_conversation_attendances: countTargetWhatsappConversations(
+        data.whatsapp,
+      ),
+      crm_messages: data.whatsapp.messages.length,
+      crm_messages_with_media: data.whatsapp.messages.filter(
         (message) => message.media_url,
       ).length,
     });

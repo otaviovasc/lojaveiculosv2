@@ -28,24 +28,22 @@ describe("Drizzle CRM retention adapter", () => {
       expect.arrayContaining([
         "bot_action_commands",
         "crm_messages",
+        "crm_channel_connections",
+        "crm_conversation_attendances",
         "crm_conversation_cycles",
-        "crm_connections",
+        "crm_conversation_threads",
         "crm_external_bot_event_outbox",
         "crm_external_bot_proposals",
         "crm_retention_audit_outbox",
         "crm_retention_legal_holds",
         "crm_retention_scopes",
         "integration_events",
-        "crm_retention_legacy_coverage",
-        "crm_whatsapp_messages",
-        "crm_whatsapp_sessions",
         "provider_effects",
         "provider_events",
       ]),
     );
-    expect(readiness.unavailableRelations).toHaveLength(15);
-    expect(readiness.legacyCoverageGaps).toBe(0);
-    expect(execute).toHaveBeenCalledTimes(15);
+    expect(readiness.unavailableRelations).toHaveLength(14);
+    expect(execute).toHaveBeenCalledTimes(14);
   });
 
   it("round-trips opaque cursor state and rejects malformed cursors", () => {
@@ -72,7 +70,6 @@ describe("Drizzle CRM retention adapter", () => {
         botCutoff: new Date("2026-07-13T15:00:00.000Z"),
         canonicalCutoff: new Date("2025-02-12T15:00:00.000Z"),
         cursor: null,
-        includeLegacyWindow: true,
         limit: 100,
         now: new Date("2026-08-12T15:00:00.000Z"),
         providerCutoff: new Date("2026-08-05T15:00:00.000Z"),
@@ -90,7 +87,7 @@ describe("Drizzle CRM retention adapter", () => {
     expect(query).toContain("resource_type = 'external_bot_grant' then false");
   });
 
-  it("covers legacy Z-API and OLX rows and honors canonical message holds", async () => {
+  it("discovers held candidates only through the scoped canonical conversation chain", async () => {
     const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () =>
       Promise.resolve([]),
     );
@@ -100,7 +97,6 @@ describe("Drizzle CRM retention adapter", () => {
         botCutoff: new Date("2026-07-13T15:00:00.000Z"),
         canonicalCutoff: new Date("2025-02-12T15:00:00.000Z"),
         cursor: null,
-        includeLegacyWindow: true,
         limit: 100,
         now: new Date("2026-08-12T15:00:00.000Z"),
         providerCutoff: new Date("2026-08-05T15:00:00.000Z"),
@@ -112,12 +108,27 @@ describe("Drizzle CRM retention adapter", () => {
       .sqlToQuery(execute.mock.calls[0]![0])
       .sql.toLowerCase();
 
-    expect(query).toContain("'legacy_message'::text");
-    expect(query).toContain("'legacy_session'::text");
-    expect(query).toContain("connection.provider = 'zapi'");
-    expect(query).toContain("connection.provider = 'olx_chat'");
-    expect(query).toContain("hold.resource_type = 'canonical_message'");
-    expect(query).toContain("session.status in ('completed', 'expired')");
+    expect(query).toContain("from crm_messages message");
+    expect(query).toContain("inner join crm_conversation_cycles cycle");
+    expect(query).toContain("inner join crm_conversation_threads thread");
+    expect(query).toContain(
+      "inner join crm_conversation_attendances attendance",
+    );
+    expect(query).toContain("inner join crm_channel_connections connection");
+    expect(query).toContain("cycle.thread_id = message.thread_id");
+    expect(query).toContain(
+      "thread.provider_connection_id = message.provider_connection_id",
+    );
+    expect(query).toContain("connection.provider = message.provider");
+    expect(query).toContain("connection.channel = thread.channel");
+    expect(query).toContain("hold.tenant_id =");
+    expect(query).toContain("hold.store_id =");
+    expect(query).toContain("attendance.changed_at");
+    expect(query).toContain("thread.last_message_at");
+    expect(query).not.toContain("crm_connections");
+    expect(query).not.toContain("crm_whatsapp_sessions");
+    expect(query).not.toContain("crm_whatsapp_messages");
+    expect(query).not.toContain("crm_retention_legacy_coverage");
   });
 
   it("expires retryable sealed OLX lead receipts after seven days", async () => {
@@ -130,7 +141,6 @@ describe("Drizzle CRM retention adapter", () => {
         botCutoff: new Date("2026-07-13T15:00:00.000Z"),
         canonicalCutoff: new Date("2025-02-12T15:00:00.000Z"),
         cursor: null,
-        includeLegacyWindow: true,
         limit: 100,
         now: new Date("2026-08-12T15:00:00.000Z"),
         providerCutoff: new Date("2026-08-05T15:00:00.000Z"),
@@ -151,12 +161,10 @@ describe("Drizzle CRM retention adapter", () => {
     expect(query).toContain("event.payload ? 'sealedreceipt'");
   });
 
-  it("reports the continuous legacy-to-canonical reconciliation gap", async () => {
-    let calls = 0;
-    const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () => {
-      calls += 1;
-      return calls <= 15 ? [{ relation: "present" }] : [{ gaps: 3 }];
-    });
+  it("checks canonical readiness without consulting legacy coverage", async () => {
+    const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () => [
+      { relation: "present" },
+    ]);
     const repository = createDrizzleCrmRetentionRepository({
       execute,
     } as unknown as DrizzleCrmClient);
@@ -166,82 +174,42 @@ describe("Drizzle CRM retention adapter", () => {
         storeId: "00000000-0000-4000-8000-000000000001",
         tenantId: "00000000-0000-4000-8000-000000000002",
       }),
-    ).resolves.toEqual({
-      legacyCoverageGaps: 3,
-      unavailableRelations: [],
-    });
-    const coverageQuery = new PgDialect().sqlToQuery(
-      execute.mock.calls[15]![0],
-    );
-    expect(coverageQuery.sql.toLowerCase()).toContain(
-      "where tenant_id = $1::uuid\n          and store_id = $2::uuid",
-    );
-    expect(coverageQuery.params).toEqual([
-      "00000000-0000-4000-8000-000000000002",
-      "00000000-0000-4000-8000-000000000001",
+    ).resolves.toEqual({ unavailableRelations: [] });
+    expect(execute).toHaveBeenCalledTimes(14);
+    const readinessSql = execute.mock.calls
+      .map(([statement]) => new PgDialect().sqlToQuery(statement).sql)
+      .join("\n")
+      .toLowerCase();
+    expect(readinessSql).not.toContain("legacy_coverage");
+    expect(readinessSql).not.toContain("crm_whatsapp");
+  });
+
+  it("dry-runs canonical candidates and skips active legal holds without mutations", async () => {
+    const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () => [
+      {
+        category: "canonical_message",
+        eligible_at: "2025-01-01T00:00:00.000Z",
+        held: true,
+        resource_id: "00000000-0000-4000-8000-000000000003",
+        resource_type: "canonical_message",
+      },
     ]);
-  });
-
-  it("rechecks scoped legacy gaps after acquiring the retention transaction lock", async () => {
-    let calls = 0;
-    const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () => {
-      calls += 1;
-      if (calls === 2) return [{ gaps: 4 }];
-      return [];
-    });
-    const transaction = vi.fn(
-      async (callback: (tx: DrizzleCrmClient) => Promise<unknown>) =>
-        callback({ execute } as unknown as DrizzleCrmClient),
-    );
-
-    const result = await processDrizzleCrmRetentionBatch(
-      { transaction } as unknown as DrizzleCrmClient,
-      retentionBatchInput(false),
-    );
-
-    expect(transaction).toHaveBeenCalledOnce();
-    expect(result.legacyCoverageGaps).toBe(4);
-    expect(execute).toHaveBeenCalledTimes(3);
-    expect(
-      new PgDialect().sqlToQuery(execute.mock.calls[0]![0]).sql.toLowerCase(),
-    ).toContain("pg_advisory_xact_lock");
-    expect(
-      new PgDialect().sqlToQuery(execute.mock.calls[1]![0]).sql.toLowerCase(),
-    ).toContain("from crm_retention_legacy_coverage");
-  });
-
-  it("keeps sealed receipt cleanup eligible while a scoped legacy gap is open", async () => {
-    let calls = 0;
-    const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () => {
-      calls += 1;
-      if (calls === 1) return [{ gaps: 2 }];
-      return [
-        {
-          category: "provider_raw_payload",
-          eligible_at: "2026-08-01T00:00:00.000Z",
-          held: false,
-          resource_id: "receipt_1",
-          resource_type: "olx_lead_receipt",
-        },
-      ];
-    });
 
     const result = await processDrizzleCrmRetentionBatch(
       { execute } as unknown as DrizzleCrmClient,
       retentionBatchInput(true),
     );
 
-    expect(result.legacyCoverageGaps).toBe(2);
-    expect(
-      result.categories.find(
-        ({ category }) => category === "provider_raw_payload",
-      ),
-    ).toMatchObject({ eligible: 1 });
-    const candidateQuery = new PgDialect().sqlToQuery(
-      execute.mock.calls[1]![0],
-    );
-    expect(
-      candidateQuery.params.filter((value) => value === false),
-    ).toHaveLength(2);
+    expect(result).toMatchObject({
+      legalHoldSkipped: 1,
+      verified: true,
+    });
+    expect(result.categories[0]).toMatchObject({ affected: 0, eligible: 0 });
+    expect(execute).toHaveBeenCalledOnce();
+    const query = new PgDialect()
+      .sqlToQuery(execute.mock.calls[0]![0])
+      .sql.toLowerCase();
+    expect(query).toContain("crm_retention_legal_holds");
+    expect(query).not.toContain("legacy_coverage");
   });
 });

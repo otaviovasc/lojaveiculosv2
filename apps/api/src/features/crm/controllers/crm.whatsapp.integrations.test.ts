@@ -1,22 +1,9 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
-import { vi } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import {
   createAuditSpy,
   createTestApp,
   expectApiError,
 } from "./crm.whatsapp.controller.testSupport.js";
-import {
-  configureBot,
-  jsonPost,
-} from "./crm.whatsapp.botIntegration.testSupport.js";
-
-const connectionId = "24000000-0000-4000-8000-000000000101";
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
 
 describe("CRM WhatsApp integrations", () => {
   it("returns an unconfigured bot integration without secrets", async () => {
@@ -88,123 +75,27 @@ describe("CRM WhatsApp integrations", () => {
     });
   });
 
-  it("authenticates bot actions with the write-only webhook secret", async () => {
-    const { audit, record } = createAuditSpy();
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const app = createTestApp({
-      audit,
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
-      ]),
-      crmWhatsappRepository: whatsappRepository,
-    });
-    await configureBot(app);
-
-    const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot/actions",
-      jsonPost(
-        {
-          action: "create_tag",
-          connectionId,
-          payload: { color: "#16a34a", name: "Quente" },
-        },
-        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
-      ),
-    );
-
-    expect(response.status).toBe(410);
-    await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
-    });
-    expect(JSON.stringify(record.mock.calls)).not.toContain(
-      "bot-webhook-secret-value-32-characters",
-    );
-  });
-
-  it("rejects bot actions with an invalid webhook secret", async () => {
+  it.each([
+    "/api/v1/crm/whatsapp/integrations/bot/actions",
+    "/api/v1/crm/bot/events",
+  ])("does not register obsolete bot endpoint %s", async (path) => {
     const app = createTestApp();
-    await configureBot(app);
-
-    const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot/actions",
-      jsonPost({ action: "list_tags" }, { "X-Webhook-Secret": "wrong-secret" }),
-    );
-
-    expect(response.status).toBe(410);
-    await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
+    const response = await app.request(path, {
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json" },
+      method: "POST",
     });
+
+    expect(response.status).toBe(404);
   });
 
-  it("blocks bot sends during human takeover", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const inbound = await whatsappRepository.ingestMessage({
-      buyerName: "Ana",
-      buyerPhone: "5511999999999",
-      channel: "WHATSAPP",
-      connectionId,
-      content: "Quero falar com uma pessoa",
-      direction: "INBOUND",
-      externalId: "bot-action-inbound-1",
-      metadata: {},
-      providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
-      senderOrigin: "customer",
-      senderType: "CUSTOMER",
-      status: "DELIVERED",
-      storeId,
-      tenantId,
-      type: "TEXT",
+  it("keeps the canonical bot actions endpoint registered", async () => {
+    const response = await createTestApp().request("/api/v1/crm/bot/actions", {
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json" },
+      method: "POST",
     });
-    await whatsappRepository.updateSession({
-      humanTakeoverAt: new Date("2026-07-02T19:01:00.000Z"),
-      sessionId: inbound.session.id,
-      status: "HUMAN_TAKEOVER",
-      storeId,
-      tenantId,
-    });
-    const sendText = vi.fn();
-    const app = createTestApp({
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
-      ]),
-      crmWhatsappGateway: { sendText },
-      crmWhatsappRepository: whatsappRepository,
-    });
-    await configureBot(app);
 
-    const response = await app.request(
-      "/api/v1/crm/whatsapp/integrations/bot/actions",
-      jsonPost(
-        {
-          action: "send_text",
-          payload: { text: "Resposta automatica" },
-          sessionId: inbound.session.id,
-        },
-        { "X-Webhook-Secret": "bot-webhook-secret-value-32-characters" },
-      ),
-    );
-
-    expect(response.status).toBe(410);
-    await expect(response.json()).resolves.toMatchObject({
-      code: "CRM_WHATSAPP_LEGACY_BOT_ACTIONS_GONE",
-    });
-    expect(sendText).not.toHaveBeenCalled();
+    expect(response.status).not.toBe(404);
   });
 });
-
-function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-  };
-}

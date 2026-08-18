@@ -5,6 +5,10 @@ import type {
   ListCrmWhatsappCampaignRecipientsInput,
   UpdateCrmWhatsappCampaignRecipientInput,
 } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import {
+  findCanonicalCycleIdsByThread,
+  findCanonicalThreadIdForCycle,
+} from "./drizzleCrmCanonicalWorkflowReferences.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { readRecord } from "./drizzleCrmWhatsappMappers.js";
 
@@ -12,6 +16,12 @@ export async function createWhatsappCampaignRecipient(
   db: DrizzleCrmClient,
   input: CreateCrmWhatsappCampaignRecipientInput,
 ) {
+  const threadId = await findCanonicalThreadIdForCycle(db, {
+    connectionId: input.connectionId,
+    cycleId: input.sessionId,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
   const [row] = await db
     .insert(crmWhatsappCampaignRecipients)
     .values({
@@ -21,15 +31,15 @@ export async function createWhatsappCampaignRecipient(
       leadId: input.leadId ?? null,
       phone: input.phone,
       sequence: input.sequence,
-      sessionId: input.sessionId,
       status: input.status ?? "pending",
       storeId: input.storeId,
       tenantId: input.tenantId,
+      threadId,
       variables: input.variables ?? {},
     })
     .returning();
   if (!row) throw new Error("CRM WhatsApp campaign recipient insert failed.");
-  return toWhatsappCampaignRecipient(row);
+  return toWhatsappCampaignRecipient(row, input.sessionId);
 }
 
 export async function listWhatsappCampaignRecipients(
@@ -50,8 +60,25 @@ export async function listWhatsappCampaignRecipients(
       eq(crmWhatsappCampaignRecipients.sequence, input.campaignSequence),
     );
   }
+  if (input.connectionId) {
+    filters.push(
+      eq(crmWhatsappCampaignRecipients.connectionId, input.connectionId),
+    );
+  }
+  if (input.phone) {
+    filters.push(eq(crmWhatsappCampaignRecipients.phone, input.phone));
+  }
   if (input.sessionId) {
-    filters.push(eq(crmWhatsappCampaignRecipients.sessionId, input.sessionId));
+    filters.push(
+      eq(
+        crmWhatsappCampaignRecipients.threadId,
+        await findCanonicalThreadIdForCycle(db, {
+          cycleId: input.sessionId,
+          storeId: input.storeId,
+          tenantId: input.tenantId,
+        }),
+      ),
+    );
   }
   if (input.statuses?.length) {
     filters.push(inArray(crmWhatsappCampaignRecipients.status, input.statuses));
@@ -62,7 +89,7 @@ export async function listWhatsappCampaignRecipients(
     .where(and(...filters))
     .orderBy(desc(crmWhatsappCampaignRecipients.updatedAt))
     .limit(input.limit);
-  return rows.map(toWhatsappCampaignRecipient);
+  return hydrateCampaignRecipients(db, rows);
 }
 
 export async function updateWhatsappCampaignRecipient(
@@ -113,11 +140,14 @@ export async function updateWhatsappCampaignRecipient(
       ),
     )
     .returning();
-  return row ? toWhatsappCampaignRecipient(row) : null;
+  if (!row) return null;
+  const [recipient] = await hydrateCampaignRecipients(db, [row]);
+  return recipient ?? null;
 }
 
 function toWhatsappCampaignRecipient(
   row: typeof crmWhatsappCampaignRecipients.$inferSelect,
+  sessionId: string,
 ) {
   return {
     campaignId: row.campaignId,
@@ -136,11 +166,32 @@ function toWhatsappCampaignRecipient(
     secondarySentAt: row.secondarySentAt,
     sentMessageId: row.sentMessageId,
     sequence: row.sequence,
-    sessionId: row.sessionId,
+    sessionId,
     status: row.status,
     storeId: row.storeId as never,
     tenantId: row.tenantId as never,
     updatedAt: row.updatedAt,
     variables: readRecord(row.variables),
   };
+}
+
+async function hydrateCampaignRecipients(
+  db: DrizzleCrmClient,
+  rows: readonly (typeof crmWhatsappCampaignRecipients.$inferSelect)[],
+) {
+  if (rows.length === 0) return [];
+  const first = rows[0];
+  if (!first) return [];
+  const cycleIdByThread = await findCanonicalCycleIdsByThread(db, {
+    storeId: first.storeId,
+    tenantId: first.tenantId,
+    threadIds: rows.map((row) => row.threadId),
+  });
+  return rows.map((row) => {
+    const sessionId = cycleIdByThread.get(row.threadId);
+    if (!sessionId) {
+      throw new Error("Canonical CRM campaign-recipient cycle was not found.");
+    }
+    return toWhatsappCampaignRecipient(row, sessionId);
+  });
 }

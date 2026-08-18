@@ -23,48 +23,44 @@ export function registerCrmWhatsappWebhookRoutes(
     services,
   }: RegisterCrmWhatsappWebhookRoutesOptions,
 ) {
-  crmFeature.post(
-    "/whatsapp/webhooks/olx/:connectionId/leads",
-    async (context) =>
-      handleWhatsapp(context, async () => {
-        const authorized = await authorizeOlxWebhook(
-          context,
-          createWebhookContext,
-          resolveEntitlements,
-          services,
-        );
-        const result = await services.ingestOlxLeadWebhook(
-          authorized.serviceContext,
-          {
-            ...(await readWebhookInput(context)),
-            authorization: authorized.authorization,
-            entitlementGranted: authorized.entitlementGranted,
-          },
-        );
-        return context.json(result);
-      }),
+  crmFeature.post("/webhooks/olx/:connectionId/leads", async (context) =>
+    handleWhatsapp(context, async () => {
+      const authorized = await authorizeOlxWebhook(
+        context,
+        createWebhookContext,
+        resolveEntitlements,
+        services,
+      );
+      const result = await services.ingestOlxLeadWebhook(
+        authorized.serviceContext,
+        {
+          ...(await readWebhookInput(context)),
+          authorization: authorized.authorization,
+          entitlementGranted: authorized.entitlementGranted,
+        },
+      );
+      return context.json(result);
+    }),
   );
 
-  crmFeature.post(
-    "/whatsapp/webhooks/olx/:connectionId/received",
-    async (context) =>
-      handleWhatsapp(context, async () => {
-        const authorized = await authorizeOlxWebhook(
-          context,
-          createWebhookContext,
-          resolveEntitlements,
-          services,
-        );
-        const result = await services.ingestOlxChatWebhook(
-          authorized.serviceContext,
-          {
-            ...(await readWebhookInput(context)),
-            authorization: authorized.authorization,
-            entitlementGranted: authorized.entitlementGranted,
-          },
-        );
-        return context.json(result, result.status === "stored" ? 201 : 200);
-      }),
+  crmFeature.post("/webhooks/olx/:connectionId/received", async (context) =>
+    handleWhatsapp(context, async () => {
+      const authorized = await authorizeOlxWebhook(
+        context,
+        createWebhookContext,
+        resolveEntitlements,
+        services,
+      );
+      const result = await services.ingestOlxChatWebhook(
+        authorized.serviceContext,
+        {
+          ...(await readWebhookInput(context)),
+          authorization: authorized.authorization,
+          entitlementGranted: authorized.entitlementGranted,
+        },
+      );
+      return context.json(result, result.status === "stored" ? 201 : 200);
+    }),
   );
 
   crmFeature.post(

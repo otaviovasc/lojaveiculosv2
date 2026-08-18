@@ -1,9 +1,10 @@
 import { and, eq } from "drizzle-orm";
-import { crmWhatsappSessionCommandReceipts } from "@lojaveiculosv2/db";
+import { conversationCommandReceipts } from "@lojaveiculosv2/db";
 import type {
   CrmWhatsappSessionCommandReceipt,
   CrmWhatsappSessionCommandRepository,
 } from "../../../domains/crm/ports/crmWhatsappSessionCommandRepository.js";
+import { findCanonicalThreadIdForCycle } from "./drizzleCrmCanonicalWorkflowReferences.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
 export function createDrizzleCrmWhatsappSessionCommandRepository(
@@ -11,20 +12,33 @@ export function createDrizzleCrmWhatsappSessionCommandRepository(
 ): CrmWhatsappSessionCommandRepository {
   return {
     async claim(input) {
+      const threadId = await findCanonicalThreadIdForCycle(db, {
+        cycleId: input.sessionId,
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      });
       const [inserted] = await db
-        .insert(crmWhatsappSessionCommandReceipts)
-        .values(input)
+        .insert(conversationCommandReceipts)
+        .values({
+          commandId: input.commandId,
+          commandType: input.commandType,
+          cycleId: input.sessionId,
+          requestFingerprint: input.requestFingerprint,
+          storeId: input.storeId,
+          tenantId: input.tenantId,
+          threadId,
+        })
         .onConflictDoNothing()
-        .returning({ commandId: crmWhatsappSessionCommandReceipts.commandId });
+        .returning({ commandId: conversationCommandReceipts.commandId });
       if (inserted) return { status: "claimed" };
       return { receipt: await requireReceipt(db, input), status: "existing" };
     },
     async complete(input) {
       const [receipt] = await db
-        .update(crmWhatsappSessionCommandReceipts)
+        .update(conversationCommandReceipts)
         .set({
+          cycleRevision: input.sessionRevision,
           result: input.result,
-          sessionRevision: input.sessionRevision,
           updatedAt: new Date(),
         })
         .where(receiptScope(input))
@@ -43,7 +57,7 @@ async function requireReceipt(
 ) {
   const [receipt] = await db
     .select()
-    .from(crmWhatsappSessionCommandReceipts)
+    .from(conversationCommandReceipts)
     .where(receiptScope(input))
     .limit(1);
   if (!receipt) {
@@ -58,14 +72,14 @@ function receiptScope(input: {
   tenantId: string;
 }) {
   return and(
-    eq(crmWhatsappSessionCommandReceipts.commandId, input.commandId),
-    eq(crmWhatsappSessionCommandReceipts.storeId, input.storeId),
-    eq(crmWhatsappSessionCommandReceipts.tenantId, input.tenantId),
+    eq(conversationCommandReceipts.commandId, input.commandId),
+    eq(conversationCommandReceipts.storeId, input.storeId),
+    eq(conversationCommandReceipts.tenantId, input.tenantId),
   );
 }
 
 function toReceipt(
-  row: typeof crmWhatsappSessionCommandReceipts.$inferSelect,
+  row: typeof conversationCommandReceipts.$inferSelect,
 ): CrmWhatsappSessionCommandReceipt {
   return {
     commandId: row.commandId,
@@ -73,8 +87,8 @@ function toReceipt(
       row.commandType as CrmWhatsappSessionCommandReceipt["commandType"],
     requestFingerprint: row.requestFingerprint,
     result: row.result,
-    sessionId: row.sessionId,
-    sessionRevision: row.sessionRevision,
+    sessionId: row.cycleId,
+    sessionRevision: row.cycleRevision,
     storeId: row.storeId as never,
     tenantId: row.tenantId as never,
   };

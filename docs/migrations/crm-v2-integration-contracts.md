@@ -63,7 +63,7 @@ All routes are under `/api/v1/crm`.
 
 ### OLX lead delivery
 
-- `POST /crm/whatsapp/webhooks/olx/:connectionId/leads`
+- `POST /crm/webhooks/olx/:connectionId/leads`
 
 This connection-scoped endpoint implements OLX's individual lead-delivery JSON
 contract. It authenticates the configured OLX webhook secret from the request

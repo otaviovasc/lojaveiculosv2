@@ -1,12 +1,33 @@
-import { and, eq, sql } from "drizzle-orm";
 import {
+  conversationCycles,
+  conversationThreadTags,
   crmTags,
-  crmWhatsappSessions,
-  crmWhatsappSessionTags,
 } from "@lojaveiculosv2/db";
-import type { UpdateCrmWhatsappSessionTagInput } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import type {
+  CountCrmWhatsappSessionsInput,
+  UpdateCrmWhatsappSessionTagInput,
+} from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { findHydratedSessionById } from "./drizzleCrmWhatsappTagHydration.js";
+
+export async function findSessionIdsByTags(
+  db: DrizzleCrmClient,
+  input: CountCrmWhatsappSessionsInput,
+) {
+  if (!input.tagIds?.length) return null;
+  const rows = await db
+    .select({ sessionId: conversationThreadTags.threadId })
+    .from(conversationThreadTags)
+    .where(
+      and(
+        eq(conversationThreadTags.storeId, input.storeId),
+        eq(conversationThreadTags.tenantId, input.tenantId),
+        inArray(conversationThreadTags.tagId, input.tagIds),
+      ),
+    );
+  return Array.from(new Set(rows.map((row) => row.sessionId)));
+}
 
 export function mutateWhatsappSessionTagWithTransaction(
   db: DrizzleCrmClient,
@@ -15,79 +36,98 @@ export function mutateWhatsappSessionTagWithTransaction(
   disableTransactions: boolean,
 ) {
   const execute = (client: DrizzleCrmClient) =>
-    operation === "add"
-      ? addWhatsappSessionTag(client, input)
-      : removeWhatsappSessionTag(client, input);
+    mutateSessionTag(client, input, operation);
   return disableTransactions
     ? execute(db)
     : db.transaction(async (tx) => execute(tx as DrizzleCrmClient));
 }
 
-async function addWhatsappSessionTag(
+async function mutateSessionTag(
   db: DrizzleCrmClient,
   input: UpdateCrmWhatsappSessionTagInput,
+  operation: "add" | "remove",
 ) {
   const session = await findHydratedSessionById(db, input.sessionId, input);
   if (!session) return null;
-  if (!(await hasScopedTag(db, input))) return session;
-  const [inserted] = await db
-    .insert(crmWhatsappSessionTags)
+  const threadId = await findThreadId(db, input);
+  if (!threadId) return null;
+  if (operation === "add" && !(await hasScopedTag(db, input))) return session;
+  const changed =
+    operation === "add"
+      ? await addTag(db, input, threadId)
+      : await removeTag(db, input, threadId);
+  if (!changed) return session;
+  await db
+    .update(conversationCycles)
+    .set({
+      revision: sql`${conversationCycles.revision} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(conversationCycles.id, input.sessionId),
+        eq(conversationCycles.storeId, input.storeId),
+        eq(conversationCycles.tenantId, input.tenantId),
+      ),
+    );
+  return findHydratedSessionById(db, input.sessionId, input);
+}
+
+async function addTag(
+  db: DrizzleCrmClient,
+  input: UpdateCrmWhatsappSessionTagInput,
+  threadId: string,
+) {
+  const [row] = await db
+    .insert(conversationThreadTags)
     .values({
-      sessionId: input.sessionId,
+      threadId,
       storeId: input.storeId,
       tagId: input.tagId,
       tenantId: input.tenantId,
     })
     .onConflictDoNothing({
-      target: [crmWhatsappSessionTags.sessionId, crmWhatsappSessionTags.tagId],
+      target: [conversationThreadTags.threadId, conversationThreadTags.tagId],
     })
-    .returning({ id: crmWhatsappSessionTags.id });
-  if (inserted) await incrementSessionRevision(db, input);
-  return inserted
-    ? findHydratedSessionById(db, input.sessionId, input)
-    : session;
+    .returning({ id: conversationThreadTags.id });
+  return Boolean(row);
 }
 
-async function removeWhatsappSessionTag(
+async function removeTag(
   db: DrizzleCrmClient,
   input: UpdateCrmWhatsappSessionTagInput,
+  threadId: string,
 ) {
-  const session = await findHydratedSessionById(db, input.sessionId, input);
-  if (!session) return null;
-  const [removed] = await db
-    .delete(crmWhatsappSessionTags)
+  const [row] = await db
+    .delete(conversationThreadTags)
     .where(
       and(
-        eq(crmWhatsappSessionTags.sessionId, input.sessionId),
-        eq(crmWhatsappSessionTags.tagId, input.tagId),
-        eq(crmWhatsappSessionTags.storeId, input.storeId),
-        eq(crmWhatsappSessionTags.tenantId, input.tenantId),
+        eq(conversationThreadTags.threadId, threadId),
+        eq(conversationThreadTags.tagId, input.tagId),
+        eq(conversationThreadTags.storeId, input.storeId),
+        eq(conversationThreadTags.tenantId, input.tenantId),
       ),
     )
-    .returning({ id: crmWhatsappSessionTags.id });
-  if (removed) await incrementSessionRevision(db, input);
-  return removed
-    ? findHydratedSessionById(db, input.sessionId, input)
-    : session;
+    .returning({ id: conversationThreadTags.id });
+  return Boolean(row);
 }
 
-async function incrementSessionRevision(
+async function findThreadId(
   db: DrizzleCrmClient,
   input: UpdateCrmWhatsappSessionTagInput,
 ) {
-  await db
-    .update(crmWhatsappSessions)
-    .set({
-      revision: sql`${crmWhatsappSessions.revision} + 1`,
-      updatedAt: new Date(),
-    })
+  const [row] = await db
+    .select({ threadId: conversationCycles.threadId })
+    .from(conversationCycles)
     .where(
       and(
-        eq(crmWhatsappSessions.id, input.sessionId),
-        eq(crmWhatsappSessions.storeId, input.storeId),
-        eq(crmWhatsappSessions.tenantId, input.tenantId),
+        eq(conversationCycles.id, input.sessionId),
+        eq(conversationCycles.storeId, input.storeId),
+        eq(conversationCycles.tenantId, input.tenantId),
       ),
-    );
+    )
+    .limit(1);
+  return row?.threadId ?? null;
 }
 
 async function hasScopedTag(

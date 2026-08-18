@@ -10,8 +10,10 @@ describe("persistCanonicalInbound", () => {
   it("normalizes the confirmed identity before canonical persistence", async () => {
     const ingestInboundMessage = vi.fn(
       async (input: CanonicalInboundMessageInput) => ({
+        attendanceState: "bot_active" as const,
         contactId: "contact-1",
         created: true,
+        createdSession: true,
         cycleId: "cycle-1",
         identityId: "identity-1",
         messageId: input.providerMessageId,
@@ -26,12 +28,6 @@ describe("persistCanonicalInbound", () => {
 
     await persistCanonicalInbound(ports, {
       channel: "whatsapp",
-      connectionCapabilities: {
-        inbound: true,
-        outbound: true,
-        templates: false,
-      },
-      connectionDisplayName: "Z-API",
       connectionId: "connection-1",
       contactDisplayName: "Buyer",
       content: "Olá",
@@ -64,8 +60,10 @@ describe("persistCanonicalInbound", () => {
 
   it("supplies legacy raw aliases for a prefixed Z-API thread", async () => {
     const ingestInboundMessage = vi.fn(async () => ({
+      attendanceState: "bot_active" as const,
       contactId: "contact-1",
       created: true,
+      createdSession: true,
       cycleId: "cycle-1",
       identityId: "identity-1",
       messageId: "message-1",
@@ -77,12 +75,6 @@ describe("persistCanonicalInbound", () => {
       } as unknown as CrmServicePorts,
       {
         channel: "whatsapp",
-        connectionCapabilities: {
-          inbound: true,
-          outbound: true,
-          templates: false,
-        },
-        connectionDisplayName: "Z-API",
         connectionId: "connection-1",
         contactDisplayName: null,
         content: "Olá",
@@ -104,16 +96,10 @@ describe("persistCanonicalInbound", () => {
     );
   });
 
-  it("allows a rolling-deploy window when the canonical port is absent", async () => {
-    await expect(
+  it("fails closed when the canonical port is absent", () => {
+    expect(() =>
       persistCanonicalInbound({} as CrmServicePorts, {
         channel: "olx_chat",
-        connectionCapabilities: {
-          inbound: true,
-          outbound: true,
-          templates: false,
-        },
-        connectionDisplayName: "OLX",
         connectionId: "connection-1",
         contactDisplayName: null,
         content: "Tenho interesse",
@@ -130,6 +116,6 @@ describe("persistCanonicalInbound", () => {
         storeId: "store-1",
         tenantId: "tenant-1",
       }),
-    ).resolves.toBeNull();
+    ).toThrow("Canonical CRM inbound repository is unavailable.");
   });
 });

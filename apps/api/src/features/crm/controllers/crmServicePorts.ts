@@ -1,6 +1,7 @@
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createDrizzleBillingQuotaGuard } from "../../../infrastructure/db/billing/drizzleBillingQuotaGuard.js";
 import { createDrizzleCrmBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmBotIntegrationRepository.js";
+import { createDrizzleCrmAssigneeMembershipRepository } from "../../../infrastructure/db/crm/drizzleCrmAssigneeMembershipRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
 import {
   createDrizzleCrmRoutingConnectionRepository,
@@ -23,6 +24,8 @@ import {
   CrmOlxWebhookSecurityConfigurationError,
 } from "../../../infrastructure/crm/olxWebhookSecurity.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
+import { createMemoryCrmAssigneeMembershipRepository } from "../adapters/memory/crmAssigneeMembershipRepository.js";
+import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRoutingRepositories } from "../adapters/memory/crmRoutingRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
@@ -50,6 +53,8 @@ export function resolveCrmPorts(
   );
   const memoryConnections = createMemoryCrmConnectionRepository();
   const memoryRouting = createMemoryCrmRoutingRepositories();
+  const memoryWhatsappRepository =
+    options.ports?.crmWhatsappRepository ?? createMemoryCrmWhatsappRepository();
   const defaultPorts = options.drizzleClient
     ? {
         ...connectionSetupPorts,
@@ -59,6 +64,8 @@ export function resolveCrmPorts(
         crmBotIntegrationRepository: createDrizzleCrmBotIntegrationRepository(
           options.drizzleClient,
         ),
+        crmAssigneeMembershipRepository:
+          createDrizzleCrmAssigneeMembershipRepository(options.drizzleClient),
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
           options.drizzleClient,
         ),
@@ -106,6 +113,10 @@ export function resolveCrmPorts(
           getAllowance: async () => ({ limit: 0, remaining: 0, used: 0 }),
         },
         crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
+        crmAssigneeMembershipRepository:
+          createMemoryCrmAssigneeMembershipRepository(),
+        crmCanonicalInboundRepository:
+          createMemoryCrmCanonicalInboundRepository(memoryWhatsappRepository),
         crmConnectionRepository: memoryConnections,
         crmRoutingConnectionRepository:
           memoryConnections.routingConnectionRepository,
@@ -118,7 +129,7 @@ export function resolveCrmPorts(
         crmWebhookEventRepository: createMemoryCrmWebhookEventRepository(),
         crmWhatsappOutboundIntentRepository:
           createMemoryCrmWhatsappOutboundIntentRepository(),
-        crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
+        crmWhatsappRepository: memoryWhatsappRepository,
         crmWhatsappSessionCommandRepository:
           createMemoryCrmWhatsappSessionCommandRepository(),
         environment,
@@ -136,6 +147,10 @@ export function resolveCrmPorts(
           crmBotIntegrationRepository: createDrizzleCrmBotIntegrationRepository(
             tx as DrizzleCrmClient,
           ),
+          crmAssigneeMembershipRepository:
+            createDrizzleCrmAssigneeMembershipRepository(
+              tx as DrizzleCrmClient,
+            ),
           crmConnectionRepository: createDrizzleCrmConnectionRepository(
             tx as DrizzleCrmClient,
           ),

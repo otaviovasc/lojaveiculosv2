@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -11,7 +12,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { stores, tenants, users } from "./identity.js";
+import { storeMemberships, stores, tenants, users } from "./identity.js";
 import { vehicleListings, vehicleUnits } from "./inventory.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 import { crmPipelines, crmPipelineStages } from "./crmPipeline.js";
@@ -80,6 +81,15 @@ export const leads = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.assignedUserId],
+      foreignColumns: [
+        storeMemberships.tenantId,
+        storeMemberships.storeId,
+        storeMemberships.userId,
+      ],
+      name: "leads_scoped_assignee_membership_fk",
+    }),
     index("leads_assigned_user_id_idx").on(table.assignedUserId),
     index("leads_board_page_idx").on(
       table.tenantId,

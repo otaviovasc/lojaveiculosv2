@@ -1,14 +1,17 @@
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import {
-  crmWhatsappSessions,
-  crmWhatsappSessionTags,
+  conversationAttendances,
+  conversationCycles,
+  conversationThreads,
 } from "@lojaveiculosv2/db";
 import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { toWhatsappSession } from "./drizzleCrmWhatsappMappers.js";
 import {
   countSessionsByAssignee as countWhatsappSessionsByAssignee,
+  countCanonicalSessions,
   countUnreadMessages,
+  canonicalSessionSelection,
   crmWhatsappUnreadSessionPredicate,
   sessionFilters,
 } from "./drizzleCrmWhatsappQueries.js";
@@ -48,7 +51,7 @@ import {
   ingestMessageWithTransaction,
   upsertSessionContextWithTransaction,
 } from "./drizzleCrmWhatsappIngest.js";
-import { updateWhatsappSession } from "./drizzleCrmWhatsappUpdates.js";
+import { updateWhatsappSessionWithTransaction } from "./drizzleCrmWhatsappUpdates.js";
 import { transitionWhatsappAttendanceWithTransaction } from "./drizzleCrmWhatsappAttendance.js";
 import {
   createWhatsappTag,
@@ -59,7 +62,10 @@ import {
   reorderWhatsappTags,
   updateWhatsappTag,
 } from "./drizzleCrmWhatsappTags.js";
-import { mutateWhatsappSessionTagWithTransaction } from "./drizzleCrmWhatsappSessionTags.js";
+import {
+  findSessionIdsByTags,
+  mutateWhatsappSessionTagWithTransaction,
+} from "./drizzleCrmWhatsappSessionTags.js";
 import { createSessionIdentityFinder } from "./drizzleCrmWhatsappSessionIdentity.js";
 
 export function createDrizzleCrmWhatsappRepository(
@@ -114,23 +120,14 @@ export function createDrizzleCrmWhatsappRepository(
     async countSessions(input) {
       const tagSessionIds = await findSessionIdsByTags(db, input);
       if (tagSessionIds && tagSessionIds.length === 0) return 0;
-      const filters = sessionFilters(input);
-      if (tagSessionIds) {
-        filters.push(inArray(crmWhatsappSessions.id, tagSessionIds));
-      }
-      if (input.unreadOnly) filters.push(crmWhatsappUnreadSessionPredicate());
-      const [row] = await db
-        .select({ sessionCount: count() })
-        .from(crmWhatsappSessions)
-        .where(and(...filters));
-      return Number(row?.sessionCount ?? 0);
+      return countCanonicalSessions(db, input, tagSessionIds);
     },
     async countSessionsByAssignee(input) {
       const tagSessionIds = await findSessionIdsByTags(db, input);
       if (tagSessionIds && tagSessionIds.length === 0) return [];
       const filters = sessionFilters({ ...input, filter: "all" });
       if (tagSessionIds)
-        filters.push(inArray(crmWhatsappSessions.id, tagSessionIds));
+        filters.push(inArray(conversationThreads.id, tagSessionIds));
       if (input.unreadOnly) filters.push(crmWhatsappUnreadSessionPredicate());
       return countWhatsappSessionsByAssignee(db, filters);
     },
@@ -161,14 +158,22 @@ export function createDrizzleCrmWhatsappRepository(
       if (tagSessionIds && tagSessionIds.length === 0) return [];
       const filters = sessionFilters(input);
       if (tagSessionIds) {
-        filters.push(inArray(crmWhatsappSessions.id, tagSessionIds));
+        filters.push(inArray(conversationThreads.id, tagSessionIds));
       }
       if (input.unreadOnly) filters.push(crmWhatsappUnreadSessionPredicate());
       const rows = await db
-        .select()
-        .from(crmWhatsappSessions)
+        .select(canonicalSessionSelection())
+        .from(conversationCycles)
+        .innerJoin(
+          conversationThreads,
+          eq(conversationCycles.threadId, conversationThreads.id),
+        )
+        .innerJoin(
+          conversationAttendances,
+          eq(conversationAttendances.cycleId, conversationCycles.id),
+        )
         .where(and(...filters))
-        .orderBy(desc(crmWhatsappSessions.lastMessageAt))
+        .orderBy(desc(conversationCycles.lastMessageAt))
         .offset(input.offset)
         .limit(input.limit);
       return Promise.all(
@@ -195,7 +200,12 @@ export function createDrizzleCrmWhatsappRepository(
     async deleteQuickMessage(input) {
       return deleteWhatsappQuickMessage(db, input);
     },
-    updateSession: (input) => updateWhatsappSession(db, input),
+    updateSession: (input) =>
+      updateWhatsappSessionWithTransaction(
+        db,
+        input,
+        !!options.disableTransactions,
+      ),
     transitionAttendance: (input) =>
       transitionWhatsappAttendanceWithTransaction(
         db,
@@ -228,22 +238,4 @@ export function createDrizzleCrmWhatsappRepository(
         !!options.disableTransactions,
       ),
   };
-}
-
-async function findSessionIdsByTags(
-  db: DrizzleCrmClient,
-  input: Parameters<CrmWhatsappRepository["countSessions"]>[0],
-) {
-  if (!input.tagIds?.length) return null;
-  const rows = await db
-    .select({ sessionId: crmWhatsappSessionTags.sessionId })
-    .from(crmWhatsappSessionTags)
-    .where(
-      and(
-        eq(crmWhatsappSessionTags.storeId, input.storeId),
-        eq(crmWhatsappSessionTags.tenantId, input.tenantId),
-        inArray(crmWhatsappSessionTags.tagId, input.tagIds),
-      ),
-    );
-  return Array.from(new Set(rows.map((row) => row.sessionId)));
 }

@@ -18,6 +18,7 @@ import type {
   CrmWebhookEffect,
   CrmWebhookEventRepository,
 } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
+import { findCanonicalMessageContext } from "./drizzleCrmCanonicalWorkflowReferences.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
 type EffectRepository = Pick<
@@ -124,18 +125,26 @@ export function createDrizzleCrmWebhookEffects(
       return rows.map(toWebhookEffect);
     },
     async stageEffects(input) {
+      const message = await findCanonicalMessageContext(db, {
+        connectionId: input.connectionId,
+        cycleId: input.sessionId,
+        messageId: input.messageId,
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      });
       await db
         .insert(crmWebhookEffectOutbox)
         .values(
           input.effects.map((effect) => ({
             connectionId: input.connectionId,
+            cycleId: input.sessionId,
             effectType: effect.effectType,
             messageId: input.messageId,
             providerEventId: input.providerEventId,
             sequence: effect.sequence,
-            sessionId: input.sessionId,
             storeId: input.storeId,
             tenantId: input.tenantId,
+            threadId: message.threadId,
           })),
         )
         .onConflictDoNothing();
@@ -166,7 +175,7 @@ function toWebhookEffect(row: typeof crmWebhookEffectOutbox.$inferSelect) {
     processingToken: row.processingToken,
     providerEventId: row.providerEventId,
     sequence: row.sequence,
-    sessionId: row.sessionId,
+    sessionId: row.cycleId,
     status: row.status,
     storeId: row.storeId as StoreId,
     tenantId: row.tenantId as TenantId,

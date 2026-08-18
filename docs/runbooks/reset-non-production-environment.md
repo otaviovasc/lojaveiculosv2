@@ -20,7 +20,13 @@ The product and audit URLs must also resolve to different databases.
 
 ## Staging Railway Shell
 
-Deploy the code first, then open a shell for the staging API service. Run the
+For an ordinary reset, deploy the reset job first. For a fail-fast schema
+cutover whose migration requires empty tables—such as canonical CRM migration
+`0058`—reverse that order: run the already-deployed reset job before releasing
+the migration. Otherwise Railway runs migrations during startup and the new
+deployment correctly fails before a post-deploy reset can execute.
+
+Open a shell for the currently healthy staging API service and run the
 inspection:
 
 ```bash
@@ -36,6 +42,11 @@ pnpm --filter @lojaveiculosv2/api ops:reset-environment --apply --confirm=stagin
 
 The job is idempotent. If a later phase fails after an earlier phase succeeds,
 fix the external dependency and run the same apply command again.
+
+For migration `0058`, confirm the second dry run reports zero rows in the CRM
+conversation, connection, outbound, campaign-recipient, and lead-outcome
+tables. Only then run the staging release. Do not recreate a store or reconnect
+a provider between the reset and the successful migration deployment.
 
 ## Local
 

@@ -29,7 +29,6 @@ export function createMemoryCrmRetentionRepository(
   input: {
     holds?: readonly MemoryCrmLegalHold[];
     items?: readonly MemoryCrmRetentionItem[];
-    legacyCoverageGaps?: number;
     unavailableRelations?: readonly string[];
   } = {},
 ): CrmRetentionRepository & {
@@ -66,7 +65,6 @@ export function createMemoryCrmRetentionRepository(
     },
     async inspectReadiness() {
       return {
-        legacyCoverageGaps: input.legacyCoverageGaps ?? 0,
         unavailableRelations: [...(input.unavailableRelations ?? [])],
       };
     },
@@ -112,7 +110,6 @@ export function createMemoryCrmRetentionRepository(
       return {
         categories,
         legalHoldSkipped: held.length,
-        legacyCoverageGaps: input.legacyCoverageGaps ?? 0,
         nextCursor:
           page.length < remaining.length
             ? writeCursor(page[page.length - 1]!)

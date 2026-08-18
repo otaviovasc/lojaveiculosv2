@@ -68,8 +68,12 @@ describe("Composio CRM connection operator support", () => {
         env: { apiKey: "COMPOSIO_API_KEY" },
         mode: "composio",
       },
+      broker: "composio",
+      channel: "instagram",
+      externalConnectionId: "instagram-id",
       phone: null,
-      provider: "composio_instagram",
+      provider: "meta_cloud",
+      state: "sandbox",
     });
   });
 
@@ -89,19 +93,59 @@ describe("Composio CRM connection operator support", () => {
   });
 
   it("upserts only a guarded reference connection", async () => {
-    const unsafe = vi.fn(async () => []);
+    const connection = buildSeedConnection("whatsapp", {
+      "connected-account": "ca_whatsapp",
+      "graph-version": "v25.0",
+      "sender-id": "phone-id",
+    });
+    const unsafe = vi.fn(async () => [
+      {
+        broker: connection.broker,
+        channel: connection.channel,
+        externalConnectionId: connection.externalConnectionId,
+        id: connection.id,
+        provider: connection.provider,
+        state: connection.state,
+        storeId: connection.storeId,
+        tenantId: connection.tenantId,
+      },
+    ]);
+
+    await expect(
+      seedLocalComposioConnection({ unsafe }, connection),
+    ).resolves.toMatchObject({
+      broker: "composio",
+      channel: "whatsapp",
+      externalConnectionId: "phone-id",
+      provider: "meta_cloud",
+      state: "sandbox",
+    });
+
+    expect(unsafe).toHaveBeenCalledTimes(1);
+    const query = unsafe.mock.calls[0]?.[0];
+    const parameters = unsafe.mock.calls[0]?.[1];
+    expect(query).toContain("INSERT INTO crm_channel_connections");
+    expect(query).toContain("ON CONFLICT (tenant_id, store_id, id) DO UPDATE");
+    expect(query).not.toMatch(/\bcrm_connections\b/u);
+    expect(query).not.toContain("credentials_ref");
+    expect(query).not.toContain(" phone,");
+    expect(parameters).toContain("phone-id");
+    expect(JSON.stringify(parameters)).not.toContain("api-key-value");
+    expect(JSON.stringify(parameters)).toContain("COMPOSIO_API_KEY");
+  });
+
+  it("does not report a canonical seed when the guarded upsert changes no row", async () => {
     const connection = buildSeedConnection("whatsapp", {
       "connected-account": "ca_whatsapp",
       "graph-version": "v25.0",
       "sender-id": "phone-id",
     });
 
-    await seedLocalComposioConnection({ unsafe }, connection);
-
-    expect(unsafe).toHaveBeenCalledTimes(1);
-    const parameters = unsafe.mock.calls[0]?.[1];
-    expect(parameters).toContain("phone-id");
-    expect(JSON.stringify(parameters)).not.toContain("api-key-value");
-    expect(JSON.stringify(parameters)).toContain("COMPOSIO_API_KEY");
+    await expect(
+      seedLocalComposioConnection(
+        { unsafe: vi.fn(async () => []) },
+        connection,
+      ),
+    ).rejects.toThrow("upsert was not confirmed");
   });
 });

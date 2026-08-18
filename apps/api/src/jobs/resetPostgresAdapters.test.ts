@@ -28,4 +28,10 @@ describe("PostgreSQL environment reset", () => {
     ).toThrow("Unsafe PostgreSQL identifier");
     expect(() => createTruncateStatement([])).toThrow("No PostgreSQL tables");
   });
+
+  it("keeps append-only event tables in the explicit reset set", () => {
+    expect(
+      partitionProductTables(["crm_conversation_attendance_events"]).resettable,
+    ).toEqual(["crm_conversation_attendance_events"]);
+  });
 });

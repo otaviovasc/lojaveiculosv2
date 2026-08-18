@@ -6,6 +6,7 @@ import type {
   VehicleUnitRepository,
 } from "../../../vehicle/ports/vehicleInventoryRepository.js";
 import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
+import type { CrmAssigneeMembershipRepository } from "../../ports/crmAssigneeMembershipRepository.js";
 import type { CrmBotWebhookDispatcher } from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmCanonicalInboundRepository } from "../../ports/crmCanonicalInboundRepository.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
@@ -19,7 +20,6 @@ import type {
   OlxCrmWebhookSetupProvider,
   ZapiConnectionSetupProvider,
 } from "../../ports/crmConnectionSetupProvider.js";
-import type { CrmFinancingBotActions } from "../../ports/crmFinancingBotActions.js";
 import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
 import type { CrmOutcomeRepository } from "../../ports/crmOutcomeRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
@@ -34,6 +34,7 @@ import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js
 import type { CrmWhatsappSessionCommandRepository } from "../../ports/crmWhatsappSessionCommandRepository.js";
 
 export type CrmServicePorts = {
+  crmAssigneeMembershipRepository?: CrmAssigneeMembershipRepository;
   billingQuotaGuard?: BillingQuotaGuard;
   crmBotIntegrationRepository?: CrmBotIntegrationRepository;
   crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
@@ -63,7 +64,6 @@ export type CrmServicePorts = {
   crmWhatsappOutboundIntentRepository?: CrmWhatsappOutboundIntentRepository;
   crmWhatsappRepository?: CrmWhatsappRepository;
   crmWhatsappSessionCommandRepository?: CrmWhatsappSessionCommandRepository;
-  financingBotActions?: CrmFinancingBotActions;
   environment?: string;
   transaction?: <T>(
     action: (ports: CrmServicePorts) => Promise<T>,

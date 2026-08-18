@@ -39,6 +39,9 @@ describe("CRM WhatsApp outbound idempotency", () => {
       providerTimestamp: new Date("2026-08-10T12:00:00.000Z"),
     }));
     const ports = {
+      crmAssigneeMembershipRepository: {
+        isActiveStoreMember: async () => true,
+      },
       crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
       crmConnectionRepository: createTestCrmConnectionRepository([
         connection(),
@@ -97,6 +100,9 @@ describe("CRM WhatsApp outbound idempotency", () => {
     });
     const intents = createMemoryCrmWhatsappOutboundIntentRepository();
     const ports = {
+      crmAssigneeMembershipRepository: {
+        isActiveStoreMember: async () => true,
+      },
       crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
       crmConnectionRepository: createTestCrmConnectionRepository([
         connection(),

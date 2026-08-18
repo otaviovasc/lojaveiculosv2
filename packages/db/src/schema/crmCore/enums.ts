@@ -110,6 +110,23 @@ export const canonicalMessageSender = pgEnum("canonical_message_sender", [
   "system",
   "unknown",
 ]);
+export const canonicalMessageOrigin = pgEnum("canonical_message_origin", [
+  "customer",
+  "human_crm",
+  "human_channel",
+  "external_bot",
+  "system",
+  "unknown",
+]);
+export const conversationCommandResult = pgEnum("conversation_command_result", [
+  "applied",
+  "already_applied",
+  "superseded",
+]);
+export const conversationAttendanceActorKind = pgEnum(
+  "conversation_attendance_actor_kind",
+  ["user", "support", "provider", "bot", "system"],
+);
 export const opportunityState = pgEnum("opportunity_state", [
   "open",
   "won",

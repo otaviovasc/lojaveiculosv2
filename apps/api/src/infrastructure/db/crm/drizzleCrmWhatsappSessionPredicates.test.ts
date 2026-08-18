@@ -16,11 +16,11 @@ describe("Drizzle CRM WhatsApp session predicates", () => {
     const { sql } = renderDrizzleSql(crmWhatsappUnreadSessionPredicate());
 
     expect(sql).toContain("exists");
-    expect(sql).toContain("crm_whatsapp_messages.session_id");
-    expect(sql).toContain("crm_whatsapp_sessions.id");
-    expect(sql).toContain("crm_whatsapp_messages.direction = 'INBOUND'");
-    expect(sql).toContain("crm_whatsapp_messages.created_at > coalesce");
-    expect(sql).toContain("crm_whatsapp_sessions.last_read_at");
+    expect(sql).toContain("crm_messages.cycle_id");
+    expect(sql).toContain("crm_conversation_cycles.id");
+    expect(sql).toContain("crm_messages.direction = 'inbound'");
+    expect(sql).toContain("crm_messages.created_at > coalesce");
+    expect(sql).toContain("crm_conversation_cycles.last_read_at");
   });
 
   it("builds preview updates that ignore older delayed webhooks", () => {
@@ -47,18 +47,18 @@ describe("Drizzle CRM WhatsApp session predicates", () => {
 
     expect(lastMessageAt.sql).toContain("case");
     expect(lastMessageAt.sql).toContain(
-      "crm_whatsapp_sessions.last_message_at is null",
+      "crm_conversation_cycles.last_message_at is null",
     );
     expect(lastMessageAt.sql).toContain(
-      "> crm_whatsapp_sessions.last_message_at",
+      "> crm_conversation_cycles.last_message_at",
     );
     expect(lastMessageAt.sql).toContain("::timestamptz");
     expect(lastMessageAt.sql).toContain(
-      "else crm_whatsapp_sessions.last_message_at",
+      "else crm_conversation_cycles.last_message_at",
     );
     expect(lastMessageContent.sql).toContain("case");
     expect(lastMessageContent.sql).toContain(
-      "else crm_whatsapp_sessions.last_message_content",
+      "else crm_conversation_cycles.last_message_content",
     );
     expect(lastMessageAt.params).toContain(incomingAt.toISOString());
     expect(lastMessageContent.params).toContain("Mensagem nova");
@@ -73,7 +73,7 @@ describe("Drizzle CRM WhatsApp session predicates", () => {
     });
 
     expect(renderDrizzleSql(update.revision).sql).toContain(
-      "crm_whatsapp_sessions.revision + 1",
+      "crm_conversation_cycles.revision + 1",
     );
   });
 });

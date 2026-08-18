@@ -18,7 +18,6 @@ export type CrmRetentionScope = Readonly<{
 }>;
 
 export type CrmRetentionReadiness = Readonly<{
-  legacyCoverageGaps: number;
   unavailableRelations: readonly string[];
 }>;
 
@@ -68,7 +67,6 @@ export type ProcessCrmRetentionBatchResult = Readonly<{
   auditId?: string;
   categories: readonly CrmRetentionCategoryResult[];
   legalHoldSkipped: number;
-  legacyCoverageGaps: number;
   nextCursor: string | null;
   verified: boolean;
 }>;

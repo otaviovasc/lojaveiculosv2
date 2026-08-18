@@ -19,11 +19,7 @@ import type {
   disconnectZapiConnection,
   refreshZapiConnectionStatus,
 } from "../../../domains/crm/services/CrmWhatsapp/zapiConnectionLifecycle.js";
-import type { ExecuteWhatsappBotActionInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
-import type {
-  AuthenticateWhatsappBotSecretInput,
-  UpdateWhatsappBotIntegrationInput,
-} from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
+import type { UpdateWhatsappBotIntegrationInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { archiveAbandonedZapiConnections } from "../../../domains/crm/services/CrmWhatsapp/archiveAbandonedZapiConnections.js";
 import type {
   configureZapiWebhooksAsSupport,
@@ -43,10 +39,6 @@ export type CrmWhatsappConnectionServices = {
   archiveAbandonedZapiConnections: ContextService<
     Parameters<typeof archiveAbandonedZapiConnections>[1],
     Awaited<ReturnType<typeof archiveAbandonedZapiConnections>>
-  >;
-  authenticateWhatsappBotSecret: ContextService<
-    AuthenticateWhatsappBotSecretInput,
-    CrmBotIntegration
   >;
   authorizeComposioWhatsappConnection: ContextService<
     AuthorizeComposioWhatsappInput,
@@ -71,10 +63,6 @@ export type CrmWhatsappConnectionServices = {
   disconnectZapiConnection: ContextService<
     Parameters<typeof disconnectZapiConnection>[1],
     Awaited<ReturnType<typeof disconnectZapiConnection>>
-  >;
-  executeWhatsappBotAction: ContextService<
-    ExecuteWhatsappBotActionInput,
-    unknown
   >;
   getWhatsappBotIntegration: (
     context: ServiceContext,

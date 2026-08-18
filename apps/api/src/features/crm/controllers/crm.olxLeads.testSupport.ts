@@ -95,17 +95,14 @@ export function postOlxLead(
   secret = olxWebhookSecret,
 ) {
   const query = auth === "query" ? `?token=${secret}` : "";
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/olx/${connectionId}/leads${query}`,
-    {
-      body: JSON.stringify(payload),
-      headers: {
-        "content-type": "application/json",
-        ...(auth === "header" ? { "x-olx-webhook-secret": secret } : {}),
-      },
-      method: "POST",
+  return app.request(`/api/v1/crm/webhooks/olx/${connectionId}/leads${query}`, {
+    body: JSON.stringify(payload),
+    headers: {
+      "content-type": "application/json",
+      ...(auth === "header" ? { "x-olx-webhook-secret": secret } : {}),
     },
-  );
+    method: "POST",
+  });
 }
 
 export function listOlxTestLeads(
