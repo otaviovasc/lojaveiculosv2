@@ -61,10 +61,6 @@
     width: 2.25rem;
   }
 
-  .kpi-counters-grid .kpi-card-badge {
-    max-width: 68%;
-  }
-
   .kpi-counters-grid .kpi-card-value {
     font-size: var(--font-size-lg);
   }

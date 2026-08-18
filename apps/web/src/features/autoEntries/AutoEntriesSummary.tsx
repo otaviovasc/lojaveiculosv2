@@ -84,44 +84,47 @@ export function AutoEntriesSummary({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line/60">
-        <span className="text-xs font-bold text-muted mr-1">Origens:</span>
-        {autoEntryDomains.map((domain) => {
-          const count = activeRules.filter(
-            (rule) => rule.event === domain.event,
-          ).length;
-          const ready = count > 0;
-          return (
-            <button
-              aria-label={
-                ready
-                  ? `${domain.tab}: ${count} regra(s) ativa(s)`
-                  : `${domain.tab}: nenhuma regra ativa`
-              }
-              className={cx(
-                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 cursor-pointer",
-                ready
-                  ? "border-accent/30 bg-accent-soft text-accent-strong"
-                  : "border-line bg-app text-muted hover:border-line-strong hover:text-text",
-              )}
-              key={domain.value}
-              onClick={() => onSelectDomain?.(domain.value)}
-              type="button"
-            >
-              <span>{domain.tab}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-line/60 text-xs text-muted">
+        <div className="flex items-center gap-2.5">
+          <span className="font-bold text-text">Cobertura por domínio:</span>
+          <div className="w-32 md:w-48 h-2 rounded-full bg-app-elevated overflow-hidden border border-line">
+            <div
+              className="h-full bg-accent transition-all duration-300 rounded-full"
+              style={{
+                width: `${Math.round((readyDomains / autoEntryDomains.length) * 100)}%`,
+              }}
+            />
+          </div>
+          <span className="font-extrabold text-accent-strong tabular-nums">
+            {Math.round((readyDomains / autoEntryDomains.length) * 100)}%
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-muted">
+          {autoEntryDomains.map((domain) => {
+            const count = activeRules.filter(
+              (rule) => rule.event === domain.event,
+            ).length;
+            const ready = count > 0;
+            return (
               <span
                 className={cx(
-                  "rounded-full px-1.5 py-0.2 text-xs font-extrabold tabular-nums",
-                  ready
-                    ? "bg-accent/20 text-accent-strong"
-                    : "bg-line text-muted",
+                  "inline-flex items-center gap-1",
+                  ready ? "text-text font-bold" : "text-muted/70",
                 )}
+                key={domain.value}
               >
-                {count}
+                <span
+                  className={cx(
+                    "size-1.5 rounded-full",
+                    ready ? "bg-success" : "bg-muted/40",
+                  )}
+                />
+                {domain.tab} ({count})
               </span>
-            </button>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </section>
   );

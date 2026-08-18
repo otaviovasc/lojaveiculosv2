@@ -174,6 +174,7 @@ export function SaleExtraCommissionCard({
               <FeatureField label="Nome da comissão">
                 <FeatureInput
                   onChange={(event) => setName(event.target.value)}
+                  placeholder="Ex.: Bônus de Gerência"
                   value={name}
                 />
               </FeatureField>
@@ -181,7 +182,7 @@ export function SaleExtraCommissionCard({
                 <FeatureInput
                   inputMode="decimal"
                   onChange={(event) => setAmount(event.target.value)}
-                  placeholder="Ex.: 250,00"
+                  placeholder="250,00"
                   value={amount}
                 />
               </FeatureField>

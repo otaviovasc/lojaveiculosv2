@@ -1,6 +1,8 @@
+import { CheckCircle2, Clock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import "../../styles/fiscal-shell.css";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
 import { hydrateEntrySellerNames } from "./commissionEntryMeta";
 import { cancelEntry, exportFinanceCsv } from "./financeBillsActions";
@@ -190,16 +192,54 @@ export function FinanceEntriesWorkspace({
     );
   };
 
+  const statusChip = useMemo(() => {
+    const pendingCount = operationalCashEntries.filter(
+      (entry) => entry.status === "pending",
+    ).length;
+    const now = new Date();
+    const overdueCount = operationalCashEntries.filter(
+      (entry) =>
+        entry.status === "pending" &&
+        Boolean(entry.dueAt && new Date(entry.dueAt) < now),
+    ).length;
+
+    if (overdueCount > 0) {
+      return (
+        <>
+          <Clock className="size-3.5" aria-hidden="true" />
+          {overdueCount} {overdueCount === 1 ? "vencido" : "vencidos"}
+        </>
+      );
+    }
+    if (pendingCount > 0) {
+      return (
+        <>
+          <Clock className="size-3.5" aria-hidden="true" />
+          {pendingCount} {pendingCount === 1 ? "pendente" : "pendentes"}
+        </>
+      );
+    }
+    return (
+      <>
+        <CheckCircle2 className="size-3.5" aria-hidden="true" />
+        Fluxo em dia
+      </>
+    );
+  }, [operationalCashEntries]);
+
   return (
-    <FeaturePageShell className="finance-workspace bg-app" variant="plain">
+    <FeaturePageShell className="finance-shell fiscal-shell" variant="content">
+      <div aria-hidden="true" className="fiscal-shell-blob" />
       <FinanceBillsHeader
         canCreate={canCreate}
+        chip={statusChip}
         onCreate={() => {
           setModalEntry(null);
           setModalRecurringEntry(null);
           setIsModalOpen(true);
         }}
         onExport={() => exportFinanceCsv(filteredEntries, activeType)}
+        onRefresh={refresh}
         onReports={() =>
           onNavigate
             ? onNavigate("reports")

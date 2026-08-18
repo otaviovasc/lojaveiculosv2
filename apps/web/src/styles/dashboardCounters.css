@@ -28,25 +28,21 @@
 
 .kpi-card-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   width: 100%;
 }
 
 .kpi-card-badge {
-  max-width: 8.25rem;
   font-size: var(--font-size-xs);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.9);
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.2rem 0.45rem;
-  border-radius: 9999px;
+  color: color-mix(in srgb, var(--color-text) 68%, transparent);
   letter-spacing: 0.035em;
   text-align: right;
   text-transform: uppercase;
-  backdrop-filter: blur(4px);
+  white-space: nowrap;
 }
 
 .kpi-card-body {
@@ -172,8 +168,6 @@
 }
 .kpi-gradient-green .kpi-card-badge {
   color: var(--color-green-start) !important;
-  background: rgba(24, 184, 65, 0.08) !important;
-  border-color: rgba(24, 184, 65, 0.18) !important;
 }
 .kpi-gradient-green .kpi-card-value {
   color: var(--color-green-start) !important;
@@ -190,8 +184,6 @@
 }
 .kpi-gradient-blue .kpi-card-badge {
   color: var(--color-blue-start) !important;
-  background: rgba(24, 42, 184, 0.08) !important;
-  border-color: rgba(24, 42, 184, 0.18) !important;
 }
 .kpi-gradient-blue .kpi-card-value {
   color: var(--color-blue-start) !important;
@@ -208,8 +200,6 @@
 }
 .kpi-gradient-violet .kpi-card-badge {
   color: var(--color-warning) !important;
-  background: rgba(184, 148, 24, 0.08) !important;
-  border-color: rgba(184, 148, 24, 0.18) !important;
 }
 .kpi-gradient-violet .kpi-card-value {
   color: var(--color-warning) !important;
@@ -226,8 +216,6 @@
 }
 .kpi-gradient-pink .kpi-card-badge {
   color: var(--color-accent) !important;
-  background: rgba(225, 31, 38, 0.08) !important;
-  border-color: rgba(225, 31, 38, 0.18) !important;
 }
 .kpi-gradient-pink .kpi-card-value {
   color: var(--color-accent) !important;
