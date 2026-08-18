@@ -12,8 +12,40 @@ import {
   requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
+import { resolveWhatsappQueueVisibility } from "../../whatsapp/whatsappQueueVisibility.js";
+
+export async function resolveScopedWhatsappSession(
+  context: ServiceContext,
+  input: { sessionId: string },
+  ports: CrmServicePorts,
+) {
+  const scope = requireCrmWhatsappScope(context);
+  const [session] = await getCrmWhatsappRepository(ports).listSessions({
+    limit: 1,
+    offset: 0,
+    queueVisibility: resolveWhatsappQueueVisibility(context),
+    sessionId: input.sessionId,
+    storeId: scope.storeId as never,
+    tenantId: scope.tenantId as never,
+  });
+  return { scope, session: session ?? null };
+}
 
 export async function findScopedWhatsappSession(
+  context: ServiceContext,
+  input: { sessionId: string },
+  ports: CrmServicePorts,
+) {
+  const { scope, session } = await resolveScopedWhatsappSession(
+    context,
+    input,
+    ports,
+  );
+  if (!session) throw new WhatsappSessionNotFoundError(input.sessionId);
+  return { scope, session };
+}
+
+export async function findOutboundWhatsappSession(
   context: ServiceContext,
   input: { sessionId: string },
   ports: CrmServicePorts,
@@ -27,7 +59,27 @@ export async function findScopedWhatsappSession(
     tenantId: scope.tenantId as never,
   });
   if (!session) throw new WhatsappSessionNotFoundError(input.sessionId);
-  return { scope, session };
+
+  if (context.permissions.includes("crm.whatsapp.assign")) {
+    return { requiresAssignment: false, scope, session };
+  }
+  if (context.actor.kind === "system" || context.actor.kind === "integration") {
+    return { requiresAssignment: false, scope, session };
+  }
+  if (context.actor.kind !== "user") {
+    throw new WhatsappSessionNotFoundError(input.sessionId);
+  }
+  if (
+    session.assignedUserId !== null &&
+    session.assignedUserId !== context.actor.id
+  ) {
+    throw new WhatsappSessionNotFoundError(input.sessionId);
+  }
+  return {
+    requiresAssignment: session.assignedUserId === null,
+    scope,
+    session,
+  };
 }
 
 export async function sessionWithConnection(

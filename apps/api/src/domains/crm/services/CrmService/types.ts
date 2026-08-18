@@ -44,6 +44,7 @@ export type CrmServicePorts = {
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
   crmOlxWebhookSecurity?: CrmOlxWebhookSecurity;
   crmOutcomeRepository?: CrmOutcomeRepository;
+  olxCrmCallbackOrigin?: string;
   olxCrmWebhookSetupProvider?: OlxCrmWebhookSetupProvider;
   crmProviderRuntime?: {
     olxChatEnabled: boolean;

@@ -13,6 +13,8 @@ import {
   tenantId,
 } from "./crm.whatsapp.sessionActions.testSupport.js";
 
+const otherUserId = "03030303-0303-4303-8303-030303030303";
+
 describe("CRM WhatsApp session lifecycle", () => {
   it("assigns, toggles intervention, closes, and updates linked leads", async () => {
     const realtimeEvents: CrmRealtimeEvent[] = [];
@@ -78,6 +80,29 @@ describe("CRM WhatsApp session lifecycle", () => {
       result: "applied",
       session: { assignedUserId: actorUserId },
     });
+
+    const reassignResponse = await app.request(
+      `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
+      jsonPost({
+        assignedUserId: otherUserId,
+        commandId: "20000000-0000-4000-8000-000000000004",
+      }),
+    );
+    expect(reassignResponse.status).toBe(200);
+    expect(realtimeEvents.at(-1)).toMatchObject({
+      revokedUserId: actorUserId,
+      session: { assignedUserId: otherUserId },
+      type: "session",
+    });
+
+    const reassignBackResponse = await app.request(
+      `/api/v1/crm/whatsapp/sessions/${inbound.session.id}/assign`,
+      jsonPost({
+        assignedUserId: actorUserId,
+        commandId: "20000000-0000-4000-8000-000000000005",
+      }),
+    );
+    expect(reassignBackResponse.status).toBe(200);
 
     const mineResponse = await app.request(
       "/api/v1/crm/whatsapp/sessions?filter=mine",

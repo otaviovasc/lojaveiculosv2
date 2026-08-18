@@ -25,6 +25,38 @@ describe("CrmWhatsappScopedNav", () => {
     });
   });
 
+  it("announces reconciliation and synchronization in one polite live region", () => {
+    const props = {
+      activeScope: "conversations" as const,
+      onChange: vi.fn(),
+      tagCount: 0,
+      unreadCount: 0,
+    };
+    const rendered = render(
+      <CrmWhatsappScopedNav
+        {...props}
+        connectionLabel="Reconciliando"
+        connectionTone="loading"
+      />,
+    );
+
+    const status = screen.getByRole("status");
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveAttribute("aria-atomic", "true");
+    expect(status).toHaveTextContent("Reconciliando");
+
+    rendered.rerender(
+      <CrmWhatsappScopedNav
+        {...props}
+        connectionLabel="Sincronizado"
+        connectionTone="online"
+      />,
+    );
+
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("Sincronizado");
+  });
+
   it("moves through WhatsApp areas with tab keyboard navigation", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

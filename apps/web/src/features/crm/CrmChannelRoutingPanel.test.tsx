@@ -17,18 +17,49 @@ import type { CrmChannelRouting, CrmRoutingPolicy } from "./crmRoutingTypes";
 describe("CrmChannelRoutingPanel", () => {
   afterEach(cleanup);
 
-  it("selects explicit Instagram accounts and keeps pending OLX unavailable", async () => {
+  it("summarizes the effective route per channel in plain language", async () => {
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(
+          createPolicy([
+            readyRoute(
+              "whatsapp",
+              "zapi-a",
+              "Equipe vendas",
+              "disabled",
+              "zapi",
+            ),
+            blockedOlxRoute(),
+          ]),
+          vi.fn(),
+        )}
+        canManage
+        connections={[
+          legacyConnection(
+            "zapi-a",
+            "zapi",
+            "Equipe vendas",
+            "+55 11 99999-0000",
+          ),
+        ]}
+      />,
+    );
+
+    expect(await screen.findByText("WhatsApp")).toBeVisible();
+    expect(screen.getByText(/Z-API · Equipe vendas — pronta/)).toBeVisible();
+    expect(screen.getByText("Rota ativa")).toBeVisible();
+    expect(
+      screen.getAllByText("Nenhuma conexão padrão definida."),
+    ).toHaveLength(2);
+    expect(
+      screen.getAllByText("Bot externo desativado neste canal."),
+    ).toHaveLength(3);
+  });
+
+  it("edits a channel route in a focused modal with only ready compatible connections", async () => {
     const user = userEvent.setup();
     const initial = createPolicy([
       readyRoute("instagram", "instagram-a", "Loja Centro", "disabled"),
-      readyRoute(
-        "whatsapp",
-        "zapi-a",
-        "Equipe vendas",
-        "inherit_store_default",
-        "zapi",
-      ),
-      blockedOlxRoute(),
     ]);
     const updateRoutingPolicy = vi.fn(async () =>
       createPolicy([
@@ -36,18 +67,9 @@ describe("CrmChannelRoutingPanel", () => {
           "instagram",
           "instagram-b",
           "Loja Norte",
-          "explicit_connection",
-          "composio_instagram",
-          "instagram-a",
-        ),
-        readyRoute(
-          "whatsapp",
-          "zapi-a",
-          "Equipe vendas",
           "inherit_store_default",
-          "zapi",
+          "composio_instagram",
         ),
-        blockedOlxRoute(),
       ]),
     );
     const onPolicyChange = vi.fn(async () => undefined);
@@ -77,41 +99,50 @@ describe("CrmChannelRoutingPanel", () => {
       />,
     );
 
-    const instagram = (await screen.findByText("Instagram")).closest("article");
-    expect(instagram).not.toBeNull();
-    const row = within(instagram as HTMLElement);
-
-    await user.click(row.getByLabelText("Conexão padrão de Instagram"));
-    await user.click(screen.getByRole("option", { name: /Loja Norte/ }));
-    await user.click(row.getByLabelText("Modo do bot em Instagram"));
-    await user.click(screen.getByRole("option", { name: "Escolher conexão" }));
+    const instagramRow = (await screen.findByText("Instagram")).closest(
+      "article",
+    ) as HTMLElement;
     await user.click(
-      row.getByLabelText("Conexão explícita do bot em Instagram"),
+      within(instagramRow).getByRole("button", { name: "Editar rota" }),
     );
-    await user.click(screen.getByRole("option", { name: /Loja Centro/ }));
-    await user.click(row.getByRole("button", { name: "Salvar rota" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toBeVisible();
+    await user.click(
+      within(dialog).getByLabelText("Conexão padrão de Instagram"),
+    );
+    const options = screen
+      .getAllByRole("option")
+      .map((option) => option.textContent ?? "");
+    expect(options.some((label) => label.includes("Loja Norte"))).toBe(true);
+    expect(options.some((label) => label.includes("Loja Centro"))).toBe(true);
+    expect(options.some((label) => label.includes("Equipe vendas"))).toBe(
+      false,
+    );
+    expect(options.some((label) => label.includes("OLX principal"))).toBe(
+      false,
+    );
+
+    await user.click(screen.getByRole("option", { name: /Loja Norte/ }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "Salvar rota" }),
+    );
 
     await waitFor(() =>
       expect(updateRoutingPolicy).toHaveBeenCalledWith({
-        bot: { connectionId: "instagram-a", mode: "explicit_connection" },
+        bot: { mode: "disabled" },
         channel: "instagram",
         defaultConnectionId: "instagram-b",
       }),
     );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
     expect(screen.getByText("Rota salva com sucesso.")).toBeVisible();
     expect(onPolicyChange).toHaveBeenCalledOnce();
-    expect(screen.getByText(/OLX Chat ainda está pendente/)).toBeVisible();
-
-    const olx = screen.getByText("OLX Chat").closest("article");
-    await user.click(
-      within(olx as HTMLElement).getByLabelText("Conexão padrão de OLX Chat"),
-    );
-    expect(
-      screen.queryByRole("option", { name: /OLX principal/ }),
-    ).not.toBeInTheDocument();
   });
 
-  it("preserves a stale route until the user explicitly replaces it", async () => {
+  it("shows a stale route as blocked reason and remediation, with no hidden value", async () => {
     const user = userEvent.setup();
     const updateRoutingPolicy = vi.fn();
     render(
@@ -125,80 +156,98 @@ describe("CrmChannelRoutingPanel", () => {
       />,
     );
 
+    expect(await screen.findByText(/connection_not_found/)).toBeVisible();
+    expect(screen.getByText(/Escolha outra conexão./)).toBeVisible();
     expect(
-      await screen.findByText("Conexão configurada não existe mais"),
-    ).toBeVisible();
-    expect(screen.getByText(/conexão salva não existe mais/)).toBeVisible();
-
-    const whatsapp = screen.getByText("WhatsApp").closest("article");
-    await user.click(
-      within(whatsapp as HTMLElement).getByRole("button", {
-        name: "Salvar rota",
-      }),
-    );
-
-    expect(updateRoutingPolicy).not.toHaveBeenCalled();
-    expect(
-      screen.getByText(/Escolha uma conexão pronta antes de substituir/),
-    ).toBeVisible();
-  });
-
-  it("shows failed OLX Chat activation as failed instead of pending", async () => {
-    const failed = legacyConnection(
-      "olx-failed",
-      "olx_chat",
-      "OLX principal",
-      null,
-      false,
-    );
-    failed.state = "error";
-    failed.status = "error";
-    render(
-      <CrmChannelRoutingPanel
-        api={createApi(createPolicy([blockedOlxRoute()]), vi.fn())}
-        canManage
-        connections={[failed]}
-      />,
-    );
-
-    expect(
-      await screen.findByText(/A ativação do OLX Chat falhou/),
-    ).toBeVisible();
-    expect(
-      screen.queryByText(/OLX Chat ainda está pendente/),
+      screen.queryByText("Conexão configurada não existe mais"),
     ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Definir rota" })[0]!,
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(/Nenhuma conexão pronta para este canal/),
+    ).toBeVisible();
   });
 
-  it("shows a disconnected selected route without silently changing it", async () => {
-    const disconnected = connection("zapi-old", "zapi", "Número antigo", false);
+  it("keeps save errors inside the dialog", async () => {
+    const user = userEvent.setup();
+    const updateRoutingPolicy = vi.fn(async () => {
+      throw new Error("save failed");
+    });
     render(
       <CrmChannelRoutingPanel
         api={createApi(
           createPolicy([
-            {
-              bot: disabledBot(),
-              channel: "whatsapp",
-              storeDefault: {
-                blocked: blocked("connection_not_connected"),
-                connection: disconnected,
-                ready: false,
-                requiredCapabilities: ["text"],
-              },
-            },
+            readyRoute(
+              "whatsapp",
+              "zapi-a",
+              "Equipe vendas",
+              "disabled",
+              "zapi",
+            ),
           ]),
-          vi.fn(),
+          updateRoutingPolicy,
         )}
         canManage
+        connections={[legacyConnection("zapi-a", "zapi", "Equipe vendas")]}
+      />,
+    );
+
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Editar rota" }))[0]!,
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("button", { name: "Salvar rota" }),
+    );
+
+    expect(await within(dialog).findByText("save failed")).toBeVisible();
+    expect(screen.getByRole("dialog")).toBeVisible();
+  });
+
+  it("blocks manage actions without permission", async () => {
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(createPolicy([blockedOlxRoute()]), vi.fn())}
+        canManage={false}
         connections={[]}
       />,
     );
 
     expect(
-      await screen.findByText(/Z-API · Número antigo \(desconectada\)/i),
-    ).toBeVisible();
+      await screen.findAllByText(
+        "Somente administradores podem alterar rotas.",
+      ),
+    ).not.toHaveLength(0);
     expect(
-      screen.getByText(/está desconectada e foi preservada/),
+      screen.getAllByRole("button", { name: "Definir rota" })[0],
+    ).toBeDisabled();
+  });
+
+  it("uses a friendly label instead of exposing an unnamed connection id", async () => {
+    const user = userEvent.setup();
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(createPolicy([]), vi.fn())}
+        canManage
+        connections={[legacyConnection("internal-id-42", "zapi", "")]}
+      />,
+    );
+
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Definir rota" }))[0]!,
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByLabelText("Conexão padrão de WhatsApp"),
+    );
+
+    expect(
+      screen.getByRole("option", { name: /Z-API · Conexão sem nome/ }),
     ).toBeVisible();
+    expect(screen.queryByText(/internal-id-42/)).not.toBeInTheDocument();
   });
 
   it("renders load errors and offers a retry", async () => {
@@ -243,23 +292,15 @@ function readyRoute(
   displayName: string,
   mode: CrmChannelRouting["bot"]["mode"],
   provider: "composio_instagram" | "zapi" = "composio_instagram",
-  botConnectionId = id,
 ): CrmChannelRouting {
   const selected = connection(id, provider, displayName, true);
-  const botConnection = connection(
-    botConnectionId,
-    provider,
-    botConnectionId === id ? displayName : "Loja Centro",
-    true,
-  );
   return {
     bot:
       mode === "disabled"
         ? disabledBot()
         : {
             blocked: null,
-            connection:
-              mode === "explicit_connection" ? botConnection : selected,
+            connection: selected,
             mode,
             ready: true,
             requiredCapabilities: ["text"],

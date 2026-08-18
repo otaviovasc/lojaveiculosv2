@@ -96,6 +96,7 @@ export type {
 } from "./crmWhatsappRepositoryModels.js";
 export type {
   CountCrmWhatsappSessionsInput,
+  CrmWhatsappQueueVisibility,
   CreateCrmWhatsappScheduledMessageInput,
   CreateCrmWhatsappTagInput,
   DeleteCrmWhatsappTagInput,

@@ -53,20 +53,29 @@ export async function applyMetaMessageStatus(
   });
   const lastCustomerReadAt =
     event.status === "READ" ? (event.timestamp ?? new Date()) : null;
-  if (lastCustomerReadAt) {
-    await updateWhatsappSessionWithCas(repository, {
-      sessionId: message.sessionId,
-      storeId: connection.storeId,
-      tenantId: connection.tenantId,
-      update: (session) => ({
-        lastCustomerReadAt: laterDate(
-          session.lastCustomerReadAt,
-          lastCustomerReadAt,
-        ),
-      }),
-    });
-  }
+  const session = lastCustomerReadAt
+    ? await updateWhatsappSessionWithCas(repository, {
+        sessionId: message.sessionId,
+        storeId: connection.storeId,
+        tenantId: connection.tenantId,
+        update: (current) => ({
+          lastCustomerReadAt: laterDate(
+            current.lastCustomerReadAt,
+            lastCustomerReadAt,
+          ),
+        }),
+      })
+    : (
+        await repository.listSessions({
+          limit: 1,
+          offset: 0,
+          sessionId: message.sessionId,
+          storeId: connection.storeId,
+          tenantId: connection.tenantId,
+        })
+      )[0];
   await getCrmRealtimePublisher(ports).publish({
+    assignedUserId: session?.assignedUserId ?? null,
     connectionId: connection.id,
     ...(lastCustomerReadAt
       ? { lastCustomerReadAt: lastCustomerReadAt.toISOString() }

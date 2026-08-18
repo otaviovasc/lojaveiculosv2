@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import type { AuditEvent } from "@lojaveiculosv2/audit";
+import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmRoutingConnection } from "../../ports/crmRoutingConnectionRepository.js";
 import type {
@@ -13,10 +14,11 @@ describe("ensureFirstReadyChannelDefault", () => {
   it("persists the first ready route instead of using a runtime fallback", async () => {
     const selected = connection("zapi", "first-ready");
     const servicePorts = ports([selected], []);
+    const audit = auditSpy();
 
     await expect(
       ensureFirstReadyChannelDefault(
-        context(),
+        context(audit.record),
         { channel: "whatsapp", connectionId: selected.id },
         servicePorts,
       ),
@@ -26,6 +28,10 @@ describe("ensureFirstReadyChannelDefault", () => {
     expect(
       result.channels.find((item) => item.channel === "whatsapp")?.storeDefault,
     ).toMatchObject({ connection: { id: selected.id }, ready: true });
+    expect(audit.events()).toMatchObject([
+      { outcome: "attempted" },
+      { metadata: { result: "created" }, outcome: "succeeded" },
+    ]);
   });
 
   it("does not choose among multiple ready routes or replace a default", async () => {
@@ -40,9 +46,10 @@ describe("ensureFirstReadyChannelDefault", () => {
     ).resolves.toBe(false);
 
     const explicit = ports([first], [policy("chosen")]);
+    const audit = auditSpy();
     await expect(
       ensureFirstReadyChannelDefault(
-        context(),
+        context(audit.record),
         { channel: "whatsapp", connectionId: first.id },
         explicit,
       ),
@@ -54,6 +61,10 @@ describe("ensureFirstReadyChannelDefault", () => {
         )
       )[0]?.defaultConnectionId,
     ).toBe("chosen");
+    expect(audit.events()).toMatchObject([
+      { outcome: "attempted" },
+      { metadata: { result: "already_present" }, outcome: "succeeded" },
+    ]);
   });
 
   it("does not overwrite an explicit default saved between read and write", async () => {
@@ -61,10 +72,11 @@ describe("ensureFirstReadyChannelDefault", () => {
     const servicePorts = ports([first], [], (policies) => {
       policies.push(policy("explicit-winner"));
     });
+    const audit = auditSpy();
 
     await expect(
       ensureFirstReadyChannelDefault(
-        context(),
+        context(audit.record),
         { channel: "whatsapp", connectionId: first.id },
         servicePorts,
       ),
@@ -76,21 +88,54 @@ describe("ensureFirstReadyChannelDefault", () => {
         )
       )[0]?.defaultConnectionId,
     ).toBe("explicit-winner");
+    expect(audit.events()).toMatchObject([
+      { outcome: "attempted" },
+      { metadata: { result: "superseded" }, outcome: "succeeded" },
+    ]);
+  });
+
+  it("records a failed terminal when automatic default persistence fails", async () => {
+    const selected = connection("zapi", "first-ready");
+    const servicePorts = ports([selected], []);
+    servicePorts.crmRoutingConnectionRepository!.listConnections = async () => {
+      throw new TypeError("routing persistence unavailable");
+    };
+    const audit = auditSpy();
+
+    await expect(
+      ensureFirstReadyChannelDefault(
+        context(audit.record),
+        { channel: "whatsapp", connectionId: selected.id },
+        servicePorts,
+      ),
+    ).rejects.toThrow("routing persistence unavailable");
+    expect(audit.events()).toMatchObject([
+      { outcome: "attempted" },
+      {
+        metadata: { errorName: "TypeError", result: "failed" },
+        outcome: "failed",
+      },
+    ]);
   });
 });
 
-function context() {
+function context(record?: (event: AuditEvent) => Promise<void>) {
   return createServiceContext({
     actor: { id: "actor-1", kind: "user" },
+    ...(record ? { audit: { record } } : {}),
     entitlements: ["crm"],
-    permissions: [
-      "crm.messaging.connection.setup",
-      "crm.routing.default.manage",
-      "crm.whatsapp.list",
-    ],
+    permissions: ["crm.messaging.connection.setup", "crm.whatsapp.list"],
     request: { requestId: "request-1" },
     ...scope(),
   });
+}
+
+function auditSpy() {
+  const record = vi.fn(async (_event: AuditEvent) => undefined);
+  return {
+    events: () => record.mock.calls.map(([event]) => event),
+    record,
+  };
 }
 
 function scope() {
@@ -168,8 +213,6 @@ function ports(
     crmRepository: {} as never,
     crmRoutingConnectionRepository: {
       listConnections: async () => connections,
-      synchronizeLegacyConnections: async () => undefined,
-      verifyLegacyMappings: async (input) => input.connectionIds,
     },
     crmRoutingPolicyRepository: policyRepository,
   };

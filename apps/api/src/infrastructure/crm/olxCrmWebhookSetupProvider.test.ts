@@ -33,32 +33,31 @@ describe("createOlxCrmWebhookSetupProvider", () => {
     });
   });
 
-  it("retries transient registration failures because OLX registration is update-safe", async () => {
+  it("performs only one POST when OLX returns an ambiguous server failure", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
       .mockResolvedValueOnce(new Response(null, { status: 201 }));
-    const wait = vi.fn(async () => undefined);
-    const provider = createOlxCrmWebhookSetupProvider(fetch, wait);
+    const provider = createOlxCrmWebhookSetupProvider(fetch);
 
     await expect(
       provider.configureChat({
         accessToken: "access",
         callbackUrl: "https://api.example/chat",
       }),
-    ).resolves.toBeUndefined();
-    expect(fetch).toHaveBeenCalledTimes(2);
-    expect(wait).toHaveBeenCalledWith(250);
+    ).rejects.toMatchObject({
+      code: "provider_outcome_indeterminate",
+      httpStatus: 500,
+      retryable: false,
+    });
+    expect(fetch).toHaveBeenCalledOnce();
   });
 
   it("preserves the final OLX HTTP status for safe diagnostics", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValue(new Response(null, { status: 401 }));
-    const provider = createOlxCrmWebhookSetupProvider(
-      fetch,
-      async () => undefined,
-    );
+    const provider = createOlxCrmWebhookSetupProvider(fetch);
 
     await expect(
       provider.configureChat({
@@ -72,15 +71,56 @@ describe("createOlxCrmWebhookSetupProvider", () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
-  it("does not wait synchronously when OLX requests a long retry delay", async () => {
-    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
-      new Response(null, {
-        headers: { "retry-after": "30" },
-        status: 429,
-      }),
-    );
-    const wait = vi.fn(async () => undefined);
-    const provider = createOlxCrmWebhookSetupProvider(fetch, wait);
+  it.each([400, 401, 403, 404, 405, 415, 422])(
+    "classifies OLX %s as a non-retryable provider rejection",
+    async (status) => {
+      const fetch = vi
+        .fn<typeof globalThis.fetch>()
+        .mockResolvedValue(new Response(null, { status }));
+      const provider = createOlxCrmWebhookSetupProvider(fetch);
+
+      await expect(
+        provider.configureChat({
+          accessToken: "access",
+          callbackUrl: "https://api.example/chat",
+        }),
+      ).rejects.toMatchObject({
+        code: "provider_rejected",
+        httpStatus: status,
+        retryable: false,
+      });
+      expect(fetch).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each([301, 408, 409, 425, 502])(
+    "classifies ambiguous OLX %s responses as indeterminate",
+    async (status) => {
+      const fetch = vi
+        .fn<typeof globalThis.fetch>()
+        .mockResolvedValue(new Response(null, { status }));
+      const provider = createOlxCrmWebhookSetupProvider(fetch);
+
+      await expect(
+        provider.configureChat({
+          accessToken: "access",
+          callbackUrl: "https://api.example/chat",
+        }),
+      ).rejects.toMatchObject({
+        code: "provider_outcome_indeterminate",
+        httpStatus: status,
+        retryable: false,
+      });
+      expect(fetch).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("does not repeat a POST whose network outcome is ambiguous", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockRejectedValueOnce(new TypeError("network interrupted"))
+      .mockResolvedValueOnce(new Response(null, { status: 201 }));
+    const provider = createOlxCrmWebhookSetupProvider(fetch);
 
     await expect(
       provider.configureChat({
@@ -88,12 +128,83 @@ describe("createOlxCrmWebhookSetupProvider", () => {
         callbackUrl: "https://api.example/chat",
       }),
     ).rejects.toMatchObject({
-      code: "rate_limited",
-      httpStatus: 429,
-      retryAfterSeconds: 30,
+      code: "provider_outcome_indeterminate",
+      retryable: false,
     });
     expect(fetch).toHaveBeenCalledOnce();
-    expect(wait).not.toHaveBeenCalled();
+  });
+
+  it("classifies a transport timeout after dispatch as indeterminate", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockRejectedValue(new DOMException("timed out", "TimeoutError"));
+    const provider = createOlxCrmWebhookSetupProvider(fetch);
+
+    await expect(
+      provider.configureChat({
+        accessToken: "access",
+        callbackUrl: "https://api.example/chat",
+      }),
+    ).rejects.toMatchObject({
+      code: "provider_outcome_indeterminate",
+      retryable: false,
+    });
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it("classifies OLX 500 as indeterminate and keeps safe request ids only", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response("token=customer-secret", {
+        headers: {
+          "x-olx-request-id": "olx-operation-500",
+          "x-provider-debug": "unsafe customer payload",
+        },
+        status: 500,
+      }),
+    );
+    const provider = createOlxCrmWebhookSetupProvider(fetch);
+
+    const error = await provider
+      .configureChat({
+        accessToken: "access-secret",
+        callbackUrl: "https://api.example/chat?token=callback-secret",
+      })
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      code: "provider_outcome_indeterminate",
+      httpStatus: 500,
+      providerRequestId: "olx-operation-500",
+      retryable: false,
+    });
+    expect(String(error)).toContain("indeterminate");
+    expect(JSON.stringify(error)).not.toContain("customer-secret");
+    expect(JSON.stringify(error)).not.toContain("access-secret");
+    expect(JSON.stringify(error)).not.toContain("callback-secret");
+    expect(JSON.stringify(error)).not.toContain("unsafe customer payload");
+  });
+
+  it("treats OLX 429 as indeterminate without proof it was not processed", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(null, {
+        headers: { "retry-after": "30" },
+        status: 429,
+      }),
+    );
+    const provider = createOlxCrmWebhookSetupProvider(fetch);
+
+    await expect(
+      provider.configureChat({
+        accessToken: "access",
+        callbackUrl: "https://api.example/chat",
+      }),
+    ).rejects.toMatchObject({
+      code: "provider_outcome_indeterminate",
+      httpStatus: 429,
+      retryAfterSeconds: 30,
+      retryable: false,
+    });
+    expect(fetch).toHaveBeenCalledOnce();
   });
 });
 

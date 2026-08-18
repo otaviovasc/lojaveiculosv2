@@ -40,6 +40,7 @@ export async function reconcileZapiConnectionStatus(
     metadata: {
       ...connection.metadata,
       lastProviderStatusCheckedAt: new Date().toISOString(),
+      providerConnected: status.connected,
     },
     ...(status.connectedPhone ? { phone: status.connectedPhone } : {}),
     status: configuredStatus,

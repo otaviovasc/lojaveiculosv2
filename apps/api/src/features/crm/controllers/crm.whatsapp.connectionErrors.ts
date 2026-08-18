@@ -9,11 +9,27 @@ import {
   WhatsappConnectionProviderAlreadyExistsError,
 } from "../../../domains/crm/whatsapp/whatsappConnectionCreation.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
+import { OlxChatSetupRetryTargetError } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
 
 export function handleWhatsappConnectionError(
   context: Context,
   error: unknown,
 ) {
+  if (error instanceof OlxChatSetupRetryTargetError) {
+    return jsonApiError(context, {
+      code:
+        error.reason === "not_found"
+          ? "CRM_OLX_CHAT_CONNECTION_NOT_FOUND"
+          : error.reason === "wrong_provider"
+            ? "CRM_OLX_CHAT_SETUP_PROVIDER_MISMATCH"
+            : error.reason === "already_configured"
+              ? "CRM_OLX_CHAT_SETUP_ALREADY_CONFIGURED"
+              : "CRM_OLX_CHAT_AUTHORIZATION_UNAVAILABLE",
+      error,
+      message: error.message,
+      status: error.reason === "not_found" ? 404 : 409,
+    });
+  }
   if (error instanceof WhatsappConnectionProviderAlreadyExistsError) {
     return jsonApiError(context, {
       code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
@@ -56,25 +72,40 @@ export function handleWhatsappConnectionError(
     const status =
       error.code === "rate_limited"
         ? 429
-        : error.code === "pairing_disconnect_required"
+        : error.code === "provider_outcome_indeterminate"
           ? 409
-          : error.code === "pairing_method_required"
+          : error.code === "pairing_disconnect_required"
             ? 409
-            : error.code === "configuration_error"
-              ? 503
-              : 502;
+            : error.code === "pairing_method_required"
+              ? 409
+              : error.code === "configuration_error"
+                ? 503
+                : 502;
     if (status === 429) {
       context.header("Retry-After", String(error.retryAfterSeconds ?? 1));
     }
     return jsonApiError(context, {
       code: `CRM_CONNECTION_SETUP_${error.code.toUpperCase()}`,
-      ...(error.retryAfterSeconds
-        ? { details: { retryAfterSeconds: error.retryAfterSeconds } }
-        : error.code === "pairing_disconnect_required"
-          ? { details: { nextAction: "disconnect_connection" } }
-          : error.code === "pairing_method_required"
-            ? { details: { nextAction: "request_phone_code" } }
-            : {}),
+      ...(error.providerRequestId ||
+      error.httpStatus ||
+      error.retryable !== undefined
+        ? {
+            details: {
+              providerHttpStatus: error.httpStatus ?? null,
+              providerRequestId: error.providerRequestId ?? null,
+              retryable: error.retryable ?? false,
+              ...(error.retryAfterSeconds
+                ? { retryAfterSeconds: error.retryAfterSeconds }
+                : {}),
+            },
+          }
+        : error.retryAfterSeconds
+          ? { details: { retryAfterSeconds: error.retryAfterSeconds } }
+          : error.code === "pairing_disconnect_required"
+            ? { details: { nextAction: "disconnect_connection" } }
+            : error.code === "pairing_method_required"
+              ? { details: { nextAction: "request_phone_code" } }
+              : {}),
       error,
       message: error.message,
       status,

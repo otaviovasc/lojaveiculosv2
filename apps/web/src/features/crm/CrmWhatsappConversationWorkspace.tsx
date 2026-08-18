@@ -48,7 +48,7 @@ export function CrmWhatsappConversationWorkspace({
     setReplyToMessage(null);
     setDetailsOpen(false);
     setConclusionOpen(false);
-  }, [inbox.activeSessionId]);
+  }, [inbox.activeSessionId, inbox.connectionFilterId]);
 
   const focusPane = (pane: "chat" | "context" | "list") => {
     setMobilePane(pane);
@@ -84,6 +84,7 @@ export function CrmWhatsappConversationWorkspace({
         <WhatsappToolbar
           assignableMembers={inbox.assignableMembers}
           availableTags={inbox.availableTags}
+          canAssign={inbox.permissions.canAssign}
           canManageConnections={
             inbox.permissions.canConnectionSetup ||
             inbox.permissions.canConnectionPair
@@ -241,6 +242,9 @@ export function CrmWhatsappConversationWorkspace({
               session={activeSession}
             />
             <MessageList
+              key={`${String(activeSession.id)}:${String(
+                inbox.connectionFilterId ?? "automatic",
+              )}`}
               actionsDisabled={inbox.isSending || !inbox.canSendText}
               isLoading={inbox.isLoadingMessages}
               messages={inbox.messages}
@@ -275,7 +279,7 @@ export function CrmWhatsappConversationWorkspace({
                 <MessageComposer
                   key={`${String(activeSession.id)}:${String(
                     activeSessionConnection?.id ?? "unknown",
-                  )}`}
+                  )}:${String(inbox.connectionFilterId ?? "automatic")}`}
                   capabilities={providerCapabilities}
                   catalogUrl={inbox.catalogUrl}
                   defaultLocationName={inbox.storeLocationName}

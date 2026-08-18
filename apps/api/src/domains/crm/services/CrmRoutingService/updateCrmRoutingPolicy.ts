@@ -75,28 +75,6 @@ export async function updateCrmRoutingPolicy(
     await runCrmTransaction(ports, async (transactionPorts) => {
       const connectionRepository =
         getCrmRoutingConnectionRepository(transactionPorts);
-      const selectedIds = [input.defaultConnectionId, botConnectionId].filter(
-        (value): value is string => Boolean(value),
-      );
-      const mappingInput = {
-        connectionIds: selectedIds,
-        ...scope,
-      } as never;
-      await connectionRepository.synchronizeLegacyConnections(mappingInput);
-      const verifiedIds =
-        await connectionRepository.verifyLegacyMappings?.(mappingInput);
-      if (
-        selectedIds.length &&
-        (!verifiedIds ||
-          selectedIds.some(
-            (connectionId) => !verifiedIds.includes(connectionId),
-          ))
-      ) {
-        throw new CrmRoutingPolicyValidationError(
-          "A selected connection has no verified legacy/canonical mapping.",
-          "legacy_mapping_missing",
-        );
-      }
       const connections = await connectionRepository.listConnections(
         scope as never,
       );

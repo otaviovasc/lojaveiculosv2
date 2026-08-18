@@ -66,6 +66,9 @@ export async function listWhatsappScheduledMessages(
   if (input.campaignId) {
     filters.push(eq(crmWhatsappScheduledMessages.campaignId, input.campaignId));
   }
+  if (input.scheduledMessageId) {
+    filters.push(eq(crmWhatsappScheduledMessages.id, input.scheduledMessageId));
+  }
   if (input.sessionId) {
     filters.push(eq(crmWhatsappScheduledMessages.sessionId, input.sessionId));
   }

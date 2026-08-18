@@ -77,6 +77,14 @@ export const crmWhatsappRoutes = {
       `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/composio/sender`,
       baseUrl,
     ),
+  olxChatSetupRetry: (
+    connectionId: CrmWhatsappConnectionId,
+    baseUrl?: string,
+  ) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/olx-chat/setup/retry`,
+      baseUrl,
+    ),
   zapiPairingCode: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/code`,

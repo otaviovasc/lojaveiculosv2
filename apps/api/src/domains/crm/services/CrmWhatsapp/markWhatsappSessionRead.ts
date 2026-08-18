@@ -11,7 +11,7 @@ import {
 } from "./serviceSupport.js";
 import {
   executeWhatsappSessionCommand,
-  reloadScopedWhatsappSession,
+  reloadVisibleWhatsappSession,
   type WhatsappSessionCommandResponse,
 } from "./executeWhatsappSessionCommand.js";
 
@@ -75,10 +75,10 @@ export async function markWhatsappSessionReadState(
               tenantId: scope.tenantId,
             });
             if (updated) return { result: "applied", session: updated };
-            const reloaded = await reloadScopedWhatsappSession(
+            const reloaded = await reloadVisibleWhatsappSession(
+              context,
               transactionPorts,
               input.sessionId,
-              scope,
             );
             if (
               input.unread

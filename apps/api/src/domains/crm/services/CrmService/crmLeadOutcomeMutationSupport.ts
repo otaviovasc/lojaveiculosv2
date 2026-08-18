@@ -12,6 +12,7 @@ import {
   getCrmWhatsappRepository,
 } from "./serviceSupport.js";
 import { hashCrmOutcome } from "./crmLeadOutcomePersistence.js";
+import { resolveScopedWhatsappSession } from "../CrmWhatsapp/whatsappSessionMutationSupport.js";
 
 export async function moveLeadToOutcomeStage(
   ports: CrmServicePorts,
@@ -84,6 +85,7 @@ export async function completeOutcomeSessions(
   ports: CrmServicePorts,
   scope: { storeId: string; tenantId: string },
   sessions: readonly CrmWhatsappSession[],
+  context?: ServiceContext,
 ) {
   const repository = getCrmWhatsappRepository(ports);
   const changed: CrmWhatsappSession[] = [];
@@ -109,7 +111,9 @@ export async function completeOutcomeSessions(
         changed.push(updated);
         break;
       }
-      candidate = await findOutcomeSession(ports, scope, candidate.id);
+      candidate = context
+        ? await findVisibleOutcomeSession(context, ports, candidate.id)
+        : await findOutcomeSession(ports, scope, candidate.id);
     }
     if (
       isActiveSession(candidate) &&
@@ -121,6 +125,22 @@ export async function completeOutcomeSessions(
     }
   }
   return changed;
+}
+
+export async function findVisibleOutcomeSession(
+  context: ServiceContext,
+  ports: CrmServicePorts,
+  sessionId: string,
+) {
+  const { session } = await resolveScopedWhatsappSession(
+    context,
+    { sessionId },
+    ports,
+  );
+  if (!session) {
+    throw new CrmLeadOutcomeValidationError("WhatsApp session was not found.");
+  }
+  return session;
 }
 
 export async function createFollowUpTask(

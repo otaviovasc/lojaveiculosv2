@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /** Server-owned vocabulary shared by the API and CRM frontend. */
 export const crmChannels = ["whatsapp", "instagram", "olx_chat"] as const;
 export type CrmChannel = (typeof crmChannels)[number];
@@ -27,30 +29,38 @@ export const crmConnectionCapabilities = [
 export type CrmConnectionCapability =
   (typeof crmConnectionCapabilities)[number];
 
-export type CrmConnectionReadiness = {
-  ready: boolean;
-  reasonCode:
-    | "not_authorized"
-    | "pending_webhook"
-    | "disconnected"
-    | "paused"
-    | "provider_error"
-    | "missing_capability"
-    | "ready"
-    | null;
-  reason: string | null;
-};
+export const crmConnectionReadinessReasonCodes = [
+  "not_authorized",
+  "pending_webhook",
+  "disconnected",
+  "paused",
+  "provider_error",
+  "missing_capability",
+  "ready",
+] as const;
 
-export type CrmChannelConnectionDto = {
-  id: string;
-  channel: CrmChannel;
-  provider: CrmProvider;
-  displayName: string;
-  state: CrmConnectionState;
-  readiness: CrmConnectionReadiness;
-  capabilities: readonly CrmConnectionCapability[];
-  isDefault: boolean;
-};
+export const crmConnectionReadinessSchema = z.object({
+  ready: z.boolean(),
+  reasonCode: z.enum(crmConnectionReadinessReasonCodes).nullable(),
+  reason: z.string().nullable(),
+});
+export type CrmConnectionReadiness = z.infer<
+  typeof crmConnectionReadinessSchema
+>;
+
+export const crmChannelConnectionSchema = z.object({
+  id: z.string().trim().min(1),
+  channel: z.enum(crmChannels),
+  provider: z.enum(crmProviders),
+  displayName: z.string().trim().min(1),
+  state: z.enum(crmConnectionStates),
+  readiness: crmConnectionReadinessSchema,
+  capabilities: z.array(z.enum(crmConnectionCapabilities)).readonly(),
+  isDefault: z.boolean(),
+});
+export type CrmChannelConnectionDto = z.infer<
+  typeof crmChannelConnectionSchema
+>;
 
 export const externalBotActionRegistry = [
   "message.send_text",

@@ -4,16 +4,11 @@ import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import type { CrmWhatsappCatalogProductsPage } from "../../ports/crmWhatsappGateway.js";
 import type { WhatsappMessage } from "../../whatsapp/whatsappModels.js";
 import { sendWhatsappOutboundMessage } from "../../whatsapp/sendWhatsappOutboundMessage.js";
-import {
-  WhatsappConnectionNotFoundError,
-  WhatsappSessionNotFoundError,
-} from "../../whatsapp/whatsappSendErrors.js";
+import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
-  getCrmWhatsappRepository,
   isCrmOlxChatEnabled,
-  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -23,6 +18,7 @@ import {
 } from "./serviceSupport.js";
 import { resolveWhatsappCatalogPhone } from "./sendWhatsappCatalog.js";
 import { assertWhatsappProviderEffectAllowed } from "../../whatsapp/assertWhatsappProviderEffectAllowed.js";
+import { findScopedWhatsappSession } from "./whatsappSessionMutationSupport.js";
 
 const readPermission = "crm.whatsapp.read";
 const sendPermission = "crm.whatsapp.send";
@@ -158,15 +154,11 @@ async function readSessionConnection(
   sessionId: string,
   ports: CrmServicePorts,
 ): Promise<CrmConnection> {
-  const scope = requireCrmWhatsappScope(context);
-  const [session] = await getCrmWhatsappRepository(ports).listSessions({
-    limit: 1,
-    offset: 0,
-    sessionId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (!session) throw new WhatsappSessionNotFoundError(sessionId);
+  const { session } = await findScopedWhatsappSession(
+    context,
+    { sessionId },
+    ports,
+  );
   const connection = await getCrmConnectionRepository(ports).findConnectionById(
     session.connectionId,
   );

@@ -8,6 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { rememberPendingComposioConnection } from "./crmWhatsappComposioOAuth";
 import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 import {
   CrmWhatsappSelfServiceSetup,
@@ -51,6 +52,30 @@ describe("CrmWhatsappSelfServiceSetup", () => {
     );
 
     expect(screen.getByText(/permissões de gerenciar conexões/i)).toBeVisible();
+  });
+
+  it("keeps existing management visible without exposing setup actions", async () => {
+    const connection = createZapiConnection("active");
+    render(
+      <CrmWhatsappSelfServiceSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        availableProviders={["composio_whatsapp", "zapi"]}
+        canPair={true}
+        canSetup={false}
+        connections={[connection]}
+        handlers={createHandlers()}
+        startAtDirectory
+      />,
+    );
+
+    expect(
+      screen.getByText(/consultar e parear conexões existentes/i),
+    ).toBeVisible();
+    expect(screen.queryByText("Instagram incluído")).not.toBeInTheDocument();
+    expect(screen.queryByText("WhatsApp Oficial")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Z-API principal/ }));
+    expect(await screen.findByRole("dialog")).toBeVisible();
   });
 
   it("keeps Official WhatsApp available when only the Z-API quota is zero", () => {
@@ -147,12 +172,14 @@ describe("CrmWhatsappSelfServiceSetup", () => {
           availableProviders={["zapi"]}
           canPair={true}
           canSetup={true}
-          existingConnection={connection}
+          connections={[connection]}
           handlers={{ ...createHandlers(), onSetConnectionPaused }}
+          startAtDirectory
         />,
       );
 
-      fireEvent.click(screen.getByRole("button", { name: actionLabel }));
+      fireEvent.click(screen.getByRole("button", { name: /Z-API principal/ }));
+      fireEvent.click(await screen.findByRole("button", { name: actionLabel }));
 
       await waitFor(() => {
         expect(onSetConnectionPaused).toHaveBeenCalledWith(
@@ -162,6 +189,88 @@ describe("CrmWhatsappSelfServiceSetup", () => {
       });
     },
   );
+
+  it("closes the setup dialog with Escape", async () => {
+    render(
+      <CrmWhatsappSelfServiceSetup
+        allowance={{ limit: 1, remaining: 1, used: 0 }}
+        availableProviders={["composio_whatsapp"]}
+        canPair={false}
+        canSetup={true}
+        handlers={createHandlers()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /WhatsApp Oficial/i }));
+    expect(await screen.findByRole("dialog")).toBeVisible();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("clears provider errors when setup closes and another provider opens", async () => {
+    const handlers = createHandlers();
+    handlers.onCreate = vi.fn(async () => {
+      throw new Error("falha anterior");
+    });
+    render(
+      <CrmWhatsappSelfServiceSetup
+        allowance={{ limit: 1, remaining: 1, used: 0 }}
+        availableProviders={["composio_whatsapp", "zapi"]}
+        canPair={true}
+        canSetup={true}
+        handlers={handlers}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /WhatsApp Oficial/i }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Autorizar com a Meta/i }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "falha anterior",
+    );
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getByRole("button", { name: /Z-API/i }));
+
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    expect(screen.queryByText("falha anterior")).not.toBeInTheDocument();
+  });
+
+  it("clears official completion state when the setup dialog closes", async () => {
+    const connection = createOfficialConnection();
+    const handlers = createHandlers();
+    handlers.onCompleteComposio = vi.fn(async () => ({
+      connection,
+      nextAction: "select_sender",
+      senders: [{ displayName: "Equipe antiga", senderId: "sender-1" }],
+    }));
+    rememberPendingComposioConnection(connection.id);
+
+    render(
+      <CrmWhatsappSelfServiceSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        availableProviders={["composio_whatsapp"]}
+        canPair={false}
+        canSetup={true}
+        connections={[connection]}
+        existingConnection={connection}
+        handlers={handlers}
+      />,
+    );
+
+    expect(await screen.findByText("Equipe antiga")).toBeVisible();
+    fireEvent.keyDown(document, { key: "Escape" });
+    const officialButtons = screen.getAllByRole("button", {
+      name: /WhatsApp Oficial/i,
+    });
+    fireEvent.click(officialButtons[officialButtons.length - 1]!);
+
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    expect(screen.queryByText("Equipe antiga")).not.toBeInTheDocument();
+  });
 });
 
 function createHandlers(): CrmWhatsappSelfServiceHandlers {
@@ -197,6 +306,7 @@ function createZapiConnection(
   status: "active" | "paused",
 ): CrmWhatsappProviderConnection {
   return {
+    channel: "whatsapp" as const,
     displayName: "Z-API principal",
     externalConnectionId: null,
     externalInstanceId: "instance-1",
@@ -214,5 +324,15 @@ function createZapiConnection(
     setup: null,
     status,
     webhookUrl: null,
+  };
+}
+
+function createOfficialConnection(): CrmWhatsappProviderConnection {
+  return {
+    ...createZapiConnection("active"),
+    displayName: "WhatsApp Oficial principal",
+    externalConnectionId: "composio-1",
+    id: "official-1",
+    provider: "composio_whatsapp",
   };
 }

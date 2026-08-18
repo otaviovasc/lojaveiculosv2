@@ -137,6 +137,7 @@ async function persistProviderStatus(
     metadata: {
       ...connection.metadata,
       lastProviderStatusCheckedAt: checkedAt.toISOString(),
+      providerConnected: live.connected,
     },
     ...(live.connectedPhone ? { phone: live.connectedPhone } : {}),
     status: nextStatus,

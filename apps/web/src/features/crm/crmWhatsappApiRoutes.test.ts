@@ -53,6 +53,9 @@ describe("CRM WhatsApp API routes", () => {
     expect(crmWhatsappRoutes.routingPolicy()).toBe(
       "/api/v1/crm/routing-policy",
     );
+    expect(crmWhatsappRoutes.olxChatSetupRetry("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/olx-chat/setup/retry",
+    );
     expect(crmWhatsappRoutes.quickMessage("quick_1")).toBe(
       "/api/v1/crm/whatsapp/quick-messages/quick_1",
     );

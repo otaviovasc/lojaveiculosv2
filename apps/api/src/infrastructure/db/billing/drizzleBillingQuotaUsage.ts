@@ -1,7 +1,7 @@
 import { and, count, eq, gte, inArray, ne } from "drizzle-orm";
 import {
-  crmConnections,
   identityInvitations,
+  providerConnections,
   storeMemberships,
   vehicleListings,
   vehiclePlateLookups,
@@ -55,13 +55,15 @@ export async function countBillingQuotaUsage(
   if (input.quotaKey === "crm_zapi") {
     const [row] = await db
       .select({ value: count() })
-      .from(crmConnections)
+      .from(providerConnections)
       .where(
         and(
-          eq(crmConnections.storeId, input.storeId),
-          eq(crmConnections.tenantId, input.tenantId),
-          eq(crmConnections.provider, "zapi"),
-          ne(crmConnections.status, "archived"),
+          eq(providerConnections.storeId, input.storeId),
+          eq(providerConnections.tenantId, input.tenantId),
+          eq(providerConnections.channel, "whatsapp"),
+          eq(providerConnections.provider, "zapi"),
+          eq(providerConnections.broker, "direct"),
+          ne(providerConnections.state, "archived"),
         ),
       );
     return Number(row?.value ?? 0);

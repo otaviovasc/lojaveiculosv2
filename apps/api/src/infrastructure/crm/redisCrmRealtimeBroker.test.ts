@@ -7,7 +7,6 @@ import type {
 import {
   createRedisClient,
   installRedisClients,
-  streamRow,
 } from "./redisCrmRealtimeBroker.testSupport.js";
 
 const redisMocks = vi.hoisted(() => ({ createClient: vi.fn() }));
@@ -47,11 +46,19 @@ describe("createRedisCrmRealtimeBroker", () => {
       });
     const broker = createRedisCrmRealtimeBroker("redis://recovering");
 
-    await expect(broker.issueTicket({ storeId, tenantId })).rejects.toThrow(
-      "redis unavailable",
-    );
     await expect(
-      broker.issueTicket({ storeId, tenantId }),
+      broker.issueTicket({
+        queueVisibility: { kind: "global" },
+        storeId,
+        tenantId,
+      }),
+    ).rejects.toThrow("redis unavailable");
+    await expect(
+      broker.issueTicket({
+        queueVisibility: { kind: "global" },
+        storeId,
+        tenantId,
+      }),
     ).resolves.toMatchObject({ storeId, tenantId });
     expect(command.connect).toHaveBeenCalledTimes(2);
   });
@@ -76,7 +83,12 @@ describe("createRedisCrmRealtimeBroker", () => {
     });
     const broker = createRedisCrmRealtimeBroker("redis://runtime-failure");
     const onEvent = vi.fn();
-    broker.subscribe({ onEvent, storeId, tenantId });
+    broker.subscribe({
+      onEvent,
+      queueVisibility: { kind: "global" },
+      storeId,
+      tenantId,
+    });
 
     await expect(broker.publish(createEvent())).rejects.toThrow(
       "redis publish failed",
@@ -98,7 +110,11 @@ describe("createRedisCrmRealtimeBroker", () => {
       return consumed;
     });
     const broker = createRedisCrmRealtimeBroker("redis://available");
-    const issued = await broker.issueTicket({ storeId, tenantId });
+    const issued = await broker.issueTicket({
+      queueVisibility: { kind: "global" },
+      storeId,
+      tenantId,
+    });
 
     await expect(broker.resolveTicket(issued.ticket)).resolves.toMatchObject({
       storeId,
@@ -108,40 +124,6 @@ describe("createRedisCrmRealtimeBroker", () => {
     expect(command.sendCommand.mock.calls.map(([args]) => args[0])).toEqual([
       "GETDEL",
       "GETDEL",
-    ]);
-  });
-
-  it("pages raw stream rows until connection-scoped replay reaches its limit", async () => {
-    const { command } = installRedisClients(redisMocks.createClient);
-    command.sendCommand
-      .mockResolvedValueOnce([streamRow("1-0", createEvent("other"))])
-      .mockResolvedValueOnce([streamRow("2-0", createEvent("target"))])
-      .mockResolvedValueOnce([streamRow("3-0", createEvent("other"))])
-      .mockResolvedValueOnce([streamRow("4-0", createEvent("target"))]);
-    const broker = createRedisCrmRealtimeBroker("redis://available");
-
-    const first = await broker.replay({
-      connectionId: "target",
-      limit: 1,
-      sinceEventId: "0-0",
-      storeId,
-      tenantId,
-    });
-    const second = await broker.replay({
-      connectionId: "target",
-      limit: 1,
-      sinceEventId: first[0]?.id ?? null,
-      storeId,
-      tenantId,
-    });
-
-    expect(first.map(({ id }) => id)).toEqual(["2-0"]);
-    expect(second.map(({ id }) => id)).toEqual(["4-0"]);
-    expect(command.sendCommand.mock.calls.map(([args]) => args[2])).toEqual([
-      "(0-0",
-      "(1-0",
-      "(2-0",
-      "(3-0",
     ]);
   });
 
@@ -166,7 +148,12 @@ describe("createRedisCrmRealtimeBroker", () => {
     const firstBroker = createRedisCrmRealtimeBroker("redis://available");
     const secondBroker = createRedisCrmRealtimeBroker("redis://available");
     const onEvent = vi.fn<(event: CrmRealtimeEventEnvelope) => void>();
-    secondBroker.subscribe({ onEvent, storeId, tenantId });
+    secondBroker.subscribe({
+      onEvent,
+      queueVisibility: { kind: "global" },
+      storeId,
+      tenantId,
+    });
 
     await Promise.all([firstBroker.ready(), secondBroker.ready()]);
     await firstBroker.publish(createEvent());
@@ -191,7 +178,12 @@ describe("createRuntimeCrmRealtimeBroker", () => {
   it("uses explicit in-memory mode for local/test", async () => {
     const broker = createRuntimeCrmRealtimeBroker({ APP_ENV: "local" });
     const onEvent = vi.fn();
-    broker.subscribe({ onEvent, storeId, tenantId });
+    broker.subscribe({
+      onEvent,
+      queueVisibility: { kind: "global" },
+      storeId,
+      tenantId,
+    });
 
     await broker.ready();
     await broker.publish(createEvent());

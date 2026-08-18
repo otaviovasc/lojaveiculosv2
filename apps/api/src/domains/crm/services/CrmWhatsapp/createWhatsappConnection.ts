@@ -178,7 +178,6 @@ export async function createWhatsappConnection(
       );
       if (
         result.ready &&
-        context.permissions.includes("crm.routing.default.manage") &&
         ports.crmRoutingConnectionRepository &&
         ports.crmRoutingPolicyRepository
       ) {

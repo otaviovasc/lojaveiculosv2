@@ -55,6 +55,10 @@ export function listMemoryScheduledMessages(
       (message) => !input.campaignId || message.campaignId === input.campaignId,
     )
     .filter(
+      (message) =>
+        !input.scheduledMessageId || message.id === input.scheduledMessageId,
+    )
+    .filter(
       (message) => !input.sessionId || message.sessionId === input.sessionId,
     )
     .filter((message) => !input.status || message.status === input.status)

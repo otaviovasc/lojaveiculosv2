@@ -11,7 +11,7 @@ import type {
   CrmCanonicalInboundRepository,
 } from "../../../domains/crm/ports/crmCanonicalInboundRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
-import { ensureCanonicalConnection } from "./drizzleCrmCanonicalInboundConnection.js";
+import { assertCanonicalInboundConnection } from "./drizzleCrmCanonicalInboundConnection.js";
 import {
   lockCanonicalIdentity,
   resolveCanonicalIdentity,
@@ -34,7 +34,7 @@ async function ingestCanonicalInbound(
   input: CanonicalInboundMessageInput,
 ): Promise<CanonicalInboundMessageResult> {
   await lockCanonicalIdentity(db, input);
-  await ensureCanonicalConnection(db, input);
+  await assertCanonicalInboundConnection(db, input);
   const duplicate = await findMessage(db, input);
   if (duplicate) return { ...duplicate, created: false };
 

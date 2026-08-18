@@ -6,6 +6,7 @@ import { CrmConnectionSetupProviderError } from "./ports/crmConnectionSetupProvi
 export type OlxCapabilityFailure = {
   code: string;
   httpStatus: number | null;
+  providerRequestId: string | null;
   retryable: boolean;
 };
 
@@ -26,6 +27,7 @@ export function createOlxCapabilityFailureRecorder(
       connectionId: input.connectionId,
       providerErrorCode: failure.code,
       providerHttpStatus: failure.httpStatus,
+      providerRequestId: failure.providerRequestId,
       requestId: context.requestId,
       retryable: failure.retryable,
       storeId: input.storeId,
@@ -34,18 +36,25 @@ export function createOlxCapabilityFailureRecorder(
   };
 }
 
-function readOlxCapabilityFailure(error: unknown): OlxCapabilityFailure {
+export function readOlxCapabilityFailure(error: unknown): OlxCapabilityFailure {
   if (error instanceof CrmConnectionSetupProviderError) {
     return {
       code: error.code,
       httpStatus: error.httpStatus ?? null,
+      providerRequestId: error.providerRequestId ?? null,
       retryable:
-        error.code === "rate_limited" ||
-        error.code === "request_failed" ||
-        (error.httpStatus !== undefined && error.httpStatus >= 500),
+        error.retryable ??
+        (error.code === "rate_limited" ||
+          error.code === "request_failed" ||
+          (error.httpStatus !== undefined && error.httpStatus >= 500)),
     };
   }
-  return { code: "request_failed", httpStatus: null, retryable: true };
+  return {
+    code: "request_failed",
+    httpStatus: null,
+    providerRequestId: null,
+    retryable: true,
+  };
 }
 
 export async function recordOlxOnboardingOutcome(

@@ -635,3 +635,12 @@
     white-space: normal;
   }
 }
+
+/* Neutral OLX OAuth return transition (CRM-originated flow) */
+.crm-olx-oauth-return {
+  align-items: center;
+  display: grid;
+  justify-items: center;
+  min-height: 40vh;
+  text-align: center;
+}

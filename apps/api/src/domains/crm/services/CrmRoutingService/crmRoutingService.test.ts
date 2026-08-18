@@ -111,22 +111,18 @@ describe("CRM channel routing service", () => {
     });
   });
 
-  it("fails closed when the selected legacy/canonical mapping is unverified", async () => {
-    const selected = connection("whatsapp", "zapi", "unverified");
-    const servicePorts = ports([selected], []);
-    servicePorts.crmRoutingConnectionRepository!.verifyLegacyMappings =
-      async () => [];
+  it("fails closed when the selected connection has no canonical row", async () => {
     await expect(
       updateCrmRoutingPolicy(
         context(["crm.routing.default.manage"]),
         {
           bot: { mode: "disabled" },
           channel: "whatsapp",
-          defaultConnectionId: selected.id,
+          defaultConnectionId: "legacy-only-connection",
         },
-        servicePorts,
+        ports([], []),
       ),
-    ).rejects.toMatchObject({ reason: "legacy_mapping_missing" });
+    ).rejects.toMatchObject({ reason: "connection_not_found" });
   });
 
   it("audits selected connections and resolved readiness", async () => {
@@ -240,8 +236,6 @@ function ports(
     crmRepository: {} as never,
     crmRoutingConnectionRepository: {
       listConnections: async () => connections,
-      synchronizeLegacyConnections: async () => undefined,
-      verifyLegacyMappings: async (input) => input.connectionIds,
     },
     crmRoutingPolicyRepository: policyRepository,
   };

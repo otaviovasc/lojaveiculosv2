@@ -1,4 +1,5 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { CrmChannelConnectionProjection } from "./crmChannelConnectionProjection.js";
 
 export type CrmConnectionProvider =
   "zapi" | "composio_whatsapp" | "composio_instagram" | "olx_chat";
@@ -7,6 +8,8 @@ export type CrmConnectionConfiguredStatus =
   "sandbox" | "active" | "paused" | "disconnected" | "error" | "archived";
 
 export type CrmConnection = {
+  /** Canonical read facts. Provider-specific setup fields remain below. */
+  canonical?: CrmChannelConnectionProjection;
   credentialsRef: Record<string, unknown>;
   displayName: string;
   externalConnectionId: string | null;

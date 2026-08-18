@@ -17,6 +17,7 @@ import {
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 import {
+  setupProviderForConnection,
   toWhatsappConnection,
   type WhatsappConnection,
 } from "../../whatsapp/whatsappConnectionModels.js";
@@ -69,7 +70,7 @@ export async function getWhatsappConnectionOverview(
   const configured = new Set(
     connections
       .filter((connection) => connection.status !== "archived")
-      .map((connection) => connection.provider),
+      .flatMap(setupProviderForConnection),
   );
   const entitlements =
     "entitlements" in context && Array.isArray(context.entitlements)

@@ -188,7 +188,11 @@ describe("createWhatsappConnection", () => {
         { displayName: "Atendimento", provider: "composio_whatsapp" },
         ports,
       ),
-    ).resolves.toMatchObject({ provider: "composio_whatsapp" });
+    ).resolves.toMatchObject({
+      broker: "composio",
+      channel: "whatsapp",
+      provider: "meta_cloud",
+    });
     expect(
       await ports.crmConnectionRepository?.listConnections({
         storeId: storeId as never,

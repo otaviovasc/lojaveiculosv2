@@ -1,9 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
-import { crmConnections } from "@lojaveiculosv2/db";
+import { providerConnections } from "@lojaveiculosv2/db";
+import { canonicalCrmConnectionMetadata } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
+  canonicalProviderConditions,
   readRecord,
+  toCanonicalConnectionValues,
   toCrmConnection,
 } from "./drizzleCrmConnectionRepositorySupport.js";
 
@@ -13,13 +16,13 @@ export async function upsertOlxConnection(
 ) {
   const [existing] = await db
     .select()
-    .from(crmConnections)
+    .from(providerConnections)
     .where(
       and(
-        eq(crmConnections.storeId, input.storeId),
-        eq(crmConnections.tenantId, input.tenantId),
-        eq(crmConnections.provider, "olx_chat"),
-        sql`${crmConnections.status} <> 'archived'`,
+        eq(providerConnections.storeId, input.storeId),
+        eq(providerConnections.tenantId, input.tenantId),
+        canonicalProviderConditions("olx_chat"),
+        sql`${providerConnections.state} <> 'archived'`,
       ),
     )
     .limit(1);
@@ -28,25 +31,33 @@ export async function upsertOlxConnection(
     existing.externalConnectionId === input.externalConnectionId &&
     input.externalConnectionId !== null
   ) {
-    const currentStored = readRecord(
-      readRecord(existing.credentialsRef).stored,
-    );
-    const nextStored = readRecord(readRecord(input.credentialsRef).stored);
-    const [updated] = await db
-      .update(crmConnections)
-      .set({
-        credentialsRef: {
-          stored: {
-            ...nextStored,
-            ...(currentStored.webhookSecret
-              ? { webhookSecret: currentStored.webhookSecret }
-              : {}),
-          },
+    const current = toCrmConnection(existing);
+    const currentStored = readRecord(current.credentialsRef.stored);
+    const nextStored = readRecord(input.credentialsRef?.stored);
+    const values = toCanonicalConnectionValues({
+      ...input,
+      credentialsRef: {
+        stored: {
+          ...nextStored,
+          ...(currentStored.webhookSecret
+            ? { webhookSecret: currentStored.webhookSecret }
+            : {}),
         },
-        displayName: input.displayName,
+      },
+      metadata: { ...current.metadata, ...(input.metadata ?? {}) },
+      provider: "olx_chat",
+      status: input.status ?? current.status,
+    });
+    const [updated] = await db
+      .update(providerConnections)
+      .set({
+        displayName: values.displayName,
+        metadata: values.metadata,
+        state: values.state,
         updatedAt: new Date(),
+        webhookUrl: values.webhookUrl,
       })
-      .where(eq(crmConnections.id, existing.id))
+      .where(eq(providerConnections.id, existing.id))
       .returning();
     if (!updated) throw new Error("OLX CRM connection update returned no row.");
     return {
@@ -56,29 +67,25 @@ export async function upsertOlxConnection(
   }
   if (existing) {
     await db
-      .update(crmConnections)
-      .set({ status: "archived", updatedAt: new Date() })
+      .update(providerConnections)
+      .set({ state: "archived", updatedAt: new Date() })
       .where(
         and(
-          eq(crmConnections.id, existing.id),
-          eq(crmConnections.storeId, input.storeId),
-          eq(crmConnections.tenantId, input.tenantId),
+          eq(providerConnections.id, existing.id),
+          eq(providerConnections.storeId, input.storeId),
+          eq(providerConnections.tenantId, input.tenantId),
         ),
       );
   }
   const [created] = await db
-    .insert(crmConnections)
-    .values({
-      credentialsRef: input.credentialsRef ?? {},
-      displayName: input.displayName,
-      externalConnectionId: input.externalConnectionId ?? null,
-      metadata: input.metadata ?? {},
-      provider: "olx_chat",
-      status: input.status ?? "error",
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-      webhookUrl: input.webhookUrl ?? null,
-    })
+    .insert(providerConnections)
+    .values(
+      toCanonicalConnectionValues({
+        ...input,
+        provider: "olx_chat",
+        status: input.status ?? "error",
+      }),
+    )
     .returning();
   if (!created) throw new Error("OLX CRM connection insert returned no row.");
   return {
@@ -94,20 +101,20 @@ export async function claimOlxWebhookSetup(
   >[0],
 ) {
   const [row] = await db
-    .update(crmConnections)
+    .update(providerConnections)
     .set({
-      metadata: sql`${crmConnections.metadata} || jsonb_build_object('webhookSetup', coalesce(${crmConnections.metadata}->'webhookSetup', '{}'::jsonb) || jsonb_build_object('attemptCount', coalesce((${crmConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1, 'lastErrorCode', null, 'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text, 'leaseOwner', ${input.leaseOwner}::text, 'status', 'configuring', 'updatedAt', ${input.now.toISOString()}::text))`,
+      metadata: sql`${providerConnections.metadata} || jsonb_build_object('connected', false, 'webhookSetup', coalesce(${providerConnections.metadata}->'webhookSetup', '{}'::jsonb) || jsonb_build_object('attemptCount', coalesce((${providerConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1, 'lastErrorCode', null, 'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text, 'leaseOwner', ${input.leaseOwner}::text, 'status', 'configuring', 'updatedAt', ${input.now.toISOString()}::text))`,
       updatedAt: input.now,
     })
     .where(
       and(
-        eq(crmConnections.id, input.connectionId),
-        eq(crmConnections.storeId, input.storeId),
-        eq(crmConnections.tenantId, input.tenantId),
-        eq(crmConnections.provider, "olx_chat"),
-        sql`${crmConnections.status} <> 'archived'`,
-        sql`coalesce(${crmConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
-        sql`(${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' is null or ${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null or (${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz)`,
+        eq(providerConnections.id, input.connectionId),
+        eq(providerConnections.storeId, input.storeId),
+        eq(providerConnections.tenantId, input.tenantId),
+        canonicalProviderConditions("olx_chat"),
+        sql`${providerConnections.state} <> 'archived'`,
+        sql`coalesce(${providerConnections.metadata}->'webhookSetup'->>'status', '') not in ('configured', 'indeterminate')`,
+        sql`(${providerConnections.metadata}->'webhookSetup'->>'leaseOwner' is null or ${providerConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null or (${providerConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz)`,
       ),
     )
     .returning();
@@ -121,22 +128,34 @@ export async function finishOlxWebhookSetup(
   >[0],
 ) {
   const setup = readRecord(input.metadata.webhookSetup);
+  const status = ["configured", "partial"].includes(String(setup.status))
+    ? ("active" as const)
+    : ("error" as const);
+  const projected = canonicalCrmConnectionMetadata({
+    metadata: { webhookSetup: setup },
+    provider: "olx_chat",
+    status,
+  });
   const [row] = await db
-    .update(crmConnections)
+    .update(providerConnections)
     .set({
-      metadata: sql`${crmConnections.metadata} || jsonb_build_object('webhookSetup', ${JSON.stringify(setup)}::jsonb)`,
-      status: ["configured", "partial"].includes(String(setup.status))
-        ? "active"
-        : "error",
+      metadata: sql`${providerConnections.metadata} || ${JSON.stringify({
+        capabilities: projected.capabilities,
+        connected: projected.connected,
+        degraded: projected.degraded,
+        errorCode: projected.errorCode,
+        webhookSetup: setup,
+      })}::jsonb`,
+      state: status,
       updatedAt: new Date(),
     })
     .where(
       and(
-        eq(crmConnections.id, input.connectionId),
-        eq(crmConnections.storeId, input.storeId),
-        eq(crmConnections.tenantId, input.tenantId),
-        eq(crmConnections.provider, "olx_chat"),
-        sql`${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
+        eq(providerConnections.id, input.connectionId),
+        eq(providerConnections.storeId, input.storeId),
+        eq(providerConnections.tenantId, input.tenantId),
+        canonicalProviderConditions("olx_chat"),
+        sql`${providerConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
       ),
     )
     .returning();

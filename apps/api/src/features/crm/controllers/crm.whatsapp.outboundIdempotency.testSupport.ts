@@ -17,6 +17,19 @@ export function context() {
   );
 }
 
+export function serverContext(kind: "integration" | "system") {
+  return Object.assign(
+    createServiceContext({
+      actor: { id: `crm-${kind}`, kind },
+      permissions: ["crm.whatsapp.send"],
+      request: { requestId: `request-${kind}` },
+      storeId,
+      tenantId,
+    }),
+    { entitlements: ["crm"] as const },
+  );
+}
+
 export function connection() {
   return {
     credentialsRef: {},

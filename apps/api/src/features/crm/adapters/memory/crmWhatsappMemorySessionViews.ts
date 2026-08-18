@@ -69,6 +69,7 @@ function filterMemorySessions(input: {
   return input.sessions
     .filter((session) => session.storeId === input.query.storeId)
     .filter((session) => session.tenantId === input.query.tenantId)
+    .filter((session) => matchesQueueVisibility(session, input.query))
     .filter(
       (session) =>
         !input.query.connectionId ||
@@ -94,6 +95,21 @@ function filterMemorySessions(input: {
     .filter((session) => matchesSearch(session, input.query.search))
     .map((session) => withUnreadCount(session, input.messages))
     .filter((session) => !input.query.unreadOnly || session.unreadCount > 0);
+}
+
+function matchesQueueVisibility(
+  session: CrmWhatsappSession,
+  query: CountCrmWhatsappSessionsInput,
+) {
+  switch (query.queueVisibility?.kind) {
+    case undefined:
+    case "global":
+      return true;
+    case "assigned":
+      return session.assignedUserId === query.queueVisibility.userId;
+    case "none":
+      return false;
+  }
 }
 
 function matchesTagFilter(

@@ -119,6 +119,7 @@ async function updateConnectionState(
     metadata: {
       ...connection.metadata,
       [`last${capitalize(input.eventType)}At`]: new Date().toISOString(),
+      providerConnected: input.status === "active",
     },
     ...(input.connectedPhone ? { phone: input.connectedPhone } : {}),
     status: input.status,

@@ -1,6 +1,7 @@
 @import "./crmWhatsappConnectionWorkflow.css";
 @import "./crmWhatsappConnectionZapiSetup.css";
 @import "./crmWhatsappSelfServiceSetup.css";
+@import "./crmWhatsappChannelDirectory.css";
 
 /* CRM-only connection operations. Shared shell and tokens remain untouched. */
 
@@ -288,4 +289,20 @@
   .crm-whatsapp-webhook-row input {
     transition: none;
   }
+}
+
+/* Connection management dialog */
+.crm-connection-dialog .crm-connection-dialog-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.crm-connection-dialog .crm-whatsapp-setup-card-flat {
+  border: 0;
+  padding: 0;
+}
+
+.crm-connection-dialog .crm-whatsapp-zapi-guided-card {
+  border: 0;
+  padding: 0;
 }

@@ -1,13 +1,17 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
-import { crmConnections } from "@lojaveiculosv2/db";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { providerConnections } from "@lojaveiculosv2/db";
+import { canonicalCrmConnectionMetadata } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   abandonedZapiConditions,
   activeCrmConnectionQuery,
+  canonicalProviderConditions,
   readConfiguredString,
   readRecord,
+  toCanonicalConnectionValues,
   toCrmConnection,
+  updateCanonicalCrmConnection,
 } from "./drizzleCrmConnectionRepositorySupport.js";
 import {
   claimOlxWebhookSetup,
@@ -21,18 +25,18 @@ export function createDrizzleCrmConnectionRepository(
   return {
     async archiveAbandonedZapiConnections(input) {
       const eligible = await db
-        .select({ id: crmConnections.id })
-        .from(crmConnections)
+        .select({ id: providerConnections.id })
+        .from(providerConnections)
         .where(abandonedZapiConditions(input.cutoff))
         .limit(input.limit);
       if (!eligible.length) return [];
       const rows = await db
-        .update(crmConnections)
-        .set({ status: "archived", updatedAt: new Date() })
+        .update(providerConnections)
+        .set({ state: "archived", updatedAt: new Date() })
         .where(
           and(
             inArray(
-              crmConnections.id,
+              providerConnections.id,
               eligible.map((item) => item.id),
             ),
             abandonedZapiConditions(input.cutoff),
@@ -43,22 +47,11 @@ export function createDrizzleCrmConnectionRepository(
     },
     async createConnection(input) {
       const [row] = await db
-        .insert(crmConnections)
-        .values({
-          credentialsRef: input.credentialsRef ?? {},
-          displayName: input.displayName,
-          externalConnectionId: input.externalConnectionId ?? null,
-          externalInstanceId: input.externalInstanceId ?? null,
-          metadata: input.metadata ?? {},
-          phone: input.phone ?? null,
-          provider: input.provider,
-          status: input.status ?? "sandbox",
-          storeId: input.storeId,
-          tenantId: input.tenantId,
-          webhookUrl: input.webhookUrl ?? null,
-        })
+        .insert(providerConnections)
+        .values(toCanonicalConnectionValues(input))
         .returning();
-      if (!row) throw new Error("CRM connection insert returned no row.");
+      if (!row)
+        throw new Error("CRM channel connection insert returned no row.");
       return toCrmConnection(row);
     },
     async upsertOlxConnection(input) {
@@ -66,21 +59,21 @@ export function createDrizzleCrmConnectionRepository(
     },
     async configureInitialZapiCredentials(input) {
       const [configured] = await db
-        .update(crmConnections)
+        .update(providerConnections)
         .set({
-          credentialsRef: input.credentialsRef,
           externalInstanceId: input.externalInstanceId,
+          metadata: sql`${providerConnections.metadata} || jsonb_build_object('credentialsRef', ${JSON.stringify(input.credentialsRef)}::jsonb)`,
           updatedAt: new Date(),
         })
         .where(
           and(
-            eq(crmConnections.id, input.connectionId),
-            eq(crmConnections.storeId, input.storeId),
-            eq(crmConnections.tenantId, input.tenantId),
-            eq(crmConnections.provider, "zapi"),
-            sql`${crmConnections.status} <> 'archived'`,
-            sql`coalesce(nullif(btrim(${crmConnections.credentialsRef}->'stored'->>'instanceId'), ''), '') = ''`,
-            sql`coalesce(nullif(btrim(${crmConnections.credentialsRef}->'stored'->>'instanceToken'), ''), '') = ''`,
+            eq(providerConnections.id, input.connectionId),
+            eq(providerConnections.storeId, input.storeId),
+            eq(providerConnections.tenantId, input.tenantId),
+            canonicalProviderConditions("zapi"),
+            sql`${providerConnections.state} <> 'archived'`,
+            sql`coalesce(nullif(btrim(${providerConnections.metadata}->'credentialsRef'->'stored'->>'instanceId'), ''), '') = ''`,
+            sql`coalesce(nullif(btrim(${providerConnections.metadata}->'credentialsRef'->'stored'->>'instanceToken'), ''), '') = ''`,
           ),
         )
         .returning();
@@ -91,20 +84,22 @@ export function createDrizzleCrmConnectionRepository(
         };
       }
       const [current] = await db
-        .select({ credentialsRef: crmConnections.credentialsRef })
-        .from(crmConnections)
+        .select({ metadata: providerConnections.metadata })
+        .from(providerConnections)
         .where(
           and(
-            eq(crmConnections.id, input.connectionId),
-            eq(crmConnections.storeId, input.storeId),
-            eq(crmConnections.tenantId, input.tenantId),
-            eq(crmConnections.provider, "zapi"),
-            sql`${crmConnections.status} <> 'archived'`,
+            eq(providerConnections.id, input.connectionId),
+            eq(providerConnections.storeId, input.storeId),
+            eq(providerConnections.tenantId, input.tenantId),
+            canonicalProviderConditions("zapi"),
+            sql`${providerConnections.state} <> 'archived'`,
           ),
         )
         .limit(1);
       if (!current) return { status: "not_found" };
-      const stored = readRecord(readRecord(current.credentialsRef).stored);
+      const stored = readRecord(
+        readRecord(readRecord(current.metadata).credentialsRef).stored,
+      );
       const instanceId = readConfiguredString(stored.instanceId);
       const instanceToken = readConfiguredString(stored.instanceToken);
       return {
@@ -114,13 +109,14 @@ export function createDrizzleCrmConnectionRepository(
     },
     async claimZapiWebhookSetup(input) {
       const [row] = await db
-        .update(crmConnections)
+        .update(providerConnections)
         .set({
-          metadata: sql`${crmConnections.metadata} || jsonb_build_object(
+          metadata: sql`${providerConnections.metadata} || jsonb_build_object(
+            'connected', false,
             'webhookSetup',
-            coalesce(${crmConnections.metadata}->'webhookSetup', '{}'::jsonb) ||
+            coalesce(${providerConnections.metadata}->'webhookSetup', '{}'::jsonb) ||
             jsonb_build_object(
-              'attemptCount', coalesce((${crmConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1,
+              'attemptCount', coalesce((${providerConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1,
               'lastErrorCode', null,
               'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text,
               'leaseOwner', ${input.leaseOwner}::text,
@@ -132,20 +128,20 @@ export function createDrizzleCrmConnectionRepository(
         })
         .where(
           and(
-            eq(crmConnections.id, input.connectionId),
-            eq(crmConnections.storeId, input.storeId),
-            eq(crmConnections.tenantId, input.tenantId),
-            eq(crmConnections.provider, "zapi"),
-            sql`${crmConnections.status} <> 'archived'`,
+            eq(providerConnections.id, input.connectionId),
+            eq(providerConnections.storeId, input.storeId),
+            eq(providerConnections.tenantId, input.tenantId),
+            canonicalProviderConditions("zapi"),
+            sql`${providerConnections.state} <> 'archived'`,
             ...(input.allowConfigured
               ? []
               : [
-                  sql`coalesce(${crmConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
+                  sql`coalesce(${providerConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
                 ]),
             sql`(
-              ${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' is null
-              or ${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null
-              or (${crmConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz
+              ${providerConnections.metadata}->'webhookSetup'->>'leaseOwner' is null
+              or ${providerConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null
+              or (${providerConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz
             )`,
           ),
         )
@@ -157,21 +153,30 @@ export function createDrizzleCrmConnectionRepository(
     },
     async finishZapiWebhookSetup(input) {
       const webhookSetup = readRecord(input.metadata.webhookSetup);
+      const projected = canonicalCrmConnectionMetadata({
+        metadata: { webhookSetup },
+        provider: "zapi",
+        status: "sandbox",
+      });
       const [row] = await db
-        .update(crmConnections)
+        .update(providerConnections)
         .set({
-          metadata: sql`${crmConnections.metadata} || jsonb_build_object(
-            'webhookSetup',
-            ${JSON.stringify(webhookSetup)}::jsonb
-          )`,
+          metadata: sql`${providerConnections.metadata} || ${JSON.stringify({
+            capabilities: projected.capabilities,
+            connected: false,
+            degraded: projected.degraded,
+            errorCode: projected.errorCode,
+            webhookSetup,
+          })}::jsonb`,
           updatedAt: new Date(),
         })
         .where(
           and(
-            eq(crmConnections.id, input.connectionId),
-            eq(crmConnections.storeId, input.storeId),
-            eq(crmConnections.tenantId, input.tenantId),
-            sql`${crmConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
+            eq(providerConnections.id, input.connectionId),
+            eq(providerConnections.storeId, input.storeId),
+            eq(providerConnections.tenantId, input.tenantId),
+            canonicalProviderConditions("zapi"),
+            sql`${providerConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
           ),
         )
         .returning();
@@ -181,69 +186,41 @@ export function createDrizzleCrmConnectionRepository(
       return finishOlxWebhookSetup(db, input);
     },
     async findConnectionByExternalId(input) {
-      const now = new Date();
-      const [row] = await activeCrmConnectionQuery(db, now)
+      const [row] = await activeCrmConnectionQuery(db, new Date())
         .where(
           and(
-            eq(crmConnections.externalConnectionId, input.externalConnectionId),
-            inArray(crmConnections.provider, [...input.providers]),
+            eq(
+              providerConnections.externalConnectionId,
+              input.externalConnectionId,
+            ),
+            or(...input.providers.map(canonicalProviderConditions)),
           ),
         )
         .limit(1);
       return row ? toCrmConnection(row) : null;
     },
     async findConnectionById(connectionId) {
-      const now = new Date();
-      const [row] = await activeCrmConnectionQuery(db, now)
-        .where(eq(crmConnections.id, connectionId))
+      const [row] = await activeCrmConnectionQuery(db, new Date())
+        .where(eq(providerConnections.id, connectionId))
         .limit(1);
       return row ? toCrmConnection(row) : null;
     },
     async listConnections(input) {
       const filters = [
-        eq(crmConnections.storeId, input.storeId),
-        eq(crmConnections.tenantId, input.tenantId),
+        eq(providerConnections.storeId, input.storeId),
+        eq(providerConnections.tenantId, input.tenantId),
       ];
       if (input.providers?.length) {
-        filters.push(inArray(crmConnections.provider, [...input.providers]));
+        filters.push(or(...input.providers.map(canonicalProviderConditions))!);
       }
       const rows = await db
         .select()
-        .from(crmConnections)
+        .from(providerConnections)
         .where(and(...filters));
       return rows.map(toCrmConnection);
     },
     async updateConnection(input) {
-      const [row] = await db
-        .update(crmConnections)
-        .set({
-          ...(input.credentialsRef
-            ? { credentialsRef: input.credentialsRef }
-            : {}),
-          ...(input.displayName ? { displayName: input.displayName } : {}),
-          ...(input.externalConnectionId !== undefined
-            ? { externalConnectionId: input.externalConnectionId }
-            : {}),
-          ...(input.externalInstanceId !== undefined
-            ? { externalInstanceId: input.externalInstanceId }
-            : {}),
-          ...(input.metadata ? { metadata: input.metadata } : {}),
-          ...(input.phone !== undefined ? { phone: input.phone } : {}),
-          ...(input.status ? { status: input.status } : {}),
-          ...(input.webhookUrl !== undefined
-            ? { webhookUrl: input.webhookUrl }
-            : {}),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(crmConnections.id, input.connectionId),
-            eq(crmConnections.storeId, input.storeId),
-            eq(crmConnections.tenantId, input.tenantId),
-          ),
-        )
-        .returning();
-      return row ? toCrmConnection(row) : null;
+      return updateCanonicalCrmConnection(db, input);
     },
   };
 }

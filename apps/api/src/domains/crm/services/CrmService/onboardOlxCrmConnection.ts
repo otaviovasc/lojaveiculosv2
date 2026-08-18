@@ -25,6 +25,7 @@ import {
   readOlxOnboardingResult,
   readRecord,
 } from "../../onboardOlxCrmConnectionSupport.js";
+import { ensureFirstReadyChannelDefault } from "../CrmRoutingService/ensureFirstReadyChannelDefault.js";
 import {
   createOlxCapabilityFailureRecorder,
   type OlxCapabilityFailure,
@@ -217,6 +218,17 @@ export async function onboardOlxCrmConnection(
   });
   assertFinishedOlxSetup(finished, setupStatus);
   const result = buildOlxOnboardingResult(connection.id, capabilities);
+  if (
+    result.capabilities.chat.status === "active" &&
+    ports.crmRoutingConnectionRepository &&
+    ports.crmRoutingPolicyRepository
+  ) {
+    await ensureFirstReadyChannelDefault(
+      context,
+      { channel: "olx_chat", connectionId: connection.id },
+      ports,
+    );
+  }
   await recordOlxOnboardingOutcome(context, input, result);
   return result;
 }

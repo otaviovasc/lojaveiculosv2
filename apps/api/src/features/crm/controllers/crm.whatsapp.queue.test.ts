@@ -121,6 +121,12 @@ describe("CRM WhatsApp queue", () => {
       externalId: "queue-permission-inbound",
       providerTimestamp: new Date("2026-07-03T12:10:00.000Z"),
     });
+    await whatsappRepository.updateSession({
+      assignedUserId: actorUserId as never,
+      sessionId: inbound.session.id,
+      storeId,
+      tenantId,
+    });
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),

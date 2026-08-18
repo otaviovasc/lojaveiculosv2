@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WhatsappToolbar } from "./CrmWhatsappQueueToolbar";
@@ -35,6 +35,7 @@ describe("WhatsappToolbar", () => {
     render(
       <WhatsappToolbar
         availableTags={createTags()}
+        canAssign
         canManageConnections
         canManageTags
         canStartConversation
@@ -116,28 +117,109 @@ describe("WhatsappToolbar", () => {
       "connection_2",
     );
 
-    await user.click(screen.getByRole("button", { name: /Etiquetas/ }));
-    await user.click(screen.getByRole("button", { name: "Quente" }));
+    const tagsTrigger = screen.getByRole("button", { name: /Etiquetas/ });
+    await user.click(tagsTrigger);
+    const tagsMenu = screen.getByRole("menu", {
+      name: "Filtrar por etiquetas",
+    });
+    expect(tagsTrigger).toHaveAttribute("aria-controls", tagsMenu.id);
+    expect(
+      within(tagsMenu).getByRole("group", { name: "Etiquetas disponíveis" }),
+    ).toBeInTheDocument();
+    const hotTag = within(tagsMenu).getByRole("menuitemcheckbox", {
+      name: "Quente",
+    });
+    expect(hotTag).toHaveFocus();
+    await user.click(hotTag);
     expect(callbacks.onTagFilterToggle).toHaveBeenCalledWith("tag_hot");
-    expect(screen.getByRole("button", { name: "Quente" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(hotTag).toHaveAttribute("aria-checked", "true");
+    await user.keyboard("{ArrowDown}");
+    expect(
+      within(tagsMenu).getByRole("menuitemcheckbox", {
+        name: "Financiamento",
+      }),
+    ).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(
+      screen.queryByRole("menu", { name: "Filtrar por etiquetas" }),
+    ).toBeNull();
+    expect(tagsTrigger).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: /Outros/ }));
-    const bruno = screen.getByRole("option", {
+    const othersTrigger = screen.getByRole("button", { name: /Outros/ });
+    await user.click(othersTrigger);
+    const assignees = screen.getByRole("listbox", {
+      name: "Atendentes da loja",
+    });
+    expect(othersTrigger).toHaveAttribute("aria-controls", assignees.id);
+    expect(
+      within(assignees).getByRole("option", { name: /Todos os atendentes/ }),
+    ).toHaveFocus();
+    const bruno = within(assignees).getByRole("option", {
       name: /Bruno.*Vendedor.*4/,
     });
     expect(bruno).toBeInTheDocument();
-    await user.click(bruno);
+    await user.keyboard("{ArrowDown}{Enter}");
     expect(callbacks.onQuickFilterChange).toHaveBeenCalledWith("others");
     expect(callbacks.onOtherAssigneeChange).toHaveBeenCalledWith("user_bruno");
+    expect(
+      screen.queryByRole("listbox", { name: "Atendentes da loja" }),
+    ).toBeNull();
+    expect(othersTrigger).toHaveFocus();
   });
 
   it("uses dealership role labels in the assignee hierarchy", () => {
     expect(formatWhatsappMemberRole("owner")).toBe("Dono");
     expect(formatWhatsappMemberRole("salesman")).toBe("Vendedor");
     expect(formatWhatsappMemberRole("supervisor")).toBe("Supervisor");
+  });
+
+  it("offers only Meus to actors without assignment visibility", () => {
+    render(
+      <WhatsappToolbar
+        assignableMembers={createAssignableMembers()}
+        availableTags={[]}
+        canAssign={false}
+        canManageConnections={false}
+        canManageTags={false}
+        canStartConversation={false}
+        connectionFilterId={null}
+        connectionId="connection_1"
+        connections={createConnections()}
+        currentUserId="user_current"
+        humanAttendanceFilter=""
+        onConnectionFilterChange={vi.fn()}
+        onHumanAttendanceFilterChange={vi.fn()}
+        onManageConnections={vi.fn()}
+        onManageTags={vi.fn()}
+        onOtherAssigneeChange={vi.fn()}
+        onQuickFilterChange={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectionModeChange={vi.fn()}
+        onStartConversation={vi.fn()}
+        onStatusFilterChange={vi.fn()}
+        onTagFilterToggle={vi.fn()}
+        onUnreadOnlyChange={vi.fn()}
+        otherAssigneeId={null}
+        quickFilter="mine"
+        search=""
+        selectedCount={0}
+        selectedTagIds={[]}
+        selectionMode={false}
+        sessionCount={2}
+        sessionCounts={createCounts()}
+        statusFilter=""
+        unreadOnly={false}
+      />,
+    );
+
+    const quickFilters = screen.getByRole("group", {
+      name: "Filtros rápidos",
+    });
+    expect(quickFilters).toHaveTextContent("Meus");
+    expect(quickFilters).not.toHaveTextContent("Novos");
+    expect(quickFilters).not.toHaveTextContent("Sem atendente");
+    expect(quickFilters).not.toHaveTextContent("Outros");
+    expect(quickFilters).not.toHaveTextContent("Todos");
   });
 });
 

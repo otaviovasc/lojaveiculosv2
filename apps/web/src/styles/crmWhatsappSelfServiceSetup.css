@@ -471,10 +471,22 @@
   }
 
   .crm-whatsapp-channel-chevron,
-  .crm-whatsapp-channel-support-link,
-  .crm-channel-oauth-action {
+  .crm-whatsapp-channel-support-link {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .crm-channel-olx-card .crm-channel-oauth-actions {
+    gap: var(--app-space-sm);
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .crm-channel-olx-card .crm-channel-oauth-action {
+    max-width: 100%;
+    white-space: normal;
+    width: 100%;
   }
 
   .crm-channel-identity {

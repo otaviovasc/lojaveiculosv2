@@ -3,6 +3,7 @@ import type {
   OlxCapabilityResult,
   OlxCrmOnboardingResult,
 } from "../marketplace/ports/marketplaceOlxCrmOnboarding.js";
+import { CrmConnectionSetupProviderError } from "./ports/crmConnectionSetupProvider.js";
 
 export const OLX_CRM_CONNECTION_SETUP_PERMISSION =
   "crm.messaging.connection.setup" as const;
@@ -23,7 +24,7 @@ export async function configureOlxCapability(
   requiredScope: string,
   scopes: readonly string[],
   capability: OlxCapabilityResult["capability"],
-  configure: () => Promise<void>,
+  configure: () => Promise<unknown>,
   onError?: (error: unknown) => void,
 ): Promise<OlxCapabilityResult> {
   if (!scopes.includes(requiredScope)) {
@@ -44,10 +45,16 @@ export async function configureOlxCapability(
     };
   } catch (error) {
     onError?.(error);
+    const unavailable =
+      error instanceof CrmConnectionSetupProviderError &&
+      (error.retryable === true ||
+        error.code === "request_failed" ||
+        error.code === "rate_limited" ||
+        (error.httpStatus !== undefined && error.httpStatus >= 500));
     return {
       capability,
       grantState: "granted",
-      reason: "provider_rejected",
+      reason: unavailable ? "runtime_unavailable" : "provider_rejected",
       status: "error",
     };
   }
@@ -119,9 +126,13 @@ function readCapability(value: unknown): OlxCapabilityResult | null {
     ) ||
     !["denied", "granted"].includes(String(record.grantState)) ||
     !["active", "blocked", "error"].includes(String(record.status)) ||
-    ![null, "missing_scope", "provider_rejected"].includes(
-      (record.reason ?? null) as null,
-    )
+    ![
+      null,
+      "access_denied",
+      "missing_scope",
+      "provider_rejected",
+      "runtime_unavailable",
+    ].includes((record.reason ?? null) as null)
   )
     return null;
   return record as OlxCapabilityResult;

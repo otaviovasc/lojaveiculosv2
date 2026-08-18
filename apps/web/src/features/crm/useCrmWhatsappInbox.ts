@@ -34,10 +34,10 @@ import { useCrmWhatsappVehicleInventory } from "./useCrmWhatsappVehicleInventory
 import { useCrmWhatsappInboxLifecycle } from "./useCrmWhatsappInboxLifecycle";
 import { useCrmRoutingPolicy } from "./useCrmRoutingPolicy";
 import { readCrmWhatsappSendReadiness } from "./crmWhatsappProviderCapabilities";
+import { useCrmWhatsappQueueAccess } from "./useCrmWhatsappQueueAccess";
 import type {
   CrmWhatsappRealtimeStatus,
   CrmWhatsappSession,
-  CrmWhatsappSessionFilter,
   CrmWhatsappSessionId,
   CrmWhatsappHumanAttendanceState,
   CrmWhatsappStatus,
@@ -53,9 +53,6 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   );
   const [error, setError] = useState<Error | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
-  const [quickFilter, setQuickFilter] =
-    useState<CrmWhatsappSessionFilter>("fresh");
-  const [otherAssigneeId, setOtherAssigneeId] = useState<string | null>(null);
   const [connectionFilterId, setConnectionFilterId] = useState<string | null>(
     null,
   );
@@ -74,11 +71,24 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     () => readCrmWhatsappCapabilities(accountSession),
     [accountSession],
   );
+  const queueAccess = useCrmWhatsappQueueAccess({
+    canAssign: permissions.canAssign,
+    currentUserId,
+    sessions,
+  });
+  const {
+    otherAssigneeId,
+    quickFilter,
+    setOtherAssigneeId,
+    setQuickFilter,
+    visibleSessions,
+  } = queueAccess;
   const assignmentState = useCrmWhatsappAssignableMembers(accountSession);
   const listVehicles = useCrmWhatsappVehicleInventory();
   const activeSession = useMemo(
-    () => sessions.find((session) => session.id === activeSessionId) ?? null,
-    [activeSessionId, sessions],
+    () =>
+      visibleSessions.find((session) => session.id === activeSessionId) ?? null,
+    [activeSessionId, visibleSessions],
   );
   const connections = useCrmWhatsappConnections(api);
   const routing = useCrmRoutingPolicy(api, permissions.canList);
@@ -167,16 +177,34 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     setError,
   });
   const { selectedTagIds } = tagState;
+  const canAccessSessionSnapshot = useCallback(
+    (session: CrmWhatsappSession) =>
+      permissions.canAssign ||
+      Boolean(
+        currentUserId && session.assignedUserId === String(currentUserId),
+      ),
+    [currentUserId, permissions.canAssign],
+  );
   const mergeSessions = useCallback(
     (
       nextSessions: CrmWhatsappSession[],
       options?: {
         preserveLocalOnly?: boolean;
+        pruneLocalOnly?: (session: CrmWhatsappSession) => boolean;
         snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
       },
     ) =>
       setSessions((current) => {
-        const merged = mergeSessionsFromServer(current, nextSessions, options);
+        const merged = mergeSessionsFromServer(current, nextSessions, {
+          ...options,
+          ...(options?.snapshotKind === "reconciled" && !options.pruneLocalOnly
+            ? {
+                pruneLocalOnly: (session: CrmWhatsappSession) =>
+                  !canAccessSessionSnapshot(session),
+              }
+            : {}),
+        });
+        sessionRevisionsRef.current.clear();
         merged.forEach((session) => {
           sessionRevisionsRef.current.set(
             session.id,
@@ -185,7 +213,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
         });
         return merged;
       }),
-    [],
+    [canAccessSessionSnapshot],
   );
   const canMergeSessionSnapshot = useCallback((session: CrmWhatsappSession) => {
     const currentRevision = sessionRevisionsRef.current.get(session.id);
@@ -209,7 +237,23 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     mergeSessions,
     setError,
   });
-  const { mergeRealtimeMessage, updateRealtimeMessageStatus } = messageState;
+  const {
+    evictSessionMessages,
+    mergeRealtimeMessage,
+    updateRealtimeMessageStatus,
+  } = messageState;
+  const removeSession = useCallback(
+    (sessionId: CrmWhatsappSessionId) => {
+      evictSessionMessages(sessionId);
+      sessionRevisionsRef.current.delete(sessionId);
+      manualUnreadSessionIdsRef.current.delete(sessionId);
+      setSessions((current) =>
+        current.filter((session) => session.id !== sessionId),
+      );
+      setActiveSessionId((current) => (current === sessionId ? null : current));
+    },
+    [evictSessionMessages],
+  );
   const { refreshSessionCounts, sessionCounts } = useCrmWhatsappSessionCounts({
     api,
     canList: permissions.canList,
@@ -280,6 +324,30 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
         ...(unreadOnly ? { unreadOnly } : {}),
       });
       let resolved = nextSessions;
+      let authorizedSessionIds: Set<CrmWhatsappSessionId> | null = null;
+      let isCompleteAuthorizationSnapshot = false;
+      if (options.snapshotKind === "reconciled" && !permissions.canAssign) {
+        const hasNarrowingFilter = Boolean(
+          humanAttendanceFilter ||
+          searchRef.current ||
+          selectedTagIds.length ||
+          statusFilter ||
+          unreadOnly,
+        );
+        const authorizationSessions = hasNarrowingFilter
+          ? await api.listSessions({
+              ...connectionQuery,
+              filter: "mine",
+              limit: 40,
+              offset: 0,
+            })
+          : nextSessions;
+        if (requestGeneration !== sessionRequestGenerationRef.current) return;
+        authorizedSessionIds = new Set(
+          authorizationSessions.map((session) => session.id),
+        );
+        isCompleteAuthorizationSnapshot = authorizationSessions.length < 40;
+      }
       if (requestGeneration !== sessionRequestGenerationRef.current) return;
       if (
         initialSessionId &&
@@ -289,18 +357,41 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
         if (requestGeneration !== sessionRequestGenerationRef.current) return;
         resolved = deepLinked ? [deepLinked, ...nextSessions] : nextSessions;
       }
-      mergeSessions(resolved, options);
+      const shouldPruneLocalSession =
+        options.snapshotKind === "reconciled" && authorizedSessionIds
+          ? (session: CrmWhatsappSession) =>
+              !canAccessSessionSnapshot(session) ||
+              (isCompleteAuthorizationSnapshot &&
+                session.connection?.id === sessionListConnectionId &&
+                !authorizedSessionIds.has(session.id))
+          : null;
+      if (shouldPruneLocalSession) {
+        sessions
+          .filter(shouldPruneLocalSession)
+          .forEach((session) => removeSession(session.id));
+      }
+      mergeSessions(resolved, {
+        ...options,
+        ...(shouldPruneLocalSession
+          ? { pruneLocalOnly: shouldPruneLocalSession }
+          : {}),
+      });
       setActiveSessionId((current) =>
         current && resolved.some((session) => session.id === current)
           ? current
-          : options.preserveLocalOnly && current
-            ? current
-            : (resolved[0]?.id ?? null),
+          : isCompleteAuthorizationSnapshot &&
+              current &&
+              !authorizedSessionIds?.has(current)
+            ? null
+            : options.preserveLocalOnly && current
+              ? current
+              : (resolved[0]?.id ?? null),
       );
       void refreshSessionCounts().catch((caught) => setError(asError(caught)));
     },
     [
       api,
+      canAccessSessionSnapshot,
       initialSessionId,
       mergeSessions,
       sessionListConnectionId,
@@ -309,7 +400,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       otherAssigneeId,
       quickFilter,
       refreshSessionCounts,
+      removeSession,
       selectedTagIds,
+      sessions,
       statusFilter,
       unreadOnly,
     ],
@@ -332,7 +425,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   });
   const quickMessageState = useCrmWhatsappQuickMessages(api, setError);
   const bulkSelection = useCrmWhatsappBulkSelection(
-    sessions,
+    visibleSessions,
     sessionActions.actions,
   );
 
@@ -373,10 +466,6 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
 
   const scheduledMessages = useCrmWhatsappScheduledMessages(api, setError);
 
-  const changeQuickFilter = useCallback((filter: CrmWhatsappSessionFilter) => {
-    setQuickFilter(filter);
-    if (filter !== "others") setOtherAssigneeId(null);
-  }, []);
   const markVisibleInboundRead = useCallback(
     (session: CrmWhatsappSession) => {
       if (!manualUnreadSessionIdsRef.current.has(session.id)) {
@@ -389,6 +478,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   useCrmWhatsappRealtime({
     activeSessionId,
     api,
+    canAccessSessionSnapshot,
     connectionId: operationalConnectionId,
     connectionsError: connections.error ?? routing.error,
     canMergeSessionSnapshot,
@@ -399,6 +489,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     refreshConnections: connections.refreshConnections,
     refreshSessionCounts,
     refreshSessions,
+    removeSession,
     updateRealtimeMessageStatus,
   });
 
@@ -500,12 +591,12 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     sendText: messageState.sendText,
     sendVehicle: messageState.sendVehicle,
     sessionCounts,
-    sessions,
+    sessions: visibleSessions,
     setActiveSessionId: selectSession,
     setConnectionFilterId,
     setHumanAttendanceFilter,
     setOtherAssigneeId,
-    setQuickFilter: changeQuickFilter,
+    setQuickFilter,
     setSearch,
     setStatusFilter,
     setUnreadOnly,

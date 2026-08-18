@@ -59,3 +59,38 @@ export function countForFilter(
 ) {
   return counts.filters[filter] ?? 0;
 }
+
+export function coerceWhatsappSessionFilter(
+  filter: CrmWhatsappSessionFilter,
+  canAssign: boolean,
+): CrmWhatsappSessionFilter {
+  return canAssign ? filter : "mine";
+}
+
+export function filterSessionsForAssignmentQueue(
+  sessions: CrmWhatsappSession[],
+  filter: CrmWhatsappSessionFilter,
+  currentUserId: string | null,
+  otherAssigneeId: string | null,
+) {
+  if (filter === "all") return sessions;
+  if (filter === "fresh" || filter === "unassigned") {
+    return sessions.filter((session) => !session.assignedUserId);
+  }
+  if (filter === "mine") {
+    return sessions.filter(
+      (session) =>
+        currentUserId !== null &&
+        String(session.assignedUserId ?? "") === String(currentUserId),
+    );
+  }
+  return sessions.filter((session) => {
+    const assignedUserId = session.assignedUserId
+      ? String(session.assignedUserId)
+      : null;
+    if (!assignedUserId || assignedUserId === String(currentUserId ?? "")) {
+      return false;
+    }
+    return !otherAssigneeId || assignedUserId === String(otherAssigneeId);
+  });
+}

@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -10,11 +11,15 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { crmConnections, crmTags } from "./crm.js";
+import { crmTags } from "./crm.js";
+import { providerConnections } from "./crmCore/authorization.js";
 import { crmWhatsappSessions } from "./crmWhatsapp.js";
 import { stores, tenants, users } from "./identity.js";
 import { leads } from "./leads.js";
 import { lifecycleColumns } from "./_shared.js";
+
+const includeCrmScopeForeignKeys =
+  process.env.DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP !== "true";
 
 export const crmWhatsappCampaignStatus = pgEnum(
   "crm_whatsapp_campaign_status",
@@ -61,9 +66,7 @@ export const crmWhatsappCampaigns = pgTable(
       .notNull()
       .default(1),
     secondarySentCount: integer("secondary_sent_count").notNull().default(0),
-    selectedConnectionId: uuid("selected_connection_id").references(
-      () => crmConnections.id,
-    ),
+    selectedConnectionId: uuid("selected_connection_id"),
     sentCount: integer("sent_count").notNull().default(0),
     status: crmWhatsappCampaignStatus("status").notNull().default("draft"),
     storeId: uuid("store_id")
@@ -75,6 +78,28 @@ export const crmWhatsappCampaigns = pgTable(
     totalRecipients: integer("total_recipients").notNull().default(0),
   },
   (table) => [
+    foreignKey({
+      columns: [table.selectedConnectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_whatsapp_campaigns_selected_connection_fk",
+    }),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [
+              table.tenantId,
+              table.storeId,
+              table.selectedConnectionId,
+            ],
+            foreignColumns: [
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
+            ],
+            name: "crm_whatsapp_campaigns_scoped_connection_fk",
+          }),
+        ]
+      : []),
     index("crm_whatsapp_campaigns_store_status_idx").on(
       table.storeId,
       table.status,
@@ -94,9 +119,7 @@ export const crmWhatsappCampaignRecipients = pgTable(
     campaignId: uuid("campaign_id")
       .notNull()
       .references(() => crmWhatsappCampaigns.id),
-    connectionId: uuid("connection_id")
-      .notNull()
-      .references(() => crmConnections.id),
+    connectionId: uuid("connection_id").notNull(),
     errorMessage: text("error_message"),
     initialScheduledMessageId: uuid("initial_scheduled_message_id"),
     initialSentAt: timestamp("initial_sent_at", { withTimezone: true }),
@@ -124,6 +147,24 @@ export const crmWhatsappCampaignRecipients = pgTable(
     variables: jsonb("variables").notNull().default({}),
   },
   (table) => [
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_whatsapp_campaign_recipients_connection_fk",
+    }),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
+            ],
+            name: "crm_whatsapp_campaign_recipients_scoped_connection_fk",
+          }),
+        ]
+      : []),
     uniqueIndex("crm_whatsapp_campaign_recipients_campaign_session_unique").on(
       table.campaignId,
       table.sessionId,

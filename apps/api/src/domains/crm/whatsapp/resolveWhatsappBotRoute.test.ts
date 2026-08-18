@@ -90,14 +90,14 @@ describe("resolveWhatsappBotRoute", () => {
     expect(error.message).toContain("Reconnect or activate");
   });
 
-  it("fails closed when the canonical route does not match the legacy adapter", async () => {
+  it("uses canonical provider facts without legacy identity verification", async () => {
     const connection = readyZapi("route-connection");
     const canonical = {
       ...canonicalConnection(connection),
       credentialBroker: "composio",
       provider: "meta_cloud",
     } as const;
-    const error = await captureError(() =>
+    await expect(
       resolveWhatsappBotRoute(
         context(),
         { channel: "whatsapp", requiredCapabilities: ["outbound"] },
@@ -105,9 +105,10 @@ describe("resolveWhatsappBotRoute", () => {
           canonical,
         ]),
       ),
-    );
-    expect(error.code).toBe("CRM_WHATSAPP_BOT_ROUTE_UNAVAILABLE");
-    expect(error.message).toContain("verified legacy/canonical");
+    ).resolves.toMatchObject({
+      id: connection.id,
+      provider: "composio_whatsapp",
+    });
   });
 
   it("keeps a session bound but blocks it when another bot route is configured", async () => {
@@ -222,7 +223,6 @@ function ports(
   };
   const routingConnections: CrmRoutingConnectionRepository = {
     listConnections: async () => canonicalConnections,
-    synchronizeLegacyConnections: async () => undefined,
   };
   return {
     crmConnectionRepository: createTestCrmConnectionRepository(connections),

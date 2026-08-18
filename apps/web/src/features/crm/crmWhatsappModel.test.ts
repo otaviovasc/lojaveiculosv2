@@ -157,6 +157,46 @@ describe("crmWhatsappModel", () => {
     ).toBe(authoritative);
   });
 
+  it("does not let an older reconciled list overwrite a realtime revision", () => {
+    const realtime = createSession({
+      assignedUserId: "user-current",
+      buyerName: "Nome atualizado",
+      revision: 8,
+    });
+    const olderList = createSession({
+      assignedUserId: null,
+      buyerName: "Nome antigo",
+      revision: 7,
+    });
+
+    expect(
+      mergeSessionsFromServer([realtime], [olderList], {
+        snapshotKind: "reconciled",
+      })[0],
+    ).toBe(realtime);
+  });
+
+  it("prunes inaccessible reconciled sessions without dropping pagination misses", () => {
+    const inaccessible = createSession({
+      assignedUserId: "user-other",
+      id: "session-revoked",
+      uuid: "session-revoked",
+    });
+    const paginationMiss = createSession({
+      assignedUserId: "user-current",
+      id: "session-next-page",
+      uuid: "session-next-page",
+    });
+
+    expect(
+      mergeSessionsFromServer([inaccessible, paginationMiss], [], {
+        preserveLocalOnly: true,
+        pruneLocalOnly: (session) => session.assignedUserId !== "user-current",
+        snapshotKind: "reconciled",
+      }),
+    ).toEqual([paginationMiss]);
+  });
+
   it("normalizes API origin, safe numeric revision, and history coverage", () => {
     expect(
       parseCrmWhatsappSession({

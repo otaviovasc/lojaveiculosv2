@@ -56,7 +56,7 @@ export function readOlxChannelOperations(
   stock: CrmChannelOperation;
 } {
   const chatConnection = connections.find(
-    (connection) => connection.provider === "olx_chat",
+    (connection) => connection.channel === "olx_chat",
   );
   const chat = readOlxChatOperation(chatConnection, marketplaceState);
   const leads = readOlxLeadsOperation(marketplaceState);
@@ -75,7 +75,9 @@ function readOlxChatOperation(
   const capability = marketplaceState?.capabilities?.chat;
   if (
     capability &&
-    (capability.status !== "active" || capability.grantState !== "granted")
+    (capability.status !== "active" ||
+      capability.grantState !== "granted" ||
+      isProviderOutcomeIndeterminate(capability))
   ) {
     return readCapabilityOperation(
       capability,
@@ -96,14 +98,20 @@ function readOlxChatOperation(
           state: "indeterminate",
         };
   }
-  if (
-    connection.live.providerStatus === "connected" ||
-    (connection.status === "active" && connection.ready === true)
-  ) {
+  if (connection.readiness?.ready === true) {
     return {
       detail: "Texto disponível em conversas iniciadas pelo comprador.",
       label: "Chat",
       state: "active",
+    };
+  }
+  if (connection.readiness?.ready === false) {
+    return {
+      detail:
+        connection.readiness.reason ??
+        "O servidor informou que o Chat ainda não está pronto.",
+      label: "Chat",
+      state: "failed",
     };
   }
   if (connection.live.providerStatus === "error") {
@@ -177,6 +185,15 @@ function readCapabilityOperation(
   label: string,
   activeDetail: string,
 ): CrmChannelOperation {
+  const reason = capability.reason as string | null;
+  if (reason === "provider_outcome_indeterminate") {
+    return {
+      detail:
+        "O provedor recebeu a solicitação, mas o resultado ainda não foi confirmado.",
+      label,
+      state: "indeterminate",
+    };
+  }
   if (capability.status === "active" && capability.grantState === "granted") {
     return { detail: activeDetail, label, state: "active" };
   }
@@ -203,6 +220,15 @@ function readCapabilityOperation(
     label,
     state: capability.reason === "runtime_unavailable" ? "degraded" : "failed",
   };
+}
+
+function isProviderOutcomeIndeterminate(
+  capability?: MarketplaceProviderCapability,
+) {
+  return (
+    (capability?.reason as string | null | undefined) ===
+    "provider_outcome_indeterminate"
+  );
 }
 
 function readAuthorizationFailure(
@@ -235,6 +261,175 @@ function readAuthorizationFailure(
     };
   }
   return null;
+}
+
+export const crmChannelGroupOrder = [
+  "whatsapp",
+  "instagram",
+  "olx_chat",
+] as const;
+
+export type CrmChannelGroupChannel = (typeof crmChannelGroupOrder)[number];
+
+export type CrmChannelConnectionGroup = {
+  channel: CrmChannelGroupChannel | "unknown";
+  channelLabel: string;
+  connections: CrmWhatsappProviderConnection[];
+  invalid?: boolean;
+};
+
+/**
+ * Groups strictly by the server-owned DTO `channel` field. Connections with a
+ * missing or unrecognized channel land in an explicit invalid group — the
+ * provider name is never used to guess a channel (ADR 0061).
+ */
+export function groupCrmConnectionsByChannel(
+  connections: readonly CrmWhatsappProviderConnection[],
+): CrmChannelConnectionGroup[] {
+  const groups: CrmChannelConnectionGroup[] = crmChannelGroupOrder.map(
+    (channel) => ({
+      channel,
+      channelLabel: readCrmWhatsappChannelLabel(channel),
+      connections: [] as CrmWhatsappProviderConnection[],
+    }),
+  );
+  const invalid: CrmChannelConnectionGroup = {
+    channel: "unknown",
+    channelLabel: "Canal não identificado",
+    connections: [],
+    invalid: true,
+  };
+  for (const connection of connections) {
+    if (connection.status === "archived" || connection.state === "archived") {
+      continue;
+    }
+    const group = groups.find(
+      (candidate) => candidate.channel === connection.channel,
+    );
+    if (group) {
+      group.connections.push(connection);
+    } else {
+      invalid.connections.push(connection);
+    }
+  }
+  return [...groups, invalid].filter((group) => group.connections.length > 0);
+}
+
+export type CrmConnectionReadinessBadge = {
+  detail: string | null;
+  label: string;
+  tone: "danger" | "neutral" | "success" | "warning";
+};
+
+export function readConnectionReadinessBadge(
+  connection: CrmWhatsappProviderConnection,
+): CrmConnectionReadinessBadge {
+  const status = connection.state ?? connection.status;
+  if (status === "paused") {
+    return {
+      detail: connection.readiness?.reason ?? null,
+      label: "Pausado",
+      tone: "neutral",
+    };
+  }
+  if (status === "error") {
+    return {
+      detail: connection.readiness?.reason ?? null,
+      label: "Erro",
+      tone: "danger",
+    };
+  }
+  if (connection.readiness?.ready === true) {
+    return { detail: null, label: "Pronto", tone: "success" };
+  }
+  if (!connection.readiness) {
+    return {
+      detail: "A API não informou a prontidão desta conexão.",
+      label: "Estado de prontidão indisponível",
+      tone: "warning",
+    };
+  }
+  return {
+    detail: connection.readiness?.reason ?? null,
+    label: connection.readiness?.reason ?? "Requer configuração",
+    tone: "warning",
+  };
+}
+
+const capabilityLabelMap = {
+  audio: "Áudio",
+  catalog: "Catálogo",
+  conversationStart: "Novas conversas",
+  documents: "Documentos",
+  imageCaption: "Legenda em imagens",
+  images: "Imagens",
+  location: "Localização",
+  quickMessages: "Respostas rápidas",
+  reactions: "Reações",
+  reply: "Respostas citadas",
+  scheduling: "Agendamento",
+  templates: "Templates",
+  text: "Texto",
+  vehicle: "Veículos",
+  video: "Vídeo",
+} as const;
+
+export function readCrmCapabilityLabel(capability: string) {
+  return (
+    capabilityLabelMap[capability as keyof typeof capabilityLabelMap] ??
+    capability
+  );
+}
+
+export function readConnectionCapabilityLabels(
+  connection: CrmWhatsappProviderConnection,
+  limit = 4,
+): string[] {
+  const capabilities = connection.capabilities;
+  if (!capabilities) return [];
+  return Object.entries(capabilityLabelMap)
+    .filter(([key]) => capabilities[key as keyof typeof capabilityLabelMap])
+    .map(([, label]) => label)
+    .slice(0, limit);
+}
+
+export type OlxChatRetryTarget = {
+  connectionId: string;
+  detail: string;
+};
+
+/**
+ * Returns the OLX Chat connection that can retry its server-side setup when
+ * the authorization itself is fine (no missing scope, no reconnect required)
+ * but the provider-internal Chat setup failed or degraded. Never use this to
+ * decide a new OAuth authorization.
+ */
+export function readOlxChatRetryTarget(
+  connections: readonly CrmWhatsappProviderConnection[],
+  marketplaceState?: MarketplaceProviderState,
+): OlxChatRetryTarget | null {
+  const connection = connections.find(
+    (candidate) => candidate.channel === "olx_chat",
+  );
+  if (!connection || !marketplaceState) return null;
+  if (!marketplaceState.accountId) return null;
+  if (marketplaceState.connectionStatus !== "connected") {
+    return null;
+  }
+  const chatCapability = marketplaceState.capabilities?.chat;
+  if (isProviderOutcomeIndeterminate(chatCapability)) {
+    return null;
+  }
+  if (
+    chatCapability?.reason === "missing_scope" ||
+    chatCapability?.reason === "access_denied"
+  ) {
+    return null;
+  }
+  if (connection.readiness?.ready !== false) return null;
+  const chat = readOlxChatOperation(connection, marketplaceState);
+  if (chat.state !== "failed" && chat.state !== "degraded") return null;
+  return { connectionId: String(connection.id), detail: chat.detail };
 }
 
 export function readOlxAuthorizationAction(

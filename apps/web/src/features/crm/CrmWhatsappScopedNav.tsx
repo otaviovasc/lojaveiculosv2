@@ -86,8 +86,10 @@ export function CrmWhatsappScopedNav({
         <div className="crm-whatsapp-scope-title">
           <strong>WhatsApp</strong>
           <span
-            aria-label={`Status da conexão: ${connectionLabel}`}
+            aria-atomic="true"
+            aria-live="polite"
             className={`crm-whatsapp-status crm-whatsapp-scope-status crm-whatsapp-status-${connectionTone}`}
+            role="status"
           >
             <span aria-hidden="true" />
             {connectionLabel}

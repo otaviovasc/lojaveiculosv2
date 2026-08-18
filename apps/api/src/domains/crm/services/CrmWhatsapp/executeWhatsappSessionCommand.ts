@@ -76,10 +76,10 @@ export async function executeWhatsappSessionCommand(input: {
           claimed.receipt.result === "applied"
             ? ("already_applied" as const)
             : claimed.receipt.result,
-        session: await reloadScopedWhatsappSession(
+        session: await reloadVisibleWhatsappSession(
+          input.context,
           ports,
           input.sessionId,
-          scope,
         ),
       };
     }
@@ -125,6 +125,15 @@ export async function reloadScopedWhatsappSession(
   });
   if (!session) throw new Error("CRM WhatsApp session disappeared.");
   return session;
+}
+
+export async function reloadVisibleWhatsappSession(
+  context: ServiceContext,
+  ports: CrmServicePorts,
+  sessionId: string,
+) {
+  return (await findScopedWhatsappSession(context, { sessionId }, ports))
+    .session;
 }
 
 function fingerprint(input: Record<string, unknown>) {

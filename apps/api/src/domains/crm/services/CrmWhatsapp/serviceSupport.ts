@@ -153,9 +153,13 @@ export async function publishWhatsappSessionUpdate(
   ports: CrmServicePorts,
   session: WhatsappSession,
   scope: { storeId: string; tenantId: string },
+  options: { revokedUserId?: string } = {},
 ) {
   await getCrmRealtimePublisher(ports).publish({
     connectionId: session.connection.id,
+    ...(options.revokedUserId
+      ? { revokedUserId: options.revokedUserId as never }
+      : {}),
     session,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,

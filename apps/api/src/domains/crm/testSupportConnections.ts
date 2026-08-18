@@ -3,6 +3,7 @@ import type {
   CrmConnectionRepository,
 } from "./ports/crmConnectionRepository.js";
 import {
+  normalizeTestCrmConnection,
   readConfiguredString,
   readRecord,
 } from "./testSupportConnectionValues.js";
@@ -10,7 +11,7 @@ import { upsertTestOlxConnection } from "./testSupportOlxConnections.js";
 export function createTestCrmConnectionRepository(
   initialConnections: readonly CrmConnection[] = [],
 ): CrmConnectionRepository {
-  const connections = [...initialConnections];
+  const connections = initialConnections.map(normalizeTestCrmConnection);
   return {
     async archiveAbandonedZapiConnections() {
       return [];
@@ -31,10 +32,14 @@ export function createTestCrmConnectionRepository(
         webhookUrl: input.webhookUrl ?? null,
       };
       connections.push(connection);
-      return connection;
+      return normalizeTestCrmConnection(connection);
     },
     async upsertOlxConnection(input) {
-      return upsertTestOlxConnection(connections, input);
+      const result = await upsertTestOlxConnection(connections, input);
+      return {
+        ...result,
+        connection: normalizeTestCrmConnection(result.connection),
+      };
     },
     async configureInitialZapiCredentials(input) {
       const connection = connections.find(
@@ -53,7 +58,10 @@ export function createTestCrmConnectionRepository(
       if (instanceId || instanceToken) return { status: "partial_state" };
       connection.credentialsRef = input.credentialsRef;
       connection.externalInstanceId = input.externalInstanceId;
-      return { connection, status: "configured" };
+      return {
+        connection: normalizeTestCrmConnection(connection),
+        status: "configured",
+      };
     },
     async claimZapiWebhookSetup(input) {
       const connection = connections.find(
@@ -91,7 +99,7 @@ export function createTestCrmConnectionRepository(
           updatedAt: input.now.toISOString(),
         },
       };
-      return connection;
+      return normalizeTestCrmConnection(connection);
     },
     async claimOlxWebhookSetup(input) {
       const connection = connections.find(
@@ -124,7 +132,7 @@ export function createTestCrmConnectionRepository(
           status: "configuring",
         },
       };
-      return connection;
+      return normalizeTestCrmConnection(connection);
     },
     async finishZapiWebhookSetup(input) {
       const connection = connections.find(
@@ -144,7 +152,7 @@ export function createTestCrmConnectionRepository(
         ...connection.metadata,
         webhookSetup: readRecord(input.metadata.webhookSetup),
       };
-      return connection;
+      return normalizeTestCrmConnection(connection);
     },
     async finishOlxWebhookSetup(input) {
       const connection = connections.find(
@@ -168,7 +176,7 @@ export function createTestCrmConnectionRepository(
       )
         ? "active"
         : "error";
-      return connection;
+      return normalizeTestCrmConnection(connection);
     },
     async findConnectionByExternalId(input) {
       return (
@@ -217,7 +225,7 @@ export function createTestCrmConnectionRepository(
           ? { webhookUrl: input.webhookUrl }
           : {}),
       });
-      return connection;
+      return normalizeTestCrmConnection(connection);
     },
   };
 }

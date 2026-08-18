@@ -6,6 +6,12 @@ import type {
   CrmRealtimeReplayInput,
   CrmRealtimeTicket,
 } from "../../domains/crm/ports/crmRealtimePublisher.js";
+import {
+  matchesWhatsappRealtimeQueueVisibility,
+  readWhatsappRealtimeSessionBoundary,
+  updateWhatsappRealtimeAssignmentBoundary,
+  type WhatsappRealtimeAssignmentBoundary,
+} from "../../domains/crm/whatsapp/whatsappQueueVisibility.js";
 
 const channel = "crm:whatsapp:realtime";
 const streamKeyPrefix = "crm:whatsapp:realtime:stream:";
@@ -65,23 +71,19 @@ export function createRedisCrmRealtimePersistence(
       const limit = input.limit ?? 250;
       if (limit <= 0) return [];
       await ensureReady();
-      const replay: CrmRealtimeEventEnvelope[] = [];
-      let cursor = input.sinceEventId;
-      while (replay.length < limit) {
+      const retained: CrmRealtimeEventEnvelope[] = [];
+      let cursor: string | null = null;
+      while (retained.length < streamMaxEvents) {
         const rows = await client.sendCommand([
           "XRANGE",
           streamKey(input.tenantId, input.storeId),
-          `(${cursor}`,
+          cursor ? `(${cursor}` : "-",
           "+",
           "COUNT",
           String(limit),
         ]);
         const parsed = parseStreamRows(rows);
-        replay.push(
-          ...parsed
-            .filter((item) => matchesReplayScope(input, item.event))
-            .slice(0, limit - replay.length),
-        );
+        retained.push(...parsed);
         const nextCursor = lastStreamId(rows);
         if (
           streamRowCount(rows) < limit ||
@@ -91,7 +93,19 @@ export function createRedisCrmRealtimePersistence(
           break;
         cursor = nextCursor;
       }
-      return replay;
+      const boundaries = new Map<string, WhatsappRealtimeAssignmentBoundary>();
+      retained.forEach(({ event }) =>
+        updateWhatsappRealtimeAssignmentBoundary(boundaries, event),
+      );
+      const cursorIndex = retained.findIndex(
+        (item) => item.id === input.sinceEventId,
+      );
+      const replay =
+        cursorIndex >= 0 ? retained.slice(cursorIndex + 1) : retained;
+      const visible = replay.filter((item) =>
+        matchesReplayScope(input, item.event, boundaries),
+      );
+      return selectReplayWindow(visible, input.queueVisibility, limit);
     },
     async resolveTicket(ticket: string) {
       await ensureReady();
@@ -133,6 +147,7 @@ function parseTicket(value: string): CrmRealtimeTicket | null {
     };
     const expiresAt = new Date(parsed.expiresAt);
     if (expiresAt.getTime() <= Date.now()) return null;
+    if (!isQueueVisibility(parsed.queueVisibility)) return null;
     return { ...parsed, expiresAt };
   } catch {
     return null;
@@ -178,9 +193,47 @@ function parseStreamEvent(value: unknown) {
 function matchesReplayScope(
   input: CrmRealtimeReplayInput,
   event: CrmRealtimeEvent,
+  boundaries: Map<string, WhatsappRealtimeAssignmentBoundary>,
 ) {
   if (input.storeId !== event.storeId) return false;
   if (input.tenantId !== event.tenantId) return false;
+  const observed = readWhatsappRealtimeSessionBoundary(event);
+  if (
+    !matchesWhatsappRealtimeQueueVisibility(
+      input.queueVisibility,
+      event,
+      observed ? boundaries.get(observed.sessionKey) : undefined,
+    )
+  ) {
+    return false;
+  }
   if (!input.connectionId) return true;
   return input.connectionId === event.connectionId;
+}
+
+function selectReplayWindow(
+  events: CrmRealtimeEventEnvelope[],
+  visibility: CrmRealtimeReplayInput["queueVisibility"],
+  limit: number,
+) {
+  const includesRevocation =
+    visibility.kind === "assigned" &&
+    events.some(
+      ({ event }) =>
+        event.type === "session" && event.revokedUserId === visibility.userId,
+    );
+  return includesRevocation ? events.slice(-limit) : events.slice(0, limit);
+}
+
+function isQueueVisibility(
+  value: unknown,
+): value is CrmRealtimeTicket["queueVisibility"] {
+  if (!value || typeof value !== "object" || !("kind" in value)) return false;
+  if (value.kind === "global" || value.kind === "none") return true;
+  return (
+    value.kind === "assigned" &&
+    "userId" in value &&
+    typeof value.userId === "string" &&
+    Boolean(value.userId)
+  );
 }

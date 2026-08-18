@@ -13,6 +13,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { providerConnections } from "./crmCore/authorization.js";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
@@ -105,7 +106,7 @@ export const crmTags = pgTable(
   {
     ...lifecycleColumns,
     color: varchar("color", { length: 16 }).notNull().default("#64748b"),
-    connectionId: uuid("connection_id").references(() => crmConnections.id),
+    connectionId: uuid("connection_id"),
     emoji: varchar("emoji", { length: 16 }),
     name: varchar("name", { length: 80 }).notNull(),
     sortOrder: integer("sort_order").notNull().default(0),
@@ -117,6 +118,24 @@ export const crmTags = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_tags_connection_fk",
+    }),
+    ...(includeCrmScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
+            ],
+            name: "crm_tags_scoped_connection_fk",
+          }),
+        ]
+      : []),
     index("crm_tags_store_idx").on(table.storeId, table.sortOrder),
     uniqueIndex("crm_tags_store_connection_name_unique").on(
       table.storeId,

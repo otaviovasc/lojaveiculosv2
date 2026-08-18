@@ -183,6 +183,7 @@ export async function selectComposioWhatsappSender(
           ...connection.metadata,
           composioBusinessAccountId: sender.businessAccountId,
           connectedPhone: sender.phone,
+          providerConnected: true,
         },
         phone: sender.phone,
         status: "active",
@@ -210,7 +211,6 @@ async function persistDefaultForReadyConnection(
 ) {
   if (
     !connection.ready ||
-    !context.permissions.includes("crm.routing.default.manage") ||
     !ports.crmRoutingConnectionRepository ||
     !ports.crmRoutingPolicyRepository
   )

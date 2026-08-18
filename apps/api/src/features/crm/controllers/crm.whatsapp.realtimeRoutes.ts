@@ -9,6 +9,7 @@ import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { assertWhatsappRead } from "./crm.whatsapp.controller.support.js";
 import { handleWhatsapp } from "./crm.whatsapp.errors.js";
+import { resolveWhatsappQueueVisibility } from "../../../domains/crm/whatsapp/whatsappQueueVisibility.js";
 
 export type RegisterCrmWhatsappRealtimeRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -31,6 +32,7 @@ export function registerCrmWhatsappRealtimeRoutes(
       const input = await readTicketInput(context);
       const ticket = await broker.issueTicket({
         connectionId: input.connectionId ?? null,
+        queueVisibility: resolveWhatsappQueueVisibility(serviceContext),
         sinceEventId: input.sinceEventId ?? null,
         storeId: scope.storeId as StoreId,
         tenantId: scope.tenantId as TenantId,
@@ -57,6 +59,7 @@ export function registerCrmWhatsappRealtimeRoutes(
       return createSseResponse({
         broker,
         connectionId: scope.connectionId ?? null,
+        queueVisibility: scope.queueVisibility,
         sinceEventId: readSinceEventId(context) ?? scope.sinceEventId ?? null,
         signal: context.req.raw.signal,
         storeId: scope.storeId,
@@ -87,6 +90,9 @@ async function readTicketInput(context: Context) {
 function createSseResponse(input: {
   broker: CrmRealtimeBroker;
   connectionId: string | null;
+  queueVisibility: Parameters<
+    CrmRealtimeBroker["replay"]
+  >[0]["queueVisibility"];
   sinceEventId: string | null;
   signal: AbortSignal;
   storeId: StoreId;
@@ -130,6 +136,7 @@ function createSseResponse(input: {
           }
           writeEnvelope(envelope);
         },
+        queueVisibility: input.queueVisibility,
         storeId: input.storeId,
         tenantId: input.tenantId,
       });
@@ -137,6 +144,7 @@ function createSseResponse(input: {
         .replay({
           connectionId: input.connectionId,
           limit: 250,
+          queueVisibility: input.queueVisibility,
           sinceEventId: input.sinceEventId,
           storeId: input.storeId,
           tenantId: input.tenantId,

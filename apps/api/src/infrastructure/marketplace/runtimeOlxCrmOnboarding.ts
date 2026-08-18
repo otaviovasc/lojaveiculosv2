@@ -7,20 +7,20 @@ import type { StoreScopedServiceContext } from "../../shared/serviceContext.js";
 import {
   externalAccountAuthorizationCapabilities,
   externalAccountAuthorizations,
-  crmChannelRoutingPolicies,
   providerConnections,
 } from "@lojaveiculosv2/db";
-import { isNull } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { onboardOlxCrmConnection } from "../../domains/crm/services/CrmService/onboardOlxCrmConnection.js";
 import { OLX_CRM_CONNECTION_SETUP_PERMISSION } from "../../domains/crm/onboardOlxCrmConnectionSupport.js";
 import { createCrmConnectionCredentialVault } from "../crm/crmConnectionCredentialVault.js";
 import { createOlxCrmWebhookSetupProvider } from "../crm/olxCrmWebhookSetupProvider.js";
 import { createDrizzleCrmConnectionRepository } from "../db/crm/drizzleCrmConnectionRepository.js";
-import type { DrizzleCrmClient } from "../db/crm/drizzleCrmRepository.js";
 import {
-  olxProviderConnectionMetadata,
-  recordOlxDefaultOutcome,
-} from "./runtimeOlxCrmOnboardingSupport.js";
+  createDrizzleCrmRoutingConnectionRepository,
+  createDrizzleCrmRoutingPolicyRepository,
+} from "../db/crm/drizzleCrmRoutingRepository.js";
+import type { DrizzleCrmClient } from "../db/crm/drizzleCrmRepository.js";
+import { olxProviderConnectionMetadata } from "./runtimeOlxCrmOnboardingSupport.js";
 
 export function createRuntimeOlxCrmOnboarding(
   db: DrizzleCrmClient,
@@ -30,6 +30,9 @@ export function createRuntimeOlxCrmOnboarding(
   const ports = {
     crmConnectionCredentialVault: createCrmConnectionCredentialVault(env),
     crmConnectionRepository: createDrizzleCrmConnectionRepository(db),
+    crmRoutingConnectionRepository:
+      createDrizzleCrmRoutingConnectionRepository(db),
+    crmRoutingPolicyRepository: createDrizzleCrmRoutingPolicyRepository(db),
     crmRepository: {} as never,
     olxCrmWebhookSetupProvider: createOlxCrmWebhookSetupProvider(),
   };
@@ -46,27 +49,15 @@ export function createRuntimeOlxCrmOnboarding(
         throw new Error("OLX capability persistence scope binding mismatch.");
       }
       const scopeState = readScopeState(input);
-      const chatReady = input.capabilities.chat.status === "active";
-      const canCreateDefault = context.permissions.includes(
-        "crm.routing.default.manage",
-      );
       const operationalCapabilities = Object.fromEntries(
         Object.entries(input.capabilities).map(([name, capability]) => [
           name,
           { reason: capability.reason, status: capability.status },
         ]),
       );
-      if (chatReady && canCreateDefault && input.connectionId) {
-        await recordOlxDefaultOutcome(
-          context,
-          { ...input, connectionId: input.connectionId },
-          "attempted",
-        );
-      }
       const connectionMetadata = olxProviderConnectionMetadata(
         input.capabilities.chat,
       );
-      let defaultCreated = false;
       await db.transaction(async (transaction) => {
         await transaction
           .insert(externalAccountAuthorizations)
@@ -124,66 +115,33 @@ export function createRuntimeOlxCrmOnboarding(
             });
         }
         if (input.connectionId) {
-          await transaction
-            .insert(providerConnections)
-            .values({
+          const [updated] = await transaction
+            .update(providerConnections)
+            .set({
               authorizationId: input.authorizationId,
-              broker: "direct",
-              channel: "olx_chat",
-              displayName: "OLX Chat",
               externalConnectionId: input.providerAccountId,
-              id: input.connectionId,
-              metadata: connectionMetadata,
-              provider: "olx",
+              metadata: sql`${providerConnections.metadata} || ${JSON.stringify(connectionMetadata)}::jsonb`,
               state: providerConnectionState(input.capabilities.chat.status),
-              storeId: input.storeId,
-              tenantId: input.tenantId,
+              updatedAt: new Date(),
             })
-            .onConflictDoUpdate({
-              set: {
-                authorizationId: input.authorizationId,
-                externalConnectionId: input.providerAccountId,
-                metadata: connectionMetadata,
-                state: providerConnectionState(input.capabilities.chat.status),
-                updatedAt: new Date(),
-              },
-              target: providerConnections.id,
-            });
-          if (chatReady && canCreateDefault) {
-            const inserted = await transaction
-              .insert(crmChannelRoutingPolicies)
-              .values({
-                botConnectionId: null,
-                botMode: "disabled",
-                channel: "olx_chat",
-                defaultConnectionId: input.connectionId,
-                storeId: input.storeId,
-                tenantId: input.tenantId,
-              })
-              .onConflictDoUpdate({
-                set: {
-                  defaultConnectionId: input.connectionId,
-                  updatedAt: new Date(),
-                },
-                setWhere: isNull(crmChannelRoutingPolicies.defaultConnectionId),
-                target: [
-                  crmChannelRoutingPolicies.tenantId,
-                  crmChannelRoutingPolicies.storeId,
-                  crmChannelRoutingPolicies.channel,
-                ],
-              })
-              .returning({ id: crmChannelRoutingPolicies.id });
-            defaultCreated = inserted.length > 0;
+            .where(
+              and(
+                eq(providerConnections.id, input.connectionId),
+                eq(providerConnections.storeId, input.storeId),
+                eq(providerConnections.tenantId, input.tenantId),
+                eq(providerConnections.channel, "olx_chat"),
+                eq(providerConnections.provider, "olx"),
+                eq(providerConnections.broker, "direct"),
+              ),
+            )
+            .returning({ id: providerConnections.id });
+          if (!updated) {
+            throw new Error(
+              "Canonical OLX CRM channel connection was not persisted by onboarding.",
+            );
           }
         }
       });
-      if (defaultCreated && input.connectionId) {
-        await recordOlxDefaultOutcome(
-          context,
-          { ...input, connectionId: input.connectionId },
-          "succeeded",
-        );
-      }
     },
   };
 }

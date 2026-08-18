@@ -10,17 +10,20 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppApiError } from "../../lib/apiErrors";
+import { markCrmOlxOauthReturn } from "../crm/crmOlxOauthReturn";
 import type { MarketplaceApi } from "./apiClient";
 import { MarketplaceModule } from "./MarketplaceModule";
-import type {
-  MarketplaceJob,
-  MarketplaceOverview,
-  MarketplaceStockPlan,
-} from "./types";
+import type { MarketplaceOverview, MarketplaceStockPlan } from "./types";
+import {
+  failedJob,
+  marketplaceStockPlan as plan,
+  queuedJob,
+} from "./MarketplaceModule.testFixtures";
 
 describe("MarketplaceModule", () => {
   afterEach(() => {
     cleanup();
+    window.sessionStorage.clear();
     window.history.replaceState({}, "", "/");
   });
 
@@ -272,6 +275,70 @@ describe("MarketplaceModule", () => {
     expect(window.location.hash).toBe("#/marketplaces");
   });
 
+  it("shows a neutral Conectando OLX transition without flashing Marketplace when OAuth started in the CRM", async () => {
+    markCrmOlxOauthReturn();
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=33333333-3333-4333-8333-333333333333#/marketplaces",
+    );
+    const api = createApi();
+
+    render(<MarketplaceModule api={api} />);
+
+    expect(await screen.findByText(/Conectando OLX/)).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Marketplaces" }),
+    ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.completeConnection).toHaveBeenCalledWith({
+        transactionId: "33333333-3333-4333-8333-333333333333",
+      }),
+    );
+  });
+
+  it("keeps a friendly CRM return transition for an OAuth callback error", () => {
+    markCrmOlxOauthReturn();
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=error&provider=olx&errorCode=MARKETPLACE_OAUTH_CALLBACK_FAILED#/marketplaces",
+    );
+
+    render(<MarketplaceModule api={createApi()} />);
+
+    expect(
+      screen.getByText(/conexão com a OLX não foi concluída/i),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Marketplaces" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the CRM return transition when OLX authorization is cancelled", async () => {
+    markCrmOlxOauthReturn();
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=44444444-4444-4444-8444-444444444444#/marketplaces",
+    );
+    const api = createApi({
+      completeConnection: vi.fn(async () => ({
+        kind: "cancelled" as const,
+        provider: "olx" as const,
+      })),
+    });
+
+    render(<MarketplaceModule api={api} />);
+
+    expect(
+      await screen.findByText(/autorização da OLX foi cancelada/i),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Marketplaces" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("reports partial OLX completion and exposes an explicit retry", async () => {
     window.history.replaceState(
       {},
@@ -469,159 +536,4 @@ const bothProvidersOverview: MarketplaceOverview = {
     },
   ],
   providers: ["olx", "mercado_livre"],
-};
-
-const plan: MarketplaceStockPlan = {
-  accounting: {
-    excluded: 1,
-    found: 3,
-    needsCorrection: 1,
-    processing: 0,
-    ready: 1,
-  },
-  blocked: 1,
-  items: [
-    {
-      accountingStatus: "needs_correction",
-      blockers: [
-        {
-          code: "MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS",
-          layer: "listing",
-          message: "Foto publica obrigatoria.",
-          userAction: "Adicionar fotos publicas ao veiculo.",
-        },
-      ],
-      decision: "blocked",
-      externalId: null,
-      jobType: null,
-      listing: {
-        catalog: null,
-        condition: "used",
-        contactPhone: null,
-        description: null,
-        doors: null,
-        fuelType: null,
-        isVisibleOnPublicSite: true,
-        licensePlate: null,
-        listingId: "listing_1",
-        locationZipCode: null,
-        mediaUrls: [],
-        mileageKm: null,
-        modelYear: 2020,
-        priceCents: 9000000,
-        publicSlug: "honda-civic-exl",
-        selectedMedia: [],
-        selectedUnitId: null,
-        status: "published",
-        stockLabel: "Honda Civic EXL",
-        title: "Honda Civic",
-        trimName: "EXL",
-        vehicleType: "cars",
-      },
-      origin: "stock",
-      provider: "olx",
-      providerMapping: null,
-      reason: "O veículo precisa de correções antes de ser enviado ao canal.",
-      userAction: null,
-    },
-    {
-      accountingStatus: "ready",
-      blockers: [],
-      decision: "publish",
-      externalId: null,
-      jobType: "listing_publish",
-      listing: {
-        catalog: null,
-        condition: "used",
-        contactPhone: "5511999999999",
-        description: "BMW pronta para publicação.",
-        doors: 4,
-        fuelType: "gasoline",
-        isVisibleOnPublicSite: true,
-        licensePlate: "ABC1D23",
-        listingId: "listing_2",
-        locationZipCode: "01310100",
-        mediaUrls: ["https://cdn.local/bmw.jpg"],
-        mileageKm: 12000,
-        modelYear: 2024,
-        priceCents: 25000000,
-        publicSlug: "bmw-320i",
-        selectedMedia: [
-          { altText: "BMW 320i", url: "https://cdn.local/bmw.jpg" },
-        ],
-        selectedUnitId: "unit_2",
-        status: "published",
-        stockLabel: "BMW 320i",
-        title: "BMW 320i",
-        trimName: "Sport",
-        vehicleType: "cars",
-      },
-      origin: "stock",
-      provider: "olx",
-      providerMapping: null,
-      reason: "O veículo está pronto para ser publicado no canal.",
-      userAction: "Envie o lote para publicar o anúncio.",
-    },
-    {
-      accountingStatus: "excluded",
-      blockers: [],
-      decision: "no_op",
-      externalId: null,
-      jobType: null,
-      listing: {
-        catalog: null,
-        condition: "used",
-        contactPhone: null,
-        description: null,
-        doors: null,
-        fuelType: null,
-        isVisibleOnPublicSite: false,
-        licensePlate: null,
-        listingId: "listing_3",
-        locationZipCode: null,
-        mediaUrls: [],
-        mileageKm: null,
-        modelYear: 2013,
-        priceCents: 8000000,
-        publicSlug: "volvo-v40",
-        selectedMedia: [],
-        selectedUnitId: null,
-        status: "published",
-        stockLabel: "Volvo V40 2013",
-        title: "Volvo V40",
-        trimName: null,
-        vehicleType: "cars",
-      },
-      origin: "stock",
-      provider: "olx",
-      providerMapping: null,
-      reason: "O anúncio está privado na vitrine da loja.",
-      userAction: "Publique o anúncio e habilite a visibilidade na vitrine.",
-    },
-  ],
-  noOp: 1,
-  pending: 0,
-  publish: 1,
-  total: 3,
-  unpublish: 0,
-  update: 0,
-};
-
-const failedJob: MarketplaceJob = {
-  accountId: "account_1",
-  completedAt: null,
-  createdAt: "2026-01-01T00:00:00.000Z",
-  errorMessage: "Falha: preco ausente. Corrigir: preencher preco.",
-  id: "job_failed",
-  jobType: "listing_publish",
-  metadata: { batchId: "batch_1", listingId: "listing_1", stockSync: true },
-  provider: "olx",
-  status: "failed",
-};
-
-const queuedJob: MarketplaceJob = {
-  ...failedJob,
-  errorMessage: null,
-  id: "job_queued",
-  status: "queued",
 };

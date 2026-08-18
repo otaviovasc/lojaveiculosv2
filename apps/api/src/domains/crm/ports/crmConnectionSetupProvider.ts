@@ -22,12 +22,17 @@ export type OlxCrmWebhookSetupProvider = {
   configureChat: (input: {
     accessToken: string;
     callbackUrl: string;
-  }) => Promise<void>;
+  }) => Promise<OlxCrmWebhookSetupDiagnostics | void>;
   configureLeads: (input: {
     accessToken: string;
     callbackUrl: string;
     token: string;
-  }) => Promise<void>;
+  }) => Promise<OlxCrmWebhookSetupDiagnostics | void>;
+};
+
+export type OlxCrmWebhookSetupDiagnostics = {
+  httpStatus: number;
+  providerRequestId: string | null;
 };
 
 export type ZapiSetupCredentials = {
@@ -132,6 +137,7 @@ export type CrmConnectionSetupProviderErrorCode =
   | "invalid_provider_response"
   | "pairing_disconnect_required"
   | "pairing_method_required"
+  | "provider_outcome_indeterminate"
   | "provider_rejected"
   | "rate_limited"
   | "request_failed"
@@ -143,6 +149,8 @@ export class CrmConnectionSetupProviderError extends Error {
     readonly code: CrmConnectionSetupProviderErrorCode,
     readonly httpStatus?: number,
     readonly retryAfterSeconds?: number,
+    readonly providerRequestId?: string,
+    readonly retryable?: boolean,
   ) {
     super(message);
     this.name = "CrmConnectionSetupProviderError";

@@ -67,6 +67,7 @@ describe("CRM WhatsApp realtime", () => {
     await broker.publish(createConnectionStatusEvent("first"));
     const [first] = await broker.replay({
       connectionId,
+      queueVisibility: { kind: "global" },
       sinceEventId: "0-0",
       storeId,
       tenantId,
@@ -79,6 +80,7 @@ describe("CRM WhatsApp realtime", () => {
     );
     const [second] = await broker.replay({
       connectionId,
+      queueVisibility: { kind: "global" },
       sinceEventId: first!.id,
       storeId,
       tenantId,

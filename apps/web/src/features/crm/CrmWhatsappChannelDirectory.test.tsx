@@ -8,6 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
 import type { MarketplaceProviderState } from "../marketplaces/types";
 import { CrmWhatsappChannelDirectory } from "./CrmWhatsappChannelDirectory";
@@ -95,6 +96,40 @@ describe("CrmWhatsappChannelDirectory", () => {
     ).toHaveTextContent(/Chat mantém o estado observado na conexão do CRM/i);
   });
 
+  it("retries an unavailable OLX overview independently of Chat setup", async () => {
+    const api = createMarketplaceApi();
+    vi.mocked(api.getOverview)
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce({
+        accounts: [],
+        jobs: [],
+        providerStates: [createOlxState()],
+        providers: ["olx"],
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      });
+
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        marketplaceApi={api}
+        onChoose={vi.fn()}
+        zapiAddonContract={null}
+      />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Tentar consultar novamente",
+      }),
+    );
+
+    expect(
+      await screen.findByText("Webhook de leads confirmado."),
+    ).toBeVisible();
+    expect(api.getOverview).toHaveBeenCalledTimes(2);
+  });
+
   it("opens management from an existing Z-API card", () => {
     const onChoose = vi.fn();
     render(
@@ -112,6 +147,29 @@ describe("CrmWhatsappChannelDirectory", () => {
     expect(screen.getByText("Já conectado")).toBeVisible();
     fireEvent.click(zapi);
     expect(onChoose).toHaveBeenCalledWith("zapi");
+  });
+
+  it.each([
+    ["a channel mismatch", { channel: "instagram" as const }],
+    [
+      "missing canonical readiness",
+      {
+        readiness: { ready: false, reason: "Pendente", reasonCode: "pending" },
+      },
+    ],
+    ["an inactive canonical status", { status: "paused" as const }],
+  ])("does not mark Z-API configured from %s", (_, override) => {
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[{ ...createZapiConnection(), ...override }]}
+        marketplaceApi={createMarketplaceApi()}
+        onChoose={vi.fn()}
+        zapiAddonContract={null}
+      />,
+    );
+
+    expect(screen.queryByText("Já conectado")).not.toBeInTheDocument();
   });
 
   it("localizes provider requirement copy instead of exposing raw English", async () => {
@@ -141,6 +199,7 @@ describe("CrmWhatsappChannelDirectory", () => {
 
 function createZapiConnection() {
   return {
+    channel: "whatsapp" as const,
     credentials: {
       apiBaseUrlEnv: null,
       clientTokenEnv: null,
@@ -163,6 +222,7 @@ function createZapiConnection() {
     phone: "5511999999999",
     provider: "zapi" as const,
     ready: true,
+    readiness: { ready: true, reason: null, reasonCode: null },
     setup: null,
     status: "active" as const,
     webhookUrl: null,
@@ -228,5 +288,206 @@ function createOlxState(): MarketplaceProviderState {
     lastSyncSummary: null,
     provider: "olx",
     requirements: [],
+  };
+}
+
+describe("CrmWhatsappChannelDirectory premium grouping", () => {
+  afterEach(cleanup);
+
+  it("groups connected channels under channel-first headings with badges", () => {
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[createZapiConnection(), createDefaultOlxConnection()]}
+        marketplaceApi={createMarketplaceApi(false, createOlxState())}
+        onChoose={vi.fn()}
+        zapiAddonContract={null}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "WhatsApp" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Instagram" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "OLX Chat" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Z-API principal")).toBeVisible();
+    expect(screen.getAllByText("Padrão")).toHaveLength(1);
+    expect(screen.getAllByText("Pronto").length).toBeGreaterThan(0);
+  });
+
+  it("opens connection management from a connected channel row", () => {
+    const onManageConnection = vi.fn();
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[createZapiConnection()]}
+        marketplaceApi={createMarketplaceApi()}
+        onChoose={vi.fn()}
+        onManageConnection={onManageConnection}
+        zapiAddonContract={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Z-API principal/ }));
+    expect(onManageConnection).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "connection-1" }),
+    );
+  });
+
+  it("marks an invalid server contract instead of guessing the channel", () => {
+    const orphan = {
+      ...createZapiConnection(),
+      id: "orphan-1",
+      provider: "carrier_pigeon",
+    };
+    delete (orphan as { channel?: unknown }).channel;
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[orphan]}
+        marketplaceApi={createMarketplaceApi()}
+        onChoose={vi.fn()}
+        zapiAddonContract={null}
+      />,
+    );
+
+    expect(screen.getByText("Canal não identificado")).toBeInTheDocument();
+    expect(screen.getByText("Contrato inválido")).toBeVisible();
+  });
+
+  it("retries OLX Chat activation without exposing the provider request id", async () => {
+    const state = createOlxState();
+    if (!state.capabilities) throw new Error("Expected OLX capabilities.");
+    state.capabilities.chat = {
+      capability: "messaging",
+      grantState: "granted",
+      reason: "provider_rejected",
+      status: "error",
+    };
+    const retryOlxChatSetup = vi.fn(async () => ({
+      channel: "olx_chat" as const,
+      connectionId: "olx-1",
+      diagnostics: {
+        httpStatus: 200,
+        providerRequestId: "op-123",
+        retryable: false,
+      },
+      provider: "olx" as const,
+      readiness: { ready: true },
+      setup: {
+        attemptCount: 2,
+        configuredAt: "2026-08-17T12:00:00.000Z",
+        status: "configured",
+      },
+    }));
+    const onConnectionsChanged = vi.fn(async () => undefined);
+    const olxConnection = {
+      ...createZapiConnection(),
+      channel: "olx_chat" as const,
+      displayName: "OLX principal",
+      id: "olx-1",
+      provider: "olx_chat" as const,
+      ready: false,
+      readiness: {
+        ready: false,
+        reason: "Ativação pendente.",
+        reasonCode: "setup_failed",
+      },
+    };
+
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[olxConnection]}
+        crmApi={{ retryOlxChatSetup }}
+        marketplaceApi={createMarketplaceApi(false, state)}
+        onChoose={vi.fn()}
+        onConnectionsChanged={onConnectionsChanged}
+        zapiAddonContract={null}
+      />,
+    );
+
+    const retry = await screen.findByRole("button", {
+      name: "Tentar ativar Chat novamente",
+    });
+    expect(
+      screen.queryByRole("button", { name: "Reconfigurar OLX" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(retry);
+
+    await waitFor(() =>
+      expect(retryOlxChatSetup).toHaveBeenCalledWith("olx-1"),
+    );
+    expect(onConnectionsChanged).toHaveBeenCalledOnce();
+    expect(
+      await screen.findByText(/OLX Chat está pronto para uso no CRM/i),
+    ).toBeVisible();
+    expect(screen.queryByText(/op-123/)).not.toBeInTheDocument();
+  });
+
+  it("shows the retry error with the request id and no fake success", async () => {
+    const state = createOlxState();
+    if (!state.capabilities) throw new Error("Expected OLX capabilities.");
+    state.capabilities.chat = {
+      capability: "messaging",
+      grantState: "granted",
+      reason: "runtime_unavailable",
+      status: "error",
+    };
+    const retryOlxChatSetup = vi.fn(async () => {
+      throw new AppApiError({
+        message: "provider exploded",
+        requestId: "req-42",
+        status: 500,
+      });
+    });
+    const olxConnection = {
+      ...createZapiConnection(),
+      channel: "olx_chat" as const,
+      id: "olx-1",
+      provider: "olx_chat" as const,
+      ready: false,
+      readiness: {
+        ready: false,
+        reason: "Ativação pendente.",
+        reasonCode: "setup_failed",
+      },
+    };
+
+    render(
+      <CrmWhatsappChannelDirectory
+        availableProviders={["zapi"]}
+        connections={[olxConnection]}
+        crmApi={{ retryOlxChatSetup }}
+        marketplaceApi={createMarketplaceApi(false, state)}
+        onChoose={vi.fn()}
+        zapiAddonContract={null}
+      />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Tentar ativar Chat novamente",
+      }),
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/Erro interno do servidor/);
+    expect(alert).toHaveTextContent(/ID do erro: req-42/);
+  });
+});
+
+function createDefaultOlxConnection() {
+  return {
+    ...createZapiConnection(),
+    channel: "olx_chat" as const,
+    displayName: "OLX principal",
+    id: "olx-1",
+    isDefault: true,
+    provider: "olx_chat" as const,
   };
 }

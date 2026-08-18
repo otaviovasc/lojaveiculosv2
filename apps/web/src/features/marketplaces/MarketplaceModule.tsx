@@ -41,12 +41,29 @@ import {
 } from "../crm/crmOlxOauthReturn";
 
 export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
+  const [{ callback: initialCallback, crmOlxReturn }] = useState(() => {
+    const callback = readMarketplaceOauthCallback(window.location);
+    return {
+      callback,
+      crmOlxReturn: callback.kind !== "none" && hasCrmOlxOauthReturn(),
+    };
+  });
   const marketplaceApi = useMemo(
     () => api ?? createMarketplaceRuntimeApi(),
     [api],
   );
   const [overview, setOverview] = useState<MarketplaceOverview | null>(null);
-  const [status, setStatus] = useState<MarketplaceStatus>({ kind: "loading" });
+  const [status, setStatus] = useState<MarketplaceStatus>(() =>
+    crmOlxReturn
+      ? {
+          kind: "olx-return",
+          message:
+            initialCallback.kind === "result-error"
+              ? "A conexão com a OLX não foi concluída. Você voltará para Conexões para tentar novamente."
+              : "Conectando OLX. Você voltará para o CRM automaticamente.",
+        }
+      : { kind: "loading" },
+  );
   const [previews, setPreviews] = useState<Record<string, ProviderPreview>>({});
   const [selectedProvider, setSelectedProvider] =
     useState<MarketplaceProvider | null>(null);
@@ -80,13 +97,17 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   }, []);
 
   const initializeMarketplace = async () => {
-    const callback = readMarketplaceOauthCallback(window.location);
+    const callback = initialCallback;
     if (callback.kind === "none") {
       await refresh();
       return;
     }
 
     if (callback.kind === "result-error") {
+      if (crmOlxReturn) {
+        redirectToCrmConnections();
+        return;
+      }
       clearCrmOlxOauthReturn();
       clearOauthCallbackLocation();
       try {
@@ -98,11 +119,13 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       return;
     }
 
-    setStatus(
-      callback.kind === "staged"
-        ? { kind: "saving", provider: callback.provider }
-        : { kind: "loading" },
-    );
+    if (!crmOlxReturn) {
+      setStatus(
+        callback.kind === "staged"
+          ? { kind: "saving", provider: callback.provider }
+          : { kind: "loading" },
+      );
+    }
     try {
       const result = await marketplaceApi.completeConnection(
         callback.kind === "staged"
@@ -112,6 +135,15 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
             : { code: callback.code, state: callback.state },
       );
       if (result.kind === "cancelled") {
+        if (crmOlxReturn) {
+          setStatus({
+            kind: "olx-return",
+            message:
+              "A autorização da OLX foi cancelada. Você voltará para Conexões para tentar novamente.",
+          });
+          redirectToCrmConnections();
+          return;
+        }
         clearCrmOlxOauthReturn();
         clearOauthCallbackLocation();
         setStatus({
@@ -124,8 +156,8 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         return;
       }
       clearOauthCallbackLocation();
-      if (result.account.provider === "olx" && hasCrmOlxOauthReturn()) {
-        window.location.assign("/dashboard#/crm?surface=whatsapp");
+      if (result.account.provider === "olx" && crmOlxReturn) {
+        redirectToCrmConnections();
         return;
       }
       clearCrmOlxOauthReturn();
@@ -142,6 +174,15 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         message: `${providerLabels[result.account.provider]} conectado. Nenhum anúncio foi enviado.`,
       });
     } catch (error) {
+      if (crmOlxReturn) {
+        setStatus({
+          kind: "olx-return",
+          message:
+            "Não foi possível confirmar a conexão da OLX agora. Você voltará para Conexões para tentar novamente.",
+        });
+        redirectToCrmConnections();
+        return;
+      }
       clearCrmOlxOauthReturn();
       clearOauthCallbackLocation();
       setStatus({ kind: "error", display: errorDisplay(error) });
@@ -271,6 +312,16 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     ? (lastRuns[selectedProvider] ?? null)
     : null;
 
+  if (status.kind === "olx-return") {
+    return (
+      <FeaturePageShell mainClassName="marketplace-shell">
+        <div className="crm-olx-oauth-return" role="status">
+          <FeatureLoadingState>{status.message}</FeatureLoadingState>
+        </div>
+      </FeaturePageShell>
+    );
+  }
+
   return (
     <FeaturePageShell mainClassName="marketplace-shell">
       <FeaturePageHeader
@@ -383,6 +434,7 @@ type ProviderPreview = {
 type MarketplaceStatus =
   | { display: MarketplaceErrorDisplay; kind: "error" }
   | { kind: "loading" }
+  | { kind: "olx-return"; message: string }
   | { kind: "partial"; message: string }
   | { kind: "ready" }
   | { kind: "saved"; message: string }
@@ -403,6 +455,10 @@ function orderedProviders(overview: MarketplaceOverview) {
 
 function clearOauthCallbackLocation() {
   window.history.replaceState({}, "", "/dashboard#/marketplaces");
+}
+
+function redirectToCrmConnections() {
+  window.location.assign("/dashboard#/crm?surface=whatsapp");
 }
 
 function oauthErrorDisplay(

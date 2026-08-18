@@ -13,7 +13,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { crmConnections } from "./crm.js";
+import { providerConnections } from "./crmCore/authorization.js";
 import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
@@ -89,9 +89,9 @@ export const providerEvents = pgTable(
           foreignKey({
             columns: [table.tenantId, table.storeId, table.connectionId],
             foreignColumns: [
-              crmConnections.tenantId,
-              crmConnections.storeId,
-              crmConnections.id,
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
             ],
             name: "provider_events_scoped_connection_fk",
           }),
@@ -129,9 +129,7 @@ export const crmWebhookEffectOutbox = pgTable(
   "crm_webhook_effect_outbox",
   {
     ...lifecycleColumns,
-    connectionId: uuid("connection_id")
-      .notNull()
-      .references(() => crmConnections.id),
+    connectionId: uuid("connection_id").notNull(),
     deadLetteredAt: timestamp("dead_lettered_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     effectType: crmWebhookEffectType("effect_type").notNull(),
@@ -163,6 +161,11 @@ export const crmWebhookEffectOutbox = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_webhook_effect_outbox_connection_fk",
+    }),
     ...(includeCrmScopeForeignKeys
       ? [
           foreignKey({
@@ -183,9 +186,9 @@ export const crmWebhookEffectOutbox = pgTable(
           foreignKey({
             columns: [table.tenantId, table.storeId, table.connectionId],
             foreignColumns: [
-              crmConnections.tenantId,
-              crmConnections.storeId,
-              crmConnections.id,
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
             ],
             name: "crm_webhook_effect_outbox_scoped_connection_fk",
           }),

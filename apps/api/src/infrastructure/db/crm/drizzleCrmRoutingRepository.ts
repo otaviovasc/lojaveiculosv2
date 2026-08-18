@@ -9,12 +9,6 @@ import type {
   CrmRoutingPolicyRepository,
 } from "../../../domains/crm/ports/crmRoutingPolicyRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
-import {
-  readRoutingRecord,
-  readRoutingString,
-  synchronizeLegacyConnections,
-  verifyLegacyMappings,
-} from "./drizzleCrmRoutingSynchronization.js";
 
 export function createDrizzleCrmRoutingConnectionRepository(
   db: DrizzleCrmClient,
@@ -54,9 +48,6 @@ export function createDrizzleCrmRoutingConnectionRepository(
         };
       });
     },
-    synchronizeLegacyConnections: (input) =>
-      synchronizeLegacyConnections(db, input),
-    verifyLegacyMappings: (input) => verifyLegacyMappings(db, input),
   };
 }
 
@@ -145,4 +136,14 @@ function mapPolicy(row: {
     storeId: row.storeId as never,
     tenantId: row.tenantId as never,
   };
+}
+
+function readRoutingRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readRoutingString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }

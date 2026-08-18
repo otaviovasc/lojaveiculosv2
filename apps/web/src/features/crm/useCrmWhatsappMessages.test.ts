@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
@@ -82,6 +82,79 @@ describe("useCrmWhatsappMessages", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(api.listMessages).toHaveBeenCalledTimes(1);
+  });
+
+  it("evicts only the revoked session cache before reselection", async () => {
+    const revokedSession = createSession({
+      id: "session-revoked",
+      uuid: "session-revoked",
+    });
+    const retainedSession = createSession({
+      id: "session-retained",
+      uuid: "session-retained",
+    });
+    const revokedMessage = createMessage({
+      content: "Mensagem revogada",
+      id: "message-revoked",
+    });
+    const retainedMessage = createMessage({
+      content: "Mensagem mantida",
+      id: "message-retained",
+    });
+    let revokedLoads = 0;
+    const api = createApi();
+    vi.mocked(api.listMessages).mockImplementation(async (sessionId) => {
+      if (sessionId === revokedSession.id) {
+        revokedLoads += 1;
+        if (revokedLoads === 1) return [revokedMessage];
+        return new Promise<CrmWhatsappMessage[]>(() => undefined);
+      }
+      return [retainedMessage];
+    });
+    let latest: ReturnType<typeof useCrmWhatsappMessages> | null = null;
+    const props = {
+      api,
+      mergeSessions: vi.fn(),
+      onState: (state: ReturnType<typeof useCrmWhatsappMessages>) => {
+        latest = state;
+      },
+      setError: vi.fn(),
+    };
+    const rendered = render(
+      createElement(Harness, {
+        ...props,
+        activeSession: revokedSession,
+      }),
+    );
+    await waitFor(() => expect(latest?.messages).toEqual([revokedMessage]));
+
+    rendered.rerender(
+      createElement(Harness, {
+        ...props,
+        activeSession: retainedSession,
+      }),
+    );
+    await waitFor(() => expect(latest?.messages).toEqual([retainedMessage]));
+
+    act(() => latest?.evictSessionMessages(revokedSession.id));
+    rendered.rerender(
+      createElement(Harness, {
+        ...props,
+        activeSession: revokedSession,
+      }),
+    );
+    await waitFor(() => expect(revokedLoads).toBe(2));
+    expect(
+      (latest as ReturnType<typeof useCrmWhatsappMessages> | null)?.messages,
+    ).toEqual([]);
+
+    rendered.rerender(
+      createElement(Harness, {
+        ...props,
+        activeSession: retainedSession,
+      }),
+    );
+    await waitFor(() => expect(latest?.messages).toEqual([retainedMessage]));
   });
 
   it("blocks send-class actions when the user can only read messages", async () => {
@@ -229,7 +302,9 @@ function createApi(): CrmWhatsappApi {
   } as unknown as CrmWhatsappApi;
 }
 
-function createSession(): CrmWhatsappSession {
+function createSession(
+  input: Partial<CrmWhatsappSession> = {},
+): CrmWhatsappSession {
   return {
     buyerName: "Joao",
     buyerPhone: "5511999999999",
@@ -240,6 +315,7 @@ function createSession(): CrmWhatsappSession {
     status: "ACTIVE",
     unreadCount: 1,
     uuid: "550e8400-e29b-41d4-a716-446655440000",
+    ...input,
   };
 }
 

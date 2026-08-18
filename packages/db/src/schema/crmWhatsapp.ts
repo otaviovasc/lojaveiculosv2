@@ -15,7 +15,8 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { crmConnections, crmTags } from "./crm.js";
+import { crmTags } from "./crm.js";
+import { providerConnections } from "./crmCore/authorization.js";
 import { stores, tenants, users } from "./identity.js";
 import { leads } from "./leads.js";
 import { lifecycleColumns } from "./_shared.js";
@@ -96,9 +97,7 @@ export const crmWhatsappSessions = pgTable(
     channel: crmWhatsappChannel("channel").notNull().default("WHATSAPP"),
     channelExternalId: varchar("channel_external_id", { length: 191 }),
     channelMetadata: jsonb("channel_metadata").notNull().default({}),
-    connectionId: uuid("connection_id")
-      .notNull()
-      .references(() => crmConnections.id),
+    connectionId: uuid("connection_id").notNull(),
     externalSessionId: varchar("external_session_id", { length: 191 }),
     firstHandledAt: timestamp("first_handled_at", { withTimezone: true }),
     freshLeadAt: timestamp("fresh_lead_at", { withTimezone: true }),
@@ -149,14 +148,19 @@ export const crmWhatsappSessions = pgTable(
       "crm_whatsapp_sessions_human_attendance_version_positive",
       sql`${table.humanAttendanceStateVersion} IS NULL OR ${table.humanAttendanceStateVersion} > 0`,
     ),
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_whatsapp_sessions_connection_fk",
+    }),
     ...(includeCrmScopeForeignKeys
       ? [
           foreignKey({
             columns: [table.tenantId, table.storeId, table.connectionId],
             foreignColumns: [
-              crmConnections.tenantId,
-              crmConnections.storeId,
-              crmConnections.id,
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
             ],
             name: "crm_whatsapp_sessions_scoped_connection_fk",
           }),
@@ -229,9 +233,7 @@ export const crmWhatsappMessages = pgTable(
     ...lifecycleColumns,
     channel: crmWhatsappChannel("channel").notNull().default("WHATSAPP"),
     channelMessageId: varchar("channel_message_id", { length: 191 }),
-    connectionId: uuid("connection_id")
-      .notNull()
-      .references(() => crmConnections.id),
+    connectionId: uuid("connection_id").notNull(),
     content: text("content").notNull().default(""),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     direction: crmWhatsappMessageDirection("direction").notNull(),
@@ -257,8 +259,22 @@ export const crmWhatsappMessages = pgTable(
     type: crmWhatsappMessageType("type").notNull().default("TEXT"),
   },
   (table) => [
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [providerConnections.id],
+      name: "crm_whatsapp_messages_connection_fk",
+    }),
     ...(includeCrmScopeForeignKeys
       ? [
+          foreignKey({
+            columns: [table.tenantId, table.storeId, table.connectionId],
+            foreignColumns: [
+              providerConnections.tenantId,
+              providerConnections.storeId,
+              providerConnections.id,
+            ],
+            name: "crm_whatsapp_messages_scoped_connection_fk",
+          }),
           foreignKey({
             columns: [
               table.tenantId,

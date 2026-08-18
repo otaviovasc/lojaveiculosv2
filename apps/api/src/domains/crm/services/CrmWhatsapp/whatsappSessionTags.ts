@@ -1,17 +1,10 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
 import {
-  toWhatsappSession,
   type WhatsappSession,
   type WhatsappSessionTag,
 } from "../../whatsapp/whatsappModels.js";
 import {
-  WhatsappConnectionNotFoundError,
-  WhatsappSessionNotFoundError,
-} from "../../whatsapp/whatsappSendErrors.js";
-import {
-  getCrmConnectionRepository,
   getCrmWhatsappRepository,
   requireCrmWhatsappScope,
   runCrmTransaction,
@@ -22,6 +15,10 @@ import {
   publishWhatsappSessionUpdate,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
+import {
+  findScopedWhatsappSession,
+  sessionWithConnection,
+} from "./whatsappSessionMutationSupport.js";
 
 export {
   createWhatsappTag,
@@ -132,9 +129,9 @@ async function addSessionTag(
 ) {
   const scope = requireCrmWhatsappScope(context);
   const updated = await runCrmTransaction(ports, async (transactionPorts) => {
-    const session = await findScopedSession(
-      input.sessionId,
-      scope,
+    const { session } = await findScopedWhatsappSession(
+      context,
+      { sessionId: input.sessionId },
       transactionPorts,
     );
     const repository = getCrmWhatsappRepository(transactionPorts);
@@ -168,14 +165,19 @@ async function removeSessionTag(
   ports: CrmServicePorts,
 ) {
   const scope = requireCrmWhatsappScope(context);
-  const updated = await runCrmTransaction(ports, async (transactionPorts) =>
-    getCrmWhatsappRepository(transactionPorts).removeSessionTag({
+  const updated = await runCrmTransaction(ports, async (transactionPorts) => {
+    await findScopedWhatsappSession(
+      context,
+      { sessionId: input.sessionId },
+      transactionPorts,
+    );
+    return getCrmWhatsappRepository(transactionPorts).removeSessionTag({
       sessionId: input.sessionId,
       storeId: scope.storeId as never,
       tagId: input.tagId,
       tenantId: scope.tenantId as never,
-    }),
-  );
+    });
+  });
   const realtimeSession = await sessionWithConnection(
     updated,
     ports,
@@ -183,39 +185,4 @@ async function removeSessionTag(
   );
   await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
   return realtimeSession;
-}
-
-async function findScopedSession(
-  sessionId: string,
-  scope: { storeId: string; tenantId: string },
-  ports: CrmServicePorts,
-) {
-  const [session] = await getCrmWhatsappRepository(ports).listSessions({
-    limit: 1,
-    offset: 0,
-    sessionId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (!session) throw new WhatsappSessionNotFoundError(sessionId);
-  return session;
-}
-
-async function sessionWithConnection(
-  session: CrmWhatsappSession | null,
-  ports: CrmServicePorts,
-  sessionId: string,
-) {
-  if (!session) throw new WhatsappSessionNotFoundError(sessionId);
-  const connection = await getCrmConnectionRepository(ports).findConnectionById(
-    session.connectionId,
-  );
-  if (
-    !connection ||
-    connection.storeId !== session.storeId ||
-    connection.tenantId !== session.tenantId
-  ) {
-    throw new WhatsappConnectionNotFoundError(session.connectionId);
-  }
-  return toWhatsappSession(session, connection);
 }

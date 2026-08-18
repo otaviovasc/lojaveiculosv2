@@ -20,6 +20,20 @@ export function registerCrmWhatsappConnectionSetupRoutes(
   { createContext, services }: ConnectionSetupRouteOptions,
 ) {
   crmFeature.post(
+    "/channel-connections/:connectionId/olx-chat/setup/retry",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.retryOlxChatSetup(serviceContext, { connectionId }),
+        );
+      }),
+  );
+
+  crmFeature.post(
     "/whatsapp/connections/:connectionId/zapi/disconnect",
     async (context) =>
       handleWhatsapp(context, async () => {
