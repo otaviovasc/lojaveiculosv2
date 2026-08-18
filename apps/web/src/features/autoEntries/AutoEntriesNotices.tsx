@@ -1,21 +1,11 @@
-import {
-  Bot,
-  CircleDollarSign,
-  LockKeyhole,
-  TriangleAlert,
-} from "lucide-react";
+import { Bot, LockKeyhole, TriangleAlert } from "lucide-react";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
-import type { AutoEntryFeedback } from "./useAutoEntryRules";
 
 export function AutoEntriesNotices({
-  activeSaleTab,
   canManage,
-  feedback,
   sellerError,
 }: {
-  activeSaleTab: boolean;
   canManage: boolean;
-  feedback: AutoEntryFeedback | null;
   sellerError: string | null;
 }) {
   return (
@@ -64,18 +54,6 @@ export function AutoEntriesNotices({
           </div>
         </section>
       ) : null}
-      {activeSaleTab ? (
-        <FeatureAlert
-          icon={<CircleDollarSign aria-hidden="true" className="size-5" />}
-          title="Receita da venda preservada"
-          tone="info"
-        >
-          <p>
-            A receita principal continua sendo gerada pelos pagamentos do
-            fechamento. As regras de Venda criam apenas comissões auxiliares.
-          </p>
-        </FeatureAlert>
-      ) : null}
       {sellerError ? (
         <FeatureAlert
           icon={<TriangleAlert aria-hidden="true" className="size-5" />}
@@ -84,9 +62,6 @@ export function AutoEntriesNotices({
         >
           <p>{sellerError}</p>
         </FeatureAlert>
-      ) : null}
-      {feedback ? (
-        <FeatureAlert tone={feedback.tone}>{feedback.message}</FeatureAlert>
       ) : null}
     </>
   );
