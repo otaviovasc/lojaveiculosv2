@@ -1,14 +1,28 @@
+import {
+  AlertCircle,
+  Clock,
+  Megaphone,
+  MessageSquareReply,
+  Send,
+  Users,
+} from "lucide-react";
 import type { CrmCampaign } from "./crmCampaignTypes";
 
 export function CampaignStats({ campaigns }: { campaigns: CrmCampaign[] }) {
   return (
     <div className="crm-campaign-stats">
-      {summarizeCampaigns(campaigns).map((item) => (
-        <div key={item.label}>
-          <strong>{item.value}</strong>
-          <span>{item.label}</span>
-        </div>
-      ))}
+      {summarizeCampaigns(campaigns).map((item) => {
+        const Icon = item.icon;
+        return (
+          <div className="crm-campaign-stat-card" key={item.label}>
+            <div className="crm-campaign-stat-top">
+              <span>{item.label}</span>
+              <Icon aria-hidden="true" className="crm-campaign-stat-icon" />
+            </div>
+            <strong>{item.value}</strong>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -74,11 +88,11 @@ function summarizeCampaigns(campaigns: CrmCampaign[]) {
       ? `${Math.round((totals.replied / totals.sent) * 100)}%`
       : "0%";
   return [
-    { label: "Campanhas", value: campaigns.length },
-    { label: "Destinatarios", value: totals.recipients },
-    { label: "Agendadas", value: totals.scheduled },
-    { label: "Enviadas", value: totals.sent },
-    { label: "Falhas", value: totals.failed },
-    { label: "Resposta", value: replyRate },
+    { icon: Megaphone, label: "Campanhas", value: campaigns.length },
+    { icon: Users, label: "Destinatarios", value: totals.recipients },
+    { icon: Clock, label: "Agendadas", value: totals.scheduled },
+    { icon: Send, label: "Enviadas", value: totals.sent },
+    { icon: AlertCircle, label: "Falhas", value: totals.failed },
+    { icon: MessageSquareReply, label: "Resposta", value: replyRate },
   ];
 }

@@ -123,7 +123,7 @@ describe("CrmTagManager", () => {
     const callbacks = renderManager(createTags(), { embedded: false });
 
     expect(
-      screen.getByRole("dialog", { name: "Etiquetas WhatsApp" }),
+      screen.getByRole("dialog", { name: "Etiquetas" }),
     ).toBeInTheDocument();
     await user.keyboard("{Escape}");
     expect(callbacks.onClose).toHaveBeenCalledOnce();

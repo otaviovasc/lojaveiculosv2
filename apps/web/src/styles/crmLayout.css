@@ -197,6 +197,21 @@
   transform: scale(1.08);
 }
 
+@keyframes crm-scope-tab-icon-enter {
+  from {
+    opacity: 0.5;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+}
+
+.crm-scope-tab-active svg {
+  animation: crm-scope-tab-icon-enter 0.18s ease-out;
+}
+
 .crm-scope-tab-badge {
   align-items: center;
   background: #10b981;
@@ -223,6 +238,12 @@
 .dark .crm-scope-tab-active {
   background: rgba(16, 185, 129, 0.16);
   color: #34d399;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-scope-tab-active svg {
+    animation: none;
+  }
 }
 
 .crm-section {

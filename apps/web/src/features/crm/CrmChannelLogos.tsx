@@ -9,10 +9,17 @@ export function InstagramLogo({
   className = "size-6",
   color = "currentColor",
   size = 24,
+  title = "",
   ...props
 }: ComponentProps<typeof SiInstagram>) {
   return (
-    <SiInstagram className={className} color={color} size={size} {...props} />
+    <SiInstagram
+      className={className}
+      color={color}
+      size={size}
+      title={title}
+      {...props}
+    />
   );
 }
 
@@ -20,19 +27,35 @@ export function MetaLogo({
   className = "size-6",
   color = "currentColor",
   size = 24,
+  title = "",
   ...props
 }: ComponentProps<typeof SiMeta>) {
-  return <SiMeta className={className} color={color} size={size} {...props} />;
+  return (
+    <SiMeta
+      className={className}
+      color={color}
+      size={size}
+      title={title}
+      {...props}
+    />
+  );
 }
 
 export function WhatsAppLogo({
   className = "size-6",
   color = "currentColor",
   size = 24,
+  title = "",
   ...props
 }: ComponentProps<typeof SiWhatsapp>) {
   return (
-    <SiWhatsapp className={className} color={color} size={size} {...props} />
+    <SiWhatsapp
+      className={className}
+      color={color}
+      size={size}
+      title={title}
+      {...props}
+    />
   );
 }
 

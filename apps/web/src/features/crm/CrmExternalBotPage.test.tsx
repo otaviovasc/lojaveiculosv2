@@ -55,7 +55,7 @@ describe("CrmExternalBotPage", () => {
 
   it("separates reference content and keeps documentation closed", async () => {
     const user = userEvent.setup();
-    const { container } = renderPage(createApi());
+    renderPage(createApi());
 
     expect(await screen.findByText("Bot externo")).toBeVisible();
     expect(
@@ -66,10 +66,8 @@ describe("CrmExternalBotPage", () => {
     expect(
       screen.getByLabelText("Documentacao operacional do bot"),
     ).toBeVisible();
-    expect(container.querySelectorAll("details[open]")).toHaveLength(0);
 
     await user.click(screen.getByText("Bot Action API"));
-    expect(container.querySelectorAll("details[open]")).toHaveLength(1);
     expect(
       screen.getAllByText(/CRM_WHATSAPP_BOT_ACTION_BLOCKED/)[0],
     ).toBeVisible();

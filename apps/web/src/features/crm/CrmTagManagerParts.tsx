@@ -105,7 +105,7 @@ export function TagDraftFields({
 
       <div className="crm-tag-draft-name">
         <label>
-          <span>Nome da etiqueta</span>
+          Nome
           <input
             disabled={disabled}
             maxLength={40}

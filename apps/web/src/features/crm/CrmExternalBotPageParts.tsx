@@ -37,7 +37,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
         </span>
         <div className="crm-bot-header-info">
           <strong className="crm-bot-eyebrow">Automação & Webhooks</strong>
-          <h2>Bot Externo</h2>
+          <h2>Bot externo</h2>
           <p>
             Encaminhe mensagens e eventos em tempo real para n8n, Typebot ou seu
             serviço próprio de automação.
@@ -80,7 +80,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
                 onChange={(event) => props.onSecretChange(event.target.value)}
                 placeholder={
                   secretConfigured
-                    ? "Segredo configurado (digite para alterar)"
+                    ? "Segredo configurado"
                     : "Mínimo 8 caracteres"
                 }
                 type="password"
@@ -92,7 +92,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
 
         <label className="crm-bot-form-switch-card">
           <div className="crm-bot-switch-info">
-            <strong>Habilitar encaminhamento para o bot</strong>
+            <strong>Bot habilitado</strong>
             <p>
               Quando ativo, mensagens e eventos dos canais autorizados disparam
               requisições POST para a URL configurada acima.

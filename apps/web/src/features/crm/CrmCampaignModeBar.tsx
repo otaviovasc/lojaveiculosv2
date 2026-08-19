@@ -1,5 +1,4 @@
-import { Megaphone, Plus } from "lucide-react";
-import { CrmModeBar } from "./CrmWorkflow";
+import { Megaphone, Plus, Sparkles } from "lucide-react";
 
 export function CampaignModeBar({
   campaignCount,
@@ -15,29 +14,61 @@ export function CampaignModeBar({
   onCreate: () => void;
 }) {
   return (
-    <CrmModeBar
-      actions={
-        mode === "overview" && canCreate ? (
-          <button
-            className="crm-action crm-action-primary"
-            onClick={onCreate}
-            type="button"
-          >
-            <Plus aria-hidden="true" />
-            Nova campanha
-          </button>
-        ) : null
-      }
-      summary={
-        mode === "overview"
-          ? (lastResult ?? `${campaignCount} campanha(s)`)
-          : "Rascunho salvo enquanto voce navega entre as etapas"
-      }
-    >
-      <span className="crm-mode-label">
-        <Megaphone aria-hidden="true" />
-        {mode === "overview" ? "Operacao de campanhas" : "Nova campanha"}
+    <header className="crm-campaign-hero-card">
+      <span aria-hidden="true" className="crm-campaign-hero-watermark">
+        <Megaphone />
       </span>
-    </CrmModeBar>
+      <div className="crm-campaign-hero-content">
+        <div className="crm-campaign-hero-main">
+          <span className="crm-campaign-hero-eyebrow">
+            {mode === "overview"
+              ? "Marketing & Disparos em Massa"
+              : "Assistente de Criação"}
+          </span>
+          <h2>
+            {mode === "overview" ? "Campanhas de Mensagens" : "Nova Campanha"}
+          </h2>
+          <p>
+            {mode === "overview"
+              ? "Dispare mensagens automatizadas e sequenciais para listas de leads e clientes com métricas de entrega e resposta em tempo real."
+              : "Configure o público-alvo, mensagem inicial, ritmo de disparo e revise a lista de destinatários antes do agendamento."}
+          </p>
+        </div>
+        <div className="crm-campaign-hero-actions">
+          {mode === "overview" ? (
+            <>
+              <span className="crm-campaign-count-badge">
+                <Megaphone
+                  aria-hidden="true"
+                  className="size-3.5 text-emerald-600"
+                />
+                <span>
+                  {lastResult ??
+                    `${campaignCount} ${campaignCount === 1 ? "campanha" : "campanhas"}`}
+                </span>
+              </span>
+              {canCreate ? (
+                <button
+                  className="crm-action crm-campaign-create-btn"
+                  onClick={onCreate}
+                  type="button"
+                >
+                  <Plus aria-hidden="true" className="size-4" />
+                  <span>Nova campanha</span>
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <span className="crm-campaign-count-badge">
+              <Sparkles
+                aria-hidden="true"
+                className="size-3.5 text-emerald-600"
+              />
+              <span>Rascunho salvo automaticamente</span>
+            </span>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }

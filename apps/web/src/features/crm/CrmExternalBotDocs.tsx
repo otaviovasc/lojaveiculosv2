@@ -20,7 +20,7 @@ export function CrmExternalBotDocs() {
 
   return (
     <section
-      aria-label="Documentação técnica da API de bots"
+      aria-label="Documentacao operacional do bot"
       className="crm-bot-docs-wrapper"
     >
       {/* Sub-navigation Navbar */}
@@ -62,7 +62,7 @@ export function CrmExternalBotDocs() {
             type="button"
           >
             <Terminal aria-hidden="true" className="size-4" />
-            <span>Bot Actions API (Playground)</span>
+            <span>Bot Action API</span>
           </button>
 
           <button
@@ -75,7 +75,7 @@ export function CrmExternalBotDocs() {
             type="button"
           >
             <ShieldCheck aria-hidden="true" className="size-4" />
-            <span>Atendimento Humano</span>
+            <span>Estados de atendimento humano</span>
           </button>
         </div>
       </div>
