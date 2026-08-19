@@ -48,7 +48,11 @@ export function CrmWhatsappZapiPairingStage({
 }) {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   return (
-    <section aria-labelledby="zapi-pairing-title" className="crm-zapi-pairing">
+    <section
+      aria-busy={busy !== null}
+      aria-labelledby="zapi-pairing-title"
+      className="crm-zapi-pairing"
+    >
       <div className="crm-zapi-stage-heading">
         <span>
           <QrCode aria-hidden="true" />
@@ -150,12 +154,22 @@ export function CrmWhatsappZapiPairingStage({
           role="tabpanel"
         >
           {qr && !qrExpired ? (
-            <>
-              <img alt="QR Code para conectar o WhatsApp" src={qr.qrCode} />
-              <p className="crm-pairing-countdown">
-                Expira em {formatRemainingTime(qr.expiresAt, now)}
-              </p>
-            </>
+            <div className="crm-pairing-qr">
+              <div className="crm-pairing-qr-frame">
+                <img alt="QR Code para conectar o WhatsApp" src={qr.qrCode} />
+              </div>
+              <div className="crm-pairing-qr-details">
+                <small>Leitura segura</small>
+                <h4>Aponte a câmera do WhatsApp para o código</h4>
+                <p>
+                  No telefone, abra Dispositivos conectados, escolha Conectar
+                  dispositivo e leia este código.
+                </p>
+                <p className="crm-pairing-countdown">
+                  Expira em {formatRemainingTime(qr.expiresAt, now)}
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="crm-pairing-empty">
               <QrCode aria-hidden="true" />
@@ -174,7 +188,11 @@ export function CrmWhatsappZapiPairingStage({
                 ) : (
                   <QrCode aria-hidden="true" />
                 )}
-                {qrExpired ? "Gerar novo QR Code" : "Gerar QR Code"}
+                {busy === "qr"
+                  ? "Gerando QR Code"
+                  : qrExpired
+                    ? "Gerar novo QR Code"
+                    : "Gerar QR Code"}
               </button>
             </div>
           )}
@@ -209,7 +227,7 @@ export function CrmWhatsappZapiPairingStage({
             ) : (
               <RefreshCw aria-hidden="true" />
             )}
-            Solicitar código
+            {busy === "code" ? "Solicitando código" : "Solicitar código"}
           </button>
           {pairingCode && !codeExpired ? (
             <output aria-live="polite" className="crm-pairing-code">
@@ -241,7 +259,7 @@ export function CrmWhatsappZapiPairingStage({
           ) : (
             <RefreshCw aria-hidden="true" />
           )}
-          Verificar agora
+          {busy === "refresh" ? "Verificando status" : "Verificar agora"}
         </button>
       </div>
     </section>
