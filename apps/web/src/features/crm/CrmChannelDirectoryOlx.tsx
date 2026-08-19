@@ -26,6 +26,7 @@ import { markCrmOlxOauthReturn } from "./crmOlxOauthReturn";
 import type { CrmConversationApi } from "./crmConversationApi";
 import { createRuntimeCrmConversationApi } from "./runtimeApi";
 import { ChannelIdentity } from "./CrmChannelDirectoryParts";
+import { OlxLogo } from "./CrmChannelLogos";
 import type { CrmProviderConnection } from "./crmConversationTypes";
 
 const operationStateLabels: Record<CrmChannelOperation["state"], string> = {
@@ -188,13 +189,20 @@ export function CrmOlxChannelCard({
   };
 
   return (
-    <article className="crm-channel-row crm-channel-olx-card">
+    <article
+      className="crm-channel-row crm-channel-olx-card"
+      data-channel="olx"
+      data-provider="olx"
+    >
+      <span aria-hidden="true" className="crm-channel-card-watermark">
+        <OlxLogo />
+      </span>
       <span aria-hidden="true" className="crm-channel-icon">
-        <MessageSquareText />
+        <OlxLogo />
       </span>
       <span className="crm-channel-body">
         <span className="crm-channel-title">
-          OLX
+          <strong>OLX</strong>
           <span className="crm-channel-badge" data-tone="muted">
             Marketplace oficial
           </span>

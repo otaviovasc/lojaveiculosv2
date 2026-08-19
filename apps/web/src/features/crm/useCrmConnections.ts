@@ -161,10 +161,15 @@ export function useCrmConnections(api: CrmConversationApi) {
       try {
         const result = await api.configureZapiWebhooks(connectionId);
         const payload = await loadConnections();
-        setConnections(payload.connections);
+        const configuredConnections = payload.connections.map((connection) =>
+          connection.id === connectionId && connection.setup === undefined
+            ? { ...connection, setup: result.setup }
+            : connection,
+        );
+        setConnections(configuredConnections);
         setAllowance(payload.allowance);
         setAvailableSetups(payload.availableSetups);
-        const connection = payload.connections.find(
+        const connection = configuredConnections.find(
           (candidate) => candidate.id === connectionId,
         );
         return {

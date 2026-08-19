@@ -1,16 +1,24 @@
 import {
-  crmChannelConnectionSchema,
+  crmConnectionOverviewSchema,
   type StoreId,
   type TenantId,
 } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { projectCanonicalCrmConnectionRow } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
+import {
+  createZapiWebhookSetupIntent,
+  requiredZapiWebhookTypes,
+} from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM connection overview contract", () => {
   it("returns canonical identity, readiness, capabilities, and default facts", async () => {
+    const setupIntent = createZapiWebhookSetupIntent(
+      "connection_1",
+      new Date("2026-08-19T18:00:00.000Z"),
+    );
     const metadata = {
       capabilities: {
         conversation_start: true,
@@ -22,7 +30,13 @@ describe("CRM connection overview contract", () => {
       },
       connected: true,
       providerConnected: true,
-      webhookSetup: { status: "configured" },
+      webhookSetup: {
+        ...setupIntent,
+        configuredAt: "2026-08-19T18:01:00.000Z",
+        status: "configured" as const,
+        succeededTypes: requiredZapiWebhookTypes,
+        updatedAt: "2026-08-19T18:01:00.000Z",
+      },
     };
     const legacyTransport: CrmConnection = {
       broker: "direct",
@@ -54,12 +68,10 @@ describe("CRM connection overview contract", () => {
     });
 
     const response = await app.request("/api/v1/crm/channel-connections");
-    const body = (await response.json()) as {
-      connections: readonly Record<string, unknown>[];
-    };
+    const body = crmConnectionOverviewSchema.parse(await response.json());
 
     expect(response.status).toBe(200);
-    expect(crmChannelConnectionSchema.parse(body.connections[0])).toEqual({
+    expect(body.connections[0]).toEqual({
       capabilities: [
         "inbound",
         "outbound",
@@ -74,6 +86,7 @@ describe("CRM connection overview contract", () => {
       isDefault: true,
       provider: "zapi",
       readiness: { ready: true, reason: null, reasonCode: "ready" },
+      setup: metadata.webhookSetup,
       state: "active",
     });
   });

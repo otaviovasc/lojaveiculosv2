@@ -1,9 +1,4 @@
-import {
-  ArrowRight,
-  Camera,
-  MessageCircle,
-  MessageSquareText,
-} from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   readConnectionCapabilityLabels,
@@ -14,17 +9,26 @@ import type {
   CrmProviderConnection,
   CrmWhatsappZapiAddonContract,
 } from "./crmConversationTypes";
+import {
+  InstagramLogo,
+  MetaLogo,
+  WhatsAppLogo,
+  OlxLogo,
+} from "./CrmChannelLogos";
 
 export function readConnectionRowIcon(
   connection: CrmProviderConnection,
 ): ReactNode {
   if (connection.channel === "instagram") {
-    return <Camera aria-hidden="true" />;
+    return <InstagramLogo className="size-6" />;
   }
-  if (connection.channel === "olx_chat") {
-    return <MessageSquareText aria-hidden="true" />;
+  if (connection.channel === "olx_chat" || connection.provider === "olx") {
+    return <OlxLogo className="size-6" />;
   }
-  return <MessageCircle aria-hidden="true" />;
+  if (connection.provider === "meta_cloud") {
+    return <MetaLogo className="size-6" />;
+  }
+  return <WhatsAppLogo className="size-6" />;
 }
 
 export function ConnectedChannelRow({
@@ -43,14 +47,20 @@ export function ConnectedChannelRow({
     .filter(Boolean)
     .join(" · ");
 
+  const channelKey = connection.channel ?? "whatsapp";
+  const providerKey = connection.provider;
+
   const body = (
     <>
+      <span aria-hidden="true" className="crm-channel-card-watermark">
+        {readConnectionRowIcon(connection)}
+      </span>
       <span aria-hidden="true" className="crm-channel-icon">
         {readConnectionRowIcon(connection)}
       </span>
       <span className="crm-channel-body">
         <span className="crm-channel-title">
-          {connection.displayName}
+          <strong>{connection.displayName}</strong>
           {connection.isDefault === true ? (
             <span className="crm-channel-badge" data-tone="success">
               Padrão
@@ -81,12 +91,22 @@ export function ConnectedChannelRow({
   );
 
   if (!onManage) {
-    return <div className="crm-channel-row">{body}</div>;
+    return (
+      <div
+        className="crm-channel-row"
+        data-channel={channelKey}
+        data-provider={providerKey}
+      >
+        {body}
+      </div>
+    );
   }
   return (
     <button
       className="crm-channel-row"
       data-actionable="true"
+      data-channel={channelKey}
+      data-provider={providerKey}
       onClick={() => onManage(connection)}
       type="button"
     >

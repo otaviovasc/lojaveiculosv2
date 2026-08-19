@@ -30,6 +30,7 @@ export function CrmMediaMessageGroup({
   const captions = messages.map(readCaption).filter(Boolean);
   const reaction = last ? readReaction(last.metadata) : undefined;
   const delivery = readDeliveryPresentation(last?.status ?? "unknown");
+  const channel = (first?.channel ?? "whatsapp").toLowerCase();
   return (
     <article
       className={
@@ -37,6 +38,7 @@ export function CrmMediaMessageGroup({
           ? "crm-bubble crm-bubble-out crm-media-bundle"
           : "crm-bubble crm-media-bundle"
       }
+      data-channel={channel}
       data-message-status={delivery.status}
     >
       {last ? (

@@ -1,4 +1,5 @@
 import {
+  filterThemesForSelector,
   minimumContrastOnSurfaces,
   minimumTextContrast,
   resolveColor,
@@ -39,10 +40,15 @@ function findCombinedStateViolations(file, rules, themes) {
       const backgroundRule = winningDeclaration(applicable, "background");
       const foregroundRule = winningDeclaration(applicable, "foreground");
       if (!backgroundRule?.background || !foregroundRule?.foreground) continue;
+      const selectorForTheme = `${backgroundRule.selector} ${foregroundRule.selector}`;
+      const applicableThemes = filterThemesForSelector(
+        themes,
+        selectorForTheme,
+      );
       const result = worstThemeContrast(
         backgroundRule.background,
         foregroundRule.foreground,
-        themes,
+        applicableThemes,
       );
       if (!result || result.ratio >= minimumTextContrast) continue;
       failures.push(
@@ -100,10 +106,15 @@ function findDescendantStateViolations(file, rules, themes) {
       }
     }
     for (const candidate of candidates.values()) {
+      const selectorForTheme = `${stateRule.selector} ${candidate.selector}`;
+      const applicableThemes = filterThemesForSelector(
+        themes,
+        selectorForTheme,
+      );
       const result = worstThemeContrast(
         stateRule.background,
         candidate.foreground,
-        themes,
+        applicableThemes,
       );
       if (!result || result.ratio >= minimumTextContrast) continue;
       failures.push(

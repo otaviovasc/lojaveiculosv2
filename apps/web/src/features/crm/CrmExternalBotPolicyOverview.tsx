@@ -1,5 +1,17 @@
 import { externalBotActionRegistry } from "@lojaveiculosv2/shared";
+import { Cpu } from "lucide-react";
 import type { CrmRoutingChannel, CrmRoutingPolicy } from "./crmRoutingTypes";
+import { InstagramLogo, OlxLogo, WhatsAppLogo } from "./CrmChannelLogos";
+import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+
+const channelMeta: Record<
+  CrmRoutingChannel,
+  { label: string; icon: typeof WhatsAppLogo }
+> = {
+  whatsapp: { label: "WhatsApp", icon: WhatsAppLogo },
+  instagram: { label: "Instagram", icon: InstagramLogo },
+  olx_chat: { label: "OLX Chat", icon: OlxLogo },
+};
 
 export function CrmExternalBotPolicyOverview({
   activeChannel,
@@ -13,52 +25,92 @@ export function CrmExternalBotPolicyOverview({
   const route = policy?.channels.find((item) => item.channel === activeChannel);
   const effectiveConnection = route?.storeDefault.connection;
   const mode = route?.externalBot.mode === "disabled" ? "disabled" : "auto";
+  const isReady = Boolean(effectiveConnection?.readiness?.ready);
+
   return (
-    <section aria-label="Políticas do External Bot" className="crm-bot-policy">
-      <header>
-        <div>
-          <h3>Políticas por canal</h3>
+    <section
+      aria-label="Políticas do External Bot"
+      className="crm-bot-policy"
+      data-channel={activeChannel}
+    >
+      <span aria-hidden="true" className="crm-bot-policy-watermark">
+        <Cpu />
+      </span>
+
+      <header className="crm-bot-policy-header">
+        <span aria-hidden="true" className="crm-bot-policy-icon">
+          <Cpu />
+        </span>
+        <div className="crm-bot-policy-info">
+          <strong className="crm-bot-policy-eyebrow">
+            Roteamento de Ações
+          </strong>
+          <h3>Políticas por Canal</h3>
           <p>
-            Cada ação usa a rota pronta do canal e permanece bloqueada quando a
-            conexão ou a capacidade exigida não está disponível.
+            Cada ação executada pelo bot consome a conexão padrão do canal e
+            permanece protegida contra disparos não autorizados.
           </p>
         </div>
-        <span>
-          {effectiveConnection?.displayName ?? "Rota não configurada"}
-        </span>
-      </header>
-      <div aria-label="Canais do External Bot" role="tablist">
-        {(["whatsapp", "instagram", "olx_chat"] as const).map((channel) => (
-          <button
-            aria-selected={activeChannel === channel}
-            key={channel}
-            onClick={() => onChannelChange(channel)}
-            role="tab"
-            type="button"
+        <div className="crm-bot-policy-status-wrap">
+          <FeatureStatusBadge
+            className="crm-bot-policy-status"
+            tone={isReady ? "success" : "neutral"}
           >
-            {channel === "olx_chat"
-              ? "OLX Chat"
-              : channel === "whatsapp"
-                ? "WhatsApp"
-                : "Instagram"}
-          </button>
-        ))}
+            {effectiveConnection?.displayName ?? "Rota não configurada"}
+          </FeatureStatusBadge>
+        </div>
+      </header>
+
+      <div
+        aria-label="Canais do External Bot"
+        className="crm-bot-channel-tabs"
+        role="tablist"
+      >
+        {(["whatsapp", "instagram", "olx_chat"] as const).map((channel) => {
+          const MetaIcon = channelMeta[channel].icon;
+          const isSelected = activeChannel === channel;
+          return (
+            <button
+              aria-selected={isSelected}
+              className={`crm-bot-channel-tab ${
+                isSelected ? "crm-bot-channel-tab-active" : ""
+              }`}
+              data-channel={channel}
+              key={channel}
+              onClick={() => onChannelChange(channel)}
+              role="tab"
+              type="button"
+            >
+              <MetaIcon aria-hidden="true" className="size-4" />
+              <span>{channelMeta[channel].label}</span>
+            </button>
+          );
+        })}
       </div>
-      <div className="crm-bot-action-list">
+
+      <div className="crm-bot-action-grid">
         {externalBotActionRegistry.map((action) => (
-          <div key={action}>
+          <div className="crm-bot-action-card" key={action}>
             <code>{action}</code>
-            <span>
+            <span
+              className={`crm-bot-action-badge ${
+                isReady && mode !== "disabled"
+                  ? "crm-bot-action-ready"
+                  : "crm-bot-action-blocked"
+              }`}
+            >
               {mode === "disabled" ? "Desabilitada" : "Auto"} ·{" "}
-              {effectiveConnection?.readiness?.ready ? "Pronta" : "Bloqueada"}
+              {isReady ? "Pronta" : "Bloqueada"}
             </span>
           </div>
         ))}
       </div>
-      <small>
-        Cooldown, limites por conexão e limite diário são server-owned. O modo
-        Proposal cria uma proposta pendente e nunca executa um efeito externo.
-      </small>
+
+      <p className="crm-bot-policy-footer">
+        Cooldown, limites por conexão e limite diário são gerenciados pelo
+        servidor. O modo Proposal cria propostas com confirmação humana e nunca
+        executa efeitos colaterais sem auditoria.
+      </p>
     </section>
   );
 }

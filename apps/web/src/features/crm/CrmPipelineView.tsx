@@ -178,7 +178,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   if (isCreateOpen) {
     return (
       <FeaturePageShell
-        className="crm-page relative min-h-screen"
+        className="crm-pipeline-page relative min-h-screen"
         variant="plain"
       >
         <CrmLeadCreateFullPage
@@ -200,7 +200,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   if (activeLead && activePipeline) {
     return (
       <FeaturePageShell
-        className="crm-page relative min-h-screen"
+        className="crm-pipeline-page relative min-h-screen"
         variant="plain"
       >
         <CrmLeadDetailsPage
@@ -271,7 +271,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
 
   return (
     <FeaturePageShell
-      className="crm-page relative min-h-screen"
+      className="crm-pipeline-page relative min-h-screen"
       variant="plain"
     >
       <FeaturePageHeader eyebrow="Atendimento" title="Clientes" />

@@ -30,6 +30,7 @@ export function TagEditorDrawer({
 }) {
   return (
     <FeatureDrawer
+      className="crm-tag-editor-drawer"
       footer={
         <div className="crm-tag-editor-actions">
           <button
@@ -57,7 +58,16 @@ export function TagEditorDrawer({
       }
       isOpen={isOpen}
       onClose={onClose}
-      title={editing ? `Editar ${editing.name}` : "Nova etiqueta"}
+      title={
+        <span className="crm-tag-editor-title">
+          <span aria-hidden="true" className="crm-tag-editor-eyebrow">
+            Etiquetas
+          </span>
+          <span className="crm-tag-editor-heading">
+            {editing ? `Editar ${editing.name}` : "Nova etiqueta"}
+          </span>
+        </span>
+      }
     >
       <div className="crm-tag-editor-column">
         {error ? (
@@ -73,6 +83,7 @@ export function TagEditorDrawer({
         <TagDraftFields
           disabled={disabled || isSaving}
           draft={draft}
+          isEditing={Boolean(editing)}
           onChange={onChange}
         />
       </div>

@@ -34,7 +34,7 @@ export async function listDrizzleCrmRetentionCandidates(
 ): Promise<DrizzleCrmRetentionCandidate[]> {
   const cursorFilter = input.cursor
     ? sql`where (eligible_at, category, resource_type, resource_id) >
-        (${input.cursor.eligibleAt}, ${input.cursor.category}, ${input.cursor.resourceType}, ${input.cursor.resourceId})`
+        (${input.cursor.eligibleAt.toISOString()}, ${input.cursor.category}, ${input.cursor.resourceType}, ${input.cursor.resourceId})`
     : sql``;
   const rows = await db.execute(sql`
     with raw_candidates as (
@@ -86,7 +86,7 @@ export async function listDrizzleCrmRetentionCandidates(
           attendance.changed_at,
           coalesce(thread.last_message_at, cycle.closed_at),
           activity.last_activity_at
-        ) <= ${input.canonicalCutoff}
+        ) <= ${input.canonicalCutoff.toISOString()}
         and coalesce(message.metadata -> 'retention' ->> 'anonymizedAt', '') = ''
 
       union all
@@ -95,7 +95,7 @@ export async function listDrizzleCrmRetentionCandidates(
       from integration_events event
       where event.tenant_id = ${input.tenantId}::uuid
         and event.store_id = ${input.storeId}::uuid
-        and event.occurred_at <= ${input.providerCutoff}
+        and event.occurred_at <= ${input.providerCutoff.toISOString()}
         and event.payload <> '{}'::jsonb
 
       union all
@@ -107,7 +107,7 @@ export async function listDrizzleCrmRetentionCandidates(
         and event.provider = 'olx_chat'
         and event.event_type = 'crm.lead.olx.received'
         and event.status in ('received', 'processing', 'failed')
-        and event.created_at <= (${input.now}::timestamptz - interval '7 days')
+        and event.created_at <= (${input.now.toISOString()}::timestamptz - interval '7 days')
         and event.payload ? 'sealedReceipt'
 
       union all
@@ -116,7 +116,7 @@ export async function listDrizzleCrmRetentionCandidates(
       from crm_external_bot_action_commands command
       where command.tenant_id = ${input.tenantId}::uuid
         and command.store_id = ${input.storeId}::uuid
-        and command.created_at <= ${input.botCutoff}
+        and command.created_at <= ${input.botCutoff.toISOString()}
         and command.input <> '{}'::jsonb
 
       union all
@@ -125,7 +125,7 @@ export async function listDrizzleCrmRetentionCandidates(
       from crm_external_bot_provider_effects effect
       where effect.tenant_id = ${input.tenantId}::uuid
         and effect.store_id = ${input.storeId}::uuid
-        and effect.created_at <= ${input.botCutoff}
+        and effect.created_at <= ${input.botCutoff.toISOString()}
         and effect.result <> '{}'::jsonb
 
       union all
@@ -135,7 +135,7 @@ export async function listDrizzleCrmRetentionCandidates(
       where event.tenant_id = ${input.tenantId}::uuid
         and event.store_id = ${input.storeId}::uuid
         and event.grant_token is not null
-        and (event.state = 'delivered' or event.grant_expires_at <= ${input.now})
+        and (event.state = 'delivered' or event.grant_expires_at <= ${input.now.toISOString()})
 
       union all
 
@@ -143,7 +143,7 @@ export async function listDrizzleCrmRetentionCandidates(
       from crm_external_bot_event_outbox event
       where event.tenant_id = ${input.tenantId}::uuid
         and event.store_id = ${input.storeId}::uuid
-        and event.created_at <= ${input.botCutoff}
+        and event.created_at <= ${input.botCutoff.toISOString()}
         and event.state in ('delivered', 'dead_letter')
         and event.payload <> '{}'::jsonb
 
@@ -153,7 +153,7 @@ export async function listDrizzleCrmRetentionCandidates(
       from crm_external_bot_proposals proposal
       where proposal.tenant_id = ${input.tenantId}::uuid
         and proposal.store_id = ${input.storeId}::uuid
-        and proposal.created_at <= ${input.botCutoff}
+        and proposal.created_at <= ${input.botCutoff.toISOString()}
         and proposal.payload <> '{}'::jsonb
     ), candidates as (
       select raw_candidates.*,
@@ -163,8 +163,8 @@ export async function listDrizzleCrmRetentionCandidates(
           where hold.tenant_id = ${input.tenantId}::uuid
             and hold.store_id = ${input.storeId}::uuid
             and hold.released_at is null
-            and hold.starts_at <= ${input.now}
-            and (hold.expires_at is null or hold.expires_at > ${input.now})
+            and hold.starts_at <= ${input.now.toISOString()}
+            and (hold.expires_at is null or hold.expires_at > ${input.now.toISOString()})
             and (hold.category is null or hold.category = raw_candidates.category)
             and (hold.resource_type is null
               or hold.resource_type = raw_candidates.resource_type)

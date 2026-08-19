@@ -1,19 +1,15 @@
 .crm-visits-page {
-  background: color-mix(in srgb, var(--color-panel) 92%, transparent);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--color-line);
-  border-radius: var(--surface-radius-xl, var(--radius-md));
-  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.06);
   display: grid;
   margin: 0 auto;
   max-width: 76rem;
-  overflow: hidden;
-  transition: all 0.25s ease;
+  width: 100%;
 }
 
 .crm-visits-page > .crm-visits-board {
-  background: transparent;
-  box-shadow: none;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   display: grid;
   gap: 1.5rem;
   min-width: 0;
@@ -49,15 +45,15 @@
 
 .crm-visit-contact > span {
   align-items: center;
-  background: color-mix(in srgb, var(--color-success) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
   border-radius: 50%;
-  color: var(--color-success-strong, var(--color-success));
+  color: #059669;
   display: inline-flex;
   height: 3rem;
   justify-content: center;
   width: 3rem;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--color-success) 20%, transparent);
+  box-shadow: none;
 }
 
 .crm-visit-contact > span svg,

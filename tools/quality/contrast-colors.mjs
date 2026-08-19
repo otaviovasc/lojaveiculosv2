@@ -1,5 +1,18 @@
 export const minimumTextContrast = 4.5;
 
+export function filterThemesForSelector(themes, selector) {
+  if (!selector) return themes;
+  const isDark = /\[data-theme=["']?dark["']?\]|\.dark\b/i.test(selector);
+  const isLight = /\[data-theme=["']?light["']?\]|\.light\b/i.test(selector);
+  if (isDark && !isLight) {
+    return themes.filter((theme) => theme.name.includes("dark"));
+  }
+  if (isLight && !isDark) {
+    return themes.filter((theme) => !theme.name.includes("dark"));
+  }
+  return themes;
+}
+
 export function parseColor(rawValue) {
   const value = cleanValue(rawValue).toLowerCase();
   if (value === "transparent") return { a: 0, b: 0, g: 0, r: 0 };

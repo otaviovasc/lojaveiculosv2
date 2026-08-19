@@ -1,7 +1,8 @@
 .crm-session-main .crm-avatar {
-  height: 3rem;
+  height: 3.5rem;
   overflow: hidden;
-  width: 3rem;
+  width: 3.5rem;
+  border-radius: 1rem;
 }
 
 .crm-session-main .crm-avatar img {
@@ -11,55 +12,176 @@
 }
 
 .crm-session-chip,
-.crm-session-status {
+.crm-session-status,
+.crm-cycle-chip,
+.crm-cycle-status {
   align-items: center;
   background: var(--color-app);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: 0.5rem;
   color: var(--color-muted);
   display: inline-flex;
   font-size: var(--font-size-xs);
-  font-weight: 950;
+  font-weight: 800;
   gap: 0.25rem;
-  max-width: 7.5rem;
-  min-height: 1.25rem;
+  max-width: 10rem;
+  min-height: 1.35rem;
   overflow: hidden;
-  padding: 0 0.375rem;
+  padding: 0.1rem 0.45rem;
   text-overflow: ellipsis;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
   white-space: nowrap;
 }
 
 .crm-session-chip svg,
-.crm-session-status svg {
+.crm-session-status svg,
+.crm-cycle-chip svg,
+.crm-cycle-status svg {
   flex: 0 0 auto;
-  height: 0.625rem;
-  width: 0.625rem;
+  height: 0.7rem;
+  width: 0.7rem;
 }
 
-.crm-session-chip-wide {
-  max-width: 10rem;
+.crm-session-chip-wide,
+.crm-cycle-chip-wide {
+  max-width: 12rem;
 }
 
-.crm-session-status {
-  background: var(--color-accent-soft);
-  border-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-line));
-  color: var(--color-accent-strong);
-}
-
-.crm-session-status-active,
-.crm-session-status-minibot_active {
-  background: var(--color-green-soft);
-  border-color: color-mix(
-    in srgb,
-    var(--color-green-start) 24%,
-    var(--color-line)
-  );
-  color: var(--color-success-soft-foreground);
-}
-
-.crm-session-status-completed {
+.crm-session-status,
+.crm-cycle-status {
   background: var(--color-app);
   border-color: var(--color-line);
   color: var(--color-muted);
+}
+
+.crm-session-status-active,
+.crm-cycle-status-active {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border-color: color-mix(in srgb, #10b981 25%, transparent);
+  color: #059669;
+}
+
+:root[data-theme="dark"] .crm-session-status-active,
+:root[data-theme="dark"] .crm-cycle-status-active,
+.dark .crm-session-status-active,
+.dark .crm-cycle-status-active {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+}
+
+.crm-session-status-minibot_active,
+.crm-cycle-status-minibot_active {
+  background: color-mix(in srgb, #8b5cf6 12%, transparent);
+  border-color: color-mix(in srgb, #8b5cf6 25%, transparent);
+  color: #7c3aed;
+}
+
+.crm-session-status-completed,
+.crm-cycle-status-completed {
+  background: var(--color-app);
+  border-color: var(--color-line);
+  color: var(--color-muted);
+}
+
+/* Channel specific badge chips */
+.crm-channel,
+.crm-cycle-chip.crm-channel {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+/* WhatsApp */
+.crm-channel[data-channel="whatsapp"],
+.crm-channel:not([data-channel]) {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border-color: color-mix(in srgb, #10b981 28%, transparent);
+  color: #059669;
+}
+
+:root[data-theme="dark"] .crm-channel[data-channel="whatsapp"],
+:root[data-theme="dark"] .crm-channel:not([data-channel]),
+.dark .crm-channel[data-channel="whatsapp"] {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Instagram */
+.crm-channel[data-channel="instagram"],
+.crm-channel[data-channel="ig"] {
+  background: color-mix(in srgb, #e1306c 12%, transparent);
+  border-color: color-mix(in srgb, #e1306c 28%, transparent);
+  color: #be185d;
+}
+
+:root[data-theme="dark"] .crm-channel[data-channel="instagram"],
+:root[data-theme="dark"] .crm-channel[data-channel="ig"],
+.dark .crm-channel[data-channel="instagram"] {
+  background: rgba(225, 48, 108, 0.16);
+  color: #f472b6;
+  border-color: rgba(225, 48, 108, 0.3);
+}
+
+/* OLX */
+.crm-channel[data-channel="olx_chat"],
+.crm-channel[data-channel="olx"] {
+  background: color-mix(in srgb, #6e0ad6 12%, transparent);
+  border-color: color-mix(in srgb, #6e0ad6 28%, transparent);
+  color: #6e0ad6;
+}
+
+:root[data-theme="dark"] .crm-channel[data-channel="olx_chat"],
+:root[data-theme="dark"] .crm-channel[data-channel="olx"],
+.dark .crm-channel[data-channel="olx_chat"] {
+  background: rgba(110, 10, 214, 0.16);
+  color: #a78bfa;
+  border-color: rgba(110, 10, 214, 0.3);
+}
+
+/* WebChat */
+.crm-channel[data-channel="web_chat"],
+.crm-channel[data-channel="webchat"],
+.crm-channel[data-channel="web"] {
+  background: color-mix(in srgb, #0284c7 12%, transparent);
+  border-color: color-mix(in srgb, #0284c7 28%, transparent);
+  color: #0284c7;
+}
+
+:root[data-theme="dark"] .crm-channel[data-channel="web_chat"],
+:root[data-theme="dark"] .crm-channel[data-channel="webchat"],
+.dark .crm-channel[data-channel="web_chat"] {
+  background: rgba(2, 132, 199, 0.16);
+  color: #38bdf8;
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+/* Facebook Messenger */
+.crm-channel[data-channel="messenger"],
+.crm-channel[data-channel="facebook"] {
+  background: color-mix(in srgb, #0084ff 12%, transparent);
+  border-color: color-mix(in srgb, #0084ff 28%, transparent);
+  color: #0084ff;
+}
+
+:root[data-theme="dark"] .crm-channel[data-channel="messenger"],
+.dark .crm-channel[data-channel="messenger"] {
+  background: rgba(0, 132, 255, 0.16);
+  color: #60a5fa;
+  border-color: rgba(0, 132, 255, 0.3);
+}
+
+/* Mercado Livre */
+.crm-channel[data-channel="mercadolivre"],
+.crm-channel[data-channel="meli"] {
+  background: color-mix(in srgb, #ca8a04 12%, transparent);
+  border-color: color-mix(in srgb, #ca8a04 28%, transparent);
+  color: #a16207;
+}
+
+:root[data-theme="dark"] .crm-channel[data-channel="mercadolivre"],
+.dark .crm-channel[data-channel="mercadolivre"] {
+  background: rgba(202, 138, 4, 0.16);
+  color: #facc15;
+  border-color: rgba(202, 138, 4, 0.3);
 }

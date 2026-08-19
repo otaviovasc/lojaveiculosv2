@@ -39,7 +39,7 @@ async function clearBotCommands(
         eq(crmExternalBotActionCommands.tenantId, input.tenantId),
         eq(crmExternalBotActionCommands.storeId, input.storeId),
         inArray(crmExternalBotActionCommands.id, ids),
-        sql`${crmExternalBotActionCommands.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
+        sql`${crmExternalBotActionCommands.createdAt} <= ${input.cutoffs.botInteractionBefore.toISOString()}`,
         withoutActiveRetentionHold(
           "bot_interaction",
           "bot_action_command",
@@ -66,7 +66,7 @@ async function clearProviderEffects(
         eq(crmExternalBotProviderEffects.tenantId, input.tenantId),
         eq(crmExternalBotProviderEffects.storeId, input.storeId),
         inArray(crmExternalBotProviderEffects.id, ids),
-        sql`${crmExternalBotProviderEffects.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
+        sql`${crmExternalBotProviderEffects.createdAt} <= ${input.cutoffs.botInteractionBefore.toISOString()}`,
         withoutActiveRetentionHold(
           "bot_interaction",
           "provider_effect",
@@ -93,7 +93,7 @@ async function clearExternalBotEvents(
         eq(crmExternalBotEventOutbox.tenantId, input.tenantId),
         eq(crmExternalBotEventOutbox.storeId, input.storeId),
         inArray(crmExternalBotEventOutbox.id, ids),
-        sql`${crmExternalBotEventOutbox.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
+        sql`${crmExternalBotEventOutbox.createdAt} <= ${input.cutoffs.botInteractionBefore.toISOString()}`,
         sql`${crmExternalBotEventOutbox.state} in ('delivered', 'dead_letter')`,
         sql`${crmExternalBotEventOutbox.payload} <> '{}'::jsonb`,
         withoutActiveRetentionHold(
@@ -119,17 +119,17 @@ async function clearExternalBotGrants(
     .set({
       grantToken: null,
       lastErrorCode: sql`case
-        when ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now}
+        when ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now.toISOString()}
         then coalesce(${crmExternalBotEventOutbox.lastErrorCode}, 'grant_expired')
         else ${crmExternalBotEventOutbox.lastErrorCode}
       end`,
       payload: sql`case
-        when ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now}
+        when ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now.toISOString()}
         then '{}'::jsonb
         else ${crmExternalBotEventOutbox.payload}
       end`,
       state: sql`case
-        when ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now}
+        when ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now.toISOString()}
           and ${crmExternalBotEventOutbox.state} in ('pending', 'processing')
         then 'dead_letter'
         else ${crmExternalBotEventOutbox.state}
@@ -143,7 +143,7 @@ async function clearExternalBotGrants(
         inArray(crmExternalBotEventOutbox.id, ids),
         sql`${crmExternalBotEventOutbox.grantToken} is not null`,
         sql`(${crmExternalBotEventOutbox.state} = 'delivered'
-          or ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now})`,
+          or ${crmExternalBotEventOutbox.grantExpiresAt} <= ${input.now.toISOString()})`,
       ),
     )
     .returning({ id: crmExternalBotEventOutbox.id });
@@ -164,7 +164,7 @@ async function clearExternalBotProposals(
         eq(crmExternalBotProposals.tenantId, input.tenantId),
         eq(crmExternalBotProposals.storeId, input.storeId),
         inArray(crmExternalBotProposals.id, ids),
-        sql`${crmExternalBotProposals.createdAt} <= ${input.cutoffs.botInteractionBefore}`,
+        sql`${crmExternalBotProposals.createdAt} <= ${input.cutoffs.botInteractionBefore.toISOString()}`,
         sql`${crmExternalBotProposals.payload} <> '{}'::jsonb`,
         withoutActiveRetentionHold(
           "bot_interaction",

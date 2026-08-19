@@ -26,9 +26,11 @@ export function MessageBubble({
   const senderLabel = getSenderLabel(message);
   const reaction = readReaction(message.metadata);
   const delivery = readDeliveryPresentation(message.status);
+  const channel = (message.channel ?? "whatsapp").toLowerCase();
   return (
     <article
       className={outgoing ? "crm-bubble crm-bubble-out" : "crm-bubble"}
+      data-channel={channel}
       data-message-status={delivery.status}
     >
       <MessageActions
@@ -98,7 +100,15 @@ export function MessageDeliveryStatus({
   delivery: MessageDeliveryPresentation;
 }) {
   if (!delivery.label) {
-    return <CheckCheck aria-label="Mensagem enviada" className="size-3" />;
+    const isRead = delivery.status === "read";
+    return (
+      <CheckCheck
+        aria-label={isRead ? "Mensagem lida" : "Mensagem enviada"}
+        className={
+          isRead ? "size-3.5 crm-delivery-read" : "size-3.5 opacity-60"
+        }
+      />
+    );
   }
   const Icon =
     delivery.status === "pending"

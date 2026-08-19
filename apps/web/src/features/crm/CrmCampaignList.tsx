@@ -27,7 +27,13 @@ export function CrmCampaignList({
   return (
     <section className="crm-campaign-panel crm-campaign-list">
       <h3>Campanhas recentes</h3>
-      {isLoading ? <p>Carregando campanhas...</p> : null}
+      {isLoading ? (
+        <div className="flex flex-col gap-3">
+          <CampaignCardSkeleton />
+          <CampaignCardSkeleton />
+          <CampaignCardSkeleton />
+        </div>
+      ) : null}
       {!isLoading && error ? (
         <div className="crm-campaign-error" role="alert">
           <p>{error}</p>
@@ -149,4 +155,17 @@ function formatCampaignWindow(campaign: CrmCampaign) {
     day: "2-digit",
     month: "short",
   });
+}
+
+function CampaignCardSkeleton() {
+  return (
+    <div className="crm-campaign-skeleton-card p-4 rounded-xl border border-line bg-app flex flex-col gap-2.5">
+      <div className="flex justify-between items-center">
+        <div className="crm-skeleton h-5 w-24 rounded-md" />
+        <div className="crm-skeleton h-4 w-32 rounded-md" />
+      </div>
+      <div className="crm-skeleton h-5 w-48 rounded-md" />
+      <div className="crm-skeleton h-4 w-28 rounded-md" />
+    </div>
+  );
 }

@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { Plus, Tags } from "lucide-react";
 import { CrmActionDialogShell } from "./CrmActionDialogFrame";
 import { TagEditorDrawer } from "./CrmTagEditorDrawer";
 import { TagManagerHeader } from "./CrmTagManagerHeader";
@@ -181,7 +182,25 @@ export function CrmTagManager({
               />
             ))
           ) : (
-            <p className="crm-tag-manager-empty">Nenhuma etiqueta criada.</p>
+            <div className="crm-tag-empty-card">
+              <span aria-hidden="true" className="crm-tag-empty-icon">
+                <Tags />
+              </span>
+              <p className="crm-tag-manager-empty">Nenhuma etiqueta criada.</p>
+              <p className="crm-tag-empty-description">
+                Crie etiquetas personalizadas com cores e emojis para
+                classificar suas conversas e organizar o fluxo da sua equipe.
+              </p>
+              <button
+                className="crm-action crm-tag-create-btn"
+                disabled={Boolean(disabled) || hasPendingAction}
+                onClick={startCreate}
+                type="button"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                <span>Criar primeira etiqueta</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -219,7 +238,7 @@ export function CrmTagManager({
       <CrmActionDialogShell
         onClose={onClose}
         panelClassName="crm-tag-manager"
-        title="Etiquetas WhatsApp"
+        title="Etiquetas"
       >
         {listContent}
         {overlays}
@@ -228,7 +247,7 @@ export function CrmTagManager({
   }
 
   return (
-    <section aria-label="Etiquetas WhatsApp" className="crm-tag-manager-page">
+    <section aria-label="Etiquetas" className="crm-tag-manager-page">
       <div className="crm-tag-manager">{listContent}</div>
       {overlays}
     </section>

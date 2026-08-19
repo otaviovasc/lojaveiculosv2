@@ -78,7 +78,7 @@ export async function applyCrmContentRetention(
                  where cycle_message.tenant_id = ${crmMessages.tenantId}
                    and cycle_message.store_id = ${crmMessages.storeId}
                    and cycle_message.cycle_id = ${crmMessages.cycleId})
-              ) <= ${input.cutoffs.canonicalMessageBefore}
+              ) <= ${input.cutoffs.canonicalMessageBefore.toISOString()}
           )`,
           withoutActiveRetentionHold(
             "canonical_message",
@@ -101,7 +101,7 @@ export async function applyCrmContentRetention(
           eq(integrationEvents.tenantId, input.tenantId),
           eq(integrationEvents.storeId, input.storeId),
           inArray(integrationEvents.id, eventIds),
-          sql`${integrationEvents.occurredAt} <= ${input.cutoffs.providerRawPayloadBefore}`,
+          sql`${integrationEvents.occurredAt} <= ${input.cutoffs.providerRawPayloadBefore.toISOString()}`,
           withoutActiveRetentionHold(
             "provider_raw_payload",
             "integration_event",
@@ -137,7 +137,7 @@ export async function applyCrmContentRetention(
           eq(providerEvents.provider, "olx_chat"),
           eq(providerEvents.eventType, "crm.lead.olx.received"),
           inArray(providerEvents.status, ["received", "processing", "failed"]),
-          sql`${providerEvents.createdAt} <= (${input.now}::timestamptz - interval '7 days')`,
+          sql`${providerEvents.createdAt} <= (${input.now.toISOString()}::timestamptz - interval '7 days')`,
           sql`${providerEvents.payload} ? 'sealedReceipt'`,
           withoutActiveRetentionHold(
             "provider_raw_payload",

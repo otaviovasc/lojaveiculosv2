@@ -6,6 +6,7 @@ import type { CrmConversationApi } from "./crmConversationApi";
 import { readCrmProviderLabel } from "./crmConnectionStatus";
 import type { CrmProviderConnection } from "./crmConversationTypes";
 import { CrmChannelRoutingEditDialog } from "./CrmChannelRoutingPanelDialog";
+import { InstagramLogo, WhatsAppLogo, OlxLogo } from "./CrmChannelLogos";
 import {
   crmRoutingChannels,
   readRoutingCandidates,
@@ -19,6 +20,16 @@ const channelLabels: Record<CrmRoutingChannel, string> = {
   olx_chat: "OLX Chat",
   whatsapp: "WhatsApp",
 };
+
+function readRoutingChannelIcon(channel: CrmRoutingChannel) {
+  if (channel === "instagram") {
+    return <InstagramLogo className="size-6" />;
+  }
+  if (channel === "olx_chat") {
+    return <OlxLogo className="size-6" />;
+  }
+  return <WhatsAppLogo className="size-6" />;
+}
 
 export function CrmChannelRoutingPanel({
   api,
@@ -78,12 +89,14 @@ export function CrmChannelRoutingPanel({
   return (
     <section aria-labelledby="crm-routing-title" className="crm-routing-panel">
       <header className="crm-routing-header">
-        <span aria-hidden="true">
-          <Waypoints />
-        </span>
-        <div>
-          <h2 id="crm-routing-title">Rotas dos canais</h2>
-          <p>A conexão padrão que atende os clientes em cada canal.</p>
+        <div className="crm-routing-header-main">
+          <span aria-hidden="true" className="crm-routing-header-icon">
+            <Waypoints />
+          </span>
+          <div className="crm-routing-header-text">
+            <h2 id="crm-routing-title">Rotas dos canais</h2>
+            <p>A conexão padrão que atende os clientes em cada canal.</p>
+          </div>
         </div>
         <button
           aria-label="Atualizar rotas"
@@ -179,26 +192,33 @@ function RoutingSummaryRow({
       : "Sem rota";
 
   return (
-    <article className="crm-routing-row">
-      <div className="crm-routing-row-heading">
-        <div>
-          <strong>{channelLabels[channel]}</strong>
-          <span>{summary}</span>
+    <article className="crm-routing-row" data-channel={channel}>
+      <span aria-hidden="true" className="crm-routing-card-watermark">
+        {readRoutingChannelIcon(channel)}
+      </span>
+      <div className="crm-routing-row-main">
+        <span aria-hidden="true" className="crm-routing-channel-icon">
+          {readRoutingChannelIcon(channel)}
+        </span>
+        <div className="crm-routing-row-content">
+          <div className="crm-routing-row-heading">
+            <strong>{channelLabels[channel]}</strong>
+            <FeatureStatusBadge tone={tone}>{toneLabel}</FeatureStatusBadge>
+          </div>
+          <p className="crm-routing-summary-text">{summary}</p>
+          <p className="crm-routing-bot-summary">{readBotSummary(policy)}</p>
+          {blocked ? (
+            <p className="crm-routing-warning" role="note">
+              {blocked.message} {blocked.remediation}
+            </p>
+          ) : null}
+          {saved ? (
+            <p className="crm-routing-success" role="status">
+              Rota salva com sucesso.
+            </p>
+          ) : null}
         </div>
-        <FeatureStatusBadge tone={tone}>{toneLabel}</FeatureStatusBadge>
       </div>
-
-      {blocked ? (
-        <p className="crm-routing-warning" role="note">
-          {blocked.message} {blocked.remediation}
-        </p>
-      ) : null}
-      <p className="crm-routing-bot-summary">{readBotSummary(policy)}</p>
-      {saved ? (
-        <p className="crm-routing-success" role="status">
-          Rota salva com sucesso.
-        </p>
-      ) : null}
 
       <div className="crm-routing-actions">
         {!canManage ? (

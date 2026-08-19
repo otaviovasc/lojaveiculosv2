@@ -126,7 +126,10 @@ export function ChatHeader({
               </p>
             </span>
           </button>
-          <span className="crm-chat-channel-pill">
+          <span
+            className="crm-chat-channel-pill"
+            data-channel={(cycle.channel ?? "whatsapp").toLowerCase()}
+          >
             <MessageCircleMore aria-hidden="true" />
             {readCrmChannelLabel(cycle.channel)}
             <small>

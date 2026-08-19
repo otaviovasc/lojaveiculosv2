@@ -1,5 +1,6 @@
 import type { Context, Hono } from "hono";
-import type { CrmChannelConnectionDto } from "@lojaveiculosv2/shared";
+import type { CrmConnectionOverviewItem } from "@lojaveiculosv2/shared";
+import type { CrmChannelConnection } from "../../../domains/crm/channelConnections/channelConnectionModels.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   crmCreateChannelConnectionSchema,
@@ -106,8 +107,8 @@ export function registerCrmChannelConnectionRoutes(
 }
 
 function toChannelConnectionDto(
-  connection: CrmChannelConnectionDto,
-): CrmChannelConnectionDto {
+  connection: CrmChannelConnection,
+): CrmConnectionOverviewItem {
   return {
     capabilities: connection.capabilities,
     channel: connection.channel,
@@ -116,6 +117,7 @@ function toChannelConnectionDto(
     isDefault: connection.isDefault,
     provider: connection.provider,
     readiness: connection.readiness,
+    setup: connection.setup,
     state: connection.state,
   };
 }

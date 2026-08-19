@@ -78,6 +78,8 @@ export function toSafeErrorMetadata(
   fallback?: ErrorDescriptorFallback,
 ): SafeAuditMetadata {
   const descriptor = describeError(error, fallback);
+  const cause = error instanceof Error ? error.cause : undefined;
+  const causeCode = cause instanceof Error ? safeErrorCode(cause) : undefined;
   return {
     errorBoundary: descriptor.boundary,
     errorCode: descriptor.code,
@@ -88,6 +90,12 @@ export function toSafeErrorMetadata(
         : "UnknownError",
     httpStatus: descriptor.httpStatus,
     retryable: descriptor.retryable,
+    ...(cause instanceof Error
+      ? {
+          errorCauseName: sanitizeDiagnosticString(cause.name),
+          ...(causeCode ? { errorCauseCode: causeCode } : {}),
+        }
+      : {}),
     ...(descriptor.attemptState
       ? { providerAttemptState: descriptor.attemptState }
       : {}),
@@ -101,6 +109,13 @@ export function toSafeErrorMetadata(
       : {}),
     ...(descriptor.safeDetails ? { errorDetails: descriptor.safeDetails } : {}),
   };
+}
+
+function safeErrorCode(error: Error): string | undefined {
+  const code = (error as Error & { code?: unknown }).code;
+  return typeof code === "string"
+    ? sanitizeDiagnosticString(code, 100)
+    : undefined;
 }
 
 export function sanitizeDiagnosticMetadata(

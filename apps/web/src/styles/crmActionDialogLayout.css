@@ -14,9 +14,10 @@
 }
 
 .crm-action-panel footer .crm-action:not(.crm-action-muted) {
-  background: var(--color-green-start);
-  border-color: var(--color-green-start);
-  color: var(--color-inverse);
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: none;
 }
 
 @media (max-width: 640px) {

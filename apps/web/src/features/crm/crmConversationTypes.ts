@@ -123,7 +123,7 @@ export type CrmProviderConnection = {
     reasonCode: string | null;
   };
   ready?: boolean;
-  setup?: CrmWhatsappZapiSetupState | null;
+  setup?: CrmWhatsappZapiSetupState | null | undefined;
   state?: CrmConnectionConfiguredStatus;
   status?: CrmConnectionConfiguredStatus;
   webhookEndpoints?: CrmWhatsappWebhookEndpoint[];
@@ -162,7 +162,7 @@ export type CrmWhatsappZapiSetupState = {
   succeededTypes: readonly string[];
   supportCode: string;
   updatedAt: string;
-  version: 1;
+  version: 1 | 2;
 };
 
 export type CrmWhatsappWebhookEndpoint = {
@@ -212,6 +212,7 @@ export type CrmWhatsappZapiAddonContract = {
 
 export type CrmCreateConnectionInput =
   | {
+      channel: "whatsapp";
       instanceId: string;
       instanceToken: string;
       provider: "zapi";

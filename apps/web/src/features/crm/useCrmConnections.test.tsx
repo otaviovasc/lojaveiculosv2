@@ -50,18 +50,7 @@ describe("useCrmConnections", () => {
       .mockResolvedValueOnce(connectionPayload("configured_connection"));
     const configureZapiWebhooks = vi.fn(async () => ({
       results: [],
-      setup: {
-        attemptCount: 1,
-        configuredAt: "2026-08-12T12:00:00.000Z",
-        lastErrorCode: null,
-        requestedAt: "2026-08-12T12:00:00.000Z",
-        requiredTypes: [],
-        status: "configured" as const,
-        succeededTypes: [],
-        supportCode: "ZAPI-TEST",
-        updatedAt: "2026-08-12T12:00:00.000Z",
-        version: 1 as const,
-      },
+      setup: configuredSetup(),
     }));
     const api = {
       configureZapiWebhooks,
@@ -80,7 +69,48 @@ describe("useCrmConnections", () => {
       expect.objectContaining({ id: "configured_connection" }),
     ]);
   });
+
+  it("keeps a successful setup when the deployed list response omits it", async () => {
+    const listConnections = vi
+      .fn()
+      .mockResolvedValueOnce(connectionPayload("connection_1"))
+      .mockResolvedValueOnce(connectionPayload("connection_1"));
+    const api = {
+      configureZapiWebhooks: vi.fn(async () => ({
+        results: [],
+        setup: configuredSetup(),
+      })),
+      listConnections,
+    } as unknown as CrmConversationApi;
+    const { result } = renderHook(() => useCrmConnections(api));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let configured!: Awaited<
+      ReturnType<typeof result.current.configureZapiWebhooks>
+    >;
+    await act(async () => {
+      configured = await result.current.configureZapiWebhooks("connection_1");
+    });
+
+    expect(configured.connection?.setup?.status).toBe("configured");
+    expect(result.current.connections[0]?.setup?.status).toBe("configured");
+  });
 });
+
+function configuredSetup() {
+  return {
+    attemptCount: 1,
+    configuredAt: "2026-08-12T12:00:00.000Z",
+    lastErrorCode: null,
+    requestedAt: "2026-08-12T12:00:00.000Z",
+    requiredTypes: [],
+    status: "configured" as const,
+    succeededTypes: [],
+    supportCode: "ZAPI-TEST",
+    updatedAt: "2026-08-12T12:00:00.000Z",
+    version: 1 as const,
+  };
+}
 
 function connectionPayload(id: string) {
   return {
