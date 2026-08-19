@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -156,6 +157,44 @@ describe("CrmWhatsappZapiSetup", () => {
     expect(screen.queryByLabelText(/token/i)).not.toBeInTheDocument();
   });
 
+  it("shows an explicit pending state while requesting a QR code", async () => {
+    const handlers = createHandlers();
+    let resolveQr!: (value: { expiresAt: string; qrCode: string }) => void;
+    handlers.onRequestZapiPairingQr = vi.fn(
+      () =>
+        new Promise<{ expiresAt: string; qrCode: string }>((resolve) => {
+          resolveQr = resolve;
+        }),
+    );
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={false}
+        connection={createDisconnectedConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Gerar QR Code" }));
+
+    expect(
+      screen.getByRole("button", { name: "Gerando QR Code" }),
+    ).toBeDisabled();
+
+    resolveQr({
+      expiresAt: "2099-08-10T12:00:00.000Z",
+      qrCode: "data:image/png;base64,qr-payload",
+    });
+    expect(
+      await screen.findByAltText("QR Code para conectar o WhatsApp"),
+    ).toBeVisible();
+  });
+
   it("switches to phone pairing when Z-API requires Passkey", async () => {
     const handlers = createHandlers();
     handlers.onRequestZapiPairingQr = vi.fn(async () => {
@@ -191,6 +230,39 @@ describe("CrmWhatsappZapiSetup", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       /exige uma verificação adicional/i,
     );
+  });
+
+  it("refreshes pairing status automatically while the modal is open", async () => {
+    vi.useFakeTimers();
+    const connection = createDisconnectedConnection();
+    const handlers = createHandlers();
+    handlers.onRefreshZapiStatus = vi.fn(async () => connection);
+
+    function SetupHarness() {
+      const [currentConnection, setCurrentConnection] = useState(connection);
+      return (
+        <CrmWhatsappZapiSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          canPair={true}
+          canSetup={false}
+          connection={currentConnection}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={setCurrentConnection}
+          zapiAddonContract={createZapiContract("active")}
+        />
+      );
+    }
+
+    try {
+      render(<SetupHarness />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5_000);
+      });
+      expect(handlers.onRefreshZapiStatus).toHaveBeenCalledWith("connection_1");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("requires a user-entered phone before requesting a pairing code", async () => {
@@ -376,6 +448,43 @@ describe("CrmWhatsappZapiSetup", () => {
       }),
     );
     expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
+  });
+
+  it("advances past pairing from the canonical ready connection projection", () => {
+    const connection: CrmProviderConnection = {
+      capabilities: [
+        "inbound",
+        "outbound",
+        "text",
+        "media",
+        "scheduling",
+        "conversation_start",
+      ],
+      channel: "whatsapp",
+      displayName: "Z-API Matriz",
+      id: "connection_1",
+      isDefault: true,
+      provider: "zapi",
+      readiness: { ready: true, reason: null, reasonCode: "ready" },
+      setup: createSetupState("configured"),
+      state: "active",
+    };
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={true}
+        connection={connection}
+        handlers={createHandlers()}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    expect(screen.getByText("Etapa 5 de 5 · Pronto")).toBeVisible();
+    expect(screen.getByText(/WhatsApp conectado e pronto/i)).toBeVisible();
   });
 
   it("does not offer device pairing when the actor lacks pairing permission", () => {

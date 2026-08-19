@@ -26,7 +26,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
     window.sessionStorage.clear();
   });
 
-  it("routes Z-API contracting to billing without collecting credentials", () => {
+  it("routes Z-API contracting to billing without collecting credentials", async () => {
     const handlers = createHandlers();
     render(
       <CrmConnectionSelfServiceSetup
@@ -42,6 +42,10 @@ describe("CrmConnectionSelfServiceSetup", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Z-API/i }));
+    expect(await screen.findByRole("dialog")).toHaveClass(
+      "feature-dialog--large",
+      "crm-connection-dialog",
+    );
     expect(screen.getByText(/ativada no próximo vencimento/i)).toBeVisible();
     expect(screen.queryByLabelText(/token/i)).not.toBeInTheDocument();
     expect(handlers.onCreate).not.toHaveBeenCalled();

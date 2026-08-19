@@ -236,3 +236,58 @@
   border: 1px solid color-mix(in srgb, var(--color-muted) 25%, transparent);
   color: var(--color-muted);
 }
+
+/* Keep connection dialogs visually continuous with the Conexao workspace. */
+.feature-dialog.crm-connection-dialog {
+  background: var(--color-app);
+  max-width: min(56rem, calc(100vw - 2rem));
+}
+
+.crm-connection-dialog .feature-dialog__header {
+  background: var(--color-panel);
+}
+
+.crm-connection-dialog .feature-dialog__body {
+  background: var(--color-app);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.crm-connection-dialog .crm-connection-dashboard,
+.crm-connection-dialog .crm-connection-dialog-body {
+  gap: 1rem;
+  max-width: none;
+}
+
+.crm-connection-dialog .crm-connection-card,
+.crm-connection-dialog .crm-connection-status-card {
+  box-shadow: none;
+}
+
+.crm-connection-management-actions {
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1rem;
+}
+
+.crm-connection-error {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .feature-dialog.crm-connection-dialog {
+    max-width: calc(100vw - 1rem);
+  }
+
+  .crm-connection-dialog .feature-dialog__body {
+    padding: 0.75rem;
+  }
+}

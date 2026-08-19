@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -82,6 +82,7 @@ export function CrmWhatsappZapiSetup({
     null,
   );
   const [showCredentials, setShowCredentials] = useState(false);
+  const autoRefreshInFlightRef = useRef(false);
   const isEntitled =
     allowance.limit > 0 ||
     ["active", "paid_awaiting_setup"].includes(zapiAddonContract?.status ?? "");
@@ -100,23 +101,34 @@ export function CrmWhatsappZapiSetup({
 
   useEffect(() => {
     if (step !== 3 && step !== 4) return undefined;
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        if (step === 4 && connection && handlers.onRefreshZapiStatus) {
-          void handlers
-            .onRefreshZapiStatus(connection.id)
-            .then((refreshed) => {
-              onConnection(refreshed);
-              if (isProviderDisconnected(refreshed)) setPairingBlock(null);
-            })
-            .catch(() => undefined);
-        } else {
-          void handlers.onRefreshConnections();
-        }
+
+    const refreshAutomatically = async () => {
+      if (
+        document.visibilityState !== "visible" ||
+        autoRefreshInFlightRef.current ||
+        busy
+      ) {
+        return;
       }
-    }, 8_000);
+      autoRefreshInFlightRef.current = true;
+      try {
+        if (step === 4 && connection && handlers.onRefreshZapiStatus) {
+          const refreshed = await handlers.onRefreshZapiStatus(connection.id);
+          onConnection(refreshed);
+          if (isProviderDisconnected(refreshed)) setPairingBlock(null);
+        } else {
+          await handlers.onRefreshConnections();
+        }
+      } catch {
+        // Automatic checks stay quiet; the explicit action exposes failures.
+      } finally {
+        autoRefreshInFlightRef.current = false;
+      }
+    };
+
+    const timer = window.setInterval(() => void refreshAutomatically(), 5_000);
     return () => window.clearInterval(timer);
-  }, [connection, handlers, onConnection, step]);
+  }, [busy, connection, handlers, onConnection, step]);
 
   const requestAddon = async () => {
     if (!canSetup) return;

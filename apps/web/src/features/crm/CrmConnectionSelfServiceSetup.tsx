@@ -257,7 +257,7 @@ export function CrmConnectionSelfServiceSetup({
         zapiAddonContract={zapiAddonContract}
       />
       <FeatureDialog
-        className="feature-dialog--medium crm-connection-dialog"
+        className="feature-dialog--large crm-connection-dialog"
         icon={
           officialChannel === "instagram" ? (
             <Camera />

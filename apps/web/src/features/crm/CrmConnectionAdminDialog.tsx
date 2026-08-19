@@ -67,7 +67,7 @@ export function CrmConnectionManageDialog({
 
   return (
     <FeatureDialog
-      className="feature-dialog--medium crm-connection-dialog"
+      className="feature-dialog--large crm-connection-dialog"
       description={
         connection
           ? "Gerencie o estado do canal sem sair da visão de conexões."
