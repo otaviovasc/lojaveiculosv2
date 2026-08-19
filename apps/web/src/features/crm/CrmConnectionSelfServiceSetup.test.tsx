@@ -42,9 +42,14 @@ describe("CrmConnectionSelfServiceSetup", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Z-API/i }));
-    expect(await screen.findByRole("dialog")).toHaveClass(
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveClass(
       "feature-dialog--large",
       "crm-connection-dialog",
+    );
+    expect(dialog.querySelector(".feature-dialog__heading")).toBeNull();
+    expect(dialog.querySelector(".crm-zapi-guided-card h3")).toHaveTextContent(
+      "Conectar WhatsApp · Z-API",
     );
     expect(screen.getByText(/ativada no próximo vencimento/i)).toBeVisible();
     expect(screen.queryByLabelText(/token/i)).not.toBeInTheDocument();

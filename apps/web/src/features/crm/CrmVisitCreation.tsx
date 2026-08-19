@@ -1,6 +1,7 @@
 import {
   CalendarClock,
   CarFront,
+  CheckCircle2,
   MessageCircle,
   UserRound,
 } from "lucide-react";
@@ -48,6 +49,7 @@ export function VisitCreationStep({
     return (
       <CrmWorkflowPanel
         description="A visita sera registrada no lead ligado a esta conversa."
+        icon={<UserRound />}
         title="Confirme o cliente"
       >
         {activeSession?.leadId ? (
@@ -90,6 +92,7 @@ export function VisitCreationStep({
     return (
       <CrmWorkflowPanel
         description="Escolha o horario combinado e registre o contexto necessario."
+        icon={<CalendarClock />}
         title="Defina os detalhes"
       >
         <div className="crm-visit-create-grid">
@@ -147,6 +150,7 @@ export function VisitCreationStep({
   return (
     <CrmWorkflowPanel
       description="A visita sera criada assim que voce confirmar."
+      icon={<CheckCircle2 />}
       title="Revise o agendamento"
     >
       <div className="crm-visit-review">

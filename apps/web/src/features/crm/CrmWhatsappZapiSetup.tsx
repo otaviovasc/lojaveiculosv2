@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -248,7 +248,7 @@ export function CrmWhatsappZapiSetup({
     onConnection(result.connection ?? { ...connection, setup: result.setup });
   };
 
-  const requestQr = async () => {
+  const requestQr = useCallback(async () => {
     const requestPairingQr = handlers.onRequestZapiPairingQr;
     if (!connection || !canPair || !requestPairingQr) return;
     setQr(null);
@@ -272,7 +272,32 @@ export function CrmWhatsappZapiSetup({
     } finally {
       setBusy(null);
     }
-  };
+  }, [canPair, connection, handlers.onRequestZapiPairingQr]);
+
+  useEffect(() => {
+    if (
+      pairingMethod !== "qr" ||
+      !qr ||
+      !qrExpired ||
+      busy !== null ||
+      !canPair ||
+      !connection ||
+      pairingBlock !== null ||
+      document.visibilityState !== "visible"
+    ) {
+      return;
+    }
+    void requestQr();
+  }, [
+    busy,
+    canPair,
+    connection,
+    pairingBlock,
+    pairingMethod,
+    qr,
+    qrExpired,
+    requestQr,
+  ]);
 
   const requestCode = async () => {
     const requestPairingCode = handlers.onRequestZapiPairingCode;

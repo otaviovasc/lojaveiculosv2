@@ -77,22 +77,13 @@
   transition: all 0.2s ease;
 }
 
-.crm-scope-status::before {
-  content: "";
-  display: inline-block;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
 .crm-status-online {
   background: color-mix(in srgb, #10b981 12%, transparent);
   color: #059669;
   border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
 }
 
-.crm-status-online::before {
+.crm-scope-status.crm-status-online > span {
   background: #10b981;
   animation: crmPulseDot 2s infinite ease-in-out;
 }
@@ -103,7 +94,7 @@
   border: 1px solid color-mix(in srgb, var(--color-muted) 25%, transparent);
 }
 
-.crm-status-offline::before {
+.crm-scope-status.crm-status-offline > span {
   background: var(--color-muted);
 }
 
@@ -114,7 +105,7 @@
   border: 1px solid color-mix(in srgb, #f59e0b 25%, transparent);
 }
 
-.crm-status-loading::before {
+.crm-scope-status.crm-status-loading > span {
   background: #f59e0b;
   animation: crmPulseDot 1.5s infinite ease-in-out;
 }
@@ -125,7 +116,7 @@
   border: 1px solid color-mix(in srgb, #ef4444 25%, transparent);
 }
 
-.crm-status-error::before {
+.crm-scope-status.crm-status-error > span {
   background: #ef4444;
 }
 

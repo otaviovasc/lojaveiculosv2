@@ -84,7 +84,7 @@ export function CrmScopedNav({
     <>
       <nav className="crm-scope-nav" aria-label="WhatsApp CRM">
         <div className="crm-scope-title">
-          <strong>WhatsApp</strong>
+          <strong>CRM</strong>
           <span
             aria-atomic="true"
             aria-live="polite"

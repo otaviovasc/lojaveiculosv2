@@ -59,6 +59,10 @@
   padding-inline: var(--app-space-lg);
 }
 
+.feature-dialog__header--close-only {
+  justify-content: flex-end;
+}
+
 .feature-dialog__title,
 .feature-drawer__title {
   min-width: 0;

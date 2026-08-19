@@ -57,6 +57,10 @@ describe("CrmSchedulesPage", () => {
     await screen.findByText("Ola futuro");
     await user.click(screen.getByRole("button", { name: "Novo agendamento" }));
 
+    expect(
+      document.querySelector(".crm-workflow--connection"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Etapa 1 de 3 · Escolha a conversa")).toBeVisible();
     expect(screen.getByLabelText("Conversa")).toHaveTextContent("Ana");
     expect(
       screen.getByRole("button", { current: "step", name: /Conversa/i }),

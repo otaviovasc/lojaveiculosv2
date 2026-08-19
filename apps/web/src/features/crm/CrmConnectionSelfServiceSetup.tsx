@@ -269,6 +269,7 @@ export function CrmConnectionSelfServiceSetup({
         }
         isOpen={provider !== null}
         onClose={closeSetup}
+        {...(provider === "zapi" ? { hideHeading: true } : {})}
         title={
           provider === "zapi"
             ? "Conectar WhatsApp · Z-API"

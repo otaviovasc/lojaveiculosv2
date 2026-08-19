@@ -46,6 +46,14 @@
   min-height: min(46rem, calc(100dvh - 12rem));
 }
 
+.crm-workflow--connection {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+
 .crm-workflow-steps {
   background: var(--color-panel);
   border-bottom: 1px solid var(--color-line);
@@ -157,6 +165,39 @@
   outline: none;
   padding: 1.25rem;
   width: 100%;
+}
+
+.crm-workflow--connection .crm-workflow-panel {
+  padding: 1.5rem;
+}
+
+.crm-workflow--connection .crm-workflow-panel > header {
+  align-items: center;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-bottom: 1.25rem;
+}
+
+.crm-workflow--connection .crm-workflow-panel > header > span {
+  align-items: center;
+  color: var(--color-success-strong);
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.crm-workflow--connection .crm-workflow-panel > header > span svg {
+  height: 1.85rem;
+  width: 1.85rem;
+}
+
+.crm-workflow--connection .crm-workflow-panel h2 {
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .crm-workflow-panel > header {

@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import { projectCanonicalCrmConnectionRow } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
 import { createAuditSpy, createTestApp } from "./crm.controller.testSupport.js";
@@ -113,8 +114,24 @@ describe("CRM connection status", () => {
   });
 
   it("reconciles a re-paired Z-API connection without replacing its history", async () => {
+    const disconnected = createZapiConnection({ status: "disconnected" });
+    const metadata = {
+      ...disconnected.metadata,
+      connected: false,
+      providerConnected: false,
+    };
     const repository = createMemoryCrmConnectionRepository([
-      createZapiConnection({ status: "disconnected" }),
+      {
+        ...disconnected,
+        canonical: projectCanonicalCrmConnectionRow({
+          broker: disconnected.broker,
+          channel: disconnected.channel,
+          metadata,
+          provider: disconnected.provider,
+          state: "disconnected",
+        }),
+        metadata,
+      },
     ]);
     const app = createTestApp({
       crmConnectionRepository: repository,
@@ -138,7 +155,13 @@ describe("CRM connection status", () => {
     await expect(response.json()).resolves.toMatchObject({
       id: connectionId,
       phone: "5511999999999",
+      readiness: { ready: true, reasonCode: "ready" },
       state: "active",
+    });
+    await expect(
+      repository.findConnectionById(connectionId),
+    ).resolves.toMatchObject({
+      metadata: { connected: true, providerConnected: true },
     });
   });
 });

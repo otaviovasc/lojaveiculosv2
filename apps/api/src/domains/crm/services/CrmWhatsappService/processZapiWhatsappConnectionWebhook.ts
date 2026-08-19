@@ -117,6 +117,7 @@ async function updateConnectionState(
     connectionId: connection.id,
     metadata: {
       ...connection.metadata,
+      connected: input.status === "active",
       [`last${capitalize(input.eventType)}At`]: new Date().toISOString(),
       providerConnected: input.status === "active",
     },

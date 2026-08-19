@@ -28,6 +28,10 @@
     padding: 1rem 0.75rem;
   }
 
+  .crm-workflow--connection .crm-workflow-panel {
+    padding: 1rem 0.75rem;
+  }
+
   .crm-workflow-footer {
     grid-template-columns: 1fr 1fr;
     position: static;
