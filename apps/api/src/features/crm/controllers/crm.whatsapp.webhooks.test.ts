@@ -151,13 +151,20 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
     expect(connected.status).toBe(200);
     await expect(
       connectionRepository.findConnectionById(connectionId),
-    ).resolves.toMatchObject({ phone: "5511940231407", status: "active" });
+    ).resolves.toMatchObject({
+      metadata: { connected: true, providerConnected: true },
+      phone: "5511940231407",
+      status: "active",
+    });
 
     const disconnected = await postWebhook(app, "disconnected", {});
     expect(disconnected.status).toBe(200);
     await expect(
       connectionRepository.findConnectionById(connectionId),
-    ).resolves.toMatchObject({ status: "disconnected" });
+    ).resolves.toMatchObject({
+      metadata: { connected: false, providerConnected: false },
+      status: "disconnected",
+    });
   });
 
   it("acknowledges chat presence callbacks", async () => {

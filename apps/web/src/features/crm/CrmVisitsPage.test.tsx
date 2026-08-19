@@ -37,6 +37,9 @@ describe("CrmVisitsPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Nova visita" }));
     expect(
+      document.querySelector(".crm-workflow--connection"),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("heading", { name: "Confirme o cliente" }),
     ).toBeVisible();
     expect(screen.getByText("Lead Visita")).toBeVisible();

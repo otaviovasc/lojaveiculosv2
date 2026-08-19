@@ -44,6 +44,8 @@ describe("CrmScopedNav", () => {
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveAttribute("aria-atomic", "true");
     expect(status).toHaveTextContent("Reconciliando");
+    expect(status.querySelectorAll(":scope > span")).toHaveLength(1);
+    expect(screen.getByText("CRM")).toBeVisible();
 
     rendered.rerender(
       <CrmScopedNav

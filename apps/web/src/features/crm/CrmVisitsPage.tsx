@@ -234,7 +234,7 @@ export function CrmVisitsPage({
         </CrmModeBar>
 
         {mode === "create" ? (
-          <div className="crm-workflow">
+          <div className="crm-workflow crm-workflow--connection">
             <CrmWorkflowStepper
               currentStep={step}
               onStepChange={setStep}

@@ -62,7 +62,7 @@ export function CrmScheduleWorkflow({
         : !content.trim();
 
   return (
-    <div className="crm-workflow crm-schedule-workflow">
+    <div className="crm-workflow crm-workflow--connection crm-schedule-workflow">
       <CrmWorkflowStepper
         currentStep={currentStep}
         onStepChange={onStepChange}
@@ -122,6 +122,7 @@ function ConversationStep({
   return (
     <CrmWorkflowPanel
       description="Selecione o atendimento que recebera a mensagem programada."
+      icon={<MessageSquareText />}
       title="Escolha a conversa"
     >
       <label className="crm-schedule-field">
@@ -159,6 +160,7 @@ function DateTimeStep({
   return (
     <CrmWorkflowPanel
       description={`Programe um horario futuro para ${cycle ? formatCycleName(cycle) : "a conversa"}.`}
+      icon={<CalendarClock />}
       title="Defina data e hora"
     >
       <label className="crm-schedule-field">
@@ -199,6 +201,7 @@ function MessageReviewStep({
   return (
     <CrmWorkflowPanel
       description="Confira destinatario, horario e conteudo antes de confirmar."
+      icon={<Send />}
       title="Mensagem e revisao"
     >
       <label className="crm-schedule-field">

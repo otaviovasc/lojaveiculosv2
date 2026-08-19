@@ -21,6 +21,12 @@ const statusOptions: Array<{ label: string; value: ScheduleStatusFilter }> = [
   { label: "Canceladas", value: "cancelled" },
 ];
 
+const scheduleStepSummaries = [
+  "Escolha a conversa",
+  "Defina data e hora",
+  "Revise a mensagem",
+] as const;
+
 export function createScheduleStatusCounts(
   messages: CrmScheduledMessage[],
 ): ScheduleStatusCounts {
@@ -69,14 +75,19 @@ export function SchedulePageModeBar({
       summary={
         mode === "queue"
           ? `${pendingCount} pendente(s) - ${failedCount} falha(s)`
-          : `Etapa ${currentStep + 1} de 3`
+          : `Etapa ${currentStep + 1} de ${scheduleStepSummaries.length} · ${scheduleStepSummaries[currentStep] ?? "Revise a mensagem"}`
       }
     >
       <span className="crm-schedule-mode-title">
         <CalendarClock aria-hidden="true" />
-        <strong>
-          {mode === "queue" ? "Agenda de mensagens" : "Novo agendamento"}
-        </strong>
+        <span>
+          <strong>
+            {mode === "queue" ? "Agenda de mensagens" : "Novo agendamento"}
+          </strong>
+          {mode === "create" ? (
+            <small>Configure destinatário, horário e mensagem.</small>
+          ) : null}
+        </span>
       </span>
     </CrmModeBar>
   );

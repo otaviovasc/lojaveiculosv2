@@ -58,17 +58,22 @@ export function CrmWorkflowStepper({
 export function CrmWorkflowPanel({
   children,
   description,
+  icon,
   title,
 }: {
   children: ReactNode;
   description?: ReactNode;
+  icon?: ReactNode;
   title: string;
 }) {
   return (
     <section className="crm-workflow-panel" tabIndex={-1}>
       <header>
-        <h2>{title}</h2>
-        {description ? <p>{description}</p> : null}
+        {icon ? <span aria-hidden="true">{icon}</span> : null}
+        <div>
+          <h2>{title}</h2>
+          {description ? <p>{description}</p> : null}
+        </div>
       </header>
       <div className="crm-workflow-panel-body">{children}</div>
     </section>

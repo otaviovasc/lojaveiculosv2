@@ -195,6 +195,55 @@ describe("CrmWhatsappZapiSetup", () => {
     ).toBeVisible();
   });
 
+  it("automatically requests a replacement QR code after expiry", async () => {
+    vi.useFakeTimers();
+    const handlers = createHandlers();
+    handlers.onRequestZapiPairingQr = vi
+      .fn()
+      .mockResolvedValueOnce({
+        expiresAt: new Date(Date.now() + 1_000).toISOString(),
+        qrCode: "data:image/png;base64,first-qr",
+      })
+      .mockResolvedValueOnce({
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        qrCode: "data:image/png;base64,replacement-qr",
+      });
+
+    try {
+      render(
+        <CrmWhatsappZapiSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          canPair={true}
+          canSetup={false}
+          connection={createDisconnectedConnection()}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={vi.fn()}
+          zapiAddonContract={createZapiContract("active")}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Gerar QR Code" }));
+        await Promise.resolve();
+      });
+      expect(
+        screen.getByAltText("QR Code para conectar o WhatsApp"),
+      ).toHaveAttribute("src", "data:image/png;base64,first-qr");
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2_000);
+      });
+
+      expect(handlers.onRequestZapiPairingQr).toHaveBeenCalledTimes(2);
+      expect(
+        screen.getByAltText("QR Code para conectar o WhatsApp"),
+      ).toHaveAttribute("src", "data:image/png;base64,replacement-qr");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("switches to phone pairing when Z-API requires Passkey", async () => {
     const handlers = createHandlers();
     handlers.onRequestZapiPairingQr = vi.fn(async () => {

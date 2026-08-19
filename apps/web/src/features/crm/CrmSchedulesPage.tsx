@@ -191,7 +191,11 @@ export function CrmSchedulesPage({
 
   return (
     <section className="crm-section">
-      <div className="crm-schedules-page">
+      <div
+        className={`crm-schedules-page${
+          mode === "create" ? " crm-schedules-page--create" : ""
+        }`}
+      >
         <SchedulePageModeBar
           canCreate={canCreate}
           currentStep={currentStep}
