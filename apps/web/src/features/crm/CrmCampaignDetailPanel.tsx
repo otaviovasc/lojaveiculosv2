@@ -1,10 +1,16 @@
 import {
   AlertCircle,
+  Calendar,
   CheckCircle2,
   Clock,
+  Layers,
   MessageCircle,
+  MessageSquare,
   Reply,
+  Send,
+  Sparkles,
   Tag,
+  TrendingUp,
 } from "lucide-react";
 import { CampaignRecipientPreview } from "./CrmCampaignRecipientPreview";
 import type { CrmCampaign, CrmCampaignDetail } from "./crmCampaignTypes";
@@ -24,14 +30,21 @@ export function CrmCampaignDetailPanel({
   if (isLoading) {
     return (
       <section className="crm-campaign-panel crm-campaign-detail">
-        <p>Carregando detalhes da campanha...</p>
+        <div className="crm-campaign-loading-state">
+          <p>Carregando detalhes da campanha...</p>
+        </div>
       </section>
     );
   }
   if (!detail) {
     return (
       <section className="crm-campaign-panel crm-campaign-detail">
-        <p>Selecione uma campanha para ver metricas e destinatarios.</p>
+        <div className="crm-campaign-empty-card">
+          <span aria-hidden="true" className="crm-campaign-empty-icon">
+            <Sparkles />
+          </span>
+          <p>Selecione uma campanha para ver metricas e destinatarios.</p>
+        </div>
       </section>
     );
   }
@@ -40,55 +53,104 @@ export function CrmCampaignDetailPanel({
   const progress = progressPercent(campaign);
   return (
     <section className="crm-campaign-panel crm-campaign-detail">
-      <header>
-        <div>
-          <strong>{campaign.name}</strong>
-          <span className={`crm-campaign-status-${campaign.status}`}>
-            {campaignStatusLabel(campaign.status)}
-          </span>
+      <header className="crm-campaign-detail-header">
+        <div className="crm-campaign-detail-title-group">
+          <div className="crm-campaign-detail-title-row">
+            <strong>{campaign.name}</strong>
+            <span className={`crm-campaign-status-${campaign.status}`}>
+              {campaignStatusLabel(campaign.status)}
+            </span>
+          </div>
+          <small className="crm-campaign-detail-date">
+            <Calendar aria-hidden="true" className="size-3.5" />
+            {formatWindow(campaign)}
+          </small>
         </div>
-        <small>{formatWindow(campaign)}</small>
       </header>
 
-      <div>
+      {/* Progress Card */}
+      <div className="crm-campaign-progress-card">
+        <div className="crm-campaign-progress-top">
+          <span className="crm-campaign-progress-label">
+            Progresso de disparo
+          </span>
+          <strong className="crm-campaign-progress-value">
+            {progress}% processado
+          </strong>
+        </div>
         <div className="crm-campaign-progress">
           <span style={{ inlineSize: `${progress}%` }} />
         </div>
-        <p>{progress}% processado</p>
+        <div className="crm-campaign-progress-breakdown">
+          <span>
+            {campaign.sentCount} de {campaign.totalRecipients} enviados
+          </span>
+          {campaign.failedCount > 0 ? (
+            <span className="text-danger">
+              {campaign.failedCount} com falha
+            </span>
+          ) : null}
+        </div>
       </div>
 
+      {/* Metrics Grid */}
       <div className="crm-campaign-detail-metrics">
         {detailMetrics(campaign).map((item) => (
-          <div key={item.label}>
-            <item.icon aria-hidden="true" />
+          <div className="crm-campaign-detail-metric-card" key={item.label}>
+            <div className="crm-campaign-detail-metric-top">
+              <span>{item.label}</span>
+              <item.icon
+                aria-hidden="true"
+                className="crm-campaign-detail-metric-icon"
+              />
+            </div>
             <strong>{item.value}</strong>
-            <span>{item.label}</span>
           </div>
         ))}
       </div>
 
+      {/* Message and Automation Cards Grid */}
       <div className="crm-campaign-detail-grid">
-        <MessagePreview title="Mensagem inicial" value={campaign.content} />
         <MessagePreview
+          icon={MessageSquare}
+          title="Mensagem inicial"
+          value={campaign.content}
+        />
+        <MessagePreview
+          icon={Reply}
           title="Follow-up"
           value={campaign.secondaryContent ?? "Sem follow-up configurado."}
         />
         <AutomationPreview campaign={campaign} tags={tags} />
       </div>
 
+      {/* Recipient Preview */}
       <CampaignRecipientPreview
-        recipients={recipients}
         conversationCycles={conversationCycles}
+        recipients={recipients}
       />
     </section>
   );
 }
 
-function MessagePreview({ title, value }: { title: string; value: string }) {
+function MessagePreview({
+  icon: Icon,
+  title,
+  value,
+}: {
+  icon: typeof MessageSquare;
+  title: string;
+  value: string;
+}) {
   return (
-    <article>
-      <h4>{title}</h4>
-      <p>{value}</p>
+    <article className="crm-campaign-message-preview-card">
+      <div className="crm-campaign-message-preview-header">
+        <Icon aria-hidden="true" className="size-3.5 text-muted" />
+        <h4>{title}</h4>
+      </div>
+      <div className="crm-campaign-message-bubble">
+        <p>{value}</p>
+      </div>
     </article>
   );
 }
@@ -100,24 +162,62 @@ function AutomationPreview({
   campaign: CrmCampaign;
   tags: CrmTag[];
 }) {
+  const initialTag = findTag(tags, campaign.initialTagId);
+  const replyTag = findTag(tags, campaign.replyTagId);
+
   return (
-    <article>
-      <h4>
-        <Tag aria-hidden="true" />
-        Etiquetas
-      </h4>
-      <dl>
-        <div>
+    <article className="crm-campaign-automation-card">
+      <div className="crm-campaign-message-preview-header">
+        <Tag aria-hidden="true" className="size-3.5 text-muted" />
+        <h4>Etiquetas</h4>
+      </div>
+      <dl className="crm-campaign-automation-list">
+        <div className="crm-campaign-automation-row">
           <dt>Inicial</dt>
-          <dd>{tagName(tags, campaign.initialTagId)}</dd>
+          <dd>
+            {initialTag ? (
+              <span className="crm-tag-admin-pill">
+                <span
+                  aria-hidden="true"
+                  className="crm-tag-dot"
+                  style={{
+                    backgroundColor: initialTag.color || "var(--color-primary)",
+                  }}
+                />
+                {initialTag.emoji ? `${initialTag.emoji} ` : ""}
+                {initialTag.name}
+              </span>
+            ) : (
+              <span className="text-muted">Nenhuma</span>
+            )}
+          </dd>
         </div>
-        <div>
+        <div className="crm-campaign-automation-row">
           <dt>Resposta</dt>
-          <dd>{tagName(tags, campaign.replyTagId)}</dd>
+          <dd>
+            {replyTag ? (
+              <span className="crm-tag-admin-pill">
+                <span
+                  aria-hidden="true"
+                  className="crm-tag-dot"
+                  style={{
+                    backgroundColor: replyTag.color || "var(--color-success)",
+                  }}
+                />
+                {replyTag.emoji ? `${replyTag.emoji} ` : ""}
+                {replyTag.name}
+              </span>
+            ) : (
+              <span className="text-muted">Nenhuma</span>
+            )}
+          </dd>
         </div>
-        <div>
+        <div className="crm-campaign-automation-row">
           <dt>Atraso</dt>
-          <dd>{campaign.secondaryDelayMinutes} min</dd>
+          <dd className="crm-campaign-delay-pill">
+            <Clock aria-hidden="true" className="size-3" />
+            {campaign.secondaryDelayMinutes} min
+          </dd>
         </div>
       </dl>
     </article>
@@ -131,11 +231,11 @@ function detailMetrics(campaign: CrmCampaign) {
     { icon: AlertCircle, label: "Falhas", value: campaign.failedCount },
     { icon: Reply, label: "Respostas", value: campaign.repliedCount },
     {
-      icon: MessageCircle,
+      icon: TrendingUp,
       label: "Taxa",
       value: `${Math.round(campaign.replyRate * 100)}%`,
     },
-    { icon: Reply, label: "Follow-ups", value: campaign.secondarySentCount },
+    { icon: Send, label: "Follow-ups", value: campaign.secondarySentCount },
   ];
 }
 
@@ -148,22 +248,33 @@ function progressPercent(campaign: CrmCampaign) {
 }
 
 function formatWindow(campaign: CrmCampaign) {
-  const start = new Date(campaign.scheduledStartAt).toLocaleString("pt-BR");
-  const end = new Date(campaign.scheduledEndAt).toLocaleString("pt-BR");
-  return `${start} ate ${end}`;
+  const start = new Date(campaign.scheduledStartAt).toLocaleString("pt-BR", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+  });
+  const end = new Date(campaign.scheduledEndAt).toLocaleString("pt-BR", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+  });
+  return `${start} até ${end}`;
 }
 
-function tagName(tags: readonly CrmTag[], tagId: string | null) {
-  if (!tagId) return "Nenhuma";
-  return tags.find((tag) => tag.id === tagId)?.name ?? "Etiqueta removida";
+function findTag(tags: readonly CrmTag[], tagId: string | null) {
+  if (!tagId) return null;
+  return tags.find((tag) => tag.id === tagId) ?? null;
 }
 
 function campaignStatusLabel(status: CrmCampaign["status"]) {
-  return {
+  const labels = {
     cancelled: "Cancelada",
     completed: "Concluida",
     draft: "Rascunho",
     paused: "Pausada",
     scheduled: "Agendada",
-  }[status];
+  };
+  return labels[status];
 }

@@ -136,7 +136,7 @@ async function seedInboundCycle(
     direction: "INBOUND",
     externalId,
     metadata: {},
-    providerTimestamp: new Date("2026-08-18T11:00:00.000Z"),
+    providerTimestamp: new Date(Date.now() - 60_000),
     senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",

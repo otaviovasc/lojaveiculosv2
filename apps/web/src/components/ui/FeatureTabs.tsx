@@ -1,5 +1,4 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
-import { AnimatedIconSwap } from "./AnimatedIconSwap";
 import { cx, type FeatureIcon } from "./featureShared";
 
 type FeatureTabOption<Value extends string> = {
@@ -81,9 +80,7 @@ export function FeatureTabs<Value extends string>({
             type="button"
           >
             {OptionIcon ? (
-              <AnimatedIconSwap stateKey={active} variant="pop">
-                <OptionIcon aria-hidden="true" className="size-4" />
-              </AnimatedIconSwap>
+              <OptionIcon aria-hidden="true" className="size-4" />
             ) : null}
             <span>{option.label}</span>
           </button>

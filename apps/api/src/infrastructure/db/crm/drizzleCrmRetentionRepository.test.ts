@@ -1,6 +1,7 @@
 import type { SQL } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { PgDialect } from "drizzle-orm/pg-core";
+import { claimDrizzleCrmRetentionAuditOutbox } from "./drizzleCrmRetentionAuditOutbox.js";
 import { listDrizzleCrmRetentionCandidates } from "./drizzleCrmRetentionCandidates.js";
 import { processDrizzleCrmRetentionBatch } from "./drizzleCrmRetentionBatch.js";
 import { createDrizzleCrmRetentionRepository } from "./drizzleCrmRetentionRepository.js";
@@ -12,6 +13,32 @@ import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { retentionBatchInput } from "./drizzleCrmRetentionRepository.testSupport.js";
 
 describe("Drizzle CRM retention adapter", () => {
+  it("serializes raw audit-outbox timestamps before postgres-js binds them", async () => {
+    const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () =>
+      Promise.resolve([]),
+    );
+    await claimDrizzleCrmRetentionAuditOutbox(
+      { execute } as unknown as DrizzleCrmClient,
+      {
+        leaseExpiresAt: new Date("2026-08-12T15:15:00.000Z"),
+        leaseOwner: "retention_worker",
+        limit: 100,
+        now: new Date("2026-08-12T15:00:00.000Z"),
+      },
+    );
+
+    const query = new PgDialect().sqlToQuery(execute.mock.calls[0]![0]);
+    expect(query.params).not.toEqual(
+      expect.arrayContaining([expect.any(Date)]),
+    );
+    expect(query.params).toEqual(
+      expect.arrayContaining([
+        "2026-08-12T15:00:00.000Z",
+        "2026-08-12T15:15:00.000Z",
+      ]),
+    );
+  });
+
   it("fails readiness closed for every unavailable required relation", async () => {
     const execute = vi.fn<(statement: SQL) => Promise<unknown[]>>(async () => [
       { relation: null },

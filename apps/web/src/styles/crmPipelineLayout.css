@@ -1,4 +1,4 @@
-.crm-page {
+.crm-pipeline-page {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -96,9 +96,14 @@
 
 .crm-segmented .crm-segmented-active {
   background: var(--color-panel);
-  box-shadow: 0 2px 8px -2px
-    color-mix(in srgb, var(--color-accent) 25%, transparent);
-  color: var(--color-accent-readable, var(--color-accent-strong));
+  box-shadow: none;
+  color: var(--color-crm-active-emerald);
+  font-weight: 800;
+}
+
+:root[data-theme="dark"] .crm-segmented .crm-segmented-active,
+.dark .crm-segmented .crm-segmented-active {
+  color: var(--color-crm-active-emerald);
 }
 
 .crm-workspace-grid {

@@ -1,4 +1,5 @@
-import { ArrowRight, Camera, QrCode, ShieldCheck } from "lucide-react";
+import { ArrowRight, QrCode } from "lucide-react";
+import { InstagramLogo, MetaLogo, WhatsAppLogo } from "./CrmChannelLogos";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
 import { groupCrmConnectionsByChannel } from "./crmChannelPresentation";
 import type { CrmConversationApi } from "./crmConversationApi";
@@ -29,7 +30,7 @@ export function CrmChannelDirectory({
   showSetupActions = true,
   zapiAddonContract,
 }: {
-  availableSetups: CrmAvailableSetup[];
+  availableSetups: readonly CrmAvailableSetup[];
   connections?: readonly CrmProviderConnection[];
   crmApi?: Pick<CrmConversationApi, "retryOlxChatSetup">;
   marketplaceApi?: MarketplaceApi;
@@ -93,15 +94,20 @@ export function CrmChannelDirectory({
               <button
                 className="crm-channel-row"
                 data-actionable="true"
+                data-channel="whatsapp"
+                data-provider="zapi"
                 onClick={() => onChoose("zapi")}
                 type="button"
               >
+                <span aria-hidden="true" className="crm-channel-card-watermark">
+                  <WhatsAppLogo />
+                </span>
                 <span aria-hidden="true" className="crm-channel-icon">
-                  <QrCode />
+                  <WhatsAppLogo />
                 </span>
                 <span className="crm-channel-body">
                   <span className="crm-channel-title">
-                    Z-API
+                    <strong>Z-API</strong>
                     {zapiConfigured ? (
                       <span className="crm-channel-badge" data-tone="muted">
                         Já conectado
@@ -133,15 +139,23 @@ export function CrmChannelDirectory({
               {officialAvailable || officialConfigured ? (
                 <button
                   className="crm-channel-row"
+                  data-channel="whatsapp"
+                  data-provider="meta_cloud"
                   onClick={() => onChoose("meta_cloud", "whatsapp")}
                   type="button"
                 >
+                  <span
+                    aria-hidden="true"
+                    className="crm-channel-card-watermark"
+                  >
+                    <MetaLogo />
+                  </span>
                   <span aria-hidden="true" className="crm-channel-icon">
-                    <ShieldCheck />
+                    <MetaLogo />
                   </span>
                   <span className="crm-channel-body">
                     <span className="crm-channel-title">
-                      WhatsApp Oficial
+                      <strong>WhatsApp Oficial</strong>
                       {officialConfigured ? (
                         <span className="crm-channel-badge" data-tone="muted">
                           Já conectado
@@ -169,13 +183,21 @@ export function CrmChannelDirectory({
                   aria-disabled="true"
                   className="crm-channel-row"
                   data-actionable="false"
+                  data-channel="whatsapp"
+                  data-provider="meta_cloud"
                 >
+                  <span
+                    aria-hidden="true"
+                    className="crm-channel-card-watermark"
+                  >
+                    <MetaLogo />
+                  </span>
                   <span aria-hidden="true" className="crm-channel-icon">
-                    <ShieldCheck />
+                    <MetaLogo />
                   </span>
                   <span className="crm-channel-body">
                     <span className="crm-channel-title">
-                      WhatsApp Oficial
+                      <strong>WhatsApp Oficial</strong>
                       <span className="crm-channel-badge" data-tone="muted">
                         Indisponível
                       </span>
@@ -213,15 +235,23 @@ export function CrmChannelDirectory({
                 <button
                   className="crm-channel-row"
                   data-actionable="true"
+                  data-channel="instagram"
+                  data-provider="meta_cloud"
                   onClick={() => onChoose("meta_cloud", "instagram")}
                   type="button"
                 >
+                  <span
+                    aria-hidden="true"
+                    className="crm-channel-card-watermark"
+                  >
+                    <InstagramLogo />
+                  </span>
                   <span aria-hidden="true" className="crm-channel-icon">
-                    <Camera />
+                    <InstagramLogo />
                   </span>
                   <span className="crm-channel-body">
                     <span className="crm-channel-title">
-                      Instagram Oficial
+                      <strong>Instagram Oficial</strong>
                       {instagramConfigured ? (
                         <span className="crm-channel-badge" data-tone="muted">
                           Já configurado
@@ -249,13 +279,21 @@ export function CrmChannelDirectory({
                   aria-disabled="true"
                   className="crm-channel-row"
                   data-actionable="false"
+                  data-channel="instagram"
+                  data-provider="meta_cloud"
                 >
+                  <span
+                    aria-hidden="true"
+                    className="crm-channel-card-watermark"
+                  >
+                    <InstagramLogo />
+                  </span>
                   <span aria-hidden="true" className="crm-channel-icon">
-                    <Camera />
+                    <InstagramLogo />
                   </span>
                   <span className="crm-channel-body">
                     <span className="crm-channel-title">
-                      Instagram Oficial
+                      <strong>Instagram Oficial</strong>
                       <span className="crm-channel-badge" data-tone="muted">
                         Indisponível
                       </span>

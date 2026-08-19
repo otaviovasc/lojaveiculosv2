@@ -27,15 +27,20 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
   const secretConfigured = Boolean(props.integration?.secretConfigured);
   return (
     <div className="crm-bot-form">
+      <span aria-hidden="true" className="crm-bot-card-watermark">
+        <Bot />
+      </span>
+
       <div className="crm-bot-form-header">
-        <span aria-hidden="true">
+        <span aria-hidden="true" className="crm-bot-header-icon">
           <Bot />
         </span>
-        <div>
+        <div className="crm-bot-header-info">
+          <strong className="crm-bot-eyebrow">Automação & Webhooks</strong>
           <h2>Bot externo</h2>
-          <p>Encaminhe mensagens para n8n, Typebot ou seu bot proprio.</p>
-          <p className="crm-bot-routing-hint">
-            Ative o bot aqui e defina os canais e contas na área Conexões.
+          <p>
+            Encaminhe mensagens e eventos em tempo real para n8n, Typebot ou seu
+            serviço próprio de automação.
           </p>
         </div>
         <FeatureStatusBadge
@@ -49,42 +54,67 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
       </div>
 
       <div className="crm-bot-form-grid">
-        <label className="crm-bot-form-field">
-          Webhook URL
-          <span>
-            <LinkIcon aria-hidden="true" />
+        <div className="crm-bot-inputs-row">
+          <label className="crm-bot-form-field">
+            <span className="crm-bot-field-label">Webhook URL</span>
+            <span className="crm-bot-input-wrap">
+              <LinkIcon aria-hidden="true" />
+              <input
+                onChange={(event) =>
+                  props.onWebhookUrlChange(event.target.value)
+                }
+                placeholder="https://bot.exemplo.com/webhook"
+                type="url"
+                value={props.webhookUrl}
+              />
+            </span>
+          </label>
+
+          <label className="crm-bot-form-field">
+            <span className="crm-bot-field-label">
+              Novo segredo (Header X-Webhook-Secret)
+            </span>
+            <span className="crm-bot-input-wrap">
+              <KeyRound aria-hidden="true" />
+              <input
+                onChange={(event) => props.onSecretChange(event.target.value)}
+                placeholder={
+                  secretConfigured
+                    ? "Segredo configurado"
+                    : "Mínimo 8 caracteres"
+                }
+                type="password"
+                value={props.secretDraft}
+              />
+            </span>
+          </label>
+        </div>
+
+        <label className="crm-bot-form-switch-card">
+          <div className="crm-bot-switch-info">
+            <strong>Bot habilitado</strong>
+            <p>
+              Quando ativo, mensagens e eventos dos canais autorizados disparam
+              requisições POST para a URL configurada acima.
+            </p>
+          </div>
+          <div className="crm-bot-switch-toggle">
             <input
-              onChange={(event) => props.onWebhookUrlChange(event.target.value)}
-              placeholder="https://bot.exemplo.com/webhook"
-              type="url"
-              value={props.webhookUrl}
+              checked={props.enabled}
+              onChange={(event) => props.onEnabledChange(event.target.checked)}
+              type="checkbox"
             />
-          </span>
+            <span className="crm-bot-switch-slider" aria-hidden="true" />
+          </div>
         </label>
 
-        <label className="crm-bot-form-field">
-          Novo segredo
-          <span>
-            <KeyRound aria-hidden="true" />
-            <input
-              onChange={(event) => props.onSecretChange(event.target.value)}
-              placeholder={
-                secretConfigured ? "Segredo configurado" : "Minimo 8 caracteres"
-              }
-              type="password"
-              value={props.secretDraft}
-            />
-          </span>
-        </label>
-
-        <label className="crm-bot-form-toggle">
-          <input
-            checked={props.enabled}
-            onChange={(event) => props.onEnabledChange(event.target.checked)}
-            type="checkbox"
-          />
-          Bot habilitado
-        </label>
+        <div className="crm-bot-routing-callout">
+          <p>
+            <strong>Roteamento por canal:</strong> Para definir quais números e
+            perfis de WhatsApp, Instagram ou OLX devem acionar este bot, acesse
+            a área <strong>Conexões</strong> e configure as rotas individuais.
+          </p>
+        </div>
 
         <div className="crm-bot-form-actions">
           <button
@@ -94,7 +124,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />
-            Salvar
+            {props.isSaving ? "Salvando..." : "Salvar configurações"}
           </button>
           {secretConfigured ? (
             <button
@@ -119,8 +149,12 @@ export function PermissionNotice({
   message?: string;
 }) {
   return (
-    <div className="rounded-xl border border-line/35 bg-panel/10 p-4 text-sm font-bold text-muted">
-      {message}
+    <div className="crm-bot-permission-card">
+      <Bot aria-hidden="true" className="size-6" />
+      <div>
+        <strong>Acesso restrito</strong>
+        <p>{message}</p>
+      </div>
     </div>
   );
 }

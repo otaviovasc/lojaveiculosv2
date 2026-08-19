@@ -3,6 +3,7 @@ import { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import { MessageList } from "./CrmMessageParts";
 import { CrmQueueToolbar } from "./CrmQueueToolbar";
 import { SessionList } from "./CrmConversationCycleList";
+import { SessionListSkeleton } from "./CrmSkeletons";
 import { CrmQueueBulkBar } from "./CrmQueueBulkBar";
 import { CrmReadOnlyComposer } from "./CrmReadOnlyComposer";
 import { CrmNewConversationDialog } from "./CrmNewConversationDialog";
@@ -140,9 +141,7 @@ export function CrmConversationWorkspace({
           />
         </CrmQueueToolbar>
         {inbox.isLoading ? (
-          <div className="crm-empty crm-empty-list">
-            Carregando conversas...
-          </div>
+          <SessionListSkeleton />
         ) : (
           <SessionList
             activeCycleId={inbox.activeCycleId}

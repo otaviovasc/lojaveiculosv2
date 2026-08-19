@@ -1,5 +1,6 @@
 import postcss from "postcss";
 import {
+  filterThemesForSelector,
   minimumContrastOnSurfaces,
   minimumTextContrast,
   resolveColor,
@@ -51,7 +52,12 @@ export function findCssStateContrastViolations(file, source, themes) {
         );
         continue;
       }
-      const result = worstThemeContrast(background, foreground, themes);
+      const applicableThemes = filterThemesForSelector(themes, selector);
+      const result = worstThemeContrast(
+        background,
+        foreground,
+        applicableThemes,
+      );
       if (!result || result.ratio >= minimumTextContrast) continue;
       failures.push(
         `${file}:${rule.source.start.line} ${selector.trim()}: ${background} + ${foreground} is ${result.ratio.toFixed(2)}:1 in ${result.theme}; require ${minimumTextContrast}:1`,

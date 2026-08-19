@@ -31,11 +31,40 @@ export const crmAvailableSetupSchema = z
   .strict();
 export type CrmAvailableSetup = z.infer<typeof crmAvailableSetupSchema>;
 
+export const crmWhatsappZapiSetupStateSchema = z
+  .object({
+    attemptCount: nonNegativeInteger,
+    configuredAt: nullableString,
+    lastErrorCode: nullableString,
+    leaseExpiresAt: nullableString,
+    leaseOwner: nullableString,
+    requestedAt: nonEmptyString,
+    requiredTypes: z.array(nonEmptyString).readonly(),
+    status: z.enum(["configured", "configuring", "failed", "partial"]),
+    succeededTypes: z.array(nonEmptyString).readonly(),
+    supportCode: nonEmptyString,
+    updatedAt: nonEmptyString,
+    version: z.literal(2),
+  })
+  .strict();
+export type CrmWhatsappZapiSetupState = z.infer<
+  typeof crmWhatsappZapiSetupStateSchema
+>;
+
+export const crmConnectionOverviewItemSchema = crmChannelConnectionSchema
+  .extend({
+    setup: crmWhatsappZapiSetupStateSchema.nullable().optional(),
+  })
+  .strict();
+export type CrmConnectionOverviewItem = z.infer<
+  typeof crmConnectionOverviewItemSchema
+>;
+
 export const crmConnectionOverviewSchema = z
   .object({
     allowance: crmConnectionAllowanceSchema,
     availableSetups: z.array(crmAvailableSetupSchema),
-    connections: z.array(crmChannelConnectionSchema),
+    connections: z.array(crmConnectionOverviewItemSchema),
   })
   .strict();
 export type CrmConnectionOverview = z.infer<typeof crmConnectionOverviewSchema>;

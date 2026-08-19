@@ -84,7 +84,7 @@ export function CrmConnectionSelfServiceSetup({
   zapiAddonContract = null,
 }: {
   allowance: CrmConnectionAllowance;
-  availableSetups: CrmAvailableSetup[];
+  availableSetups: readonly CrmAvailableSetup[];
   canPair: boolean;
   canSetup: boolean;
   connections?: readonly CrmProviderConnection[];
@@ -127,6 +127,20 @@ export function CrmConnectionSelfServiceSetup({
       setProvider(nextProvider);
     }
   }, [existingConnection, startAtDirectory]);
+
+  const selectedConnectionId = connection ? String(connection.id) : null;
+  useEffect(() => {
+    if (!selectedConnectionId) return;
+    const refreshedConnection = connections.find(
+      (candidate) => String(candidate.id) === selectedConnectionId,
+    );
+    if (!refreshedConnection) return;
+    setConnection((current) =>
+      current && String(current.id) === selectedConnectionId
+        ? refreshedConnection
+        : current,
+    );
+  }, [connections, selectedConnectionId]);
 
   const chooseProvider = (
     nextProvider: CrmSetupProvider,
@@ -230,7 +244,7 @@ export function CrmConnectionSelfServiceSetup({
         </div>
       ) : null}
       <CrmChannelDirectory
-        availableSetups={availableSetups}
+        availableSetups={[...availableSetups]}
         connections={connections}
         {...(marketplaceApi ? { marketplaceApi } : {})}
         onChoose={chooseProvider}

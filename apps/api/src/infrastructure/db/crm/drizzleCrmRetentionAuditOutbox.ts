@@ -14,8 +14,8 @@ export async function claimDrizzleCrmRetentionAuditOutbox(
       select id
       from crm_retention_audit_outbox
       where state in ('pending', 'delivering')
-        and next_attempt_at <= ${input.now}
-        and (lease_expires_at is null or lease_expires_at <= ${input.now})
+        and next_attempt_at <= ${input.now.toISOString()}
+        and (lease_expires_at is null or lease_expires_at <= ${input.now.toISOString()})
       order by next_attempt_at, created_at, id
       for update skip locked
       limit ${input.limit}
@@ -23,9 +23,9 @@ export async function claimDrizzleCrmRetentionAuditOutbox(
     update crm_retention_audit_outbox outbox
     set state = 'delivering',
         lease_owner = ${input.leaseOwner},
-        lease_expires_at = ${input.leaseExpiresAt},
+        lease_expires_at = ${input.leaseExpiresAt.toISOString()},
         attempt_count = attempt_count + 1,
-        updated_at = ${input.now}
+        updated_at = ${input.now.toISOString()}
     from candidates
     where outbox.id = candidates.id
     returning outbox.*
@@ -66,10 +66,10 @@ export async function markDrizzleCrmRetentionAuditOutbox(
   const rows = await db.execute(sql`
     update crm_retention_audit_outbox
     set state = case when ${input.succeeded} then 'delivered' else 'pending' end,
-        next_attempt_at = ${input.nextAttemptAt},
+        next_attempt_at = ${input.nextAttemptAt.toISOString()},
         lease_owner = null,
         lease_expires_at = null,
-        updated_at = ${input.now}
+        updated_at = ${input.now.toISOString()}
     where id = ${input.id}::uuid
       and lease_owner = ${input.leaseOwner}
     returning id

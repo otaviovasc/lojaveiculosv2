@@ -377,6 +377,7 @@ function buildZapiConnectionInput(
   credentials: ZapiCredentialsDraft,
 ): CrmCreateConnectionInput {
   return {
+    channel: "whatsapp",
     instanceId: credentials.instanceId.trim(),
     instanceToken: credentials.instanceToken.trim(),
     provider: "zapi",

@@ -37,8 +37,8 @@ export function withoutActiveRetentionHold(
     where hold.tenant_id = ${input.tenantId}::uuid
       and hold.store_id = ${input.storeId}::uuid
       and hold.released_at is null
-      and hold.starts_at <= ${input.now}
-      and (hold.expires_at is null or hold.expires_at > ${input.now})
+      and hold.starts_at <= ${input.now.toISOString()}
+      and (hold.expires_at is null or hold.expires_at > ${input.now.toISOString()})
       and (hold.category is null or hold.category = ${category})
       and (hold.resource_type is null or hold.resource_type = ${resourceType}
         or (${equivalentResourceType ?? null}::text is not null

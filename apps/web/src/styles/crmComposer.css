@@ -1,61 +1,82 @@
+/* CRM Message Composer Styling */
+.crm-composer {
+  background: var(--color-panel);
+  border-top: 1px solid var(--color-line);
+  padding: 0.75rem 1rem;
+  position: relative;
+  z-index: 15;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* Replying to draft bar */
 .crm-shell .crm-reply-draft {
   align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-left: 0.1875rem solid var(--color-accent);
-  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, #10b981 8%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 25%, var(--color-line));
+  border-left: 4px solid #10b981;
+  border-radius: 0.75rem;
   display: grid;
   gap: 0.625rem;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
   min-height: 3rem;
-  padding: 0.5rem 0.625rem;
+  padding: 0.5rem 0.75rem;
+  box-shadow: none;
 }
 
 .crm-shell .crm-reply-draft > svg {
-  color: var(--color-accent);
-  height: 1rem;
-  width: 1rem;
+  color: #10b981;
+  height: 1.15rem;
+  width: 1.15rem;
 }
 
 .crm-shell .crm-reply-draft span {
   display: grid;
-  gap: 0.125rem;
+  gap: 0.1rem;
   min-width: 0;
 }
 
-.crm-shell .crm-reply-draft strong,
-.crm-shell .crm-reply-draft small {
+.crm-shell .crm-reply-draft strong {
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.crm-shell .crm-reply-draft strong {
-  color: var(--color-accent-strong);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
+:root[data-theme="dark"] .crm-shell .crm-reply-draft strong,
+.dark .crm-shell .crm-reply-draft strong {
+  color: #34d399;
 }
 
 .crm-shell .crm-reply-draft small {
   color: var(--color-muted);
   font-size: var(--font-size-sm);
-  font-weight: 450;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .crm-shell .crm-reply-draft button {
   align-items: center;
   background: transparent;
   border: 0;
+  border-radius: 9999px;
   color: var(--color-muted);
   display: inline-flex;
-  height: 2rem;
+  height: 1.75rem;
   justify-content: center;
-  width: 2rem;
+  width: 1.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .crm-shell .crm-reply-draft button:hover {
-  background: var(--color-panel);
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
   color: var(--color-text);
 }
 
@@ -64,15 +85,12 @@
   width: 1rem;
 }
 
+/* Composer row */
 .crm-shell .crm-composer-row {
   align-items: flex-end;
   display: flex;
-  gap: 0.5rem;
-}
-
-.crm-shell .crm-composer-row textarea {
-  flex: 1;
-  min-width: 0;
+  gap: 0.625rem;
+  position: relative;
 }
 
 .crm-shell .crm-composer-textbox {
@@ -82,276 +100,214 @@
 }
 
 .crm-shell .crm-composer-textbox textarea {
-  padding-right: 3rem;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  color: var(--color-text);
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 450;
+  line-height: 1.45;
+  max-height: 8rem;
+  min-height: 2.75rem;
+  outline: none;
+  padding: 0.625rem 1rem;
+  resize: none;
   width: 100%;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
-.crm-shell .crm-composer-textbox > .crm-icon-action,
-.crm-shell .crm-recording {
-  position: absolute;
-  right: 0.375rem;
-  top: 50%;
-  transform: translateY(-50%);
+.crm-shell .crm-composer-textbox textarea:focus {
+  background: var(--color-panel);
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
 }
 
-.crm-shell .crm-quick-picker,
-.crm-shell .crm-attach-menu {
+/* Send & Action Buttons */
+.crm-send-action {
+  align-items: center;
+  background: #10b981 !important;
+  border: 0 !important;
+  border-radius: 9999px !important;
+  color: #ffffff !important;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.crm-send-action:hover:not(:disabled) {
+  background: #059669 !important;
+  transform: scale(1.06);
+}
+
+.crm-send-action:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.crm-send-action svg {
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+/* Audio Action */
+.crm-send-action.crm-audio-action {
+  background: #3b82f6 !important;
+  box-shadow: none !important;
+}
+
+.crm-send-action.crm-audio-action:hover:not(:disabled) {
+  background: #2563eb !important;
+}
+
+/* Plus Attach Menu Button */
+.crm-attach-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  color: var(--color-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 0.2s ease;
+}
+
+.crm-attach-trigger:hover {
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  color: var(--color-text);
+  transform: scale(1.05);
+}
+
+.crm-attach-trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+  transform: rotate(45deg);
+}
+
+/* Attach Popover Menu */
+.crm-attach-menu {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  bottom: calc(100% + 0.5rem);
+  border-radius: 1rem;
+  bottom: calc(100% + 0.625rem);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
   display: grid;
   gap: 0.25rem;
-  max-height: min(22rem, 52dvh);
-  overflow-y: auto;
-  padding: 0.375rem;
-  position: absolute;
-  z-index: 9;
-}
-
-.crm-shell .crm-quick-picker {
   left: 0;
-  right: 0;
-}
-
-.crm-shell .crm-quick-option {
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  display: grid;
-  gap: 0.125rem;
-  grid-template-columns: auto minmax(0, 1fr);
-  min-height: 3rem;
-  padding: 0.5rem 0.625rem;
-  text-align: left;
-}
-
-.crm-shell .crm-quick-option.active,
-.crm-shell .crm-quick-option:hover {
-  background: var(--color-app);
-}
-
-.crm-shell .crm-quick-option span {
-  align-self: start;
-  background: var(--color-accent-soft);
-  border-radius: var(--radius-sm);
-  color: var(--color-accent-strong);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  grid-row: span 2;
-  line-height: 1;
-  padding: 0.375rem 0.5rem;
-}
-
-.crm-shell .crm-quick-option strong,
-.crm-shell .crm-quick-option small {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.crm-shell .crm-quick-option strong {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-}
-
-.crm-shell .crm-quick-option small {
-  align-items: center;
-  color: var(--color-muted);
-  display: inline-flex;
-  font-size: var(--font-size-xs);
-  font-weight: 450;
-  gap: 0.25rem;
-}
-
-.crm-shell .crm-quick-option small svg {
-  height: 0.875rem;
-  width: 0.875rem;
-}
-
-.crm-shell .crm-quick-empty {
-  color: var(--color-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  margin: 0;
-  padding: 0.75rem;
-}
-
-.crm-shell .crm-quick-manager {
-  width: min(38rem, 100%);
-}
-
-.crm-shell .crm-template-kind {
-  display: grid;
-  gap: 0.375rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.crm-shell .crm-template-kind button {
-  align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  color: var(--color-muted);
-  display: inline-flex;
-  font-size: var(--font-size-sm);
-  font-weight: 550;
-  gap: 0.5rem;
-  justify-content: center;
-  min-height: 2.5rem;
-}
-
-.crm-shell .crm-template-kind button.active {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent);
-  color: var(--color-accent-strong);
-}
-
-.crm-shell .crm-template-kind svg,
-.crm-shell .crm-template-row svg {
-  height: 1rem;
-  width: 1rem;
-}
-
-.crm-shell .crm-template-preview {
-  align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  display: grid;
-  gap: 0.625rem;
-  grid-template-columns: 4rem minmax(0, 1fr);
-  min-height: 4.5rem;
+  min-width: 14rem;
   padding: 0.5rem;
+  position: absolute;
+  z-index: 50;
 }
 
-.crm-shell .crm-template-preview img {
-  aspect-ratio: 1;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  width: 4rem;
-}
-
-.crm-shell .crm-template-preview audio {
-  grid-column: 1 / -1;
-  width: 100%;
-}
-
-.crm-shell .crm-template-list {
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  display: grid;
-  overflow: hidden;
-}
-
-.crm-shell .crm-template-row {
-  align-items: center;
-  border-top: 1px solid var(--color-line);
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: auto minmax(0, 1fr) minmax(4rem, auto) auto;
-  min-height: 3rem;
-  padding: 0.5rem 0.625rem;
-}
-
-.crm-shell .crm-template-row:first-child {
-  border-top: 0;
-}
-
-.crm-shell .crm-template-row span,
-.crm-shell .crm-template-row em {
-  color: var(--color-accent-strong);
-  font-size: var(--font-size-xs);
-  font-style: normal;
-  font-weight: 600;
-}
-
-.crm-shell .crm-template-row strong,
-.crm-shell .crm-template-row small {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.crm-shell .crm-template-row button {
-  background: transparent;
-  border: 0;
-  color: var(--color-muted);
-  height: 2rem;
-  width: 2rem;
-}
-
-.crm-shell .crm-template-actions {
-  display: inline-flex;
-}
-
-.crm-shell .crm-attach {
-  position: relative;
-}
-
-.crm-shell .crm-attach-menu {
-  left: 0;
-  min-width: 13rem;
-}
-
-.crm-shell .crm-attach-menu button {
+.crm-attach-option {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 0.625rem;
   color: var(--color-text);
   display: flex;
   font-size: var(--font-size-sm);
-  font-weight: 500;
-  gap: 0.625rem;
-  min-height: 2.5rem;
-  padding: 0 0.75rem;
+  font-weight: 600;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
   text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.crm-shell .crm-attach-menu button:hover {
-  background: var(--color-app);
+.crm-attach-option:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
 }
 
-.crm-shell .crm-attach-menu svg {
-  color: var(--color-accent);
-  height: 1rem;
-  width: 1rem;
+.crm-attach-option svg {
+  height: 1.25rem;
+  width: 1.25rem;
 }
 
-.crm-shell .crm-spin {
-  animation: crm-spin 0.8s linear infinite;
+/* Quick message autocomplete popover */
+.crm-quick-picker {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  bottom: calc(100% + 0.625rem);
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.14);
+  display: grid;
+  gap: 0.25rem;
+  left: 0;
+  max-height: min(22rem, 52dvh);
+  overflow-y: auto;
+  padding: 0.5rem;
+  position: absolute;
+  right: 0;
+  z-index: 50;
 }
 
-@keyframes crm-spin {
-  to {
-    transform: rotate(360deg);
-  }
+.crm-quick-option {
+  background: transparent;
+  border: 0;
+  border-radius: 0.625rem;
+  color: var(--color-text);
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-@media (max-width: 520px) {
-  .crm-shell .crm-composer {
-    padding-inline: 0.625rem;
-  }
-
-  .crm-shell .crm-template-kind {
-    grid-template-columns: 1fr;
-  }
-
-  .crm-shell .crm-template-row {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  .crm-shell .crm-template-row small {
-    display: none;
-  }
+.crm-quick-option.active,
+.crm-quick-option:hover {
+  background: color-mix(in srgb, #10b981 10%, var(--color-panel));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .crm-shell .crm-spin {
-    animation-duration: 1.5s;
-  }
+.crm-quick-option span {
+  align-self: start;
+  background: rgba(16, 185, 129, 0.15);
+  border-radius: 0.5rem;
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  grid-row: span 2;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+}
+
+:root[data-theme="dark"] .crm-quick-option span,
+.dark .crm-quick-option span {
+  color: #34d399;
+}
+
+.crm-quick-option strong {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-quick-option small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

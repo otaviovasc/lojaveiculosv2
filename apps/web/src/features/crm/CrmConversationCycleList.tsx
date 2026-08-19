@@ -132,14 +132,30 @@ export function SessionList({
                   ) : null}
                   {cycle.tags?.length
                     ? cycle.tags.slice(0, 2).map((tag) => (
-                        <span key={tag.id} className="crm-cycle-tag-chip">
-                          <i
-                            aria-hidden="true"
-                            style={{
-                              backgroundColor:
-                                tag.color ?? "var(--color-muted)",
-                            }}
-                          />
+                        <span
+                          key={tag.id}
+                          className="crm-cycle-tag-chip"
+                          style={{
+                            backgroundColor: tag.color
+                              ? `${tag.color}18`
+                              : undefined,
+                            color: tag.color ?? undefined,
+                            borderColor: tag.color
+                              ? `${tag.color}40`
+                              : undefined,
+                          }}
+                        >
+                          {tag.emoji ? (
+                            <span className="text-xs mr-0.5">{tag.emoji}</span>
+                          ) : (
+                            <i
+                              aria-hidden="true"
+                              style={{
+                                backgroundColor:
+                                  tag.color ?? "var(--color-muted)",
+                              }}
+                            />
+                          )}
                           {tag.name}
                         </span>
                       ))
@@ -237,7 +253,10 @@ function ChannelBadge({
   });
   return (
     <>
-      <span className="crm-channel crm-cycle-chip">
+      <span
+        className="crm-channel crm-cycle-chip"
+        data-channel={(channel ?? "whatsapp").toLowerCase()}
+      >
         {channel === "whatsapp" ? (
           <Phone aria-hidden="true" className="size-3" />
         ) : (

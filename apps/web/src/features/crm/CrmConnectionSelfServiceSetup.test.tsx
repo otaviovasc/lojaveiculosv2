@@ -11,6 +11,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { rememberPendingComposioConnection } from "./crmComposioOAuth";
 import type {
+  CrmAvailableSetup,
   CrmOfficialChannelSetupProvider,
   CrmProviderConnection,
 } from "./crmConversationTypes";
@@ -85,6 +86,38 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Z-API principal/ }));
     expect(await screen.findByRole("dialog")).toBeVisible();
+  });
+
+  it("advances an open Z-API setup when refreshed connections finish webhook setup", async () => {
+    const handlers = createHandlers();
+    const configuring = createZapiSetupConnection("configuring");
+    const configured = createZapiSetupConnection("configured");
+    const props = {
+      allowance: { limit: 1, remaining: 0, used: 1 },
+      availableSetups: [
+        { broker: "direct", channel: "whatsapp", provider: "zapi" },
+      ] satisfies CrmAvailableSetup[],
+      canPair: true,
+      canSetup: true,
+      handlers,
+      startAtDirectory: true,
+      zapiAddonContract: createZapiContract("active"),
+    };
+    const { rerender } = render(
+      <CrmConnectionSelfServiceSetup {...props} connections={[configuring]} />,
+    );
+
+    const zapiSetupButtons = within(
+      screen.getByRole("region", { name: "WhatsApp" }),
+    ).getAllByRole("button");
+    fireEvent.click(zapiSetupButtons[zapiSetupButtons.length - 1]!);
+    expect(screen.getByText("Etapa 3 de 5 · Configuração")).toBeVisible();
+
+    rerender(
+      <CrmConnectionSelfServiceSetup {...props} connections={[configured]} />,
+    );
+
+    expect(await screen.findByText("Etapa 4 de 5 · Pareamento")).toBeVisible();
   });
 
   it("keeps Official WhatsApp available when only the Z-API quota is zero", () => {
@@ -481,6 +514,45 @@ function createZapiConnection(
     setup: null,
     status,
     webhookUrl: null,
+  };
+}
+
+function createZapiSetupConnection(
+  setupStatus: "configured" | "configuring",
+): CrmProviderConnection {
+  const requiredTypes = [
+    "chat-presence",
+    "connected",
+    "delivery",
+    "disconnected",
+    "received",
+    "status",
+  ] as const;
+  return {
+    ...createZapiConnection("active"),
+    live: {
+      checkedAt: "2026-08-19T19:00:00.000Z",
+      connected: false,
+      connectedPhone: null,
+      providerStatus: "disconnected",
+      smartphoneConnected: false,
+    },
+    ready: false,
+    setup: {
+      attemptCount: setupStatus === "configured" ? 2 : 1,
+      configuredAt:
+        setupStatus === "configured" ? "2026-08-19T19:00:00.000Z" : null,
+      lastErrorCode: null,
+      requestedAt: "2026-08-19T18:59:00.000Z",
+      requiredTypes,
+      status: setupStatus,
+      succeededTypes: setupStatus === "configured" ? requiredTypes : [],
+      supportCode: "ZAPI-TEST",
+      updatedAt: "2026-08-19T19:00:00.000Z",
+      version: 1,
+    },
+    state: "disconnected",
+    status: "disconnected",
   };
 }
 

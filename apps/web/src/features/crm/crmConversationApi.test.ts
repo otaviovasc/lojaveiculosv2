@@ -287,6 +287,22 @@ describe("CRM WhatsApp API", () => {
     });
   });
 
+  it("retains persisted Z-API webhook setup state in connection overview reads", async () => {
+    const connection = canonicalConnection({ setup: configuredZapiSetup() });
+    const api = createCrmConversationApi({
+      fetch: createFakeFetch([connectionOverview([connection])]).fetch,
+    });
+
+    await expect(api.listConnections()).resolves.toMatchObject({
+      connections: [
+        {
+          id: "connection_1",
+          setup: { status: "configured", version: 2 },
+        },
+      ],
+    });
+  });
+
   it("uses the self-service connection and provider setup contracts", async () => {
     const fake = createFakeFetch([
       { id: "connection_1" },
@@ -583,5 +599,36 @@ function connectionOverview(connections: Record<string, unknown>[]) {
     },
     availableSetups: [],
     connections,
+  };
+}
+
+function configuredZapiSetup() {
+  return {
+    attemptCount: 2,
+    configuredAt: "2026-08-19T18:01:00.000Z",
+    lastErrorCode: null,
+    leaseExpiresAt: null,
+    leaseOwner: null,
+    requestedAt: "2026-08-19T18:00:00.000Z",
+    requiredTypes: [
+      "chat-presence",
+      "connected",
+      "delivery",
+      "disconnected",
+      "received",
+      "status",
+    ],
+    status: "configured",
+    succeededTypes: [
+      "chat-presence",
+      "connected",
+      "delivery",
+      "disconnected",
+      "received",
+      "status",
+    ],
+    supportCode: "ZAPI-CONNECTION",
+    updatedAt: "2026-08-19T18:01:00.000Z",
+    version: 2,
   };
 }

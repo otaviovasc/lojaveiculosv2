@@ -79,7 +79,11 @@ export function VisitBoard({
         </header>
         <div className="crm-visits-timeline">
           {isLoading ? (
-            <VisitEmpty label="Carregando visitas." />
+            <>
+              <VisitSkeleton />
+              <VisitSkeleton />
+              <VisitSkeleton />
+            </>
           ) : visits.length ? (
             visits.map((visit) => (
               <VisitRow
@@ -96,6 +100,19 @@ export function VisitBoard({
         </div>
       </div>
     </section>
+  );
+}
+
+function VisitSkeleton() {
+  return (
+    <div className="crm-visit-row crm-visit-skeleton flex flex-col gap-3">
+      <div className="flex justify-between items-center">
+        <div className="crm-skeleton h-5 w-28 rounded-md" />
+        <div className="crm-skeleton h-5 w-20 rounded-md" />
+      </div>
+      <div className="crm-skeleton h-5 w-48 rounded-md" />
+      <div className="crm-skeleton h-4 w-32 rounded-md" />
+    </div>
   );
 }
 

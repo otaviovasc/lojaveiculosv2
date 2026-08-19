@@ -152,6 +152,9 @@ importers:
       "@daypicker/react":
         specifier: ^10.0.1
         version: 10.0.1(@types/react@19.2.17)(react@19.2.7)
+      "@icons-pack/react-simple-icons":
+        specifier: ^13.15.1
+        version: 13.15.1(react@19.2.7)
       "@lojaveiculosv2/design-system":
         specifier: workspace:*
         version: link:../../packages/design-system
@@ -1825,6 +1828,14 @@ packages:
         integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==,
       }
     engines: { node: ">=18.18" }
+
+  "@icons-pack/react-simple-icons@13.15.1":
+    resolution:
+      {
+        integrity: sha512-S35E7vJlJzMeoqjwwI7ZmQUJ2W+2KspnB6bc49KdoDGwp5mCgAy9L3sscfWMewQSMgBdPU8KWWwpSGq5DJyAFw==,
+      }
+    peerDependencies:
+      react: ^16.13 || ^17 || ^18 || ^19
 
   "@inquirer/ansi@2.0.7":
     resolution:
@@ -9565,6 +9576,10 @@ snapshots:
 
   "@humanwhocodes/retry@0.4.3": {}
 
+  "@icons-pack/react-simple-icons@13.15.1(react@19.2.7)":
+    dependencies:
+      react: 19.2.7
+
   "@inquirer/ansi@2.0.7": {}
 
   "@inquirer/confirm@6.1.1(@types/node@24.13.2)":
@@ -12526,8 +12541,8 @@ snapshots:
 
   magicast@0.5.3:
     dependencies:
-      "@babel/parser": 7.29.7
-      "@babel/types": 7.29.7
+      "@babel/parser": 7.29.8
+      "@babel/types": 7.29.8
       source-map-js: 1.2.1
 
   make-cancellable-promise@2.0.0: {}

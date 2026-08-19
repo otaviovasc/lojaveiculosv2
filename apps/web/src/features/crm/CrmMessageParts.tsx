@@ -9,6 +9,7 @@ import {
   shouldShowMessageDay,
 } from "./crmMessageDates";
 import type { CrmMessageView } from "./crmConversationModel";
+import { MessageListSkeleton } from "./CrmSkeletons";
 
 export function MessageList({
   actionsDisabled,
@@ -28,7 +29,7 @@ export function MessageList({
   }, [messages]);
 
   if (isLoading) {
-    return <div className="crm-empty">Carregando mensagens...</div>;
+    return <MessageListSkeleton />;
   }
 
   const groups = groupMessagesForDisplay(messages);

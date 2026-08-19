@@ -1,33 +1,46 @@
 import { Check, Sparkles, X } from "lucide-react";
 import type { TagDraft } from "./CrmTagManagerParts";
 
-const colorPresets = [
+export const tagColorPresets = [
   { label: "Destaque", value: "var(--color-accent)" },
   { label: "Urgente", value: "var(--color-danger)" },
   { label: "Atenção", value: "var(--color-warning)" },
   { label: "Sucesso", value: "var(--color-success)" },
-  { label: "Primaria", value: "var(--color-primary)" },
-  { label: "Info", value: "var(--color-info)" },
-  { label: "Vendas", value: "var(--color-sales)" },
+  { label: "Proposta", value: "var(--color-info)" },
+  { label: "VIP", value: "var(--color-primary)" },
+  { label: "Info", value: "var(--color-sales)" },
   { label: "Neutra", value: "var(--color-muted)" },
 ];
 
-const emojiPresets = [
+export const tagEmojiPresets = [
   "🔥",
   "⭐",
-  "✅",
-  "💬",
-  "📞",
   "🚗",
-  "🎯",
-  "⏳",
-  "👑",
-  "💎",
+  "💰",
   "🤝",
+  "📞",
+  "💬",
+  "✅",
+  "⏳",
+  "💎",
+  "👑",
+  "🎯",
+  "🚀",
   "⚡",
   "📌",
   "🏷️",
   "",
+];
+
+export const tagSuggestionPresets: {
+  color: string;
+  emoji: string;
+  name: string;
+}[] = [
+  { color: "var(--color-danger)", emoji: "🔥", name: "Cliente quente" },
+  { color: "var(--color-warning)", emoji: "📞", name: "Aguardando retorno" },
+  { color: "var(--color-primary)", emoji: "⭐", name: "Cliente VIP" },
+  { color: "var(--color-success)", emoji: "💰", name: "Proposta enviada" },
 ];
 
 export function TagDraftPreview({ draft }: { draft: TagDraft }) {
@@ -38,51 +51,43 @@ export function TagDraftPreview({ draft }: { draft: TagDraft }) {
     <div className="crm-tag-draft-preview">
       <div className="crm-tag-draft-preview-header">
         <Sparkles aria-hidden="true" className="crm-tag-sparkle-icon" />
-        <span>Previa em tempo real</span>
+        <span>Prévia</span>
       </div>
-      <div className="crm-tag-draft-preview-grid">
-        <div className="crm-tag-draft-sample-box">
-          <span className="crm-tag-draft-sample-title">Chip na conversa</span>
+      <div className="crm-tag-draft-preview-inline">
+        <span
+          className="crm-tag-chip"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${tagColor} 16%, var(--color-panel))`,
+            borderColor: `color-mix(in srgb, ${tagColor} 40%, var(--color-line))`,
+            color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
+          }}
+        >
           <span
-            className="crm-tag-chip"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${tagColor} 16%, var(--color-panel))`,
-              borderColor: `color-mix(in srgb, ${tagColor} 35%, var(--color-line))`,
-              color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
-            }}
-          >
-            <span
-              aria-hidden="true"
-              className="crm-tag-dot"
-              style={{ backgroundColor: tagColor }}
-            />
-            <span>
-              {draft.emoji ? `${draft.emoji} ` : ""}
-              {nameText}
-            </span>
-          </span>
-        </div>
-        <div className="crm-tag-draft-sample-box">
-          <span className="crm-tag-draft-sample-title">
-            Emblema no gerenciador
-          </span>
-          <strong
-            className="crm-tag-admin-pill"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${tagColor} 20%, var(--color-panel))`,
-              borderColor: `color-mix(in srgb, ${tagColor} 45%, var(--color-line))`,
-              color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
-            }}
-          >
-            <span
-              aria-hidden="true"
-              className="crm-tag-dot"
-              style={{ backgroundColor: tagColor }}
-            />
+            aria-hidden="true"
+            className="crm-tag-dot"
+            style={{ backgroundColor: tagColor }}
+          />
+          <span>
             {draft.emoji ? `${draft.emoji} ` : ""}
             {nameText}
-          </strong>
-        </div>
+          </span>
+        </span>
+        <strong
+          className="crm-tag-admin-pill"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${tagColor} 18%, var(--color-panel))`,
+            borderColor: `color-mix(in srgb, ${tagColor} 45%, var(--color-line))`,
+            color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
+          }}
+        >
+          <span
+            aria-hidden="true"
+            className="crm-tag-dot"
+            style={{ backgroundColor: tagColor }}
+          />
+          {draft.emoji ? `${draft.emoji} ` : ""}
+          {nameText}
+        </strong>
       </div>
     </div>
   );
@@ -101,7 +106,7 @@ export function TagColorPicker({
     <section className="crm-tag-draft-group" aria-label="Cores">
       <span>Cor da etiqueta</span>
       <div className="crm-tag-color-grid">
-        {colorPresets.map((preset) => {
+        {tagColorPresets.map((preset) => {
           const isSelected = draft.color === preset.value;
           return (
             <button
@@ -120,13 +125,22 @@ export function TagColorPicker({
         })}
       </div>
       <label className="crm-tag-custom-color">
-        Cor personalizada
-        <input
-          disabled={disabled}
-          onChange={(event) => onChange({ color: event.target.value })}
-          placeholder="ex: var(--color-primary)"
-          value={draft.color}
-        />
+        <span>Cor personalizada</span>
+        <div className="crm-tag-input-with-preview">
+          <span
+            aria-hidden="true"
+            className="crm-tag-color-swatch-preview"
+            style={{
+              backgroundColor: draft.color || "var(--color-muted)",
+            }}
+          />
+          <input
+            disabled={disabled}
+            onChange={(event) => onChange({ color: event.target.value })}
+            placeholder="ex: var(--color-primary)"
+            value={draft.color}
+          />
+        </div>
       </label>
     </section>
   );
@@ -143,9 +157,9 @@ export function TagEmojiPicker({
 }) {
   return (
     <section className="crm-tag-draft-group" aria-label="Emojis">
-      <span>Emoji rapido</span>
+      <span>Emoji rápido</span>
       <div className="crm-tag-emoji-grid">
-        {emojiPresets.map((emoji) => (
+        {tagEmojiPresets.map((emoji) => (
           <button
             aria-label={emoji ? `Usar emoji ${emoji}` : "Remover emoji"}
             aria-pressed={draft.emoji === emoji}
@@ -154,12 +168,12 @@ export function TagEmojiPicker({
             onClick={() => onChange({ emoji })}
             type="button"
           >
-            {emoji || <X aria-hidden="true" />}
+            {emoji || <X aria-hidden="true" className="size-4" />}
           </button>
         ))}
       </div>
       <label className="crm-tag-custom-emoji">
-        Emoji
+        <span>Emoji</span>
         <input
           disabled={disabled}
           maxLength={16}

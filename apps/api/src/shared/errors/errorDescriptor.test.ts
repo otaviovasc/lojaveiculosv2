@@ -55,6 +55,21 @@ describe("error descriptors", () => {
     expect(JSON.stringify(metadata)).not.toContain("do-not-log");
   });
 
+  it("reports a safe nested driver code without exposing its message", () => {
+    const cause = Object.assign(
+      new TypeError("password=do-not-log and token=also-secret"),
+      { code: "ERR_INVALID_ARG_TYPE" },
+    );
+    const metadata = toSafeErrorMetadata(new Error("Failed query", { cause }));
+
+    expect(metadata).toMatchObject({
+      errorCauseCode: "ERR_INVALID_ARG_TYPE",
+      errorCauseName: "TypeError",
+    });
+    expect(JSON.stringify(metadata)).not.toContain("do-not-log");
+    expect(JSON.stringify(metadata)).not.toContain("also-secret");
+  });
+
   it("redacts sensitive keys and credential-like string values", () => {
     const metadata = sanitizeDiagnosticMetadata({
       authorization: "Bearer abc",

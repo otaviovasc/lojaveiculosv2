@@ -45,7 +45,13 @@ export function ScheduleList({
   conversationCycles?: CrmConversationCycle[];
 }) {
   if (isLoading) {
-    return <p className="crm-schedule-empty">Carregando...</p>;
+    return (
+      <div className="crm-schedule-list">
+        <ScheduleSkeleton />
+        <ScheduleSkeleton />
+        <ScheduleSkeleton />
+      </div>
+    );
   }
   if (!messages.length) {
     return <p className="crm-schedule-empty">{emptyLabel}</p>;
@@ -207,4 +213,17 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
   }).format(date);
+}
+
+function ScheduleSkeleton() {
+  return (
+    <div className="crm-schedule-row flex flex-col gap-3">
+      <div className="flex justify-between items-center">
+        <div className="crm-skeleton h-5 w-32 rounded-md" />
+        <div className="crm-skeleton h-5 w-20 rounded-md" />
+      </div>
+      <div className="crm-skeleton h-4 w-48 rounded-md" />
+      <div className="crm-skeleton h-12 w-full rounded-md" />
+    </div>
+  );
 }

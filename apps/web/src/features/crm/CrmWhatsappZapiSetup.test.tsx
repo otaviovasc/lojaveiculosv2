@@ -82,6 +82,7 @@ describe("CrmWhatsappZapiSetup", () => {
 
     await waitFor(() =>
       expect(handlers.onCreate).toHaveBeenCalledWith({
+        channel: "whatsapp",
         instanceId: "instance-1",
         instanceToken: "instance-token",
         provider: "zapi",

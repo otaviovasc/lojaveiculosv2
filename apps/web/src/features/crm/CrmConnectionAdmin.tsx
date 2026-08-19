@@ -52,7 +52,7 @@ type ConnectionAdminProps = {
   canManageRouting?: boolean;
   selfService?: {
     allowance: CrmConnectionAllowance;
-    availableSetups: CrmAvailableSetup[];
+    availableSetups: readonly CrmAvailableSetup[];
     canPair: boolean;
     canSetup: boolean;
     handlers: CrmConnectionSelfServiceHandlers;
