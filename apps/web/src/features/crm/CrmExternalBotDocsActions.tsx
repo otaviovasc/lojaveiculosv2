@@ -41,8 +41,11 @@ export function CrmExternalBotDocsActions() {
 
   function parseActionName(jsonCode: string): string {
     try {
-      const parsed = JSON.parse(jsonCode);
-      return parsed.action ?? "";
+      const parsed: unknown = JSON.parse(jsonCode);
+      if (typeof parsed === "object" && parsed !== null && "action" in parsed) {
+        return String((parsed as Record<string, unknown>).action ?? "");
+      }
+      return "";
     } catch {
       return "";
     }
