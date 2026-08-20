@@ -18,7 +18,7 @@ import {
   requireRow,
 } from "./drizzleVehicleCatalogSupport.js";
 import { createDrizzleVehicleCatalogWrites } from "./drizzleVehicleCatalogWrites.js";
-
+import { vehicleCatalogSnapshotModelNameFromVersion } from "./vehicleCatalogSnapshotName.js";
 export type DrizzleVehicleCatalogClient = PostgresJsDatabase<typeof schema>;
 
 export function createDrizzleVehicleCatalogRepository(
@@ -56,6 +56,11 @@ export function createDrizzleVehicleCatalogRepository(
       if (!year) return null;
       const brand = await findBrand(db, input);
       if (!brand) return null;
+      const [family] = await db
+        .select()
+        .from(vehicleCatalogModelFamilies)
+        .where(eq(vehicleCatalogModelFamilies.id, version.modelFamilyId));
+      if (!family) return null;
       return {
         brandCode: input.brandCode,
         brandLogoUrl: brand.logoUrl,
@@ -63,7 +68,10 @@ export function createDrizzleVehicleCatalogRepository(
         fipeCode: year.fipeCode,
         fuel: year.fuel,
         modelCode: version.fipeCode,
-        modelName: version.name,
+        modelName: vehicleCatalogSnapshotModelNameFromVersion(
+          family.name,
+          version,
+        ),
         modelYear: year.modelYear,
         priceCents: year.priceCents,
         referenceMonth: year.referenceMonth,
@@ -77,6 +85,7 @@ export function createDrizzleVehicleCatalogRepository(
       const rows = await db
         .select({
           brand: vehicleCatalogBrands,
+          family: vehicleCatalogModelFamilies,
           version: vehicleCatalogVersions,
           year: vehicleCatalogYears,
         })
@@ -84,6 +93,13 @@ export function createDrizzleVehicleCatalogRepository(
         .innerJoin(
           vehicleCatalogVersions,
           eq(vehicleCatalogVersions.id, vehicleCatalogYears.versionId),
+        )
+        .innerJoin(
+          vehicleCatalogModelFamilies,
+          eq(
+            vehicleCatalogModelFamilies.id,
+            vehicleCatalogVersions.modelFamilyId,
+          ),
         )
         .innerJoin(
           vehicleCatalogBrands,
@@ -101,14 +117,17 @@ export function createDrizzleVehicleCatalogRepository(
               : [eq(vehicleCatalogYears.modelYear, input.modelYear)]),
           ),
         );
-      return rows.map(({ brand, version, year }) => ({
+      return rows.map(({ brand, family, version, year }) => ({
         brandCode: brand.fipeCode,
         brandLogoUrl: brand.logoUrl,
         brandName: brand.name,
         fipeCode: year.fipeCode,
         fuel: year.fuel,
         modelCode: version.fipeCode,
-        modelName: version.name,
+        modelName: vehicleCatalogSnapshotModelNameFromVersion(
+          family.name,
+          version,
+        ),
         modelYear: year.modelYear,
         priceCents: year.priceCents,
         referenceMonth: year.referenceMonth,
