@@ -143,6 +143,7 @@ describe("CrmChannelDirectory", () => {
 
   it("opens management from an existing Z-API card", () => {
     const onChoose = vi.fn();
+    const onManage = vi.fn();
     render(
       <CrmChannelDirectory
         availableSetups={[
@@ -151,15 +152,19 @@ describe("CrmChannelDirectory", () => {
         connections={[createZapiConnection()]}
         marketplaceApi={createMarketplaceApi()}
         onChoose={onChoose}
+        onManageConnection={onManage}
         zapiAddonContract={null}
       />,
     );
 
-    const zapi = screen.getByRole("button", { name: /Z-API/i });
+    const zapi = screen.getByRole("button", { name: /Z-API principal/i });
     expect(zapi).toBeEnabled();
-    expect(screen.getByText("Já conectado")).toBeVisible();
+    expect(screen.queryByText("Já conectado")).not.toBeInTheDocument();
     fireEvent.click(zapi);
-    expect(onChoose).toHaveBeenCalledWith("zapi");
+    expect(onChoose).not.toHaveBeenCalled();
+    expect(onManage).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "connection-1", provider: "zapi" }),
+    );
   });
 
   it("keeps configured Instagram Official setup actionable when no new setup is offered", () => {

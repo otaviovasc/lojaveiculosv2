@@ -326,6 +326,14 @@ export function CrmConnectionSelfServiceSetup({
         isRefreshing={isBusy}
         onClose={() => setManagedConnectionId(null)}
         onRefresh={handlers.onRefreshConnections}
+        {...(managedConnection?.provider === "zapi" &&
+        handlers.onRefreshZapiStatus
+          ? {
+              onRefreshStatus: async () => {
+                await handlers.onRefreshZapiStatus!(managedConnection.id);
+              },
+            }
+          : {})}
         {...(handlers.onSetConnectionPaused
           ? { onSetConnectionPaused: handlers.onSetConnectionPaused }
           : {})}

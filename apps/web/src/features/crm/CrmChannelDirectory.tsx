@@ -66,9 +66,18 @@ export function CrmChannelDirectory({
       isComposioConnectionForProvider(connection, "instagram") &&
       (connection.state ?? connection.status) !== "archived",
   );
-  const zapiConfigured = connections.some(
+  // A configured Z-API connection is already represented by its connected
+  // row below. Do not render the catalog/setup row as a second card for the
+  // same provider, including while the provider is reconnecting or pending.
+  const hasZapiConnectedOrConfiguredConnection = connections.some(
     (connection) =>
-      connection.provider === "zapi" && isReadyCrmConnection(connection),
+      connection.provider === "zapi" &&
+      (connection.state ?? connection.status) !== "archived" &&
+      connection.setup?.status !== "configuring" &&
+      (connection.setup?.status === "configured" ||
+        (connection.state ?? connection.status) === "active" ||
+        connection.credentials?.storedInstanceConfigured === true ||
+        Boolean(connection.externalInstanceId)),
   );
   const groups = groupCrmConnectionsByChannel(connections);
   const connectionsFor = (channel: "instagram" | "olx_chat" | "whatsapp") =>
@@ -89,7 +98,7 @@ export function CrmChannelDirectory({
               />
             </li>
           ))}
-          {showSetupActions ? (
+          {showSetupActions && !hasZapiConnectedOrConfiguredConnection ? (
             <li>
               <button
                 className="crm-channel-row"
@@ -108,18 +117,10 @@ export function CrmChannelDirectory({
                 <span className="crm-channel-body">
                   <span className="crm-channel-title">
                     <strong>Z-API</strong>
-                    {zapiConfigured ? (
-                      <span className="crm-channel-badge" data-tone="muted">
-                        Já conectado
-                      </span>
-                    ) : (
-                      <ZapiAddonBadge contract={zapiAddonContract} />
-                    )}
+                    <ZapiAddonBadge contract={zapiAddonContract} />
                   </span>
                   <span className="crm-channel-description">
-                    {zapiConfigured
-                      ? "Conexão ativa. Abra para revisar webhooks, desconectar ou trocar o aparelho."
-                      : readZapiChooserDescription(zapiAddonContract)}
+                    {readZapiChooserDescription(zapiAddonContract)}
                   </span>
                   <ChannelIdentity
                     broker="Credencial direta"

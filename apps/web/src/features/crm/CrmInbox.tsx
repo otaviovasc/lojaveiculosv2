@@ -245,7 +245,14 @@ export function CrmInbox({
                         onRequestZapiPairingCode: inbox.requestZapiPairingCode,
                         onRequestZapiPairingQr: inbox.requestZapiPairingQr,
                         onRequestZapiAddon: inbox.requestZapiAddon,
-                        onRefreshZapiStatus: inbox.refreshZapiConnectionStatus,
+                        onRefreshZapiStatus: async (connectionId) => {
+                          const result =
+                            await inbox.refreshZapiConnectionStatus(
+                              connectionId,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
                         onSelectComposioSender: async (
                           connectionId,
                           sender,

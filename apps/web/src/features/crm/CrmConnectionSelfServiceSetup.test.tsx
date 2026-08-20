@@ -289,6 +289,37 @@ describe("CrmConnectionSelfServiceSetup", () => {
     },
   );
 
+  it("refreshes the real provider status from the manage dialog", async () => {
+    const connection = createZapiConnection("active");
+    const onRefreshZapiStatus = vi.fn(async () => connection);
+
+    render(
+      <CrmConnectionSelfServiceSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        availableSetups={[]}
+        canPair={true}
+        canSetup={true}
+        connections={[connection]}
+        handlers={{
+          ...createHandlers(),
+          onRefreshZapiStatus,
+        }}
+        startAtDirectory
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Z-API principal/i }));
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Atualizar status da conexão",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(onRefreshZapiStatus).toHaveBeenCalledWith(connection.id),
+    );
+  });
+
   it.each([
     ["Instagram", "instagram", "perfil do Instagram"],
     ["WhatsApp", "whatsapp", "número do WhatsApp"],

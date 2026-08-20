@@ -11,6 +11,33 @@ const credentials = {
 };
 
 describe("createZapiCrmConnectionSetupProvider", () => {
+  it("uses the local test client token only in local development", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      Response.json({ connected: true }),
+    );
+    const provider = createZapiCrmConnectionSetupProvider(
+      {
+        APP_ENV: "local",
+        CRM_ZAPI_API_BASE_URL: "https://zapi.test",
+        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
+      },
+      fetchImpl,
+    );
+
+    await expect(provider.validateStatus(credentials)).resolves.toMatchObject({
+      connected: true,
+    });
+    expect(
+      new Headers(fetchImpl.mock.calls[0]?.[1]?.headers).get("Client-Token"),
+    ).toBe("local-test-client-token");
+    expect(() =>
+      createZapiCrmConnectionSetupProvider({
+        APP_ENV: "staging",
+        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
+      }),
+    ).toThrow("Z-API client authentication is not configured");
+  });
+
   it("validates status with central client authentication", async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () =>
       Response.json({

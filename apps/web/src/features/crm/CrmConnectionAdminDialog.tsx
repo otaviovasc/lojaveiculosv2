@@ -22,6 +22,7 @@ export function CrmConnectionManageDialog({
   isRefreshing = false,
   onClose,
   onRefresh,
+  onRefreshStatus,
   onSetConnectionPaused,
 }: {
   canManage?: boolean;
@@ -30,6 +31,7 @@ export function CrmConnectionManageDialog({
   isRefreshing?: boolean;
   onClose: () => void;
   onRefresh: () => Promise<void> | void;
+  onRefreshStatus?: () => Promise<void>;
   onSetConnectionPaused?: (
     connectionId: CrmConnectionId,
     paused: boolean,
@@ -37,6 +39,25 @@ export function CrmConnectionManageDialog({
 }) {
   const [lifecycleBusy, setLifecycleBusy] = useState(false);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+
+  const refreshStatus = async () => {
+    if (statusBusy || disabled || isRefreshing) return;
+    setStatusBusy(true);
+    setLifecycleError(null);
+    try {
+      await (onRefreshStatus ? onRefreshStatus() : onRefresh());
+    } catch (caught) {
+      setLifecycleError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível atualizar o status da conexão.",
+        ),
+      );
+    } finally {
+      setStatusBusy(false);
+    }
+  };
 
   const togglePaused = async () => {
     if (!connection || !onSetConnectionPaused || lifecycleBusy) return;
@@ -83,16 +104,16 @@ export function CrmConnectionManageDialog({
             <ConnectionDashboard
               connection={connection}
               disabled={disabled}
-              isRefreshing={isRefreshing}
-              onRefresh={() => void onRefresh()}
+              isRefreshing={isRefreshing || statusBusy}
+              onRefresh={() => void refreshStatus()}
             />
           ) : (
             <ConnectionSetupFlow
               connection={connection}
               disabled={disabled}
-              isRefreshing={isRefreshing}
+              isRefreshing={isRefreshing || statusBusy}
               localError={null}
-              onRefresh={() => void onRefresh()}
+              onRefresh={() => void refreshStatus()}
             />
           )}
           {onSetConnectionPaused ? (

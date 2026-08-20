@@ -15,6 +15,9 @@ import {
   type BillingQuotaKey,
 } from "../../../domains/billing/ports/billingQuotaGuard.js";
 import { countBillingQuotaUsage } from "./drizzleBillingQuotaUsage.js";
+import { findLocalZapiTestOverrideLimit } from "./drizzleBillingLocalZapiOverride.js";
+
+export { isLocalZapiTestOverrideMetadata } from "./drizzleBillingLocalZapiOverride.js";
 
 export type DrizzleBillingQuotaClient = PostgresJsDatabase<typeof schema>;
 
@@ -28,9 +31,18 @@ export function createDrizzleBillingQuotaGuard(
     tenantId: string;
   }) {
     const checkedAt = now();
-    const contract = await findEffectiveContract(db, input, checkedAt);
-    const limit = await resolveLimit(db, contract, input, checkedAt);
-    const used = await countBillingQuotaUsage(db, input, contract.periodStart);
+    const resolution = await resolveQuotaContract(db, input, checkedAt);
+    const limit =
+      resolution.kind === "local_zapi_test_override"
+        ? resolution.limit
+        : await resolveLimit(db, resolution.contract, input, checkedAt);
+    const used = await countBillingQuotaUsage(
+      db,
+      input,
+      resolution.kind === "local_zapi_test_override"
+        ? null
+        : resolution.contract.periodStart,
+    );
     const effectiveLimit = limit ?? Number.MAX_SAFE_INTEGER;
     return {
       limit: effectiveLimit,
@@ -44,13 +56,18 @@ export function createDrizzleBillingQuotaGuard(
       await db.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`${input.storeId}:${input.quotaKey}`}, 29))`,
       );
-      const contract = await findEffectiveContract(db, input, checkedAt);
-      const limit = await resolveLimit(db, contract, input, checkedAt);
+      const resolution = await resolveQuotaContract(db, input, checkedAt);
+      const limit =
+        resolution.kind === "local_zapi_test_override"
+          ? resolution.limit
+          : await resolveLimit(db, resolution.contract, input, checkedAt);
       if (limit === null) return;
       const current = await countBillingQuotaUsage(
         db,
         input,
-        contract.periodStart,
+        resolution.kind === "local_zapi_test_override"
+          ? null
+          : resolution.contract.periodStart,
       );
       if (current + (input.increment ?? 1) <= limit) return;
       throw new BillingQuotaExceededError({
@@ -61,6 +78,33 @@ export function createDrizzleBillingQuotaGuard(
     },
     getAllowance,
   };
+}
+
+async function resolveQuotaContract(
+  db: DrizzleBillingQuotaClient,
+  input: { quotaKey: BillingQuotaKey; storeId: string; tenantId: string },
+  now: Date,
+) {
+  try {
+    return {
+      contract: await findEffectiveContract(db, input, now),
+      kind: "subscription" as const,
+    };
+  } catch (error) {
+    if (!(error instanceof BillingContractUnavailableError)) throw error;
+
+    const localOverrideLimit = await findLocalZapiTestOverrideLimit(
+      db,
+      input,
+      now,
+    );
+    if (localOverrideLimit === null) throw error;
+
+    return {
+      kind: "local_zapi_test_override" as const,
+      limit: localOverrideLimit,
+    };
+  }
 }
 
 async function findEffectiveContract(

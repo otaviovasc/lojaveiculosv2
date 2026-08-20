@@ -16,11 +16,13 @@ test.describe("CRM WhatsApp connection", () => {
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
 
-    await page.route("**/crm/whatsapp/connections", (route) =>
+    await page.route("**/api/v1/crm/channel-connections", (route) =>
       route.fulfill({
         body: JSON.stringify({
           allowance: { limit: 0, remaining: 0, used: 0 },
-          availableProviders: [],
+          availableSetups: [
+            { broker: "direct", channel: "whatsapp", provider: "zapi" },
+          ],
           connections: [],
         }),
         headers: { "content-type": "application/json" },
@@ -62,18 +64,18 @@ test.describe("CRM WhatsApp connection", () => {
     await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
-    const connection = page.getByRole("region", { name: "Conexão" });
+    const connection = page.getByRole("region", { name: "Conexões" });
+    const zapiCard = connection.locator('button[data-provider="zapi"]');
+    await expect(zapiCard).toBeVisible();
+    await zapiCard.click();
+    const dialog = page.getByRole("dialog");
     await expect(
-      connection.getByRole("button", { name: /Z-API/ }),
+      dialog.getByRole("button", { name: "Solicitar Z-API" }),
     ).toBeVisible();
-    await connection.getByRole("button", { name: /Z-API/ }).click();
-    await expect(
-      connection.getByRole("button", { name: "Solicitar Z-API" }),
-    ).toBeVisible();
-    await connection.getByRole("button", { name: "Solicitar Z-API" }).click();
+    await dialog.getByRole("button", { name: "Solicitar Z-API" }).click();
     await request;
     await expect(
-      connection.getByText("Aguardando confirmação de pagamento"),
+      dialog.getByText("Aguardando confirmação de pagamento"),
     ).toBeVisible();
     await saveQaScreenshot(
       page,
@@ -82,32 +84,32 @@ test.describe("CRM WhatsApp connection", () => {
     );
   });
 
-  test("shows pairing only for a configured Z-API connection", async ({
+  test("opens status management for a configured Z-API connection", async ({
     page,
   }, testInfo) => {
     await setQaViewport(page, "desktop");
     await installLocalOwnerSession(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
-    await page.route("**/crm/whatsapp/connections", (route) =>
+    await page.route("**/api/v1/crm/channel-connections", (route) =>
       route.fulfill({
         body: JSON.stringify({
           allowance: { limit: 1, remaining: 0, used: 1 },
-          availableProviders: [],
+          availableSetups: [],
           connections: [
             {
-              credentials: {
-                apiBaseUrlEnv: null,
-                clientTokenEnv: null,
-                instanceIdEnv: null,
-                instanceTokenEnv: null,
-                mode: "stored",
-                storedInstanceConfigured: true,
-              },
               displayName: "Z-API E2E",
-              externalConnectionId: null,
-              externalInstanceId: "stored-instance",
               id: "connection-zapi",
+              channel: "whatsapp",
+              provider: "zapi",
+              state: "disconnected",
+              readiness: {
+                ready: false,
+                reasonCode: "disconnected",
+                reason: null,
+              },
+              capabilities: [],
+              isDefault: false,
               live: {
                 checkedAt: "2026-08-10T12:00:00.000Z",
                 connected: false,
@@ -115,23 +117,20 @@ test.describe("CRM WhatsApp connection", () => {
                 providerStatus: "disconnected",
                 smartphoneConnected: false,
               },
-              phone: null,
-              provider: "zapi",
-              ready: false,
               setup: {
                 attemptCount: 0,
                 configuredAt: null,
                 lastErrorCode: null,
+                leaseExpiresAt: null,
+                leaseOwner: null,
                 requestedAt: "2026-08-10T12:00:00.000Z",
                 requiredTypes: [],
                 status: "configured",
                 succeededTypes: [],
                 supportCode: "ZAPI-E2E",
                 updatedAt: "2026-08-10T12:00:00.000Z",
-                version: 1,
+                version: 2,
               },
-              status: "disconnected",
-              webhookUrl: null,
             },
           ],
         }),
@@ -150,21 +149,20 @@ test.describe("CRM WhatsApp connection", () => {
     await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
-    const connection = page.getByRole("region", { name: "Conexão" });
+    const directory = page.getByRole("region", { name: "Conexões" });
+    await directory.locator('button[data-provider="zapi"]').click();
+    const connection = page.getByRole("dialog");
     await expect(
-      connection.getByRole("heading", { name: "Conectar WhatsApp · Z-API" }),
+      connection.getByRole("heading", {
+        name: "WhatsApp · Z-API E2E",
+      }),
     ).toBeVisible();
+    await expect(connection.getByText("Desconectada")).toBeVisible();
     await expect(
-      connection.getByRole("button", { name: "Gerar QR Code" }),
+      connection.getByRole("button", { name: "Atualizar status da conexão" }),
     ).toBeVisible();
-    await connection.getByRole("tab", { name: "Código do telefone" }).click();
-    await expect(
-      connection.getByLabel("Telefone para pareamento"),
-    ).toBeVisible();
+    await expect(connection.getByRole("tab")).toHaveCount(0);
     await expect(connection.getByLabel("ID da instância")).toHaveCount(0);
-    await expect(connection.getByLabel("Token da instância")).toHaveCount(0);
-    await expect(connection.getByLabel("Token do cliente")).toHaveCount(0);
-    await expect(connection.getByText(/webhook/i)).toHaveCount(0);
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-connection-pairing");
   });
 
@@ -175,11 +173,13 @@ test.describe("CRM WhatsApp connection", () => {
     await installLocalOwnerSession(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
-    await page.route("**/crm/whatsapp/connections", (route) =>
+    await page.route("**/api/v1/crm/channel-connections", (route) =>
       route.fulfill({
         body: JSON.stringify({
           allowance: { limit: 0, remaining: 0, used: 0 },
-          availableProviders: ["zapi"],
+          availableSetups: [
+            { broker: "direct", channel: "whatsapp", provider: "zapi" },
+          ],
           connections: [],
         }),
         headers: { "content-type": "application/json" },
@@ -197,15 +197,14 @@ test.describe("CRM WhatsApp connection", () => {
     await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
-    const connection = page.getByRole("region", { name: "Conexão" });
+    const connection = page.getByRole("region", { name: "Conexões" });
     const directory = connection.getByRole("list", {
-      name: "Adicionar canal",
+      name: "Canais conectados e disponíveis de WhatsApp",
     });
+    const zapiCard = directory.locator('button[data-provider="zapi"]');
 
     // Z-API remains an actionable row with an honest optional-add-on note.
-    await expect(
-      directory.getByRole("button", { name: /Z-API/ }),
-    ).toBeVisible();
+    await expect(zapiCard).toBeVisible();
     await expect(directory.getByText("Adicional opcional")).toBeVisible();
 
     // Official WhatsApp is honestly unavailable: no button, no CTA.
@@ -219,12 +218,13 @@ test.describe("CRM WhatsApp connection", () => {
     ).toHaveCount(0);
     await expect(directory.locator('[aria-disabled="true"]')).toHaveCount(1);
 
-    // Instagram is support-assisted: badge plus support link, no setup CTA.
-    await expect(directory.getByText("Instagram incluído")).toBeVisible();
-    await expect(directory.getByText("Com a equipe")).toBeVisible();
+    // Instagram is honestly unavailable when the server offers no setup.
+    const instagram = connection.getByRole("region", { name: "Instagram" });
+    await expect(instagram.getByText("Instagram Oficial")).toBeVisible();
+    await expect(instagram.getByText("Indisponível")).toBeVisible();
     await expect(
-      directory.getByRole("link", { name: "Pedir ajuda para configurar" }),
-    ).toBeVisible();
+      instagram.getByRole("link", { name: "Pedir ajuda para configurar" }),
+    ).toHaveCount(0);
 
     await saveQaScreenshot(
       page,
@@ -243,18 +243,18 @@ test.describe("CRM WhatsApp connection", () => {
 
     let connectionCreated = false;
     const createdConnection = {
-      credentials: {
-        apiBaseUrlEnv: null,
-        clientTokenEnv: null,
-        instanceIdEnv: null,
-        instanceTokenEnv: null,
-        mode: "stored",
-        storedInstanceConfigured: true,
-      },
       displayName: "Z-API E2E",
-      externalConnectionId: null,
-      externalInstanceId: "3E2E-INSTANCE",
       id: "connection-zapi-e2e",
+      channel: "whatsapp",
+      provider: "zapi",
+      state: "sandbox",
+      readiness: {
+        ready: false,
+        reasonCode: "pending_webhook",
+        reason: "Aguardando configuração do webhook.",
+      },
+      capabilities: [],
+      isDefault: false,
       live: {
         checkedAt: "2026-08-10T12:00:00.000Z",
         connected: false,
@@ -269,18 +269,18 @@ test.describe("CRM WhatsApp connection", () => {
         attemptCount: 1,
         configuredAt: null,
         lastErrorCode: null,
+        leaseExpiresAt: null,
+        leaseOwner: null,
         requestedAt: "2026-08-10T12:00:00.000Z",
         requiredTypes: ["received", "delivery"],
         status: "configuring",
         succeededTypes: [],
         supportCode: "ZAPI-E2E",
         updatedAt: "2026-08-10T12:00:00.000Z",
-        version: 1,
+        version: 2,
       },
-      status: "disconnected",
-      webhookUrl: null,
     };
-    await page.route("**/crm/whatsapp/connections", async (route) => {
+    await page.route("**/api/v1/crm/channel-connections", async (route) => {
       const request = route.request();
       if (request.method() === "POST") {
         connectionCreated = true;
@@ -298,7 +298,9 @@ test.describe("CRM WhatsApp connection", () => {
             remaining: connectionCreated ? 0 : 1,
             used: 0,
           },
-          availableProviders: connectionCreated ? [] : ["zapi"],
+          availableSetups: connectionCreated
+            ? []
+            : [{ broker: "direct", channel: "whatsapp", provider: "zapi" }],
           connections: connectionCreated ? [createdConnection] : [],
         }),
         headers: { "content-type": "application/json" },
@@ -331,8 +333,9 @@ test.describe("CRM WhatsApp connection", () => {
     await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Conexão/ }).click();
 
-    const connection = page.getByRole("region", { name: "Conexão" });
-    await connection.getByRole("button", { name: /Z-API/ }).click();
+    const directory = page.getByRole("region", { name: "Conexões" });
+    await directory.locator('button[data-provider="zapi"]').click();
+    const connection = page.getByRole("dialog");
 
     // First-time credential form after paid_awaiting_setup.
     await expect(
@@ -341,14 +344,13 @@ test.describe("CRM WhatsApp connection", () => {
       }),
     ).toBeVisible();
     const createRequest = page.waitForRequest(
-      "**/crm/whatsapp/connections",
+      "**/api/v1/crm/channel-connections",
       (candidate) => candidate.method() === "POST",
     );
     await connection.getByLabel("ID da instância").fill("3E2E-INSTANCE");
     await connection
       .getByLabel("Token da instância")
       .fill("instance-token-e2e");
-    await connection.getByLabel("Token do cliente").fill("client-token-e2e");
     await connection
       .getByRole("button", { name: "Salvar credenciais" })
       .click();
@@ -358,7 +360,6 @@ test.describe("CRM WhatsApp connection", () => {
     );
     await expect.poll(async () => (await posted).provider).toBe("zapi");
     expect(await posted).toMatchObject({
-      clientToken: "client-token-e2e",
       instanceId: "3E2E-INSTANCE",
       instanceToken: "instance-token-e2e",
       provider: "zapi",
@@ -379,32 +380,32 @@ test.describe("CRM WhatsApp connection", () => {
     );
   });
 
-  test("keeps the guided pairing flow usable on a 390x844 mobile viewport", async ({
+  test("keeps connection status controls usable on a 390x844 mobile viewport", async ({
     page,
   }, testInfo) => {
     await setQaViewport(page, "mobile");
     await installLocalOwnerSession(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
-    await page.route("**/crm/whatsapp/connections", (route) =>
+    await page.route("**/api/v1/crm/channel-connections", (route) =>
       route.fulfill({
         body: JSON.stringify({
           allowance: { limit: 1, remaining: 0, used: 1 },
-          availableProviders: [],
+          availableSetups: [],
           connections: [
             {
-              credentials: {
-                apiBaseUrlEnv: null,
-                clientTokenEnv: null,
-                instanceIdEnv: null,
-                instanceTokenEnv: null,
-                mode: "stored",
-                storedInstanceConfigured: true,
-              },
               displayName: "Z-API E2E",
-              externalConnectionId: null,
-              externalInstanceId: "stored-instance",
               id: "connection-zapi",
+              channel: "whatsapp",
+              provider: "zapi",
+              state: "disconnected",
+              readiness: {
+                ready: false,
+                reasonCode: "disconnected",
+                reason: null,
+              },
+              capabilities: [],
+              isDefault: false,
               live: {
                 checkedAt: "2026-08-10T12:00:00.000Z",
                 connected: false,
@@ -412,23 +413,20 @@ test.describe("CRM WhatsApp connection", () => {
                 providerStatus: "disconnected",
                 smartphoneConnected: false,
               },
-              phone: null,
-              provider: "zapi",
-              ready: false,
               setup: {
                 attemptCount: 0,
                 configuredAt: null,
                 lastErrorCode: null,
+                leaseExpiresAt: null,
+                leaseOwner: null,
                 requestedAt: "2026-08-10T12:00:00.000Z",
                 requiredTypes: [],
                 status: "configured",
                 succeededTypes: [],
                 supportCode: "ZAPI-E2E",
                 updatedAt: "2026-08-10T12:00:00.000Z",
-                version: 1,
+                version: 2,
               },
-              status: "disconnected",
-              webhookUrl: null,
             },
           ],
         }),
@@ -451,16 +449,14 @@ test.describe("CRM WhatsApp connection", () => {
       .getByRole("button", { name: /Conexão/ })
       .click();
 
-    const connection = page.getByRole("region", { name: "Conexão" });
+    const directory = page.getByRole("region", { name: "Conexões" });
+    await directory.locator('button[data-provider="zapi"]').click();
+    const connection = page.getByRole("dialog");
     await expect(
-      connection.getByRole("heading", { name: "Conectar WhatsApp · Z-API" }),
+      connection.getByRole("heading", { name: "WhatsApp · Z-API E2E" }),
     ).toBeVisible();
     await expect(
-      connection.getByRole("button", { name: "Gerar QR Code" }),
-    ).toBeVisible();
-    await connection.getByRole("tab", { name: "Código do telefone" }).click();
-    await expect(
-      connection.getByLabel("Telefone para pareamento"),
+      connection.getByRole("button", { name: "Atualizar status da conexão" }),
     ).toBeVisible();
 
     const horizontalOverflow = await page.evaluate(
@@ -470,21 +466,9 @@ test.describe("CRM WhatsApp connection", () => {
     );
     expect(horizontalOverflow).toBeLessThanOrEqual(0);
 
-    // The fixed mobile bottom nav must never cover the last action: once
-    // scrolled into view, "Verificar agora" sits fully above the nav.
-    const verifyNow = connection.getByRole("button", {
-      name: "Verificar agora",
-    });
-    await verifyNow.scrollIntoViewIfNeeded();
-    const verifyNowBox = await verifyNow.boundingBox();
-    const mobileNavBox = await page
-      .locator(".crm-whatsapp-mobile-nav")
-      .boundingBox();
-    expect(verifyNowBox).not.toBeNull();
-    expect(mobileNavBox).not.toBeNull();
-    expect(verifyNowBox!.y + verifyNowBox!.height).toBeLessThanOrEqual(
-      mobileNavBox!.y,
-    );
+    await connection
+      .getByRole("button", { name: "Atualizar status da conexão" })
+      .scrollIntoViewIfNeeded();
     await saveQaScreenshot(
       page,
       testInfo,

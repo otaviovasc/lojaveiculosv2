@@ -59,22 +59,20 @@ describe("CrmConnectionAdmin", () => {
     );
 
     const zapiCard = await screen.findByRole("button", {
-      name: /Já conectado/i,
+      name: /CRM channel/i,
     });
     expect(zapiCard).toBeEnabled();
-    expect(screen.getByText("Já conectado")).toBeVisible();
+    expect(screen.queryByText("Já conectado")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /WhatsApp Oficial/i }),
     ).toBeVisible();
     fireEvent.click(zapiCard);
     expect(await screen.findByRole("dialog")).toBeVisible();
-    expect(
-      screen.getAllByText("Conectar WhatsApp · Z-API").length,
-    ).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole("button", { name: "Ver outros canais" }));
+    expect(screen.getByText("Z-API: online")).toBeVisible();
+    fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: /Já conectado/i }),
+      await screen.findByRole("button", { name: /CRM channel/i }),
     ).toBeEnabled();
   });
 

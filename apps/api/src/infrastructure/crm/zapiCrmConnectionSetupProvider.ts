@@ -8,6 +8,7 @@ import {
   isZapiProviderConnected,
   readString,
 } from "./zapiCrmWhatsappGatewaySupport.js";
+import { readCentralClientToken } from "./zapiCrmWhatsappCredentials.js";
 import {
   assertHttpsProviderUrl,
   assertProviderAccepted,
@@ -28,7 +29,7 @@ export function createZapiCrmConnectionSetupProvider(
   env: Record<string, string | undefined> = process.env,
   fetchImpl: typeof fetch = fetch,
 ): ZapiConnectionSetupProvider {
-  const clientToken = env.CRM_ZAPI_CLIENT_TOKEN?.trim();
+  const clientToken = readCentralClientToken(env);
   if (!clientToken) {
     throw new CrmConnectionSetupProviderError(
       "Z-API client authentication is not configured",
