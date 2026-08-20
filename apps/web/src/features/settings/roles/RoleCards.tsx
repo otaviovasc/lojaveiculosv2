@@ -117,15 +117,16 @@ export function CustomRoleCard({
       </button>
       {!disabled && (
         <button
+          aria-label={`Excluir cargo customizado ${role.name}`}
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-lg border border-line bg-panel hover:border-danger hover:text-danger-text text-muted opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+          className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-lg border border-line bg-panel hover:border-danger hover:text-danger-text text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer z-10"
           title="Excluir cargo customizado"
         >
-          <X className="size-3.5" />
+          <X aria-hidden="true" className="size-3.5" />
         </button>
       )}
     </div>

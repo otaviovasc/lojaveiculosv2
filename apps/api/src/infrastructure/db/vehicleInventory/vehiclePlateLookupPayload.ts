@@ -145,6 +145,8 @@ function readCatalogSnapshot(value: unknown): VehicleCatalogSnapshot | null {
     fipeCode: readString(value.fipeCode),
     fuel: readString(value.fuel),
     modelCode,
+    modelFamilyCode: readString(value.modelFamilyCode),
+    modelFamilyName: readString(value.modelFamilyName),
     modelName,
     modelYear: readNumber(value.modelYear),
     priceCents: readNumber(value.priceCents),

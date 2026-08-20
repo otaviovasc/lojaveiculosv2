@@ -1,6 +1,12 @@
 import { coerceVehicleColor } from "@lojaveiculosv2/shared";
 import { CarFront, Check, ClipboardList, Gauge, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+  formatVehicleMileageInput,
+  formatVehiclePlateInput,
+  formatVehicleRenavamInput,
+  formatVehicleVinInput,
+} from "../../lib/masks";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import { InventoryCatalogSelector } from "../inventory/components/InventoryCatalogSelector";
 import {
@@ -328,28 +334,63 @@ function TradeInInput({
   type?: "number" | "text";
 }) {
   const rawValue = tradeIn[field];
+  const textValue =
+    rawValue !== undefined && rawValue !== null ? String(rawValue) : "";
   const displayValue =
-    field === "mileageKm" &&
-    rawValue !== undefined &&
-    rawValue !== null &&
-    rawValue !== ""
-      ? Number(String(rawValue).replace(/\D/g, "") || "0").toLocaleString(
-          "pt-BR",
-        )
-      : rawValue !== undefined && rawValue !== null
-        ? String(rawValue)
-        : "";
+    field === "mileageKm"
+      ? formatVehicleMileageInput(textValue)
+      : field === "plate"
+        ? formatVehiclePlateInput(textValue)
+        : field === "chassi"
+          ? formatVehicleVinInput(textValue)
+          : field === "renavam"
+            ? formatVehicleRenavamInput(textValue)
+            : textValue;
+  const maxLength =
+    field === "plate"
+      ? 7
+      : field === "chassi"
+        ? 17
+        : field === "renavam"
+          ? 11
+          : undefined;
 
   return (
     <InventoryField className={className} label={label}>
       <InventoryInput
+        className={
+          field === "plate" || field === "chassi"
+            ? "font-mono uppercase"
+            : undefined
+        }
         inputMode={
           type === "number" || field === "mileageKm" ? "numeric" : undefined
         }
+        maxLength={maxLength}
         onChange={(event) => {
           if (field === "mileageKm") {
-            const digits = event.target.value.replace(/\D/g, "");
+            const digits = formatVehicleMileageInput(
+              event.target.value,
+            ).replace(/\D/g, "");
             onChange("tradeIn", field, digits ? Number(digits) : null);
+          } else if (field === "plate") {
+            onChange(
+              "tradeIn",
+              field,
+              formatVehiclePlateInput(event.target.value),
+            );
+          } else if (field === "chassi") {
+            onChange(
+              "tradeIn",
+              field,
+              formatVehicleVinInput(event.target.value),
+            );
+          } else if (field === "renavam") {
+            onChange(
+              "tradeIn",
+              field,
+              formatVehicleRenavamInput(event.target.value),
+            );
           } else if (type === "number") {
             const num = Number(event.target.value);
             onChange(

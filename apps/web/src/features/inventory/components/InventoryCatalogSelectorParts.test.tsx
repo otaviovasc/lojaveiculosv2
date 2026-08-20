@@ -57,4 +57,38 @@ describe("CatalogSelect combobox", () => {
 
     expect(screen.getByText("F")).toBeVisible();
   });
+
+  it("supports keyboard navigation and selection", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <CatalogSelect
+        combobox
+        label="Versão FIPE"
+        onChange={onChange}
+        options={[
+          { code: "1", name: "Versão A" },
+          { code: "2", name: "Versão B" },
+        ]}
+        value=""
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Versão FIPE" });
+    await user.click(combobox);
+    expect(combobox).toHaveAttribute("aria-controls");
+
+    await user.keyboard("{ArrowDown}");
+
+    const activeOption = screen.getByRole("option", { name: "Versão B" });
+    expect(activeOption).toHaveAttribute("data-active", "true");
+    expect(activeOption).toHaveAttribute("tabindex", "-1");
+
+    await user.keyboard("{Enter}");
+
+    expect(onChange).toHaveBeenCalledWith("2");
+    expect(
+      screen.queryByRole("listbox", { name: "Versão FIPE: opções" }),
+    ).not.toBeInTheDocument();
+  });
 });

@@ -13,12 +13,14 @@ import type { VehicleCatalogRepository } from "../../../domains/vehicle/ports/ve
 import {
   findBrand,
   findModelFamily,
+  findModelFamilyById,
   findVersion,
   findYear,
+  mapVehicleCatalogSnapshot,
   requireRow,
 } from "./drizzleVehicleCatalogSupport.js";
 import { createDrizzleVehicleCatalogWrites } from "./drizzleVehicleCatalogWrites.js";
-import { vehicleCatalogSnapshotModelNameFromVersion } from "./vehicleCatalogSnapshotName.js";
+
 export type DrizzleVehicleCatalogClient = PostgresJsDatabase<typeof schema>;
 
 export function createDrizzleVehicleCatalogRepository(
@@ -56,36 +58,14 @@ export function createDrizzleVehicleCatalogRepository(
       if (!year) return null;
       const brand = await findBrand(db, input);
       if (!brand) return null;
-      const [family] = await db
-        .select()
-        .from(vehicleCatalogModelFamilies)
-        .where(eq(vehicleCatalogModelFamilies.id, version.modelFamilyId));
-      if (!family) return null;
-      return {
-        brandCode: input.brandCode,
-        brandLogoUrl: brand.logoUrl,
-        brandName: brand.name,
-        fipeCode: year.fipeCode,
-        fuel: year.fuel,
-        modelCode: version.fipeCode,
-        modelName: vehicleCatalogSnapshotModelNameFromVersion(
-          family.name,
-          version,
-        ),
-        modelYear: year.modelYear,
-        priceCents: year.priceCents,
-        referenceMonth: year.referenceMonth,
-        source: "fipe",
-        vehicleType: input.vehicleType,
-        yearCode: year.fipeYearCode,
-        yearName: year.name,
-      };
+      const modelFamily = await findModelFamilyById(db, version.modelFamilyId);
+      return mapVehicleCatalogSnapshot({ brand, modelFamily, version, year });
     },
     async listSnapshotsByFipeReference(input) {
       const rows = await db
         .select({
           brand: vehicleCatalogBrands,
-          family: vehicleCatalogModelFamilies,
+          modelFamily: vehicleCatalogModelFamilies,
           version: vehicleCatalogVersions,
           year: vehicleCatalogYears,
         })
@@ -117,25 +97,9 @@ export function createDrizzleVehicleCatalogRepository(
               : [eq(vehicleCatalogYears.modelYear, input.modelYear)]),
           ),
         );
-      return rows.map(({ brand, family, version, year }) => ({
-        brandCode: brand.fipeCode,
-        brandLogoUrl: brand.logoUrl,
-        brandName: brand.name,
-        fipeCode: year.fipeCode,
-        fuel: year.fuel,
-        modelCode: version.fipeCode,
-        modelName: vehicleCatalogSnapshotModelNameFromVersion(
-          family.name,
-          version,
-        ),
-        modelYear: year.modelYear,
-        priceCents: year.priceCents,
-        referenceMonth: year.referenceMonth,
-        source: "fipe" as const,
-        vehicleType: brand.vehicleType,
-        yearCode: year.fipeYearCode,
-        yearName: year.name,
-      }));
+      return rows.map(({ brand, modelFamily, version, year }) =>
+        mapVehicleCatalogSnapshot({ brand, modelFamily, version, year }),
+      );
     },
     async listBrands(input) {
       const rows = await db

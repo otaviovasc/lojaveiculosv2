@@ -13,6 +13,12 @@ import {
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryPlateLookupResponse } from "../model/enrichmentTypes";
+import {
+  formatInventoryMileageInput,
+  formatInventoryPlateInput,
+  formatInventoryRenavamInput,
+  formatInventoryVinInput,
+} from "../model/inventoryInputFormatting";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
 import {
   InventoryField,
@@ -133,7 +139,10 @@ export function InventoryCreateForm({
           <InventoryField label="Placa">
             <InventoryInput
               className="font-mono uppercase"
-              onChange={onChange("plate")}
+              maxLength={7}
+              onChange={(event) =>
+                onChange("plate")(formatInventoryPlateInput(event.target.value))
+              }
               placeholder="Ex: abc1d23"
               value={form.plate}
             />
@@ -142,7 +151,9 @@ export function InventoryCreateForm({
             <InventoryInput
               className="font-mono uppercase"
               maxLength={17}
-              onChange={onChange("vin")}
+              onChange={(event) =>
+                onChange("vin")(formatInventoryVinInput(event.target.value))
+              }
               placeholder="Chassi ou VIN"
               value={form.vin}
             />
@@ -153,7 +164,9 @@ export function InventoryCreateForm({
               inputMode="numeric"
               maxLength={11}
               onChange={(event) =>
-                onChange("renavam")(event.target.value.replace(/\D/g, ""))
+                onChange("renavam")(
+                  formatInventoryRenavamInput(event.target.value),
+                )
               }
               placeholder="11 dígitos"
               value={form.renavam}
@@ -236,9 +249,8 @@ export function InventoryCreateForm({
             <InventoryInput
               inputMode="numeric"
               onChange={(event) => {
-                const digits = event.target.value.replace(/\D/g, "");
                 onChange("mileageKm")(
-                  digits ? Number(digits).toLocaleString("pt-BR") : "",
+                  formatInventoryMileageInput(event.target.value),
                 );
               }}
               placeholder="Ex: 32.500"

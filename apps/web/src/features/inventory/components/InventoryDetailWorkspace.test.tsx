@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionBootstrap } from "../../account/apiClient";
 import { AccountSessionProvider } from "../../account/accountSession";
@@ -23,6 +24,38 @@ describe("InventoryDetailWorkspace", () => {
 
     expect(screen.getByRole("main")).toHaveClass("dashboard-main");
     expect(screen.getByRole("main")).not.toHaveClass("max-w-7xl");
+  });
+
+  it("opens the core vehicle editor from the overview action", async () => {
+    const user = userEvent.setup();
+    render(
+      <InventoryDetailWorkspace
+        api={
+          {
+            getVehicleUnitAcquisition: vi.fn(async () => null),
+            listCatalogBrands: vi.fn(async () => []),
+            listVehicleSuppliers: vi.fn(async () => []),
+          } as unknown as InventoryApi
+        }
+        detail={createInventoryDetailFixture()}
+        onBack={vi.fn()}
+        onUpdated={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Editar veículo" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Editar veículo" }),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    await user.click(screen.getByRole("button", { name: "Financeiro" }));
+    await user.click(screen.getByRole("button", { name: "Geral" }));
+
+    expect(
+      screen.queryByRole("heading", { name: "Editar veículo" }),
+    ).not.toBeInTheDocument();
   });
 
   it("hides the Vitrine tab when storefront management is not granted", () => {

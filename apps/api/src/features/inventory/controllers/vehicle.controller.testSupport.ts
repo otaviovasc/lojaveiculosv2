@@ -82,6 +82,8 @@ export function createInventoryTestServices(): InventoryListingServices {
       fipeCode: "001267-0",
       fuel: "Flex",
       modelCode: "4828",
+      modelFamilyCode: "toro",
+      modelFamilyName: "Toro",
       modelName: "Toro Volcano",
       modelYear: 2024,
       priceCents: 12690000,

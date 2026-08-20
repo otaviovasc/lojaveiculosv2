@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInventoryDetailFixture } from "./inventoryDetail.testSupport";
 import {
+  buildListingEditInput,
   createInventoryEditState,
   validateInventoryEditState,
 } from "./inventoryEditModel";
@@ -34,5 +35,18 @@ describe("inventory edit model", () => {
         modelYear: "",
       }),
     ).toBeNull();
+  });
+
+  it("formats the stored price and includes internal notes in listing changes", () => {
+    const detail = createInventoryDetailFixture();
+    const form = createInventoryEditState(detail, detail.units[0] ?? null);
+
+    expect(form.price).toBe("189.900,00");
+    expect(
+      buildListingEditInput(
+        { ...form, internalNotes: "  Aguardando preparação  " },
+        detail.listing,
+      ),
+    ).toEqual({ internalNotes: "Aguardando preparação" });
   });
 });

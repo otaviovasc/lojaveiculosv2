@@ -62,6 +62,8 @@ export const inventoryRoutes = {
     input: CatalogInput & {
       brandCode: string;
       modelCode: string;
+      modelFamilyCode?: string;
+      modelFamilyName?: string;
       yearCode: string;
     },
     baseUrl?: string,
@@ -73,6 +75,10 @@ export const inventoryRoutes = {
     const params = catalogParams(input);
     params.set("brandCode", input.brandCode);
     params.set("modelCode", input.modelCode);
+    if (input.modelFamilyCode)
+      params.set("modelFamilyCode", input.modelFamilyCode);
+    if (input.modelFamilyName)
+      params.set("modelFamilyName", input.modelFamilyName);
     params.set("yearCode", input.yearCode);
     return `${endpoint}?${params.toString()}`;
   },

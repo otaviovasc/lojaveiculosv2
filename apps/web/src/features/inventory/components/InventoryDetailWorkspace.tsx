@@ -13,11 +13,7 @@ import { InventoryDetailDocumentosTab } from "./InventoryDetailDocumentosTab";
 import { InventoryDetailHistoricoTab } from "./InventoryDetailHistoricoTab";
 import { InventoryDetailVitrineTab } from "./InventoryDetailVitrineTab";
 import { buildSalesRouteFromInventoryDetail } from "./InventoryDetailSalesRoute";
-import {
-  initialOpcionais,
-  initialObservacoes,
-  formatPrice,
-} from "./InventoryDetailWorkspaceMocks";
+import { formatPrice } from "./InventoryDetailWorkspaceMocks";
 import {
   InventoryDetailEmptyTab,
   InventoryDetailWorkspaceTabs,
@@ -62,6 +58,7 @@ export function InventoryDetailWorkspace({
     : true;
   const [detail, setDetail] = useState(initialDetail);
   const [activeTab, setActiveTab] = useState<TabId>("geral");
+  const [isEditRequested, setIsEditRequested] = useState(false);
 
   const [notification, setNotification] = useState<string | null>(null);
   const [isPrintSheetOpen, setIsPrintSheetOpen] = useState(false);
@@ -79,10 +76,6 @@ export function InventoryDetailWorkspace({
     () => buildInitialSpecs(listing, primaryUnit),
     [listing, primaryUnit],
   );
-
-  const [opcionais, setOpcionais] = useState(initialOpcionais);
-
-  const [observacoes, setObservacoes] = useState(initialObservacoes);
 
   const [notasInternas, setNotasInternas] = useState(
     listing.internalNotes ?? "",
@@ -138,24 +131,9 @@ export function InventoryDetailWorkspace({
     setActiveTab(tab);
   };
 
-  const handleToggleOpcional = (id: string) => {
-    setOpcionais((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
-      ),
-    );
-    showNotification("Opcional atualizado!");
-  };
-  const handleToggleObservacao = (id: string) => {
-    setObservacoes((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
-      ),
-    );
-    showNotification("Observação especial atualizada!");
-  };
   const handleUpdatedDetail = (updated: InventoryListingDetail) => {
     setDetail(updated);
+    setNotasInternas(updated.listing.internalNotes ?? "");
     onUpdated(updated);
   };
 
@@ -208,6 +186,10 @@ export function InventoryDetailWorkspace({
 
       <InventoryDetailOverview
         detail={detail}
+        onEditVehicle={() => {
+          setActiveTab("geral");
+          setIsEditRequested(true);
+        }}
         primaryUnit={primaryUnit}
         specs={specs}
       />
@@ -224,9 +206,9 @@ export function InventoryDetailWorkspace({
           <InventoryDetailGeneralTab
             api={api}
             detail={detail}
+            isEditRequested={isEditRequested}
             initialUnitId={primaryUnitId}
             notasInternas={notasInternas}
-            observacoes={observacoes}
             onUpdated={handleUpdatedDetail}
             onSaveNotasInternas={(notes) => {
               void handleSaveInternalNotes(notes);
@@ -234,9 +216,7 @@ export function InventoryDetailWorkspace({
             onEditSaved={() =>
               showNotification("Veículo atualizado com sucesso!")
             }
-            onToggleObservacao={handleToggleObservacao}
-            onToggleOpcional={handleToggleOpcional}
-            opcionais={opcionais}
+            onEditRequestHandled={() => setIsEditRequested(false)}
             specs={specs}
           />
         )}

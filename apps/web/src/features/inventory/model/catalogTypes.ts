@@ -67,6 +67,8 @@ export type InventoryCatalogSnapshot = {
   fipeCode: string | null;
   fuel: string | null;
   modelCode: string | null;
+  modelFamilyCode?: string | null;
+  modelFamilyName?: string | null;
   modelName: string | null;
   modelYear: number | null;
   priceCents: number | null;

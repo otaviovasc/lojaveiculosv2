@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import {
@@ -105,9 +112,12 @@ function CatalogCombobox({
   const rootRef = useRef<HTMLLabelElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const listboxId = useId();
   const selected = options.find((option) => option.code === value);
   const [query, setQuery] = useState(selected?.name ?? displayValue ?? "");
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const selectedName = selected?.name;
   const filtered = useMemo(() => {
     const search = query.trim().toLowerCase();
@@ -181,6 +191,17 @@ function CatalogCombobox({
 
   useEffect(() => {
     if (!open) return;
+    const selectedIndex = filtered.findIndex((option) => option.code === value);
+    setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+  }, [filtered, open, value]);
+
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    optionRefs.current[activeIndex]?.scrollIntoView?.({ block: "nearest" });
+  }, [activeIndex, open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
       if (rootRef.current?.contains(target)) return;
@@ -200,7 +221,13 @@ function CatalogCombobox({
     >
       <div className="relative w-full" ref={triggerRef}>
         <InventoryInput
+          aria-activedescendant={
+            open && activeIndex >= 0
+              ? `${listboxId}-option-${activeIndex}`
+              : undefined
+          }
           aria-autocomplete="list"
+          aria-controls={open ? listboxId : undefined}
           aria-expanded={open}
           autoComplete="off"
           className="w-full"
@@ -217,6 +244,33 @@ function CatalogCombobox({
           }}
           onFocus={() => {
             if (!disabled) setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setOpen(false);
+              return;
+            }
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault();
+              setOpen(true);
+              setActiveIndex((current) => {
+                const direction = event.key === "ArrowDown" ? 1 : -1;
+                if (current < 0) return direction > 0 ? 0 : filtered.length - 1;
+                return Math.max(
+                  0,
+                  Math.min(filtered.length - 1, current + direction),
+                );
+              });
+              return;
+            }
+            if (event.key === "Enter" && open && activeIndex >= 0) {
+              const option = filtered[activeIndex];
+              if (!option) return;
+              event.preventDefault();
+              onChange(option.code);
+              setQuery(option.name);
+              setOpen(false);
+            }
           }}
           placeholder={placeholder ?? "Digite para buscar..."}
           role="combobox"
@@ -239,23 +293,37 @@ function CatalogCombobox({
                 <div
                   aria-label={`${label}: opções`}
                   className="custom-select-options"
+                  id={listboxId}
                   role="listbox"
                 >
-                  {filtered.map((option) => {
+                  {filtered.map((option, index) => {
                     const isSelected = option.code === value;
+                    const isActive = index === activeIndex;
                     return (
                       <button
                         aria-selected={isSelected}
-                        className="custom-select-option"
+                        className={[
+                          "custom-select-option",
+                          isActive ? "bg-accent-soft text-app-text" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        data-active={isActive ? "true" : undefined}
                         data-selected={isSelected ? "true" : undefined}
+                        id={`${listboxId}-option-${index}`}
                         key={option.code}
                         onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setActiveIndex(index)}
                         onClick={() => {
                           onChange(option.code);
                           setQuery(option.name);
                           setOpen(false);
                         }}
+                        ref={(element) => {
+                          optionRefs.current[index] = element;
+                        }}
                         role="option"
+                        tabIndex={-1}
                         type="button"
                       >
                         {kind === "brand" ? (
