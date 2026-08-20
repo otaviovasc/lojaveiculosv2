@@ -29,12 +29,13 @@ export function WorkspaceTopBar({
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-5">
       <div className="flex items-center gap-3.5 min-w-0">
         <button
+          aria-label="Voltar ao estoque"
           onClick={onBack}
           className="p-2.5 rounded-xl bg-app-elevated border border-line hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer"
           title="Voltar ao estoque"
           type="button"
         >
-          <ArrowLeft className="size-5" />
+          <ArrowLeft aria-hidden="true" className="size-5" />
         </button>
         <div className="min-w-0">
           <h1 className="text-xl md:text-2xl font-black leading-tight break-words">

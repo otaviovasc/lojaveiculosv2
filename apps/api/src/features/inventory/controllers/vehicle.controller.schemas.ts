@@ -93,10 +93,11 @@ export const updateUnitSchema = z.object({
 export const catalogQuerySchema = z.object({
   vehicleType: z.enum(vehicleCatalogTypes).optional(),
 });
-
 export const catalogSnapshotQuerySchema = z.object({
   brandCode: z.string().trim().min(1),
   modelCode: z.string().trim().min(1),
+  modelFamilyCode: z.string().trim().min(1).optional(),
+  modelFamilyName: z.string().trim().min(1).optional(),
   vehicleType: z.enum(vehicleCatalogTypes).optional(),
   yearCode: z.string().trim().min(1),
 });

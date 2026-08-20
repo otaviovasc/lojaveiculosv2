@@ -11,10 +11,6 @@ import type {
 } from "../model/types";
 import { buildInitialSpecs } from "./InventoryDetailFormatters";
 import { InventoryDetailGeneralTab } from "./InventoryDetailGeneralTab";
-import {
-  initialObservacoes,
-  initialOpcionais,
-} from "./InventoryDetailWorkspaceMocks";
 
 afterEach(cleanup);
 
@@ -29,7 +25,7 @@ describe("InventoryDetailGeneralTab vehicle edit", () => {
     renderGeneralTab({ api, detail, onEditSaved, onUpdated });
 
     await user.click(
-      screen.getByRole("button", { name: "Editar especificações" }),
+      screen.getByRole("button", { name: "Editar dados do veículo" }),
     );
     expect(
       screen.getByRole("heading", { name: "Editar veículo" }),
@@ -37,12 +33,14 @@ describe("InventoryDetailGeneralTab vehicle edit", () => {
 
     await replaceInput(user, "Quilometragem", "54321");
     await replaceInput(user, "Portas", "4");
-    await replaceInput(user, "Placa", "QAE1B23");
+    await replaceInput(user, "Placa", "qae1b23");
+    await replaceInput(user, "Notas internas", "Aguardando preparação");
     await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
 
     await waitFor(() =>
       expect(api.updateListingDetails).toHaveBeenCalledWith("listing_1", {
         doors: 4,
+        internalNotes: "Aguardando preparação",
         mileageKm: 54321,
       }),
     );
@@ -63,7 +61,7 @@ describe("InventoryDetailGeneralTab vehicle edit", () => {
 
     renderGeneralTab({ api, detail });
     await user.click(
-      screen.getByRole("button", { name: "Editar especificações" }),
+      screen.getByRole("button", { name: "Editar dados do veículo" }),
     );
 
     expect(screen.getByDisplayValue("Reservado")).toBeDisabled();
@@ -76,6 +74,26 @@ describe("InventoryDetailGeneralTab vehicle edit", () => {
       }),
     );
     expect(api.updateUnit).not.toHaveBeenCalled();
+  });
+
+  it("exposes internal notes as an accessible persisted accordion", async () => {
+    const detail = createDetail();
+    const { api } = createEditApi(detail);
+    const user = userEvent.setup();
+
+    renderGeneralTab({ api, detail });
+
+    const notesToggle = screen.getByRole("button", {
+      name: "Notas Internas",
+    });
+    expect(notesToggle).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(notesToggle);
+
+    expect(notesToggle).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("button", { name: "Editar Nota Interna" }),
+    ).toBeVisible();
   });
 });
 
@@ -107,13 +125,9 @@ function renderGeneralTab({
       detail={detail}
       initialUnitId={unit?.id ?? null}
       notasInternas=""
-      observacoes={[...initialObservacoes]}
       onEditSaved={onEditSaved}
       onSaveNotasInternas={vi.fn()}
-      onToggleObservacao={vi.fn()}
-      onToggleOpcional={vi.fn()}
       onUpdated={onUpdated}
-      opcionais={[...initialOpcionais]}
       specs={buildInitialSpecs(detail.listing, unit)}
     />,
   );

@@ -35,7 +35,9 @@ export function InventoryCatalogSelector({
     catalog?.vehicleType ?? "cars",
   );
   const [brandCode, setBrandCode] = useState(catalog?.brandCode ?? "");
-  const [modelFamilyCode, setModelFamilyCode] = useState("");
+  const [modelFamilyCode, setModelFamilyCode] = useState(
+    catalog?.modelFamilyCode ?? "",
+  );
   const [yearCode, setYearCode] = useState(catalog?.yearCode ?? "");
   const [versionCode, setVersionCode] = useState(catalog?.modelCode ?? "");
 
@@ -54,6 +56,8 @@ export function InventoryCatalogSelector({
   const [state, setState] = useState<CatalogState>({ kind: "idle" });
 
   const onCatalogChangeRef = useRef(onCatalogChange);
+  const selectionRef = useRef({ versionCode, yearCode });
+  selectionRef.current = { versionCode, yearCode };
   useEffect(() => {
     onCatalogChangeRef.current = onCatalogChange;
   }, [onCatalogChange]);
@@ -84,10 +88,19 @@ export function InventoryCatalogSelector({
       .listCatalogModels(brandCode, vehicleType)
       .then((items) => {
         setModels(items);
+        const savedFamily =
+          items.find((item) => item.code === catalog?.modelFamilyCode) ??
+          findMatchingModelFamily(items, catalog?.modelName);
+        if (
+          savedFamily &&
+          catalog?.modelCode === selectionRef.current.versionCode
+        ) {
+          setModelFamilyCode(savedFamily.code);
+        }
         setState({ kind: "idle" });
       })
       .catch((error) => setState(toErrorState(error)));
-  }, [api, brandCode, vehicleType]);
+  }, [api, brandCode, catalog?.modelCode, catalog?.modelName, vehicleType]);
 
   useEffect(() => {
     if (!api || !brandCode || !modelFamilyCode) {
@@ -137,6 +150,16 @@ export function InventoryCatalogSelector({
 
           setYears(uniqueYears);
           setYearToVersionsMap(mapping);
+          const savedYearCode = selectionRef.current.yearCode;
+          const savedVersionCode = selectionRef.current.versionCode;
+          const versionsForSavedYear = mapping[savedYearCode] ?? [];
+          setFilteredVersions(
+            versionsList.filter(
+              (version) =>
+                versionsForSavedYear.includes(version.code) ||
+                version.code === savedVersionCode,
+            ),
+          );
           setState({ kind: "idle" });
         } catch (err) {
           setState(toErrorState(err));
@@ -173,20 +196,41 @@ export function InventoryCatalogSelector({
 
   useEffect(() => {
     if (!api || !brandCode || !versionCode || !yearCode) return;
+    const selectedFamily = models.find(
+      (model) => model.code === modelFamilyCode,
+    );
+    const modelFamilyName =
+      selectedFamily?.name ?? catalog?.modelFamilyName ?? undefined;
     setState({ kind: "loading" });
     void api
       .getCatalogSnapshot({
         brandCode,
         modelCode: versionCode,
+        ...(modelFamilyCode ? { modelFamilyCode } : {}),
+        ...(modelFamilyName ? { modelFamilyName } : {}),
         vehicleType,
         yearCode,
       })
       .then((snapshot) => {
-        onCatalogChangeRef.current(snapshot);
+        onCatalogChangeRef.current({
+          ...snapshot,
+          modelFamilyCode: modelFamilyCode || null,
+          modelFamilyName:
+            selectedFamily?.name ?? catalog?.modelFamilyName ?? null,
+        });
         setState({ kind: "idle" });
       })
       .catch((error) => setState(toErrorState(error)));
-  }, [api, brandCode, versionCode, vehicleType, yearCode]);
+  }, [
+    api,
+    brandCode,
+    catalog?.modelFamilyName,
+    modelFamilyCode,
+    models,
+    vehicleType,
+    versionCode,
+    yearCode,
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -248,7 +292,9 @@ export function InventoryCatalogSelector({
           combobox
           disabled={!brandCode}
           displayValue={
-            !modelFamilyCode ? (catalog?.modelName ?? undefined) : undefined
+            !modelFamilyCode
+              ? (catalog?.modelFamilyName ?? catalog?.modelName ?? undefined)
+              : undefined
           }
           value={modelFamilyCode}
           className="md:col-span-2"
@@ -331,6 +377,39 @@ export function InventoryCatalogSelector({
       <CatalogStatus catalog={catalog} state={state} />
     </div>
   );
+}
+
+export function findMatchingModelFamily(
+  models: readonly InventoryCatalogOption[],
+  versionName: string | null | undefined,
+) {
+  const normalizedVersion = normalizeCatalogName(versionName ?? "");
+  if (!normalizedVersion) return null;
+
+  return (
+    models
+      .filter((model) => {
+        const family = normalizeCatalogName(model.name);
+        return (
+          normalizedVersion === family ||
+          normalizedVersion.startsWith(`${family} `)
+        );
+      })
+      .sort(
+        (left, right) =>
+          normalizeCatalogName(right.name).length -
+          normalizeCatalogName(left.name).length,
+      )[0] ?? null
+  );
+}
+
+function normalizeCatalogName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 function catalogYearDisplay(catalog: InventoryCatalogSnapshot | null) {

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   formatBrazilianDocument,
   formatBrazilianZipCode,
+  formatVehicleRenavamInput,
+  formatVehicleVinInput,
 } from "../../lib/masks";
 import { lookupBrazilianZipCode } from "../../lib/cepLookup";
 import { SaleField } from "./SaleWorkspaceForm";
@@ -198,6 +200,7 @@ export function VehicleDocumentationFields({
 
       <DocumentInput
         error={errors.vehicleRenavam}
+        formatter={formatVehicleRenavamInput}
         label={`Renavam ${policy.vehicleRenavam ? "*" : ""}`}
         maxLength={11}
         onChange={(value) => onChange("renavam", value)}
@@ -207,6 +210,7 @@ export function VehicleDocumentationFields({
       <DocumentInput
         className="uppercase"
         error={errors.vehicleChassi}
+        formatter={formatVehicleVinInput}
         label={`Chassi * ${policy.vehicleChassi ? "(Obrigatório)" : "(Opcional)"}`}
         maxLength={17}
         onChange={(value) => onChange("chassi", value)}

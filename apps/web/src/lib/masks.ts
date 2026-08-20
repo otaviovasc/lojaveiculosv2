@@ -105,6 +105,29 @@ export function formatBrazilianZipCode(value: string): string {
     .replace(/^(\d{5})(\d{1,3})$/, "$1-$2");
 }
 
+export function formatVehicleMileageInput(value: string): string {
+  const digits = onlyDigits(value).slice(0, 9);
+  return digits ? Number(digits).toLocaleString("pt-BR") : "";
+}
+
+export function formatVehiclePlateInput(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 7);
+}
+
+export function formatVehicleRenavamInput(value: string): string {
+  return onlyDigits(value).slice(0, 11);
+}
+
+export function formatVehicleVinInput(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 17);
+}
+
 export function formatBrazilianPixKey(value: string, category: string): string {
   switch (category) {
     case "CPF":

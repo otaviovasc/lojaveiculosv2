@@ -5,6 +5,7 @@ import {
   FileText,
   Gauge,
   ImageIcon,
+  PencilLine,
   Tag,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -15,6 +16,7 @@ import {
   formatTransmission,
 } from "./InventoryDetailFormatters";
 import { formatPrice } from "./InventoryDetailWorkspaceMocks";
+import { FeatureActionButton } from "../../../components/ui/FeatureLayout";
 
 type Specs = {
   bodyType: string;
@@ -31,10 +33,12 @@ type Specs = {
 
 export function InventoryDetailOverview({
   detail,
+  onEditVehicle,
   primaryUnit,
   specs,
 }: {
   detail: InventoryListingDetail;
+  onEditVehicle: () => void;
   primaryUnit: InventoryUnit | null;
   specs: Specs;
 }) {
@@ -88,9 +92,18 @@ export function InventoryDetailOverview({
 
           <div className="grid content-start gap-4 border-t border-line bg-app p-5 md:border-l md:border-t-0">
             <div>
-              <span className="text-xs font-black uppercase tracking-widest text-muted">
-                Preço anunciado
-              </span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-black uppercase tracking-widest text-muted">
+                  Preço anunciado
+                </span>
+                <FeatureActionButton
+                  icon={PencilLine}
+                  label="Editar veículo"
+                  onClick={onEditVehicle}
+                >
+                  Editar
+                </FeatureActionButton>
+              </div>
               <p className="mt-1 text-3xl font-black tracking-tight text-accent">
                 {listing.priceCents
                   ? formatPrice(listing.priceCents)

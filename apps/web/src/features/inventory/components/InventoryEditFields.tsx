@@ -1,13 +1,19 @@
-import { BadgeDollarSign, CarFront } from "lucide-react";
+import { BadgeDollarSign, CarFront, ClipboardList, Gauge } from "lucide-react";
 import { listingStatusOptions, unitStatusOptions } from "../model/formModel";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryEditState } from "../model/inventoryEditModel";
 import { inventoryUnitStatusLabels } from "../model/listCatalogModel";
+import {
+  formatInventoryPlateInput,
+  formatInventoryRenavamInput,
+  formatInventoryVinInput,
+} from "../model/inventoryInputFormatting";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
 import { InventoryEditTechnicalFields } from "./InventoryEditTechnicalFields";
 import {
   InventoryField,
   InventoryColorSelect,
+  InventoryCurrencyInput,
   InventoryInput,
   InventorySelect,
   InventoryTextarea,
@@ -35,21 +41,19 @@ export function EditListingFields({
     <div className="grid gap-4">
       <div className="flex items-center gap-2 text-sm font-black text-app-text">
         <CarFront aria-hidden="true" className="size-4 text-accent-strong" />
-        Anuncio
+        Anúncio
       </div>
-      <InventoryField label="Titulo" required>
+      <InventoryField label="Título" required>
         <InventoryInput
           onChange={(event) => onChange({ ...form, title: event.target.value })}
           value={form.title}
         />
       </InventoryField>
       <div className="grid gap-4 sm:grid-cols-2">
-        <InventoryField label="Preco" required>
-          <InventoryInput
-            inputMode="decimal"
-            onChange={(event) =>
-              onChange({ ...form, price: event.target.value })
-            }
+        <InventoryField label="Preço" required>
+          <InventoryCurrencyInput
+            onValueChange={(price) => onChange({ ...form, price })}
+            placeholder="0,00"
             value={form.price}
           />
         </InventoryField>
@@ -66,6 +70,24 @@ export function EditListingFields({
           />
         </InventoryField>
       </div>
+      <InventoryField label="Descrição comercial">
+        <InventoryTextarea
+          onChange={(event) =>
+            onChange({ ...form, description: event.target.value })
+          }
+          value={form.description}
+        />
+      </InventoryField>
+      <div className="flex items-center gap-2 border-t border-line pt-4 text-sm font-black text-app-text">
+        <ClipboardList
+          aria-hidden="true"
+          className="size-4 text-accent-strong"
+        />
+        Catálogo FIPE
+      </div>
+      <p className="-mt-2 text-xs font-bold text-muted">
+        Selecione em ordem: tipo, marca, modelo, ano e versão.
+      </p>
       <InventoryCatalogSelector
         api={api}
         catalog={form.catalog}
@@ -83,13 +105,18 @@ export function EditListingFields({
           onChange({ ...form, manufactureYear: value })
         }
       />
+      <div className="flex items-center gap-2 border-t border-line pt-4 text-sm font-black text-app-text">
+        <Gauge aria-hidden="true" className="size-4 text-accent-strong" />
+        Especificações
+      </div>
       <InventoryEditTechnicalFields form={form} onChange={onChange} />
-      <InventoryField label="Descricao">
+      <InventoryField label="Notas internas">
         <InventoryTextarea
           onChange={(event) =>
-            onChange({ ...form, description: event.target.value })
+            onChange({ ...form, internalNotes: event.target.value })
           }
-          value={form.description}
+          placeholder="Pendências, preparação ou contexto da negociação."
+          value={form.internalNotes}
         />
       </InventoryField>
     </div>
@@ -137,43 +164,47 @@ function UnitFields({
   const workflowStatus = unit.status === "reserved" || unit.status === "sold";
 
   return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <InventoryField label="Cor">
-          <InventoryColorSelect
-            onChange={(colorName) =>
-              onChange({
-                ...form,
-                colorName,
-              })
-            }
-            value={form.colorName || ""}
-          />
-        </InventoryField>
-        <InventoryField label="Placa">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <InventoryField label="Cor">
+        <InventoryColorSelect
+          onChange={(colorName) =>
+            onChange({
+              ...form,
+              colorName,
+            })
+          }
+          value={form.colorName || ""}
+        />
+      </InventoryField>
+      <InventoryField label="Placa">
+        <InventoryInput
+          className="font-mono uppercase"
+          maxLength={7}
+          onChange={(event) =>
+            onChange({
+              ...form,
+              plate: formatInventoryPlateInput(event.target.value),
+            })
+          }
+          placeholder="Ex: ABC1D23"
+          value={form.plate}
+        />
+      </InventoryField>
+      <InventoryField label="Status da unidade" required>
+        {workflowStatus ? (
           <InventoryInput
-            onChange={(event) =>
-              onChange({ ...form, plate: event.target.value })
-            }
-            value={form.plate}
+            disabled
+            value={inventoryUnitStatusLabels[unit.status]}
           />
-        </InventoryField>
-        <InventoryField label="Status da unidade" required>
-          {workflowStatus ? (
-            <InventoryInput
-              disabled
-              value={inventoryUnitStatusLabels[unit.status]}
-            />
-          ) : (
-            <InventorySelect
-              onChange={(unitStatus) => onChange({ ...form, unitStatus })}
-              options={unitStatusOptions}
-              value={form.unitStatus}
-            />
-          )}
-        </InventoryField>
-      </div>
-      <InventoryField label="Numero de estoque">
+        ) : (
+          <InventorySelect
+            onChange={(unitStatus) => onChange({ ...form, unitStatus })}
+            options={unitStatusOptions}
+            value={form.unitStatus}
+          />
+        )}
+      </InventoryField>
+      <InventoryField label="Número de estoque">
         <InventoryInput
           onChange={(event) =>
             onChange({ ...form, stockNumber: event.target.value })
@@ -185,7 +216,13 @@ function UnitFields({
         <InventoryInput
           className="font-mono uppercase"
           maxLength={17}
-          onChange={(event) => onChange({ ...form, vin: event.target.value })}
+          onChange={(event) =>
+            onChange({
+              ...form,
+              vin: formatInventoryVinInput(event.target.value),
+            })
+          }
+          placeholder="17 caracteres"
           value={form.vin}
         />
       </InventoryField>
@@ -197,12 +234,13 @@ function UnitFields({
           onChange={(event) =>
             onChange({
               ...form,
-              renavam: event.target.value.replace(/\D/g, ""),
+              renavam: formatInventoryRenavamInput(event.target.value),
             })
           }
+          placeholder="11 dígitos"
           value={form.renavam}
         />
       </InventoryField>
-    </>
+    </div>
   );
 }

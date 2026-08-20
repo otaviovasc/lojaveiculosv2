@@ -30,6 +30,20 @@ export const listingCatalogSchema = z
     fipeCode: z.string().trim().min(1).nullable(),
     fuel: z.string().trim().min(1).nullable(),
     modelCode: z.string().trim().min(1).nullable(),
+    modelFamilyCode: z
+      .string()
+      .trim()
+      .min(1)
+      .nullable()
+      .optional()
+      .default(null),
+    modelFamilyName: z
+      .string()
+      .trim()
+      .min(1)
+      .nullable()
+      .optional()
+      .default(null),
     modelName: z.string().trim().min(1).nullable(),
     modelYear: z.number().int().min(1886).max(2100).nullable(),
     priceCents: z.number().int().nonnegative().nullable().default(null),

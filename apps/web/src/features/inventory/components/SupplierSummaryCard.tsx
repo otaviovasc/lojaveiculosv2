@@ -1,3 +1,5 @@
+import { PencilLine } from "lucide-react";
+import { FeatureActionButton } from "../../../components/ui/FeatureLayout";
 import type { VehicleSupplier, VehicleSupplierKind } from "../model/types";
 
 type Props = {
@@ -88,13 +90,13 @@ export function SupplierSummaryCard({ supplier, onEdit }: Props) {
         ) : null}
       </div>
       <div className="flex justify-end mt-2 pt-2 border-t border-line/30">
-        <button
+        <FeatureActionButton
+          icon={PencilLine}
+          label="Editar fornecedor"
           onClick={onEdit}
-          className="text-accent-strong hover:text-accent-strong-hover text-xs font-black flex items-center gap-1 cursor-pointer transition-all"
-          type="button"
         >
           Editar cadastro
-        </button>
+        </FeatureActionButton>
       </div>
     </div>
   );

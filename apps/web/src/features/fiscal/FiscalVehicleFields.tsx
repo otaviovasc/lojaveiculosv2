@@ -8,6 +8,12 @@ import {
   FeatureFieldGroup,
   FeatureFormSection,
 } from "../../components/ui/FeatureForms";
+import {
+  formatVehicleMileageInput,
+  formatVehiclePlateInput,
+  formatVehicleRenavamInput,
+  formatVehicleVinInput,
+} from "../../lib/masks";
 import type { IssueFiscalTaxForm } from "./fiscalIssueModel";
 import type { VehicleNfeVehicle } from "./types";
 
@@ -118,10 +124,11 @@ export function FiscalVehicleFields({
               <FeatureField label="Chassi">
                 <FeatureInput
                   aria-label="Chassi"
+                  className="font-mono uppercase"
                   maxLength={17}
                   onChange={(event) =>
                     onVehicleChange({
-                      chassis: event.target.value.toUpperCase(),
+                      chassis: formatVehicleVinInput(event.target.value),
                     })
                   }
                   value={vehicle.chassis ?? ""}
@@ -130,9 +137,12 @@ export function FiscalVehicleFields({
               <FeatureField label="Placa">
                 <FeatureInput
                   aria-label="Placa"
-                  maxLength={8}
+                  className="font-mono uppercase"
+                  maxLength={7}
                   onChange={(event) =>
-                    onVehicleChange({ plate: event.target.value.toUpperCase() })
+                    onVehicleChange({
+                      plate: formatVehiclePlateInput(event.target.value),
+                    })
                   }
                   value={vehicle.plate ?? ""}
                 />
@@ -146,7 +156,7 @@ export function FiscalVehicleFields({
                   inputMode="numeric"
                   onChange={(event) =>
                     onVehicleChange({
-                      renavam: event.target.value.replace(/\D/g, ""),
+                      renavam: formatVehicleRenavamInput(event.target.value),
                     })
                   }
                   value={vehicle.renavam ?? ""}
@@ -264,7 +274,9 @@ export function FiscalVehicleFields({
                   inputMode="numeric"
                   onChange={(event) =>
                     onVehicleChange({
-                      odometer: event.target.value.replace(/\D/g, ""),
+                      odometer: formatVehicleMileageInput(
+                        event.target.value,
+                      ).replace(/\D/g, ""),
                     })
                   }
                   value={String(vehicle.odometer ?? "")}

@@ -19,6 +19,7 @@ function LocalDevUserAccountButton({ compact }: { compact: boolean }) {
 
   return (
     <button
+      aria-label={name}
       className={
         compact
           ? "flex w-full justify-center rounded-lg py-1 text-primary hover:bg-app-elevated"

@@ -5,6 +5,7 @@ import type {
   UpdateInventoryListingInput,
   UpdateInventoryUnitInput,
 } from "./types";
+import { formatCurrencyValue } from "../../../lib/masks";
 import { parsePriceCents } from "./formModel";
 
 export type InventoryEditState = {
@@ -15,6 +16,7 @@ export type InventoryEditState = {
   engineAspiration: NonNullable<InventoryListing["engineAspiration"]> | "";
   engineDisplacement: NonNullable<InventoryListing["engineDisplacement"]> | "";
   fuelType: NonNullable<InventoryListing["fuelType"]> | "";
+  internalNotes: string;
   manufactureYear: string;
   mileageKm: string;
   modelYear: string;
@@ -43,6 +45,7 @@ export function createInventoryEditState(
     engineAspiration: listing.engineAspiration ?? "",
     engineDisplacement: listing.engineDisplacement ?? "",
     fuelType: listing.fuelType ?? "",
+    internalNotes: listing.internalNotes ?? "",
     manufactureYear: optionalNumberText(listing.manufactureYear),
     mileageKm: optionalNumberText(listing.mileageKm),
     modelYear: optionalNumberText(listing.modelYear),
@@ -50,7 +53,7 @@ export function createInventoryEditState(
     price:
       listing.priceCents === null
         ? ""
-        : String((listing.priceCents / 100).toFixed(2)).replace(".", ","),
+        : formatCurrencyValue(listing.priceCents / 100),
     renavam: unit?.renavam ?? "",
     status: listing.status,
     stockNumber: unit?.stockNumber ?? "",
@@ -94,6 +97,7 @@ export function buildListingEditInput(
     engineAspiration: form.engineAspiration || null,
     engineDisplacement: form.engineDisplacement || null,
     fuelType: form.fuelType || null,
+    internalNotes: nullableText(form.internalNotes),
     manufactureYear: parseOptionalInteger(form.manufactureYear),
     mileageKm: parseOptionalInteger(form.mileageKm),
     modelYear: parseOptionalInteger(form.modelYear),
@@ -120,6 +124,7 @@ export function buildListingEditInput(
     next.engineDisplacement,
   );
   setChanged(input, "fuelType", listing.fuelType, next.fuelType);
+  setChanged(input, "internalNotes", listing.internalNotes, next.internalNotes);
   setChanged(
     input,
     "manufactureYear",

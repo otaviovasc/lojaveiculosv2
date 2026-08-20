@@ -23,6 +23,8 @@ export type VehicleCatalogSnapshot = {
   fipeCode: string | null;
   fuel: string | null;
   modelCode: string;
+  modelFamilyCode?: string | null;
+  modelFamilyName?: string | null;
   modelName: string;
   modelYear: number | null;
   priceCents: number | null;

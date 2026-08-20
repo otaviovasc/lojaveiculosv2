@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useState,
   type ComponentProps,
   type CSSProperties,
   type ReactNode,
@@ -10,6 +11,10 @@ import {
   FeatureInput,
   FeatureSelect,
 } from "../../../components/ui/FeatureControls";
+import {
+  formatInventoryCurrencyInput,
+  normalizeInventoryCurrencyEntry,
+} from "../model/inventoryInputFormatting";
 
 type FieldProps = {
   children: ReactNode;
@@ -70,6 +75,50 @@ export const InventoryField = forwardRef<HTMLLabelElement, FieldProps>(
 
 export function InventoryInput(props: ComponentProps<"input">) {
   return <FeatureInput {...props} />;
+}
+
+export function InventoryCurrencyInput({
+  className,
+  onBlur,
+  onFocus,
+  onValueChange,
+  value,
+  ...props
+}: Omit<ComponentProps<"input">, "onChange" | "value"> & {
+  onValueChange: (value: string) => void;
+  value: string;
+}) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <div className="relative">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-muted"
+      >
+        R$
+      </span>
+      <InventoryInput
+        {...props}
+        className={["pl-10 font-mono tabular-nums", className]
+          .filter(Boolean)
+          .join(" ")}
+        inputMode="decimal"
+        onBlur={(event) => {
+          setIsFocused(false);
+          onBlur?.(event);
+        }}
+        onChange={(event) =>
+          onValueChange(normalizeInventoryCurrencyEntry(event.target.value))
+        }
+        onFocus={(event) => {
+          setIsFocused(true);
+          onFocus?.(event);
+        }}
+        value={isFocused ? value : formatInventoryCurrencyInput(value)}
+      />
+    </div>
+  );
 }
 
 type InventorySelectProps<Value extends string = string> = {

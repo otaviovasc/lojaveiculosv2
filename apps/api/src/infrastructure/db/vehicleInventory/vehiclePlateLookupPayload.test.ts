@@ -9,6 +9,8 @@ describe("parseVehiclePlateLookupPayload", () => {
       fipeCode: "029039-4",
       fuel: "Gasolina",
       modelCode: "2344",
+      modelFamilyCode: "v40",
+      modelFamilyName: "V40",
       modelName: "V40 T-4 2.0 Aut./Mec.",
       modelYear: 2013,
       priceCents: 6552600,
@@ -60,6 +62,43 @@ describe("parseVehiclePlateLookupPayload", () => {
     expect(parseVehiclePlateLookupPayload({}, "AXD9H38")).toMatchObject({
       lookupVersion: 1,
       plate: "AXD9H38",
+    });
+  });
+
+  it("keeps resolved legacy snapshots readable without family fields", () => {
+    const catalog = {
+      brandCode: "59",
+      brandName: "Volvo",
+      fipeCode: "029039-4",
+      fuel: "Gasolina",
+      modelCode: "2344",
+      modelName: "V40 T-4 2.0 Aut./Mec.",
+      modelYear: 2013,
+      priceCents: 6552600,
+      referenceMonth: "agosto de 2026",
+      source: "fipe",
+      vehicleType: "cars",
+      yearCode: "2013-1",
+      yearName: "2013 Gasolina",
+    };
+
+    expect(
+      parseVehiclePlateLookupPayload(
+        {
+          catalogIdentity: {
+            candidates: [],
+            catalog,
+            reason: null,
+            status: "resolved",
+          },
+          lookupVersion: 2,
+        },
+        "AXD9H38",
+      ).catalogIdentity.catalog,
+    ).toMatchObject({
+      modelFamilyCode: null,
+      modelFamilyName: null,
+      modelName: "V40 T-4 2.0 Aut./Mec.",
     });
   });
 });

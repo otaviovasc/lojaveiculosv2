@@ -9,6 +9,10 @@ import {
   formatBrazilianWhatsappPhone,
   formatBrazilianZipCode,
   formatCurrencyValue,
+  formatVehicleMileageInput,
+  formatVehiclePlateInput,
+  formatVehicleRenavamInput,
+  formatVehicleVinInput,
   normalizeBrazilianPhoneDigits,
   parseCurrencyInput,
 } from "./masks";
@@ -45,6 +49,23 @@ describe("currency input helpers", () => {
       expect(formatCurrencyValue(input)).toBe("");
     },
   );
+});
+
+describe("vehicle input masks", () => {
+  it("normalizes identifiers shared by inventory, sales and fiscal forms", () => {
+    expect(formatVehiclePlateInput("abc-1d23 extra")).toBe("ABC1D23");
+    expect(formatVehicleVinInput("9bw zzZ-377-vt004251")).toBe(
+      "9BWZZZ377VT004251",
+    );
+    expect(formatVehicleRenavamInput("001.234.567-89 extra")).toBe(
+      "00123456789",
+    );
+  });
+
+  it("formats mileage without retaining pasted units", () => {
+    expect(formatVehicleMileageInput("32.500 km")).toBe("32.500");
+    expect(formatVehicleMileageInput("km")).toBe("");
+  });
 });
 
 describe("Brazilian contact masks", () => {

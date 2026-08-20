@@ -10,7 +10,7 @@ import {
   idealSellPriceCents,
   recommendedAcquisitionCents,
 } from "../model/inventoryPricing";
-import { InventoryField, InventoryInput } from "./InventoryFormParts";
+import { InventoryCurrencyInput, InventoryField } from "./InventoryFormParts";
 
 export function InventoryCreateCostsSection({
   form,
@@ -68,18 +68,16 @@ export function InventoryCreateCostsSection({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <InventoryField label="Valor de aquisição" required>
-          <InventoryInput
-            inputMode="decimal"
-            onChange={onChange("acquisitionPrice")}
-            placeholder="R$ 0,00"
+          <InventoryCurrencyInput
+            onValueChange={(value) => onChange("acquisitionPrice")(value)}
+            placeholder="0,00"
             value={form.acquisitionPrice}
           />
         </InventoryField>
         <InventoryField label="Valor de venda anunciado" required>
-          <InventoryInput
-            inputMode="decimal"
-            onChange={onChange("price")}
-            placeholder="R$ 0,00"
+          <InventoryCurrencyInput
+            onValueChange={(value) => onChange("price")(value)}
+            placeholder="0,00"
             value={form.price}
           />
         </InventoryField>

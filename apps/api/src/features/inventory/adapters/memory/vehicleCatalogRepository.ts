@@ -27,6 +27,8 @@ export function createMemoryVehicleCatalogRepository(): VehicleCatalogRepository
     fipeCode: "001267-0",
     fuel: "Flex",
     modelCode: "4828",
+    modelFamilyCode: "toro",
+    modelFamilyName: "Toro",
     modelName: "Toro Volcano 2.0 16V 4x4 TB Diesel Aut.",
     modelYear: 2024,
     priceCents: 12690000,

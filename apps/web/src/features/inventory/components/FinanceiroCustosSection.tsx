@@ -152,12 +152,16 @@ export function FinanceiroCustosSection({
                         <span>{c.account}</span>
                         {c.receipt ? (
                           <button
+                            aria-label={`Visualizar comprovante ${c.receipt.fileName}`}
                             onClick={() => onDownloadReceipt?.(c.receipt!.id)}
                             type="button"
                             className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent-text cursor-pointer transition-all flex items-center justify-center"
                             title={`Visualizar comprovante: ${c.receipt.fileName}`}
                           >
-                            <Paperclip className="size-3.5 text-accent" />
+                            <Paperclip
+                              aria-hidden="true"
+                              className="size-3.5 text-accent"
+                            />
                           </button>
                         ) : null}
                       </div>

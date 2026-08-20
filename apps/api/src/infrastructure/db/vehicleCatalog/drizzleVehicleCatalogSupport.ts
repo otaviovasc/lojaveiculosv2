@@ -5,7 +5,10 @@ import {
   vehicleCatalogYears,
 } from "@lojaveiculosv2/db";
 import { and, eq } from "drizzle-orm";
-import type { VehicleCatalogType } from "../../../domains/vehicle/ports/vehicleCatalogProvider.js";
+import type {
+  VehicleCatalogSnapshot,
+  VehicleCatalogType,
+} from "../../../domains/vehicle/ports/vehicleCatalogProvider.js";
 import type { DrizzleVehicleCatalogClient } from "./drizzleVehicleCatalogRepository.js";
 
 export type BrandRow = typeof vehicleCatalogBrands.$inferSelect;
@@ -48,6 +51,17 @@ export async function findModelFamily(
         eq(vehicleCatalogModelFamilies.slug, input.modelFamilyCode),
       ),
     );
+  return row ?? null;
+}
+
+export async function findModelFamilyById(
+  db: DrizzleVehicleCatalogClient,
+  modelFamilyId: string,
+): Promise<FamilyRow | null> {
+  const [row] = await db
+    .select()
+    .from(vehicleCatalogModelFamilies)
+    .where(eq(vehicleCatalogModelFamilies.id, modelFamilyId));
   return row ?? null;
 }
 
@@ -128,4 +142,40 @@ export function preserveVehicleBrandLogoUrl(
   existingLogoUrl: string | null | undefined,
 ): string | null {
   return incomingLogoUrl ?? existingLogoUrl ?? null;
+}
+
+export function mapVehicleCatalogSnapshot(input: {
+  brand: Pick<BrandRow, "fipeCode" | "logoUrl" | "name" | "vehicleType">;
+  modelFamily: Pick<FamilyRow, "name" | "slug"> | null;
+  version: Pick<VersionRow, "fipeCode" | "name">;
+  year: Pick<
+    YearRow,
+    | "fipeCode"
+    | "fipeYearCode"
+    | "fuel"
+    | "modelYear"
+    | "name"
+    | "priceCents"
+    | "referenceMonth"
+  >;
+}): VehicleCatalogSnapshot {
+  const { brand, modelFamily, version, year } = input;
+  return {
+    brandCode: brand.fipeCode,
+    brandLogoUrl: brand.logoUrl,
+    brandName: brand.name,
+    fipeCode: year.fipeCode,
+    fuel: year.fuel,
+    modelCode: version.fipeCode,
+    modelFamilyCode: modelFamily?.slug ?? null,
+    modelFamilyName: modelFamily?.name ?? null,
+    modelName: version.name,
+    modelYear: year.modelYear,
+    priceCents: year.priceCents,
+    referenceMonth: year.referenceMonth,
+    source: "fipe",
+    vehicleType: brand.vehicleType,
+    yearCode: year.fipeYearCode,
+    yearName: year.name,
+  };
 }

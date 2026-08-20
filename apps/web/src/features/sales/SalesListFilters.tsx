@@ -94,6 +94,7 @@ export function SalesListFilters({
             </div>
             {(startDate || endDate) && (
               <button
+                aria-label="Limpar período"
                 className="p-1 hover:bg-app rounded-md text-muted hover:text-app-text ml-1.5 shrink-0"
                 onClick={() => {
                   onStartDateChange(null);
@@ -102,7 +103,7 @@ export function SalesListFilters({
                 title="Limpar Datas"
                 type="button"
               >
-                <X className="size-3.5" />
+                <X aria-hidden="true" className="size-3.5" />
               </button>
             )}
           </div>
