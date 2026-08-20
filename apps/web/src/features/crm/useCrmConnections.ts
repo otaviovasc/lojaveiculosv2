@@ -9,6 +9,7 @@ import type {
   CrmCreateConnectionInput,
   CrmProviderConnection,
   CrmWhatsappZapiAddonContract,
+  CrmWhatsappZapiWebhookSetupResult,
 } from "./crmConversationTypes";
 
 const fallbackAllowance: CrmConnectionAllowance = {
@@ -28,6 +29,8 @@ export function useCrmConnections(api: CrmConversationApi) {
   const [zapiAddonContract, setZapiAddonContract] =
     useState<CrmWhatsappZapiAddonContract | null>(null);
   const requestGenerationRef = useRef(0);
+  const connectionsRef = useRef<CrmProviderConnection[]>([]);
+  const connectionMutationGenerationRef = useRef(new Map<string, number>());
 
   const loadConnections = useCallback(() => api.listConnections(), [api]);
   const loadZapiAddonContract = useCallback(async () => {
@@ -41,6 +44,65 @@ export function useCrmConnections(api: CrmConversationApi) {
     }
   }, [api]);
 
+  const applyConnectionsPayload = useCallback(
+    (payload: Awaited<ReturnType<CrmConversationApi["listConnections"]>>) => {
+      const nextConnections = payload.connections.map((incoming) => {
+        const current = connectionsRef.current.find(
+          (candidate) => String(candidate.id) === String(incoming.id),
+        );
+        return current
+          ? reconcileConnectionSnapshot(current, incoming)
+          : incoming;
+      });
+      connectionsRef.current = nextConnections;
+      setConnections(nextConnections);
+      setAllowance(payload.allowance);
+      setAvailableSetups(payload.availableSetups);
+    },
+    [],
+  );
+
+  const beginConnectionMutation = useCallback(
+    (connectionId: CrmConnectionId) => {
+      const key = String(connectionId);
+      const next = (connectionMutationGenerationRef.current.get(key) ?? 0) + 1;
+      connectionMutationGenerationRef.current.set(key, next);
+      return next;
+    },
+    [],
+  );
+
+  const isLatestConnectionMutation = useCallback(
+    (connectionId: CrmConnectionId, generation: number) =>
+      connectionMutationGenerationRef.current.get(String(connectionId)) ===
+      generation,
+    [],
+  );
+
+  const reconcileConnection = useCallback(
+    (connectionId: CrmConnectionId, incoming: CrmProviderConnection) => {
+      const current = connectionsRef.current.find(
+        (candidate) => String(candidate.id) === String(connectionId),
+      );
+      const reconciled = current
+        ? reconcileConnectionSnapshot(current, incoming)
+        : incoming;
+      const nextConnections = current
+        ? connectionsRef.current.map((candidate) =>
+            String(candidate.id) === String(connectionId)
+              ? reconciled
+              : candidate,
+          )
+        : connectionsRef.current;
+      if (current) {
+        connectionsRef.current = nextConnections;
+        setConnections(nextConnections);
+      }
+      return reconciled;
+    },
+    [],
+  );
+
   const refreshConnections = useCallback(async () => {
     const requestGeneration = ++requestGenerationRef.current;
     try {
@@ -49,23 +111,25 @@ export function useCrmConnections(api: CrmConversationApi) {
         loadZapiAddonContract(),
       ]);
       if (requestGeneration !== requestGenerationRef.current) return;
-      setConnections(payload.connections);
-      setAllowance(payload.allowance);
-      setAvailableSetups(payload.availableSetups);
+      applyConnectionsPayload(payload);
       setZapiAddonContract(addonContract);
     } catch (caught) {
       if (requestGeneration === requestGenerationRef.current) {
         setError(asError(caught));
       }
     }
-  }, [loadConnections, loadZapiAddonContract]);
+  }, [applyConnectionsPayload, loadConnections, loadZapiAddonContract]);
 
   const createConnection = useCallback(
     async (input: CrmCreateConnectionInput) => {
       try {
         const created = await api.createConnection(input);
         await refreshConnections();
-        return created;
+        return (
+          connectionsRef.current.find(
+            (connection) => String(connection.id) === String(created.id),
+          ) ?? created
+        );
       } catch (caught) {
         setError(asError(caught));
         return null;
@@ -100,30 +164,58 @@ export function useCrmConnections(api: CrmConversationApi) {
 
   const disconnectZapiConnection = useCallback(
     async (connectionId: CrmConnectionId) => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
       try {
         const connection = await api.disconnectZapiConnection(connectionId);
         await refreshConnections();
-        return connection;
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return (
+            connectionsRef.current.find(
+              (candidate) => String(candidate.id) === String(connectionId),
+            ) ?? connection
+          );
+        }
+        return reconcileConnection(connectionId, connection);
       } catch (caught) {
         setError(asError(caught));
         throw caught;
       }
     },
-    [api, refreshConnections],
+    [
+      api,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      reconcileConnection,
+      refreshConnections,
+    ],
   );
 
   const refreshZapiConnectionStatus = useCallback(
     async (connectionId: CrmConnectionId) => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
       try {
         const connection = await api.refreshZapiConnectionStatus(connectionId);
         await refreshConnections();
-        return connection;
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return (
+            connectionsRef.current.find(
+              (candidate) => String(candidate.id) === String(connectionId),
+            ) ?? connection
+          );
+        }
+        return reconcileConnection(connectionId, connection);
       } catch (caught) {
         setError(asError(caught));
         throw caught;
       }
     },
-    [api, refreshConnections],
+    [
+      api,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      reconcileConnection,
+      refreshConnections,
+    ],
   );
 
   const requestZapiAddon = useCallback(async () => {
@@ -157,21 +249,36 @@ export function useCrmConnections(api: CrmConversationApi) {
   );
 
   const configureZapiWebhooks = useCallback(
-    async (connectionId: CrmConnectionId) => {
+    async (
+      connectionId: CrmConnectionId,
+    ): Promise<
+      CrmWhatsappZapiWebhookSetupResult & {
+        connection?: CrmProviderConnection;
+      }
+    > => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
       try {
         const result = await api.configureZapiWebhooks(connectionId);
-        const payload = await loadConnections();
-        const configuredConnections = payload.connections.map((connection) =>
-          connection.id === connectionId && connection.setup === undefined
-            ? { ...connection, setup: result.setup }
-            : connection,
+        await refreshConnections();
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return result;
+        }
+        const currentConnections = connectionsRef.current;
+        const current = currentConnections.find(
+          (candidate) => String(candidate.id) === String(connectionId),
         );
-        setConnections(configuredConnections);
-        setAllowance(payload.allowance);
-        setAvailableSetups(payload.availableSetups);
-        const connection = configuredConnections.find(
-          (candidate) => candidate.id === connectionId,
-        );
+        const connection = current
+          ? { ...current, setup: result.setup }
+          : undefined;
+        if (connection) {
+          const configuredConnections = currentConnections.map((candidate) =>
+            String(candidate.id) === String(connectionId)
+              ? connection
+              : candidate,
+          );
+          connectionsRef.current = configuredConnections;
+          setConnections(configuredConnections);
+        }
         return {
           ...result,
           ...(connection ? { connection } : {}),
@@ -181,7 +288,12 @@ export function useCrmConnections(api: CrmConversationApi) {
         throw caught;
       }
     },
-    [api, loadConnections],
+    [
+      api,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      refreshConnections,
+    ],
   );
 
   const authorizeComposio = useCallback(
@@ -202,6 +314,11 @@ export function useCrmConnections(api: CrmConversationApi) {
               ? result.connection
               : connection,
           ),
+        );
+        connectionsRef.current = connectionsRef.current.map((connection) =>
+          connection.id === result.connection.id
+            ? result.connection
+            : connection,
         );
         return result;
       } catch (caught) {
@@ -229,15 +346,18 @@ export function useCrmConnections(api: CrmConversationApi) {
   useEffect(() => {
     const requestGeneration = ++requestGenerationRef.current;
     let active = true;
+    connectionsRef.current = [];
+    setConnections([]);
+    setAllowance(fallbackAllowance);
+    setAvailableSetups([]);
+    setZapiAddonContract(null);
     setIsLoading(true);
     setError(null);
-    void loadConnections()
-      .then(async (payload) => {
+    void Promise.all([loadConnections(), loadZapiAddonContract()])
+      .then(([payload, addonContract]) => {
         if (active && requestGeneration === requestGenerationRef.current) {
-          setConnections(payload.connections);
-          setAllowance(payload.allowance);
-          setAvailableSetups(payload.availableSetups);
-          setZapiAddonContract(await loadZapiAddonContract());
+          applyConnectionsPayload(payload);
+          setZapiAddonContract(addonContract);
         }
       })
       .catch((caught) => {
@@ -252,7 +372,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     return () => {
       active = false;
     };
-  }, [loadConnections, loadZapiAddonContract]);
+  }, [applyConnectionsPayload, loadConnections, loadZapiAddonContract]);
 
   return {
     allowance,
@@ -277,4 +397,31 @@ export function useCrmConnections(api: CrmConversationApi) {
     setConnectionPaused,
     zapiAddonContract,
   };
+}
+
+function reconcileConnectionSnapshot(
+  current: CrmProviderConnection,
+  incoming: CrmProviderConnection,
+): CrmProviderConnection {
+  const currentLiveAt = readTimestamp(current.live?.checkedAt);
+  const incomingLiveAt = readTimestamp(incoming.live?.checkedAt);
+  const currentSetupAt = readTimestamp(current.setup?.updatedAt);
+  const incomingSetupAt = readTimestamp(incoming.setup?.updatedAt);
+
+  return {
+    ...current,
+    ...incoming,
+    ...(current.live && (!incoming.live || incomingLiveAt < currentLiveAt)
+      ? { live: current.live }
+      : {}),
+    ...(current.setup && (!incoming.setup || incomingSetupAt < currentSetupAt)
+      ? { setup: current.setup }
+      : {}),
+  };
+}
+
+function readTimestamp(value: string | null | undefined) {
+  if (!value) return 0;
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
 }

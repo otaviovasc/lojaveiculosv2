@@ -206,7 +206,7 @@ describe("local permission smoke safety and personas", () => {
       expect(projection).toContain("crm.messaging.connection.pair");
     }
     expect(localProjection).toContain(
-      '{"agency":108,"admin":102,"owner":108,"investor":14,"salesman":46,"supervisor":78}',
+      '{"agency":108,"admin":102,"owner":108,"investor":15,"salesman":47,"supervisor":78}',
     );
     expect(migration).toContain(
       'DELETE FROM "membership_permission_overrides"',

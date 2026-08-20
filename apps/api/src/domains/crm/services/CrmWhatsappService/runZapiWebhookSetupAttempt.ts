@@ -33,7 +33,6 @@ import { CrmConnectionNotFoundError } from "../../messaging/crmMessagingErrors.j
 import { assertTrustedZapiWebhookDestination } from "../../whatsapp/zapiWebhookDestination.js";
 import { reconcileZapiConnectionStatus } from "./reconcileZapiConnectionStatus.js";
 import { crmChannelConnectionCapabilityFacts } from "../../channelConnections/connectionCreation.js";
-
 export type RunZapiWebhookSetupInput = {
   basePath: string;
   canonicalApiOrigin: string;
@@ -69,14 +68,22 @@ export async function runZapiWebhookSetupAttempt(
     input.canonicalApiOrigin,
   );
   const startedAt = Date.now();
-  const current =
-    readZapiWebhookSetupState(connection.metadata) ??
-    createZapiWebhookSetupIntent(connection.id);
+  const persistedSetup = readZapiWebhookSetupState(connection.metadata);
+  const current = persistedSetup ?? createZapiWebhookSetupIntent(connection.id);
   if (current.status === "configured" && !input.forceReconfigure) {
     await auditSetupResult(context, connection.id, current);
     await reportConfiguredSetup(context, connection.id, current, ports);
     await reconcileZapiConnectionStatus(context, connection, ports);
     return { results: [], setup: current };
+  }
+  if (!persistedSetup) {
+    const normalized = await repository.updateConnection({
+      connectionId: connection.id,
+      metadata: withZapiWebhookSetupState(connection.metadata, current),
+      storeId: connection.storeId,
+      tenantId: connection.tenantId,
+    });
+    if (!normalized) throw new Error("Z-API setup state was not persisted.");
   }
   const now = new Date();
   const leaseOwner = crypto.randomUUID();
@@ -105,7 +112,6 @@ export async function runZapiWebhookSetupAttempt(
   if (!configuring || configuring.leaseOwner !== leaseOwner) {
     throw new Error("Z-API setup lease was not persisted.");
   }
-
   logSetup(context, "started", connection.id, configuring, startedAt);
   const baseUrl = resolveWebhookBaseUrl({
     basePath: input.basePath,
@@ -133,9 +139,7 @@ export async function runZapiWebhookSetupAttempt(
     await auditSetupResult(context, connection.id, setup);
     return { results: [], setup };
   }
-
   // Provider success is durable before optional audit/billing bookkeeping.
-  // A bookkeeping failure must never cause another provider registration.
   const setup = completeZapiWebhookSetupAttempt(configuring, response.results);
   await persistSetupState(pending, setup, leaseOwner, ports);
   logSetup(context, "completed", connection.id, setup, startedAt);
@@ -148,7 +152,6 @@ export async function runZapiWebhookSetupAttempt(
   }
   return { results: response.results, setup };
 }
-
 async function reportConfiguredSetup(
   context: ServiceContext,
   connectionId: string,
@@ -169,7 +172,6 @@ async function reportConfiguredSetup(
     });
   }
 }
-
 async function persistSetupState(
   connection: CrmConnection,
   setup: ZapiWebhookSetupState,
@@ -200,7 +202,6 @@ async function persistSetupState(
   });
   if (!updated) throw new Error("Z-API setup lease is no longer owned.");
 }
-
 function logSetup(
   context: ServiceContext,
   phase: "completed" | "failed" | "started",
@@ -220,7 +221,6 @@ function logSetup(
     supportCode: setup.supportCode,
   });
 }
-
 async function auditSetupResult(
   context: ServiceContext,
   connectionId: string,

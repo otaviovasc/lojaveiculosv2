@@ -75,5 +75,10 @@ export const crmPipelineStages = pgTable(
       table.sortOrder,
     ),
     index("crm_pipeline_stages_store_idx").on(table.storeId),
+    uniqueIndex("crm_pipeline_stages_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
   ],
 );

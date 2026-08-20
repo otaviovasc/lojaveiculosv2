@@ -95,6 +95,42 @@ describe("useCrmConnections", () => {
     expect(configured.connection?.setup?.status).toBe("configured");
     expect(result.current.connections[0]?.setup?.status).toBe("configured");
   });
+
+  it("keeps the fresh status mutation when the following list is older", async () => {
+    const listConnections = vi
+      .fn()
+      .mockResolvedValueOnce(connectionPayload("connection_1"))
+      .mockResolvedValueOnce(connectionPayload("connection_1"));
+    const refreshedConnection = {
+      ...connectionPayload("connection_1").connections[0],
+      live: {
+        checkedAt: "2099-08-10T12:00:00.000Z",
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected",
+        smartphoneConnected: true,
+      },
+    };
+    const api = {
+      listConnections,
+      refreshZapiConnectionStatus: vi.fn(async () => refreshedConnection),
+    } as unknown as CrmConversationApi;
+    const { result } = renderHook(() => useCrmConnections(api));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let refreshed!: Awaited<
+      ReturnType<typeof result.current.refreshZapiConnectionStatus>
+    >;
+    await act(async () => {
+      refreshed =
+        await result.current.refreshZapiConnectionStatus("connection_1");
+    });
+
+    expect(refreshed.live?.providerStatus).toBe("connected");
+    expect(result.current.connections[0]?.live?.providerStatus).toBe(
+      "connected",
+    );
+  });
 });
 
 function configuredSetup() {
