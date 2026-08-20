@@ -57,6 +57,7 @@ export const canonicalCrmForeignKeyNames = [
 
 export const crmScopeIndexNames = [
   "stores_id_tenant_unique",
+  "crm_channel_routing_policies_scope_channel_unique",
   "external_account_authorizations_scope_id_unique",
   "external_account_authorizations_semantic_id_unique",
   "external_account_authorization_capabilities_scope_id_unique",
@@ -304,6 +305,8 @@ async function ensureCrmScopeIndexes() {
   await sql.unsafe(`
     CREATE UNIQUE INDEX IF NOT EXISTS "stores_id_tenant_unique"
       ON "stores" ("id", "tenant_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "crm_channel_routing_policies_scope_channel_unique"
+      ON "crm_channel_routing_policies" ("tenant_id", "store_id", "channel");
     CREATE UNIQUE INDEX IF NOT EXISTS "external_account_authorizations_scope_id_unique"
       ON "external_account_authorizations" ("tenant_id", "store_id", "id");
     CREATE UNIQUE INDEX IF NOT EXISTS "external_account_authorizations_semantic_id_unique"

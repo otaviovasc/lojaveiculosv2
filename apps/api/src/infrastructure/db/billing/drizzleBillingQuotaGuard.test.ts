@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveFeatureLimit } from "./drizzleBillingQuotaGuard.js";
+import {
+  isLocalZapiTestOverrideMetadata,
+  resolveFeatureLimit,
+} from "./drizzleBillingQuotaGuard.js";
 
 describe("resolveFeatureLimit", () => {
   const plateLookup = { limit: 300, trialLimit: 10 };
@@ -16,5 +19,33 @@ describe("resolveFeatureLimit", () => {
     expect(
       resolveFeatureLimit("trialing", { limit: 300, trialLimit: null }),
     ).toBe(300);
+  });
+});
+
+describe("isLocalZapiTestOverrideMetadata", () => {
+  it("accepts only the explicit local Z-API rehearsal override", () => {
+    expect(
+      isLocalZapiTestOverrideMetadata({
+        billingBound: false,
+        fixture: "local_seed",
+        overrideContractVersion: "2026-07-capability-v1",
+        provider: "zapi",
+        reason: "local_zapi_webhook_rehearsal",
+        testInstance: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects metadata that could represent a production entitlement", () => {
+    expect(
+      isLocalZapiTestOverrideMetadata({
+        billingBound: true,
+        fixture: "local_seed",
+        overrideContractVersion: "2026-07-capability-v1",
+        provider: "zapi",
+        reason: "local_zapi_webhook_rehearsal",
+        testInstance: true,
+      }),
+    ).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRuntimeFetch, normalizeRuntimeApiBaseUrl } from "./runtimeAuth";
+import { clearLocalDevAccount, selectLocalDevAccount } from "./localDevAuth";
 
 type ClerkWindow = Window & {
   __clerk_internal_ready?: Promise<unknown> & {
@@ -30,8 +31,22 @@ function resetClerkRuntime() {
 
 beforeEach(resetClerkRuntime);
 afterEach(resetClerkRuntime);
+afterEach(clearLocalDevAccount);
+afterEach(() => vi.unstubAllEnvs());
 
 describe("createRuntimeFetch", () => {
+  it("does not initialize Clerk for a local development account", async () => {
+    vi.stubEnv("VITE_LOCAL_AUTH_BYPASS", "true");
+    vi.stubEnv("VITE_DEV_CLERK_USER_ID", "clerk_seed_owner");
+    selectLocalDevAccount("clerk_seed_owner");
+    const baseFetch = vi.fn<typeof fetch>(async () => new Response("{}"));
+
+    await createRuntimeFetch(baseFetch)("/api/v1/session/bootstrap");
+
+    expect(baseFetch).toHaveBeenCalledTimes(1);
+    expect(baseFetch.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
   it("waits for Clerk initialization before sending an authenticated request", async () => {
     const baseFetch = vi.fn<typeof fetch>(async () => new Response("{}"));
 

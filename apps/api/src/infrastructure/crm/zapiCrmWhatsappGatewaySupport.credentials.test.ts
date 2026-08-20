@@ -72,6 +72,36 @@ describe("resolveZapiCredentials stored token", () => {
     ).toThrow("central client authentication is not configured");
   });
 
+  it("uses the test client token only for the local environment", () => {
+    const connection = createConnection();
+    connection.credentialsRef = {
+      env: {
+        apiBaseUrl: "ZAPI_API_BASE_URL",
+        instanceId: "ZAPI_INSTANCE_ID",
+        instanceToken: "ZAPI_INSTANCE_TOKEN",
+      },
+    };
+
+    expect(
+      resolveZapiCredentials(connection, {
+        APP_ENV: "local",
+        CRM_ZAPI_API_BASE_URL: "https://api.z-api.io",
+        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
+        ZAPI_API_BASE_URL: "https://api.z-api.io",
+        ZAPI_INSTANCE_ID: "instance-1",
+        ZAPI_INSTANCE_TOKEN: "instance-secret",
+      }).clientToken,
+    ).toBe("local-test-client-token");
+    expect(() =>
+      resolveZapiCredentials(connection, {
+        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
+        ZAPI_API_BASE_URL: "https://api.z-api.io",
+        ZAPI_INSTANCE_ID: "instance-1",
+        ZAPI_INSTANCE_TOKEN: "instance-secret",
+      }),
+    ).toThrow("central client authentication is not configured");
+  });
+
   it("rejects plaintext stored instance tokens", () => {
     const connection = createConnection();
     connection.credentialsRef = {

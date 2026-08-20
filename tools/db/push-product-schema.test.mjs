@@ -51,6 +51,7 @@ const expectedCanonicalCrmForeignKeyNames = [
 
 const expectedCrmScopeIndexNames = [
   "stores_id_tenant_unique",
+  "crm_channel_routing_policies_scope_channel_unique",
   "external_account_authorizations_scope_id_unique",
   "external_account_authorizations_semantic_id_unique",
   "external_account_authorization_capabilities_scope_id_unique",

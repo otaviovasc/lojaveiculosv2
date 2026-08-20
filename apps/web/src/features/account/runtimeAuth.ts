@@ -8,6 +8,10 @@ export type RuntimeAuthHeadersInput = {
 };
 
 export async function readClerkToken(options?: { skipCache?: boolean }) {
+  // Local development authenticates through explicit x-clerk-user-id headers.
+  // Do not initialize Clerk just to discover that there is no browser token;
+  // the Clerk runtime is intentionally absent from the local stack.
+  if (readLocalDevAccount()) return null;
   return getClerkToken(options);
 }
 

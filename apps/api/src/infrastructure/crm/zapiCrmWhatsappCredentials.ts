@@ -13,6 +13,14 @@ export function resolveZapiCredentials(
 ): ZapiCredentials {
   const envRefs = readEnvRefs(connection.credentialsRef);
   const clientToken = readCentralClientToken(env);
+  if (!clientToken) {
+    throw new CrmMessagingGatewayError(
+      "ZAPI central client authentication is not configured",
+      409,
+      undefined,
+      "configuration_error",
+    );
+  }
   const stored = readStoredCredentials(connection, env);
   if (stored) {
     return {
@@ -51,14 +59,14 @@ function readEnvRefs(credentialsRef: Record<string, unknown>) {
   };
 }
 
-function readCentralClientToken(env: Record<string, string | undefined>) {
-  const value = env.CRM_ZAPI_CLIENT_TOKEN?.trim();
-  if (value) return value;
-  throw new CrmMessagingGatewayError(
-    "ZAPI central client authentication is not configured",
-    409,
-    undefined,
-    "configuration_error",
+export function readCentralClientToken(
+  env: Record<string, string | undefined>,
+) {
+  return (
+    env.CRM_ZAPI_CLIENT_TOKEN?.trim() ||
+    (env.APP_ENV === "local"
+      ? env.CRM_ZAPI_TEST_CLIENT_TOKEN?.trim()
+      : undefined)
   );
 }
 
