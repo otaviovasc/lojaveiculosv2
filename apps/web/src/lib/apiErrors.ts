@@ -196,6 +196,8 @@ function friendlyMessage(input: {
       return "Esta conversa não está mais disponível. Atualize a lista e selecione outro atendimento.";
     case "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE":
       return "A conexão atual não oferece esta ação. Verifique a configuração do canal.";
+    case "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED":
+      return "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.";
     case "CRM_WHATSAPP_PROVIDER_RATE_LIMITED":
       return "O WhatsApp limitou as solicitações por alguns instantes. Aguarde e tente novamente.";
     case "CRM_WHATSAPP_GATEWAY_ERROR":

@@ -11,6 +11,31 @@ const nullableString = z.string().nullable();
 const optionalNullableString = nullableString.optional();
 const nonNegativeInteger = z.number().int().nonnegative();
 
+export const crmConnectionLiveStatusSchema = z.union([
+  z
+    .object({
+      checkedAt: nonEmptyString,
+      connected: z.boolean(),
+      connectedPhone: nullableString,
+      providerStatus: z.enum(["connected", "disconnected", "unknown"]),
+      smartphoneConnected: z.boolean().nullable(),
+    })
+    .strict(),
+  z
+    .object({
+      checkedAt: nonEmptyString,
+      connected: z.null(),
+      connectedPhone: z.null(),
+      errorMessage: nonEmptyString,
+      providerStatus: z.literal("error"),
+      smartphoneConnected: z.null(),
+    })
+    .strict(),
+]);
+export type CrmConnectionLiveStatus = z.infer<
+  typeof crmConnectionLiveStatusSchema
+>;
+
 export const crmConnectionAllowanceSchema = z
   .object({
     limit: nonNegativeInteger,
@@ -53,6 +78,7 @@ export type CrmWhatsappZapiSetupState = z.infer<
 
 export const crmConnectionOverviewItemSchema = crmChannelConnectionSchema
   .extend({
+    live: crmConnectionLiveStatusSchema.optional(),
     setup: crmWhatsappZapiSetupStateSchema.nullable().optional(),
   })
   .strict();

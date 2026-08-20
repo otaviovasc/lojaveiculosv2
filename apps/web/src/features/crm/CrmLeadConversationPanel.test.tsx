@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AccountSessionProvider } from "../account/accountSession";
-import type { CrmChannelConnectionDto } from "@lojaveiculosv2/shared";
+import type { CrmConnectionOverviewItem } from "@lojaveiculosv2/shared";
 import type { SessionBootstrap } from "../account/apiClient";
 import { CrmLeadConversationPanel } from "./CrmLeadConversationPanel";
 import type { CrmConversationApi } from "./crmConversationApi";
@@ -149,7 +149,7 @@ function createConversationApi(
 
 function createConnection(
   setupProvider: "meta_cloud" | "zapi" = "zapi",
-): CrmChannelConnectionDto {
+): CrmConnectionOverviewItem {
   const provider = setupProvider === "zapi" ? "zapi" : "meta_cloud";
   return {
     capabilities:
@@ -159,6 +159,13 @@ function createConnection(
     channel: "whatsapp",
     displayName: provider === "zapi" ? "ZAPI" : "WhatsApp oficial",
     id: "24000000-0000-4000-8000-000000000101",
+    live: {
+      checkedAt: "2026-07-06T10:00:00.000Z",
+      connected: true,
+      connectedPhone: "5511999999999",
+      providerStatus: "connected",
+      smartphoneConnected: true,
+    },
     provider,
     isDefault: true,
     readiness: { ready: true, reason: null, reasonCode: "ready" },

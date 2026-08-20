@@ -118,6 +118,24 @@ describe("persistInitialReadyChannelDefault", () => {
       },
     ]);
   });
+
+  it("allows the authenticated provider webhook to persist the first ready route", async () => {
+    const selected = connection("zapi", "provider-ready");
+
+    await expect(
+      persistInitialReadyChannelDefault(
+        createServiceContext({
+          actor: { id: "zapi", kind: "integration" },
+          entitlements: ["crm"],
+          permissions: ["crm.messages.ingest"],
+          request: { requestId: "provider-request" },
+          ...scope(),
+        }),
+        { channel: "whatsapp", connectionId: selected.id },
+        ports([selected], []),
+      ),
+    ).resolves.toBe(true);
+  });
 });
 
 function context(record?: (event: AuditEvent) => Promise<void>) {

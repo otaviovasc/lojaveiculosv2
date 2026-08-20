@@ -58,6 +58,7 @@ export function useCrmConnections(api: CrmConversationApi) {
       setConnections(nextConnections);
       setAllowance(payload.allowance);
       setAvailableSetups(payload.availableSetups);
+      setError(null);
     },
     [],
   );

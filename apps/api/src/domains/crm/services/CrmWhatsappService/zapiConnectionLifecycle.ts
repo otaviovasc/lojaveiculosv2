@@ -20,6 +20,7 @@ import {
   logCrmServiceEvent,
   recordCrmServiceMutation,
 } from "../CrmMessagingService/serviceSupport.js";
+import { persistInitialReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
 
 const permission = "crm.messaging.connection.setup" as const;
 
@@ -80,7 +81,19 @@ export async function refreshZapiConnectionStatus(
         live.checkedAt,
         ports,
       );
-      return toCrmChannelConnection(updated, live);
+      const result = toCrmChannelConnection(updated, live);
+      if (
+        result.ready &&
+        ports.crmRoutingConnectionRepository &&
+        ports.crmRoutingPolicyRepository
+      ) {
+        await persistInitialReadyChannelDefault(
+          context,
+          { channel: "whatsapp", connectionId: result.id },
+          ports,
+        );
+      }
+      return result;
     },
   );
 }

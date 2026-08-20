@@ -101,8 +101,8 @@ export type CrmConnectionLiveStatus =
     };
 
 /** Setup screens may enrich the canonical connection DTO with provider-local
- * operational details returned by Z-API mutation endpoints. List reads only
- * populate the canonical shared fields. */
+ * operational details. The overview contract also carries the safe live
+ * provider status used by connection management surfaces. */
 export type CrmProviderConnection = {
   capabilities?:
     CrmChannelConnectionDto["capabilities"] | CrmProviderCapabilities;
@@ -113,7 +113,7 @@ export type CrmProviderConnection = {
   externalInstanceId?: string | null;
   id: string;
   isDefault?: boolean;
-  live?: CrmConnectionLiveStatus;
+  live?: CrmConnectionLiveStatus | undefined;
   metadata?: CrmConnectionMetadata;
   phone?: string | null;
   provider: CrmProvider;

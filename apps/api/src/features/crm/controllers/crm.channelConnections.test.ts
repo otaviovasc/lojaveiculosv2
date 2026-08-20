@@ -128,10 +128,10 @@ describe("CRM connections", () => {
     expect(() => crmConnectionOverviewItemSchema.parse(body)).not.toThrow();
     expect(body).toMatchObject({
       id: connectionId,
+      live: { providerStatus: "disconnected" },
       state: "disconnected",
     });
     expect(body).not.toHaveProperty("credentials");
-    expect(body).not.toHaveProperty("live");
     expect(disconnectConnection).toHaveBeenCalledTimes(1);
     await expect(
       repository.findConnectionById(connectionId),
