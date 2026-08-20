@@ -74,11 +74,11 @@ describe("CRM cycle lifecycle", () => {
     );
     expect(assignResponse.status).toBe(200);
     const assigned = (await assignResponse.json()) as {
-      conversationCycle: { revision: number };
+      cycle: { revision: number };
     };
     expect(assigned).toMatchObject({
       result: "applied",
-      conversationCycle: { assignedUserId: actorUserId },
+      cycle: { assignedUserId: actorUserId },
     });
 
     const reassignResponse = await app.request(
@@ -119,9 +119,9 @@ describe("CRM cycle lifecycle", () => {
     );
     expect(interventionResponse.status).toBe(200);
     const interventionCommand = (await interventionResponse.json()) as {
-      conversationCycle: { revision: number };
+      cycle: { revision: number };
     };
-    const intervention = interventionCommand.conversationCycle;
+    const intervention = interventionCommand.cycle;
     expect(intervention).toMatchObject({
       humanAttendanceState: "IN_HUMAN_SERVICE",
       humanAttendanceStateVersion: 1,
@@ -157,13 +157,13 @@ describe("CRM cycle lifecycle", () => {
     expect(closeResponse.status).toBe(200);
     const closedCommand = (await closeResponse.json()) as {
       result: string;
-      conversationCycle: {
+      cycle: {
         humanAttendanceChangedAt: unknown;
         revision: number;
       };
     };
     expect(closedCommand.result).toBe("applied");
-    const closed = closedCommand.conversationCycle;
+    const closed = closedCommand.cycle;
     expect(closed).toMatchObject({
       assignedUserId: null,
       humanAttendanceState: null,

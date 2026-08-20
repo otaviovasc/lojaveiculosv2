@@ -51,7 +51,7 @@ describe("CRM start conversation from lead", () => {
         id: existing.id,
         status: "contacted",
       },
-      conversationCycle: {
+      cycle: {
         assignedUserId: "02020202-0202-4202-8202-020202020202",
         customerDisplayName: "Lead V2",
         customerPhone: "5511977776666",

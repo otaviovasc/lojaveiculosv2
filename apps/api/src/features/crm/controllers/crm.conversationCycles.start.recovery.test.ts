@@ -59,13 +59,12 @@ describe("CRM start conversation recovery", () => {
       message: {
         providerTimestamp: providerTimestamp.toISOString(),
       },
-      conversationCycle: {
-        firstHandledAt: cycleClaimedAt.toISOString(),
+      cycle: {
         humanAttendanceChangedAt: providerTimestamp.toISOString(),
         humanAttendanceState: "IN_HUMAN_SERVICE",
         humanAttendanceStateVersion: 1,
         humanHandlingStartedAt: providerTimestamp.toISOString(),
-        humanTakeoverAt: providerTimestamp.toISOString(),
+        interventionHistoryStartedAt: providerTimestamp.toISOString(),
         status: "HUMAN_TAKEOVER",
       },
     });

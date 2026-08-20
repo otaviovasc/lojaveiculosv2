@@ -90,7 +90,7 @@ describe("CRM start conversation with an existing lead", () => {
         metadata: { crmMessaging: { firstDirection: "OUTBOUND" } },
         status: "contacted",
       },
-      conversationCycle: { leadId: existing.id },
+      cycle: { leadId: existing.id },
     });
     expect(sendText).toHaveBeenCalledWith(
       expect.anything(),
@@ -131,7 +131,7 @@ describe("CRM start conversation with an existing lead", () => {
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
       lead: { id: existing.id },
-      conversationCycle: { leadId: existing.id },
+      cycle: { leadId: existing.id },
     });
   });
 });
