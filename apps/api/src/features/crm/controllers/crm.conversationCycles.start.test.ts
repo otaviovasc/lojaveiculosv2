@@ -134,7 +134,7 @@ describe("CRM start conversation", () => {
         status: "SENT",
         type: "TEXT",
       },
-      conversationCycle: {
+      cycle: {
         assignedUserId: actorUserId,
         customerDisplayName: "Ana Silva",
         customerPhone: "5511999999999",

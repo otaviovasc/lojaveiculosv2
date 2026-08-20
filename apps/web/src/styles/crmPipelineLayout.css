@@ -7,15 +7,15 @@
   padding: 1rem;
 }
 
-.crm-toolbar,
-.crm-workspace-grid,
-.crm-form-grid,
-.crm-kanban {
+.crm-pipeline-page .crm-toolbar,
+.crm-pipeline-page .crm-workspace-grid,
+.crm-pipeline-page .crm-form-grid,
+.crm-pipeline-page .crm-kanban {
   display: grid;
   gap: 0.75rem;
 }
 
-.crm-toolbar {
+.crm-pipeline-page .crm-toolbar {
   background: color-mix(in srgb, var(--color-panel) 90%, transparent);
   backdrop-filter: blur(12px);
   border: 1px solid var(--color-line);
@@ -25,7 +25,7 @@
   transition: all 0.25s ease;
 }
 
-.crm-search {
+.crm-pipeline-page .crm-search {
   align-items: center;
   background: var(--color-app);
   border: 1px solid var(--color-line);
@@ -37,12 +37,12 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.crm-search:focus-within {
+.crm-pipeline-page .crm-search:focus-within {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
-.crm-search input {
+.crm-pipeline-page .crm-search input {
   background: transparent;
   border: 0;
   color: var(--color-text);
@@ -53,8 +53,8 @@
   outline: 0;
 }
 
-.crm-segmented,
-.crm-quick-dates {
+.crm-pipeline-page .crm-segmented,
+.crm-pipeline-page .crm-quick-dates {
   background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
@@ -63,8 +63,8 @@
   padding: 0.25rem;
 }
 
-.crm-segmented button,
-.crm-quick-dates button {
+.crm-pipeline-page .crm-segmented button,
+.crm-pipeline-page .crm-quick-dates button {
   align-items: center;
   border-radius: var(--radius-sm);
   color: var(--color-muted);
@@ -82,36 +82,39 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.crm-segmented button:hover,
-.crm-quick-dates button:hover {
+.crm-pipeline-page .crm-segmented button:hover,
+.crm-pipeline-page .crm-quick-dates button:hover {
   color: var(--color-text);
   background: color-mix(in srgb, var(--color-text) 5%, transparent);
   transform: translateY(-1px);
 }
 
-.crm-segmented button:active,
-.crm-quick-dates button:active {
+.crm-pipeline-page .crm-segmented button:active,
+.crm-pipeline-page .crm-quick-dates button:active {
   transform: translateY(0) scale(0.96);
 }
 
-.crm-segmented .crm-segmented-active {
+.crm-pipeline-page .crm-segmented .crm-segmented-active {
   background: var(--color-panel);
   box-shadow: none;
   color: var(--color-crm-active-emerald);
   font-weight: 800;
 }
 
-:root[data-theme="dark"] .crm-segmented .crm-segmented-active,
-.dark .crm-segmented .crm-segmented-active {
+:root[data-theme="dark"]
+  .crm-pipeline-page
+  .crm-segmented
+  .crm-segmented-active,
+.dark .crm-pipeline-page .crm-segmented .crm-segmented-active {
   color: var(--color-crm-active-emerald);
 }
 
-.crm-workspace-grid {
+.crm-pipeline-page .crm-workspace-grid {
   align-items: start;
 }
 
-.crm-primary-column,
-.crm-side-column {
+.crm-pipeline-page .crm-primary-column,
+.crm-pipeline-page .crm-side-column {
   display: grid;
   gap: 1rem;
   min-width: 0;
@@ -129,7 +132,7 @@
   }
 }
 
-.crm-kanban {
+.crm-pipeline-page .crm-kanban {
   grid-auto-columns: minmax(17.5rem, 1fr);
   grid-auto-flow: column;
   overflow-x: auto;
@@ -138,13 +141,13 @@
 }
 
 @media (min-width: 768px) {
-  .crm-toolbar {
+  .crm-pipeline-page .crm-toolbar {
     grid-template-columns: minmax(14rem, 1fr) 11rem 11rem auto;
   }
 }
 
 @media (min-width: 1180px) {
-  .crm-workspace-grid {
+  .crm-pipeline-page .crm-workspace-grid {
     grid-template-columns: minmax(0, 1.6fr) minmax(19rem, 0.7fr);
   }
 }

@@ -45,11 +45,11 @@ describe("CRM cycle actions", () => {
     );
     expect(readResponse.status).toBe(200);
     const read = (await readResponse.json()) as {
-      conversationCycle: { revision: number };
+      cycle: { revision: number };
     };
     expect(read).toMatchObject({
       result: "applied",
-      conversationCycle: { unreadCount: 0 },
+      cycle: { unreadCount: 0 },
     });
 
     const unreadOnlyResponse = await app.request(
@@ -65,7 +65,7 @@ describe("CRM cycle actions", () => {
     expect(unreadResponse.status).toBe(200);
     await expect(unreadResponse.json()).resolves.toMatchObject({
       result: "applied",
-      conversationCycle: { unreadCount: 1 },
+      cycle: { unreadCount: 1 },
     });
   });
 
@@ -113,7 +113,7 @@ describe("CRM cycle actions", () => {
     expect(replay.status).toBe(200);
     await expect(replay.json()).resolves.toMatchObject({
       result: "already_applied",
-      conversationCycle: { assignedUserId: actorUserId },
+      cycle: { assignedUserId: actorUserId },
     });
 
     const conflictingReuse = await app.request(
@@ -173,7 +173,7 @@ describe("CRM cycle actions", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       result: "superseded",
-      conversationCycle: {
+      cycle: {
         assignedUserId: "03030303-0303-4303-8303-030303030303",
       },
     });

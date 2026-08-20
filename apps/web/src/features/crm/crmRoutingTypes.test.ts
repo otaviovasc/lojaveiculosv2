@@ -29,6 +29,34 @@ describe("readRoutingCandidates", () => {
     ]);
   });
 
+  it("keeps a ready Z-API connection returned by the connection overview", () => {
+    expect(
+      readRoutingCandidates([
+        {
+          capabilities: ["inbound", "outbound"],
+          channel: "whatsapp",
+          displayName: "WhatsApp da loja",
+          id: "connection-zapi",
+          isDefault: false,
+          provider: "zapi",
+          readiness: {
+            ready: true,
+            reason: null,
+            reasonCode: "ready",
+          },
+          setup: null,
+          state: "active",
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        channel: "whatsapp",
+        id: "connection-zapi",
+        ready: true,
+      }),
+    ]);
+  });
+
   it("drops connections that do not satisfy the shared DTO schema", () => {
     expect(
       readRoutingCandidates([

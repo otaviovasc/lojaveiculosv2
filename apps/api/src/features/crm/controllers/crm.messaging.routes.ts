@@ -33,6 +33,8 @@ import { registerCrmProviderEventRoutes } from "./crm.providerEvents.routes.js";
 import { registerCrmWhatsappWebhookRoutes } from "./crm.whatsapp.webhookRoutes.js";
 import type { CrmServices } from "./crmServices.js";
 import { registerCrmWhatsappZapiSupportRoutes } from "./crm.whatsapp.zapiSupportRoutes.js";
+import { listCycleDtos, toStartCycleDto } from "./crm.conversationCycle.dto.js";
+import { toCrmMessageDto } from "./crm.message.dto.js";
 
 export type RegisterCrmMessagingApiRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -68,11 +70,8 @@ export function registerCrmMessagingApiRoutes(
       if (!parsed.success) throw new CrmMessagingValidationError();
       const serviceContext = await createContext(context);
       assertConversationRead(serviceContext);
-      const cycles = await services.listConversationCycles(
-        serviceContext,
-        cleanCrmConversationCyclesQuery(parsed.data),
-      );
-      return context.json(cycles);
+      const query = cleanCrmConversationCyclesQuery(parsed.data);
+      return context.json(await listCycleDtos(serviceContext, query, services));
     }),
   );
 
@@ -102,7 +101,7 @@ export function registerCrmMessagingApiRoutes(
         ...parsed.data,
         cycleId: context.req.param("cycleId"),
       });
-      return context.json(messages);
+      return context.json(messages.map(toCrmMessageDto));
     }),
   );
 
@@ -125,7 +124,7 @@ export function registerCrmMessagingApiRoutes(
         content: input.content,
         cycleId: context.req.param("cycleId"),
       });
-      return context.json(message, 201);
+      return context.json(toCrmMessageDto(message), 201);
     }),
   );
 
@@ -163,7 +162,7 @@ export function registerCrmMessagingApiRoutes(
           : {}),
         ...(input.text ? { text: input.text } : {}),
       });
-      return context.json(result, 201);
+      return context.json(toStartCycleDto(result), 201);
     }),
   );
 
@@ -181,7 +180,7 @@ export function registerCrmMessagingApiRoutes(
         messageId: params.data.messageId,
         reaction: input.reaction,
       });
-      return context.json(message);
+      return context.json(toCrmMessageDto(message));
     }),
   );
 
@@ -194,7 +193,7 @@ export function registerCrmMessagingApiRoutes(
       const message = await services.removeCrmReaction(serviceContext, {
         messageId: params.data.messageId,
       });
-      return context.json(message);
+      return context.json(toCrmMessageDto(message));
     }),
   );
 
@@ -207,7 +206,7 @@ export function registerCrmMessagingApiRoutes(
       const message = await services.deleteMessage(serviceContext, {
         messageId: params.data.messageId,
       });
-      return context.json(message);
+      return context.json(toCrmMessageDto(message));
     }),
   );
 
@@ -229,7 +228,7 @@ export function registerCrmMessagingApiRoutes(
           ...(input.mimeType ? { mimeType: input.mimeType } : {}),
           cycleId: context.req.param("cycleId"),
         });
-        return context.json(message, 201);
+        return context.json(toCrmMessageDto(message), 201);
       }),
   );
 
@@ -237,10 +236,7 @@ export function registerCrmMessagingApiRoutes(
   registerCrmCampaignRoutes(crmFeature, { createContext, services });
   registerCrmScheduledRoutes(crmFeature, { createContext, services });
   registerCrmMessagingExtraRoutes(crmFeature, { createContext, services });
-  registerCrmProviderEventRoutes(crmFeature, {
-    createContext,
-    services,
-  });
+  registerCrmProviderEventRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappWebhookRoutes(crmFeature, {
     createWebhookContext,
     resolveEntitlements: resolveBotEntitlements ?? (async () => [] as const),

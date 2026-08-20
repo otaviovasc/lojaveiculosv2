@@ -1,4 +1,8 @@
-import type { PermissionKey } from "@lojaveiculosv2/shared";
+import {
+  crmConversationCycleListResponseSchema,
+  crmMessageListResponseSchema,
+  type PermissionKey,
+} from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
@@ -110,6 +114,43 @@ describe("CRM queue", () => {
         lastMessageContent: "Mensagem nova",
       },
     ]);
+  });
+
+  it("returns conversation cycles through the public HTTP contract", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const inbound = await ingestText(conversationRepository, {
+      customerDisplayName: "Dora",
+      customerPhone: "5511999999904",
+      content: "Mensagem nova",
+      externalId: "queue-public-contract",
+      providerTimestamp: new Date("2026-07-03T12:05:00.000Z"),
+    });
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmConversationRepository: conversationRepository,
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/conversation-cycles?connectionId=${connectionId}`,
+    );
+
+    expect(response.status).toBe(200);
+    const body: unknown = await response.json();
+    expect(() =>
+      crmConversationCycleListResponseSchema.parse(body),
+    ).not.toThrow();
+    expect(body).toMatchObject([
+      { channel: "whatsapp", connection: { id: connectionId } },
+    ]);
+
+    const messagesResponse = await app.request(
+      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/messages`,
+    );
+    const messages: unknown = await messagesResponse.json();
+    expect(() => crmMessageListResponseSchema.parse(messages)).not.toThrow();
+    expect(messages).toMatchObject([{ channel: "whatsapp" }]);
   });
 
   it("enforces read-only WhatsApp permissions for store users", async () => {

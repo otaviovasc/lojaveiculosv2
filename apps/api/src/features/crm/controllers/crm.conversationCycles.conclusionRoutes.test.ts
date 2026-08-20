@@ -26,7 +26,7 @@ describe("POST CRM attendance conclusion", () => {
     expect(first.status).toBe(200);
     await expect(first.json()).resolves.toMatchObject({
       result: "applied",
-      conversationCycle: { assignedUserId: null, status: "COMPLETED" },
+      cycle: { assignedUserId: null, status: "COMPLETED" },
     });
     const replay = await request();
     await expect(replay.json()).resolves.toMatchObject({

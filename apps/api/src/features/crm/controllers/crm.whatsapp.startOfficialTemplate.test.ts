@@ -65,7 +65,7 @@ describe("CRM official WhatsApp template conversation start", () => {
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
       message: {
-        channel: "WHATSAPP",
+        channel: "whatsapp",
         content: "[template:primeiro_contato]",
         externalId: "wamid.template-1",
         status: "SENT",

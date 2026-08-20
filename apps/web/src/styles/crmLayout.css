@@ -14,7 +14,7 @@
   background: var(--color-app);
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(20rem, 24rem) minmax(27rem, 1fr);
+  grid-template-columns: minmax(21rem, 25rem) minmax(27rem, 1fr);
   min-height: 0;
   min-width: 0;
   overflow: hidden;
@@ -23,7 +23,7 @@
 
 .crm-shell[data-details-open="true"] {
   grid-template-columns:
-    minmax(20rem, 24rem)
+    minmax(21rem, 25rem)
     minmax(27rem, 1fr)
     minmax(18rem, 22rem);
 }
@@ -375,6 +375,129 @@
 .crm-skeleton-list {
   display: flex;
   flex-direction: column;
+}
+
+/* Empty Conversation State - Modern Card */
+.crm-empty-conversation-state {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-height: 0;
+  padding: 2rem;
+  width: 100%;
+}
+
+.crm-empty-conversation-card {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 30rem;
+  padding: 2.25rem 2rem;
+  position: relative;
+  text-align: center;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-empty-conversation-card:hover {
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  transform: translateY(-2px);
+}
+
+.crm-empty-conversation-icon {
+  align-items: center;
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
+  border-radius: 1.25rem;
+  color: #059669;
+  display: inline-flex;
+  height: 3.75rem;
+  justify-content: center;
+  width: 3.75rem;
+  flex-shrink: 0;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme="dark"] .crm-empty-conversation-icon,
+.dark .crm-empty-conversation-icon {
+  color: #34d399;
+}
+
+.crm-empty-conversation-card:hover .crm-empty-conversation-icon {
+  transform: scale(1.08);
+}
+
+.crm-empty-conversation-icon svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.crm-empty-conversation-tag {
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .crm-empty-conversation-tag,
+.dark .crm-empty-conversation-tag {
+  color: #34d399;
+}
+
+.crm-empty-conversation-card h2 {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-xl);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.crm-empty-conversation-card p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 450;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.crm-empty-conversation-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.crm-empty-conversation-shortcuts span {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.crm-empty-conversation-shortcuts kbd {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.25rem;
+  color: var(--color-text);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.1rem 0.3rem;
 }
 
 @media (max-width: 1180px) and (min-width: 861px) {

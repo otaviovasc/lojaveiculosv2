@@ -8,6 +8,7 @@ import {
 } from "./crm.messaging.controller.support.js";
 import { handleCrmMessaging } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
+import { toConversationCycleCommandDto } from "./crm.conversationCycle.dto.js";
 
 const commandId = z.string().trim().min(1).max(191);
 
@@ -78,7 +79,7 @@ export function registerCrmAttendanceRoutes(
           serviceContext,
           command,
         );
-        return context.json(result);
+        return context.json(toConversationCycleCommandDto(result));
       }),
   );
 }

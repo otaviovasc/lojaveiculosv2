@@ -16,6 +16,7 @@ import {
   handleCrmMessaging,
 } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
+import { toConversationCycleCommandDto } from "./crm.conversationCycle.dto.js";
 
 export type RegisterCrmConversationCycleRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -37,12 +38,12 @@ export function registerCrmConversationCycleRoutes(
         const serviceContext = await createContext(context);
         assertConversationAssign(serviceContext);
         const cycleId = context.req.param("cycleId");
-        const cycle = await services.assignConversationCycle(serviceContext, {
+        const command = await services.assignConversationCycle(serviceContext, {
           assignedUserId: input.assignedUserId,
           commandId: input.commandId,
           cycleId,
         });
-        return context.json(cycle);
+        return context.json(toConversationCycleCommandDto(command));
       }),
   );
 
@@ -61,7 +62,7 @@ export function registerCrmConversationCycleRoutes(
           commandId: input.commandId,
           cycleId,
         });
-        return context.json(command);
+        return context.json(toConversationCycleCommandDto(command));
       }),
   );
 
@@ -94,7 +95,7 @@ export function registerCrmConversationCycleRoutes(
         commandId: input.commandId,
         cycleId: context.req.param("cycleId"),
       });
-      return context.json(command);
+      return context.json(toConversationCycleCommandDto(command));
     }),
   );
 }
@@ -117,5 +118,5 @@ async function setReadState(
     serviceContext,
     { commandId: input.commandId, cycleId, unread },
   );
-  return context.json(command);
+  return context.json(toConversationCycleCommandDto(command));
 }

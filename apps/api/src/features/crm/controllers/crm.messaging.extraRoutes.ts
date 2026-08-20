@@ -19,6 +19,7 @@ import {
 import { registerCrmQuickMessageRoutes } from "./crm.quickMessages.routes.js";
 import { registerCrmTagRoutes } from "./crm.tags.routes.js";
 import type { CrmServices } from "./crmServices.js";
+import { toCrmMessageDto } from "./crm.message.dto.js";
 
 type RegisterCrmMessagingExtraRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -75,7 +76,7 @@ export function registerCrmMessagingExtraRoutes(
         cycleId: input.cycleId,
         ...(input.url ? { url: input.url } : {}),
       });
-      return context.json(message, 201);
+      return context.json(toCrmMessageDto(message), 201);
     }),
   );
 
@@ -100,7 +101,7 @@ export function registerCrmMessagingExtraRoutes(
         cycleId: input.cycleId,
         ...(input.title ? { title: input.title } : {}),
       });
-      return context.json(message, 201);
+      return context.json(toCrmMessageDto(message), 201);
     }),
   );
 
@@ -124,7 +125,7 @@ export function registerCrmMessagingExtraRoutes(
           cycleId: input.cycleId,
         },
       );
-      return context.json(message, 201);
+      return context.json(toCrmMessageDto(message), 201);
     }),
   );
 
@@ -151,7 +152,7 @@ export function registerCrmMessagingExtraRoutes(
         ...(input.url ? { url: input.url } : {}),
         ...(input.year ? { year: input.year } : {}),
       });
-      return context.json(message, 201);
+      return context.json(toCrmMessageDto(message), 201);
     }),
   );
 }
