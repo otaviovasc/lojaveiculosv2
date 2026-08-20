@@ -22,8 +22,20 @@ export function toChannelConnectionDto(
 export function toChannelConnectionOverviewItem(
   connection: CrmChannelConnection,
 ): CrmConnectionOverviewItem {
+  const live =
+    connection.live.providerStatus === "error"
+      ? {
+          ...connection.live,
+          checkedAt: connection.live.checkedAt.toISOString(),
+          errorMessage: "Não foi possível verificar o status do provedor.",
+        }
+      : {
+          ...connection.live,
+          checkedAt: connection.live.checkedAt.toISOString(),
+        };
   return {
     ...toChannelConnectionDto(connection),
+    live,
     setup: connection.setup,
   };
 }

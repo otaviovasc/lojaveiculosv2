@@ -39,6 +39,11 @@ describe("CRM connection status", () => {
     expect(body.connections[0]).toMatchObject({
       displayName: "ZAPI Test Connection",
       id: connectionId,
+      live: {
+        connected: true,
+        connectedPhone: "5511940231407",
+        providerStatus: "connected",
+      },
       provider: "zapi",
       state: "active",
     });
@@ -160,11 +165,15 @@ describe("CRM connection status", () => {
     expect(() => crmConnectionOverviewItemSchema.parse(body)).not.toThrow();
     expect(body).toMatchObject({
       id: connectionId,
+      live: {
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected",
+      },
       readiness: { ready: true, reasonCode: "ready" },
       state: "active",
     });
     expect(body).not.toHaveProperty("credentials");
-    expect(body).not.toHaveProperty("live");
     await expect(
       repository.findConnectionById(connectionId),
     ).resolves.toMatchObject({

@@ -77,6 +77,11 @@ describe("API error display helpers", () => {
       "A conexão atual não oferece esta ação. Verifique a configuração do canal.",
     ],
     [
+      "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED",
+      409,
+      "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.",
+    ],
+    [
       "CRM_PROVIDER_UNAVAILABLE",
       422,
       "Servico temporariamente indisponivel. Tente novamente em instantes.",

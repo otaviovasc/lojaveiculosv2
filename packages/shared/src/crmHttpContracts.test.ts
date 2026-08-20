@@ -47,6 +47,13 @@ describe("canonical CRM read contracts", () => {
     displayName: "WhatsApp Oficial",
     id: "connection_1",
     isDefault: true,
+    live: {
+      checkedAt: "2026-08-18T12:00:00.000Z",
+      connected: true,
+      connectedPhone: "5511999999999",
+      providerStatus: "connected",
+      smartphoneConnected: true,
+    },
     provider: "meta_cloud",
     readiness: { ready: true, reason: null, reasonCode: "ready" },
     state: "active",

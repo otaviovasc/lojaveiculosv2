@@ -19,6 +19,8 @@ import { resolveCrmConnectionRoute } from "./routingResolution.js";
 const requiredCapabilities = ["outbound"] as const;
 const automaticSetupPermission = "crm.messaging.connection.setup";
 type AutomaticDefaultResult = "already_present" | "created" | "superseded";
+type AutomaticDefaultPermission =
+  "crm.messages.ingest" | "crm.messaging.connection.setup";
 
 /** Persist the connection that first becomes ready; this is not a runtime fallback. */
 export async function persistInitialReadyChannelDefault(
@@ -26,7 +28,8 @@ export async function persistInitialReadyChannelDefault(
   input: { channel: CrmMessagingChannel; connectionId: string },
   ports: CrmServicePorts,
 ) {
-  assertPermission(context, automaticSetupPermission);
+  const authorizationPermission = readAuthorizationPermission(context);
+  assertPermission(context, authorizationPermission);
   assertEntitlement(context as StoreScopedServiceContext, "crm");
   const scope = requireCrmMessagingScope(context);
   await context.audit.record({
@@ -38,7 +41,7 @@ export async function persistInitialReadyChannelDefault(
     metadata: {
       channel: input.channel,
       connectionId: input.connectionId,
-      permission: automaticSetupPermission,
+      permission: authorizationPermission,
       trigger: "connection_setup",
     },
     outcome: "attempted",
@@ -92,10 +95,25 @@ export async function persistInitialReadyChannelDefault(
         tenantId: scope.tenantId,
       });
     }
-    await recordTerminal(context, input, scope, "succeeded", result);
+    await recordTerminal(
+      context,
+      input,
+      scope,
+      "succeeded",
+      result,
+      authorizationPermission,
+    );
     return result === "created";
   } catch (error) {
-    await recordTerminal(context, input, scope, "failed", "failed", error);
+    await recordTerminal(
+      context,
+      input,
+      scope,
+      "failed",
+      "failed",
+      authorizationPermission,
+      error,
+    );
     throw error;
   }
 }
@@ -106,6 +124,7 @@ async function recordTerminal(
   scope: { storeId: string; tenantId: string },
   outcome: "failed" | "succeeded",
   result: AutomaticDefaultResult | "failed",
+  authorizationPermission: AutomaticDefaultPermission,
   error?: unknown,
 ) {
   await context.audit.record({
@@ -120,7 +139,7 @@ async function recordTerminal(
       ...(error
         ? { errorName: error instanceof Error ? error.name : "UnknownError" }
         : {}),
-      permission: automaticSetupPermission,
+      permission: authorizationPermission,
       result,
       trigger: "connection_setup",
     },
@@ -133,4 +152,12 @@ async function recordTerminal(
         : "Evaluated the initial ready CRM channel default",
     tenantId: scope.tenantId,
   });
+}
+
+function readAuthorizationPermission(
+  context: ServiceContext,
+): AutomaticDefaultPermission {
+  return context.actor.kind === "integration"
+    ? "crm.messages.ingest"
+    : automaticSetupPermission;
 }

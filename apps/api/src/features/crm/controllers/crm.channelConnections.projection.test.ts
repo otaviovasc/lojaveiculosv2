@@ -71,7 +71,7 @@ describe("CRM connection overview contract", () => {
     const body = crmConnectionOverviewSchema.parse(await response.json());
 
     expect(response.status).toBe(200);
-    expect(body.connections[0]).toEqual({
+    expect(body.connections[0]).toMatchObject({
       capabilities: [
         "inbound",
         "outbound",
@@ -89,5 +89,14 @@ describe("CRM connection overview contract", () => {
       setup: metadata.webhookSetup,
       state: "active",
     });
+    const live = body.connections[0]?.live;
+    expect(live).toMatchObject({
+      connected: false,
+      connectedPhone: null,
+      providerStatus: "unknown",
+      smartphoneConnected: null,
+    });
+    if (!live) throw new Error("Expected live connection status.");
+    expect(typeof live.checkedAt).toBe("string");
   });
 });

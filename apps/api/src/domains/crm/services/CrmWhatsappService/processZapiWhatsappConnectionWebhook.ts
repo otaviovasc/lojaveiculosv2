@@ -18,6 +18,7 @@ import {
   type ZapiWebhookResult,
 } from "../CrmMessagingService/serviceSupport.js";
 import { readZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState.js";
+import { persistInitialReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
 
 const permission = "crm.messages.ingest";
 
@@ -126,6 +127,17 @@ async function updateConnectionState(
     storeId: connection.storeId,
     tenantId: connection.tenantId,
   });
+  if (
+    input.status === "active" &&
+    ports.crmRoutingConnectionRepository &&
+    ports.crmRoutingPolicyRepository
+  ) {
+    await persistInitialReadyChannelDefault(
+      context,
+      { channel: "whatsapp", connectionId: connection.id },
+      ports,
+    );
+  }
   await auditZapiWebhook(context, connection, input.eventType, {
     status: input.status,
   });
