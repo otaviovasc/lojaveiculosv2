@@ -26,6 +26,46 @@ export function ix35Catalog(): MarketplaceCatalogSnapshot {
   };
 }
 
+export function cheryCatalog(): MarketplaceCatalogSnapshot {
+  return {
+    brandCode: "161",
+    brandName: "Caoa Chery/Chery",
+    fipeCode: "073025-4",
+    fuel: "Flex",
+    modelCode: "8587",
+    modelName: "Tiggo 7 TXS 1.5 16V Turbo Flex Aut.",
+    modelYear: 2022,
+    referenceMonth: "agosto de 2026",
+    source: "fipe",
+    vehicleType: "cars",
+    yearCode: "2022-5",
+    yearName: "2022 Flex",
+  };
+}
+
+export function cheryCatalogFetch() {
+  return vi
+    .fn<typeof globalThis.fetch>()
+    .mockResolvedValueOnce(
+      jsonResponse({ data: { "CAOA CHERY": 161, CHERY: 162 }, status: "ok" }),
+    )
+    .mockResolvedValueOnce(
+      jsonResponse({ data: { "TIGGO 7": 8587 }, status: "ok" }),
+    )
+    .mockResolvedValueOnce(
+      jsonResponse({
+        data: { "TXS 1.5 16V TURBO FLEX AUTOMATICO": 1 },
+        status: "ok",
+      }),
+    );
+}
+
+export async function resolveCheryCatalog(fetch: typeof globalThis.fetch) {
+  const resolver = createOlxTestGateway(fetch).resolveCatalogMapping;
+  if (!resolver) throw new Error("Missing OLX catalog resolver");
+  return resolver({ catalog: cheryCatalog(), token: tokenSet() });
+}
+
 export function ix35CatalogFetch(
   versions: Record<string, number>,
   includeAccountCheck = false,
