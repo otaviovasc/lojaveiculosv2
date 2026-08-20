@@ -56,6 +56,8 @@ export function SessionList({
         const ownerLabel =
           cycle.assignedMember?.name ??
           (cycle.assignedUserId ? "Atribuido" : "Sem dono");
+        const channel = (cycle.channel ?? "whatsapp").toLowerCase();
+        const provider = cycle.connection?.provider;
         return (
           <div
             className={[
@@ -65,6 +67,8 @@ export function SessionList({
             ]
               .filter(Boolean)
               .join(" ")}
+            data-channel={channel}
+            {...(provider ? { "data-provider": provider } : {})}
             key={cycle.id}
           >
             {selectionMode ? (

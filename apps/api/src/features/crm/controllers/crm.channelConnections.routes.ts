@@ -1,6 +1,4 @@
 import type { Context, Hono } from "hono";
-import type { CrmConnectionOverviewItem } from "@lojaveiculosv2/shared";
-import type { CrmChannelConnection } from "../../../domains/crm/channelConnections/channelConnectionModels.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   crmCreateChannelConnectionSchema,
@@ -17,6 +15,7 @@ import {
 import type { CrmServices } from "./crmServices.js";
 import { registerCrmChannelConnectionSetupRoutes } from "./crm.channelConnections.setupRoutes.js";
 import { readWebhookRequestBase } from "./crm.webhookRequestBase.js";
+import { toChannelConnectionOverviewItem } from "./crm.channelConnection.dto.js";
 
 type RegisterCrmChannelConnectionRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -36,7 +35,7 @@ export function registerCrmChannelConnectionRoutes(
       return context.json({
         allowance: overview.allowance,
         availableSetups: overview.availableSetups,
-        connections: overview.connections.map(toChannelConnectionDto),
+        connections: overview.connections.map(toChannelConnectionOverviewItem),
       });
     }),
   );
@@ -67,7 +66,7 @@ export function registerCrmChannelConnectionRoutes(
               provider: "meta_cloud",
             },
       );
-      return context.json(toChannelConnectionDto(connection), 201);
+      return context.json(toChannelConnectionOverviewItem(connection), 201);
     }),
   );
 
@@ -96,7 +95,7 @@ export function registerCrmChannelConnectionRoutes(
           ...(input.status !== undefined ? { status: input.status } : {}),
         },
       );
-      return context.json(toChannelConnectionDto(connection));
+      return context.json(toChannelConnectionOverviewItem(connection));
     }),
   );
 
@@ -104,20 +103,4 @@ export function registerCrmChannelConnectionRoutes(
     createContext,
     services,
   });
-}
-
-function toChannelConnectionDto(
-  connection: CrmChannelConnection,
-): CrmConnectionOverviewItem {
-  return {
-    capabilities: connection.capabilities,
-    channel: connection.channel,
-    displayName: connection.displayName,
-    id: connection.id,
-    isDefault: connection.isDefault,
-    provider: connection.provider,
-    readiness: connection.readiness,
-    setup: connection.setup,
-    state: connection.state,
-  };
 }

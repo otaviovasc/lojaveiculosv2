@@ -9,6 +9,7 @@ import {
 } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
 import { readWebhookRequestBase } from "./crm.webhookRequestBase.js";
+import { toChannelConnectionOverviewItem } from "./crm.channelConnection.dto.js";
 
 type ConnectionSetupRouteOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -41,11 +42,11 @@ export function registerCrmChannelConnectionSetupRoutes(
           context.req.param("connectionId"),
         );
         const serviceContext = await createContext(context);
-        return context.json(
-          await services.disconnectZapiConnection(serviceContext, {
-            connectionId,
-          }),
+        const connection = await services.disconnectZapiConnection(
+          serviceContext,
+          { connectionId },
         );
+        return context.json(toChannelConnectionOverviewItem(connection));
       }),
   );
 
@@ -57,11 +58,11 @@ export function registerCrmChannelConnectionSetupRoutes(
           context.req.param("connectionId"),
         );
         const serviceContext = await createContext(context);
-        return context.json(
-          await services.refreshZapiConnectionStatus(serviceContext, {
-            connectionId,
-          }),
+        const connection = await services.refreshZapiConnectionStatus(
+          serviceContext,
+          { connectionId },
         );
+        return context.json(toChannelConnectionOverviewItem(connection));
       }),
   );
 

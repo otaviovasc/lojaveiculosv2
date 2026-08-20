@@ -10,7 +10,7 @@ import type {
   CrmRoutingPolicyPatchInput,
   CrmRoutingPolicyReadDto,
 } from "@lojaveiculosv2/shared";
-import { crmChannelConnectionSchema } from "@lojaveiculosv2/shared";
+import { crmConnectionOverviewItemSchema } from "@lojaveiculosv2/shared";
 
 export const crmRoutingChannels = [
   "whatsapp",
@@ -41,7 +41,7 @@ export function readRoutingCandidates(
   connections: readonly unknown[],
 ): CrmRoutingCandidate[] {
   return connections.flatMap((value) => {
-    const parsed = crmChannelConnectionSchema.safeParse(value);
+    const parsed = crmConnectionOverviewItemSchema.safeParse(value);
     if (!parsed.success) return [];
     const connection = parsed.data;
     return [

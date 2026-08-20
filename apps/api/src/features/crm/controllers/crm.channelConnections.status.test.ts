@@ -1,4 +1,8 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import {
+  crmConnectionOverviewItemSchema,
+  type StoreId,
+  type TenantId,
+} from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { projectCanonicalCrmConnectionRow } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
@@ -152,12 +156,15 @@ describe("CRM connection status", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
+    const body: unknown = await response.json();
+    expect(() => crmConnectionOverviewItemSchema.parse(body)).not.toThrow();
+    expect(body).toMatchObject({
       id: connectionId,
-      phone: "5511999999999",
       readiness: { ready: true, reasonCode: "ready" },
       state: "active",
     });
+    expect(body).not.toHaveProperty("credentials");
+    expect(body).not.toHaveProperty("live");
     await expect(
       repository.findConnectionById(connectionId),
     ).resolves.toMatchObject({

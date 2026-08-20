@@ -76,7 +76,13 @@ describe("CRM send text auto-assignment", () => {
       },
       crmRepository,
       crmMessagingGateway: {
-        getConnectionStatus: vi.fn(),
+        getConnectionStatus: vi.fn(async () => ({
+          checkedAt: new Date("2026-07-02T19:00:00.000Z"),
+          connected: true,
+          connectedPhone: "5511999999999",
+          smartphoneConnected: true,
+          providerStatus: "connected" as const,
+        })),
         sendMedia: vi.fn(),
         sendText,
       },

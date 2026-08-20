@@ -101,9 +101,11 @@ export function CrmQueueToolbar({
   return (
     <header className="crm-toolbar">
       <div className="crm-toolbar-top">
-        <div className="min-w-0">
+        <div className="crm-toolbar-title-wrap">
           <h2>CRM</h2>
-          <p>{sessionCount} conversas</p>
+          <span className="crm-toolbar-count">
+            {sessionCount} {sessionCount === 1 ? "conversa" : "conversas"}
+          </span>
         </div>
         <div className="crm-toolbar-actions">
           <CrmConnectionFilter
@@ -121,7 +123,7 @@ export function CrmQueueToolbar({
             title="Gerenciar etiquetas"
             type="button"
           >
-            <Tags />
+            <Tags aria-hidden="true" />
           </button>
           <button
             aria-label="Gerenciar conexões de mensagens"
@@ -131,10 +133,77 @@ export function CrmQueueToolbar({
             title="Gerenciar conexões de mensagens"
             type="button"
           >
-            <Wrench />
+            <Wrench aria-hidden="true" />
+          </button>
+          <button
+            aria-label="Nova conversa"
+            className="crm-icon-action crm-new-cycle-action crm-new-session-action"
+            disabled={!canStartConversation}
+            onClick={onStartConversation}
+            title={startConversationUnavailableReason ?? "Nova conversa"}
+            type="button"
+          >
+            <Plus aria-hidden="true" />
           </button>
         </div>
       </div>
+
+      <div className="crm-search-row">
+        <label className="crm-search">
+          <Search aria-hidden="true" className="crm-search-icon" />
+          <input
+            aria-label="Pesquisar conversas por nome ou telefone"
+            onChange={(event) => onSearch(event.target.value)}
+            placeholder="Pesquisar por nome ou telefone..."
+            value={search}
+          />
+          {search ? (
+            <button
+              aria-label="Limpar pesquisa"
+              className="crm-search-clear"
+              onClick={() => onSearch("")}
+              type="button"
+            >
+              <X aria-hidden="true" />
+            </button>
+          ) : null}
+        </label>
+        <button
+          aria-label={
+            selectionMode ? "Cancelar seleção" : "Selecionar conversas"
+          }
+          aria-pressed={selectionMode}
+          className={
+            selectionMode
+              ? "crm-icon-action crm-selection-action crm-selection-action-active"
+              : "crm-icon-action crm-selection-action"
+          }
+          onClick={() => onSelectionModeChange(!selectionMode)}
+          title={selectionMode ? "Cancelar seleção" : "Selecionar conversas"}
+          type="button"
+        >
+          {selectionMode ? (
+            <X aria-hidden="true" />
+          ) : (
+            <CheckSquare aria-hidden="true" />
+          )}
+          {selectedCount > 0 ? (
+            <span className="crm-selection-badge">{selectedCount}</span>
+          ) : null}
+        </button>
+      </div>
+
+      <QueueQuickFilterRow
+        assignableMembers={assignableMembers}
+        canAssign={canAssign}
+        currentUserId={currentUserId}
+        onOtherAssigneeChange={onOtherAssigneeChange}
+        onQuickFilterChange={onQuickFilterChange}
+        otherAssigneeId={otherAssigneeId}
+        quickFilter={quickFilter}
+        conversationCycleCounts={conversationCycleCounts}
+      />
+
       <div
         className="crm-smart-filters"
         aria-label="Filtros inteligentes"
@@ -224,57 +293,8 @@ export function CrmQueueToolbar({
           ) : null}
         </button>
       </div>
-      <div className="crm-search-row">
-        <label className="crm-search">
-          <Search aria-hidden="true" className="size-4" />
-          <input
-            aria-label="Pesquisar conversas por nome ou telefone"
-            onChange={(event) => onSearch(event.target.value)}
-            placeholder="Pesquisar por nome ou telefone..."
-            value={search}
-          />
-        </label>
-        <button
-          aria-label={
-            selectionMode ? "Cancelar seleção" : "Selecionar conversas"
-          }
-          aria-pressed={selectionMode}
-          className={
-            selectionMode
-              ? "crm-icon-action crm-selection-action crm-selection-action-active"
-              : "crm-icon-action crm-selection-action"
-          }
-          onClick={() => onSelectionModeChange(!selectionMode)}
-          title={selectionMode ? "Cancelar seleção" : "Selecionar conversas"}
-          type="button"
-        >
-          {selectionMode ? <X /> : <CheckSquare />}
-          {selectedCount > 0 ? (
-            <span className="crm-selection-badge">{selectedCount}</span>
-          ) : null}
-        </button>
-        <button
-          aria-label="Nova conversa"
-          className="crm-icon-action crm-new-cycle-action"
-          disabled={!canStartConversation}
-          onClick={onStartConversation}
-          title={startConversationUnavailableReason ?? "Nova conversa"}
-          type="button"
-        >
-          <Plus aria-hidden="true" />
-        </button>
-      </div>
+
       {children}
-      <QueueQuickFilterRow
-        assignableMembers={assignableMembers}
-        canAssign={canAssign}
-        currentUserId={currentUserId}
-        onOtherAssigneeChange={onOtherAssigneeChange}
-        onQuickFilterChange={onQuickFilterChange}
-        otherAssigneeId={otherAssigneeId}
-        quickFilter={quickFilter}
-        conversationCycleCounts={conversationCycleCounts}
-      />
     </header>
   );
 }

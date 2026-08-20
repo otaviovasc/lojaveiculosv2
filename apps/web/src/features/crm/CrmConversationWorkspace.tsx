@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MessageSquareText } from "lucide-react";
 import { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import { MessageList } from "./CrmMessageParts";
 import { CrmQueueToolbar } from "./CrmQueueToolbar";
@@ -314,8 +315,26 @@ export function CrmConversationWorkspace({
             )}
           </>
         ) : (
-          <div className="crm-empty">
-            Selecione uma conversa para continuar o atendimento.
+          <div className="crm-empty crm-empty-conversation-state">
+            <div className="crm-empty-conversation-card">
+              <span aria-hidden="true" className="crm-empty-conversation-icon">
+                <MessageSquareText />
+              </span>
+              <span className="crm-empty-conversation-tag">WhatsApp CRM</span>
+              <h2>Selecione uma conversa</h2>
+              <p>
+                Escolha um contato na fila ao lado para visualizar o histórico
+                de mensagens, negociações de veículos, propostas e agendamentos.
+              </p>
+              <div className="crm-empty-conversation-shortcuts">
+                <span>
+                  <kbd>Alt</kbd> + <kbd>1</kbd> Focar lista
+                </span>
+                <span>
+                  <kbd>Alt</kbd> + <kbd>2</kbd> Focar conversa
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </section>

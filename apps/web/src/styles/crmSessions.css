@@ -85,23 +85,83 @@
   min-height: 5.5rem;
   padding: 0.875rem 1rem;
   text-align: left;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
   position: relative;
   cursor: pointer;
+  overflow: hidden;
+}
+
+/* Ambient channel backdrops matching Conexao cards */
+.crm-cycle[data-channel="whatsapp"]:not([data-provider="meta_cloud"]),
+.crm-cycle[data-provider="zapi"],
+.crm-session[data-channel="whatsapp"]:not([data-provider="meta_cloud"]),
+.crm-session[data-provider="zapi"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #10b981 4%, var(--color-panel)),
+    var(--color-panel) 80%
+  );
+}
+
+.crm-cycle[data-provider="meta_cloud"][data-channel="whatsapp"],
+.crm-cycle[data-provider="meta_cloud"]:not([data-channel="instagram"]):not(
+    [data-channel="olx"]
+  ),
+.crm-session[data-provider="meta_cloud"][data-channel="whatsapp"],
+.crm-session[data-provider="meta_cloud"]:not([data-channel="instagram"]):not(
+    [data-channel="olx"]
+  ) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #0081fb 4%, var(--color-panel)),
+    var(--color-panel) 80%
+  );
+}
+
+.crm-cycle[data-channel="instagram"],
+.crm-session[data-channel="instagram"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #e1306c 4%, var(--color-panel)),
+    var(--color-panel) 80%
+  ) !important;
+}
+
+.crm-cycle[data-channel="olx"],
+.crm-cycle[data-channel="olx_chat"],
+.crm-session[data-channel="olx"],
+.crm-session[data-channel="olx_chat"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #6e0ad6 4%, var(--color-panel)),
+    var(--color-panel) 80%
+  );
 }
 
 .crm-session:hover,
 .crm-cycle:hover {
   background: color-mix(in srgb, var(--color-text) 3.5%, var(--color-panel));
+  border-bottom-color: color-mix(in srgb, #10b981 35%, var(--color-line));
+}
+
+.crm-cycle[data-channel="whatsapp"]:hover:not(.crm-cycle-active) {
+  border-bottom-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+}
+
+.crm-cycle[data-channel="instagram"]:hover:not(.crm-cycle-active) {
+  border-bottom-color: color-mix(in srgb, #e1306c 40%, var(--color-line));
+}
+
+.crm-cycle[data-channel="olx"]:hover:not(.crm-cycle-active),
+.crm-cycle[data-channel="olx_chat"]:hover:not(.crm-cycle-active) {
+  border-bottom-color: color-mix(in srgb, #6e0ad6 40%, var(--color-line));
 }
 
 .crm-session-active,
 .crm-cycle-active {
   background: color-mix(in srgb, #10b981 8%, var(--color-panel)) !important;
-  box-shadow: inset 3px 0 0 #10b981 !important;
+  box-shadow: inset 3.5px 0 0 #10b981 !important;
 }
 
 :root[data-theme="dark"] .crm-session-active,
@@ -109,13 +169,13 @@
 .dark .crm-session-active,
 .dark .crm-cycle-active {
   background: rgba(16, 185, 129, 0.12) !important;
-  box-shadow: inset 3px 0 0 #34d399 !important;
+  box-shadow: inset 3.5px 0 0 #34d399 !important;
 }
 
 .crm-session-selected,
 .crm-cycle-selected {
   background: color-mix(in srgb, #3b82f6 8%, var(--color-panel)) !important;
-  box-shadow: inset 3px 0 0 #3b82f6 !important;
+  box-shadow: inset 3.5px 0 0 #3b82f6 !important;
 }
 
 /* Selection Checkbox */
@@ -341,6 +401,55 @@
 .crm-session-chip-wide,
 .crm-cycle-chip-wide {
   max-width: 12rem;
+}
+
+.crm-channel.crm-cycle-chip[data-channel="whatsapp"],
+.crm-channel.crm-session-chip[data-channel="whatsapp"] {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border-color: color-mix(in srgb, #10b981 25%, transparent);
+  color: #059669;
+}
+
+:root[data-theme="dark"] .crm-channel.crm-cycle-chip[data-channel="whatsapp"],
+:root[data-theme="dark"] .crm-channel.crm-session-chip[data-channel="whatsapp"],
+.dark .crm-channel.crm-cycle-chip[data-channel="whatsapp"],
+.dark .crm-channel.crm-session-chip[data-channel="whatsapp"] {
+  color: #34d399;
+}
+
+.crm-channel.crm-cycle-chip[data-channel="instagram"],
+.crm-channel.crm-session-chip[data-channel="instagram"] {
+  background: color-mix(in srgb, #e1306c 12%, transparent);
+  border-color: color-mix(in srgb, #e1306c 25%, transparent);
+  color: #be185d;
+}
+
+:root[data-theme="dark"] .crm-channel.crm-cycle-chip[data-channel="instagram"],
+:root[data-theme="dark"]
+  .crm-channel.crm-session-chip[data-channel="instagram"],
+.dark .crm-channel.crm-cycle-chip[data-channel="instagram"],
+.dark .crm-channel.crm-session-chip[data-channel="instagram"] {
+  color: #f472b6;
+}
+
+.crm-channel.crm-cycle-chip[data-channel="olx"],
+.crm-channel.crm-cycle-chip[data-channel="olx_chat"],
+.crm-channel.crm-session-chip[data-channel="olx"],
+.crm-channel.crm-session-chip[data-channel="olx_chat"] {
+  background: color-mix(in srgb, #6e0ad6 12%, transparent);
+  border-color: color-mix(in srgb, #6e0ad6 25%, transparent);
+  color: #6e0ad6;
+}
+
+:root[data-theme="dark"] .crm-channel.crm-cycle-chip[data-channel="olx"],
+:root[data-theme="dark"] .crm-channel.crm-cycle-chip[data-channel="olx_chat"],
+:root[data-theme="dark"] .crm-channel.crm-session-chip[data-channel="olx"],
+:root[data-theme="dark"] .crm-channel.crm-session-chip[data-channel="olx_chat"],
+.dark .crm-channel.crm-cycle-chip[data-channel="olx"],
+.dark .crm-channel.crm-cycle-chip[data-channel="olx_chat"],
+.dark .crm-channel.crm-session-chip[data-channel="olx"],
+.dark .crm-channel.crm-session-chip[data-channel="olx_chat"] {
+  color: #a78bfa;
 }
 
 .crm-empty-list {

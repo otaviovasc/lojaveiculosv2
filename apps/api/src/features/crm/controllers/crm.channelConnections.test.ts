@@ -1,4 +1,8 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import {
+  crmConnectionOverviewItemSchema,
+  type StoreId,
+  type TenantId,
+} from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { CrmMessagingGatewayError } from "../../../domains/crm/ports/crmMessagingGateway.js";
@@ -120,11 +124,14 @@ describe("CRM connections", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
+    const body: unknown = await response.json();
+    expect(() => crmConnectionOverviewItemSchema.parse(body)).not.toThrow();
+    expect(body).toMatchObject({
       id: connectionId,
-      live: { connected: false, providerStatus: "disconnected" },
-      status: "disconnected",
+      state: "disconnected",
     });
+    expect(body).not.toHaveProperty("credentials");
+    expect(body).not.toHaveProperty("live");
     expect(disconnectConnection).toHaveBeenCalledTimes(1);
     await expect(
       repository.findConnectionById(connectionId),

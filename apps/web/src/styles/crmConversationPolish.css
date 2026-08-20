@@ -1,5 +1,8 @@
 /* CRM Conversation Polish Styles */
-.crm-page,
+.crm-page {
+  background: var(--color-app);
+}
+
 .crm-shell,
 .crm-list {
   background: var(--color-panel);
@@ -17,7 +20,7 @@
 
 .crm-shell[data-details-open="true"] {
   grid-template-columns:
-    minmax(20rem, 24rem)
+    minmax(21rem, 25rem)
     minmax(27rem, 1fr)
     minmax(18rem, 22rem);
 }
