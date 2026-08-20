@@ -73,12 +73,12 @@ export function Toast({
       ) : (
         <span aria-hidden="true" />
       )}
-      <span className="grid min-w-0 gap-0.5">
+      <div className="grid min-w-0 gap-0.5">
         <strong className="font-bold leading-snug">{title}</strong>
         {children ? (
-          <span className="text-xs leading-snug text-muted">{children}</span>
+          <div className="text-xs leading-snug text-muted">{children}</div>
         ) : null}
-      </span>
+      </div>
       {onDismiss ? (
         <button
           aria-label="Fechar notificação"

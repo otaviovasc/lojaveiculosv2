@@ -51,15 +51,30 @@ describe("CrmInbox synchronization status", () => {
       "Sincronizado",
     );
   });
+
+  it("renders inbox failures as a toast instead of a layout banner", () => {
+    inboxMock.current = createInbox("connected", new Error("backend down"));
+
+    render(
+      <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveAttribute("data-ui", "toast");
+    expect(document.querySelector(".crm-note")).not.toBeInTheDocument();
+    expect(screen.getByText("backend down")).toBeVisible();
+  });
 });
 
-function createInbox(realtimeStatus: "connected" | "connecting") {
+function createInbox(
+  realtimeStatus: "connected" | "connecting",
+  error: Error | null = null,
+) {
   return {
     availableTags: [],
     connectionError: null,
     connectionId: "connection-1",
     connectionIsLoading: false,
-    error: null,
+    error,
     hasConnection: true,
     permissions: {
       canCampaignRead: false,

@@ -314,6 +314,99 @@ describe("CrmWhatsappZapiSetup", () => {
     }
   });
 
+  it("continues reconciling status after the connection reaches ready", async () => {
+    vi.useFakeTimers();
+    const connected: CrmProviderConnection = {
+      ...createDisconnectedConnection(),
+      live: {
+        checkedAt: "2099-08-12T12:00:00.000Z",
+        connected: true,
+        connectedPhone: "5511999999999",
+        providerStatus: "connected",
+        smartphoneConnected: true,
+      },
+      ready: true,
+      status: "active",
+    };
+    const handlers = createHandlers();
+    handlers.onRefreshZapiStatus = vi.fn(async () => connected);
+
+    try {
+      render(
+        <CrmWhatsappZapiSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          canPair={true}
+          canSetup={false}
+          connection={connected}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={vi.fn()}
+          zapiAddonContract={createZapiContract("active")}
+        />,
+      );
+
+      expect(screen.getByText("Etapa 5 de 5 · Pronto")).toBeVisible();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5_000);
+      });
+
+      expect(handlers.onRefreshZapiStatus).toHaveBeenCalledWith("connection_1");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not render a QR response for a connection that was replaced", async () => {
+    const handlers = createHandlers();
+    let resolveQr!: (value: { expiresAt: string; qrCode: string }) => void;
+    handlers.onRequestZapiPairingQr = vi.fn(
+      () =>
+        new Promise<{ expiresAt: string; qrCode: string }>((resolve) => {
+          resolveQr = resolve;
+        }),
+    );
+    const first = createDisconnectedConnection("connection_1");
+    const replacement = createDisconnectedConnection("connection_2");
+    const { rerender } = render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={false}
+        connection={first}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Gerar QR Code" }));
+    rerender(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={true}
+        canSetup={false}
+        connection={replacement}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    await act(async () => {
+      resolveQr({
+        expiresAt: "2099-08-10T12:00:00.000Z",
+        qrCode: "data:image/png;base64,stale-qr",
+      });
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.queryByAltText("QR Code para conectar o WhatsApp"),
+    ).not.toBeInTheDocument();
+  });
+
   it("requires a user-entered phone before requesting a pairing code", async () => {
     const handlers = createHandlers();
     handlers.onRequestZapiPairingCode = vi.fn(async (_connectionId, phone) => ({
@@ -656,12 +749,14 @@ function createZapiContract(
   };
 }
 
-function createDisconnectedConnection(): CrmProviderConnection {
+function createDisconnectedConnection(
+  id = "connection_1",
+): CrmProviderConnection {
   return {
     displayName: "Z-API Matriz",
     externalConnectionId: null,
     externalInstanceId: "instance-1",
-    id: "connection_1",
+    id,
     live: {
       checkedAt: "2026-08-10T12:00:00.000Z",
       connected: false,

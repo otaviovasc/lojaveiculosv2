@@ -103,6 +103,11 @@ export const leads = pgTable(
     index("leads_pipeline_id_idx").on(table.pipelineId),
     index("leads_pipeline_stage_id_idx").on(table.pipelineStageId),
     index("leads_source_idx").on(table.source),
+    uniqueIndex("leads_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
     uniqueIndex("leads_source_identity_unique")
       .on(table.tenantId, table.storeId, table.source, table.sourceIdentityKey)
       .where(

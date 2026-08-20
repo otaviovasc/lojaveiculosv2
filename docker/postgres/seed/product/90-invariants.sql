@@ -58,12 +58,12 @@ BEGIN
   IF EXISTS (
     WITH expected(role_key, expected_count) AS (
       VALUES
-        ('agency'::role_template_key, 101),
-        ('admin'::role_template_key, 95),
-        ('owner'::role_template_key, 101),
+        ('agency'::role_template_key, 108),
+        ('admin'::role_template_key, 102),
+        ('owner'::role_template_key, 108),
         ('investor'::role_template_key, 15),
         ('salesman'::role_template_key, 47),
-        ('supervisor'::role_template_key, 75)
+        ('supervisor'::role_template_key, 78)
     )
     SELECT 1
     FROM expected

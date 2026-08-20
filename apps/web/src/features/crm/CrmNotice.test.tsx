@@ -25,6 +25,8 @@ describe("CrmNotice", () => {
     );
 
     expect(screen.getByText("A conversa mudou.")).toBeVisible();
+    expect(screen.getByRole("alert")).toHaveAttribute("data-ui", "toast");
+    expect(document.querySelector(".crm-note")).not.toBeInTheDocument();
     const details = screen.getByText("Detalhes técnicos").closest("details");
     expect(details).not.toHaveAttribute("open");
     fireEvent.click(

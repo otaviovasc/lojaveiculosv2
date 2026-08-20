@@ -83,6 +83,17 @@ export function CrmWhatsappZapiSetup({
   );
   const [showCredentials, setShowCredentials] = useState(false);
   const autoRefreshInFlightRef = useRef(false);
+  const actionGenerationRef = useRef(0);
+  const currentConnectionIdRef = useRef<string | null>(connection?.id ?? null);
+  currentConnectionIdRef.current = connection?.id ?? null;
+  const beginAction = useCallback(() => ++actionGenerationRef.current, []);
+  const isCurrentAction = useCallback(
+    (generation: number, connectionId?: string) =>
+      generation === actionGenerationRef.current &&
+      (connectionId === undefined ||
+        currentConnectionIdRef.current === connectionId),
+    [],
+  );
   const isEntitled =
     allowance.limit > 0 ||
     ["active", "paid_awaiting_setup"].includes(zapiAddonContract?.status ?? "");
@@ -93,6 +104,36 @@ export function CrmWhatsappZapiSetup({
     pairingCode?.expiresAt && new Date(pairingCode.expiresAt).getTime() <= now,
   );
 
+  const connectionStateKey = [
+    connection?.id ?? "none",
+    connection?.externalInstanceId ?? "none",
+    connection?.setup?.status ?? "none",
+    connection?.live?.providerStatus ?? "unknown",
+    connection?.readiness?.ready ?? connection?.ready ?? "unknown",
+    connection?.state ?? connection?.status ?? "unknown",
+  ].join(":");
+  const previousConnectionStateKeyRef = useRef(connectionStateKey);
+  if (previousConnectionStateKeyRef.current !== connectionStateKey) {
+    previousConnectionStateKeyRef.current = connectionStateKey;
+    actionGenerationRef.current += 1;
+  }
+
+  useEffect(() => {
+    autoRefreshInFlightRef.current = false;
+    setBusy(null);
+    setError(null);
+    setPairingCode(null);
+    setPairAgain(false);
+    setQr(null);
+    setNow(Date.now());
+  }, [connectionStateKey]);
+
+  useEffect(() => {
+    setPairingBlock(null);
+    setPairingMethod("qr");
+    setPhone("");
+  }, [connection?.id]);
+
   useEffect(() => {
     if (!qr?.expiresAt && !pairingCode?.expiresAt) return undefined;
     const timer = window.setInterval(() => setNow(Date.now()), 1_000);
@@ -100,7 +141,11 @@ export function CrmWhatsappZapiSetup({
   }, [pairingCode?.expiresAt, qr?.expiresAt]);
 
   useEffect(() => {
-    if (step !== 3 && step !== 4) return undefined;
+    if (step !== 3 && step !== 4 && step !== 5) return undefined;
+
+    const refreshConnections = handlers.onRefreshConnections;
+    const refreshZapiStatus = handlers.onRefreshZapiStatus;
+    const connectionId = connection?.id;
 
     const refreshAutomatically = async () => {
       if (
@@ -110,14 +155,16 @@ export function CrmWhatsappZapiSetup({
       ) {
         return;
       }
+      const actionGeneration = beginAction();
       autoRefreshInFlightRef.current = true;
       try {
-        if (step === 4 && connection && handlers.onRefreshZapiStatus) {
-          const refreshed = await handlers.onRefreshZapiStatus(connection.id);
+        if ((step === 4 || step === 5) && connectionId && refreshZapiStatus) {
+          const refreshed = await refreshZapiStatus(connectionId);
+          if (!isCurrentAction(actionGeneration, connectionId)) return;
           onConnection(refreshed);
           if (isProviderDisconnected(refreshed)) setPairingBlock(null);
         } else {
-          await handlers.onRefreshConnections();
+          await refreshConnections();
         }
       } catch {
         // Automatic checks stay quiet; the explicit action exposes failures.
@@ -128,7 +175,16 @@ export function CrmWhatsappZapiSetup({
 
     const timer = window.setInterval(() => void refreshAutomatically(), 5_000);
     return () => window.clearInterval(timer);
-  }, [busy, connection, handlers, onConnection, step]);
+  }, [
+    beginAction,
+    busy,
+    connection?.id,
+    handlers.onRefreshConnections,
+    handlers.onRefreshZapiStatus,
+    isCurrentAction,
+    onConnection,
+    step,
+  ]);
 
   const requestAddon = async () => {
     if (!canSetup) return;
@@ -136,10 +192,12 @@ export function CrmWhatsappZapiSetup({
       setError("A solicitação da Z-API não está disponível neste momento.");
       return;
     }
+    const actionGeneration = beginAction();
     await runAction({
       action: handlers.onRequestZapiAddon,
       busy: "addon",
       fallbackError: "Não foi possível registrar a solicitação da Z-API.",
+      isCurrent: () => isCurrentAction(actionGeneration),
       setBusy,
       setError,
     });
@@ -151,6 +209,7 @@ export function CrmWhatsappZapiSetup({
       setError("Informe o ID e o token da instância Z-API.");
       return;
     }
+    const actionGeneration = beginAction();
     setBusy("credentials");
     setError(null);
     try {
@@ -162,23 +221,28 @@ export function CrmWhatsappZapiSetup({
           "A conexão não foi criada. Nenhuma credencial foi confirmada.",
         );
       }
+      if (!isCurrentAction(actionGeneration)) return;
       setCredentials(emptyCredentials);
       onConnection(created);
     } catch (caught) {
-      setError(
-        formatApiErrorDisplay(
-          caught,
-          "Não foi possível salvar a conexão Z-API.",
-        ),
-      );
+      if (isCurrentAction(actionGeneration)) {
+        setError(
+          formatApiErrorDisplay(
+            caught,
+            "Não foi possível salvar a conexão Z-API.",
+          ),
+        );
+      }
     } finally {
-      setBusy(null);
+      if (isCurrentAction(actionGeneration)) setBusy(null);
     }
   };
 
   const refresh = async () => {
     if (busy) return;
     const currentConnection = connection;
+    const actionGeneration = beginAction();
+    const connectionId = currentConnection?.id;
     const refreshStatus = currentConnection
       ? handlers.onRefreshZapiStatus
       : undefined;
@@ -187,18 +251,20 @@ export function CrmWhatsappZapiSetup({
         action: () => refreshStatus(currentConnection.id),
         busy: "refresh",
         fallbackError: "Não foi possível atualizar o canal.",
+        isCurrent: () => isCurrentAction(actionGeneration, connectionId),
         setBusy,
         setError,
       });
-      if (result) {
-        onConnection(result);
+      if (result && isCurrentAction(actionGeneration, connectionId)) {
         if (isProviderDisconnected(result)) setPairingBlock(null);
+        onConnection(result);
       }
     } else {
       await runAction({
         action: handlers.onRefreshConnections,
         busy: "refresh",
         fallbackError: "Não foi possível atualizar o canal.",
+        isCurrent: () => isCurrentAction(actionGeneration),
         setBusy,
         setError,
       });
@@ -208,55 +274,72 @@ export function CrmWhatsappZapiSetup({
   const disconnect = async () => {
     const disconnectZapi = handlers.onDisconnectZapi;
     if (!connection || !canSetup || !disconnectZapi || busy) return;
+    const actionGeneration = beginAction();
+    const connectionId = connection.id;
     const result = await runAction({
-      action: () => disconnectZapi(connection.id),
+      action: () => disconnectZapi(connectionId),
       busy: "disconnect",
       fallbackError:
         "Não foi possível desconectar o WhatsApp da Z-API. A conexão não foi marcada como desligada.",
+      isCurrent: () => isCurrentAction(actionGeneration, connectionId),
       setBusy,
       setError,
     });
-    if (result) onConnection(result);
+    if (result && isCurrentAction(actionGeneration, connectionId)) {
+      onConnection(result);
+    }
   };
 
   const disconnectBeforePairing = async () => {
     const disconnectZapi = handlers.onDisconnectZapi;
     if (!connection || !canSetup || !disconnectZapi || busy) return;
+    const actionGeneration = beginAction();
+    const connectionId = connection.id;
     const result = await runAction({
-      action: () => disconnectZapi(connection.id),
+      action: () => disconnectZapi(connectionId),
       busy: "disconnect",
       fallbackError: "Não foi possível desconectar o aparelho na Z-API.",
+      isCurrent: () => isCurrentAction(actionGeneration, connectionId),
       setBusy,
       setError,
     });
     if (!result) return;
+    if (!isCurrentAction(actionGeneration, connectionId)) return;
     onConnection(result);
     setPairingBlock("waiting_disconnect");
   };
 
   const configureWebhooks = async () => {
     if (!connection || !canSetup || busy) return;
+    const actionGeneration = beginAction();
+    const connectionId = connection.id;
     const result = await runAction({
-      action: () => handlers.onConfigureZapiWebhooks(connection.id),
+      action: () => handlers.onConfigureZapiWebhooks(connectionId),
       busy: "refresh",
       fallbackError:
         "Não foi possível verificar a configuração automática da Z-API.",
+      isCurrent: () => isCurrentAction(actionGeneration, connectionId),
       setBusy,
       setError,
     });
     if (!result) return;
+    if (!isCurrentAction(actionGeneration, connectionId)) return;
     onConnection(result.connection ?? { ...connection, setup: result.setup });
   };
 
   const requestQr = useCallback(async () => {
     const requestPairingQr = handlers.onRequestZapiPairingQr;
-    if (!connection || !canPair || !requestPairingQr) return;
+    const connectionId = connection?.id;
+    if (!connectionId || !canPair || !requestPairingQr) return;
+    const actionGeneration = beginAction();
     setQr(null);
     setBusy("qr");
     setError(null);
     try {
-      setQr(await requestPairingQr(connection.id));
+      const payload = await requestPairingQr(connectionId);
+      if (isCurrentAction(actionGeneration, connectionId)) setQr(payload);
     } catch (caught) {
+      if (!isCurrentAction(actionGeneration, connectionId)) return;
       if (requiresPhonePairing(caught)) {
         setPairingMethod("code");
         setError(
@@ -270,9 +353,15 @@ export function CrmWhatsappZapiSetup({
         );
       }
     } finally {
-      setBusy(null);
+      if (isCurrentAction(actionGeneration, connectionId)) setBusy(null);
     }
-  }, [canPair, connection, handlers.onRequestZapiPairingQr]);
+  }, [
+    beginAction,
+    canPair,
+    connection?.id,
+    handlers.onRequestZapiPairingQr,
+    isCurrentAction,
+  ]);
 
   useEffect(() => {
     if (
@@ -301,18 +390,24 @@ export function CrmWhatsappZapiSetup({
 
   const requestCode = async () => {
     const requestPairingCode = handlers.onRequestZapiPairingCode;
-    if (!connection || !canPair || !requestPairingCode) return;
+    const connectionId = connection?.id;
+    if (!connectionId || !canPair || !requestPairingCode) return;
     const normalizedPhone = phone.replace(/\D/g, "");
     if (normalizedPhone.length < 8 || normalizedPhone.length > 15) {
       setError("Informe um telefone válido com DDI, DDD e número.");
       return;
     }
+    const actionGeneration = beginAction();
     setPairingCode(null);
     setBusy("code");
     setError(null);
     try {
-      setPairingCode(await requestPairingCode(connection.id, normalizedPhone));
+      const payload = await requestPairingCode(connectionId, normalizedPhone);
+      if (isCurrentAction(actionGeneration, connectionId)) {
+        setPairingCode(payload);
+      }
     } catch (caught) {
+      if (!isCurrentAction(actionGeneration, connectionId)) return;
       if (requiresProviderDisconnect(caught)) {
         setPairingBlock("disconnect_required");
       } else {
@@ -324,7 +419,7 @@ export function CrmWhatsappZapiSetup({
         );
       }
     } finally {
-      setBusy(null);
+      if (isCurrentAction(actionGeneration, connectionId)) setBusy(null);
     }
   };
 
@@ -557,12 +652,14 @@ async function runAction<T>({
   action,
   busy,
   fallbackError,
+  isCurrent = () => true,
   setBusy,
   setError,
 }: {
   action: () => Promise<T | undefined>;
   busy: BusyState;
   fallbackError: string;
+  isCurrent?: () => boolean;
   setBusy: (busy: BusyState | null) => void;
   setError: (error: string | null) => void;
 }) {
@@ -571,9 +668,9 @@ async function runAction<T>({
   try {
     return await action();
   } catch (caught) {
-    setError(formatApiErrorDisplay(caught, fallbackError));
+    if (isCurrent()) setError(formatApiErrorDisplay(caught, fallbackError));
     return undefined;
   } finally {
-    setBusy(null);
+    if (isCurrent()) setBusy(null);
   }
 }
