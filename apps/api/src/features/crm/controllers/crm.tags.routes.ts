@@ -18,6 +18,7 @@ import {
   handleCrmMessaging,
 } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
+import { toConversationCycleDto } from "./crm.conversationCycle.dto.js";
 
 type RegisterCrmTagRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -123,7 +124,7 @@ export function registerCrmTagRoutes(
         name: input.name,
         cycleId: context.req.param("cycleId"),
       });
-      return context.json(cycle);
+      return context.json(toConversationCycleDto(cycle));
     }),
   );
 
@@ -146,7 +147,7 @@ export function registerCrmTagRoutes(
             tagId,
           },
         );
-        return context.json(cycle);
+        return context.json(toConversationCycleDto(cycle));
       }),
   );
 }

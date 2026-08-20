@@ -33,7 +33,7 @@ import { registerCrmProviderEventRoutes } from "./crm.providerEvents.routes.js";
 import { registerCrmWhatsappWebhookRoutes } from "./crm.whatsapp.webhookRoutes.js";
 import type { CrmServices } from "./crmServices.js";
 import { registerCrmWhatsappZapiSupportRoutes } from "./crm.whatsapp.zapiSupportRoutes.js";
-import { listConversationCycleDtos } from "./crm.conversationCycle.dto.js";
+import { listCycleDtos, toStartCycleDto } from "./crm.conversationCycle.dto.js";
 import { toCrmMessageDto } from "./crm.message.dto.js";
 
 export type RegisterCrmMessagingApiRoutesOptions = {
@@ -71,9 +71,7 @@ export function registerCrmMessagingApiRoutes(
       const serviceContext = await createContext(context);
       assertConversationRead(serviceContext);
       const query = cleanCrmConversationCyclesQuery(parsed.data);
-      return context.json(
-        await listConversationCycleDtos(serviceContext, query, services),
-      );
+      return context.json(await listCycleDtos(serviceContext, query, services));
     }),
   );
 
@@ -164,7 +162,7 @@ export function registerCrmMessagingApiRoutes(
           : {}),
         ...(input.text ? { text: input.text } : {}),
       });
-      return context.json(result, 201);
+      return context.json(toStartCycleDto(result), 201);
     }),
   );
 
