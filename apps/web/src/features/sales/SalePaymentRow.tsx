@@ -64,7 +64,7 @@ export function PaymentRow({
             onChange={(method) =>
               onChange(changePaymentMethod(payment, method))
             }
-            options={salePaymentMethods.map((method) => ({
+            options={paymentMethodsForRow(payment.method).map((method) => ({
               label: formatPaymentMethodLabel(method),
               value: method,
             }))}
@@ -125,12 +125,20 @@ export function newPayment(
   };
 }
 
-function localDateInputValue(): string {
-  const date = new Date();
+export function localDateInputValue(
+  date: Pick<Date, "getDate" | "getFullYear" | "getMonth"> = new Date(),
+): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+export function paymentMethodsForRow(
+  currentMethod: SalePaymentMethod,
+): readonly SalePaymentMethod[] {
+  if (currentMethod === "trade_in") return salePaymentMethods;
+  return salePaymentMethods.filter((method) => method !== "trade_in");
 }
 
 function MoneyInput({

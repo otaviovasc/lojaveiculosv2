@@ -39,6 +39,24 @@ describe("SessionList", () => {
     expect(onToggleSelected).not.toHaveBeenCalled();
   });
 
+  it("exposes the active conversation to assistive technology", () => {
+    render(
+      <SessionList
+        activeCycleId="session_1"
+        onSelect={vi.fn()}
+        onToggleSelected={vi.fn()}
+        selectedCycleIds={[]}
+        selectionMode={false}
+        conversationCycles={[createSession()]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /Ana Premium/ })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
   it("toggles rows instead of opening them in selection mode", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();

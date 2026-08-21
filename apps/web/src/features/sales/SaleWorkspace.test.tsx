@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SaleWorkspace } from "./SaleWorkspace";
@@ -60,7 +66,8 @@ describe("SaleWorkspace", () => {
       name: "Reservar Veículo",
     });
     expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeDisabled();
-    expect(reserveButton).toBeEnabled();
+    expect(reserveButton).toBeDisabled();
+    await waitFor(() => expect(reserveButton).toBeEnabled(), { timeout: 1500 });
     const clearTimeoutCallsBeforeReserve = clearTimeoutSpy.mock.calls.length;
     await user.click(reserveButton);
 
@@ -78,6 +85,7 @@ describe("SaleWorkspace", () => {
     const pending = saleRecord({ status: "pending" });
     const saved = saleRecord({
       buyerSnapshot: {
+        ...validBuyerSnapshot(),
         name: "Cliente QA",
         phone: "(11) 90000-0000",
         source: "server",
@@ -113,7 +121,21 @@ describe("SaleWorkspace", () => {
     expect(
       screen.getByRole("button", { name: "Remover pagamento 1" }),
     ).toBeDisabled();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Fechar Venda" }),
+      ).toBeEnabled(),
+    );
     await user.click(screen.getByRole("button", { name: "Fechar Venda" }));
+    const closeDialog = screen.getByRole("dialog", {
+      name: "Fechar esta venda?",
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    await user.click(
+      within(closeDialog).getByRole("button", {
+        name: "Confirmar fechamento",
+      }),
+    );
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(onSave).toHaveBeenCalledOnce();
@@ -123,7 +145,7 @@ describe("SaleWorkspace", () => {
     });
   });
 
-  it("waits for an in-flight autosave before closing a pending sale", async () => {
+  it("keeps the sticky close action disabled until autosave finishes", async () => {
     const user = userEvent.setup();
     const pending = saleRecord({ status: "pending" });
     let resolveSave: ((sale: SaleRecord) => void) | undefined;
@@ -156,14 +178,14 @@ describe("SaleWorkspace", () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledOnce(), {
       timeout: 1500,
     });
-    await user.click(screen.getByRole("button", { name: "Fechar Venda" }));
-
+    expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeDisabled();
     expect(onSave).toHaveBeenCalledOnce();
     expect(onClose).not.toHaveBeenCalled();
 
     resolveSave?.(
       saleRecord({
         buyerSnapshot: {
+          ...validBuyerSnapshot(),
           name: "Cliente QA",
           phone: "(11) 90000-0000",
           source: "server",
@@ -173,12 +195,169 @@ describe("SaleWorkspace", () => {
       }),
     );
 
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Fechar Venda" }),
+      ).toBeEnabled(),
+    );
+    await user.click(screen.getByRole("button", { name: "Fechar Venda" }));
+    await user.click(
+      within(
+        screen.getByRole("dialog", { name: "Fechar esta venda?" }),
+      ).getByRole("button", { name: "Confirmar fechamento" }),
+    );
+
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(onSave).toHaveBeenCalledOnce();
     expect(onClose.mock.calls[0]?.[0]).toMatchObject({
       buyerSnapshot: { source: "server" },
       revision: 2,
     });
+  });
+
+  it("keeps incomplete draft steps blocked and explains what is missing", async () => {
+    const user = userEvent.setup();
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={vi.fn()}
+        onRevert={vi.fn()}
+        onSave={vi.fn()}
+        sale={saleRecord({ buyerSnapshot: { name: "" }, leadId: null })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /Valores, Pagos & Serviços/ }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /Formalização & Download/ }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Avançar" })).toBeDisabled();
+    expect(
+      screen.getByText(/Complete antes de avançar: Comprador, Lead/),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /Formalização & Download/ }),
+    );
+    expect(
+      screen.getByRole("button", { name: /Veículo & Comprador/ }),
+    ).toHaveAttribute("aria-current", "step");
+  });
+
+  it("keeps document-policy errors out of the close-ready state", async () => {
+    const user = userEvent.setup();
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={vi.fn()}
+        onRevert={vi.fn()}
+        onSave={vi.fn()}
+        sale={saleRecord({
+          buyerSnapshot: { name: "Cliente QA" },
+          listingSnapshot: { title: "Audi A4" },
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /Documentos & Validação/ }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: /Formalização & Download/ }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeDisabled();
+    expect(screen.getByText("Pendências para fechar")).toBeInTheDocument();
+    expect(
+      screen.getByText(/CPF\/CNPJ, Endereço do comprador/),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /Documentos & Validação/ }),
+    );
+    expect(
+      screen.getByText(/Complete antes de avançar: CPF\/CNPJ/),
+    ).toBeInTheDocument();
+  });
+
+  it("lets pending sales inspect every step without hiding recorded gaps", async () => {
+    const user = userEvent.setup();
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={vi.fn()}
+        onRevert={vi.fn()}
+        onSave={vi.fn()}
+        sale={saleRecord({ buyerSnapshot: { name: "" }, status: "pending" })}
+      />,
+    );
+
+    const finalStep = screen.getByRole("button", {
+      name: /Formalização & Download/,
+    });
+    expect(finalStep).toBeEnabled();
+    await user.click(finalStep);
+    expect(
+      screen.getByText(/Pendências registradas nesta etapa: Comprador/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Há pendências antes do fechamento"),
+    ).toBeInTheDocument();
+  });
+
+  it("requires confirmation and allows cancelling any close request", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={onClose}
+        onReserve={vi.fn()}
+        onRevert={vi.fn()}
+        onSave={vi.fn((sale: SaleRecord) => Promise.resolve(sale))}
+        sale={saleRecord({ status: "pending" })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Fechar Venda" }));
+    const dialog = screen.getByRole("dialog", { name: "Fechar esta venda?" });
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+
+    expect(onClose).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Fechar esta venda?" }),
+      ).not.toBeInTheDocument(),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Formalização & Download/ }),
+    );
+    await user.click(
+      screen.getAllByRole("button", { name: "Fechar Venda" })[0]!,
+    );
+    await user.click(
+      within(
+        screen.getByRole("dialog", { name: "Fechar esta venda?" }),
+      ).getByRole("button", { name: "Cancelar" }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Fechar esta venda?" }),
+      ).not.toBeInTheDocument(),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Fechar Venda Agora" }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Fechar esta venda?" }),
+    ).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("only exposes reversal for the current closed revision", async () => {
@@ -314,9 +493,16 @@ describe("SaleWorkspace", () => {
         onSave={onSave}
         sale={saleRecord({
           buyerSnapshot: {
+            address: "Rua das Flores, 100",
+            city: "São Paulo",
+            document: "52998224725",
             email: "cliente@example.test",
+            estadoCivil: "solteiro",
             name: "Cliente QA",
+            nacionalidade: "brasileira",
             phone: "(11) 99999-9999",
+            profissao: "comerciante",
+            state: "SP",
           },
           leadId: null,
           listingId: "listing_1",
@@ -343,9 +529,12 @@ describe("SaleWorkspace", () => {
     expect(
       await screen.findByText("Lead criado e vinculado a esta venda."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeEnabled();
-
     await waitFor(() => expect(onSave).toHaveBeenCalled(), { timeout: 1500 });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Fechar Venda" }),
+      ).toBeEnabled(),
+    );
     expect(onSave.mock.calls.at(-1)?.[0]).toMatchObject({
       leadId: "lead_new",
       listingSnapshot: {
@@ -389,7 +578,7 @@ describe("SaleWorkspace", () => {
 
 function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
   return {
-    buyerSnapshot: { name: "Cliente QA" },
+    buyerSnapshot: validBuyerSnapshot(),
     closedAt: null,
     correctionOfSaleId: null,
     createdAt: "2026-01-01T00:00:00.000Z",
@@ -405,7 +594,11 @@ function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
     isCurrentRevision: true,
     leadId: "lead_1",
     listingId: null,
-    listingSnapshot: { title: "Audi A4" },
+    listingSnapshot: {
+      chassi: "9BWZZZ377VT004251",
+      renavam: "12345678901",
+      title: "Audi A4",
+    },
     overrideReason: null,
     overrideRequiredFields: false,
     payments: [payment("payment_1")],
@@ -423,6 +616,19 @@ function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
     unitId: "unit_1",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
+  };
+}
+
+function validBuyerSnapshot(): Record<string, unknown> {
+  return {
+    address: "Rua das Flores, 100",
+    city: "São Paulo",
+    document: "52998224725",
+    estadoCivil: "solteiro",
+    name: "Cliente QA",
+    nacionalidade: "brasileira",
+    profissao: "comerciante",
+    state: "SP",
   };
 }
 

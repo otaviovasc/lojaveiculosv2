@@ -65,6 +65,7 @@ export function buildSaleAutoEntryEvents(
   ];
 
   for (const financing of facts.financing) {
+    if (financing.rank === "R0") continue;
     events.push({
       ...common,
       attributes: { financingRank: financing.rank },

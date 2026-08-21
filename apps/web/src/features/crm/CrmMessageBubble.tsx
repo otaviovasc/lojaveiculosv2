@@ -1,4 +1,10 @@
-import { AlertTriangle, CheckCheck, CircleHelp, Clock3 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCheck,
+  CircleHelp,
+  Clock3,
+} from "lucide-react";
 import {
   MessageActions,
   type MessageActionHandlers,
@@ -16,22 +22,29 @@ export function MessageBubble({
   actionsDisabled,
   message,
   onDelete,
+  onMediaClick,
+  onQuoteClick,
   onReact,
   onRemoveReaction,
   onReply,
 }: MessageActionHandlers & {
   message: CrmMessage;
+  onMediaClick?: ((url: string) => void) | undefined;
+  onQuoteClick?: ((quoteId?: string) => void) | undefined;
 }) {
   const outgoing = message.direction === "OUTBOUND";
   const senderLabel = getSenderLabel(message);
   const reaction = readReaction(message.metadata);
   const delivery = readDeliveryPresentation(message.status);
   const channel = (message.channel ?? "whatsapp").toLowerCase();
+  const elementId = `crm-msg-${message.id}`;
+
   return (
     <article
       className={outgoing ? "crm-bubble crm-bubble-out" : "crm-bubble"}
       data-channel={channel}
       data-message-status={delivery.status}
+      id={elementId}
     >
       <MessageActions
         actionsDisabled={actionsDisabled}
@@ -46,8 +59,11 @@ export function MessageBubble({
         {senderLabel ? <strong>{senderLabel}</strong> : null}
         <span>{getSenderOriginLabel(message)}</span>
       </div>
-      <QuotedMessage metadata={message.metadata} />
-      <MessageContent message={message} />
+      <QuotedMessage
+        metadata={message.metadata}
+        onClick={onQuoteClick ? () => onQuoteClick() : undefined}
+      />
+      <MessageContent message={message} onMediaClick={onMediaClick} />
       {reaction ? (
         <button
           aria-label={`Reacao ${reaction}`}
@@ -101,13 +117,25 @@ export function MessageDeliveryStatus({
 }) {
   if (!delivery.label) {
     const isRead = delivery.status === "read";
+    const isDelivered = delivery.status === "delivered";
+    if (isRead) {
+      return (
+        <CheckCheck
+          aria-label="Mensagem lida"
+          className="size-3.5 crm-delivery-read"
+        />
+      );
+    }
+    if (isDelivered) {
+      return (
+        <CheckCheck
+          aria-label="Mensagem enviada"
+          className="size-3.5 opacity-60"
+        />
+      );
+    }
     return (
-      <CheckCheck
-        aria-label={isRead ? "Mensagem lida" : "Mensagem enviada"}
-        className={
-          isRead ? "size-3.5 crm-delivery-read" : "size-3.5 opacity-60"
-        }
-      />
+      <Check aria-label="Mensagem enviada" className="size-3.5 opacity-60" />
     );
   }
   const Icon =

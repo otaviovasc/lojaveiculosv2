@@ -11,6 +11,7 @@ import type { InventoryApi } from "../inventory/api/apiClient";
 import { DocumentationPanel } from "./SaleServicesDocumentationPanel";
 import { FinancingPanel, InsurancePanel } from "./SaleServicesPolicyPanels";
 import { TradeInPanel } from "./SaleServicesTradeInPanel";
+import type { FinancingPaymentSyncState } from "./salePaymentSync";
 import type {
   ActiveServiceTab,
   ServiceChangeHandler,
@@ -23,6 +24,7 @@ export function SaleServicesTabs({
   commission,
   documentation,
   financing,
+  financingPaymentSyncState,
   insurance,
   inventoryApi,
   onChange,
@@ -35,6 +37,7 @@ export function SaleServicesTabs({
   commission: SnapshotRecord;
   documentation: SnapshotRecord;
   financing: SnapshotRecord;
+  financingPaymentSyncState: FinancingPaymentSyncState;
   insurance: SnapshotRecord;
   inventoryApi: InventoryApi | null;
   onChange: ServiceChangeHandler;
@@ -85,7 +88,11 @@ export function SaleServicesTabs({
 
       <div className="bg-panel border border-line rounded-2xl p-5 shadow-sm">
         {activeTab === "financing" && (
-          <FinancingPanel financing={financing} onChange={onChange} />
+          <FinancingPanel
+            financing={financing}
+            onChange={onChange}
+            paymentSyncState={financingPaymentSyncState}
+          />
         )}
         {activeTab === "insurance" && (
           <InsurancePanel insurance={insurance} onChange={onChange} />

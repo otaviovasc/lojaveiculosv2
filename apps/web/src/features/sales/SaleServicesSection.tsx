@@ -3,9 +3,14 @@ import { Banknote } from "lucide-react";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
+import { localDateInputValue } from "./SalePaymentRow";
 import { SaleServicesPaymentsSection } from "./SaleServicesPaymentsSection";
 import { SaleServicesTabs } from "./SaleServicesTabs";
 import { formatCents, parseCurrency } from "./saleServicesFormat";
+import {
+  financingPaymentSyncState,
+  synchronizeSingleFinancingPayment,
+} from "./salePaymentSync";
 import { saleSourceOptions } from "./salesModel";
 import { asSnapshotRecord } from "./salesSnapshot";
 import type {
@@ -41,16 +46,20 @@ export function ServicesSection({
       const currentService = asSnapshotRecord(
         draft.saleSourceSnapshot[serviceKey],
       );
-      return {
+      const nextService = {
+        ...currentService,
+        [field]: value,
+      };
+      const nextDraft = {
         ...draft,
         saleSourceSnapshot: {
           ...draft.saleSourceSnapshot,
-          [serviceKey]: {
-            ...currentService,
-            [field]: value,
-          },
+          [serviceKey]: nextService,
         },
       };
+      return serviceKey === "financing"
+        ? synchronizeSingleFinancingPayment(nextDraft, nextService)
+        : nextDraft;
     });
   };
 
@@ -105,7 +114,7 @@ export function ServicesSection({
           ...draft.payments,
           {
             amountCents: valuation,
-            dueAt: new Date().toISOString().slice(0, 10),
+            dueAt: localDateInputValue(),
             extraCents: 0,
             id: `draft-payment-${Date.now()}-${draft.payments.length}`,
             installments: null,
@@ -282,6 +291,7 @@ export function ServicesSection({
         commission={commission}
         documentation={documentation}
         financing={financing}
+        financingPaymentSyncState={financingPaymentSyncState(sale, financing)}
         insurance={insurance}
         inventoryApi={inventoryApi}
         onChange={handleServiceChange}

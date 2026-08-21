@@ -3,9 +3,13 @@ import {
   Car,
   Contact,
   Download,
+  ExternalLink,
+  FileSpreadsheet,
   FileText,
   MapPin,
   PackageSearch,
+  Phone,
+  Play,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import {
@@ -16,54 +20,109 @@ import {
   readString,
 } from "./crmMessageHelpers";
 import type { CrmMessage } from "./crmConversationTypes";
+import { CrmAudioPlayer } from "./CrmAudioPlayer";
 
-export function MessageContent({ message }: { message: CrmMessage }) {
+export function MessageContent({
+  message,
+  onMediaClick,
+}: {
+  message: CrmMessage;
+  onMediaClick?: ((url: string) => void) | undefined;
+}) {
   if (message.deletedAt) return <em>Esta mensagem foi apagada</em>;
   const metadata = readRecord(message.metadata);
   const media = readRecord(metadata.media);
   const caption = readString(media.caption) ?? message.content;
+  const outgoing = message.direction === "OUTBOUND";
 
   if (message.mediaUrl && message.type === "IMAGE") {
     return (
-      <figure className="crm-media">
-        <img alt={caption || "Imagem enviada"} src={message.mediaUrl} />
+      <figure
+        className="crm-media crm-media-interactive"
+        onClick={
+          onMediaClick ? () => onMediaClick(message.mediaUrl!) : undefined
+        }
+      >
+        <img
+          alt={caption || "Imagem enviada"}
+          className="crm-media-img"
+          loading="lazy"
+          src={message.mediaUrl}
+        />
         <MessageCaption message={message} value={caption} />
       </figure>
     );
   }
+
   if (message.mediaUrl && message.type === "STICKER") {
     return (
-      <figure className="crm-media crm-sticker">
+      <figure
+        className="crm-media crm-sticker crm-media-interactive"
+        onClick={
+          onMediaClick ? () => onMediaClick(message.mediaUrl!) : undefined
+        }
+      >
         <img alt={caption || "Figurinha enviada"} src={message.mediaUrl} />
       </figure>
     );
   }
+
   if (message.mediaUrl && message.type === "VIDEO") {
     return (
-      <figure className="crm-media">
-        <video controls src={message.mediaUrl} />
+      <figure className="crm-media crm-media-video-container">
+        {onMediaClick ? (
+          <div
+            aria-label={`Reproduzir ${caption || "video"}`}
+            className="crm-media-video-thumb-wrap"
+            onClick={() => onMediaClick(message.mediaUrl!)}
+            role="button"
+            tabIndex={0}
+          >
+            <video
+              className="crm-media-video-preview"
+              muted
+              preload="metadata"
+              src={message.mediaUrl}
+            />
+            <span className="crm-video-play-overlay">
+              <Play className="size-6 fill-white text-white ml-0.5" />
+            </span>
+          </div>
+        ) : (
+          <video controls preload="metadata" src={message.mediaUrl} />
+        )}
         <MessageCaption message={message} value={caption} />
       </figure>
     );
   }
+
   if (message.mediaUrl && message.type === "AUDIO") {
-    return (
-      <div className="crm-audio">
-        <audio controls src={message.mediaUrl} />
-      </div>
-    );
+    return <CrmAudioPlayer outgoing={outgoing} src={message.mediaUrl} />;
   }
+
   if (message.mediaUrl && message.type === "DOCUMENT") {
     const fileName = readString(media.fileName) ?? message.content;
+    const mimeType = readString(media.mimeType) ?? "";
+    const isSpreadsheet =
+      fileName?.endsWith(".xlsx") ||
+      fileName?.endsWith(".xls") ||
+      fileName?.endsWith(".csv") ||
+      mimeType.includes("spreadsheet") ||
+      mimeType.includes("excel") ||
+      mimeType.includes("csv");
+
+    const Icon = isSpreadsheet ? FileSpreadsheet : FileText;
+
     return (
       <AttachmentLink
         href={message.mediaUrl}
-        icon={<FileText aria-hidden="true" className="size-5" />}
+        icon={<Icon aria-hidden="true" className="size-5" />}
         label={fileName || "Documento"}
-        {...readOptionalMeta(readString(media.mimeType))}
+        {...readOptionalMeta(mimeType)}
       />
     );
   }
+
   if (message.type === "LOCATION") {
     const location = readRecord(metadata.location);
     return (
@@ -75,33 +134,45 @@ export function MessageContent({ message }: { message: CrmMessage }) {
       />
     );
   }
+
   if (message.type === "CATALOG") {
     return <CatalogLikeCard message={message} metadata={metadata} />;
   }
+
   if (message.type === "CONTACT") {
     const contact = readRecord(metadata.contact);
+    const phone = readString(contact.phone);
     return (
-      <div className="crm-attachment">
-        <Contact aria-hidden="true" className="size-5" />
-        <span>
+      <div className="crm-attachment crm-contact-card">
+        <div className="crm-contact-icon">
+          <Contact aria-hidden="true" className="size-5" />
+        </div>
+        <div className="crm-contact-body">
           <strong>{message.content || "Contato"}</strong>
-          {readString(contact.phone) ? (
-            <small>{readString(contact.phone)}</small>
+          {phone ? (
+            <small className="crm-contact-phone">
+              <Phone className="size-3 inline mr-1" />
+              {phone}
+            </small>
           ) : null}
-        </span>
+        </div>
       </div>
     );
   }
+
   if (message.mediaUrl) {
     return <AttachmentLink href={message.mediaUrl} label="Abrir anexo" />;
   }
+
   return <p>{message.content}</p>;
 }
 
 export function QuotedMessage({
   metadata,
+  onClick,
 }: {
   metadata?: Record<string, unknown> | undefined;
+  onClick?: (() => void) | undefined;
 }) {
   const replyTo = readRecord(readRecord(metadata).replyTo);
   if (!Object.keys(replyTo).length) return null;
@@ -109,8 +180,18 @@ export function QuotedMessage({
   const sender =
     readString(replyTo.senderName) ??
     (readString(replyTo.direction) === "OUTBOUND" ? "Atendente" : "Contato");
+
   return (
-    <div className="crm-quoted-message">
+    <div
+      className={
+        onClick
+          ? "crm-quoted-message crm-quoted-interactive"
+          : "crm-quoted-message"
+      }
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
       <strong>{sender}</strong>
       <span>{content}</span>
     </div>
@@ -183,22 +264,28 @@ function RichMessageCard({
   subtitle?: string | undefined;
   title: string;
 }) {
+  const metaItems = meta.filter(Boolean);
   const content = (
     <>
       {imageUrl ? (
         <span className="crm-rich-card-media">
-          <img alt="" src={imageUrl} />
+          <img alt="" loading="lazy" src={imageUrl} />
         </span>
       ) : (
         <span className="crm-rich-card-icon">{icon}</span>
       )}
-      <span>
+      <span className="crm-rich-card-info">
         <strong>{title}</strong>
         {subtitle ? <small>{subtitle}</small> : null}
-        {meta.filter(Boolean).length ? (
-          <small>{meta.filter(Boolean).join(" · ")}</small>
+        {metaItems.length ? (
+          <small className="crm-rich-card-badges">
+            {metaItems.join(" · ")}
+          </small>
         ) : null}
       </span>
+      {href ? (
+        <ExternalLink className="size-4 crm-rich-card-link-icon" />
+      ) : null}
     </>
   );
   if (!href) return <div className="crm-rich-card">{content}</div>;
@@ -233,11 +320,16 @@ function AttachmentLink({
 }) {
   const content = (
     <>
-      {icon}
-      <span>
+      <div className="crm-attachment-icon">{icon}</div>
+      <span className="crm-attachment-body">
         <strong>{label}</strong>
         {meta ? <small>{meta}</small> : null}
       </span>
+      {href ? (
+        <span className="crm-attachment-download" title="Baixar">
+          <Download aria-hidden="true" className="size-4" />
+        </span>
+      ) : null}
     </>
   );
   if (!href) return <div className="crm-attachment">{content}</div>;

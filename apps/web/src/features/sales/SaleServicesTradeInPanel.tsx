@@ -1,5 +1,15 @@
-import { coerceVehicleColor } from "@lojaveiculosv2/shared";
-import { CarFront, Check, ClipboardList, Gauge, RefreshCw } from "lucide-react";
+import {
+  coerceVehicleColor,
+  isActiveSalePaymentStatus,
+} from "@lojaveiculosv2/shared";
+import {
+  AlertTriangle,
+  CarFront,
+  Check,
+  ClipboardList,
+  Gauge,
+  RefreshCw,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import {
   formatVehicleMileageInput,
@@ -22,8 +32,8 @@ import {
   transmissionOptions,
 } from "../inventory/model/formModel";
 import type { InventoryCatalogSnapshot } from "../inventory/model/types";
-import { SaleField } from "./SaleWorkspaceForm";
 import { formatCurrency, parseCurrency } from "./saleServicesFormat";
+import { getTradeInSnapshotMissingFields } from "./saleWorkspaceReadiness";
 import { snapshotBoolean, snapshotNumber } from "./salesSnapshot";
 import type { ServiceChangeHandler } from "./SaleServicesTypes";
 import type { SnapshotRecord } from "./salesSnapshot";
@@ -103,14 +113,66 @@ function TradeInFields({
 }) {
   const catalog = readTradeInCatalog(tradeIn);
   const valuationCents = snapshotNumber(tradeIn.valuationCents) ?? 0;
-  const tradeInPayment = sale.payments.find((p) => p.method === "trade_in");
+  const missingFields = getTradeInSnapshotMissingFields(tradeIn);
+  const isSnapshotComplete = missingFields.length === 0;
+  const tradeInPayments = sale.payments.filter(
+    (payment) =>
+      payment.method === "trade_in" &&
+      isActiveSalePaymentStatus(payment.status),
+  );
+  const tradeInPayment = tradeInPayments[0];
+  const hasDuplicateTradeInPayments = tradeInPayments.length > 1;
   const isPaymentSynced =
-    Boolean(tradeInPayment) &&
+    tradeInPayments.length === 1 &&
     valuationCents > 0 &&
     tradeInPayment?.principalCents === valuationCents;
 
   return (
     <div className="flex flex-col gap-5">
+      <div
+        aria-live="polite"
+        className={
+          isSnapshotComplete
+            ? "rounded-xl border border-success/30 bg-success/10 p-4 text-success-strong"
+            : "rounded-xl border border-warning/30 bg-warning/10 p-4 text-warning-strong"
+        }
+        id="trade-in-validation-status"
+        role="status"
+      >
+        <div className="flex items-start gap-2">
+          {isSnapshotComplete ? (
+            <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          ) : (
+            <AlertTriangle
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0"
+            />
+          )}
+          <div className="min-w-0 text-xs font-bold">
+            <p className="font-black uppercase tracking-wider">
+              {isSnapshotComplete
+                ? "Cadastro da troca completo"
+                : `${missingFields.length} campo${missingFields.length === 1 ? "" : "s"} obrigatório${missingFields.length === 1 ? "" : "s"} pendente${missingFields.length === 1 ? "" : "s"}`}
+            </p>
+            {isSnapshotComplete ? (
+              <p className="mt-1">
+                O veículo está pronto para ser vinculado ao pagamento e
+                cadastrado no estoque ao fechar a venda.
+              </p>
+            ) : (
+              <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+                {missingFields.map((field) => (
+                  <li className="flex items-center gap-1.5" key={field}>
+                    <span aria-hidden="true">•</span>
+                    <span>{field}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-xl border border-success/20 bg-success/10 p-4 text-xs font-bold text-success-strong flex flex-col gap-1.5 shadow-inner">
         <span className="uppercase tracking-wider font-black flex items-center gap-1 text-success-strong">
           <Check className="size-3.5" /> Cadastro Automático Ativo
@@ -133,6 +195,7 @@ function TradeInFields({
             label="Placa"
             onChange={onChange}
             placeholder="Ex: ABC1D23"
+            required
             tradeIn={tradeIn}
           />
           <TradeInInput
@@ -140,6 +203,7 @@ function TradeInFields({
             label="Chassi / VIN"
             onChange={onChange}
             placeholder="Chassi ou VIN"
+            required
             tradeIn={tradeIn}
           />
           <TradeInInput
@@ -147,6 +211,7 @@ function TradeInFields({
             label="Renavam"
             onChange={onChange}
             placeholder="Ex: 11 dígitos"
+            required
             tradeIn={tradeIn}
           />
         </div>
@@ -184,6 +249,7 @@ function TradeInFields({
               label="Marca / fabricante"
               onChange={onChange}
               placeholder="Informe a marca"
+              required
               tradeIn={tradeIn}
             />
             <TradeInInput
@@ -191,6 +257,7 @@ function TradeInFields({
               label="Modelo / versão"
               onChange={onChange}
               placeholder="Informe o modelo e a versão"
+              required
               tradeIn={tradeIn}
             />
             <TradeInInput
@@ -198,6 +265,7 @@ function TradeInFields({
               label="Ano modelo"
               onChange={onChange}
               placeholder="Ex: 2022"
+              required
               tradeIn={tradeIn}
               type="number"
             />
@@ -270,8 +338,10 @@ function TradeInFields({
       </TradeInFieldGroup>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-line bg-app/50 p-4">
-        <SaleField label="Valor de avaliação / entrada">
+        <InventoryField label="Valor de avaliação / entrada" required>
           <input
+            aria-describedby="trade-in-validation-status"
+            aria-invalid={valuationCents <= 0}
             className="sales-input text-lg font-black text-accent-strong"
             inputMode="numeric"
             onChange={(event) =>
@@ -282,9 +352,10 @@ function TradeInFields({
               )
             }
             placeholder="R$ 0,00"
+            required
             value={formatCurrency(valuationCents)}
           />
-        </SaleField>
+        </InventoryField>
 
         {valuationCents > 0 && onSyncPayment ? (
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line/40">
@@ -295,14 +366,24 @@ function TradeInFields({
               </span>
             ) : (
               <span className="text-xs font-bold text-muted">
-                {tradeInPayment
-                  ? "O valor da avaliação difere da parcela de troca lançada."
-                  : "Adicione este valor de troca às parcelas para abater do saldo da venda."}
+                {hasDuplicateTradeInPayments
+                  ? "Há mais de uma parcela de troca. Mantenha apenas o lançamento criado por este painel."
+                  : tradeInPayment
+                    ? "O valor da avaliação difere da parcela de troca lançada."
+                    : "Adicione este valor de troca às parcelas para abater do saldo da venda."}
               </span>
             )}
             <button
               className="sales-secondary-button !min-h-9 !h-9 text-xs font-black uppercase tracking-wider"
+              disabled={!isSnapshotComplete || hasDuplicateTradeInPayments}
               onClick={onSyncPayment}
+              title={
+                hasDuplicateTradeInPayments
+                  ? "Remova o pagamento duplicado da troca antes de sincronizar."
+                  : isSnapshotComplete
+                    ? undefined
+                    : "Preencha os campos obrigatórios da troca antes de lançar o pagamento."
+              }
               type="button"
             >
               {isPaymentSynced
@@ -322,6 +403,7 @@ function TradeInInput({
   label,
   onChange,
   placeholder,
+  required = false,
   tradeIn,
   type = "text",
 }: {
@@ -330,6 +412,7 @@ function TradeInInput({
   label: string;
   onChange: ServiceChangeHandler;
   placeholder: string;
+  required?: boolean;
   tradeIn: SnapshotRecord;
   type?: "number" | "text";
 }) {
@@ -354,10 +437,13 @@ function TradeInInput({
         : field === "renavam"
           ? 11
           : undefined;
+  const isComplete = isRequiredTradeInInputComplete(field, rawValue);
 
   return (
-    <InventoryField className={className} label={label}>
+    <InventoryField className={className} label={label} required={required}>
       <InventoryInput
+        aria-describedby={required ? "trade-in-validation-status" : undefined}
+        aria-invalid={required && !isComplete}
         className={
           field === "plate" || field === "chassi"
             ? "font-mono uppercase"
@@ -403,11 +489,30 @@ function TradeInInput({
           }
         }}
         placeholder={placeholder}
+        required={required}
         type={field === "mileageKm" ? "text" : type}
         value={displayValue}
       />
     </InventoryField>
   );
+}
+
+function isRequiredTradeInInputComplete(
+  field: string,
+  value: unknown,
+): boolean {
+  const text = snapshotText(value);
+  if (field === "plate") return text.replace(/[^A-Za-z0-9]/g, "").length >= 7;
+  if (field === "chassi") {
+    return text.replace(/[^A-Za-z0-9]/g, "").length === 17;
+  }
+  if (field === "renavam") return text.replace(/\D/g, "").length === 11;
+  if (field === "yearModel") {
+    return (
+      typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    );
+  }
+  return text.trim().length > 0;
 }
 
 function TradeInSelect({

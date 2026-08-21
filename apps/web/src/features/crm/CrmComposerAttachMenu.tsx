@@ -8,8 +8,8 @@ import {
   Music,
   Paperclip,
 } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
-import type { ReactNode } from "react";
 import type { CrmProviderCapabilities } from "./crmProviderCapabilities";
 
 export function CrmComposerAttachMenu({
@@ -37,11 +37,39 @@ export function CrmComposerAttachMenu({
   onToggle: () => void;
   open: boolean;
 }) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Click outside to close attach menu
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onToggle();
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onToggle();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onToggle]);
+
   return (
-    <div className="crm-attach">
+    <div className="crm-attach" ref={menuRef}>
       <button
+        aria-expanded={open}
         aria-label="Anexos"
-        className="crm-icon-action"
+        className={
+          open
+            ? "crm-icon-action crm-attach-trigger active"
+            : "crm-icon-action crm-attach-trigger"
+        }
         disabled={disabled}
         onClick={onToggle}
         title="Anexos"
@@ -56,22 +84,35 @@ export function CrmComposerAttachMenu({
       {open ? (
         <div className="crm-attach-menu">
           {capabilities.allowImages ? (
-            <AttachMenuButton icon={<ImageIcon />} onClick={onOpenImages}>
+            <AttachMenuButton
+              colorClass="crm-attach-color-image"
+              icon={<ImageIcon />}
+              onClick={onOpenImages}
+            >
               {capabilities.allowVideo ? "Fotos e videos" : "Fotos"}
             </AttachMenuButton>
           ) : null}
           {capabilities.allowDocuments ? (
-            <AttachMenuButton icon={<FileText />} onClick={onOpenDocuments}>
+            <AttachMenuButton
+              colorClass="crm-attach-color-doc"
+              icon={<FileText />}
+              onClick={onOpenDocuments}
+            >
               Documentos
             </AttachMenuButton>
           ) : null}
           {capabilities.allowAudio ? (
-            <AttachMenuButton icon={<Music />} onClick={onOpenAudio}>
+            <AttachMenuButton
+              colorClass="crm-attach-color-audio"
+              icon={<Music />}
+              onClick={onOpenAudio}
+            >
               Audio
             </AttachMenuButton>
           ) : null}
           {capabilities.allowQuickMessages ? (
             <AttachMenuButton
+              colorClass="crm-attach-color-quick"
               icon={<MessageSquareText />}
               onClick={onOpenQuickMessages}
             >
@@ -79,17 +120,29 @@ export function CrmComposerAttachMenu({
             </AttachMenuButton>
           ) : null}
           {capabilities.allowCatalog ? (
-            <AttachMenuButton icon={<BookOpen />} onClick={onOpenCatalog}>
+            <AttachMenuButton
+              colorClass="crm-attach-color-catalog"
+              icon={<BookOpen />}
+              onClick={onOpenCatalog}
+            >
               Enviar catalogo
             </AttachMenuButton>
           ) : null}
           {capabilities.allowVehicle ? (
-            <AttachMenuButton icon={<Car />} onClick={onOpenVehicle}>
+            <AttachMenuButton
+              colorClass="crm-attach-color-vehicle"
+              icon={<Car />}
+              onClick={onOpenVehicle}
+            >
               Enviar veiculo
             </AttachMenuButton>
           ) : null}
           {capabilities.allowLocation ? (
-            <AttachMenuButton icon={<MapPin />} onClick={onOpenLocation}>
+            <AttachMenuButton
+              colorClass="crm-attach-color-location"
+              icon={<MapPin />}
+              onClick={onOpenLocation}
+            >
               Localizacao
             </AttachMenuButton>
           ) : null}
@@ -101,17 +154,19 @@ export function CrmComposerAttachMenu({
 
 function AttachMenuButton({
   children,
+  colorClass,
   icon,
   onClick,
 }: {
   children: string;
+  colorClass?: string | undefined;
   icon: ReactNode;
   onClick: () => void;
 }) {
   return (
-    <button onClick={onClick} type="button">
-      {icon}
-      {children}
+    <button className="crm-attach-option" onClick={onClick} type="button">
+      <span className={`crm-attach-icon-wrap ${colorClass ?? ""}`}>{icon}</span>
+      <span className="crm-attach-label">{children}</span>
     </button>
   );
 }

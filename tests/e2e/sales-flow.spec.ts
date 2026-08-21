@@ -105,11 +105,31 @@ test.describe("Sales QA flow", () => {
     const tradeInPlate = `TRD${Date.now().toString().slice(-4)}`;
     await fillTradeIn(page, tradeInPlate);
 
+    await page.getByRole("button", { name: /Documentos & Validação/ }).click();
+    await page.getByLabel(/^CPF \/ CNPJ/).fill("52998224725");
+    await page
+      .getByLabel(/^Logradouro \/ Rua e Número/)
+      .fill("Rua QA Sales, 100");
+    await page.getByLabel(/^Cidade/).fill("São Paulo");
+    await page.getByLabel(/^Estado/).fill("SP");
+    await page.getByLabel("Nacionalidade *").fill("Brasileira");
+    await page.getByLabel("Estado Civil *").fill("Solteiro");
+    await page.getByLabel("Profissão *").fill("Analista de QA");
+    await page.getByLabel(/^Renavam/).fill("12345678901");
+    const chassiField = page.getByLabel(/^Chassi/);
+    await chassiField.fill("9BWZZZ377VT004251");
+    await chassiField.press("Tab");
+    await expect(
+      page.getByText("Documentação Validada com Sucesso"),
+    ).toBeVisible();
+
     await page.getByRole("button", { name: /Formalização & Download/ }).click();
     await expect(page.getByText("Total em Pagamentos")).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Reservar Veículo" }),
-    ).toBeEnabled();
+    const stickySummary = page.locator(".sales-summary-aside");
+    const reserveButton = stickySummary.getByRole("button", {
+      name: "Reservar Veículo",
+    });
+    await expect(reserveButton).toBeEnabled();
     await saveQaScreenshot(page, testInfo, "sales-ready-review");
 
     const reserveResponse = page.waitForResponse(
@@ -118,7 +138,7 @@ test.describe("Sales QA flow", () => {
         response.url().includes("/reserve") &&
         response.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "Reservar Veículo" }).click();
+    await reserveButton.click();
     await expect((await reserveResponse).status()).toBe(200);
     await expect(page.getByText("Reserva ativa")).toBeVisible();
 
@@ -128,7 +148,14 @@ test.describe("Sales QA flow", () => {
         response.url().includes("/close") &&
         response.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "Fechar Venda" }).click();
+    await stickySummary.getByRole("button", { name: "Fechar Venda" }).click();
+    const closeDialog = page.getByRole("dialog", {
+      name: "Fechar esta venda?",
+    });
+    await expect(closeDialog).toBeVisible();
+    await closeDialog
+      .getByRole("button", { name: "Confirmar fechamento" })
+      .click();
     await expect((await closeResponse).status()).toBe(200);
     await expect(page.getByText("Venda fechada")).toBeVisible();
     await expectAcquiredTradeInUnit(page, tradeInPlate);

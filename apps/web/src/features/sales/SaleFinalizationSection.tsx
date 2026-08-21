@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
+  AlertCircle,
   CheckCircle2,
   FileText,
   ArrowRight,
@@ -12,6 +13,7 @@ import {
   ChevronLeft,
   Calendar,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 import type { SaleDocumentKind, SaleRecord } from "./types";
 import { formatCents, formatDocumentKindLabel } from "./salesModel";
@@ -19,6 +21,24 @@ import { createDocumentsApi } from "../documents/apiClient";
 import { createDocumentsApiOptions } from "../documents/runtimeApi";
 import type { WorkspaceDocument } from "../documents/types";
 import BorderGlow from "../../components/ui/BorderGlow";
+import {
+  buildStoredDocumentsZip,
+  downloadStoredDocument,
+  triggerBrowserDownload,
+} from "./saleFinalizationDownloads";
+
+type DocumentLoadState = "idle" | "loading" | "ready" | "error";
+type DownloadFeedback = {
+  message: string;
+  tone: "success" | "info" | "error";
+};
+const feedbackClasses: Record<DownloadFeedback["tone"], string> = {
+  error:
+    "px-4 py-3 rounded-xl border border-danger/30 bg-danger/10 text-danger text-xs font-bold flex flex-row items-center gap-2 animate-in fade-in",
+  info: "px-4 py-3 rounded-xl border border-accent/30 bg-accent/10 text-app-text text-xs font-bold flex flex-row items-center gap-2 animate-in fade-in",
+  success:
+    "px-4 py-3 rounded-xl border border-success/30 bg-success/10 text-success-strong text-xs font-bold flex flex-row items-center gap-2 animate-in fade-in",
+};
 
 export function FinalizationSection({
   canClose = false,
@@ -34,95 +54,113 @@ export function FinalizationSection({
   sale: SaleRecord;
 }) {
   const [documents, setDocuments] = useState<WorkspaceDocument[]>([]);
-  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const [documentLoadAttempt, setDocumentLoadAttempt] = useState(0);
+  const [documentLoadState, setDocumentLoadState] =
+    useState<DocumentLoadState>("idle");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>(
+    {},
+  );
   const [isZipping, setIsZipping] = useState(false);
-  const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
+  const [downloadFeedback, setDownloadFeedback] =
+    useState<DownloadFeedback | null>(null);
 
   const isClosed = sale.status === "closed";
   const selectedDocs = sale.selectedDocumentKinds;
 
   useEffect(() => {
-    if (!isClosed) return;
+    if (!isClosed) {
+      setDocuments([]);
+      setDocumentLoadState("idle");
+      return;
+    }
     let isActive = true;
-    setIsLoadingDocs(true);
+    setDocuments([]);
+    setDocumentLoadState("loading");
 
     void createDocumentsApiOptions()
       .then((opts) => createDocumentsApi(opts))
-      .then((api) =>
-        api.listDocuments(
-          sale.unitId
-            ? { targetId: sale.unitId, targetType: "vehicle_unit" }
-            : { targetId: sale.id },
-        ),
-      )
-      .then((docs) => {
+      .then((api) => {
+        const queries = [
+          api.listDocuments({ targetId: sale.id, targetType: "sale" }),
+          ...(sale.unitId
+            ? [
+                api.listDocuments({
+                  targetId: sale.unitId,
+                  targetType: "vehicle_unit",
+                }),
+              ]
+            : []),
+        ];
+        return Promise.allSettled(queries);
+      })
+      .then((queryResults) => {
         if (!isActive) return;
-        const matching = docs.filter(
-          (d) =>
-            d.metadata?.saleId === sale.id ||
-            selectedDocs.includes(d.kind as SaleDocumentKind) ||
-            d.context?.targetId === sale.unitId,
+        const documentGroups = queryResults.flatMap((result) =>
+          result.status === "fulfilled" ? [result.value] : [],
         );
-        setDocuments(matching.length > 0 ? matching : docs);
+        if (documentGroups.length === 0) {
+          throw new Error("sale_documents_unavailable");
+        }
+        const matching = Array.from(
+          new Map(
+            documentGroups
+              .flat()
+              .filter(
+                (document) =>
+                  selectedDocs.includes(document.kind as SaleDocumentKind) &&
+                  (document.metadata.saleId === sale.id ||
+                    (document.context.targetType === "sale" &&
+                      document.context.targetId === sale.id)),
+              )
+              .map((document) => [document.id, document]),
+          ).values(),
+        );
+        setDocuments(matching);
+        setDocumentLoadState("ready");
       })
       .catch(() => {
         if (!isActive) return;
         setDocuments([]);
-      })
-      .finally(() => {
-        if (isActive) setIsLoadingDocs(false);
+        setDocumentLoadState("error");
       });
 
     return () => {
       isActive = false;
     };
-  }, [
-    isClosed,
-    sale.id,
-    sale.selectedDocumentKinds,
-    sale.unitId,
-    selectedDocs,
-  ]);
+  }, [documentLoadAttempt, isClosed, sale.id, sale.unitId, selectedDocs]);
 
   useEffect(() => {
-    if (!downloadMessage) return;
-    const timer = setTimeout(() => setDownloadMessage(null), 4000);
+    if (!downloadFeedback) return;
+    const timer = setTimeout(() => setDownloadFeedback(null), 5000);
     return () => clearTimeout(timer);
-  }, [downloadMessage]);
+  }, [downloadFeedback]);
 
   const handleDownloadSingle = async (
-    docKey: string,
+    document: WorkspaceDocument,
     docTitle: string,
-    docId?: string,
   ) => {
-    setDownloadingId(docKey);
-    setDownloadMessage(null);
+    setDownloadingId(document.id);
+    setDownloadFeedback(null);
+    setDownloadErrors((current) => {
+      const next = { ...current };
+      delete next[document.id];
+      return next;
+    });
     try {
-      if (docId) {
-        const opts = await createDocumentsApiOptions();
-        const api = createDocumentsApi(opts);
-        const download = await api.downloadDocument(docId);
-        const url = download.contentUrl ?? download.downloadUrl;
-        const resp = await fetch(url, {
-          headers: download.contentHeaders ?? {},
-        });
-        if (resp.ok) {
-          const blob = await resp.blob();
-          triggerBlobDownload(
-            blob,
-            download.fileName || `${docTitle || docKey}.pdf`,
-          );
-          setDownloadMessage(`Documento baixado: ${docTitle}`);
-          return;
-        }
-      }
-      // Fallback synthetic download
-      triggerSyntheticDownload(sale, docKey, docTitle);
-      setDownloadMessage(`Documento baixado: ${docTitle}`);
+      const download = await downloadStoredDocument(document);
+      triggerBrowserDownload(download.blob, download.fileName);
+      setDownloadFeedback({
+        message: `Download iniciado: ${docTitle}.`,
+        tone: "success",
+      });
     } catch {
-      triggerSyntheticDownload(sale, docKey, docTitle);
-      setDownloadMessage(`Documento baixado: ${docTitle}`);
+      const message = "Não foi possível baixar o arquivo armazenado.";
+      setDownloadErrors((current) => ({
+        ...current,
+        [document.id]: message,
+      }));
+      setDownloadFeedback({ message, tone: "error" });
     } finally {
       setDownloadingId(null);
     }
@@ -130,76 +168,42 @@ export function FinalizationSection({
 
   const handleDownloadAllZip = async () => {
     setIsZipping(true);
-    setDownloadMessage(null);
+    setDownloadFeedback(null);
     try {
-      const { default: JSZip } = await import("jszip");
-      const zip = new JSZip();
-      const opts = await createDocumentsApiOptions();
-      const api = createDocumentsApi(opts);
-
-      const itemsToDownload =
-        documents.length > 0
-          ? documents.map((d) => ({
-              id: d.id,
-              kind: d.kind,
-              title: d.title || formatDocumentKindLabel(d.kind),
-            }))
-          : selectedDocs.map((kind) => ({
-              id: undefined,
-              kind,
-              title: formatDocumentKindLabel(kind),
-            }));
-
-      let count = 0;
-      for (const item of itemsToDownload) {
-        let added = false;
-        if (item.id) {
-          try {
-            const download = await api.downloadDocument(item.id);
-            const url = download.contentUrl ?? download.downloadUrl;
-            const resp = await fetch(url, {
-              headers: download.contentHeaders ?? {},
-            });
-            if (resp.ok) {
-              const blob = await resp.blob();
-              zip.file(
-                download.fileName || `${item.title || item.kind}.pdf`,
-                blob,
-              );
-              added = true;
-              count++;
-            }
-          } catch {
-            added = false;
-          }
-        }
-        if (!added) {
-          const content = buildDocumentText(sale, item.kind, item.title);
-          zip.file(
-            `${item.title || item.kind}.txt`,
-            new Blob([content], { type: "text/plain;charset=utf-8" }),
-          );
-          count++;
-        }
-      }
-
-      if (count === 0) {
-        setDownloadMessage("Nenhum documento disponível para empacotar.");
+      if (documents.length === 0) {
+        setDownloadFeedback({
+          message: "Nenhum documento armazenado está disponível para o pacote.",
+          tone: "info",
+        });
         return;
       }
-
-      const zipBlob = await zip.generateAsync({ type: "blob" });
       const rawTitle = String(sale.listingSnapshot.title || "venda");
       const safeTitle = rawTitle.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
-      triggerBlobDownload(
-        zipBlob,
+      const zip = await buildStoredDocumentsZip(
+        documents,
         `documentos-${safeTitle}-${sale.id.slice(0, 8)}.zip`,
       );
-      setDownloadMessage(
-        "Pacote .ZIP com todos os documentos baixado com sucesso!",
-      );
+      if (!zip) {
+        setDownloadFeedback({
+          message:
+            "Nenhum arquivo armazenado pôde ser recuperado para o pacote.",
+          tone: "error",
+        });
+        return;
+      }
+      triggerBrowserDownload(zip.blob, zip.fileName);
+      setDownloadFeedback({
+        message:
+          zip.failedCount === 0
+            ? `Download do pacote iniciado com ${zip.count} ${zip.count === 1 ? "documento" : "documentos"}.`
+            : `Download do pacote iniciado com ${zip.count} ${zip.count === 1 ? "documento" : "documentos"}. ${zip.failedCount} ${zip.failedCount === 1 ? "arquivo não pôde" : "arquivos não puderam"} ser recuperado${zip.failedCount === 1 ? "" : "s"}.`,
+        tone: zip.failedCount === 0 ? "success" : "info",
+      });
     } catch {
-      setDownloadMessage("Erro ao gerar pacote de documentos.");
+      setDownloadFeedback({
+        message: "Não foi possível gerar o pacote com os arquivos armazenados.",
+        tone: "error",
+      });
     } finally {
       setIsZipping(false);
     }
@@ -219,15 +223,14 @@ export function FinalizationSection({
           </div>
           <div className="max-w-xl">
             <span className="inline-block px-3 py-1 rounded-full bg-success/15 text-success-strong text-xs font-black uppercase tracking-wider mb-2">
-              Venda Concluída & Formalizada
+              Venda concluída
             </span>
             <h3 className="text-lg font-black text-app-text">
-              Formalização Finalizada com Sucesso!
+              Fechamento registrado no sistema
             </h3>
             <p className="text-xs font-bold text-muted leading-relaxed mt-1">
-              A venda foi fechada no sistema e os documentos jurídicos foram
-              gerados. Você pode baixar os arquivos individualmente ou todos
-              empacotados em um único arquivo ZIP.
+              Abaixo, o sistema confirma quais documentos desta venda estão
+              armazenados e disponíveis para download.
             </p>
           </div>
 
@@ -277,24 +280,34 @@ export function FinalizationSection({
           </div>
           <div className="max-w-md">
             <h3 className="text-base font-black text-app-text uppercase tracking-wider">
-              Pronto para Fechar a Venda
+              {canClose
+                ? "Revise antes de fechar a venda"
+                : "Há pendências antes do fechamento"}
             </h3>
             <p className="text-xs font-bold text-muted leading-relaxed mt-1">
-              Revise os dados e selecione os documentos. Ao clicar em Fechar
-              Venda, todos os documentos oficiais serão gerados para download
-              imediato.
+              {canClose
+                ? "Confirme os dados e os documentos selecionados. Os downloads só serão liberados quando os arquivos aparecerem no repositório."
+                : "Volte às etapas com pendências, complete os dados obrigatórios e faça uma nova revisão."}
             </p>
           </div>
         </div>
       )}
 
       {/* Download feedback notification */}
-      {downloadMessage && (
-        <div className="bg-accent/10 border border-accent/30 text-app-text px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="size-4 text-accent shrink-0" />
-          <span>{downloadMessage}</span>
+      {downloadFeedback ? (
+        <div
+          aria-live={downloadFeedback.tone === "error" ? "assertive" : "polite"}
+          className={feedbackClasses[downloadFeedback.tone]}
+          role={downloadFeedback.tone === "error" ? "alert" : "status"}
+        >
+          {downloadFeedback.tone === "error" ? (
+            <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
+          ) : (
+            <CheckCircle2 aria-hidden="true" className="size-4 shrink-0" />
+          )}
+          <span>{downloadFeedback.message}</span>
         </div>
-      )}
+      ) : null}
 
       {/* Document Section */}
       <div className="bg-panel border border-line rounded-2xl p-5 shadow-sm flex flex-col gap-4">
@@ -304,27 +317,66 @@ export function FinalizationSection({
             <span>Documentos da Formalização</span>
           </h4>
 
-          {/* Download All as ZIP Button */}
-          <button
-            className="sales-primary-button !min-h-9 !h-9 text-xs font-black flex items-center gap-2"
-            disabled={isZipping || selectedDocs.length === 0}
-            onClick={() => void handleDownloadAllZip()}
-            type="button"
-          >
-            <div className="gloss-overlay" />
-            {isZipping ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <FolderArchive className="size-4" />
-            )}
-            <span>{isZipping ? "Compactando..." : "Baixar Todos (.ZIP)"}</span>
-          </button>
+          {isClosed ? (
+            <button
+              className="sales-primary-button inline-flex flex-row items-center gap-2 whitespace-nowrap text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={
+                isZipping ||
+                documentLoadState !== "ready" ||
+                documents.length === 0
+              }
+              onClick={() => void handleDownloadAllZip()}
+              type="button"
+            >
+              <div className="gloss-overlay" />
+              {isZipping ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <FolderArchive aria-hidden="true" className="size-4" />
+              )}
+              <span>
+                {isZipping ? "Compactando..." : "Baixar arquivos (.ZIP)"}
+              </span>
+            </button>
+          ) : (
+            <span className="text-xs font-bold text-muted">
+              Downloads disponíveis após o fechamento
+            </span>
+          )}
         </div>
 
-        {isLoadingDocs ? (
+        {isClosed && documentLoadState === "loading" ? (
           <div className="py-8 flex flex-col items-center justify-center gap-2 text-xs font-bold text-muted">
             <Loader2 className="size-6 animate-spin text-accent" />
-            <span>Carregando documentos da venda...</span>
+            <span>Localizando documentos no repositório...</span>
+          </div>
+        ) : isClosed && documentLoadState === "error" ? (
+          <div
+            className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-danger"
+            role="alert"
+          >
+            <div className="flex flex-row items-start gap-3">
+              <AlertCircle
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black">
+                  Não foi possível carregar os documentos.
+                </p>
+                <p className="mt-1 text-xs font-medium">
+                  Nenhum arquivo foi marcado como disponível.
+                </p>
+              </div>
+              <button
+                className="sales-secondary-button inline-flex flex-row items-center gap-2 whitespace-nowrap text-xs"
+                onClick={() => setDocumentLoadAttempt((attempt) => attempt + 1)}
+                type="button"
+              >
+                <RefreshCw aria-hidden="true" className="size-3.5" />
+                <span>Tentar novamente</span>
+              </button>
+            </div>
           </div>
         ) : selectedDocs.length === 0 ? (
           <div className="py-6 text-center text-xs font-bold text-muted">
@@ -339,6 +391,9 @@ export function FinalizationSection({
               );
               const isDownloadingThis =
                 downloadingId === (matchingDoc?.id ?? kind);
+              const downloadError = matchingDoc
+                ? downloadErrors[matchingDoc.id]
+                : undefined;
 
               return (
                 <div
@@ -359,35 +414,56 @@ export function FinalizationSection({
                         </span>
                       </div>
                       <span className="text-xs text-muted font-medium block mt-0.5">
-                        {isClosed
-                          ? "Documento gerado e disponível para download"
-                          : "Pronto para emissão no fechamento"}
+                        {!isClosed
+                          ? "Selecionado para emissão. O download depende do arquivo armazenado após o fechamento."
+                          : matchingDoc
+                            ? "Arquivo confirmado no repositório."
+                            : "Documento não localizado no repositório desta venda."}
                       </span>
+                      {downloadError ? (
+                        <span className="mt-1 block text-xs font-bold text-danger">
+                          {downloadError}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    <button
-                      className="sales-secondary-button !min-h-9 !h-9 text-xs font-black flex items-center gap-1.5"
-                      disabled={isDownloadingThis}
-                      onClick={() =>
-                        void handleDownloadSingle(
-                          matchingDoc?.id ?? kind,
-                          label,
-                          matchingDoc?.id,
-                        )
-                      }
-                      type="button"
-                    >
-                      {isDownloadingThis ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <Download className="size-3.5 text-accent" />
-                      )}
-                      <span>
-                        {isDownloadingThis ? "Baixando..." : "Baixar PDF"}
+                    {isClosed && matchingDoc ? (
+                      <button
+                        className="sales-secondary-button inline-flex flex-row items-center gap-2 whitespace-nowrap text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={isDownloadingThis}
+                        onClick={() =>
+                          void handleDownloadSingle(matchingDoc, label)
+                        }
+                        type="button"
+                      >
+                        {isDownloadingThis ? (
+                          <Loader2
+                            aria-hidden="true"
+                            className="size-3.5 animate-spin"
+                          />
+                        ) : downloadError ? (
+                          <RefreshCw aria-hidden="true" className="size-3.5" />
+                        ) : (
+                          <Download
+                            aria-hidden="true"
+                            className="size-3.5 text-accent"
+                          />
+                        )}
+                        <span>
+                          {isDownloadingThis
+                            ? "Baixando..."
+                            : downloadError
+                              ? "Tentar download"
+                              : "Baixar arquivo"}
+                        </span>
+                      </button>
+                    ) : (
+                      <span className="rounded-lg border border-line bg-panel px-3 py-2 text-xs font-black text-muted">
+                        {isClosed ? "Indisponível" : "Aguardando fechamento"}
                       </span>
-                    </button>
+                    )}
                   </div>
                 </div>
               );
@@ -414,13 +490,14 @@ export function FinalizationSection({
                   Módulo Fiscal / NF-e
                 </span>
                 <span className="text-xs font-medium text-muted block mt-0.5 leading-relaxed">
-                  Gere o DANFE e transmita a nota fiscal eletrônica da venda.
+                  Acesse a área fiscal para revisar os dados antes de qualquer
+                  emissão oficial.
                 </span>
               </div>
             </div>
 
             <button
-              className="sales-primary-button !min-h-10 !h-10 flex items-center justify-center gap-2 bg-blue-start hover:bg-blue-end text-white text-xs font-black"
+              className="sales-primary-button inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap bg-blue-start hover:bg-blue-end text-white text-xs"
               onClick={goToNfe}
               type="button"
             >
@@ -451,7 +528,7 @@ export function FinalizationSection({
           <div className="flex items-center gap-2">
             {onBack && (
               <button
-                className="sales-secondary-button !min-h-10 !h-10 flex-1 flex items-center justify-center gap-1.5 text-xs font-black"
+                className="sales-secondary-button inline-flex flex-row flex-1 items-center justify-center gap-2 whitespace-nowrap text-xs"
                 onClick={onBack}
                 type="button"
               >
@@ -462,13 +539,9 @@ export function FinalizationSection({
 
             {!isClosed && onClose && (
               <button
-                className="sales-primary-button !min-h-10 !h-10 flex-1 flex items-center justify-center gap-1.5 text-xs font-black"
+                className="sales-primary-button inline-flex flex-row flex-1 items-center justify-center gap-2 whitespace-nowrap text-xs disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canClose || isSaving}
                 onClick={onClose}
-                style={{
-                  opacity: canClose ? 1 : 0.5,
-                  cursor: canClose ? "pointer" : "not-allowed",
-                }}
                 type="button"
               >
                 <div className="gloss-overlay" />
@@ -481,70 +554,4 @@ export function FinalizationSection({
       </div>
     </div>
   );
-}
-
-function triggerBlobDownload(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function triggerSyntheticDownload(
-  sale: SaleRecord,
-  docKind: string,
-  docTitle: string,
-) {
-  const content = buildDocumentText(sale, docKind, docTitle);
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  triggerBlobDownload(blob, `${docTitle || docKind}.txt`);
-}
-
-function buildDocumentText(
-  sale: SaleRecord,
-  docKind: string,
-  docTitle: string,
-): string {
-  const buyerName = String(sale.buyerSnapshot.name || "Não informado");
-  const buyerDoc = String(sale.buyerSnapshot.document || "Não informado");
-  const vehicleTitle = String(sale.listingSnapshot.title || "Veículo");
-  const plate = String(sale.listingSnapshot.plate || "Pendente");
-  const price = formatCents(sale.salePriceCents);
-  const date = new Date().toLocaleDateString("pt-BR");
-
-  return [
-    `=============================================================`,
-    ` ${docTitle.toUpperCase()}`,
-    `=============================================================`,
-    ``,
-    `Data de Emissão: ${date}`,
-    `Venda ID: ${sale.id}`,
-    `Status: ${sale.status.toUpperCase()}`,
-    ``,
-    `--- DADOS DO COMPRADOR ---`,
-    `Nome: ${buyerName}`,
-    `CPF/CNPJ: ${buyerDoc}`,
-    `Telefone: ${String(sale.buyerSnapshot.phone || "Não informado")}`,
-    `E-mail: ${String(sale.buyerSnapshot.email || "Não informado")}`,
-    ``,
-    `--- DADOS DO VEÍCULO ---`,
-    `Modelo: ${vehicleTitle}`,
-    `Placa: ${plate}`,
-    `Unidade: ${String(sale.listingSnapshot.unitLabel || "Não informado")}`,
-    ``,
-    `--- VALORES E CONDIÇÕES ---`,
-    `Valor Total da Venda: ${price}`,
-    `Parcelas Lançadas: ${sale.payments.length}`,
-    ...sale.payments.map(
-      (p, i) =>
-        `  #${i + 1} - ${p.method.toUpperCase()}: ${formatCents(p.principalCents)} (Vencimento: ${p.dueAt || "À vista"})`,
-    ),
-    ``,
-    `Documento emitido eletronicamente pelo Loja Veículos OS.`,
-    `=============================================================`,
-  ].join("\n");
 }

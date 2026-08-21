@@ -48,6 +48,7 @@ export function paymentSnapshots(value: unknown) {
           date: formatPdfDate(payment.paidAt ?? payment.dueAt),
           description:
             optionalText(payment.description) ??
+            optionalText(payment.methodReference) ??
             (installments && installments > 1
               ? `${installments}x de ${formatCurrencyCents(Math.round(amountCents / installments))}`
               : "-"),
@@ -74,13 +75,15 @@ export function tradeInVehicleFromMetadata(
 ): PdfVehicleInfo | undefined {
   const tradeIn = asRecord(value);
   if (!Object.keys(tradeIn).length) return undefined;
+  const catalog = asRecord(tradeIn.catalog);
   return {
-    brand: optionalText(tradeIn.brand),
+    brand: optionalText(tradeIn.brand) ?? optionalText(catalog.brandName),
     chassi: optionalText(tradeIn.chassi),
     color: optionalText(tradeIn.color),
     manufactureYear: optionalNumber(tradeIn.yearFabrication),
-    model: optionalText(tradeIn.model),
-    modelYear: optionalNumber(tradeIn.yearModel),
+    model: optionalText(tradeIn.model) ?? optionalText(catalog.modelName),
+    modelYear:
+      optionalNumber(tradeIn.yearModel) ?? optionalNumber(catalog.modelYear),
     plate: optionalText(tradeIn.plate),
     renavam: optionalText(tradeIn.renavam),
     version: optionalText(tradeIn.version),

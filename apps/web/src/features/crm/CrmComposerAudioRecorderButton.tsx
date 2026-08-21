@@ -95,11 +95,20 @@ export function CrmComposerAudioRecorderButton({
 
   if (isRecording) {
     return (
-      <span className="crm-recording">
-        <span aria-label="Gravando audio">{formatDuration(elapsedMs)}</span>
+      <span className="crm-recording" role="status">
+        <span className="crm-recording-pulse" />
+        <span aria-label="Gravando audio" className="crm-recording-timer">
+          {formatDuration(elapsedMs)}
+        </span>
+        <div className="crm-recording-wave" aria-hidden="true">
+          <span className="crm-rec-bar" />
+          <span className="crm-rec-bar" />
+          <span className="crm-rec-bar" />
+          <span className="crm-rec-bar" />
+        </div>
         <button
           aria-label="Descartar gravacao"
-          className="crm-icon-action"
+          className="crm-icon-action crm-recording-cancel"
           onClick={cancelRecording}
           title="Descartar gravacao"
           type="button"
@@ -108,7 +117,7 @@ export function CrmComposerAudioRecorderButton({
         </button>
         <button
           aria-label="Enviar audio"
-          className="crm-icon-action crm-icon-action-active"
+          className="crm-icon-action crm-icon-action-active crm-send-action"
           onClick={stopRecording}
           title="Enviar audio"
           type="button"

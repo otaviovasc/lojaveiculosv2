@@ -13,9 +13,9 @@
 @import "./crmCampaignList.css";
 @import "./crmCampaignDetail.css";
 @import "./crmConnectionAdmin.css";
-@import "./crmConnectionAdminResponsive.css";
 @import "./crmChannelRouting.css";
 @import "./crmConnectionStatus.css";
+@import "./crmConnectionAdminResponsive.css";
 @import "./crmVisits.css";
 @import "./crmVisitsTimeline.css";
 @import "./crmIntegrations.css";
@@ -35,6 +35,8 @@
 @import "./crmOperationsParity.css";
 @import "./crmOperationsParityDetail.css";
 @import "./crmMediaDialog.css";
+@import "./crmAudioPlayer.css";
+@import "./crmGalleryViewer.css";
 @import "./crmActionDialogBase.css";
 @import "./crmActionDialogCatalog.css";
 @import "./crmActionDialogVehicle.css";

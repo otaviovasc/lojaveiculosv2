@@ -1,4 +1,4 @@
-export const saleFinancingRanks = ["R1", "R2", "R3", "R4", "R5"] as const;
+export const saleFinancingRanks = ["R0", "R1", "R2", "R3", "R4", "R5"] as const;
 
 export type SaleFinancingRank = (typeof saleFinancingRanks)[number];
 

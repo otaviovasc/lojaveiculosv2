@@ -7,12 +7,14 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle } from "../../components/ui/dialog";
 import {
   fallbackFileLabel,
   formatFileSize,
   readMediaType,
 } from "./crmMediaFiles";
+import { CrmAudioPlayer } from "./CrmAudioPlayer";
 
 export function CrmMediaPreviewDialog({
   activeIndex,
@@ -52,11 +54,21 @@ export function CrmMediaPreviewDialog({
   previewUrls: Map<File, string>;
 }) {
   const activeFile = files[activeIndex] ?? files[0];
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Auto resize caption textarea
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [caption]);
+
   if (!activeFile) return null;
 
   return (
     <Dialog
-      containerClassName="p-3 sm:p-6"
+      containerClassName="p-2 sm:p-6"
       onOpenChange={(open) => !open && onClose()}
       open
     >
@@ -78,16 +90,16 @@ export function CrmMediaPreviewDialog({
           >
             <X />
           </button>
-          <div>
+          <div className="crm-media-dialog-title-wrap">
             <h2>{activeFile.name || "Anexo"}</h2>
             <span>
-              {activeIndex + 1} de {files.length} -{" "}
+              {activeIndex + 1} de {files.length} ·{" "}
               {formatFileSize(activeFile.size)}
             </span>
           </div>
           <button
             aria-label="Remover anexo atual"
-            className="crm-media-icon"
+            className="crm-media-icon crm-media-icon-danger"
             onClick={() => onRemove(activeIndex)}
             title="Remover"
             type="button"
@@ -173,6 +185,7 @@ export function CrmMediaPreviewDialog({
                   ? "Adicionar legenda..."
                   : "Envie o texto separadamente da imagem."
               }
+              ref={textareaRef}
               rows={1}
               value={allowCaption ? caption : ""}
             />
@@ -212,6 +225,14 @@ function MediaPreview({
         preload="metadata"
         src={previewUrl}
       />
+    );
+  }
+  if (mediaType === "audio" && previewUrl) {
+    return (
+      <div className="crm-media-audio-preview">
+        <CrmAudioPlayer src={previewUrl} />
+        <p className="mt-2 text-xs font-bold text-white/80">{file.name}</p>
+      </div>
     );
   }
   return (
