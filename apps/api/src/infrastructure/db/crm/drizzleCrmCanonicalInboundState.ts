@@ -12,6 +12,24 @@ import {
   scopedCanonicalInboundThread,
 } from "./drizzleCrmCanonicalInboundSupport.js";
 
+export async function backfillCanonicalInboundProfilePhoto(
+  db: DrizzleCrmClient,
+  input: CanonicalInboundMessageInput,
+  threadId: string,
+) {
+  if (!input.profilePhotoStorageKey || !input.profilePhotoUrl) return;
+  const profilePhoto = JSON.stringify({
+    storageKey: input.profilePhotoStorageKey,
+  });
+  await db
+    .update(conversationThreads)
+    .set({
+      metadata: sql`jsonb_set(coalesce(${conversationThreads.metadata}, '{}'::jsonb), '{profilePhoto}', ${profilePhoto}::jsonb, true)`,
+      profilePhotoUrl: input.profilePhotoUrl,
+    })
+    .where(scopedCanonicalInboundThread(input, threadId));
+}
+
 export async function updateCanonicalInboundState(
   db: DrizzleCrmClient,
   input: CanonicalInboundMessageInput,

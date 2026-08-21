@@ -1,5 +1,6 @@
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { Loader2, Reply, Send, X } from "lucide-react";
+import { forwardRef, useCallback, useImperativeHandle } from "react";
 import { CrmComposerAttachMenu } from "./CrmComposerAttachMenu";
 import { CrmComposerAudioRecorderButton } from "./CrmComposerAudioRecorderButton";
 import { CatalogDialog } from "./CrmWhatsappCatalogDialog";
@@ -12,28 +13,39 @@ import { addFiles, formatReplyDraft } from "./crmComposerSupport";
 import type { ComposerDialog, MessageComposerProps } from "./CrmComposerTypes";
 import { useMessageComposerState } from "./CrmComposerState";
 import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
+import { readMediaType } from "./crmMediaFiles";
 
-export function MessageComposer({
-  capabilities = readCrmConnectionCapabilities(undefined),
-  catalogUrl,
-  defaultLocationName,
-  disabled = false,
-  onSend,
-  onSendCatalog,
-  onLoadCatalogProducts,
-  onSendLocation,
-  onSendMedia,
-  onLoadVehicles,
-  onSendCatalogProduct,
-  onSendQuickMessage,
-  onSendVehicle,
-  onCreateQuickMessage,
-  onDeleteQuickMessage,
-  onUpdateQuickMessage,
-  quickMessages = [],
-  replyToMessage,
-  onCancelReply,
-}: MessageComposerProps) {
+export type MessageComposerHandle = {
+  openFiles: (files: readonly File[]) => void;
+};
+
+export const MessageComposer = forwardRef<
+  MessageComposerHandle,
+  MessageComposerProps
+>(function MessageComposer(
+  {
+    capabilities = readCrmConnectionCapabilities(undefined),
+    catalogUrl,
+    defaultLocationName,
+    disabled = false,
+    onSend,
+    onSendCatalog,
+    onLoadCatalogProducts,
+    onSendLocation,
+    onSendMedia,
+    onLoadVehicles,
+    onSendCatalogProduct,
+    onSendQuickMessage,
+    onSendVehicle,
+    onCreateQuickMessage,
+    onDeleteQuickMessage,
+    onUpdateQuickMessage,
+    quickMessages = [],
+    replyToMessage,
+    onCancelReply,
+  }: MessageComposerProps,
+  ref,
+) {
   const composerState = useMessageComposerState({
     allowMediaCaption: capabilities.allowImageCaption,
     allowQuickMessages: capabilities.allowQuickMessages,
@@ -71,6 +83,24 @@ export function MessageComposer({
     textareaRef,
     previewUrls,
   } = composerState;
+
+  const openFiles = useCallback(
+    (incomingFiles: readonly File[]) => {
+      const acceptedFiles = incomingFiles.filter((file) => {
+        const mediaType = readMediaType(file);
+        if (mediaType === "audio") return capabilities.allowAudio;
+        if (mediaType === "document") return capabilities.allowDocuments;
+        if (mediaType === "video") return capabilities.allowVideo;
+        return capabilities.allowImages;
+      });
+      if (acceptedFiles.length) {
+        setFiles((current) => [...current, ...acceptedFiles]);
+      }
+    },
+    [capabilities, setFiles],
+  );
+
+  useImperativeHandle(ref, () => ({ openFiles }), [openFiles]);
 
   const openDialog = (nextDialog: ComposerDialog) => {
     setDialog(nextDialog);
@@ -266,11 +296,11 @@ export function MessageComposer({
             <CrmComposerAudioRecorderButton
               disabled={effectiveDisabled}
               primary
-              onRecorded={(file) => setFiles((current) => [...current, file])}
+              onSend={(file) => onSendMedia({ file, mediaType: "audio" })}
             />
           ) : null}
         </AnimatedIconSwap>
       </div>
     </form>
   );
-}
+});

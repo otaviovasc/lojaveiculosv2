@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import postgres from "postgres";
 import { assertKnownLocalDatabaseUrl } from "./local-database-safety.mjs";
 import { installFinanceAutoEntryParity } from "./install-finance-auto-entry-parity.mjs";
@@ -104,6 +104,7 @@ export async function pushProductSchema({
   installFiscalCatalogParity: installFiscalParity = installFiscalCatalogParity,
   installScopeForeignKeys: installForeignKeys = installScopeForeignKeys,
   readAutomationTableState: readTableState = readAutomationTableState,
+  ensureSchemaUniqueIndexes: ensureUniqueIndexes = ensureSchemaUniqueIndexes,
   runDrizzlePush: runPush = runDrizzlePush,
   verifyBootstrapState: verifyBootstrap = verifyBootstrapState,
   verifyFinalState: verifyFinal = verifyFinalState,
@@ -120,7 +121,23 @@ export async function pushProductSchema({
       );
     }
 
-    await runPush({ bootstrap: true });
+    let recoveredWithFinalPush = false;
+    try {
+      await runPush({ bootstrap: true });
+    } catch (error) {
+      if (error.code !== "42830") throw error;
+
+      const tableState = await readTableState();
+      if (tableState.count !== tableState.expected) throw error;
+
+      await ensureAutomationIndexes();
+      await ensureCrmIndexes();
+      await ensureFinancingIndexes();
+      await ensureBillingIndexes();
+      await ensureUniqueIndexes();
+      await runPush({ bootstrap: false });
+      recoveredWithFinalPush = true;
+    }
     await installFinanceParity(sql);
     await installFiscalParity(sql);
     await ensureAutomationIndexes();
@@ -128,7 +145,7 @@ export async function pushProductSchema({
     await ensureFinancingIndexes();
     await ensureBillingIndexes();
     await verifyBootstrap();
-    await installForeignKeys();
+    if (!recoveredWithFinalPush) await installForeignKeys();
     await verifyFinal();
   } catch (error) {
     try {
@@ -156,6 +173,29 @@ function isMainModule() {
   );
 }
 
+function ensureSchemaUniqueIndexes() {
+  const tsxBinary = fileURLToPath(
+    new URL("../../apps/api/node_modules/.bin/tsx", import.meta.url),
+  );
+  const helper = fileURLToPath(
+    new URL("./ensure-product-schema-unique-indexes.ts", import.meta.url),
+  );
+  const result = spawnSync(tsxBinary, [helper], {
+    cwd: fileURLToPath(new URL("../..", import.meta.url)),
+    env: process.env,
+    encoding: "utf8",
+    stdio: ["inherit", "inherit", "pipe"],
+  });
+  const stderr = result.stderr ?? "";
+  if (stderr) process.stderr.write(stderr);
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(
+      `Schema unique-index bootstrap exited with status ${String(result.status)}.`,
+    );
+  }
+}
+
 function runDrizzlePush({ bootstrap }) {
   const args = ["push"];
   if (force) args.push("--force");
@@ -179,9 +219,12 @@ function runDrizzlePush({ bootstrap }) {
   if (stderr) process.stderr.write(stderr);
   if (result.error) throw result.error;
   if (stderr.includes("PostgresError:")) {
-    throw new Error(
+    const error = new Error(
       `${bootstrap ? "Scoped foreign-key bootstrap" : "Final schema"} push reported a PostgreSQL error.`,
     );
+    const code = stderr.match(/code:\s*['"]([A-Z0-9]+)['"]/i)?.[1];
+    if (code) error.code = code;
+    throw error;
   }
   if (result.status !== 0) {
     throw new Error(

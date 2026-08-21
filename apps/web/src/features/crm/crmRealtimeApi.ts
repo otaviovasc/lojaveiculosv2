@@ -14,10 +14,10 @@ type JsonBody = Record<string, unknown>;
 const crmSseEventNames = [
   "connected",
   "connection_status",
+  "conversationCycle",
   "message",
   "message_status",
   "presence",
-  "cycle",
 ] as const;
 
 export function subscribeCrmEvents(input: {
@@ -125,14 +125,17 @@ function parseRealtimeEvent(value: unknown): CrmRealtimeEvent {
   }
   const event = value as Record<string, unknown>;
   if (event.type === "message") {
-    return Object.assign({}, event, {
+    const { conversationCycle, ...messageEvent } = event;
+    return Object.assign({}, messageEvent, {
       message: crmMessageSchema.parse(event.message),
-      cycle: crmConversationCycleSchema.parse(event.cycle),
+      cycle: crmConversationCycleSchema.parse(conversationCycle),
     }) as CrmRealtimeEvent;
   }
-  if (event.type === "cycle") {
-    return Object.assign({}, event, {
-      cycle: crmConversationCycleSchema.parse(event.cycle),
+  if (event.type === "conversationCycle") {
+    const { conversationCycle, ...cycleEvent } = event;
+    return Object.assign({}, cycleEvent, {
+      cycle: crmConversationCycleSchema.parse(conversationCycle),
+      type: "cycle",
     }) as CrmRealtimeEvent;
   }
   return value as CrmRealtimeEvent;

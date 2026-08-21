@@ -150,6 +150,20 @@ async function assertCrm(db) {
   const [row] = await db`
     select
       (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}) as leads,
+      (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}
+       and pipeline_stage_id = '25100000-0000-4000-8000-000000000001') as "newLeads",
+      (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}
+       and pipeline_stage_id = '25100000-0000-4000-8000-000000000002') as "contactedLeads",
+      (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}
+       and pipeline_stage_id = '25100000-0000-4000-8000-000000000003') as "qualifiedLeads",
+      (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}
+       and pipeline_stage_id = '25100000-0000-4000-8000-000000000004') as "negotiatingLeads",
+      (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}
+       and pipeline_stage_id = '25100000-0000-4000-8000-000000000005') as "reservationLeads",
+      (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}
+       and pipeline_stage_id = '25100000-0000-4000-8000-000000000006') as "wonLeads",
+      (select count(*)::int from leads where tenant_id = ${seedIds.primaryTenant}
+       and pipeline_stage_id = '25100000-0000-4000-8000-000000000007') as "lostLeads",
       (select count(*)::int from crm_pipeline_stages where tenant_id = ${seedIds.primaryTenant}) as stages,
       (select count(*)::int from crm_conversation_threads
        where tenant_id = ${seedIds.primaryTenant}) as threads,
@@ -173,6 +187,17 @@ async function assertCrm(db) {
     row.leads >= 3 && row.stages >= 5,
     "CRM leads and pipeline stages are incomplete.",
   );
+  for (const [stage, count] of [
+    ["new", row.newLeads],
+    ["contacted", row.contactedLeads],
+    ["qualified", row.qualifiedLeads],
+    ["negotiating", row.negotiatingLeads],
+    ["reservation", row.reservationLeads],
+    ["won", row.wonLeads],
+    ["lost", row.lostLeads],
+  ]) {
+    assert(count >= 2, `CRM stage ${stage} needs at least two seeded leads.`);
+  }
   assert(
     row.threads >= 3 &&
       row.cycles >= 3 &&
@@ -287,16 +312,14 @@ async function assertInventory(db) {
   `;
   assertCount(prices, "mismatches", 0, "Latest price history");
   const [emptyGalleries] = await db`
-    select count(*)::int as count from vehicle_listings listing
+    select count(*)::int as count from vehicle_units unit
+    inner join vehicle_listings listing on listing.id = unit.listing_id
     where listing.tenant_id in ${db(seededTenantIds)}
-      and listing.status = 'published' and listing.is_visible_on_public_site
-      and listing.metadata->>'mediaScenario' = 'missing_photos'
-      and not exists (select 1 from vehicle_units unit
-        inner join vehicle_media media on media.unit_id = unit.id
-          and media.is_deleted = false and media.is_public
-        where unit.listing_id = listing.id)
+      and not exists (select 1 from vehicle_media media
+        where media.unit_id = unit.id
+          and media.is_deleted = false and media.is_public)
   `;
-  assertCount(emptyGalleries, "count", 8, "Explicit empty-gallery scenarios");
+  assertCount(emptyGalleries, "count", 0, "Seeded vehicle photo coverage");
   return {
     ...counts,
     emptyGalleries: emptyGalleries.count,

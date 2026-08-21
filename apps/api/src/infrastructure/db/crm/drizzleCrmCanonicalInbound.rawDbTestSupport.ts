@@ -115,7 +115,13 @@ export async function validateOlxCanonicalInbound(
     secondaryPhone: input.zapiPhone,
   };
   const olxFirst = await repository.ingestInboundMessage(olxInput);
-  const olxReplay = await repository.ingestInboundMessage(olxInput);
+  const profilePhotoStorageKey = `crm/profiles/${randomUUID()}.jpg`;
+  const profilePhotoUrl = `https://media.test/${profilePhotoStorageKey}`;
+  const olxReplay = await repository.ingestInboundMessage({
+    ...olxInput,
+    profilePhotoStorageKey,
+    profilePhotoUrl,
+  });
   expect(olxFirst.created).toBe(true);
   expect(olxReplay).toMatchObject({
     contactId: olxFirst.contactId,
@@ -124,6 +130,20 @@ export async function validateOlxCanonicalInbound(
     created: false,
   });
   expect(olxFirst.contactId).not.toBe(input.zapiFirst.contactId);
+  const [olxThread] = await transaction
+    .select({
+      metadata: schema.conversationThreads.metadata,
+      profilePhotoUrl: schema.conversationThreads.profilePhotoUrl,
+    })
+    .from(schema.conversationThreads)
+    .where(eq(schema.conversationThreads.id, olxFirst.threadId));
+  expect(olxThread).toEqual({
+    metadata: {
+      profilePhoto: { storageKey: profilePhotoStorageKey },
+      unreadCount: 1,
+    },
+    profilePhotoUrl,
+  });
   const olxIdentities = await transaction
     .select({
       contactId: schema.contactIdentities.contactId,

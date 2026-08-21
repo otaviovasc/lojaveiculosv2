@@ -44,9 +44,9 @@ before reseeding.
 `qa:seed:local` verifies tenant scope, accounts, permission overrides,
 subscription/entitlement truth, inventory lifecycle, reservation and finance
 graphs, documents, and provider truth. It runs automatically at the end of
-`db:seed`. Eight published listings intentionally carry
-`mediaScenario=missing_photos` to exercise the empty-gallery/degraded-content
-state; only model-correct R2 media is attached.
+`db:seed`. Every seeded vehicle unit has one title-matched Wikimedia Commons
+image whose attribution is stored in `vehicle_media.metadata`; local/
+development R2 keys use the `l/seed/vehicles/` prefix.
 
 ## External systems
 

@@ -34,9 +34,9 @@ describe("CRM WhatsApp API", () => {
     await api.sendText({ cycleId: "session_1", text: "Ola" });
 
     expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/messages/text",
+      input: "/api/v1/crm/conversation-cycles/session_1/messages",
       init: {
-        body: JSON.stringify({ cycleId: "session_1", text: "Ola" }),
+        body: JSON.stringify({ content: "Ola" }),
         method: "POST",
       },
     });
@@ -89,12 +89,11 @@ describe("CRM WhatsApp API", () => {
     });
 
     expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/messages/text",
+      input: "/api/v1/crm/conversation-cycles/session_1/messages",
       init: {
         body: JSON.stringify({
+          content: "Sim, esta disponivel.",
           replyToMessageId: "550e8400-e29b-41d4-a716-446655440000",
-          cycleId: "session_1",
-          text: "Sim, esta disponivel.",
         }),
         method: "POST",
       },

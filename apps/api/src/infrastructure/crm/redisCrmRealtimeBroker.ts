@@ -63,7 +63,6 @@ export function createRedisCrmRealtimeBroker(
       ensureCommandClient,
     ),
     async publish(event) {
-      await ensureSubscriber();
       const envelope = await persistence.appendEvent(event);
       await persistence.publishEnvelope(envelope);
     },

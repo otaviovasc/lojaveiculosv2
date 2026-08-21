@@ -18,6 +18,7 @@ import {
   resolveCanonicalIdentity,
 } from "./drizzleCrmCanonicalInboundIdentity.js";
 import {
+  backfillCanonicalInboundProfilePhoto,
   readCanonicalInboundAttendanceState,
   updateCanonicalInboundState,
 } from "./drizzleCrmCanonicalInboundState.js";
@@ -39,7 +40,10 @@ async function ingestCanonicalInbound(
   await lockCanonicalIdentity(db, input);
   await assertCanonicalInboundConnection(db, input);
   const duplicate = await findMessage(db, input);
-  if (duplicate) return { ...duplicate, created: false };
+  if (duplicate) {
+    await backfillCanonicalInboundProfilePhoto(db, input, duplicate.threadId);
+    return { ...duplicate, created: false };
+  }
 
   const { contactId, identityId } = await resolveCanonicalIdentity(db, input);
   const thread = await resolveCanonicalInboundThread(db, input, contactId);

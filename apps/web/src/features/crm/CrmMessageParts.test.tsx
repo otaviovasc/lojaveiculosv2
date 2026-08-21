@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MessageList } from "./CrmMessageParts";
@@ -9,6 +9,24 @@ import type { CrmMessage } from "./crmConversationTypes";
 describe("CrmMessageParts", () => {
   afterEach(() => {
     cleanup();
+  });
+
+  it("forwards dropped files from the conversation history", () => {
+    const onFilesDropped = vi.fn();
+    const { container } = render(
+      <MessageList
+        isLoading={false}
+        messages={[]}
+        onFilesDropped={onFilesDropped}
+      />,
+    );
+    const file = new File(["image"], "civic.jpg", { type: "image/jpeg" });
+
+    fireEvent.drop(container.querySelector(".crm-messages")!, {
+      dataTransfer: { files: [file], types: ["Files"] },
+    });
+
+    expect(onFilesDropped).toHaveBeenCalledWith([file]);
   });
 
   it("renders image media with its caption", () => {

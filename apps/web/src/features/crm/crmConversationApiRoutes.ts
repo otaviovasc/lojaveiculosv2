@@ -186,8 +186,11 @@ export const crmConversationRoutes = {
       `/crm/quick-messages/${encodeURIComponent(quickMessageId)}/send`,
       baseUrl,
     ),
-  sendText: (baseUrl?: string) =>
-    createCrmEndpoint("/crm/messages/text", baseUrl),
+  sendText: (cycleId: CrmConversationCycleId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/messages`,
+      baseUrl,
+    ),
   sendVehicle: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/send/vehicle", baseUrl),
 } as const;

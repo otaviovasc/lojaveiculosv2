@@ -13,6 +13,7 @@ import { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsP
 import type { useCrmInbox } from "./useCrmInbox";
 import type { CrmMessage } from "./crmConversationTypes";
 import type { CrmScope } from "./CrmScopedNav";
+import type { MessageComposerHandle } from "./CrmComposer";
 import { readInitialCycleId } from "./crmConversationHookSupport";
 import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
 
@@ -25,6 +26,7 @@ export function CrmConversationWorkspace({
 }) {
   const activeSession = inbox.activeSession;
   const shellRef = useRef<HTMLElement>(null);
+  const composerRef = useRef<MessageComposerHandle>(null);
   const [mobilePane, setMobilePane] = useState<"chat" | "context" | "list">(
     () => (readInitialCycleId() ? "chat" : "list"),
   );
@@ -263,6 +265,11 @@ export function CrmConversationWorkspace({
                   ? setReplyToMessage
                   : undefined
               }
+              onFilesDropped={
+                inbox.canSendText
+                  ? (files) => composerRef.current?.openFiles(files)
+                  : undefined
+              }
             />
             {inbox.canSendText ? (
               <>
@@ -276,6 +283,7 @@ export function CrmConversationWorkspace({
                     activeSessionConnection?.id ?? "unknown",
                   )}:${String(inbox.connectionFilterId ?? "automatic")}`}
                   capabilities={providerCapabilities}
+                  ref={composerRef}
                   catalogUrl={inbox.catalogUrl}
                   defaultLocationName={inbox.storeLocationName}
                   disabled={inbox.isSending}

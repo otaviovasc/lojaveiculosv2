@@ -1,19 +1,20 @@
-import { Mic, Square, Trash2 } from "lucide-react";
+import { Loader2, Mic, Send, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 
 export function CrmComposerAudioRecorderButton({
   disabled,
-  onRecorded,
+  onSend,
   primary = false,
 }: {
   disabled?: boolean;
-  onRecorded: (file: File) => void;
+  onSend: (file: File) => Promise<boolean>;
   primary?: boolean;
 }) {
   const [error, setError] = useState("");
   const [elapsedMs, setElapsedMs] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -52,9 +53,10 @@ export function CrmComposerAudioRecorderButton({
       recorder.onstop = () => {
         const type = recorder.mimeType || "audio/webm";
         const chunks = chunksRef.current;
+        const cancelled = cancelledRef.current;
         cleanupRecorder();
-        if (cancelledRef.current || !chunks.length) return;
-        onRecorded(
+        if (cancelled || !chunks.length) return;
+        void sendRecording(
           new File([new Blob(chunks, { type })], fileName(type), { type }),
         );
       };
@@ -79,6 +81,18 @@ export function CrmComposerAudioRecorderButton({
     cleanupRecorder();
   };
 
+  const sendRecording = async (file: File) => {
+    setIsSending(true);
+    setError("");
+    try {
+      await onSend(file);
+    } catch {
+      setError("Nao foi possivel enviar o audio.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (isRecording) {
     return (
       <span className="crm-recording">
@@ -93,14 +107,14 @@ export function CrmComposerAudioRecorderButton({
           <Trash2 />
         </button>
         <button
-          aria-label="Parar gravacao"
+          aria-label="Enviar audio"
           className="crm-icon-action crm-icon-action-active"
           onClick={stopRecording}
-          title="Parar gravacao"
+          title="Enviar audio"
           type="button"
         >
           <AnimatedIconSwap stateKey={isRecording} variant="pop">
-            <Square />
+            <Send />
           </AnimatedIconSwap>
         </button>
       </span>
@@ -116,13 +130,16 @@ export function CrmComposerAudioRecorderButton({
             ? "crm-icon-action crm-send-action crm-audio-action"
             : "crm-icon-action"
         }
-        disabled={disabled || !supported}
+        disabled={disabled || isSending || !supported}
         onClick={() => void startRecording()}
         title={supported ? "Gravar audio" : "Gravacao indisponivel"}
         type="button"
       >
-        <AnimatedIconSwap stateKey={isRecording} variant="pop">
-          <Mic />
+        <AnimatedIconSwap
+          stateKey={isSending ? "sending" : "idle"}
+          variant="pop"
+        >
+          {isSending ? <Loader2 className="crm-spin" /> : <Mic />}
         </AnimatedIconSwap>
       </button>
       {error ? <small className="crm-recording-error">{error}</small> : null}
