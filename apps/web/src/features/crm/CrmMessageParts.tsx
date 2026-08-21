@@ -19,9 +19,11 @@ export function MessageList({
   onReact,
   onRemoveReaction,
   onReply,
+  onFilesDropped,
 }: MessageActionHandlers & {
   isLoading: boolean;
   messages: CrmMessageView[];
+  onFilesDropped?: ((files: File[]) => void) | undefined;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -34,7 +36,21 @@ export function MessageList({
 
   const groups = groupMessagesForDisplay(messages);
   return (
-    <div className="crm-messages">
+    <div
+      className="crm-messages"
+      onDragOver={(event) => {
+        if (!onFilesDropped || !hasDraggedFiles(event.dataTransfer)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+      }}
+      onDrop={(event) => {
+        if (!onFilesDropped) return;
+        const files = Array.from(event.dataTransfer.files);
+        if (!files.length) return;
+        event.preventDefault();
+        onFilesDropped(files);
+      }}
+    >
       {groups.map((group, index) => {
         const key =
           group.kind === "media"
@@ -72,4 +88,8 @@ export function MessageList({
       <div ref={endRef} />
     </div>
   );
+}
+
+function hasDraggedFiles(dataTransfer: DataTransfer) {
+  return Array.from(dataTransfer.types).includes("Files");
 }

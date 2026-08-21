@@ -45,6 +45,55 @@ describe("useCrmRealtime", () => {
     expect(refreshSessionCounts).toHaveBeenCalledTimes(1);
   });
 
+  it("merges an inbound message and its list snapshot immediately", async () => {
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    const mergeCycles = vi.fn();
+    const mergeRealtimeMessage = vi.fn();
+    const refreshSessionCounts = vi.fn(async () => undefined);
+    const cycle = createSession();
+    const message = {
+      content: "Olá",
+      createdAt: "2026-08-20T12:00:00.000Z",
+      direction: "INBOUND" as const,
+      id: "message-1",
+      senderType: "CUSTOMER" as const,
+      status: "DELIVERED" as const,
+      type: "TEXT" as const,
+    };
+
+    render(
+      <Harness
+        api={api}
+        mergeCycles={mergeCycles}
+        mergeRealtimeMessage={mergeRealtimeMessage}
+        refreshSessionCounts={refreshSessionCounts}
+      />,
+    );
+    await waitFor(() => expect(onEvent).toBeDefined());
+
+    onEvent?.({
+      connectionId: "connection-1",
+      cycle,
+      message,
+      type: "message",
+    });
+
+    expect(mergeCycles).toHaveBeenCalledWith([cycle], {
+      preserveLocalOnly: true,
+      snapshotKind: "realtime",
+    });
+    expect(mergeRealtimeMessage).toHaveBeenCalledWith(message);
+    expect(refreshSessionCounts).toHaveBeenCalledTimes(1);
+  });
+
   it("removes a cycle tombstone instead of merging it for a revoked user", async () => {
     let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
     const api = {
@@ -373,6 +422,7 @@ function Harness({
   connectionId = "connection-1",
   connectionsError = null,
   mergeCycles,
+  mergeRealtimeMessage = vi.fn(),
   onStatus,
   refreshConnections = vi.fn(async () => undefined),
   refreshSessionCounts,
@@ -384,6 +434,9 @@ function Harness({
   connectionId?: string | null;
   connectionsError?: Error | null;
   mergeCycles: (conversationCycles: CrmConversationCycle[]) => void;
+  mergeRealtimeMessage?: Parameters<
+    typeof useCrmRealtime
+  >[0]["mergeRealtimeMessage"];
   onStatus?: (status: CrmRealtimeStatus) => void;
   refreshConnections?: () => Promise<void>;
   refreshSessionCounts: () => Promise<void>;
@@ -396,7 +449,7 @@ function Harness({
     ...(canAccessSessionSnapshot ? { canAccessSessionSnapshot } : {}),
     connectionId,
     connectionsError,
-    mergeRealtimeMessage: vi.fn(),
+    mergeRealtimeMessage,
     mergeCycles,
     removeSession,
     ...(onStatus ? { onStatus } : {}),

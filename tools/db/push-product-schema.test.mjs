@@ -316,6 +316,49 @@ describe("product schema push bootstrap", () => {
       "install-foreign-keys",
     ]);
   });
+
+  it("recovers a fresh push when composite parent keys are created after foreign keys", async () => {
+    const events = [];
+    let pushCount = 0;
+
+    await pushProductSchema({
+      detachScopeForeignKeys: async () => events.push("detach-foreign-keys"),
+      ensureAutomationScopeIndexes: async () =>
+        events.push("ensure-automation-indexes"),
+      ensureBillingScopeIndexes: async () =>
+        events.push("ensure-billing-indexes"),
+      ensureCrmScopeIndexes: async () => events.push("ensure-crm-indexes"),
+      ensureFinancingScopeIndexes: async () =>
+        events.push("ensure-financing-indexes"),
+      ensureSchemaUniqueIndexes: async () =>
+        events.push("ensure-schema-unique-indexes"),
+      installFinanceAutoEntryParity: async () =>
+        events.push("install-finance-parity"),
+      installFiscalCatalogParity: async () =>
+        events.push("install-fiscal-parity"),
+      installScopeForeignKeys: async () => events.push("install-foreign-keys"),
+      readAutomationTableState: async () => ({ count: 3, expected: 3 }),
+      runDrizzlePush: async ({ bootstrap }) => {
+        pushCount += 1;
+        events.push(bootstrap ? "drizzle-bootstrap" : "drizzle-final");
+        if (bootstrap) {
+          const error = new Error("missing parent key");
+          error.code = "42830";
+          throw error;
+        }
+      },
+      verifyBootstrapState: async () => events.push("verify-bootstrap"),
+      verifyFinalState: async () => events.push("verify-final"),
+    });
+
+    expect(pushCount).toBe(2);
+    expect(events).toContain("ensure-schema-unique-indexes");
+    expect(events.indexOf("ensure-schema-unique-indexes")).toBeLessThan(
+      events.indexOf("drizzle-final"),
+    );
+    expect(events).not.toContain("install-foreign-keys");
+    expect(events.at(-1)).toBe("verify-final");
+  });
 });
 
 function indexNames(table) {

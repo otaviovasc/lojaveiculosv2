@@ -106,7 +106,9 @@ describe("CRM conversation API routes", () => {
     expect(crmConversationRoutes.sendLocation()).toBe(
       "/api/v1/crm/whatsapp/send/location",
     );
-    expect(crmConversationRoutes.sendText()).toBe("/api/v1/crm/messages/text");
+    expect(crmConversationRoutes.sendText("cycle-uuid")).toBe(
+      "/api/v1/crm/conversation-cycles/cycle-uuid/messages",
+    );
     expect(crmConversationRoutes.sendMedia("cycle-uuid")).toBe(
       "/api/v1/crm/conversation-cycles/cycle-uuid/messages/media",
     );

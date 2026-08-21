@@ -277,10 +277,10 @@ export function createCrmConversationApi({
       postJson(crmConversationRoutes.composioSender(connectionId, baseUrl), {
         senderId,
       }),
-    sendText: ({ idempotencyKey, ...input }) =>
+    sendText: ({ idempotencyKey, cycleId, text, ...input }) =>
       postJson(
-        crmConversationRoutes.sendText(baseUrl),
-        input,
+        crmConversationRoutes.sendText(cycleId, baseUrl),
+        { content: text, ...input },
         idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {},
       ),
     sendVehicle: ({ idempotencyKey, ...input }) =>

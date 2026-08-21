@@ -138,6 +138,7 @@ describe("createRedisCrmRealtimeBroker", () => {
       storeId,
       tenantId,
     });
+    await broker.ready();
     await broker.publish(createEvent());
 
     expect(command.set).toHaveBeenCalledWith(

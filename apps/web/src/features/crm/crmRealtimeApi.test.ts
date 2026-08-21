@@ -23,7 +23,7 @@ class FakeEventSource {
     this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
   }
 
-  emit(data: CrmRealtimeEvent, lastEventId = "", type = "message") {
+  emit(data: unknown, lastEventId = "", type = "message") {
     const event = {
       data: JSON.stringify(data),
       lastEventId,
@@ -134,6 +134,81 @@ describe("CRM WhatsApp realtime API", () => {
     unsubscribe();
   });
 
+  it("normalizes backend conversation-cycle fields for inbound messages", async () => {
+    vi.stubGlobal("EventSource", FakeEventSource);
+    const postJson = vi
+      .fn()
+      .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" });
+    const events: CrmRealtimeEvent[] = [];
+    const onError = vi.fn();
+
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "/events",
+      eventsTicketRoute: "/events/ticket",
+      onError,
+      onEvent: (event) => events.push(event),
+      postJson,
+    });
+    await flushPromises();
+
+    FakeEventSource.instances[0]!.emit(
+      {
+        connectionId: "connection-1",
+        conversationCycle: createWireCycle(),
+        message: createWireMessage(),
+        type: "message",
+      },
+      "redis-1",
+      "message",
+    );
+
+    expect(events).toHaveLength(1);
+    const [messageEvent] = events;
+    expect(messageEvent?.type).toBe("message");
+    if (!messageEvent || messageEvent.type !== "message") {
+      throw new Error("Expected a CRM message realtime event.");
+    }
+    expect(messageEvent.cycle.id).toBe("cycle-1");
+    expect(messageEvent.message.id).toBe("message-1");
+    expect(onError).not.toHaveBeenCalled();
+
+    unsubscribe();
+  });
+
+  it("dispatches backend conversation-cycle event names", async () => {
+    vi.stubGlobal("EventSource", FakeEventSource);
+    const events: CrmRealtimeEvent[] = [];
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "/events",
+      eventsTicketRoute: "/events/ticket",
+      onEvent: (event) => events.push(event),
+      postJson: vi
+        .fn()
+        .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" }),
+    });
+    await flushPromises();
+
+    FakeEventSource.instances[0]!.emit(
+      {
+        connectionId: "connection-1",
+        conversationCycle: createWireCycle(),
+        type: "conversationCycle",
+      },
+      "redis-2",
+      "conversationCycle",
+    );
+
+    expect(events).toHaveLength(1);
+    const [cycleEvent] = events;
+    expect(cycleEvent?.type).toBe("cycle");
+    if (!cycleEvent || cycleEvent.type !== "cycle") {
+      throw new Error("Expected a CRM conversation-cycle realtime event.");
+    }
+    expect(cycleEvent.cycle.id).toBe("cycle-1");
+
+    unsubscribe();
+  });
+
   it("opens ticket-authenticated SSE without credentialed CORS mode", async () => {
     vi.stubGlobal("EventSource", FakeEventSource);
     const postJson = vi
@@ -161,4 +236,27 @@ async function flushPromises() {
 
 function readEventStatus(event: CrmRealtimeEvent) {
   return event.type === "connection_status" ? event.status : event.type;
+}
+
+function createWireCycle() {
+  return {
+    channel: "whatsapp",
+    id: "cycle-1",
+    revision: 1,
+    status: "HUMAN_TAKEOVER",
+  };
+}
+
+function createWireMessage() {
+  return {
+    channel: "whatsapp",
+    content: "Olá",
+    createdAt: "2026-08-20T12:00:00.000Z",
+    direction: "INBOUND",
+    id: "message-1",
+    senderOrigin: "customer",
+    senderType: "CUSTOMER",
+    status: "DELIVERED",
+    type: "TEXT",
+  };
 }

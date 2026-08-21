@@ -18,6 +18,7 @@ SELECT pg_advisory_xact_lock(
 \ir product/40-inventory.sql
 \ir product/50-crm.sql
 \ir product/45-inventory-scenarios.sql
+\ir product/46-inventory-seed-media.sql
 \ir product/55-crm-scenarios.sql
 \ir product/60-sales-finance.sql
 \ir product/65-workflow-scenarios.sql

@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { screen, waitForElementToBeRemoved } from "@testing-library/react";
+import { act, screen, waitForElementToBeRemoved } from "@testing-library/react";
+import { createRef } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanupTest, renderComposer } from "./CrmComposer.testSupport";
+import type { MessageComposerHandle } from "./CrmComposer";
 import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
 
 describe("CrmComposer", () => {
@@ -144,24 +146,47 @@ describe("CrmComposer", () => {
     ).toBeVisible();
   });
 
-  it("records audio into the existing media send flow", async () => {
-    vi.stubGlobal("URL", {
-      createObjectURL: vi.fn(() => "blob:crm-audio-preview"),
-      revokeObjectURL: vi.fn(),
-    });
+  it("sends or discards a recording directly without opening media preview", async () => {
     installMediaRecorderMock();
     const user = userEvent.setup();
     const { callbacks } = renderComposer();
 
     await user.click(screen.getByRole("button", { name: "Gravar audio" }));
-    await user.click(screen.getByRole("button", { name: "Parar gravacao" }));
+    await user.click(
+      screen.getByRole("button", { name: "Descartar gravacao" }),
+    );
 
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Enviar mensagem" }));
+    expect(callbacks.onSendMedia).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Gravar audio" }));
+    await user.click(screen.getByRole("button", { name: "Enviar audio" }));
+
     expect(callbacks.onSendMedia).toHaveBeenCalledWith(
       expect.objectContaining({
         mediaType: "audio",
       }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens dropped media in the attachment preview flow", () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:crm-dropped-preview"),
+      revokeObjectURL: vi.fn(),
+    });
+    const composerRef = createRef<MessageComposerHandle>();
+    renderComposer({ ref: composerRef });
+    const file = new File(["image"], "dropped-civic.jpg", {
+      type: "image/jpeg",
+    });
+
+    act(() => composerRef.current?.openFiles([file]));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByAltText("dropped-civic.jpg")).toHaveAttribute(
+      "src",
+      "blob:crm-dropped-preview",
     );
   });
 
