@@ -81,7 +81,7 @@
 .crm-send-action:not(.crm-audio-action) {
   background: var(--color-green-start);
   border-color: var(--color-green-start);
-  color: var(--color-inverse, #ffffff);
+  color: var(--color-success-foreground);
   box-shadow: none;
 }
 
@@ -90,8 +90,16 @@
 }
 
 .crm-send-action:not(.crm-audio-action):hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-green-start) 88%, #ffffff);
-  border-color: color-mix(in srgb, var(--color-green-start) 88%, #ffffff);
+  background: color-mix(
+    in srgb,
+    var(--color-green-start) 88%,
+    var(--color-panel)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 88%,
+    var(--color-panel)
+  );
   transform: scale(1.04);
   box-shadow: none;
 }

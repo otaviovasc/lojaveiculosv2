@@ -5,15 +5,16 @@
   padding: 0.75rem 1rem;
   position: relative;
   z-index: 15;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 -1px 3px color-mix(in srgb, var(--color-text) 5%, transparent);
 }
 
 /* Replying to draft bar */
 .crm-shell .crm-reply-draft {
   align-items: center;
-  background: color-mix(in srgb, #10b981 8%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, #10b981 25%, var(--color-line));
-  border-left: 4px solid #10b981;
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-success) 25%, var(--color-line));
+  border-left: 4px solid var(--color-success);
   border-radius: 0.75rem;
   display: grid;
   gap: 0.625rem;
@@ -25,7 +26,7 @@
 }
 
 .crm-shell .crm-reply-draft > svg {
-  color: #10b981;
+  color: var(--color-success-strong);
   height: 1.15rem;
   width: 1.15rem;
 }
@@ -37,7 +38,7 @@
 }
 
 .crm-shell .crm-reply-draft strong {
-  color: #059669;
+  color: var(--color-success-strong);
   font-size: var(--font-size-xs);
   font-weight: 800;
   text-transform: uppercase;
@@ -45,11 +46,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-:root[data-theme="dark"] .crm-shell .crm-reply-draft strong,
-.dark .crm-shell .crm-reply-draft strong {
-  color: #34d399;
 }
 
 .crm-shell .crm-reply-draft small {
@@ -123,29 +119,29 @@
 
 .crm-shell .crm-composer-textbox textarea:focus {
   background: var(--color-panel);
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  border-color: var(--color-success);
+  box-shadow: var(--shadow-focus);
 }
 
 /* Send & Action Buttons */
 .crm-send-action {
   align-items: center;
-  background: #10b981 !important;
-  border: 0 !important;
-  border-radius: 9999px !important;
-  color: #ffffff !important;
+  background: var(--color-success);
+  border: 0;
+  border-radius: 9999px;
+  color: var(--color-success-foreground);
   display: inline-flex;
   flex: 0 0 auto;
   height: 2.75rem;
   justify-content: center;
   width: 2.75rem;
   cursor: pointer;
-  box-shadow: none !important;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .crm-send-action:hover:not(:disabled) {
-  background: #059669 !important;
+  background: color-mix(in srgb, var(--color-success) 88%, var(--color-panel));
   transform: scale(1.06);
 }
 
@@ -156,16 +152,6 @@
 .crm-send-action svg {
   height: 1.15rem;
   width: 1.15rem;
-}
-
-/* Audio Action */
-.crm-send-action.crm-audio-action {
-  background: #3b82f6 !important;
-  box-shadow: none !important;
-}
-
-.crm-send-action.crm-audio-action:hover:not(:disabled) {
-  background: #2563eb !important;
 }
 
 /* Plus Attach Menu Button */
@@ -201,30 +187,44 @@
 .crm-attach-menu {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: 1rem;
+  border-radius: 1.125rem;
   bottom: calc(100% + 0.625rem);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.05);
   display: grid;
   gap: 0.25rem;
   left: 0;
-  min-width: 14rem;
+  min-width: 14.5rem;
   padding: 0.5rem;
   position: absolute;
   z-index: 50;
+  animation: crmAttachPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes crmAttachPop {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .crm-attach-option {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 0.625rem;
+  border-radius: 0.75rem;
   color: var(--color-text);
   display: flex;
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: 650;
   gap: 0.75rem;
   min-height: 2.75rem;
-  padding: 0.5rem 0.875rem;
+  padding: 0.4rem 0.75rem;
   text-align: left;
   width: 100%;
   cursor: pointer;
@@ -232,12 +232,65 @@
 }
 
 .crm-attach-option:hover {
-  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  transform: translateX(2px);
 }
 
-.crm-attach-option svg {
-  height: 1.25rem;
-  width: 1.25rem;
+.crm-attach-icon-wrap {
+  align-items: center;
+  border-radius: 9999px;
+  display: inline-flex;
+  height: 2.125rem;
+  justify-content: center;
+  width: 2.125rem;
+  flex-shrink: 0;
+}
+
+.crm-attach-icon-wrap svg {
+  height: 1.1rem;
+  width: 1.1rem;
+}
+
+.crm-attach-color-image {
+  background: rgba(168, 85, 247, 0.15);
+  color: #9333ea;
+}
+
+.crm-attach-color-doc {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+
+.crm-attach-color-audio {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+.crm-attach-color-quick {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+
+.crm-attach-color-catalog {
+  background: rgba(20, 184, 166, 0.15);
+  color: #0d9488;
+}
+
+.crm-attach-color-vehicle {
+  background: rgba(6, 182, 212, 0.15);
+  color: #0891b2;
+}
+
+.crm-attach-color-location {
+  background: rgba(244, 63, 94, 0.15);
+  color: #e11d48;
+}
+
+.crm-attach-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Quick message autocomplete popover */
@@ -246,7 +299,7 @@
   border: 1px solid var(--color-line);
   border-radius: 1rem;
   bottom: calc(100% + 0.625rem);
-  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--shadow-panel);
   display: grid;
   gap: 0.25rem;
   left: 0;
@@ -275,24 +328,19 @@
 
 .crm-quick-option.active,
 .crm-quick-option:hover {
-  background: color-mix(in srgb, #10b981 10%, var(--color-panel));
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-panel));
 }
 
 .crm-quick-option span {
   align-self: start;
-  background: rgba(16, 185, 129, 0.15);
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
   border-radius: 0.5rem;
-  color: #059669;
+  color: var(--color-success-strong);
   font-size: var(--font-size-xs);
   font-weight: 800;
   grid-row: span 2;
   line-height: 1;
   padding: 0.35rem 0.5rem;
-}
-
-:root[data-theme="dark"] .crm-quick-option span,
-.dark .crm-quick-option span {
-  color: #34d399;
 }
 
 .crm-quick-option strong {

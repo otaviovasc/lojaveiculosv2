@@ -1,3 +1,4 @@
+import { Play } from "lucide-react";
 import {
   formatMessageTime,
   getSenderLabel,
@@ -17,11 +18,13 @@ export function CrmMediaMessageGroup({
   actionsDisabled,
   messages,
   onDelete,
+  onMediaClick,
   onReact,
   onRemoveReaction,
   onReply,
 }: MessageActionHandlers & {
   messages: CrmMessageView[];
+  onMediaClick?: ((url: string) => void) | undefined;
 }) {
   const first = messages[0];
   const last = messages[messages.length - 1];
@@ -31,6 +34,7 @@ export function CrmMediaMessageGroup({
   const reaction = last ? readReaction(last.metadata) : undefined;
   const delivery = readDeliveryPresentation(last?.status ?? "unknown");
   const channel = (first?.channel ?? "whatsapp").toLowerCase();
+
   return (
     <article
       className={
@@ -56,27 +60,53 @@ export function CrmMediaMessageGroup({
       <div
         className={`crm-media-grid crm-media-grid-${Math.min(messages.length, 4)}`}
       >
-        {messages.slice(0, 4).map((message, index) => (
-          <a
-            className="crm-media-cell"
-            href={message.mediaUrl ?? undefined}
-            key={message.clientId ?? message.id}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {message.type === "VIDEO" ? (
-              <video src={message.mediaUrl ?? undefined} />
-            ) : (
-              <img
-                alt={readCaption(message) || "Midia enviada"}
-                src={message.mediaUrl ?? undefined}
-              />
-            )}
-            {index === 3 && messages.length > 4 ? (
-              <span>+{messages.length - 4}</span>
-            ) : null}
-          </a>
-        ))}
+        {messages.slice(0, 4).map((message, index) => {
+          const isVideo = message.type === "VIDEO";
+          const isFourthWithMore = index === 3 && messages.length > 4;
+          const caption = readCaption(message);
+
+          const handleClick = (e: React.MouseEvent) => {
+            if (onMediaClick && message.mediaUrl) {
+              e.preventDefault();
+              onMediaClick(message.mediaUrl);
+            }
+          };
+
+          return (
+            <a
+              className="crm-media-cell"
+              href={message.mediaUrl ?? undefined}
+              key={message.clientId ?? message.id}
+              onClick={handleClick}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {isVideo ? (
+                <div className="crm-media-cell-video">
+                  <video
+                    muted
+                    preload="metadata"
+                    src={message.mediaUrl ?? undefined}
+                  />
+                  <span className="crm-media-cell-play">
+                    <Play className="size-4 fill-white text-white ml-0.5" />
+                  </span>
+                </div>
+              ) : (
+                <img
+                  alt={caption || "Midia enviada"}
+                  loading="lazy"
+                  src={message.mediaUrl ?? undefined}
+                />
+              )}
+              {isFourthWithMore ? (
+                <span className="crm-media-cell-more">
+                  +{messages.length - 4}
+                </span>
+              ) : null}
+            </a>
+          );
+        })}
       </div>
       {captions.length ? (
         <p className="crm-media-bundle-caption">{captions.join("\n")}</p>

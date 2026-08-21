@@ -110,6 +110,32 @@ describe("vehicle workflow pdf", () => {
     });
   });
 
+  it("falls back to the sale trade-in metadata for the power of attorney", () => {
+    const model = buildWorkflowPdfModel({
+      ...record,
+      kind: "power_of_attorney",
+      metadata: {
+        ...record.metadata,
+        tradeInVehicle: {
+          catalog: { brandName: "Honda", modelName: "Civic", modelYear: 2021 },
+          chassi: "93HFC1630KZ123456",
+          plate: "ABC1D23",
+          renavam: "12345678901",
+          yearFabrication: 2020,
+        },
+      },
+    });
+
+    expect(model.tradeInVehicle).toMatchObject({
+      brand: "Honda",
+      chassi: "93HFC1630KZ123456",
+      model: "Civic",
+      modelYear: 2021,
+      plate: "ABC1D23",
+      renavam: "12345678901",
+    });
+  });
+
   it("fails closed when a customized clause contains an unresolved token", () => {
     expect(() =>
       interpolateWorkflowTemplateClause("Cliente {{unknown.value}}", {}),

@@ -13,6 +13,11 @@ import type {
 } from "../ports/vehicleSalesRepository.js";
 import type { DocumentTemplate } from "../../documents/ports/documentRepository.js";
 import type { VehicleStoreBranding } from "../ports/vehicleStoreBrandingReader.js";
+import {
+  paymentSnapshot,
+  saleTradeInSnapshot,
+  sumPaymentAmounts,
+} from "./vehicleWorkflowDocumentPayments.js";
 
 export const vehicleSaleDocumentKinds = [
   "sale_contract",
@@ -111,6 +116,7 @@ export function buildSoldDocuments(input: {
   const paymentMethods = [
     ...new Set(activePayments.map((payment) => payment.method)),
   ];
+  const tradeInVehicle = saleTradeInSnapshot(input.sale);
   return selectedDocumentKinds.map((kind) => {
     const spec = soldDocuments[kind];
     const template = input.templates?.get(spec.kind);
@@ -133,7 +139,9 @@ export function buildSoldDocuments(input: {
             activePayments.filter((payment) => payment.status === "paid"),
           ),
           paymentMethod: paymentMethods.join(", "),
-          payments: activePayments.map(paymentSnapshot),
+          payments: activePayments.map((payment) =>
+            paymentSnapshot(payment, tradeInVehicle),
+          ),
           salePriceCents: input.sale.sale.salePriceCents,
           tablePriceCents: input.listing.priceCents,
         },
@@ -143,6 +151,7 @@ export function buildSoldDocuments(input: {
         template: `${spec.role}_v1`,
         templateClauses: template?.clauses ?? null,
         templateTitle: template?.title ?? null,
+        tradeInVehicle,
         vehicle: vehicleSnapshot(input.listing, input.unit),
       },
       role: spec.role,
@@ -150,34 +159,6 @@ export function buildSoldDocuments(input: {
       unit: input.unit,
     });
   });
-}
-
-function sumPaymentAmounts(payments: readonly VehicleSalePayment[]): number {
-  return payments.reduce((total, payment) => total + payment.amountCents, 0);
-}
-
-function paymentSnapshot(payment: VehicleSalePayment) {
-  const metadata = payment.metadata ?? {};
-  return {
-    amountCents: payment.amountCents,
-    description:
-      typeof metadata.description === "string" && metadata.description.trim()
-        ? metadata.description.trim()
-        : null,
-    dueAt: payment.dueAt,
-    extraCents: payment.extraCents,
-    id: payment.id,
-    installments: payment.installments,
-    method: payment.method,
-    paidAt: payment.paidAt,
-    principalCents: payment.principalCents,
-    providerPaymentId: payment.providerPaymentId,
-    status: payment.status,
-    tradeInVehicle:
-      metadata.tradeInVehicle && typeof metadata.tradeInVehicle === "object"
-        ? metadata.tradeInVehicle
-        : null,
-  };
 }
 
 export { appendVehicleDocumentVoidHistory } from "./vehicleWorkflowDocumentHistory.js";

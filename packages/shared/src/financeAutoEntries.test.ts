@@ -37,6 +37,7 @@ describe("finance auto-entry contract", () => {
       "none",
     ]);
     expect(financeAutoEntryFinancingRanks).toEqual([
+      "R0",
       "R1",
       "R2",
       "R3",

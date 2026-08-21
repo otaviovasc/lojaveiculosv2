@@ -49,15 +49,10 @@
 }
 
 .crm-tag-filter-row button[aria-pressed="true"] {
-  background: color-mix(in srgb, #10b981 14%, var(--color-panel));
-  border-color: color-mix(in srgb, #10b981 35%, var(--color-line));
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-line));
   color: var(--color-crm-active-emerald);
   font-weight: 700;
-}
-
-:root[data-theme="dark"] .crm-tag-filter-row button[aria-pressed="true"],
-.dark .crm-tag-filter-row button[aria-pressed="true"] {
-  color: var(--color-crm-active-emerald);
 }
 
 .crm-tag-filter-row i,
@@ -99,7 +94,7 @@
 .crm-session[data-provider="zapi"] {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #10b981 4%, var(--color-panel)),
+    color-mix(in srgb, var(--color-success) 4%, var(--color-panel)),
     var(--color-panel) 80%
   );
 }
@@ -142,11 +137,19 @@
 .crm-session:hover,
 .crm-cycle:hover {
   background: color-mix(in srgb, var(--color-text) 3.5%, var(--color-panel));
-  border-bottom-color: color-mix(in srgb, #10b981 35%, var(--color-line));
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--color-success) 35%,
+    var(--color-line)
+  );
 }
 
 .crm-cycle[data-channel="whatsapp"]:hover:not(.crm-cycle-active) {
-  border-bottom-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--color-success) 40%,
+    var(--color-line)
+  );
 }
 
 .crm-cycle[data-channel="instagram"]:hover:not(.crm-cycle-active) {
@@ -160,22 +163,22 @@
 
 .crm-session-active,
 .crm-cycle-active {
-  background: color-mix(in srgb, #10b981 8%, var(--color-panel)) !important;
-  box-shadow: inset 3.5px 0 0 #10b981 !important;
-}
-
-:root[data-theme="dark"] .crm-session-active,
-:root[data-theme="dark"] .crm-cycle-active,
-.dark .crm-session-active,
-.dark .crm-cycle-active {
-  background: rgba(16, 185, 129, 0.12) !important;
-  box-shadow: inset 3.5px 0 0 #34d399 !important;
+  background: color-mix(
+    in srgb,
+    var(--color-success) 10%,
+    var(--color-panel)
+  ) !important;
+  box-shadow: inset 3.5px 0 0 var(--color-success-strong) !important;
 }
 
 .crm-session-selected,
 .crm-cycle-selected {
-  background: color-mix(in srgb, #3b82f6 8%, var(--color-panel)) !important;
-  box-shadow: inset 3.5px 0 0 #3b82f6 !important;
+  background: color-mix(
+    in srgb,
+    var(--color-info) 8%,
+    var(--color-panel)
+  ) !important;
+  box-shadow: inset 3.5px 0 0 var(--color-info) !important;
 }
 
 /* Selection Checkbox */
@@ -198,14 +201,14 @@
 
 .crm-session-pick:hover,
 .crm-cycle-pick:hover {
-  border-color: #10b981;
+  border-color: var(--color-success);
 }
 
 .crm-session-pick[aria-pressed="true"],
 .crm-cycle-pick[aria-pressed="true"] {
-  background: #047857;
-  border-color: #047857;
-  color: #ffffff;
+  background: var(--color-success-strong);
+  border-color: var(--color-success-strong);
+  color: var(--color-success-strong-foreground);
 }
 
 .crm-session-pick svg,
@@ -247,7 +250,7 @@
   overflow: hidden;
   position: relative;
   width: 3.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text) 7%, transparent);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -338,9 +341,9 @@
 
 .crm-unread {
   align-items: center;
-  background: #047857;
+  background: var(--color-success-strong);
   border-radius: 9999px;
-  color: #ffffff;
+  color: var(--color-success-strong-foreground);
   display: inline-flex;
   flex: 0 0 auto;
   font-size: var(--font-size-xs);
@@ -405,16 +408,9 @@
 
 .crm-channel.crm-cycle-chip[data-channel="whatsapp"],
 .crm-channel.crm-session-chip[data-channel="whatsapp"] {
-  background: color-mix(in srgb, #10b981 12%, transparent);
-  border-color: color-mix(in srgb, #10b981 25%, transparent);
-  color: #059669;
-}
-
-:root[data-theme="dark"] .crm-channel.crm-cycle-chip[data-channel="whatsapp"],
-:root[data-theme="dark"] .crm-channel.crm-session-chip[data-channel="whatsapp"],
-.dark .crm-channel.crm-cycle-chip[data-channel="whatsapp"],
-.dark .crm-channel.crm-session-chip[data-channel="whatsapp"] {
-  color: #34d399;
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-success) 25%, transparent);
+  color: var(--color-success-strong);
 }
 
 .crm-channel.crm-cycle-chip[data-channel="instagram"],

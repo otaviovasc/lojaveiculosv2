@@ -33,6 +33,7 @@ export type VehicleSale = {
   createdAt: Date;
   id: string;
   salePriceCents: number;
+  saleSourceSnapshot?: Record<string, unknown>;
   sellerUserId: string | null;
   status: VehicleSaleStatus;
   storeId: string;

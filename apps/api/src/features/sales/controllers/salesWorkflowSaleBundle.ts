@@ -26,6 +26,7 @@ export function toVehicleSaleBundle(
       createdAt: sale.createdAt,
       id: sale.id,
       salePriceCents: requirePositiveCents(sale.salePriceCents, "sale_price"),
+      saleSourceSnapshot: sale.saleSourceSnapshot,
       sellerUserId: sale.sellerUserId,
       status,
       storeId: sale.storeId,

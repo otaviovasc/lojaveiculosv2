@@ -92,6 +92,7 @@ export function SessionList({
               </button>
             ) : null}
             <button
+              aria-current={activeCycleId === cycle.id ? "true" : undefined}
               className="crm-cycle-main"
               onClick={() =>
                 selectionMode ? onToggleSelected(cycle.id) : onSelect(cycle.id)

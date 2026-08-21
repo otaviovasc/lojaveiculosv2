@@ -24,6 +24,8 @@ import {
   collectMissingSalePaymentFields,
   hasSaleBuyerName,
 } from "../../salePaymentReadiness.js";
+import { collectMissingSaleTradeInFields } from "../../saleTradeInReadiness.js";
+import { readRequiredDocumentKinds } from "../../saleDocumentPolicy.js";
 
 export type SalesServicePorts = {
   crmSaleOutcomePort?: CrmSaleOutcomePort;
@@ -173,8 +175,12 @@ export function collectMissingSaleFields(
   if (sale.salePriceCents && principalTotal < sale.salePriceCents) {
     missing.push("payment_principal_coverage");
   }
+  if (sale.salePriceCents && principalTotal > sale.salePriceCents) {
+    missing.push("payment_principal_exceeds_sale_price");
+  }
 
   missing.push(...collectMissingSalePaymentFields(sale.payments));
+  missing.push(...collectMissingSaleTradeInFields(sale));
 
   for (const kind of readRequiredDocumentKinds(sale.documentPolicySnapshot)) {
     if (!sale.selectedDocumentKinds.includes(kind)) {
@@ -231,19 +237,4 @@ export async function auditSalesServiceEvent(
     ...(context.request ? { request: context.request } : {}),
     ...(context.source ? { source: context.source } : {}),
   });
-}
-
-function readRequiredDocumentKinds(
-  snapshot: Record<string, unknown>,
-): readonly string[] {
-  const direct = snapshot.requiredDocumentKinds;
-  if (Array.isArray(direct)) {
-    return direct.filter((value): value is string => typeof value === "string");
-  }
-  const policy = snapshot.policy;
-  if (!policy || typeof policy !== "object") return [];
-  const required = (policy as { requiredDocumentKinds?: unknown })
-    .requiredDocumentKinds;
-  if (!Array.isArray(required)) return [];
-  return required.filter((value): value is string => typeof value === "string");
 }

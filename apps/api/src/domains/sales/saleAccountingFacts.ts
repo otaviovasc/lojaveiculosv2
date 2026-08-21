@@ -65,8 +65,12 @@ function readFinancingFacts(
   if (snapshot?.status !== "approved") return [];
   const payments = sale.payments.filter(isActiveFinancingPayment);
   if (payments.length === 0) missing.push("financing_active_payment");
+  const isSinglePayment = payments.length === 1;
   return payments.flatMap((payment) => {
     const amountCents =
+      (isSinglePayment
+        ? readPositiveCents(snapshot.financedAmountCents)
+        : null) ??
       readPositiveCents(payment.metadata.financedAmountCents) ??
       readPositiveCents(payment.metadata.financingValueCents) ??
       readPositiveCents(payment.principalCents);
@@ -79,7 +83,9 @@ function readFinancingFacts(
         amountCents,
         paymentId: payment.id,
         rank: readFinancingRank(
-          payment.metadata.financingRank ?? snapshot.rank,
+          isSinglePayment
+            ? (snapshot.rank ?? payment.metadata.financingRank)
+            : (payment.metadata.financingRank ?? snapshot.rank),
         ),
       },
     ];

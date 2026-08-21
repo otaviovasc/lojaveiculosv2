@@ -114,9 +114,9 @@
 
 .crm-action {
   align-items: center;
-  background: #10b981;
+  background: var(--color-success);
   border-radius: 0.625rem;
-  color: #ffffff;
+  color: var(--color-success-foreground);
   display: inline-flex;
   font-size: var(--font-size-sm);
   font-weight: 750;
@@ -131,7 +131,7 @@
 }
 
 .crm-action:hover:not(:disabled) {
-  background: #059669;
+  background: color-mix(in srgb, var(--color-success) 88%, var(--color-panel));
   transform: translateY(-1px) scale(1.02);
 }
 

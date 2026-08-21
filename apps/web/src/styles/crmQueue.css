@@ -2,7 +2,7 @@
 .crm-toolbar {
   background: var(--color-panel);
   border-bottom: 1px solid var(--color-line);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px 0 color-mix(in srgb, var(--color-text) 6%, transparent);
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
@@ -88,22 +88,27 @@
 }
 
 .crm-icon-action svg {
+  flex: 0 0 auto;
   height: 1rem;
   width: 1rem;
 }
 
-.crm-new-session-action,
-.crm-new-cycle-action {
-  background: #10b981 !important;
-  border-color: #10b981 !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
+.crm-icon-action.crm-new-session-action,
+.crm-icon-action.crm-new-cycle-action {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-success-foreground);
+  box-shadow: none;
 }
 
-.crm-new-session-action:hover:not(:disabled),
-.crm-new-cycle-action:hover:not(:disabled) {
-  background: #059669 !important;
-  border-color: #059669 !important;
+.crm-icon-action.crm-new-session-action:hover:not(:disabled),
+.crm-icon-action.crm-new-cycle-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-success) 88%, var(--color-panel));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 88%,
+    var(--color-panel)
+  );
   transform: scale(1.08);
 }
 
@@ -149,8 +154,8 @@
 
 .crm-search input:focus {
   background: var(--color-panel);
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
 }
 
 .crm-search-clear {
@@ -180,23 +185,18 @@
   width: 0.75rem;
 }
 
-.crm-selection-action-active {
-  background: rgba(16, 185, 129, 0.12) !important;
-  border-color: #10b981 !important;
-  color: var(--color-crm-active-emerald) !important;
-}
-
-:root[data-theme="dark"] .crm-selection-action-active,
-.dark .crm-selection-action-active {
-  color: var(--color-crm-active-emerald) !important;
+.crm-icon-action.crm-selection-action-active {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-app));
+  border-color: color-mix(in srgb, var(--color-success) 40%, var(--color-line));
+  color: var(--color-crm-active-emerald);
 }
 
 .crm-selection-badge {
   align-items: center;
-  background: #10b981;
+  background: var(--color-success);
   border: 1.5px solid var(--color-panel);
   border-radius: 9999px;
-  color: #ffffff;
+  color: var(--color-success-foreground);
   display: inline-flex;
   font-size: var(--font-size-xs);
   font-variant-numeric: tabular-nums;
@@ -255,11 +255,11 @@
   color: var(--color-text);
 }
 
-.crm-filter-active,
+.crm-filter.crm-filter-active,
 .crm-filter[aria-pressed="true"] {
-  background: var(--color-panel) !important;
-  color: var(--color-text) !important;
-  font-weight: 750 !important;
+  background: var(--color-panel);
+  color: var(--color-text);
+  font-weight: 750;
 }
 
 .crm-filter > span:not(.crm-filter-label) {
@@ -275,19 +275,8 @@
 
 .crm-filter.crm-filter-active > span:not(.crm-filter-label),
 .crm-filter[aria-pressed="true"] > span:not(.crm-filter-label) {
-  background: color-mix(in srgb, #10b981 18%, transparent);
-  color: #059669;
-}
-
-:root[data-theme="dark"]
-  .crm-filter.crm-filter-active
-  > span:not(.crm-filter-label),
-:root[data-theme="dark"]
-  .crm-filter[aria-pressed="true"]
-  > span:not(.crm-filter-label),
-.dark .crm-filter.crm-filter-active > span:not(.crm-filter-label),
-.dark .crm-filter[aria-pressed="true"] > span:not(.crm-filter-label) {
-  color: #34d399;
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
+  color: var(--color-success-strong);
 }
 
 .crm-filter .crm-filter-label {
@@ -366,56 +355,35 @@
   font-weight: 750;
 }
 
-.crm-smart-filter-active,
-.crm-queue-dropdown-active {
-  background: color-mix(in srgb, #10b981 12%, var(--color-panel)) !important;
-  border-color: color-mix(in srgb, #10b981 40%, var(--color-line)) !important;
-  color: var(--color-crm-active-emerald) !important;
-  box-shadow: none !important;
+.crm-smart-filter.crm-smart-filter-active,
+.crm-queue-dropdown.crm-queue-dropdown-active {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-success) 40%, var(--color-line));
+  color: var(--color-crm-active-emerald);
+  box-shadow: none;
 }
 
-:root[data-theme="dark"] .crm-smart-filter-active,
-:root[data-theme="dark"] .crm-queue-dropdown-active,
-.dark .crm-smart-filter-active,
-.dark .crm-queue-dropdown-active {
-  color: var(--color-crm-active-emerald) !important;
-}
-
-.crm-smart-filter-unread.crm-smart-filter-active,
-.crm-smart-filter-waiting-human.crm-smart-filter-active {
-  background: rgba(239, 68, 68, 0.12) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  color: var(--color-crm-active-red) !important;
-  box-shadow: none !important;
-}
-
-:root[data-theme="dark"] .crm-smart-filter-unread.crm-smart-filter-active,
-:root[data-theme="dark"]
-  .crm-smart-filter-waiting-human.crm-smart-filter-active,
-.dark .crm-smart-filter-unread.crm-smart-filter-active,
-.dark .crm-smart-filter-waiting-human.crm-smart-filter-active {
-  color: var(--color-crm-active-red) !important;
+.crm-smart-filter.crm-smart-filter-unread.crm-smart-filter-active,
+.crm-smart-filter.crm-smart-filter-waiting-human.crm-smart-filter-active {
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-line));
+  color: var(--color-crm-active-red);
+  box-shadow: none;
 }
 
 .crm-smart-filter-waiting-human {
-  color: #ef4444;
+  color: var(--color-danger-readable);
 }
 
 .crm-smart-filter-in-human-service {
-  color: #3b82f6;
+  color: var(--color-info-soft-foreground);
 }
 
-.crm-smart-filter-in-human-service.crm-smart-filter-active {
-  background: rgba(59, 130, 246, 0.12) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  color: var(--color-crm-active-blue) !important;
-  box-shadow: none !important;
-}
-
-:root[data-theme="dark"]
-  .crm-smart-filter-in-human-service.crm-smart-filter-active,
-.dark .crm-smart-filter-in-human-service.crm-smart-filter-active {
-  color: var(--color-crm-active-blue) !important;
+.crm-smart-filter.crm-smart-filter-in-human-service.crm-smart-filter-active {
+  background: color-mix(in srgb, var(--color-info) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-info) 40%, var(--color-line));
+  color: var(--color-crm-active-blue);
+  box-shadow: none;
 }
 
 /* Anchors & Popover Menus */
@@ -430,7 +398,7 @@
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 0.875rem;
-  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow-panel);
   padding: 0.375rem;
   z-index: 50;
 }
@@ -544,7 +512,7 @@
 }
 
 .crm-connection-filter-option > svg {
-  color: #10b981;
+  color: var(--color-success-strong);
   height: 1rem;
   width: 1rem;
 }
@@ -636,7 +604,7 @@
   margin: 0.5rem 0.75rem;
   max-height: min(32rem, 58dvh);
   overflow-y: auto;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-panel);
 }
 
 .crm-bulk-heading {
@@ -668,7 +636,10 @@
   font-weight: 600;
   gap: 0.375rem;
   min-height: 2rem;
+  overflow-wrap: normal;
   padding: 0 0.5rem;
+  white-space: nowrap;
+  word-break: normal;
   cursor: pointer;
 }
 
@@ -680,6 +651,7 @@
 .crm-bulk-heading svg,
 .crm-bulk-actions svg,
 .crm-bulk-confirm svg {
+  flex: 0 0 auto;
   height: 1rem;
   width: 1rem;
 }
@@ -737,13 +709,8 @@
 }
 
 .crm-bulk-actions button[aria-pressed="true"] {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: #10b981;
-  color: var(--color-crm-active-emerald);
-}
-
-:root[data-theme="dark"] .crm-bulk-actions button[aria-pressed="true"],
-.dark .crm-bulk-actions button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-success) 40%, var(--color-line));
   color: var(--color-crm-active-emerald);
 }
 
@@ -761,23 +728,31 @@
 
 .crm-bulk-confirm {
   align-items: center;
-  background: #10b981;
-  border: 1px solid #10b981;
+  background: var(--color-success);
+  border: 1px solid var(--color-success);
   border-radius: 0.625rem;
-  color: #ffffff;
+  color: var(--color-success-foreground);
   display: inline-flex;
   font-size: var(--font-size-sm);
   font-weight: 700;
   gap: 0.5rem;
   justify-content: center;
   min-height: 2.75rem;
+  max-width: 100%;
+  overflow-wrap: normal;
   padding: 0 0.875rem;
+  white-space: nowrap;
+  word-break: normal;
   cursor: pointer;
   box-shadow: none;
   transition: all 0.18s ease;
 }
 
 .crm-bulk-confirm:hover {
-  background: #047857;
-  border-color: #047857;
+  background: color-mix(in srgb, var(--color-success) 88%, var(--color-panel));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 88%,
+    var(--color-panel)
+  );
 }

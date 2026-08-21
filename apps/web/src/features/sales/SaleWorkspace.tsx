@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import { SaleCancelDialog } from "./SaleCancelDialog";
 import { SaleRevertDialog } from "./SaleRevertDialog";
@@ -12,6 +13,11 @@ import {
 } from "./SaleWorkspaceChrome";
 import { StickySaleSummary } from "./SaleSummaryPanel";
 import { canPersistSaleWorkspaceEdits, saleMissingFields } from "./salesModel";
+import {
+  canNavigateToSaleWorkspaceStep,
+  getSaleCloseMissingFields,
+  getSaleWorkspaceStepReadiness,
+} from "./saleWorkspaceReadiness";
 import {
   clearSaleAutosaveTimer,
   createSaleSaveState,
@@ -59,6 +65,8 @@ export function SaleWorkspace({
   const [message, setMessage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false);
   const autosaveTimerRef = useRef<number | undefined>(undefined);
   const draftRef = useRef<SaleRecord | null>(sale);
@@ -78,6 +86,8 @@ export function SaleWorkspace({
       draftRef.current = sale;
       resetSaleSaveState(saveStateRef.current, sale);
       if (isDifferentSale) {
+        setIsCloseDialogOpen(false);
+        setIsClosing(false);
         setCurrentStep(sale?.status === "closed" ? 3 : 0);
       } else if (sale?.status === "closed" && previousStatus !== "closed") {
         setCurrentStep(3);
@@ -193,12 +203,14 @@ export function SaleWorkspace({
     setIsSaving(true);
     try {
       const saved = await persistDraft(draftRef.current ?? draft);
-      if (!saved) return;
+      if (!saved) return false;
       const transitioned = await action(saved);
       resetSaleSaveState(saveStateRef.current, transitioned ?? saved);
       setMessage("Status da venda atualizado");
+      return true;
     } catch (error) {
       setMessage(saleSaveErrorMessage(error));
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -220,11 +232,39 @@ export function SaleWorkspace({
     });
   };
 
-  const isCloseReady = saleMissingFields(draft, "close").length === 0;
+  const isCloseReady = getSaleCloseMissingFields(draft).length === 0;
   const isReserveReady = saleMissingFields(draft, "reserve").length === 0;
   const canClose =
     isCloseReady && (draft.status === "draft" || draft.status === "pending");
   const canReserve = isReserveReady && draft.status === "draft";
+  const stepReadiness = getSaleWorkspaceStepReadiness(draft);
+  const stepStates = stepReadiness.map((readiness, targetStep) => ({
+    ...readiness,
+    isAccessible: canNavigateToSaleWorkspaceStep({
+      currentStep,
+      readiness: stepReadiness,
+      sale: draft,
+      targetStep,
+    }),
+  }));
+  const canAdvance = canNavigateToSaleWorkspaceStep({
+    currentStep,
+    readiness: stepReadiness,
+    sale: draft,
+    targetStep: currentStep + 1,
+  });
+  const requestCloseSale = () => {
+    if (canClose) setIsCloseDialogOpen(true);
+  };
+  const confirmCloseSale = async () => {
+    setIsClosing(true);
+    try {
+      const didClose = await runTransition(onClose);
+      if (didClose) setIsCloseDialogOpen(false);
+    } finally {
+      setIsClosing(false);
+    }
+  };
 
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] items-start">
@@ -232,8 +272,11 @@ export function SaleWorkspace({
         <SaleWorkspaceHeader
           currentStep={currentStep}
           isSaving={isSaving}
-          onStepChange={setCurrentStep}
+          onStepChange={(step) => {
+            if (stepStates[step]?.isAccessible) setCurrentStep(step);
+          }}
           sale={draft}
+          stepReadiness={stepStates}
           {...(onBack ? { onBack: () => void handleBack() } : {})}
         />
         <SaleWorkspaceMessage message={message} />
@@ -246,7 +289,7 @@ export function SaleWorkspace({
           currentStep={currentStep}
           inventoryApi={inventoryApi}
           isSaving={isSaving}
-          onClose={() => void runTransition(onClose)}
+          onClose={requestCloseSale}
           sale={draft}
           update={update}
           {...(onBack
@@ -260,14 +303,17 @@ export function SaleWorkspace({
         />
 
         <SaleWorkspaceNavigation
+          canAdvance={canAdvance}
           canClose={canClose}
           canReserve={canReserve}
           currentStep={currentStep}
           isSaving={isSaving}
           onBack={() => setCurrentStep((step) => step - 1)}
-          onClose={() => void runTransition(onClose)}
+          onClose={requestCloseSale}
           onFinish={() => void handleBack()}
-          onNext={() => setCurrentStep((step) => step + 1)}
+          onNext={() => {
+            if (canAdvance) setCurrentStep((step) => step + 1);
+          }}
           onReserve={() => void runTransition(onReserve)}
           sale={draft}
         />
@@ -276,7 +322,7 @@ export function SaleWorkspace({
       <StickySaleSummary
         isSaving={isSaving}
         onCancel={() => setIsCancelDialogOpen(true)}
-        onClose={() => void runTransition(onClose)}
+        onClose={requestCloseSale}
         onReserve={() => void runTransition(onReserve)}
         onRevert={() => setIsRevertDialogOpen(true)}
         sale={draft}
@@ -287,6 +333,16 @@ export function SaleWorkspace({
         onClose={() => setIsCancelDialogOpen(false)}
         onConfirm={cancelSale}
         status={draft.status}
+      />
+      <ConfirmDialog
+        confirmLabel="Confirmar fechamento"
+        description="Revise comprador, valores e documentos. O fechamento altera o estoque e solicita a emissão dos documentos selecionados."
+        isLoading={isClosing}
+        isOpen={isCloseDialogOpen}
+        loadingLabel="Fechando venda..."
+        onClose={() => setIsCloseDialogOpen(false)}
+        onConfirm={confirmCloseSale}
+        title="Fechar esta venda?"
       />
       <SaleRevertDialog
         isOpen={isRevertDialogOpen}
