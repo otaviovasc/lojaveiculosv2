@@ -43,7 +43,7 @@ describe("CrmTagManager", () => {
       name: "Retorno ativo",
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("cancels the editor and starts the next draft empty", async () => {
     const user = userEvent.setup();

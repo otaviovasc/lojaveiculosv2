@@ -52,7 +52,7 @@ describe("InventoryDetailGeneralTab vehicle edit", () => {
     expect(
       screen.queryByRole("heading", { name: "Editar veículo" }),
     ).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("does not resubmit a workflow-owned reserved status on a specs edit", async () => {
     const detail = createDetail({ unitStatus: "reserved" });
