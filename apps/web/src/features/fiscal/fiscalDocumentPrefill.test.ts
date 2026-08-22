@@ -17,7 +17,7 @@ function createDocument(
     issuedAt: null,
     metadata: {},
     provider: "spedy",
-    providerDocumentId: null,
+    hasProviderReference: false,
     recipientId: null,
     status: "issued",
     templateId: null,

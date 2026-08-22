@@ -18,6 +18,10 @@ import {
   parseJson,
 } from "./fiscal.controller.support.js";
 import { fiscalServices, type FiscalServices } from "./fiscalServices.js";
+import {
+  toFiscalDocumentDto,
+  toFiscalOverviewDto,
+} from "./fiscalResponseDtos.js";
 
 export type FiscalContextFactory = (
   context: Context,
@@ -59,7 +63,9 @@ export function createFiscalFeature(options: CreateFiscalFeatureOptions = {}) {
   feature.get("/overview", async (context) =>
     handleFiscal(context, async () => {
       const serviceContext = await createUserContext(context, contextFactory);
-      return context.json(await services.getOverview(serviceContext));
+      return context.json(
+        toFiscalOverviewDto(await services.getOverview(serviceContext)),
+      );
     }),
   );
 
@@ -133,23 +139,53 @@ export function createFiscalFeature(options: CreateFiscalFeatureOptions = {}) {
       const input = await parseJson(context, issueFiscalDocumentSchema);
       const serviceContext = await createUserContext(context, contextFactory);
       return context.json(
-        await services.issueDocument(serviceContext, {
-          ...(input.documentKind ? { documentKind: input.documentKind } : {}),
-          documentType: input.documentType,
-          externalReference: input.externalReference,
-          ...(input.metadata ? { metadata: input.metadata } : {}),
-          ...(input.recipientId !== undefined
-            ? { recipientId: input.recipientId }
-            : {}),
-          ...(input.templateId !== undefined
-            ? { templateId: input.templateId }
-            : {}),
-          ...(input.templateVariables
-            ? { templateVariables: input.templateVariables }
-            : {}),
-        }),
+        toFiscalDocumentDto(
+          await services.issueDocument(serviceContext, {
+            ...(input.documentKind ? { documentKind: input.documentKind } : {}),
+            documentType: input.documentType,
+            externalReference: input.externalReference,
+            ...(input.metadata ? { metadata: input.metadata } : {}),
+            ...(input.recipientId !== undefined
+              ? { recipientId: input.recipientId }
+              : {}),
+            ...(input.templateId !== undefined
+              ? { templateId: input.templateId }
+              : {}),
+            ...(input.templateVariables
+              ? { templateVariables: input.templateVariables }
+              : {}),
+          }),
+        ),
         201,
       );
+    }),
+  );
+
+  feature.get("/documents/:documentId/artifacts/:format", async (context) =>
+    handleFiscal(context, async () => {
+      const format = context.req.param("format");
+      if (format !== "pdf" && format !== "xml") {
+        throw new FiscalRequestValidationError(
+          "Fiscal artifact format must be pdf or xml.",
+        );
+      }
+      const serviceContext = await createUserContext(context, contextFactory);
+      const artifact = await services.downloadDocumentArtifact(serviceContext, {
+        documentId: context.req.param("documentId"),
+        format,
+      });
+      const body = Uint8Array.from(artifact.bytes).buffer;
+      return new Response(body, {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0",
+          "Content-Disposition": `attachment; filename="${artifact.fileName}"`,
+          "Content-Length": String(artifact.bytes.byteLength),
+          "Content-Security-Policy": "default-src 'none'; sandbox",
+          "Content-Type": artifact.contentType,
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
     }),
   );
 
@@ -158,10 +194,12 @@ export function createFiscalFeature(options: CreateFiscalFeatureOptions = {}) {
       const input = await parseJson(context, cancelFiscalDocumentSchema);
       const serviceContext = await createUserContext(context, contextFactory);
       return context.json(
-        await services.cancelDocument(serviceContext, {
-          documentId: context.req.param("documentId"),
-          reason: input.reason,
-        }),
+        toFiscalDocumentDto(
+          await services.cancelDocument(serviceContext, {
+            documentId: context.req.param("documentId"),
+            reason: input.reason,
+          }),
+        ),
       );
     }),
   );
@@ -170,9 +208,11 @@ export function createFiscalFeature(options: CreateFiscalFeatureOptions = {}) {
     handleFiscal(context, async () => {
       const serviceContext = await createUserContext(context, contextFactory);
       return context.json(
-        await services.repeatDocument(serviceContext, {
-          documentId: context.req.param("documentId"),
-        }),
+        toFiscalDocumentDto(
+          await services.repeatDocument(serviceContext, {
+            documentId: context.req.param("documentId"),
+          }),
+        ),
         201,
       );
     }),
@@ -183,9 +223,11 @@ export function createFiscalFeature(options: CreateFiscalFeatureOptions = {}) {
       await parseJson(context, syncFiscalDocumentSchema);
       const serviceContext = await createUserContext(context, contextFactory);
       return context.json(
-        await services.syncDocumentStatus(serviceContext, {
-          documentId: context.req.param("documentId"),
-        }),
+        toFiscalDocumentDto(
+          await services.syncDocumentStatus(serviceContext, {
+            documentId: context.req.param("documentId"),
+          }),
+        ),
       );
     }),
   );

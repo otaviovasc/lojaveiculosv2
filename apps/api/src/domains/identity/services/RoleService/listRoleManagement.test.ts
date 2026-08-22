@@ -30,10 +30,33 @@ describe("listRoleManagement", () => {
     ]);
   });
 
-  it("rejects tenant-level agency access without a store membership", async () => {
+  it("lets validated tenant-level agency access manage a store roster", async () => {
     const repository = createRepository();
     const context = createServiceContext({
       actor: { id: "user_agency", kind: "user" },
+      membershipRole: "agency",
+      permissions: ["users.manage"],
+      request: { requestId: "req_1" },
+      storeId,
+      tenantId,
+    });
+
+    const result = await listRoleManagement(context, {
+      roleManagementRepository: repository,
+    });
+
+    expect(result.actor).toEqual({
+      canManageRoles: true,
+      membershipId: null,
+      role: "agency",
+    });
+    expect(result.memberships[0]?.manageable).toBe(true);
+  });
+
+  it("rejects an unvalidated tenant actor without a store membership", async () => {
+    const repository = createRepository();
+    const context = createServiceContext({
+      actor: { id: "user_unknown", kind: "user" },
       permissions: ["users.manage"],
       request: { requestId: "req_1" },
       storeId,

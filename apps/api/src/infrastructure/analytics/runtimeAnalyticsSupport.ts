@@ -1,8 +1,12 @@
 import type {
+  commissions,
+  documents,
   financeEntries,
+  leadActivities,
   leads,
   sales,
   vehicleChecklists,
+  vehicleCosts,
   vehicleListings,
   vehicleUnits,
 } from "@lojaveiculosv2/db";
@@ -26,6 +30,10 @@ export function scoped(
     | typeof vehicleChecklists
     | typeof sales
     | typeof financeEntries
+    | typeof commissions
+    | typeof documents
+    | typeof leadActivities
+    | typeof vehicleCosts
     | typeof leads,
   input: { storeId: string; tenantId: string },
 ) {

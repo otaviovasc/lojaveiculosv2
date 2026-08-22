@@ -563,6 +563,9 @@ describe("SaleWorkspace", () => {
       screen.getByRole("button", { name: /Documentos & Validação/ }),
     );
     expect(screen.queryByText("Garantia de Venda")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: "Termo de recebimento" }),
+    ).toBeVisible();
 
     await user.click(screen.getByRole("checkbox", { name: "Recibo de Venda" }));
     await waitFor(() => expect(onSave).toHaveBeenCalledOnce(), {

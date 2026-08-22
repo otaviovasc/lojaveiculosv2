@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { getReadableColorOnBackground } from "../../../lib/colors";
 import { readableTextColorForBackground } from "../publicStorefrontTheme";
 import { fontStack } from "../storefrontFonts";
 import type {
@@ -59,6 +60,10 @@ export function resolveTokenVars(
   const motion = motionProfiles[tokens.motion.style];
   return {
     "--sf-accent": tokens.color.accent,
+    "--sf-accent-readable": getReadableColorOnBackground(
+      tokens.color.accent,
+      tokens.color.surface,
+    ),
     "--sf-accent-soft": `color-mix(in oklab, ${tokens.color.accent} 12%, transparent)`,
     "--sf-accent-strong": tokens.color.accentStrong,
     "--sf-body-font": fontStack(tokens.type.bodyFont),

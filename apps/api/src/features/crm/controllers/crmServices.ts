@@ -52,8 +52,17 @@ import {
   type UpdateCrmRoutingPolicyInput,
 } from "../../../domains/crm/services/CrmRoutingService/updateCrmRoutingPolicy.js";
 import type { CrmRoutingPolicyReadModel } from "../../../domains/crm/services/CrmRoutingService/routingReadModels.js";
+import {
+  getCrmStatistics,
+  type GetCrmStatisticsInput,
+  type GetCrmStatisticsResult,
+} from "../../../domains/crm/services/CrmStatisticsService/getCrmStatistics.js";
 export type { CreateCrmServicesOptions } from "./crmServices.types.js";
 export type CrmServices = CrmMessagingServices & {
+  getStatistics: (
+    context: ServiceContext,
+    input: GetCrmStatisticsInput,
+  ) => Promise<GetCrmStatisticsResult>;
   getRoutingPolicy: (
     context: ServiceContext,
   ) => Promise<CrmRoutingPolicyReadModel>;
@@ -162,6 +171,7 @@ export function createCrmServices(
       deleteCrmPipeline(context, input, ports),
     getLead: (context, input) => getCrmLead(context, input, ports),
     getRoutingPolicy: (context) => getCrmRoutingPolicy(context, ports),
+    getStatistics: (context, input) => getCrmStatistics(context, input, ports),
     listActivities: (context, input) =>
       listLeadActivities(context, input, ports),
     listLeadBoard: (context, input) => listCrmLeadBoard(context, input, ports),

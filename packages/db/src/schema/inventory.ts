@@ -153,6 +153,11 @@ export const vehicleUnits = pgTable(
     index("vehicle_units_status_idx").on(table.status),
     index("vehicle_units_store_status_idx").on(table.storeId, table.status),
     index("vehicle_units_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("vehicle_units_id_tenant_store_unique").on(
+      table.id,
+      table.tenantId,
+      table.storeId,
+    ),
     uniqueIndex("vehicle_units_store_plate_unique")
       .on(table.storeId, table.plate)
       .where(sql`${table.isDeleted} = false AND ${table.deletedAt} IS NULL`),

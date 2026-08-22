@@ -64,6 +64,7 @@ function createFiscalApi(): FiscalApi {
     cancelDocument: vi.fn(),
     createRecipient: vi.fn(),
     createTemplate: vi.fn(),
+    downloadDocumentArtifact: vi.fn(),
     getOverview: vi.fn(),
     issueDocument: vi.fn(),
     listRecipients: vi.fn(async () => [

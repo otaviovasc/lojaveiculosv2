@@ -6,6 +6,7 @@ import {
   CreditCard,
   Plus,
   PlugZap,
+  UsersRound,
   Sun,
   Moon,
   Menu,
@@ -23,6 +24,7 @@ import { UserAccountButton } from "../account/UserAccountButton";
 export function AgencyLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileDrawerRef = useRef<HTMLElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
@@ -43,16 +45,43 @@ export function AgencyLayout() {
   useEffect(() => {
     if (!isMobileOpen) return;
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsMobileOpen(false);
+    const containDrawerFocus = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        mobileDrawerRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) {
+        event.preventDefault();
+        return;
+      }
+      const activeElement = document.activeElement;
+      if (
+        event.shiftKey &&
+        (activeElement === first ||
+          !focusable.includes(activeElement as HTMLElement))
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", containDrawerFocus);
     mobileCloseButtonRef.current?.focus();
 
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("keydown", containDrawerFocus);
       mobileMenuButtonRef.current?.focus();
     };
   }, [isMobileOpen]);
@@ -60,7 +89,7 @@ export function AgencyLayout() {
   const menuItems = [
     {
       path: "/agency/admin",
-      label: "Portal da Agência",
+      label: "Portal da agência",
       icon: LayoutDashboard,
       end: true,
     },
@@ -70,8 +99,13 @@ export function AgencyLayout() {
       icon: BarChart3,
     },
     {
+      path: "/agency/admin/team-access",
+      label: "Acesso da equipe",
+      icon: UsersRound,
+    },
+    {
       path: "/agency/admin/unified-billing",
-      label: "Cobrança Unificada",
+      label: "Cobrança unificada",
       icon: CreditCard,
     },
     {
@@ -81,7 +115,7 @@ export function AgencyLayout() {
     },
     {
       path: "/agency/admin/create-store",
-      label: "Adicionar Loja",
+      label: "Adicionar loja",
       icon: Plus,
     },
   ];
@@ -118,7 +152,7 @@ export function AgencyLayout() {
 
           <nav
             className="flex flex-col gap-1.5 py-6 px-0"
-            aria-label="Menu Principal"
+            aria-label="Menu principal"
           >
             {menuItems.map((item) => {
               const Icon = item.icon;
@@ -128,6 +162,7 @@ export function AgencyLayout() {
                   to={item.path}
                   end={!!item.end}
                   onClick={() => setIsMobileOpen(false)}
+                  title={item.label}
                   className={({ isActive }) =>
                     "agency-menu-item " +
                     (isActive ? "agency-menu-item-active" : "text-muted")
@@ -163,12 +198,12 @@ export function AgencyLayout() {
               {theme === "dark" ? (
                 <>
                   <Sun className="size-3.5 text-warning shrink-0" />
-                  <span className="toggle-text">Tema Claro</span>
+                  <span className="toggle-text">Tema claro</span>
                 </>
               ) : (
                 <>
                   <Moon className="size-3.5 text-violet-foreground shrink-0" />
-                  <span className="toggle-text">Tema Escuro</span>
+                  <span className="toggle-text">Tema escuro</span>
                 </>
               )}
             </button>
@@ -229,6 +264,7 @@ export function AgencyLayout() {
           <aside
             className="agency-mobile-drawer relative z-10 flex flex-col justify-between w-72 max-w-xs overflow-hidden h-full p-4 animate-fade-in"
             id="agency-mobile-navigation"
+            ref={mobileDrawerRef}
           >
             <div>
               <div className="agency-mobile-drawer-brand flex items-center justify-between pb-4">
@@ -256,7 +292,7 @@ export function AgencyLayout() {
 
               <nav
                 className="flex flex-col gap-1.5 py-6 px-0"
-                aria-label="Menu Mobile"
+                aria-label="Menu mobile"
               >
                 {menuItems.map((item) => {
                   const Icon = item.icon;

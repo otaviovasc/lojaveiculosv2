@@ -18,6 +18,7 @@ import {
   useAgencyCrederePageState,
   type AgencyCredereApiFactory,
 } from "./useAgencyCrederePageState";
+import { AgencyTenantSelector } from "../useAgencyTenantSelection";
 
 export function AgencyCrederePage({
   apiFactory,
@@ -33,6 +34,7 @@ export function AgencyCrederePage({
   const {
     actionError,
     agencyTenant,
+    agencyTenants,
     busyKey,
     connection,
     disconnect,
@@ -43,6 +45,7 @@ export function AgencyCrederePage({
     removeMapping,
     saveMapping,
     selections,
+    selectAgencyTenant,
     setSelections,
     startOAuth,
     stores,
@@ -59,20 +62,29 @@ export function AgencyCrederePage({
     <FeaturePageShell className="credere-shell" variant="content">
       <FeaturePageHeader
         actions={
-          connection?.connected ? (
+          agencyTenants.length > 1 || connection?.connected ? (
             <>
-              <FeatureActionButton
-                disabled={busyKey !== null}
-                icon={RefreshCw}
-                label="Reconectar"
-                onClick={() => void startOAuth()}
+              <AgencyTenantSelector
+                agencyTenant={agencyTenant}
+                agencyTenants={agencyTenants}
+                onChange={selectAgencyTenant}
               />
-              <FeatureActionButton
-                disabled={busyKey !== null}
-                icon={Unplug}
-                label="Desconectar"
-                onClick={() => setDisconnectOpen(true)}
-              />
+              {connection?.connected ? (
+                <>
+                  <FeatureActionButton
+                    disabled={busyKey !== null}
+                    icon={RefreshCw}
+                    label="Reconectar"
+                    onClick={() => void startOAuth()}
+                  />
+                  <FeatureActionButton
+                    disabled={busyKey !== null}
+                    icon={Unplug}
+                    label="Desconectar"
+                    onClick={() => setDisconnectOpen(true)}
+                  />
+                </>
+              ) : null}
             </>
           ) : undefined
         }

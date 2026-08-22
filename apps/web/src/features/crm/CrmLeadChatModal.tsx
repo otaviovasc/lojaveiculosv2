@@ -13,11 +13,8 @@ import type {
   CrmProviderConnection,
   CrmConversationCycle,
 } from "./crmConversationTypes";
-import type { CrmMessageView } from "./crmConversationModel";
 import type { ProductCrmLead } from "./productCrmTypes";
-
-const MESSAGE_PAGE_SIZE = 50;
-const MESSAGE_POLL_MS = 5_000;
+import { useCrmMessages } from "./useCrmMessages";
 
 type Props = {
   lead: ProductCrmLead;
@@ -41,17 +38,38 @@ export function CrmLeadChatModal({
   );
   const [connections, setConnections] = useState<CrmProviderConnection[]>([]);
   const [cycle, setSession] = useState<CrmConversationCycle | null>(null);
-  const [messages, setMessages] = useState<CrmMessageView[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [isStartingConversation, setIsStartingConversation] = useState(false);
 
   const startConnection = useMemo(
     () => findDefaultFreeTextStartConnection(connections),
     [connections],
   );
+  const mergeActiveCycle = useCallback((nextCycles: CrmConversationCycle[]) => {
+    setSession(
+      (current) =>
+        nextCycles.find((nextCycle) => nextCycle.id === current?.id) ?? current,
+    );
+  }, []);
+  const setMessagesError = useCallback((caught: Error) => {
+    setError(
+      formatApiErrorDisplay(
+        caught,
+        "Não foi possível concluir a ação no chat.",
+      ),
+    );
+  }, []);
+  const messageState = useCrmMessages({
+    activeSession: cycle,
+    activeCycleId: cycle?.id ?? null,
+    api: conversationApi,
+    canLoadMessages: permissions.canList,
+    canSendMessages: permissions.canSend,
+    mergeCycles: mergeActiveCycle,
+    setError: setMessagesError,
+  });
 
   useEffect(() => {
     if (!permissions.canList) {
@@ -84,66 +102,30 @@ export function CrmLeadChatModal({
     };
   }, [lead.id, permissions.canList, conversationApi]);
 
-  const loadMessages = useCallback(async () => {
-    if (!cycle) return;
-    const nextMessages = await conversationApi.listMessages(cycle.id, {
-      limit: MESSAGE_PAGE_SIZE,
-      offset: 0,
-    });
-    setMessages(nextMessages);
-  }, [cycle, conversationApi]);
-
-  useEffect(() => {
-    if (!cycle || !permissions.canList) return;
-    let active = true;
-    setIsLoadingMessages(true);
-    setMessages([]);
-    void loadMessages()
-      .catch((caught) => {
-        if (active) {
-          setError(
-            formatApiErrorDisplay(
-              caught,
-              "Não foi possível carregar as mensagens.",
-            ),
-          );
-        }
-      })
-      .finally(() => {
-        if (active) setIsLoadingMessages(false);
-      });
-    const interval = window.setInterval(() => {
-      void loadMessages().catch(() => undefined);
-    }, MESSAGE_POLL_MS);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [cycle, permissions.canList, loadMessages]);
-
   const handleSend = async () => {
     const text = draft.trim();
-    if (!text || isSending || !permissions.canSend) return;
-    setIsSending(true);
+    if (
+      !text ||
+      messageState.isSending ||
+      isStartingConversation ||
+      !permissions.canSend
+    )
+      return;
     setError(null);
+    if (cycle) {
+      if (await messageState.sendText(text)) setDraft("");
+      return;
+    }
+    setIsStartingConversation(true);
     try {
-      if (cycle) {
-        const sent = await conversationApi.sendText({
-          idempotencyKey: crypto.randomUUID(),
-          cycleId: String(cycle.id),
-          text,
-        });
-        setMessages((current) => [...current, sent]);
-      } else {
-        if (!startConnection) return;
-        const result = await conversationApi.startConversation({
-          connectionId: startConnection.id,
-          leadId: lead.id,
-          text,
-        });
-        setSession(result.cycle);
-        onConversationStarted?.(lead);
-      }
+      if (!startConnection) return;
+      const result = await conversationApi.startConversation({
+        connectionId: startConnection.id,
+        leadId: lead.id,
+        text,
+      });
+      setSession(result.cycle);
+      onConversationStarted?.(lead);
       setDraft("");
     } catch (caught) {
       setError(
@@ -155,9 +137,11 @@ export function CrmLeadChatModal({
         ),
       );
     } finally {
-      setIsSending(false);
+      setIsStartingConversation(false);
     }
   };
+
+  const isSending = messageState.isSending || isStartingConversation;
 
   const canSubmit =
     Boolean(draft.trim()) &&
@@ -188,8 +172,12 @@ export function CrmLeadChatModal({
         ) : cycle ? (
           <MessageList
             actionsDisabled={isSending}
-            isLoading={isLoadingMessages}
-            messages={messages}
+            hasOlderMessages={messageState.hasOlderMessages}
+            isLoading={messageState.isLoadingMessages}
+            isLoadingOlderMessages={messageState.isLoadingOlderMessages}
+            messages={messageState.messages}
+            olderMessagesError={messageState.olderMessagesError}
+            onLoadOlder={messageState.loadOlderMessages}
           />
         ) : (
           <div className="crm-empty">

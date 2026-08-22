@@ -265,6 +265,10 @@
     display: none;
   }
 
+  .documents-top-bar-action--mobile-only {
+    display: inline-flex;
+  }
+
   .documents-mobile-filter-action {
     display: inline-flex;
   }
@@ -273,6 +277,12 @@
     max-height: calc(100dvh - 2rem);
     overflow: auto;
     width: min(24rem, 100%);
+  }
+}
+
+@media (min-width: 901px) {
+  .documents-mobile-folders-backdrop {
+    display: none;
   }
 }
 

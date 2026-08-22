@@ -34,7 +34,7 @@ describe("createHttpAccountContext", () => {
     ).rejects.toThrow(AccountProvisioningProviderError);
   });
 
-  it("grants Credere connection management only to account authorities", async () => {
+  it("grants agency analytics and Credere management only to authorities", async () => {
     const context = await captureContext(
       new Request("https://api.local/api/v1/agency/tenants/tenant_1", {
         headers: { "x-clerk-user-id": "clerk_agency" },
@@ -57,12 +57,14 @@ describe("createHttpAccountContext", () => {
     expect(agency.serviceContext.permissions).toContain(
       "financing.connection.manage",
     );
+    expect(agency.serviceContext.permissions).toContain("analytics.read");
     expect(platform.serviceContext.permissions).toContain(
       "financing.connection.manage",
     );
     expect(regular.serviceContext.permissions).not.toContain(
       "financing.connection.manage",
     );
+    expect(regular.serviceContext.permissions).not.toContain("analytics.read");
   });
 });
 

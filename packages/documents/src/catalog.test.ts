@@ -28,6 +28,9 @@ describe("document template catalog", () => {
     expect(editable.map((template) => template.templateKey)).toContain(
       "sale_contract",
     );
+    expect(editable.map((template) => template.templateKey)).toContain(
+      "buyer_acknowledgment",
+    );
     expect(locked.map((template) => template.templateKey)).toEqual(
       expect.arrayContaining([
         "financial_report",

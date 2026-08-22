@@ -8,12 +8,13 @@ import {
 import type { AnalyticsDashboard } from "./types";
 
 const dashboard: AnalyticsDashboard = {
+  financialAvailability: { status: "available" },
   generatedAt: "2026-06-22T17:00:00.000Z",
   inventory: {
     averagePriceCents: 12000000,
     availableListings: 4,
     reservedListings: 1,
-    soldListings: 2,
+    soldListings: 9,
     totalListings: 7,
   },
   kpis: [{ deltaLabel: "periodo atual", label: "GMV", value: "R$ 240.000" }],
@@ -27,9 +28,12 @@ const dashboard: AnalyticsDashboard = {
   ],
   revenue: {
     closedSalesCents: 24000000,
-    grossMarginCents: 0,
     openReceivablesCents: 100000,
     paidReceiptsCents: 0,
+  },
+  sales: {
+    avgTicketCents: 12000000,
+    closedCount: 2,
   },
   storeId: "store_1",
   tenantId: "tenant_1",
@@ -41,8 +45,8 @@ describe("dashboard model", () => {
 
     expect(stats.map((stat) => stat.label)).toEqual([
       "Faturamento",
-      "Ticket medio",
-      "Conversao",
+      "Ticket médio",
+      "Conversão",
       "Leads WhatsApp",
     ]);
     expect(stats.map((stat) => normalizeSpaces(stat.value))).toEqual([
@@ -54,11 +58,55 @@ describe("dashboard model", () => {
   });
 
   it("keeps operational labels grounded in the backend summary", () => {
-    expect(inventoryRotationLabel(dashboard)).toBe("4/7 disponiveis");
+    expect(inventoryRotationLabel(dashboard)).toBe("4/7 disponíveis");
     expect(normalizeSpaces(receivablesLabel(dashboard))).toBe(
       "R$ 1.000 em aberto",
     );
     expect(topLeadSources(dashboard)[0]?.label).toBe("WhatsApp");
+  });
+
+  it("uses period sales for ticket metrics instead of historical sold inventory", () => {
+    const stats = createDashboardStats(dashboard);
+
+    expect(dashboard.inventory.soldListings).toBe(9);
+    expect(stats[1]).toMatchObject({
+      deltaLabel: "2 vendas fechadas no período",
+      label: "Ticket médio",
+    });
+    expect(normalizeSpaces(stats[1]?.value ?? "")).toBe("R$ 120.000");
+  });
+
+  it("shows restricted financial metrics as unavailable instead of zero", () => {
+    const restricted: AnalyticsDashboard = {
+      ...dashboard,
+      financialAvailability: {
+        reason: "Este perfil não possui a permissão finance.read.",
+        status: "restricted",
+      },
+      kpis: dashboard.kpis.filter((kpi) => kpi.label !== "GMV"),
+      revenue: {
+        closedSalesCents: null,
+        openReceivablesCents: null,
+        paidReceiptsCents: null,
+      },
+      sales: {
+        avgTicketCents: null,
+        closedCount: 2,
+      },
+    };
+
+    const stats = createDashboardStats(restricted);
+    expect(stats[0]).toMatchObject({
+      deltaLabel: "Acesso financeiro restrito",
+      label: "Faturamento",
+      value: "—",
+    });
+    expect(stats[1]).toMatchObject({
+      deltaLabel: "Acesso financeiro restrito",
+      label: "Ticket médio",
+      value: "—",
+    });
+    expect(receivablesLabel(restricted)).toBe("Recebíveis restritos");
   });
 });
 

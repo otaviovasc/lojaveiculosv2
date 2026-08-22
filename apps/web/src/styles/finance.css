@@ -372,7 +372,7 @@
 .finance-category-badge--blue {
   background: var(--color-blue-soft);
   border: 1px solid color-mix(in srgb, var(--color-blue-start) 28%, transparent);
-  color: var(--color-blue-start);
+  color: var(--color-info-soft-foreground);
 }
 
 .finance-category-badge--warning {
@@ -525,7 +525,7 @@
 
 .finance-cell-amount[data-entry-type="revenue"],
 .finance-entry-card[data-entry-type="revenue"] .finance-card-amount {
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
 }
 
 .finance-cell-amount[data-entry-type="expense"],

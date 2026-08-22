@@ -58,9 +58,9 @@ BEGIN
   IF EXISTS (
     WITH expected(role_key, expected_count) AS (
       VALUES
-        ('agency'::role_template_key, 108),
+        ('agency'::role_template_key, 110),
         ('admin'::role_template_key, 102),
-        ('owner'::role_template_key, 108),
+        ('owner'::role_template_key, 110),
         ('investor'::role_template_key, 15),
         ('salesman'::role_template_key, 47),
         ('supervisor'::role_template_key, 78)

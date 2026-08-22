@@ -53,6 +53,73 @@ describe("analytics dashboard route", () => {
     });
   });
 
+  it("keeps finance, CRM, and document report values behind their permissions", async () => {
+    const app = createApp(createAnalyticsServices());
+
+    const response = await app.request(
+      "/dashboard?from=2026-06-01&to=2026-06-30",
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as AnalyticsDashboard;
+    expect(body.finance).toMatchObject({
+      availability: { status: "restricted" },
+      paidOutflowCents: 0,
+      receivedRevenueCents: 0,
+    });
+    expect(body.owner).toMatchObject({
+      availability: { status: "restricted" },
+      vehicles: [],
+    });
+    expect(body.crm).toMatchObject({
+      availability: { status: "restricted" },
+      interactionCount: 0,
+      totalLeads: 0,
+    });
+    expect(body.documents).toMatchObject({
+      availability: { status: "restricted" },
+      byKind: [],
+      total: 0,
+    });
+    expect(body.financialAvailability.status).toBe("restricted");
+    expect(body.attention).toMatchObject({
+      overdueReceivablesCents: null,
+      overdueReceivablesCount: null,
+    });
+    expect(body.revenue).toEqual({
+      closedSalesCents: null,
+      openReceivablesCents: null,
+      paidReceiptsCents: null,
+    });
+    expect(body.sales).toMatchObject({
+      avgTicketCents: null,
+      grossMarginCents: null,
+      revenueCents: null,
+    });
+    expect(body.kpis.map((kpi) => kpi.label)).not.toContain("GMV fechado");
+    expect(body.kpis.map((kpi) => kpi.label)).not.toContain(
+      "Recebiveis abertos",
+    );
+  });
+
+  it("preserves financial metrics for a custom role with finance.read", async () => {
+    const app = createApp(createAnalyticsServices(), {
+      permissions: ["analytics.read", "finance.read"],
+    });
+
+    const response = await app.request(
+      "/dashboard?from=2026-06-01&to=2026-06-30",
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as AnalyticsDashboard;
+    expect(body.financialAvailability.status).toBe("available");
+    expect(body.attention.overdueReceivablesCents).toBe(1230000);
+    expect(body.revenue.closedSalesCents).toBe(74200000);
+    expect(body.sales.grossMarginCents).toBe(9340000);
+    expect(body.kpis.map((kpi) => kpi.label)).toContain("GMV fechado");
+  });
+
   it("falls back to a 30 day period when params are absent", async () => {
     const services = createServicesStub();
     const app = createApp(services);

@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
-import { useAccountSession } from "../../account/accountSession";
 import {
   createRuntimeActorAuth,
   createRuntimeFetch,
@@ -8,6 +7,7 @@ import {
   readRuntimeApiBaseUrl,
 } from "../../account/runtimeAuth";
 import { createAgencyApi, type AgencyManagedStoreOverview } from "../apiClient";
+import { useAgencyTenantSelection } from "../useAgencyTenantSelection";
 import {
   createAgencyCredereApi,
   type AgencyCredereApi,
@@ -25,11 +25,9 @@ export type AgencyCredereApiFactory = () => Promise<AgencyCredereApis>;
 export function useAgencyCrederePageState(
   apiFactory?: AgencyCredereApiFactory,
 ) {
-  const session = useAccountSession();
-  const agencyTenant = session.tenantMemberships.find(
-    (membership) =>
-      membership.role === "agency" && membership.status === "active",
-  );
+  const requestGeneration = useRef(0);
+  const { agencyTenant, agencyTenants, selectAgencyTenant } =
+    useAgencyTenantSelection();
   const apisPromise = useMemo(
     () => apiFactory?.() ?? createRuntimeApis(),
     [apiFactory],
@@ -50,21 +48,28 @@ export function useAgencyCrederePageState(
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    const generation = ++requestGeneration.current;
     if (!agencyTenant) {
       setLoading(false);
       return;
     }
     setLoading(true);
     setError(null);
+    setActionError(null);
+    setConnection(null);
+    setProviderStores(null);
+    setStores([]);
     try {
       const { agency, credere } = await apisPromise;
       const [overview, nextConnection] = await Promise.all([
         agency.getOverview(agencyTenant.tenantId),
         credere.getConnection(agencyTenant.tenantId),
       ]);
+      if (generation !== requestGeneration.current) return;
       setStores(overview.stores);
       setConnection(nextConnection);
     } catch (caught) {
+      if (generation !== requestGeneration.current) return;
       setError(
         formatApiErrorDisplay(
           caught,
@@ -72,12 +77,15 @@ export function useAgencyCrederePageState(
         ),
       );
     } finally {
-      setLoading(false);
+      if (generation === requestGeneration.current) setLoading(false);
     }
   }, [agencyTenant, apisPromise]);
 
   useEffect(() => {
     void load();
+    return () => {
+      requestGeneration.current += 1;
+    };
   }, [load]);
 
   useEffect(() => {
@@ -163,6 +171,7 @@ export function useAgencyCrederePageState(
   return {
     actionError,
     agencyTenant,
+    agencyTenants,
     busyKey,
     connection,
     disconnect,
@@ -173,6 +182,7 @@ export function useAgencyCrederePageState(
     removeMapping,
     saveMapping,
     selections,
+    selectAgencyTenant,
     setSelections,
     startOAuth,
     stores,

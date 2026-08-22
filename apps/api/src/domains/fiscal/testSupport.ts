@@ -32,6 +32,17 @@ export function createFiscalTestPorts(): FiscalServicePorts {
           webhookConfigured: true,
         };
       },
+      async downloadDocumentArtifact(input) {
+        const bytes =
+          input.format === "pdf"
+            ? new TextEncoder().encode("%PDF-1.7 test artifact")
+            : new TextEncoder().encode('<?xml version="1.0"?><nfe />');
+        return {
+          bytes,
+          contentType:
+            input.format === "pdf" ? "application/pdf" : "application/xml",
+        };
+      },
       async issueDocument(input) {
         return {
           accessKey: `access_${input.storeId}`,

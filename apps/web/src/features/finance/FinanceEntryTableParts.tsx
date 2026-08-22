@@ -84,27 +84,40 @@ export function StatusButton({
 }
 
 export function EntryActions({
-  canAttach = true,
+  canGenerateReceipt = true,
+  canOpenReceipt = true,
   canUpdate = true,
   entry,
   onCancel,
   onEdit,
+  onReceipt,
+  receiptActionEntryId,
 }: {
-  canAttach?: boolean;
+  canGenerateReceipt?: boolean;
+  canOpenReceipt?: boolean;
   canUpdate?: boolean;
   entry: FinanceEntry;
   onCancel: (entry: FinanceEntry) => void;
   onEdit: (entry: FinanceEntry) => void;
+  onReceipt: (entry: FinanceEntry) => void;
+  receiptActionEntryId?: string | null | undefined;
 }) {
-  if (!canAttach && !canUpdate) return null;
+  if (!canOpenReceipt && !canUpdate) return null;
   return (
     <FeatureRowActions>
-      {canAttach ? (
+      {canOpenReceipt ? (
         <FeatureRowAction
-          ariaLabel="Anexar recibo"
+          ariaLabel={
+            receiptActionEntryId === entry.id
+              ? "Abrindo recibo"
+              : canGenerateReceipt
+                ? "Abrir ou gerar recibo"
+                : "Abrir recibo existente"
+          }
+          disabled={receiptActionEntryId === entry.id}
           icon={ReceiptText}
-          onClick={() => onEdit(entry)}
-          tooltip="Recibo"
+          onClick={() => onReceipt(entry)}
+          tooltip={receiptActionEntryId === entry.id ? "Abrindo..." : "Recibo"}
         />
       ) : null}
       {canUpdate ? (

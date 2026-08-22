@@ -87,6 +87,8 @@ VALUES
   ('22222222-2222-4222-8222-222222222222', 'inventory.checklist_read'),
   ('22222222-2222-4222-8222-222222222222', 'inventory.checklist_update'),
   ('22222222-2222-4222-8222-222222222222', 'inventory.cost_create'),
+  ('22222222-2222-4222-8222-222222222222', 'inventory.cost_update'),
+  ('22222222-2222-4222-8222-222222222222', 'inventory.cost_void'),
   ('22222222-2222-4222-8222-222222222222', 'inventory.create'),
   ('22222222-2222-4222-8222-222222222222', 'inventory.delete'),
   ('22222222-2222-4222-8222-222222222222', 'inventory.document_attach'),
@@ -281,6 +283,8 @@ VALUES
   ('55555555-5555-4555-8555-555555555555', 'inventory.checklist_read'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.checklist_update'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.cost_create'),
+  ('55555555-5555-4555-8555-555555555555', 'inventory.cost_update'),
+  ('55555555-5555-4555-8555-555555555555', 'inventory.cost_void'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.create'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.delete'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.document_attach'),
@@ -482,4 +486,4 @@ VALUES
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.update_video')
 ON CONFLICT (role_template_id, permission_key) DO NOTHING;
 
--- Expected permission counts at generation time: {"agency":108,"admin":102,"owner":108,"investor":15,"salesman":47,"supervisor":78}
+-- Expected permission counts at generation time: {"agency":110,"admin":102,"owner":110,"investor":15,"salesman":47,"supervisor":78}

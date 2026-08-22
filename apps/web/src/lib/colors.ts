@@ -33,6 +33,40 @@ export function getContrastColorForText(hexColor: string): string {
   return rgbToHex(shiftUntilContrastPasses(rgb, background, mixTarget));
 }
 
+/**
+ * Keeps a brand accent recognizable while shifting it only as far as needed
+ * to remain readable on a known surface. This is used for storefront text;
+ * solid accent fills continue to use the original brand color.
+ */
+export function getReadableColorOnBackground(
+  foregroundHex: string,
+  backgroundHex: string,
+): string {
+  const foreground = parseHexColor(foregroundHex);
+  const background = parseHexColor(backgroundHex);
+  if (!foreground || !background) return foregroundHex;
+
+  if (contrastRatio(foreground, background) >= MINIMUM_TEXT_CONTRAST) {
+    return foregroundHex;
+  }
+
+  const black: Rgb = { r: 0, g: 0, b: 0 };
+  const white: Rgb = { r: 255, g: 255, b: 255 };
+  const target =
+    contrastRatio(black, background) >= contrastRatio(white, background)
+      ? black
+      : white;
+
+  for (let step = 1; step <= 20; step += 1) {
+    const candidate = mixColor(foreground, target, step / 20);
+    if (contrastRatio(candidate, background) >= MINIMUM_TEXT_CONTRAST) {
+      return rgbToHex(candidate);
+    }
+  }
+
+  return rgbToHex(target);
+}
+
 function isDarkThemeActive(): boolean {
   return (
     typeof document !== "undefined" &&

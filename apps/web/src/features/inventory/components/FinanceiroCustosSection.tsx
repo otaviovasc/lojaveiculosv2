@@ -1,179 +1,244 @@
 import { useState } from "react";
-import { Filter, Plus, DollarSign, Paperclip, Upload } from "lucide-react";
-import { formatCurrencyValue, parseCurrencyInput } from "../../../lib/masks";
-import type { InventoryCostKind } from "../model/types";
-import {
-  InventorySelect,
-  InventoryField,
-  InventoryInput,
-} from "./InventoryFormParts";
+import { Ban, DollarSign, Filter, Paperclip, Pencil, Plus } from "lucide-react";
+import { InventorySelect } from "./InventoryFormParts";
 import {
   costFilterKinds,
   costKindLabel,
-  costKindOptions,
   type CostFilterKind,
+  type CostItem,
   type FinanceiroCustosSectionProps,
 } from "./FinanceiroCustosSectionModel";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../../components/ui/dialog";
+  FinanceiroCostFormDialog,
+  FinanceiroCostVoidDialog,
+} from "./FinanceiroCostDialogs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../../components/ui/tooltip";
 
 export function FinanceiroCustosSection({
   addStatus,
+  canCreate = true,
+  canUpdate = true,
+  canVoid = true,
   clearStatus,
   costs,
   formatBRL,
   isAdding = false,
+  isUpdating = false,
+  isVoiding = false,
   onAddCost,
   onDownloadReceipt,
+  onUpdateCost,
+  onVoidCost,
 }: FinanceiroCustosSectionProps) {
-  const [costAccount, setCostAccount] = useState("");
-  const [costValue, setCostValue] = useState("");
-  const [costKind, setCostKind] = useState<InventoryCostKind>("preparation");
   const [costFilterKind, setCostFilterKind] = useState<CostFilterKind>("Todos");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [costFile, setCostFile] = useState<File | null>(null);
+  const [editingCost, setEditingCost] = useState<CostItem | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [voidingCost, setVoidingCost] = useState<CostItem | null>(null);
 
-  const handleAddCost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanValue = Number(costValue) * 100;
-    if (isNaN(cleanValue) || cleanValue <= 0 || !costAccount) return;
-
-    const success = await onAddCost(
-      costAccount,
-      cleanValue,
-      costKind,
-      costFile,
-    );
-    if (success) {
-      setCostAccount("");
-      setCostValue("");
-      setCostFile(null);
-      setIsModalOpen(false);
-    }
-  };
-
-  const handleOpenModal = () => {
-    clearStatus?.();
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    clearStatus?.();
-    setCostFile(null);
-    setIsModalOpen(false);
-  };
-
-  const filteredCosts = costs.filter((c) => {
-    return costFilterKind === "Todos" || c.kind === costFilterKind;
-  });
-
-  const totalCostsSum = filteredCosts.reduce(
-    (acc, curr) => acc + curr.value,
+  const filteredCosts = costs.filter(
+    (cost) => costFilterKind === "Todos" || cost.kind === costFilterKind,
+  );
+  const activeFilteredCosts = filteredCosts.filter(
+    (cost) => cost.status === "active",
+  );
+  const activeCount = costs.filter((cost) => cost.status === "active").length;
+  const totalCostsSum = activeFilteredCosts.reduce(
+    (sum, cost) => sum + cost.value,
     0,
   );
 
-  const selectCostFilterKind = (value: string) => {
-    if (costFilterKinds.includes(value as CostFilterKind)) {
-      setCostFilterKind(value as CostFilterKind);
-    }
+  const openCreate = () => {
+    clearStatus?.();
+    setEditingCost(null);
+    setIsFormOpen(true);
   };
-
-  const selectCostKind = (value: string) => {
-    if (costKindOptions.includes(value as InventoryCostKind)) {
-      setCostKind(value as InventoryCostKind);
-    }
+  const openEdit = (cost: CostItem) => {
+    clearStatus?.();
+    setEditingCost(cost);
+    setIsFormOpen(true);
+  };
+  const openVoid = (cost: CostItem) => {
+    clearStatus?.();
+    setVoidingCost(cost);
   };
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-4">
+    <div className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <div className="flex flex-col justify-between gap-4 border-b border-line pb-4 md:flex-row md:items-center">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-black uppercase tracking-wider">
             Custos
           </h3>
-          <span className="bg-accent-soft text-accent-strong text-xs font-black px-2 py-0.5 rounded-full">
-            {costs.length}
+          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-black text-accent-strong">
+            {activeCount} ativos
           </span>
+          {costs.length > activeCount ? (
+            <span className="text-xs font-bold text-muted">
+              {costs.length - activeCount} estornados
+            </span>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-muted border-r border-line pr-3">
-            <Filter className="size-3.5" />
+          <div className="flex items-center gap-1.5 border-r border-line pr-3 text-xs font-bold text-muted">
+            <Filter aria-hidden="true" className="size-3.5" />
             <span>Tipo:</span>
             <InventorySelect
               ariaLabel="Filtrar custos por tipo"
               className="min-h-8 px-2 py-0 text-xs"
-              value={costFilterKind}
-              onChange={selectCostFilterKind}
+              onChange={(value) => {
+                if (costFilterKinds.includes(value as CostFilterKind)) {
+                  setCostFilterKind(value as CostFilterKind);
+                }
+              }}
               options={costFilterKinds.map((kind) => ({
                 label: kind === "Todos" ? kind : costKindLabel(kind),
                 value: kind,
               }))}
+              value={costFilterKind}
             />
           </div>
 
           <button
-            onClick={handleOpenModal}
+            className="flex min-h-8 cursor-pointer items-center gap-1 rounded-lg bg-accent px-3.5 text-xs font-black text-accent-foreground transition-all hover:bg-accent-strong hover:text-accent-strong-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!canCreate}
+            onClick={openCreate}
+            title={
+              canCreate
+                ? "Registrar novo custo"
+                : "Sem permissão para registrar custos"
+            }
             type="button"
-            className="min-h-8 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-3.5 flex items-center gap-1"
           >
-            <Plus className="size-3.5" />
-            <span>Novo Custo</span>
+            <Plus aria-hidden="true" className="size-3.5" />
+            <span>Novo custo</span>
           </button>
         </div>
       </div>
 
-      {filteredCosts.length > 0 ? (
+      {addStatus && !isFormOpen && !voidingCost ? (
+        <p
+          aria-live="polite"
+          className="rounded-lg border border-danger/30 bg-danger/10 p-2.5 text-xs font-bold text-danger"
+        >
+          {addStatus}
+        </p>
+      ) : null}
+
+      {filteredCosts.length ? (
         <div className="flex flex-col gap-2.5">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-bold">
+            <table className="w-full min-w-[720px] text-left text-xs font-bold">
               <thead>
-                <tr className="border-b border-line text-muted uppercase text-xs tracking-wider">
+                <tr className="border-b border-line text-xs uppercase tracking-wider text-muted">
                   <th className="py-2">Conta / Descrição</th>
                   <th className="py-2">Tipo</th>
                   <th className="py-2">Data</th>
+                  <th className="py-2">Status</th>
                   <th className="py-2 text-right">Valor</th>
+                  <th className="py-2 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCosts.map((c) => (
+                {filteredCosts.map((cost) => (
                   <tr
-                    key={c.id}
-                    className="border-b border-line/30 hover:bg-app/10 transition-colors"
+                    className={
+                      cost.status === "voided"
+                        ? "border-b border-line/30 opacity-70 transition-colors hover:bg-app/10"
+                        : "border-b border-line/30 transition-colors hover:bg-app/10"
+                    }
+                    key={cost.id}
                   >
-                    <td className="py-3 text-app-text font-black">
+                    <td className="py-3 font-black text-app-text">
                       <div className="flex items-center gap-2">
-                        <span>{c.account}</span>
-                        {c.receipt ? (
-                          <button
-                            aria-label={`Visualizar comprovante ${c.receipt.fileName}`}
-                            onClick={() => onDownloadReceipt?.(c.receipt!.id)}
-                            type="button"
-                            className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent-text cursor-pointer transition-all flex items-center justify-center"
-                            title={`Visualizar comprovante: ${c.receipt.fileName}`}
+                        <span
+                          className={
+                            cost.status === "voided" ? "line-through" : ""
+                          }
+                        >
+                          {cost.account}
+                        </span>
+                        {cost.receipt ? (
+                          <CostIconAction
+                            label={`Visualizar comprovante ${cost.receipt.fileName}`}
+                            onClick={() =>
+                              onDownloadReceipt?.(cost.receipt!.id)
+                            }
                           >
                             <Paperclip
                               aria-hidden="true"
-                              className="size-3.5 text-accent"
+                              className="size-3.5"
                             />
-                          </button>
+                          </CostIconAction>
                         ) : null}
                       </div>
+                      {cost.status === "voided" && cost.voidReason ? (
+                        <span className="mt-1 block max-w-md text-xs font-bold text-muted">
+                          Motivo: {cost.voidReason}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="py-3">
-                      <span className="text-xs font-black px-2.5 py-0.5 rounded-full border bg-app text-muted border-line">
-                        {c.kindLabel}
+                      <span className="rounded-full border border-line bg-app px-2.5 py-0.5 text-xs font-black text-muted">
+                        {cost.kindLabel}
                       </span>
                     </td>
-                    <td className="py-3 text-muted">{c.date}</td>
-                    <td className="py-3 text-right font-black text-app-text">
-                      {formatBRL(c.value)}
+                    <td className="py-3 text-muted">{cost.date}</td>
+                    <td className="py-3">
+                      <span
+                        className={
+                          cost.status === "active"
+                            ? "rounded-full bg-green-soft px-2.5 py-1 text-xs font-black text-success-strong"
+                            : "rounded-full bg-app-elevated px-2.5 py-1 text-xs font-black text-muted"
+                        }
+                      >
+                        {cost.status === "active" ? "Ativo" : "Estornado"}
+                      </span>
+                    </td>
+                    <td
+                      className={
+                        cost.status === "voided"
+                          ? "py-3 text-right font-black text-muted line-through"
+                          : "py-3 text-right font-black text-app-text"
+                      }
+                    >
+                      {formatBRL(cost.value)}
+                    </td>
+                    <td className="py-3 text-right">
+                      {cost.status === "active" ? (
+                        <div className="inline-flex items-center gap-1">
+                          {canUpdate && onUpdateCost ? (
+                            <CostIconAction
+                              label={`Corrigir custo ${cost.account}`}
+                              onClick={() => openEdit(cost)}
+                            >
+                              <Pencil aria-hidden="true" className="size-3.5" />
+                            </CostIconAction>
+                          ) : null}
+                          {canVoid && onVoidCost ? (
+                            <CostIconAction
+                              danger
+                              label={`Estornar custo ${cost.account}`}
+                              onClick={() => openVoid(cost)}
+                            >
+                              <Ban aria-hidden="true" className="size-3.5" />
+                            </CostIconAction>
+                          ) : null}
+                          {!canUpdate && !canVoid ? (
+                            <span className="text-xs font-bold text-muted">
+                              Somente leitura
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-xs font-bold text-muted">
+                          Histórico preservado
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -181,9 +246,9 @@ export function FinanceiroCustosSection({
             </table>
           </div>
 
-          <div className="flex justify-between items-center border-t border-line pt-3 mt-1 bg-app/5 p-3.5 rounded-xl">
-            <span className="text-xs font-black text-muted uppercase tracking-wider">
-              Soma dos Custos
+          <div className="mt-1 flex items-center justify-between rounded-xl border-t border-line bg-app/5 p-3.5 pt-3">
+            <span className="text-xs font-black uppercase tracking-wider text-muted">
+              Soma dos custos ativos
             </span>
             <span className="text-sm font-black text-accent-strong">
               {formatBRL(totalCostsSum)}
@@ -191,136 +256,97 @@ export function FinanceiroCustosSection({
           </div>
         </div>
       ) : (
-        <div className="py-12 text-center flex flex-col items-center justify-center bg-app/10 border border-line border-dashed rounded-xl gap-3">
-          <DollarSign className="size-8 text-muted" />
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line bg-app/10 py-12 text-center">
+          <DollarSign aria-hidden="true" className="size-8 text-muted" />
           <div>
             <p className="text-xs font-black text-app-text">
               Nenhum custo registrado com este filtro.
             </p>
-            <p className="text-xs text-muted font-bold mt-1">
-              Clique em "Novo Custo" acima para cadastrar novos gastos.
+            <p className="mt-1 text-xs font-bold text-muted">
+              {canCreate
+                ? 'Use "Novo custo" para registrar um gasto.'
+                : "Você possui acesso somente para consulta."}
             </p>
           </div>
         </div>
       )}
 
-      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="max-w-md" radius="xl" surface="panel">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-base font-black uppercase tracking-wider">
-              Adicionar Novo Custo
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted font-bold">
-              Registre um novo custo ou despesa associada a este veículo.
-            </DialogDescription>
-          </DialogHeader>
-
-          {addStatus ? (
-            <div className="bg-accent-soft/20 border border-accent-soft text-accent-strong text-xs font-bold rounded-lg p-2.5 mb-4">
-              {addStatus}
-            </div>
-          ) : null}
-
-          <form
-            onSubmit={(e) => {
-              void handleAddCost(e);
-            }}
-            className="grid gap-4"
-          >
-            <InventoryField label="Conta / Descrição" required>
-              <InventoryInput
-                disabled={isAdding}
-                type="text"
-                placeholder="Ex: Pintura do parachoque"
-                value={costAccount}
-                onChange={(e) => setCostAccount(e.target.value)}
-                required
-              />
-            </InventoryField>
-
-            <div className="grid gap-4 grid-cols-2">
-              <InventoryField label="Valor (R$)" required>
-                <InventoryInput
-                  disabled={isAdding}
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={formatCurrencyValue(costValue)}
-                  onChange={(e) =>
-                    setCostValue(parseCurrencyInput(e.target.value))
-                  }
-                  required
-                />
-              </InventoryField>
-
-              <InventoryField label="Tipo do Custo" required>
-                <InventorySelect
-                  disabled={isAdding}
-                  ariaLabel="Tipo do custo"
-                  value={costKind}
-                  onChange={selectCostKind}
-                  options={costKindOptions.map((kind) => ({
-                    label: costKindLabel(kind),
-                    value: kind,
-                  }))}
-                />
-              </InventoryField>
-            </div>
-
-            <InventoryField label="Comprovante / Nota (Opcional)">
-              <div className="flex items-center gap-2 mt-1">
-                <label className="min-h-9 flex items-center justify-center gap-1.5 rounded-lg border border-line bg-app px-3.5 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer">
-                  <Upload className="size-3.5 text-muted" />
-                  <span>
-                    {costFile ? "Alterar Arquivo" : "Escolher Arquivo"}
-                  </span>
-                  <input
-                    type="file"
-                    disabled={isAdding}
-                    accept="image/*,application/pdf,.doc,.docx"
-                    className="sr-only"
-                    onChange={(e) => setCostFile(e.target.files?.[0] ?? null)}
-                  />
-                </label>
-                {costFile ? (
-                  <span
-                    className="text-xs font-bold text-app-text truncate max-w-[200px]"
-                    title={costFile.name}
-                  >
-                    {costFile.name}
-                  </span>
-                ) : (
-                  <span className="text-xs font-bold text-muted">
-                    Nenhum arquivo selecionado
-                  </span>
-                )}
-              </div>
-            </InventoryField>
-
-            <DialogFooter
-              className="flex gap-2 justify-end"
-              divider
-              paddingTop="md"
-            >
-              <button
-                className="min-h-9 rounded-lg px-4 text-xs font-black border border-line text-app-text hover:bg-line/25 transition-all cursor-pointer"
-                onClick={handleCloseModal}
-                type="button"
-                disabled={isAdding}
-              >
-                Cancelar
-              </button>
-              <button
-                disabled={isAdding}
-                type="submit"
-                className="min-h-9 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-4 flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <Plus className="size-3.5" />
-                <span>{isAdding ? "Salvando..." : "Confirmar"}</span>
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <FinanceiroCostFormDialog
+        cost={editingCost}
+        isSaving={editingCost ? isUpdating : isAdding}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingCost(null);
+          clearStatus?.();
+        }}
+        onSave={(input) =>
+          editingCost && onUpdateCost
+            ? onUpdateCost(
+                editingCost.id,
+                input.account,
+                input.value,
+                input.kind,
+                input.costDate,
+              )
+            : onAddCost(
+                input.account,
+                input.value,
+                input.kind,
+                input.costDate,
+                input.file,
+              )
+        }
+        open={isFormOpen}
+        status={addStatus}
+      />
+      <FinanceiroCostVoidDialog
+        cost={voidingCost}
+        isSaving={isVoiding}
+        onOpenChange={(open) => {
+          if (!open) setVoidingCost(null);
+          clearStatus?.();
+        }}
+        onVoid={(reason) =>
+          voidingCost && onVoidCost
+            ? onVoidCost(voidingCost.id, reason)
+            : Promise.resolve(false)
+        }
+        open={Boolean(voidingCost)}
+        status={addStatus}
+      />
     </div>
+  );
+}
+
+function CostIconAction({
+  children,
+  danger = false,
+  label,
+  onClick,
+}: {
+  children: React.ReactNode;
+  danger?: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          aria-label={label}
+          className={
+            danger
+              ? "inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-danger-soft-foreground transition-colors hover:bg-danger/10"
+              : "inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors hover:bg-line/25 hover:text-accent-text"
+          }
+          onClick={onClick}
+          title={label}
+          type="button"
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }

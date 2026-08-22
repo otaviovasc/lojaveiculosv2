@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { billingPaths, billingSchemas } from "./billingOpenApi.js";
 import { analyticsPaths, analyticsSchemas } from "./analyticsOpenApi.js";
+import {
+  agencyOperationsPaths,
+  agencyOperationsSchemas,
+} from "./agencyOperationsOpenApi.js";
 import { automationPaths, automationSchemas } from "./automationOpenApi.js";
 import { compliancePaths, complianceSchemas } from "./complianceOpenApi.js";
 import {
@@ -88,6 +92,7 @@ export const openApiDocument = {
     ...financePaths,
     ...financingPaths,
     ...fiscalPaths,
+    ...agencyOperationsPaths,
     ...analyticsPaths,
     ...automationPaths,
     ...compliancePaths,
@@ -109,6 +114,7 @@ export const openApiDocument = {
       ...financeSchemas,
       ...financingSchemas,
       ...fiscalSchemas,
+      ...agencyOperationsSchemas,
       ...analyticsSchemas,
       ...automationSchemas,
       ...complianceSchemas,

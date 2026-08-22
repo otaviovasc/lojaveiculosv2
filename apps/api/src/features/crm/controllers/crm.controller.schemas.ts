@@ -67,6 +67,26 @@ export const listLeadBoardQuerySchema = z.object({
   status: leadStatusSchema.optional(),
 });
 
+export const crmStatisticsQuerySchema = z
+  .object({
+    connectionId: z.string().uuid().optional(),
+    from: z.string().datetime(),
+    toExclusive: z.string().datetime(),
+  })
+  .superRefine((value, context) => {
+    const from = new Date(value.from);
+    const toExclusive = new Date(value.toExclusive);
+    if (from >= toExclusive) {
+      context.addIssue({
+        code: "custom",
+        message: "from must precede toExclusive",
+      });
+    }
+    if (toExclusive.getTime() - from.getTime() > 366 * 24 * 60 * 60 * 1_000) {
+      context.addIssue({ code: "custom", message: "period exceeds 366 days" });
+    }
+  });
+
 export const createLeadSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
   buyerEmail: z.string().email().nullable().optional(),

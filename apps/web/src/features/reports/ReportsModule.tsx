@@ -1,10 +1,13 @@
-import { AlertTriangle, BarChart3, Inbox, RefreshCcw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { FeatureSelect } from "../../components/ui/FeatureControls";
+import { BarChart3, GitCompareArrows, RefreshCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FeatureDateField,
+  FeatureSearchField,
+  FeatureSelect,
+} from "../../components/ui/FeatureControls";
 import {
   FeatureActionButton,
   FeaturePageShell,
-  FeatureSection,
   FeatureToolbar,
 } from "../../components/ui/FeatureLayout";
 import {
@@ -14,49 +17,109 @@ import {
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createReportsApi, type ReportsApi } from "./apiClient";
+import { CrmReport, InventoryReport } from "./CrmInventoryReports";
+import { DocumentsReport, MarketingReport } from "./DocumentsMarketingReports";
+import { FinanceReport } from "./FinanceReport";
+import { OwnerReport } from "./OwnerReports";
 import {
-  getReportAgeBucketLabel,
-  getReportFunnelLabel,
-  getReportSourceLabel,
-} from "./reportsLabels";
+  formatPeriod,
+  isValidPeriod,
+  previousPeriod,
+  readReportsViewState,
+  resolvePeriod,
+  syncReportsViewState,
+  type PeriodPreset,
+  type ReportsViewState,
+} from "./reportPeriod";
+import { ReportsNavigation } from "./ReportsNavigation";
 import { createReportsApiOptions } from "./runtimeApi";
-import type { ReportsDashboard, ReportsPeriod } from "./types";
+import type { ReportsDashboard, ReportsPeriod, ReportTab } from "./types";
 import "./reports.css";
 
-type PeriodPreset = "7d" | "30d" | "90d" | "month";
-
-const periodOptions: readonly {
-  label: string;
-  value: PeriodPreset;
-}[] = [
+const periodOptions: readonly { label: string; value: PeriodPreset }[] = [
   { label: "7 dias", value: "7d" },
   { label: "30 dias", value: "30d" },
   { label: "90 dias", value: "90d" },
   { label: "Mês atual", value: "month" },
+  { label: "Período personalizado", value: "custom" },
 ];
 
 export function ReportsModule({ api }: { api?: ReportsApi }) {
   const reportsApi = useMemo(() => api ?? createRuntimeReportsApi(), [api]);
-  const [preset, setPreset] = useState<PeriodPreset>("30d");
+  const [view, setView] = useState<ReportsViewState>(readReportsViewState);
   const [dashboard, setDashboard] = useState<ReportsDashboard | null>(null);
+  const [comparison, setComparison] = useState<ReportsDashboard | null>(null);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
   const [status, setStatus] = useState<LoadStatus>({ kind: "loading" });
-
-  const refresh = useCallback(
-    async (selected: PeriodPreset) => {
-      setStatus({ kind: "loading" });
-      try {
-        setDashboard(await reportsApi.getDashboard(computePeriod(selected)));
-        setStatus({ kind: "ready" });
-      } catch (error) {
-        setStatus({ kind: "error", message: errorMessage(error) });
-      }
-    },
-    [reportsApi],
+  const requestVersion = useRef(0);
+  const period = useMemo(
+    () => resolvePeriod(view),
+    [view.customPeriod.from, view.customPeriod.to, view.preset],
   );
 
+  const load = useCallback(async () => {
+    if (!isValidPeriod(period)) {
+      setStatus({
+        kind: "error",
+        message: "Informe uma data inicial menor ou igual à data final.",
+      });
+      return;
+    }
+    const version = ++requestVersion.current;
+    setStatus({ kind: "loading" });
+    setComparisonError(null);
+    const results = await Promise.allSettled([
+      reportsApi.getDashboard(period),
+      ...(view.compare
+        ? [reportsApi.getDashboard(previousPeriod(period))]
+        : []),
+    ]);
+    if (version !== requestVersion.current) return;
+    const currentResult = results[0];
+    if (!currentResult || currentResult.status === "rejected") {
+      setStatus({
+        kind: "error",
+        message: errorMessage(currentResult?.reason),
+      });
+      return;
+    }
+    setDashboard(currentResult.value);
+    setStatus({ kind: "ready" });
+    const previousResult = results[1];
+    if (!previousResult) {
+      setComparison(null);
+      return;
+    }
+    if (previousResult.status === "fulfilled") {
+      setComparison(previousResult.value);
+    } else {
+      setComparison(null);
+      setComparisonError(
+        formatApiErrorDisplay(
+          previousResult.reason,
+          "O período anterior não pôde ser comparado.",
+        ),
+      );
+    }
+  }, [period, reportsApi, view.compare]);
+
   useEffect(() => {
-    void refresh(preset);
-  }, [preset, refresh]);
+    syncReportsViewState(view);
+  }, [view]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    const restoreFromUrl = () => setView(readReportsViewState());
+    window.addEventListener("popstate", restoreFromUrl);
+    return () => window.removeEventListener("popstate", restoreFromUrl);
+  }, []);
+
+  const updateView = (patch: Partial<ReportsViewState>) =>
+    setView((current) => ({ ...current, ...patch }));
+  const searchable = view.tab === "sold" || view.tab === "costs";
 
   return (
     <FeaturePageShell mainClassName="feature-shell">
@@ -65,7 +128,7 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
           <p className="reports-toolbar__eyebrow">Desempenho</p>
           <h1>Relatórios</h1>
           <p className="reports-toolbar__description">
-            Vendas, financeiro, estoque e funil comercial em um só lugar.
+            Margem por veículo, caixa, estoque, CRM e documentos.
           </p>
         </div>
         <div
@@ -77,40 +140,108 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
             ariaLabel="Período dos relatórios"
             className="reports-toolbar__period"
             density="compact"
-            onChange={setPreset}
+            onChange={(preset) => updateView({ preset })}
             options={periodOptions}
-            value={preset}
+            value={view.preset}
           />
+          <button
+            aria-pressed={view.compare}
+            className="reports-compare"
+            onClick={() => updateView({ compare: !view.compare })}
+            type="button"
+          >
+            <GitCompareArrows aria-hidden="true" className="size-4" />
+            Comparar
+          </button>
           <FeatureActionButton
             icon={RefreshCcw}
             isBusy={status.kind === "loading"}
             label="Atualizar"
-            onClick={() => void refresh(preset)}
+            onClick={() => void load()}
             title="Atualizar relatórios"
           />
+        </div>
+        {view.preset === "custom" ? (
+          <div className="reports-custom-period">
+            <FeatureDateField
+              label="Data inicial"
+              max={view.customPeriod.to}
+              onChange={(from) =>
+                updateView({
+                  customPeriod: { ...view.customPeriod, from },
+                })
+              }
+              value={view.customPeriod.from}
+            />
+            <FeatureDateField
+              label="Data final"
+              min={view.customPeriod.from}
+              onChange={(to) =>
+                updateView({ customPeriod: { ...view.customPeriod, to } })
+              }
+              value={view.customPeriod.to}
+            />
+          </div>
+        ) : null}
+        <div className="reports-toolbar__context">
+          <span>{formatPeriod(period)}</span>
           {dashboard ? (
-            <span className="reports-toolbar__updated">
+            <span>
               Atualizado em {formatGeneratedAt(dashboard.generatedAt)}
             </span>
           ) : null}
         </div>
       </FeatureToolbar>
 
+      <ReportsNavigation
+        onChange={(tab) => updateView({ tab })}
+        value={view.tab}
+      />
+
+      {searchable ? (
+        <FeatureSearchField
+          className="reports-search"
+          label="Buscar veículo no relatório"
+          onChange={(event) =>
+            updateView({ search: event.currentTarget.value })
+          }
+          placeholder="Buscar por veículo, placa ou data"
+          value={view.search}
+        />
+      ) : null}
+
+      {view.compare && isValidPeriod(period) ? (
+        <div className="reports-comparison-note">
+          <GitCompareArrows aria-hidden="true" className="size-4" />
+          <span>
+            Comparando {formatPeriod(period)} com{" "}
+            {formatPeriod(previousPeriod(period))}
+          </span>
+        </div>
+      ) : null}
+      {comparisonError ? <FeatureAlert>{comparisonError}</FeatureAlert> : null}
       {status.kind === "error" ? (
         <FeatureAlert>{status.message}</FeatureAlert>
       ) : null}
       {dashboard ? (
-        <Dashboard dashboard={dashboard} />
+        <div aria-busy={status.kind === "loading"}>
+          <ReportContent
+            comparison={comparison}
+            dashboard={dashboard}
+            search={view.search}
+            tab={view.tab}
+          />
+        </div>
       ) : status.kind === "error" ? (
         <FeatureEmptyState
           action={
             <FeatureActionButton
               icon={RefreshCcw}
               label="Tentar carregar novamente"
-              onClick={() => void refresh(preset)}
+              onClick={() => void load()}
             />
           }
-          body="Os indicadores não puderam ser consultados agora. Nenhum valor estimado foi exibido."
+          body="A consulta falhou e nenhum valor estimado foi exibido. Tente novamente para buscar os dados oficiais."
           icon={BarChart3}
           title="Relatórios indisponíveis"
         />
@@ -121,262 +252,40 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
   );
 }
 
-function Dashboard({ dashboard }: { dashboard: ReportsDashboard }) {
-  const activeLeads = dashboard.leadFunnel
-    .filter((step) => step.key !== "lost" && step.key !== "won")
-    .reduce((total, step) => total + step.count, 0);
-
-  const kpis = [
-    { label: "Vendas", value: String(dashboard.sales.closedCount) },
-    { label: "Receita", value: money(dashboard.sales.revenueCents) },
-    { label: "Margem bruta", value: money(dashboard.sales.grossMarginCents) },
-    {
-      label: "A receber",
-      value: money(dashboard.revenue.openReceivablesCents),
-    },
-    { label: "Leads ativos", value: String(activeLeads) },
-    { label: "Estoque", value: String(dashboard.inventory.availableListings) },
-  ];
-
-  return (
-    <div className="reports-dashboard">
-      <section aria-label="Indicadores principais" className="reports-horizon">
-        {kpis.map((kpi) => (
-          <article className="reports-horizon__item" key={kpi.label}>
-            <span className="reports-horizon__label">{kpi.label}</span>
-            <strong className="reports-horizon__value">{kpi.value}</strong>
-          </article>
-        ))}
-      </section>
-
-      <FeatureSection className="reports-section-surface" title="Financeiro">
-        <dl className="reports-facts-grid">
-          <div className="reports-fact-cell">
-            <dt>Recebido</dt>
-            <dd>{money(dashboard.revenue.paidReceiptsCents)}</dd>
-          </div>
-          <div className="reports-fact-cell">
-            <dt>A receber</dt>
-            <dd>{money(dashboard.revenue.openReceivablesCents)}</dd>
-          </div>
-          <div className="reports-fact-cell">
-            <dt>Vencido</dt>
-            <dd
-              className={
-                dashboard.attention.overdueReceivablesCount > 0
-                  ? "has-warning"
-                  : undefined
-              }
-            >
-              {money(dashboard.attention.overdueReceivablesCents)} ·{" "}
-              {dashboard.attention.overdueReceivablesCount}{" "}
-              {dashboard.attention.overdueReceivablesCount === 1
-                ? "título"
-                : "títulos"}
-            </dd>
-          </div>
-          <div className="reports-fact-cell">
-            <dt>Ticket médio</dt>
-            <dd>{money(dashboard.sales.avgTicketCents)}</dd>
-          </div>
-        </dl>
-      </FeatureSection>
-
-      <FeatureSection className="reports-section-surface" title="Estoque">
-        <div className="reports-inventory-deck">
-          <span className="reports-inventory-deck__highlight">
-            <strong>
-              {dashboard.inventory.availableListings} de{" "}
-              {dashboard.inventory.totalListings}
-            </strong>{" "}
-            veículos disponíveis
-          </span>
-          <span className="reports-inventory-deck__meta">
-            {dashboard.inventory.reservedListings} reservados ·{" "}
-            {dashboard.inventory.soldListings} vendidos · preço médio{" "}
-            {money(dashboard.inventory.averagePriceCents)}
-          </span>
-        </div>
-        <div className="reports-bars">
-          {ageBucketEntries(dashboard).map(({ key, count }) => (
-            <BarRow
-              count={count}
-              key={key}
-              label={getReportAgeBucketLabel(key)}
-              max={maxAgeBucket(dashboard)}
-            />
-          ))}
-        </div>
-      </FeatureSection>
-
-      <section className="feature-grid two">
-        <FeatureSection
-          className="reports-section-surface"
-          title="Funil comercial"
-        >
-          {dashboard.leadFunnel.length ? (
-            <div className="reports-bars">
-              {dashboard.leadFunnel.map((step) => (
-                <BarRow
-                  count={step.count}
-                  key={step.key}
-                  label={getReportFunnelLabel(step.key)}
-                  max={Math.max(
-                    ...dashboard.leadFunnel.map((item) => item.count),
-                  )}
-                />
-              ))}
-            </div>
-          ) : (
-            <FeatureEmptyState
-              body="O funil ainda não possui oportunidades no período selecionado."
-              density="compact"
-              icon={Inbox}
-              title="Sem dados de funil"
-            />
-          )}
-        </FeatureSection>
-        <FeatureSection
-          className="reports-section-surface"
-          title="Origem dos leads"
-        >
-          {dashboard.leadSources.length ? (
-            <div className="reports-bars">
-              {dashboard.leadSources.map((source) => (
-                <BarRow
-                  count={source.value}
-                  key={source.key}
-                  label={getReportSourceLabel(source.key)}
-                  max={Math.max(
-                    ...dashboard.leadSources.map((item) => item.value),
-                  )}
-                />
-              ))}
-            </div>
-          ) : (
-            <FeatureEmptyState
-              body="As origens aparecerão quando os primeiros leads forem registrados."
-              density="compact"
-              icon={Inbox}
-              title="Sem origens registradas"
-            />
-          )}
-        </FeatureSection>
-      </section>
-
-      <FeatureSection
-        className="reports-section-surface"
-        title="Precisa de atenção"
-      >
-        {hasAttention(dashboard) ? (
-          <ul className="reports-attention">
-            {dashboard.attention.overdueReceivablesCount > 0 ? (
-              <li>
-                <AlertTriangle aria-hidden="true" className="size-4" />
-                <span>
-                  {dashboard.attention.overdueReceivablesCount}{" "}
-                  {dashboard.attention.overdueReceivablesCount === 1
-                    ? "recebível vencido"
-                    : "recebíveis vencidos"}{" "}
-                  somando{" "}
-                  <strong>
-                    {money(dashboard.attention.overdueReceivablesCents)}
-                  </strong>
-                </span>
-              </li>
-            ) : null}
-            {dashboard.attention.pendingChecklistsCount > 0 ? (
-              <li>
-                <AlertTriangle aria-hidden="true" className="size-4" />
-                <span>
-                  {dashboard.attention.pendingChecklistsCount}{" "}
-                  {dashboard.attention.pendingChecklistsCount === 1
-                    ? "checklist pendente"
-                    : "checklists pendentes"}{" "}
-                  aguardando conclusão
-                </span>
-              </li>
-            ) : null}
-          </ul>
-        ) : (
-          <FeatureEmptyState
-            body="Nenhum recebível vencido ou checklist pendente no momento."
-            density="compact"
-            icon={BarChart3}
-            title="Tudo em dia"
-            tone="green"
-          />
-        )}
-      </FeatureSection>
-    </div>
-  );
-}
-
-function BarRow({
-  count,
-  label,
-  max,
+function ReportContent({
+  comparison,
+  dashboard,
+  search,
+  tab,
 }: {
-  count: number;
-  label: string;
-  max: number;
+  comparison: ReportsDashboard | null;
+  dashboard: ReportsDashboard;
+  search: string;
+  tab: ReportTab;
 }) {
-  return (
-    <div className="reports-bar-row">
-      <div className="reports-bar-row__header">
-        <span>{label}</span>
-        <strong>{count}</strong>
-      </div>
-      <div className="reports-progress-track">
-        <div
-          className="reports-progress-fill"
-          style={{ width: `${max > 0 ? (count / max) * 100 : 0}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-type AgeBucketKey = keyof ReportsDashboard["inventory"]["ageBuckets"];
-
-function ageBucketEntries(dashboard: ReportsDashboard) {
-  const buckets = dashboard.inventory.ageBuckets;
-  return (Object.keys(buckets) as AgeBucketKey[]).map((key) => ({
-    key,
-    count: buckets[key],
-  }));
-}
-
-function maxAgeBucket(dashboard: ReportsDashboard) {
-  return Math.max(...ageBucketEntries(dashboard).map(({ count }) => count));
-}
-
-function hasAttention(dashboard: ReportsDashboard) {
-  return (
-    dashboard.attention.overdueReceivablesCount > 0 ||
-    dashboard.attention.pendingChecklistsCount > 0
-  );
-}
-
-function computePeriod(preset: PeriodPreset, now = new Date()): ReportsPeriod {
-  const to = formatDate(now);
-  if (preset === "month") {
-    return {
-      from: formatDate(new Date(now.getFullYear(), now.getMonth(), 1)),
-      to,
-    };
+  if (tab === "summary" || tab === "sold" || tab === "costs") {
+    return (
+      <OwnerReport
+        comparison={comparison}
+        dashboard={dashboard}
+        search={search}
+        tab={tab}
+      />
+    );
   }
-  const days = preset === "7d" ? 7 : preset === "90d" ? 90 : 30;
-  const from = new Date(now);
-  from.setDate(from.getDate() - (days - 1));
-  return { from: formatDate(from), to };
-}
-
-function formatDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  if (tab === "finance") {
+    return <FinanceReport comparison={comparison} dashboard={dashboard} />;
+  }
+  if (tab === "crm") {
+    return <CrmReport comparison={comparison} dashboard={dashboard} />;
+  }
+  if (tab === "inventory") {
+    return <InventoryReport comparison={comparison} dashboard={dashboard} />;
+  }
+  if (tab === "documents") {
+    return <DocumentsReport comparison={comparison} dashboard={dashboard} />;
+  }
+  return <MarketingReport dashboard={dashboard} />;
 }
 
 type LoadStatus =
@@ -384,16 +293,11 @@ type LoadStatus =
 
 function createRuntimeReportsApi(): ReportsApi {
   return {
-    getDashboard: async (period) =>
-      createReportsApi(await createReportsApiOptions()).getDashboard(period),
+    getDashboard: async (targetPeriod: ReportsPeriod) =>
+      createReportsApi(await createReportsApiOptions()).getDashboard(
+        targetPeriod,
+      ),
   };
-}
-
-function money(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
-    style: "currency",
-  }).format(cents / 100);
 }
 
 function formatGeneratedAt(value: string) {

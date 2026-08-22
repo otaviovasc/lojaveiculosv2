@@ -182,6 +182,7 @@
   --color-accent: var(--sf-accent) !important;
   --color-accent-soft: var(--sf-accent-soft) !important;
   --color-accent-strong: var(--sf-accent-strong) !important;
+  --color-accent-readable: var(--sf-accent-readable) !important;
   --color-accent-contrast: var(--sf-inverse);
   --color-inverse: var(--sf-inverse);
   --public-storefront-heading-font: var(--sf-heading-font);

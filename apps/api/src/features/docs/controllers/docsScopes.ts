@@ -29,6 +29,10 @@ export const openApiScopes = {
   "inventory.media_update": "Reorder media and edit media visibility.",
   "inventory.media_delete": "Delete vehicle media and cleanup objects.",
   "inventory.cost_create": "Create vehicle costs and linked finance entries.",
+  "inventory.cost_update":
+    "Correct vehicle costs and synchronize linked finance entries.",
+  "inventory.cost_void":
+    "Void vehicle costs with a reason while preserving history.",
   "inventory.checklist_read": "Read vehicle readiness checklists.",
   "inventory.checklist_update":
     "Create and update vehicle readiness checklists.",

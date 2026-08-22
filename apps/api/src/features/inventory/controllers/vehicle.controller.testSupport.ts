@@ -59,6 +59,8 @@ export function createInventoryTestServices(): InventoryListingServices {
   return {
     ...createChecklistTestServices(),
     addVehicleCost: vi.fn(async () => listingDetailResult()),
+    updateVehicleCost: vi.fn(async () => listingDetailResult()),
+    voidVehicleCost: vi.fn(async () => listingDetailResult()),
     analyzeListingResale: vi.fn(async () => listingDetailResult()),
     archiveVehicleSupplier: vi.fn(async () => supplierResult()),
     approveAiStudioImage: vi.fn(async () => listingDetailResult()),
@@ -216,6 +218,9 @@ export async function createUserContext() {
       "inventory.checklist_read",
       "inventory.checklist_update",
       "inventory.document_attach",
+      "inventory.cost_create",
+      "inventory.cost_update",
+      "inventory.cost_void",
       "inventory.media_delete",
       "inventory.media_update",
       "inventory.read",

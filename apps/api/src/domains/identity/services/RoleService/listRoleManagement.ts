@@ -67,8 +67,17 @@ export async function listRoleManagement(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
-  const actor = findActorMembership(context, state.memberships);
-  if (!actor || actor.status !== "active") {
+  const actorMembership = findActorMembership(context, state.memberships);
+  const actor =
+    actorMembership?.status === "active"
+      ? {
+          membershipId: actorMembership.membershipId,
+          role: actorMembership.role,
+        }
+      : context.membershipRole === "agency"
+        ? { membershipId: null, role: "agency" as const }
+        : null;
+  if (!actor) {
     throw new AuthorizationError(
       "Role management requires an active store membership.",
     );

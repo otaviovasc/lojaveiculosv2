@@ -1,5 +1,7 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { AnalyticsServices } from "../../features/analytics/controllers/analyticsServices.js";
+import type { AgencyStatsServices } from "../../features/agency/controllers/agencyStatsServices.js";
+import type { AgencyTeamAccessServices } from "../../features/agency/controllers/agencyTeamAccessServices.js";
 import type { AutomationServices } from "../../features/automation/controllers/automationServices.js";
 import type { BillingServices } from "../../features/billing/controllers/billingServices.js";
 import type { ComplianceServices } from "../../features/compliance/controllers/complianceServices.js";
@@ -36,6 +38,8 @@ import type { ServiceLogger } from "../../shared/serviceLogger.js";
 import type { ExternalBotManagerPorts } from "../../domains/crm/bot/ports/externalBotPorts.js";
 
 export type CreateAppOptions = {
+  agencyStatsServices?: AgencyStatsServices;
+  agencyTeamAccessServices?: AgencyTeamAccessServices;
   analyticsServices?: AnalyticsServices;
   automationServices?: AutomationServices;
   audit?: AuditSink;

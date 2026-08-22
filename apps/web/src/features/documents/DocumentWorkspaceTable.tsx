@@ -1,10 +1,6 @@
-import { Download, FileSearch, Trash2, UploadCloud } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
-import {
-  FeatureRowAction,
-  FeatureRowActions,
-  FeatureTableFrame,
-} from "../../components/ui/FeatureTable";
+import { FeatureTableFrame } from "../../components/ui/FeatureTable";
 import { MercosulPlateBadge } from "../inventory/components/InventoryListingBadges";
 import { DocumentOriginBadge } from "./DocumentBadges";
 import { documentVehicleInfo } from "./documentDisplayModel";
@@ -16,6 +12,7 @@ import {
 } from "./documentsWorkspaceModel";
 import { statusLabel } from "./documentLabels";
 import { DocumentWorkspaceMobileList } from "./DocumentWorkspaceMobileList";
+import { DocumentWorkspaceRowActions } from "./DocumentWorkspaceRowActions";
 import type { WorkspaceDocument } from "./types";
 
 export type DocumentsUploadListAction = {
@@ -212,28 +209,13 @@ export function DocumentsTable({
                     className="sticky right-0 w-40 min-w-40 bg-panel px-4 py-3 whitespace-nowrap text-right align-middle group-hover:bg-app-elevated"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <FeatureRowActions>
-                      <FeatureRowAction
-                        ariaLabel="Visualizar documento"
-                        icon={FileSearch}
-                        onClick={() => onSelect(document)}
-                        tooltip="Visualizar"
-                      />
-                      <FeatureRowAction
-                        ariaLabel="Baixar documento"
-                        disabled={isBusy}
-                        icon={Download}
-                        onClick={() => void onDownload(document.id)}
-                        tooltip="Baixar"
-                      />
-                      <FeatureRowAction
-                        ariaLabel="Excluir documento"
-                        disabled={isBusy || document.status === "voided"}
-                        icon={Trash2}
-                        onClick={() => onDelete(document)}
-                        tooltip="Excluir"
-                      />
-                    </FeatureRowActions>
+                    <DocumentWorkspaceRowActions
+                      document={document}
+                      isBusy={isBusy}
+                      onDelete={onDelete}
+                      onDownload={onDownload}
+                      onSelect={onSelect}
+                    />
                   </td>
                 </tr>
               );

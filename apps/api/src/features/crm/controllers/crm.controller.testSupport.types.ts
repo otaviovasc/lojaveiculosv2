@@ -31,6 +31,7 @@ export type CreateCrmTestAppOptions = {
   crmCanonicalInboundRepository?: CrmServicePorts["crmCanonicalInboundRepository"];
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
   crmConnectionRepository?: CrmConnectionRepository;
+  crmStatisticsReadModel?: CrmServicePorts["crmStatisticsReadModel"];
   crmOlxWebhookSecurity?: CrmServicePorts["crmOlxWebhookSecurity"];
   crmOutcomeRepository?: CrmServicePorts["crmOutcomeRepository"];
   olxCrmWebhookSetupProvider?: CrmServicePorts["olxCrmWebhookSetupProvider"];

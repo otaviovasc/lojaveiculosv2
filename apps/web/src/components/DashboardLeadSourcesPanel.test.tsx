@@ -35,6 +35,7 @@ describe("DashboardLeadSourcesPanel", () => {
 });
 
 const emptyDashboard: AnalyticsDashboard = {
+  financialAvailability: { status: "available" },
   generatedAt: "2026-08-12T12:00:00.000Z",
   inventory: {
     averagePriceCents: 0,
@@ -48,9 +49,12 @@ const emptyDashboard: AnalyticsDashboard = {
   leadSources: [],
   revenue: {
     closedSalesCents: 0,
-    grossMarginCents: 0,
     openReceivablesCents: 0,
     paidReceiptsCents: 0,
+  },
+  sales: {
+    avgTicketCents: null,
+    closedCount: 0,
   },
   storeId: "store_1",
   tenantId: "tenant_1",

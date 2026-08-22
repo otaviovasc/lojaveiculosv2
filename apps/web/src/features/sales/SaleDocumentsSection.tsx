@@ -49,12 +49,21 @@ const DOCUMENT_OPTIONS: readonly DocumentDefinition[] = [
   },
   {
     id: "delivery_term",
-    title: "Termo de Entrega e Garantia",
+    title: "Termo de Entrega",
     badge: "Entrega",
     description:
-      "Declaração de recebimento do veículo, manual, chaves e termo de vistoria.",
+      "Formaliza a entrega do veículo e o início das responsabilidades do comprador.",
     requires: ["CPF/CNPJ"],
     icon: ShieldCheck,
+  },
+  {
+    id: "buyer_acknowledgment",
+    title: "Termo de recebimento",
+    badge: "Checklist",
+    description:
+      "Confirma o recebimento de documentos e itens, como chaves, manual, CRV ou ATPV-e.",
+    requires: ["CPF/CNPJ"],
+    icon: FileCheck,
   },
   {
     id: "power_of_attorney",

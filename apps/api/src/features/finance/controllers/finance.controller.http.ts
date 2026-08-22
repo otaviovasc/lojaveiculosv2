@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import type { z } from "zod";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { commonApiErrorResponse } from "../../../infrastructure/http/commonApiErrorResponse.js";
+import { FinanceStoreIdentityUnavailableError } from "../../../domains/finance/services/FinanceService/generateFinanceEntryReceipt.js";
 import {
   FinanceEntryDocumentNotFoundError,
   FinanceEntryNotFoundError,
@@ -105,6 +106,15 @@ export async function handleFinance(
     if (error instanceof FinanceDocumentStorageUnavailableError) {
       return jsonApiError(context, {
         code: "FINANCE_STORAGE_UNAVAILABLE",
+        error,
+        message: error.message,
+        status: 503,
+      });
+    }
+
+    if (error instanceof FinanceStoreIdentityUnavailableError) {
+      return jsonApiError(context, {
+        code: "FINANCE_STORE_IDENTITY_UNAVAILABLE",
         error,
         message: error.message,
         status: 503,

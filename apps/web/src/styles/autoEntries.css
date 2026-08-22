@@ -1106,15 +1106,10 @@
   }
 }
 
-/* Save action dirty state: pristine (values === stored) is dimmed; a small
-   warning dot flags unsaved changes. */
+/* Save action dirty state: pristine forms disable the action; a small warning
+   dot flags unsaved changes. */
 .ae-save-action {
   position: relative;
-  transition: opacity var(--motion-duration-base) var(--motion-ease-standard);
-}
-
-.ae-save-action--pristine {
-  opacity: 0.55;
 }
 
 .ae-save-action__dot {
@@ -1142,8 +1137,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ae-disclosure__chevron,
-  .ae-save-action {
+  .ae-disclosure__chevron {
     transition: none;
   }
 

@@ -32,6 +32,7 @@ import type { CrmOutboundIntentRepository } from "../../ports/crmOutboundIntentR
 import type { CrmConversationRepository } from "../../ports/crmConversationRepository.js";
 import type { CrmConversationCycleCommandRepository } from "../../ports/crmConversationCycleCommandRepository.js";
 import type { ExternalBotManagerPorts } from "../../bot/ports/externalBotPorts.js";
+import type { CrmStatisticsReadModel } from "../../readModels/crmStatisticsReadModel.js";
 
 export type CrmServicePorts = {
   crmAssigneeMembershipRepository?: CrmAssigneeMembershipRepository;
@@ -64,6 +65,7 @@ export type CrmServicePorts = {
   crmOutboundIntentRepository?: CrmOutboundIntentRepository;
   crmConversationRepository?: CrmConversationRepository;
   crmConversationCycleCommandRepository?: CrmConversationCycleCommandRepository;
+  crmStatisticsReadModel?: CrmStatisticsReadModel;
   environment?: string;
   transaction?: <T>(
     action: (ports: CrmServicePorts) => Promise<T>,

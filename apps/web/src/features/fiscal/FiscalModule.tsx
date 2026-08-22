@@ -214,6 +214,9 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
               />
               <FiscalDocumentList
                 api={fiscalApi}
+                canDownloadOfficialArtifacts={
+                  overview.capabilities.canDownloadOfficialArtifacts
+                }
                 documents={overview.documents}
                 onCorrect={startCorrection}
                 onError={reportError}

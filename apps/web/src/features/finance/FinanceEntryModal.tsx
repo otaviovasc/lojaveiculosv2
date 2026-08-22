@@ -33,6 +33,8 @@ import type {
   FinanceEntryType,
   FinanceRecurringEntry,
 } from "./types";
+import type { FinanceVehicleOption } from "./financeVehicleOptions";
+import type { FinanceVehicleOptionsState } from "./useFinanceAccess";
 
 export function FinanceEntryModal({
   activeType,
@@ -43,6 +45,8 @@ export function FinanceEntryModal({
   onSubmit,
   recurringEntry,
   sellerOptions = [],
+  vehicleOptions = [],
+  vehicleOptionsState = { kind: "idle" },
 }: {
   activeType: FinanceEntryType;
   api?: FinanceApi | null;
@@ -52,6 +56,8 @@ export function FinanceEntryModal({
   onSubmit: (draft: FinanceEntryDraft) => Promise<void>;
   recurringEntry?: FinanceRecurringEntry | null;
   sellerOptions?: readonly SaleSellerOption[];
+  vehicleOptions?: readonly FinanceVehicleOption[];
+  vehicleOptionsState?: FinanceVehicleOptionsState;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [draft, setDraft] = useState(() => createEntryDraft(activeType));
@@ -267,6 +273,8 @@ export function FinanceEntryModal({
             sellerOptions={sellerOptions}
             setField={setField}
             setDraft={setDraft}
+            vehicleOptions={vehicleOptions}
+            vehicleOptionsState={vehicleOptionsState}
           />
         )}
         {entry && !recurringEntry && api ? (

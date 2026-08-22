@@ -24,21 +24,26 @@ import type {
 } from "./AgencyDashboardPage.model";
 
 export function AgencyDashboardHeader({
+  agencySelector,
   storeCount,
   onCreate,
 }: {
+  agencySelector?: ReactNode;
   storeCount: number;
   onCreate: () => void;
 }) {
   return (
     <FeaturePageHeader
       actions={
-        <FeatureActionButton
-          icon={Plus}
-          label="Criar nova loja"
-          onClick={onCreate}
-          variant="primary"
-        />
+        <>
+          {agencySelector}
+          <FeatureActionButton
+            icon={Plus}
+            label="Criar nova loja"
+            onClick={onCreate}
+            variant="primary"
+          />
+        </>
       }
       chip={
         storeCount > 0
@@ -52,12 +57,18 @@ export function AgencyDashboardHeader({
           Visão geral
         </>
       }
-      title="Rede de Lojas"
+      title="Rede de lojas"
     />
   );
 }
 
-export function AgencyStatsGrid({ stores }: { stores: AgencyStore[] }) {
+export function AgencyStatsGrid({
+  loading = false,
+  stores,
+}: {
+  loading?: boolean;
+  stores: AgencyStore[];
+}) {
   const vehicleCount = stores.reduce(
     (acc, curr) => acc + (curr._count?.veiculos || 0),
     0,
@@ -100,6 +111,8 @@ export function AgencyStatsGrid({ stores }: { stores: AgencyStore[] }) {
     <section aria-label="Indicadores da rede" className="agency-kpi-grid">
       {kpis.map(({ icon: Icon, label, tone, value }) => (
         <article
+          aria-busy={loading || undefined}
+          aria-label={loading ? `${label}: carregando` : undefined}
           className={`agency-kpi-card agency-kpi-card--${tone}`}
           key={label}
         >
@@ -108,7 +121,9 @@ export function AgencyStatsGrid({ stores }: { stores: AgencyStore[] }) {
           </span>
           <div className="agency-kpi-card__info">
             <small>{label}</small>
-            <strong>{value}</strong>
+            <strong aria-hidden={loading || undefined}>
+              {loading ? "—" : value}
+            </strong>
           </div>
         </article>
       ))}
@@ -131,7 +146,7 @@ export function AgencyStoresCard({
   onStatusFilterChange,
 }: {
   children: ReactNode;
-  filteredCount: number;
+  filteredCount: number | null;
   planEndDateFrom: string;
   planEndDateTo: string;
   searchTerm: string;
@@ -151,7 +166,7 @@ export function AgencyStoresCard({
             <Store className="size-5" />
           </div>
           <h2 className="text-lg font-black uppercase italic tracking-wider text-primary">
-            Nossas Lojas ({filteredCount})
+            Nossas lojas{filteredCount === null ? "" : ` (${filteredCount})`}
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:flex xl:items-center gap-3 flex-1 xl:max-w-4xl justify-end">

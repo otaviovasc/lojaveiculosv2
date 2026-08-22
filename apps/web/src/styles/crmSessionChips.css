@@ -59,7 +59,7 @@
 .crm-cycle-status-active {
   background: color-mix(in srgb, #10b981 12%, transparent);
   border-color: color-mix(in srgb, #10b981 25%, transparent);
-  color: #059669;
+  color: var(--color-success-soft-foreground);
 }
 
 :root[data-theme="dark"] .crm-session-status-active,
@@ -96,7 +96,7 @@
 .crm-channel:not([data-channel]) {
   background: color-mix(in srgb, #10b981 12%, transparent);
   border-color: color-mix(in srgb, #10b981 28%, transparent);
-  color: #059669;
+  color: var(--color-success-soft-foreground);
 }
 
 :root[data-theme="dark"] .crm-channel[data-channel="whatsapp"],

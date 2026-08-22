@@ -68,6 +68,7 @@ export function AgencyBillingStoreEntitlements({
         <div className="agency-store-billing-select">
           <span>Loja selecionada</span>
           <FeatureSelect
+            ariaLabel="Loja selecionada"
             onChange={onStoreChange}
             options={overview.stores.map((store) => ({
               label: store.storeName,

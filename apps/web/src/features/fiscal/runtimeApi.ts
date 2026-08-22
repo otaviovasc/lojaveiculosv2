@@ -32,6 +32,8 @@ export function createRuntimeFiscalApi(): FiscalApi {
     confirmDefaults: async (input) => (await api()).confirmDefaults(input),
     createRecipient: async (input) => (await api()).createRecipient(input),
     createTemplate: async (input) => (await api()).createTemplate(input),
+    downloadDocumentArtifact: async (documentId, format) =>
+      (await api()).downloadDocumentArtifact(documentId, format),
     getConnection: async () => (await api()).getConnection(),
     getOverview: async () => (await api()).getOverview(),
     issueDocument: async (input) => (await api()).issueDocument(input),

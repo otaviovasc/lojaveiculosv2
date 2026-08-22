@@ -46,6 +46,59 @@ export const fiscalPaths = {
       },
     },
   },
+  "/api/v1/fiscal/documents/{documentId}/artifacts/{format}": {
+    get: {
+      tags: ["Fiscal", "Documents"],
+      summary: "Download an official fiscal document artifact",
+      description:
+        "Returns the provider-backed PDF or XML artifact only when the scoped fiscal document has an eligible official status. No synthetic artifact is generated.",
+      operationId: "downloadFiscalDocumentArtifact",
+      security: [{ bearerAuth: ["fiscal.manage", "documents.download"] }],
+      parameters: [
+        {
+          in: "path",
+          name: "documentId",
+          required: true,
+          schema: { type: "string" },
+        },
+        {
+          in: "path",
+          name: "format",
+          required: true,
+          schema: { type: "string", enum: ["pdf", "xml"] },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Official provider-backed fiscal artifact.",
+          headers: {
+            "Cache-Control": { schema: { type: "string" } },
+            "Content-Disposition": { schema: { type: "string" } },
+          },
+          content: {
+            "application/pdf": {
+              schema: { type: "string", format: "binary" },
+            },
+            "application/xml": {
+              schema: { type: "string", format: "binary" },
+            },
+          },
+        },
+        "400": { description: "Artifact format or request scope is invalid." },
+        "401": { description: "Authentication is required." },
+        "403": {
+          description:
+            "fiscal.manage and documents.download permissions are required.",
+        },
+        "404": { description: "Fiscal document was not found in store scope." },
+        "409": {
+          description:
+            "The official provider artifact is not available for this document.",
+        },
+        "503": { description: "The fiscal provider is unavailable." },
+      },
+    },
+  },
   "/api/v1/fiscal/recipients": {
     get: {
       tags: ["Fiscal"],

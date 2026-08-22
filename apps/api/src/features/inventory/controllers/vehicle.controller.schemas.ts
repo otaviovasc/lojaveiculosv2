@@ -177,21 +177,6 @@ export const unpublishListingSchema = z.object({
   reason: z.string().trim().min(1).nullable().optional(),
 });
 
-export const costSchema = z.object({
-  amountCents: z.number().int().positive(),
-  costDate: z.coerce.date().optional(),
-  description: z.string().trim().min(1).nullable().optional(),
-  kind: z.enum([
-    "acquisition",
-    "fee",
-    "other",
-    "preparation",
-    "repair",
-    "tax",
-    "transport",
-  ]),
-});
-
 const checklistItemSchema = z.object({
   id: z.string().trim().min(1).optional(),
   label: z.string().trim().min(1).max(160),

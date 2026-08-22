@@ -6,7 +6,11 @@ import type {
 export type SaleStatus = "draft" | "pending" | "closed" | "cancelled";
 export type { SalePaymentStatus } from "@lojaveiculosv2/shared";
 export type SaleDocumentKind =
-  "delivery_term" | "power_of_attorney" | "sale_contract" | "sale_receipt";
+  | "buyer_acknowledgment"
+  | "delivery_term"
+  | "power_of_attorney"
+  | "sale_contract"
+  | "sale_receipt";
 export const saleFinancingRanks = ["R0", "R1", "R2", "R3", "R4", "R5"] as const;
 export type SaleFinancingRank = (typeof saleFinancingRanks)[number];
 

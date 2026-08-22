@@ -4,6 +4,7 @@ import type {
   CreateUploadedDocumentInput,
   CreateVehicleUploadedDocumentInput,
   DocumentDownload,
+  DocumentsPage,
   DocumentKind,
   DocumentPreview,
   DocumentTemplate,
@@ -27,6 +28,7 @@ import {
 export { documentsRoutes } from "./documentApiRoutes";
 
 export type DocumentDownloadOptions = DocumentDownloadRouteOptions;
+export type DocumentsRequestOptions = { signal?: AbortSignal };
 
 export type DocumentsApi = {
   createUploadedDocument: (
@@ -44,6 +46,10 @@ export type DocumentsApi = {
   listDocuments: (
     filters?: ListDocumentsFilters,
   ) => Promise<WorkspaceDocument[]>;
+  listDocumentPage: (
+    filters?: ListDocumentsFilters,
+    request?: DocumentsRequestOptions,
+  ) => Promise<DocumentsPage>;
   listTemplates: () => Promise<DocumentTemplate[]>;
   listVersions: (documentId: string) => Promise<DocumentVersion[]>;
   previewDocument: (documentId: string) => Promise<DocumentPreview>;
@@ -122,11 +128,16 @@ export function createDocumentsApi({
             baseUrl,
           ),
         })),
+    listDocumentPage: (filters = {}, request = {}) =>
+      fetch(documentsRoutes.documents(filters, baseUrl), {
+        headers: createDocumentsHeaders(auth),
+        ...(request.signal ? { signal: request.signal } : {}),
+      }).then(readJson<DocumentsPage>),
     listDocuments: (filters = {}) =>
       fetch(documentsRoutes.documents(filters, baseUrl), {
         headers: createDocumentsHeaders(auth),
       })
-        .then(readJson<{ documents: WorkspaceDocument[] }>)
+        .then(readJson<DocumentsPage>)
         .then((payload) => payload.documents),
     listTemplates: () =>
       fetch(documentsRoutes.templates(baseUrl), {

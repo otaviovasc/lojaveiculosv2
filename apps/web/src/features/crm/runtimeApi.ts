@@ -73,6 +73,10 @@ async function createRuntimeProductApi() {
 
 export function createRuntimeCrmConversationApi(): CrmConversationApi {
   return {
+    getStatistics: async (input, options) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).getStatistics(input, options),
     addCycleTag: async (cycleId, input) =>
       createCrmConversationApi(await createProductCrmApiOptions()).addCycleTag(
         cycleId,

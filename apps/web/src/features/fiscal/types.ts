@@ -15,16 +15,24 @@ export type FiscalDocumentStatus =
   | "queued"
   | "rejected";
 
+export type FiscalArtifactFormat = "pdf" | "xml";
+
+export type FiscalDocumentArtifact = {
+  blob: Blob;
+  contentType: "application/pdf" | "application/xml";
+  fileName: string;
+};
+
 export type FiscalDocument = {
   accessKey: string | null;
   createdAt: string;
   documentKind: "nfe" | "nfse";
   documentType: string;
+  hasProviderReference: boolean;
   id: string;
   issuedAt: string | null;
   metadata: Record<string, unknown>;
   provider: "spedy";
-  providerDocumentId: string | null;
   recipientId: string | null;
   status: FiscalDocumentStatus;
   templateId: string | null;
@@ -64,6 +72,9 @@ export type FiscalTemplate = {
 };
 
 export type FiscalOverview = {
+  capabilities: {
+    canDownloadOfficialArtifacts: boolean;
+  };
   documents: FiscalDocument[];
   provider: {
     configured: boolean;

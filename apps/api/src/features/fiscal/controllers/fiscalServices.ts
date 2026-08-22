@@ -1,6 +1,11 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { cancelFiscalDocument } from "../../../domains/fiscal/services/FiscalService/cancelFiscalDocument.js";
 import type { CancelFiscalDocumentInput } from "../../../domains/fiscal/services/FiscalService/cancelFiscalDocument.js";
+import {
+  downloadFiscalDocumentArtifact,
+  type DownloadFiscalDocumentArtifactInput,
+  type FiscalDocumentArtifactDownload,
+} from "../../../domains/fiscal/services/FiscalService/downloadFiscalDocumentArtifact.js";
 import { getFiscalOverview } from "../../../domains/fiscal/services/FiscalService/getFiscalOverview.js";
 import { issueFiscalDocument } from "../../../domains/fiscal/services/FiscalService/issueFiscalDocument.js";
 import type { IssueFiscalDocumentInput } from "../../../domains/fiscal/services/FiscalService/issueFiscalDocument.js";
@@ -73,6 +78,10 @@ export type FiscalServices = {
     context: ServiceContext,
     input: UpsertFiscalTemplateInput,
   ) => Promise<FiscalServiceInvoiceTemplate>;
+  downloadDocumentArtifact: (
+    context: ServiceContext,
+    input: DownloadFiscalDocumentArtifactInput,
+  ) => Promise<FiscalDocumentArtifactDownload>;
   getOverview: (context: ServiceContext) => Promise<FiscalOverview>;
   getConnection: (context: ServiceContext) => Promise<FiscalConnection>;
   issueDocument: (
@@ -149,6 +158,8 @@ export function createFiscalServices(
       createFiscalRecipient(context, input, ports),
     createTemplate: (context, input) =>
       createFiscalTemplate(context, input, ports),
+    downloadDocumentArtifact: (context, input) =>
+      downloadFiscalDocumentArtifact(context, input, ports),
     getOverview: (context) => getFiscalOverview(context, ports),
     getConnection: (context) => getFiscalConnection(context, ports),
     issueDocument: (context, input) =>

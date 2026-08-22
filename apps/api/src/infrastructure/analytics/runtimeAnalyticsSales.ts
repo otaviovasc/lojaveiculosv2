@@ -15,13 +15,22 @@ export async function getRevenue(
   const toExclusive = nextDay(input.period.to);
   const [salesRow] = await db
     .select({
-      closedSalesCents: sql<number>`coalesce(sum(${sales.salePriceCents}) filter (where ${sales.status} = 'closed'), 0)::int`,
+      closedSalesCents: sql<number>`coalesce(sum(${sales.salePriceCents}), 0)::int`,
     })
     .from(sales)
-    .where(scoped(sales, input));
+    .where(
+      and(
+        scoped(sales, input),
+        eq(sales.status, "closed"),
+        eq(sales.isCurrentRevision, true),
+        sql`${sales.closedAt} >= ${dayStart(input.period.from)}`,
+        sql`${sales.closedAt} < ${toExclusive}`,
+      ),
+    );
   const [financeRow] = await db
     .select({
-      openReceivablesCents: sql<number>`coalesce(sum(${financeEntries.amountCents}) filter (where ${financeEntries.type} = 'revenue' and ${financeEntries.status} = 'pending'), 0)::int`,
+      // Open receivables mean pending revenue due inside the selected period.
+      openReceivablesCents: sql<number>`coalesce(sum(${financeEntries.amountCents}) filter (where ${financeEntries.type} = 'revenue' and ${financeEntries.status} = 'pending' and ${financeEntries.dueAt} >= ${dayStart(input.period.from)} and ${financeEntries.dueAt} < ${toExclusive}), 0)::int`,
       // Paid receipts are period-filtered on the paid_at timestamp.
       paidReceiptsCents: sql<number>`coalesce(sum(${financeEntries.amountCents}) filter (where ${financeEntries.type} = 'revenue' and ${financeEntries.status} = 'paid' and ${financeEntries.paidAt} >= ${dayStart(input.period.from)} and ${financeEntries.paidAt} < ${toExclusive}), 0)::int`,
     })

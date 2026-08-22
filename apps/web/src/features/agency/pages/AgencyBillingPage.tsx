@@ -1,5 +1,7 @@
 import { CreditCard, RefreshCcw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import "../../../styles/billing-panels.css";
 import {
   FeatureActionButton,
   FeaturePageHeader,
@@ -19,8 +21,11 @@ import type {
   BillingAddonContract,
   BillingProviderStatus,
 } from "../../billing/types";
-import { useAccountSession } from "../../account/accountSession";
 import type { AgencyApi, AgencyTenantOverview } from "../apiClient";
+import {
+  AgencyTenantSelector,
+  useAgencyTenantSelection,
+} from "../useAgencyTenantSelection";
 import {
   agencyBillingErrorMessage,
   createAgencyBillingPanelOverview,
@@ -36,15 +41,16 @@ import {
 } from "./AgencyBillingSummarySections";
 
 export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
-  const session = useAccountSession();
-  const agencyTenant = session.tenantMemberships.find(
-    (membership) =>
-      membership.role === "agency" && membership.status === "active",
-  );
+  const requestGeneration = useRef(0);
+  const { agencyTenant, agencyTenants, selectAgencyTenant } =
+    useAgencyTenantSelection();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [overview, setOverview] = useState<AgencyTenantOverview | null>(null);
   const [providerStatus, setProviderStatus] =
     useState<BillingProviderStatus | null>(null);
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(() =>
+    searchParams.get("storeId"),
+  );
   const [status, setStatus] = useState<AgencyBillingStatus>({
     kind: "loading",
   });
@@ -61,7 +67,8 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const checkoutReturn = readBillingCheckoutReturn("agency");
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+    const generation = ++requestGeneration.current;
     if (!agencyTenant) {
       setStatus({
         kind: "error",
@@ -70,26 +77,66 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
       return;
     }
     setStatus({ kind: "loading" });
+    setOverview(null);
+    setProviderStatus(null);
     try {
       const billingApi = api ?? (await createRuntimeAgencyBillingApi());
       const [nextOverview, nextProviderStatus] = await Promise.all([
         billingApi.getOverview(agencyTenant.tenantId),
         billingApi.getProviderStatus(agencyTenant.tenantId),
       ]);
+      if (generation !== requestGeneration.current) return;
       setOverview(nextOverview);
       setProviderStatus(nextProviderStatus);
-      setSelectedStoreId(
-        (current) => current ?? nextOverview.stores[0]?.storeId ?? null,
+      setSelectedStoreId((current) =>
+        nextOverview.stores.some((store) => store.storeId === current)
+          ? current
+          : (nextOverview.stores[0]?.storeId ?? null),
       );
       setStatus({ kind: "ready" });
     } catch (error) {
+      if (generation !== requestGeneration.current) return;
       setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
     }
-  };
+  }, [agencyTenant, api]);
 
   useEffect(() => {
     void refresh();
-  }, []);
+    return () => {
+      requestGeneration.current += 1;
+    };
+  }, [refresh]);
+
+  useEffect(() => {
+    const requestedStoreId = searchParams.get("storeId");
+    if (
+      !requestedStoreId ||
+      !overview?.stores.some((store) => store.storeId === requestedStoreId)
+    ) {
+      return;
+    }
+    setSelectedStoreId(requestedStoreId);
+  }, [overview, searchParams]);
+
+  useEffect(() => {
+    if (
+      !selectedStoreId ||
+      !overview?.stores.some((store) => store.storeId === selectedStoreId) ||
+      searchParams.get("storeId") === selectedStoreId
+    ) {
+      return;
+    }
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("storeId", selectedStoreId);
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [overview, searchParams, selectedStoreId, setSearchParams]);
+
+  const selectStore = (storeId: string) => {
+    setSelectedStoreId(storeId);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("storeId", storeId);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   const panelOverview = useMemo(
     () => createAgencyBillingPanelOverview(overview, selectedStoreId),
@@ -184,12 +231,19 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     <FeaturePageShell className="billing-shell" variant="content">
       <FeaturePageHeader
         actions={
-          <FeatureActionButton
-            icon={RefreshCcw}
-            isBusy={status.kind === "loading"}
-            label="Atualizar"
-            onClick={() => void refresh()}
-          />
+          <>
+            <AgencyTenantSelector
+              agencyTenant={agencyTenant}
+              agencyTenants={agencyTenants}
+              onChange={selectAgencyTenant}
+            />
+            <FeatureActionButton
+              icon={RefreshCcw}
+              isBusy={status.kind === "loading"}
+              label="Atualizar"
+              onClick={() => void refresh()}
+            />
+          </>
         }
         description="Uma visão clara do investimento do grupo e dos pacotes que ajudam cada loja a crescer."
         eyebrow={
@@ -270,7 +324,7 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
                 }
                 onCancelZapi={() => void updateZapiRequest("cancel")}
                 onRequestZapi={() => void updateZapiRequest("request")}
-                onStoreChange={setSelectedStoreId}
+                onStoreChange={selectStore}
               />
               <AgencyBillingAllocation overview={overview} />
             </>

@@ -16,6 +16,8 @@ import { createDocumentsApi } from "../../documents/apiClient";
 import { createDocumentsApiOptions } from "../../documents/runtimeApi";
 import { openDocumentDownload } from "../../documents/DocumentsModuleSupport";
 import { uploadInventoryFile } from "../model/mediaWorkspaceTypes";
+import { useOptionalAccountSession } from "../../account/accountSession";
+import { readSessionEffectivePermissions } from "../../account/sessionPermissions";
 import {
   costToItem,
   costToCashFlowItem,
@@ -41,7 +43,16 @@ export function InventoryDetailFinanceiroTab({
   unit: InventoryUnit | null;
 }) {
   const [isAddingCost, setIsAddingCost] = useState(false);
+  const [isUpdatingCost, setIsUpdatingCost] = useState(false);
+  const [isVoidingCost, setIsVoidingCost] = useState(false);
   const [costMessage, setCostMessage] = useState<string | null>(null);
+  const accountSession = useOptionalAccountSession();
+  const permissions = accountSession
+    ? readSessionEffectivePermissions(accountSession)
+    : null;
+  const canCreateCost = permissions?.includes("inventory.cost_create") ?? true;
+  const canUpdateCost = permissions?.includes("inventory.cost_update") ?? true;
+  const canVoidCost = permissions?.includes("inventory.cost_void") ?? true;
 
   const listing = detail.listing;
   const selectedUnit = unit ?? detail.units[0] ?? null;
@@ -78,6 +89,7 @@ export function InventoryDetailFinanceiroTab({
     account: string,
     value: number,
     kind: InventoryCostKind,
+    costDate: string,
     file?: File | null,
   ): Promise<boolean> => {
     if (!selectedUnit) {
@@ -90,6 +102,7 @@ export function InventoryDetailFinanceiroTab({
     try {
       let updated = await api.addCost(selectedUnit.id, {
         amountCents: Math.round(value),
+        costDate,
         description: account.trim(),
         kind,
       });
@@ -129,6 +142,56 @@ export function InventoryDetailFinanceiroTab({
     }
   };
 
+  const handleUpdateCost = async (
+    costId: string,
+    account: string,
+    value: number,
+    kind: InventoryCostKind,
+    costDate: string,
+  ): Promise<boolean> => {
+    if (!selectedUnit) return false;
+    setIsUpdatingCost(true);
+    setCostMessage(null);
+    try {
+      const updated = await api.updateCost(selectedUnit.id, costId, {
+        amountCents: Math.round(value),
+        costDate,
+        description: account.trim(),
+        kind,
+      });
+      onUpdated(updated);
+      return true;
+    } catch (error) {
+      setCostMessage(
+        formatApiErrorDisplay(error, "Não foi possível corrigir o custo."),
+      );
+      return false;
+    } finally {
+      setIsUpdatingCost(false);
+    }
+  };
+
+  const handleVoidCost = async (
+    costId: string,
+    reason: string,
+  ): Promise<boolean> => {
+    if (!selectedUnit) return false;
+    setIsVoidingCost(true);
+    setCostMessage(null);
+    try {
+      const updated = await api.voidCost(selectedUnit.id, costId, { reason });
+      onUpdated(updated);
+      return true;
+    } catch (error) {
+      setCostMessage(
+        formatApiErrorDisplay(error, "Não foi possível estornar o custo."),
+      );
+      return false;
+    } finally {
+      setIsVoidingCost(false);
+    }
+  };
+
   const handleDownloadReceipt = async (documentId: string) => {
     try {
       const opts = await createDocumentsApiOptions();
@@ -136,7 +199,9 @@ export function InventoryDetailFinanceiroTab({
       const download = await docsApi.downloadDocument(documentId);
       openDocumentDownload(download);
     } catch (error) {
-      console.error("Erro ao baixar o comprovante", error);
+      setCostMessage(
+        formatApiErrorDisplay(error, "Não foi possível abrir o comprovante."),
+      );
     }
   };
 
@@ -263,14 +328,21 @@ export function InventoryDetailFinanceiroTab({
 
       <FinanceiroCustosSection
         addStatus={costMessage}
+        canCreate={canCreateCost}
+        canUpdate={canUpdateCost}
+        canVoid={canVoidCost}
         clearStatus={() => setCostMessage(null)}
         costs={costItems}
         formatBRL={formatBRL}
         isAdding={isAddingCost}
+        isUpdating={isUpdatingCost}
+        isVoiding={isVoidingCost}
         onAddCost={handleAddCost}
         onDownloadReceipt={(documentId) => {
           void handleDownloadReceipt(documentId);
         }}
+        onUpdateCost={handleUpdateCost}
+        onVoidCost={handleVoidCost}
       />
 
       <FinanceiroNotasFiscaisSection />

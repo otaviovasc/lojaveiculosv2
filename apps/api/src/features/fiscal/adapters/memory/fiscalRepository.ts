@@ -191,6 +191,7 @@ function createOverview(
   documents: FiscalDocument[],
 ): FiscalOverview {
   return {
+    capabilities: { canDownloadOfficialArtifacts: false },
     documents,
     events: [],
     provider: {

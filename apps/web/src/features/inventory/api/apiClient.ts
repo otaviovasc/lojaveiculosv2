@@ -13,6 +13,8 @@ import type {
   UpdateInventoryChecklistInput,
   UpdateInventoryListingInput,
   UpdateInventoryUnitInput,
+  UpdateInventoryCostInput,
+  VoidInventoryCostInput,
 } from "../model/types";
 import type {
   InventoryPlateLookupResponse,
@@ -101,6 +103,32 @@ export function createInventoryApi({
       description: input.description,
       kind: input.kind,
     });
+
+  const updateCost = (
+    unitId: string,
+    costId: string,
+    input: UpdateInventoryCostInput,
+  ) =>
+    sendJson<InventoryListingDetail>(
+      inventoryRoutes.cost(unitId, costId, baseUrl),
+      {
+        amountCents: input.amountCents,
+        costDate: input.costDate,
+        description: input.description,
+        kind: input.kind,
+      },
+      "PATCH",
+    );
+
+  const voidCost = (
+    unitId: string,
+    costId: string,
+    input: VoidInventoryCostInput,
+  ) =>
+    postJson<InventoryListingDetail>(
+      inventoryRoutes.voidCost(unitId, costId, baseUrl),
+      { reason: input.reason },
+    );
 
   const createChecklist = (
     unitId: string,
@@ -298,6 +326,8 @@ export function createInventoryApi({
 
   return {
     addCost,
+    updateCost,
+    voidCost,
     analyzeResale,
     analyzeListingResale,
     attachUnit,

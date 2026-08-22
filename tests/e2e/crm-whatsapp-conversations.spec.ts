@@ -3,7 +3,10 @@ import {
   installCampaignApiMocks,
   installNoopCampaignEventSource,
 } from "./crm-whatsapp-campaigns-helpers";
-import { createCampaignConnection } from "./crm-whatsapp-campaigns-fixtures";
+import {
+  createCampaignConnection,
+  createCampaignCycleConnection,
+} from "./crm-whatsapp-campaigns-fixtures";
 import { installLocalOwnerSession } from "./crm-whatsapp-test-helpers";
 import { saveQaScreenshot } from "./support/artifacts";
 import {
@@ -24,44 +27,50 @@ test.describe("CRM WhatsApp conversations", () => {
   }, testInfo) => {
     await setQaViewport(page, "desktop");
     await installLocalOwnerSession(page);
+    await installDeferredAdminModulePrefetch(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
     await installCapabilityAwareConnectionMock(page);
     const richSessions = createRichSessions();
     const primarySession = richSessions[0]!;
-    await page.route("**/crm/whatsapp/sessions**", (route) =>
+    await page.route(/\/api\/v1\/crm\/conversation-cycles(?:\?.*)?$/, (route) =>
       route.fulfill({
         body: JSON.stringify(richSessions),
         headers: { "content-type": "application/json" },
         status: 200,
       }),
     );
-    await page.route("**/crm/whatsapp/sessions/*/read", (route) =>
-      route.fulfill({
-        body: JSON.stringify({
-          ...primarySession,
-          lastReadAt: "2026-07-07T12:05:00.000Z",
-          unreadCount: 0,
+    await page.route(
+      "**/api/v1/crm/conversation-cycles/*/actions/read",
+      (route) =>
+        route.fulfill({
+          body: JSON.stringify({
+            ...primarySession,
+            lastReadAt: "2026-07-07T12:05:00.000Z",
+            unreadCount: 0,
+          }),
+          headers: { "content-type": "application/json" },
+          status: 200,
         }),
-        headers: { "content-type": "application/json" },
-        status: 200,
-      }),
     );
-    await page.route("**/crm/whatsapp/sessions/*/unread", (route) =>
-      route.fulfill({
-        body: JSON.stringify({}),
-        headers: { "content-type": "application/json" },
-        status: 200,
-      }),
+    await page.route(
+      "**/api/v1/crm/conversation-cycles/*/actions/unread",
+      (route) =>
+        route.fulfill({
+          body: JSON.stringify({}),
+          headers: { "content-type": "application/json" },
+          status: 200,
+        }),
     );
-    await page.route("**/crm/whatsapp/sessions/*/tags", (route) =>
+    await page.route("**/api/v1/crm/conversation-cycles/*/tags", (route) =>
       route.fulfill({
         body: JSON.stringify({
           ...primarySession,
-          sessionTags: [
-            ...primarySession.sessionTags,
+          tags: [
+            ...primarySession.tags,
             {
-              color: "var(--color-blue-start)",
+              color: "blue",
+              emoji: null,
               id: "tag_replied",
               name: "Respondeu",
             },
@@ -74,18 +83,25 @@ test.describe("CRM WhatsApp conversations", () => {
 
     await page.goto("/crm#/crm?surface=conversations");
 
-    await expect(page.getByRole("heading", { name: "CRM" })).toBeVisible();
+    await expect(
+      page
+        .getByRole("navigation", { name: "WhatsApp CRM" })
+        .getByText("CRM", { exact: true }),
+    ).toBeVisible();
+    const filterRail = page.getByRole("group", { name: "Filtros rápidos" });
+    const allFilter = filterRail.getByRole("button", { name: /Todos/ });
+    await allFilter.click();
     await expect(
       page.getByText("Tenho interesse no Civic.").first(),
     ).toBeVisible();
     await expect(page.getByText("Quente").first()).toBeVisible();
-    const filterRail = page.getByRole("group", { name: "Filtros rápidos" });
-    const allFilter = filterRail.getByRole("button", { name: /Todos/ });
     await allFilter.scrollIntoViewIfNeeded();
     await expect(allFilter).toBeVisible();
 
     await page.getByRole("button", { name: /Etiquetas/ }).click();
-    const repliedTagOption = page.getByRole("button", { name: "Respondeu" });
+    const repliedTagOption = page.getByRole("menuitemcheckbox", {
+      name: "Respondeu",
+    });
     await expect(repliedTagOption).toBeVisible();
     const optionBox = await repliedTagOption.boundingBox();
     const labelBox = await repliedTagOption
@@ -116,13 +132,14 @@ test.describe("CRM WhatsApp conversations", () => {
     await expect(page.getByText("Todos os status")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Nova conversa" }).click();
-    await expect(
-      page.locator(".crm-whatsapp-action-panel header h2"),
-    ).toBeVisible();
+    const newConversationDialog = page.getByRole("dialog", {
+      name: "Nova conversa",
+    });
+    await expect(newConversationDialog).toBeVisible();
     await expect(
       page.getByText("Inicie o atendimento pelo número do cliente."),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Fechar" }).click();
+    await newConversationDialog.getByRole("button", { name: "Fechar" }).click();
 
     await page.getByRole("button", { name: /Ana Premium/ }).click();
     await expect(page.getByLabel("Detalhe da conversa")).toContainText(
@@ -141,7 +158,7 @@ test.describe("CRM WhatsApp conversations", () => {
     await expect(detailsPanel).toHaveCount(0);
     await page.getByRole("button", { name: "Adicionar etiqueta" }).click();
     await expect(page.getByPlaceholder("Buscar etiqueta")).toBeVisible();
-    const headerTagMenu = page.locator(".crm-whatsapp-tag-menu");
+    const headerTagMenu = page.locator(".crm-tag-menu");
     await expect
       .poll(() =>
         headerTagMenu.evaluate((element) => {
@@ -158,7 +175,9 @@ test.describe("CRM WhatsApp conversations", () => {
     const tagRequest = page.waitForRequest(
       (request) =>
         request.method() === "POST" &&
-        request.url().includes(`/sessions/${primarySession.id}/tags`),
+        request
+          .url()
+          .includes(`/conversation-cycles/${primarySession.id}/tags`),
     );
     await page.getByRole("button", { name: "Respondeu" }).click();
     await tagRequest;
@@ -168,9 +187,11 @@ test.describe("CRM WhatsApp conversations", () => {
     await page.getByRole("button", { name: "Selecionar conversas" }).click();
     await expect(page.getByText("Selecione conversas")).toBeVisible();
     await page.getByRole("button", { name: /Ana Premium/ }).click();
-    await expect(page.getByText("1 conversa", { exact: true })).toBeVisible();
-    await page
-      .getByLabel("Ações em massa")
+    const bulkActions = page.getByLabel("Ações em massa");
+    await expect(
+      bulkActions.getByText("1 conversa", { exact: true }),
+    ).toBeVisible();
+    await bulkActions
       .getByRole("button", { name: "Não lidas", exact: true })
       .click();
     await saveQaScreenshot(
@@ -193,28 +214,31 @@ test.describe("CRM WhatsApp conversations", () => {
   }, testInfo) => {
     await setQaViewport(page, "mobile");
     await installLocalOwnerSession(page);
+    await installDeferredAdminModulePrefetch(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
     await installCapabilityAwareConnectionMock(page);
     const richSessions = createRichSessions();
     const primarySession = richSessions[0]!;
-    await page.route("**/crm/whatsapp/sessions**", (route) =>
+    await page.route(/\/api\/v1\/crm\/conversation-cycles(?:\?.*)?$/, (route) =>
       route.fulfill({
         body: JSON.stringify(richSessions),
         headers: { "content-type": "application/json" },
         status: 200,
       }),
     );
-    await page.route("**/crm/whatsapp/sessions/*/read", (route) =>
-      route.fulfill({
-        body: JSON.stringify({
-          ...primarySession,
-          lastReadAt: "2026-07-07T12:05:00.000Z",
-          unreadCount: 0,
+    await page.route(
+      "**/api/v1/crm/conversation-cycles/*/actions/read",
+      (route) =>
+        route.fulfill({
+          body: JSON.stringify({
+            ...primarySession,
+            lastReadAt: "2026-07-07T12:05:00.000Z",
+            unreadCount: 0,
+          }),
+          headers: { "content-type": "application/json" },
+          status: 200,
         }),
-        headers: { "content-type": "application/json" },
-        status: 200,
-      }),
     );
 
     await page.goto("/crm#/crm?surface=conversations");
@@ -226,6 +250,10 @@ test.describe("CRM WhatsApp conversations", () => {
       name: "Navegação móvel do WhatsApp CRM",
     });
     await expect(mobileNavigation).toBeVisible();
+    await page
+      .getByRole("group", { name: "Filtros rápidos" })
+      .getByRole("button", { name: /Todos/ })
+      .click();
 
     await page.getByRole("button", { name: /Ana Premium/ }).click();
     await expect(page.getByLabel("Detalhe da conversa")).toBeVisible();
@@ -241,7 +269,7 @@ test.describe("CRM WhatsApp conversations", () => {
       .getByRole("button", { name: "Abrir detalhes da conversa" })
       .click();
     await expect(
-      page.locator('.crm-whatsapp-shell[data-mobile-pane="context"]'),
+      page.locator('.crm-shell[data-mobile-pane="context"]'),
     ).toBeVisible();
     await expect(
       page.getByRole("complementary", {
@@ -267,11 +295,16 @@ test.describe("CRM WhatsApp conversations", () => {
   test("hides inbox tools when WhatsApp is disconnected", async ({ page }) => {
     await setQaViewport(page, "desktop");
     await installLocalOwnerSession(page);
+    await installDeferredAdminModulePrefetch(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
-    await page.route("**/crm/whatsapp/connections", (route) =>
+    await page.route("**/api/v1/crm/channel-connections", (route) =>
       route.fulfill({
-        body: JSON.stringify({ connections: [] }),
+        body: JSON.stringify({
+          allowance: { limit: 1, remaining: 1, used: 0 },
+          availableSetups: [],
+          connections: [],
+        }),
         headers: { "content-type": "application/json" },
         status: 200,
       }),
@@ -290,43 +323,26 @@ test.describe("CRM WhatsApp conversations", () => {
       "aria-selected",
       "true",
     );
-    const connectionRegion = page.getByRole("region", { name: "Conexão" });
+    const connectionRegion = page.getByRole("region", { name: "Conexões" });
     await expect(connectionRegion).toContainText("Z-API");
     await expect(connectionRegion).toContainText("WhatsApp Oficial");
   });
 });
 
+async function installDeferredAdminModulePrefetch(page: Page) {
+  await page.addInitScript(() => {
+    window.requestIdleCallback = () => 0;
+    window.cancelIdleCallback = () => undefined;
+  });
+}
+
 async function installCapabilityAwareConnectionMock(page: Page) {
-  await page.route("**/crm/whatsapp/connections", (route) =>
+  await page.route("**/api/v1/crm/channel-connections", (route) =>
     route.fulfill({
       body: JSON.stringify({
-        connections: [
-          {
-            ...createCampaignConnection(),
-            capabilities: {
-              audio: true,
-              catalog: true,
-              conversationStart: true,
-              delete: true,
-              documents: true,
-              imageCaption: true,
-              images: true,
-              location: true,
-              quickMessages: true,
-              reactions: true,
-              reply: true,
-              scheduling: true,
-              templates: false,
-              text: true,
-              vehicle: true,
-              video: true,
-            },
-            ready: true,
-            setup: {
-              status: "configured",
-            },
-          },
-        ],
+        allowance: { limit: 1, remaining: 0, used: 1 },
+        availableSetups: [],
+        connections: [createCampaignConnection()],
       }),
       headers: { "content-type": "application/json" },
       status: 200,
@@ -338,58 +354,45 @@ function createRichSessions() {
   return [
     {
       assignedMember: {
-        email: "carla@example.com",
-        id: 11,
-        name: "Carla",
-        role: "OWNER",
+        email: "bruno@example.com",
+        id: "70000000-0000-4000-8000-000000000002",
+        name: "Bruno Santos",
+        role: "SALESMAN",
       },
-      buyerName: "Ana Premium",
-      buyerPhone: "5511999999999",
-      channel: "WHATSAPP",
-      connection: {
-        id: "24000000-0000-4000-8000-000000000101",
-        name: "ZAPI Matriz",
-        phone: "5511888887777",
-        provider: "zapi",
-        status: "active",
-      },
+      assignedUserId: "70000000-0000-4000-8000-000000000002",
+      channel: "whatsapp",
+      connection: createCampaignCycleConnection(),
+      customerDisplayName: "Ana Premium",
+      customerPhone: "5511999999999",
       id: "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
       lastMessageAt: "2026-07-07T12:00:00.000Z",
       lastMessageContent: "Tenho interesse no Civic.",
       leadId: "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
       metadata: { adTitle: "Civic Touring em destaque", isAdInitiated: true },
       profilePhotoUrl: avatarSvg,
-      sessionTags: [
-        { color: "var(--color-accent)", id: "tag_hot", name: "Quente" },
-        { color: "var(--color-green-start)", id: "tag_reply", name: "Retorno" },
+      revision: 1,
+      tags: [
+        { color: "red", emoji: null, id: "tag_hot", name: "Quente" },
+        { color: "green", emoji: null, id: "tag_reply", name: "Retorno" },
       ],
       status: "ACTIVE",
       unreadCount: 3,
-      uuid: "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
       vehicle: { id: 44, mainPhotoUrl: null, title: "Civic Touring" },
     },
     {
       assignedMember: null,
       assignedUserId: null,
-      buyerName: "Bruno Retorno",
-      buyerPhone: "551188887777",
-      channel: "WHATSAPP",
-      connection: {
-        id: "24000000-0000-4000-8000-000000000101",
-        name: "ZAPI Matriz",
-        phone: "5511888887777",
-        provider: "zapi",
-        status: "active",
-      },
+      channel: "whatsapp",
+      connection: createCampaignCycleConnection(),
+      customerDisplayName: "Bruno Retorno",
+      customerPhone: "551188887777",
       id: "5e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
       lastMessageAt: "2026-07-07T11:40:00.000Z",
       lastMessageContent: "Pode me chamar depois das 15h?",
-      sessionTags: [
-        { color: "var(--color-blue-start)", id: "tag_2", name: "Follow" },
-      ],
+      revision: 1,
+      tags: [{ color: "blue", emoji: null, id: "tag_2", name: "Follow" }],
       status: "HUMAN_TAKEOVER",
       unreadCount: 0,
-      uuid: "5e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
       vehicle: null,
     },
   ];

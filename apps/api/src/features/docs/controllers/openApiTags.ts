@@ -6,6 +6,11 @@ export const openApiTags = [
     description: "Store roles, permissions, and membership access.",
   },
   {
+    name: "Agency",
+    description:
+      "Tenant-scoped agency operations across managed dealership stores.",
+  },
+  {
     name: "Billing",
     description: "Plans, subscriptions, and store feature entitlements.",
   },

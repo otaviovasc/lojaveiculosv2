@@ -25,6 +25,23 @@ const ageBucketLabels: Record<string, string> = {
   over90: "Mais de 90 dias",
 };
 
+const documentKindLabels: Record<string, string> = {
+  buyer_acknowledgment: "Ciência do comprador",
+  buyer_document: "Documento do comprador",
+  consignment_contract: "Contrato de consignação",
+  delivery_term: "Termo de entrega",
+  finance_receipt: "Recibo financeiro",
+  inspection: "Vistoria",
+  invoice: "Nota fiscal",
+  power_of_attorney: "Procuração",
+  reservation_receipt: "Recibo de reserva",
+  sale_contract: "Contrato de venda",
+  sale_receipt: "Recibo de venda",
+  test_drive: "Test drive",
+  vehicle_registration: "Documento do veículo",
+  warranty_certificate: "Certificado de garantia",
+};
+
 export function getReportFunnelLabel(key: string) {
   return funnelLabels[key] ?? "Outra etapa";
 }
@@ -35,4 +52,8 @@ export function getReportSourceLabel(key: string) {
 
 export function getReportAgeBucketLabel(key: string) {
   return ageBucketLabels[key] ?? "Idade desconhecida";
+}
+
+export function getReportDocumentKindLabel(key: string) {
+  return documentKindLabels[key] ?? "Outro documento";
 }

@@ -32,10 +32,13 @@ export type DocumentsWorkspaceBodyProps = {
   folderDocuments: readonly WorkspaceDocument[];
   hasActiveFilters: boolean;
   isLoading: boolean;
+  isLoadingMore: boolean;
+  loadedDocumentCount: number;
   onCloseDetail: () => void;
   onDownloadDocument: (id: string) => Promise<void>;
   onDownloadSelected: () => void;
   onKindChange: (value: DocumentKind | "") => void;
+  onLoadMore: () => void;
   onOriginSelect: (origin: DocumentOriginFilter) => void;
   onPreviewDocument: (id: string) => Promise<void>;
   onSearchChange: (value: string) => void;
@@ -50,12 +53,14 @@ export type DocumentsWorkspaceBodyProps = {
   onStatusChange: (value: DocumentStatus | "") => void;
   onUploadClick: () => void;
   originFilter: DocumentOriginFilter;
+  paginationError: string | null;
   search: string;
   selectedFolderKey: DocumentsFolderKey;
   showUpload: boolean;
   sortBy: DocumentsSortKey;
   sortedVisible: readonly WorkspaceDocument[];
   state: DocumentsState;
+  totalDocumentCount: number;
   selection: DocumentsSelection;
   updateDocument: (
     document: WorkspaceDocument,
@@ -73,10 +78,13 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
     folderDocuments,
     hasActiveFilters,
     isLoading,
+    isLoadingMore,
+    loadedDocumentCount,
     onCloseDetail,
     onDownloadDocument,
     onDownloadSelected,
     onKindChange,
+    onLoadMore,
     onOriginSelect,
     onPreviewDocument,
     onSearchChange,
@@ -88,12 +96,14 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
     onStatusChange,
     onUploadClick,
     originFilter,
+    paginationError,
     search,
     selectedFolderKey,
     showUpload,
     sortBy,
     sortedVisible,
     state,
+    totalDocumentCount,
     selection,
     updateDocument,
     visibleSelectedCount,
@@ -123,7 +133,10 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
           status={filters.status}
         />
       ) : null}
-      {!isLoading && !errorMessage && folderDocuments.length === 0 ? (
+      {!isLoading &&
+      !errorMessage &&
+      loadedDocumentCount >= totalDocumentCount &&
+      folderDocuments.length === 0 ? (
         <DocumentsEmptyState
           {...(showUpload
             ? {
@@ -146,6 +159,7 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
       ) : null}
       {!isLoading &&
       !errorMessage &&
+      loadedDocumentCount >= totalDocumentCount &&
       folderDocuments.length > 0 &&
       sortedVisible.length === 0 ? (
         <DocumentsEmptyState
@@ -195,6 +209,35 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
               : {})}
           />
         </>
+      ) : null}
+
+      {!isLoading && loadedDocumentCount < totalDocumentCount ? (
+        <div
+          aria-label="Paginação de documentos"
+          className="flex flex-col items-center gap-2 rounded-xl border border-line bg-panel p-4 text-center"
+        >
+          <p className="text-sm font-semibold text-text tabular-nums">
+            {loadedDocumentCount} de {totalDocumentCount} documentos carregados
+          </p>
+          <p className="max-w-xl text-xs leading-relaxed text-muted">
+            A busca e os filtros já consideram todo o acervo desta pasta. Esta
+            lista mostra a página carregada; carregue mais para ver os demais
+            resultados.
+          </p>
+          <button
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-line-strong bg-app-elevated px-4 text-sm font-bold text-text transition-colors hover:bg-accent-soft hover:text-accent-strong disabled:cursor-wait disabled:opacity-70"
+            disabled={isLoadingMore}
+            onClick={onLoadMore}
+            type="button"
+          >
+            {isLoadingMore ? "Carregando documentos..." : "Carregar mais"}
+          </button>
+          {paginationError ? (
+            <p className="text-sm font-semibold text-danger" role="alert">
+              {paginationError}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {state.selectedDocument ? (

@@ -8,8 +8,11 @@ import type {
   CrmConversationCycleId,
   CrmConversationCycleQuery,
 } from "./crmConversationTypes";
+import type { CrmStatisticsQuery } from "./crmStatisticsTypes";
 
 export const crmConversationRoutes = {
+  statistics: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/statistics", baseUrl),
   assignCycle: (cycleId: CrmConversationCycleId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/actions/assign`,
@@ -194,6 +197,14 @@ export const crmConversationRoutes = {
   sendVehicle: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/send/vehicle", baseUrl),
 } as const;
+
+export function createCrmStatisticsQuery(query: CrmStatisticsQuery) {
+  const params = new URLSearchParams();
+  addOptionalParam(params, "connectionId", query.connectionId);
+  addOptionalParam(params, "from", query.from);
+  addOptionalParam(params, "toExclusive", query.toExclusive);
+  return params;
+}
 
 export function createCrmConversationCyclesQuery(
   query: CrmConversationCycleQuery = {},

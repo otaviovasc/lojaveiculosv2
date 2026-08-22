@@ -19,6 +19,13 @@ export type DocumentKind =
 export type DocumentStatus =
   "archived" | "draft" | "issued" | "pending_signature" | "signed" | "voided";
 
+export class DocumentLinkUniquenessConflictError extends Error {
+  constructor() {
+    super("A document link already exists for this business role.");
+    this.name = "DocumentLinkUniquenessConflictError";
+  }
+}
+
 export type DocumentLinkTarget =
   | "finance_entry"
   | "financing_inquiry"
@@ -91,12 +98,22 @@ export type ListLinkedDocumentsInput = {
 export type ListDocumentsInput = {
   kind?: DocumentKind | undefined;
   limit?: number | undefined;
+  offset?: number | undefined;
+  origin?: "automatic" | "manual" | undefined;
   search?: string | undefined;
+  scope?: "general" | "vehicle" | undefined;
   status?: DocumentStatus | undefined;
   storeId: string;
   targetId?: string | undefined;
   targetType?: DocumentLinkTarget | undefined;
   tenantId: string;
+  uploadedFrom?: Date | undefined;
+  uploadedTo?: Date | undefined;
+};
+
+export type ListDocumentsResult = {
+  documents: readonly LinkedDocument[];
+  total: number;
 };
 
 export type DocumentTemplate = {
@@ -175,7 +192,7 @@ export type DocumentRepository = {
     templateKey?: string | undefined;
     tenantId: string;
   }) => Promise<DocumentTemplate | null>;
-  list: (input: ListDocumentsInput) => Promise<readonly LinkedDocument[]>;
+  list: (input: ListDocumentsInput) => Promise<ListDocumentsResult>;
   listVersions: (input: {
     documentId: string;
     versionId?: string | undefined;

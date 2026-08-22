@@ -146,6 +146,14 @@ async function assertCanResendInvitation(
   ports: AccountProvisioningPorts,
 ) {
   if (invitation.storeId) {
+    if (
+      context.membershipRole === "agency" &&
+      context.storeId === invitation.storeId &&
+      context.tenantId === invitation.tenantId
+    ) {
+      assertPermission(context, "users.manage");
+      return;
+    }
     const canManageStore =
       await ports.accountProvisioningRepository.hasStorePermission({
         permission: "users.manage",

@@ -375,6 +375,7 @@ function createApi(overrides: Partial<FiscalApi> = {}): FiscalApi {
     confirmDefaults: vi.fn(),
     createRecipient: vi.fn(),
     createTemplate: vi.fn(),
+    downloadDocumentArtifact: vi.fn(),
     getConnection: vi.fn(),
     getOverview: vi.fn(),
     issueDocument: vi.fn(),

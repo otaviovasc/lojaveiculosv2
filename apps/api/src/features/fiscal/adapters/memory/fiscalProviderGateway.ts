@@ -4,6 +4,7 @@ import type {
   FiscalProviderGateway,
   FiscalProviderStatus,
 } from "../../../../domains/fiscal/ports/fiscalProviderGateway.js";
+import { FiscalArtifactUnavailableError } from "../../../../domains/fiscal/ports/fiscalProviderGateway.js";
 
 export function createMemoryFiscalProviderGateway(
   configured = false,
@@ -18,6 +19,9 @@ export function createMemoryFiscalProviderGateway(
     },
     async getProviderStatus() {
       return providerStatus(configured);
+    },
+    async downloadDocumentArtifact(input) {
+      throw new FiscalArtifactUnavailableError(input.format);
     },
     async issueDocument(input) {
       return createIssueResult(input, configured);

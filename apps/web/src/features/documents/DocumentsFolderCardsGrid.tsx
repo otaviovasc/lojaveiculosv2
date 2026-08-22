@@ -6,6 +6,11 @@ import {
 } from "../../components/ui/FeatureControls";
 import { FeatureEmptyState } from "../../components/ui/FeatureStates";
 import {
+  inventoryListStatusOptions,
+  inventoryUnitStatusLabels,
+  type InventoryListStatusFilter,
+} from "../inventory/model/listCatalogModel";
+import {
   filterDocumentsForFolder,
   type DocumentVehicleOption,
   type DocumentsFolderKey,
@@ -45,27 +50,40 @@ const COUNT_BADGE_VARIANT_CLASS = {
 } as const;
 
 export function DocumentsFolderCardsGrid({
+  countsAreFolderScoped = false,
   documents,
+  hasMoreDocuments = false,
   isLoading,
   onSelectFolder,
   selectedKey,
+  selectedTotalDocumentCount = 0,
   vehicleOptions,
 }: {
+  countsAreFolderScoped?: boolean;
   documents: readonly WorkspaceDocument[];
+  hasMoreDocuments?: boolean;
   isLoading?: boolean;
   onSelectFolder: (key: DocumentsFolderKey) => void;
   selectedKey: DocumentsFolderKey;
+  selectedTotalDocumentCount?: number;
   vehicleOptions: readonly DocumentVehicleOption[];
 }) {
   const [search, setSearch] = useState("");
   const [presenceFilter, setPresenceFilter] =
     useState<FolderPresenceFilter>("all");
+  const [statusFilter, setStatusFilter] =
+    useState<InventoryListStatusFilter>("");
   const [sortBy, setSortBy] = useState<FolderGridSort>("docs_desc");
 
   const generalDocs = useMemo(
     () => filterDocumentsForFolder(documents, "general"),
     [documents],
   );
+  const generalCount = countsAreFolderScoped
+    ? selectedKey === "general"
+      ? selectedTotalDocumentCount
+      : null
+    : generalDocs.length;
 
   const vehicleFolders = useMemo(() => {
     return vehicleOptions.map((vehicle) => {
@@ -84,43 +102,60 @@ export function DocumentsFolderCardsGrid({
         .toLowerCase();
 
       return {
-        count: folderDocs.length,
+        count: countsAreFolderScoped
+          ? selectedKey === folderKey
+            ? selectedTotalDocumentCount
+            : null
+          : folderDocs.length,
         folderKey,
         plate: vehicle.plate,
         primaryMediaUrl: vehicle.primaryMediaUrl,
         searchHaystack,
         stockNumber: vehicle.stockNumber,
+        status: vehicle.status,
         title: vehicle.label,
         vin: vehicle.vin,
       };
     });
-  }, [documents, vehicleOptions]);
+  }, [
+    countsAreFolderScoped,
+    documents,
+    selectedKey,
+    selectedTotalDocumentCount,
+    vehicleOptions,
+  ]);
 
   const filteredVehicles = useMemo(() => {
     const q = search.trim().toLowerCase();
     return vehicleFolders
       .filter((folder) => {
         if (q && !folder.searchHaystack.includes(q)) return false;
+        if (statusFilter && folder.status !== statusFilter) return false;
         if (presenceFilter === "has_docs" && folder.count === 0) return false;
-        if (presenceFilter === "empty" && folder.count > 0) return false;
+        if (presenceFilter === "empty" && folder.count !== 0) return false;
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === "docs_desc") return b.count - a.count;
-        if (sortBy === "docs_asc") return a.count - b.count;
+        if (sortBy === "docs_desc") return (b.count ?? -1) - (a.count ?? -1);
+        if (sortBy === "docs_asc")
+          return (
+            (a.count ?? Number.MAX_SAFE_INTEGER) -
+            (b.count ?? Number.MAX_SAFE_INTEGER)
+          );
         if (sortBy === "title_asc") return a.title.localeCompare(b.title);
         if (sortBy === "title_desc") return b.title.localeCompare(a.title);
         return 0;
       });
-  }, [presenceFilter, search, sortBy, vehicleFolders]);
+  }, [presenceFilter, search, sortBy, statusFilter, vehicleFolders]);
 
   const showGeneralFolder = useMemo(() => {
     const q = search.trim().toLowerCase();
+    if (statusFilter) return false;
     if (q && !"documentos gerais pasta geral avulsos".includes(q)) return false;
-    if (presenceFilter === "has_docs" && generalDocs.length === 0) return false;
-    if (presenceFilter === "empty" && generalDocs.length > 0) return false;
+    if (presenceFilter === "has_docs" && generalCount === 0) return false;
+    if (presenceFilter === "empty" && generalCount !== 0) return false;
     return true;
-  }, [generalDocs.length, presenceFilter, search]);
+  }, [generalCount, presenceFilter, search, statusFilter]);
 
   return (
     <section
@@ -138,11 +173,22 @@ export function DocumentsFolderCardsGrid({
             value={search}
           />
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="w-44">
+            <FeatureSelect
+              ariaLabel="Filtrar pastas por fase do veículo"
+              disabled={isLoading}
+              onChange={(value) =>
+                setStatusFilter(value as InventoryListStatusFilter)
+              }
+              options={inventoryListStatusOptions}
+              value={statusFilter}
+            />
+          </div>
           <div className="w-44">
             <FeatureSelect
               ariaLabel="Filtrar por presença de documentos"
-              disabled={isLoading}
+              disabled={isLoading || hasMoreDocuments || countsAreFolderScoped}
               onChange={(val) => setPresenceFilter(val as FolderPresenceFilter)}
               options={PRESENCE_OPTIONS}
               value={presenceFilter}
@@ -159,6 +205,18 @@ export function DocumentsFolderCardsGrid({
           </div>
         </div>
       </div>
+
+      {countsAreFolderScoped ? (
+        <p className="text-xs font-semibold text-muted" role="status">
+          A contagem exata aparece na pasta aberta; abra outra pasta para
+          consultar o total dela com os filtros atuais.
+        </p>
+      ) : hasMoreDocuments ? (
+        <p className="text-xs font-semibold text-muted" role="status">
+          O filtro de pastas vazias fica disponível após carregar todos os
+          documentos, evitando classificar uma pasta incompleta como vazia.
+        </p>
+      ) : null}
 
       {/* Grid of Folder Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -178,7 +236,9 @@ export function DocumentsFolderCardsGrid({
                 <FolderArchive aria-hidden="true" className="size-6" />
               </div>
               <span className="inline-flex items-center rounded-full border border-line bg-app-elevated px-2.5 py-0.5 text-xs font-bold text-muted tabular-nums">
-                {generalDocs.length} {generalDocs.length === 1 ? "doc" : "docs"}
+                {generalCount ?? "—"}
+                {!countsAreFolderScoped && hasMoreDocuments ? "+" : ""}{" "}
+                {generalCount === 1 ? "doc" : "docs"}
               </span>
             </div>
             <div className="mt-4">
@@ -226,12 +286,14 @@ export function DocumentsFolderCardsGrid({
                 )}
                 <span
                   className={`${COUNT_BADGE_BASE_CLASS} ${
-                    vehicle.count > 0
+                    (vehicle.count ?? 0) > 0
                       ? COUNT_BADGE_VARIANT_CLASS.hasDocs
                       : COUNT_BADGE_VARIANT_CLASS.empty
                   }`}
                 >
-                  {vehicle.count} {vehicle.count === 1 ? "doc" : "docs"}
+                  {vehicle.count ?? "—"}
+                  {!countsAreFolderScoped && hasMoreDocuments ? "+" : ""}{" "}
+                  {vehicle.count === 1 ? "doc" : "docs"}
                 </span>
               </div>
 
@@ -251,6 +313,11 @@ export function DocumentsFolderCardsGrid({
                 <h3 className="mt-1 line-clamp-1 text-sm font-extrabold text-text group-hover:text-accent-strong">
                   {vehicle.title}
                 </h3>
+                {vehicle.status ? (
+                  <span className="mt-1 inline-flex text-xs font-semibold text-accent-strong">
+                    {inventoryUnitStatusLabels[vehicle.status]}
+                  </span>
+                ) : null}
                 <p className="mt-0.5 line-clamp-1 text-xs text-muted">
                   {vehicle.vin ? `CHASSI: ${vehicle.vin}` : "Pasta de veículo"}
                 </p>

@@ -71,6 +71,48 @@ describe("crmModel", () => {
     ]);
   });
 
+  it("keeps the current snapshot reference when a poll has no message changes", () => {
+    const message = createMessage({
+      metadata: { reaction: { value: "👍" } },
+    });
+    const current = [message];
+    const unchangedServerSnapshot = [
+      createMessage({
+        metadata: { reaction: { value: "👍" } },
+      }),
+    ];
+
+    expect(mergeMessagesFromServer(current, unchangedServerSnapshot)).toBe(
+      current,
+    );
+  });
+
+  it("replaces the snapshot when visible message content changes", () => {
+    const current = [createMessage({ status: "SENT" })];
+    const updated = [createMessage({ status: "READ" })];
+
+    expect(mergeMessagesFromServer(current, updated)).not.toBe(current);
+    expect(mergeMessagesFromServer(current, updated)).toEqual(updated);
+  });
+
+  it("keeps loaded older history when the live first page is refreshed", () => {
+    const older = createMessage({
+      content: "Mesmo texto",
+      createdAt: "2026-07-03T11:00:00.000Z",
+      id: "older-message",
+    });
+    const latest = createMessage({
+      content: "Mesmo texto",
+      createdAt: "2026-07-03T12:00:00.000Z",
+      id: "latest-message",
+    });
+
+    expect(mergeMessagesFromServer([older, latest], [{ ...latest }])).toEqual([
+      older,
+      latest,
+    ]);
+  });
+
   it("does not regress attendance when an older realtime cycle arrives", () => {
     const current = createSession({
       humanAttendanceChangedAt: "2026-07-03T12:05:00.000Z",

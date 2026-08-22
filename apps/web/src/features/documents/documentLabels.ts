@@ -18,6 +18,7 @@ export function targetLabel(target: DocumentLinkTarget) {
 
 export const kindOptions: Array<{ label: string; value: DocumentKind | "" }> = [
   { label: "Todos os tipos", value: "" },
+  { label: "Termo de recebimento", value: "buyer_acknowledgment" },
   { label: "Cadastro comprador", value: "buyer_document" },
   { label: "Contrato", value: "sale_contract" },
   { label: "Documento da unidade", value: "vehicle_registration" },

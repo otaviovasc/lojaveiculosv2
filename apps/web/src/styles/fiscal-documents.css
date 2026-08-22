@@ -181,6 +181,19 @@
   white-space: nowrap;
 }
 
+.fiscal-artifact-feedback {
+  color: var(--color-success-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  max-width: 20rem;
+  text-align: right;
+}
+
+.fiscal-artifact-feedback--error {
+  color: var(--color-danger);
+}
+
 /* ── Inline cancellation bar ─────────────────────────────────────────── */
 
 .fiscal-cancel-bar {

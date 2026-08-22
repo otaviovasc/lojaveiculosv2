@@ -17,6 +17,7 @@ import type {
 } from "../../ports/financeRepository.js";
 import type { FinanceAutoEntryRepository } from "../../ports/financeAutoEntryRepository.js";
 import type { CommissionWorkspaceRepository } from "../../ports/commissionWorkspaceRepository.js";
+import type { FinanceStoreIdentityReader } from "../../ports/financeStoreIdentityReader.js";
 import type { FinanceServicePorts } from "./types.js";
 export type { FinanceServicePorts } from "./types.js";
 
@@ -89,6 +90,12 @@ export function getObjectStorage(
   ports: FinanceServicePorts | undefined,
 ): ObjectStorage {
   return requirePort(ports?.objectStorage, "objectStorage");
+}
+
+export function getFinanceStoreIdentityReader(
+  ports: FinanceServicePorts | undefined,
+): FinanceStoreIdentityReader {
+  return requirePort(ports?.storeIdentityReader, "storeIdentityReader");
 }
 
 export async function findScopedFinanceEntry(

@@ -87,11 +87,17 @@ export const documentsRoutes = {
 function createQuery(filters: ListDocumentsFilters): string {
   const params = new URLSearchParams();
   if (filters.search?.trim()) params.set("search", filters.search.trim());
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
   if (filters.kind) params.set("kind", filters.kind);
+  if (filters.origin) params.set("origin", filters.origin);
+  if (filters.scope) params.set("scope", filters.scope);
   if (filters.status) params.set("status", filters.status);
   if (filters.targetId?.trim()) params.set("targetId", filters.targetId.trim());
   if (filters.targetType) params.set("targetType", filters.targetType);
   if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.offset !== undefined)
+    params.set("offset", String(filters.offset));
   const query = params.toString();
   return query ? `?${query}` : "";
 }

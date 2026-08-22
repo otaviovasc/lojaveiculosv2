@@ -44,6 +44,7 @@ export async function updateMembershipAccess(
   const actor = before.memberships.find(
     (member) => member.user.id === context.actor.id,
   );
+  const actorRole = actor?.role ?? context.membershipRole;
   const target = before.memberships.find(
     (member) => member.membershipId === input.membershipId,
   );
@@ -51,7 +52,7 @@ export async function updateMembershipAccess(
   enforcePolicy({
     input,
     ...(actor?.membershipId ? { actorMembershipId: actor.membershipId } : {}),
-    ...(actor?.role ? { actorRole: actor.role } : {}),
+    ...(actorRole ? { actorRole } : {}),
     ...(target ? { target } : {}),
   });
 

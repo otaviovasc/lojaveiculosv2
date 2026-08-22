@@ -130,6 +130,9 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
             : {}),
+          ...(options.crmStatisticsReadModel
+            ? { crmStatisticsReadModel: options.crmStatisticsReadModel }
+            : {}),
           ...(options.crmOlxWebhookSecurity
             ? { crmOlxWebhookSecurity: options.crmOlxWebhookSecurity }
             : {}),

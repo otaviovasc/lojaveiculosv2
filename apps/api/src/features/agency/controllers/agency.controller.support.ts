@@ -17,6 +17,13 @@ export async function createAgencyContext(
   tenantId: TenantId,
 ): Promise<ServiceContext> {
   const account = await contextFactory(context, { tenantId });
+  return createAgencyServiceContext(account, tenantId);
+}
+
+export function createAgencyServiceContext(
+  account: HttpAccountContext,
+  tenantId: TenantId,
+): ServiceContext {
   if (account.serviceContext.actor.kind !== "user") {
     throw new HttpContextAuthenticationError(
       "Agency routes require user context.",

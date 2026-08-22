@@ -186,7 +186,7 @@ export function agencyBillingConfigurationLabels(
 export function agencyBillingErrorMessage(error: unknown) {
   return formatApiErrorDisplay(
     error,
-    "Nao foi possivel carregar o faturamento da agencia.",
+    "Não foi possível carregar o faturamento da agência.",
   );
 }
 

@@ -1,7 +1,7 @@
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { DocumentDownload, WorkspaceDocument } from "./types";
 
-export const DOCUMENTS_PAGE_SIZE = 200;
+export const DOCUMENTS_PAGE_SIZE = 100;
 
 export type WorkspaceStatus =
   { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };

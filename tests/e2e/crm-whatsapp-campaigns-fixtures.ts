@@ -52,10 +52,21 @@ export function createCampaignBootstrap() {
 
 export function createCampaignConnection() {
   return {
+    capabilities: [
+      "catalog",
+      "delete",
+      "inbound",
+      "outbound",
+      "reactions",
+      "text",
+      "media",
+      "scheduling",
+      "conversation_start",
+    ],
+    channel: "whatsapp",
     displayName: "ZAPI E2E",
-    externalConnectionId: null,
-    externalInstanceId: null,
     id: campaignConnectionId,
+    isDefault: true,
     live: {
       checkedAt: "2026-07-07T12:00:00.000Z",
       connected: true,
@@ -63,23 +74,79 @@ export function createCampaignConnection() {
       providerStatus: "connected",
       smartphoneConnected: true,
     },
-    phone: "5518996469432",
     provider: "zapi",
-    status: "active",
-    webhookEndpoints: [
-      "received",
-      "delivery",
-      "status",
-      "connected",
-      "disconnected",
-      "chat-presence",
-    ].map((type) => ({
-      label: type,
-      type,
-      url: `http://127.0.0.1:8787/api/v1/crm/whatsapp/webhooks/zapi/${campaignConnectionId}/${type}`,
-    })),
-    webhookTokenRequired: false,
-    webhookUrl: null,
+    readiness: { ready: true, reason: null, reasonCode: "ready" },
+    state: "active",
+    setup: {
+      attemptCount: 1,
+      configuredAt: "2026-07-07T12:00:00.000Z",
+      lastErrorCode: null,
+      leaseExpiresAt: null,
+      leaseOwner: null,
+      requestedAt: "2026-07-07T11:59:00.000Z",
+      requiredTypes: [],
+      status: "configured",
+      succeededTypes: [],
+      supportCode: "ZAPI-E2E",
+      updatedAt: "2026-07-07T12:00:00.000Z",
+      version: 2,
+    },
+  };
+}
+
+export function createCampaignCycleConnection() {
+  const connection = createCampaignConnection();
+  return {
+    capabilities: connection.capabilities,
+    channel: connection.channel,
+    displayName: connection.displayName,
+    id: connection.id,
+    isDefault: connection.isDefault,
+    provider: connection.provider,
+    readiness: connection.readiness,
+    state: connection.state,
+  };
+}
+
+export function createCampaignRoutingPolicy() {
+  const connection = createCampaignConnection();
+  const routedConnection = {
+    active: true,
+    capabilities: connection.capabilities,
+    channel: connection.channel,
+    connected: true,
+    displayName: connection.displayName,
+    id: connection.id,
+    isDefault: connection.isDefault,
+    provider: connection.provider,
+    readiness: connection.readiness,
+    state: connection.state,
+  };
+  return {
+    channels: [
+      {
+        channel: "whatsapp",
+        externalBot: {
+          blocked: {
+            code: "route_disabled",
+            message: "Automação externa desativada.",
+            remediation: "Ative uma rota apenas quando necessário.",
+          },
+          connection: null,
+          mode: "disabled",
+          ready: false,
+          requiredCapabilities: ["text"],
+        },
+        storeDefault: {
+          blocked: null,
+          connection: routedConnection,
+          ready: true,
+          requiredCapabilities: ["text"],
+        },
+      },
+    ],
+    storeId: "50000000-0000-4000-8000-000000000001",
+    tenantId: "60000000-0000-4000-8000-000000000001",
   };
 }
 
@@ -99,8 +166,10 @@ export function createCampaignSessionCounts() {
       HUMAN_TAKEOVER: 0,
       MINIBOT_ACTIVE: 0,
     },
+    inHumanService: 0,
     total: 2,
     unread: 0,
+    waitingHuman: 0,
   };
 }
 
@@ -201,22 +270,24 @@ function createSession(input: {
   leadId?: string;
 }) {
   return {
-    buyerName: input.buyerName,
-    buyerPhone: input.buyerPhone,
-    channel: "WHATSAPP",
-    connection: {
-      id: campaignConnectionId,
-      name: "ZAPI E2E",
-      phone: "5518996469432",
-      provider: "zapi",
-      status: "active",
-    },
+    channel: "whatsapp",
+    connection: createCampaignCycleConnection(),
+    customerDisplayName: input.buyerName,
+    customerPhone: input.buyerPhone,
     id: input.id,
     lastMessageContent: "Tenho interesse no Civic.",
     lastMessageAt: "2026-07-07T12:00:00.000Z",
     leadId: input.leadId ?? "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
-    sessionTags: [{ id: warmTagId, name: "Oferta enviada" }],
+    revision: 1,
     status: "ACTIVE",
+    tags: [
+      {
+        color: "green",
+        emoji: null,
+        id: warmTagId,
+        name: "Oferta enviada",
+      },
+    ],
     unreadCount: 0,
     uuid: input.id,
   };

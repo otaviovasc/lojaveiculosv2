@@ -1,9 +1,5 @@
-import { Download, FileSearch, Trash2, UploadCloud } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
-import {
-  FeatureRowAction,
-  FeatureRowActions,
-} from "../../components/ui/FeatureTable";
 import { MercosulPlateBadge } from "../inventory/components/InventoryListingCardGrid";
 import { DocumentOriginBadge } from "./DocumentBadges";
 import { documentVehicleInfo } from "./documentDisplayModel";
@@ -16,6 +12,7 @@ import {
 } from "./documentsWorkspaceModel";
 import { statusLabel } from "./documentLabels";
 import type { WorkspaceDocument } from "./types";
+import { DocumentWorkspaceRowActions } from "./DocumentWorkspaceRowActions";
 
 export function DocumentWorkspaceMobileList({
   documents,
@@ -39,11 +36,11 @@ export function DocumentWorkspaceMobileList({
   return (
     <ul
       aria-label="Documentos"
-      className="grid gap-2 md:hidden"
+      className="grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)] gap-2 md:hidden"
       data-testid="documents-mobile-list"
     >
       {upload ? (
-        <li>
+        <li className="min-w-0">
           <button
             className="documents-upload-list-button"
             disabled={upload.disabled}
@@ -68,7 +65,7 @@ export function DocumentWorkspaceMobileList({
         return (
           <li
             className={
-              "rounded-xl border bg-panel p-3 shadow-sm transition-colors " +
+              "min-w-0 rounded-xl border bg-panel p-3 shadow-sm transition-colors " +
               (isChecked ? "border-accent bg-accent-soft" : "border-line")
             }
             key={`${document.id}:${document.context.targetType}:${document.context.targetId}`}
@@ -133,28 +130,15 @@ export function DocumentWorkspaceMobileList({
                   <MercosulPlateBadge plate={vehicle.plate} />
                 ) : null}
               </div>
-              <FeatureRowActions className="shrink-0">
-                <FeatureRowAction
-                  ariaLabel="Visualizar documento"
-                  icon={FileSearch}
-                  onClick={() => onSelect(document)}
-                  tooltip="Visualizar"
+              <div className="shrink-0">
+                <DocumentWorkspaceRowActions
+                  document={document}
+                  isBusy={isBusy}
+                  onDelete={onDelete}
+                  onDownload={onDownload}
+                  onSelect={onSelect}
                 />
-                <FeatureRowAction
-                  ariaLabel="Baixar documento"
-                  disabled={isBusy}
-                  icon={Download}
-                  onClick={() => void onDownload(document.id)}
-                  tooltip="Baixar"
-                />
-                <FeatureRowAction
-                  ariaLabel="Excluir documento"
-                  disabled={isBusy || document.status === "voided"}
-                  icon={Trash2}
-                  onClick={() => onDelete(document)}
-                  tooltip="Excluir"
-                />
-              </FeatureRowActions>
+              </div>
             </div>
           </li>
         );

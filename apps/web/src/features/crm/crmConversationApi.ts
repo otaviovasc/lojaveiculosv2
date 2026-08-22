@@ -16,6 +16,7 @@ import type {
 } from "./crmConversationApiTypes";
 import {
   createCrmWhatsappCatalogProductsQuery,
+  createCrmStatisticsQuery,
   createCrmMessageQuery,
   createCrmScheduledMessagesQuery,
   createCrmConversationCycleCountsQuery,
@@ -30,6 +31,7 @@ import {
 } from "./crmCampaignApiRoutes";
 import { subscribeCrmEvents } from "./crmRealtimeApi";
 import type { CrmWhatsappZapiAddonContract } from "./crmConversationTypes";
+import type { CrmStatisticsResponse } from "./crmStatisticsTypes";
 
 export {
   createCrmConversationCyclesQuery,
@@ -83,6 +85,17 @@ export function createCrmConversationApi({
     }).then(readMaybeJson<T>);
 
   return {
+    getStatistics: (input, options) =>
+      fetch(
+        withQuery(crmConversationRoutes.statistics(baseUrl), [
+          createCrmStatisticsQuery(input),
+        ]),
+        {
+          headers: createProductCrmHeaders(auth),
+          method: "GET",
+          ...(options?.signal ? { signal: options.signal } : {}),
+        },
+      ).then(readJson<CrmStatisticsResponse>),
     addCycleTag: (cycleId, input) =>
       postMaybeJson(crmConversationRoutes.cycleTags(cycleId, baseUrl), input),
     assignCycle: (cycleId, input) =>

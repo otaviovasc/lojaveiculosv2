@@ -1,4 +1,4 @@
-import { Link2, UserRound, X } from "lucide-react";
+import { CarFront, Link2, UserRound, X } from "lucide-react";
 import {
   FeatureSearchField,
   FeatureSelect,
@@ -16,6 +16,8 @@ import {
   type FinanceFilters,
 } from "./financeBillsModel";
 import type { FinanceEntry } from "./types";
+import type { FinanceVehicleOption } from "./financeVehicleOptions";
+import type { FinanceVehicleOptionsState } from "./useFinanceAccess";
 
 const filterLabelClassName =
   "finance-filters__field finance-filter-label grid min-w-0 gap-1 text-xs font-bold uppercase tracking-wider text-muted";
@@ -24,10 +26,14 @@ export function FinanceBillsFilters({
   entries,
   filters,
   onChange,
+  vehicleOptions,
+  vehicleOptionsState,
 }: {
   entries: readonly FinanceEntry[];
   filters: FinanceFilters;
   onChange: (filters: FinanceFilters) => void;
+  vehicleOptions: readonly FinanceVehicleOption[];
+  vehicleOptionsState: FinanceVehicleOptionsState;
 }) {
   const sellers = sellerFilterOptions(entries);
   const hasFilters = hasAnyActiveFilter(filters);
@@ -81,6 +87,31 @@ export function FinanceBillsFilters({
           />
         </label>
         <label className={filterLabelClassName}>
+          Veículo
+          <FeatureSelect
+            disabled={
+              vehicleOptionsState.kind === "loading" ||
+              vehicleOptionsState.kind === "error" ||
+              vehicleOptions.length === 0
+            }
+            leftIcon={<CarFront aria-hidden="true" className="size-4" />}
+            onChange={(vehicleUnitId) =>
+              onChange({ ...filters, vehicleUnitId })
+            }
+            options={[
+              { label: vehicleFilterLabel(vehicleOptionsState), value: "all" },
+              ...vehicleOptions.map((vehicle) => ({
+                label: vehicle.label,
+                searchText: `${vehicle.label} ${vehicle.detail}`,
+                value: vehicle.id,
+              })),
+            ]}
+            searchable
+            searchPlaceholder="Buscar veículo ou placa"
+            value={filters.vehicleUnitId}
+          />
+        </label>
+        <label className={filterLabelClassName}>
           Vendedor
           <FeatureSelect
             disabled={sellers.length === 0}
@@ -130,18 +161,30 @@ function hasAnyActiveFilter(filters: FinanceFilters) {
     filters.status !== initialFinanceFilters.status ||
     filters.datePreset !== initialFinanceFilters.datePreset ||
     filters.source !== initialFinanceFilters.source ||
-    filters.sellerUserId !== initialFinanceFilters.sellerUserId
+    filters.sellerUserId !== initialFinanceFilters.sellerUserId ||
+    filters.vehicleUnitId !== initialFinanceFilters.vehicleUnitId
   );
 }
 
 const datePresetOptions = [
   { label: "Todos", value: "all" },
+  { label: "Hoje", value: "today" },
+  { label: "Esta semana", value: "thisWeek" },
   { label: "Este mês", value: "thisMonth" },
+  { label: "Este ano", value: "thisYear" },
   { label: "Próximos 7 dias", value: "next7" },
+  { label: "Próximos 15 dias", value: "next15" },
   { label: "Próximos 30 dias", value: "next30" },
+  { label: "Próximos 90 dias", value: "next90" },
   { label: "Vencidos", value: "overdue" },
   { label: "Personalizado", value: "custom" },
 ] satisfies Array<{ label: string; value: FinanceDatePreset }>;
+
+function vehicleFilterLabel(state: FinanceVehicleOptionsState) {
+  if (state.kind === "loading") return "Carregando veículos";
+  if (state.kind === "error") return "Veículos indisponíveis";
+  return "Todos os veículos";
+}
 
 const sourceOptions = (
   [

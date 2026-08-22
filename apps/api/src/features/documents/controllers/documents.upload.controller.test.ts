@@ -126,7 +126,12 @@ function createServices(
     download: vi.fn(async () => unexpected("download")),
     listVersions: vi.fn(async () => []),
     listTemplates: vi.fn(async () => []),
-    listWorkspace: vi.fn(async () => []),
+    listWorkspace: vi.fn(async () => ({
+      documents: [],
+      limit: 100,
+      offset: 0,
+      total: 0,
+    })),
     preview: vi.fn(async () => unexpected("preview")),
     recordTemplateSuggestionOutcome: vi.fn(async () => ({
       recordedAt: new Date(),

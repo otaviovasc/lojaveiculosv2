@@ -49,6 +49,8 @@ export const allPermissions = [
   "inventory.checklist_read",
   "inventory.checklist_update",
   "inventory.cost_create",
+  "inventory.cost_update",
+  "inventory.cost_void",
   "inventory.create",
   "inventory.delete",
   "inventory.document_attach",

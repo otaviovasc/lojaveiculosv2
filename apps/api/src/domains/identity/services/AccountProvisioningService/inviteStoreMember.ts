@@ -32,10 +32,12 @@ export async function inviteStoreMember(
   }
   assertAssignableStoreInviteRole(input.role);
   const actorStoreRole =
-    await ports.accountProvisioningRepository.findActiveStoreRole({
-      storeId: context.storeId as never,
-      userId: context.actor.id as never,
-    });
+    context.membershipRole === "agency"
+      ? "agency"
+      : await ports.accountProvisioningRepository.findActiveStoreRole({
+          storeId: context.storeId as never,
+          userId: context.actor.id as never,
+        });
   assertStoreInviteRoleAllowedByActor(actorStoreRole, input.role);
   await ports.quotaGuard?.assertAvailable({
     quotaKey: "seller",

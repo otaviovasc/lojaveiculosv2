@@ -79,6 +79,13 @@ export const editableDocumentTemplates = [
     clause("Efeitos", "Para que surta seus efeitos legais, as partes firmam o presente termo de responsabilidade."),
     signatures(["{{store.name}}", "{{buyer.name}}"]),
   ], "TermoEntrega.tsx"),
+  editable("buyer_acknowledgment", "buyer_acknowledgment", "Termo de recebimento", [
+    fields("Comprador", [{ label: "Nome", token: "{{buyer.name}}" }, { label: "Documento", token: "{{buyer.document}}" }]),
+    fields("Veículo", vehicleFields),
+    table("Documentos e itens recebidos", ["Item", "Recebido", "Observação"], "buyer_acknowledgment_items"),
+    paragraph("O comprador confirma o recebimento dos documentos e itens assinalados neste termo."),
+    signatures(["{{store.name}}", "{{buyer.name}}"]),
+  ], "TermoRecebimentoDocumentos.tsx"),
   editable("trade_in_power_of_attorney", "power_of_attorney", "Procuracao especifica para venda de veiculo", [
     fields("Outorgante", [{ label: "Nome", token: "{{buyer.name}}" }, { label: "Documento", token: "{{buyer.document}}" }, { label: "Endereço", token: "{{buyer.address}}" }]),
     fields("Dados do veículo", vehicleFields),

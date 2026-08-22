@@ -32,6 +32,9 @@ describe("finance api client", () => {
     expect(financeRoutes.entryDocumentContent("entry 1", "doc 1")).toBe(
       "/api/v1/finance/entries/entry%201/documents/doc%201/content",
     );
+    expect(financeRoutes.entryReceipt("entry 1")).toBe(
+      "/api/v1/finance/entries/entry%201/receipt",
+    );
     expect(financeRoutes.recurringEntries()).toBe(
       "/api/v1/finance/recurring-entries",
     );
@@ -348,6 +351,29 @@ describe("finance api client", () => {
     );
     expect((init?.headers as Record<string, string>).Authorization).toBe(
       "Bearer token_1",
+    );
+  });
+
+  it("generates a persisted finance-entry receipt", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      jsonResponse({
+        document: {
+          id: "document_1",
+          kind: "finance_receipt",
+          title: "Recibo de lançamento financeiro",
+        },
+        generated: true,
+      }),
+    );
+    const api = createFinanceApi({ fetch: fetchMock });
+
+    const result = await api.generateEntryReceipt("entry_1");
+
+    expect(result.generated).toBe(true);
+    expect(result.document.id).toBe("document_1");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/finance/entries/entry_1/receipt",
+      expect.objectContaining({ method: "POST" }),
     );
   });
 });

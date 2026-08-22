@@ -4,6 +4,7 @@
 
 .billing-locked-workspace {
   --billing-locked-accent: var(--color-accent);
+  --billing-locked-accent-readable: var(--billing-locked-accent);
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 1.5rem;
@@ -21,6 +22,7 @@
 
 .billing-locked-workspace--simulations {
   --billing-locked-accent: var(--color-info);
+  --billing-locked-accent-readable: var(--color-info-soft-foreground);
 }
 
 .billing-locked-background-icon {
@@ -66,7 +68,7 @@
 }
 
 .billing-locked-eyebrow {
-  color: var(--billing-locked-accent);
+  color: var(--billing-locked-accent-readable);
 }
 
 .billing-locked-status {
@@ -78,7 +80,7 @@
   border: 1px solid
     color-mix(in srgb, var(--billing-locked-accent) 30%, var(--color-line));
   border-radius: 999px;
-  color: var(--billing-locked-accent);
+  color: var(--billing-locked-accent-readable);
   letter-spacing: 0.02em;
   padding: 0.4rem 0.75rem;
   text-transform: none;
@@ -139,7 +141,7 @@
 
 .billing-locked-feature-label,
 .billing-locked-cta-label {
-  color: var(--billing-locked-accent);
+  color: var(--billing-locked-accent-readable);
   font-size: var(--font-size-xs);
   font-weight: 950;
   letter-spacing: 0.08em;

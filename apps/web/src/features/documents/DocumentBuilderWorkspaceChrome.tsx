@@ -79,7 +79,7 @@ export function DocumentBuilderHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="documents-builder-topbar-actions flex items-center gap-2 shrink-0">
         {onOpenCreateTemplate ? (
           <button
             className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-app px-3 py-1.5 text-xs font-bold text-app-text transition hover:bg-app-elevated hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
@@ -104,11 +104,14 @@ export function DocumentBuilderHeader({
 
         {onToggleAi ? (
           <button
-            className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-bold text-blue-400 transition hover:bg-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-app px-3 py-1.5 text-xs font-bold text-app-text transition hover:bg-app-elevated hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
             onClick={onToggleAi}
             type="button"
           >
-            <Sparkles aria-hidden="true" className="size-3.5" />
+            <Sparkles
+              aria-hidden="true"
+              className="size-3.5 text-accent-strong"
+            />
             <span>Assistente IA</span>
           </button>
         ) : null}

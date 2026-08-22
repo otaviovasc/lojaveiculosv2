@@ -8,6 +8,10 @@ import type {
   CrmRoutingPolicy,
   UpdateCrmRoutingPolicyInput,
 } from "./crmRoutingTypes";
+import type {
+  CrmStatisticsQuery,
+  CrmStatisticsResponse,
+} from "./crmStatisticsTypes";
 
 /** Response contract of POST /crm/channel-connections/:id/olx-chat/setup/retry. */
 export type CrmOlxChatSetupRetryResult = {
@@ -87,6 +91,10 @@ import type {
 } from "./crmConversationTypes";
 
 export type CrmConversationApi = {
+  getStatistics: (
+    input: CrmStatisticsQuery,
+    options?: { signal?: AbortSignal },
+  ) => Promise<CrmStatisticsResponse>;
   assignCycle: (
     cycleId: CrmConversationCycleId,
     input: CrmAssignConversationCycleInput,

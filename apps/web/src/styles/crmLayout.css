@@ -79,7 +79,7 @@
 
 .crm-status-online {
   background: color-mix(in srgb, #10b981 12%, transparent);
-  color: #059669;
+  color: var(--color-success-soft-foreground);
   border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
 }
 
@@ -221,7 +221,7 @@
 
 .crm-scope-tab-active {
   background: color-mix(in srgb, #10b981 12%, transparent);
-  color: #059669;
+  color: var(--color-success-soft-foreground);
   font-weight: 700;
 }
 
@@ -511,7 +511,7 @@
 
 @media (max-width: 860px) {
   .crm-page {
-    height: calc(100dvh - 3.5rem);
+    height: calc(100dvh - 4rem);
   }
 
   .crm-shell {

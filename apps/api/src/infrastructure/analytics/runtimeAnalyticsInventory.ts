@@ -14,6 +14,9 @@ export async function getInventory(
     db
       .select({
         averagePriceCents: sql<number>`coalesce(avg(${vehicleListings.askingPriceCents}), 0)::int`,
+        // Listing-level value: one asking price per published listing,
+        // regardless of how many available units are linked to it.
+        availableAskingValueCents: sql<number>`coalesce(sum(${vehicleListings.askingPriceCents}) filter (where ${vehicleListings.status} = 'published'), 0)::int`,
         availableListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'published')::int`,
         soldListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'sold_out')::int`,
         totalListings: sql<number>`count(*)::int`,
@@ -46,6 +49,7 @@ export async function getInventory(
       over90: ageRow[0]?.over90 ?? 0,
     },
     reservedListings: unit?.reservedListings ?? 0,
+    availableAskingValueCents: listing?.availableAskingValueCents ?? 0,
   };
 }
 

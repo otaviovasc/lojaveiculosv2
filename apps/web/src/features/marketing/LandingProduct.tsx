@@ -14,7 +14,7 @@ export function ProductSection() {
             </span>
             <h2 className="mt-6 max-w-3xl font-display text-3xl font-black leading-tight tracking-tight text-app-text sm:text-5xl">
               Tecnologia de ponta{" "}
-              <span className="text-accent">para sua revenda.</span>
+              <span className="text-accent-text">para sua revenda.</span>
             </h2>
           </div>
         </AnimatedContent>
@@ -41,7 +41,7 @@ export function ProductSection() {
             <AnimatedContent delay={0.08 * index} key={title}>
               <article className="h-full rounded-lg border border-line bg-panel p-5">
                 <span className="flex size-8 items-center justify-center rounded-md bg-accent-soft">
-                  <Check className="size-4 text-accent" />
+                  <Check className="size-4 text-accent-text" />
                 </span>
                 <h3 className="mt-4 text-base font-black text-app-text">
                   {title}

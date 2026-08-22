@@ -532,6 +532,43 @@ describe("useCrmInbox realtime queue integration", () => {
     expect(hookMocks.messages.evictSessionMessages).not.toHaveBeenCalled();
   });
 
+  it("appends the next conversation page without losing the active selection", async () => {
+    const firstPage = Array.from({ length: 40 }, (_, index) =>
+      createSession({ id: `cycle-${index}`, assignedUserId: "user-current" }),
+    );
+    const lastCycle = createSession({
+      id: "cycle-40",
+      assignedUserId: "user-current",
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async (input: { offset?: number }) =>
+        input.offset === 40 ? [lastCycle] : firstPage,
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap(false)}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await act(async () => result.current.refreshSessions());
+    await waitFor(() => expect(result.current.hasMoreSessions).toBe(true));
+    act(() => result.current.setActiveCycleId("cycle-5"));
+    await act(async () => result.current.loadMoreSessions());
+
+    expect(api.listConversationCycles).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: 40, offset: 40 }),
+    );
+    expect(result.current.conversationCycles).toHaveLength(41);
+    expect(result.current.activeCycleId).toBe("cycle-5");
+    expect(result.current.hasMoreSessions).toBe(false);
+  });
+
   it.each([
     { authorized: true, expectedCycleId: "cycle-deep-link" },
     { authorized: false, expectedCycleId: null },

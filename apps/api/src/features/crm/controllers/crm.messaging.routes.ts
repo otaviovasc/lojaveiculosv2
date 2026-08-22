@@ -35,6 +35,7 @@ import type { CrmServices } from "./crmServices.js";
 import { registerCrmWhatsappZapiSupportRoutes } from "./crm.whatsapp.zapiSupportRoutes.js";
 import { listCycleDtos, toStartCycleDto } from "./crm.conversationCycle.dto.js";
 import { toCrmMessageDto } from "./crm.message.dto.js";
+import { registerCrmStatisticsRoutes } from "./crm.statistics.routes.js";
 
 export type RegisterCrmMessagingApiRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -233,6 +234,7 @@ export function registerCrmMessagingApiRoutes(
   );
 
   registerCrmConversationCycleRoutes(crmFeature, { createContext, services });
+  registerCrmStatisticsRoutes(crmFeature, { createContext, services });
   registerCrmCampaignRoutes(crmFeature, { createContext, services });
   registerCrmScheduledRoutes(crmFeature, { createContext, services });
   registerCrmMessagingExtraRoutes(crmFeature, { createContext, services });

@@ -41,7 +41,7 @@ export async function analyzeVehicleListingResale(
     : [];
   const [costs, acquisition] = await Promise.all([
     ports?.operationsRepository
-      ? getOperationsRepository(ports).listCostsByUnitIds({
+      ? getOperationsRepository(ports).listActiveCostsByUnitIds({
           ...scope,
           unitIds: units.map((unit) => unit.id),
         })

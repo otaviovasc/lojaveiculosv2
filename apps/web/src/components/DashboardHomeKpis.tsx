@@ -3,39 +3,60 @@ import { AnimatedCounter } from "./ui/CountUp";
 import type { createDashboardStats } from "../features/analytics/dashboardModel";
 import { DASHBOARD_KPI_ENTRY_DELAY_STEP } from "../features/analytics/dashboardHomeAnimation";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
+import type { ModuleId } from "../app/modules";
 
 type DashboardStat = ReturnType<typeof createDashboardStats>[number];
 
-export function DashboardHomeKpis({ stats }: { stats: DashboardStat[] }) {
+export function DashboardHomeKpis({
+  canViewAnalytics,
+  onNavigate,
+  stats,
+}: {
+  canViewAnalytics: boolean;
+  onNavigate: (moduleId: ModuleId) => void;
+  stats: DashboardStat[];
+}) {
   return (
     <div className="kpi-counters-grid">
       {stats.map((stat, idx) => {
         const KpiIcon = getKpiIcon(stat.label);
+        const cardContent = (
+          <>
+            {canViewAnalytics ? <div className="gloss-overlay" /> : null}
+            <div className="kpi-card-content">
+              <div className="kpi-card-header">
+                <div className="kpi-icon-container">
+                  <KpiIcon className="size-5.5 text-white" />
+                </div>
+                <span className="kpi-card-badge">{stat.deltaLabel}</span>
+              </div>
+              <div className="kpi-card-body">
+                <p className="kpi-card-label">{stat.label}</p>
+                <p className="kpi-card-value">
+                  <AnimatedCounter value={stat.value} />
+                </p>
+              </div>
+            </div>
+            <KpiIcon className="kpi-bg-icon text-white" />
+          </>
+        );
         return (
           <DashboardHomeEntry
             key={stat.label}
             delay={idx * DASHBOARD_KPI_ENTRY_DELAY_STEP}
           >
-            <div
-              className={`kpi-card-premium ${getKpiToneClass(stat.tone)} group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02]`}
-            >
-              <div className="gloss-overlay" />
-              <div className="kpi-card-content">
-                <div className="kpi-card-header">
-                  <div className="kpi-icon-container">
-                    <KpiIcon className="size-5.5 text-white" />
-                  </div>
-                  <span className="kpi-card-badge">{stat.deltaLabel}</span>
-                </div>
-                <div className="kpi-card-body">
-                  <p className="kpi-card-label">{stat.label}</p>
-                  <h3 className="kpi-card-value">
-                    <AnimatedCounter value={stat.value} />
-                  </h3>
-                </div>
-              </div>
-              <KpiIcon className="kpi-bg-icon text-white" />
-            </div>
+            {canViewAnalytics ? (
+              <button
+                aria-label={`${stat.label}: ${stat.value}. ${stat.deltaLabel}. Abrir relatórios`}
+                className={getInteractiveKpiClass(stat.tone)}
+                onClick={() => onNavigate("reports")}
+                type="button"
+              >
+                {cardContent}
+              </button>
+            ) : (
+              <div className={getStaticKpiClass(stat.tone)}>{cardContent}</div>
+            )}
           </DashboardHomeEntry>
         );
       })}
@@ -43,17 +64,31 @@ export function DashboardHomeKpis({ stats }: { stats: DashboardStat[] }) {
   );
 }
 
-function getKpiToneClass(tone: string) {
+function getInteractiveKpiClass(tone: string) {
   switch (tone) {
     case "green":
-      return "kpi-gradient-green";
+      return "kpi-card-premium kpi-gradient-green group w-full text-left transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
     case "blue":
-      return "kpi-gradient-blue";
+      return "kpi-card-premium kpi-gradient-blue group w-full text-left transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
     case "violet":
-      return "kpi-gradient-violet";
+      return "kpi-card-premium kpi-gradient-violet group w-full text-left transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
     case "pink":
     default:
-      return "kpi-gradient-pink";
+      return "kpi-card-premium kpi-gradient-pink group w-full text-left transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  }
+}
+
+function getStaticKpiClass(tone: string) {
+  switch (tone) {
+    case "green":
+      return "kpi-card-premium kpi-gradient-green";
+    case "blue":
+      return "kpi-card-premium kpi-gradient-blue";
+    case "violet":
+      return "kpi-card-premium kpi-gradient-violet";
+    case "pink":
+    default:
+      return "kpi-card-premium kpi-gradient-pink";
   }
 }
 

@@ -589,7 +589,9 @@ describe("CrmWhatsappZapiSetup", () => {
         name: "Reconectar ou trocar aparelho",
       }),
     );
-    expect(screen.getByRole("button", { name: "Gerar QR Code" })).toBeVisible();
+    expect(
+      await screen.findByRole("button", { name: "Gerar QR Code" }),
+    ).toBeVisible();
   });
 
   it("advances past pairing from the canonical ready connection projection", () => {
