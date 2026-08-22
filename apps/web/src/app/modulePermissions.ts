@@ -136,6 +136,7 @@ function hasModulePermissions(
   session: SessionBootstrap,
   rule: ModulePermissionRule,
 ) {
+  if (readSessionActiveStore(session)?.role === "agency") return true;
   const permissions = readSessionEffectivePermissions(session);
   if (!permissions) return true;
   const granted = new Set(permissions);

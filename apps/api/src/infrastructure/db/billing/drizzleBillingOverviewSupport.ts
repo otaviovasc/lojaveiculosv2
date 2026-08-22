@@ -4,7 +4,6 @@ import {
   payments,
   storeEntitlements,
   storeEntitlementEvents,
-  stores,
   subscriptionItems,
 } from "@lojaveiculosv2/db";
 import type {
@@ -18,6 +17,7 @@ import type {
 import { createChargeableItem } from "../../../domains/billing/readModels/billingChargePreviewModel.js";
 import { isEffectiveEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { listActiveBillingStores } from "./drizzleBillingStoreDirectory.js";
 
 export async function listEntitlementEvents(
   db: DrizzleBillingClient,
@@ -55,11 +55,7 @@ export async function listAllocations(
   subscription: BillingSubscription | null,
 ): Promise<BillingStoreAllocation[]> {
   const [storeRows, itemRows, entitlementRows] = await Promise.all([
-    db
-      .select()
-      .from(stores)
-      .where(eq(stores.tenantId, input.tenantId))
-      .limit(50),
+    listActiveBillingStores(db, input.tenantId),
     subscription ? listSubscriptionItems(db, subscription.id) : [],
     db
       .select()
@@ -146,11 +142,7 @@ export async function listChargeables(
 
   const [itemRows, storeRows, addonRows] = await Promise.all([
     listSubscriptionItems(db, subscription.id),
-    db
-      .select()
-      .from(stores)
-      .where(eq(stores.tenantId, input.tenantId))
-      .limit(100),
+    listActiveBillingStores(db, input.tenantId),
     db.select().from(addons).limit(100),
   ]);
   const storesById = new Map(storeRows.map((store) => [store.id, store]));

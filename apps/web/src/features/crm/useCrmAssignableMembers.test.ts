@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it } from "vitest";
 import type { SessionBootstrap } from "../account/apiClient";
+import { persistCurrentStoreSlug } from "../account/currentStore";
 import type { RoleManagementView } from "../settings/types";
 import {
   canAssignConversationCycles,
@@ -7,6 +9,10 @@ import {
 } from "./useCrmAssignableMembers";
 
 describe("useCrmAssignableMembers", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it("maps active WhatsApp-capable members to assignable members", () => {
     const assignableMembers = mapRoleManagementToCrmAssignableMembers(
       createRoles(),
@@ -41,6 +47,35 @@ describe("useCrmAssignableMembers", () => {
         },
       }),
     ).toBe(false);
+  });
+
+  it("reads assign capability from an agency-selected store", () => {
+    const session = createSession();
+    session.defaultStore = null;
+    session.stores = [
+      {
+        ...createSession().defaultStore!,
+        effectivePermissions: [],
+        role: "agency",
+        storeName: "Loja da agência",
+        storeSlug: "agency-store",
+      },
+    ];
+    persistCurrentStoreSlug("agency-store", session.user.clerkUserId);
+
+    expect(canAssignConversationCycles(session)).toBe(true);
+    expect(
+      mapRoleManagementToCrmAssignableMembers(
+        { ...createRoles(), memberships: [] },
+        session,
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        id: "user_owner",
+        role: "AGENCY",
+        seeUnassignedChats: true,
+      }),
+    ]);
   });
 });
 

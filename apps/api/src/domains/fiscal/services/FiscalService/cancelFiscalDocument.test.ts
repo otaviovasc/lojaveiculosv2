@@ -17,13 +17,13 @@ import {
 describe("cancelFiscalDocument", () => {
   it.each([
     ["cancelled", "cancelled", "succeeded"],
-    ["queued", "queued", "succeeded"],
-    ["authorized", "authorized", "succeeded"],
+    ["queued", "queued", "failed"],
+    ["authorized", "authorized", "failed"],
     ["failed", "failed", "failed"],
     ["error", "error", "failed"],
     ["rejected", "rejected", "failed"],
-    ["issued", "issued", "succeeded"],
-    ["processing", "processing", "succeeded"],
+    ["issued", "issued", "failed"],
+    ["processing", "processing", "failed"],
   ] as const)(
     "maps provider status %s to %s with %s audit outcome",
     async (providerStatus, expectedStatus, outcome) => {

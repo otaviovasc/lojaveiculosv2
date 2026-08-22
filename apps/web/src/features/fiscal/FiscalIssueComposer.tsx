@@ -102,6 +102,7 @@ export function FiscalIssueComposer({
   const [salesStatus, setSalesStatus] = useState<OriginListStatus>("idle");
   const [entries, setEntries] = useState<readonly FinanceEntry[]>([]);
   const [entriesStatus, setEntriesStatus] = useState<OriginListStatus>("idle");
+  const formErrorRef = useRef<HTMLDivElement>(null);
   const runtimeApisRef = useRef<{
     finance?: Pick<FinanceApi, "listAllEntries">;
     inventory?: Pick<InventoryApi, "getListing">;
@@ -116,6 +117,10 @@ export function FiscalIssueComposer({
     setFormError(null);
     setIssuedDocument(null);
   }, [initialDraft]);
+
+  useEffect(() => {
+    if (formError) formErrorRef.current?.focus();
+  }, [formError]);
 
   useEffect(() => {
     let cancelled = false;
@@ -399,7 +404,11 @@ export function FiscalIssueComposer({
           </div>
         </div>
 
-        {formError ? <FeatureAlert>{formError}</FeatureAlert> : null}
+        {formError ? (
+          <div ref={formErrorRef} tabIndex={-1}>
+            <FeatureAlert>{formError}</FeatureAlert>
+          </div>
+        ) : null}
         {issuedDocument ? (
           <FeatureAlert tone="success">
             Emissão registrada no provedor com status {issuedDocument.status}.

@@ -13,6 +13,7 @@ export type SimulationDraftInput = {
   downPayment: number | null;
   email: string;
   fipeCode: string;
+  genderCode: string;
   hasCnh: boolean | null;
   income: number | null;
   installments: string;
@@ -25,12 +26,14 @@ export type SimulationDraftInput = {
   modelYear: string;
   molicarCode: string;
   name: string;
+  occupationCode: string;
   phone: string;
   preflightReady: boolean;
   requiredFields: ReadonlySet<string>;
   unitId: string;
   unsupportedFieldCount: number;
   vehicleValue: number | null;
+  zipCode: string;
   zeroKm: boolean;
 };
 
@@ -47,11 +50,16 @@ export function buildSimulationDraft(
     error: null,
     draft: {
       applicant: {
+        ...(input.zipCode ? { addressZipCode: input.zipCode } : {}),
         ...(input.birthDate ? { birthDate: input.birthDate } : {}),
         ...(input.hasCnh !== null ? { hasCnh: input.hasCnh } : {}),
+        ...(input.genderCode ? { genderCode: input.genderCode } : {}),
         name: input.name,
         cpfCnpj: input.cpfCnpj,
         phone: input.phone,
+        ...(input.occupationCode
+          ? { occupationCode: input.occupationCode }
+          : {}),
         ...(input.email.trim() ? { email: input.email } : {}),
         ...(input.income && input.income > 0
           ? { monthlyIncomeCents: Math.round(input.income * 100) }
@@ -104,6 +112,8 @@ function validateSimulationDraft(input: SimulationDraftInput) {
     return "Informe um CPF/CNPJ válido para consultar o Credere.";
   if (!input.preflightReady)
     return "Confira os dados exigidos pelo Credere antes de simular.";
+  if (input.unsupportedFieldCount > 0)
+    return "Há dados exigidos pelos bancos que ainda não podem ser preenchidos neste formulário.";
   if (input.requiredFields.has("birthDate") && !input.birthDate)
     return "Informe a data de nascimento exigida pelos bancos.";
   if (input.requiredFields.has("hasCnh") && input.hasCnh === null)
@@ -112,6 +122,15 @@ function validateSimulationDraft(input: SimulationDraftInput) {
     return "Informe o e-mail exigido pelos bancos.";
   if (input.requiredFields.has("monthlyIncomeCents") && !input.income)
     return "Informe a renda mensal exigida pelos bancos.";
+  if (input.requiredFields.has("genderCode") && !input.genderCode)
+    return "Informe o gênero exigido pelos bancos.";
+  if (input.requiredFields.has("occupationCode") && !input.occupationCode)
+    return "Informe a ocupação exigida pelos bancos.";
+  if (
+    input.requiredFields.has("zipCode") &&
+    input.zipCode.replace(/\D/g, "").length !== 8
+  )
+    return "Informe o CEP residencial exigido pelos bancos.";
   if (!input.phone.replace(/\D/g, ""))
     return "Informe o telefone do proponente.";
   if (!input.vehicleValue || input.vehicleValue <= 0)

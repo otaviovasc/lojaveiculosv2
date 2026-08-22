@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Command, Search } from "lucide-react";
+import { ArrowLeft, Command, Search } from "lucide-react";
 import type { AppTheme } from "../../app/theme";
 import {
   DashboardSidebarNavItem,
@@ -8,6 +8,7 @@ import {
   SidebarFooterActions,
 } from "./dashboard-sidebar-parts";
 import type { DashboardSidebarItem } from "./dashboard-sidebar-parts";
+import type { SidebarWorkspaceOption } from "./dashboard-sidebar-parts";
 import { SidebarTexture } from "./TextureBackground";
 
 export type { DashboardSidebarItem };
@@ -28,6 +29,10 @@ export type DashboardSidebarProps<Id extends string = string> = {
   workspaceLogoUrl?: string | null | undefined;
   workspaceMeta?: string;
   workspaceName: string;
+  workspaceId?: string | undefined;
+  workspaces?: readonly SidebarWorkspaceOption[] | undefined;
+  onWorkspaceSelect?: ((workspaceId: string) => void) | undefined;
+  agencyPortalHref?: string | undefined;
   onSearchClick?: () => void;
 };
 
@@ -47,6 +52,10 @@ export function DashboardSidebar<Id extends string = string>({
   workspaceLogoUrl,
   workspaceMeta = "Loja atual",
   workspaceName,
+  workspaceId,
+  workspaces,
+  onWorkspaceSelect,
+  agencyPortalHref,
   onSearchClick,
 }: DashboardSidebarProps<Id>) {
   const [isMac, setIsMac] = useState(true);
@@ -75,10 +84,28 @@ export function DashboardSidebar<Id extends string = string>({
         meta={workspaceMeta}
         name={workspaceName}
         onClose={onClose}
+        onWorkspaceSelect={onWorkspaceSelect}
         theme={theme}
         iconUrl={workspaceIconUrl}
         logoUrl={workspaceLogoUrl}
+        workspaceId={workspaceId}
+        workspaces={workspaces}
       />
+
+      {agencyPortalHref ? (
+        <div className="workspace-sidebar__agency-return-wrap">
+          <a
+            aria-label={isCompact ? "Voltar à agência" : undefined}
+            className={`workspace-sidebar__agency-return${isCompact ? " is-compact" : ""}`}
+            href={agencyPortalHref}
+            onClick={onClose}
+            title={isCompact ? "Voltar à agência" : undefined}
+          >
+            <ArrowLeft aria-hidden="true" />
+            {isCompact ? null : <span>Voltar à agência</span>}
+          </a>
+        </div>
+      ) : null}
 
       {onSearchClick && (
         <div className="workspace-sidebar__search-wrap">

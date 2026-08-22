@@ -7,6 +7,9 @@ import {
 } from "./simulationStepReadiness";
 
 const readySnapshot: SimulationStepSnapshot = {
+  additionalFieldsReady: true,
+  bankCount: 1,
+  consent: true,
   cpfCnpj: "529.982.247-25",
   credereVehicleModelId: "credere_model_1",
   downPayment: 10_000,
@@ -19,6 +22,7 @@ const readySnapshot: SimulationStepSnapshot = {
   name: "Ana Souza",
   phone: "(11) 98765-4321",
   preflightReady: true,
+  unsupportedFieldCount: 0,
   vehicleValue: 50_000,
 };
 
@@ -93,6 +97,27 @@ describe("simulationStepReadiness", () => {
     expect(result).toEqual({
       ready: false,
       reason: "Confira o cadastro do proponente no Credere.",
+    });
+  });
+
+  it("blocks unsupported provider fields before review", () => {
+    expect(
+      simulationStepReadiness("applicant", {
+        ...readySnapshot,
+        unsupportedFieldCount: 1,
+      }),
+    ).toMatchObject({ ready: false });
+  });
+
+  it("requires bank selection and consent on review", () => {
+    expect(
+      simulationStepReadiness("review", {
+        ...readySnapshot,
+        consent: false,
+      }),
+    ).toEqual({
+      ready: false,
+      reason: "Registre o consentimento do proponente antes de simular.",
     });
   });
 

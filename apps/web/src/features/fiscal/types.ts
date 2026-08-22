@@ -39,6 +39,12 @@ export type FiscalDocument = {
   templateVersion: number | null;
 };
 
+export type FiscalEvent = {
+  eventType: string;
+  fiscalDocumentId: string;
+  occurredAt: string;
+};
+
 export type FiscalRecipient = {
   address: Record<string, unknown>;
   defaultServiceTemplateId: string | null;
@@ -73,9 +79,14 @@ export type FiscalTemplate = {
 
 export type FiscalOverview = {
   capabilities: {
+    canCancelDocuments?: boolean;
     canDownloadOfficialArtifacts: boolean;
+    canIssueDocuments?: boolean;
+    canRepeatDocuments?: boolean;
+    canSyncDocumentStatus?: boolean;
   };
   documents: FiscalDocument[];
+  events?: FiscalEvent[];
   provider: {
     configured: boolean;
     missingConfiguration: readonly string[];

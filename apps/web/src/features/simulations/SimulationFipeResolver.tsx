@@ -36,6 +36,7 @@ export function SimulationFipeResolver({
   });
   const isResolving = lookup.kind === "loading";
   const autoResolvedKeyRef = useRef("");
+  const requestSequenceRef = useRef(0);
 
   const failLookup = (message: string, requestId?: string) =>
     setLookup({ kind: "error", message, ...(requestId ? { requestId } : {}) });
@@ -58,6 +59,7 @@ export function SimulationFipeResolver({
       return;
     }
     setLookup({ kind: "loading" });
+    const requestSequence = ++requestSequenceRef.current;
     try {
       const resolution = await onResolve({
         fipeCode: normalizedFipe,
@@ -69,10 +71,12 @@ export function SimulationFipeResolver({
             }
           : {}),
       });
+      if (requestSequence !== requestSequenceRef.current) return;
       applyResolution(resolution, candidate, setCandidates, onSelect, (next) =>
         next ? failLookup(next) : setLookup({ kind: "success", value: null }),
       );
     } catch (cause) {
+      if (requestSequence !== requestSequenceRef.current) return;
       const display = getApiErrorDisplay(
         cause,
         "Não foi possível confirmar a versão FIPE na Credere.",
@@ -91,7 +95,7 @@ export function SimulationFipeResolver({
 
     if (isValidFipe && isValidYear && !selected) {
       const key = `${normalizedFipe}:${year}`;
-      if (autoResolvedKeyRef.current !== key && lookup.kind !== "loading") {
+      if (autoResolvedKeyRef.current !== key) {
         autoResolvedKeyRef.current = key;
         void resolve(undefined, normalizedFipe, year);
       }
@@ -126,6 +130,7 @@ export function SimulationFipeResolver({
             inputMode="numeric"
             maxLength={8}
             onChange={(event) => {
+              requestSequenceRef.current += 1;
               onFipeCodeChange(event.target.value);
               setCandidates([]);
               setLookup({ kind: "idle" });

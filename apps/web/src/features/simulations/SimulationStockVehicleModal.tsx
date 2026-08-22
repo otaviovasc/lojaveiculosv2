@@ -106,13 +106,14 @@ export function SimulationStockVehicleModal({
                 const priceFormatted = formatInventoryPrice(listing.priceCents);
 
                 return (
-                  <article
-                    className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-line bg-panel p-0 shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
+                  <button
+                    className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-line bg-panel p-0 text-left transition-colors hover:border-accent/50"
                     key={item.primaryUnit?.id ?? listing.id}
                     onClick={() => {
                       onSelect(item);
                       onClose();
                     }}
+                    type="button"
                   >
                     <div className="relative aspect-[16/9] w-full overflow-hidden bg-app-elevated">
                       {item.primaryMediaUrl ? (
@@ -163,7 +164,7 @@ export function SimulationStockVehicleModal({
                         </span>
                       </div>
                     </div>
-                  </article>
+                  </button>
                 );
               })}
             </div>

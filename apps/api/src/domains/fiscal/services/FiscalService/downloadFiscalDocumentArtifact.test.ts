@@ -33,7 +33,13 @@ describe("downloadFiscalDocumentArtifact", () => {
       context.permissions = [...permissions];
 
       await expect(getFiscalOverview(context, ports)).resolves.toMatchObject({
-        capabilities: { canDownloadOfficialArtifacts: expected },
+        capabilities: {
+          canCancelDocuments: false,
+          canDownloadOfficialArtifacts: expected,
+          canIssueDocuments: false,
+          canRepeatDocuments: false,
+          canSyncDocumentStatus: true,
+        },
       });
     },
   );

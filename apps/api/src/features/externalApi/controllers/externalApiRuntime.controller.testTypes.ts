@@ -26,3 +26,14 @@ export type VehicleDetailJson = {
 export type LeadDetailJson = {
   data: Record<string, unknown>;
 };
+
+export type LeadListJson = {
+  data: Array<Record<string, unknown>>;
+  pagination: {
+    hasMore: boolean;
+    limit: number;
+    nextOffset: number | null;
+    page: number;
+    total: number;
+  };
+};

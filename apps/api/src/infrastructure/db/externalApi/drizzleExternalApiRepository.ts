@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   apiClientKeys,
@@ -16,10 +16,13 @@ import type {
   ExternalApiRepository,
 } from "../../../domains/externalApi/ports/externalApiRepository.js";
 import {
+  completeExternalApiIdempotencyKey,
   countRecentExternalApiRequests,
+  failExternalApiIdempotencyKey,
   recordExternalApiRequest,
   reserveExternalApiIdempotencyKey,
 } from "./drizzleExternalApiGovernance.js";
+import { readExternalApiClientMetadata } from "./drizzleExternalApiClientReads.js";
 
 export type DrizzleExternalApiClient = PostgresJsDatabase<typeof schema>;
 
@@ -76,6 +79,9 @@ export function createDrizzleExternalApiRepository(
     async countRecentRequests(input) {
       return countRecentExternalApiRequests(db, input);
     },
+    async completeIdempotencyKey(input) {
+      return completeExternalApiIdempotencyKey(db, input);
+    },
     async createClient(input) {
       return db.transaction(async (transaction) => {
         const tx = transaction as DrizzleExternalApiClient;
@@ -97,32 +103,40 @@ export function createDrizzleExternalApiRepository(
           keyPrefix: input.keyPrefix,
         });
 
-        return toClient(client, [input.keyPrefix]);
+        return toClient(client, [input.keyPrefix], null);
       });
     },
     async listClients(input) {
-      const [clients, keys] = await Promise.all([
-        db
-          .select()
-          .from(apiClients)
-          .where(
-            and(
-              eq(apiClients.storeId, input.storeId),
-              eq(apiClients.tenantId, input.tenantId),
-            ),
-          )
-          .limit(100),
-        db.select().from(apiClientKeys).limit(500),
-      ]);
+      const clients = await db
+        .select()
+        .from(apiClients)
+        .where(
+          and(
+            eq(apiClients.storeId, input.storeId),
+            eq(apiClients.tenantId, input.tenantId),
+          ),
+        )
+        .orderBy(desc(apiClients.createdAt))
+        .limit(100);
+      if (clients.length === 0) return [];
+
+      const clientIds = clients.map((client) => client.id);
+      const metadata = await readExternalApiClientMetadata(
+        db,
+        input,
+        clientIds,
+      );
 
       return clients.map((client) =>
         toClient(
           client,
-          keys
-            .filter((key) => key.clientId === client.id && !key.revokedAt)
-            .map((key) => key.keyPrefix),
+          metadata.keyPrefixesByClient.get(client.id) ?? [],
+          metadata.lastUsedAtByClient.get(client.id) ?? null,
         ),
       );
+    },
+    async failIdempotencyKey(input) {
+      return failExternalApiIdempotencyKey(db, input);
     },
     async recordRequest(input) {
       return recordExternalApiRequest(db, input);
@@ -150,7 +164,7 @@ export function createDrizzleExternalApiRepository(
           .update(apiClientKeys)
           .set({ revokedAt: new Date() })
           .where(eq(apiClientKeys.clientId, client.id));
-        return toClient(client, []);
+        return toClient(client, [], null);
       });
     },
   };
@@ -203,11 +217,16 @@ async function listActiveEntitlements(
   return rows.map((row) => row.featureKey as EntitlementKey);
 }
 
-function toClient(row: ClientRow, keyPrefixes: string[]): ExternalApiClient {
+function toClient(
+  row: ClientRow,
+  keyPrefixes: string[],
+  lastUsedAt: Date | null,
+): ExternalApiClient {
   return {
     createdAt: row.createdAt,
     id: row.id,
     keyPrefixes,
+    lastUsedAt,
     name: row.name,
     scopes: toPermissionKeys(row.scopes),
     status: row.status,

@@ -8,7 +8,12 @@ describe("runtime Credere simulation input", () => {
     expect(result.amountCents).toBe(4_000_000);
     expect(result).toMatchObject({
       accessoryValueCents: 25_000,
-      customer: { hasCnh: false },
+      customer: {
+        addressZipCode: "01310930",
+        genderCode: "F",
+        hasCnh: false,
+        occupationCode: "43",
+      },
       documentationValueCents: 15_000,
       installmentCounts: [24, 48],
       insuranceValueCents: 10_000,
@@ -37,9 +42,12 @@ describe("runtime Credere simulation input", () => {
 function simulationPayload() {
   return {
     applicant: {
+      addressZipCode: "01310930",
       document: "52998224725",
+      genderCode: "F",
       hasCnh: false,
       name: "Buyer Test",
+      occupationCode: "43",
       phone: "11988887777",
     },
     consent: { creditSimulation: true, personalData: true },

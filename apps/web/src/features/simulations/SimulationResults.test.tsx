@@ -55,6 +55,19 @@ describe("SimulationResults", () => {
     ).toBeVisible();
   });
 
+  it("keeps partial offers non-terminal while the provider is processing", () => {
+    renderResult({
+      conditions: [acceptedCondition("Banco A", 48, 320_000)],
+      status: "submitted",
+      success: null,
+    });
+
+    expect(screen.getByText("Processando Simulação")).toBeVisible();
+    expect(screen.getByText(/retornos parciais/i)).toBeVisible();
+    expect(screen.queryByText("Simulação Finalizada")).toBeNull();
+    expect(screen.queryByText(/concluída com sucesso/i)).toBeNull();
+  });
+
   it("surfaces a degraded polling failure and keeps manual reconciliation", () => {
     renderResult(
       { status: "processing", success: null },

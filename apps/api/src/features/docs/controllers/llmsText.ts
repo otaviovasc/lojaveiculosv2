@@ -185,8 +185,8 @@ export const llmsText = `# Loja Veiculos API
 - GET/POST /api/v1/fiscal/recipients: lists and creates store-scoped NFS-e tomadores/financeiras; writes require fiscal.recipient.manage and nfe entitlement.
 - GET/POST /api/v1/fiscal/templates: lists and creates store-scoped NFS-e templates with service codes, retention config, and safe description variables; writes require fiscal.template.manage and nfe entitlement.
 - POST /api/v1/fiscal/templates/preview: renders a template preview and reports unresolved variables without sending a provider request.
-- POST /api/v1/fiscal/documents: records one fiscal issue attempt, snapshots provider payload/response, and persists provider status; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.document.issue and nfe entitlement.
-- POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.document.cancel and nfe entitlement.
+- POST /api/v1/fiscal/documents: records one fiscal issue attempt, snapshots provider payload/response, and persists provider status; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.manage, fiscal.document.issue, and nfe entitlement.
+- POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.manage, fiscal.document.cancel, and nfe entitlement.
 - POST /api/v1/fiscal/documents/{documentId}/repeat: creates a draft from a prior note with source metadata and review-required flag; it never sends a provider request.
 - POST /api/v1/fiscal/documents/{documentId}/status-sync: reconciles one persisted fiscal document status with the configured gateway state; requires fiscal.manage and nfe entitlement.
 ## Current finance endpoints
@@ -266,7 +266,8 @@ export const llmsText = `# Loja Veiculos API
 ## External API safety limits
 - External API key requests are tenant and store scoped before services run.
 - External clients use least-privilege scopes instead of operator roles.
-- API-key mutations use Idempotency-Key to reject duplicate processing with 409; prior responses are not replayed. Request ids provide audit correlation.
+- Public lead metadata is flat and accepts only bounded message and title strings; unknown, reserved, or nested keys are rejected.
+- API-key mutations replay the original bounded JSON status/body for the same completed Idempotency-Key and validated payload. Changed payloads and in-flight attempts return 409; retry a 5xx attempt with a new key. Request ids provide audit correlation.
 - Rate limits, payload size limits, and pagination caps are enforced on external API-key requests.
 - Destructive operations require explicit delete scopes and audit records.
 `;

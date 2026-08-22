@@ -13,11 +13,13 @@ import { registerExternalVehicleRoutes } from "./externalApiRuntime.vehicles.js"
 import type { CredereFinancingServices } from "../../financing/controllers/credereFinancingServices.js";
 import { credereFinancingServices } from "../../financing/controllers/credereFinancingServices.js";
 import { registerExternalCredereRoutes } from "./externalApiRuntime.credere.js";
+import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 
 export type ExternalApiRuntimeServices = {
   crm?: CrmServices | undefined;
   financing?: CredereFinancingServices | undefined;
   inventory?: InventoryListingServices | undefined;
+  publicStorefront?: PublicStorefrontRepository | undefined;
 };
 
 export function registerExternalApiRuntimeRoutes(
@@ -42,6 +44,9 @@ export function registerExternalApiRuntimeRoutes(
   registerExternalVehicleRoutes(feature, {
     contextFactory: input.contextFactory,
     inventory: services.inventory,
+    ...(input.services?.publicStorefront
+      ? { publicStorefront: input.services.publicStorefront }
+      : {}),
   });
   registerExternalLeadRoutes(feature, {
     contextFactory: input.contextFactory,

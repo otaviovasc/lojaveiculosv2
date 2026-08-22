@@ -4,6 +4,7 @@ import type {
   CrmConversationCycleId,
 } from "./crmConversationTypes";
 import type { CrmConversationApi } from "./crmConversationApi";
+import { readCrmConversationCycleIdFromHash } from "./crmRouteState";
 
 export function asError(caught: unknown) {
   return caught instanceof Error ? caught : new Error(String(caught));
@@ -11,11 +12,7 @@ export function asError(caught: unknown) {
 
 export function readInitialCycleId(): CrmConversationCycleId | null {
   if (typeof window === "undefined") return null;
-  const query = window.location.hash.split("?")[1] ?? "";
-  const params = new URLSearchParams(query);
-  const raw = (params.get("cycleId") ?? params.get("crm_session"))?.trim();
-  if (!raw) return null;
-  return raw;
+  return readCrmConversationCycleIdFromHash(window.location.hash);
 }
 
 export function createConnectionQuery(connectionId: CrmConnectionId | null) {

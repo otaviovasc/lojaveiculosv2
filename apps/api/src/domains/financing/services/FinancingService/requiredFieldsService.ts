@@ -68,17 +68,29 @@ export async function getCredereRequiredFields(
     sanitizeRequirements(result.requirements),
     usableBanks,
   );
+  const domainTypes = requiredDomainTypes(requirements);
+  const domains = domainTypes.length
+    ? await getFinancingGateway(ports).listDomainOptions({
+        credereStoreId: mapping.providerStoreId,
+        token: connection.token!,
+        types: domainTypes,
+      })
+    : {};
   const response = {
     applicant: result.lead
       ? {
+          addressZipCode: result.lead.addressZipCode,
           birthDate: result.lead.birthdate,
           email: result.lead.email,
+          genderCode: result.lead.genderCode,
           hasCnh: result.lead.hasCnh,
           monthlyIncomeCents: result.lead.monthlyIncomeCents,
           name: result.lead.name,
+          occupationCode: result.lead.occupationCode,
           phone: result.lead.phoneNumber,
         }
       : null,
+    domains,
     knownLead: Boolean(result.lead),
     missingFields: uniqueRequirementFields(requirements),
     requirements,
@@ -102,6 +114,29 @@ export async function getCredereRequiredFields(
     tenantId: scope.tenantId,
   });
   return response;
+}
+
+function requiredDomainTypes(requirements: Record<string, readonly string[]>) {
+  const normalizedFields = Object.keys(requirements).map((field) =>
+    field
+      .trim()
+      .toLowerCase()
+      .replace(/[.\s-]+/g, "_"),
+  );
+  return [
+    ...(normalizedFields.some((field) =>
+      ["gender", "retrieve_gender"].includes(field.replace(/^lead_/, "")),
+    )
+      ? ["gender"]
+      : []),
+    ...(normalizedFields.some((field) =>
+      ["occupation", "retrieve_occupation"].includes(
+        field.replace(/^lead_/, ""),
+      ),
+    )
+      ? ["occupation"]
+      : []),
+  ];
 }
 
 function filterRequirementsByUsableBanks(

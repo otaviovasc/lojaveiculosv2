@@ -1,6 +1,7 @@
 import { useState, type ComponentProps } from "react";
 import { History, PlusCircle } from "lucide-react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { Toast, type ToastTone } from "../../components/ui/Toast";
 import { SimulationForm, type SimulationPrefill } from "./SimulationForm";
@@ -17,6 +18,7 @@ export function SimulationsReadyWorkspace({
   isRefreshing,
   isSubmitting,
   onRefresh,
+  onRetryHistory,
   onGetRequiredFields,
   onResolveFipe,
   onSelectSimulation,
@@ -33,6 +35,7 @@ export function SimulationsReadyWorkspace({
   isRefreshing: boolean;
   isSubmitting: boolean;
   onRefresh: () => void;
+  onRetryHistory: () => void;
   onGetRequiredFields: ComponentProps<
     typeof SimulationForm
   >["onGetRequiredFields"];
@@ -98,51 +101,32 @@ export function SimulationsReadyWorkspace({
 
       {/* Tab Navigation Selector - Full Width */}
       <div className="w-full">
-        <div
-          aria-label="Navegação das simulações"
-          className="grid w-full grid-cols-2 gap-1.5 rounded-2xl border border-line/60 bg-app-elevated/70 p-1.5 backdrop-blur-md shadow-sm"
-          role="tablist"
-        >
-          <button
-            aria-selected={activeTab === "simulation"}
-            className={
-              activeTab === "simulation"
-                ? "inline-flex items-center justify-center gap-2 rounded-xl border border-line/60 bg-panel px-4 py-2.5 text-xs font-black text-app-text transition-all sm:text-sm"
-                : "inline-flex items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-bold text-muted transition-all hover:bg-panel/40 hover:text-app-text sm:text-sm"
-            }
-            onClick={() => {
-              setActiveTab("simulation");
-              setViewingHistorySimulation(null);
-            }}
-            role="tab"
-            type="button"
-          >
-            <PlusCircle className="size-4 text-accent-strong" />
-            <span>Nova simulação</span>
-          </button>
-
-          <button
-            aria-selected={activeTab === "history"}
-            className={
-              activeTab === "history"
-                ? "inline-flex items-center justify-center gap-2 rounded-xl border border-line/60 bg-panel px-4 py-2.5 text-xs font-black text-app-text transition-all sm:text-sm"
-                : "inline-flex items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-bold text-muted transition-all hover:bg-panel/40 hover:text-app-text sm:text-sm"
-            }
-            onClick={() => {
-              setActiveTab("history");
-            }}
-            role="tab"
-            type="button"
-          >
-            <History className="size-4 text-accent-strong" />
-            <span>Histórico</span>
-            {history && history.length > 0 ? (
-              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-black text-accent-strong">
-                {history.length}
-              </span>
-            ) : null}
-          </button>
-        </div>
+        <FeatureTabs
+          activeClassName="border-line/60 bg-panel font-black text-app-text"
+          ariaLabel="Navegação das simulações"
+          onChange={(value) => {
+            setActiveTab(value);
+            if (value === "simulation") setViewingHistorySimulation(null);
+          }}
+          optionClassName="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-bold text-muted transition-all hover:bg-panel/40 hover:text-app-text sm:text-sm"
+          options={[
+            {
+              icon: PlusCircle,
+              label: "Nova simulação",
+              value: "simulation",
+            },
+            {
+              icon: History,
+              label:
+                history && history.length > 0
+                  ? `Histórico (${history.length})`
+                  : "Histórico",
+              value: "history",
+            },
+          ]}
+          value={activeTab}
+          variant="split"
+        />
       </div>
 
       {activeTab === "history" ? (
@@ -175,6 +159,7 @@ export function SimulationsReadyWorkspace({
             error={historyError}
             history={history}
             onSelect={handleSelectHistoryItem}
+            onRetry={onRetryHistory}
             selectedId={current?.id ?? null}
             variant="full"
           />
@@ -211,6 +196,14 @@ export function SimulationsReadyWorkspace({
               </div>
             </header>
             <div className="credere-form-body">
+              {status.unavailableBanks.length > 0 ? (
+                <FeatureAlert
+                  title={`${status.unavailableBanks.length} banco(s) indisponível(is)`}
+                  tone="warning"
+                >
+                  {unavailableBankCopy(status)}
+                </FeatureAlert>
+              ) : null}
               {status.usableBanks.length === 0 ? (
                 <FeatureAlert title="Nenhum banco habilitado" tone="warning">
                   O provedor não retornou bancos utilizáveis para esta loja no
@@ -226,8 +219,9 @@ export function SimulationsReadyWorkspace({
                   onSubmit={async (draft) => {
                     await onSubmit(draft);
                     setToast({
-                      title: "Simulação enviada!",
-                      children: "Consulta transmitida à Credere com sucesso.",
+                      title: "Simulação registrada",
+                      children:
+                        "A consulta foi aceita e o status será atualizado nesta tela.",
                       tone: "success",
                     });
                   }}
@@ -252,6 +246,20 @@ export function SimulationsReadyWorkspace({
       )}
     </FeatureSection>
   );
+}
+
+function unavailableBankCopy(status: CredereStoreStatus) {
+  const names = status.unavailableBanks
+    .map((bank) => bank.name ?? bank.code)
+    .slice(0, 3)
+    .join(", ");
+  const authorizationRequired = status.unavailableBanks.some(
+    (bank) => bank.reason === "authorization_required",
+  );
+  const guidance = authorizationRequired
+    ? "A autorização de ao menos um banco precisa ser renovada pela conta responsável pela conexão."
+    : "Esses bancos não aceitarão consultas até a integração voltar a ficar saudável.";
+  return `${names}${status.unavailableBanks.length > 3 ? " e outros" : ""}. ${guidance} ${status.usableBanks.length > 0 ? `Você ainda pode consultar ${status.usableBanks.length} banco(s) habilitado(s).` : ""}`;
 }
 
 export function createPrefillIdentity(prefill: SimulationPrefill) {

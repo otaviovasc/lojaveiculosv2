@@ -75,14 +75,15 @@ export function SimulationCrmLeadModal({
               {filteredItems.map((item) => {
                 const selected = item.id === selectedId;
                 return (
-                  <article
-                    className="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-line bg-panel p-3.5 shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
+                  <button
+                    className="group flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-panel p-3.5 text-left transition-colors hover:border-accent/50"
                     data-selected={selected || undefined}
                     key={item.id}
                     onClick={() => {
                       onSelect(item);
                       onClose();
                     }}
+                    type="button"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
@@ -118,7 +119,7 @@ export function SimulationCrmLeadModal({
                       <Check className="size-3.5" />
                       <span>{selected ? "Selecionado" : "Selecionar"}</span>
                     </span>
-                  </article>
+                  </button>
                 );
               })}
             </div>

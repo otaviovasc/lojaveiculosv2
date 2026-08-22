@@ -11,7 +11,7 @@ test("reviews a standalone fiscal origin before starting issuance", async ({
   page,
 }, testInfo) => {
   await installLocalSession(page, {
-    permissions: ["fiscal.manage"],
+    permissions: ["fiscal.document.issue", "fiscal.manage"],
     persona: qaPersonas.owner,
   });
 
@@ -127,8 +127,15 @@ const fiscalDocument = {
 };
 
 const fiscalOverview = {
-  capabilities: { canDownloadOfficialArtifacts: false },
+  capabilities: {
+    canCancelDocuments: true,
+    canDownloadOfficialArtifacts: false,
+    canIssueDocuments: true,
+    canRepeatDocuments: true,
+    canSyncDocumentStatus: true,
+  },
   documents: [],
+  events: [],
   provider: {
     configured: true,
     missingConfiguration: [],

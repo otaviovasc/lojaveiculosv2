@@ -2,6 +2,7 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type { FinancingProvider } from "../../ports/financingRepository.js";
+import type { FinancingIntegratedBank } from "../../ports/financingProviderGateway.js";
 import type { FinancingReadiness } from "./types.js";
 import {
   financingSimulationReadPermission,
@@ -37,12 +38,13 @@ export async function getFinancingReadiness(
     tenantId: scope.tenantId,
   });
   let usableBanks: { code: string; name: string | null }[] = [];
+  let unavailableBanks: FinancingReadiness["unavailableBanks"] = [];
   if (connection?.status === "connected" && mapping) {
     const usableConnection = await getUsableProviderConnection(
       { provider, tenantId: scope.tenantId },
       ports,
     );
-    const [integratedBanks, policy] = await Promise.all([
+    const [integratedBanks, policy, credentials] = await Promise.all([
       getFinancingGateway(ports).listIntegratedBanks({
         credereStoreId: mapping.providerStoreId,
         token: usableConnection.token!,
@@ -53,15 +55,41 @@ export async function getFinancingReadiness(
         storeId: scope.storeId,
         tenantId: scope.tenantId,
       }),
+      ports.repository.listActiveOkayBankCredentials({
+        provider,
+        providerStoreId: mapping.providerStoreId,
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+      }),
     ]);
     const policySet = policy ? new Set(policy.map(normalizeBankCode)) : null;
-    usableBanks = integratedBanks
+    const credentialSet = credentials.length
+      ? new Set(credentials.map((bank) => normalizeBankCode(bank.code)))
+      : null;
+    const eligibleBanks = integratedBanks.filter(
+      (bank) => !policySet || policySet.has(normalizeBankCode(bank.code)),
+    );
+    usableBanks = eligibleBanks
       .filter((bank) => bank.active && bank.status === "okay")
       .map((bank) => ({
         code: normalizeBankCode(bank.code),
         name: bank.tradename ?? bank.name,
       }))
-      .filter((bank) => !policySet || policySet.has(bank.code));
+      .filter((bank) => !credentialSet || credentialSet.has(bank.code));
+    unavailableBanks = eligibleBanks
+      .filter(
+        (bank) =>
+          !bank.active ||
+          bank.status !== "okay" ||
+          Boolean(
+            credentialSet && !credentialSet.has(normalizeBankCode(bank.code)),
+          ),
+      )
+      .map((bank) => ({
+        code: normalizeBankCode(bank.code),
+        name: bank.tradename ?? bank.name,
+        reason: unavailableBankReason(bank),
+      }));
   }
 
   const readiness: FinancingReadiness = {
@@ -80,6 +108,8 @@ export async function getFinancingReadiness(
       code: bank.code,
       name: bank.name,
     })),
+    unavailableBankCount: unavailableBanks.length,
+    unavailableBanks,
   };
   await context.audit.record({
     action: "financing.readiness.read",
@@ -93,6 +123,7 @@ export async function getFinancingReadiness(
       permission: financingSimulationReadPermission,
       provider,
       usableBankCount: readiness.usableBankCount,
+      unavailableBankCount: readiness.unavailableBankCount,
     },
     outcome: "succeeded",
     requestId: context.requestId,
@@ -101,4 +132,12 @@ export async function getFinancingReadiness(
     tenantId: scope.tenantId,
   });
   return readiness;
+}
+
+function unavailableBankReason(
+  bank: FinancingIntegratedBank,
+): FinancingReadiness["unavailableBanks"][number]["reason"] {
+  if (!bank.active) return "inactive";
+  if (bank.status === "unauthorized") return "authorization_required";
+  return "provider_error";
 }

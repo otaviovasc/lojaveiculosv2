@@ -86,6 +86,7 @@ export function SimulationsPage({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pollExhausted, setPollExhausted] = useState(false);
   const [pollError, setPollError] = useState<string | null>(null);
+  const [navigationError, setNavigationError] = useState<string | null>(null);
   const pollAttemptsRef = useRef(0);
   const idempotencyOperationRef = useRef<CredereIdempotencyOperation | null>(
     null,
@@ -124,8 +125,13 @@ export function SimulationsPage({
         const api = await apiPromise;
         const fresh = await api.getSimulation(simulation.id);
         storeSimulationSnapshot(fresh);
-      } catch {
-        // Keep optimistic snapshot if API query fails
+      } catch (error) {
+        setPollError(
+          formatApiErrorDisplay(
+            error,
+            "Não foi possível atualizar os detalhes desta simulação.",
+          ),
+        );
       }
     },
     [apiPromise, storeSimulationSnapshot],
@@ -144,8 +150,15 @@ export function SimulationsPage({
           storeSimulationSnapshot(found);
           window.scrollTo({ behavior: "smooth", top: 0 });
         }
-      } catch {
-        // Ignore if simulation cannot be loaded by ID
+      } catch (error) {
+        if (!cancelled) {
+          setNavigationError(
+            formatApiErrorDisplay(
+              error,
+              "Não foi possível abrir a simulação solicitada.",
+            ),
+          );
+        }
       }
     })();
 
@@ -278,6 +291,7 @@ export function SimulationsPage({
       setSubmitError(
         formatApiErrorDisplay(error, "Não foi possível enviar a simulação."),
       );
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -309,11 +323,27 @@ export function SimulationsPage({
       pollAttemptsRef.current = 0;
       setPollExhausted(false);
     } catch (error) {
-      setSubmitError(
+      setPollError(
         formatApiErrorDisplay(error, "Não foi possível atualizar a simulação."),
       );
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const retryHistory = async () => {
+    setHistory(null);
+    setHistoryError(null);
+    try {
+      const api = await apiPromise;
+      setHistory(await api.listSimulations());
+    } catch (error) {
+      setHistoryError(
+        formatApiErrorDisplay(
+          error,
+          "Não foi possível carregar o histórico de simulações.",
+        ),
+      );
     }
   };
 
@@ -350,6 +380,15 @@ export function SimulationsPage({
           Exibindo as simulações já registradas nesta loja.
         </Toast>
       ) : null}
+      {navigationError ? (
+        <Toast
+          onDismiss={() => setNavigationError(null)}
+          title="Simulação indisponível"
+          tone="danger"
+        >
+          {navigationError}
+        </Toast>
+      ) : null}
       {statusState.kind === "loading" ? (
         <SimulationLoadingNotice />
       ) : statusState.kind === "error" ? (
@@ -369,6 +408,7 @@ export function SimulationsPage({
           isRefreshing={isRefreshing}
           isSubmitting={isSubmitting}
           onRefresh={() => void refreshCurrent()}
+          onRetryHistory={() => void retryHistory()}
           onGetRequiredFields={getRequiredFields}
           onResolveFipe={resolveFipeVehicle}
           onSelectSimulation={(simulation) => {

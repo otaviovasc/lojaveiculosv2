@@ -1,18 +1,21 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { CircleAlert } from "lucide-react";
 import { FeatureFormSection } from "../../components/ui/FeatureForms";
 import { formatBrazilianDocument, formatBrazilianPhone } from "../../lib/masks";
 import { SimulationFipeResolver } from "./SimulationFipeResolver";
 import { SimulationReviewStep } from "./SimulationReviewStep";
 import {
+  applicantRequirementLabel,
   isValidPreflightDocument,
   readApplicantRequirements,
+  type SupportedApplicantField,
 } from "./applicantPreflight";
 import {
   SimulationApplicantFields,
   SimulationTermsFields,
   SimulationVehicleFields,
 } from "./SimulationFormFields";
+import { SimulationApplicantProviderFields } from "./SimulationApplicantProviderFields";
 import {
   SimulationApplicantSource,
   SimulationVehicleSource,
@@ -85,8 +88,11 @@ export function SimulationForm({
   );
   const [email, setEmail] = useState(prefill?.email ?? "");
   const [birthDate, setBirthDate] = useState("");
+  const [genderCode, setGenderCode] = useState("");
   const [hasCnh, setHasCnh] = useState<boolean | null>(null);
   const [income, setIncome] = useState<number | null>(null);
+  const [occupationCode, setOccupationCode] = useState("");
+  const [zipCode, setZipCode] = useState("");
   const [vehicleValue, setVehicleValue] = useState<number | null>(
     prefill?.vehicleValueCents ? prefill.vehicleValueCents / 100 : null,
   );
@@ -142,7 +148,25 @@ export function SimulationForm({
   const requirements =
     preflightState.kind === "ready"
       ? readApplicantRequirements(preflightState.result)
-      : { supported: new Set<string>(), unsupported: [] as string[] };
+      : {
+          supported: new Set<SupportedApplicantField>(),
+          unsupported: [] as string[],
+        };
+  const domains =
+    preflightState.kind === "ready" ? preflightState.result.domains : {};
+  const blockingFields = [
+    ...requirements.unsupported.map(applicantRequirementLabel),
+    ...(requirements.supported.has("genderCode") &&
+    !genderCode &&
+    !domains.gender?.length
+      ? ["gênero (opções indisponíveis no Credere)"]
+      : []),
+    ...(requirements.supported.has("occupationCode") &&
+    !occupationCode &&
+    !domains.occupation?.length
+      ? ["ocupação (opções indisponíveis no Credere)"]
+      : []),
+  ];
 
   const [attemptedSteps, setAttemptedSteps] = useState<
     Record<SimulationFormStep, boolean>
@@ -201,8 +225,13 @@ export function SimulationForm({
               : formatBrazilianPhone(applicant.phone ?? ""),
           );
           setEmail((current) => current.trim() || applicant.email || "");
+          setGenderCode((current) => current || applicant.genderCode || "");
           setBirthDate((current) => current || applicant.birthDate || "");
           setHasCnh((current) => current ?? applicant.hasCnh);
+          setOccupationCode(
+            (current) => current || applicant.occupationCode || "",
+          );
+          setZipCode((current) => current || applicant.addressZipCode || "");
           setIncome(
             (current) =>
               current ??
@@ -232,6 +261,7 @@ export function SimulationForm({
     const readiness = simulationStepReadiness(step, snapshot);
     if (!readiness.ready) {
       setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
+      focusFirstInvalidField();
       return setValidationError(readiness.reason);
     }
     const result = buildSimulationDraft({
@@ -246,6 +276,7 @@ export function SimulationForm({
       downPayment,
       email,
       fipeCode,
+      genderCode,
       hasCnh,
       income,
       installments,
@@ -258,20 +289,23 @@ export function SimulationForm({
       modelYear,
       molicarCode,
       name,
+      occupationCode,
       phone,
       preflightReady: preflightState.kind === "ready",
       requiredFields: requirements.supported,
       unitId,
       unsupportedFieldCount: requirements.unsupported.length,
       vehicleValue,
+      zipCode,
       zeroKm,
     });
     if (result.error !== null) {
       setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
+      focusFirstInvalidField();
       return setValidationError(result.error);
     }
     setValidationError(null);
-    void onSubmit(result.draft);
+    void Promise.resolve(onSubmit(result.draft)).catch(() => undefined);
   };
 
   const toggleBank = (code: string) =>
@@ -286,6 +320,14 @@ export function SimulationForm({
     if (!item) {
       setListingId("");
       setUnitId("");
+      setCatalog(null);
+      setVehicleValue(null);
+      setManufactureYear("");
+      setModelYear("");
+      setFipeCode("");
+      setSelectedFipeCandidate(null);
+      setCredereVehicleModelId("");
+      setMolicarCode("");
       return;
     }
     const listing = item.listing;
@@ -310,8 +352,8 @@ export function SimulationForm({
     setListingId("");
     setUnitId("");
     setFipeCode(next?.fipeCode ?? "");
-    if (next?.modelYear) setModelYear(String(next.modelYear));
-    if (next?.priceCents) setVehicleValue(next.priceCents / 100);
+    setModelYear(next?.modelYear ? String(next.modelYear) : "");
+    setVehicleValue(next?.priceCents ? next.priceCents / 100 : null);
     setSelectedFipeCandidate(null);
     setCredereVehicleModelId("");
     setMolicarCode("");
@@ -341,9 +383,41 @@ export function SimulationForm({
     const readiness = simulationStepReadiness(step, snapshot);
     if (!readiness.ready) {
       setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
+      focusFirstInvalidField();
       return setValidationError(readiness.reason);
     }
     setStep(nextSimulationStep(step));
+    setValidationError(null);
+  };
+
+  const changeStep = (target: SimulationFormStep) => {
+    const order: SimulationFormStep[] = [
+      "vehicle",
+      "applicant",
+      "terms",
+      "review",
+    ];
+    const targetIndex = order.indexOf(target);
+    const currentIndex = order.indexOf(step);
+    if (targetIndex <= currentIndex) {
+      setStep(target);
+      setValidationError(null);
+      return;
+    }
+    for (const candidate of order.slice(0, targetIndex)) {
+      const readiness = simulationStepReadiness(candidate, snapshot);
+      if (!readiness.ready) {
+        setStep(candidate);
+        setAttemptedSteps((previous) => ({
+          ...previous,
+          [candidate]: true,
+        }));
+        setValidationError(readiness.reason);
+        focusFirstInvalidField();
+        return;
+      }
+    }
+    setStep(target);
     setValidationError(null);
   };
 
@@ -353,6 +427,18 @@ export function SimulationForm({
   };
 
   const snapshot: SimulationStepSnapshot = {
+    additionalFieldsReady:
+      (!requirements.supported.has("birthDate") || Boolean(birthDate)) &&
+      (!requirements.supported.has("email") || Boolean(email.trim())) &&
+      (!requirements.supported.has("genderCode") || Boolean(genderCode)) &&
+      (!requirements.supported.has("hasCnh") || hasCnh !== null) &&
+      (!requirements.supported.has("monthlyIncomeCents") || income !== null) &&
+      (!requirements.supported.has("occupationCode") ||
+        Boolean(occupationCode)) &&
+      (!requirements.supported.has("zipCode") ||
+        zipCode.replace(/\D/g, "").length === 8),
+    bankCount: bankCodes.length,
+    consent,
     cpfCnpj,
     credereVehicleModelId,
     downPayment,
@@ -365,9 +451,15 @@ export function SimulationForm({
     name,
     phone,
     preflightReady: preflightState.kind === "ready",
+    unsupportedFieldCount: blockingFields.length,
     vehicleValue,
   };
   const currentReadiness = simulationStepReadiness(step, snapshot);
+  const completedSteps = new Set<SimulationFormStep>(
+    (["vehicle", "applicant", "terms", "review"] as const).filter(
+      (candidate) => simulationStepReadiness(candidate, snapshot).ready,
+    ),
+  );
 
   // Vehicle step invalid flags
   const manufactureYearInvalid = attemptedSteps.vehicle && !manufactureYear;
@@ -401,6 +493,18 @@ export function SimulationForm({
     attemptedSteps.applicant &&
     requirements.supported.has("monthlyIncomeCents") &&
     income === null;
+  const genderInvalid =
+    attemptedSteps.applicant &&
+    requirements.supported.has("genderCode") &&
+    !genderCode;
+  const occupationInvalid =
+    attemptedSteps.applicant &&
+    requirements.supported.has("occupationCode") &&
+    !occupationCode;
+  const zipCodeInvalid =
+    attemptedSteps.applicant &&
+    requirements.supported.has("zipCode") &&
+    zipCode.replace(/\D/g, "").length !== 8;
 
   // Terms step invalid flags
   const vehicleValueInvalid =
@@ -414,21 +518,21 @@ export function SimulationForm({
   // Review step invalid flags
   const consentInvalid = attemptedSteps.review && !consent;
 
-  const checklist: SimulationSummaryChecklistItem[] = [
-    {
-      complete: simulationStepReadiness("vehicle", snapshot).ready,
-      label: "Veículo e versão confirmados",
-    },
-    {
-      complete: simulationStepReadiness("applicant", snapshot).ready,
-      label: "Proponente conferido no Credere",
-    },
-    {
-      complete: simulationStepReadiness("terms", snapshot).ready,
-      label: "Condições definidas",
-    },
-    { complete: consent, label: "Consentimento registrado" },
-  ];
+  const vehicleReady = simulationStepReadiness("vehicle", snapshot).ready;
+  const applicantReady = simulationStepReadiness("applicant", snapshot).ready;
+  const termsReady = simulationStepReadiness("terms", snapshot).ready;
+  const checklist = useMemo<SimulationSummaryChecklistItem[]>(
+    () => [
+      { complete: vehicleReady, label: "Veículo e versão confirmados" },
+      {
+        complete: applicantReady,
+        label: "Proponente conferido no Credere",
+      },
+      { complete: termsReady, label: "Condições definidas" },
+      { complete: consent, label: "Consentimento registrado" },
+    ],
+    [applicantReady, consent, termsReady, vehicleReady],
+  );
   const versionLabel = selectedFipeCandidate
     ? selectedFipeCandidate.version || selectedFipeCandidate.name
     : null;
@@ -473,7 +577,11 @@ export function SimulationForm({
   return (
     <form className="credere-form" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-6">
-        <SimulationFormStepper onChange={setStep} step={step} />
+        <SimulationFormStepper
+          completedSteps={completedSteps}
+          onChange={changeStep}
+          step={step}
+        />
 
         {step === "vehicle" ? (
           <FeatureFormSection
@@ -492,8 +600,9 @@ export function SimulationForm({
                 onSourceChange={(value) => {
                   setVehicleSource(value);
                   if (value === "catalog") {
-                    setListingId("");
-                    setUnitId("");
+                    selectListing(null);
+                  } else {
+                    selectCatalog(null);
                   }
                 }}
                 onToast={onToast ?? (() => {})}
@@ -589,6 +698,9 @@ export function SimulationForm({
                 onCpfCnpjBlur={() => void runApplicantPreflight()}
                 onCpfCnpjChange={(value) => {
                   setCpfCnpj(value);
+                  setGenderCode("");
+                  setOccupationCode("");
+                  setZipCode("");
                   preflightRequestRef.current = "";
                   setPreflightState({ kind: "idle" });
                   setPreflightErrorId(null);
@@ -602,13 +714,26 @@ export function SimulationForm({
                 phoneInvalid={phoneInvalid}
                 requiredFields={requirements.supported}
               />
+              <SimulationApplicantProviderFields
+                domains={domains}
+                genderCode={genderCode}
+                genderInvalid={genderInvalid}
+                occupationCode={occupationCode}
+                occupationInvalid={occupationInvalid}
+                onGenderChange={setGenderCode}
+                onOccupationChange={setOccupationCode}
+                onZipCodeChange={setZipCode}
+                requiredFields={requirements.supported}
+                zipCode={zipCode}
+                zipCodeInvalid={zipCodeInvalid}
+              />
               <SimulationApplicantPreflightStatus
+                blockingFields={blockingFields}
                 canCheck={isValidPreflightDocument(cpfCnpj)}
                 invalid={preflightInvalid}
                 onRetry={() => void runApplicantPreflight()}
                 requestId={preflightErrorId}
                 state={preflightState}
-                unsupportedCount={requirements.unsupported.length}
               />
             </div>
           </FeatureFormSection>
@@ -676,7 +801,7 @@ export function SimulationForm({
         <SimulationStepActions
           isLast={step === "review"}
           isSubmitting={isSubmitting}
-          nextDisabled={false}
+          nextBlocked={!currentReadiness.ready}
           nextHint={currentReadiness.ready ? null : currentReadiness.reason}
           onBack={step === "vehicle" ? null : previousStep}
           onNext={step === "review" ? null : continueStep}
@@ -685,4 +810,13 @@ export function SimulationForm({
       </div>
     </form>
   );
+}
+
+function focusFirstInvalidField() {
+  window.requestAnimationFrame(() => {
+    const invalid = document.querySelector<HTMLElement>(
+      '.credere-form [data-invalid="true"]',
+    );
+    invalid?.focus();
+  });
 }

@@ -1,7 +1,15 @@
+import { createHash } from "node:crypto";
+import type { EntitlementKey } from "@lojaveiculosv2/shared";
 import type { Context } from "hono";
 import type { z } from "zod";
-import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { assertEntitlement } from "../../../shared/authorization.js";
+import type {
+  ServiceContext,
+  StoreScopedServiceContext,
+} from "../../../shared/serviceContext.js";
 import { HttpContextAuthenticationError } from "../../../infrastructure/http/createHttpServiceContext.js";
+import { ExternalApiIdempotencyReplay } from "../../../infrastructure/http/externalApiIdempotencyReplay.js";
+import { externalApiRequestFingerprintContextKey } from "../../../infrastructure/http/externalApiRequestContext.js";
 import type { ApiErrorResponseInput } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
   apiErrorInput,
@@ -29,7 +37,48 @@ export async function createIntegrationContext(
       "External API runtime routes require a scoped API key.",
     );
   }
-  return serviceContext;
+  if (!serviceContext.storeId || !serviceContext.tenantId) {
+    throw new HttpContextAuthenticationError(
+      "External API runtime routes require store and tenant scope.",
+    );
+  }
+  if (
+    !("entitlements" in serviceContext) ||
+    !Array.isArray(serviceContext.entitlements)
+  ) {
+    throw new HttpContextAuthenticationError(
+      "External API runtime routes require entitlement scope.",
+    );
+  }
+  return serviceContext as StoreScopedServiceContext;
+}
+
+export function assertExternalRuntimeEntitlement(
+  context: StoreScopedServiceContext,
+  entitlement: EntitlementKey,
+) {
+  assertEntitlement(context, entitlement);
+}
+
+export function bindValidatedExternalApiRequest(
+  context: Context,
+  payload: unknown,
+) {
+  const canonicalPayload =
+    JSON.stringify(payload, (_key, value: unknown) => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return value;
+      }
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).sort(
+          ([left], [right]) => left.localeCompare(right),
+        ),
+      );
+    }) ?? "null";
+  context.set(
+    externalApiRequestFingerprintContextKey,
+    createHash("sha256").update(canonicalPayload).digest("hex"),
+  );
 }
 
 export async function parseJson<Schema extends z.ZodType>(
@@ -69,7 +118,24 @@ export async function handleRuntime(
   context: Context,
   action: () => Promise<Response>,
 ): Promise<Response> {
-  return handleControllerAction(context, action, runtimeErrorResponse);
+  return handleControllerAction(
+    context,
+    async () => {
+      try {
+        return await action();
+      } catch (error) {
+        if (!(error instanceof ExternalApiIdempotencyReplay)) throw error;
+        return new Response(JSON.stringify(error.body), {
+          headers: {
+            "content-type": error.contentType,
+            "idempotency-replayed": "true",
+          },
+          status: error.statusCode,
+        });
+      }
+    },
+    runtimeErrorResponse,
+  );
 }
 
 function runtimeErrorResponse(error: unknown): ApiErrorResponseInput | null {

@@ -184,7 +184,13 @@ function createApi({
     downloadDocumentArtifact: vi.fn(),
     getConnection: vi.fn(async () => connection),
     getOverview: vi.fn(async () => ({
-      capabilities: { canDownloadOfficialArtifacts: true },
+      capabilities: {
+        canCancelDocuments: true,
+        canDownloadOfficialArtifacts: true,
+        canIssueDocuments: true,
+        canRepeatDocuments: true,
+        canSyncDocumentStatus: true,
+      },
       documents: [
         createDocument({
           id: "fiscal_1",

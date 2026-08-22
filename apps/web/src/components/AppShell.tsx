@@ -22,7 +22,12 @@ import {
 import { useTenantAdminBrand } from "../app/useTenantAdminBrand";
 import { UserAccountButton } from "../features/account/UserAccountButton";
 import { useOptionalAccountSession } from "../features/account/accountSession";
-import { readRuntimeStoreSlug } from "../features/account/currentStore";
+import type { SessionBootstrap } from "../features/account/apiClient";
+import {
+  persistCurrentStoreSlug,
+  readRuntimeStoreSlug,
+} from "../features/account/currentStore";
+import { readSessionActiveStore } from "../features/account/sessionPermissions";
 import {
   DashboardSidebar,
   type DashboardSidebarItem,
@@ -69,7 +74,11 @@ export function AppShell({
     readBrowserPreferredTheme(),
   );
   const accountSession = useOptionalAccountSession();
-  const storeLabel = readStoreLabel();
+  const { activeStore, agencyPortalHref, workspaces } = useMemo(
+    () => readStoreWorkspaceState(accountSession),
+    [accountSession],
+  );
+  const storeLabel = activeStore?.storeSlug ?? readStoreLabel();
   const tenantBrandState = useTenantAdminBrand({
     fallbackStoreLabel: storeLabel,
     theme,
@@ -97,6 +106,10 @@ export function AppShell({
   const navigate = (moduleId: ModuleId) => {
     onNavigate(moduleId);
     setIsMobileNavOpen(false);
+  };
+
+  const selectWorkspace = (storeSlug: string) => {
+    if (accountSession) switchStoreWorkspace(accountSession, storeSlug);
   };
 
   const toggleTheme = () => {
@@ -187,6 +200,10 @@ export function AppShell({
           workspaceLogoUrl={tenantBrand.logoUrl}
           workspaceMeta={tenantBrand.storeLabel}
           workspaceName={tenantBrand.storeName}
+          workspaceId={activeStore?.storeSlug}
+          workspaces={workspaces}
+          onWorkspaceSelect={selectWorkspace}
+          agencyPortalHref={agencyPortalHref}
           onSearchClick={() => setIsCommandOpen(true)}
         />
       </aside>
@@ -270,6 +287,10 @@ export function AppShell({
               workspaceLogoUrl={tenantBrand.logoUrl}
               workspaceMeta={tenantBrand.storeLabel}
               workspaceName={tenantBrand.storeName}
+              workspaceId={activeStore?.storeSlug}
+              workspaces={workspaces}
+              onWorkspaceSelect={selectWorkspace}
+              agencyPortalHref={agencyPortalHref}
               onSearchClick={() => setIsCommandOpen(true)}
             />
           </aside>
@@ -293,6 +314,70 @@ export function AppShell({
       />
     </div>
   );
+}
+
+export function switchStoreWorkspace(
+  session: SessionBootstrap,
+  storeSlug: string,
+  reload: () => void = () => window.location.reload(),
+) {
+  const nextStore = [
+    ...(session.defaultStore ? [session.defaultStore] : []),
+    ...session.stores,
+  ].find((store) => store.status === "active" && store.storeSlug === storeSlug);
+  if (!nextStore) return false;
+  const currentStore = readSessionActiveStore(session);
+  const activeAgencyMembership = session.tenantMemberships.find(
+    (membership) =>
+      membership.status === "active" &&
+      membership.role === "agency" &&
+      membership.tenantId === currentStore?.tenantId,
+  );
+  if (
+    activeAgencyMembership &&
+    nextStore.tenantId !== activeAgencyMembership.tenantId
+  ) {
+    return false;
+  }
+  if (currentStore?.storeSlug === nextStore.storeSlug) return false;
+  persistCurrentStoreSlug(nextStore.storeSlug, session.user.clerkUserId);
+  reload();
+  return true;
+}
+
+export function readStoreWorkspaceState(session: SessionBootstrap | null) {
+  const activeStore = readSessionActiveStore(session);
+  const activeAgencyMembership = session?.tenantMemberships.find(
+    (membership) =>
+      membership.status === "active" &&
+      membership.role === "agency" &&
+      membership.tenantId === activeStore?.tenantId,
+  );
+  const stores = [
+    ...(session?.defaultStore ? [session.defaultStore] : []),
+    ...(session?.stores ?? []),
+  ];
+  const workspaces = Array.from(
+    new Map(
+      stores
+        .filter((store) => store.status === "active")
+        .filter(
+          (store) =>
+            !activeAgencyMembership ||
+            store.tenantId === activeAgencyMembership.tenantId,
+        )
+        .map((store) => [store.storeSlug, store]),
+    ).values(),
+  ).map((store) => ({
+    id: store.storeSlug,
+    meta: store.tenantName,
+    name: store.storeName,
+  }));
+  return {
+    activeStore,
+    agencyPortalHref: activeAgencyMembership ? "/agency/admin" : undefined,
+    workspaces,
+  };
 }
 
 function readStoreLabel() {

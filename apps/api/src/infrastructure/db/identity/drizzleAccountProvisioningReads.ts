@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   membershipPermissionOverrides,
   platformAdminMemberships,
@@ -224,6 +224,7 @@ export async function hasActiveTenantRole(
         eq(tenantMemberships.userId, input.userId),
         eq(tenantMemberships.status, "active"),
         eq(tenants.isDeleted, false),
+        isNull(tenants.deletedAt),
         eq(roleTemplates.roleKey, input.role),
       ),
     )

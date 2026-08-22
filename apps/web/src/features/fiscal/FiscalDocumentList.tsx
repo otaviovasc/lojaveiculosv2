@@ -13,6 +13,7 @@ import { FeatureTableFrame } from "../../components/ui/FeatureTable";
 import "../../styles/fiscal-documents.css";
 import type { FiscalApi } from "./apiClient";
 import { FiscalDocumentActions } from "./FiscalDocumentActions";
+import { FiscalDocumentDetails } from "./FiscalDocumentDetails";
 import {
   fiscalStatusFilterOptions,
   fiscalTypeFilterOptions,
@@ -37,14 +38,16 @@ import {
   getFiscalDocumentStatusTone,
   getFiscalDocumentTypeLabel,
 } from "./fiscalLabels";
-import type { FiscalDocument } from "./types";
+import type { FiscalDocument, FiscalEvent, FiscalOverview } from "./types";
 
 export const FISCAL_STATUS_POLL_INTERVAL_MS = 10_000;
 
 type FiscalDocumentListProps = {
   api: FiscalApi;
+  capabilities: FiscalOverview["capabilities"];
   canDownloadOfficialArtifacts: boolean;
   documents: readonly FiscalDocument[];
+  events: readonly FiscalEvent[];
   onCorrect: (document: FiscalDocument) => void;
   onError: (message: string) => void;
   onRefresh: () => Promise<void>;
@@ -54,17 +57,25 @@ type FiscalDocumentListProps = {
 
 type RowProps = {
   api: FiscalApi;
+  actionInstanceId: "desktop" | "mobile";
+  capabilities: FiscalOverview["capabilities"];
   canDownloadOfficialArtifacts: boolean;
   document: FiscalDocument;
+  detailsOpen: boolean;
+  detailsId: string;
+  events: readonly FiscalEvent[];
   onCorrect: (document: FiscalDocument) => void;
   onError: (message: string) => void;
   onRefresh: () => Promise<void>;
+  onToggleDetails: () => void;
 };
 
 export function FiscalDocumentList({
   api,
+  capabilities,
   canDownloadOfficialArtifacts,
   documents,
+  events,
   onCorrect,
   onError,
   onRefresh,
@@ -73,6 +84,9 @@ export function FiscalDocumentList({
 }: FiscalDocumentListProps) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<FiscalTypeFilter>("all");
+  const [expandedDocumentId, setExpandedDocumentId] = useState<string | null>(
+    null,
+  );
 
   const pollingIds = useMemo(
     () =>
@@ -88,18 +102,23 @@ export function FiscalDocumentList({
   );
 
   useEffect(() => {
-    if (!pollingIds) return undefined;
+    if (!capabilities.canSyncDocumentStatus || !pollingIds) return undefined;
     const ids = pollingIds.split(",");
-    const intervalId = setInterval(() => {
+    const syncPending = () => {
       // Status sync is best-effort: polling errors never surface as page
       // errors, and no synthetic status is shown while the provider is
       // unreachable.
-      void Promise.allSettled(
+      return Promise.allSettled(
         ids.map((id) => api.syncDocumentStatus(id, {})),
       ).then(() => onRefresh());
-    }, FISCAL_STATUS_POLL_INTERVAL_MS);
+    };
+    void syncPending();
+    const intervalId = setInterval(
+      () => void syncPending(),
+      FISCAL_STATUS_POLL_INTERVAL_MS,
+    );
     return () => clearInterval(intervalId);
-  }, [api, onRefresh, pollingIds]);
+  }, [api, capabilities.canSyncDocumentStatus, onRefresh, pollingIds]);
 
   const statusCounts = useMemo(() => {
     const counts = new Map<FiscalStatusFilter, number>();
@@ -128,7 +147,9 @@ export function FiscalDocumentList({
 
   const rowProps = {
     api,
+    capabilities,
     canDownloadOfficialArtifacts,
+    events,
     onCorrect,
     onError,
     onRefresh,
@@ -210,8 +231,16 @@ export function FiscalDocumentList({
               <tbody className="divide-y divide-line/40">
                 {filtered.map((document) => (
                   <DocumentTableRow
+                    actionInstanceId="desktop"
+                    detailsOpen={expandedDocumentId === document.id}
+                    detailsId={`fiscal-document-details-desktop-${document.id}`}
                     document={document}
                     key={document.id}
+                    onToggleDetails={() =>
+                      setExpandedDocumentId((current) =>
+                        current === document.id ? null : document.id,
+                      )
+                    }
                     {...rowProps}
                   />
                 ))}
@@ -221,8 +250,16 @@ export function FiscalDocumentList({
           <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:hidden">
             {filtered.map((document) => (
               <DocumentCard
+                actionInstanceId="mobile"
+                detailsOpen={expandedDocumentId === document.id}
+                detailsId={`fiscal-document-details-mobile-${document.id}`}
                 document={document}
                 key={document.id}
+                onToggleDetails={() =>
+                  setExpandedDocumentId((current) =>
+                    current === document.id ? null : document.id,
+                  )
+                }
                 {...rowProps}
               />
             ))}
@@ -251,59 +288,100 @@ function DocumentKindIcon({
   );
 }
 
-function DocumentTableRow({ document, ...actions }: RowProps) {
+function DocumentTableRow({
+  actionInstanceId,
+  capabilities,
+  detailsOpen,
+  detailsId,
+  document,
+  events,
+  onToggleDetails,
+  ...actions
+}: RowProps) {
   const summary = readDocumentSummary(document);
   return (
-    <tr
-      className={cx(
-        "group transition-colors hover:bg-app-elevated/40",
-        summary.rejected && "bg-danger/5",
-      )}
-    >
-      <td className="p-3.5 pl-4">
-        <div className="flex items-center gap-3">
-          <DocumentKindIcon
-            kind={document.documentKind}
-            rejected={summary.rejected}
-          />
-          <div className="min-w-0">
-            <strong className="fiscal-doc-title">{summary.title}</strong>
-            <span className="fiscal-doc-subtitle">{summary.subtitle}</span>
+    <>
+      <tr
+        className={cx(
+          "group transition-colors hover:bg-app-elevated/40",
+          summary.rejected && "bg-danger/5",
+        )}
+      >
+        <td className="p-3.5 pl-4">
+          <div className="flex items-center gap-3">
+            <DocumentKindIcon
+              kind={document.documentKind}
+              rejected={summary.rejected}
+            />
+            <div className="min-w-0">
+              <strong className="fiscal-doc-title">{summary.title}</strong>
+              <span className="fiscal-doc-subtitle">{summary.subtitle}</span>
+            </div>
           </div>
-        </div>
-      </td>
-      <td className="p-3.5">
-        <span className="block font-bold text-app-text">
-          {summary.recipientName}
-        </span>
-        {summary.recipientDocument ? (
-          <span className="text-xs font-semibold text-muted">
-            {summary.recipientDocument}
+        </td>
+        <td className="p-3.5">
+          <span className="block font-bold text-app-text">
+            {summary.recipientName}
           </span>
-        ) : null}
-      </td>
-      <td className="p-3.5">
-        <span className="fiscal-doc-total">{summary.totalLabel}</span>
-      </td>
-      <td className="p-3.5">
-        <FeatureStatusBadge size="dense" tone={summary.statusTone}>
-          {summary.statusLabel}
-        </FeatureStatusBadge>
-        {summary.errorMessage ? (
-          <span className="fiscal-doc-error">{summary.errorMessage}</span>
-        ) : null}
-      </td>
-      <td className="p-3.5 text-xs font-bold text-muted">
-        {summary.dateLabel}
-      </td>
-      <td className="p-3.5 pr-4">
-        <FiscalDocumentActions document={document} {...actions} />
-      </td>
-    </tr>
+          {summary.recipientDocument ? (
+            <span className="text-xs font-semibold text-muted">
+              {summary.recipientDocument}
+            </span>
+          ) : null}
+        </td>
+        <td className="p-3.5">
+          <span className="fiscal-doc-total">{summary.totalLabel}</span>
+        </td>
+        <td className="p-3.5">
+          <FeatureStatusBadge size="dense" tone={summary.statusTone}>
+            {summary.statusLabel}
+          </FeatureStatusBadge>
+          {summary.errorMessage ? (
+            <span className="fiscal-doc-error">{summary.errorMessage}</span>
+          ) : null}
+        </td>
+        <td className="p-3.5 text-xs font-bold text-muted">
+          {summary.dateLabel}
+        </td>
+        <td className="p-3.5 pr-4">
+          <FiscalDocumentActions
+            actionInstanceId={actionInstanceId}
+            canCancelDocuments={capabilities.canCancelDocuments ?? false}
+            canRepeatDocuments={capabilities.canRepeatDocuments ?? false}
+            canSyncDocumentStatus={capabilities.canSyncDocumentStatus ?? false}
+            detailsOpen={detailsOpen}
+            detailsId={detailsId}
+            document={document}
+            onToggleDetails={onToggleDetails}
+            {...actions}
+          />
+        </td>
+      </tr>
+      {detailsOpen ? (
+        <tr className="fiscal-document-details-row">
+          <td colSpan={6}>
+            <FiscalDocumentDetails
+              document={document}
+              events={events}
+              id={detailsId}
+            />
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }
 
-function DocumentCard({ document, ...actions }: RowProps) {
+function DocumentCard({
+  actionInstanceId,
+  capabilities,
+  detailsOpen,
+  detailsId,
+  document,
+  events,
+  onToggleDetails,
+  ...actions
+}: RowProps) {
   const summary = readDocumentSummary(document);
   return (
     <article
@@ -340,8 +418,25 @@ function DocumentCard({ document, ...actions }: RowProps) {
         <div className="fiscal-doc-card__error">{summary.errorMessage}</div>
       ) : null}
       <div className="fiscal-doc-card__actions">
-        <FiscalDocumentActions document={document} {...actions} />
+        <FiscalDocumentActions
+          actionInstanceId={actionInstanceId}
+          canCancelDocuments={capabilities.canCancelDocuments ?? false}
+          canRepeatDocuments={capabilities.canRepeatDocuments ?? false}
+          canSyncDocumentStatus={capabilities.canSyncDocumentStatus ?? false}
+          detailsOpen={detailsOpen}
+          detailsId={detailsId}
+          document={document}
+          onToggleDetails={onToggleDetails}
+          {...actions}
+        />
       </div>
+      {detailsOpen ? (
+        <FiscalDocumentDetails
+          document={document}
+          events={events}
+          id={detailsId}
+        />
+      ) : null}
     </article>
   );
 }

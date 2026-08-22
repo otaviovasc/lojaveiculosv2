@@ -21,6 +21,7 @@ import {
   FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
 import { FeatureTableFrame } from "../../components/ui/FeatureTable";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { simulationStatusLabel } from "./simulationPresentation";
 import type { CredereSimulation } from "./types";
 
@@ -33,12 +34,14 @@ export function SimulationHistoryPanel({
   error,
   history,
   onSelect,
+  onRetry,
   selectedId,
   variant = "full",
 }: {
   error: string | null;
   history: CredereSimulation[] | null;
   onSelect: (simulation: CredereSimulation) => void;
+  onRetry?: (() => void) | undefined;
   selectedId?: string | null;
   variant?: "compact" | "full";
 }) {
@@ -86,7 +89,23 @@ export function SimulationHistoryPanel({
   }, [history]);
 
   if (error) {
-    return <FeatureAlert tone="danger">{error}</FeatureAlert>;
+    return (
+      <FeatureAlert
+        action={
+          onRetry ? (
+            <FeatureActionButton
+              icon={History}
+              label="Tentar novamente"
+              onClick={onRetry}
+            />
+          ) : undefined
+        }
+        title="Histórico indisponível"
+        tone="danger"
+      >
+        {error}
+      </FeatureAlert>
+    );
   }
 
   if (history === null) {
@@ -286,6 +305,7 @@ export function SimulationHistoryPanel({
                     <th className="p-3.5">Data e Hora</th>
                     <th className="p-3.5">Cliente</th>
                     <th className="p-3.5">Veículo</th>
+                    <th className="p-3.5">Status</th>
                     <th className="p-3.5">Ofertas e Condições</th>
                     <th className="p-3.5 text-right">Ação</th>
                   </tr>
@@ -320,6 +340,14 @@ export function SimulationHistoryPanel({
                               {formatHistoryDate(item.createdAt)}
                             </span>
                           </div>
+                        </td>
+                        <td className="p-3.5">
+                          <FeatureStatusBadge
+                            size="dense"
+                            tone={statusTone(item.status)}
+                          >
+                            {simulationStatusLabel(item.status)}
+                          </FeatureStatusBadge>
                         </td>
                         <td className="p-3.5">
                           <div className="inline-flex items-center gap-2">
@@ -413,6 +441,12 @@ export function SimulationHistoryPanel({
                       <Calendar className="size-3.5" />
                       {formatHistoryDate(item.createdAt)}
                     </span>
+                    <FeatureStatusBadge
+                      size="dense"
+                      tone={statusTone(item.status)}
+                    >
+                      {simulationStatusLabel(item.status)}
+                    </FeatureStatusBadge>
                   </div>
 
                   <div className="flex flex-col gap-1 text-sm">

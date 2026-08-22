@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { storeEntitlements, stores } from "@lojaveiculosv2/db";
+import { storeEntitlements } from "@lojaveiculosv2/db";
 import type {
   BillingPlan,
   BillingSubscription,
@@ -7,6 +7,7 @@ import type {
 import { isEffectiveEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import { listChargeables } from "./drizzleBillingOverviewSupport.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { listActiveBillingStores } from "./drizzleBillingStoreDirectory.js";
 
 export async function listStoreScopedAllocations(
   db: DrizzleBillingClient,
@@ -15,11 +16,7 @@ export async function listStoreScopedAllocations(
   subscription: BillingSubscription | null,
 ) {
   const [storeRows, chargeables, entitlementRows] = await Promise.all([
-    db
-      .select()
-      .from(stores)
-      .where(eq(stores.tenantId, input.tenantId))
-      .limit(50),
+    listActiveBillingStores(db, input.tenantId),
     listChargeables(db, input, billingPlans, subscription),
     db
       .select()

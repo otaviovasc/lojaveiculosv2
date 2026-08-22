@@ -15,7 +15,11 @@ export function fetchCredere(
   });
 }
 
-export function credereApiUrl(path: string, query?: Record<string, string>) {
+export function credereApiUrl(
+  path: string,
+  query?: Record<string, string>,
+  apiRoot = CREDERE_API_ROOT,
+) {
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) {
     throw new FinancingProviderGatewayError(
       "not_configured",
@@ -23,7 +27,7 @@ export function credereApiUrl(path: string, query?: Record<string, string>) {
       500,
     );
   }
-  const url = new URL(`${CREDERE_API_ROOT}${path}`);
+  const url = new URL(`${apiRoot.replace(/\/$/, "")}${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     url.searchParams.set(key, value);
   }

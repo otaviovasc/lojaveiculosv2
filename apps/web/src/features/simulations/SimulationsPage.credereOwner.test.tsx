@@ -103,6 +103,7 @@ function createApi(): CredereApi {
     getStatus: vi.fn(async () => ({
       configured: false,
       mappedStoreAlias: null,
+      unavailableBanks: [],
       usableBanks: [],
     })),
     listProviderStores: vi.fn(async () => [

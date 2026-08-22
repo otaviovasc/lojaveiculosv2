@@ -138,8 +138,10 @@ function createExternalApiRepository(apiKey: string): ExternalApiRepository {
           }
         : null,
     countRecentRequests: vi.fn(async () => 0),
+    completeIdempotencyKey: vi.fn(async () => true),
     createClient: vi.fn(),
     listClients: vi.fn(),
+    failIdempotencyKey: vi.fn(async () => true),
     recordRequest: vi.fn(),
     reserveIdempotencyKey: vi.fn(async () => ({ kind: "created" as const })),
     revokeClient: vi.fn(),

@@ -97,6 +97,9 @@ export async function upsertCredereLead(
   const gateway = getFinancingGateway(ports);
   const cpfCnpj = normalizeDocument(input.customer.document);
   const lead = {
+    ...(input.customer.addressZipCode
+      ? { address: { zipCode: input.customer.addressZipCode } }
+      : {}),
     cpfCnpj,
     name: input.customer.name,
     phoneNumber: input.customer.phone,
@@ -104,11 +107,17 @@ export async function upsertCredereLead(
       ? { birthdate: input.customer.birthDate }
       : {}),
     ...(input.customer.email ? { email: input.customer.email } : {}),
+    ...(input.customer.genderCode
+      ? { retrieveGender: input.customer.genderCode }
+      : {}),
     ...(input.customer.hasCnh !== undefined
       ? { hasCnh: input.customer.hasCnh }
       : {}),
     ...(input.customer.monthlyIncomeCents
       ? { monthlyIncomeCents: input.customer.monthlyIncomeCents }
+      : {}),
+    ...(input.customer.occupationCode
+      ? { retrieveOccupation: input.customer.occupationCode }
       : {}),
   };
   const request = { credereStoreId: providerStoreId, token, lead };

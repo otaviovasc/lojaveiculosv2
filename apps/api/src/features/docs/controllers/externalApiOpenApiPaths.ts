@@ -78,13 +78,16 @@ export const externalApiPaths = {
     },
   },
   "/api/v1/external-api/leads": {
-    get: runtimeOperation(
-      "List CRM leads through a scoped external API key",
-      "listExternalApiLeads",
-      "lead.read",
-      leadQueryParameters,
-      "ExternalApiLeadListResponse",
-    ),
+    get: {
+      ...runtimeOperation(
+        "List CRM leads through a scoped external API key",
+        "listExternalApiLeads",
+        "lead.read",
+        leadQueryParameters,
+        "ExternalApiLeadListResponse",
+      ),
+      "x-required-entitlements": ["crm"],
+    },
     post: {
       ...runtimeOperationBase(
         "Create a CRM lead from an external app or AI agent",
@@ -93,13 +96,16 @@ export const externalApiPaths = {
       ),
       parameters: [idempotencyKeyParameter],
       requestBody: requestBody("CreateExternalApiLeadRequest"),
-      "x-deduplication-semantics": "reject-duplicate-key-with-409",
+      "x-required-entitlements": ["crm"],
+      "x-idempotency-semantics": "replay-completed-identical-request",
       responses: {
         "201": jsonResponse(
           "Created lead envelope.",
           "ExternalApiLeadResponse",
         ),
-        "409": errorResponse("Deduplication key was already used."),
+        "409": errorResponse(
+          "Idempotency key is in flight or was used with a different validated payload.",
+        ),
         ...protectedErrorResponses,
       },
     },
@@ -112,6 +118,7 @@ export const externalApiPaths = {
         "lead.read",
       ),
       parameters: [leadIdParameter],
+      "x-required-entitlements": ["crm"],
       responses: detailResponses(
         "Lead detail envelope.",
         "ExternalApiLeadResponse",
@@ -125,14 +132,17 @@ export const externalApiPaths = {
       ),
       parameters: [leadIdParameter, idempotencyKeyParameter],
       requestBody: requestBody("UpdateExternalApiLeadRequest"),
-      "x-deduplication-semantics": "reject-duplicate-key-with-409",
+      "x-required-entitlements": ["crm"],
+      "x-idempotency-semantics": "replay-completed-identical-request",
       responses: {
         "200": jsonResponse(
           "Updated lead envelope.",
           "ExternalApiLeadResponse",
         ),
         "404": errorResponse("Lead not found."),
-        "409": errorResponse("Deduplication key was already used."),
+        "409": errorResponse(
+          "Idempotency key is in flight or was used with a different validated payload.",
+        ),
         ...protectedErrorResponses,
       },
     },

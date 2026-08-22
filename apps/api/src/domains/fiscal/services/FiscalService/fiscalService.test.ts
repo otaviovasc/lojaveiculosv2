@@ -204,6 +204,7 @@ describe("FiscalService", () => {
       repeatRequiresReview: true,
       repeatedFromDocumentId: issued.id,
     });
+    expect(draft.metadata).not.toHaveProperty("sourceProviderDocumentId");
     expect(draft.providerDocumentId).toBeNull();
   });
 });

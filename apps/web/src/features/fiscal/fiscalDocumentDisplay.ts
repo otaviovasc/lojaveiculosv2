@@ -77,6 +77,11 @@ export function isCancellableStatus(status: FiscalDocumentStatus) {
   return status === "authorized" || status === "issued";
 }
 
+/** Terminal successful documents that may safely seed a new review draft. */
+export function isRepeatableStatus(status: FiscalDocumentStatus) {
+  return status === "authorized" || status === "issued";
+}
+
 export function readExternalReference(document: FiscalDocument) {
   return stringValue(asRecord(document.metadata).externalReference);
 }

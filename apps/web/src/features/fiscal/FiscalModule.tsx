@@ -122,6 +122,7 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
     setStatusFilter((current) => (current === filter ? "all" : filter));
 
   const emissionReady = connection?.status === "ready";
+  const canIssueDocuments = overview?.capabilities.canIssueDocuments ?? false;
 
   return (
     <FeaturePageShell className="fiscal-shell" variant="content">
@@ -136,6 +137,7 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
               title="Atualizar dados fiscais"
             />
             <FeatureActionButton
+              disabled={!canIssueDocuments}
               icon={FilePlus2}
               label="Emitir documento"
               onClick={() => setTab("emitir")}
@@ -214,10 +216,12 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
               />
               <FiscalDocumentList
                 api={fiscalApi}
+                capabilities={overview.capabilities}
                 canDownloadOfficialArtifacts={
                   overview.capabilities.canDownloadOfficialArtifacts
                 }
                 documents={overview.documents}
+                events={overview.events ?? []}
                 onCorrect={startCorrection}
                 onError={reportError}
                 onRefresh={() => refresh({ silent: true })}
@@ -229,7 +233,7 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
 
           {tab === "emitir" ? (
             <div className="grid gap-4">
-              {emissionReady ? (
+              {emissionReady && canIssueDocuments ? (
                 <>
                   {correction ? (
                     <FiscalCorrectionPanel
@@ -257,10 +261,18 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
                       variant="primary"
                     />
                   }
-                  body="A emissão de notas só é liberada quando a conexão com o provedor estiver pronta: empresa criada, certificado válido e padrões fiscais confirmados. Nenhuma emissão foi iniciada."
+                  body={
+                    canIssueDocuments
+                      ? "A emissão de notas só é liberada quando a conexão com o provedor estiver pronta: empresa criada, certificado válido e padrões fiscais confirmados. Nenhuma emissão foi iniciada."
+                      : "Seu perfil pode consultar as notas, mas não tem permissão para emitir documentos fiscais. Nenhuma emissão foi iniciada."
+                  }
                   className="fiscal-shell-notice"
                   icon={ShieldAlert}
-                  title="Emissão bloqueada"
+                  title={
+                    canIssueDocuments
+                      ? "Emissão bloqueada"
+                      : "Sem permissão para emitir"
+                  }
                 />
               )}
             </div>

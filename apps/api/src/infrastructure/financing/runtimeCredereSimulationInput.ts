@@ -56,6 +56,9 @@ export function toCredereSimulationInput(
       termsVersion: "credere-simulation-v1",
     },
     customer: {
+      ...(typeof applicant.addressZipCode === "string"
+        ? { addressZipCode: applicant.addressZipCode }
+        : {}),
       document: requireString(applicant.document, "applicant.document"),
       name: requireString(applicant.name, "applicant.name"),
       phone: requireString(applicant.phone, "applicant.phone"),
@@ -65,10 +68,16 @@ export function toCredereSimulationInput(
       ...(typeof applicant.email === "string"
         ? { email: applicant.email }
         : {}),
+      ...(typeof applicant.genderCode === "string"
+        ? { genderCode: applicant.genderCode }
+        : {}),
       ...(typeof applicant.hasCnh === "boolean"
         ? { hasCnh: applicant.hasCnh }
         : {}),
       ...(monthlyIncomeCents ? { monthlyIncomeCents } : {}),
+      ...(typeof applicant.occupationCode === "string"
+        ? { occupationCode: applicant.occupationCode }
+        : {}),
     },
     ...(documentationValueCents ? { documentationValueCents } : {}),
     downPaymentCents,

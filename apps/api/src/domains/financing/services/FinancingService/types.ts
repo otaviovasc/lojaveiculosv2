@@ -35,17 +35,27 @@ export type FinancingReadiness = {
   requiredFields: readonly string[];
   usableBankCount: number;
   usableBanks: readonly { code: string; name: string | null }[];
+  unavailableBankCount: number;
+  unavailableBanks: readonly {
+    code: string;
+    name: string | null;
+    reason: "authorization_required" | "inactive" | "provider_error";
+  }[];
 };
 
 export type CredereRequiredFieldsResult = {
   applicant: {
+    addressZipCode: string | null;
     birthDate: string | null;
     email: string | null;
+    genderCode: string | null;
     hasCnh: boolean | null;
     monthlyIncomeCents: number | null;
     name: string | null;
+    occupationCode: string | null;
     phone: string | null;
   } | null;
+  domains: Record<string, readonly { label: string; value: string }[]>;
   knownLead: boolean;
   missingFields: readonly string[];
   requirements: Record<string, readonly string[]>;
@@ -68,12 +78,15 @@ export type CreateCredereSimulationInput = {
     userAgent?: string | null;
   };
   customer: {
+    addressZipCode?: string;
     birthDate?: string;
     document: string;
     email?: string;
+    genderCode?: string;
     hasCnh?: boolean;
     monthlyIncomeCents?: number;
     name: string;
+    occupationCode?: string;
     phone: string;
   };
   documentationValueCents?: number;

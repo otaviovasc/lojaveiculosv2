@@ -9,10 +9,15 @@ import type { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import type { useCrmInbox } from "./useCrmInbox";
 
 vi.mock("./CrmConversationParts", () => ({
-  ChatHeader: ({ onClose }: ComponentProps<typeof ChatHeader>) => (
-    <button onClick={onClose} type="button">
-      Concluir
-    </button>
+  ChatHeader: ({ onBack, onClose }: ComponentProps<typeof ChatHeader>) => (
+    <>
+      <button onClick={onBack} type="button">
+        Voltar para conversas
+      </button>
+      <button onClick={onClose} type="button">
+        Concluir
+      </button>
+    </>
   ),
   MessageComposer: ({ onSend }: ComponentProps<typeof MessageComposer>) => {
     const [draft, setDraft] = useState("");
@@ -46,7 +51,13 @@ vi.mock("./CrmMessageParts", () => ({
 vi.mock("./CrmQueueToolbar", () => ({
   CrmQueueToolbar: ({ children }: { children?: ReactNode }) => <>{children}</>,
 }));
-vi.mock("./CrmConversationCycleList", () => ({ SessionList: () => null }));
+vi.mock("./CrmConversationCycleList", () => ({
+  SessionList: ({ onSelect }: { onSelect: (cycleId: string) => void }) => (
+    <button onClick={() => onSelect("cycle-2")} type="button">
+      Abrir segunda conversa
+    </button>
+  ),
+}));
 vi.mock("./CrmQueueBulkBar", () => ({ CrmQueueBulkBar: () => null }));
 vi.mock("./CrmReadOnlyComposer", () => ({
   CrmReadOnlyComposer: () => null,
@@ -75,7 +86,9 @@ describe("CrmConversationWorkspace conclusion", () => {
     render(
       <CrmConversationWorkspace
         inbox={createInbox({ closeCycle, concludeCycle })}
+        onCycleChange={vi.fn()}
         onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
       />,
     );
 
@@ -116,7 +129,12 @@ describe("CrmConversationWorkspace conclusion", () => {
       connections: [connection, createConnection("connection-2")],
     } as unknown as ReturnType<typeof useCrmInbox>;
     const rendered = render(
-      <CrmConversationWorkspace inbox={firstInbox} onScopeChange={vi.fn()} />,
+      <CrmConversationWorkspace
+        inbox={firstInbox}
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
     );
 
     await user.type(screen.getByRole("textbox", { name: "Rascunho" }), "oi");
@@ -130,7 +148,9 @@ describe("CrmConversationWorkspace conclusion", () => {
           ...firstInbox,
           connectionFilterId: "connection-2",
         }}
+        onCycleChange={vi.fn()}
         onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
       />,
     );
 
@@ -138,6 +158,32 @@ describe("CrmConversationWorkspace conclusion", () => {
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     expect(firstInbox.activeSessionConnection?.id).toBe("connection-1");
     expect(firstInbox.activeSession?.connection?.id).toBe("connection-1");
+  });
+
+  it("delegates conversation selection and mobile back to route state", async () => {
+    const user = userEvent.setup();
+    const onCycleChange = vi.fn();
+    render(
+      <CrmConversationWorkspace
+        inbox={createInbox({
+          closeCycle: vi.fn(async () => true),
+          concludeCycle: vi.fn(async () => true),
+        })}
+        onCycleChange={onCycleChange}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Abrir segunda conversa" }),
+    );
+    expect(onCycleChange).toHaveBeenLastCalledWith("cycle-2");
+
+    await user.click(
+      screen.getByRole("button", { name: "Voltar para conversas" }),
+    );
+    expect(onCycleChange).toHaveBeenLastCalledWith(null);
   });
 });
 

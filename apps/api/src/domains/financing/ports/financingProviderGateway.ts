@@ -13,7 +13,6 @@ export type { FinancingSimulationCandidate } from "./financingReconciliationMode
 export type { FinancingLead } from "./financingLeadModels.js";
 
 export type FinancingProvider = "credere";
-
 export type FinancingProviderErrorKind =
   | "indeterminate"
   | "invalid_response"
@@ -64,6 +63,10 @@ export type FinancingIntegratedBank = {
   status: string | null;
   tradename: string | null;
 };
+export type FinancingDomainOption = {
+  label: string;
+  value: string;
+};
 
 export type FinancingLeadAddress = {
   city?: string;
@@ -88,7 +91,6 @@ export type FinancingLeadInput = {
   retrieveOccupation?: string;
   retrieveProfession?: string;
 };
-
 export type FinancingRequiredFields = {
   lead: FinancingLead | null;
   requirements: Record<string, string[]>;
@@ -159,7 +161,6 @@ export type FinancingSimulationCondition = {
   reasonIdentifier: string | null;
   status: FinancingSimulationConditionStatus;
 };
-
 export type FinancingSimulationStatus = "completed" | "failed" | "pending";
 
 export type FinancingSimulation = {
@@ -205,6 +206,9 @@ export type FinancingProviderGateway = {
   listIntegratedBanks: (
     input: StoreScopedFinancingRequest,
   ) => Promise<FinancingIntegratedBank[]>;
+  listDomainOptions: (
+    input: StoreScopedFinancingRequest & { types: readonly string[] },
+  ) => Promise<Record<string, FinancingDomainOption[]>>;
   listSimulationCandidates: (
     input: StoreScopedFinancingRequest & { createdAfter: Date },
   ) => Promise<FinancingSimulationCandidate[]>;

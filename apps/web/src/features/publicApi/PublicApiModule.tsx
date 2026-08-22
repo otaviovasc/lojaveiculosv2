@@ -175,6 +175,7 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
         name={name}
         onCopy={copyToClipboard}
         onCreate={() => void createClient()}
+        onDismissCreatedKey={() => setCreatedKey(null)}
         onNameChange={setName}
         onScopesChange={setScopes}
         scopes={scopes}
@@ -214,7 +215,7 @@ function copySuccessMessage(id: string) {
   if (id === "base-url") return "URL base copiada.";
   if (id === "created-key") return "Chave copiada com segurança.";
   if (id.includes(":")) return "Exemplo curl copiado.";
-  return "Rota do artefato copiada.";
+  return "URL do artefato copiada.";
 }
 
 function createRuntimePublicApi(): PublicApi {

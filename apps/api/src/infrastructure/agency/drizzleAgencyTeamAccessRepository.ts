@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   roleTemplates,
@@ -36,11 +36,12 @@ export function createDrizzleAgencyTeamAccessStoreDirectory(
             eq(tenantMemberships.status, "active"),
             eq(roleTemplates.roleKey, "agency"),
             eq(stores.isDeleted, false),
+            isNull(stores.deletedAt),
             eq(tenants.isDeleted, false),
+            isNull(tenants.deletedAt),
           ),
         )
-        .orderBy(asc(stores.tradingName))
-        .limit(200);
+        .orderBy(asc(stores.tradingName), asc(stores.id));
 
       return rows.map((row) => ({
         ...row,

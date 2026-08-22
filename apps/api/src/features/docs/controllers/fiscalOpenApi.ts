@@ -36,12 +36,18 @@ export const fiscalPaths = {
     post: {
       tags: ["Fiscal"],
       summary: "Create one fiscal document issue attempt",
+      description:
+        "Requires fiscal.manage and fiscal.document.issue permissions plus the nfe entitlement.",
       operationId: "issueFiscalDocument",
-      security: [{ bearerAuth: [] }],
+      security: [{ bearerAuth: ["fiscal.manage", "fiscal.document.issue"] }],
       responses: {
         "201": {
           description:
             "Fiscal document created or failed with provider status.",
+        },
+        "403": {
+          description:
+            "fiscal.manage and fiscal.document.issue permissions plus the nfe entitlement are required.",
         },
       },
     },
@@ -178,8 +184,10 @@ export const fiscalPaths = {
     post: {
       tags: ["Fiscal"],
       summary: "Create one fiscal document cancellation attempt",
+      description:
+        "Requires fiscal.manage and fiscal.document.cancel permissions plus the nfe entitlement.",
       operationId: "cancelFiscalDocument",
-      security: [{ bearerAuth: [] }],
+      security: [{ bearerAuth: ["fiscal.manage", "fiscal.document.cancel"] }],
       parameters: [
         {
           in: "path",
@@ -188,7 +196,13 @@ export const fiscalPaths = {
           schema: { type: "string" },
         },
       ],
-      responses: { "200": { description: "Fiscal document status updated." } },
+      responses: {
+        "200": { description: "Fiscal document status updated." },
+        "403": {
+          description:
+            "fiscal.manage and fiscal.document.cancel permissions plus the nfe entitlement are required.",
+        },
+      },
     },
   },
   "/api/v1/fiscal/documents/{documentId}/repeat": {

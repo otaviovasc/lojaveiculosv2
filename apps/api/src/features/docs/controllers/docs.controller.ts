@@ -172,7 +172,7 @@ export const openApiDocument = {
   "x-external-api-safety-limits": [
     "Tenant and store scoping required for every external request.",
     "Least-privilege external client scopes required; operator roles are not exposed to integrations.",
-    "API-key mutations use Idempotency-Key for duplicate rejection; reused keys return 409 and do not replay prior responses.",
+    "API-key mutations replay the original bounded JSON status/body for the same completed Idempotency-Key and validated payload; changed payloads and in-flight attempts return 409.",
     "Request identifiers required for audit correlation.",
     "Rate limits, payload size limits, and pagination caps required before launch.",
     "Destructive operations require explicit delete scopes and audit records.",

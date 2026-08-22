@@ -50,6 +50,7 @@ describe("createCredereApi", () => {
     expect(status).toEqual({
       configured: true,
       mappedStoreAlias: "Loja Centro Credere",
+      unavailableBanks: [],
       usableBanks: [{ code: "001", name: "Banco Um", status: "active" }],
     });
     expect(JSON.stringify(status)).not.toContain("credere_ext_123");
@@ -68,6 +69,7 @@ describe("createCredereApi", () => {
     expect(parsed).toEqual({
       configured: false,
       mappedStoreAlias: "Agencia Matriz",
+      unavailableBanks: [],
       usableBanks: [{ code: "237", name: "Banco Dois", status: null }],
     });
   });
@@ -131,6 +133,7 @@ describe("createCredereApi", () => {
     expect(required).toEqual({
       applicant: null,
       applicantKnown: true,
+      domains: {},
       missingFields: ["monthly_income"],
       requirements: { lead: ["monthlyIncomeCents"], vehicle: [] },
     });

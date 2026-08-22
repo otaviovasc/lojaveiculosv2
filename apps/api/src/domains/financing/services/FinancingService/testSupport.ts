@@ -21,13 +21,16 @@ export function createPorts(
       createAuthorizationUrl: async (input) =>
         `https://credere.example.test/oauth?state=${input.state}`,
       createLead: async (input) => ({
+        addressZipCode: input.lead.address?.zipCode ?? null,
         birthdate: input.lead.birthdate ?? null,
         cpfCnpj: input.lead.cpfCnpj,
         email: input.lead.email ?? null,
+        genderCode: input.lead.retrieveGender ?? null,
         hasCnh: input.lead.hasCnh ?? null,
         id: "lead_1",
         monthlyIncomeCents: input.lead.monthlyIncomeCents ?? null,
         name: input.lead.name,
+        occupationCode: input.lead.retrieveOccupation ?? null,
         phoneNumber: input.lead.phoneNumber,
       }),
       createSimulation: async () =>
@@ -52,6 +55,7 @@ export function createPorts(
           tradename: "PAN",
         },
       ],
+      listDomainOptions: async () => ({}),
       listSimulationCandidates: async () => [],
       listSellers: async () => [
         {
@@ -100,13 +104,16 @@ export function createPorts(
       revokeToken: async () => undefined,
       supportsPkce: false,
       updateLead: async (input) => ({
+        addressZipCode: input.lead.address?.zipCode ?? null,
         birthdate: input.lead.birthdate ?? null,
         cpfCnpj: input.lead.cpfCnpj,
         email: input.lead.email ?? null,
+        genderCode: input.lead.retrieveGender ?? null,
         hasCnh: input.lead.hasCnh ?? null,
         id: "lead_1",
         monthlyIncomeCents: input.lead.monthlyIncomeCents ?? null,
         name: input.lead.name,
+        occupationCode: input.lead.retrieveOccupation ?? null,
         phoneNumber: input.lead.phoneNumber,
       }),
       ...gatewayOverrides,

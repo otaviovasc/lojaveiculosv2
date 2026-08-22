@@ -90,6 +90,7 @@ export function toOverview(
   input: { storeId: string; tenantId: string },
   documents: FiscalDocument[],
   events: (typeof fiscalEvents.$inferSelect)[],
+  summary: FiscalOverview["summary"],
 ): FiscalOverview {
   return {
     capabilities: { canDownloadOfficialArtifacts: false },
@@ -109,18 +110,7 @@ export function toOverview(
       webhookConfigured: false,
     },
     storeId: input.storeId,
-    summary: {
-      cancelled: documents.filter((document) => document.status === "cancelled")
-        .length,
-      failed: documents.filter((document) =>
-        ["error", "failed", "rejected"].includes(document.status),
-      ).length,
-      issued: documents.filter((document) => isIssuedStatus(document.status))
-        .length,
-      pending: documents.filter((document) =>
-        ["draft", "processing", "queued"].includes(document.status),
-      ).length,
-    },
+    summary,
     tenantId: input.tenantId,
   };
 }

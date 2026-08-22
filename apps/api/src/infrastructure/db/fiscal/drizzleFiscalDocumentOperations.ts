@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   fiscalDocumentSnapshots,
   fiscalDocuments,
@@ -54,7 +54,7 @@ export async function getOverview(
   db: DrizzleFiscalClient,
   input: { storeId: string; tenantId: string },
 ) {
-  const [documents, events] = await Promise.all([
+  const [documents, events, summaryRows] = await Promise.all([
     db
       .select()
       .from(fiscalDocuments)
@@ -67,8 +67,23 @@ export async function getOverview(
       .where(scopedEvents(input))
       .orderBy(desc(fiscalEvents.occurredAt))
       .limit(50),
+    db
+      .select({
+        cancelled: countStatuses(["cancelled"]),
+        failed: countStatuses(["error", "failed", "rejected"]),
+        issued: countStatuses(["authorized", "issued"]),
+        pending: countStatuses(["draft", "processing", "queued"]),
+      })
+      .from(fiscalDocuments)
+      .where(scopedDocuments(input)),
   ]);
-  return toOverview(input, documents.map(toDocument), events);
+  const summary = summaryRows[0] ?? {
+    cancelled: 0,
+    failed: 0,
+    issued: 0,
+    pending: 0,
+  };
+  return toOverview(input, documents.map(toDocument), events, summary);
 }
 
 export async function getDocument(
@@ -195,6 +210,12 @@ function scopedDocument(
   input: { storeId: string; tenantId: string },
 ) {
   return and(eq(fiscalDocuments.id, documentId), scopedDocuments(input));
+}
+
+function countStatuses(
+  statuses: (typeof fiscalDocuments.status.enumValues)[number][],
+) {
+  return sql<number>`count(*) filter (where ${inArray(fiscalDocuments.status, statuses)})::int`;
 }
 
 async function insertEvent(

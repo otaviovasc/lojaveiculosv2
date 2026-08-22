@@ -2,7 +2,15 @@ import type { CredereRequiredFields } from "./types";
 import { isValidBrazilianCnpj } from "@lojaveiculosv2/shared";
 
 export type SupportedApplicantField =
-  "birthDate" | "email" | "hasCnh" | "monthlyIncomeCents" | "name" | "phone";
+  | "birthDate"
+  | "email"
+  | "genderCode"
+  | "hasCnh"
+  | "monthlyIncomeCents"
+  | "name"
+  | "occupationCode"
+  | "phone"
+  | "zipCode";
 
 const supportedAliases: Record<string, SupportedApplicantField> = {
   applicant_email: "email",
@@ -18,6 +26,7 @@ const supportedAliases: Record<string, SupportedApplicantField> = {
   driver_license: "hasCnh",
   email: "email",
   full_name: "name",
+  gender: "genderCode",
   has_cnh: "hasCnh",
   hascnh: "hasCnh",
   income: "monthlyIncomeCents",
@@ -28,18 +37,19 @@ const supportedAliases: Record<string, SupportedApplicantField> = {
   name: "name",
   phone: "phone",
   phone_number: "phone",
+  retrieve_gender: "genderCode",
+  retrieve_occupation: "occupationCode",
   salary: "monthlyIncomeCents",
+  occupation: "occupationCode",
+  address: "zipCode",
+  address_zip_code: "zipCode",
+  cep: "zipCode",
+  zip_code: "zipCode",
 };
 
 const alreadyCollectedFields = new Set([
   "accepted_terms",
   "accessory_value_cents",
-  "address",
-  "address_city",
-  "address_line1",
-  "address_line2",
-  "address_state",
-  "address_zip_code",
   "amount_cents",
   "applicant_document",
   "asset_value_cents",
@@ -48,7 +58,6 @@ const alreadyCollectedFields = new Set([
   "bank_codes",
   "banks",
   "buyer_document",
-  "cep",
   "channel",
   "city",
   "consent",
@@ -93,7 +102,6 @@ const alreadyCollectedFields = new Set([
   "year_manufacture",
   "year_model",
   "zero_km",
-  "zip_code",
 ]);
 
 export function readApplicantRequirements(result: CredereRequiredFields) {
@@ -128,6 +136,23 @@ export function isValidPreflightDocument(value: string) {
   return digits.length === 11
     ? isValidCpf(digits)
     : isValidBrazilianCnpj(digits);
+}
+
+export function applicantRequirementLabel(field: string) {
+  const normalized = normalizeFieldName(field).replace(
+    /^(applicant|customer|lead)_/,
+    "",
+  );
+  const labels: Record<string, string> = {
+    address_city: "cidade do endereço",
+    address_line1: "logradouro",
+    address_number: "número do endereço",
+    address_state: "UF do endereço",
+    mother_name: "nome da mãe",
+    profession: "profissão",
+    retrieve_profession: "profissão",
+  };
+  return labels[normalized] ?? normalized.replace(/_/g, " ");
 }
 
 function isValidCpf(digits: string) {

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createSpedyHttpFiscalAdminGateway } from "./spedyHttpFiscalAdminGateway.js";
+import { ownerRequest } from "./spedyHttpFiscalAdminClient.js";
 
 const env = {
   SPEDY_API_URL: "https://api.spedy.test/v1/",
@@ -50,9 +51,20 @@ describe("spedyHttpFiscalAdminGateway", () => {
     const [createUrl, createRequest] = fetcher.mock.calls[1] ?? [];
     expect(createUrl).toBe("https://api.spedy.test/v1/companies");
     expect(createRequest?.method).toBe("POST");
+    expect(createRequest?.redirect).toBe("error");
     expect(new Headers(createRequest?.headers).get("X-Api-Key")).toBe(
       "owner-key",
     );
+  });
+
+  it("rejects cross-origin owner requests before attaching the API key", async () => {
+    const fetcher = vi.fn<typeof fetch>();
+
+    await expect(
+      ownerRequest(fetcher, env, "GET", "https://attacker.example/companies"),
+    ).rejects.toMatchObject({ name: "SpedyGatewayConfigurationError" });
+
+    expect(fetcher).not.toHaveBeenCalled();
   });
 
   it("does not register a duplicate status webhook", async () => {

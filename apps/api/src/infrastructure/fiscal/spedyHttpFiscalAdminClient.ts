@@ -2,6 +2,7 @@ import {
   SpedyGatewayConfigurationError,
   SpedyGatewayHttpError,
 } from "./spedyErrors.js";
+import { trustedSpedyUrl } from "./spedyHttpSecurity.js";
 
 export type JsonRecord = Record<string, unknown>;
 export type Fetcher = typeof fetch;
@@ -67,12 +68,14 @@ export async function ownerUpload(
   path: string,
   body: FormData,
 ) {
-  const response = await fetcher(
-    toUrl(requireEnv(env, "SPEDY_API_URL"), path),
+  const response = await safeFetch(
+    fetcher,
+    trustedSpedyUrl(requireEnv(env, "SPEDY_API_URL"), path),
     {
       body,
       headers: { "X-Api-Key": requireEnv(env, "SPEDY_OWNER_API_KEY") },
       method: "POST",
+      redirect: "error",
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     },
   );
@@ -120,8 +123,9 @@ async function request(
   path: string,
   body?: unknown,
 ) {
-  const response = await fetcher(
-    toUrl(requireEnv(env, "SPEDY_API_URL"), path),
+  const response = await safeFetch(
+    fetcher,
+    trustedSpedyUrl(requireEnv(env, "SPEDY_API_URL"), path),
     {
       ...(body ? { body: JSON.stringify(body) } : {}),
       headers: {
@@ -129,6 +133,7 @@ async function request(
         "X-Api-Key": apiKey,
       },
       method,
+      redirect: "error",
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     },
   );
@@ -168,6 +173,10 @@ function redactSecrets(value: unknown): unknown {
   );
 }
 
-function toUrl(baseUrl: string, path: string) {
-  return new URL(path, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`).href;
+async function safeFetch(fetcher: Fetcher, url: string, init: RequestInit) {
+  try {
+    return await fetcher(url, init);
+  } catch {
+    throw new SpedyGatewayHttpError("Spedy fiscal request failed.", 503);
+  }
 }

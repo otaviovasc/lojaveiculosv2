@@ -1,4 +1,10 @@
-import { leads, sales, stores } from "@lojaveiculosv2/db";
+import {
+  leads,
+  sales,
+  stores,
+  vehicleListings,
+  vehicleUnits,
+} from "@lojaveiculosv2/db";
 import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
@@ -32,9 +38,31 @@ describe("createDrizzleAgencyStatsRepository", () => {
       expect(predicate.params).not.toContain("2026-08-01T00:00:00.000Z");
     }
   });
+
+  it("returns every active store and excludes soft-deleted store facts", async () => {
+    const selected: SelectedQuery[] = [];
+    const repository = createDrizzleAgencyStatsRepository(
+      createQueryCapturingDb(selected, 101),
+    );
+
+    const report = await repository.getStats({
+      period: { from: "2026-08-01", to: "2026-08-22" },
+      tenantId: "tenant_1",
+    });
+
+    expect(report.availableStores).toHaveLength(101);
+    expect(report.stores).toHaveLength(101);
+    expect(report.totals.storeCount).toBe(101);
+    for (const table of [stores, vehicleListings, vehicleUnits, sales, leads]) {
+      const predicate = renderSql(
+        selected.find((query) => query.table === table)?.where,
+      );
+      expect(predicate.sql).toContain('"deleted_at" is null');
+    }
+  });
 });
 
-function createQueryCapturingDb(selected: SelectedQuery[]) {
+function createQueryCapturingDb(selected: SelectedQuery[], storeCount = 1) {
   return {
     select() {
       return {
@@ -43,13 +71,11 @@ function createQueryCapturingDb(selected: SelectedQuery[]) {
           selected.push(query);
           const rows =
             table === stores
-              ? [
-                  {
-                    storeId: "store_1",
-                    storeName: "Centro",
-                    storeSlug: "centro",
-                  },
-                ]
+              ? Array.from({ length: storeCount }, (_, index) => ({
+                  storeId: `store_${String(index + 1)}`,
+                  storeName: `Loja ${String(index + 1)}`,
+                  storeSlug: `loja-${String(index + 1)}`,
+                }))
               : [];
           const result = {
             groupBy: async () => rows,

@@ -51,8 +51,14 @@ export async function getFiscalOverview(
   return {
     ...overview,
     capabilities: {
+      canCancelDocuments: context.permissions.includes(
+        "fiscal.document.cancel",
+      ),
       canDownloadOfficialArtifacts:
         context.permissions.includes("documents.download"),
+      canIssueDocuments: context.permissions.includes("fiscal.document.issue"),
+      canRepeatDocuments: context.permissions.includes("fiscal.document.issue"),
+      canSyncDocumentStatus: context.permissions.includes("fiscal.manage"),
     },
     provider,
   };

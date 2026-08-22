@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAccountSession } from "../account/accountSession";
+import { readSessionActiveStore } from "../account/sessionPermissions";
 import { useRemoteSearch } from "../../lib/useRemoteSearch";
 import type { CrmConversationApi } from "./crmConversationApi";
 import {
@@ -45,9 +46,12 @@ import type {
 
 const CRM_SESSION_PAGE_SIZE = 40;
 
-export function useCrmInbox(api: CrmConversationApi) {
+export function useCrmInbox(
+  api: CrmConversationApi,
+  routedCycleId: CrmConversationCycleId | null = readInitialCycleId(),
+) {
   const accountSession = useOptionalAccountSession();
-  const initialCycleId = readInitialCycleId();
+  const initialCycleId = routedCycleId;
   const [activeCycleId, setActiveCycleId] =
     useState<CrmConversationCycleId | null>(initialCycleId);
   const [initialSessionResolved, setInitialSessionResolved] = useState(
@@ -78,9 +82,10 @@ export function useCrmInbox(api: CrmConversationApi) {
   const sessionsRef = useRef(conversationCycles);
   sessionsRef.current = conversationCycles;
   const currentUserId = accountSession?.user.id ?? null;
+  const activeStore = readSessionActiveStore(accountSession);
   const permissions = useMemo(
     () => readCrmCapabilities(accountSession),
-    [accountSession],
+    [accountSession, activeStore?.storeId],
   );
   const queueAccess = useCrmQueueAccess({
     canAssign: permissions.canAssign,
@@ -164,8 +169,8 @@ export function useCrmInbox(api: CrmConversationApi) {
     [activeConnection, activeSessionConnection],
   );
   const catalogUrl = useMemo(
-    () => buildStorefrontUrl(accountSession?.defaultStore?.storeSlug),
-    [accountSession?.defaultStore?.storeSlug],
+    () => buildStorefrontUrl(activeStore?.storeSlug),
+    [activeStore?.storeSlug],
   );
   const markingReadRef = useRef(new Set<CrmConversationCycleId>());
   const manualUnreadCycleIdsRef = useRef(new Set<CrmConversationCycleId>());
@@ -298,6 +303,18 @@ export function useCrmInbox(api: CrmConversationApi) {
   );
 
   useEffect(() => {
+    sessionRequestGenerationRef.current += 1;
+    const alreadyLoaded = Boolean(
+      initialCycleId &&
+      sessionsRef.current.some((cycle) => cycle.id === initialCycleId),
+    );
+    setActiveCycleId(initialCycleId);
+    setInitialSessionResolved(initialCycleId === null || alreadyLoaded);
+    if (initialCycleId && !alreadyLoaded) setIsLoadingSessions(true);
+    if (initialCycleId && alreadyLoaded) setIsLoadingSessions(false);
+  }, [initialCycleId]);
+
+  useEffect(() => {
     if (initialSessionResolved || !initialCycleId || !permissions.canList) {
       return;
     }
@@ -307,7 +324,10 @@ export function useCrmInbox(api: CrmConversationApi) {
       .then((deepLinked) => {
         if (!active) return;
         if (deepLinked) {
-          mergeCycles([deepLinked], { snapshotKind: "reconciled" });
+          mergeCycles([deepLinked], {
+            preserveLocalOnly: true,
+            snapshotKind: "reconciled",
+          });
           setActiveCycleId(deepLinked.id);
         }
       })
@@ -675,7 +695,7 @@ export function useCrmInbox(api: CrmConversationApi) {
     setStatusFilter,
     setUnreadOnly,
     statusFilter,
-    storeLocationName: accountSession?.defaultStore?.storeName ?? "Loja",
+    storeLocationName: activeStore?.storeName ?? "Loja",
     startConversation: conversationState.startConversation,
     startConversationProvider: conversationStartCapability.provider,
     startConversationUnavailableReason:

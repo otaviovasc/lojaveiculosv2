@@ -1,7 +1,6 @@
 import type {
   FinancingGatewayAuthConfig,
   FinancingProviderGateway,
-  FinancingTokenSet,
 } from "../../domains/financing/ports/financingProviderGateway.js";
 import { FinancingProviderGatewayError } from "../../domains/financing/ports/financingProviderGateway.js";
 import {
@@ -11,7 +10,6 @@ import {
   revokeCredereToken,
 } from "./credereAuth.js";
 import {
-  isUsableCredereBank,
   mapIntegratedBanks,
   mapLead,
   mapRequiredFields,
@@ -20,21 +18,21 @@ import {
   mapVehicleModel,
   simulationPayload,
 } from "./credereDtoMappers.js";
+import { mapDomainOptions } from "./credereDomainMappers.js";
+import { parseSafeJson, providerError } from "./credereHttpSupport.js";
 import {
-  bearerHeaders,
-  credereApiUrl,
-  fetchCredere,
-  fetchWithReadRetry,
-  networkError,
-  parseSafeJson,
-  providerError,
-} from "./credereHttpSupport.js";
+  readCredere,
+  readCredereJson,
+  writeCredereJson,
+  writeCredereJsonResponse,
+} from "./credereJsonTransport.js";
 import { leadPayload } from "./credereLeadPayload.js";
 import { mapSellers } from "./credereSellerMappers.js";
 import { mapCredereFipeModels } from "./credereFipeModels.js";
 import { listCredereSimulationCandidates } from "./credereSimulationReconciliation.js";
 
 export type CredereHttpGatewayOptions = {
+  apiRoot?: string;
   auth?: FinancingGatewayAuthConfig;
   fetch?: typeof fetch;
 };
@@ -44,19 +42,23 @@ export function createCredereHttpGateway(
 ): FinancingProviderGateway {
   const fetchImpl = options.fetch ?? fetch;
   const auth = readAuth(options);
+  const apiRoot = options.apiRoot;
 
   return {
     createAuthorizationUrl: async (input) =>
-      createCredereAuthorizationUrl(auth, input),
+      createCredereAuthorizationUrl(auth, input, apiRoot),
     createLead: async (input) =>
       mapLead(
-        await writeJson(fetchImpl, "/banks_api/leads", input, {
-          body: leadPayload(input.lead),
-          method: "POST",
-        }),
+        await writeCredereJson(
+          fetchImpl,
+          "/banks_api/leads",
+          input,
+          { body: leadPayload(input.lead), method: "POST" },
+          apiRoot,
+        ),
       ),
     createSimulation: async (input) => {
-      const response = await writeJsonResponse(
+      const response = await writeCredereJsonResponse(
         fetchImpl,
         "/banks_api/simulations",
         input,
@@ -65,6 +67,7 @@ export function createCredereHttpGateway(
           indeterminateOnFailure: true,
           method: "POST",
         },
+        apiRoot,
       );
       return mapSimulation(
         await parseSafeJson(response),
@@ -72,26 +75,36 @@ export function createCredereHttpGateway(
       );
     },
     exchangeAuthorizationCode: (input) =>
-      exchangeCredereAuthorizationCode(fetchImpl, auth, input),
+      exchangeCredereAuthorizationCode(fetchImpl, auth, input, apiRoot),
     getLead: async (input) => {
-      const response = await read(fetchImpl, leadPath(input.cpfCnpj), input);
+      const response = await readCredere(
+        fetchImpl,
+        leadPath(input.cpfCnpj),
+        input,
+        {},
+        apiRoot,
+      );
       if (response.status === 404) return null;
       if (!response.ok) throw providerError(response);
       return mapLead(await parseSafeJson(response));
     },
     getRequiredFields: async (input) =>
       mapRequiredFields(
-        await readJson(
+        await readCredereJson(
           fetchImpl,
           `${leadPath(input.cpfCnpj)}/required_fields`,
           input,
+          {},
+          apiRoot,
         ),
       ),
     getSimulation: async (input) => {
-      const response = await read(
+      const response = await readCredere(
         fetchImpl,
         `/banks_api/simulations/${encodeURIComponent(input.uuid)}`,
         input,
+        {},
+        apiRoot,
       );
       if (!response.ok) throw providerError(response);
       return mapSimulation(
@@ -101,57 +114,103 @@ export function createCredereHttpGateway(
     },
     listIntegratedBanks: async (input) =>
       mapIntegratedBanks(
-        await readJson(
+        await readCredereJson(
           fetchImpl,
           `/stores/${encodeURIComponent(input.credereStoreId)}/integrated_banks`,
           input,
           { storeHeader: false },
+          apiRoot,
         ),
-      ).filter(isUsableCredereBank),
+      ),
+    listDomainOptions: async (input) => {
+      const entries = await Promise.all(
+        input.types.map(async (type) => ({
+          options: mapDomainOptions(
+            await readCredereJson(
+              fetchImpl,
+              "/banks_api/domains",
+              input,
+              { query: { types: type } },
+              apiRoot,
+            ),
+            type,
+          ),
+          type,
+        })),
+      );
+      const optionsByType: Record<string, (typeof entries)[number]["options"]> =
+        {};
+      for (const entry of entries) optionsByType[entry.type] = entry.options;
+      return optionsByType;
+    },
     listSimulationCandidates: (input) =>
-      listCredereSimulationCandidates(fetchImpl, input),
+      listCredereSimulationCandidates(fetchImpl, input, apiRoot),
     listSellers: async (input) =>
       mapSellers(
-        await readJson(fetchImpl, "/users/proposals_filter_list", input, {
-          query: { store_id: input.credereStoreId },
-          storeHeader: false,
-        }),
+        await readCredereJson(
+          fetchImpl,
+          "/users/proposals_filter_list",
+          input,
+          {
+            query: { store_id: input.credereStoreId },
+            storeHeader: false,
+          },
+          apiRoot,
+        ),
       ),
     listStores: async (input) =>
-      mapStores(await readJson(fetchImpl, "/stores", input)),
+      mapStores(
+        await readCredereJson(fetchImpl, "/stores", input, {}, apiRoot),
+      ),
     listVehicleModelsByFipe: async (input) =>
       mapCredereFipeModels(
-        await readJson(fetchImpl, "/vehicle_models", input, {
-          query: {
-            fipe_code: input.fipeCode,
-            per_page: "100",
-            year_end_greater_than_or_equal_to: String(input.modelYear),
-            year_start_less_than_or_equal_to: String(input.modelYear),
+        await readCredereJson(
+          fetchImpl,
+          "/vehicle_models",
+          input,
+          {
+            query: {
+              fipe_code: input.fipeCode,
+              per_page: "100",
+              year_end_greater_than_or_equal_to: String(input.modelYear),
+              year_start_less_than_or_equal_to: String(input.modelYear),
+            },
+            storeHeader: false,
           },
-          storeHeader: false,
-        }),
+          apiRoot,
+        ),
       ),
     lookupVehicleModel: async (input) =>
       mapVehicleModel(
-        await readJson(fetchImpl, "/vehicle_models/search", input, {
-          query: {
-            manufacture_year: String(input.manufactureYear),
-            model_year: String(input.modelYear),
-            q: input.query,
+        await readCredereJson(
+          fetchImpl,
+          "/vehicle_models/search",
+          input,
+          {
+            query: {
+              manufacture_year: String(input.manufactureYear),
+              model_year: String(input.modelYear),
+              q: input.query,
+            },
+            storeHeader: false,
           },
-          storeHeader: false,
-        }),
+          apiRoot,
+        ),
       ),
     provider: "credere",
     refreshToken: (refreshToken) =>
-      refreshCredereToken(fetchImpl, auth, refreshToken),
-    revokeToken: (accessToken) => revokeCredereToken(fetchImpl, accessToken),
+      refreshCredereToken(fetchImpl, auth, refreshToken, apiRoot),
+    revokeToken: (accessToken) =>
+      revokeCredereToken(fetchImpl, accessToken, apiRoot),
     updateLead: async (input) =>
       mapLead(
-        await writeJson(fetchImpl, leadPath(input.cpfCnpj), input, {
-          body: leadPayload(input.lead),
-          method: "PUT",
-        }),
+        await writeCredereJson(
+          fetchImpl,
+          leadPath(input.cpfCnpj),
+          input,
+          { body: leadPayload(input.lead), method: "PUT" },
+          apiRoot,
+        ),
       ),
   };
 }
@@ -167,81 +226,6 @@ function readAuth(options: CredereHttpGatewayOptions) {
   return options.auth;
 }
 
-async function readJson(
-  fetchImpl: typeof fetch,
-  path: string,
-  input: { credereStoreId?: string; token: FinancingTokenSet },
-  options: { query?: Record<string, string>; storeHeader?: boolean } = {},
-) {
-  const response = await read(fetchImpl, path, input, options);
-  if (!response.ok) throw providerError(response);
-  return parseSafeJson(response);
-}
-
-async function read(
-  fetchImpl: typeof fetch,
-  path: string,
-  input: { credereStoreId?: string; token: FinancingTokenSet },
-  options: { query?: Record<string, string>; storeHeader?: boolean } = {},
-) {
-  return fetchWithReadRetry(fetchImpl, credereApiUrl(path, options.query), {
-    headers: bearerHeaders(
-      input.token.accessToken,
-      options.storeHeader === false ? undefined : input.credereStoreId,
-    ),
-    method: "GET",
-  });
-}
-
-async function writeJson(
-  fetchImpl: typeof fetch,
-  path: string,
-  input: { credereStoreId: string; token: FinancingTokenSet },
-  options: { body: unknown; method: "POST" | "PUT" },
-) {
-  const response = await writeJsonResponse(fetchImpl, path, input, options);
-  return parseSafeJson(response);
-}
-
-async function writeJsonResponse(
-  fetchImpl: typeof fetch,
-  path: string,
-  input: { credereStoreId: string; token: FinancingTokenSet },
-  options: {
-    body: unknown;
-    indeterminateOnFailure?: boolean;
-    method: "POST" | "PUT";
-  },
-) {
-  let response: Response;
-  try {
-    response = await fetchCredere(fetchImpl, credereApiUrl(path), {
-      body: JSON.stringify(stripUndefined(options.body)),
-      headers: bearerHeaders(input.token.accessToken, input.credereStoreId),
-      method: options.method,
-    });
-  } catch {
-    throw networkError(options.indeterminateOnFailure === true);
-  }
-  if (!response.ok) {
-    if (options.indeterminateOnFailure && response.status >= 500) {
-      throw networkError(true);
-    }
-    throw providerError(response);
-  }
-  return response;
-}
-
 function leadPath(cpfCnpj: string) {
   return `/banks_api/leads/${encodeURIComponent(cpfCnpj.replace(/\D/g, ""))}`;
-}
-
-function stripUndefined(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stripUndefined);
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([, entry]) => entry !== undefined)
-      .map(([key, entry]) => [key, stripUndefined(entry)]),
-  );
 }
