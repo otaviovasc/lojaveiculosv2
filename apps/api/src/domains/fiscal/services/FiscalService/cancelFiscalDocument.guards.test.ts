@@ -57,6 +57,25 @@ describe("cancelFiscalDocument guards", () => {
       }),
     );
   });
+
+  it("sanitizes non-Error provider failures in the cancellation audit", async () => {
+    const harness = await createHarness("authorized");
+    harness.cancelDocument.mockRejectedValueOnce("provider timeout");
+
+    await expect(runCancel(harness)).rejects.toBe("provider timeout");
+
+    expect(harness.updateDocumentStatus).not.toHaveBeenCalled();
+    expect(harness.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "fiscal.document.cancel",
+        metadata: {
+          errorName: "UnknownError",
+          providerOutcome: "unknown",
+        },
+        outcome: "failed",
+      }),
+    );
+  });
 });
 
 async function createHarness(status: FiscalDocumentStatus) {
