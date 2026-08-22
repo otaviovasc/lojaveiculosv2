@@ -11,24 +11,30 @@ import { CrmNewConversationDialog } from "./CrmNewConversationDialog";
 import { CrmAttendanceConclusionDialog } from "./CrmAttendanceConclusionDialog";
 import { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsPanel";
 import type { useCrmInbox } from "./useCrmInbox";
-import type { CrmMessage } from "./crmConversationTypes";
+import type {
+  CrmConversationCycleId,
+  CrmMessage,
+} from "./crmConversationTypes";
 import type { CrmScope } from "./CrmScopedNav";
 import type { MessageComposerHandle } from "./CrmComposer";
-import { readInitialCycleId } from "./crmConversationHookSupport";
 import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
 
 export function CrmConversationWorkspace({
   inbox,
+  onCycleChange,
   onScopeChange,
+  routeCycleId,
 }: {
   inbox: ReturnType<typeof useCrmInbox>;
+  onCycleChange: (cycleId: CrmConversationCycleId | null) => void;
   onScopeChange: (scope: CrmScope) => void;
+  routeCycleId: CrmConversationCycleId | null;
 }) {
   const activeSession = inbox.activeSession;
   const shellRef = useRef<HTMLElement>(null);
   const composerRef = useRef<MessageComposerHandle>(null);
   const [mobilePane, setMobilePane] = useState<"chat" | "context" | "list">(
-    () => (readInitialCycleId() ? "chat" : "list"),
+    () => (routeCycleId ? "chat" : "list"),
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -52,6 +58,10 @@ export function CrmConversationWorkspace({
     setDetailsOpen(false);
     setConclusionOpen(false);
   }, [inbox.activeCycleId, inbox.connectionFilterId]);
+
+  useEffect(() => {
+    setMobilePane(routeCycleId ? "chat" : "list");
+  }, [routeCycleId]);
 
   const focusPane = (pane: "chat" | "context" | "list") => {
     setMobilePane(pane);
@@ -153,7 +163,7 @@ export function CrmConversationWorkspace({
             onLoadMore={() => void inbox.loadMoreSessions()}
             onSelect={(cycleId) => {
               setDetailsOpen(false);
-              inbox.setActiveCycleId(cycleId);
+              onCycleChange(cycleId);
               focusPane("chat");
             }}
             onToggleSelected={inbox.toggleSelectedSession}
@@ -203,7 +213,10 @@ export function CrmConversationWorkspace({
               canTagSessions={inbox.permissions.canTagAssign}
               canToggleIntervention={inbox.permissions.canToggleIntervention}
               currentUserId={inbox.currentUserId}
-              onBack={() => focusPane("list")}
+              onBack={() => {
+                onCycleChange(null);
+                focusPane("list");
+              }}
               onAddTag={async (input) => {
                 const accepted = await inbox.actions.addCycleTag(
                   activeSession.id,

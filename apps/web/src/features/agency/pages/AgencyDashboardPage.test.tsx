@@ -8,7 +8,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionBootstrap } from "../../account/apiClient";
 import { AccountSessionProvider } from "../../account/accountSession";
@@ -70,7 +70,58 @@ describe("AgencyDashboardPage", () => {
     });
     expect(screen.queryByText("Loja Centro")).not.toBeInTheDocument();
   });
+
+  it("opens CRM for every active same-tenant store owned by the agency", async () => {
+    agencyGetOverview.mockResolvedValue(
+      overview("store_center", "Loja Centro", "tenant_center"),
+    );
+    const delegatedSession = session();
+    delegatedSession.stores = [
+      {
+        effectivePermissions: [],
+        entitlements: ["crm"],
+        role: "agency",
+        status: "active",
+        storeId: "store_center",
+        storeName: "Loja Centro",
+        storeSlug: "loja-centro",
+        tenantId: "tenant_center",
+        tenantName: "Agência Centro",
+      },
+    ];
+    render(
+      <AccountSessionProvider session={delegatedSession}>
+        <MemoryRouter>
+          <AgencyDashboardPage />
+          <LocationProbe />
+        </MemoryRouter>
+      </AccountSessionProvider>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Abrir CRM de Loja Centro" }),
+    );
+
+    expect(
+      window.localStorage.getItem(
+        "lojaveiculosv2:current-store-slug:clerk_agency",
+      ),
+    ).toBe("loja-centro");
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      "/dashboard#/crm?surface=conversations",
+    );
+  });
 });
+
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <output data-testid="location">
+      {location.pathname}
+      {location.hash}
+    </output>
+  );
+}
 
 function overview(
   storeId: string,

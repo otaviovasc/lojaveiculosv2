@@ -86,15 +86,17 @@ describe("PublicApiModule interactions", () => {
     await screen.findByText(clientFixture.name);
 
     await user.click(
-      screen.getByRole("button", { name: "Copiar rota do artefato Docs" }),
+      screen.getByRole("button", { name: "Copiar URL do artefato Docs" }),
     );
 
-    expect(writeText).toHaveBeenCalledWith("/api/v1/external-api/docs");
-    expect(screen.getByText("Rota do artefato copiada.")).toBeVisible();
+    expect(writeText).toHaveBeenCalledWith(
+      "http://localhost:3000/api/v1/external-api/docs",
+    );
+    expect(screen.getByText("URL do artefato copiada.")).toBeVisible();
 
     writeText.mockRejectedValueOnce(new Error("permission denied"));
     await user.click(
-      screen.getByRole("button", { name: "Copiar rota do artefato OpenAPI" }),
+      screen.getByRole("button", { name: "Copiar URL do artefato OpenAPI" }),
     );
 
     expect(
@@ -109,6 +111,7 @@ const clientFixture: PublicApiClient = {
   createdAt: "2026-01-01T00:00:00.000Z",
   id: "api_client_1",
   keyPrefixes: ["lv2_abcd1234"],
+  lastUsedAt: null,
   name: "Integra Zapier",
   scopes: ["inventory.read", "lead.create"],
   status: "active",

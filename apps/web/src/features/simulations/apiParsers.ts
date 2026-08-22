@@ -20,6 +20,9 @@ export function parseStoreStatus(raw: unknown): CredereStoreStatus {
       "storeAlias",
       "alias",
     ]),
+    unavailableBanks: readArray(record, ["unavailableBanks"]).map(
+      parseUnavailableBank,
+    ),
     usableBanks: readArray(record, ["usableBanks", "banks"]).map(parseBank),
   };
 }
@@ -61,23 +64,65 @@ export function parseRequiredFields(raw: unknown): CredereRequiredFields {
   return {
     applicant: lead
       ? {
+          addressZipCode: readString(lead, ["addressZipCode", "zipCode"]),
           birthDate: readString(lead, ["birthDate", "birthdate"]),
           email: readString(lead, ["email"]),
+          genderCode: readString(lead, ["genderCode", "retrieveGender"]),
           hasCnh: readBoolean(lead, ["hasCnh", "has_cnh"]),
           monthlyIncomeCents: readNumber(lead, [
             "monthlyIncomeCents",
             "monthly_income_cents",
           ]),
           name: readString(lead, ["name"]),
+          occupationCode: readString(lead, [
+            "occupationCode",
+            "retrieveOccupation",
+          ]),
           phone: readString(lead, ["phone", "phoneNumber"]),
         }
       : null,
+    domains: parseDomains(record?.["domains"]),
     applicantKnown:
       readBoolean(record, ["knownLead", "applicantKnown", "knownApplicant"]) ??
       lead !== null,
     missingFields: readStringArray(record, ["missingFields", "missing_fields"]),
     requirements: parseRequirements(record?.["requirements"]),
   };
+}
+
+function parseUnavailableBank(raw: unknown) {
+  const record = asRecord(raw) ?? {};
+  const rawReason = readString(record, ["reason"]);
+  const reason: CredereStoreStatus["unavailableBanks"][number]["reason"] =
+    rawReason === "authorization_required" ||
+    rawReason === "inactive" ||
+    rawReason === "provider_error"
+      ? rawReason
+      : "provider_error";
+  return {
+    code: readString(record, ["code"]) ?? "unknown",
+    name: readString(record, ["name"]),
+    reason,
+  };
+}
+
+function parseDomains(raw: unknown) {
+  const record = asRecord(raw);
+  if (!record) return {};
+  return Object.fromEntries(
+    Object.entries(record).map(([type, options]) => [
+      type,
+      (Array.isArray(options) ? options : [])
+        .map((option) => {
+          const item = asRecord(option);
+          return {
+            label: readString(item, ["label"]) ?? "",
+            value: readString(item, ["value", "code", "id"]) ?? "",
+          };
+        })
+        .filter((option) => option.label && option.value),
+    ]),
+  );
 }
 
 export function parseSimulation(raw: unknown): CredereSimulation {

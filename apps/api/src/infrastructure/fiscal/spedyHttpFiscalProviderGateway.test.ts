@@ -91,7 +91,7 @@ describe("spedyHttpFiscalProviderGateway", () => {
 
     const [requestUrl, request] = fetcher.mock.calls[0] ?? [];
     expect(requestUrl).toBe("https://api.spedy.test/v1/product-invoices");
-    expect(request?.method).toBe("POST");
+    expect(request).toMatchObject({ method: "POST", redirect: "error" });
     expect(new Headers(request?.headers).get("X-Api-Key")).toBe("company-key");
     expect(JSON.parse(String(request?.body))).toMatchObject({
       integrationId: "local_document_1",

@@ -77,7 +77,9 @@ export function CrmWhatsappZapiSetup({
   const [pairingMethod, setPairingMethod] = useState<ZapiPairingMethod>("qr");
   const [pairingBlock, setPairingBlock] = useState<PairingBlock>(null);
   const [phone, setPhone] = useState("");
-  const [pairAgain, setPairAgain] = useState(false);
+  const [pairAgainForStateRevision, setPairAgainForStateRevision] = useState<
+    number | null
+  >(null);
   const [qr, setQr] = useState<{ expiresAt: string; qrCode: string } | null>(
     null,
   );
@@ -98,7 +100,6 @@ export function CrmWhatsappZapiSetup({
     allowance.limit > 0 ||
     ["active", "paid_awaiting_setup"].includes(zapiAddonContract?.status ?? "");
   const resolvedStep = readZapiSetupStep({ connection, isEntitled });
-  const step = pairAgain && resolvedStep === 5 ? 4 : resolvedStep;
   const qrExpired = Boolean(qr && new Date(qr.expiresAt).getTime() <= now);
   const codeExpired = Boolean(
     pairingCode?.expiresAt && new Date(pairingCode.expiresAt).getTime() <= now,
@@ -113,17 +114,23 @@ export function CrmWhatsappZapiSetup({
     connection?.state ?? connection?.status ?? "unknown",
   ].join(":");
   const previousConnectionStateKeyRef = useRef(connectionStateKey);
+  const connectionStateRevisionRef = useRef(0);
   if (previousConnectionStateKeyRef.current !== connectionStateKey) {
     previousConnectionStateKeyRef.current = connectionStateKey;
+    connectionStateRevisionRef.current += 1;
     actionGenerationRef.current += 1;
   }
+  const step =
+    pairAgainForStateRevision === connectionStateRevisionRef.current &&
+    resolvedStep === 5
+      ? 4
+      : resolvedStep;
 
   useEffect(() => {
     autoRefreshInFlightRef.current = false;
     setBusy(null);
     setError(null);
     setPairingCode(null);
-    setPairAgain(false);
     setQr(null);
     setNow(Date.now());
   }, [connectionStateKey]);
@@ -488,7 +495,14 @@ export function CrmWhatsappZapiSetup({
             connection={connection}
             isDisconnecting={busy === "disconnect"}
             onDisconnect={() => void disconnect()}
-            {...(canPair ? { onPairAgain: () => setPairAgain(true) } : {})}
+            {...(canPair
+              ? {
+                  onPairAgain: () =>
+                    setPairAgainForStateRevision(
+                      connectionStateRevisionRef.current,
+                    ),
+                }
+              : {})}
           />
         ) : null}
         {step !== 2 && error ? (

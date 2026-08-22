@@ -14,7 +14,10 @@ export const FORBIDDEN_SCOPE_KEYS = [
 
 export type CredereSimulationBody = {
   applicant: {
+    addressZipCode?: string;
+    genderCode?: string;
     name: string;
+    occupationCode?: string;
     document: string;
     phone: string;
     email?: string;
@@ -62,11 +65,17 @@ export function buildCreateSimulationBody(
     "renda mensal",
   );
   const applicant = {
+    ...(draft.applicant.addressZipCode?.trim()
+      ? { addressZipCode: draft.applicant.addressZipCode.trim() }
+      : {}),
     name: requiredText(draft.applicant.name, "nome do proponente"),
     document: requiredDigits(draft.applicant.cpfCnpj, "CPF/CNPJ do proponente"),
     phone: requiredPhoneDigits(draft.applicant.phone),
     ...(draft.applicant.email?.trim()
       ? { email: draft.applicant.email.trim() }
+      : {}),
+    ...(draft.applicant.genderCode?.trim()
+      ? { genderCode: draft.applicant.genderCode.trim() }
       : {}),
     ...(draft.applicant.birthDate?.trim()
       ? { birthDate: draft.applicant.birthDate.trim() }
@@ -75,6 +84,9 @@ export function buildCreateSimulationBody(
       ? { hasCnh: draft.applicant.hasCnh }
       : {}),
     ...(monthlyIncomeCents ? { monthlyIncomeCents } : {}),
+    ...(draft.applicant.occupationCode?.trim()
+      ? { occupationCode: draft.applicant.occupationCode.trim() }
+      : {}),
   };
   const vehicle = {
     ...(draft.vehicle.credereVehicleModelId?.trim()

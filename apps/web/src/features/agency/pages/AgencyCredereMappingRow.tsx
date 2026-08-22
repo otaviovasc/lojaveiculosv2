@@ -51,9 +51,11 @@ export function AgencyCredereMappingRow({
             disabled={busyKey !== null}
             icon={Link2Off}
             isBusy={busyKey === `unmap:${store.storeId}`}
-            label="Remover mapeamento"
+            label={`Remover mapeamento de ${store.storeName}`}
             onClick={onRemove}
-          />
+          >
+            Remover mapeamento
+          </FeatureActionButton>
         </div>
       ) : (
         <div className="credere-mapping-control">
@@ -74,10 +76,12 @@ export function AgencyCredereMappingRow({
           <FeatureActionButton
             disabled={!selection || busyKey !== null}
             isBusy={busyKey === `map:${store.storeId}`}
-            label="Mapear"
+            label={`Mapear ${store.storeName}`}
             onClick={onSave}
             variant="primary"
-          />
+          >
+            Mapear
+          </FeatureActionButton>
         </div>
       )}
     </li>

@@ -1,4 +1,4 @@
-import { Check, Copy, KeyRound, Plus, ShieldCheck } from "lucide-react";
+import { Check, Copy, KeyRound, Plus, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import {
@@ -24,6 +24,7 @@ export function PublicApiKeyCreator({
   name,
   onCopy,
   onCreate,
+  onDismissCreatedKey,
   onNameChange,
   onScopesChange,
   scopes,
@@ -34,6 +35,7 @@ export function PublicApiKeyCreator({
   name: string;
   onCopy: (value: string, id: string) => Promise<void>;
   onCreate: () => void;
+  onDismissCreatedKey: () => void;
   onNameChange: (value: string) => void;
   onScopesChange: (scopes: PublicApiScope[]) => void;
   scopes: PublicApiScope[];
@@ -52,26 +54,42 @@ export function PublicApiKeyCreator({
       title="Nova chave de acesso"
     >
       {createdKey ? (
-        <div className="internal-secret public-api-secret">
-          <KeyRound aria-hidden="true" className="size-4" />
-          <div>
-            <small>
-              Chave criada. Copie agora: o valor completo não será exibido
-              novamente.
-            </small>
-            <code>{createdKey}</code>
+        <>
+          <p aria-live="polite" className="sr-only" role="status">
+            Chave criada. Copie agora: o valor completo é exibido somente uma
+            vez.
+          </p>
+          <div
+            aria-label="Nova chave da API, exibida somente uma vez"
+            className="internal-secret public-api-secret"
+            role="region"
+          >
+            <KeyRound aria-hidden="true" className="size-4" />
+            <div>
+              <small>
+                Chave criada. Copie agora: o valor completo não será exibido
+                novamente.
+              </small>
+              <code aria-label="Valor da nova chave da API">{createdKey}</code>
+            </div>
+            <FeatureRowAction
+              ariaLabel={
+                copiedId === "created-key"
+                  ? "Chave copiada"
+                  : "Copiar nova chave da API"
+              }
+              icon={copiedId === "created-key" ? Check : Copy}
+              onClick={() => void onCopy(createdKey, "created-key")}
+              tooltip="Copiar chave"
+            />
+            <FeatureRowAction
+              ariaLabel="Ocultar nova chave da API"
+              icon={X}
+              onClick={onDismissCreatedKey}
+              tooltip="Ocultar chave"
+            />
           </div>
-          <FeatureRowAction
-            ariaLabel={
-              copiedId === "created-key"
-                ? "Chave copiada"
-                : "Copiar nova chave da API"
-            }
-            icon={copiedId === "created-key" ? Check : Copy}
-            onClick={() => void onCopy(createdKey, "created-key")}
-            tooltip="Copiar chave"
-          />
-        </div>
+        </>
       ) : null}
 
       <div className="mt-4 grid gap-5">

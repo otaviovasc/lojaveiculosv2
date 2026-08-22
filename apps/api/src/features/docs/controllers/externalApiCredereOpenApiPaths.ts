@@ -19,7 +19,7 @@ export const externalApiCrederePaths = {
   "/api/v1/external-api/financing/credere/preflight": {
     post: {
       ...runtimeBase(
-        "Check Credere readiness, banks, required fields, and an existing applicant",
+        "Check Credere readiness and missing fields without returning applicant PII",
         "preflightExternalApiCredereSimulation",
         "financing.simulation.read",
       ),
@@ -42,13 +42,15 @@ export const externalApiCrederePaths = {
       ),
       parameters: [idempotencyKeyParameter],
       requestBody: requestBody("CredereSimulationRequest"),
-      "x-deduplication-semantics": "reject-duplicate-key-with-409",
+      "x-idempotency-semantics": "replay-completed-identical-request",
       responses: {
         "202": jsonResponse(
           "Accepted Credere simulation.",
           "CredereSimulationResponse",
         ),
-        "409": errorResponse("Deduplication key was already used."),
+        "409": errorResponse(
+          "Idempotency key is in flight or was used with a different validated payload.",
+        ),
         ...protectedErrorResponses,
       },
     },

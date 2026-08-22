@@ -35,8 +35,8 @@ export function createDrizzleStoreAccessRepository(
   return {
     async findByClerkUserAndStoreSlug(input) {
       const access =
-        (await findDirectStoreAccess(db, input)) ??
-        (await findAgencyTenantStoreAccess(db, input));
+        (await findAgencyTenantStoreAccess(db, input)) ??
+        (await findDirectStoreAccess(db, input));
 
       if (!access) return null;
 
@@ -104,6 +104,9 @@ export function createDrizzleStoreAccessRepository(
         ]);
 
       return {
+        accessOrigin: access.membershipId
+          ? "direct_store_membership"
+          : "tenant_agency_fallback",
         billingManagedBy: tenantAgencyMemberships.length
           ? "agency"
           : "store_owner",

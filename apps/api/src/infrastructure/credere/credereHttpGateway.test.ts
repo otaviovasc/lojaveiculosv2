@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  bank,
   condition,
   gateway,
   jsonResponse,
@@ -66,42 +65,6 @@ describe("createCredereHttpGateway", () => {
         id: "store_inactive",
         name: "Filial",
         status: "inactive",
-      },
-    ]);
-  });
-
-  it("filters integrated banks to active okay unique credentials", async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      jsonResponse({
-        banks: [
-          bank("655", true, "okay"),
-          bank("655", true, "okay"),
-          bank("623", false, "okay"),
-          bank("394", true, "error"),
-          bank("237", true, "okay"),
-        ],
-      }),
-    );
-
-    await expect(
-      gateway(fetcher).listIntegratedBanks({
-        credereStoreId: "store_123",
-        token: tokenSet(),
-      }),
-    ).resolves.toEqual([
-      {
-        active: true,
-        code: "655",
-        name: "Bank 655",
-        status: "okay",
-        tradename: "B655",
-      },
-      {
-        active: true,
-        code: "237",
-        name: "Bank 237",
-        status: "okay",
-        tradename: "B237",
       },
     ]);
   });

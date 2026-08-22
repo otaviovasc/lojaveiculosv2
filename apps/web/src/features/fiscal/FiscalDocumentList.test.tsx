@@ -15,7 +15,7 @@ import { AppApiError } from "../../lib/apiErrors";
 import type { FiscalApi } from "./apiClient";
 import { FiscalDocumentList } from "./FiscalDocumentList";
 import type { FiscalStatusFilter } from "./fiscalDocumentDisplay";
-import type { FiscalDocument } from "./types";
+import type { FiscalDocument, FiscalEvent } from "./types";
 
 vi.mock("../../components/ui/AnimatedContent", () => ({
   default: ({ children }: { children: unknown }) => children,
@@ -79,18 +79,19 @@ describe("FiscalDocumentList", () => {
     vi.useFakeTimers();
     try {
       const { api } = renderList();
-      expect(api.syncDocumentStatus).not.toHaveBeenCalled();
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(10_000);
-      });
+      await act(async () => Promise.resolve());
       expect(api.syncDocumentStatus).toHaveBeenCalledTimes(1);
-      expect(api.syncDocumentStatus).toHaveBeenCalledWith("doc_queued", {});
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(10_000);
       });
       expect(api.syncDocumentStatus).toHaveBeenCalledTimes(2);
+      expect(api.syncDocumentStatus).toHaveBeenCalledWith("doc_queued", {});
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+      expect(api.syncDocumentStatus).toHaveBeenCalledTimes(3);
     } finally {
       vi.useRealTimers();
     }
@@ -124,7 +125,13 @@ describe("FiscalDocumentList", () => {
     expect(cancelButtons).toHaveLength(2);
 
     fireEvent.click(cancelButtons[0]!);
+    expect(cancelButtons[0]).toHaveAttribute("aria-expanded", "true");
+    expect(cancelButtons[0]).toHaveAttribute(
+      "aria-controls",
+      "fiscal-cancel-desktop-doc_issued",
+    );
     const reason = within(table).getByLabelText("Motivo do cancelamento");
+    expect(reason).toHaveFocus();
     const confirm = within(table).getByRole("button", {
       name: "Confirmar cancelamento",
     });
@@ -162,6 +169,46 @@ describe("FiscalDocumentList", () => {
     );
   });
 
+  it("creates a review draft only from issued documents and opens it", async () => {
+    const { api, onCorrect } = renderList();
+    const table = screen.getByRole("table");
+    const repeat = within(table).getAllByRole("button", {
+      name: /^Criar nova /,
+    });
+
+    expect(repeat).toHaveLength(2);
+    fireEvent.click(repeat[0]!);
+
+    await waitFor(() =>
+      expect(api.repeatDocument).toHaveBeenCalledWith("doc_issued"),
+    );
+    await waitFor(() =>
+      expect(onCorrect).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "doc_issued" }),
+      ),
+    );
+  });
+
+  it("shows safe document details and status history on demand", () => {
+    renderList();
+    const table = screen.getByRole("table");
+
+    fireEvent.click(
+      within(table).getByRole("button", {
+        name: /Mostrar detalhes.*sale:sale_1/,
+      }),
+    );
+
+    expect(within(table).getByText("Detalhes fiscais")).toBeInTheDocument();
+    expect(
+      within(table).getByText("35240123456789000123456789000123456789000123"),
+    ).toBeInTheDocument();
+    expect(within(table).getByText("Status atualizado")).toBeInTheDocument();
+    expect(
+      within(table).queryByText("provider_private"),
+    ).not.toBeInTheDocument();
+  });
+
   it("syncs status manually for pending documents only", () => {
     const { api } = renderList();
     const table = screen.getByRole("table");
@@ -172,6 +219,32 @@ describe("FiscalDocumentList", () => {
     expect(syncButtons).toHaveLength(1);
     fireEvent.click(syncButtons[0]!);
     expect(api.syncDocumentStatus).toHaveBeenCalledWith("doc_queued", {});
+  });
+
+  it("hides mutation actions that the server capability denies", async () => {
+    const { api } = renderList({
+      capabilities: {
+        canCancelDocuments: false,
+        canRepeatDocuments: false,
+        canSyncDocumentStatus: false,
+      },
+    });
+    await act(async () => Promise.resolve());
+    const table = screen.getByRole("table");
+
+    expect(
+      within(table).queryByRole("button", { name: /^Cancelar / }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(table).queryByRole("button", { name: /^Criar nova / }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(table).queryByRole("button", { name: /^Corrigir e reenviar / }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(table).queryByRole("button", { name: /^Atualizar status / }),
+    ).not.toBeInTheDocument();
+    expect(api.syncDocumentStatus).not.toHaveBeenCalled();
   });
 
   it("downloads official PDF/XML bytes for issued documents", async () => {
@@ -187,7 +260,7 @@ describe("FiscalDocumentList", () => {
 
     fireEvent.click(
       within(table).getAllByRole("button", {
-        name: "Baixar PDF oficial do documento fiscal",
+        name: /^Baixar PDF oficial do documento fiscal/,
       })[0]!,
     );
 
@@ -209,12 +282,12 @@ describe("FiscalDocumentList", () => {
 
     expect(
       within(table).getByRole("button", {
-        name: /PDF oficial indisponível\. Disponível após a autorização/,
+        name: /PDF oficial indisponível.*Disponível após a autorização/,
       }),
     ).toBeDisabled();
     expect(
       within(table).getByRole("button", {
-        name: /XML oficial indisponível\. O provedor não disponibilizou/,
+        name: /XML oficial indisponível.*O provedor não disponibilizou/,
       }),
     ).toBeDisabled();
   });
@@ -225,7 +298,7 @@ describe("FiscalDocumentList", () => {
 
     expect(
       within(table).getAllByRole("button", {
-        name: /PDF oficial indisponível\. Sem permissão/,
+        name: /PDF oficial indisponível.*Sem permissão/,
       })[0],
     ).toBeDisabled();
   });
@@ -245,7 +318,7 @@ describe("FiscalDocumentList", () => {
 
     fireEvent.click(
       within(table).getAllByRole("button", {
-        name: "Baixar XML oficial do documento fiscal",
+        name: /^Baixar XML oficial do documento fiscal/,
       })[0]!,
     );
 
@@ -257,6 +330,11 @@ describe("FiscalDocumentList", () => {
 
 function renderList(overrides?: {
   canDownloadOfficialArtifacts?: boolean;
+  capabilities?: {
+    canCancelDocuments?: boolean;
+    canRepeatDocuments?: boolean;
+    canSyncDocumentStatus?: boolean;
+  };
   documents?: FiscalDocument[];
 }) {
   const api = createListApi();
@@ -270,10 +348,22 @@ function renderList(overrides?: {
     return (
       <FiscalDocumentList
         api={api}
+        capabilities={{
+          canCancelDocuments:
+            overrides?.capabilities?.canCancelDocuments ?? true,
+          canDownloadOfficialArtifacts:
+            overrides?.canDownloadOfficialArtifacts ?? true,
+          canIssueDocuments: true,
+          canRepeatDocuments:
+            overrides?.capabilities?.canRepeatDocuments ?? true,
+          canSyncDocumentStatus:
+            overrides?.capabilities?.canSyncDocumentStatus ?? true,
+        }}
         canDownloadOfficialArtifacts={
           overrides?.canDownloadOfficialArtifacts ?? true
         }
         documents={documents}
+        events={createEvents()}
         onCorrect={onCorrect}
         onError={onError}
         onRefresh={onRefresh}
@@ -285,6 +375,16 @@ function renderList(overrides?: {
 
   render(<Harness />);
   return { api, onCorrect, onError, onRefresh };
+}
+
+function createEvents(): FiscalEvent[] {
+  return [
+    {
+      eventType: "status_changed",
+      fiscalDocumentId: "doc_issued",
+      occurredAt: "2026-07-10T12:30:00.000Z",
+    },
+  ];
 }
 
 function createListApi(): FiscalApi {

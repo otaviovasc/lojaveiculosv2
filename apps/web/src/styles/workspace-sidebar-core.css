@@ -48,6 +48,31 @@
   margin-inline: auto;
 }
 
+.workspace-sidebar__compact-workspace-trigger {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+}
+
+.workspace-sidebar__compact-workspace-trigger:not(:disabled) {
+  cursor: pointer;
+}
+
+.workspace-sidebar__compact-workspace-trigger:not(:disabled):hover {
+  border-color: var(--color-sidebar-line);
+  background: var(--color-sidebar-hover);
+}
+
+.workspace-sidebar__compact-workspace-trigger:focus-visible {
+  outline: 2px solid var(--color-accent-readable);
+  outline-offset: 2px;
+}
+
 .workspace-sidebar__store-row,
 .workspace-sidebar__store-identity,
 .workspace-sidebar__nav-copy,
@@ -103,6 +128,15 @@
 .workspace-sidebar__store-trigger:focus-visible {
   outline: 2px solid var(--color-accent-readable);
   outline-offset: 2px;
+}
+
+.workspace-sidebar__store-trigger:disabled {
+  cursor: default;
+}
+
+.workspace-sidebar__store-trigger:disabled:hover {
+  border-color: var(--color-sidebar-line);
+  background: var(--color-sidebar);
 }
 
 .workspace-sidebar__store-trigger > svg {
@@ -172,6 +206,54 @@
 .workspace-sidebar__search-wrap {
   padding-block: var(--app-space-sm);
   padding-inline: var(--app-space-md);
+}
+
+.workspace-sidebar__agency-return-wrap {
+  padding: var(--app-space-sm) var(--app-space-md) 0;
+}
+
+.workspace-sidebar--compact .workspace-sidebar__agency-return-wrap {
+  display: flex;
+  justify-content: center;
+  padding-inline: var(--app-space-xs);
+}
+
+.workspace-sidebar__agency-return {
+  display: flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: var(--app-space-sm);
+  border: 1px solid var(--color-sidebar-line);
+  border-radius: var(--radius-md);
+  background: var(--color-sidebar);
+  color: var(--color-sidebar-muted);
+  padding: 0.5rem var(--app-space-sm);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+}
+
+.workspace-sidebar__agency-return.is-compact {
+  width: 2.25rem;
+  height: 2.25rem;
+  justify-content: center;
+  padding: 0;
+}
+
+.workspace-sidebar__agency-return:hover {
+  border-color: var(--color-accent-readable);
+  background: var(--color-sidebar-hover);
+  color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__agency-return:focus-visible {
+  outline: 2px solid var(--color-accent-readable);
+  outline-offset: 2px;
+}
+
+.workspace-sidebar__agency-return svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: 0 0 auto;
 }
 
 .workspace-sidebar--compact .workspace-sidebar__search-wrap {

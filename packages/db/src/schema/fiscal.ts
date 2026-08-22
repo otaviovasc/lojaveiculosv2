@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -90,6 +91,11 @@ export const fiscalProviderConnections = pgTable(
     }),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "fiscal_provider_connections_store_scope_fk",
+    }),
     uniqueIndex("fiscal_provider_connections_store_provider_unique").on(
       table.storeId,
       table.provider,
@@ -132,7 +138,35 @@ export const fiscalDocuments = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "fiscal_documents_store_scope_fk",
+    }),
+    foreignKey({
+      columns: [table.recipientId, table.tenantId, table.storeId],
+      foreignColumns: [
+        fiscalServiceRecipients.id,
+        fiscalServiceRecipients.tenantId,
+        fiscalServiceRecipients.storeId,
+      ],
+      name: "fiscal_documents_recipient_scope_fk",
+    }),
+    foreignKey({
+      columns: [table.templateId, table.tenantId, table.storeId],
+      foreignColumns: [
+        fiscalServiceInvoiceTemplates.id,
+        fiscalServiceInvoiceTemplates.tenantId,
+        fiscalServiceInvoiceTemplates.storeId,
+      ],
+      name: "fiscal_documents_template_scope_fk",
+    }),
     index("fiscal_documents_store_status_idx").on(table.storeId, table.status),
+    uniqueIndex("fiscal_documents_id_scope_unique").on(
+      table.id,
+      table.tenantId,
+      table.storeId,
+    ),
     uniqueIndex("fiscal_documents_provider_document_unique").on(
       table.storeId,
       table.provider,
@@ -161,6 +195,20 @@ export const fiscalDocumentSnapshots = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "fiscal_document_snapshots_store_scope_fk",
+    }),
+    foreignKey({
+      columns: [table.fiscalDocumentId, table.tenantId, table.storeId],
+      foreignColumns: [
+        fiscalDocuments.id,
+        fiscalDocuments.tenantId,
+        fiscalDocuments.storeId,
+      ],
+      name: "fiscal_document_snapshots_document_scope_fk",
+    }),
     index("fiscal_document_snapshots_document_id_idx").on(
       table.fiscalDocumentId,
     ),
@@ -185,6 +233,20 @@ export const fiscalDocumentLinks = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "fiscal_document_links_store_scope_fk",
+    }),
+    foreignKey({
+      columns: [table.fiscalDocumentId, table.tenantId, table.storeId],
+      foreignColumns: [
+        fiscalDocuments.id,
+        fiscalDocuments.tenantId,
+        fiscalDocuments.storeId,
+      ],
+      name: "fiscal_document_links_document_scope_fk",
+    }),
     index("fiscal_document_links_document_id_idx").on(table.fiscalDocumentId),
     index("fiscal_document_links_target_idx").on(
       table.targetType,
@@ -211,6 +273,20 @@ export const fiscalEvents = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "fiscal_events_store_scope_fk",
+    }),
+    foreignKey({
+      columns: [table.fiscalDocumentId, table.tenantId, table.storeId],
+      foreignColumns: [
+        fiscalDocuments.id,
+        fiscalDocuments.tenantId,
+        fiscalDocuments.storeId,
+      ],
+      name: "fiscal_events_document_scope_fk",
+    }),
     index("fiscal_events_document_id_idx").on(table.fiscalDocumentId),
     index("fiscal_events_store_id_idx").on(table.storeId),
   ],

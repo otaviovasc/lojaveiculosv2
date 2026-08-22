@@ -39,6 +39,25 @@ export async function createExternalApiClient(
     }),
   );
 
+  await context.audit.record({
+    action: "external_api.client.create",
+    actor: context.actor,
+    category: "authorization",
+    criticality: "high",
+    entityId: key.keyPrefix,
+    entityType: "api_client",
+    failureTier: "required",
+    metadata: {
+      keyPrefix: key.keyPrefix,
+      scopes: [...new Set(input.scopes)].sort(),
+    },
+    outcome: "attempted",
+    requestId: context.requestId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+    summary: "Requested external API client creation",
+  });
+
   const client = await ports.externalApiRepository.createClient({
     keyHash: key.keyHash,
     keyPrefix: key.keyPrefix,
@@ -55,6 +74,7 @@ export async function createExternalApiClient(
     criticality: "high",
     entityId: client.id,
     entityType: "api_client",
+    failureTier: "required",
     metadata: {
       keyPrefix: key.keyPrefix,
       scopes: client.scopes,

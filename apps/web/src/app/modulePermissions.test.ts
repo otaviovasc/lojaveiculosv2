@@ -103,7 +103,8 @@ describe("module permissions", () => {
       defaultStore: null,
       stores: [
         {
-          effectivePermissions: ["inventory.read", "users.manage"],
+          effectivePermissions: [],
+          entitlements: ["crm", "external_api", "fiscal", "simulations"],
           role: "agency",
           status: "active" as const,
           storeId: "store_agency",
@@ -125,7 +126,11 @@ describe("module permissions", () => {
     };
 
     expect(getModulePermission("inventory", session).canView).toBe(true);
-    expect(getModulePermission("billing", session).canView).toBe(false);
+    expect(getModulePermission("billing", session).canView).toBe(true);
+    expect(getModulePermission("crm", session).canView).toBe(true);
+    expect(getModulePermission("fiscal", session).canView).toBe(true);
+    expect(getModulePermission("public-api", session).canView).toBe(true);
+    expect(getModulePermission("simulations", session).canView).toBe(true);
   });
 
   it("keeps every product module visible for owners without entitlements", () => {

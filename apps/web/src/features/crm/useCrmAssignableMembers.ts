@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SessionBootstrap } from "../account/apiClient";
+import { readSessionActiveStore } from "../account/sessionPermissions";
 import { createSettingsApi } from "../settings/apiClient";
 import { createSettingsApiOptions } from "../settings/runtimeApi";
 import type { RoleManagementView, RoleMemberView } from "../settings/types";
@@ -82,7 +83,7 @@ function currentUserAssignableMember(
     id: cycle.user.id as never,
     isActive: true,
     name: cycle.user.name ?? cycle.user.email,
-    role: cycle.defaultStore?.role?.toUpperCase() ?? "MEMBER",
+    role: readSessionActiveStore(cycle)?.role.toUpperCase() ?? "MEMBER",
     seeUnassignedChats: canAssignConversationCycles(cycle),
   };
 }

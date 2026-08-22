@@ -29,6 +29,7 @@ type OpenApiOperation = {
   security?: readonly Record<string, readonly string[]>[];
   "x-required-scopes"?: readonly string[];
   "x-required-permissions"?: readonly string[];
+  "x-required-entitlements"?: readonly string[];
 };
 
 describe("Public API OpenAPI contract", () => {
@@ -104,6 +105,35 @@ describe("Public API OpenAPI contract", () => {
       externalApiOpenApiDocument.components.schemas
         .CreateExternalApiClientRequest.properties.scopes.items.enum,
     ).toEqual(externalApiAssignableScopes);
+    for (const schemaName of [
+      "CreateExternalApiLeadRequest",
+      "UpdateExternalApiLeadRequest",
+    ] as const) {
+      const metadata =
+        externalApiOpenApiDocument.components.schemas[schemaName].properties
+          .metadata;
+      expect(metadata).toMatchObject({
+        additionalProperties: false,
+        maxProperties: 2,
+        properties: {
+          message: { maxLength: 2000, type: "string" },
+          title: { maxLength: 191, type: "string" },
+        },
+      });
+    }
+  });
+
+  it("documents the CRM entitlement on every lead operation", () => {
+    for (const [path, method] of [
+      ["/api/v1/external-api/leads", "GET"],
+      ["/api/v1/external-api/leads", "POST"],
+      ["/api/v1/external-api/leads/{leadId}", "GET"],
+      ["/api/v1/external-api/leads/{leadId}", "PATCH"],
+    ] as const) {
+      expect(operationAt(path, method)["x-required-entitlements"]).toEqual([
+        "crm",
+      ]);
+    }
   });
 
   it("documents the actual response envelopes and duplicate-key behavior", () => {
@@ -122,6 +152,15 @@ describe("Public API OpenAPI contract", () => {
     expect(responseRef("/api/v1/external-api/clients", "GET", "200")).toBe(
       "#/components/schemas/ExternalApiClientListResponse",
     );
+    expect(
+      externalApiOpenApiDocument.components.schemas.ExternalApiClient.required,
+    ).toContain("lastUsedAt");
+    const preflightSchema = JSON.stringify(
+      externalApiOpenApiDocument.components.schemas.CrederePreflightResponse,
+    );
+    expect(preflightSchema).not.toContain('"birthDate"');
+    expect(preflightSchema).not.toContain('"email"');
+    expect(preflightSchema).not.toContain('"phone"');
 
     for (const [path, method] of [
       ["/api/v1/external-api/leads", "POST"],
@@ -130,7 +169,9 @@ describe("Public API OpenAPI contract", () => {
       const operation = operationAt(path, method);
       expect(parameterNames(operation, "header")).toContain("Idempotency-Key");
       expect(operation.responses["409"]).toBeDefined();
-      expect(JSON.stringify(operation)).toContain("reject-duplicate-key");
+      expect(JSON.stringify(operation)).toContain(
+        "replay-completed-identical-request",
+      );
     }
   });
 });

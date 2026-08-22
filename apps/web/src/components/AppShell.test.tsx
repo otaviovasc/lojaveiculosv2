@@ -3,9 +3,18 @@ import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { moduleDefinitions } from "../app/moduleDefinitions";
+import type { SessionBootstrap } from "../features/account/apiClient";
+import {
+  persistCurrentStoreSlug,
+  readCurrentStoreSlug,
+} from "../features/account/currentStore";
 import type { StoreSettingsSnapshot } from "../features/settings/types";
 import { createSettingsApiOptions } from "../features/settings/runtimeApi";
-import { AppShell } from "./AppShell";
+import {
+  AppShell,
+  readStoreWorkspaceState,
+  switchStoreWorkspace,
+} from "./AppShell";
 
 vi.mock("../features/settings/runtimeApi", () => ({
   createSettingsApiOptions: vi.fn(),
@@ -22,6 +31,7 @@ describe("AppShell tenant branding", () => {
 
   afterEach(() => {
     cleanup();
+    localStorage.clear();
     vi.clearAllMocks();
   });
 
@@ -85,6 +95,7 @@ describe("AppShell sidebar collapse behavior", () => {
 
   afterEach(() => {
     cleanup();
+    localStorage.clear();
     vi.clearAllMocks();
   });
 
@@ -180,6 +191,87 @@ describe("AppShell sidebar collapse behavior", () => {
     );
   });
 });
+
+describe("switchStoreWorkspace", () => {
+  afterEach(() => localStorage.clear());
+
+  it("persists only an active accessible store and reloads to clear scoped state", () => {
+    const session = createAgencySession();
+    persistCurrentStoreSlug("loja-a", session.user.clerkUserId);
+    const reload = vi.fn();
+
+    expect(switchStoreWorkspace(session, "loja-b", reload)).toBe(true);
+    expect(readCurrentStoreSlug(session.user.clerkUserId)).toBe("loja-b");
+    expect(reload).toHaveBeenCalledOnce();
+    expect(switchStoreWorkspace(session, "loja-suspensa", reload)).toBe(false);
+    expect(switchStoreWorkspace(session, "loja-inexistente", reload)).toBe(
+      false,
+    );
+    expect(switchStoreWorkspace(session, "loja-outra-agencia", reload)).toBe(
+      false,
+    );
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it("lists every active same-tenant agency store and excludes other tenants", () => {
+    const session = createAgencySession();
+    persistCurrentStoreSlug("loja-a", session.user.clerkUserId);
+
+    expect(readStoreWorkspaceState(session)).toMatchObject({
+      agencyPortalHref: "/agency/admin",
+      workspaces: [
+        { id: "loja-a", name: "Loja A" },
+        { id: "loja-b", name: "Loja B" },
+      ],
+    });
+  });
+});
+
+function createAgencySession(): SessionBootstrap {
+  return {
+    defaultStore: null,
+    needsOnboarding: false,
+    platformAdmin: false,
+    stores: [
+      createStore("loja-a", "active"),
+      createStore("loja-b", "active"),
+      createStore("loja-suspensa", "suspended"),
+      createStore("loja-outra-agencia", "active", "tenant-other"),
+    ],
+    tenantMemberships: [
+      {
+        role: "agency",
+        status: "active",
+        tenantId: "tenant-agency",
+        tenantName: "Agência",
+        tenantSlug: "agencia",
+      },
+    ],
+    user: {
+      clerkUserId: "clerk-agency",
+      email: "agency@loja.test",
+      id: "user-agency",
+      name: "Agência",
+    },
+  };
+}
+
+function createStore(
+  storeSlug: string,
+  status: "active" | "suspended",
+  tenantId = "tenant-agency",
+): SessionBootstrap["stores"][number] {
+  return {
+    effectivePermissions: ["crm.conversations.read"],
+    role: "agency",
+    status,
+    storeId: `store-${storeSlug}`,
+    storeName: storeSlug === "loja-a" ? "Loja A" : "Loja B",
+    storeSlug,
+    tenantId,
+    tenantName: "Agência",
+  };
+}
 
 function createSettings({
   profile = {},

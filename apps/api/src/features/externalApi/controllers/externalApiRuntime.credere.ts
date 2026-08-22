@@ -11,6 +11,7 @@ import {
 } from "../../financing/controllers/credereFinancing.presenters.js";
 import { CredereFinancingInquiryNotFoundError } from "../../financing/controllers/credereFinancing.errors.js";
 import {
+  bindValidatedExternalApiRequest,
   createIntegrationContext,
   handleRuntime,
   parseJson,
@@ -41,7 +42,7 @@ export function registerExternalCredereRoutes(
       ]);
       return context.json({
         data: {
-          applicant,
+          applicant: presentExternalApplicantPreflight(applicant),
           readiness: presentStoreStatus(status),
         },
       });
@@ -51,6 +52,7 @@ export function registerExternalCredereRoutes(
   feature.post("/financing/credere/simulations", (context) =>
     handleRuntime(context, async () => {
       const payload = await parseJson(context, createSimulationSchema);
+      bindValidatedExternalApiRequest(context, payload);
       const serviceContext = await createIntegrationContext(
         context,
         input.contextFactory,
@@ -80,4 +82,23 @@ export function registerExternalCredereRoutes(
       return context.json({ data: presentSimulation(result) });
     }),
   );
+}
+
+function presentExternalApplicantPreflight(value: unknown) {
+  const record =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : {};
+  return {
+    knownLead: record.knownLead === true,
+    missingFields: Array.isArray(record.missingFields)
+      ? record.missingFields.filter(
+          (field): field is string => typeof field === "string",
+        )
+      : [],
+    requirements:
+      record.requirements && typeof record.requirements === "object"
+        ? record.requirements
+        : {},
+  };
 }

@@ -111,15 +111,9 @@ export const externalApiCredereSchemas = {
         properties: {
           applicant: {
             type: "object",
-            additionalProperties: true,
+            additionalProperties: false,
             required: ["knownLead", "missingFields", "requirements"],
             properties: {
-              applicant: {
-                anyOf: [
-                  { type: "object", additionalProperties: true },
-                  { type: "null" },
-                ],
-              },
               knownLead: { type: "boolean" },
               missingFields: { type: "array", items: { type: "string" } },
               requirements: { type: "object", additionalProperties: true },

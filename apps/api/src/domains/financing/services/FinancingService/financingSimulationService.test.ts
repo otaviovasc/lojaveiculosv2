@@ -11,7 +11,6 @@ import {
   pendingSimulation,
   simulationInput,
 } from "./testSupport.js";
-
 describe("Financing simulation service", () => {
   it("uses only the context store and does not enumerate siblings", async () => {
     const repository = createMemoryFinancingRepository();
@@ -41,6 +40,8 @@ describe("Financing simulation service", () => {
       provider: "credere",
       usableBankCount: 0,
       usableBanks: [],
+      unavailableBankCount: 0,
+      unavailableBanks: [],
     });
     expect(JSON.stringify(readiness)).not.toContain("store_1");
     expect(JSON.stringify(readiness)).not.toContain("Sibling Store");
@@ -48,7 +49,9 @@ describe("Financing simulation service", () => {
   });
 
   it("builds readiness from live integrated banks and server policy", async () => {
-    const repository = createMemoryFinancingRepository({ bankPolicy: ["655"] });
+    const repository = createMemoryFinancingRepository({
+      bankPolicy: ["655", "623"],
+    });
     repository.seedConnection();
     repository.seedStoreMapping({ providerStoreName: "Loja Credere" });
     const listIntegratedBanks = vi.fn(async () => [
@@ -85,6 +88,8 @@ describe("Financing simulation service", () => {
       mappedStoreAlias: "Loja Credere",
       usableBankCount: 1,
       usableBanks: [{ code: "655", name: "BV" }],
+      unavailableBankCount: 1,
+      unavailableBanks: [{ code: "623", name: "PAN", reason: "inactive" }],
     });
     expect(listIntegratedBanks).toHaveBeenCalledWith(
       expect.objectContaining({ credereStoreId: "credere_store_1" }),

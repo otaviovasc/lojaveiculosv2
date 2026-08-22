@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionBootstrap } from "../account/apiClient";
 import { AccountSessionProvider } from "../account/accountSession";
+import { persistCurrentStoreSlug } from "../account/currentStore";
 import type { CrmConversationApi } from "./crmConversationApi";
 import { defaultConversationCycleCounts } from "./crmQueueState";
 import type {
@@ -209,7 +210,50 @@ describe("useCrmInbox realtime queue integration", () => {
   afterEach(() => {
     cleanup();
     hookMocks.useRealLifecycle = false;
+    localStorage.clear();
     window.location.hash = "";
+  });
+
+  it("uses the agency-selected store for permissions and storefront context", () => {
+    const session = createSessionBootstrap();
+    session.defaultStore = null;
+    session.stores = [
+      {
+        effectivePermissions: [],
+        role: "agency",
+        status: "active",
+        storeId: "store-agency",
+        storeName: "Loja da agência",
+        storeSlug: "agency-store",
+        tenantId: "tenant-agency",
+        tenantName: "Agência",
+      },
+    ];
+    persistCurrentStoreSlug("agency-store", session.user.clerkUserId);
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={session}>
+        {children}
+      </AccountSessionProvider>
+    );
+
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    expect(result.current.catalogUrl).toBe(
+      `${window.location.origin}/agency-store`,
+    );
+    expect(result.current.storeLocationName).toBe("Loja da agência");
+    expect(result.current.permissions).toMatchObject({
+      canAssign: true,
+      canList: true,
+      canRead: true,
+      canSend: true,
+    });
   });
 
   it("loads conversationCycles once when lifecycle and realtime updates change cycle state", async () => {
@@ -612,6 +656,96 @@ describe("useCrmInbox realtime queue integration", () => {
       });
     },
   );
+
+  it("restores authorized conversations when browser route state changes", async () => {
+    const cycles = ["cycle-route-1", "cycle-route-2"].map((id) => {
+      const cycle = createSession({
+        assignedUserId: "user-current",
+        revision: 1,
+      });
+      cycle.id = id;
+      return cycle;
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(
+        async (input: { cycleId?: string | number }) =>
+          cycles.filter((cycle) => cycle.id === input.cycleId),
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap(false)}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result, rerender } = renderHook(
+      ({ cycleId }: { cycleId: string | null }) => useCrmInbox(api, cycleId),
+      {
+        initialProps: { cycleId: "cycle-route-1" as string | null },
+        wrapper,
+      },
+    );
+
+    await waitFor(() =>
+      expect(result.current.activeSession?.id).toBe("cycle-route-1"),
+    );
+    rerender({ cycleId: "cycle-route-2" });
+    await waitFor(() =>
+      expect(result.current.activeSession?.id).toBe("cycle-route-2"),
+    );
+
+    rerender({ cycleId: "cycle-route-1" });
+    await waitFor(() =>
+      expect(result.current.activeSession?.id).toBe("cycle-route-1"),
+    );
+    expect(api.listConversationCycles).toHaveBeenCalledTimes(2);
+
+    rerender({ cycleId: null });
+    await waitFor(() => expect(result.current.activeCycleId).toBeNull());
+  });
+
+  it("ignores a stale deep-link response after browser navigation", async () => {
+    const pending = new Map<string, (cycles: CrmConversationCycle[]) => void>();
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(
+        (input: { cycleId?: string | number }) =>
+          new Promise<CrmConversationCycle[]>((resolve) => {
+            pending.set(String(input.cycleId), resolve);
+          }),
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap(false)}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result, rerender } = renderHook(
+      ({ cycleId }: { cycleId: string }) => useCrmInbox(api, cycleId),
+      { initialProps: { cycleId: "cycle-old" }, wrapper },
+    );
+    await waitFor(() => expect(pending.has("cycle-old")).toBe(true));
+
+    rerender({ cycleId: "cycle-new" });
+    await waitFor(() => expect(pending.has("cycle-new")).toBe(true));
+    const newest = createSession({ assignedUserId: "user-current" });
+    newest.id = "cycle-new";
+    await act(async () => pending.get("cycle-new")?.([newest]));
+    await waitFor(() =>
+      expect(result.current.activeSession?.id).toBe("cycle-new"),
+    );
+
+    const stale = createSession({ assignedUserId: "user-current" });
+    stale.id = "cycle-old";
+    await act(async () => pending.get("cycle-old")?.([stale]));
+    expect(result.current.activeSession?.id).toBe("cycle-new");
+  });
 });
 
 function createSession(

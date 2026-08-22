@@ -1,11 +1,17 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it } from "vitest";
 import type { SessionBootstrap } from "../account/apiClient";
+import { persistCurrentStoreSlug } from "../account/currentStore";
 import {
   hasCrmConversationAccess,
   readCrmCapabilities,
 } from "./crmPermissions";
 
 describe("CRM WhatsApp permissions", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it("maps read-only store users to list/read capabilities only", () => {
     expect(
       readCrmCapabilities(
@@ -123,6 +129,31 @@ describe("CRM WhatsApp permissions", () => {
     expect(hasCrmConversationAccess(["crm.conversations.read"])).toBe(true);
     expect(hasCrmConversationAccess(["crm.conversations.read"])).toBe(true);
     expect(hasCrmConversationAccess(["lead.read"])).toBe(false);
+  });
+
+  it("uses the agency-selected store when the session has no default store", () => {
+    persistCurrentStoreSlug("agency-store", "clerk_user");
+    const session = createSession([]);
+    session.defaultStore = null;
+    session.stores = [
+      {
+        effectivePermissions: [],
+        role: "agency",
+        status: "active",
+        storeId: "store_agency",
+        storeName: "Loja da agência",
+        storeSlug: "agency-store",
+        tenantId: "tenant_agency",
+        tenantName: "Agência",
+      },
+    ];
+
+    expect(readCrmCapabilities(session)).toMatchObject({
+      canAssign: true,
+      canList: true,
+      canRead: true,
+      canSend: true,
+    });
   });
 });
 

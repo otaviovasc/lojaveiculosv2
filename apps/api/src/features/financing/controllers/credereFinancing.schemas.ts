@@ -68,12 +68,20 @@ export const createSimulationSchema = z
   .object({
     applicant: z
       .object({
+        addressZipCode: z
+          .string()
+          .trim()
+          .transform(onlyDigits)
+          .refine((value) => /^\d{8}$/.test(value), "Invalid ZIP code.")
+          .optional(),
         birthDate: brazilianDateSchema().optional(),
         document: brazilianDocumentSchema(),
         email: z.string().trim().email().max(320).optional(),
+        genderCode: providerDomainCode().optional(),
         hasCnh: z.boolean().optional(),
         monthlyIncomeCents: positiveCents.optional(),
         name: nonEmptyString,
+        occupationCode: providerDomainCode().optional(),
         phone: phoneSchema(),
       })
       .strict(),
@@ -184,6 +192,15 @@ function phoneSchema() {
       return digits.length >= 10 && digits.length <= 13;
     }, "Phone must have 10 to 13 digits.")
     .transform(onlyDigits);
+}
+
+function providerDomainCode() {
+  return z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[A-Za-z0-9_.-]+$/);
 }
 
 function yearSchema() {

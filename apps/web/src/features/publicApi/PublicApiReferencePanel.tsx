@@ -103,31 +103,34 @@ export function PublicApiReferencePanel({
 
       {view === "resources" ? (
         <div className="public-api-resource-grid">
-          {publicApiResources.map((resource) => (
-            <button
-              aria-label={`Copiar rota do artefato ${resource.label}`}
-              key={resource.path}
-              onClick={() => void onCopy(resource.path, resource.path)}
-              type="button"
-            >
-              <span className="public-api-resource-icon">
-                <resource.icon aria-hidden="true" className="size-4" />
-              </span>
-              <span className="public-api-resource-copy">
-                <strong>{resource.label}</strong>
-                <small>{resource.description}</small>
-                <code>{resource.path}</code>
-              </span>
-              <span className="public-api-resource-action">
-                {copiedId === resource.path ? (
-                  <Check aria-hidden="true" className="size-4" />
-                ) : (
-                  <Copy aria-hidden="true" className="size-4" />
-                )}
-                {copiedId === resource.path ? "Copiado" : "Copiar rota"}
-              </span>
-            </button>
-          ))}
+          {publicApiResources.map((resource) => {
+            const resourceUrl = `${deploymentBaseUrl.replace(/\/$/, "")}${resource.path}`;
+            return (
+              <button
+                aria-label={`Copiar URL do artefato ${resource.label}`}
+                key={resource.path}
+                onClick={() => void onCopy(resourceUrl, resource.path)}
+                type="button"
+              >
+                <span className="public-api-resource-icon">
+                  <resource.icon aria-hidden="true" className="size-4" />
+                </span>
+                <span className="public-api-resource-copy">
+                  <strong>{resource.label}</strong>
+                  <small>{resource.description}</small>
+                  <code>{resourceUrl}</code>
+                </span>
+                <span className="public-api-resource-action">
+                  {copiedId === resource.path ? (
+                    <Check aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Copy aria-hidden="true" className="size-4" />
+                  )}
+                  {copiedId === resource.path ? "Copiado" : "Copiar URL"}
+                </span>
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -159,6 +162,33 @@ export function PublicApiReferencePanel({
                       <code key={scope}>{scope}</code>
                     ))}
                   </div>
+                  <dl className="public-api-contract-summary">
+                    <div>
+                      <dt>Entrada</dt>
+                      <dd>
+                        <ul>
+                          {endpoint.requestSummary.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Resposta</dt>
+                      <dd>
+                        <span>{endpoint.responseSummary}</span>
+                        <code className="public-api-response-example">
+                          {endpoint.responseExample}
+                        </code>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Erros</dt>
+                      <dd>
+                        <code>{endpoint.errorSummary}</code>
+                      </dd>
+                    </div>
+                  </dl>
                   <pre
                     aria-label={`Exemplo curl para ${endpoint.title}`}
                     tabIndex={0}

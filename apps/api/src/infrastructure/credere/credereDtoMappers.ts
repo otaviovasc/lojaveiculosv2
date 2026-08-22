@@ -16,11 +16,9 @@ import {
   readRecord,
   readString,
 } from "./credereHttpSupport.js";
-
 export function isUsableCredereBank(bank: FinancingIntegratedBank) {
   return bank.active && bank.status === "okay";
 }
-
 export function mapStores(payload: Record<string, unknown>): FinancingStore[] {
   return readArray(payload.stores)
     .map(readRecord)
@@ -38,7 +36,6 @@ export function mapStores(payload: Record<string, unknown>): FinancingStore[] {
     })
     .filter((store) => store.id);
 }
-
 export function mapIntegratedBanks(
   payload: Record<string, unknown>,
 ): FinancingIntegratedBank[] {
@@ -56,28 +53,35 @@ export function mapIntegratedBanks(
       };
     })
     .filter((bank) => {
-      if (!isUsableCredereBank(bank) || seen.has(bank.code)) return false;
+      if (!bank.code || seen.has(bank.code)) return false;
       seen.add(bank.code);
       return true;
     });
 }
-
 export function mapLead(payload: Record<string, unknown>): FinancingLead {
   const data = readRecord(payload.data);
+  const address = readRecord(data.address);
+  const gender = readRecord(data.gender);
+  const occupation = readRecord(data.occupation);
   return {
+    addressZipCode: readString(address.zip_code),
     birthdate: readString(data.birthdate) ?? readString(data.birth_date),
     cpfCnpj: readString(data.cpf_cnpj) ?? "",
     email: readString(data.email),
+    genderCode:
+      readString(gender.credere_identifier) ?? readString(data.retrieve_gender),
     hasCnh: readBoolean(data.has_cnh),
     id: readString(data.id) ?? "",
     monthlyIncomeCents:
       readNumber(data.monthly_income) ?? readNumber(data.monthly_income_cents),
     name: readString(data.name),
+    occupationCode:
+      readString(occupation.credere_identifier) ??
+      readString(data.retrieve_occupation),
     phoneNumber:
       readString(data.phone_number) ?? readString(data.phone) ?? null,
   };
 }
-
 export function mapRequiredFields(
   payload: Record<string, unknown>,
 ): FinancingRequiredFields {

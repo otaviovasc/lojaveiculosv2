@@ -21,7 +21,9 @@ import { createPlaceholderServiceContext } from "./createPlaceholderServiceConte
 import {
   createExternalApiServiceContext,
   externalApiContextKey,
+  assertExternalApiAudience,
   readExternalApiKey,
+  readExternalApiRequestFingerprint,
 } from "./externalApiHttpContext.js";
 import {
   HttpContextAuthenticationError,
@@ -77,6 +79,7 @@ export async function createHttpServiceContext(
   const externalApiKey = readExternalApiKey(context);
 
   if (externalApiKey) {
+    assertExternalApiAudience(request.path);
     return createExternalApiServiceContext({
       audit,
       apiKey: externalApiKey,
@@ -85,6 +88,7 @@ export async function createHttpServiceContext(
         context.set(externalApiContextKey, metadata);
       },
       request,
+      ...readExternalApiRequestFingerprint(context),
       ...(options.externalApiRepository
         ? { repository: options.externalApiRepository }
         : {}),

@@ -1,4 +1,5 @@
 import type { SessionBootstrap } from "../account/apiClient";
+import { readSessionActiveStore } from "../account/sessionPermissions";
 
 const permissions = {
   assign: "crm.conversations.assign",
@@ -86,8 +87,11 @@ export function hasCrmPermission(
   cycle: SessionBootstrap | null,
   permission: (typeof permissions)[keyof typeof permissions],
 ) {
+  const store = readSessionActiveStore(cycle);
   return Boolean(
-    cycle?.defaultStore?.effectivePermissions?.includes(permission),
+    store &&
+    (store.role === "agency" ||
+      store.effectivePermissions?.includes(permission)),
   );
 }
 

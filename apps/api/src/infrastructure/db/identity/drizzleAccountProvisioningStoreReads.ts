@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   roleTemplates,
   storeMemberships,
@@ -41,10 +41,11 @@ export async function listStores(
         and(
           eq(storeMemberships.userId, userId),
           eq(stores.isDeleted, false),
+          isNull(stores.deletedAt),
           eq(tenants.isDeleted, false),
+          isNull(tenants.deletedAt),
         ),
-      )
-      .limit(100),
+      ),
     db
       .select({
         role: roleTemplates.roleKey,
@@ -68,10 +69,11 @@ export async function listStores(
           eq(tenantMemberships.status, "active"),
           eq(roleTemplates.roleKey, "agency"),
           eq(stores.isDeleted, false),
+          isNull(stores.deletedAt),
           eq(tenants.isDeleted, false),
+          isNull(tenants.deletedAt),
         ),
-      )
-      .limit(100),
+      ),
   ]);
   const directStores = await Promise.all(
     directRows.map(async (row) => {
@@ -103,7 +105,6 @@ export async function listStores(
     directStores.map((store) => [store.storeId, store]),
   );
   for (const row of agencyRows) {
-    if (storesById.has(row.storeId as never)) continue;
     storesById.set(row.storeId as never, {
       billingManagedBy: "agency",
       effectivePermissions: resolveRolePermissions({

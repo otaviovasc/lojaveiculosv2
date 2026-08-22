@@ -10,7 +10,7 @@ import {
 import { createExternalApiFeature } from "./externalApi.controller.js";
 
 describe("external API Credere runtime", () => {
-  it("preflights readiness and safe existing-applicant fields", async () => {
+  it("preflights readiness without turning a CPF into a PII oracle", async () => {
     const getRequiredFields = vi.fn(async () => ({
       applicant: {
         birthDate: "1990-05-10",
@@ -40,12 +40,15 @@ describe("external API Credere runtime", () => {
     });
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
+    const json = (await response.json()) as unknown;
+    expect(json).toMatchObject({
       data: {
-        applicant: { knownLead: true, applicant: { name: "Ana Silva" } },
+        applicant: { knownLead: true, missingFields: [] },
         readiness: { configured: true, mappedStoreAlias: "Loja Centro" },
       },
     });
+    expect(JSON.stringify(json)).not.toContain("ana@example.com");
+    expect(JSON.stringify(json)).not.toContain("11999990000");
     expect(getRequiredFields).toHaveBeenCalledWith(expect.anything(), {
       bankCodes: ["001"],
       document: "52998224725",

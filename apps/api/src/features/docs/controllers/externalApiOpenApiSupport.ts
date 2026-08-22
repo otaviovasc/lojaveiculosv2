@@ -30,7 +30,7 @@ export const idempotencyKeyParameter = {
   name: "Idempotency-Key",
   required: true,
   description:
-    "Mutation deduplication key. Reuse is rejected with 409; the earlier response is not replayed.",
+    "Mutation idempotency key. The same key and validated payload replay the original bounded JSON status/body after completion. A different payload or in-flight request returns 409. A 5xx attempt is not replayed and must be retried with a new key.",
   schema: { type: "string", minLength: 1 },
 } as const;
 

@@ -127,6 +127,8 @@ export function SimulationResults({
 
   const hasAccepted = accepted.length > 0;
   const isPending = isProcessingStatus(simulation.status);
+  const isTerminal = !isPending && !isIndeterminate;
+  const hasTerminalAccepted = isTerminal && hasAccepted;
   const reasonGuidance = getCredereReasonGuidance(simulation.reason);
 
   const uniqueBanksCount = useMemo(() => {
@@ -241,7 +243,7 @@ export function SimulationResults({
       {/* Hero Banner Header */}
       <div
         className={
-          hasAccepted
+          hasTerminalAccepted
             ? "relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/85 via-emerald-900/50 to-panel p-6 shadow-sm sm:p-8 text-app-text"
             : isPending
               ? "relative overflow-hidden rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-950/85 via-amber-900/50 to-panel p-6 shadow-sm sm:p-8 text-app-text"
@@ -253,14 +255,14 @@ export function SimulationResults({
             <div className="flex items-center gap-4">
               <div
                 className={
-                  hasAccepted
+                  hasTerminalAccepted
                     ? "flex size-14 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/20 text-emerald-400 backdrop-blur-md"
                     : isPending
                       ? "flex size-14 shrink-0 items-center justify-center rounded-2xl border border-amber-400/40 bg-amber-500/20 text-amber-400 backdrop-blur-md"
                       : "flex size-14 shrink-0 items-center justify-center rounded-2xl border border-line bg-panel text-muted"
                 }
               >
-                {hasAccepted ? (
+                {hasTerminalAccepted ? (
                   <CheckCircle2 className="size-7" />
                 ) : isPending ? (
                   <RefreshCw className="size-7 animate-spin" />
@@ -273,17 +275,19 @@ export function SimulationResults({
                   className="font-display text-2xl font-black tracking-tight text-app-text"
                   id="credere-result-title"
                 >
-                  {hasAccepted
+                  {hasTerminalAccepted
                     ? "Simulação Finalizada"
                     : isPending
                       ? "Processando Simulação"
                       : "Simulação Processada"}
                 </h2>
                 <p className="text-sm font-semibold text-muted">
-                  {hasAccepted
+                  {hasTerminalAccepted
                     ? "Análise de crédito concluída com sucesso junto aos bancos parceiros"
                     : isPending
-                      ? "Consultando bancos autorizados em tempo real..."
+                      ? hasAccepted
+                        ? "Há retornos parciais; a consulta continua em processamento."
+                        : "Consultando bancos autorizados em tempo real..."
                       : "Análise processada, sem propostas aprovadas pelos bancos"}
                 </p>
               </div>
@@ -310,7 +314,7 @@ export function SimulationResults({
               <div className="inline-flex items-center gap-2 text-sm font-bold text-app-text">
                 <span
                   className={
-                    hasAccepted
+                    hasTerminalAccepted
                       ? "size-2 rounded-full bg-emerald-500"
                       : isPending
                         ? "size-2 rounded-full bg-amber-500 animate-pulse"

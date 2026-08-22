@@ -27,7 +27,10 @@ export function presentDirectOwnerConnection(value: unknown, storeId: string) {
   };
 }
 
-export function presentStoreStatus(value: unknown) {
+export function presentStoreStatus(
+  value: unknown,
+  options: { includeBankHealth?: boolean } = {},
+) {
   const record = asRecord(value);
   return {
     configured: Boolean(record.configured),
@@ -36,6 +39,31 @@ export function presentStoreStatus(value: unknown) {
         ? record.mappedStoreAlias
         : null,
     usableBanks: asArray(record.usableBanks).map(presentUsableBank),
+    ...(options.includeBankHealth
+      ? {
+          unavailableBanks: asArray(record.unavailableBanks).map(
+            presentUnavailableBank,
+          ),
+        }
+      : {}),
+  };
+}
+
+function presentUnavailableBank(value: unknown) {
+  const record = asRecord(value);
+  const allowedReasons = new Set([
+    "authorization_required",
+    "inactive",
+    "provider_error",
+  ]);
+  const reason =
+    typeof record.reason === "string" && allowedReasons.has(record.reason)
+      ? record.reason
+      : "provider_error";
+  return {
+    code: String(record.code ?? ""),
+    ...(typeof record.name === "string" ? { name: record.name } : {}),
+    reason,
   };
 }
 

@@ -19,12 +19,13 @@ type CandidateInput = Parameters<
 export async function listCredereSimulationCandidates(
   fetchImpl: typeof fetch,
   input: CandidateInput,
+  apiRoot?: string,
 ) {
   const candidates = [];
   const seenCandidates = new Set<string>();
   const seenPages = new Set<string>();
   for (let page = 1; ; page += 1) {
-    const result = await readCandidatePage(fetchImpl, input, page);
+    const result = await readCandidatePage(fetchImpl, input, page, apiRoot);
     const fingerprint = pageFingerprint(result.payload);
     if (seenPages.has(fingerprint)) break;
     seenPages.add(fingerprint);
@@ -44,15 +45,20 @@ async function readCandidatePage(
   fetchImpl: typeof fetch,
   input: CandidateInput,
   page: number,
+  apiRoot?: string,
 ) {
   const response = await fetchWithReadRetry(
     fetchImpl,
-    credereApiUrl("/proposal_simulations", {
-      after: formatCredereDate(input.createdAfter),
-      page: String(page),
-      per_page: String(pageSize),
-      sort: "created_at_desc",
-    }),
+    credereApiUrl(
+      "/proposal_simulations",
+      {
+        after: formatCredereDate(input.createdAfter),
+        page: String(page),
+        per_page: String(pageSize),
+        sort: "created_at_desc",
+      },
+      apiRoot,
+    ),
     {
       headers: bearerHeaders(input.token.accessToken, input.credereStoreId),
       method: "GET",

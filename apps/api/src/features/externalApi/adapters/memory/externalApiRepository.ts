@@ -17,9 +17,12 @@ type RequestLogRow = {
 };
 
 type IdempotencyRow = {
+  body: unknown;
   clientId: string;
+  contentType: string | null;
   idempotencyKey: string;
   requestFingerprint: string;
+  status: "completed" | "failed" | "started";
   statusCode: number | null;
 };
 
@@ -42,6 +45,15 @@ export function createMemoryExternalApiRepository(): ExternalApiRepository {
           log.clientId === input.clientId && log.createdAt >= input.since,
       ).length;
     },
+    async completeIdempotencyKey(input) {
+      const row = findIdempotencyRow(idempotencyKeys, input);
+      if (!row || row.status !== "started") return false;
+      row.body = structuredClone(input.body);
+      row.contentType = input.contentType;
+      row.status = "completed";
+      row.statusCode = input.statusCode;
+      return true;
+    },
     async createClient(input) {
       const now = new Date();
       const client: ClientRow = {
@@ -50,6 +62,7 @@ export function createMemoryExternalApiRepository(): ExternalApiRepository {
         keyHash: input.keyHash,
         keyId: `api_key_${clients.length + 1}`,
         keyPrefixes: [input.keyPrefix],
+        lastUsedAt: null,
         name: input.name,
         scopes: input.scopes,
         status: "active",
@@ -67,21 +80,22 @@ export function createMemoryExternalApiRepository(): ExternalApiRepository {
             client.storeId === input.storeId &&
             client.tenantId === input.tenantId,
         )
-        .map(toClient);
+        .map((client) =>
+          toClient(client, latestRequestAt(requestLogs, client.id)),
+        );
+    },
+    async failIdempotencyKey(input) {
+      const row = findIdempotencyRow(idempotencyKeys, input);
+      if (!row || row.status !== "started") return false;
+      row.status = "failed";
+      row.statusCode = input.statusCode;
+      return true;
     },
     async recordRequest(input) {
       requestLogs.push({
         clientId: input.clientId,
         createdAt: new Date(),
       });
-      if (input.idempotencyKey) {
-        const row = idempotencyKeys.find(
-          (item) =>
-            item.clientId === input.clientId &&
-            item.idempotencyKey === input.idempotencyKey,
-        );
-        if (row) row.statusCode = input.statusCode;
-      }
     },
     async reserveIdempotencyKey(input) {
       const existing = idempotencyKeys.find(
@@ -89,19 +103,37 @@ export function createMemoryExternalApiRepository(): ExternalApiRepository {
           item.clientId === input.clientId &&
           item.idempotencyKey === input.idempotencyKey,
       );
-      if (existing?.requestFingerprint === input.requestFingerprint) {
-        return { kind: "duplicate", statusCode: existing.statusCode };
-      }
       if (existing) {
+        if (existing.requestFingerprint === input.requestFingerprint) {
+          if (
+            existing.status === "completed" &&
+            existing.statusCode !== null &&
+            existing.contentType
+          ) {
+            return {
+              body: structuredClone(existing.body),
+              contentType: existing.contentType,
+              kind: "replay",
+              statusCode: existing.statusCode,
+            };
+          }
+          if (existing.status === "failed") {
+            return { kind: "failed", statusCode: existing.statusCode };
+          }
+          return { kind: "in_flight" };
+        }
         return {
           kind: "conflict",
           requestFingerprint: existing.requestFingerprint,
         };
       }
       idempotencyKeys.push({
+        body: null,
         clientId: input.clientId,
+        contentType: null,
         idempotencyKey: input.idempotencyKey,
         requestFingerprint: input.requestFingerprint,
+        status: "started",
         statusCode: null,
       });
       return { kind: "created" };
@@ -121,11 +153,31 @@ export function createMemoryExternalApiRepository(): ExternalApiRepository {
   };
 }
 
-function toClient(row: ClientRow): ExternalApiClient {
+function findIdempotencyRow(
+  rows: IdempotencyRow[],
+  input: {
+    clientId: string;
+    idempotencyKey: string;
+    requestFingerprint: string;
+  },
+) {
+  return rows.find(
+    (row) =>
+      row.clientId === input.clientId &&
+      row.idempotencyKey === input.idempotencyKey &&
+      row.requestFingerprint === input.requestFingerprint,
+  );
+}
+
+function toClient(
+  row: ClientRow,
+  lastUsedAt: Date | null = row.lastUsedAt,
+): ExternalApiClient {
   return {
     createdAt: row.createdAt,
     id: row.id,
     keyPrefixes: row.keyPrefixes,
+    lastUsedAt,
     name: row.name,
     scopes: row.scopes,
     status: row.status,
@@ -133,6 +185,16 @@ function toClient(row: ClientRow): ExternalApiClient {
     tenantId: row.tenantId,
     updatedAt: row.updatedAt,
   };
+}
+
+function latestRequestAt(requestLogs: RequestLogRow[], clientId: string) {
+  return requestLogs.reduce<Date | null>(
+    (latest, log) =>
+      log.clientId === clientId && (!latest || log.createdAt > latest)
+        ? log.createdAt
+        : latest,
+    null,
+  );
 }
 
 function toAuthenticatedClient(row: ClientRow): ExternalApiAuthenticatedClient {

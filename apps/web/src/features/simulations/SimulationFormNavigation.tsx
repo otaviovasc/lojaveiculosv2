@@ -36,9 +36,11 @@ const steps = [
 ] as const;
 
 export function SimulationFormStepper({
+  completedSteps,
   onChange,
   step,
 }: {
+  completedSteps: ReadonlySet<SimulationFormStep>;
   onChange: (step: SimulationFormStep) => void;
   step: SimulationFormStep;
 }) {
@@ -49,7 +51,7 @@ export function SimulationFormStepper({
         {steps.map((item, index) => {
           const Icon = item.icon;
           const active = item.value === step;
-          const complete = index < activeIndex;
+          const complete = completedSteps.has(item.value);
           return (
             <li
               className="credere-form-step"
@@ -89,7 +91,7 @@ export function SimulationFormStepper({
 export function SimulationStepActions({
   isLast,
   isSubmitting,
-  nextDisabled = false,
+  nextBlocked = false,
   nextHint = null,
   onBack,
   onNext,
@@ -97,7 +99,7 @@ export function SimulationStepActions({
 }: {
   isLast: boolean;
   isSubmitting: boolean;
-  nextDisabled?: boolean;
+  nextBlocked?: boolean;
   nextHint?: string | null;
   onBack: (() => void) | null;
   onNext: (() => void) | null;
@@ -116,8 +118,12 @@ export function SimulationStepActions({
         <span>{activeLabel}</span>
       </p>
       <div className="credere-form-actions-buttons">
-        {nextDisabled && nextHint ? (
-          <p className="credere-form-actions-hint" role="status">
+        {nextHint ? (
+          <p
+            className="credere-form-actions-hint"
+            id="simulation-next-hint"
+            role="status"
+          >
             {nextHint}
           </p>
         ) : null}
@@ -139,11 +145,11 @@ export function SimulationStepActions({
           />
         ) : onNext ? (
           <FeatureActionButton
-            disabled={nextDisabled}
+            aria-describedby={nextHint ? "simulation-next-hint" : undefined}
             icon={ChevronRight}
             label="Continuar"
             onClick={onNext}
-            {...(nextDisabled && nextHint ? { title: nextHint } : {})}
+            {...(nextBlocked && nextHint ? { title: nextHint } : {})}
             type="button"
             variant="primary"
           />

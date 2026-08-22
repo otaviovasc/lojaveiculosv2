@@ -43,6 +43,7 @@ export function registerStoreCredereFinancingRoutes(
       return context.json(
         presentStoreStatus(
           await input.services.store.getStatus(serviceContext),
+          { includeBankHealth: true },
         ),
       );
     }),

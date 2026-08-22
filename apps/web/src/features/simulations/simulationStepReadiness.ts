@@ -8,7 +8,10 @@ import type { SimulationFormStep } from "./SimulationFormNavigation";
  * simulationDraftBuilder remains the final guard.
  */
 export type SimulationStepSnapshot = {
+  additionalFieldsReady: boolean;
   cpfCnpj: string;
+  bankCount: number;
+  consent: boolean;
   credereVehicleModelId: string;
   downPayment: number | null;
   fipeCode: string;
@@ -20,6 +23,7 @@ export type SimulationStepSnapshot = {
   name: string;
   phone: string;
   preflightReady: boolean;
+  unsupportedFieldCount: number;
   vehicleValue: number | null;
 };
 
@@ -71,6 +75,18 @@ export function simulationStepReadiness(
         reason: "Confira o cadastro do proponente no Credere.",
       };
     }
+    if (snapshot.unsupportedFieldCount > 0) {
+      return {
+        ready: false,
+        reason: "Ajuste os campos exigidos pelos bancos ou altere a seleção.",
+      };
+    }
+    if (!snapshot.additionalFieldsReady) {
+      return {
+        ready: false,
+        reason: "Preencha os dados adicionais exigidos pelos bancos.",
+      };
+    }
     return { ready: true };
   }
   if (step === "terms") {
@@ -85,6 +101,18 @@ export function simulationStepReadiness(
       };
     }
     return { ready: true };
+  }
+  if (snapshot.bankCount === 0) {
+    return {
+      ready: false,
+      reason: "Selecione ao menos uma instituição financeira.",
+    };
+  }
+  if (!snapshot.consent) {
+    return {
+      ready: false,
+      reason: "Registre o consentimento do proponente antes de simular.",
+    };
   }
   return { ready: true };
 }

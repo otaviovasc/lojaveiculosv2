@@ -1,4 +1,8 @@
 export type CrmSurface = "leads" | "conversations";
+export type CrmRouteState = {
+  cycleId: string | null;
+  scope: CrmRouteScope;
+};
 export type CrmRouteScope =
   | "campaigns"
   | "connection"
@@ -43,6 +47,24 @@ export function readCrmScopeFromHash(
   return crmScopes.has(scope as CrmRouteScope)
     ? (scope as CrmRouteScope)
     : fallback;
+}
+
+export function readCrmConversationCycleIdFromHash(hash: string) {
+  const query = hash.split("?")[1] ?? "";
+  const params = new URLSearchParams(query);
+  const cycleId = (params.get("cycleId") ?? params.get("crm_session"))?.trim();
+  return cycleId || null;
+}
+
+export function readCrmRouteStateFromHash(hash: string): CrmRouteState {
+  const scope = readCrmScopeFromHash(hash);
+  return {
+    cycleId:
+      scope === "conversations"
+        ? readCrmConversationCycleIdFromHash(hash)
+        : null,
+    scope,
+  };
 }
 
 export function readCrmSurfaceFromHash(

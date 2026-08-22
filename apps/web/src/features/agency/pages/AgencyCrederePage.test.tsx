@@ -50,6 +50,14 @@ describe("AgencyCrederePage", () => {
     expect(screen.getByText("Loja Norte")).toBeVisible();
     expect(screen.getByText("Vinculada")).toBeVisible();
     expect(screen.getByText("Pendente")).toBeVisible();
+    expect(
+      screen.getByRole("button", {
+        name: "Remover mapeamento de Loja Centro",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Mapear Loja Norte" }),
+    ).toBeDisabled();
     expect(screen.queryByText(/ID externo/i)).not.toBeInTheDocument();
   });
 

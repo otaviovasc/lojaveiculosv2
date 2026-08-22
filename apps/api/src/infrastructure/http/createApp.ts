@@ -161,6 +161,7 @@ export function createApp(options: CreateAppOptions = {}) {
         crm: options.crmServices,
         financing: options.financingServices,
         inventory: options.inventoryListingServices,
+        publicStorefront: options.publicStorefrontRepository,
       },
       ...(options.externalApiServices
         ? { services: options.externalApiServices }

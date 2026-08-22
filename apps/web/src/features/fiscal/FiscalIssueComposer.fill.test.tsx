@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InventoryListingDetail } from "../inventory/model/types";
 import type { SaleRecord } from "../sales/types";
@@ -54,6 +60,16 @@ describe("FiscalIssueComposer fills", () => {
     const select = await screen.findByLabelText("Financeira / Tomador");
     fireEvent.change(select, { target: { value: "recipient_1" } });
     expect(select).toHaveValue("recipient_1");
+  });
+
+  it("focuses the validation alert when review is requested with invalid data", async () => {
+    render(<FiscalIssueComposer api={createFiscalApi()} />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "3. Itens e veículo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revisar e emitir" }));
+
+    const alert = await screen.findByRole("alert");
+    await waitFor(() => expect(alert.parentElement).toHaveFocus());
   });
 });
 

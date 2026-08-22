@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getApiErrorDisplay, getApiErrorRecovery } from "../../lib/apiErrors";
+import { useOptionalAccountSession } from "../account/accountSession";
+import { readSessionActiveStore } from "../account/sessionPermissions";
 import type { CrmConversationApi } from "./crmConversationApi";
 import type { ProductCrmApi } from "./productCrmApi";
 import {
@@ -36,15 +38,25 @@ import { MessageCircle, PlugZap } from "lucide-react";
 import { readPendingComposioConnectionId } from "./crmComposioOAuth";
 import { consumeCrmOlxOauthReturn } from "./crmOlxOauthReturn";
 import { CrmStatsPage } from "./CrmStatsPage";
-import { crmScopeHash, readCrmScopeFromHash } from "./crmRouteState";
+import {
+  crmConversationCycleHash,
+  crmScopeHash,
+  readCrmRouteStateFromHash,
+} from "./crmRouteState";
+import type { CrmConversationCycleId } from "./crmConversationTypes";
 
-export function CrmInbox({
-  api,
-  productApi,
-}: {
+type CrmInboxProps = {
   api?: CrmConversationApi;
   productApi?: ProductCrmApi;
-}) {
+};
+
+export function CrmInbox(props: CrmInboxProps) {
+  const session = useOptionalAccountSession();
+  const storeScopeKey = readSessionActiveStore(session)?.storeId ?? "no-store";
+  return <StoreScopedCrmInbox key={storeScopeKey} {...props} />;
+}
+
+function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
   const conversationApi = useMemo(
     () => api ?? createRuntimeCrmConversationApi(),
     [api],
@@ -54,12 +66,14 @@ export function CrmInbox({
     [productApi],
   );
   const visitsApi = useMemo(() => createRuntimeCrmVisitsApi(), []);
-  const inbox = useCrmInbox(conversationApi);
-  const [activeScope, setActiveScope] = useState<CrmScope>(() =>
-    readPendingComposioConnectionId() || consumeCrmOlxOauthReturn()
-      ? "connection"
-      : readCrmScopeFromHash(window.location.hash),
-  );
+  const [routeState, setRouteState] = useState(() => {
+    const state = readCrmRouteStateFromHash(window.location.hash);
+    return readPendingComposioConnectionId() || consumeCrmOlxOauthReturn()
+      ? { cycleId: null, scope: "connection" as const }
+      : state;
+  });
+  const inbox = useCrmInbox(conversationApi, routeState.cycleId);
+  const activeScope = routeState.scope;
   const [visitedScopes, setVisitedScopes] = useState<ReadonlySet<CrmScope>>(
     () => new Set<CrmScope>([activeScope]),
   );
@@ -80,6 +94,33 @@ export function CrmInbox({
   const errorDisplay = getApiErrorDisplay(
     inbox.error,
     "Não foi possível carregar o WhatsApp.",
+  );
+
+  useEffect(() => {
+    const syncRouteFromHash = () => {
+      setRouteState(readCrmRouteStateFromHash(window.location.hash));
+    };
+    window.addEventListener("hashchange", syncRouteFromHash);
+    return () => window.removeEventListener("hashchange", syncRouteFromHash);
+  }, []);
+
+  const navigateToHash = useCallback((hash: string) => {
+    const normalizedHash = `#${hash}`;
+    setRouteState(readCrmRouteStateFromHash(normalizedHash));
+    if (window.location.hash !== normalizedHash) window.location.hash = hash;
+  }, []);
+  const setActiveScope = useCallback(
+    (scope: CrmScope) => navigateToHash(crmScopeHash(scope)),
+    [navigateToHash],
+  );
+  const setActiveCycle = useCallback(
+    (cycleId: CrmConversationCycleId | null) =>
+      navigateToHash(
+        cycleId
+          ? crmConversationCycleHash(cycleId)
+          : crmScopeHash("conversations"),
+      ),
+    [navigateToHash],
   );
 
   useEffect(() => {
@@ -178,10 +219,7 @@ export function CrmInbox({
             activeScope={activeScope}
             connectionLabel={status.label}
             connectionTone={status.tone}
-            onChange={(scope) => {
-              setActiveScope(scope);
-              window.history.replaceState(null, "", `#${crmScopeHash(scope)}`);
-            }}
+            onChange={setActiveScope}
             tagCount={inbox.availableTags.length}
             unreadCount={unreadCount}
           />
@@ -199,7 +237,9 @@ export function CrmInbox({
                 ) : (
                   <CrmConversationWorkspace
                     inbox={inbox}
+                    onCycleChange={setActiveCycle}
                     onScopeChange={setActiveScope}
+                    routeCycleId={routeState.cycleId}
                   />
                 )}
               </div>

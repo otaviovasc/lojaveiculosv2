@@ -41,96 +41,6 @@ export const scopeOptions: PublicApiScopeOption[] = [
     "Listas, busca e detalhes seguros para aplicativos externos.",
   ),
   option(
-    "Inventário",
-    "inventory.create",
-    "Criar estoque",
-    "Criação de anúncios e unidades pelo contrato V2.",
-  ),
-  option(
-    "Inventário",
-    "inventory.update_price",
-    "Editar preço",
-    "Atualização de preços com auditoria.",
-  ),
-  option(
-    "Inventário",
-    "inventory.update_description",
-    "Editar descrição",
-    "Campos públicos e descrições comerciais.",
-  ),
-  option(
-    "Inventário",
-    "inventory.update_internal_notes",
-    "Notas internas",
-    "Campos internos de operação.",
-  ),
-  option(
-    "Inventário",
-    "inventory.update_status",
-    "Status do anúncio",
-    "Publicar, arquivar ou preparar anúncios.",
-  ),
-  option(
-    "Inventário",
-    "inventory.update_unit",
-    "Unidades",
-    "Cor, status, placa, chassi e estoque físico.",
-  ),
-  option(
-    "Inventário",
-    "inventory.media_update",
-    "Mídia",
-    "Uploads, ordenação e visibilidade de fotos.",
-  ),
-  option(
-    "Inventário",
-    "inventory.document_attach",
-    "Documentos",
-    "Anexos de unidade e documentos de veículo.",
-  ),
-  option(
-    "Operação",
-    "inventory.cost_create",
-    "Custos",
-    "Despesas operacionais ligadas ao veículo.",
-  ),
-  option(
-    "Operação",
-    "inventory.reserve",
-    "Reservas",
-    "Reservar e liberar unidades com chave de deduplicação.",
-  ),
-  option(
-    "Operação",
-    "inventory.sell",
-    "Vendas",
-    "Finalizar venda e gerar efeitos financeiros.",
-  ),
-  option(
-    "Financeiro",
-    "finance.read",
-    "Ler financeiro",
-    "Resumo, lançamentos, regras e documentos.",
-  ),
-  option(
-    "Financeiro",
-    "finance.create",
-    "Criar financeiro",
-    "Lançamentos, recorrências e comissões.",
-  ),
-  option(
-    "Financeiro",
-    "finance.update",
-    "Editar financeiro",
-    "Pagamento, cancelamento e atualização.",
-  ),
-  option(
-    "Financeiro",
-    "finance.attach_document",
-    "Anexar financeiro",
-    "Uploads e documentos financeiros.",
-  ),
-  option(
     "Financeiro",
     "financing.simulation.read",
     "Consultar Credere",
@@ -141,12 +51,6 @@ export const scopeOptions: PublicApiScopeOption[] = [
     "financing.simulation.create",
     "Criar simulação Credere",
     "Envio consentido aos bancos habilitados da loja.",
-  ),
-  option(
-    "CRM",
-    "crm.access",
-    "Acesso CRM",
-    "Entitlement operacional para fluxos de CRM.",
   ),
   option("CRM", "lead.read", "Ler leads", "Listagem e detalhe de leads."),
   option(
@@ -165,7 +69,6 @@ export const scopeOptions: PublicApiScopeOption[] = [
 
 const scopeGroupOrder: PublicApiScopeOption["group"][] = [
   "Inventário",
-  "Operação",
   "Financeiro",
   "CRM",
 ];
@@ -193,19 +96,11 @@ export const scopePresets: PublicApiScopePreset[] = [
     scopes: ["inventory.read", "lead.create"],
   },
   {
-    description: "Sincronização completa de estoque e mídia.",
+    description: "Leitura segura do catálogo, disponibilidade e mídia pública.",
     icon: CarFront,
-    label: "DMS de estoque",
-    name: "inventory-dms",
-    scopes: [
-      "inventory.create",
-      "inventory.media_update",
-      "inventory.read",
-      "inventory.update_description",
-      "inventory.update_price",
-      "inventory.update_status",
-      "inventory.update_unit",
-    ],
+    label: "Catálogo de estoque",
+    name: "inventory-catalog",
+    scopes: ["inventory.read"],
   },
   {
     description: "Leitura e avanços de leads por CRM próprio.",

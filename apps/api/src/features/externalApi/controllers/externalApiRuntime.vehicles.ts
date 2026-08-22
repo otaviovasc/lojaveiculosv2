@@ -1,5 +1,7 @@
 import type { Context, Hono } from "hono";
 import type { InventoryListingServices } from "../../inventory/controllers/listingServices.js";
+import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
   toExternalVehicleDetail,
   toExternalVehicleListItem,
@@ -13,7 +15,6 @@ import {
 } from "./externalApiRuntime.http.js";
 import {
   createPagination,
-  createPaginationFromResult,
   hasAdvancedVehicleFilters,
   matchesVehicleFilters,
   resolveVehicleStatus,
@@ -25,6 +26,7 @@ export function registerExternalVehicleRoutes(
   input: {
     contextFactory: RuntimeContextFactory;
     inventory: InventoryListingServices;
+    publicStorefront?: PublicStorefrontRepository;
   },
 ) {
   feature.get("/vehicles/search", (context) =>
@@ -43,11 +45,27 @@ export function registerExternalVehicleRoutes(
         context,
         input.contextFactory,
       );
+      const listingId = context.req.param("listingId");
+      const detail = await input.inventory.getListing(serviceContext, {
+        listingId,
+      });
+      if (!detail.listing.isVisibleOnPublicSite) {
+        throw new VehicleListingNotFoundError(listingId);
+      }
+      const publicListing = input.publicStorefront?.findPublicListingDetailById
+        ? await input.publicStorefront.findPublicListingDetailById({
+            listingId,
+            storeId: serviceContext.storeId as never,
+            tenantId: serviceContext.tenantId as never,
+          })
+        : null;
+      if (input.publicStorefront && !publicListing) {
+        throw new VehicleListingNotFoundError(listingId);
+      }
       return context.json({
         data: toExternalVehicleDetail(
-          await input.inventory.getListing(serviceContext, {
-            listingId: context.req.param("listingId"),
-          }),
+          detail,
+          publicListing?.priceCents ?? null,
         ),
       });
     }),
@@ -59,6 +77,7 @@ async function listExternalVehicles(
   input: {
     contextFactory: RuntimeContextFactory;
     inventory: InventoryListingServices;
+    publicStorefront?: PublicStorefrontRepository;
   },
 ) {
   const query = parseQuery(context, externalVehicleQuerySchema);
@@ -68,53 +87,56 @@ async function listExternalVehicles(
   );
   const limit = query.limit;
   const offset = query.offset ?? (query.page - 1) * limit;
-  const needsLocalFiltering = hasAdvancedVehicleFilters(query);
   const listInput = {
     search: query.search ?? query.q ?? null,
     status: resolveVehicleStatus(query),
   };
-  if (needsLocalFiltering) {
-    const items = await listAllListingsForLocalFilters(
-      input,
-      serviceContext,
-      listInput,
-    );
-    const filtered = sortVehicles(
-      items
-        .map(toExternalVehicleListItem)
-        .filter((item) => matchesVehicleFilters(item, query)),
-      query.sort,
-    );
-
-    return {
-      data: filtered.slice(offset, offset + limit),
-      meta: {
-        contract: "external-api.vehicle-list.v1",
-        filtersAppliedInEnvelope: true,
-      },
-      pagination: createPagination(query.page, limit, offset, filtered.length),
-    };
-  }
-
-  const listings = await input.inventory.listListings(serviceContext, {
-    ...listInput,
-    limit,
-    offset,
-  });
+  const [items, publicPrices] = await Promise.all([
+    listAllListingsForLocalFilters(input, serviceContext, listInput),
+    loadPublicPrices(input.publicStorefront, serviceContext),
+  ]);
   const filtered = sortVehicles(
-    listings.items
-      .map(toExternalVehicleListItem)
+    items
+      .filter((item) => item.listing.isVisibleOnPublicSite)
+      .filter((item) => !publicPrices || publicPrices.has(item.listing.id))
+      .map((item) =>
+        toExternalVehicleListItem(
+          item,
+          publicPrices?.get(item.listing.id) ?? null,
+        ),
+      )
       .filter((item) => matchesVehicleFilters(item, query)),
     query.sort,
   );
   return {
-    data: filtered,
+    data: filtered.slice(offset, offset + limit),
     meta: {
       contract: "external-api.vehicle-list.v1",
-      filtersAppliedInEnvelope: false,
+      filtersAppliedInEnvelope: hasAdvancedVehicleFilters(query),
     },
-    pagination: createPaginationFromResult(query.page, limit, listings),
+    pagination: createPagination(query.page, limit, offset, filtered.length),
   };
+}
+
+async function loadPublicPrices(
+  repository: PublicStorefrontRepository | undefined,
+  serviceContext: Awaited<ReturnType<typeof createIntegrationContext>>,
+) {
+  if (!repository) return null;
+  const prices = new Map<string, number | null>();
+  let offset = 0;
+
+  for (;;) {
+    const page = await repository.listPublicListings({
+      limit: 100,
+      offset,
+      storeId: serviceContext.storeId as never,
+      tenantId: serviceContext.tenantId as never,
+    });
+    for (const listing of page) prices.set(listing.id, listing.priceCents);
+    if (page.length < 100) return prices;
+    offset += page.length;
+  }
 }
 
 async function listAllListingsForLocalFilters(

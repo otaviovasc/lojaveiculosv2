@@ -1,47 +1,77 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
-import { createPrefillIdentity } from "./SimulationsReadyWorkspace";
-import type { SimulationPrefill } from "./SimulationForm";
+import "@testing-library/jest-dom/vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { SimulationsReadyWorkspace } from "./SimulationsReadyWorkspace";
 
-describe("createPrefillIdentity", () => {
-  it("changes when any simulation prefill field changes", () => {
-    const prefill: SimulationPrefill = {
-      applicantName: "Ana Souza",
-      channel: "store_workspace",
-      cpfCnpj: "52998224725",
-      credereVehicleModelId: "model_1",
-      email: "ana@example.test",
-      fipeCode: "005340-6",
-      leadId: "lead_1",
-      licensingCity: "Sao Paulo",
-      licensingUf: "SP",
-      listingId: "listing_1",
-      manufactureYear: 2022,
-      modelYear: 2023,
-      molicarCode: "01906108-0",
-      phone: "11987654321",
-      unitId: "unit_1",
-      vehicleValueCents: 5_000_000,
-      zeroKm: false,
-    };
-    const baseIdentity = createPrefillIdentity(prefill);
+describe("SimulationsReadyWorkspace", () => {
+  afterEach(cleanup);
 
-    for (const key of Object.keys(prefill) as Array<keyof SimulationPrefill>) {
-      expect(
-        createPrefillIdentity({
-          ...prefill,
-          [key]: changedValueFor(key, prefill[key]),
-        }),
-      ).not.toBe(baseIdentity);
-    }
+  it("does not announce success when simulation creation rejects", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn(async () => {
+      throw new Error("Credere unavailable");
+    });
+    render(
+      <SimulationsReadyWorkspace
+        current={null}
+        history={[]}
+        historyError={null}
+        isRefreshing={false}
+        isSubmitting={false}
+        onGetRequiredFields={async () => ({
+          applicant: null,
+          applicantKnown: false,
+          domains: {},
+          missingFields: [],
+          requirements: {},
+        })}
+        onRefresh={vi.fn()}
+        onResolveFipe={vi.fn(async () => ({
+          candidates: [] as [],
+          status: "not_found" as const,
+        }))}
+        onRetryHistory={vi.fn()}
+        onSelectSimulation={vi.fn()}
+        onSubmit={onSubmit}
+        pollError={null}
+        pollExhausted={false}
+        prefill={{
+          applicantName: "Ana Souza",
+          cpfCnpj: "52998224725",
+          credereVehicleModelId: "credere_model_1",
+          fipeCode: "005340-6",
+          licensingCity: "São Paulo",
+          licensingUf: "SP",
+          manufactureYear: 2022,
+          modelYear: 2023,
+          molicarCode: "01906108-0",
+          phone: "11987654321",
+          vehicleValueCents: 5_000_000,
+        }}
+        status={{
+          configured: true,
+          mappedStoreAlias: "Credere Centro",
+          unavailableBanks: [],
+          usableBanks: [{ code: "655", name: "BV", status: "okay" }],
+        }}
+        submitError={null}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Proponente" }));
+    await user.click(screen.getByRole("button", { name: "Conferir agora" }));
+    await screen.findByText(/Dados mínimos conferidos/);
+    await user.click(screen.getByRole("button", { name: "Condições" }));
+    await user.type(screen.getByLabelText("Entrada (R$)"), "1000000");
+    await user.click(screen.getByRole("button", { name: "Revisão" }));
+    await user.click(screen.getByLabelText(/O proponente autorizou/i));
+    await user.click(
+      screen.getByRole("button", { name: "Simular no Credere" }),
+    );
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    expect(screen.queryByText("Simulação registrada")).not.toBeInTheDocument();
   });
 });
-
-function changedValueFor(
-  key: keyof SimulationPrefill,
-  value: SimulationPrefill[keyof SimulationPrefill],
-) {
-  if (typeof value === "number") return value + 1;
-  if (typeof value === "boolean") return !value;
-  return `${String(value)}-${String(key)}`;
-}

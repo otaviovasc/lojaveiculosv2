@@ -9,6 +9,7 @@ describe("readApplicantRequirements", () => {
     const result = readApplicantRequirements({
       applicant: null,
       applicantKnown: false,
+      domains: {},
       missingFields: [
         "lead.has_cnh",
         "customer.birthdate",
@@ -26,11 +27,33 @@ describe("readApplicantRequirements", () => {
     const result = readApplicantRequirements({
       applicant: null,
       applicantKnown: true,
+      domains: {},
       missingFields: ["lead.profession"],
       requirements: {},
     });
 
     expect(result.unsupported).toEqual(["lead.profession"]);
+  });
+
+  it("maps V1-compatible coded fields and CEP instead of treating address as collected", () => {
+    const result = readApplicantRequirements({
+      applicant: null,
+      applicantKnown: false,
+      domains: {},
+      missingFields: [
+        "lead.retrieve_gender",
+        "lead.retrieve_occupation",
+        "lead.address.zip_code",
+      ],
+      requirements: {},
+    });
+
+    expect([...result.supported]).toEqual([
+      "genderCode",
+      "occupationCode",
+      "zipCode",
+    ]);
+    expect(result.unsupported).toEqual([]);
   });
 });
 

@@ -18,7 +18,11 @@ import {
   AgencyStatsGrid,
   AgencyStoresCard,
 } from "./AgencyDashboardControls";
-import { AgencyStoresTable } from "./AgencyDashboardStoresTable";
+import {
+  AgencyStoresTable,
+  type AgencyStoreModuleAccess,
+  type AgencyStoreModuleId,
+} from "./AgencyDashboardStoresTable";
 import { createAgencyApi } from "../apiClient";
 import { useAccountSession } from "../../account/accountSession";
 import { persistCurrentStoreSlug } from "../../account/currentStore";
@@ -89,12 +93,63 @@ export function AgencyDashboardPage() {
     };
   }, [fetchData]);
 
+  const findAgencyOwnedStore = useCallback(
+    (store: AgencyStore) =>
+      session.stores.find(
+        (access) =>
+          access.status === "active" &&
+          access.role === "agency" &&
+          access.tenantId === agencyTenant?.tenantId &&
+          access.storeSlug === store.subdominio,
+      ) ?? null,
+    [agencyTenant?.tenantId, session.stores],
+  );
+
+  const readStoreModuleAccess = useCallback(
+    (
+      store: AgencyStore,
+      moduleId: AgencyStoreModuleId,
+    ): AgencyStoreModuleAccess => {
+      const agencyStore = findAgencyOwnedStore(store);
+      if (!agencyStore) {
+        return {
+          canOpen: false,
+          reason: "Loja indisponível nesta agência.",
+        };
+      }
+      const requirement = storeModuleRequirements[moduleId];
+      if (
+        agencyStore.entitlements &&
+        !agencyStore.entitlements.includes(requirement)
+      ) {
+        return {
+          canOpen: false,
+          reason: "Módulo não contratado para esta loja.",
+        };
+      }
+      return { canOpen: true, reason: null };
+    },
+    [findAgencyOwnedStore],
+  );
+
   const manageStore = useCallback(
     (store: AgencyStore) => {
+      if (!findAgencyOwnedStore(store)) return;
       persistCurrentStoreSlug(store.subdominio, session.user.clerkUserId);
       void navigate("/dashboard");
     },
-    [navigate, session.user.clerkUserId],
+    [findAgencyOwnedStore, navigate, session.user.clerkUserId],
+  );
+
+  const openStoreModule = useCallback(
+    (store: AgencyStore, moduleId: AgencyStoreModuleId) => {
+      if (!readStoreModuleAccess(store, moduleId).canOpen) return;
+      persistCurrentStoreSlug(store.subdominio, session.user.clerkUserId);
+      const moduleHash =
+        moduleId === "crm" ? "/crm?surface=conversations" : `/${moduleId}`;
+      void navigate(`/dashboard#${moduleHash}`);
+    },
+    [navigate, readStoreModuleAccess, session.user.clerkUserId],
   );
 
   const filteredAndSortedStores = stores
@@ -249,6 +304,8 @@ export function AgencyDashboardPage() {
               setPlanEndDateTo("");
             }}
             onManageStore={manageStore}
+            onOpenStoreModule={openStoreModule}
+            readStoreModuleAccess={readStoreModuleAccess}
             stores={filteredAndSortedStores}
           />
         </AgencyStoresCard>
@@ -256,3 +313,13 @@ export function AgencyDashboardPage() {
     </FeaturePageShell>
   );
 }
+
+const storeModuleRequirements: Record<
+  AgencyStoreModuleId,
+  "crm" | "external_api" | "fiscal" | "simulations"
+> = {
+  crm: "crm",
+  fiscal: "fiscal",
+  "public-api": "external_api",
+  simulations: "simulations",
+};

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import { hashExternalApiKey } from "../../domains/externalApi/crypto/apiKeyCrypto.js";
+import { externalApiRequestFingerprintContextKey } from "./externalApiRequestContext.js";
 import {
   createHttpServiceContext,
   HttpContextAuthorizationError,
@@ -13,7 +14,7 @@ describe("createHttpServiceContext external API auth", () => {
     const apiKey = "lv2_testprefix_secret";
     const externalApiRepository = createExternalApiRepository(apiKey);
     const context = await captureContext(
-      new Request("https://api.local/api/v1/inventory/listings", {
+      new Request("https://api.local/api/v1/external-api/vehicles", {
         headers: {
           "x-api-key": apiKey,
           "x-request-id": "req_api",
@@ -36,10 +37,26 @@ describe("createHttpServiceContext external API auth", () => {
     expect(serviceContext.tenantId).toBe("tenant_1");
   });
 
-  it("requires idempotency keys for external API mutations", async () => {
+  it("rejects Public API keys on internal API audiences", async () => {
     const apiKey = "lv2_testprefix_secret";
     const context = await captureContext(
       new Request("https://api.local/api/v1/inventory/listings", {
+        headers: { "x-api-key": apiKey },
+      }),
+    );
+    await expect(
+      createHttpServiceContext(context, {
+        externalApiRepository: createExternalApiRepository(apiKey),
+      }),
+    ).rejects.toThrow(
+      "External API keys are only accepted by Public API routes.",
+    );
+  });
+
+  it("requires idempotency keys for external API mutations", async () => {
+    const apiKey = "lv2_testprefix_secret";
+    const context = await captureContext(
+      new Request("https://api.local/api/v1/external-api/leads", {
         headers: { "x-api-key": apiKey },
         method: "POST",
       }),
@@ -74,7 +91,7 @@ describe("createHttpServiceContext external API auth", () => {
   it("rejects an otherwise valid API key after its add-on is unavailable", async () => {
     const apiKey = "lv2_testprefix_secret";
     const context = await captureContext(
-      new Request("https://api.local/api/v1/inventory/listings", {
+      new Request("https://api.local/api/v1/external-api/vehicles", {
         headers: { "x-api-key": apiKey },
       }),
     );
@@ -91,7 +108,7 @@ describe("createHttpServiceContext external API auth", () => {
   it("rejects external API requests above the per-minute rate limit", async () => {
     const apiKey = "lv2_testprefix_secret";
     const context = await captureContext(
-      new Request("https://api.local/api/v1/inventory/listings", {
+      new Request("https://api.local/api/v1/external-api/vehicles", {
         headers: { "x-api-key": apiKey },
       }),
     );
@@ -105,10 +122,10 @@ describe("createHttpServiceContext external API auth", () => {
     ).rejects.toMatchObject({ statusCode: 429 });
   });
 
-  it("rejects duplicate external API idempotency keys", async () => {
+  it("surfaces a completed identical request for response replay", async () => {
     const apiKey = "lv2_testprefix_secret";
     const context = await captureContext(
-      new Request("https://api.local/api/v1/inventory/listings", {
+      new Request("https://api.local/api/v1/external-api/leads", {
         headers: {
           "idempotency-key": "idem_1",
           "x-api-key": apiKey,
@@ -116,14 +133,15 @@ describe("createHttpServiceContext external API auth", () => {
         method: "POST",
       }),
     );
+    context.set(externalApiRequestFingerprintContextKey, "body_digest_1");
 
     await expect(
       createHttpServiceContext(context, {
         externalApiRepository: createExternalApiRepository(apiKey, {
-          reserveKind: "duplicate",
+          reserveKind: "replay",
         }),
       }),
-    ).rejects.toMatchObject({ statusCode: 409 });
+    ).rejects.toMatchObject({ statusCode: 201 });
   });
 });
 
@@ -132,7 +150,7 @@ function createExternalApiRepository(
   options: {
     entitlements?: readonly "external_api"[];
     recentRequests?: number;
-    reserveKind?: "created" | "duplicate";
+    reserveKind?: "created" | "replay";
   } = {},
 ): ExternalApiRepository {
   return {
@@ -150,12 +168,19 @@ function createExternalApiRepository(
           }
         : null,
     countRecentRequests: async () => options.recentRequests ?? 0,
+    completeIdempotencyKey: vi.fn(async () => true),
     createClient: vi.fn(),
     listClients: vi.fn(),
+    failIdempotencyKey: vi.fn(async () => true),
     recordRequest: vi.fn(),
     reserveIdempotencyKey: async () =>
-      options.reserveKind === "duplicate"
-        ? { kind: "duplicate", statusCode: 201 }
+      options.reserveKind === "replay"
+        ? {
+            body: { data: { id: "lead_1" } },
+            contentType: "application/json; charset=UTF-8",
+            kind: "replay",
+            statusCode: 201,
+          }
         : { kind: "created" },
     revokeClient: vi.fn(),
   };

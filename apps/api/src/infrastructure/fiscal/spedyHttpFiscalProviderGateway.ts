@@ -10,6 +10,7 @@ import {
 } from "./spedyErrors.js";
 import { buildSpedyIssuePayload } from "./spedyFiscalPayload.js";
 import { requestSpedyFiscalArtifact } from "./spedyHttpFiscalArtifacts.js";
+import { trustedSpedyUrl } from "./spedyHttpSecurity.js";
 import {
   getSpedyProviderStatus,
   requireConnectedFiscalCompany,
@@ -118,18 +119,22 @@ async function request(
   path: string,
   body?: Record<string, unknown>,
 ) {
-  const response = await fetcher(
-    toUrl(requireEnv(env, "SPEDY_API_URL"), path),
-    {
+  const url = trustedSpedyUrl(requireEnv(env, "SPEDY_API_URL"), path);
+  let response: Response;
+  try {
+    response = await fetcher(url, {
       ...(body ? { body: JSON.stringify(body) } : {}),
       headers: {
         ...(body ? { "Content-Type": "application/json" } : {}),
         "X-Api-Key": apiKey,
       },
       method,
+      redirect: "error",
       signal: AbortSignal.timeout(30_000),
-    },
-  );
+    });
+  } catch {
+    throw new SpedyGatewayHttpError("Spedy fiscal request failed.", 503);
+  }
   const payload = await readPayload(response);
   if (!response.ok) {
     throw new SpedyGatewayHttpError(
@@ -191,8 +196,4 @@ function requireEnv(env: Record<string, string | undefined>, key: string) {
   const value = env[key];
   if (!value) throw new SpedyGatewayConfigurationError([key]);
   return value;
-}
-
-function toUrl(baseUrl: string, path: string) {
-  return new URL(path, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`).href;
 }

@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  History,
   KeyRound,
   LoaderCircle,
   ShieldCheck,
@@ -124,6 +125,12 @@ export function PublicApiClientList({
                     Criado em {formatClientDate(client.createdAt)}
                   </span>
                   <span>
+                    <History aria-hidden="true" className="size-3.5" />
+                    {client.lastUsedAt
+                      ? `Último uso ${formatClientDateTime(client.lastUsedAt)}`
+                      : "Ainda não utilizada"}
+                  </span>
+                  <span>
                     <ShieldCheck aria-hidden="true" className="size-3.5" />
                     {client.scopes.length} permissões
                   </span>
@@ -160,4 +167,13 @@ function clientStatusTone(status: PublicApiClientStatus): FeatureStatusTone {
 
 function formatClientDate(value: string) {
   return publicApiClientDateFormatter.format(new Date(value));
+}
+
+const publicApiClientDateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+function formatClientDateTime(value: string) {
+  return publicApiClientDateTimeFormatter.format(new Date(value));
 }

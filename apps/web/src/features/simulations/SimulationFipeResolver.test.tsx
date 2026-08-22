@@ -81,6 +81,64 @@ describe("SimulationFipeResolver", () => {
     ).toBeInTheDocument();
   });
 
+  it("ignores a stale FIPE response after the operator changes the vehicle", async () => {
+    let resolveFirst!: (value: {
+      candidates: CredereFipeCandidate[];
+      status: "ambiguous";
+    }) => void;
+    const first = new Promise<{
+      candidates: CredereFipeCandidate[];
+      status: "ambiguous";
+    }>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const newerCandidate = {
+      ...candidate,
+      fipeCode: "001004-9",
+      modelId: "model_2",
+      name: "Uno",
+      version: "1.0 Fire",
+    };
+    const onResolve = vi
+      .fn()
+      .mockReturnValueOnce(first)
+      .mockResolvedValueOnce({
+        candidates: [newerCandidate],
+        status: "ambiguous",
+      });
+    const { rerender } = render(
+      <SimulationFipeResolver
+        fipeCode="005340-6"
+        modelYear="2023"
+        onFipeCodeChange={vi.fn()}
+        onResolve={onResolve}
+        onSelect={vi.fn()}
+        selected={null}
+      />,
+    );
+
+    rerender(
+      <SimulationFipeResolver
+        fipeCode="001004-9"
+        modelYear="2023"
+        onFipeCodeChange={vi.fn()}
+        onResolve={onResolve}
+        onSelect={vi.fn()}
+        selected={null}
+      />,
+    );
+    expect(
+      await screen.findByRole("button", { name: /Selecionar 1.0 Fire/ }),
+    ).toBeVisible();
+
+    resolveFirst({ candidates: [candidate], status: "ambiguous" });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: /Selecionar 1.0 MPI/ }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   it("renders invalid highlight state when marked invalid", () => {
     const { container } = render(
       <SimulationFipeResolver

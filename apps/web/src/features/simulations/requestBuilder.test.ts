@@ -16,11 +16,14 @@ const consent = {
 
 const draft: CredereSimulationDraft = {
   applicant: {
+    addressZipCode: "01310-930",
     birthDate: "1990-05-10",
     cpfCnpj: "123.456.789-09",
     email: "ana@example.com",
+    genderCode: "F",
     monthlyIncomeCents: 850_000,
     name: "Ana Souza",
+    occupationCode: "43",
     phone: "+55 (11) 98765-4321",
   },
   consent,
@@ -47,11 +50,14 @@ describe("buildCreateSimulationBody", () => {
 
     expect(body).toEqual({
       applicant: {
+        addressZipCode: "01310-930",
         birthDate: "1990-05-10",
         document: "12345678909",
         email: "ana@example.com",
+        genderCode: "F",
         monthlyIncomeCents: 850_000,
         name: "Ana Souza",
+        occupationCode: "43",
         phone: "11987654321",
       },
       consent: {

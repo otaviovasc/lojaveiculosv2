@@ -5,7 +5,7 @@ import {
   vehicleListings,
   vehicleUnits,
 } from "@lojaveiculosv2/db";
-import { and, eq, sql, type SQL } from "drizzle-orm";
+import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
@@ -30,7 +30,11 @@ export function createDrizzleAgencyStatsRepository(
         })
         .from(stores)
         .where(
-          and(eq(stores.tenantId, input.tenantId), eq(stores.isDeleted, false)),
+          and(
+            eq(stores.tenantId, input.tenantId),
+            eq(stores.isDeleted, false),
+            isNull(stores.deletedAt),
+          ),
         )
         .orderBy(stores.tradingName, stores.id);
 
@@ -150,6 +154,7 @@ function scope(
   return and(
     eq(table.tenantId, input.tenantId),
     eq(table.isDeleted, false),
+    isNull(table.deletedAt),
     ...(input.storeId ? [eq(table.storeId, input.storeId)] : []),
   );
 }

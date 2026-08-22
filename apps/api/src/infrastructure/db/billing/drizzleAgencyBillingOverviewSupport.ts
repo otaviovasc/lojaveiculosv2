@@ -2,8 +2,8 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import {
   storeEntitlements,
   storeEntitlementEvents,
-  stores,
   tenants,
+  type stores,
   vehicleListings,
 } from "@lojaveiculosv2/db";
 import type {
@@ -30,6 +30,7 @@ import {
 } from "./drizzleBillingOverviewSupport.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { listAddonContracts } from "./drizzleBillingAddonContracts.js";
+import { listActiveBillingStores } from "./drizzleBillingStoreDirectory.js";
 
 export async function getTenantOverview(
   db: DrizzleBillingClient,
@@ -41,7 +42,13 @@ export async function getTenantOverview(
   const [tenant] = await db
     .select()
     .from(tenants)
-    .where(eq(tenants.id, input.tenantId))
+    .where(
+      and(
+        eq(tenants.id, input.tenantId),
+        eq(tenants.isDeleted, false),
+        isNull(tenants.deletedAt),
+      ),
+    )
     .limit(1);
   if (!tenant) throw new Error("Tenant not found.");
   const catalogVersion = await findActiveBillingCatalogVersion(db);
@@ -58,13 +65,7 @@ export async function getTenantOverview(
     listAddons(db, catalogVersion),
     listAddonContracts(db, input),
     listPlans(db, catalogVersion),
-    db
-      .select()
-      .from(stores)
-      .where(
-        and(eq(stores.tenantId, input.tenantId), eq(stores.isDeleted, false)),
-      )
-      .limit(100),
+    listActiveBillingStores(db, input.tenantId),
     db
       .select()
       .from(storeEntitlements)

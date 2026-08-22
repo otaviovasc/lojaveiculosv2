@@ -59,7 +59,11 @@ export type FiscalEvent = {
 
 export type FiscalOverview = {
   capabilities: {
+    canCancelDocuments?: boolean;
     canDownloadOfficialArtifacts: boolean;
+    canIssueDocuments?: boolean;
+    canRepeatDocuments?: boolean;
+    canSyncDocumentStatus?: boolean;
   };
   documents: readonly FiscalDocument[];
   events: readonly FiscalEvent[];

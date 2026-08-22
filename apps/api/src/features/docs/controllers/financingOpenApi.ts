@@ -1,4 +1,10 @@
+import { z } from "zod";
+import {
+  createSimulationSchema,
+  requiredFieldsSchema,
+} from "../../financing/controllers/credereFinancing.schemas.js";
 import { financingConnectionPaths } from "./financingConnectionOpenApi.js";
+import { credereRequiredFieldsResponseSchema } from "./financingRequiredFieldsOpenApi.js";
 
 const bearerSecurity = [{ bearerAuth: [] }];
 
@@ -6,10 +12,31 @@ export const financingSchemas = {
   CredereStoreStatus: {
     type: "object",
     additionalProperties: false,
-    required: ["configured", "mappedStoreAlias", "usableBanks"],
+    required: [
+      "configured",
+      "mappedStoreAlias",
+      "unavailableBanks",
+      "usableBanks",
+    ],
     properties: {
       configured: { type: "boolean" },
       mappedStoreAlias: { type: ["string", "null"] },
+      unavailableBanks: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["code", "reason"],
+          properties: {
+            code: { type: "string" },
+            name: { type: "string" },
+            reason: {
+              type: "string",
+              enum: ["authorization_required", "inactive", "provider_error"],
+            },
+          },
+        },
+      },
       usableBanks: {
         type: "array",
         items: {
@@ -30,24 +57,11 @@ export const financingSchemas = {
     },
   },
   CredereRequiredFieldsRequest: {
-    type: "object",
-    additionalProperties: false,
-    required: ["document"],
-    properties: { document: { type: "string" } },
+    ...toOpenApiInputSchema(requiredFieldsSchema),
   },
+  CredereRequiredFieldsResponse: credereRequiredFieldsResponseSchema,
   CredereSimulationRequest: {
-    type: "object",
-    additionalProperties: false,
-    required: ["applicant", "vehicle", "terms", "consent"],
-    properties: {
-      applicant: { type: "object", additionalProperties: false },
-      consent: { type: "object", additionalProperties: false },
-      leadId: { type: "string" },
-      listingId: { type: "string" },
-      terms: { type: "object", additionalProperties: false },
-      unitId: { type: "string" },
-      vehicle: { type: "object", additionalProperties: false },
-    },
+    ...toOpenApiInputSchema(createSimulationSchema),
   },
   CredereStoreMappingRequest: {
     type: "object",
@@ -75,7 +89,11 @@ export const financingPaths = {
       operationId: "getCredereRequiredFields",
       security: bearerSecurity,
       requestBody: jsonBody("CredereRequiredFieldsRequest"),
-      responses: response("Required field result."),
+      responses: response(
+        "Required field result.",
+        "200",
+        "CredereRequiredFieldsResponse",
+      ),
     },
   },
   "/api/v1/financing/credere/simulations": {
@@ -91,7 +109,16 @@ export const financingPaths = {
       summary: "Create a Credere financing simulation.",
       operationId: "createCredereSimulation",
       security: bearerSecurity,
-      parameters: [{ in: "header", name: "Idempotency-Key", required: true }],
+      parameters: [
+        {
+          in: "header",
+          name: "Idempotency-Key",
+          required: true,
+          description:
+            "Stable key for retrying the same simulation request without creating a duplicate.",
+          schema: { type: "string", minLength: 1, maxLength: 191 },
+        },
+      ],
       requestBody: jsonBody("CredereSimulationRequest"),
       responses: {
         ...response("Created simulation.", "201"),
@@ -118,6 +145,14 @@ export const financingPaths = {
     },
   },
 } as const;
+
+function toOpenApiInputSchema(schema: z.ZodType): Record<string, unknown> {
+  const { $schema: _dialect, ...jsonSchema } = z.toJSONSchema(schema, {
+    io: "input",
+    unrepresentable: "any",
+  });
+  return jsonSchema;
+}
 
 function jsonBody(schemaName: keyof typeof financingSchemas) {
   return {

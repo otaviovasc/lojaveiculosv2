@@ -14,7 +14,9 @@ import {
   FiscalScopeError,
 } from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
 import {
+  FiscalDocumentCancellationNotAllowedError,
   FiscalDocumentNotFoundError,
+  FiscalDocumentRepeatNotAllowedError,
   FiscalRecipientNotFoundError,
   FiscalTemplateNotFoundError,
   FiscalValidationError,
@@ -131,6 +133,22 @@ function handleFiscalError(context: Context, error: unknown) {
       status: 409,
     });
   }
+  if (error instanceof FiscalDocumentCancellationNotAllowedError) {
+    return jsonApiError(context, {
+      code: "FISCAL_CANCELLATION_NOT_ALLOWED",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof FiscalDocumentRepeatNotAllowedError) {
+    return jsonApiError(context, {
+      code: "FISCAL_REPEAT_NOT_ALLOWED",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
   if (
     error instanceof HttpContextAuthenticationError ||
     (error instanceof Error && error.name === "SpedyWebhookTokenError")
@@ -187,7 +205,7 @@ function handleFiscalError(context: Context, error: unknown) {
     return jsonApiError(context, {
       code: "FISCAL_PROVIDER_UNAVAILABLE",
       error,
-      message: error.message,
+      message: "Fiscal provider is temporarily unavailable.",
       status: 503,
     });
   }

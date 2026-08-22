@@ -37,6 +37,7 @@ export function createRuntimeCredereFinancingServices(
   if (!config) return undefined;
   const ports = {
     gateway: createCredereHttpGateway({
+      apiRoot: config.apiRoot,
       auth: {
         clientId: config.clientId,
         clientSecret: config.clientSecret,

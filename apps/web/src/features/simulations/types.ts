@@ -14,6 +14,11 @@ export type CredereUsableBank = {
 export type CredereStoreStatus = {
   configured: boolean;
   mappedStoreAlias: string | null;
+  unavailableBanks: {
+    code: string;
+    name: string | null;
+    reason: "authorization_required" | "inactive" | "provider_error";
+  }[];
   usableBanks: CredereUsableBank[];
 };
 
@@ -51,13 +56,17 @@ export type CredereStoreMapping = {
 
 export type CredereRequiredFields = {
   applicant: {
+    addressZipCode: string | null;
     birthDate: string | null;
     email: string | null;
+    genderCode: string | null;
     hasCnh: boolean | null;
     monthlyIncomeCents: number | null;
     name: string | null;
+    occupationCode: string | null;
     phone: string | null;
   } | null;
+  domains: Record<string, { label: string; value: string }[]>;
   applicantKnown: boolean;
   missingFields: string[];
   requirements: Record<string, string[]>;
@@ -117,7 +126,10 @@ export type CredereConsentEvidence = {
 };
 
 export type CredereApplicantInput = {
+  addressZipCode?: string | undefined;
+  genderCode?: string | undefined;
   name: string;
+  occupationCode?: string | undefined;
   cpfCnpj: string;
   phone: string;
   email?: string | undefined;

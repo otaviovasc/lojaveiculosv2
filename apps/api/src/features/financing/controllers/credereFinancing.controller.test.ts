@@ -150,6 +150,14 @@ describe("Credere financing controller", () => {
           usableBanks: [
             { code: "655", name: "BV", providerInternalId: "secret" },
           ],
+          unavailableBanks: [
+            {
+              code: "623",
+              name: "PAN",
+              providerInternalId: "secret",
+              reason: "authorization_required",
+            },
+          ],
         })),
       },
     });
@@ -161,6 +169,9 @@ describe("Credere financing controller", () => {
     expect(await response.json()).toEqual({
       configured: true,
       mappedStoreAlias: "Loja Credere",
+      unavailableBanks: [
+        { code: "623", name: "PAN", reason: "authorization_required" },
+      ],
       usableBanks: [{ code: "655", name: "BV" }],
     });
   });

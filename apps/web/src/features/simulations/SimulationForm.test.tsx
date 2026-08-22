@@ -18,22 +18,81 @@ vi.mock("../settings/apiClient", () => ({
 describe("SimulationForm", () => {
   afterEach(cleanup);
 
-  it("renders empty currency fields as blank and enables usable banks", async () => {
+  it("does not let stepper navigation skip an incomplete vehicle", async () => {
     const user = userEvent.setup();
-    const { container } = renderForm();
+    renderForm();
 
     await user.click(screen.getByRole("button", { name: "Condições" }));
-    expect(screen.getByLabelText("Valor do veículo (R$)")).toHaveValue("");
-    expect(screen.getByLabelText("Entrada (R$)")).toHaveValue("");
-    await user.click(screen.getByRole("button", { name: "Proponente" }));
-    expect(screen.getByLabelText("Renda mensal (R$, opcional)")).toHaveValue(
-      "",
+    expect(
+      screen.getAllByText("Selecione o veículo e confirme os anos.")[0],
+    ).toBeVisible();
+    expect(screen.queryByLabelText("Entrada (R$)")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Veículo" })).toHaveAttribute(
+      "aria-current",
+      "step",
     );
-    await user.click(screen.getByRole("button", { name: "Revisão" }));
-    expect(screen.getByRole("checkbox", { name: "BV" })).toBeChecked();
-    expect(container.querySelector("select")).toBeNull();
-    expect(container.querySelector("option")).toBeNull();
   });
+
+  it("shows real gender, occupation and CEP fields requested by selected banks", async () => {
+    const user = userEvent.setup();
+    renderForm(vi.fn(), validVehiclePrefill(), async () => ({
+      applicant: null,
+      applicantKnown: false,
+      domains: {
+        gender: [{ label: "Feminino", value: "F" }],
+        occupation: [{ label: "Servidor público", value: "43" }],
+      },
+      missingFields: [
+        "retrieve_gender",
+        "retrieve_occupation",
+        "address.zip_code",
+      ],
+      requirements: {},
+    }));
+
+    await user.click(screen.getByRole("button", { name: "Proponente" }));
+    await user.type(screen.getByLabelText("Nome do proponente"), "Ana Souza");
+    await user.type(screen.getByLabelText("CPF/CNPJ"), "52998224725");
+    await user.type(screen.getByLabelText("Telefone"), "11987654321");
+    expect(await screen.findByRole("button", { name: "Gênero" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Ocupação" })).toBeVisible();
+    expect(screen.getByLabelText("CEP residencial")).toBeVisible();
+  });
+
+  it("blocks unknown required provider fields with an actionable message", async () => {
+    const user = userEvent.setup();
+    renderForm(vi.fn(), validVehiclePrefill(), async () => ({
+      applicant: null,
+      applicantKnown: true,
+      domains: {},
+      missingFields: ["lead.profession"],
+      requirements: {},
+    }));
+
+    await user.click(screen.getByRole("button", { name: "Proponente" }));
+    await user.type(screen.getByLabelText("Nome do proponente"), "Ana Souza");
+    await user.type(screen.getByLabelText("CPF/CNPJ"), "52998224725");
+    await user.type(screen.getByLabelText("Telefone"), "11987654321");
+    expect(
+      await screen.findByText(/a consulta exige campo.*profissão/i),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(screen.queryByText("Condições")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Entrada (R$)")).toBeNull();
+  });
+
+  function validVehiclePrefill() {
+    return {
+      credereVehicleModelId: "credere_model_1",
+      fipeCode: "005340-6",
+      licensingCity: "Sao Paulo",
+      licensingUf: "SP",
+      manufactureYear: 2022,
+      modelYear: 2023,
+      molicarCode: "01906108-0",
+      vehicleValueCents: 5_000_000,
+    };
+  }
 
   it("submits prefilled client and selected Credere vehicle data", async () => {
     const user = userEvent.setup();
@@ -88,12 +147,17 @@ describe("SimulationForm", () => {
 
   it("shows only supported applicant fields requested by the preflight", async () => {
     const user = userEvent.setup();
-    renderForm(vi.fn(), { cpfCnpj: "52998224725" }, async () => ({
-      applicant: null,
-      applicantKnown: true,
-      missingFields: ["birthdate", "has_cnh", "unsupported_provider_field"],
-      requirements: {},
-    }));
+    renderForm(
+      vi.fn(),
+      { ...validVehiclePrefill(), cpfCnpj: "52998224725" },
+      async () => ({
+        applicant: null,
+        applicantKnown: true,
+        domains: {},
+        missingFields: ["birthdate", "has_cnh", "unsupported_provider_field"],
+        requirements: {},
+      }),
+    );
 
     await user.click(screen.getByRole("button", { name: "Proponente" }));
     await user.click(screen.getByRole("button", { name: "Conferir agora" }));
@@ -101,7 +165,9 @@ describe("SimulationForm", () => {
     expect(
       await screen.findByRole("button", { name: /^Data de nascimento:/ }),
     ).toBeVisible();
-    expect(screen.getByText(/Dados mínimos conferidos/)).toBeVisible();
+    expect(
+      screen.getByText(/a consulta exige campo.*unsupported provider field/i),
+    ).toBeVisible();
     expect(screen.queryByLabelText("unsupported_provider_field")).toBeNull();
   });
 
@@ -110,6 +176,7 @@ describe("SimulationForm", () => {
     renderForm(
       vi.fn(),
       {
+        ...validVehiclePrefill(),
         applicantName: "Nome informado pela loja",
         cpfCnpj: "52998224725",
         email: "operador@example.com",
@@ -117,14 +184,18 @@ describe("SimulationForm", () => {
       },
       async () => ({
         applicant: {
+          addressZipCode: null,
           birthDate: "1990-05-10",
           email: "credere@example.com",
+          genderCode: null,
           hasCnh: true,
           monthlyIncomeCents: 450_000,
           name: "Nome retornado pela Credere",
+          occupationCode: null,
           phone: "11999990000",
         },
         applicantKnown: true,
+        domains: {},
         missingFields: ["monthly_income"],
         requirements: {},
       }),
@@ -164,7 +235,7 @@ describe("SimulationForm", () => {
       screen.getByRole("button", { name: "UF de licenciamento" }),
     ).toHaveAttribute("data-invalid", "true");
     expect(
-      screen.getByText("Selecione o veículo e confirme os anos."),
+      screen.getAllByText("Selecione o veículo e confirme os anos.")[0],
     ).toBeInTheDocument();
     expect(
       container.querySelector("section.credere-form-fipe"),
@@ -180,6 +251,7 @@ function renderForm(
   >["onGetRequiredFields"] = async () => ({
     applicant: null,
     applicantKnown: false,
+    domains: {},
     missingFields: [],
     requirements: {},
   }),

@@ -3,10 +3,8 @@ import {
   type FiscalArtifactFormat,
   type FiscalProviderArtifact,
 } from "../../domains/fiscal/ports/fiscalProviderGateway.js";
-import {
-  SpedyGatewayConfigurationError,
-  SpedyGatewayHttpError,
-} from "./spedyErrors.js";
+import { SpedyGatewayHttpError } from "./spedyErrors.js";
+import { trustedSpedyUrl } from "./spedyHttpSecurity.js";
 
 type Fetcher = typeof fetch;
 
@@ -19,7 +17,7 @@ export async function requestSpedyFiscalArtifact(input: {
   format: FiscalArtifactFormat;
   path: string;
 }): Promise<FiscalProviderArtifact> {
-  const url = trustedSpedyArtifactUrl(input.baseUrl, input.path);
+  const url = trustedSpedyUrl(input.baseUrl, input.path);
   let response: Response;
   try {
     response = await input.fetcher(url, {
@@ -62,32 +60,6 @@ export async function requestSpedyFiscalArtifact(input: {
     bytes,
     contentType: input.format === "pdf" ? "application/pdf" : "application/xml",
   };
-}
-
-function trustedSpedyArtifactUrl(baseUrl: string, path: string) {
-  let trustedOrigin: URL;
-  let artifactUrl: URL;
-  try {
-    trustedOrigin = new URL(baseUrl);
-    artifactUrl = new URL(
-      path,
-      baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`,
-    );
-  } catch {
-    throw new SpedyGatewayConfigurationError(["SPEDY_API_URL"]);
-  }
-  if (
-    trustedOrigin.protocol !== "https:" ||
-    trustedOrigin.username ||
-    trustedOrigin.password ||
-    artifactUrl.protocol !== "https:" ||
-    artifactUrl.origin !== trustedOrigin.origin ||
-    artifactUrl.username ||
-    artifactUrl.password
-  ) {
-    throw new SpedyGatewayConfigurationError(["SPEDY_API_URL=https"]);
-  }
-  return artifactUrl.href;
 }
 
 async function readBoundedArtifactBody(

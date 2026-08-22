@@ -1,11 +1,14 @@
 import { Hono } from "hono";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { tenants } from "@lojaveiculosv2/db";
 import type { AccountProvisioningRepository } from "../../domains/identity/ports/accountProvisioningRepository.js";
 import type {
   ClerkUserProfile,
   IdentityUserSummary,
 } from "../../domains/identity/ports/accountProvisioningRepository.js";
 import { AccountProvisioningProviderError } from "../../domains/identity/services/AccountProvisioningService/serviceSupport.js";
+import { hasActiveTenantRole } from "../db/identity/drizzleAccountProvisioningReads.js";
+import type { DrizzleAccountProvisioningClient } from "../db/identity/drizzleAccountProvisioningSupport.js";
 import { createHttpAccountContext } from "./createHttpAccountContext.js";
 
 describe("createHttpAccountContext", () => {
@@ -66,6 +69,31 @@ describe("createHttpAccountContext", () => {
     );
     expect(regular.serviceContext.permissions).not.toContain("analytics.read");
   });
+
+  it("denies agency account permissions for a soft-deleted tenant", async () => {
+    const context = await captureContext(
+      new Request("https://api.local/api/v1/agency/tenants/tenant_1", {
+        headers: { "x-clerk-user-id": "clerk_agency" },
+      }),
+    );
+    const tenantRoleResolver = vi.fn((input) =>
+      hasActiveTenantRole(createSoftDeletedTenantRoleDb(), input),
+    );
+
+    const account = await createHttpAccountContext(context, {
+      repository: createRepository({ tenantRoleResolver }),
+      tenantId: "tenant_1",
+    });
+
+    expect(tenantRoleResolver).toHaveBeenCalledWith({
+      role: "agency",
+      tenantId: "tenant_1",
+      userId: "user_1",
+    });
+    expect(account.serviceContext.permissions).toEqual([
+      "identity.session.bootstrap",
+    ]);
+  });
 });
 
 async function captureContext(request: Request) {
@@ -84,6 +112,7 @@ function createRepository(
   options: {
     agency?: boolean;
     platformAdmin?: boolean;
+    tenantRoleResolver?: AccountProvisioningRepository["hasActiveTenantRole"];
   } = {},
 ): AccountProvisioningRepository {
   return {
@@ -104,9 +133,58 @@ function createRepository(
     findInvitationById: vi.fn(async () => null),
     findSessionBootstrap: vi.fn(),
     hasActivePlatformAdmin: vi.fn(async () => Boolean(options.platformAdmin)),
-    hasActiveTenantRole: vi.fn(async () => Boolean(options.agency)),
+    hasActiveTenantRole:
+      options.tenantRoleResolver ?? vi.fn(async () => Boolean(options.agency)),
     hasStorePermission: vi.fn(async () => false),
     markInvitationSendFailed: vi.fn(async () => true),
     markInvitationSent: vi.fn(async () => true),
   };
+}
+
+function createSoftDeletedTenantRoleDb(): DrizzleAccountProvisioningClient {
+  let hasDeletedAtGuard = false;
+  const db = {
+    select() {
+      return {
+        from() {
+          const builder = {
+            innerJoin() {
+              return builder;
+            },
+            limit() {
+              return Promise.resolve(
+                hasDeletedAtGuard ? [] : [{ id: "tenant_membership_1" }],
+              );
+            },
+            where(condition: unknown) {
+              hasDeletedAtGuard = referencesIsNull(
+                condition,
+                tenants.deletedAt,
+              );
+              return builder;
+            },
+          };
+          return builder;
+        },
+      };
+    },
+  };
+  return db as unknown as DrizzleAccountProvisioningClient;
+}
+
+function referencesIsNull(value: unknown, column: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const chunks = (value as { queryChunks?: readonly unknown[] }).queryChunks;
+  if (!chunks) return false;
+  return chunks.some((chunk, index) => {
+    if (chunk === column)
+      return chunkText(chunks[index + 1]).includes("is null");
+    return referencesIsNull(chunk, column);
+  });
+}
+
+function chunkText(value: unknown): string {
+  if (!value || typeof value !== "object") return "";
+  const content = (value as { value?: unknown }).value;
+  return Array.isArray(content) ? content.join("") : "";
 }
