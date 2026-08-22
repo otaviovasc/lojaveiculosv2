@@ -7,7 +7,10 @@ import type { DocumentDownloadDescriptor } from "../../../domains/documents/serv
 import type { DocumentVersion } from "../../../domains/documents/ports/documentRepository.js";
 import type { DocumentPreview } from "../../../domains/documents/preview/documentPreview.js";
 import type { DocumentWorkspaceServicePorts } from "../../../domains/documents/services/DocumentWorkspaceService/serviceSupport.js";
-import type { ListDocumentWorkspaceInput } from "../../../domains/documents/services/DocumentWorkspaceService/listDocumentWorkspace.js";
+import type {
+  ListDocumentWorkspaceInput,
+  ListDocumentWorkspaceResult,
+} from "../../../domains/documents/services/DocumentWorkspaceService/listDocumentWorkspace.js";
 import { listDocumentWorkspace } from "../../../domains/documents/services/DocumentWorkspaceService/listDocumentWorkspace.js";
 import { listDocumentTemplates } from "../../../domains/documents/services/DocumentTemplateService/listDocumentTemplates.js";
 import {
@@ -73,7 +76,7 @@ export type DocumentServices = {
   listWorkspace: (
     context: ServiceContext,
     input: ListDocumentWorkspaceInput,
-  ) => Promise<readonly LinkedDocument[]>;
+  ) => Promise<ListDocumentWorkspaceResult>;
   listTemplates: (
     context: ServiceContext,
   ) => Promise<readonly DocumentTemplate[]>;

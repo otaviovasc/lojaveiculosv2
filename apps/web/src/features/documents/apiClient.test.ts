@@ -43,13 +43,14 @@ describe("documents api client", () => {
       documentsRoutes.documents({
         kind: "sale_contract",
         limit: 150,
+        offset: 300,
         search: "contrato venda",
         status: "issued",
         targetId: "sale_1",
         targetType: "sale",
       }),
     ).toBe(
-      "/api/v1/documents?search=contrato+venda&kind=sale_contract&status=issued&targetId=sale_1&targetType=sale&limit=150",
+      "/api/v1/documents?search=contrato+venda&kind=sale_contract&status=issued&targetId=sale_1&targetType=sale&limit=150&offset=300",
     );
   });
 
@@ -279,6 +280,9 @@ describe("documents api client", () => {
             uploadedAt: "2026-01-01T10:00:00.000Z",
           },
         ],
+        limit: 100,
+        offset: 0,
+        total: 1,
       }),
     );
     const api = createDocumentsApi({
@@ -297,6 +301,36 @@ describe("documents api client", () => {
         "x-clerk-user-id": "clerk_1",
         "x-store-slug": "loja",
       }),
+    );
+  });
+
+  it("returns pagination metadata for the workspace", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({ documents: [], limit: 50, offset: 50, total: 123 }),
+      );
+    const api = createDocumentsApi({ fetch: fetchMock });
+    const controller = new AbortController();
+
+    const page = await api.listDocumentPage(
+      {
+        dateFrom: "2026-01-01",
+        dateTo: "2026-01-31",
+        limit: 50,
+        offset: 50,
+        origin: "manual",
+        scope: "vehicle",
+        search: "placa antiga",
+        status: "draft",
+      },
+      { signal: controller.signal },
+    );
+
+    expect(page).toEqual({ documents: [], limit: 50, offset: 50, total: 123 });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/documents?search=placa+antiga&dateFrom=2026-01-01&dateTo=2026-01-31&origin=manual&scope=vehicle&status=draft&limit=50&offset=50",
+      expect.objectContaining({ signal: controller.signal }),
     );
   });
 });

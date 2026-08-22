@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { z } from "zod";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { FiscalArtifactUnavailableError } from "../../../domains/fiscal/ports/fiscalProviderGateway.js";
 import {
   HttpContextAuthenticationError,
   HttpContextAuthorizationError,
@@ -117,6 +118,14 @@ function handleFiscalError(context: Context, error: unknown) {
   if (error instanceof FiscalProviderReferenceMissingError) {
     return jsonApiError(context, {
       code: "FISCAL_PROVIDER_REFERENCE_MISSING",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof FiscalArtifactUnavailableError) {
+    return jsonApiError(context, {
+      code: "FISCAL_ARTIFACT_UNAVAILABLE",
       error,
       message: error.message,
       status: 409,

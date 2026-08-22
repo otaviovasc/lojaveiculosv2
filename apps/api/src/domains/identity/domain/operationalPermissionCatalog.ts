@@ -72,6 +72,18 @@ export const operationalPermissionGroups = [
         "medium",
       ),
       permission(
+        "inventory.cost_update",
+        "Corrigir custos",
+        "Corrigir valor, tipo, data ou descrição de um custo do veículo.",
+        "high",
+      ),
+      permission(
+        "inventory.cost_void",
+        "Estornar custos",
+        "Cancelar custos do veículo com justificativa e histórico de auditoria.",
+        "high",
+      ),
+      permission(
         "inventory.checklist_read",
         "Visualizar vistorias (Checklists)",
         "Consultar listas de checagem e vistorias dos veículos.",

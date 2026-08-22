@@ -56,6 +56,11 @@ export const financeRoutes = {
       `/finance/entries/${encodeURIComponent(entryId)}/documents/${encodeURIComponent(documentId)}/content`,
       baseUrl,
     ),
+  entryReceipt: (entryId: string, baseUrl?: string) =>
+    createFinanceEndpoint(
+      `/finance/entries/${encodeURIComponent(entryId)}/receipt`,
+      baseUrl,
+    ),
   entries: (
     baseUrl?: string,
     input: ListFinanceEntriesInput | FinanceEntryType = {},

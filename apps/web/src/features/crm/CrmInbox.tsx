@@ -35,6 +35,8 @@ import { CrmVisitsPage } from "./CrmVisitsPage";
 import { MessageCircle, PlugZap } from "lucide-react";
 import { readPendingComposioConnectionId } from "./crmComposioOAuth";
 import { consumeCrmOlxOauthReturn } from "./crmOlxOauthReturn";
+import { CrmStatsPage } from "./CrmStatsPage";
+import { crmScopeHash, readCrmScopeFromHash } from "./crmRouteState";
 
 export function CrmInbox({
   api,
@@ -56,7 +58,7 @@ export function CrmInbox({
   const [activeScope, setActiveScope] = useState<CrmScope>(() =>
     readPendingComposioConnectionId() || consumeCrmOlxOauthReturn()
       ? "connection"
-      : "conversations",
+      : readCrmScopeFromHash(window.location.hash),
   );
   const [visitedScopes, setVisitedScopes] = useState<ReadonlySet<CrmScope>>(
     () => new Set<CrmScope>([activeScope]),
@@ -176,7 +178,10 @@ export function CrmInbox({
             activeScope={activeScope}
             connectionLabel={status.label}
             connectionTone={status.tone}
-            onChange={setActiveScope}
+            onChange={(scope) => {
+              setActiveScope(scope);
+              window.history.replaceState(null, "", `#${crmScopeHash(scope)}`);
+            }}
             tagCount={inbox.availableTags.length}
             unreadCount={unreadCount}
           />
@@ -324,6 +329,18 @@ export function CrmInbox({
                   canManage={inbox.permissions.canVisitsManage}
                   canRead={inbox.permissions.canVisitsRead}
                   listVehicles={inbox.listVehicles}
+                />
+              </div>
+            ) : null}
+            {visitedScopes.has("statistics") ? (
+              <div
+                className={scopePanelClassName("statistics")}
+                key="statistics"
+              >
+                <CrmStatsPage
+                  api={conversationApi}
+                  canRead={inbox.permissions.canList}
+                  connections={inbox.connections}
                 />
               </div>
             ) : null}

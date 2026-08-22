@@ -1,5 +1,6 @@
 import {
   CalendarClock,
+  ChartNoAxesCombined,
   CarFront,
   MessageSquareText,
   Megaphone,
@@ -15,6 +16,7 @@ export type CrmScope =
   | "conversations"
   | "integrations"
   | "schedules"
+  | "statistics"
   | "tags"
   | "visits";
 
@@ -42,6 +44,11 @@ const scopes: CrmScopeOption[] = [
     icon: CarFront,
     id: "visits",
     label: "Visitas",
+  },
+  {
+    icon: ChartNoAxesCombined,
+    id: "statistics",
+    label: "Estatísticas",
   },
   {
     icon: Megaphone,

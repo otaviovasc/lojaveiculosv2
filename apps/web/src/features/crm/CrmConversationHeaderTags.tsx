@@ -22,7 +22,7 @@ export function SessionTagRow({
             style={{
               backgroundColor: `color-mix(in srgb, ${tagColor} 16%, var(--color-panel))`,
               borderColor: `color-mix(in srgb, ${tagColor} 35%, var(--color-line))`,
-              color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
+              color: "var(--color-text)",
             }}
           >
             <span

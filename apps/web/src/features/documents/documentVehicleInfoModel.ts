@@ -6,6 +6,7 @@ import {
   readRecordString,
 } from "./documentMetadataReaders";
 import type { DocumentLinkTarget, WorkspaceDocument } from "./types";
+import type { InventoryUnitStatus } from "../inventory/model/types";
 
 export type DocumentVehicleInfo = {
   id: string;
@@ -14,6 +15,7 @@ export type DocumentVehicleInfo = {
   plate: string | null;
   primaryMediaUrl: string | null;
   stockNumber: string | null;
+  status: InventoryUnitStatus | null;
   targetType: "vehicle_unit";
   unitId: string | null;
   vin: string | null;
@@ -82,12 +84,34 @@ export function documentVehicleInfo(
     stockNumber:
       readMetadataString(document, ["stockNumber"]) ??
       readRecordString(vehicle, ["stockNumber"]),
+    status: readVehicleUnitStatus(
+      readMetadataString(document, ["unitStatus", "vehicleStatus"]) ??
+        readRecordString(vehicle, ["unitStatus", "status"]),
+    ),
     targetType,
     unitId: unitId ?? document.context.targetId,
     vin:
       readMetadataString(document, ["vin", "chassis", "chassi"]) ??
       readRecordString(vehicle, ["vin", "chassis", "chassi"]),
   };
+}
+
+const vehicleUnitStatuses = new Set<InventoryUnitStatus>([
+  "acquired",
+  "available",
+  "delivered",
+  "inactive",
+  "in_preparation",
+  "reserved",
+  "sold",
+]);
+
+function readVehicleUnitStatus(
+  value: string | null,
+): InventoryUnitStatus | null {
+  return value && vehicleUnitStatuses.has(value as InventoryUnitStatus)
+    ? (value as InventoryUnitStatus)
+    : null;
 }
 
 function isVehicleLinkedDocument(document: WorkspaceDocument) {

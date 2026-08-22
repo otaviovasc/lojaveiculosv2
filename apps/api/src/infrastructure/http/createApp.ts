@@ -8,7 +8,6 @@ import { docsFeature } from "../../features/docs/controllers/docs.controller.js"
 import { createCrmFeature } from "../../features/crm/controllers/crm.controller.js";
 import { createFinanceFeature } from "../../features/finance/controllers/finance.controller.js";
 import { installCredereFinancingRoutes } from "../../features/financing/controllers/installCredereFinancingRoutes.js";
-import { createAgencyFeature } from "../../features/agency/controllers/agency.controller.js";
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
@@ -21,7 +20,6 @@ import { createRolesFeature } from "../../features/identity/controllers/roles.co
 import type { CreateAppOptions } from "./createAppOptions.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 import { createHttpAccountContextFactory } from "./createHttpAccountContextFactory.js";
-import { createAgencyAccountContextFactory } from "./createAgencyAccountContextFactory.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
 import { installHealthRoutes } from "./installHealthRoutes.js";
@@ -34,6 +32,7 @@ import { createBillingWebhookContextFactory } from "./billingWebhookContextFacto
 import { installFiscalRoutes } from "./installFiscalRoutes.js";
 import { installMarketplaceRoutes } from "./installMarketplaceRoutes.js";
 import { createPublicStorefrontFeatureOptions } from "./createAppStorefrontOptions.js";
+import { installAgencyRoutes } from "./installAgencyRoutes.js";
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
@@ -125,21 +124,7 @@ export function createApp(options: CreateAppOptions = {}) {
       ...(options.billingServices ? { services: options.billingServices } : {}),
     }),
   );
-  const agencyAccountContextFactory = createAgencyAccountContextFactory(
-    options,
-    options.accountProvisioningServices,
-  );
-  if (options.accountProvisioningServices) {
-    app.route(
-      "/api/v1/agency",
-      createAgencyFeature({
-        accountContextFactory: agencyAccountContextFactory,
-        ...(options.billingServices
-          ? { services: options.billingServices }
-          : {}),
-      }),
-    );
-  }
+  const agencyAccountContextFactory = installAgencyRoutes(app, options);
   installCredereFinancingRoutes(app, {
     accountContextFactory: agencyAccountContextFactory,
     callbackContextFactory: createPublicOAuthCallbackContextFactory(options),

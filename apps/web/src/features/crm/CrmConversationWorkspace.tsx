@@ -148,6 +148,9 @@ export function CrmConversationWorkspace({
         ) : (
           <SessionList
             activeCycleId={inbox.activeCycleId}
+            hasMore={inbox.hasMoreSessions}
+            isLoadingMore={inbox.isLoadingMoreSessions}
+            onLoadMore={() => void inbox.loadMoreSessions()}
             onSelect={(cycleId) => {
               setDetailsOpen(false);
               inbox.setActiveCycleId(cycleId);
@@ -243,7 +246,9 @@ export function CrmConversationWorkspace({
                 inbox.connectionFilterId ?? "automatic",
               )}`}
               actionsDisabled={inbox.isSending || !inbox.canSendText}
+              hasOlderMessages={inbox.hasOlderMessages}
               isLoading={inbox.isLoadingMessages}
+              isLoadingOlderMessages={inbox.isLoadingOlderMessages}
               messages={inbox.messages}
               onDelete={
                 inbox.permissions.canSend && providerCapabilities.allowDelete
@@ -270,6 +275,8 @@ export function CrmConversationWorkspace({
                   ? (files) => composerRef.current?.openFiles(files)
                   : undefined
               }
+              onLoadOlder={inbox.loadOlderMessages}
+              olderMessagesError={inbox.olderMessagesError}
             />
             {inbox.canSendText ? (
               <>

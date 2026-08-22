@@ -6,7 +6,7 @@ export interface TransactionItem {
   description: string;
   origin: string;
   value: number;
-  status: "Registrado";
+  status: "Estornado" | "Registrado";
 }
 
 interface FinanceiroCashFlowSectionProps {
@@ -20,7 +20,9 @@ export function FinanceiroCashFlowSection({
 }: FinanceiroCashFlowSectionProps) {
   const cashFlowEntradas = 0;
   const cashFlowSaidas = Math.abs(
-    items.reduce((acc, curr) => acc + curr.value, 0),
+    items
+      .filter((item) => item.status === "Registrado")
+      .reduce((acc, curr) => acc + curr.value, 0),
   );
 
   return (
@@ -101,13 +103,31 @@ export function FinanceiroCashFlowSection({
                     {item.description}
                   </td>
                   <td className="py-3 text-muted">{item.origin}</td>
-                  <td className="py-3 text-right font-black text-danger">
+                  <td
+                    className={
+                      item.status === "Estornado"
+                        ? "py-3 text-right font-black text-muted line-through"
+                        : "py-3 text-right font-black text-danger"
+                    }
+                  >
                     {formatBRL(item.value)}
                   </td>
                   <td className="py-3 text-right">
                     <span className="inline-flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-accent shrink-0" />
-                      <span className="text-accent font-bold">
+                      <span
+                        className={
+                          item.status === "Estornado"
+                            ? "size-1.5 shrink-0 rounded-full bg-muted"
+                            : "size-1.5 shrink-0 rounded-full bg-accent"
+                        }
+                      />
+                      <span
+                        className={
+                          item.status === "Estornado"
+                            ? "font-bold text-muted"
+                            : "font-bold text-accent"
+                        }
+                      >
                         {item.status}
                       </span>
                     </span>

@@ -133,6 +133,16 @@ export const inventoryRoutes = {
       `/inventory/units/${encodeURIComponent(unitId)}/costs`,
       baseUrl,
     ),
+  cost: (unitId: string, costId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/costs/${encodeURIComponent(costId)}`,
+      baseUrl,
+    ),
+  voidCost: (unitId: string, costId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/costs/${encodeURIComponent(costId)}/void`,
+      baseUrl,
+    ),
   checklists: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/units/${encodeURIComponent(unitId)}/checklists`,

@@ -1,4 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -26,6 +29,11 @@ export const vehicleChecklistStatus = pgEnum("vehicle_checklist_status", [
   "waived",
 ]);
 
+export const vehicleCostStatus = pgEnum("vehicle_cost_status", [
+  "active",
+  "voided",
+]);
+
 export const vehicleCosts = pgTable(
   "vehicle_costs",
   {
@@ -37,18 +45,33 @@ export const vehicleCosts = pgTable(
     description: text("description"),
     kind: vehicleCostKind("kind").notNull(),
     metadata: jsonb("metadata").notNull().default({}),
+    status: vehicleCostStatus("status").notNull().default("active"),
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    unitId: uuid("unit_id")
-      .notNull()
-      .references(() => vehicleUnits.id),
+    unitId: uuid("unit_id").notNull(),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
   },
   (table) => [
+    check(
+      "vehicle_costs_status_void_fields_check",
+      sql`(${table.status} = 'active' AND ${table.voidedAt} IS NULL AND ${table.voidReason} IS NULL) OR (${table.status} = 'voided' AND ${table.voidedAt} IS NOT NULL AND ${table.voidReason} IS NOT NULL AND length(btrim(${table.voidReason})) >= 3)`,
+    ),
+    foreignKey({
+      columns: [table.unitId, table.tenantId, table.storeId],
+      foreignColumns: [
+        vehicleUnits.id,
+        vehicleUnits.tenantId,
+        vehicleUnits.storeId,
+      ],
+      name: "vehicle_costs_unit_scope_fk",
+    }),
     index("vehicle_costs_kind_idx").on(table.kind),
+    index("vehicle_costs_status_idx").on(table.status),
     index("vehicle_costs_store_id_idx").on(table.storeId),
     index("vehicle_costs_tenant_id_idx").on(table.tenantId),
     index("vehicle_costs_unit_id_idx").on(table.unitId),

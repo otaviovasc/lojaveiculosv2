@@ -19,6 +19,8 @@ import { createDrizzleCrmWebhookEventRepository } from "../../../infrastructure/
 import { createDrizzleCrmOutboundIntentRepository } from "../../../infrastructure/db/crm/drizzleCrmOutboundIntentRepository.js";
 import { createDrizzleCrmConversationRepository } from "../../../infrastructure/db/crm/drizzleCrmConversationRepository.js";
 import { createDrizzleCrmConversationCycleCommandRepository } from "../../../infrastructure/db/crm/drizzleCrmConversationCycleCommandRepository.js";
+import { createDrizzleCrmStatisticsReadModel } from "../../../infrastructure/db/crm/drizzleCrmStatisticsReadModel.js";
+import { emptyCrmStatisticsSnapshot } from "../../../domains/crm/readModels/crmStatisticsReadModel.js";
 import {
   createOlxWebhookSecurity,
   CrmOlxWebhookSecurityConfigurationError,
@@ -102,6 +104,9 @@ export function resolveCrmPorts(
           createDrizzleCrmConversationCycleCommandRepository(
             options.drizzleClient,
           ),
+        crmStatisticsReadModel: createDrizzleCrmStatisticsReadModel(
+          options.drizzleClient,
+        ),
         environment,
         vehicleInventory: createCrmVehicleInventoryPorts(options.drizzleClient),
       }
@@ -135,6 +140,9 @@ export function resolveCrmPorts(
         crmConversationRepository: memoryConversationRepository,
         crmConversationCycleCommandRepository:
           createMemoryCrmConversationCycleCommandRepository(),
+        crmStatisticsReadModel: {
+          load: async () => emptyCrmStatisticsSnapshot(),
+        },
         environment,
       };
   const ports = { ...defaultPorts, ...(options.ports ?? {}) };
@@ -189,6 +197,9 @@ export function resolveCrmPorts(
             createDrizzleCrmConversationCycleCommandRepository(
               tx as DrizzleCrmClient,
             ),
+          crmStatisticsReadModel: createDrizzleCrmStatisticsReadModel(
+            tx as DrizzleCrmClient,
+          ),
           vehicleInventory: createCrmVehicleInventoryPorts(
             tx as DrizzleCrmClient,
           ),

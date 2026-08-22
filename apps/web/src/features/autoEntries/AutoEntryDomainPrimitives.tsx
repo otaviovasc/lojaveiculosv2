@@ -68,13 +68,9 @@ export function AutoEntrySaveAction({
   if (!canManage) return null;
   return (
     <div className="auto-entry-domain-card__save flex justify-end border-t border-line/50 pt-4">
-      <div
-        className={cx(
-          "ae-save-action",
-          isDirty === false && "ae-save-action--pristine",
-        )}
-      >
+      <div className="ae-save-action">
         <FeatureActionButton
+          disabled={isDirty === false}
           icon={Save}
           isBusy={isSaving}
           label={label}

@@ -11,6 +11,7 @@ import {
 } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import type { FiscalApi } from "./apiClient";
 import { FiscalDocumentList } from "./FiscalDocumentList";
 import type { FiscalStatusFilter } from "./fiscalDocumentDisplay";
@@ -30,7 +31,11 @@ vi.stubGlobal(
 );
 
 describe("FiscalDocumentList", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   it("filters by text search across recipient, key and reference", () => {
     renderList();
@@ -168,9 +173,92 @@ describe("FiscalDocumentList", () => {
     fireEvent.click(syncButtons[0]!);
     expect(api.syncDocumentStatus).toHaveBeenCalledWith("doc_queued", {});
   });
+
+  it("downloads official PDF/XML bytes for issued documents", async () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:fiscal-artifact"),
+      revokeObjectURL: vi.fn(),
+    });
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    const { api } = renderList();
+    const table = screen.getByRole("table");
+
+    fireEvent.click(
+      within(table).getAllByRole("button", {
+        name: "Baixar PDF oficial do documento fiscal",
+      })[0]!,
+    );
+
+    await waitFor(() =>
+      expect(api.downloadDocumentArtifact).toHaveBeenCalledWith(
+        "doc_issued",
+        "pdf",
+      ),
+    );
+    await waitFor(() => expect(click).toHaveBeenCalled());
+    expect(within(table).getByRole("status")).toHaveTextContent(
+      "Download do PDF oficial iniciado.",
+    );
+  });
+
+  it("keeps unavailable artifacts visible and disabled", () => {
+    renderList();
+    const table = screen.getByRole("table");
+
+    expect(
+      within(table).getByRole("button", {
+        name: /PDF oficial indisponível\. Disponível após a autorização/,
+      }),
+    ).toBeDisabled();
+    expect(
+      within(table).getByRole("button", {
+        name: /XML oficial indisponível\. O provedor não disponibilizou/,
+      }),
+    ).toBeDisabled();
+  });
+
+  it("keeps download actions disabled without the server capability", () => {
+    renderList({ canDownloadOfficialArtifacts: false });
+    const table = screen.getByRole("table");
+
+    expect(
+      within(table).getAllByRole("button", {
+        name: /PDF oficial indisponível\. Sem permissão/,
+      })[0],
+    ).toBeDisabled();
+  });
+
+  it("shows a correlated per-row error when official bytes are unavailable", async () => {
+    const { api } = renderList();
+    vi.mocked(api.downloadDocumentArtifact).mockRejectedValueOnce(
+      new AppApiError({
+        code: "FISCAL_ARTIFACT_UNAVAILABLE",
+        message: "Official artifact unavailable.",
+        requestId: "request_fiscal_1",
+        status: 409,
+        userMessage: "O arquivo oficial ainda não está disponível.",
+      }),
+    );
+    const table = screen.getByRole("table");
+
+    fireEvent.click(
+      within(table).getAllByRole("button", {
+        name: "Baixar XML oficial do documento fiscal",
+      })[0]!,
+    );
+
+    expect(await within(table).findByRole("alert")).toHaveTextContent(
+      "O arquivo oficial ainda não está disponível. ID do erro: request_fiscal_1",
+    );
+  });
 });
 
-function renderList(overrides?: { documents?: FiscalDocument[] }) {
+function renderList(overrides?: {
+  canDownloadOfficialArtifacts?: boolean;
+  documents?: FiscalDocument[];
+}) {
   const api = createListApi();
   const onCorrect = vi.fn();
   const onError = vi.fn();
@@ -182,6 +270,9 @@ function renderList(overrides?: { documents?: FiscalDocument[] }) {
     return (
       <FiscalDocumentList
         api={api}
+        canDownloadOfficialArtifacts={
+          overrides?.canDownloadOfficialArtifacts ?? true
+        }
         documents={documents}
         onCorrect={onCorrect}
         onError={onError}
@@ -203,6 +294,11 @@ function createListApi(): FiscalApi {
     cancelDocument: vi.fn(async (_id: string) => createDocuments()[0]!),
     createRecipient: vi.fn(),
     createTemplate: vi.fn(),
+    downloadDocumentArtifact: vi.fn(async (_id, format) => ({
+      blob: new Blob([format === "pdf" ? "%PDF-1.7" : "<nfe />"]),
+      contentType: format === "pdf" ? "application/pdf" : "application/xml",
+      fileName: `nota.${format}`,
+    })),
     getOverview: vi.fn(),
     issueDocument: vi.fn(),
     listRecipients: vi.fn(async () => []),
@@ -230,7 +326,7 @@ function createDocuments(): FiscalDocument[] {
         vehicleNfe: { sale: { price: 85000 } },
       },
       provider: "spedy",
-      providerDocumentId: "spedy_1",
+      hasProviderReference: true,
       recipientId: null,
       status: "issued",
       templateId: null,
@@ -248,7 +344,7 @@ function createDocuments(): FiscalDocument[] {
         recipient: { document: "98765432000100", name: "Oficina Central" },
       },
       provider: "spedy",
-      providerDocumentId: "spedy_2",
+      hasProviderReference: true,
       recipientId: null,
       status: "queued",
       templateId: null,
@@ -267,7 +363,7 @@ function createDocuments(): FiscalDocument[] {
         recipient: { document: "11222333000144", name: "Loja Parceira" },
       },
       provider: "spedy",
-      providerDocumentId: "spedy_3",
+      hasProviderReference: true,
       recipientId: null,
       status: "rejected",
       templateId: null,
@@ -286,7 +382,7 @@ function createDocuments(): FiscalDocument[] {
         recipient: { document: "55666777000188", name: "Financeira ABC" },
       },
       provider: "spedy",
-      providerDocumentId: "spedy_4",
+      hasProviderReference: true,
       recipientId: "rec_1",
       status: "issued",
       templateId: "tpl_1",

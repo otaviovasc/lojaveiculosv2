@@ -179,6 +179,7 @@ function createHarness(
     ...createFiscalTestAuxiliaryPorts(),
     fiscalProviderGateway: {
       cancelDocument: unused("cancelDocument"),
+      downloadDocumentArtifact: unused("downloadDocumentArtifact"),
       getProviderStatus: unused("getProviderStatus"),
       issueDocument: unused("issueDocument"),
       syncDocumentStatus,

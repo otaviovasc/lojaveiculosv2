@@ -43,6 +43,8 @@ import type {
   CrmConversationCycleStatus,
 } from "./crmConversationTypes";
 
+const CRM_SESSION_PAGE_SIZE = 40;
+
 export function useCrmInbox(api: CrmConversationApi) {
   const accountSession = useOptionalAccountSession();
   const initialCycleId = readInitialCycleId();
@@ -53,6 +55,9 @@ export function useCrmInbox(api: CrmConversationApi) {
   );
   const [error, setError] = useState<Error | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [isLoadingMoreSessions, setIsLoadingMoreSessions] = useState(false);
+  const [hasMoreSessions, setHasMoreSessions] = useState(false);
+  const loadedSessionOffsetRef = useRef(0);
   const [connectionFilterId, setConnectionFilterId] = useState<string | null>(
     null,
   );
@@ -264,6 +269,34 @@ export function useCrmInbox(api: CrmConversationApi) {
       unreadOnly,
     });
 
+  const createSessionQuery = useCallback(
+    (offset: number) => ({
+      ...createConnectionQuery(sessionListConnectionId!),
+      ...(quickFilter === "others" && otherAssigneeId
+        ? { assigneeId: otherAssigneeId }
+        : {}),
+      filter: quickFilter,
+      ...(humanAttendanceFilter
+        ? { humanAttendanceState: humanAttendanceFilter }
+        : {}),
+      limit: CRM_SESSION_PAGE_SIZE,
+      offset,
+      ...(searchRef.current ? { search: searchRef.current } : {}),
+      ...(selectedTagIds.length ? { tagIds: selectedTagIds } : {}),
+      ...(statusFilter ? { status: statusFilter } : {}),
+      ...(unreadOnly ? { unreadOnly } : {}),
+    }),
+    [
+      humanAttendanceFilter,
+      otherAssigneeId,
+      quickFilter,
+      selectedTagIds,
+      sessionListConnectionId,
+      statusFilter,
+      unreadOnly,
+    ],
+  );
+
   useEffect(() => {
     if (initialSessionResolved || !initialCycleId || !permissions.canList) {
       return;
@@ -305,22 +338,9 @@ export function useCrmInbox(api: CrmConversationApi) {
       if (!sessionListConnectionId || !permissions.canList) return;
       const requestGeneration = ++sessionRequestGenerationRef.current;
       const connectionQuery = createConnectionQuery(sessionListConnectionId);
-      const nextSessions = await api.listConversationCycles({
-        ...connectionQuery,
-        ...(quickFilter === "others" && otherAssigneeId
-          ? { assigneeId: otherAssigneeId }
-          : {}),
-        filter: quickFilter,
-        ...(humanAttendanceFilter
-          ? { humanAttendanceState: humanAttendanceFilter }
-          : {}),
-        limit: 40,
-        offset: 0,
-        ...(searchRef.current ? { search: searchRef.current } : {}),
-        ...(selectedTagIds.length ? { tagIds: selectedTagIds } : {}),
-        ...(statusFilter ? { status: statusFilter } : {}),
-        ...(unreadOnly ? { unreadOnly } : {}),
-      });
+      const nextSessions = await api.listConversationCycles(
+        createSessionQuery(0),
+      );
       let resolved = nextSessions;
       let authorizedCycleIds: Set<CrmConversationCycleId> | null = null;
       let isCompleteAuthorizationSnapshot = false;
@@ -374,6 +394,16 @@ export function useCrmInbox(api: CrmConversationApi) {
           ? { pruneLocalOnly: shouldPruneLocalSession }
           : {}),
       });
+      if (!options.preserveLocalOnly) {
+        loadedSessionOffsetRef.current = nextSessions.length;
+        setHasMoreSessions(nextSessions.length === CRM_SESSION_PAGE_SIZE);
+      } else if (loadedSessionOffsetRef.current <= CRM_SESSION_PAGE_SIZE) {
+        loadedSessionOffsetRef.current = Math.max(
+          loadedSessionOffsetRef.current,
+          nextSessions.length,
+        );
+        setHasMoreSessions(nextSessions.length === CRM_SESSION_PAGE_SIZE);
+      }
       setActiveCycleId((current) =>
         current && resolved.some((cycle) => cycle.id === current)
           ? current
@@ -390,6 +420,7 @@ export function useCrmInbox(api: CrmConversationApi) {
     [
       api,
       canAccessSessionSnapshot,
+      createSessionQuery,
       initialCycleId,
       mergeCycles,
       sessionListConnectionId,
@@ -404,6 +435,45 @@ export function useCrmInbox(api: CrmConversationApi) {
       unreadOnly,
     ],
   );
+
+  const loadMoreSessions = useCallback(async () => {
+    if (
+      !sessionListConnectionId ||
+      !permissions.canList ||
+      !hasMoreSessions ||
+      isLoadingMoreSessions
+    ) {
+      return;
+    }
+    const requestGeneration = ++sessionRequestGenerationRef.current;
+    setIsLoadingMoreSessions(true);
+    try {
+      const nextSessions = await api.listConversationCycles(
+        createSessionQuery(loadedSessionOffsetRef.current),
+      );
+      if (requestGeneration !== sessionRequestGenerationRef.current) return;
+      loadedSessionOffsetRef.current += nextSessions.length;
+      mergeCycles(nextSessions, {
+        preserveLocalOnly: true,
+        snapshotKind: "poll",
+      });
+      setHasMoreSessions(nextSessions.length === CRM_SESSION_PAGE_SIZE);
+    } catch (caught) {
+      if (requestGeneration === sessionRequestGenerationRef.current) {
+        setError(asError(caught));
+      }
+    } finally {
+      setIsLoadingMoreSessions(false);
+    }
+  }, [
+    api,
+    createSessionQuery,
+    hasMoreSessions,
+    isLoadingMoreSessions,
+    mergeCycles,
+    permissions.canList,
+    sessionListConnectionId,
+  ]);
 
   const patchSession = useCallback((nextSession: CrmConversationCycle) => {
     setSessions((current) =>
@@ -548,10 +618,14 @@ export function useCrmInbox(api: CrmConversationApi) {
     deleteTag: tagState.deleteTag,
     error: error ?? connections.error ?? routing.error,
     hasConnection: Boolean(connectionId),
+    hasOlderMessages: messageState.hasOlderMessages,
+    hasMoreSessions,
     hasRetryableSessionAction: sessionActions.hasRetryableSessionAction,
     isLoading: connections.isLoading || routing.isLoading || isLoadingSessions,
     humanAttendanceFilter,
     isLoadingMessages: messageState.isLoadingMessages,
+    isLoadingOlderMessages: messageState.isLoadingOlderMessages,
+    isLoadingMoreSessions,
     isMutatingSession: sessionActions.isMutatingSession,
     isSessionActionPending: sessionActions.isSessionActionPending,
     isConcludingSession: sessionActions.isConcludingSession,
@@ -562,7 +636,10 @@ export function useCrmInbox(api: CrmConversationApi) {
     listCatalogProducts: messageState.listCatalogProducts,
     listScheduledMessages: scheduledMessages.listScheduledMessages,
     listVehicles,
+    loadOlderMessages: messageState.loadOlderMessages,
+    loadMoreSessions,
     messages: messageState.messages,
+    olderMessagesError: messageState.olderMessagesError,
     otherAssigneeId,
     permissions,
     processDueScheduledMessages: scheduledMessages.processDueScheduledMessages,

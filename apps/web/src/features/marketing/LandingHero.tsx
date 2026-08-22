@@ -17,14 +17,14 @@ export function HeroSection() {
       <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-20 pt-32 text-center sm:px-8 lg:px-10">
         <AnimatedContent duration={0.6} trigger="mount">
           <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-4 py-1.5 text-xs font-black uppercase tracking-[0.28em] text-app-text">
-            <Sparkles className="size-3.5 text-accent" />
+            <Sparkles className="size-3.5 text-accent-text" />
             {landingHero.badge}
           </span>
         </AnimatedContent>
         <AnimatedContent delay={0.08} duration={0.6} trigger="mount">
           <h1 className="mt-8 max-w-5xl font-display text-4xl font-black leading-[1.02] tracking-tight text-app-text sm:text-6xl lg:text-7xl">
             {landingHero.titleLead}{" "}
-            <span className="text-accent">{landingHero.titleAccent}</span>{" "}
+            <span className="text-accent-text">{landingHero.titleAccent}</span>{" "}
             {landingHero.titleTrail}
           </h1>
         </AnimatedContent>
@@ -53,7 +53,7 @@ export function HeroSection() {
                   className="landing-glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-muted"
                   key={pill}
                 >
-                  <PillIcon className="size-3.5 text-accent" />
+                  <PillIcon className="size-3.5 text-accent-text" />
                   {pill}
                 </span>
               );

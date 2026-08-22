@@ -57,6 +57,7 @@ export function createIssueHarness(status: "failed" | "issued" = "issued") {
     ...createFiscalTestAuxiliaryPorts(),
     fiscalProviderGateway: {
       cancelDocument: unused("cancelDocument"),
+      downloadDocumentArtifact: unused("downloadDocumentArtifact"),
       getProviderStatus: async () => ({
         configured: true,
         missingConfiguration: [],

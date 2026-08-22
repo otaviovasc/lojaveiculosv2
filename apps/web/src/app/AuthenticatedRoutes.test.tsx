@@ -22,6 +22,7 @@ vi.mock("./AppLazyRoutes", () => {
     AgencyDashboardPage: emptyRoute,
     AgencyLayout: () => <Outlet />,
     AgencyStatsPage: emptyRoute,
+    AgencyTeamAccessPage: () => <div>Agency team access route</div>,
     ObservabilityPage: () => <div>Observability route</div>,
     OwnerOnboardingPage: emptyRoute,
     PlatformAdminPage: emptyRoute,
@@ -44,6 +45,23 @@ describe("AuthenticatedRoutes", () => {
     );
 
     expect(await screen.findByText("Credere agency route")).toBeInTheDocument();
+  });
+
+  it("keeps agency team access behind the authenticated route boundary", async () => {
+    render(
+      <MemoryRouter initialEntries={["/agency/admin/team-access"]}>
+        <Routes>
+          <Route
+            path="/agency/admin/*"
+            element={<AuthenticatedRoutes section="agency-admin" />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText("Agency team access route"),
+    ).toBeInTheDocument();
   });
 
   it("keeps the platform observability route behind the authenticated route boundary", async () => {

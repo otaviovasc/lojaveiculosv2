@@ -87,6 +87,11 @@ describe("API error display helpers", () => {
       "Servico temporariamente indisponivel. Tente novamente em instantes.",
     ],
     [
+      "FISCAL_ARTIFACT_UNAVAILABLE",
+      409,
+      "O arquivo fiscal oficial ainda não está disponível. Atualize o status da nota e tente novamente.",
+    ],
+    [
       "CRM_LEAD_NOT_FOUND",
       422,
       "Nao encontramos esse registro. Atualize a tela e tente novamente.",

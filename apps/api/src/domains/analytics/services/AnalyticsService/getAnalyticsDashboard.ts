@@ -26,6 +26,13 @@ export async function getAnalyticsDashboard(
   );
 
   const dashboard = await ports.analyticsRepository.getDashboard({
+    access: {
+      crm:
+        context.permissions.includes("crm.pipeline.read") ||
+        context.permissions.includes("crm.access"),
+      documents: context.permissions.includes("documents.read"),
+      finance: context.permissions.includes("finance.read"),
+    },
     period: input.period,
     storeId: scope.storeId,
     tenantId: scope.tenantId,

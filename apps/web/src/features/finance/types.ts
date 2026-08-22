@@ -52,8 +52,15 @@ export type FinanceEntryDocument = {
   fileName?: string | null;
   id: string;
   kind?: string;
+  linkRole?: string;
   mimeType?: string | null;
+  status?: string;
   title: string;
+};
+
+export type GenerateFinanceEntryReceiptResult = {
+  document: FinanceEntryDocument;
+  generated: boolean;
 };
 
 export type FinanceEntryDetail = FinanceEntryBundle & {
@@ -88,6 +95,7 @@ export type UpdateFinanceEntryInput = Partial<
     | "amountCents"
     | "category"
     | "dueAt"
+    | "links"
     | "metadata"
     | "name"
     | "paidAt"

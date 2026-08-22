@@ -3,6 +3,8 @@ import type {
   ObjectStorage,
 } from "../../shared/storage/objectStorage.js";
 
+const localEnvironmentPrefix = "l";
+
 export function createMemoryObjectStorage(): ObjectStorage {
   return {
     async createDownload(input) {
@@ -40,5 +42,7 @@ function createStorageKey(
         scopeSegments: readonly string[];
       },
 ): string {
-  return [...input.scopeSegments, input.fileName].join("/");
+  return [localEnvironmentPrefix, ...input.scopeSegments, input.fileName].join(
+    "/",
+  );
 }

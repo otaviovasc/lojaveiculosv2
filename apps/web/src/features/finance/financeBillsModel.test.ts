@@ -8,6 +8,7 @@ import {
   initialFinanceFilters,
   loadFinanceWorkspace,
   recurringEntryToDraft,
+  entryToDraft,
   toEntryInput,
   toRecurringInput,
 } from "./financeBillsModel";
@@ -54,6 +55,32 @@ describe("finance bills model", () => {
       status: "paid",
       type: "expense",
     });
+  });
+
+  it("serializes and restores a specific vehicle-unit association", () => {
+    const input = toEntryInput({
+      ...createEntryDraft("expense"),
+      amount: "850",
+      category: "Manutenção",
+      name: "Revisão do veículo",
+      vehicleUnitId: "unit_42",
+    });
+
+    expect(input.links).toEqual([
+      { targetId: "unit_42", targetType: "vehicle_unit" },
+    ]);
+    expect(
+      entryToDraft({
+        ...entry("vehicle", "Revisão", "Manutenção", "pending", "2026-06-25"),
+        links: [
+          {
+            entryId: "vehicle",
+            targetId: "unit_42",
+            targetType: "vehicle_unit",
+          },
+        ],
+      }).vehicleUnitId,
+    ).toBe("unit_42");
   });
 
   it("maps recurrence settings to the V2 recurring entry contract", () => {
@@ -134,6 +161,37 @@ describe("finance bills model", () => {
         status: "pending",
       }).map((item) => item.id),
     ).toEqual(["1"]);
+  });
+
+  it("filters entries by one linked vehicle unit", () => {
+    const linked = {
+      ...entry("1", "Revisão", "Veículo", "pending", "2026-06-25"),
+      links: [
+        {
+          entryId: "1",
+          targetId: "unit_1",
+          targetType: "vehicle_unit" as const,
+        },
+      ],
+    };
+    const other = {
+      ...entry("2", "Seguro", "Veículo", "pending", "2026-06-25"),
+      links: [
+        {
+          entryId: "2",
+          targetId: "unit_2",
+          targetType: "vehicle_unit" as const,
+        },
+      ],
+    };
+
+    expect(
+      filterEntries([linked, other], {
+        ...initialFinanceFilters,
+        datePreset: "all",
+        vehicleUnitId: "unit_2",
+      }).map((item) => item.id),
+    ).toEqual(["2"]);
   });
 
   it("keeps operational cash inputs independent from date filters", () => {

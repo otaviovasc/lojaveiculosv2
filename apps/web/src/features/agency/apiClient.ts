@@ -68,6 +68,50 @@ export type AgencyManagedStoreOverview = {
   vehicleCount: number;
 };
 
+export type AgencyStatsPeriod = { from: string; to: string };
+
+export type AgencyStatsStoreOption = {
+  storeId: string;
+  storeName: string;
+  storeSlug: string;
+};
+
+export type AgencyStatsStoreRow = AgencyStatsStoreOption & {
+  inventory: {
+    availableListings: number;
+    reservedUnits: number;
+    totalListings: number;
+  };
+  leads: {
+    activeCount: number;
+    conversionRate: number;
+    totalCount: number;
+    wonCount: number;
+  };
+  sales: {
+    averageTicketCents: number;
+    closedCount: number;
+    grossMarginCents: number;
+    revenueCents: number;
+  };
+};
+
+export type AgencyStatsReport = {
+  availableStores: readonly AgencyStatsStoreOption[];
+  generatedAt: string;
+  leadSources: readonly { count: number; key: string; label: string }[];
+  period: AgencyStatsPeriod;
+  scopeStoreId: string | null;
+  stores: readonly AgencyStatsStoreRow[];
+  tenantId: string;
+  totals: {
+    inventory: AgencyStatsStoreRow["inventory"];
+    leads: AgencyStatsStoreRow["leads"];
+    sales: AgencyStatsStoreRow["sales"];
+    storeCount: number;
+  };
+};
+
 export type AgencyApi = {
   cancelStoreZapiRequest: (
     tenantId: string,
@@ -78,6 +122,10 @@ export type AgencyApi = {
     input: CreateBillingCheckoutInput,
   ) => Promise<BillingCheckoutSession>;
   getOverview: (tenantId: string) => Promise<AgencyTenantOverview>;
+  getStats?: (
+    tenantId: string,
+    input: AgencyStatsPeriod & { storeId?: string },
+  ) => Promise<AgencyStatsReport>;
   getProviderStatus: (tenantId: string) => Promise<BillingProviderStatus>;
   requestStoreZapi: (
     tenantId: string,
@@ -127,6 +175,11 @@ export function createAgencyApi(options: {
           headers: headers(auth),
         },
       ),
+    getStats: (tenantId, input) =>
+      request<AgencyStatsReport>(
+        routes.stats(tenantId, input, options.baseUrl),
+        { headers: headers(auth) },
+      ),
     getProviderStatus: (tenantId) =>
       request<BillingProviderStatus>(
         routes.providerStatus(tenantId, options.baseUrl),
@@ -170,6 +223,18 @@ const routes = {
       `/agency/tenants/${encodeURIComponent(tenantId)}/overview`,
       baseUrl,
     ),
+  stats: (
+    tenantId: string,
+    input: AgencyStatsPeriod & { storeId?: string },
+    baseUrl?: string,
+  ) => {
+    const query = new URLSearchParams({ from: input.from, to: input.to });
+    if (input.storeId) query.set("storeId", input.storeId);
+    return endpoint(
+      `/agency/tenants/${encodeURIComponent(tenantId)}/stats?${query.toString()}`,
+      baseUrl,
+    );
+  },
   providerStatus: (tenantId: string, baseUrl?: string) =>
     endpoint(
       `/agency/tenants/${encodeURIComponent(tenantId)}/billing/provider/status`,

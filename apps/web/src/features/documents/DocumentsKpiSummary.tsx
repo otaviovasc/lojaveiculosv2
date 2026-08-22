@@ -24,11 +24,13 @@ type Kpi = {
 
 export function DocumentsKpiSummary({
   activeOrigin,
+  isPartial = false,
   isLoading,
   onOriginSelect,
   summary,
 }: {
   activeOrigin: DocumentOriginFilter;
+  isPartial?: boolean;
   isLoading: boolean;
   onOriginSelect: (origin: DocumentOriginFilter) => void;
   summary: DocumentsKpiSummary;
@@ -44,21 +46,21 @@ export function DocumentsKpiSummary({
     {
       filter: "automatic",
       icon: Bot,
-      label: "Automáticos",
+      label: isPartial ? "Automáticos carregados" : "Automáticos",
       tone: "blue",
       value: summary.automatic,
     },
     {
       filter: "manual",
       icon: UploadCloud,
-      label: "Envios manuais",
+      label: isPartial ? "Manuais carregados" : "Envios manuais",
       tone: "pink",
       value: summary.manual,
     },
     {
       filter: "all",
       icon: CarFront,
-      label: "Unidades",
+      label: isPartial ? "Unidades carregadas" : "Unidades",
       tone: "green",
       value: summary.vehicles,
     },

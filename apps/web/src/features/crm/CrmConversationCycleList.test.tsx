@@ -105,6 +105,29 @@ describe("SessionList", () => {
     );
     expect(screen.queryByText("Intervenção humana")).not.toBeInTheDocument();
   });
+
+  it("loads another page and exposes the reached-end state", async () => {
+    const onLoadMore = vi.fn();
+    const common = {
+      activeCycleId: null,
+      conversationCycles: [createSession()],
+      isLoadingMore: false,
+      onLoadMore,
+      onSelect: vi.fn(),
+      onToggleSelected: vi.fn(),
+      selectedCycleIds: [],
+      selectionMode: false,
+    };
+    const { rerender } = render(<SessionList {...common} hasMore />);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Carregar mais conversas" }),
+    );
+    expect(onLoadMore).toHaveBeenCalledOnce();
+    rerender(<SessionList {...common} hasMore={false} />);
+    expect(
+      screen.getByText("Todas as conversas foram carregadas."),
+    ).toBeInTheDocument();
+  });
 });
 
 function createSession(): CrmConversationCycle {

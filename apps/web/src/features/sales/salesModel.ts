@@ -15,6 +15,11 @@ export const defaultRequiredDocumentKinds = [
   "power_of_attorney",
 ] as const;
 
+export const saleDocumentKinds = [
+  ...defaultRequiredDocumentKinds,
+  "buyer_acknowledgment",
+] as const satisfies readonly SaleDocumentKind[];
+
 export const saleSourceOptions = [
   { label: "Lead Digital", value: "lead" },
   { label: "Loja Física (Walk-in)", value: "walk_in" },
@@ -171,7 +176,7 @@ export function requiredDocumentKinds(
 }
 
 export function isSaleDocumentKind(value: string): value is SaleDocumentKind {
-  return (defaultRequiredDocumentKinds as readonly string[]).includes(value);
+  return (saleDocumentKinds as readonly string[]).includes(value);
 }
 
 export function paymentPrincipalTotal(sale: SaleRecord): number {
@@ -231,11 +236,11 @@ export function formatDocumentKindLabel(kind: string): string {
     case "sale_receipt":
       return "Recibo de Venda";
     case "delivery_term":
-      return "Termo de Entrega e Garantia";
+      return "Termo de Entrega";
     case "power_of_attorney":
       return "Procuração de Transferência";
     case "buyer_acknowledgment":
-      return "Termo de Recebimento";
+      return "Termo de recebimento";
     case "reservation_receipt":
       return "Recibo de Sinal e Reserva";
     default:

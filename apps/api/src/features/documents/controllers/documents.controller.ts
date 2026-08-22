@@ -57,13 +57,13 @@ export function createDocumentsFeature(
       }
 
       const serviceContext = await createContext(context);
-      const documents = await services.listWorkspace(
-        serviceContext,
-        parsed.data,
-      );
+      const page = await services.listWorkspace(serviceContext, parsed.data);
 
       return context.json({
-        documents: documents.map(toDocumentWorkspaceDto),
+        documents: page.documents.map(toDocumentWorkspaceDto),
+        limit: page.limit,
+        offset: page.offset,
+        total: page.total,
       });
     }),
   );

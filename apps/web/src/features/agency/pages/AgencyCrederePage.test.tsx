@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionBootstrap } from "../../account/apiClient";
 import { AccountSessionProvider } from "../../account/accountSession";
@@ -9,7 +16,10 @@ import type { AgencyCredereApi } from "../credereApiClient";
 import { AgencyCrederePage } from "./AgencyCrederePage";
 
 describe("AgencyCrederePage", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    window.localStorage.clear();
+  });
 
   it("keeps the provider APIs untouched when the actor has no agency", async () => {
     const apis = createApis();
@@ -54,6 +64,39 @@ describe("AgencyCrederePage", () => {
     expect(
       screen.getByRole("button", { name: "Tentar novamente" }),
     ).toBeVisible();
+  });
+
+  it("does not let a slower agency response replace the selected agency", async () => {
+    const apis = createApis({ connected: true });
+    const center = deferred<AgencyTenantOverview>();
+    const north = deferred<AgencyTenantOverview>();
+    vi.mocked(apis.agency.getOverview).mockImplementation((tenantId) =>
+      tenantId === "tenant_center" ? center.promise : north.promise,
+    );
+    renderPage(apis, multiAgencySession());
+
+    await waitFor(() =>
+      expect(apis.agency.getOverview).toHaveBeenCalledWith("tenant_center"),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Conta de agência ativa" }),
+    );
+    fireEvent.click(screen.getByRole("option", { name: "Agência Norte" }));
+    await waitFor(() =>
+      expect(apis.agency.getOverview).toHaveBeenCalledWith("tenant_north"),
+    );
+
+    await act(async () => {
+      north.resolve(overviewWithStores([store("store_north", "Loja Norte")]));
+    });
+    expect(await screen.findByText("Loja Norte")).toBeVisible();
+
+    await act(async () => {
+      center.resolve(
+        overviewWithStores([store("store_center", "Loja Centro")]),
+      );
+    });
+    expect(screen.queryByText("Loja Centro")).not.toBeInTheDocument();
   });
 });
 
@@ -134,6 +177,12 @@ function store(storeId: string, storeName: string) {
   };
 }
 
+function overviewWithStores(
+  stores: ReturnType<typeof store>[],
+): AgencyTenantOverview {
+  return { stores } as unknown as AgencyTenantOverview;
+}
+
 function session({
   agency = true,
 }: { agency?: boolean } = {}): SessionBootstrap {
@@ -160,4 +209,34 @@ function session({
       name: "Operador",
     },
   };
+}
+
+function multiAgencySession(): SessionBootstrap {
+  return {
+    ...session(),
+    tenantMemberships: [
+      {
+        role: "agency",
+        status: "active",
+        tenantId: "tenant_center",
+        tenantName: "Agência Centro",
+        tenantSlug: "agencia-centro",
+      },
+      {
+        role: "agency",
+        status: "active",
+        tenantId: "tenant_north",
+        tenantName: "Agência Norte",
+        tenantSlug: "agencia-norte",
+      },
+    ],
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
 }

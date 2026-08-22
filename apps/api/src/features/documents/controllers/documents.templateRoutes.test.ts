@@ -149,7 +149,12 @@ function createDocumentServiceStubs(
     download: vi.fn(async () => unexpected("download")),
     listTemplates: vi.fn(async () => []),
     listVersions: vi.fn(async () => []),
-    listWorkspace: vi.fn(async () => []),
+    listWorkspace: vi.fn(async () => ({
+      documents: [],
+      limit: 100,
+      offset: 0,
+      total: 0,
+    })),
     preview: vi.fn(async () => unexpected("preview")),
     recordTemplateSuggestionOutcome: vi.fn(async () => ({
       recordedAt: new Date(),

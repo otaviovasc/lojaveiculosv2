@@ -2,12 +2,48 @@ import { documentLinks, documents } from "@lojaveiculosv2/db";
 import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
+import { DocumentLinkUniquenessConflictError } from "../../../domains/documents/ports/documentRepository.js";
 import {
   createDrizzleDocumentRepository,
   type DrizzleDocumentClient,
 } from "./drizzleDocumentRepository.js";
 
 describe("drizzle document repository", () => {
+  it("maps the finance receipt business-uniqueness constraint", async () => {
+    const documentRow = { id: "document_1" };
+    const db = {
+      insert: (table: unknown) => ({
+        values: () => ({
+          returning: async () => {
+            if (table === documents) return [documentRow];
+            throw {
+              code: "23505",
+              constraint: "document_links_finance_entry_receipt_unique",
+            };
+          },
+        }),
+      }),
+    } as unknown as DrizzleDocumentClient;
+
+    await expect(
+      createDrizzleDocumentRepository(db).create({
+        createdByUserId: null,
+        fileName: "receipt.pdf",
+        fileSizeBytes: 1,
+        kind: "finance_receipt",
+        linkRole: "finance_entry_receipt",
+        mimeType: "application/pdf",
+        status: "issued",
+        storageKey: "receipt.pdf",
+        storeId: "store_1",
+        targetId: "entry_1",
+        targetType: "finance_entry",
+        tenantId: "tenant_1",
+        title: "Receipt",
+      }),
+    ).rejects.toBeInstanceOf(DocumentLinkUniquenessConflictError);
+  });
+
   it("lists multiple target documents with one scoped, newest-first join", async () => {
     let innerJoinCalls = 0;
     let joinClause: SQL | undefined;
@@ -101,11 +137,11 @@ describe("drizzle document repository", () => {
     expect(whereQuery.params).toEqual([
       "store_1",
       "tenant_1",
+      "target_1",
+      "finance_entry",
       "store_1",
       "tenant_1",
       false,
-      "target_1",
-      "finance_entry",
     ]);
     expect(orderByQuery.sql).toBe('"documents"."uploaded_at" desc');
   });

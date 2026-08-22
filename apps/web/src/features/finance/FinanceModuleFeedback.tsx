@@ -1,3 +1,5 @@
+import { RefreshCcw } from "lucide-react";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import type { FinanceListState, FinanceToast } from "./financeBillsModel";
 
@@ -24,12 +26,26 @@ export function CommissionAccessNotice({ canManage }: { canManage: boolean }) {
 
 export function FinanceLoadError({
   listState,
+  onRetry,
 }: {
   listState: FinanceListState;
+  onRetry: () => void;
 }) {
   if (listState.kind !== "error") return null;
   return (
-    <FeatureAlert className="feature-alert text-danger">
+    <FeatureAlert
+      action={
+        <FeatureActionButton
+          icon={RefreshCcw}
+          label="Tentar novamente"
+          onClick={onRetry}
+          variant="primary"
+        />
+      }
+      className="feature-alert"
+      title="Dados financeiros indisponíveis"
+      tone="danger"
+    >
       {listState.message}
     </FeatureAlert>
   );

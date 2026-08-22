@@ -27,9 +27,15 @@ vi.mock("../inventory/api/apiClient", () => ({
   createInventoryApi: () => ({ listListings: mocks.listListings }),
 }));
 
-vi.mock("./CrmInbox", () => ({
-  CrmInbox: () => <div>WhatsApp inbox</div>,
-}));
+vi.mock("./CrmPipelineLazyParts", async () => {
+  const { CrmPipelineModule } = await import("./CrmPipelineModule");
+
+  return { CrmPipelineModule };
+});
+
+vi.mock("./CrmInbox", () => {
+  return { CrmInbox: () => <div>WhatsApp inbox</div> };
+});
 
 describe("CrmModule", () => {
   afterEach(() => {

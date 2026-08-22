@@ -78,6 +78,7 @@ vi.mock("./AppLazyRoutes", async () => {
     AgencyDashboardPage: emptyRoute,
     AgencyLayout: () => <Outlet />,
     AgencyStatsPage: emptyRoute,
+    AgencyTeamAccessPage: emptyRoute,
     LandingPage,
     ObservabilityPage: () => <div>Observability route</div>,
     OwnerOnboardingPage: emptyRoute,

@@ -4,6 +4,10 @@ import type {
   FinanceRepository,
 } from "../../finance/ports/financeRepository.js";
 import type { VehicleCost } from "../ports/vehicleOperationsRepository.js";
+import {
+  VehicleCostFinanceEntryDuplicateError,
+  VehicleCostFinanceEntryNotFoundError,
+} from "../vehicleCostErrors.js";
 import type {
   VehicleListing,
   VehicleUnit,
@@ -79,6 +83,76 @@ export async function createVehicleCostFinanceEntry(input: {
     tenantId: input.cost.tenantId ?? "",
     type: "expense",
   });
+}
+
+export async function updateVehicleCostFinanceEntry(input: {
+  cost: VehicleCost;
+  financeRepository: FinanceRepository;
+  listing: VehicleListing;
+}): Promise<FinanceEntryBundle> {
+  const current = await findVehicleCostFinanceEntry(
+    input.financeRepository,
+    input.cost,
+  );
+  return input.financeRepository.updateEntry({
+    amountCents: input.cost.amountCents,
+    category: `vehicle_${input.cost.kind}`,
+    dueAt: input.cost.costDate,
+    entryId: current.entry.id,
+    metadata: {
+      ...current.entry.metadata,
+      description: input.cost.description,
+      kind: input.cost.kind,
+      source: "vehicle_cost",
+    },
+    name: `Custo de veiculo - ${input.listing.title}`,
+    paidAt: input.cost.costDate,
+    status: "paid",
+    storeId: input.cost.storeId,
+    tenantId: input.cost.tenantId,
+  });
+}
+
+export async function voidVehicleCostFinanceEntry(input: {
+  cost: VehicleCost;
+  financeRepository: FinanceRepository;
+  reason: string;
+}): Promise<FinanceEntryBundle> {
+  const current = await findVehicleCostFinanceEntry(
+    input.financeRepository,
+    input.cost,
+  );
+  return input.financeRepository.updateEntry({
+    entryId: current.entry.id,
+    metadata: {
+      ...current.entry.metadata,
+      cancelledReason: input.reason,
+      source: "vehicle_cost",
+    },
+    status: "cancelled",
+    storeId: input.cost.storeId,
+    tenantId: input.cost.tenantId,
+  });
+}
+
+async function findVehicleCostFinanceEntry(
+  financeRepository: FinanceRepository,
+  cost: VehicleCost,
+): Promise<FinanceEntryBundle> {
+  const entries = await financeRepository.list({
+    limit: 2,
+    offset: 0,
+    storeId: cost.storeId,
+    targetId: cost.id,
+    targetType: "vehicle_cost",
+    tenantId: cost.tenantId,
+  });
+  if (entries.length > 1) {
+    throw new VehicleCostFinanceEntryDuplicateError(cost.id);
+  }
+  const [entry] = entries;
+  if (!entry) throw new VehicleCostFinanceEntryNotFoundError(cost.id);
+  return entry;
 }
 
 async function upsertSaleFinanceEntry(

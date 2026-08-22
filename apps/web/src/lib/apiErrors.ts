@@ -213,6 +213,8 @@ function friendlyMessage(input: {
       return "Já existe um veículo nesta loja com a mesma placa, estoque ou chassi.";
     case "DOCUMENT_POLICY_ERROR":
       return "O documento não pôde ser vinculado a esta unidade. Atualize a tela e tente novamente.";
+    case "FISCAL_ARTIFACT_UNAVAILABLE":
+      return "O arquivo fiscal oficial ainda não está disponível. Atualize o status da nota e tente novamente.";
     case "INVENTORY_STORAGE_SCOPE_ERROR":
       return "O arquivo não pôde ser vinculado ao veículo. Atualize a tela e tente novamente.";
     case undefined:

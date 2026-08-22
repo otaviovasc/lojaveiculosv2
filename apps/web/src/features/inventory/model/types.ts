@@ -51,6 +51,8 @@ export type {
 export type {
   CreateInventoryCostInput,
   InventoryCostKind,
+  UpdateInventoryCostInput,
+  VoidInventoryCostInput,
 } from "./operationTypes";
 export type {
   CreateVehicleSupplierInput,

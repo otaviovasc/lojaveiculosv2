@@ -48,5 +48,12 @@ export async function getFiscalOverview(
     summary: "Read fiscal provider and document overview",
   });
 
-  return { ...overview, provider };
+  return {
+    ...overview,
+    capabilities: {
+      canDownloadOfficialArtifacts:
+        context.permissions.includes("documents.download"),
+    },
+    provider,
+  };
 }

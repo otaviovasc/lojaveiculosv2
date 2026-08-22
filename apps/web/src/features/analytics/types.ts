@@ -29,6 +29,10 @@ export type AnalyticsPeriod = {
   to: string;
 };
 
+export type AnalyticsFinancialAvailability =
+  | { status: "available" }
+  | { reason: string; status: "restricted" | "unavailable" };
+
 export type HomeDashboard = {
   generatedAt: string;
   inventory: {
@@ -43,6 +47,7 @@ export type HomeDashboard = {
 };
 
 export type AnalyticsDashboard = {
+  financialAvailability: AnalyticsFinancialAvailability;
   generatedAt: string;
   inventory: {
     averagePriceCents: number;
@@ -55,10 +60,13 @@ export type AnalyticsDashboard = {
   leadFunnel: readonly AnalyticsFunnelStep[];
   leadSources: readonly AnalyticsBreakdown[];
   revenue: {
-    closedSalesCents: number;
-    grossMarginCents: number;
-    openReceivablesCents: number;
-    paidReceiptsCents: number;
+    closedSalesCents: number | null;
+    openReceivablesCents: number | null;
+    paidReceiptsCents: number | null;
+  };
+  sales: {
+    avgTicketCents: number | null;
+    closedCount: number;
   };
   storeId: string;
   tenantId: string;

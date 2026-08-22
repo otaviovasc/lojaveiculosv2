@@ -24,6 +24,7 @@ export const documentTemplateKeys = [
   "sale_receipt",
   "reservation_receipt",
   "delivery_term",
+  "buyer_acknowledgment",
   "trade_in_power_of_attorney",
   "test_drive_term",
   "used_vehicle_warranty",

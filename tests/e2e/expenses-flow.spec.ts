@@ -1,4 +1,3 @@
-import { writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { saveQaScreenshot } from "./support/artifacts";
 import { installLocalSession, loginAs } from "./support/auth";
@@ -18,11 +17,10 @@ test.describe("expenses flow", () => {
     const diagnostics = collectPageDiagnostics(page);
     const uniqueName = `Gasto QA ${Date.now()}`;
     const editedName = `${uniqueName} editado`;
-    const receiptTitle = `Recibo ${uniqueName}`;
 
     await setQaViewport(page, "desktop");
     await loginAs(page, qaPersonas.owner, testInfo);
-    await mockSignedStorageUploads(page);
+    await mockFinanceDocumentStorage(page);
     await page.goto("/expenses");
 
     await expect(
@@ -65,43 +63,26 @@ test.describe("expenses flow", () => {
     await expect(createdRow).toBeVisible();
     await saveQaScreenshot(page, testInfo, "expenses-created");
 
-    const receiptPath = testInfo.outputPath("expenses-receipt.pdf");
-    await writeFile(
-      receiptPath,
-      Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n"),
-    );
-    await createdRow.getByRole("button", { name: /Anexar recibo/i }).click();
-    await expect(page.getByText(/Comprovante opcional/i)).toBeVisible();
-    const receiptDialog = page.getByRole("dialog", {
-      name: /Editar lan[cç]amento/i,
-    });
-    await receiptDialog
-      .locator('input[type="file"]')
-      .setInputFiles(receiptPath);
-    await receiptDialog.getByLabel("Título").fill(receiptTitle);
-    await saveQaScreenshot(page, testInfo, "expenses-receipt-modal");
-    const uploadResponse = page.waitForResponse(
+    const generateReceiptResponse = page.waitForResponse(
       (response) =>
         response.url().includes("/api/v1/finance/entries/") &&
-        response.url().includes("/documents/uploads") &&
+        response.url().endsWith("/receipt") &&
         response.request().method() === "POST",
     );
-    const attachResponse = page.waitForResponse(
+    const openReceiptResponse = page.waitForResponse(
       (response) =>
         response.url().includes("/api/v1/finance/entries/") &&
-        response.url().includes("/documents") &&
-        !response.url().includes("/uploads") &&
-        response.request().method() === "POST",
+        response.url().includes("/documents/") &&
+        response.url().endsWith("/content") &&
+        response.request().method() === "GET",
     );
-    await receiptDialog
-      .getByRole("button", { name: /Salvar lan[cç]amento/i })
+    await createdRow
+      .getByRole("button", { name: /Abrir ou gerar recibo/i })
       .click();
-    await expect((await uploadResponse).status()).toBe(201);
-    await expect((await attachResponse).status()).toBe(201);
-    await expect(
-      createdRow.getByText(`Comprovante: ${receiptTitle}`),
-    ).toBeVisible();
-    await saveQaScreenshot(page, testInfo, "expenses-receipt-attached");
+    await expect((await generateReceiptResponse).status()).toBe(200);
+    await expect((await openReceiptResponse).status()).toBe(200);
+    await expect(page.getByText("Recibo gerado")).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "expenses-receipt-generated");
 
     await createdRow.getByRole("button", { name: /Editar/i }).click();
     await page.getByLabel(/Identifica[cç][aã]o/i).fill(editedName);
@@ -180,8 +161,11 @@ test.describe("expenses flow", () => {
     });
     await expect(audiRow).toBeVisible();
     await expect(
-      audiRow.getByRole("button", { name: /Editar|Pagar|Cancelar|recibo/i }),
+      audiRow.getByRole("button", { name: /Editar|Pagar|Cancelar/i }),
     ).toHaveCount(0);
+    await expect(
+      audiRow.getByRole("button", { name: /Abrir recibo existente/i }),
+    ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "expenses-read-only");
   });
 });
@@ -192,7 +176,20 @@ async function selectFilter(page: Page, label: string, nextValue: string) {
   await page.getByRole("option", { name: nextValue }).click();
 }
 
-async function mockSignedStorageUploads(page: Page) {
+async function mockFinanceDocumentStorage(page: Page) {
+  await page.route(
+    /\/api\/v1\/finance\/entries\/[^/]+\/documents\/[^/]+\/content$/,
+    async (route) => {
+      await route.fulfill({
+        body: Buffer.from(
+          "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n",
+        ),
+        contentType: "application/pdf",
+        headers: { "content-disposition": "inline" },
+        status: 200,
+      });
+    },
+  );
   await page.route(
     /https:\/\/[^/]+\.r2\.cloudflarestorage\.com\/.*/,
     async (route) => {

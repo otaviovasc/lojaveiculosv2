@@ -93,10 +93,76 @@ describe("DocumentsModule folder switching", () => {
     ).not.toBeInTheDocument();
     expect(within(table()).queryByText("Doc Corolla")).not.toBeInTheDocument();
     expect(within(table()).queryByText("Doc duplo")).not.toBeInTheDocument();
+  }, 15_000);
+
+  it("filters vehicle folders by lifecycle status", async () => {
+    render(
+      <DocumentsModule
+        api={createDocumentsApiMock()}
+        inventoryApi={createInventoryApiMock()}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("button", { name: /Honda Civic/i }),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Filtrar pastas por fase do veículo",
+      }),
+    );
+    fireEvent.click(await screen.findByRole("option", { name: "Vendido" }));
+
+    expect(
+      screen.getByRole("button", { name: /Toyota Corolla/i }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /Honda Civic/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("aborts and ignores a stale folder response", async () => {
+    const civicPage =
+      deferred<Awaited<ReturnType<DocumentsApi["listDocumentPage"]>>>();
+    let civicSignal: AbortSignal | undefined;
+    const listDocumentPage = vi.fn<DocumentsApi["listDocumentPage"]>(
+      async (filters = {}, request = {}) => {
+        if (filters.targetId === "unit_1") {
+          civicSignal = request.signal;
+          return civicPage.promise;
+        }
+        if (filters.targetId === "unit_2") {
+          return pageWith(documentByTitle("Doc Corolla"));
+        }
+        return pageWith(documentByTitle("Contrato geral"));
+      },
+    );
+    render(
+      <DocumentsModule
+        api={createDocumentsApiMock({ listDocumentPage })}
+        inventoryApi={createInventoryApiMock()}
+      />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Honda Civic/i }),
+    );
+    await waitFor(() => expect(civicSignal).toBeDefined());
+    fireEvent.click(screen.getByRole("button", { name: /Toyota Corolla/i }));
+
+    expect((await screen.findAllByText("Doc Corolla"))[0]).toBeVisible();
+    expect(civicSignal?.aborted).toBe(true);
+    civicPage.resolve(pageWith(documentByTitle("Doc Civic")));
+    await Promise.resolve();
+
+    expect(screen.getAllByText("Doc Corolla")[0]).toBeVisible();
+    expect(screen.queryByText("Doc Civic")).not.toBeInTheDocument();
   });
 });
 
-function createDocumentsApiMock(): DocumentsApi {
+function createDocumentsApiMock(
+  overrides: Partial<DocumentsApi> = {},
+): DocumentsApi {
   return {
     createUploadedDocument: vi.fn(async () => {
       throw new Error("Unexpected create uploaded document");
@@ -111,6 +177,12 @@ function createDocumentsApiMock(): DocumentsApi {
       throw new Error("Unexpected download document");
     }),
     listDocuments: vi.fn(async () => documents),
+    listDocumentPage: vi.fn(async () => ({
+      documents,
+      limit: 100,
+      offset: 0,
+      total: documents.length,
+    })),
     listTemplates: vi.fn(async (): Promise<DocumentTemplate[]> => []),
     listVersions: vi.fn(async (): Promise<DocumentVersion[]> => []),
     previewDocument: vi.fn(async () => {
@@ -140,7 +212,26 @@ function createDocumentsApiMock(): DocumentsApi {
     voidDocument: vi.fn(async () => {
       throw new Error("Unexpected void document");
     }),
+    ...overrides,
   };
+}
+
+function pageWith(document: WorkspaceDocument) {
+  return { documents: [document], limit: 100, offset: 0, total: 1 };
+}
+
+function documentByTitle(title: string) {
+  const document = documents.find((item) => item.title === title);
+  if (!document) throw new Error(`Missing test document: ${title}`);
+  return document;
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 }
 
 function createInventoryApiMock(): InventoryApi {
@@ -157,6 +248,7 @@ function createInventoryApiMock(): InventoryApi {
             {
               id: "unit_1",
               plate: "ABC1D23",
+              status: "available",
               stockNumber: "ST-1",
               vin: null,
             },
@@ -175,6 +267,7 @@ function createInventoryApiMock(): InventoryApi {
             {
               id: "unit_2",
               plate: "DEF2E34",
+              status: "sold",
               stockNumber: "ST-2",
               vin: null,
             },
@@ -189,6 +282,7 @@ function createInventoryApiMock(): InventoryApi {
             {
               id: "unit_3",
               plate: "GHI3F45",
+              status: "in_preparation",
               stockNumber: "ST-3",
               vin: null,
             },

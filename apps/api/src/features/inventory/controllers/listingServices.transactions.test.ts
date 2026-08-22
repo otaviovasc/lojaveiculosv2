@@ -30,6 +30,25 @@ describe("inventory listing transaction composition", () => {
         services.attachListingUnit(context(), { listingId: "listing_1" }),
     ],
     [
+      "updateVehicleCost",
+      (services) =>
+        services.updateVehicleCost(context(), {
+          amountCents: 900,
+          costId: "cost_1",
+          kind: "repair",
+          unitId: "unit_1",
+        }),
+    ],
+    [
+      "voidVehicleCost",
+      (services) =>
+        services.voidVehicleCost(context(), {
+          costId: "cost_1",
+          reason: "Duplicado",
+          unitId: "unit_1",
+        }),
+    ],
+    [
       "attachVehicleDocument",
       (services) =>
         services.attachVehicleDocument(context(), {
@@ -143,6 +162,8 @@ function context() {
     actor: { id: "00000000-0000-4000-8000-000000000001", kind: "user" },
     permissions: [
       "inventory.cost_create",
+      "inventory.cost_update",
+      "inventory.cost_void",
       "inventory.create",
       "inventory.checklist_read",
       "inventory.checklist_update",

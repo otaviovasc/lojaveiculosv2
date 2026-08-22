@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -6,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -97,10 +99,25 @@ export const financeEntryLinks = pgTable(
   },
   (table) => [
     index("finance_entry_links_entry_id_idx").on(table.entryId),
+    index("finance_entry_links_scope_entry_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.entryId,
+    ),
+    index("finance_entry_links_scope_target_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.targetType,
+      table.targetId,
+      table.entryId,
+    ),
     index("finance_entry_links_target_idx").on(
       table.targetType,
       table.targetId,
     ),
+    uniqueIndex("finance_entry_links_vehicle_cost_target_unique")
+      .on(table.tenantId, table.storeId, table.targetId)
+      .where(sql`${table.targetType} = 'vehicle_cost'`),
   ],
 );
 

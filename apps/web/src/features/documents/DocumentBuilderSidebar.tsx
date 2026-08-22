@@ -46,6 +46,7 @@ function documentKindIcon(kind: DocumentKind, locked: boolean) {
     case "reservation_receipt":
       return Receipt;
     case "delivery_term":
+    case "buyer_acknowledgment":
       return FileCheck;
     case "test_drive":
       return Car;
@@ -115,7 +116,7 @@ export function DocumentBuilderSidebar({
           </div>
           {onOpenCreateTemplate ? (
             <button
-              className="documents-builder-sidebar-create-btn inline-flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 text-xs font-bold text-accent-foreground transition hover:bg-accent-strong hover:text-accent-strong-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+              className="documents-builder-sidebar-create-btn inline-flex items-center gap-1 rounded-lg border border-line bg-app px-2.5 py-1.5 text-xs font-bold text-app-text transition hover:border-line-strong hover:bg-app-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
               onClick={onOpenCreateTemplate}
               title="Criar novo modelo"
               type="button"

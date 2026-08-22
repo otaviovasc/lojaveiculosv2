@@ -22,7 +22,7 @@ export function MetricsSection() {
               <span className="font-display text-5xl font-black tracking-tight text-app-text sm:text-6xl">
                 {metric}
               </span>
-              <span className="text-xs font-black uppercase tracking-[0.22em] text-accent">
+              <span className="text-xs font-black uppercase tracking-[0.22em] text-accent-text">
                 {label}
               </span>
               <p className="max-w-60 text-sm font-semibold leading-6 text-muted">
@@ -41,19 +41,19 @@ export function ProblemSection() {
     <section className="px-5 py-16 sm:px-8 sm:py-24 lg:px-10">
       <div className="mx-auto max-w-7xl">
         <AnimatedContent>
-          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-text">
             O status quo do mercado
           </p>
           <h2 className="mt-4 max-w-3xl font-display text-3xl font-black leading-tight tracking-tight text-app-text sm:text-5xl">
             Por que a maioria das lojas{" "}
-            <span className="text-accent">perde o jogo digital.</span>
+            <span className="text-accent-text">perde o jogo digital.</span>
           </h2>
         </AnimatedContent>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {landingPains.map(({ title, pain, solution }, index) => (
             <AnimatedContent delay={0.06 * index} key={title}>
               <article className="flex flex-col rounded-lg border border-line bg-panel p-5">
-                <span className="text-xs font-black uppercase tracking-[0.22em] text-accent">
+                <span className="text-xs font-black uppercase tracking-[0.22em] text-accent-text">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-3 text-base font-black uppercase tracking-wide text-app-text">
@@ -63,7 +63,7 @@ export function ProblemSection() {
                   {pain}
                 </p>
                 <p className="mt-4 border-t border-line pt-3 text-sm font-bold leading-6 text-app-text">
-                  <span className="text-accent">Na Loja Veículos: </span>
+                  <span className="text-accent-text">Na Loja Veículos: </span>
                   {solution}
                 </p>
               </article>
@@ -84,12 +84,12 @@ export function WorkflowSection() {
       <div className="mx-auto max-w-7xl">
         <AnimatedContent>
           <div className="flex flex-col items-center text-center">
-            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-text">
               Como funciona o motor
             </p>
             <h2 className="mt-4 max-w-3xl font-display text-3xl font-black leading-tight tracking-tight text-app-text sm:text-5xl">
               Da entrada do pátio{" "}
-              <span className="text-accent">ao dinheiro no caixa.</span>
+              <span className="text-accent-text">ao dinheiro no caixa.</span>
             </h2>
           </div>
         </AnimatedContent>
@@ -97,7 +97,7 @@ export function WorkflowSection() {
           {landingSteps.map(({ title, text }, index) => (
             <AnimatedContent delay={0.08 * index} key={title}>
               <article className="group rounded-lg border border-line bg-app p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40">
-                <span className="flex size-10 items-center justify-center rounded-md bg-accent-soft text-sm font-black text-accent">
+                <span className="flex size-10 items-center justify-center rounded-md bg-accent-soft text-sm font-black text-accent-text">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-5 text-xl font-black text-app-text">
@@ -122,7 +122,7 @@ export function FeatureSection() {
         <AnimatedContent>
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+              <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-text">
                 Plataforma
               </p>
               <h2 className="mt-4 max-w-2xl font-display text-3xl font-black leading-tight tracking-tight text-app-text sm:text-5xl">
@@ -136,7 +136,7 @@ export function FeatureSection() {
           {landingFeatures.map(({ icon: Icon, label, text }, index) => (
             <AnimatedContent delay={0.05 * index} key={label}>
               <article className="group rounded-lg border border-line bg-panel p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40">
-                <Icon className="size-6 text-accent" />
+                <Icon className="size-6 text-accent-text" />
                 <h3 className="mt-4 text-lg font-black text-app-text">
                   {label}
                 </h3>
@@ -161,12 +161,12 @@ export function TestimonialsSection() {
       <div className="mx-auto max-w-7xl">
         <AnimatedContent>
           <div className="flex flex-col items-center text-center">
-            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-text">
               Showrooms parceiros
             </p>
             <h2 className="mt-4 max-w-3xl font-display text-3xl font-black leading-tight tracking-tight text-app-text sm:text-5xl">
               Experiência real de{" "}
-              <span className="text-accent">quem opera com a gente.</span>
+              <span className="text-accent-text">quem opera com a gente.</span>
             </h2>
           </div>
         </AnimatedContent>
@@ -174,13 +174,13 @@ export function TestimonialsSection() {
           {landingTestimonials.map(({ name, location, quote }, index) => (
             <AnimatedContent delay={0.08 * index} key={name}>
               <figure className="flex flex-col rounded-lg border border-line bg-app p-6">
-                <Quote className="size-5 text-accent" />
+                <Quote className="size-5 text-accent-text" />
                 <blockquote className="mt-4 text-sm font-semibold leading-6 text-app-text">
                   “{quote}”
                 </blockquote>
                 <figcaption className="mt-5 border-t border-line pt-4">
                   <p className="text-sm font-black text-app-text">{name}</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-accent">
+                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-accent-text">
                     {location}
                   </p>
                 </figcaption>

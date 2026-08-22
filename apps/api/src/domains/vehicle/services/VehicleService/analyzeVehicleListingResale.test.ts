@@ -4,7 +4,10 @@ import {
   createListing,
 } from "../../testSupportVehicleServiceFixtures.js";
 import { createInMemoryVehiclePorts } from "../../testSupportVehicleServiceInventoryPorts.js";
+import { addVehicleCost } from "./addVehicleCost.js";
 import { analyzeVehicleListingResale } from "./analyzeVehicleListingResale.js";
+import { attachVehicleUnit } from "./attachVehicleUnit.js";
+import { voidVehicleCost } from "./voidVehicleCost.js";
 
 describe("analyzeVehicleListingResale", () => {
   it("persists the provider-identified analysis on the scoped listing", async () => {
@@ -76,6 +79,63 @@ describe("analyzeVehicleListingResale", () => {
         provider: { name: "openrouter" },
       }),
     );
+  });
+
+  it("excludes voided acquisition costs from the provider request", async () => {
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const context = createContext([
+      "inventory.create",
+      "inventory.cost_create",
+      "inventory.cost_void",
+      "inventory.resale_analysis_generate",
+    ]);
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1" },
+      ports,
+    );
+    await addVehicleCost(
+      context,
+      { amountCents: 7000000, kind: "acquisition", unitId: unit.id },
+      ports,
+    );
+    const duplicate = await addVehicleCost(
+      context,
+      { amountCents: 99000000, kind: "acquisition", unitId: unit.id },
+      ports,
+    );
+    await voidVehicleCost(
+      context,
+      {
+        costId: duplicate.id,
+        reason: "Custo de aquisicao duplicado",
+        unitId: unit.id,
+      },
+      ports,
+    );
+    const analyze = vi.fn(async () => ({
+      dealRiskScore: 20,
+      riskLevel: "low" as const,
+      suggestedDescription: "Boa margem.",
+      summary: "Aquisicao consistente.",
+      topics: [],
+    }));
+    ports.resaleAnalysisProvider = {
+      analyze,
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
+    };
+
+    await analyzeVehicleListingResale(
+      context,
+      { listingId: "listing_1" },
+      ports,
+    );
+
+    expect(analyze).toHaveBeenCalledWith(
+      expect.objectContaining({ acquisitionPriceCents: 7000000 }),
+    );
+    expect(ports.operationsRepository.costs).toHaveLength(2);
   });
 
   it("rejects read-only actors before invoking the provider", async () => {

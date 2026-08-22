@@ -92,6 +92,7 @@ export function toOverview(
   events: (typeof fiscalEvents.$inferSelect)[],
 ): FiscalOverview {
   return {
+    capabilities: { canDownloadOfficialArtifacts: false },
     documents,
     events: events.map((event) => ({
       createdAt: event.createdAt,

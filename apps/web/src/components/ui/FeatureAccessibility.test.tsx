@@ -2,11 +2,13 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Eye } from "lucide-react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureTabs } from "./FeatureControls";
 import { FeatureActionButton, FeaturePageShell } from "./FeatureLayout";
 import { FeatureAlert, FeatureLoadingState } from "./FeatureStates";
+import { FeatureRowAction, FeatureRowActions } from "./FeatureTable";
 
 afterEach(cleanup);
 
@@ -99,6 +101,24 @@ describe("shared feature accessibility", () => {
     await user.keyboard("{Home}");
     expect(tabs[0]).toHaveFocus();
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps compact row actions on the shared touch-target contract", () => {
+    render(
+      <FeatureRowActions>
+        <FeatureRowAction
+          ariaLabel="Visualizar documento"
+          icon={Eye}
+          onClick={vi.fn()}
+          tooltip="Visualizar"
+        />
+      </FeatureRowActions>,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Visualizar documento" }),
+    ).toHaveClass("feature-row-action__button");
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Visualizar");
   });
 });
 

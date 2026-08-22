@@ -36,6 +36,10 @@ import {
   createRuntimeAnalyticsServices,
   type RuntimeAnalyticsClient,
 } from "../analytics/runtimeAnalyticsServices.js";
+import { createRuntimeAgencyStatsServices } from "../agency/runtimeAgencyStatsServices.js";
+import type { DrizzleAgencyStatsClient } from "../agency/drizzleAgencyStatsRepository.js";
+import { createRuntimeAgencyTeamAccessServices } from "../agency/runtimeAgencyTeamAccessServices.js";
+import type { DrizzleAgencyTeamAccessClient } from "../agency/drizzleAgencyTeamAccessRepository.js";
 import { createRuntimeComplianceServices } from "../compliance/runtimeComplianceServices.js";
 import { createRuntimeDocumentServices } from "../documents/runtimeDocumentServices.js";
 import { createRuntimeFiscalServices } from "../fiscal/runtimeFiscalServices.js";
@@ -84,7 +88,25 @@ export function createRuntimeHttpAppOptions({
   const marketplaceDb = db as DrizzleMarketplaceClient;
   const crmDb = db as DrizzleCrmClient;
   const externalBotManager = createRuntimeExternalBotManager(db, env);
+  const accountProvisioningServices = createAccountProvisioningServices({
+    ...(clerkAccountProviders.invitationSender
+      ? { invitationSender: clerkAccountProviders.invitationSender }
+      : {}),
+    repository: createDrizzleAccountProvisioningRepository(
+      db as DrizzleAccountProvisioningClient,
+    ),
+    quotaGuard: createDrizzleBillingQuotaGuard(db as DrizzleBillingQuotaClient),
+  });
+  const roleServices = createRuntimeRoleServices(db);
   return {
+    agencyStatsServices: createRuntimeAgencyStatsServices(
+      db as DrizzleAgencyStatsClient,
+    ),
+    agencyTeamAccessServices: createRuntimeAgencyTeamAccessServices(
+      db as DrizzleAgencyTeamAccessClient,
+      accountProvisioningServices,
+      roleServices,
+    ),
     logger: createPinoServiceLogger({
       baseMetadata: {
         environment: env.APP_ENV ?? "unknown",
@@ -96,17 +118,7 @@ export function createRuntimeHttpAppOptions({
     ),
     automationServices: createRuntimeAutomationServices(db),
     ...(audit ? { audit } : {}),
-    accountProvisioningServices: createAccountProvisioningServices({
-      ...(clerkAccountProviders.invitationSender
-        ? { invitationSender: clerkAccountProviders.invitationSender }
-        : {}),
-      repository: createDrizzleAccountProvisioningRepository(
-        db as DrizzleAccountProvisioningClient,
-      ),
-      quotaGuard: createDrizzleBillingQuotaGuard(
-        db as DrizzleBillingQuotaClient,
-      ),
-    }),
+    accountProvisioningServices,
     billingServices: createBillingServices({
       ports: createRuntimeBillingServicePorts(db, env),
     }),
@@ -212,7 +224,7 @@ export function createRuntimeHttpAppOptions({
           ),
         }),
       ),
-    roleServices: createRuntimeRoleServices(db),
+    roleServices,
     salesServices: createRuntimeSalesServices(db, runtimeObjectStorage),
     settingsServices: createRuntimeSettingsServices(db),
     storeAccessRepository: createDrizzleStoreAccessRepository(

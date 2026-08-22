@@ -25,6 +25,9 @@ import type {
 
 export function SessionList({
   activeCycleId,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore = () => undefined,
   onSelect,
   onToggleSelected,
   selectedCycleIds,
@@ -32,6 +35,9 @@ export function SessionList({
   conversationCycles,
 }: {
   activeCycleId: CrmConversationCycleId | null;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
   onSelect: (cycleId: CrmConversationCycleId) => void;
   onToggleSelected: (cycleId: CrmConversationCycleId) => void;
   selectedCycleIds: string[];
@@ -144,7 +150,7 @@ export function SessionList({
                             backgroundColor: tag.color
                               ? `${tag.color}18`
                               : undefined,
-                            color: tag.color ?? undefined,
+                            color: "var(--color-text)",
                             borderColor: tag.color
                               ? `${tag.color}40`
                               : undefined,
@@ -201,6 +207,22 @@ export function SessionList({
           </div>
         );
       })}
+      <div className="crm-cycle-list-footer" role="status">
+        {hasMore ? (
+          <button
+            className="crm-load-more"
+            disabled={isLoadingMore}
+            onClick={onLoadMore}
+            type="button"
+          >
+            {isLoadingMore
+              ? "Carregando conversas…"
+              : "Carregar mais conversas"}
+          </button>
+        ) : (
+          <span>Todas as conversas foram carregadas.</span>
+        )}
+      </div>
     </div>
   );
 }

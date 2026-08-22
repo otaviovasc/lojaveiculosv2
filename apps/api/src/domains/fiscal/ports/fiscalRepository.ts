@@ -58,6 +58,9 @@ export type FiscalEvent = {
 };
 
 export type FiscalOverview = {
+  capabilities: {
+    canDownloadOfficialArtifacts: boolean;
+  };
   documents: readonly FiscalDocument[];
   events: readonly FiscalEvent[];
   provider: {

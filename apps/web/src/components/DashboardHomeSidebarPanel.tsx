@@ -100,7 +100,7 @@ function DashboardSellerPerformance({
   dashboard: AnalyticsDashboard | null;
 }) {
   const soldListings = dashboard?.inventory.soldListings ?? 0;
-  const closedSalesCents = dashboard?.revenue.closedSalesCents ?? 0;
+  const closedSalesCents = dashboard?.revenue.closedSalesCents ?? null;
 
   return (
     <div className="sidebar-block">
@@ -128,7 +128,11 @@ function DashboardSellerPerformance({
               <h5 className="seller-name">Equipe comercial</h5>
               <div className="seller-stats">
                 <span className="seller-leads">{soldListings} Vendas</span>
-                <span className="seller-value">{money(closedSalesCents)}</span>
+                <span className="seller-value">
+                  {closedSalesCents === null
+                    ? "Financeiro restrito"
+                    : money(closedSalesCents)}
+                </span>
               </div>
             </div>
           </div>

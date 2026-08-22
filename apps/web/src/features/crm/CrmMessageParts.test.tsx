@@ -2,13 +2,223 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MessageList } from "./CrmMessageParts";
 import type { CrmMessage } from "./crmConversationTypes";
 
+const originalScrollIntoView = Element.prototype.scrollIntoView;
+
 describe("CrmMessageParts", () => {
   afterEach(() => {
     cleanup();
+    if (originalScrollIntoView) {
+      Object.defineProperty(Element.prototype, "scrollIntoView", {
+        configurable: true,
+        value: originalScrollIntoView,
+      });
+    } else {
+      Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+    }
+  });
+
+  it("keeps the reader's position unless they are near the end or send a message", () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    const first = createMessage({ id: "message-1" });
+    const { container, rerender } = render(
+      <MessageList isLoading={false} messages={[first]} />,
+    );
+    const list = container.querySelector<HTMLDivElement>(".crm-messages")!;
+    Object.defineProperties(list, {
+      clientHeight: { configurable: true, value: 200 },
+      scrollHeight: { configurable: true, value: 1_000 },
+      scrollTop: { configurable: true, value: 100, writable: true },
+    });
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+
+    fireEvent.scroll(list);
+    rerender(
+      <MessageList
+        isLoading={false}
+        messages={[
+          first,
+          createMessage({
+            createdAt: "2026-07-02T19:01:00.000Z",
+            id: "message-2",
+          }),
+        ]}
+      />,
+    );
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+
+    list.scrollTop = 720;
+    fireEvent.scroll(list);
+    const firstThree = [
+      first,
+      createMessage({
+        createdAt: "2026-07-02T19:01:00.000Z",
+        id: "message-2",
+      }),
+      createMessage({
+        createdAt: "2026-07-02T19:02:00.000Z",
+        id: "message-3",
+      }),
+    ];
+    rerender(<MessageList isLoading={false} messages={firstThree} />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+
+    list.scrollTop = 100;
+    fireEvent.scroll(list);
+    rerender(
+      <MessageList
+        isLoading={false}
+        messages={[
+          ...firstThree,
+          {
+            ...createMessage({
+              createdAt: "2026-07-02T19:03:00.000Z",
+              direction: "OUTBOUND",
+              id: "local-message",
+              senderType: "HUMAN",
+              status: "PENDING",
+            }),
+            clientId: "local-message",
+          },
+        ]}
+      />,
+    );
+    expect(scrollIntoView).toHaveBeenCalledTimes(3);
+  });
+
+  it("starts a replaced conversation at the latest message without moving on prepended history", () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    const current = createMessage({ id: "cycle-a-message-2" });
+    const { container, rerender } = render(
+      <MessageList isLoading={false} messages={[current]} />,
+    );
+    const list = container.querySelector<HTMLDivElement>(".crm-messages")!;
+    Object.defineProperties(list, {
+      clientHeight: { configurable: true, value: 200 },
+      scrollHeight: { configurable: true, value: 1_000 },
+      scrollTop: { configurable: true, value: 100, writable: true },
+    });
+    fireEvent.scroll(list);
+
+    rerender(
+      <MessageList
+        isLoading={false}
+        messages={[
+          createMessage({
+            createdAt: "2026-07-02T18:59:00.000Z",
+            id: "cycle-a-message-1",
+          }),
+          current,
+        ]}
+      />,
+    );
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MessageList
+        isLoading={false}
+        messages={[createMessage({ id: "cycle-b-message-1" })]}
+      />,
+    );
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows older-history loading, retry, and exhausted states", async () => {
+    const user = userEvent.setup();
+    const onLoadOlder = vi.fn(async () => true);
+    const message = createMessage();
+    const { rerender } = render(
+      <MessageList
+        hasOlderMessages
+        isLoading={false}
+        messages={[message]}
+        onLoadOlder={onLoadOlder}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Carregar mensagens anteriores" }),
+    ).toBeEnabled();
+
+    rerender(
+      <MessageList
+        hasOlderMessages
+        isLoading={false}
+        isLoadingOlderMessages
+        messages={[message]}
+        onLoadOlder={onLoadOlder}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Carregando mensagens..." }),
+    ).toBeDisabled();
+
+    rerender(
+      <MessageList
+        hasOlderMessages
+        isLoading={false}
+        messages={[message]}
+        olderMessagesError
+        onLoadOlder={onLoadOlder}
+      />,
+    );
+    expect(
+      screen.getByText("Não foi possível carregar as mensagens anteriores."),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+    expect(onLoadOlder).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MessageList
+        isLoading={false}
+        messages={[message]}
+        onLoadOlder={onLoadOlder}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", {
+        name: "Carregar mensagens anteriores",
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Início da conversa")).toBeInTheDocument();
+  });
+
+  it("keeps the visible message anchored when older history is prepended", async () => {
+    const user = userEvent.setup();
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    const { container } = render(<HistoryPaginationHarness />);
+    const list = container.querySelector<HTMLDivElement>(".crm-messages")!;
+    Object.defineProperties(list, {
+      clientHeight: { configurable: true, value: 80 },
+      scrollHeight: {
+        configurable: true,
+        get: () => list.querySelectorAll(".crm-bubble").length * 300,
+      },
+      scrollTop: { configurable: true, value: 10, writable: true },
+    });
+    fireEvent.scroll(list);
+
+    await user.click(
+      screen.getByRole("button", { name: "Carregar mensagens anteriores" }),
+    );
+    expect(await screen.findByText("Mensagem anterior")).toBeInTheDocument();
+    expect(list.scrollTop).toBe(310);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
   it("forwards dropped files from the conversation history", () => {
@@ -278,4 +488,32 @@ function createMessage(overrides: Partial<CrmMessage> = {}): CrmMessage {
     type: "TEXT",
     ...overrides,
   };
+}
+
+function HistoryPaginationHarness() {
+  const current = createMessage({
+    content: "Mensagem atual",
+    id: "current-message",
+  });
+  const [messages, setMessages] = useState([current]);
+  const [hasOlderMessages, setHasOlderMessages] = useState(true);
+  return (
+    <MessageList
+      hasOlderMessages={hasOlderMessages}
+      isLoading={false}
+      messages={messages}
+      onLoadOlder={async () => {
+        setMessages([
+          createMessage({
+            content: "Mensagem anterior",
+            createdAt: "2026-07-02T18:00:00.000Z",
+            id: "older-message",
+          }),
+          current,
+        ]);
+        setHasOlderMessages(false);
+        return true;
+      }}
+    />
+  );
 }

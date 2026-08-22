@@ -22,7 +22,6 @@
 
 .credere-shell-header .documents-top-bar-eyebrow {
   align-items: center;
-  color: var(--color-accent-strong);
   display: inline-flex;
   font-size: var(--font-size-xs);
   font-weight: 900;

@@ -43,6 +43,7 @@ export const FISCAL_STATUS_POLL_INTERVAL_MS = 10_000;
 
 type FiscalDocumentListProps = {
   api: FiscalApi;
+  canDownloadOfficialArtifacts: boolean;
   documents: readonly FiscalDocument[];
   onCorrect: (document: FiscalDocument) => void;
   onError: (message: string) => void;
@@ -53,6 +54,7 @@ type FiscalDocumentListProps = {
 
 type RowProps = {
   api: FiscalApi;
+  canDownloadOfficialArtifacts: boolean;
   document: FiscalDocument;
   onCorrect: (document: FiscalDocument) => void;
   onError: (message: string) => void;
@@ -61,6 +63,7 @@ type RowProps = {
 
 export function FiscalDocumentList({
   api,
+  canDownloadOfficialArtifacts,
   documents,
   onCorrect,
   onError,
@@ -76,7 +79,7 @@ export function FiscalDocumentList({
       documents
         .filter(
           (document) =>
-            !!document.providerDocumentId &&
+            document.hasProviderReference &&
             isPendingSyncStatus(document.status),
         )
         .map((document) => document.id)
@@ -123,7 +126,13 @@ export function FiscalDocumentList({
     );
   });
 
-  const rowProps = { api, onCorrect, onError, onRefresh };
+  const rowProps = {
+    api,
+    canDownloadOfficialArtifacts,
+    onCorrect,
+    onError,
+    onRefresh,
+  };
 
   return (
     <div className="fiscal-docs">

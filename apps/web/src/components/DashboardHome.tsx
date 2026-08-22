@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import type { ModuleId } from "../app/modules";
 import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { readRuntimeStoreSlug } from "../features/account/currentStore";
@@ -22,6 +23,13 @@ import { DashboardHomeSidebarPanel } from "./DashboardHomeSidebarPanel";
 import { DashboardHomeToolbar } from "./DashboardHomeToolbar";
 import { AppApiError, formatApiErrorDisplay } from "../lib/apiErrors";
 import { Button } from "./ui/button";
+import { FeatureAlert } from "./ui/FeatureStates";
+
+type AppliedAnalyticsPeriod = {
+  from: string;
+  requestKey: number;
+  to: string;
+};
 
 export function DashboardHome({
   api,
@@ -38,24 +46,38 @@ export function DashboardHome({
   );
   const [analyticsDashboard, setAnalyticsDashboard] =
     useState<AnalyticsDashboard | null>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [isAnalyticsRefreshing, setIsAnalyticsRefreshing] = useState(false);
   const [status, setStatus] = useState<DashboardLoadStatus>({
     kind: "loading",
   });
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
   const [resourceIndex, setResourceIndex] = useState(0);
   const [pushEnabled, setPushEnabled] = useState(true);
+  const latestAnalyticsRequestRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const bodyState = getDashboardBodyState(status, homeDashboard);
   const publicStoreSlug = readRuntimeStoreSlug();
 
-  const [startDate, setStartDate] = useState<Date>(() => {
+  const initialPeriodRef = useRef<{ endDate: Date; startDate: Date } | null>(
+    null,
+  );
+  if (!initialPeriodRef.current) {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  });
-  const [endDate, setEndDate] = useState<Date>(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  });
+    initialPeriodRef.current = {
+      endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+      startDate: new Date(now.getFullYear(), now.getMonth(), 1),
+    };
+  }
+  const initialPeriod = initialPeriodRef.current;
+  const [draftStartDate, setDraftStartDate] = useState(initialPeriod.startDate);
+  const [draftEndDate, setDraftEndDate] = useState(initialPeriod.endDate);
+  const [appliedAnalyticsPeriod, setAppliedAnalyticsPeriod] =
+    useState<AppliedAnalyticsPeriod>(() => ({
+      from: formatDashboardDate(initialPeriod.startDate),
+      requestKey: 0,
+      to: formatDashboardDate(initialPeriod.endDate),
+    }));
 
   const refreshHome = useCallback(async () => {
     setStatus({ kind: "loading" });
@@ -69,7 +91,7 @@ export function DashboardHome({
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel carregar o painel gerencial.",
+          "Não foi possível carregar o painel gerencial.",
         ),
         ...(statusCode === undefined ? {} : { statusCode }),
       });
@@ -82,28 +104,52 @@ export function DashboardHome({
 
   useEffect(() => {
     if (!canViewAnalytics) {
+      latestAnalyticsRequestRef.current += 1;
       setAnalyticsDashboard(null);
+      setAnalyticsError(null);
+      setIsAnalyticsRefreshing(false);
       return;
     }
 
-    let cancelled = false;
-    setAnalyticsDashboard(null);
+    const requestId = latestAnalyticsRequestRef.current + 1;
+    latestAnalyticsRequestRef.current = requestId;
+    setAnalyticsError(null);
+    setIsAnalyticsRefreshing(true);
     void analyticsApi
       .getDashboard({
-        from: formatDashboardDate(startDate),
-        to: formatDashboardDate(endDate),
+        from: appliedAnalyticsPeriod.from,
+        to: appliedAnalyticsPeriod.to,
       })
       .then((dashboard) => {
-        if (!cancelled) setAnalyticsDashboard(dashboard);
+        if (latestAnalyticsRequestRef.current !== requestId) return;
+        setAnalyticsDashboard(dashboard);
       })
-      .catch(() => {
-        if (!cancelled) setAnalyticsDashboard(null);
+      .catch((error: unknown) => {
+        if (latestAnalyticsRequestRef.current !== requestId) return;
+        setAnalyticsError(
+          formatApiErrorDisplay(
+            error,
+            "Não foi possível atualizar os indicadores.",
+          ),
+        );
+      })
+      .finally(() => {
+        if (latestAnalyticsRequestRef.current !== requestId) return;
+        setIsAnalyticsRefreshing(false);
       });
 
     return () => {
-      cancelled = true;
+      if (latestAnalyticsRequestRef.current === requestId) {
+        latestAnalyticsRequestRef.current = requestId + 1;
+      }
     };
-  }, [analyticsApi, canViewAnalytics, endDate, startDate]);
+  }, [
+    analyticsApi,
+    appliedAnalyticsPeriod.from,
+    appliedAnalyticsPeriod.requestKey,
+    appliedAnalyticsPeriod.to,
+    canViewAnalytics,
+  ]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -116,7 +162,7 @@ export function DashboardHome({
 
   const handleCopyLink = async () => {
     if (!publicStoreSlug) return;
-    const linkText = `${publicStoreSlug}.lojaveiculos.com.br`;
+    const linkText = `https://${publicStoreSlug}.lojaveiculos.com.br`;
     try {
       await navigator.clipboard.writeText(linkText);
       setCopyState("copied");
@@ -126,10 +172,19 @@ export function DashboardHome({
     }
   };
 
-  const handleVisitStore = () => {
-    if (!publicStoreSlug) return;
-    const url = `https://${publicStoreSlug}.lojaveiculos.com.br`;
-    window.open(url, "_blank", "noopener");
+  const applyDraftPeriod = () => {
+    setAppliedAnalyticsPeriod((current) => ({
+      from: formatDashboardDate(draftStartDate),
+      requestKey: current.requestKey + 1,
+      to: formatDashboardDate(draftEndDate),
+    }));
+  };
+
+  const retryAppliedPeriod = () => {
+    setAppliedAnalyticsPeriod((current) => ({
+      ...current,
+      requestKey: current.requestKey + 1,
+    }));
   };
 
   if (bodyState === "loading") {
@@ -155,22 +210,54 @@ export function DashboardHome({
   if (!homeDashboard) return null;
 
   const stats = createDashboardStats(analyticsDashboard);
+  const isDraftPeriodDirty =
+    formatDashboardDate(draftStartDate) !== appliedAnalyticsPeriod.from ||
+    formatDashboardDate(draftEndDate) !== appliedAnalyticsPeriod.to;
 
   return (
     <div className="relative min-h-screen store-dashboard overflow-hidden">
       <main ref={containerRef} className="dashboard-main">
         <DashboardHomeToolbar
           copyState={copyState}
+          isPeriodDirty={isDraftPeriodDirty}
+          isRefreshing={isAnalyticsRefreshing}
+          onApplyPeriod={applyDraftPeriod}
           onCopyLink={() => void handleCopyLink()}
-          onVisitStore={handleVisitStore}
           publicSlug={publicStoreSlug}
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
+          startDate={draftStartDate}
+          endDate={draftEndDate}
+          onStartDateChange={setDraftStartDate}
+          onEndDateChange={setDraftEndDate}
           canViewAnalytics={canViewAnalytics}
         />
-        <DashboardHomeKpis stats={stats} />
+        {analyticsError ? (
+          <FeatureAlert
+            action={
+              <Button
+                disabled={isAnalyticsRefreshing}
+                onClick={retryAppliedPeriod}
+                size="xs"
+                type="button"
+                variant="outline"
+              >
+                <RefreshCw aria-hidden="true" />
+                Tentar novamente
+              </Button>
+            }
+            icon={<AlertTriangle aria-hidden="true" className="size-4" />}
+            title="Não foi possível atualizar os indicadores"
+            tone="warning"
+          >
+            {analyticsDashboard
+              ? `Os últimos dados carregados continuam visíveis. ${analyticsError}`
+              : analyticsError}
+          </FeatureAlert>
+        ) : null}
+        <DashboardHomeKpis
+          canViewAnalytics={canViewAnalytics}
+          onNavigate={onNavigate}
+          stats={stats}
+        />
         <div className="dashboard-panels-grid">
           <DashboardHomeMainPanels
             analyticsDashboard={analyticsDashboard}

@@ -139,9 +139,11 @@ async function resolveAccountAuthorization(
       userId: user.id,
     });
     if (isAgency) {
+      permissions.add("analytics.read");
       permissions.add("billing.manage");
       permissions.add("financing.connection.manage");
       permissions.add("store.manage");
+      permissions.add("users.manage");
     }
   }
   return {

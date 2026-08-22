@@ -95,6 +95,8 @@ export const llmsText = `# Loja Veiculos API
 - inventory.media_update: required to reorder media or update media metadata/visibility.
 - inventory.media_delete: required to delete media records and request object cleanup.
 - inventory.cost_create: required to create vehicle costs and linked finance entries.
+- inventory.cost_update: required to correct active vehicle costs and linked finance entries.
+- inventory.cost_void: required to void active vehicle costs with a reason while preserving audit history.
 - inventory.checklist_read: required to read vehicle readiness checklists.
 - inventory.checklist_update: required to create and update vehicle readiness checklists.
 - inventory.reserve: required to reserve, release, cancel, or expire vehicle unit reservations and emit reservation receipts.
@@ -208,7 +210,7 @@ export const llmsText = `# Loja Veiculos API
 
 ## Current analytics endpoints
 - GET /api/v1/analytics/home: returns the core store dashboard summary; requires dashboard.read and is not entitlement-gated.
-- GET /api/v1/analytics/dashboard: returns DB-backed inventory, finance, lead funnel, source attribution, and KPI snapshots; requires analytics.read and analytics entitlement.
+- GET /api/v1/analytics/dashboard: returns the selected DB-backed period with inventory, sales, lead funnel, source attribution, owner vehicle margins, finance planned/paid category totals, CRM interactions, document status/kind totals, and marketing availability; requires analytics.read and the analytics entitlement. Closed-sales totals count only current revisions closed in the period, open receivables are pending revenue due in the period, and availableAskingValueCents sums each published listing asking price once rather than once per unit. Owner and finance data additionally require finance.read, CRM data requires crm.pipeline.read or crm.access, and document data requires documents.read. Without finance.read, financialAvailability is restricted, base revenue/ticket/margin/overdue values are null, financial KPI strings are omitted, and owner/finance sections return zero or empty values with an explicit restriction reason. Other restricted sections also return an explicit reason with zero or empty values. Marketing reports unavailable until visit/click events are persisted.
 
 ## Current compliance endpoints
 - GET /api/v1/compliance/snapshot: returns LGPD workflow, access review, audit export, retention, provider webhook, and secret-rotation posture; requires compliance.manage and compliance entitlement.

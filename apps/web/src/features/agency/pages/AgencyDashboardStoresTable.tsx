@@ -59,10 +59,10 @@ export function AgencyStoresTable({
       <table className="agency-table">
         <thead>
           <tr>
-            <th className="text-left">Loja / Subdomínio</th>
-            <th className="text-center">Planos & Status</th>
+            <th className="text-left">Loja e subdomínio</th>
+            <th className="text-center">Plano e status</th>
             <th className="text-center">Estoque</th>
-            <th className="text-right">Ações Rápidas</th>
+            <th className="text-right">Ações rápidas</th>
           </tr>
         </thead>
         <tbody>
@@ -124,8 +124,12 @@ function AgencyStoreRow({
           <AgencyRowButton
             icon={<Gem className="size-3.5" />}
             label="Plano"
-            onClick={() => void navigate("/agency/admin/unified-billing")}
-            title="Gerenciar Plano"
+            onClick={() =>
+              void navigate(
+                `/agency/admin/unified-billing?storeId=${encodeURIComponent(store.id)}`,
+              )
+            }
+            title="Gerenciar plano"
           />
           <AgencyRowButton
             icon={<Settings className="size-3.5" />}
@@ -137,8 +141,9 @@ function AgencyStoreRow({
             href={`https://${store.subdominio}.lojaveiculos.com.br`}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={`Ver site público de ${store.settings?.profile_name || store.nome_da_loja}`}
             className="p-2.5 bg-panel border border-line text-muted hover:text-accent-text hover:border-accent/40 rounded-xl transition-all"
-            title="Ver Site Público"
+            title="Ver site público"
           >
             <ExternalLink className="size-4" />
           </a>

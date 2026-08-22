@@ -8,9 +8,9 @@ import {
 
 const expectedPermissionCounts = Object.freeze({
   admin: 102,
-  agency: 108,
+  agency: 110,
   investor: 15,
-  owner: 108,
+  owner: 110,
   salesman: 47,
   supervisor: 78,
 });

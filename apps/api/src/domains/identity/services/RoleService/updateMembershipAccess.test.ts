@@ -192,6 +192,22 @@ describe("updateMembershipAccess", () => {
     );
   });
 
+  it("lets a validated tenant-level agency manage owners without a direct store membership", async () => {
+    const repository = createRepository();
+    const context = createContext("user_virtual_agency" as UserId);
+    context.membershipRole = "agency";
+
+    await updateMembershipAccess(
+      context,
+      { membershipId: ownerMembershipId, overrides: [], role: "owner" },
+      { roleManagementRepository: repository },
+    );
+
+    expect(repository.updateMembershipAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ membershipId: ownerMembershipId }),
+    );
+  });
+
   it("blocks users from editing their own role", async () => {
     await expect(
       updateMembershipAccess(

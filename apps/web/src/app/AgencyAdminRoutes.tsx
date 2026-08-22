@@ -8,6 +8,7 @@ import {
   AgencyDashboardPage,
   AgencyLayout,
   AgencyStatsPage,
+  AgencyTeamAccessPage,
 } from "./AppLazyRoutes";
 
 export function AgencyAdminRoutes() {
@@ -22,6 +23,7 @@ export function AgencyAdminRoutes() {
       >
         <Route index element={<AgencyDashboardPage />} />
         <Route path="stats" element={<AgencyStatsPage />} />
+        <Route path="team-access" element={<AgencyTeamAccessPage />} />
         <Route path="unified-billing" element={<AgencyBillingPage />} />
         <Route path="credere" element={<AgencyCrederePage />} />
         <Route path="create-store" element={<AgencyCreateStorePage />} />

@@ -39,7 +39,6 @@
 
 .fiscal-shell-header .documents-top-bar-eyebrow {
   align-items: center;
-  color: var(--color-accent-strong);
   display: inline-flex;
   font-size: var(--font-size-xs);
   font-weight: 900;
@@ -171,7 +170,7 @@
 }
 
 .fiscal-kpi-card--green {
-  --fiscal-kpi-accent: var(--color-green-start);
+  --fiscal-kpi-accent: var(--color-success-strong);
 }
 
 .fiscal-kpi-card--accent {

@@ -17,6 +17,13 @@ import { VehicleAiStudioProviderError } from "../../../domains/vehicle/ports/veh
 import { VehicleListingDeletionStateError } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
 import { VehiclePublicationValidationError } from "../../../domains/vehicle/services/VehicleService/publishVehicleListing.js";
 import {
+  VehicleCostFinanceEntryDuplicateError,
+  VehicleCostFinanceEntryNotFoundError,
+  VehicleCostNotFoundError,
+  VehicleCostStateError,
+  VehicleCostValidationError,
+} from "../../../domains/vehicle/vehicleCostErrors.js";
+import {
   VehicleListingNotFoundError,
   VehicleMediaNotFoundError,
   VehicleSupplierNotFoundError,
@@ -48,7 +55,8 @@ export function mapInventoryWorkflowError(
     error instanceof VehicleWorkflowValidationError ||
     error instanceof VehicleChecklistValidationError ||
     error instanceof VehicleAiStudioValidationError ||
-    error instanceof VehiclePublicationValidationError
+    error instanceof VehiclePublicationValidationError ||
+    error instanceof VehicleCostValidationError
   ) {
     return jsonApiError(context, {
       code: "VEHICLE_VALIDATION_ERROR",
@@ -61,6 +69,19 @@ export function mapInventoryWorkflowError(
   if (error instanceof VehicleWorkflowStateError) {
     return jsonApiError(context, {
       code: "VEHICLE_WORKFLOW_CONFLICT",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+
+  if (
+    error instanceof VehicleCostStateError ||
+    error instanceof VehicleCostFinanceEntryDuplicateError ||
+    error instanceof VehicleCostFinanceEntryNotFoundError
+  ) {
+    return jsonApiError(context, {
+      code: "VEHICLE_COST_CONFLICT",
       error,
       message: error.message,
       status: 409,
@@ -180,12 +201,14 @@ function isVehicleInventoryNotFoundError(
   error: unknown,
 ): error is
   | VehicleListingNotFoundError
+  | VehicleCostNotFoundError
   | VehicleChecklistNotFoundError
   | VehicleMediaNotFoundError
   | VehicleSupplierNotFoundError
   | VehicleUnitNotFoundError {
   return (
     error instanceof VehicleListingNotFoundError ||
+    error instanceof VehicleCostNotFoundError ||
     error instanceof VehicleChecklistNotFoundError ||
     error instanceof VehicleMediaNotFoundError ||
     error instanceof VehicleSupplierNotFoundError ||
@@ -193,6 +216,7 @@ function isVehicleInventoryNotFoundError(
     (error instanceof Error &&
       [
         "VehicleListingNotFoundError",
+        "VehicleCostNotFoundError",
         "VehicleChecklistNotFoundError",
         "VehicleMediaNotFoundError",
         "VehicleSupplierNotFoundError",

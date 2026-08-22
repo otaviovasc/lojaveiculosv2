@@ -25,6 +25,9 @@ describe("fiscal controller persisted provider reference contract", () => {
     });
 
     expect(response.status).toBe(200);
+    const payload: unknown = await response.json();
+    expect(payload).toMatchObject({ hasProviderReference: true });
+    expect(payload).not.toHaveProperty("providerDocumentId");
     expect(services.cancelDocument).toHaveBeenCalledWith(
       expect.objectContaining({ actor: { id: "user_1", kind: "user" } }),
       {
@@ -123,10 +126,10 @@ describe("fiscal controller persisted provider reference contract", () => {
   });
 });
 
-function createContext() {
+function createContext(permissions = ["fiscal.manage"]) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
-    permissions: ["fiscal.manage"],
+    permissions,
     request: { requestId: "request_1" },
     storeId: "store_1",
     tenantId: "tenant_1",
@@ -140,6 +143,13 @@ function createServices() {
   const syncDocumentStatus = vi.fn<FiscalServices["syncDocumentStatus"]>(
     async () => documentRecord,
   );
+  const downloadDocumentArtifact = vi.fn<
+    FiscalServices["downloadDocumentArtifact"]
+  >(async () => ({
+    bytes: new TextEncoder().encode("%PDF-1.7 official"),
+    contentType: "application/pdf",
+    fileName: "nfe-oficial-20260712.pdf",
+  }));
   const value: FiscalServices = {
     archiveRecipient: unused("archiveRecipient"),
     archiveTemplate: unused("archiveTemplate"),
@@ -147,6 +157,7 @@ function createServices() {
     confirmDefaults: unused("confirmDefaults"),
     createRecipient: unused("createRecipient"),
     createTemplate: unused("createTemplate"),
+    downloadDocumentArtifact,
     getConnection: unused("getConnection"),
     getOverview: unused("getOverview"),
     issueDocument: unused("issueDocument"),
@@ -162,7 +173,12 @@ function createServices() {
     updateTemplate: unused("updateTemplate"),
     uploadCertificate: unused("uploadCertificate"),
   };
-  return { cancelDocument, syncDocumentStatus, value };
+  return {
+    cancelDocument,
+    downloadDocumentArtifact,
+    syncDocumentStatus,
+    value,
+  };
 }
 
 const documentRecord: FiscalDocument = {

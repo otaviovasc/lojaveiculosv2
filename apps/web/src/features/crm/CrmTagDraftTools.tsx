@@ -59,7 +59,7 @@ export function TagDraftPreview({ draft }: { draft: TagDraft }) {
           style={{
             backgroundColor: `color-mix(in srgb, ${tagColor} 16%, var(--color-panel))`,
             borderColor: `color-mix(in srgb, ${tagColor} 40%, var(--color-line))`,
-            color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
+            color: "var(--color-text)",
           }}
         >
           <span
@@ -77,7 +77,7 @@ export function TagDraftPreview({ draft }: { draft: TagDraft }) {
           style={{
             backgroundColor: `color-mix(in srgb, ${tagColor} 18%, var(--color-panel))`,
             borderColor: `color-mix(in srgb, ${tagColor} 45%, var(--color-line))`,
-            color: `color-mix(in srgb, ${tagColor} 90%, var(--color-text))`,
+            color: "var(--color-text)",
           }}
         >
           <span

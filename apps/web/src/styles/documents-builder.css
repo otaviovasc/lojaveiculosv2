@@ -251,7 +251,7 @@
 
 .documents-builder-fab-row {
   align-items: center;
-  display: flex;
+  display: none;
   gap: 0.6rem;
 }
 
@@ -312,6 +312,16 @@
   }
 }
 
+@media (max-width: 640px) {
+  .documents-builder-topbar-actions {
+    display: none;
+  }
+
+  .documents-builder-fab-row {
+    display: flex;
+  }
+}
+
 /* FeaturePageShell wraps the page in overflow-hidden, which kills
    position: sticky on the sidebar. Restore visibility for this page only. */
 .store-dashboard.documents-builder-page {
@@ -353,13 +363,13 @@
 }
 
 .documents-builder-sidebar-create-btn {
-  background: var(--color-accent);
-  color: var(--color-accent-foreground);
+  background: var(--color-app);
+  color: var(--color-text);
 }
 
 .documents-builder-sidebar-create-btn:hover {
-  background: var(--color-accent-strong);
-  color: var(--color-accent-strong-foreground);
+  background: var(--color-app-elevated);
+  color: var(--color-text);
 }
 
 .documents-builder-filter-pill {

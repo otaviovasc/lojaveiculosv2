@@ -43,6 +43,11 @@ export const AgencyStatsPage = lazy(() =>
     default: module.AgencyStatsPage,
   })),
 );
+export const AgencyTeamAccessPage = lazy(() =>
+  import("../features/agency/pages/AgencyTeamAccessPage").then((module) => ({
+    default: module.AgencyTeamAccessPage,
+  })),
+);
 export const LandingPage = lazy(() =>
   import("../features/marketing/LandingPage").then((module) => ({
     default: module.LandingPage,

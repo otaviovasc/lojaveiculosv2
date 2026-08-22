@@ -39,7 +39,7 @@ import { readDocumentsRouteState } from "./documentsRouteState";
 import { useDocumentUnitFolders } from "./useDocumentUnitFolders";
 import { useDocumentsBulkSelection } from "./useDocumentsBulkSelection";
 import { useDocumentsModuleState } from "./useDocumentsModuleState";
-import type { WorkspaceDocument } from "./types";
+import type { ListDocumentsFilters, WorkspaceDocument } from "./types";
 
 export function DocumentsModule({
   api,
@@ -87,7 +87,35 @@ export function DocumentsModule({
     }
   }, [api]);
 
-  const state = useDocumentsModuleState(runtimeApi);
+  const documentQuery = useMemo<ListDocumentsFilters>(() => {
+    const selectedUnitId = selectedFolderKey.startsWith("unit:")
+      ? selectedFolderKey.slice("unit:".length)
+      : null;
+    return {
+      ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+      ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
+      ...(filters.kind ? { kind: filters.kind } : {}),
+      ...(originFilter !== "all" ? { origin: originFilter } : {}),
+      ...(filters.search.trim() ? { search: filters.search.trim() } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(selectedUnitId
+        ? {
+            scope: "vehicle" as const,
+            targetId: selectedUnitId,
+            targetType: "vehicle_unit" as const,
+          }
+        : { scope: "general" as const }),
+    };
+  }, [
+    filters.dateFrom,
+    filters.dateTo,
+    filters.kind,
+    filters.search,
+    filters.status,
+    originFilter,
+    selectedFolderKey,
+  ]);
+  const state = useDocumentsModuleState(runtimeApi, documentQuery);
   const unitFolders = useDocumentUnitFolders(state.documents, inventoryApi);
   const vehicleOptions = unitFolders.options;
 
@@ -129,6 +157,7 @@ export function DocumentsModule({
   const isLoading = state.status.kind === "loading";
   const errorMessage =
     state.status.kind === "error" ? state.status.message : null;
+  const hasMoreDocuments = state.documents.length < state.totalDocuments;
 
   const selectedUnit = selectedFolderKey.startsWith("unit:")
     ? (vehicleOptions.find(
@@ -239,9 +268,10 @@ export function DocumentsModule({
 
       <DocumentsKpiSummary
         activeOrigin={originFilter}
+        isPartial={hasMoreDocuments}
         isLoading={isLoading}
         onOriginSelect={setOriginFilter}
-        summary={summary}
+        summary={{ ...summary, total: state.totalDocuments }}
       />
 
       {errorMessage ? (
@@ -260,23 +290,29 @@ export function DocumentsModule({
 
       {viewMode === "grid" ? (
         <DocumentsFolderCardsGrid
+          countsAreFolderScoped
           documents={state.documents}
+          hasMoreDocuments={hasMoreDocuments}
           isLoading={unitFolders.status === "loading" || isLoading}
           onSelectFolder={(key) => {
             selectFolder(key);
             setViewMode("split");
           }}
           selectedKey={selectedFolderKey}
+          selectedTotalDocumentCount={state.totalDocuments}
           vehicleOptions={vehicleOptions as readonly DocumentVehicleOption[]}
         />
       ) : (
         <section className="documents-command-layout">
           <div className="documents-desktop-folders">
             <DocumentsFolderSidebar
+              countsAreFolderScoped
               documents={state.documents}
+              hasMoreDocuments={hasMoreDocuments}
               isLoading={unitFolders.status === "loading"}
               onSelect={selectFolder}
               selectedKey={selectedFolderKey}
+              selectedTotalDocumentCount={state.totalDocuments}
               vehicleOptions={vehicleOptions}
             />
           </div>
@@ -289,12 +325,15 @@ export function DocumentsModule({
             folderDocuments={folderDocuments}
             hasActiveFilters={hasFilters}
             isLoading={isLoading}
+            isLoadingMore={state.isLoadingMore}
+            loadedDocumentCount={state.documents.length}
             onCloseDetail={closeDetail}
             onDownloadDocument={state.downloadDocument}
             onDownloadSelected={() => {
               void onDownloadSelected();
             }}
             onKindChange={(value) => setFilter("kind", value)}
+            onLoadMore={() => void state.loadMore()}
             onOriginSelect={setOriginFilter}
             onPreviewDocument={state.previewDocument}
             onSearchChange={(value) => setFilter("search", value)}
@@ -306,12 +345,14 @@ export function DocumentsModule({
             onStatusChange={(value) => setFilter("status", value)}
             onUploadClick={() => state.setIsUploadDialogOpen(true)}
             originFilter={originFilter}
+            paginationError={state.paginationError}
             search={filters.search}
             selectedFolderKey={selectedFolderKey}
             showUpload={showUpload}
             sortBy={sortBy}
             sortedVisible={sortedVisible}
             state={state}
+            totalDocumentCount={state.totalDocuments}
             selection={selection}
             updateDocument={state.updateDocument}
             visibleSelectedCount={visibleSelectedCount}
@@ -323,6 +364,7 @@ export function DocumentsModule({
         deleteDocument={state.deleteDocument}
         documentToDelete={state.documentToDelete}
         documents={state.documents}
+        hasMoreDocuments={hasMoreDocuments}
         isDocumentActionBusy={state.isDocumentActionBusy}
         isUploadDialogOpen={state.isUploadDialogOpen}
         linkDocument={linkDocument}
@@ -333,6 +375,7 @@ export function DocumentsModule({
         onUpdateDocument={state.updateDocument}
         runtimeApi={runtimeApi}
         selectedKey={selectedFolderKey}
+        selectedTotalDocumentCount={state.totalDocuments}
         setDocumentToDelete={state.setDocumentToDelete}
         setIsUploadDialogOpen={state.setIsUploadDialogOpen}
         setLinkDocument={setLinkDocument}

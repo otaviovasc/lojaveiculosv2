@@ -52,6 +52,37 @@ export function createDrizzleVehicleOperationsRepository(
         .returning();
       return toStatusHistory(requireRow(row));
     },
+    async findCost(input) {
+      const scope = requireScope(input);
+      const [row] = await db
+        .select()
+        .from(vehicleCosts)
+        .where(
+          and(
+            eq(vehicleCosts.id, input.costId),
+            eq(vehicleCosts.unitId, input.unitId),
+            eq(vehicleCosts.storeId, scope.storeId),
+            eq(vehicleCosts.tenantId, scope.tenantId),
+          ),
+        );
+      return row ? toCost(row) : null;
+    },
+    async listActiveCostsByUnitIds(input: ListVehicleCostsInput) {
+      const scope = requireScope(input);
+      if (input.unitIds.length === 0) return [];
+      const rows = await db
+        .select()
+        .from(vehicleCosts)
+        .where(
+          and(
+            eq(vehicleCosts.status, "active"),
+            eq(vehicleCosts.storeId, scope.storeId),
+            eq(vehicleCosts.tenantId, scope.tenantId),
+            inArray(vehicleCosts.unitId, [...input.unitIds]),
+          ),
+        );
+      return rows.map(toCost);
+    },
     async listCostsByUnitIds(input: ListVehicleCostsInput) {
       const scope = requireScope(input);
       if (input.unitIds.length === 0) return [];
@@ -95,6 +126,23 @@ export function createDrizzleVehicleOperationsRepository(
         );
       return rows.map(toStatusHistory);
     },
+    async updateCost(record) {
+      const scope = requireScope(record);
+      const [row] = await db
+        .update(vehicleCosts)
+        .set(toCostUpdate(record))
+        .where(
+          and(
+            eq(vehicleCosts.id, record.costId),
+            eq(vehicleCosts.unitId, record.unitId),
+            eq(vehicleCosts.storeId, scope.storeId),
+            eq(vehicleCosts.tenantId, scope.tenantId),
+            eq(vehicleCosts.status, record.expectedStatus),
+          ),
+        )
+        .returning();
+      return row ? toCost(row) : null;
+    },
   };
 }
 
@@ -106,10 +154,34 @@ function toCost(row: CostRow): VehicleCost {
     description: row.description,
     id: row.id,
     kind: row.kind,
+    status: row.status,
     storeId: row.storeId,
     tenantId: row.tenantId,
     unitId: row.unitId,
     updatedAt: row.updatedAt,
+    voidedAt: row.voidedAt,
+    voidReason: row.voidReason,
+  };
+}
+
+function toCostUpdate(
+  record: Parameters<VehicleOperationsRepository["updateCost"]>[0],
+) {
+  return {
+    ...(record.amountCents !== undefined
+      ? { amountCents: record.amountCents }
+      : {}),
+    ...(record.costDate !== undefined ? { costDate: record.costDate } : {}),
+    ...(record.description !== undefined
+      ? { description: record.description }
+      : {}),
+    ...(record.kind !== undefined ? { kind: record.kind } : {}),
+    ...(record.status !== undefined ? { status: record.status } : {}),
+    ...(record.voidedAt !== undefined ? { voidedAt: record.voidedAt } : {}),
+    ...(record.voidReason !== undefined
+      ? { voidReason: record.voidReason }
+      : {}),
+    updatedAt: new Date(),
   };
 }
 

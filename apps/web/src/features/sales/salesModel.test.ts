@@ -223,14 +223,12 @@ describe("sales model start context", () => {
       "Contrato de Compra e Venda",
     );
     expect(formatDocumentKindLabel("sale_receipt")).toBe("Recibo de Venda");
-    expect(formatDocumentKindLabel("delivery_term")).toBe(
-      "Termo de Entrega e Garantia",
-    );
+    expect(formatDocumentKindLabel("delivery_term")).toBe("Termo de Entrega");
     expect(formatDocumentKindLabel("power_of_attorney")).toBe(
       "Procuração de Transferência",
     );
     expect(formatDocumentKindLabel("buyer_acknowledgment")).toBe(
-      "Termo de Recebimento",
+      "Termo de recebimento",
     );
     expect(formatDocumentKindLabel("reservation_receipt")).toBe(
       "Recibo de Sinal e Reserva",

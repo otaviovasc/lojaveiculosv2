@@ -9,13 +9,15 @@ test("shared select keeps the chosen option brand-forward and accessible", async
   page,
 }) => {
   await loginAs(page, qaPersonas.owner);
-  await page.goto("/commissions");
+  await page.goto("/reports");
   await expect(
-    page.getByRole("heading", { level: 1, name: "Comissões" }),
+    page.getByRole("heading", { level: 1, name: "Relatórios" }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Periodo" }).click();
-  const selected = page.getByRole("option", { name: "Este mês" });
+  await page
+    .getByRole("button", { exact: true, name: "Período dos relatórios" })
+    .click();
+  const selected = page.getByRole("option", { selected: true });
   await expect(selected).toBeVisible();
   const colors = await selected.evaluate((element) => {
     const root = getComputedStyle(document.documentElement);

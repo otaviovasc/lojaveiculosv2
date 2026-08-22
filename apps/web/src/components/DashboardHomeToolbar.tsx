@@ -1,12 +1,15 @@
 import { Check, Copy, Eye } from "lucide-react";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
+import { Button } from "./ui/button";
 import { DatePickerField } from "./ui/DatePickerField";
 
 export function DashboardHomeToolbar({
   canViewAnalytics,
   copyState,
+  isPeriodDirty,
+  isRefreshing,
+  onApplyPeriod,
   onCopyLink,
-  onVisitStore,
   publicSlug,
   startDate,
   endDate,
@@ -15,8 +18,10 @@ export function DashboardHomeToolbar({
 }: {
   canViewAnalytics: boolean;
   copyState: "idle" | "copied";
+  isPeriodDirty: boolean;
+  isRefreshing: boolean;
+  onApplyPeriod: () => void;
   onCopyLink: () => void;
-  onVisitStore: () => void;
   publicSlug?: string | undefined;
   startDate: Date;
   endDate: Date;
@@ -26,19 +31,13 @@ export function DashboardHomeToolbar({
   const publicUrl = publicSlug
     ? `${publicSlug}.lojaveiculos.com.br`
     : "Loja sem link público";
+  const publicHref = publicSlug ? `https://${publicUrl}` : undefined;
 
   return (
     <div className="dashboard-toolbar-premium">
       <DashboardHomeEntry delay={0.02}>
         <div className="dashboard-brand-section">
-          <h1 className="dashboard-title-h1">Dashboard Gerencial</h1>
-          <div className="dashboard-status-pill">
-            <span className="dashboard-pulse-dot">
-              <span className="ping"></span>
-              <span className="dot"></span>
-            </span>
-            <span className="dashboard-status-pill-text">Loja Ativa</span>
-          </div>
+          <h1 className="dashboard-title-h1">Dashboard gerencial</h1>
         </div>
       </DashboardHomeEntry>
 
@@ -68,22 +67,49 @@ export function DashboardHomeToolbar({
                 value={endDate}
               />
             </div>
+            <Button
+              aria-busy={isRefreshing}
+              disabled={!canViewAnalytics || isRefreshing}
+              onClick={onApplyPeriod}
+              size="xs"
+              type="button"
+              variant="outline"
+            >
+              {isRefreshing
+                ? "Atualizando..."
+                : isPeriodDirty
+                  ? "Aplicar período"
+                  : "Atualizar"}
+            </Button>
           </div>
         </DashboardHomeEntry>
 
         <DashboardHomeEntry delay={0.06}>
           <div className="control-group-wrapper">
-            <span className="control-group-label">Link Público</span>
+            <span className="control-group-label">Link público</span>
             <div className="public-link-container">
-              <span
-                className="public-link-url hover:text-accent transition-colors cursor-pointer"
-                onClick={onVisitStore}
-                title={publicUrl}
-              >
-                {publicUrl}
-              </span>
+              {publicHref ? (
+                <a
+                  className="public-link-url transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  href={publicHref}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  title={publicUrl}
+                >
+                  {publicUrl}
+                </a>
+              ) : (
+                <span className="public-link-url" title={publicUrl}>
+                  {publicUrl}
+                </span>
+              )}
               <div className="public-link-actions">
                 <button
+                  aria-label={
+                    copyState === "copied"
+                      ? "Link da loja copiado"
+                      : "Copiar link da loja"
+                  }
                   onClick={onCopyLink}
                   className={
                     "compact-action-btn " +
@@ -91,6 +117,7 @@ export function DashboardHomeToolbar({
                   }
                   disabled={!publicSlug}
                   title="Copiar Link"
+                  type="button"
                 >
                   {copyState === "copied" ? (
                     <Check className="size-4" />
@@ -98,14 +125,28 @@ export function DashboardHomeToolbar({
                     <Copy className="size-4" />
                   )}
                 </button>
-                <button
-                  onClick={onVisitStore}
-                  className="compact-action-btn"
-                  disabled={!publicSlug}
-                  title="Visitar Loja"
-                >
-                  <Eye className="size-4" />
-                </button>
+                {publicHref ? (
+                  <a
+                    aria-label="Visitar loja pública em nova aba"
+                    className="compact-action-btn"
+                    href={publicHref}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    title="Visitar loja"
+                  >
+                    <Eye className="size-4" />
+                  </a>
+                ) : (
+                  <button
+                    aria-label="Loja sem link público"
+                    className="compact-action-btn"
+                    disabled
+                    title="Loja sem link público"
+                    type="button"
+                  >
+                    <Eye className="size-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

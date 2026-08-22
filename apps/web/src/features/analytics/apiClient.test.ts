@@ -7,6 +7,7 @@ describe("analytics api client", () => {
       async () =>
         new Response(
           JSON.stringify({
+            financialAvailability: { status: "available" },
             generatedAt: "2026-06-22T17:00:00.000Z",
             inventory: {
               averagePriceCents: 12000000,
@@ -20,9 +21,12 @@ describe("analytics api client", () => {
             leadSources: [],
             revenue: {
               closedSalesCents: 24000000,
-              grossMarginCents: 0,
               openReceivablesCents: 100000,
               paidReceiptsCents: 0,
+            },
+            sales: {
+              avgTicketCents: 12000000,
+              closedCount: 2,
             },
             storeId: "store_1",
             tenantId: "tenant_1",
@@ -50,5 +54,9 @@ describe("analytics api client", () => {
       "/api/v1/analytics/dashboard?from=2026-06-01&to=2026-06-30",
     );
     expect(dashboard.storeId).toBe("store_1");
+    expect(dashboard.sales).toEqual({
+      avgTicketCents: 12000000,
+      closedCount: 2,
+    });
   });
 });

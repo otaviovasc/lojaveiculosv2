@@ -430,6 +430,7 @@ export function applyDocumentBuilderSuggestion(
 
 export function templateKindLabel(kind: DocumentKind) {
   const labels: Partial<Record<DocumentKind, string>> = {
+    buyer_acknowledgment: "Recebimento",
     delivery_term: "Entrega",
     finance_receipt: "Financeiro",
     inspection: "Checklist",

@@ -12,6 +12,7 @@ import type { CrmMessage, CrmConversationCycle } from "./crmConversationTypes";
 describe("useCrmMessages", () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   it("appends realtime messages without dropping loaded history", () => {
@@ -79,6 +80,108 @@ describe("useCrmMessages", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(api.listMessages).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not overlap polling requests for the active cycle", async () => {
+    vi.useFakeTimers();
+    const api = createApi();
+    let resolveFirstLoad: ((messages: CrmMessage[]) => void) | undefined;
+    vi.mocked(api.listMessages).mockImplementationOnce(
+      () =>
+        new Promise<CrmMessage[]>((resolve) => {
+          resolveFirstLoad = resolve;
+        }),
+    );
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        setError: vi.fn(),
+      }),
+    );
+
+    expect(api.listMessages).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      vi.advanceTimersByTime(5_000);
+      await Promise.resolve();
+    });
+    expect(api.listMessages).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveFirstLoad?.([]);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(5_000);
+      await Promise.resolve();
+    });
+
+    expect(api.listMessages).toHaveBeenCalledTimes(2);
+    expect(api.listMessages).toHaveBeenLastCalledWith("session_1", {
+      limit: 50,
+      offset: 0,
+    });
+  });
+
+  it("loads more than 50 messages and retries an older-page failure", async () => {
+    const api = createApi();
+    const allMessages = Array.from({ length: 60 }, (_, index) =>
+      createMessage({
+        content: `Mensagem ${index + 1}`,
+        createdAt: new Date(
+          Date.parse("2026-07-03T12:00:00.000Z") + index * 60_000,
+        ).toISOString(),
+        id: `message-${index + 1}`,
+      }),
+    ).reverse();
+    let olderAttempts = 0;
+    vi.mocked(api.listMessages).mockImplementation(async (_cycleId, query) => {
+      const offset = query?.offset ?? 0;
+      if (offset === 50 && olderAttempts++ === 0) {
+        throw new Error("temporary history failure");
+      }
+      return allMessages.slice(offset, offset + (query?.limit ?? 50));
+    });
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest?.messages).toHaveLength(50));
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)?.hasOlderMessages,
+    ).toBe(true);
+
+    await expect(latest!.loadOlderMessages()).resolves.toBe(false);
+    await waitFor(() => expect(latest?.olderMessagesError).toBe(true));
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)?.hasOlderMessages,
+    ).toBe(true);
+
+    await expect(latest!.loadOlderMessages()).resolves.toBe(true);
+    await waitFor(() => expect(latest?.messages).toHaveLength(60));
+    const loadedMessages = (latest as ReturnType<typeof useCrmMessages> | null)
+      ?.messages;
+    expect(loadedMessages?.[0]?.id).toBe("message-1");
+    expect(loadedMessages?.at(-1)?.id).toBe("message-60");
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)?.hasOlderMessages,
+    ).toBe(false);
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)?.olderMessagesError,
+    ).toBe(false);
+    expect(api.listMessages).toHaveBeenLastCalledWith("session_1", {
+      limit: 50,
+      offset: 50,
+    });
   });
 
   it("evicts only the revoked cycle cache before reselection", async () => {

@@ -160,6 +160,7 @@ function introForOperationalContext(context: string) {
 
 function kindFallbackTitle(kind: DocumentKind) {
   const titles: Partial<Record<DocumentKind, string>> = {
+    buyer_acknowledgment: "Termo de recebimento",
     delivery_term: "Termo de entrega",
     power_of_attorney: "Procuração",
     reservation_receipt: "Recibo de sinal",
@@ -170,6 +171,7 @@ function kindFallbackTitle(kind: DocumentKind) {
 }
 
 function documentNumber(kind: DocumentKind) {
+  if (kind === "buyer_acknowledgment") return "Recebimento nº 2048";
   if (kind === "reservation_receipt") return "Reserva nº 1024";
   if (kind === "sale_contract" || kind === "sale_receipt")
     return "Venda nº 2048";
@@ -179,6 +181,9 @@ function documentNumber(kind: DocumentKind) {
 }
 
 function introForKind(kind: DocumentKind) {
+  if (kind === "buyer_acknowledgment") {
+    return "O comprador confirma os documentos e itens recebidos com o veículo, incluindo chaves, manual e documento de transferência quando aplicável.";
+  }
   if (kind === "reservation_receipt") {
     return "Recebemos do comprador qualificado abaixo a importância descrita como sinal para reserva do veículo, conforme dados da operação registrada.";
   }

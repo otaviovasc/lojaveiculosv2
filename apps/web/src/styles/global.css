@@ -308,6 +308,12 @@ table,
   --color-accent-strong-foreground: var(--color-accent-strong-contrast);
 }
 
+[data-active-module="expenses"],
+[data-active-module="commissions"],
+[data-active-module="auto-entries"] {
+  --color-accent-contrast: var(--color-solid-deep-foreground);
+}
+
 :root[data-theme="dark"] [data-active-module="sales"],
 :root[data-theme="dark"] [data-active-module="inventory"],
 :root[data-theme="dark"] [data-active-module="crm"] {

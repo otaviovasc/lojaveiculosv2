@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, LoaderCircle, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
@@ -45,6 +45,7 @@ import type {
   FinanceRecurringEntry,
 } from "./types";
 import { useFinanceAccess } from "./useFinanceAccess";
+import { openFinanceEntryReceipt } from "./financeReceiptAction";
 
 export function FinanceEntriesWorkspace({
   api,
@@ -53,9 +54,15 @@ export function FinanceEntriesWorkspace({
   api: FinanceApi | undefined;
   onNavigate: ((moduleId: "reports") => void) | undefined;
 }) {
-  const { canAttach, canCreate, canUpdate, sellerOptions } = useFinanceAccess(
-    Boolean(api),
-  );
+  const {
+    canCreate,
+    canGenerateReceipt,
+    canOpenReceipt,
+    canUpdate,
+    sellerOptions,
+    vehicleOptions,
+    vehicleOptionsState,
+  } = useFinanceAccess(Boolean(api), true, true);
   const [activeType, setActiveType] = useState<FinanceEntryType | "all">("all");
   const [entriesByType, setEntriesByType] = useState<
     Record<FinanceEntryType, FinanceEntry[]>
@@ -82,6 +89,9 @@ export function FinanceEntriesWorkspace({
   const [cancelRecurringTarget, setCancelRecurringTarget] =
     useState<FinanceRecurringEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [receiptActionEntryId, setReceiptActionEntryId] = useState<
+    string | null
+  >(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const visibleEntriesByType = useMemo(
     () => ({
@@ -148,15 +158,18 @@ export function FinanceEntriesWorkspace({
 
   useEffect(() => {
     if (!runtimeApi) return;
+    let isCurrentRequest = true;
     setListState({ kind: "loading" });
     void loadFinanceWorkspace(runtimeApi, { materializeRecurring: canCreate })
       .then((payload) => {
+        if (!isCurrentRequest) return;
         setCommissionRules(payload.commissionRules);
         setEntriesByType(payload.entriesByType);
         setRecurringEntries(payload.recurringEntries);
         setListState({ kind: "ready" });
       })
       .catch((error) => {
+        if (!isCurrentRequest) return;
         setEntriesByType({ commission: [], expense: [], revenue: [] });
         setListState({
           kind: "error",
@@ -166,6 +179,9 @@ export function FinanceEntriesWorkspace({
           ),
         });
       });
+    return () => {
+      isCurrentRequest = false;
+    };
   }, [canCreate, refreshToken, runtimeApi]);
 
   const refresh = () => setRefreshToken((current) => current + 1);
@@ -192,7 +208,58 @@ export function FinanceEntriesWorkspace({
     );
   };
 
+  const openReceipt = async (entry: FinanceEntry) => {
+    if (!runtimeApi || receiptActionEntryId) return;
+    setReceiptActionEntryId(entry.id);
+    try {
+      const result = await openFinanceEntryReceipt(runtimeApi, entry, {
+        canGenerate: canGenerateReceipt,
+      });
+      if (result.kind === "missing") {
+        setToast({
+          kind: "error",
+          message: "Nenhum recibo foi anexado a este lançamento.",
+          title: "Recibo não disponível",
+        });
+        return;
+      }
+      setToast({
+        kind: "success",
+        message: entry.name,
+        title: result.generated ? "Recibo gerado" : "Recibo aberto",
+      });
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: formatApiErrorDisplay(
+          error,
+          "Não foi possível abrir ou gerar o recibo.",
+        ),
+        title: "Erro no recibo",
+      });
+    } finally {
+      setReceiptActionEntryId(null);
+    }
+  };
+
   const statusChip = useMemo(() => {
+    if (listState.kind === "loading") {
+      return (
+        <>
+          <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
+          Carregando fluxo
+        </>
+      );
+    }
+    if (listState.kind === "error") {
+      return (
+        <>
+          <TriangleAlert className="size-3.5" aria-hidden="true" />
+          Dados indisponíveis
+        </>
+      );
+    }
+
     const pendingCount = operationalCashEntries.filter(
       (entry) => entry.status === "pending",
     ).length;
@@ -225,12 +292,15 @@ export function FinanceEntriesWorkspace({
         Fluxo em dia
       </>
     );
-  }, [operationalCashEntries]);
+  }, [listState.kind, operationalCashEntries]);
 
   return (
     <FeaturePageShell className="finance-shell fiscal-shell" variant="content">
       <div aria-hidden="true" className="fiscal-shell-blob" />
       <FinanceBillsHeader
+        {...(listState.kind === "ready"
+          ? { onExport: () => exportFinanceCsv(filteredEntries, activeType) }
+          : {})}
         canCreate={canCreate}
         chip={statusChip}
         onCreate={() => {
@@ -238,7 +308,6 @@ export function FinanceEntriesWorkspace({
           setModalRecurringEntry(null);
           setIsModalOpen(true);
         }}
-        onExport={() => exportFinanceCsv(filteredEntries, activeType)}
         onRefresh={refresh}
         onReports={() =>
           onNavigate
@@ -247,6 +316,7 @@ export function FinanceEntriesWorkspace({
         }
       />
       <FinanceAccessNotice canManage={canCreate || canUpdate} />
+      <FinanceLoadError listState={listState} onRetry={refresh} />
       <FinanceCashFlowOverview
         entries={operationalCashEntries}
         onShowOverdue={() => {
@@ -267,64 +337,78 @@ export function FinanceEntriesWorkspace({
           }));
           scrollToTable();
         }}
+        status={listState.kind}
       />
-      <FinanceCommissionDueCards entries={visibleEntriesByType.commission} />
+      {listState.kind === "ready" ? (
+        <FinanceCommissionDueCards entries={visibleEntriesByType.commission} />
+      ) : null}
 
-      <FinanceUrgencyPanel
-        entries={operationalCashEntries}
-        onEdit={(entry) => {
-          if (!canUpdate) return;
-          setActiveType(entry.type);
-          setModalEntry(entry);
-          setModalRecurringEntry(null);
-          setIsModalOpen(true);
-        }}
-        onViewAll={scrollToTable}
-      />
-
-      <div ref={tableRef}>
-        <FinanceEntryTable
-          activeType={activeType}
-          canAttach={canAttach}
-          canCreate={canCreate}
-          canUpdate={canUpdate}
-          entries={filteredEntries}
-          isLoading={listState.kind === "loading"}
-          onCancel={setCancelTarget}
-          onCreate={() => setIsModalOpen(true)}
+      {listState.kind === "ready" ? (
+        <FinanceUrgencyPanel
+          entries={operationalCashEntries}
           onEdit={(entry) => {
+            if (!canUpdate) return;
+            setActiveType(entry.type);
             setModalEntry(entry);
             setModalRecurringEntry(null);
             setIsModalOpen(true);
           }}
-          onExport={() => exportFinanceCsv(filteredEntries, activeType)}
-          onMarkPending={(entry) => void updateStatus(entry, "pending")}
-          onPay={(entry) => void updateStatus(entry, "pay")}
-          otherEntryCount={Math.max(
-            0,
-            filteredCashEntries.length - filteredEntries.length,
-          )}
-          toast={toast ? <FinanceToastMessage toast={toast} /> : null}
-          filters={
-            <FinanceBillsFilters
-              entries={allEntries}
-              filters={filters}
-              onChange={setFilters}
-            />
-          }
-          typeTabs={
-            <FinanceTypeTabs
-              activeType={activeType}
-              counts={filteredCountsByType}
-              onTypeChange={(type) => {
-                setActiveType(type);
-                setToast(null);
-              }}
-            />
-          }
+          onViewAll={scrollToTable}
         />
-      </div>
-      {activeType === "commission" && canCreate ? (
+      ) : null}
+
+      {listState.kind !== "error" ? (
+        <div ref={tableRef}>
+          <FinanceEntryTable
+            activeType={activeType}
+            canCreate={canCreate}
+            canGenerateReceipt={canGenerateReceipt}
+            canOpenReceipt={canOpenReceipt}
+            canUpdate={canUpdate}
+            entries={filteredEntries}
+            isLoading={listState.kind === "loading"}
+            onCancel={setCancelTarget}
+            onCreate={() => setIsModalOpen(true)}
+            onEdit={(entry) => {
+              setModalEntry(entry);
+              setModalRecurringEntry(null);
+              setIsModalOpen(true);
+            }}
+            onExport={() => exportFinanceCsv(filteredEntries, activeType)}
+            onMarkPending={(entry) => void updateStatus(entry, "pending")}
+            onPay={(entry) => void updateStatus(entry, "pay")}
+            onReceipt={(entry) => void openReceipt(entry)}
+            otherEntryCount={Math.max(
+              0,
+              filteredCashEntries.length - filteredEntries.length,
+            )}
+            receiptActionEntryId={receiptActionEntryId}
+            toast={toast ? <FinanceToastMessage toast={toast} /> : null}
+            filters={
+              <FinanceBillsFilters
+                entries={allEntries}
+                filters={filters}
+                onChange={setFilters}
+                vehicleOptions={vehicleOptions}
+                vehicleOptionsState={vehicleOptionsState}
+              />
+            }
+            typeTabs={
+              <FinanceTypeTabs
+                activeType={activeType}
+                counts={filteredCountsByType}
+                onTypeChange={(type) => {
+                  setActiveType(type);
+                  setToast(null);
+                }}
+              />
+            }
+          />
+        </div>
+      ) : null}
+      {listState.kind === "ready" &&
+      activeType === "commission" &&
+      canCreate ? (
         <CommissionRulesPanel
           items={commissionRules}
           onCreate={async (input) => {
@@ -334,24 +418,25 @@ export function FinanceEntriesWorkspace({
           }}
         />
       ) : null}
-      <div className="finance-bottom-grid">
-        <FinanceRecurringBillsPanel
-          canUpdate={canUpdate}
-          items={recurringEntries}
-          onCancel={(entry) => setCancelRecurringTarget(entry)}
-          onEdit={(entry) => {
-            setModalEntry(null);
-            setModalRecurringEntry(entry);
-            setIsModalOpen(true);
-          }}
-        />
-        <FinanceCashFlowInsights
-          commissionRules={commissionRules}
-          entries={operationalCashEntries}
-          recurringEntries={recurringEntries}
-        />
-      </div>
-      <FinanceLoadError listState={listState} />
+      {listState.kind === "ready" ? (
+        <div className="finance-bottom-grid">
+          <FinanceRecurringBillsPanel
+            canUpdate={canUpdate}
+            items={recurringEntries}
+            onCancel={(entry) => setCancelRecurringTarget(entry)}
+            onEdit={(entry) => {
+              setModalEntry(null);
+              setModalRecurringEntry(entry);
+              setIsModalOpen(true);
+            }}
+          />
+          <FinanceCashFlowInsights
+            commissionRules={commissionRules}
+            entries={operationalCashEntries}
+            recurringEntries={recurringEntries}
+          />
+        </div>
+      ) : null}
       <FinanceEntryDialogs
         activeType={activeType === "all" ? "expense" : activeType}
         api={runtimeApi}
@@ -382,6 +467,8 @@ export function FinanceEntriesWorkspace({
         }}
         onSubmit={submitDraft}
         sellerOptions={sellerOptions}
+        vehicleOptions={vehicleOptions}
+        vehicleOptionsState={vehicleOptionsState}
       />
     </FeaturePageShell>
   );

@@ -11,6 +11,7 @@ import { readFileAsBase64 } from "./crmMediaFiles";
 import {
   createOptimisticMediaMessage,
   createOptimisticTextMessage,
+  haveSameMessageSnapshot,
   mergeMessagesFromServer,
   type CrmMessageView,
 } from "./crmConversationModel";
@@ -44,6 +45,11 @@ type UseCrmMessagesOptions = {
   setError: (error: Error) => void;
 };
 
+type MessagePaginationState = {
+  hasOlderMessages: boolean;
+  serverMessageIds: Set<string>;
+};
+
 export function useCrmMessages({
   activeSession,
   activeCycleId,
@@ -58,9 +64,20 @@ export function useCrmMessages({
     useState<CrmConversationCycleId | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<CrmMessageView[]>([]);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
+  const [olderMessagesError, setOlderMessagesError] = useState(false);
   const messagesBySessionRef = useRef(
     new Map<CrmConversationCycleId, CrmMessageView[]>(),
   );
+  const paginationBySessionRef = useRef(
+    new Map<CrmConversationCycleId, MessagePaginationState>(),
+  );
+  const olderRequestRef = useRef<{
+    cycleId: CrmConversationCycleId;
+    promise: Promise<boolean>;
+    token: symbol;
+  } | null>(null);
   const evictedCycleIdsRef = useRef(new Set<CrmConversationCycleId>());
   const messagesRef = useRef<CrmMessageView[]>([]);
   messagesRef.current = messages;
@@ -76,6 +93,7 @@ export function useCrmMessages({
       if (evictedCycleIdsRef.current.has(cycleId)) return;
       const current = messagesBySessionRef.current.get(cycleId) ?? [];
       const next = typeof update === "function" ? update(current) : update;
+      if (haveSameMessageSnapshot(current, next)) return;
       messagesBySessionRef.current.set(cycleId, next);
       if (activeCycleIdRef.current === cycleId) setMessages(next);
     },
@@ -85,6 +103,7 @@ export function useCrmMessages({
     (cycleId: CrmConversationCycleId) => {
       evictedCycleIdsRef.current.add(cycleId);
       messagesBySessionRef.current.delete(cycleId);
+      paginationBySessionRef.current.delete(cycleId);
       if (previousCycleIdRef.current === cycleId) {
         previousCycleIdRef.current = null;
       }
@@ -93,6 +112,9 @@ export function useCrmMessages({
       setMessages([]);
       setLoadedCycleId((current) => (current === cycleId ? null : current));
       setIsLoadingMessages(false);
+      setHasOlderMessages(false);
+      setIsLoadingOlderMessages(false);
+      setOlderMessagesError(false);
     },
     [],
   );
@@ -130,7 +152,15 @@ export function useCrmMessages({
           ? []
           : (messagesBySessionRef.current.get(activeCycleId) ?? []),
       );
+      setHasOlderMessages(
+        paginationBySessionRef.current.get(activeCycleId)?.hasOlderMessages ??
+          false,
+      );
+    } else {
+      setHasOlderMessages(false);
     }
+    setIsLoadingOlderMessages(false);
+    setOlderMessagesError(false);
   }, [activeCycleId]);
 
   useEffect(() => {
@@ -149,22 +179,55 @@ export function useCrmMessages({
       setMessages([]);
       setLoadedCycleId(null);
       setIsLoadingMessages(false);
+      setHasOlderMessages(false);
+      setIsLoadingOlderMessages(false);
+      setOlderMessagesError(false);
       return;
     }
     let active = true;
+    let inFlight: Promise<void> | null = null;
+    let inFlightToken: symbol | null = null;
     setIsLoadingMessages(true);
-    const loadMessages = async () => {
-      const nextMessages = await api.listMessages(activeCycleId, {
-        limit: MESSAGE_PAGE_SIZE,
-        offset: 0,
-      });
-      if (active && requestGeneration === requestGenerationRef.current) {
-        evictedCycleIdsRef.current.delete(activeCycleId);
-        setMessages((current) =>
-          mergeMessagesFromServer(current, nextMessages),
-        );
-        setLoadedCycleId(activeCycleId);
-      }
+    const loadMessages = () => {
+      if (inFlight) return inFlight;
+      const requestToken = Symbol("crm-message-poll");
+      const request = (async () => {
+        try {
+          const nextMessages = await api.listMessages(activeCycleId, {
+            limit: MESSAGE_PAGE_SIZE,
+            offset: 0,
+          });
+          if (active && requestGeneration === requestGenerationRef.current) {
+            evictedCycleIdsRef.current.delete(activeCycleId);
+            const existingPagination =
+              paginationBySessionRef.current.get(activeCycleId);
+            const pagination = existingPagination ?? {
+              hasOlderMessages: nextMessages.length === MESSAGE_PAGE_SIZE,
+              serverMessageIds: new Set<string>(),
+            };
+            for (const message of nextMessages) {
+              pagination.serverMessageIds.add(String(message.id));
+            }
+            if (nextMessages.length < MESSAGE_PAGE_SIZE) {
+              pagination.hasOlderMessages = false;
+            }
+            paginationBySessionRef.current.set(activeCycleId, pagination);
+            setMessages((current) =>
+              mergeMessagesFromServer(current, nextMessages),
+            );
+            setLoadedCycleId(activeCycleId);
+            setHasOlderMessages(pagination.hasOlderMessages);
+          }
+        } finally {
+          if (inFlightToken === requestToken) {
+            inFlight = null;
+            inFlightToken = null;
+          }
+        }
+      })();
+      inFlightToken = requestToken;
+      inFlight = request;
+      return request;
     };
     void loadMessages()
       .catch((caught) => {
@@ -184,6 +247,72 @@ export function useCrmMessages({
       window.clearInterval(interval);
     };
   }, [activeCycleId, api, canLoadMessages, setError]);
+
+  const loadOlderMessages = useCallback(() => {
+    const cycleId = activeCycleIdRef.current;
+    if (!cycleId || !canLoadMessages) return Promise.resolve(false);
+    const pagination = paginationBySessionRef.current.get(cycleId);
+    if (!pagination?.hasOlderMessages) return Promise.resolve(false);
+    const existingRequest = olderRequestRef.current;
+    if (existingRequest?.cycleId === cycleId) return existingRequest.promise;
+
+    const requestGeneration = requestGenerationRef.current;
+    const requestToken = Symbol("crm-older-messages");
+    setIsLoadingOlderMessages(true);
+    setOlderMessagesError(false);
+    const promise = (async () => {
+      try {
+        const nextMessages = await api.listMessages(cycleId, {
+          limit: MESSAGE_PAGE_SIZE,
+          offset: pagination.serverMessageIds.size,
+        });
+        if (
+          activeCycleIdRef.current !== cycleId ||
+          requestGeneration !== requestGenerationRef.current
+        ) {
+          return false;
+        }
+        let newMessageCount = 0;
+        for (const message of nextMessages) {
+          const messageId = String(message.id);
+          if (!pagination.serverMessageIds.has(messageId)) newMessageCount += 1;
+          pagination.serverMessageIds.add(messageId);
+        }
+        pagination.hasOlderMessages =
+          nextMessages.length === MESSAGE_PAGE_SIZE && newMessageCount > 0;
+        paginationBySessionRef.current.set(cycleId, pagination);
+        updateSessionMessages(cycleId, (current) =>
+          mergeMessagesFromServer(current, nextMessages),
+        );
+        setHasOlderMessages(pagination.hasOlderMessages);
+        return newMessageCount > 0;
+      } catch {
+        if (
+          activeCycleIdRef.current === cycleId &&
+          requestGeneration === requestGenerationRef.current
+        ) {
+          setOlderMessagesError(true);
+        }
+        return false;
+      } finally {
+        if (olderRequestRef.current?.token === requestToken) {
+          olderRequestRef.current = null;
+          if (
+            activeCycleIdRef.current === cycleId &&
+            requestGeneration === requestGenerationRef.current
+          ) {
+            setIsLoadingOlderMessages(false);
+          }
+        }
+      }
+    })();
+    olderRequestRef.current = {
+      cycleId,
+      promise,
+      token: requestToken,
+    };
+    return promise;
+  }, [api, canLoadMessages, updateSessionMessages]);
 
   const patchMessage = useCallback((message: CrmMessage) => {
     setMessages((current) =>
@@ -411,13 +540,17 @@ export function useCrmMessages({
   );
   return {
     evictSessionMessages,
+    hasOlderMessages,
     isLoadingMessages,
+    isLoadingOlderMessages,
     hasLoadedActiveMessages: loadedCycleId === activeCycleId,
     isSending,
     deleteMessage,
     listCatalogProducts: structuredMessages.listCatalogProducts,
+    loadOlderMessages,
     mergeRealtimeMessage,
     messages,
+    olderMessagesError,
     sendCatalog: structuredMessages.sendCatalog,
     sendCatalogProduct: structuredMessages.sendCatalogProduct,
     sendLocation: structuredMessages.sendLocation,
@@ -461,9 +594,10 @@ export function mergeRealtimeMessageIntoHistory(
   }
   mergedById.set(messageId, message);
 
-  return [...mergedById.values()].sort(
+  const next = [...mergedById.values()].sort(
     (left, right) =>
       new Date(left.providerTimestamp ?? left.createdAt).getTime() -
       new Date(right.providerTimestamp ?? right.createdAt).getTime(),
   );
+  return haveSameMessageSnapshot(current, next) ? current : next;
 }

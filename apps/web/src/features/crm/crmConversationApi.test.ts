@@ -20,6 +20,27 @@ function createFakeFetch(payloads: unknown[]) {
 }
 
 describe("CRM WhatsApp API", () => {
+  it("requests scoped CRM statistics with encoded period boundaries", async () => {
+    const fake = createFakeFetch([{}]);
+    const api = createCrmConversationApi({ fetch: fake.fetch });
+    const controller = new AbortController();
+
+    await api.getStatistics(
+      {
+        connectionId: "connection-1",
+        from: "2026-08-01T00:00:00-03:00",
+        toExclusive: "2026-08-08T00:00:00-03:00",
+      },
+      { signal: controller.signal },
+    );
+
+    expect(String(fake.calls[0]?.input)).toContain("/api/v1/crm/statistics?");
+    expect(String(fake.calls[0]?.input)).toContain("connectionId=connection-1");
+    expect(String(fake.calls[0]?.input)).toContain("toExclusive=");
+    expect(fake.calls[0]?.init?.method).toBe("GET");
+    expect(fake.calls[0]?.init?.signal).toBe(controller.signal);
+  });
+
   it("uses product auth headers and posts text messages through V2", async () => {
     const fake = createFakeFetch([{ id: 99 }]);
     const api = createCrmConversationApi({

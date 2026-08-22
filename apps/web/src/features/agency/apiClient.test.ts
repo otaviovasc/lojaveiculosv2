@@ -84,6 +84,30 @@ describe("createAgencyApi", () => {
     );
   });
 
+  it("reads agency stats with explicit period and optional store scope", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ stores: [], tenantId: "tenant_1" }), {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        }),
+    ) as typeof fetch;
+    const api = createAgencyApi({ fetch: fetchMock });
+
+    await api.getStats?.("tenant_1", {
+      from: "2026-08-01",
+      storeId: "store_1",
+      to: "2026-08-22",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/agency/tenants/tenant_1/stats?from=2026-08-01&to=2026-08-22&storeId=store_1",
+      expect.objectContaining({
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  });
+
   it("saves the initial CRM and Z-API selection for the managed store", async () => {
     const fetchMock = vi.fn(
       async () =>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RefreshCcw } from "lucide-react";
 import {
@@ -23,6 +23,10 @@ import { createAgencyApi } from "../apiClient";
 import { useAccountSession } from "../../account/accountSession";
 import { persistCurrentStoreSlug } from "../../account/currentStore";
 import {
+  AgencyTenantSelector,
+  useAgencyTenantSelection,
+} from "../useAgencyTenantSelection";
+import {
   createRuntimeActorAuth,
   createRuntimeFetch,
   readClerkToken,
@@ -30,6 +34,7 @@ import {
 } from "../../account/runtimeAuth";
 
 export function AgencyDashboardPage() {
+  const requestGeneration = useRef(0);
   const [stores, setStores] = useState<AgencyStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -39,13 +44,12 @@ export function AgencyDashboardPage() {
   const [planEndDateFrom, setPlanEndDateFrom] = useState("");
   const [planEndDateTo, setPlanEndDateTo] = useState("");
   const session = useAccountSession();
-  const agencyTenant = session.tenantMemberships.find(
-    (membership) =>
-      membership.role === "agency" && membership.status === "active",
-  );
+  const { agencyTenant, agencyTenants, selectAgencyTenant } =
+    useAgencyTenantSelection();
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
+    const generation = ++requestGeneration.current;
     if (!agencyTenant) {
       setStores([]);
       setLoading(false);
@@ -53,6 +57,7 @@ export function AgencyDashboardPage() {
     }
     setLoading(true);
     setLoadError(null);
+    setStores([]);
     try {
       const token = await readClerkToken();
       const api = createAgencyApi({
@@ -61,8 +66,10 @@ export function AgencyDashboardPage() {
         ...readRuntimeApiBaseUrl(),
       });
       const overview = await api.getOverview(agencyTenant.tenantId);
+      if (generation !== requestGeneration.current) return;
       setStores(mapAgencyOverviewToStores(overview));
     } catch (error) {
+      if (generation !== requestGeneration.current) return;
       setStores([]);
       setLoadError(
         formatApiErrorDisplay(
@@ -71,12 +78,15 @@ export function AgencyDashboardPage() {
         ),
       );
     } finally {
-      setLoading(false);
+      if (generation === requestGeneration.current) setLoading(false);
     }
   }, [agencyTenant]);
 
   useEffect(() => {
     void fetchData();
+    return () => {
+      requestGeneration.current += 1;
+    };
   }, [fetchData]);
 
   const manageStore = useCallback(
@@ -180,10 +190,17 @@ export function AgencyDashboardPage() {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute right-1/4 top-0 h-[300px] w-[500px] rounded-full bg-accent-strong/15 blur-[120px]"
+        className="pointer-events-none absolute right-1/4 top-0 hidden h-[300px] w-[500px] rounded-full bg-accent-strong/15 blur-[120px] lg:block"
       />
       <div className="relative z-10 space-y-6">
         <AgencyDashboardHeader
+          agencySelector={
+            <AgencyTenantSelector
+              agencyTenant={agencyTenant}
+              agencyTenants={agencyTenants}
+              onChange={selectAgencyTenant}
+            />
+          }
           storeCount={stores.length}
           onCreate={() => void navigate("/agency/admin/create-store")}
         />
@@ -202,9 +219,9 @@ export function AgencyDashboardPage() {
             {loadError}
           </FeatureAlert>
         ) : null}
-        <AgencyStatsGrid stores={stores} />
+        <AgencyStatsGrid loading={loading} stores={stores} />
         <AgencyStoresCard
-          filteredCount={filteredAndSortedStores.length}
+          filteredCount={loading ? null : filteredAndSortedStores.length}
           onPlanEndDateFromChange={setPlanEndDateFrom}
           onPlanEndDateToChange={setPlanEndDateTo}
           onSearchTermChange={setSearchTerm}

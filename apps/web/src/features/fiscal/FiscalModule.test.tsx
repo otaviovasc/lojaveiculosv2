@@ -143,7 +143,7 @@ function createDocument(
     issuedAt: null,
     metadata: {},
     provider: "spedy",
-    providerDocumentId: null,
+    hasProviderReference: false,
     recipientId: null,
     status: "issued",
     templateId: null,
@@ -181,8 +181,10 @@ function createApi({
     confirmDefaults: vi.fn(async () => connection),
     createRecipient: vi.fn(),
     createTemplate: vi.fn(),
+    downloadDocumentArtifact: vi.fn(),
     getConnection: vi.fn(async () => connection),
     getOverview: vi.fn(async () => ({
+      capabilities: { canDownloadOfficialArtifacts: true },
       documents: [
         createDocument({
           id: "fiscal_1",
@@ -191,7 +193,7 @@ function createApi({
             recipient: { document: "12345678900", name: "Maria Silva" },
             vehicleNfe: { sale: { price: 85000 } },
           },
-          providerDocumentId: "spedy_private_123",
+          hasProviderReference: true,
           status: "issued",
         }),
         createDocument({
@@ -200,7 +202,7 @@ function createApi({
             message: "CFOP inválido para a operação",
             recipient: { document: "98765432000100", name: "Loja Parceira" },
           },
-          providerDocumentId: "spedy_private_456",
+          hasProviderReference: true,
           status: "rejected",
         }),
       ],

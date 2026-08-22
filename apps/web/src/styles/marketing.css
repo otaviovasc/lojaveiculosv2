@@ -20,6 +20,12 @@
     transparent
   );
   --color-accent-soft: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  --color-accent-readable: color-mix(
+    in srgb,
+    var(--color-accent) 30%,
+    var(--color-warm-white)
+  );
+  --color-accent-text: var(--color-accent-readable);
   background-color: var(--color-app);
   color: var(--color-text);
 }
