@@ -5,6 +5,7 @@ const domainsRoot = new URL("../../apps/api/src/domains", import.meta.url)
   .pathname;
 const nonEntrypointFiles = new Set([
   "auditVehicleServiceEvent.ts",
+  "buildCrmChannelConnectionOverview.ts",
   "composioChannelConnectionSetup.types.ts",
   "composioInstagramConnectionSelection.ts",
   "composioWhatsappConnectionSelection.ts",
@@ -39,6 +40,7 @@ const nonEntrypointFiles = new Set([
   "sendWhatsappVehicleSupport.ts",
   "serviceSupport.ts",
   "simulationSyncProjection.ts",
+  "verifyUpdatedZapiCredentials.ts",
   "summarizeMarketplaceStockPlan.ts",
   "testSupport.ts",
   "types.ts",
@@ -48,6 +50,7 @@ const nonEntrypointFiles = new Set([
   "routingErrors.ts",
   "routingReadModels.ts",
   "routingResolution.ts",
+  "zapiWebhookSetupObservability.ts",
   "crmMessageActionSupport.ts",
   "crmQuickMessageModels.ts",
   "crmQuickMessageMedia.ts",
@@ -160,6 +163,7 @@ for (const file of domainFiles.filter(isServiceFile)) {
     !source.includes("auditFinanceServiceEvent(") &&
     !source.includes("auditWhatsappServiceEvent(") &&
     !source.includes("auditZapiWebhook(") &&
+    !source.includes("auditZapiWebhookSetupResult(") &&
     !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
     !source.includes("auditVehicleServiceEvent(") &&

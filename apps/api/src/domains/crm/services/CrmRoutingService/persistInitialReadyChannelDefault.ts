@@ -7,6 +7,7 @@ import type {
   StoreScopedServiceContext,
 } from "../../../../shared/serviceContext.js";
 import type { CrmMessagingChannel } from "../../ports/crmRoutingPolicyRepository.js";
+import type { CrmChannelConnection } from "../../channelConnections/channelConnectionModels.js";
 import {
   getCrmRoutingConnectionRepository,
   getCrmRoutingPolicyRepository,
@@ -115,6 +116,38 @@ export async function persistInitialReadyChannelDefault(
       error,
     );
     throw error;
+  }
+}
+
+export async function persistReadyChannelDefault(
+  context: ServiceContext,
+  connection: CrmChannelConnection,
+  ports: CrmServicePorts,
+) {
+  if (
+    !connection.ready ||
+    !ports.crmRoutingConnectionRepository ||
+    !ports.crmRoutingPolicyRepository
+  ) {
+    return false;
+  }
+  try {
+    return await persistInitialReadyChannelDefault(
+      context,
+      { channel: connection.channel, connectionId: connection.id },
+      ports,
+    );
+  } catch (error) {
+    const scope = requireCrmMessagingScope(context);
+    context.logger.warn("crm.routing.policy.default.deferred", {
+      channel: connection.channel,
+      connectionId: connection.id,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      requestId: context.requestId,
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
+    });
+    return false;
   }
 }
 

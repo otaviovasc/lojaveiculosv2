@@ -58,6 +58,7 @@ const hookMocks = vi.hoisted(() => {
       error: null,
       isLoading: false,
       refreshConnections: vi.fn(async () => undefined),
+      repairZapiConnectionCredentials: resolveFalse,
       requestZapiAddon: resolveFalse,
       requestZapiPairingCode: resolveFalse,
       requestZapiPairingQr: resolveFalse,

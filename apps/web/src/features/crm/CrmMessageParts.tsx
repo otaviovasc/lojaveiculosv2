@@ -21,7 +21,11 @@ import {
   getSenderLabel,
   type CrmMessageView,
 } from "./crmConversationModel";
-import { readRecord, readString } from "./crmMessageHelpers";
+import {
+  readRecord,
+  readString,
+  sanitizeCrmMessageUrl,
+} from "./crmMessageHelpers";
 import { MessageListSkeleton } from "./CrmSkeletons";
 import {
   CrmMediaGalleryViewer,
@@ -117,8 +121,9 @@ export function MessageList({
   const galleryItems = useMemo<CrmGalleryMediaItem[]>(() => {
     const items: CrmGalleryMediaItem[] = [];
     for (const msg of messages) {
+      const mediaUrl = sanitizeCrmMessageUrl(msg.mediaUrl);
       if (
-        msg.mediaUrl &&
+        mediaUrl &&
         (msg.type === "IMAGE" || msg.type === "VIDEO" || msg.type === "STICKER")
       ) {
         const metadata = readRecord(msg.metadata);
@@ -134,7 +139,7 @@ export function MessageList({
             (msg.direction === "OUTBOUND" ? "Você" : "Contato"),
           time: formatMessageTime(msg),
           type: msg.type,
-          url: msg.mediaUrl,
+          url: mediaUrl,
         });
       }
     }
@@ -235,6 +240,12 @@ export function MessageList({
                 Não foi possível carregar as mensagens anteriores.
               </span>
             ) : null}
+          </div>
+        ) : null}
+        {!messages.length ? (
+          <div className="crm-message-empty" role="status">
+            <strong>Nenhuma mensagem ainda</strong>
+            <span>As mensagens desta conversa aparecerão aqui.</span>
           </div>
         ) : null}
         {groups.map((group, index) => {

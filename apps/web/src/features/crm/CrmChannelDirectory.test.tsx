@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppApiError } from "../../lib/apiErrors";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
 import type { MarketplaceProviderState } from "../marketplaces/types";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 import { CrmChannelDirectory } from "./CrmChannelDirectory";
 
 describe("CrmChannelDirectory", () => {
@@ -165,6 +166,102 @@ describe("CrmChannelDirectory", () => {
     expect(onManage).toHaveBeenCalledWith(
       expect.objectContaining({ id: "connection-1", provider: "zapi" }),
     );
+  });
+
+  it("opens the existing Z-API repair flow instead of creating another connection", () => {
+    const onChoose = vi.fn();
+    const onManage = vi.fn();
+    const onRepair = vi.fn();
+    const disconnected: CrmProviderConnection = {
+      ...createZapiConnection(),
+      live: {
+        ...createZapiConnection().live,
+        connected: false,
+        providerStatus: "disconnected",
+        smartphoneConnected: false,
+      },
+      ready: false,
+      readiness: {
+        ready: false,
+        reason: "A conexão com o aparelho foi perdida.",
+        reasonCode: "disconnected",
+      },
+      status: "disconnected",
+    };
+
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+        ]}
+        connections={[disconnected]}
+        marketplaceApi={createMarketplaceApi()}
+        onChoose={onChoose}
+        onManageConnection={onManage}
+        onRepairConnection={onRepair}
+        showRepairActions
+        zapiAddonContract={null}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Z-API principal.*Reparar conexão/i,
+      }),
+    );
+    expect(onRepair).toHaveBeenCalledWith(disconnected);
+    expect(onChoose).not.toHaveBeenCalled();
+    expect(onManage).not.toHaveBeenCalled();
+  });
+
+  it("hides duplicate Z-API setup and offers repair for a partial record", () => {
+    const onChoose = vi.fn();
+    const onRepair = vi.fn();
+    const { readiness: _readiness, ...connectionWithoutReadiness } =
+      createZapiConnection();
+    const partial: CrmProviderConnection = {
+      ...connectionWithoutReadiness,
+      credentials: {
+        ...createZapiConnection().credentials,
+        storedInstanceConfigured: false,
+      },
+      externalInstanceId: null,
+      setup: {
+        attemptCount: 1,
+        configuredAt: null,
+        lastErrorCode: "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE",
+        requestedAt: "2026-08-12T12:00:00.000Z",
+        requiredTypes: [],
+        status: "partial",
+        succeededTypes: [],
+        supportCode: "ZAPI-PARTIAL",
+        updatedAt: "2026-08-12T12:00:00.000Z",
+        version: 1,
+      },
+      status: "error",
+    };
+
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+        ]}
+        connections={[partial]}
+        onChoose={onChoose}
+        onRepairConnection={onRepair}
+        showRepairActions
+        zapiAddonContract={null}
+      />,
+    );
+
+    expect(screen.getAllByText("Z-API principal")).toHaveLength(1);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Z-API principal.*Reparar conexão/i,
+      }),
+    );
+    expect(onRepair).toHaveBeenCalledWith(partial);
+    expect(onChoose).not.toHaveBeenCalled();
   });
 
   it("keeps configured Instagram Official setup actionable when no new setup is offered", () => {

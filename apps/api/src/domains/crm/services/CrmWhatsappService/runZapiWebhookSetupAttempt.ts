@@ -24,15 +24,16 @@ import {
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import { getCrmZapiSetupCompletionReporter } from "../CrmService/crmConnectionSetupSupport.js";
-import {
-  auditCrmServiceEvent,
-  logCrmServiceEvent,
-} from "../CrmMessagingService/serviceSupport.js";
+import { logCrmServiceEvent } from "../CrmMessagingService/serviceSupport.js";
 import { openZapiWebhookSecret } from "../../whatsapp/zapiWebhookSecret.js";
 import { CrmConnectionNotFoundError } from "../../messaging/crmMessagingErrors.js";
 import { assertTrustedZapiWebhookDestination } from "../../whatsapp/zapiWebhookDestination.js";
 import { reconcileZapiConnectionStatus } from "./reconcileZapiConnectionStatus.js";
 import { crmChannelConnectionCapabilityFacts } from "../../channelConnections/connectionCreation.js";
+import {
+  auditZapiWebhookSetupResult,
+  logZapiWebhookSetup,
+} from "./zapiWebhookSetupObservability.js";
 export type RunZapiWebhookSetupInput = {
   basePath: string;
   canonicalApiOrigin: string;
@@ -40,6 +41,7 @@ export type RunZapiWebhookSetupInput = {
   forceReconfigure?: boolean;
 };
 export type RunZapiWebhookSetupResult = {
+  connectionStatus: "active" | "disconnected" | "unverified";
   results: readonly CrmMessagingWebhookConfigResult[];
   setup: ZapiWebhookSetupState;
 };
@@ -71,10 +73,14 @@ export async function runZapiWebhookSetupAttempt(
   const persistedSetup = readZapiWebhookSetupState(connection.metadata);
   const current = persistedSetup ?? createZapiWebhookSetupIntent(connection.id);
   if (current.status === "configured" && !input.forceReconfigure) {
-    await auditSetupResult(context, connection.id, current);
+    await auditZapiWebhookSetupResult(context, connection.id, current);
     await reportConfiguredSetup(context, connection.id, current, ports);
-    await reconcileZapiConnectionStatus(context, connection, ports);
-    return { results: [], setup: current };
+    const connectionStatus = await reconcileZapiConnectionStatus(
+      context,
+      connection,
+      ports,
+    );
+    return { connectionStatus, results: [], setup: current };
   }
   if (!persistedSetup) {
     const normalized = await repository.updateConnection({
@@ -104,15 +110,26 @@ export async function runZapiWebhookSetupAttempt(
     if (!setup) throw new Error("Z-API setup target is unavailable.");
     if (latest && setup.status === "configured") {
       await reportConfiguredSetup(context, connection.id, setup, ports);
-      await reconcileZapiConnectionStatus(context, latest, ports);
+      const connectionStatus = await reconcileZapiConnectionStatus(
+        context,
+        latest,
+        ports,
+      );
+      return { connectionStatus, results: [], setup };
     }
-    return { results: [], setup };
+    return { connectionStatus: "unverified", results: [], setup };
   }
   const configuring = readZapiWebhookSetupState(pending.metadata);
   if (!configuring || configuring.leaseOwner !== leaseOwner) {
     throw new Error("Z-API setup lease was not persisted.");
   }
-  logSetup(context, "started", connection.id, configuring, startedAt);
+  logZapiWebhookSetup(
+    context,
+    "started",
+    connection.id,
+    configuring,
+    startedAt,
+  );
   const baseUrl = resolveWebhookBaseUrl({
     basePath: input.basePath,
     requestOrigin: input.canonicalApiOrigin,
@@ -135,22 +152,27 @@ export async function runZapiWebhookSetupAttempt(
   } catch (error) {
     const setup = failZapiWebhookSetupAttempt(configuring, error);
     await persistSetupState(pending, setup, leaseOwner, ports);
-    logSetup(context, "failed", connection.id, setup, startedAt);
-    await auditSetupResult(context, connection.id, setup);
-    return { results: [], setup };
+    logZapiWebhookSetup(context, "failed", connection.id, setup, startedAt);
+    await auditZapiWebhookSetupResult(context, connection.id, setup);
+    return { connectionStatus: "unverified", results: [], setup };
   }
   // Provider success is durable before optional audit/billing bookkeeping.
   const setup = completeZapiWebhookSetupAttempt(configuring, response.results);
   await persistSetupState(pending, setup, leaseOwner, ports);
-  logSetup(context, "completed", connection.id, setup, startedAt);
-  await auditSetupResult(context, connection.id, setup);
+  logZapiWebhookSetup(context, "completed", connection.id, setup, startedAt);
+  await auditZapiWebhookSetupResult(context, connection.id, setup);
+  let connectionStatus: "active" | "disconnected" | "unverified" = "unverified";
   if (setup.status === "configured") {
     await reportConfiguredSetup(context, connection.id, setup, ports);
     const configuredConnection =
       (await repository.findConnectionById(connection.id)) ?? connection;
-    await reconcileZapiConnectionStatus(context, configuredConnection, ports);
+    connectionStatus = await reconcileZapiConnectionStatus(
+      context,
+      configuredConnection,
+      ports,
+    );
   }
-  return { results: response.results, setup };
+  return { connectionStatus, results: response.results, setup };
 }
 async function reportConfiguredSetup(
   context: ServiceContext,
@@ -201,49 +223,4 @@ async function persistSetupState(
     tenantId: connection.tenantId,
   });
   if (!updated) throw new Error("Z-API setup lease is no longer owned.");
-}
-function logSetup(
-  context: ServiceContext,
-  phase: "completed" | "failed" | "started",
-  connectionId: string,
-  setup: ZapiWebhookSetupState,
-  startedAt: number,
-) {
-  logCrmServiceEvent(context, `crm.provider.zapi.webhooks.${phase}`, {
-    attemptCount: setup.attemptCount,
-    connectionId,
-    durationMs: Math.max(0, Date.now() - startedAt),
-    errorCode: setup.lastErrorCode,
-    operation: "configure_webhooks",
-    provider: "zapi",
-    setupStatus: setup.status,
-    succeededCount: setup.succeededTypes.length,
-    supportCode: setup.supportCode,
-  });
-}
-async function auditSetupResult(
-  context: ServiceContext,
-  connectionId: string,
-  setup: ZapiWebhookSetupState,
-) {
-  await auditCrmServiceEvent(
-    context,
-    {
-      action: "crm.provider.zapi.connection.setup.result",
-      category: "data_change",
-      entityId: connectionId,
-      entityType: "crm_channel_connection",
-      failureTier: "required",
-      metadata: {
-        attemptCount: setup.attemptCount,
-        errorCode: setup.lastErrorCode,
-        setupStatus: setup.status,
-        succeededCount: setup.succeededTypes.length,
-        supportCode: setup.supportCode,
-      },
-      permission: "crm.messaging.connection.setup",
-      summary: "Processed Z-API webhook setup intent",
-    },
-    setup.status === "configured" ? "succeeded" : "failed",
-  );
 }

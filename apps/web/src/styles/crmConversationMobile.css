@@ -1,3 +1,42 @@
+/* Secondary header commands collapse into this explicit menu on narrow panes. */
+.crm-header-more-actions {
+  display: none;
+}
+
+.crm-header-more-menu {
+  display: grid;
+  gap: 0.125rem;
+  min-width: min(15rem, calc(100vw - 1.5rem));
+}
+
+.crm-header-more-menu > :is(button, a) {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  gap: 0.625rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.crm-header-more-menu > :is(button, a):is(:hover, :focus-visible) {
+  background: var(--color-app);
+}
+
+.crm-header-more-menu > :is(button, a) > svg {
+  color: var(--color-muted);
+  flex: 0 0 auto;
+  height: 1rem;
+  width: 1rem;
+}
+
 @media (max-width: 860px) {
   .crm-page:has(
       .crm-shell:is([data-mobile-pane="chat"], [data-mobile-pane="context"])
@@ -74,6 +113,18 @@
 
   .crm-header-actions .crm-header-action-secondary {
     display: none;
+  }
+
+  .crm-header-actions .crm-header-action-secondary-anchor {
+    display: none;
+  }
+
+  .crm-header-actions .crm-header-action-group-secondary {
+    display: none;
+  }
+
+  .crm-header-actions .crm-header-more-actions {
+    display: inline-flex;
   }
 
   .crm-header-actions .crm-action {

@@ -1,7 +1,10 @@
 import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { whatsappComposioSenderSchema } from "./crm.controller.schemas.js";
-import { whatsappZapiPairingCodeSchema } from "./crm.channelConnections.schemas.js";
+import {
+  whatsappZapiCredentialsSchema,
+  whatsappZapiPairingCodeSchema,
+} from "./crm.channelConnections.schemas.js";
 import { parseCrmMessagingJson } from "./crm.messaging.controller.support.js";
 import {
   CrmMessagingValidationError,
@@ -45,6 +48,31 @@ export function registerCrmChannelConnectionSetupRoutes(
         const connection = await services.disconnectZapiConnection(
           serviceContext,
           { connectionId },
+        );
+        return context.json(toChannelConnectionOverviewItem(connection));
+      }),
+  );
+
+  crmFeature.put(
+    "/channel-connections/:connectionId/zapi/credentials",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const input = await parseCrmMessagingJson(
+          context,
+          whatsappZapiCredentialsSchema,
+        );
+        const serviceContext = await createContext(context);
+        const connection = await services.repairZapiConnectionCredentials(
+          serviceContext,
+          {
+            connectionId,
+            instanceId: input.instanceId,
+            instanceToken: input.instanceToken,
+            ...readWebhookRequestBase(context),
+          },
         );
         return context.json(toChannelConnectionOverviewItem(connection));
       }),

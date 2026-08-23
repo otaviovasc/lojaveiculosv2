@@ -26,8 +26,10 @@ export function CrmChannelDirectory({
   onChoose,
   onConnectionsChanged,
   onManageConnection,
+  onRepairConnection,
   onRedirect,
   showSetupActions = true,
+  showRepairActions = false,
   zapiAddonContract,
 }: {
   availableSetups: readonly CrmAvailableSetup[];
@@ -40,7 +42,9 @@ export function CrmChannelDirectory({
   ) => void;
   onConnectionsChanged?: () => Promise<void> | void;
   onManageConnection?: (connection: CrmProviderConnection) => void;
+  onRepairConnection?: (connection: CrmProviderConnection) => void;
   onRedirect?: (url: string) => void;
+  showRepairActions?: boolean;
   showSetupActions?: boolean;
   zapiAddonContract: CrmWhatsappZapiAddonContract | null;
 }) {
@@ -69,15 +73,10 @@ export function CrmChannelDirectory({
   // A configured Z-API connection is already represented by its connected
   // row below. Do not render the catalog/setup row as a second card for the
   // same provider, including while the provider is reconnecting or pending.
-  const hasZapiConnectedOrConfiguredConnection = connections.some(
+  const hasExistingZapiConnection = connections.some(
     (connection) =>
       connection.provider === "zapi" &&
-      (connection.state ?? connection.status) !== "archived" &&
-      connection.setup?.status !== "configuring" &&
-      (connection.setup?.status === "configured" ||
-        (connection.state ?? connection.status) === "active" ||
-        connection.credentials?.storedInstanceConfigured === true ||
-        Boolean(connection.externalInstanceId)),
+      (connection.state ?? connection.status) !== "archived",
   );
   const groups = groupCrmConnectionsByChannel(connections);
   const connectionsFor = (channel: "instagram" | "olx_chat" | "whatsapp") =>
@@ -95,10 +94,15 @@ export function CrmChannelDirectory({
                 {...(onManageConnection
                   ? { onManage: onManageConnection }
                   : {})}
+                {...(showRepairActions &&
+                connection.provider === "zapi" &&
+                onRepairConnection
+                  ? { onRepair: onRepairConnection }
+                  : {})}
               />
             </li>
           ))}
-          {showSetupActions && !hasZapiConnectedOrConfiguredConnection ? (
+          {showSetupActions && !hasExistingZapiConnection ? (
             <li>
               <button
                 className="crm-channel-row"

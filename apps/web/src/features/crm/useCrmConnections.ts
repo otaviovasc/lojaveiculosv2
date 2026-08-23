@@ -10,6 +10,7 @@ import type {
   CrmProviderConnection,
   CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmZapiCredentialsInput,
 } from "./crmConversationTypes";
 
 const fallbackAllowance: CrmConnectionAllowance = {
@@ -31,6 +32,7 @@ export function useCrmConnections(api: CrmConversationApi) {
   const requestGenerationRef = useRef(0);
   const connectionsRef = useRef<CrmProviderConnection[]>([]);
   const connectionMutationGenerationRef = useRef(new Map<string, number>());
+  const preserveNextOperationalSnapshotRef = useRef(new Set<string>());
 
   const loadConnections = useCallback(() => api.listConnections(), [api]);
   const loadZapiAddonContract = useCallback(async () => {
@@ -47,12 +49,21 @@ export function useCrmConnections(api: CrmConversationApi) {
   const applyConnectionsPayload = useCallback(
     (payload: Awaited<ReturnType<CrmConversationApi["listConnections"]>>) => {
       const nextConnections = payload.connections.map((incoming) => {
+        const connectionId = String(incoming.id);
         const current = connectionsRef.current.find(
-          (candidate) => String(candidate.id) === String(incoming.id),
+          (candidate) => String(candidate.id) === connectionId,
         );
-        return current
+        const reconciled = current
           ? reconcileConnectionSnapshot(current, incoming)
           : incoming;
+        if (
+          !current ||
+          !preserveNextOperationalSnapshotRef.current.has(connectionId)
+        ) {
+          return reconciled;
+        }
+        preserveNextOperationalSnapshotRef.current.delete(connectionId);
+        return preserveConnectionOperationalState(current, reconciled);
       });
       connectionsRef.current = nextConnections;
       setConnections(nextConnections);
@@ -125,15 +136,11 @@ export function useCrmConnections(api: CrmConversationApi) {
     async (input: CrmCreateConnectionInput) => {
       try {
         const created = await api.createConnection(input);
-        await refreshConnections();
-        return (
-          connectionsRef.current.find(
-            (connection) => String(connection.id) === String(created.id),
-          ) ?? created
-        );
+        void refreshConnections();
+        return created;
       } catch (caught) {
         setError(asError(caught));
-        return null;
+        throw caught;
       }
     },
     [api, refreshConnections],
@@ -177,6 +184,43 @@ export function useCrmConnections(api: CrmConversationApi) {
           );
         }
         return reconcileConnection(connectionId, connection);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [
+      api,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      reconcileConnection,
+      refreshConnections,
+    ],
+  );
+
+  const repairZapiConnectionCredentials = useCallback(
+    async (connectionId: CrmConnectionId, input: CrmZapiCredentialsInput) => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
+      try {
+        const connection = await api.repairZapiConnectionCredentials(
+          connectionId,
+          input,
+        );
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return (
+            connectionsRef.current.find(
+              (candidate) => String(candidate.id) === String(connectionId),
+            ) ?? connection
+          );
+        }
+        const reconciled = reconcileConnection(connectionId, connection);
+        preserveNextOperationalSnapshotRef.current.add(String(connection.id));
+        await refreshConnections();
+        return (
+          connectionsRef.current.find(
+            (candidate) => String(candidate.id) === String(connection.id),
+          ) ?? reconciled
+        );
       } catch (caught) {
         setError(asError(caught));
         throw caught;
@@ -390,6 +434,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     ),
     isLoading,
     refreshConnections,
+    repairZapiConnectionCredentials,
     requestZapiPairingCode,
     requestZapiPairingQr,
     requestZapiAddon,
@@ -418,6 +463,22 @@ function reconcileConnectionSnapshot(
     ...(current.setup && (!incoming.setup || incomingSetupAt < currentSetupAt)
       ? { setup: current.setup }
       : {}),
+  };
+}
+
+function preserveConnectionOperationalState(
+  current: CrmProviderConnection,
+  incoming: CrmProviderConnection,
+): CrmProviderConnection {
+  return {
+    ...incoming,
+    ...(current.credentials ? { credentials: current.credentials } : {}),
+    ...(current.live ? { live: current.live } : {}),
+    ...(current.readiness ? { readiness: current.readiness } : {}),
+    ...(current.ready !== undefined ? { ready: current.ready } : {}),
+    ...(current.setup ? { setup: current.setup } : {}),
+    ...(current.state ? { state: current.state } : {}),
+    ...(current.status ? { status: current.status } : {}),
   };
 }
 

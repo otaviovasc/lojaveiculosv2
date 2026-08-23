@@ -15,6 +15,7 @@ import type {
   CrmSetupProvider,
   CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmZapiCredentialsInput,
 } from "./crmConversationTypes";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import { CrmChannelDirectory } from "./CrmChannelDirectory";
@@ -25,6 +26,7 @@ import {
   isComposioConnectionForProvider,
   readPendingComposioConnection,
 } from "./crmComposioOAuth";
+import { needsConnectionRepair } from "./CrmChannelDirectoryParts";
 
 export type CrmConnectionSelfServiceHandlers = {
   onAuthorizeComposio: (
@@ -45,6 +47,10 @@ export type CrmConnectionSelfServiceHandlers = {
     }
   >;
   onRefreshConnections: () => Promise<void>;
+  onRepairZapiCredentials?: (
+    connectionId: CrmConnectionId,
+    input: CrmZapiCredentialsInput,
+  ) => Promise<CrmProviderConnection>;
   onRequestZapiPairingCode?: (
     connectionId: CrmConnectionId,
     phone: string,
@@ -75,6 +81,7 @@ export function CrmConnectionSelfServiceSetup({
   availableSetups,
   canPair,
   canSetup,
+  canRepairCredentials = false,
   connections = [],
   existingConnection = null,
   handlers,
@@ -86,6 +93,7 @@ export function CrmConnectionSelfServiceSetup({
   allowance: CrmConnectionAllowance;
   availableSetups: readonly CrmAvailableSetup[];
   canPair: boolean;
+  canRepairCredentials?: boolean;
   canSetup: boolean;
   connections?: readonly CrmProviderConnection[];
   existingConnection?: CrmProviderConnection | null;
@@ -166,6 +174,13 @@ export function CrmConnectionSelfServiceSetup({
     );
     setOfficialChannel(channel);
     setProvider(nextProvider);
+  };
+
+  const chooseConnectionForRepair = (candidate: CrmProviderConnection) => {
+    resetSetupProgress();
+    setConnection(candidate);
+    setOfficialChannel("whatsapp");
+    setProvider("zapi");
   };
 
   const closeSetup = () => {
@@ -252,7 +267,9 @@ export function CrmConnectionSelfServiceSetup({
         onManageConnection={(candidate) =>
           setManagedConnectionId(String(candidate.id))
         }
+        onRepairConnection={chooseConnectionForRepair}
         onRedirect={onRedirect}
+        showRepairActions={canRepairCredentials}
         showSetupActions={canSetup}
         zapiAddonContract={zapiAddonContract}
       />
@@ -282,6 +299,7 @@ export function CrmConnectionSelfServiceSetup({
           <CrmWhatsappZapiSetup
             allowance={allowance}
             canPair={canPair}
+            canRepairCredentials={canRepairCredentials}
             canSetup={canSetup}
             connection={connection?.provider === "zapi" ? connection : null}
             handlers={handlers}
@@ -326,6 +344,16 @@ export function CrmConnectionSelfServiceSetup({
         isRefreshing={isBusy}
         onClose={() => setManagedConnectionId(null)}
         onRefresh={handlers.onRefreshConnections}
+        {...(managedConnection?.provider === "zapi" &&
+        canRepairCredentials &&
+        needsConnectionRepair(managedConnection)
+          ? {
+              onRepair: () => {
+                setManagedConnectionId(null);
+                chooseConnectionForRepair(managedConnection);
+              },
+            }
+          : {})}
         {...(managedConnection?.provider === "zapi" &&
         handlers.onRefreshZapiStatus
           ? {

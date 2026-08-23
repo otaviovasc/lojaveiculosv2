@@ -34,12 +34,16 @@ export function readConnectionRowIcon(
 export function ConnectedChannelRow({
   connection,
   onManage,
+  onRepair,
 }: {
   connection: CrmProviderConnection;
   onManage?: (connection: CrmProviderConnection) => void;
+  onRepair?: (connection: CrmProviderConnection) => void;
 }) {
   const badge = readConnectionReadinessBadge(connection);
   const capabilityLabels = readConnectionCapabilityLabels(connection);
+  const repairNeeded = needsConnectionRepair(connection);
+  const onAction = repairNeeded && onRepair ? onRepair : onManage;
   const secondary = [
     readCrmProviderLabel(connection.provider),
     connection.phone,
@@ -84,13 +88,16 @@ export function ConnectedChannelRow({
           </span>
         ) : null}
       </span>
-      {onManage ? (
-        <ArrowRight aria-hidden="true" className="crm-channel-chevron" />
+      {onAction ? (
+        <span className="crm-channel-row-action">
+          {repairNeeded && onRepair ? "Reparar conexão" : null}
+          <ArrowRight aria-hidden="true" className="crm-channel-chevron" />
+        </span>
       ) : null}
     </>
   );
 
-  if (!onManage) {
+  if (!onAction) {
     return (
       <div
         className="crm-channel-row"
@@ -107,11 +114,26 @@ export function ConnectedChannelRow({
       data-actionable="true"
       data-channel={channelKey}
       data-provider={providerKey}
-      onClick={() => onManage(connection)}
+      onClick={() => onAction(connection)}
       type="button"
     >
       {body}
     </button>
+  );
+}
+
+export function needsConnectionRepair(connection: CrmProviderConnection) {
+  const lifecycle = connection.state ?? connection.status;
+  return (
+    connection.setup?.status === "failed" ||
+    connection.setup?.status === "partial" ||
+    (connection.setup?.status === "configuring" &&
+      connection.credentials?.storedInstanceConfigured !== true) ||
+    connection.readiness?.ready === false ||
+    connection.live?.providerStatus === "disconnected" ||
+    connection.live?.providerStatus === "error" ||
+    lifecycle === "disconnected" ||
+    lifecycle === "error"
   );
 }
 

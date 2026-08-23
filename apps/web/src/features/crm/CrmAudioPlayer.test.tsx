@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmAudioPlayer } from "./CrmAudioPlayer";
@@ -19,7 +19,7 @@ describe("CrmAudioPlayer", () => {
     expect(
       screen.getByRole("button", { name: "Reproduzir audio" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.getByRole("slider")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Velocidade de reproducao/ }),
     ).toHaveTextContent("1x");
@@ -58,5 +58,42 @@ describe("CrmAudioPlayer", () => {
     await user.click(playButton);
 
     expect(playMock).toHaveBeenCalled();
+  });
+
+  it("reloads the audio after an error", async () => {
+    const user = userEvent.setup();
+    const loadMock = vi.fn();
+    const pauseMock = vi.fn();
+    window.HTMLMediaElement.prototype.load = loadMock;
+    window.HTMLMediaElement.prototype.pause = pauseMock;
+    render(<CrmAudioPlayer src="https://audio.local/test.ogg" />);
+
+    fireEvent.error(screen.getByLabelText("Mensagem de audio"));
+    const retry = screen.getByRole("button", {
+      name: "Tentar carregar audio novamente",
+    });
+    expect(retry).toBeEnabled();
+
+    await user.click(retry);
+
+    expect(pauseMock).toHaveBeenCalled();
+    expect(loadMock).toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Reproduzir audio" }),
+    ).toBeEnabled();
+  });
+
+  it("seeks from the keyboard when the waveform is focused", () => {
+    render(<CrmAudioPlayer src="https://audio.local/test.ogg" />);
+    const audio = screen.getByLabelText<HTMLAudioElement>("Mensagem de audio");
+    Object.defineProperties(audio, {
+      currentTime: { configurable: true, value: 10, writable: true },
+      duration: { configurable: true, value: 100 },
+    });
+
+    fireEvent.keyDown(screen.getByRole("slider"), { key: "ArrowRight" });
+
+    expect(audio.currentTime).toBe(15);
+    expect(screen.getByRole("slider")).toHaveAttribute("aria-valuenow", "15");
   });
 });

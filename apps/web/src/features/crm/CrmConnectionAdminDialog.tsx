@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PauseCircle, PlayCircle } from "lucide-react";
+import { PauseCircle, PlayCircle, Wrench } from "lucide-react";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { isConnectedConnection } from "./crmConnectionSelection";
@@ -23,6 +23,7 @@ export function CrmConnectionManageDialog({
   onClose,
   onRefresh,
   onRefreshStatus,
+  onRepair,
   onSetConnectionPaused,
 }: {
   canManage?: boolean;
@@ -32,6 +33,7 @@ export function CrmConnectionManageDialog({
   onClose: () => void;
   onRefresh: () => Promise<void> | void;
   onRefreshStatus?: () => Promise<void>;
+  onRepair?: () => void;
   onSetConnectionPaused?: (
     connectionId: CrmConnectionId,
     paused: boolean,
@@ -116,6 +118,23 @@ export function CrmConnectionManageDialog({
               onRefresh={() => void refreshStatus()}
             />
           )}
+          {onRepair ? (
+            <div className="crm-connection-management-actions">
+              <button
+                className="crm-action crm-action-primary"
+                disabled={!canManage || disabled || lifecycleBusy}
+                onClick={onRepair}
+                type="button"
+              >
+                <Wrench aria-hidden="true" />
+                Reparar ou reconectar
+              </button>
+              <small>
+                Reabre o pareamento da conexão existente; o histórico do CRM é
+                preservado.
+              </small>
+            </div>
+          ) : null}
           {onSetConnectionPaused ? (
             <div className="crm-connection-management-actions">
               <button

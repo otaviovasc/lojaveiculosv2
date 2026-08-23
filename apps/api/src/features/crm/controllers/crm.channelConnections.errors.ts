@@ -10,6 +10,8 @@ import {
 } from "../../../domains/crm/channelConnections/connectionCreation.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { OlxChatSetupRetryTargetError } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
+import { CrmZapiCredentialVerificationError } from "../../../domains/crm/services/CrmChannelConnectionService/verifyUpdatedZapiCredentials.js";
+import { ZapiIdentityReplacementRequiresSupportError } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnectionIdentity.js";
 
 export function handleCrmMessagingConnectionError(
   context: Context,
@@ -45,6 +47,22 @@ export function handleCrmMessagingConnectionError(
       error,
       message: error.message,
       status: 409,
+    });
+  }
+  if (error instanceof ZapiIdentityReplacementRequiresSupportError) {
+    return jsonApiError(context, {
+      code: "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof CrmZapiCredentialVerificationError) {
+    return jsonApiError(context, {
+      code: "CRM_ZAPI_CREDENTIAL_VERIFICATION_FAILED",
+      error,
+      message: error.message,
+      status: 502,
     });
   }
   if (error instanceof BillingQuotaExceededError) {

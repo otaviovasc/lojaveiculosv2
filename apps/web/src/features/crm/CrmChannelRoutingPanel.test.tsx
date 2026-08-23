@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
 import type { CrmConversationApi } from "./crmConversationApi";
 import type { CrmProviderConnection } from "./crmConversationTypes";
@@ -200,6 +201,76 @@ describe("CrmChannelRoutingPanel", () => {
 
     expect(await within(dialog).findByText("save failed")).toBeVisible();
     expect(screen.getByRole("dialog")).toBeVisible();
+  });
+
+  it("automatically selects the sole ready connection for an empty route", async () => {
+    const user = userEvent.setup();
+    const updateRoutingPolicy = vi.fn(async () => createPolicy([]));
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(createPolicy([]), updateRoutingPolicy)}
+        canManage
+        connections={[legacyConnection("zapi-a", "zapi", "Equipe vendas")]}
+      />,
+    );
+
+    const whatsappRow = (await screen.findByText("WhatsApp")).closest(
+      "article",
+    ) as HTMLElement;
+    await user.click(
+      within(whatsappRow).getByRole("button", { name: "Definir rota" }),
+    );
+
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(/única conexão pronta foi selecionada/i),
+    ).toBeVisible();
+    await user.click(
+      within(dialog).getByRole("button", { name: "Salvar rota" }),
+    );
+
+    expect(updateRoutingPolicy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: "whatsapp",
+        defaultConnectionId: "zapi-a",
+      }),
+    );
+  });
+
+  it("keeps the request id visible when saving a stale route fails", async () => {
+    const user = userEvent.setup();
+    const updateRoutingPolicy = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_VERSION_CONFLICT",
+        message: "Revision mismatch",
+        requestId: "b3b9f196-7285-4b5a-ac04-b3dea5e5136c",
+        status: 409,
+      });
+    });
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(createPolicy([]), updateRoutingPolicy)}
+        canManage
+        connections={[legacyConnection("zapi-a", "zapi", "Equipe vendas")]}
+      />,
+    );
+
+    const whatsappRow = (await screen.findByText("WhatsApp")).closest(
+      "article",
+    ) as HTMLElement;
+    await user.click(
+      within(whatsappRow).getByRole("button", { name: "Definir rota" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("button", { name: "Salvar rota" }),
+    );
+
+    expect(
+      await within(dialog).findByText(
+        /ID do erro: b3b9f196-7285-4b5a-ac04-b3dea5e5136c/,
+      ),
+    ).toBeVisible();
   });
 
   it("blocks manage actions without permission", async () => {

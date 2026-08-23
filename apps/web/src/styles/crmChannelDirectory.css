@@ -445,6 +445,18 @@
     color 0.2s ease;
 }
 
+.crm-channel-row-action {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.4rem;
+  position: relative;
+  z-index: 1;
+}
+
 .crm-channel-row:hover .crm-channel-chevron,
 .crm-channel-row:hover .crm-channel-action-arrow {
   color: #10b981;

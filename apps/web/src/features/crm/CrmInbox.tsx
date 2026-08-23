@@ -263,6 +263,8 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                       allowance: inbox.connectionAllowance,
                       availableSetups: inbox.availableConnectionSetups,
                       canPair: inbox.permissions.canConnectionPair,
+                      canRepairCredentials:
+                        inbox.permissions.canConnectionCredentialsManage,
                       canSetup: inbox.permissions.canConnectionSetup,
                       handlers: {
                         onAuthorizeComposio: inbox.authorizeComposioConnection,
@@ -282,11 +284,27 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         },
                         onCreate: async (input) => {
                           const result = await inbox.createConnection(input);
-                          await inbox.refreshRoutingPolicy();
+                          void inbox
+                            .refreshRoutingPolicy()
+                            .catch(() => undefined);
                           return result;
                         },
                         onDisconnectZapi: inbox.disconnectZapiConnection,
                         onRefreshConnections: inbox.refreshConnections,
+                        onRepairZapiCredentials: async (
+                          connectionId,
+                          input,
+                        ) => {
+                          const result =
+                            await inbox.repairZapiConnectionCredentials(
+                              connectionId,
+                              input,
+                            );
+                          void inbox
+                            .refreshRoutingPolicy()
+                            .catch(() => undefined);
+                          return result;
+                        },
                         onRequestZapiPairingCode: inbox.requestZapiPairingCode,
                         onRequestZapiPairingQr: inbox.requestZapiPairingQr,
                         onRequestZapiAddon: inbox.requestZapiAddon,

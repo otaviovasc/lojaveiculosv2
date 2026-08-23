@@ -82,6 +82,26 @@ describe("API error display helpers", () => {
       "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.",
     ],
     [
+      "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT",
+      409,
+      "O ID informado pertence a outra instância Z-API. Para trocar a instância sem perder o histórico, acione o suporte.",
+    ],
+    [
+      "CRM_ZAPI_CREDENTIAL_VERIFICATION_FAILED",
+      502,
+      "A Z-API não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token e tente novamente.",
+    ],
+    [
+      "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
+      409,
+      "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.",
+    ],
+    [
+      "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE",
+      409,
+      "As credenciais Z-API ficaram incompletas. Abra a conexão existente, use Reparar conexão e informe novamente o ID e o token da mesma instância.",
+    ],
+    [
       "CRM_PROVIDER_UNAVAILABLE",
       422,
       "Servico temporariamente indisponivel. Tente novamente em instantes.",

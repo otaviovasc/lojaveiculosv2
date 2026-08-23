@@ -22,6 +22,7 @@ describe("CRM WhatsApp permissions", () => {
       canCampaignManage: false,
       canCampaignRead: false,
       canClose: false,
+      canConnectionCredentialsManage: false,
       canConnectionPair: false,
       canConnectionSetup: false,
       canIntegrationsManage: false,
@@ -95,6 +96,17 @@ describe("CRM WhatsApp permissions", () => {
       canConnectionPair: true,
       canConnectionSetup: false,
     });
+  });
+
+  it("requires both setup and tenant management to repair credentials", () => {
+    expect(
+      readCrmCapabilities(
+        createSession(["crm.messaging.connection.setup", "tenant.manage"]),
+      ),
+    ).toMatchObject({ canConnectionCredentialsManage: true });
+    expect(
+      readCrmCapabilities(createSession(["crm.messaging.connection.setup"])),
+    ).toMatchObject({ canConnectionCredentialsManage: false });
   });
 
   it("maps default routing independently from connection setup", () => {

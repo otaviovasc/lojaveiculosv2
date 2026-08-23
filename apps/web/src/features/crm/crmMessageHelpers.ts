@@ -20,6 +20,31 @@ export function readCoordinate(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+const absoluteUrlPattern = /^[a-z][a-z\d+.-]*:/i;
+const unsafeUrlCharactersPattern = /[\u0000-\u001f\u007f]/;
+
+export function sanitizeCrmMessageUrl(value: unknown) {
+  const candidate = readString(value);
+  if (!candidate || unsafeUrlCharactersPattern.test(candidate))
+    return undefined;
+  if (candidate.startsWith("//") || candidate.startsWith("\\"))
+    return undefined;
+
+  try {
+    const base = new URL("https://crm.local/");
+    const parsed = new URL(candidate, base);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return undefined;
+    }
+    if (!absoluteUrlPattern.test(candidate) && parsed.origin !== base.origin) {
+      return undefined;
+    }
+    return candidate;
+  } catch {
+    return undefined;
+  }
+}
+
 export function readOptionalHref(href?: string) {
   return href ? { href } : {};
 }

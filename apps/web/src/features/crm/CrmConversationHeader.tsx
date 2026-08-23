@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   Bot,
   CalendarClock,
+  EllipsisVertical,
   ExternalLink,
   CheckCheck,
   MailCheck,
@@ -11,7 +12,7 @@ import {
   UserCheck,
   UserRound,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { ChatAssignmentSelect } from "./CrmConversationHeaderAssignment";
 import { CrmHumanAttendanceBadge } from "./CrmHumanAttendanceBadge";
@@ -81,11 +82,47 @@ export function ChatHeader({
   >;
   cycle: CrmConversationCycle;
 }) {
+  const identityButtonRef = useRef<HTMLButtonElement>(null);
+  const moreActionsButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreStableFocusRef = useRef(false);
   const tagButtonRef = useRef<HTMLButtonElement>(null);
+  const [moreActionsOpen, setMoreActionsOpen] = useState(false);
+  const [tagMenuSource, setTagMenuSource] = useState<"desktop" | "mobile">(
+    "desktop",
+  );
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
   const disabled = Boolean(actionsDisabled);
   const assignedToCurrentUser =
     Boolean(currentUserId) && cycle.assignedUserId === currentUserId;
+  const hasSecondaryActions = Boolean(
+    canMarkRead || canTagSessions || canScheduleMessages || cycle.leadId,
+  );
+  const tagAnchorRef =
+    tagMenuSource === "mobile" ? moreActionsButtonRef : tagButtonRef;
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const breakpoint = window.matchMedia("(max-width: 860px)");
+    const closeResponsivePopovers = () => {
+      if (!moreActionsOpen && !tagMenuOpen) return;
+      restoreStableFocusRef.current = true;
+      setMoreActionsOpen(false);
+      setTagMenuOpen(false);
+    };
+    breakpoint.addEventListener("change", closeResponsivePopovers);
+    return () => {
+      breakpoint.removeEventListener("change", closeResponsivePopovers);
+    };
+  }, [moreActionsOpen, tagMenuOpen]);
+
+  useLayoutEffect(() => {
+    if (moreActionsOpen || tagMenuOpen || !restoreStableFocusRef.current) {
+      return;
+    }
+    restoreStableFocusRef.current = false;
+    identityButtonRef.current?.focus();
+  }, [moreActionsOpen, tagMenuOpen]);
+
   return (
     <header className="crm-chat-header">
       <div className="crm-chat-header-main">
@@ -105,6 +142,7 @@ export function ChatHeader({
             aria-label="Abrir detalhes da conversa"
             className="crm-chat-title"
             onClick={onOpenDetails}
+            ref={identityButtonRef}
             type="button"
           >
             <span className="crm-avatar crm-avatar-lg">
@@ -148,7 +186,7 @@ export function ChatHeader({
         {canMarkRead || canTagSessions ? (
           <div
             aria-label="Ações da conversa"
-            className="crm-header-action-group"
+            className="crm-header-action-group crm-header-action-group-secondary"
             role="group"
           >
             {canMarkRead ? (
@@ -172,44 +210,122 @@ export function ChatHeader({
               </button>
             ) : null}
             {canTagSessions ? (
-              <div className="crm-tag-menu-anchor">
+              <div className="crm-tag-menu-anchor crm-header-action-secondary-anchor">
                 <button
                   aria-label="Adicionar etiqueta"
-                  className="crm-icon-action"
+                  aria-expanded={tagMenuOpen && tagMenuSource === "desktop"}
+                  aria-haspopup="dialog"
+                  className="crm-icon-action crm-header-action-secondary"
                   disabled={disabled || pendingActions?.tag}
-                  onClick={() => setTagMenuOpen((open) => !open)}
+                  onClick={() => {
+                    setTagMenuSource("desktop");
+                    setTagMenuOpen((open) => !open);
+                  }}
                   ref={tagButtonRef}
                   title="Adicionar etiqueta"
                   type="button"
                 >
                   <Tag />
                 </button>
-                <FeatureAnchoredPopover
-                  align="end"
-                  anchorRef={tagButtonRef}
-                  className="crm-tag-popover"
-                  isOpen={tagMenuOpen}
-                  onClose={() => setTagMenuOpen(false)}
-                >
-                  <TagMenu
-                    activeTags={cycle.tags ?? []}
-                    availableTags={availableTags ?? []}
-                    disabled={disabled || Boolean(pendingActions?.tag)}
-                    onAdd={async (input) => {
-                      const accepted = await onAddTag(input);
-                      if (accepted) setTagMenuOpen(false);
-                      return accepted;
-                    }}
-                  />
-                </FeatureAnchoredPopover>
               </div>
             ) : null}
+          </div>
+        ) : null}
+        {hasSecondaryActions ? (
+          <div className="crm-header-action-group crm-header-more-actions">
+            <button
+              aria-expanded={moreActionsOpen}
+              aria-haspopup="menu"
+              aria-label="Mais ações"
+              className="crm-icon-action"
+              disabled={disabled}
+              onClick={() => {
+                setTagMenuOpen(false);
+                setMoreActionsOpen((open) => !open);
+              }}
+              ref={moreActionsButtonRef}
+              title="Mais ações"
+              type="button"
+            >
+              <EllipsisVertical aria-hidden="true" />
+            </button>
+            <FeatureAnchoredPopover
+              align="end"
+              anchorRef={moreActionsButtonRef}
+              ariaLabel="Mais ações da conversa"
+              className="crm-header-more-menu"
+              initialFocus="first"
+              isOpen={moreActionsOpen}
+              onClose={() => setMoreActionsOpen(false)}
+              role="menu"
+            >
+              {canMarkRead ? (
+                <button
+                  disabled={disabled || pendingActions?.read}
+                  onClick={() => {
+                    setMoreActionsOpen(false);
+                    if (cycle.unreadCount) onMarkRead();
+                    else onMarkUnread();
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  {cycle.unreadCount ? <MailCheck /> : <MailOpen />}
+                  {cycle.unreadCount
+                    ? "Marcar como lida"
+                    : "Marcar como não lida"}
+                </button>
+              ) : null}
+              {canScheduleMessages ? (
+                <button
+                  disabled={disabled}
+                  onClick={() => {
+                    setMoreActionsOpen(false);
+                    onScheduleMessage();
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <CalendarClock />
+                  Abrir agendamentos
+                </button>
+              ) : null}
+              {cycle.leadId ? (
+                <a
+                  href={`#/crm?surface=leads&leadId=${encodeURIComponent(cycle.leadId)}`}
+                  onClick={() => setMoreActionsOpen(false)}
+                  role="menuitem"
+                >
+                  <ExternalLink />
+                  Abrir lead vinculado
+                </a>
+              ) : null}
+              {canTagSessions ? (
+                <button
+                  disabled={disabled || pendingActions?.tag}
+                  onClick={() => {
+                    setMoreActionsOpen(false);
+                    setTagMenuSource("mobile");
+                    setTagMenuOpen(true);
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <Tag />
+                  Adicionar etiqueta
+                </button>
+              ) : null}
+            </FeatureAnchoredPopover>
           </div>
         ) : null}
         {canScheduleMessages || cycle.leadId || canToggleIntervention ? (
           <div
             aria-label="Ferramentas do atendimento"
-            className="crm-header-action-group"
+            className={
+              canToggleIntervention
+                ? "crm-header-action-group"
+                : "crm-header-action-group crm-header-action-group-secondary"
+            }
             role="group"
           >
             {canScheduleMessages ? (
@@ -303,6 +419,27 @@ export function ChatHeader({
           </div>
         ) : null}
       </div>
+      <FeatureAnchoredPopover
+        align="end"
+        anchorRef={tagAnchorRef}
+        ariaLabel="Adicionar etiqueta"
+        className="crm-tag-popover"
+        initialFocus="first"
+        isOpen={tagMenuOpen}
+        onClose={() => setTagMenuOpen(false)}
+        role="dialog"
+      >
+        <TagMenu
+          activeTags={cycle.tags ?? []}
+          availableTags={availableTags ?? []}
+          disabled={disabled || Boolean(pendingActions?.tag)}
+          onAdd={async (input) => {
+            const accepted = await onAddTag(input);
+            if (accepted) setTagMenuOpen(false);
+            return accepted;
+          }}
+        />
+      </FeatureAnchoredPopover>
     </header>
   );
 }

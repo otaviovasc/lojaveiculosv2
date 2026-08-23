@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import type { CrmConversationApi } from "./crmConversationApi";
 import { useCrmConnections } from "./useCrmConnections";
 
@@ -70,6 +71,34 @@ describe("useCrmConnections", () => {
     ]);
   });
 
+  it("preserves the structured API error when connection creation fails", async () => {
+    const failure = new AppApiError({
+      code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
+      message: "Provider connection already exists.",
+      requestId: "request-create-conflict",
+      status: 409,
+    });
+    const api = {
+      createConnection: vi.fn().mockRejectedValue(failure),
+      listConnections: vi.fn().mockResolvedValue(connectionPayload("existing")),
+    } as unknown as CrmConversationApi;
+    const { result } = renderHook(() => useCrmConnections(api));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await expect(
+        result.current.createConnection({
+          channel: "whatsapp",
+          provider: "zapi",
+          instanceId: "instance-existing",
+          instanceToken: "token-replacement",
+        }),
+      ).rejects.toBe(failure);
+    });
+
+    expect(result.current.error).toBe(failure);
+  });
+
   it("keeps a successful setup when the deployed list response omits it", async () => {
     const listConnections = vi
       .fn()
@@ -130,6 +159,79 @@ describe("useCrmConnections", () => {
     expect(result.current.connections[0]?.live?.providerStatus).toBe(
       "connected",
     );
+  });
+
+  it("preserves a same-instance repair when the immediate list snapshot is stale", async () => {
+    const listConnections = vi
+      .fn()
+      .mockResolvedValueOnce(connectionPayload("connection_1"))
+      .mockResolvedValueOnce(connectionPayload("connection_1"));
+    const repairedConnection = {
+      ...connectionPayload("connection_1").connections[0],
+      displayName: "Z-API reparada",
+      ready: true,
+      readiness: { ready: true, reason: null, reasonCode: "ready" },
+      state: "active" as const,
+      status: "active" as const,
+    };
+    const repairZapiConnectionCredentials = vi.fn(
+      async () => repairedConnection,
+    );
+    const api = {
+      listConnections,
+      repairZapiConnectionCredentials,
+    } as unknown as CrmConversationApi;
+    const { result } = renderHook(() => useCrmConnections(api));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let repaired!: Awaited<
+      ReturnType<typeof result.current.repairZapiConnectionCredentials>
+    >;
+    await act(async () => {
+      repaired = await result.current.repairZapiConnectionCredentials(
+        "connection_1",
+        { instanceId: "instance-1", instanceToken: "token_new" },
+      );
+    });
+
+    expect(repairZapiConnectionCredentials).toHaveBeenCalledWith(
+      "connection_1",
+      { instanceId: "instance-1", instanceToken: "token_new" },
+    );
+    expect(repaired.id).toBe("connection_1");
+    expect(repaired.readiness?.ready).toBe(true);
+    expect(result.current.connections).toHaveLength(1);
+    expect(result.current.connections[0]?.id).toBe("connection_1");
+    expect(result.current.connections[0]?.readiness?.ready).toBe(true);
+    expect(result.current.connections[0]?.status).toBe("active");
+  });
+
+  it("returns a successful create without waiting for the list refresh", async () => {
+    const refreshNeverCompletes = new Promise<
+      ReturnType<typeof connectionPayload>
+    >(() => undefined);
+    const created = connectionPayload("created").connections[0]!;
+    const api = {
+      createConnection: vi.fn(async () => created),
+      listConnections: vi
+        .fn()
+        .mockResolvedValueOnce(connectionPayload("existing"))
+        .mockReturnValueOnce(refreshNeverCompletes),
+    } as unknown as CrmConversationApi;
+    const { result } = renderHook(() => useCrmConnections(api));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let resolved: unknown;
+    await act(async () => {
+      resolved = await result.current.createConnection({
+        channel: "whatsapp",
+        instanceId: "instance-created",
+        instanceToken: "token-created",
+        provider: "zapi",
+      });
+    });
+
+    expect(resolved).toBe(created);
   });
 });
 

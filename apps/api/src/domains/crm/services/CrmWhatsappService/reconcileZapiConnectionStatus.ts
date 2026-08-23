@@ -15,7 +15,7 @@ export async function reconcileZapiConnectionStatus(
   context: ServiceContext,
   connection: CrmConnection,
   ports: CrmServicePorts,
-): Promise<void> {
+): Promise<"active" | "disconnected" | "unverified"> {
   assertPermission(context, "crm.messaging.connection.setup");
   let status;
   try {
@@ -33,7 +33,7 @@ export async function reconcileZapiConnectionStatus(
         provider: "zapi",
       },
     );
-    return;
+    return "unverified";
   }
   const configuredStatus = status.connected ? "active" : "disconnected";
   const updated = await getCrmConnectionRepository(ports).updateConnection({
@@ -76,4 +76,5 @@ export async function reconcileZapiConnectionStatus(
     permission: "crm.messaging.connection.setup",
     summary: "Reconciled Z-API connection status after webhook setup",
   });
+  return configuredStatus;
 }

@@ -50,7 +50,9 @@ export function CrmChannelRoutingEditDialog({
     (candidate) => candidate.channel === channel && candidate.ready,
   );
   const [defaultConnectionId, setDefaultConnectionId] = useState(
-    () => policy?.storeDefault.connection?.id ?? "",
+    () =>
+      policy?.storeDefault.connection?.id ??
+      (readyCandidates.length === 1 ? readyCandidates[0]!.id : ""),
   );
   const [botMode, setBotMode] = useState<CrmExternalBotRouteMode>(
     () => policy?.externalBot.mode ?? "disabled",
@@ -144,6 +146,12 @@ export function CrmChannelRoutingEditDialog({
           <p className="crm-routing-capability-note" role="note">
             Nenhuma conexão pronta para este canal. Conclua a configuração de um
             canal antes de definir a rota.
+          </p>
+        ) : null}
+        {!policy?.storeDefault.connection && readyCandidates.length === 1 ? (
+          <p className="crm-routing-capability-note" role="status">
+            A única conexão pronta foi selecionada automaticamente. Salve para
+            ativar esta rota.
           </p>
         ) : null}
         <details className="crm-routing-bot">

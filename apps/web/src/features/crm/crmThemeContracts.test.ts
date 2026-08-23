@@ -84,4 +84,15 @@ describe("CRM theme contracts", () => {
       ".crm-connection-admin .crm-channel-identity",
     );
   });
+
+  it("reserves space for message actions on touch pointers", () => {
+    const messageActions = readStyle("crmMessageActions.css");
+
+    expect(messageActions).toMatch(
+      /@media \(hover: none\), \(pointer: coarse\)[\s\S]*\.crm-shell \.crm-bubble:has\(\.crm-message-actions\)[\s\S]*padding-top: 2\.5rem/,
+    );
+    expect(messageActions).toMatch(
+      /@media \(hover: none\), \(pointer: coarse\)[\s\S]*\.crm-message-actions[\s\S]*top: 0\.25rem/,
+    );
+  });
 });

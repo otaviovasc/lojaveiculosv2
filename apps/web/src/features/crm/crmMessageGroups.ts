@@ -36,6 +36,7 @@ function canJoinMediaGroup(
   const previous = group.messages[group.messages.length - 1];
   if (!previous) return false;
   return (
+    group.messages.length < 4 &&
     isGroupableMedia(message) &&
     previous.direction === message.direction &&
     previous.senderType === message.senderType &&
@@ -45,10 +46,25 @@ function canJoinMediaGroup(
 }
 
 function isGroupableMedia(message: CrmMessageView) {
+  const replyTo = readReplyTo(message);
   return (
     !message.deletedAt &&
+    !replyTo &&
     Boolean(message.mediaUrl) &&
     (message.type === "IMAGE" || message.type === "VIDEO")
+  );
+}
+
+function readReplyTo(message: CrmMessageView) {
+  const metadata = message.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata))
+    return false;
+  const replyTo = metadata.replyTo;
+  return Boolean(
+    replyTo &&
+    typeof replyTo === "object" &&
+    !Array.isArray(replyTo) &&
+    Object.keys(replyTo).length,
   );
 }
 
