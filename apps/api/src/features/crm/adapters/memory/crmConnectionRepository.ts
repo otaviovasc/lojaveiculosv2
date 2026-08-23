@@ -59,6 +59,7 @@ export function createMemoryCrmConnectionRepository(
         metadata: { createdAt: new Date().toISOString(), ...input.metadata },
         phone: input.phone ?? null,
         provider: input.provider,
+        revision: 0,
         status: input.status ?? "sandbox",
         storeId: input.storeId,
         tenantId: input.tenantId,
@@ -166,6 +167,12 @@ export function createMemoryCrmConnectionRepository(
           item.tenantId === input.tenantId,
       );
       if (!connection) return null;
+      if (
+        input.expectedRevision !== undefined &&
+        (connection.revision ?? 0) !== input.expectedRevision
+      ) {
+        return null;
+      }
       if (input.credentialsRef)
         connection.credentialsRef = input.credentialsRef;
       if (input.displayName) connection.displayName = input.displayName;
@@ -180,6 +187,7 @@ export function createMemoryCrmConnectionRepository(
       if (input.status) connection.status = input.status;
       if (input.webhookUrl !== undefined)
         connection.webhookUrl = input.webhookUrl;
+      connection.revision = (connection.revision ?? 0) + 1;
       return normalizeConnection(connection);
     },
   };

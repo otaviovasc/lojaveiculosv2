@@ -36,6 +36,7 @@ export type CrmChannelConnection = CrmChannelConnectionDto & {
   metadata: CrmChannelConnectionMetadata;
   phone: string | null;
   ready: boolean;
+  routingStatus: "ready" | "preserved" | "deferred";
   setup: ZapiWebhookSetupState | null;
   status: CrmConnectionConfiguredStatus;
 };
@@ -77,6 +78,9 @@ export function toCrmChannelConnection(
     id: connection.id,
     isDefault: false,
     provider: canonical.provider,
+    ...(connection.revision !== undefined
+      ? { revision: connection.revision }
+      : {}),
     readiness: canonical.readiness,
     state: canonical.state,
   });
@@ -90,9 +94,17 @@ export function toCrmChannelConnection(
     metadata: readConnectionMetadata(connection.metadata),
     phone: connection.phone,
     ready: canonical.readiness.ready,
+    routingStatus: readRoutingStatus(connection.metadata),
     setup,
     status: connection.status,
   };
+}
+
+function readRoutingStatus(metadata: Record<string, unknown>) {
+  const status = metadata.routingStatus;
+  return status === "ready" || status === "preserved" || status === "deferred"
+    ? status
+    : "preserved";
 }
 
 export function setupProviderForConnection(

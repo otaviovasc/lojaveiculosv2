@@ -291,6 +291,8 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         },
                         onDisconnectZapi: inbox.disconnectZapiConnection,
                         onRefreshConnections: inbox.refreshConnections,
+                        onRefreshConnectionsWithPayload:
+                          inbox.refreshConnectionsAndRead,
                         onRepairZapiCredentials: async (
                           connectionId,
                           input,
@@ -300,6 +302,19 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                               connectionId,
                               input,
                             );
+                          void inbox
+                            .refreshRoutingPolicy()
+                            .catch(() => undefined);
+                          return result;
+                        },
+                        onReplaceZapiConnection: async (
+                          connectionId,
+                          input,
+                        ) => {
+                          const result = await inbox.replaceZapiConnection(
+                            connectionId,
+                            input,
+                          );
                           void inbox
                             .refreshRoutingPolicy()
                             .catch(() => undefined);

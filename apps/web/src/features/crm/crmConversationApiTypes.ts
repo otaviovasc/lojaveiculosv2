@@ -87,6 +87,8 @@ import type {
   CrmWhatsappZapiPairingCode,
   CrmWhatsappZapiPairingQr,
   CrmZapiCredentialsInput,
+  CrmZapiReplacementInput,
+  CrmZapiReplacementResult,
   CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiWebhookSetupResult,
 } from "./crmConversationTypes";
@@ -124,6 +126,14 @@ export type CrmConversationApi = {
     connectionId: CrmConnectionId,
     input: CrmZapiCredentialsInput,
   ) => Promise<CrmProviderConnection>;
+  replaceZapiConnection: (
+    connectionId: CrmConnectionId,
+    input: CrmZapiReplacementInput,
+  ) => Promise<CrmZapiReplacementResult>;
+  getZapiReplacementStatus: (
+    connectionId: CrmConnectionId,
+    operationId: string,
+  ) => Promise<CrmZapiReplacementResult>;
   getZapiAddonContract?: () => Promise<CrmWhatsappZapiAddonContract | null>;
   deleteMessage: (messageId: CrmMessage["id"]) => Promise<CrmMessage | null>;
   updateCycleAttendance: (

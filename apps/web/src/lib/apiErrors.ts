@@ -200,6 +200,10 @@ function friendlyMessage(input: {
       return "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.";
     case "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS":
       return "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.";
+    case "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED":
+      return "A conexão Z-API foi encontrada. Confirme as novas credenciais da mesma instância para continuar.";
+    case "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED":
+      return "A conexão Z-API foi encontrada. Confirme a troca para a nova instância para continuar.";
     case "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE":
       return "As credenciais Z-API ficaram incompletas. Abra a conexão existente, use Reparar conexão e informe novamente o ID e o token da mesma instância.";
     case "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT":

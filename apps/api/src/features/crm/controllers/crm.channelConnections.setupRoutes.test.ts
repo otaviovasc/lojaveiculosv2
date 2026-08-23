@@ -184,7 +184,7 @@ describe("CRM channel connection setup routes", () => {
     expect(getQrCode).not.toHaveBeenCalled();
   });
 
-  it("first-configures only the uncredentialed Z-API connection in the authenticated scope", async () => {
+  it("targets the existing Z-API connection in the authenticated scope", async () => {
     const own = {
       ...createConnection("zapi", {}),
       storeId: customerStoreId,
@@ -214,10 +214,18 @@ describe("CRM channel connection setup routes", () => {
       headers: { "content-type": "application/json" },
       method: "POST",
     });
-    expect(response.status).toBe(201);
-    await expect(repository.findConnectionById(own.id)).resolves.toMatchObject({
-      credentialsRef: { mode: "stored" },
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED",
+      details: {
+        connectionId: own.id,
+        identityRelation: "same_instance",
+        nextAction: "repair_credentials",
+      },
     });
+    await expect(repository.findConnectionById(own.id)).resolves.toMatchObject(
+      own,
+    );
     await expect(repository.findConnectionById(foreign.id)).resolves.toEqual(
       foreign,
     );

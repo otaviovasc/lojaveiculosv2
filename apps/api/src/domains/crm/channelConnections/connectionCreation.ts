@@ -110,6 +110,28 @@ export class CrmChannelConnectionProviderAlreadyExistsError extends Error {
   }
 }
 
+export type CrmZapiIdentityRelation = "same_instance" | "different_instance";
+export type CrmZapiConflictAction = "repair_credentials" | "replace_instance";
+
+export class CrmZapiConnectionConflictError extends Error {
+  readonly code = "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED" as const;
+  constructor(
+    readonly details: {
+      connectionId: string;
+      expectedRevision: number;
+      identityRelation: CrmZapiIdentityRelation;
+      nextAction: CrmZapiConflictAction;
+    },
+  ) {
+    super(
+      details.nextAction === "repair_credentials"
+        ? "A Z-API connection already exists and requires credential confirmation."
+        : "A different Z-API instance was supplied and requires replacement confirmation.",
+    );
+    this.name = "CrmZapiConnectionConflictError";
+  }
+}
+
 export class CrmChannelConnectionCredentialStateError extends Error {
   constructor() {
     super(

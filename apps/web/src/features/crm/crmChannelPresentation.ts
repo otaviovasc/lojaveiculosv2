@@ -337,6 +337,20 @@ export function readConnectionReadinessBadge(
       tone: "danger",
     };
   }
+  if (connection.live?.providerStatus === "error") {
+    return {
+      detail: "A última checagem do provedor falhou. Tente novamente.",
+      label: "Erro no provedor",
+      tone: "danger",
+    };
+  }
+  if (connection.live?.providerStatus === "disconnected") {
+    return {
+      detail: "O provedor está desconectado. Reconecte para voltar a operar.",
+      label: "Desconectada",
+      tone: "danger",
+    };
+  }
   if (connection.readiness?.ready === true) {
     return { detail: null, label: "Pronto", tone: "success" };
   }

@@ -14,7 +14,11 @@ export function toChannelConnectionDto(
     id: connection.id,
     isDefault: connection.isDefault,
     provider: connection.provider,
+    ...(connection.revision !== undefined
+      ? { revision: connection.revision }
+      : {}),
     readiness: connection.readiness,
+    routingStatus: connection.routingStatus,
     state: connection.state,
   };
 }

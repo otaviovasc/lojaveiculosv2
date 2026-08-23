@@ -23,6 +23,8 @@ import { updateVerifiedZapiConnectionIdentity } from "./replaceZapiConnectionIde
 
 export type RepairZapiConnectionCredentialsInput = ZapiSupportWebhookTarget & {
   connectionId: string;
+  expectedRevision?: number;
+  idempotencyKey?: string;
   instanceId: string;
   instanceToken: string;
 };

@@ -14,6 +14,7 @@ export type CrmWhatsappZapiSetupProps = {
   canSetup: boolean;
   connection: CrmProviderConnection | null;
   handlers: CrmConnectionSelfServiceHandlers;
+  initialCredentialMode?: "repair" | "replacement";
   onBack: () => void;
   onConnection: (connection: CrmProviderConnection) => void;
   zapiAddonContract: CrmWhatsappZapiAddonContract | null;

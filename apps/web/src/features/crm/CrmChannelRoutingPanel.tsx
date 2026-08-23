@@ -132,6 +132,7 @@ export function CrmChannelRoutingPanel({
             <RoutingSummaryRow
               canManage={canManage}
               channel={channel}
+              connections={connections}
               key={channel}
               onEdit={() => {
                 setSavedChannel(null);
@@ -168,17 +169,23 @@ export function CrmChannelRoutingPanel({
 function RoutingSummaryRow({
   canManage,
   channel,
+  connections,
   onEdit,
   policy,
   saved,
 }: {
   canManage: boolean;
   channel: CrmRoutingChannel;
+  connections: readonly CrmProviderConnection[];
   onEdit: () => void;
   policy: CrmChannelRouting | null;
   saved: boolean;
 }) {
   const route = policy?.storeDefault ?? null;
+  const routeFinalizationPending = connections.some(
+    (connection) =>
+      connection.channel === channel && connection.routingStatus === "deferred",
+  );
   const blocked =
     route?.blocked && route.blocked.code !== "policy_not_configured"
       ? route.blocked
@@ -210,6 +217,11 @@ function RoutingSummaryRow({
           {blocked ? (
             <p className="crm-routing-warning" role="note">
               {blocked.message} {blocked.remediation}
+            </p>
+          ) : null}
+          {routeFinalizationPending ? (
+            <p className="crm-routing-warning" role="status">
+              Conexão criada. A rota está sendo finalizada automaticamente.
             </p>
           ) : null}
           {saved ? (

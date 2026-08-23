@@ -68,7 +68,7 @@ export function CredentialsStage({
   canSubmit: boolean;
   credentials: ZapiCredentialsDraft;
   error: string | null;
-  mode?: "create" | "repair";
+  mode?: "create" | "repair" | "replacement";
   onCancel?: () => void;
   onChange: (draft: ZapiCredentialsDraft) => void;
   onSave: () => void;
@@ -89,18 +89,28 @@ export function CredentialsStage({
           <small>
             {mode === "repair"
               ? "Reparo seguro da conexão existente"
-              : "Cadastro único e protegido"}
+              : mode === "replacement"
+                ? "Troca protegida da instância da loja"
+                : "Cadastro único e protegido"}
           </small>
           <h4 id="zapi-credentials-title">
             {mode === "repair"
               ? "Atualizar credenciais da Z-API"
-              : "Credenciais da instância Z-API"}
+              : mode === "replacement"
+                ? "Trocar instância desta loja"
+                : "Credenciais da instância Z-API"}
           </h4>
           <p>
             O ID e o token da instância são enviados uma única vez, não ficam
             salvos no navegador e nunca retornam pela API. O Client-Token da
             plataforma é aplicado pelo servidor.
           </p>
+          {mode === "replacement" ? (
+            <p>
+              A conexão atual permanece operacional durante a verificação. O
+              histórico e a rota da loja serão preservados.
+            </p>
+          ) : null}
         </div>
         <button
           aria-label={
@@ -164,7 +174,9 @@ export function CredentialsStage({
             ? "Salvando"
             : mode === "repair"
               ? "Confirmar novas credenciais"
-              : "Salvar credenciais"}
+              : mode === "replacement"
+                ? "Confirmar troca da instância"
+                : "Salvar credenciais"}
         </button>
         {onCancel ? (
           <button

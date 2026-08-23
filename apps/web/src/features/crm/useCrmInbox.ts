@@ -622,8 +622,10 @@ export function useCrmInbox(
     configureZapiWebhooks: connections.configureZapiWebhooks,
     disconnectZapiConnection: connections.disconnectZapiConnection,
     refreshConnections: connections.refreshConnections,
+    refreshConnectionsAndRead: connections.refreshConnectionsAndRead,
     repairZapiConnectionCredentials:
       connections.repairZapiConnectionCredentials,
+    replaceZapiConnection: connections.replaceZapiConnection,
     refreshRoutingPolicy: routing.refresh,
     requestZapiPairingCode: connections.requestZapiPairingCode,
     requestZapiPairingQr: connections.requestZapiPairingQr,

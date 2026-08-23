@@ -11,6 +11,8 @@ import type {
   CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiWebhookSetupResult,
   CrmZapiCredentialsInput,
+  CrmZapiReplacementInput,
+  CrmZapiReplacementResult,
 } from "./crmConversationTypes";
 
 const fallbackAllowance: CrmConnectionAllowance = {
@@ -115,22 +117,29 @@ export function useCrmConnections(api: CrmConversationApi) {
     [],
   );
 
-  const refreshConnections = useCallback(async () => {
+  const refreshConnectionsAndRead = useCallback(async () => {
     const requestGeneration = ++requestGenerationRef.current;
     try {
       const [payload, addonContract] = await Promise.all([
         loadConnections(),
         loadZapiAddonContract(),
       ]);
-      if (requestGeneration !== requestGenerationRef.current) return;
+      if (requestGeneration !== requestGenerationRef.current) return undefined;
       applyConnectionsPayload(payload);
       setZapiAddonContract(addonContract);
+      return payload.connections;
     } catch (caught) {
       if (requestGeneration === requestGenerationRef.current) {
         setError(asError(caught));
+        return undefined;
       }
     }
+    return undefined;
   }, [applyConnectionsPayload, loadConnections, loadZapiAddonContract]);
+
+  const refreshConnections = useCallback(async () => {
+    await refreshConnectionsAndRead();
+  }, [refreshConnectionsAndRead]);
 
   const createConnection = useCallback(
     async (input: CrmCreateConnectionInput) => {
@@ -249,6 +258,37 @@ export function useCrmConnections(api: CrmConversationApi) {
           );
         }
         return reconcileConnection(connectionId, connection);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [
+      api,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      reconcileConnection,
+      refreshConnections,
+    ],
+  );
+
+  const replaceZapiConnection = useCallback(
+    async (connectionId: CrmConnectionId, input: CrmZapiReplacementInput) => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
+      try {
+        const result = await api.replaceZapiConnection(connectionId, input);
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return result;
+        }
+        reconcileConnection(connectionId, result.connection);
+        await refreshConnections();
+        return {
+          ...result,
+          connection:
+            connectionsRef.current.find(
+              (candidate) => String(candidate.id) === String(connectionId),
+            ) ?? result.connection,
+        } satisfies CrmZapiReplacementResult;
       } catch (caught) {
         setError(asError(caught));
         throw caught;
@@ -434,7 +474,9 @@ export function useCrmConnections(api: CrmConversationApi) {
     ),
     isLoading,
     refreshConnections,
+    refreshConnectionsAndRead,
     repairZapiConnectionCredentials,
+    replaceZapiConnection,
     requestZapiPairingCode,
     requestZapiPairingQr,
     requestZapiAddon,

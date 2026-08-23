@@ -35,6 +35,7 @@ export async function verifyUpdatedZapiCredentials(
   context: ServiceContext,
   input: ZapiSupportWebhookTarget & { connectionId: string },
   prior: CredentialState,
+  updatedRevision: number | undefined,
   repository: CrmConnectionRepository,
   scope: { storeId: string; tenantId: string },
   ports: CrmServicePorts,
@@ -55,6 +56,9 @@ export async function verifyUpdatedZapiCredentials(
     const restored = await repository.updateConnection({
       connectionId: input.connectionId,
       ...prior,
+      ...(updatedRevision !== undefined
+        ? { expectedRevision: updatedRevision }
+        : {}),
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     });
