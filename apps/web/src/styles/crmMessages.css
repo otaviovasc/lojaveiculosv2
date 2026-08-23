@@ -437,7 +437,7 @@
   border-radius: 0.875rem;
   color: var(--color-text);
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
   gap: 0.75rem;
   min-width: min(22rem, 100%);
   padding: 0.625rem;
@@ -477,7 +477,7 @@
   width: 4.5rem;
 }
 
-.crm-shell .crm-rich-card > span:last-child {
+.crm-shell .crm-rich-card-info {
   display: grid;
   gap: 0.2rem;
   min-width: 0;
@@ -614,6 +614,12 @@
 }
 
 .crm-quoted-interactive {
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0;
+  color: inherit;
+  text-align: left;
+  width: 100%;
   cursor: pointer;
   transition:
     opacity 0.15s ease,
@@ -627,10 +633,27 @@
 
 /* Interactive Media Styling */
 .crm-media-interactive {
+  background: transparent;
+  border: 0;
   cursor: pointer;
+  display: block;
+  padding: 0;
+  width: 100%;
   transition:
     transform 0.15s ease,
     opacity 0.15s ease;
+}
+
+.crm-media-cell-unavailable {
+  align-items: center;
+  background: var(--color-app);
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  justify-content: center;
+  padding: 0.75rem;
+  text-align: center;
 }
 
 .crm-media-interactive:hover img {
@@ -642,7 +665,11 @@
 }
 
 .crm-media-video-thumb-wrap {
+  background: transparent;
+  border: 0;
   cursor: pointer;
+  display: block;
+  padding: 0;
   position: relative;
   width: 100%;
 }
@@ -843,12 +870,31 @@
 
 .crm-rich-card-link-icon {
   color: var(--color-muted);
+  grid-column: 3;
   flex-shrink: 0;
   margin-left: auto;
   opacity: 0.6;
   transition:
     transform 0.15s ease,
     opacity 0.15s ease;
+}
+
+.crm-message-empty {
+  align-self: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.25rem;
+  margin: auto;
+  max-width: 22rem;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+.crm-message-empty strong {
+  color: var(--color-text);
 }
 
 .crm-rich-card:hover .crm-rich-card-link-icon {

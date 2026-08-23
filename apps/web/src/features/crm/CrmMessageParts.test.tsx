@@ -438,7 +438,9 @@ describe("CrmMessageParts", () => {
     expect(onReply).toHaveBeenCalledWith(messages[1]);
 
     await user.click(screen.getByRole("button", { name: "Reagir a mensagem" }));
-    await user.click(screen.getByRole("button", { name: "Reagir com 👍" }));
+    await user.click(
+      screen.getByRole("menuitemradio", { name: "Reagir com 👍" }),
+    );
     expect(onReact).toHaveBeenCalledWith(messages[1], "👍");
 
     await user.click(screen.getByRole("button", { name: "Apagar mensagem" }));
@@ -468,7 +470,9 @@ describe("CrmMessageParts", () => {
     expect(onReply).toHaveBeenCalledWith(message);
 
     await user.click(screen.getByRole("button", { name: "Reagir a mensagem" }));
-    await user.click(screen.getByRole("button", { name: "Reagir com 👍" }));
+    await user.click(
+      screen.getByRole("menuitemradio", { name: "Reagir com 👍" }),
+    );
     expect(onReact).toHaveBeenCalledWith(message, "👍");
 
     await user.click(screen.getByRole("button", { name: "Apagar mensagem" }));

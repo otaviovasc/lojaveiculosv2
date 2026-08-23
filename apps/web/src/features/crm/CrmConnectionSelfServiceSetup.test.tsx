@@ -9,6 +9,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import { rememberPendingComposioConnection } from "./crmComposioOAuth";
 import type {
   CrmAvailableSetup,
@@ -107,6 +108,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
         { broker: "direct", channel: "whatsapp", provider: "zapi" },
       ] satisfies CrmAvailableSetup[],
       canPair: true,
+      canRepairCredentials: true,
       canSetup: true,
       handlers,
       startAtDirectory: true,
@@ -127,6 +129,138 @@ describe("CrmConnectionSelfServiceSetup", () => {
     );
 
     expect(await screen.findByText("Etapa 4 de 5 · Pareamento")).toBeVisible();
+  });
+
+  it("repairs an existing disconnected Z-API connection without calling create", async () => {
+    const handlers = createHandlers();
+    const disconnected = createZapiSetupConnection("configured");
+    const otherDisconnected = {
+      ...disconnected,
+      displayName: "Z-API secundária",
+      id: "connection-other",
+    };
+    const replacement = {
+      ...disconnected,
+      displayName: "Z-API reparada",
+    };
+    handlers.onRepairZapiCredentials = vi.fn(async () => replacement);
+    handlers.onRequestZapiPairingQr = vi.fn(async () => ({
+      expiresAt: "2099-08-19T20:00:00.000Z",
+      qrCode: "data:image/png;base64,repaired",
+    }));
+    render(
+      <CrmConnectionSelfServiceSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+        ]}
+        canPair
+        canRepairCredentials
+        canSetup
+        connections={[otherDisconnected, disconnected]}
+        handlers={handlers}
+        startAtDirectory
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    const repair = screen.getByRole("button", {
+      name: /Z-API principal.*Reparar conexão/i,
+    });
+    expect(repair).toBeVisible();
+    fireEvent.click(repair);
+
+    expect(await screen.findByText("Etapa 4 de 5 · Pareamento")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Atualizar credenciais da conexão",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("ID da instância"), {
+      target: { value: "instance-1" },
+    });
+    fireEvent.change(screen.getByLabelText("Token da instância"), {
+      target: { value: "token-repaired" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar novas credenciais" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onRepairZapiCredentials).toHaveBeenCalledWith(
+        disconnected.id,
+        {
+          instanceId: "instance-1",
+          instanceToken: "token-repaired",
+        },
+      ),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Gerar QR Code" }),
+    );
+    await waitFor(() =>
+      expect(handlers.onRequestZapiPairingQr).toHaveBeenCalledWith(
+        disconnected.id,
+      ),
+    );
+    expect(handlers.onCreate).not.toHaveBeenCalled();
+  });
+
+  it("keeps the existing connection selected when another instance id is rejected", async () => {
+    const handlers = createHandlers();
+    const disconnected = createZapiSetupConnection("configured");
+    handlers.onRepairZapiCredentials = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT",
+        message: "Identity replacement requires support.",
+        requestId: "request-replacement",
+        status: 409,
+      });
+    });
+
+    render(
+      <CrmConnectionSelfServiceSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+        ]}
+        canPair
+        canRepairCredentials
+        canSetup
+        connections={[disconnected]}
+        handlers={handlers}
+        startAtDirectory
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Z-API principal.*Reparar conexão/i,
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Atualizar credenciais da conexão",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("ID da instância"), {
+      target: { value: "instance-from-another-account" },
+    });
+    fireEvent.change(screen.getByLabelText("Token da instância"), {
+      target: { value: "token-new" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar novas credenciais" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /outra instância Z-API.*acione o suporte/i,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "ID do erro: request-replacement",
+    );
+    expect(handlers.onCreate).not.toHaveBeenCalled();
   });
 
   it("keeps Official WhatsApp available when only the Z-API quota is zero", () => {

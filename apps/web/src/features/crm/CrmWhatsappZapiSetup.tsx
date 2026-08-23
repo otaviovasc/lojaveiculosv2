@@ -1,12 +1,5 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  KeyRound,
-  Loader2,
-  QrCode,
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, QrCode } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { ConnectionSectionCard } from "./CrmConnectionAdminParts";
 import {
@@ -20,52 +13,37 @@ import {
   ZapiSetupProgress,
   ZapiWebhookSetupStatus,
 } from "./CrmWhatsappZapiSetupParts";
-import type {
-  CrmConnectionAllowance,
-  CrmCreateConnectionInput,
-  CrmProviderConnection,
-  CrmWhatsappZapiAddonContract,
-} from "./crmConversationTypes";
-import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 import {
   isProviderDisconnected,
   requiresPhonePairing,
   requiresProviderDisconnect,
 } from "./crmZapiPairingState";
-
-type ZapiCredentialsDraft = {
-  instanceId: string;
-  instanceToken: string;
-};
-
-const emptyCredentials: ZapiCredentialsDraft = {
-  instanceId: "",
-  instanceToken: "",
-};
-
-type BusyState =
-  "addon" | "code" | "credentials" | "disconnect" | "qr" | "refresh";
-type PairingBlock = "disconnect_required" | "waiting_disconnect" | null;
+import {
+  buildZapiConnectionInput,
+  type BusyState,
+  CredentialsStage,
+  emptyCredentials,
+  RepairCredentialsButton,
+  runAction,
+  type ZapiCredentialsDraft,
+} from "./CrmWhatsappZapiCredentials";
+import {
+  type CrmWhatsappZapiSetupProps,
+  type PairingBlock,
+  readZapiConnectionStateKey,
+} from "./CrmWhatsappZapiSetupTypes";
 
 export function CrmWhatsappZapiSetup({
   allowance,
   canPair,
   canSetup,
+  canRepairCredentials = false,
   connection,
   handlers,
   onBack,
   onConnection,
   zapiAddonContract,
-}: {
-  allowance: CrmConnectionAllowance;
-  canPair: boolean;
-  canSetup: boolean;
-  connection: CrmProviderConnection | null;
-  handlers: CrmConnectionSelfServiceHandlers;
-  onBack: () => void;
-  onConnection: (connection: CrmProviderConnection) => void;
-  zapiAddonContract: CrmWhatsappZapiAddonContract | null;
-}) {
+}: CrmWhatsappZapiSetupProps) {
   const [busy, setBusy] = useState<BusyState | null>(null);
   const [credentials, setCredentials] = useState(emptyCredentials);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +62,7 @@ export function CrmWhatsappZapiSetup({
     null,
   );
   const [showCredentials, setShowCredentials] = useState(false);
+  const [showRepairCredentials, setShowRepairCredentials] = useState(false);
   const autoRefreshInFlightRef = useRef(false);
   const actionGenerationRef = useRef(0);
   const currentConnectionIdRef = useRef<string | null>(connection?.id ?? null);
@@ -105,14 +84,7 @@ export function CrmWhatsappZapiSetup({
     pairingCode?.expiresAt && new Date(pairingCode.expiresAt).getTime() <= now,
   );
 
-  const connectionStateKey = [
-    connection?.id ?? "none",
-    connection?.externalInstanceId ?? "none",
-    connection?.setup?.status ?? "none",
-    connection?.live?.providerStatus ?? "unknown",
-    connection?.readiness?.ready ?? connection?.ready ?? "unknown",
-    connection?.state ?? connection?.status ?? "unknown",
-  ].join(":");
+  const connectionStateKey = readZapiConnectionStateKey(connection);
   const previousConnectionStateKeyRef = useRef(connectionStateKey);
   const connectionStateRevisionRef = useRef(0);
   if (previousConnectionStateKeyRef.current !== connectionStateKey) {
@@ -139,6 +111,7 @@ export function CrmWhatsappZapiSetup({
     setPairingBlock(null);
     setPairingMethod("qr");
     setPhone("");
+    setShowRepairCredentials(false);
   }, [connection?.id]);
 
   useEffect(() => {
@@ -211,32 +184,47 @@ export function CrmWhatsappZapiSetup({
   };
 
   const saveCredentials = async () => {
-    if (!canSetup) return;
+    const repairingConnection = showRepairCredentials ? connection : null;
+    if (repairingConnection ? !canRepairCredentials : !canSetup) return;
     if (!credentials.instanceId.trim() || !credentials.instanceToken.trim()) {
       setError("Informe o ID e o token da instância Z-API.");
+      return;
+    }
+    if (repairingConnection && !handlers.onRepairZapiCredentials) {
+      setError(
+        "A atualização segura das credenciais não está disponível neste momento.",
+      );
       return;
     }
     const actionGeneration = beginAction();
     setBusy("credentials");
     setError(null);
     try {
-      const created = await handlers.onCreate(
-        buildZapiConnectionInput(credentials),
-      );
-      if (!created) {
+      const updated = repairingConnection
+        ? await handlers.onRepairZapiCredentials!(repairingConnection.id, {
+            instanceId: credentials.instanceId.trim(),
+            instanceToken: credentials.instanceToken.trim(),
+          })
+        : await handlers.onCreate(buildZapiConnectionInput(credentials));
+      if (!updated) {
         throw new Error(
-          "A conexão não foi criada. Nenhuma credencial foi confirmada.",
+          repairingConnection
+            ? "A conexão não foi reparada. Nenhuma credencial foi alterada."
+            : "A conexão não foi criada. Nenhuma credencial foi confirmada.",
         );
       }
       if (!isCurrentAction(actionGeneration)) return;
       setCredentials(emptyCredentials);
-      onConnection(created);
+      setShowRepairCredentials(false);
+      onConnection(updated);
     } catch (caught) {
       if (isCurrentAction(actionGeneration)) {
         setError(
           formatApiErrorDisplay(
             caught,
-            "Não foi possível salvar a conexão Z-API.",
+            repairingConnection
+              ? "Não foi possível atualizar as credenciais da conexão."
+              : "Não foi possível salvar a conexão Z-API.",
           ),
         );
       }
@@ -451,7 +439,7 @@ export function CrmWhatsappZapiSetup({
         {step === 2 ? (
           <CredentialsStage
             busy={busy}
-            canSetup={canSetup}
+            canSubmit={canSetup}
             credentials={credentials}
             error={error}
             onChange={setCredentials}
@@ -460,34 +448,74 @@ export function CrmWhatsappZapiSetup({
             showCredentials={showCredentials}
           />
         ) : null}
-        {step === 3 && connection ? (
-          <ZapiWebhookSetupStatus
-            canConfigure={canSetup}
-            connection={connection}
-            isRefreshing={busy === "refresh"}
-            onRefresh={() => void configureWebhooks()}
+        {(step === 3 || step === 4) && connection && showRepairCredentials ? (
+          <CredentialsStage
+            busy={busy}
+            canSubmit={canRepairCredentials}
+            credentials={credentials}
+            error={error}
+            mode="repair"
+            onCancel={() => {
+              setCredentials(emptyCredentials);
+              setError(null);
+              setShowRepairCredentials(false);
+            }}
+            onChange={setCredentials}
+            onSave={() => void saveCredentials()}
+            onToggleVisibility={() => setShowCredentials((current) => !current)}
+            showCredentials={showCredentials}
           />
         ) : null}
-        {step === 4 && connection ? (
-          <CrmWhatsappZapiPairingStage
-            busy={busy}
-            canDisconnect={canSetup && Boolean(handlers.onDisconnectZapi)}
-            canPair={canPair && pairingBlock === null}
-            codeExpired={codeExpired}
-            method={pairingMethod}
-            now={now}
-            onMethodChange={setPairingMethod}
-            onDisconnect={() => void disconnectBeforePairing()}
-            onPhoneChange={setPhone}
-            onRefresh={() => void refresh()}
-            onRequestCode={() => void requestCode()}
-            onRequestQr={() => void requestQr()}
-            pairingCode={pairingCode}
-            pairingBlock={pairingBlock}
-            phone={phone}
-            qr={qr}
-            qrExpired={qrExpired}
-          />
+        {step === 3 && connection && !showRepairCredentials ? (
+          <>
+            <ZapiWebhookSetupStatus
+              canConfigure={canSetup}
+              connection={connection}
+              isRefreshing={busy === "refresh"}
+              onRefresh={() => void configureWebhooks()}
+            />
+            <RepairCredentialsButton
+              busy={busy}
+              canRepair={canRepairCredentials}
+              enabled={Boolean(handlers.onRepairZapiCredentials)}
+              onClick={() => {
+                setError(null);
+                setShowRepairCredentials(true);
+              }}
+            />
+          </>
+        ) : null}
+        {step === 4 && connection && !showRepairCredentials ? (
+          <>
+            <CrmWhatsappZapiPairingStage
+              busy={busy}
+              canDisconnect={canSetup && Boolean(handlers.onDisconnectZapi)}
+              canPair={canPair && pairingBlock === null}
+              codeExpired={codeExpired}
+              method={pairingMethod}
+              now={now}
+              onMethodChange={setPairingMethod}
+              onDisconnect={() => void disconnectBeforePairing()}
+              onPhoneChange={setPhone}
+              onRefresh={() => void refresh()}
+              onRequestCode={() => void requestCode()}
+              onRequestQr={() => void requestQr()}
+              pairingCode={pairingCode}
+              pairingBlock={pairingBlock}
+              phone={phone}
+              qr={qr}
+              qrExpired={qrExpired}
+            />
+            <RepairCredentialsButton
+              busy={busy}
+              canRepair={canRepairCredentials}
+              enabled={Boolean(handlers.onRepairZapiCredentials)}
+              onClick={() => {
+                setError(null);
+                setShowRepairCredentials(true);
+              }}
+            />
+          </>
         ) : null}
         {step === 5 && connection ? (
           <ZapiReadyState
@@ -505,7 +533,7 @@ export function CrmWhatsappZapiSetup({
               : {})}
           />
         ) : null}
-        {step !== 2 && error ? (
+        {step !== 2 && !showRepairCredentials && error ? (
           <p className="crm-connection-error" role="alert">
             {error}
           </p>
@@ -517,174 +545,4 @@ export function CrmWhatsappZapiSetup({
       </button>
     </ConnectionSectionCard>
   );
-}
-
-function buildZapiConnectionInput(
-  credentials: ZapiCredentialsDraft,
-): CrmCreateConnectionInput {
-  return {
-    channel: "whatsapp",
-    instanceId: credentials.instanceId.trim(),
-    instanceToken: credentials.instanceToken.trim(),
-    provider: "zapi",
-  };
-}
-
-function CredentialsStage({
-  busy,
-  canSetup,
-  credentials,
-  error,
-  onChange,
-  onSave,
-  onToggleVisibility,
-  showCredentials,
-}: {
-  busy: BusyState | null;
-  canSetup: boolean;
-  credentials: ZapiCredentialsDraft;
-  error: string | null;
-  onChange: (draft: ZapiCredentialsDraft) => void;
-  onSave: () => void;
-  onToggleVisibility: () => void;
-  showCredentials: boolean;
-}) {
-  const invalid = error?.startsWith("Informe o ID") ?? false;
-  return (
-    <section
-      aria-labelledby="zapi-credentials-title"
-      className="crm-zapi-credentials"
-    >
-      <div className="crm-zapi-stage-heading">
-        <span>
-          <KeyRound aria-hidden="true" />
-        </span>
-        <div>
-          <small>Cadastro único e protegido</small>
-          <h4 id="zapi-credentials-title">Credenciais da instância Z-API</h4>
-          <p>
-            O ID e o token da instância são enviados uma única vez, não ficam
-            salvos no navegador e nunca retornam pela API. O Client-Token da
-            plataforma é aplicado pelo servidor.
-          </p>
-        </div>
-        <button
-          aria-label={
-            showCredentials ? "Ocultar credenciais" : "Mostrar credenciais"
-          }
-          className="crm-icon-action"
-          onClick={onToggleVisibility}
-          title={
-            showCredentials ? "Ocultar credenciais" : "Mostrar credenciais"
-          }
-          type="button"
-        >
-          {showCredentials ? (
-            <EyeOff aria-hidden="true" />
-          ) : (
-            <Eye aria-hidden="true" />
-          )}
-        </button>
-      </div>
-      <div className="crm-zapi-credential-fields">
-        <CredentialField
-          invalid={invalid}
-          label="ID da instância"
-          onChange={(value) => onChange({ ...credentials, instanceId: value })}
-          showValue={showCredentials}
-          value={credentials.instanceId}
-        />
-        <CredentialField
-          invalid={invalid}
-          label="Token da instância"
-          onChange={(value) =>
-            onChange({ ...credentials, instanceToken: value })
-          }
-          showValue={showCredentials}
-          value={credentials.instanceToken}
-        />
-      </div>
-      {error ? (
-        <p className="crm-connection-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {!canSetup ? (
-        <p className="crm-zapi-permission-note">
-          Peça a um administrador da loja para cadastrar as credenciais.
-        </p>
-      ) : null}
-      <button
-        className="crm-connection-save"
-        disabled={busy !== null || !canSetup}
-        onClick={onSave}
-        type="button"
-      >
-        {busy === "credentials" ? (
-          <Loader2 aria-hidden="true" className="crm-spin" />
-        ) : (
-          <KeyRound aria-hidden="true" />
-        )}
-        {busy === "credentials" ? "Salvando" : "Salvar credenciais"}
-      </button>
-    </section>
-  );
-}
-
-function CredentialField({
-  invalid,
-  label,
-  onChange,
-  showValue,
-  value,
-}: {
-  invalid: boolean;
-  label: string;
-  onChange: (value: string) => void;
-  showValue: boolean;
-  value: string;
-}) {
-  const inputId = useId();
-  return (
-    <div className="crm-connection-field">
-      <label htmlFor={inputId}>{label}</label>
-      <input
-        aria-invalid={invalid}
-        autoComplete="off"
-        id={inputId}
-        onChange={(event) => onChange(event.target.value)}
-        spellCheck={false}
-        type={showValue ? "text" : "password"}
-        value={value}
-      />
-      <small>Disponível no painel da Z-API, dentro da sua instância.</small>
-    </div>
-  );
-}
-
-async function runAction<T>({
-  action,
-  busy,
-  fallbackError,
-  isCurrent = () => true,
-  setBusy,
-  setError,
-}: {
-  action: () => Promise<T | undefined>;
-  busy: BusyState;
-  fallbackError: string;
-  isCurrent?: () => boolean;
-  setBusy: (busy: BusyState | null) => void;
-  setError: (error: string | null) => void;
-}) {
-  setBusy(busy);
-  setError(null);
-  try {
-    return await action();
-  } catch (caught) {
-    if (isCurrent()) setError(formatApiErrorDisplay(caught, fallbackError));
-    return undefined;
-  } finally {
-    if (isCurrent()) setBusy(null);
-  }
 }

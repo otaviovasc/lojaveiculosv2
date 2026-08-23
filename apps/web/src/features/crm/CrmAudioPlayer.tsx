@@ -85,6 +85,49 @@ export function CrmAudioPlayer({
     setProgress(ratio * 100);
   }, []);
 
+  const updatePosition = useCallback((nextTime: number) => {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0)
+      return;
+    const boundedTime = Math.max(0, Math.min(audio.duration, nextTime));
+    audio.currentTime = boundedTime;
+    setCurrentTime(formatTime(boundedTime));
+    setProgress((boundedTime / audio.duration) * 100);
+  }, []);
+
+  const handleSeekKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      const nextTime =
+        event.key === "ArrowRight"
+          ? audio.currentTime + 5
+          : event.key === "ArrowLeft"
+            ? audio.currentTime - 5
+            : event.key === "Home"
+              ? 0
+              : event.key === "End"
+                ? audio.duration
+                : null;
+      if (nextTime === null) return;
+      event.preventDefault();
+      updatePosition(nextTime);
+    },
+    [updatePosition],
+  );
+
+  const retryLoad = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    setIsPlaying(false);
+    setProgress(0);
+    setCurrentTime("0:00");
+    setDuration("0:00");
+    setHasError(false);
+    audio.load();
+  }, []);
+
   useEffect(() => {
     setIsPlaying(false);
     setProgress(0);
@@ -115,11 +158,18 @@ export function CrmAudioPlayer({
       />
 
       <button
-        aria-label={isPlaying ? "Pausar audio" : "Reproduzir audio"}
+        aria-label={
+          hasError
+            ? "Tentar carregar audio novamente"
+            : isPlaying
+              ? "Pausar audio"
+              : "Reproduzir audio"
+        }
         className="crm-audio-play-btn"
-        disabled={hasError}
-        onClick={togglePlay}
-        title={isPlaying ? "Pausar" : "Reproduzir"}
+        onClick={hasError ? retryLoad : togglePlay}
+        title={
+          hasError ? "Tentar novamente" : isPlaying ? "Pausar" : "Reproduzir"
+        }
         type="button"
       >
         {hasError ? (
@@ -137,9 +187,11 @@ export function CrmAudioPlayer({
           aria-valuemax={100}
           aria-valuemin={0}
           aria-valuenow={Math.round(progress)}
+          aria-valuetext={`${currentTime} de ${duration}`}
           className="crm-audio-waveform"
           onClick={handleSeek}
-          role="progressbar"
+          onKeyDown={handleSeekKeyDown}
+          role="slider"
           tabIndex={0}
         >
           {waveBars.map((height, index) => {

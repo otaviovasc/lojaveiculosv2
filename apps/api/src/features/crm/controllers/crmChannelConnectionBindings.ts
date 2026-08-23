@@ -33,6 +33,7 @@ import {
   updateZapiCredentialsAsSupport,
 } from "../../../domains/crm/services/CrmWhatsappService/manageZapiConnectionAsSupport.js";
 import { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
+import { repairZapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairZapiConnectionCredentials.js";
 
 type ConnectionBindings = Pick<
   CrmMessagingServices,
@@ -49,6 +50,7 @@ type ConnectionBindings = Pick<
   | "listCrmChannelConnections"
   | "requestZapiPairingCode"
   | "requestZapiPairingQr"
+  | "repairZapiConnectionCredentials"
   | "retryOlxChatSetup"
   | "refreshZapiConnectionStatus"
   | "requestZapiPairingCodeAsSupport"
@@ -88,6 +90,8 @@ export const createCrmChannelConnectionBindings = (
     requestZapiPairingCode(context, input, ports),
   requestZapiPairingQr: (context, input) =>
     requestZapiPairingQr(context, input, ports),
+  repairZapiConnectionCredentials: (context, input) =>
+    repairZapiConnectionCredentials(context, input, ports),
   retryOlxChatSetup: (context, input) =>
     retryOlxChatSetup(context, input, ports),
   refreshZapiConnectionStatus: (context, input) =>

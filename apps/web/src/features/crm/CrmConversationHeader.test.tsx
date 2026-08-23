@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatHeader } from "./CrmConversationHeader";
 
 describe("CrmConversationHeader", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
 
   it("provides explicit mobile navigation back to the conversation list", async () => {
     const user = userEvent.setup();
@@ -177,5 +180,151 @@ describe("CrmConversationHeader", () => {
         name: "Responsabilidade pelo atendimento",
       }),
     ).toContainElement(screen.getByRole("button", { name: "Concluir" }));
+  });
+
+  it("keeps secondary actions available in an accessible more-actions menu", async () => {
+    const user = userEvent.setup();
+    const onMarkUnread = vi.fn();
+    const onScheduleMessage = vi.fn();
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        canAssignSession={false}
+        canCloseSession={false}
+        canMarkRead
+        canScheduleMessages
+        canTagSessions
+        canToggleIntervention={false}
+        onAddTag={vi.fn(async () => false)}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={onMarkUnread}
+        onOpenDetails={vi.fn()}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={onScheduleMessage}
+        onToggleIntervention={vi.fn()}
+        cycle={{
+          customerDisplayName: "Ana Premium",
+          channel: "whatsapp",
+          id: "cycle-1",
+          leadId: "lead-1",
+          status: "ACTIVE",
+        }}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Mais ações" });
+    await user.click(trigger);
+    const menu = screen.getByRole("menu", {
+      name: "Mais ações da conversa",
+    });
+    expect(menu).toContainElement(
+      screen.getByRole("menuitem", { name: "Marcar como não lida" }),
+    );
+    expect(menu).toContainElement(
+      screen.getByRole("menuitem", { name: "Abrir agendamentos" }),
+    );
+    expect(menu).toContainElement(
+      screen.getByRole("menuitem", { name: "Abrir lead vinculado" }),
+    );
+    expect(menu).toContainElement(
+      screen.getByRole("menuitem", { name: "Adicionar etiqueta" }),
+    );
+
+    await user.click(
+      screen.getByRole("menuitem", { name: "Abrir agendamentos" }),
+    );
+    expect(onScheduleMessage).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("dismisses more actions with Escape and returns focus to its trigger", async () => {
+    const user = userEvent.setup();
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        canAssignSession={false}
+        canCloseSession={false}
+        canMarkRead
+        canScheduleMessages={false}
+        canTagSessions={false}
+        canToggleIntervention={false}
+        onAddTag={vi.fn(async () => false)}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={vi.fn()}
+        onToggleIntervention={vi.fn()}
+        cycle={{
+          customerDisplayName: "Ana Premium",
+          channel: "whatsapp",
+          id: "cycle-1",
+          status: "ACTIVE",
+        }}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Mais ações" });
+    await user.click(trigger);
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("closes a portalled mobile menu when its responsive anchor changes", async () => {
+    const user = userEvent.setup();
+    let breakpointListener: (() => void) | undefined;
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({
+        addEventListener: (_event: string, listener: () => void) => {
+          breakpointListener = listener;
+        },
+        matches: true,
+        media: "(max-width: 860px)",
+        onchange: null,
+        removeEventListener: vi.fn(),
+      })),
+    );
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        canAssignSession={false}
+        canCloseSession={false}
+        canMarkRead
+        canScheduleMessages={false}
+        canTagSessions={false}
+        canToggleIntervention={false}
+        onAddTag={vi.fn(async () => false)}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={vi.fn()}
+        onToggleIntervention={vi.fn()}
+        cycle={{
+          customerDisplayName: "Ana Premium",
+          channel: "whatsapp",
+          id: "cycle-1",
+          status: "ACTIVE",
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Mais ações" }));
+    expect(screen.getByRole("menu")).toBeVisible();
+    act(() => breakpointListener?.());
+
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Abrir detalhes da conversa" }),
+    ).toHaveFocus();
   });
 });

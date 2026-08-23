@@ -4,7 +4,12 @@ import {
   getSenderLabel,
   type CrmMessageView,
 } from "./crmConversationModel";
-import { readReaction, readRecord, readString } from "./crmMessageHelpers";
+import {
+  readReaction,
+  readRecord,
+  readString,
+  sanitizeCrmMessageUrl,
+} from "./crmMessageHelpers";
 import {
   MessageActions,
   type MessageActionHandlers,
@@ -61,33 +66,51 @@ export function CrmMediaMessageGroup({
         className={`crm-media-grid crm-media-grid-${Math.min(messages.length, 4)}`}
       >
         {messages.slice(0, 4).map((message, index) => {
+          const mediaUrl = sanitizeCrmMessageUrl(message.mediaUrl);
           const isVideo = message.type === "VIDEO";
           const isFourthWithMore = index === 3 && messages.length > 4;
           const caption = readCaption(message);
 
           const handleClick = (e: React.MouseEvent) => {
-            if (onMediaClick && message.mediaUrl) {
+            if (onMediaClick && mediaUrl) {
               e.preventDefault();
-              onMediaClick(message.mediaUrl);
+              onMediaClick(mediaUrl);
             }
           };
+
+          const handleKeyDown = (event: React.KeyboardEvent) => {
+            if (event.key !== " " || !onMediaClick || !mediaUrl) return;
+            event.preventDefault();
+            onMediaClick(mediaUrl);
+          };
+
+          if (!mediaUrl) {
+            return (
+              <div
+                aria-label="Mídia indisponível"
+                className="crm-media-cell crm-media-cell-unavailable"
+                id={`crm-msg-${message.id}`}
+                key={message.clientId ?? message.id}
+              >
+                Mídia indisponível
+              </div>
+            );
+          }
 
           return (
             <a
               className="crm-media-cell"
-              href={message.mediaUrl ?? undefined}
+              href={mediaUrl}
+              id={`crm-msg-${message.id}`}
               key={message.clientId ?? message.id}
               onClick={handleClick}
+              onKeyDown={handleKeyDown}
               rel="noreferrer"
               target="_blank"
             >
               {isVideo ? (
                 <div className="crm-media-cell-video">
-                  <video
-                    muted
-                    preload="metadata"
-                    src={message.mediaUrl ?? undefined}
-                  />
+                  <video muted preload="metadata" src={mediaUrl} />
                   <span className="crm-media-cell-play">
                     <Play className="size-4 fill-white text-white ml-0.5" />
                   </span>
@@ -96,7 +119,7 @@ export function CrmMediaMessageGroup({
                 <img
                   alt={caption || "Midia enviada"}
                   loading="lazy"
-                  src={message.mediaUrl ?? undefined}
+                  src={mediaUrl}
                 />
               )}
               {isFourthWithMore ? (

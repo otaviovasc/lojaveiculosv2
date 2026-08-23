@@ -222,6 +222,11 @@ export type CrmCreateConnectionInput =
       provider: CrmOfficialChannelSetupProvider;
     };
 
+export type CrmZapiCredentialsInput = {
+  instanceId: string;
+  instanceToken: string;
+};
+
 export type CrmWhatsappZapiPairingQr = {
   expiresAt: string;
   qrCode: string;

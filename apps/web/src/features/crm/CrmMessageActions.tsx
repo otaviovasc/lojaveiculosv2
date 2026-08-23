@@ -1,6 +1,7 @@
 import { Reply, SmilePlus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
+import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import type { CrmMessage } from "./crmConversationTypes";
 
 export type MessageActionHandlers = {
@@ -24,6 +25,8 @@ export function MessageActions({
   currentReaction?: string | undefined;
   message: CrmMessage;
 }) {
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const reactionButtonRef = useRef<HTMLButtonElement>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reactionOpen, setReactionOpen] = useState(false);
   const hasActions = Boolean(onReply || onReact || onDelete);
@@ -46,11 +49,14 @@ export function MessageActions({
         <span className="crm-reaction-anchor">
           <button
             aria-label="Reagir a mensagem"
+            aria-expanded={reactionOpen}
+            aria-haspopup="menu"
             disabled={actionsDisabled || Boolean(message.deletedAt)}
             onClick={() => {
               setDeleteOpen(false);
               setReactionOpen((open) => !open);
             }}
+            ref={reactionButtonRef}
             title="Reagir"
             type="button"
           >
@@ -58,7 +64,18 @@ export function MessageActions({
               <SmilePlus />
             </AnimatedIconSwap>
           </button>
-          {reactionOpen ? (
+          <FeatureAnchoredPopover
+            align="end"
+            anchorRef={reactionButtonRef}
+            ariaLabel="Reações da mensagem"
+            className="crm-reaction-palette"
+            initialFocus="first"
+            isOpen={reactionOpen}
+            maxHeight={96}
+            onClose={() => setReactionOpen(false)}
+            onKeyDown={handleHorizontalMenuNavigation}
+            role="menu"
+          >
             <ReactionPalette
               currentReaction={currentReaction}
               disabled={Boolean(actionsDisabled)}
@@ -68,20 +85,31 @@ export function MessageActions({
                 if (accepted) setReactionOpen(false);
                 return accepted;
               }}
-              onRemove={onRemoveReaction}
+              onRemove={
+                onRemoveReaction
+                  ? async (targetMessage) => {
+                      const accepted = await onRemoveReaction(targetMessage);
+                      if (accepted) setReactionOpen(false);
+                      return accepted;
+                    }
+                  : undefined
+              }
             />
-          ) : null}
+          </FeatureAnchoredPopover>
         </span>
       ) : null}
       {onDelete ? (
         <span className="crm-delete-anchor">
           <button
             aria-label="Apagar mensagem"
+            aria-expanded={deleteOpen}
+            aria-haspopup="dialog"
             disabled={actionsDisabled || Boolean(message.deletedAt)}
             onClick={() => {
               setReactionOpen(false);
               setDeleteOpen((open) => !open);
             }}
+            ref={deleteButtonRef}
             title="Apagar"
             type="button"
           >
@@ -89,7 +117,17 @@ export function MessageActions({
               <Trash2 />
             </AnimatedIconSwap>
           </button>
-          {deleteOpen ? (
+          <FeatureAnchoredPopover
+            align="end"
+            anchorRef={deleteButtonRef}
+            ariaLabel="Confirmar exclusão da mensagem"
+            className="crm-delete-confirm"
+            initialFocus="first"
+            isOpen={deleteOpen}
+            maxHeight={112}
+            onClose={() => setDeleteOpen(false)}
+            role="dialog"
+          >
             <DeleteMessageConfirm
               disabled={Boolean(actionsDisabled)}
               onCancel={() => setDeleteOpen(false)}
@@ -99,7 +137,7 @@ export function MessageActions({
                 return accepted;
               }}
             />
-          ) : null}
+          </FeatureAnchoredPopover>
         </span>
       ) : null}
     </div>
@@ -122,16 +160,17 @@ function ReactionPalette({
   onRemove?: ((message: CrmMessage) => Promise<boolean>) | undefined;
 }) {
   return (
-    <div className="crm-reaction-palette" role="menu">
+    <div className="crm-reaction-palette-items">
       {COMMON_REACTIONS.map((reaction) => (
         <button
+          aria-checked={currentReaction === reaction}
           aria-label={`Reagir com ${reaction}`}
-          aria-pressed={currentReaction === reaction}
           disabled={disabled}
           key={reaction}
           onClick={() => {
             void onPick(reaction);
           }}
+          role="menuitemradio"
           type="button"
         >
           {reaction}
@@ -144,6 +183,7 @@ function ReactionPalette({
           onClick={() => {
             void onRemove(message);
           }}
+          role="menuitem"
           type="button"
         >
           <X />
@@ -151,6 +191,29 @@ function ReactionPalette({
       ) : null}
     </div>
   );
+}
+
+function handleHorizontalMenuNavigation(event: KeyboardEvent<HTMLDivElement>) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+    return;
+  }
+  const items = Array.from(
+    event.currentTarget.querySelectorAll<HTMLElement>(
+      '[role^="menuitem"]:not(:disabled)',
+    ),
+  );
+  if (!items.length) return;
+  event.preventDefault();
+  const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+  const nextIndex =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? items.length - 1
+        : event.key === "ArrowRight"
+          ? (currentIndex + 1) % items.length
+          : (currentIndex - 1 + items.length) % items.length;
+  items[nextIndex]?.focus();
 }
 
 function DeleteMessageConfirm({
@@ -163,7 +226,7 @@ function DeleteMessageConfirm({
   onConfirm: () => Promise<boolean>;
 }) {
   return (
-    <div className="crm-delete-confirm" role="group">
+    <div className="crm-delete-confirm-content">
       <span>Apagar?</span>
       <button
         disabled={disabled}

@@ -21,13 +21,16 @@
 }
 
 .crm-bubble:hover .crm-message-actions,
+.crm-bubble:focus-within .crm-message-actions,
 .crm-message-actions:focus-within {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
-.crm-message-actions button {
+.crm-message-actions button,
+.crm-reaction-palette button,
+.crm-delete-confirm button {
   align-items: center;
   background: transparent;
   border: 0;
@@ -39,17 +42,23 @@
   width: 1.75rem;
 }
 
-.crm-message-actions button:hover {
+.crm-message-actions button:hover,
+.crm-reaction-palette button:hover,
+.crm-delete-confirm button:hover {
   background: var(--color-app);
   color: var(--color-text);
 }
 
-.crm-message-actions button:disabled {
+.crm-message-actions button:disabled,
+.crm-reaction-palette button:disabled,
+.crm-delete-confirm button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
-.crm-message-actions svg {
+.crm-message-actions svg,
+.crm-reaction-palette svg,
+.crm-delete-confirm svg {
   height: 0.9375rem;
   width: 0.9375rem;
 }
@@ -70,18 +79,23 @@
   display: inline-flex;
   gap: 0.125rem;
   padding: 0.25rem;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.375rem);
-  z-index: 6;
+  width: max-content;
+}
+
+.crm-reaction-palette-items,
+.crm-delete-confirm-content {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.125rem;
 }
 
 .crm-reaction-palette button {
   font-size: calc(var(--font-size-sm) * 1.0667);
 }
 
-.crm-reaction-palette button[aria-pressed="true"] {
+.crm-reaction-palette button[aria-checked="true"] {
   background: var(--color-accent-soft);
+  color: var(--color-accent-soft-foreground);
 }
 
 .crm-delete-confirm {
@@ -90,7 +104,7 @@
   padding: 0.375rem;
 }
 
-.crm-delete-confirm span {
+.crm-delete-confirm-content span {
   color: var(--color-muted);
   font-size: calc(var(--font-size-xs) * 1.1);
   font-weight: 900;
@@ -98,13 +112,26 @@
   white-space: nowrap;
 }
 
-.crm-delete-confirm button:nth-of-type(1) {
+.crm-delete-confirm-content button:nth-of-type(1) {
   background: color-mix(in srgb, var(--color-danger) 12%, var(--color-panel));
   color: var(--color-danger);
   font-size: calc(var(--font-size-xs) * 1.2);
   font-weight: 950;
   padding: 0 0.625rem;
   width: auto;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .crm-shell .crm-bubble:has(.crm-message-actions) {
+    padding-top: 2.5rem;
+  }
+
+  .crm-message-actions {
+    opacity: 1;
+    pointer-events: auto;
+    top: 0.25rem;
+    transform: translateY(0);
+  }
 }
 
 .crm-quoted-message {

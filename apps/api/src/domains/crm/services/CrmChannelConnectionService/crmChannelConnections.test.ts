@@ -2,7 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import { createTestCrmConnectionRepository } from "../../testSupportConnections.js";
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
-import { getCrmChannelConnectionOverview } from "./crmChannelConnections.js";
+import type { UpsertCrmChannelRoutingPolicyInput } from "../../ports/crmRoutingPolicyRepository.js";
+import { crmChannelConnectionCapabilityFacts } from "../../channelConnections/connectionCreation.js";
+import {
+  createZapiWebhookSetupIntent,
+  withZapiWebhookSetupState,
+} from "../../whatsapp/zapiWebhookSetupState.js";
+import {
+  getCrmChannelConnectionOverview,
+  updateCrmChannelConnection,
+} from "./crmChannelConnections.js";
 
 const storeId = "11111111-1111-4111-8111-111111111111";
 const tenantId = "22222222-2222-4222-8222-222222222222";
@@ -42,6 +51,98 @@ describe("getCrmChannelConnectionOverview", () => {
       { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
       { broker: "composio", channel: "instagram", provider: "meta_cloud" },
     ]);
+  });
+});
+
+describe("updateCrmChannelConnection", () => {
+  it("does not initialize routing for an unrelated display-name update", async () => {
+    const connectionId = "33333333-3333-4333-8333-333333333333";
+    const repository = createTestCrmConnectionRepository([
+      {
+        broker: "direct",
+        channel: "whatsapp",
+        credentialsRef: {},
+        displayName: "WhatsApp",
+        externalConnectionId: null,
+        externalInstanceId: null,
+        id: connectionId,
+        metadata: withZapiWebhookSetupState(
+          {
+            capabilities: crmChannelConnectionCapabilityFacts({
+              broker: "direct",
+              channel: "whatsapp",
+              provider: "zapi",
+            }),
+            connected: true,
+            degraded: false,
+            errorCode: null,
+          },
+          {
+            ...createZapiWebhookSetupIntent(connectionId),
+            configuredAt: "2026-08-23T12:00:00.000Z",
+            status: "configured",
+          },
+        ),
+        phone: null,
+        provider: "zapi",
+        status: "active",
+        storeId: storeId as never,
+        tenantId: tenantId as never,
+        webhookUrl: null,
+      },
+    ]);
+    const createDefaultIfMissing = vi.fn(
+      async (input: UpsertCrmChannelRoutingPolicyInput) => ({
+        ...input,
+        id: "policy-whatsapp",
+      }),
+    );
+
+    const updated = await updateCrmChannelConnection(
+      createServiceContext({
+        actor: { id: "user_1", kind: "user" },
+        entitlements: ["crm", "crm_zapi"],
+        permissions: ["crm.messaging.connection.setup"],
+        request: { requestId: "request_1" },
+        storeId,
+        tenantId,
+      }),
+      { connectionId, displayName: "WhatsApp principal" },
+      {
+        crmConnectionRepository: repository,
+        crmMessagingGateway: {
+          configureWebhooks: vi.fn(),
+          deleteMessage: vi.fn(),
+          disconnectConnection: vi.fn(),
+          getConnectionStatus: vi.fn(async () => ({
+            checkedAt: new Date("2026-08-23T12:00:00.000Z"),
+            connected: true,
+            connectedPhone: null,
+            providerStatus: "connected" as const,
+            smartphoneConnected: true,
+          })),
+          getProfilePhotoUrl: vi.fn(),
+          listCatalogProducts: vi.fn(),
+          removeReaction: vi.fn(),
+          sendCatalog: vi.fn(),
+          sendMedia: vi.fn(),
+          sendProduct: vi.fn(),
+          sendReaction: vi.fn(),
+          sendTemplate: vi.fn(),
+          sendText: vi.fn(),
+        },
+        crmRepository: {} as never,
+        crmRoutingConnectionRepository: repository.routingConnectionRepository,
+        crmRoutingPolicyRepository: {
+          createDefaultIfMissing,
+          listPolicies: vi.fn(async () => []),
+          upsertPolicy: vi.fn(),
+        },
+      },
+    );
+
+    expect(updated.ready).toBe(true);
+    expect(createDefaultIfMissing).not.toHaveBeenCalled();
   });
 });
 

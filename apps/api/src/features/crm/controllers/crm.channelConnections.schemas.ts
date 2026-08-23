@@ -32,6 +32,13 @@ export const whatsappZapiPairingCodeSchema = z
   .object({ phone: z.string().trim().min(8).max(30) })
   .strict();
 
+export const whatsappZapiCredentialsSchema = z
+  .object({
+    instanceId: z.string().trim().min(1).max(191),
+    instanceToken: z.string().trim().min(1).max(500),
+  })
+  .strict();
+
 export const whatsappComposioSenderSchema = z
   .object({ senderId: z.string().trim().min(1).max(191) })
   .strict();

@@ -17,6 +17,7 @@ import {
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import { updateCrmChannelConnection } from "../CrmChannelConnectionService/crmChannelConnections.js";
+import { persistReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
 import { runZapiWebhookSetupAttempt } from "./runZapiWebhookSetupAttempt.js";
 import {
   auditCrmServiceEvent,
@@ -30,10 +31,18 @@ import type {
 
 type CredentialRotationInput = ZapiSupportScope &
   ZapiSupportWebhookTarget & {
+    allowIdentityReplacement?: boolean;
     connectionId: string;
     instanceId: string;
     instanceToken: string;
   };
+
+export class ZapiIdentityReplacementRequiresSupportError extends Error {
+  constructor() {
+    super("Replacing the Z-API instance identity requires support recovery.");
+    this.name = "ZapiIdentityReplacementRequiresSupportError";
+  }
+}
 
 export async function updateVerifiedZapiConnectionIdentity(
   context: StoreScopedServiceContext,
@@ -67,6 +76,9 @@ export async function updateVerifiedZapiConnectionIdentity(
     ports,
   );
   if (currentInstanceId !== input.instanceId.trim()) {
+    if (input.allowIdentityReplacement === false) {
+      throw new ZapiIdentityReplacementRequiresSupportError();
+    }
     return replaceZapiConnectionIdentity(context, input, current, ports);
   }
   const updated = await updateCrmChannelConnection(
@@ -144,10 +156,12 @@ async function replaceZapiConnectionIdentity(
         (await getCrmConnectionRepository(ports).findConnectionById(
           created.id,
         )) ?? created;
-      return toCrmChannelConnection(
+      const result = toCrmChannelConnection(
         finalConnection,
         await readConnectionLiveStatus(context, finalConnection, ports),
       );
+      await persistReadyChannelDefault(context, result, ports);
+      return result;
     },
   );
 }

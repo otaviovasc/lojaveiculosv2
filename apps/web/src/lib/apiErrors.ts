@@ -198,6 +198,14 @@ function friendlyMessage(input: {
       return "A conexão atual não oferece esta ação. Verifique a configuração do canal.";
     case "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED":
       return "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.";
+    case "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS":
+      return "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.";
+    case "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE":
+      return "As credenciais Z-API ficaram incompletas. Abra a conexão existente, use Reparar conexão e informe novamente o ID e o token da mesma instância.";
+    case "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT":
+      return "O ID informado pertence a outra instância Z-API. Para trocar a instância sem perder o histórico, acione o suporte.";
+    case "CRM_ZAPI_CREDENTIAL_VERIFICATION_FAILED":
+      return "A Z-API não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token e tente novamente.";
     case "CRM_WHATSAPP_PROVIDER_RATE_LIMITED":
       return "O WhatsApp limitou as solicitações por alguns instantes. Aguarde e tente novamente.";
     case "CRM_WHATSAPP_GATEWAY_ERROR":

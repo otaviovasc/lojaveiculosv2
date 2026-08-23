@@ -8,6 +8,7 @@ const permissions = {
   close: "crm.conversations.manage",
   connectionPair: "crm.messaging.connection.pair",
   connectionSetup: "crm.messaging.connection.setup",
+  connectionCredentialsManage: "tenant.manage",
   botManage: "crm.bot.manage",
   botRead: "crm.bot.read",
   list: "crm.conversations.read",
@@ -31,6 +32,7 @@ export type CrmCapabilities = {
   canCampaignRead: boolean;
   canClose: boolean;
   canConnectionPair: boolean;
+  canConnectionCredentialsManage: boolean;
   canConnectionSetup: boolean;
   canIntegrationsManage: boolean;
   canList: boolean;
@@ -57,6 +59,9 @@ export function readCrmCapabilities(
     canCampaignRead: hasCrmPermission(cycle, permissions.campaignRead),
     canClose: hasCrmPermission(cycle, permissions.close),
     canConnectionPair: hasCrmPermission(cycle, permissions.connectionPair),
+    canConnectionCredentialsManage:
+      hasCrmPermission(cycle, permissions.connectionSetup) &&
+      hasCrmPermission(cycle, permissions.connectionCredentialsManage),
     canConnectionSetup: hasCrmPermission(cycle, permissions.connectionSetup),
     canIntegrationsManage:
       hasCrmPermission(cycle, permissions.connectionSetup) ||

@@ -1,7 +1,7 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmExternalBotIntegration } from "../../../domains/crm/ports/crmExternalBotIntegrationRepository.js";
-import type { CrmChannelConnection } from "../../../domains/crm/services/CrmChannelConnectionService/crmChannelConnections.js";
-import type { UpdateCrmChannelConnectionInput } from "../../../domains/crm/services/CrmChannelConnectionService/crmChannelConnections.js";
+import type { CrmChannelConnection } from "../../../domains/crm/channelConnections/channelConnectionModels.js";
+import type { UpdateCrmChannelConnectionInput } from "../../../domains/crm/channelConnections/channelConnectionUpdates.js";
 import type {
   CreateCrmChannelConnectionInput,
   CrmChannelConnectionOverview,
@@ -29,6 +29,7 @@ import type {
   updateZapiCredentialsAsSupport,
 } from "../../../domains/crm/services/CrmWhatsappService/manageZapiConnectionAsSupport.js";
 import type { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
+import type { repairZapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairZapiConnectionCredentials.js";
 
 type ContextService<Input, Output> = (
   context: ServiceContext,
@@ -80,6 +81,10 @@ export type CrmChannelConnectionServices = {
   requestZapiPairingQr: ContextService<
     RequestZapiPairingQrInput,
     { expiresAt: string; qrCode: string }
+  >;
+  repairZapiConnectionCredentials: ContextService<
+    Parameters<typeof repairZapiConnectionCredentials>[1],
+    Awaited<ReturnType<typeof repairZapiConnectionCredentials>>
   >;
   retryOlxChatSetup: ContextService<
     Parameters<typeof retryOlxChatSetup>[1],

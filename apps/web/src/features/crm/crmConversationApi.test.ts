@@ -330,6 +330,7 @@ describe("CRM WhatsApp API", () => {
       { qrCode: "data:image/png;base64,qr" },
       { code: "123456", requested: true },
       { id: "connection_1", status: "disconnected" },
+      { id: "connection_repaired", status: "disconnected" },
       { id: "connection_1", status: "active" },
       { redirectUrl: "https://connect.composio.dev/cycle/test" },
       { connection: { id: "connection_2" }, senders: [] },
@@ -345,6 +346,10 @@ describe("CRM WhatsApp API", () => {
     await api.requestZapiPairingQr("connection_1");
     await api.requestZapiPairingCode("connection_1", "5511999999999");
     await api.disconnectZapiConnection("connection_1");
+    await api.repairZapiConnectionCredentials("connection_1", {
+      instanceId: "instance_repaired",
+      instanceToken: "token_repaired",
+    });
     await api.refreshZapiConnectionStatus("connection_1");
     await api.authorizeComposioConnection("connection_2");
     await api.completeComposioConnection("connection_2");
@@ -380,16 +385,26 @@ describe("CRM WhatsApp API", () => {
       init: { body: "{}", method: "POST" },
     });
     expect(fake.calls[5]).toMatchObject({
+      input: "/api/v1/crm/channel-connections/connection_1/zapi/credentials",
+      init: {
+        body: JSON.stringify({
+          instanceId: "instance_repaired",
+          instanceToken: "token_repaired",
+        }),
+        method: "PUT",
+      },
+    });
+    expect(fake.calls[6]).toMatchObject({
       input: "/api/v1/crm/channel-connections/connection_1/zapi/status/refresh",
       init: { body: "{}", method: "POST" },
     });
-    expect(fake.calls[6]?.input).toBe(
+    expect(fake.calls[7]?.input).toBe(
       "/api/v1/crm/channel-connections/connection_2/composio/authorize",
     );
-    expect(fake.calls[7]?.input).toBe(
+    expect(fake.calls[8]?.input).toBe(
       "/api/v1/crm/channel-connections/connection_2/composio/complete",
     );
-    expect(fake.calls[8]).toMatchObject({
+    expect(fake.calls[9]).toMatchObject({
       input: "/api/v1/crm/channel-connections/connection_2/composio/sender",
       init: {
         body: JSON.stringify({ senderId: "sender_1" }),

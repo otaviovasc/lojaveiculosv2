@@ -10,22 +10,16 @@ import {
   requireCrmMessagingScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import { getCrmBillingQuotaGuard } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   auditCrmServiceEvent,
   logCrmServiceEvent,
   recordCrmServiceMutation,
 } from "../CrmMessagingService/serviceSupport.js";
 import {
-  connectionIdentityKey,
-  setupProviderForConnection,
   toCrmChannelConnection,
   type CrmChannelConnection,
 } from "../../channelConnections/channelConnectionModels.js";
-import type {
-  CrmChannelConnectionOverview,
-  CrmChannelConnectionSetupIdentity,
-} from "../../channelConnections/connectionCreation.js";
+import type { CrmChannelConnectionOverview } from "../../channelConnections/connectionCreation.js";
 import {
   assertCredentialUpdateMatchesProvider,
   buildUpdatedConnectionCredentialsRef,
@@ -36,57 +30,28 @@ import {
   createZapiWebhookSetupIntent,
   withZapiWebhookSetupState,
 } from "../../whatsapp/zapiWebhookSetupState.js";
-import { runZapiWebhookSetupAttempt } from "../CrmWhatsappService/runZapiWebhookSetupAttempt.js";
 import {
   readConnectionLiveStatus,
   sealUpdatedZapiCredentials,
 } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
+import { persistReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
+import {
+  snapshotZapiCredentialState,
+  verifyUpdatedZapiCredentials,
+} from "./verifyUpdatedZapiCredentials.js";
+import { buildCrmChannelConnectionOverview } from "./buildCrmChannelConnectionOverview.js";
 
 export type { CrmChannelConnection } from "../../channelConnections/channelConnectionModels.js";
 export type { UpdateCrmChannelConnectionInput } from "../../channelConnections/channelConnectionUpdates.js";
 const readPermission = "crm.conversations.read";
 const updatePermission = "crm.messaging.connection.setup";
 const credentialUpdatePermission = "tenant.manage";
-const availableSetups = [
-  { broker: "direct", channel: "whatsapp", provider: "zapi" },
-  { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
-  { broker: "composio", channel: "instagram", provider: "meta_cloud" },
-] as const satisfies readonly CrmChannelConnectionSetupIdentity[];
-
 export async function getCrmChannelConnectionOverview(
   context: ServiceContext,
   ports: CrmServicePorts,
 ): Promise<CrmChannelConnectionOverview> {
   const connections = await listCrmChannelConnections(context, ports);
-  const scope = requireCrmMessagingScope(context);
-  const getAllowance = getCrmBillingQuotaGuard(ports).getAllowance;
-  if (!getAllowance) {
-    throw new Error("Billing quota allowance resolver is unavailable.");
-  }
-  const allowance = await getAllowance({
-    quotaKey: "crm_zapi",
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
-  });
-  const configured = new Set(
-    connections
-      .filter((connection) => connection.status !== "archived")
-      .map(setupProviderForConnection)
-      .filter((key): key is string => key !== null),
-  );
-  const entitlements =
-    "entitlements" in context && Array.isArray(context.entitlements)
-      ? context.entitlements
-      : [];
-  return {
-    allowance,
-    availableSetups: availableSetups.filter((identity) => {
-      if (configured.has(connectionIdentityKey(identity))) return false;
-      if (identity.provider === "zapi") return true;
-      return entitlements.includes("crm");
-    }),
-    connections,
-  };
+  return buildCrmChannelConnectionOverview(context, ports, connections);
 }
 
 export async function listCrmChannelConnections(
@@ -113,7 +78,6 @@ export async function listCrmChannelConnections(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
-
   const result = await Promise.all(
     connections.map(async (connection) =>
       toCrmChannelConnection(
@@ -192,7 +156,13 @@ export async function updateCrmChannelConnection(
         context as never,
         current.provider === "zapi" ? "crm_zapi" : "crm",
       );
+      if (input.instanceCredentials) {
+        assertEntitlement(context as never, "crm");
+      }
       assertCredentialUpdateMatchesProvider(current, input);
+      const priorCredentialState = input.instanceCredentials
+        ? snapshotZapiCredentialState(current)
+        : null;
       const safeInput = input.instanceCredentials
         ? {
             ...input,
@@ -231,19 +201,30 @@ export async function updateCrmChannelConnection(
         tenantId: scope.tenantId as never,
       });
       if (!updated) throw new CrmConnectionNotFoundError(input.connectionId);
-      if (input.instanceCredentials && input.webhookSetupTarget) {
-        await runZapiWebhookSetupAttempt(
+      if (
+        input.instanceCredentials &&
+        input.webhookSetupTarget &&
+        priorCredentialState
+      ) {
+        await verifyUpdatedZapiCredentials(
           context,
           { connectionId: updated.id, ...input.webhookSetupTarget },
+          priorCredentialState,
+          repository,
+          scope,
           ports,
         );
       }
       const finalConnection =
         (await repository.findConnectionById(updated.id)) ?? updated;
-      return toCrmChannelConnection(
+      const result = toCrmChannelConnection(
         finalConnection,
         await readConnectionLiveStatus(context, finalConnection, ports),
       );
+      if (input.instanceCredentials) {
+        await persistReadyChannelDefault(context, result, ports);
+      }
+      return result;
     },
   );
 }

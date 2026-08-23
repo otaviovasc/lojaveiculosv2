@@ -54,6 +54,7 @@ type ConnectionAdminProps = {
     allowance: CrmConnectionAllowance;
     availableSetups: readonly CrmAvailableSetup[];
     canPair: boolean;
+    canRepairCredentials?: boolean;
     canSetup: boolean;
     handlers: CrmConnectionSelfServiceHandlers;
     zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
@@ -102,6 +103,7 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
             allowance={selfService.allowance}
             availableSetups={selfService.availableSetups}
             canPair={selfService.canPair}
+            canRepairCredentials={selfService.canRepairCredentials ?? false}
             canSetup={selfService.canSetup}
             connections={connections}
             existingConnection={readInitialConnection(connections)}
@@ -123,6 +125,7 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
               onManageConnection={(connection) =>
                 setManagedConnectionId(String(connection.id))
               }
+              showRepairActions={false}
               showSetupActions={false}
               zapiAddonContract={null}
             />

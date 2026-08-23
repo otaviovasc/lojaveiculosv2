@@ -72,6 +72,12 @@ export function createCrmConversationApi({
       headers: createProductCrmHeaders(auth),
       method: "PATCH",
     }).then(readJson<T>);
+  const putJson = <T>(route: string, body: JsonBody) =>
+    fetch(route, {
+      body: JSON.stringify(cleanJson(body)),
+      headers: createProductCrmHeaders(auth),
+      method: "PUT",
+    }).then(readJson<T>);
   const postMaybeJson = <T>(route: string, body: JsonBody = {}) =>
     fetch(route, {
       body: JSON.stringify(cleanJson(body)),
@@ -122,6 +128,11 @@ export function createCrmConversationApi({
       postJson(crmConversationRoutes.connections(baseUrl), input),
     disconnectZapiConnection: (connectionId) =>
       postJson(crmConversationRoutes.zapiDisconnect(connectionId, baseUrl)),
+    repairZapiConnectionCredentials: (connectionId, input) =>
+      putJson(
+        crmConversationRoutes.zapiCredentials(connectionId, baseUrl),
+        input,
+      ),
     configureZapiWebhooks: (connectionId) =>
       postJson(
         crmConversationRoutes.zapiWebhooksConfigure(connectionId, baseUrl),

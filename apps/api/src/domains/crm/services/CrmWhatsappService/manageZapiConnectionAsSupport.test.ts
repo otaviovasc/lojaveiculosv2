@@ -90,6 +90,7 @@ function setup() {
             status: 200,
             type: webhook.type,
             url: webhook.url,
+            verified: true,
           })),
         }),
       ),
@@ -103,6 +104,15 @@ function setup() {
     } as never,
     crmZapiSupportAuthorizer: {
       assertPaidSetupEligible: vi.fn(async () => undefined),
+    },
+    zapiConnectionSetupProvider: {
+      getPairingCode: vi.fn(),
+      getQrCode: vi.fn(),
+      validateStatus: vi.fn(async () => ({
+        connected: false,
+        connectedPhone: null,
+        smartphoneConnected: false,
+      })),
     },
   };
   return { audit, ports, repository };
