@@ -1,5 +1,8 @@
 import { CalendarClock } from "lucide-react";
-import { FeatureSegmentedControl } from "../../components/ui/FeatureControls";
+import {
+  FeatureSegmentedControl,
+  FeatureSelect,
+} from "../../components/ui/FeatureControls";
 import type { AutoEntryTiming } from "./types";
 
 type TimingKind = AutoEntryTiming["kind"];
@@ -10,6 +13,11 @@ const timingOptions: ReadonlyArray<{ label: string; value: TimingKind }> = [
   { label: "Dia do mês", value: "day_of_month" },
   { label: "Próx. mês", value: "next_month_day" },
 ];
+
+const monthDayOptions = Array.from({ length: 31 }, (_, index) => {
+  const day = String(index + 1);
+  return { label: day, value: day };
+});
 
 /**
  * Segmented "when does this post" control. Replaces the old dropdown + number
@@ -36,7 +44,13 @@ export function AutoEntryTimingSelector({
 }) {
   const maximum = kind === "days_after" ? 365 : 31;
   const prefix = kind === "days_after" ? "Após" : "Dia";
-  const unit = kind === "days_after" ? "dias" : "de cada mês";
+  const unit =
+    kind === "days_after"
+      ? "dias"
+      : kind === "next_month_day"
+        ? "do próximo mês"
+        : "de cada mês";
+  const isMonthly = kind === "day_of_month" || kind === "next_month_day";
 
   return (
     <div className="auto-entry-timing">
@@ -58,18 +72,35 @@ export function AutoEntryTimingSelector({
       ) : (
         <div className="auto-entry-timing__param">
           <span className="auto-entry-timing__unit">{prefix}</span>
-          <input
-            aria-invalid={Boolean(error)}
-            aria-label={prefix === "Após" ? "Quantidade de dias" : "Dia do mês"}
-            className="auto-entry-timing__field"
-            disabled={disabled}
-            inputMode="numeric"
-            max={maximum}
-            min={1}
-            onChange={(event) => onValueChange(event.target.value)}
-            type="number"
-            value={value}
-          />
+          {isMonthly ? (
+            <div className="auto-entry-timing__select">
+              <FeatureSelect
+                ariaLabel={
+                  kind === "next_month_day"
+                    ? "Escolher dia do próximo mês"
+                    : "Escolher dia do mês"
+                }
+                disabled={disabled}
+                onChange={onValueChange}
+                options={monthDayOptions}
+                placeholder="Escolha o dia"
+                value={value || undefined}
+              />
+            </div>
+          ) : (
+            <input
+              aria-invalid={Boolean(error)}
+              aria-label="Quantidade de dias"
+              className="auto-entry-timing__field"
+              disabled={disabled}
+              inputMode="numeric"
+              max={maximum}
+              min={1}
+              onChange={(event) => onValueChange(event.target.value)}
+              type="number"
+              value={value}
+            />
+          )}
           <span className="auto-entry-timing__unit">{unit}</span>
           <span className="ml-auto text-xs font-semibold text-muted">
             1–{maximum}

@@ -109,22 +109,11 @@ export function DocumentBuilderSidebar({
       className="documents-builder-sidebar"
     >
       <div className="documents-builder-sidebar-header flex flex-col gap-2">
-        <div className="flex items-center justify-between">
+        <div>
           <div>
             <span>Biblioteca</span>
             <strong>{templates.length} modelos disponíveis</strong>
           </div>
-          {onOpenCreateTemplate ? (
-            <button
-              className="documents-builder-sidebar-create-btn inline-flex items-center gap-1 rounded-lg border border-line bg-app px-2.5 py-1.5 text-xs font-bold text-app-text transition hover:border-line-strong hover:bg-app-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-              onClick={onOpenCreateTemplate}
-              title="Criar novo modelo"
-              type="button"
-            >
-              <Plus aria-hidden="true" className="size-3.5" />
-              <span>Novo modelo</span>
-            </button>
-          ) : null}
         </div>
 
         {/* Category Pills */}
@@ -247,6 +236,20 @@ export function DocumentBuilderSidebar({
           </div>
         ) : null}
       </div>
+
+      {onOpenCreateTemplate ? (
+        <div className="documents-builder-sidebar-footer">
+          <button
+            className="documents-builder-sidebar-create-btn inline-flex items-center justify-center gap-1 rounded-lg border border-line bg-app px-2.5 py-1.5 text-xs font-bold text-app-text transition hover:border-line-strong hover:bg-app-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+            onClick={onOpenCreateTemplate}
+            title="Criar novo modelo"
+            type="button"
+          >
+            <Plus aria-hidden="true" className="size-3.5" />
+            <span>Novo modelo</span>
+          </button>
+        </div>
+      ) : null}
     </aside>
   );
 }

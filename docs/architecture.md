@@ -171,6 +171,10 @@ entitlement through `GET /api/v1/analytics/dashboard`. Without both grants, the
 frontend must not request or render analytics data; it keeps the dashboard
 layout stable with neutral placeholder values and disabled analytics controls.
 An analytics request failure must not replace or block the core home dashboard.
+Store users with `finance.read` may materialize the same selected period as a
+downloadable executive PDF through `GET /api/v1/analytics/dashboard.pdf`. The
+server renders the bytes from the scoped dashboard read model and records the
+export as a data-access audit event.
 
 ## Billing Contract Direction
 

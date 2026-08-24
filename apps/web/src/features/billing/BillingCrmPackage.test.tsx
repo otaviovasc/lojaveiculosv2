@@ -16,7 +16,7 @@ describe("BillingCrmPackage", () => {
     expect(
       screen.getByText("WhatsApp Oficial e Instagram incluídos"),
     ).toBeVisible();
-    expect(screen.getByText(/R\$\s179,00\/mês/)).toBeVisible();
+    expect(screen.getByText(/R\$\s179,00/)).toBeVisible();
     expect(screen.getByText(/CRM fica em R\$\s279,00\/mês/)).toBeVisible();
     expect(
       screen.getByText("10.000 ações de integração por mês incluídas"),
@@ -32,6 +32,23 @@ describe("BillingCrmPackage", () => {
       }),
     );
     expect(onRequestZapi).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the card itself for CRM selection and keeps the price in the footer", () => {
+    const onToggleCrm = vi.fn();
+    renderPackage({ isCrmSelected: false, onToggleCrm });
+
+    const card = screen.getByRole("checkbox", {
+      name: "Adicionar CRM à assinatura",
+    });
+    expect(card).toHaveTextContent(/R\$\s179,00/);
+    expect(card).toHaveTextContent("/mês");
+    expect(
+      screen.queryByRole("button", { name: "Adicionar CRM" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(card);
+    expect(onToggleCrm).toHaveBeenCalledTimes(1);
   });
 
   it("shows the scheduled state and lets an authorized manager cancel", () => {

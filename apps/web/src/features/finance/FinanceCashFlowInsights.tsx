@@ -1,6 +1,9 @@
 import { ChartNoAxesColumn, Link2, Repeat2 } from "lucide-react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import {
+  FeatureEmptyState,
+  FeatureStatusBadge,
+} from "../../components/ui/FeatureStates";
 import {
   categoryBreakdown,
   sourceBreakdown,
@@ -33,15 +36,32 @@ export function FinanceCashFlowInsights({
   const pendingCommissions = entries.filter(
     (entry) => entry.type === "commission" && entry.status === "pending",
   );
+  const categoriesSectionLayout = categories.length
+    ? { padding: "default" as const }
+    : {
+        className: "flex h-full flex-col",
+        headerClassName: "p-5",
+        padding: "none" as const,
+      };
+  const sourcesSectionLayout = sources.length
+    ? { padding: "default" as const }
+    : {
+        className: "flex h-full flex-col",
+        headerClassName: "p-5",
+        padding: "none" as const,
+      };
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-stretch w-full h-full">
       <FeatureSection
+        {...categoriesSectionLayout}
         description="Maiores centros de custo considerando gastos e comissões."
         icon={<ChartNoAxesColumn className="size-5" />}
         title="Análise de gastos"
       >
-        <div className="mt-3 grid gap-3">
+        <div
+          className={categories.length ? "mt-3 grid gap-3" : "min-h-0 flex-1"}
+        >
           {categories.length ? (
             categories.map((item) => (
               <div className="finance-insight-bar-row" key={item.label}>
@@ -74,20 +94,25 @@ export function FinanceCashFlowInsights({
               </div>
             ))
           ) : (
-            <p className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
-              Nenhuma saída encontrada nos filtros atuais.
-            </p>
+            <FeatureEmptyState
+              body="Nenhuma saída encontrada nos filtros atuais."
+              className="h-full w-full"
+              density="compact"
+              icon={ChartNoAxesColumn}
+              title="Nenhum gasto encontrado"
+            />
           )}
         </div>
       </FeatureSection>
 
       <div className="grid gap-4 h-full xl:grid-rows-2">
         <FeatureSection
+          {...sourcesSectionLayout}
           description="Separação por origem operacional."
           icon={<Link2 className="size-5" />}
           title="Origem"
         >
-          <div className="mt-3">
+          <div className={sources.length ? "mt-3" : "min-h-0 flex-1"}>
             {sources.length ? (
               <div className="grid grid-cols-2 gap-3 finance-origins-grid">
                 {sources.map((source) => (
@@ -105,9 +130,13 @@ export function FinanceCashFlowInsights({
                 ))}
               </div>
             ) : (
-              <p className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
-                Sem origem para exibir.
-              </p>
+              <FeatureEmptyState
+                body="Sem origem para exibir."
+                className="h-full w-full"
+                density="compact"
+                icon={Link2}
+                title="Nenhuma origem encontrada"
+              />
             )}
           </div>
         </FeatureSection>

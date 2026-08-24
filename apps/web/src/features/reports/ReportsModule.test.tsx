@@ -22,7 +22,10 @@ vi.stubGlobal(
 
 describe("ReportsModule", () => {
   beforeEach(() => window.history.replaceState(null, "", "/admin"));
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it("opens the owner summary with grouped report navigation and real ledger gaps", async () => {
     render(<ReportsModule api={createApi()} />);
@@ -42,7 +45,12 @@ describe("ReportsModule", () => {
       screen.getByRole("heading", { name: "Vendas que precisam de atenção" }),
     ).toBeVisible();
     expect(screen.getByText("Aquisição pendente")).toBeVisible();
-    expect(screen.getByText(/nenhum arquivo foi sintetizado/i)).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Baixar PDF executivo" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/nenhum arquivo foi sintetizado/i),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the selected report and search in the URL", async () => {
@@ -63,6 +71,32 @@ describe("ReportsModule", () => {
     expect(screen.getByText("Honda Civic Touring")).toBeVisible();
     expect(screen.queryByText("Toyota Corolla XEi")).not.toBeInTheDocument();
     expect(window.location.search).toContain("q=Civic");
+  });
+
+  it("downloads the materialized executive PDF for the selected period", async () => {
+    const user = userEvent.setup();
+    const api = createApi();
+    const createObjectUrl = vi.fn(() => "blob:executive-report");
+    const revokeObjectUrl = vi.fn();
+    Object.defineProperties(URL, {
+      createObjectURL: { configurable: true, value: createObjectUrl },
+      revokeObjectURL: { configurable: true, value: revokeObjectUrl },
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    render(<ReportsModule api={api} />);
+    await screen.findByText("Saldo realizado");
+
+    await user.click(
+      screen.getByRole("button", { name: "Baixar PDF executivo" }),
+    );
+
+    await waitFor(() =>
+      expect(api.downloadExecutiveReport).toHaveBeenCalledTimes(1),
+    );
+    expect(vi.mocked(api.downloadExecutiveReport).mock.calls[0]?.[0]).toEqual(
+      vi.mocked(api.getDashboard).mock.calls[0]?.[0],
+    );
+    expect(createObjectUrl).toHaveBeenCalledWith(expect.any(Blob));
   });
 
   it("restores a custom range from the URL", async () => {
@@ -181,7 +215,7 @@ describe("ReportsModule", () => {
       .fn<ReportsApi["getDashboard"]>()
       .mockRejectedValueOnce(new Error("falha"))
       .mockResolvedValue(createDashboard());
-    render(<ReportsModule api={{ getDashboard }} />);
+    render(<ReportsModule api={{ ...createApi(), getDashboard }} />);
 
     expect(
       await screen.findByRole("heading", { name: "Relatórios indisponíveis" }),
@@ -200,6 +234,10 @@ describe("ReportsModule", () => {
 
 function createApi(overrides: Partial<ReportsDashboard> = {}): ReportsApi {
   return {
+    downloadExecutiveReport: vi.fn(async () => ({
+      blob: new Blob(["%PDF-1.7"], { type: "application/pdf" }),
+      fileName: "relatorio-executivo.pdf",
+    })),
     getDashboard: vi.fn(async (period: ReportsPeriod) => ({
       ...createDashboard(overrides),
       period,

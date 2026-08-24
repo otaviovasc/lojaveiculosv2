@@ -1,4 +1,9 @@
-import { BarChart3, GitCompareArrows, RefreshCcw } from "lucide-react";
+import {
+  BarChart3,
+  Download,
+  GitCompareArrows,
+  RefreshCcw,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FeatureDateField,
@@ -7,8 +12,8 @@ import {
 } from "../../components/ui/FeatureControls";
 import {
   FeatureActionButton,
+  FeaturePageHeader,
   FeaturePageShell,
-  FeatureToolbar,
 } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
@@ -50,6 +55,8 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
   const [dashboard, setDashboard] = useState<ReportsDashboard | null>(null);
   const [comparison, setComparison] = useState<ReportsDashboard | null>(null);
   const [comparisonError, setComparisonError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const [status, setStatus] = useState<LoadStatus>({ kind: "loading" });
   const requestVersion = useRef(0);
   const period = useMemo(
@@ -120,78 +127,105 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
   const updateView = (patch: Partial<ReportsViewState>) =>
     setView((current) => ({ ...current, ...patch }));
   const searchable = view.tab === "sold" || view.tab === "costs";
+  const downloadExecutiveReport = useCallback(async () => {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const report = await reportsApi.downloadExecutiveReport(period);
+      triggerBrowserDownload(report.blob, report.fileName);
+    } catch (error) {
+      setDownloadError(
+        formatApiErrorDisplay(error, "Não foi possível gerar o PDF executivo."),
+      );
+    } finally {
+      setDownloading(false);
+    }
+  }, [period, reportsApi]);
 
   return (
     <FeaturePageShell mainClassName="feature-shell">
-      <FeatureToolbar className="reports-toolbar">
-        <div className="reports-toolbar__identity">
-          <p className="reports-toolbar__eyebrow">Desempenho</p>
-          <h1>Relatórios</h1>
-          <p className="reports-toolbar__description">
-            Margem por veículo, caixa, estoque, CRM e documentos.
-          </p>
-        </div>
-        <div
-          aria-label="Ações dos relatórios"
-          className="reports-toolbar__actions"
-          role="toolbar"
-        >
-          <FeatureSelect
-            ariaLabel="Período dos relatórios"
-            className="reports-toolbar__period"
-            density="compact"
-            onChange={(preset) => updateView({ preset })}
-            options={periodOptions}
-            value={view.preset}
-          />
-          <button
-            aria-pressed={view.compare}
-            className="reports-compare"
-            onClick={() => updateView({ compare: !view.compare })}
-            type="button"
+      <FeaturePageHeader
+        actions={
+          <div
+            aria-label="Ações dos relatórios"
+            className="reports-toolbar__actions"
+            role="toolbar"
           >
-            <GitCompareArrows aria-hidden="true" className="size-4" />
-            Comparar
-          </button>
-          <FeatureActionButton
-            icon={RefreshCcw}
-            isBusy={status.kind === "loading"}
-            label="Atualizar"
-            onClick={() => void load()}
-            title="Atualizar relatórios"
+            <FeatureSelect
+              ariaLabel="Período dos relatórios"
+              className="reports-toolbar__period"
+              density="compact"
+              onChange={(preset) => updateView({ preset })}
+              options={periodOptions}
+              value={view.preset}
+            />
+            <button
+              aria-pressed={view.compare}
+              className="reports-compare"
+              onClick={() => updateView({ compare: !view.compare })}
+              type="button"
+            >
+              <GitCompareArrows aria-hidden="true" className="size-4" />
+              Comparar
+            </button>
+            <FeatureActionButton
+              icon={RefreshCcw}
+              isBusy={status.kind === "loading"}
+              label="Atualizar"
+              onClick={() => void load()}
+              title="Atualizar relatórios"
+            />
+            {view.tab === "summary" ? (
+              <FeatureActionButton
+                disabled={
+                  !dashboard ||
+                  dashboard.owner.availability.status !== "available"
+                }
+                icon={Download}
+                isBusy={downloading}
+                label="Baixar PDF executivo"
+                onClick={() => void downloadExecutiveReport()}
+                title="Baixar PDF executivo"
+                variant="primary"
+              />
+            ) : null}
+          </div>
+        }
+        actionsLabel="Ações dos relatórios"
+        description="Margem por veículo, caixa, estoque, CRM e documentos."
+        eyebrow="Desempenho"
+        title="Relatórios"
+      />
+
+      {view.preset === "custom" ? (
+        <div className="reports-custom-period">
+          <FeatureDateField
+            label="Data inicial"
+            max={view.customPeriod.to}
+            onChange={(from) =>
+              updateView({
+                customPeriod: { ...view.customPeriod, from },
+              })
+            }
+            value={view.customPeriod.from}
+          />
+          <FeatureDateField
+            label="Data final"
+            min={view.customPeriod.from}
+            onChange={(to) =>
+              updateView({ customPeriod: { ...view.customPeriod, to } })
+            }
+            value={view.customPeriod.to}
           />
         </div>
-        {view.preset === "custom" ? (
-          <div className="reports-custom-period">
-            <FeatureDateField
-              label="Data inicial"
-              max={view.customPeriod.to}
-              onChange={(from) =>
-                updateView({
-                  customPeriod: { ...view.customPeriod, from },
-                })
-              }
-              value={view.customPeriod.from}
-            />
-            <FeatureDateField
-              label="Data final"
-              min={view.customPeriod.from}
-              onChange={(to) =>
-                updateView({ customPeriod: { ...view.customPeriod, to } })
-              }
-              value={view.customPeriod.to}
-            />
-          </div>
+      ) : null}
+
+      <div className="reports-toolbar__context">
+        <span>{formatPeriod(period)}</span>
+        {dashboard ? (
+          <span>Atualizado em {formatGeneratedAt(dashboard.generatedAt)}</span>
         ) : null}
-        <div className="reports-toolbar__context">
-          <span>{formatPeriod(period)}</span>
-          {dashboard ? (
-            <span>
-              Atualizado em {formatGeneratedAt(dashboard.generatedAt)}
-            </span>
-          ) : null}
-        </div>
-      </FeatureToolbar>
+      </div>
 
       <ReportsNavigation
         onChange={(tab) => updateView({ tab })}
@@ -220,6 +254,7 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
         </div>
       ) : null}
       {comparisonError ? <FeatureAlert>{comparisonError}</FeatureAlert> : null}
+      {downloadError ? <FeatureAlert>{downloadError}</FeatureAlert> : null}
       {status.kind === "error" ? (
         <FeatureAlert>{status.message}</FeatureAlert>
       ) : null}
@@ -293,6 +328,10 @@ type LoadStatus =
 
 function createRuntimeReportsApi(): ReportsApi {
   return {
+    downloadExecutiveReport: async (targetPeriod: ReportsPeriod) =>
+      createReportsApi(await createReportsApiOptions()).downloadExecutiveReport(
+        targetPeriod,
+      ),
     getDashboard: async (targetPeriod: ReportsPeriod) =>
       createReportsApi(await createReportsApiOptions()).getDashboard(
         targetPeriod,
@@ -314,4 +353,15 @@ function errorMessage(error: unknown) {
     error,
     "Não foi possível carregar os relatórios.",
   );
+}
+
+function triggerBrowserDownload(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.download = fileName;
+  anchor.href = url;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -97,6 +97,119 @@
   animation: ae-content-in 220ms ease-out;
 }
 
+/* Loading state mirrors the domain layout so the page does not collapse into
+   a spinner while its rules are being fetched. The panel proportions follow
+   the first sale view: one team summary followed by two editing cards. */
+.ae-loading-skeleton {
+  display: grid;
+  gap: var(--app-space-lg);
+  min-width: 0;
+}
+
+.ae-loading-skeleton__tabs {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-xl);
+  display: grid;
+  gap: var(--app-space-xs);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: var(--app-space-xs);
+}
+
+.ae-loading-skeleton__tab {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  display: flex;
+  gap: var(--app-space-xs);
+  min-height: 2.75rem;
+  padding: var(--app-space-xs) var(--app-space-sm);
+}
+
+.ae-loading-skeleton__domain {
+  display: grid;
+  gap: var(--app-space-md);
+  min-width: 0;
+}
+
+.ae-loading-skeleton__heading {
+  align-items: center;
+  display: flex;
+  gap: var(--app-space-md);
+  min-width: 0;
+}
+
+.ae-loading-skeleton__cards {
+  display: grid;
+  gap: var(--app-space-lg);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ae-loading-skeleton__panel {
+  min-height: 18rem;
+  overflow: hidden;
+}
+
+.ae-loading-skeleton__panel--wide {
+  grid-column: 1 / -1;
+  min-height: 14rem;
+}
+
+.ae-loading-skeleton__panel-header {
+  border-bottom: 1px solid var(--color-line);
+  display: grid;
+  gap: var(--app-space-sm);
+  padding: var(--app-space-lg);
+}
+
+.ae-loading-skeleton__panel-body {
+  display: grid;
+  gap: var(--app-space-md);
+  padding: var(--app-space-lg);
+}
+
+.ae-loading-skeleton__panel-footer {
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding: var(--app-space-md) var(--app-space-lg);
+}
+
+@media (max-width: 64rem) {
+  .ae-loading-skeleton__tabs {
+    display: flex;
+    overflow: hidden;
+  }
+
+  .ae-loading-skeleton__tab {
+    flex: 0 0 8.5rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .ae-loading-skeleton__heading {
+    align-items: flex-start;
+  }
+
+  .ae-loading-skeleton__heading > span:nth-child(2) {
+    gap: 0.45rem;
+  }
+
+  .ae-loading-skeleton__heading > span:last-child {
+    display: none;
+  }
+
+  .ae-loading-skeleton__cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ae-loading-skeleton__panel--wide {
+    grid-column: auto;
+  }
+}
+
 /* Permission state: a calm, branded read-only surface that matches the
    premium locked-state language without implying a billing entitlement. */
 .auto-entries-readonly-panel {
@@ -806,6 +919,19 @@
   outline: none;
   width: 3.5rem;
   -moz-appearance: textfield;
+}
+
+.auto-entry-timing__select {
+  flex: 1 1 9rem;
+  min-width: 0;
+}
+
+.auto-entry-timing__select .custom-select-trigger {
+  background: transparent;
+  border: 0;
+  min-height: 2.75rem;
+  padding-inline: var(--app-space-sm);
+  width: 100%;
 }
 
 .auto-entry-timing__field::-webkit-outer-spin-button,

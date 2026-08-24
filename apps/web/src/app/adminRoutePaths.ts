@@ -19,6 +19,7 @@ export const adminRoutePaths = [
   "/paid-traffic",
   "/public-api",
   "/public-site",
+  "/relatorios",
   "/reports",
   "/sales",
   "/settings",

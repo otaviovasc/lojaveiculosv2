@@ -35,30 +35,45 @@ export function oneCalendarMonthFrom(date) {
   return result;
 }
 
+export function planZapiOperatorOverride(contract) {
+  if (!contract || contract.status === "cancelled") return "create";
+  if (["active", "paid_awaiting_setup"].includes(contract.status))
+    return "keep";
+  return "activate";
+}
+
+export function resolveGrantDatabaseUrls(env = process.env) {
+  const staging = env.APP_ENV === "staging";
+  return {
+    auditDatabaseUrl:
+      (staging ? env.STAGING_AUDIT_DB : undefined) ?? env.AUDIT_DATABASE_URL,
+    databaseUrl: (staging ? env.STAGING_DB : undefined) ?? env.DATABASE_URL,
+  };
+}
+
 export async function runGrant(input, env = process.env) {
-  if (!env.DATABASE_URL) throw new Error("DATABASE_URL must be configured.");
+  const { auditDatabaseUrl, databaseUrl } = resolveGrantDatabaseUrls(env);
+  if (!databaseUrl)
+    throw new Error("DATABASE_URL or STAGING_DB must be configured.");
   if (input.apply && env.APP_ENV !== "staging")
     throw new Error(
       "Applying all-feature access is restricted to APP_ENV=staging.",
     );
-  if (input.apply && !env.AUDIT_DATABASE_URL)
-    throw new Error("AUDIT_DATABASE_URL is required for an applied grant.");
+  if (input.apply && !auditDatabaseUrl)
+    throw new Error(
+      "AUDIT_DATABASE_URL or STAGING_AUDIT_DB is required for an applied grant.",
+    );
 
-  const product = postgres(
-    env.DATABASE_URL,
-    connectionOptions(env.DATABASE_URL),
-  );
+  const product = postgres(databaseUrl, connectionOptions(databaseUrl));
   const audit = input.apply
-    ? postgres(
-        env.AUDIT_DATABASE_URL,
-        connectionOptions(env.AUDIT_DATABASE_URL),
-      )
+    ? postgres(auditDatabaseUrl, connectionOptions(auditDatabaseUrl))
     : null;
   try {
     const user = await resolveUser(product, input.userId);
     const stores = await resolveStores(product, user.id);
     const catalog = await resolveActiveCatalogFeatures(product);
     const features = catalog.features;
+    const zapiAddon = await resolveActiveZapiAddon(product);
     const startsAt = new Date();
     const endsAt = oneCalendarMonthFrom(startsAt);
     const preview = {
@@ -68,11 +83,16 @@ export async function runGrant(input, env = process.env) {
       featureCount: features.length,
       storeCount: stores.length,
       userId: user.id,
+      zapiAddonAvailable: Boolean(zapiAddon),
     };
     if (!input.apply) return { applied: false, ...preview };
 
     const requestId = `staging-entitlement-grant-${randomUUID()}`;
+    const zapiContracts = [];
     await product.begin(async (tx) => {
+      await tx`SELECT pg_advisory_xact_lock(
+        hashtextextended('lojaveiculosv2:staging:grant-all', 0)
+      )`;
       for (const store of stores)
         await grantStoreFeatures(tx, {
           endsAt,
@@ -83,6 +103,15 @@ export async function runGrant(input, env = process.env) {
           store,
           user,
         });
+      if (zapiAddon)
+        for (const store of stores)
+          zapiContracts.push(
+            await grantZapiOperatorOverride(tx, {
+              addon: zapiAddon,
+              store,
+              startsAt,
+            }),
+          );
       await persistRequiredAudit(audit, {
         endsAt,
         features,
@@ -90,9 +119,10 @@ export async function runGrant(input, env = process.env) {
         requestId,
         stores,
         user,
+        zapiContracts,
       });
     });
-    return { applied: true, requestId, ...preview };
+    return { applied: true, requestId, zapiContracts, ...preview };
   } finally {
     await product.end();
     await audit?.end();
@@ -161,6 +191,19 @@ async function resolveActiveCatalogFeatures(sql) {
   };
 }
 
+async function resolveActiveZapiAddon(sql) {
+  const [addon] = await sql`SELECT addon.id, addon.monthly_price_cents
+    FROM addons AS addon
+    INNER JOIN billing_catalog_versions AS catalog
+      ON catalog.version=addon.catalog_version
+    WHERE catalog.status='active' AND catalog.published_at <= now()
+      AND addon.status='active' AND addon.published_at <= now()
+      AND addon.code='crm_zapi'
+    ORDER BY addon.published_at DESC
+    LIMIT 1`;
+  return addon ?? null;
+}
+
 async function grantStoreFeatures(tx, input) {
   for (const featureKey of input.features) {
     const [before] = await tx`SELECT ends_at, starts_at, status
@@ -200,6 +243,82 @@ async function grantStoreFeatures(tx, input) {
         ${before?.status ?? null}, ${input.reason}, 'operator_exception',
         ${input.store.id}, ${input.store.tenant_id}, now(), now())`;
   }
+}
+
+async function grantZapiOperatorOverride(tx, input) {
+  const [existing] = await tx`SELECT
+      id, activated_by_payment_id, activated_by_provider_checkout_id,
+      activated_by_provider_event_id, paid_at, scheduled_for, status
+    FROM billing_addon_contracts
+    WHERE store_id=${input.store.id} AND tenant_id=${input.store.tenant_id}
+      AND addon_id=${input.addon.id} AND status <> 'cancelled'
+    ORDER BY created_at DESC
+    LIMIT 1`;
+  const action = planZapiOperatorOverride(existing);
+  if (action === "keep")
+    return toZapiContractSummary(existing, false, input.store.id);
+
+  if (action === "activate") {
+    const [updated] = await tx`UPDATE billing_addon_contracts
+      SET paid_at=COALESCE(paid_at, ${input.startsAt}),
+          scheduled_for=NULL,
+          status='paid_awaiting_setup',
+          updated_at=now()
+      WHERE id=${existing.id} AND status IN ('pending', 'scheduled')
+      RETURNING id, activated_by_payment_id, activated_by_provider_checkout_id,
+        activated_by_provider_event_id, paid_at, scheduled_for, status`;
+    if (updated) return toZapiContractSummary(updated, true, input.store.id);
+    const [raced] = await tx`SELECT
+        id, activated_by_payment_id, activated_by_provider_checkout_id,
+        activated_by_provider_event_id, paid_at, scheduled_for, status
+      FROM billing_addon_contracts
+      WHERE id=${existing.id}
+      LIMIT 1`;
+    return toZapiContractSummary(raced ?? existing, false, input.store.id);
+  }
+
+  const [subscription] = await tx`SELECT id
+    FROM subscriptions
+    WHERE tenant_id=${input.store.tenant_id}
+    ORDER BY created_at DESC
+    LIMIT 1`;
+  if (!subscription)
+    throw new Error(
+      `No subscription was found for staging store ${input.store.id}.`,
+    );
+
+  const [item] = await tx`INSERT INTO subscription_items
+    (addon_id, item_type, quantity, starts_at, store_id, subscription_id,
+     tenant_id, unit_amount_cents, created_at, updated_at)
+    VALUES (${input.addon.id}, 'addon', 1, ${input.startsAt}, ${input.store.id},
+      ${subscription.id}, ${input.store.tenant_id}, ${input.addon.monthly_price_cents},
+      now(), now())
+    RETURNING id`;
+  if (!item) throw new Error("Z-API subscription item was not persisted.");
+
+  const [contract] = await tx`INSERT INTO billing_addon_contracts
+    (addon_id, paid_at, scheduled_for, status, store_id, subscription_id,
+     subscription_item_id, tenant_id, created_at, updated_at)
+    VALUES (${input.addon.id}, ${input.startsAt}, NULL, 'paid_awaiting_setup',
+      ${input.store.id}, ${subscription.id}, ${item.id}, ${input.store.tenant_id},
+      now(), now())
+    RETURNING id, activated_by_payment_id, activated_by_provider_checkout_id,
+      activated_by_provider_event_id, paid_at, scheduled_for, status`;
+  if (!contract) throw new Error("Z-API billing contract was not persisted.");
+  return toZapiContractSummary(contract, true, input.store.id);
+}
+
+function toZapiContractSummary(contract, changed, storeId) {
+  return {
+    changed,
+    contractId: contract.id,
+    providerEvidenceAbsent:
+      !contract.activated_by_payment_id &&
+      !contract.activated_by_provider_checkout_id &&
+      !contract.activated_by_provider_event_id,
+    status: contract.status,
+    storeId,
+  };
 }
 
 function coversGrantWindow(entitlement, startsAt, endsAt) {
@@ -242,6 +361,42 @@ async function persistRequiredAudit(sql, input) {
         ${sql.json(["billing", "operator_exception", "staging"])},
         ${sql.json({ id: store.id, type: "store" })},
         ${store.tenant_id}, now(), now())`;
+
+  for (const contract of input.zapiContracts)
+    if (contract.changed) {
+      const store = input.stores.find((item) => item.id === contract.storeId);
+      if (!store)
+        throw new Error(`Z-API store was not resolved: ${contract.storeId}`);
+      await sql`INSERT INTO audit_events
+        (action, actor_id, actor_kind, category, changes, criticality,
+         data_classification, entity_id, entity_type, failure_tier, metadata,
+         outcome, request_context, request_id, severity, source, store_id,
+         summary, tags, target, tenant_id, created_at, updated_at)
+        VALUES ('billing.addon.zapi.operator_override', 'staging_operator',
+          'system', 'data_change', ${sql.json([
+            {
+              after: {
+                providerEvidenceAbsent: contract.providerEvidenceAbsent,
+                status: contract.status,
+              },
+              before: null,
+              path: "billing_addon_contracts",
+            },
+          ])}, 'high', 'internal', ${contract.contractId},
+          'billing_addon_contracts', 'required', ${sql.json({
+            reason: input.reason,
+            targetUserId: input.user.id,
+          })}, 'succeeded', ${sql.json({ requestId: input.requestId })},
+          ${input.requestId}, 'info', ${sql.json({
+            component: "grant-user-all-features",
+            environment: "staging",
+            service: "operator",
+          })}, ${store.id},
+          'Granted staging Z-API capacity without provider payment evidence.',
+          ${sql.json(["billing", "operator_exception", "staging", "zapi"])},
+          ${sql.json({ id: contract.contractId, type: "billing_addon_contract" })},
+          ${store.tenant_id}, now(), now())`;
+    }
 }
 
 function connectionOptions(value) {
@@ -256,7 +411,7 @@ if (isMain) {
   try {
     const result = await runGrant(parseGrantArgs(process.argv.slice(2)));
     process.stdout.write(
-      `${result.applied ? "Applied" : "Dry run"}: catalog ${result.catalogVersion}, ${result.featureCount} features [${result.features.join(", ")}] across ${result.storeCount} store(s), ending ${result.endsAt}${result.requestId ? ` (request ${result.requestId})` : ""}.\n`,
+      `${result.applied ? "Applied" : "Dry run"}: catalog ${result.catalogVersion}, ${result.featureCount} features [${result.features.join(", ")}] across ${result.storeCount} store(s), Z-API addon ${result.zapiAddonAvailable ? "available" : "unavailable"}, ending ${result.endsAt}${result.requestId ? ` (request ${result.requestId})` : ""}.\n`,
     );
   } catch (error) {
     process.stderr.write(

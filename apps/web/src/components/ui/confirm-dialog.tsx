@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { AlertTriangle } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -106,30 +107,39 @@ export function ConfirmDialog({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md rounded-2xl border border-border/50 bg-card p-6 shadow-lg"
+            className="relative w-full max-w-md rounded-2xl border border-border/50 bg-card p-6 shadow-xl"
             onKeyDown={(event) => trapDialogFocus(event, dialogRef.current)}
             ref={dialogRef}
             role="dialog"
             tabIndex={-1}
           >
-            <h2
-              className="text-lg font-bold font-display tracking-tight text-foreground"
-              id={titleId}
-            >
-              {title}
-            </h2>
-            {description && (
-              <p
-                className="mt-2 text-sm text-muted-foreground"
-                id={descriptionId}
-              >
-                {description}
-              </p>
-            )}
+            <div className="flex items-start gap-3.5">
+              {variant === "destructive" ? (
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10 text-destructive">
+                  <AlertTriangle aria-hidden="true" className="size-5" />
+                </div>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <h2
+                  className="text-lg font-bold font-display tracking-tight text-foreground leading-tight"
+                  id={titleId}
+                >
+                  {title}
+                </h2>
+                {description && (
+                  <p
+                    className="mt-2 text-sm text-muted-foreground leading-relaxed"
+                    id={descriptionId}
+                  >
+                    {description}
+                  </p>
+                )}
+              </div>
+            </div>
             {error && (
               <div
                 aria-live="assertive"
-                className="mt-3 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive"
+                className="mt-3 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive font-medium"
                 role="alert"
               >
                 {error}
@@ -141,7 +151,7 @@ export function ConfirmDialog({
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
+                className="cursor-pointer rounded-xl bg-secondary px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-secondary/80 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cancelLabel}
               </button>
@@ -153,8 +163,8 @@ export function ConfirmDialog({
                 disabled={isLoading}
                 className={
                   variant === "destructive"
-                    ? "rounded-xl px-4 py-2.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 transition-colors disabled:opacity-50"
-                    : "rounded-xl px-4 py-2.5 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    ? "cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold text-destructive-foreground bg-destructive hover:bg-destructive/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    : "cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold text-primary-foreground bg-primary hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 }
               >
                 {isLoading ? loadingLabel : confirmLabel}

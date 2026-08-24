@@ -63,11 +63,11 @@ export function DocumentsReport({
           tone={documents.pendingSignature > 0 ? "warning" : "good"}
         />
       </MetricDeck>
-      <FeatureSection
-        className="reports-section-surface"
-        title="Documentos por tipo"
-      >
-        {documents.byKind.length ? (
+      {documents.byKind.length ? (
+        <FeatureSection
+          className="reports-section-surface"
+          title="Documentos por tipo"
+        >
           <div className="reports-bars">
             {documents.byKind.map((row) => (
               <BarRow
@@ -78,15 +78,15 @@ export function DocumentsReport({
               />
             ))}
           </div>
-        ) : (
-          <FeatureEmptyState
-            body="Nenhum documento foi enviado ou gerado no período."
-            density="compact"
-            icon={FileText}
-            title="Sem documentos"
-          />
-        )}
-      </FeatureSection>
+        </FeatureSection>
+      ) : (
+        <FeatureEmptyState
+          body="Nenhum documento foi enviado ou gerado no período."
+          density="compact"
+          icon={FileText}
+          title="Documentos por tipo"
+        />
+      )}
     </div>
   );
 }
@@ -108,7 +108,6 @@ export function MarketingReport({
     <FeatureEmptyState
       body="O contrato de métricas de marketing ainda não expõe dados para este relatório."
       icon={Megaphone}
-      title="Marketing sem métricas disponíveis"
     />
   );
 }

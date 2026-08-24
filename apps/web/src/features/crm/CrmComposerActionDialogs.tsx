@@ -66,15 +66,15 @@ export function LocationDialog({
           setIsSaving(false);
         }
       }}
-      title="Enviar localizacao"
+      title="Enviar localização"
     >
       <button
-        className="crm-action-inline"
+        className="crm-action-inline cursor-pointer"
         disabled={disabled || isSaving || !geolocation}
         onClick={() => {
           setError("");
           if (!geolocation) {
-            setError("Geolocalizacao indisponivel neste navegador.");
+            setError("Geolocalização indisponível neste navegador.");
             return;
           }
           geolocation.getCurrentPosition(
@@ -82,29 +82,30 @@ export function LocationDialog({
               setLatitude(String(position.coords.latitude));
               setLongitude(String(position.coords.longitude));
             },
-            () => setError("Nao foi possivel ler a localizacao atual."),
+            () => setError("Não foi possível ler a localização atual."),
             { enableHighAccuracy: true, maximumAge: 60_000, timeout: 8_000 },
           );
         }}
         type="button"
       >
         <MapPin aria-hidden="true" />
-        Usar minha localizacao
+        Usar minha localização
       </button>
       <div className="crm-location-map">
         {mapUrl ? (
           <iframe
             src={`https://www.google.com/maps?q=${parsedLatitude},${parsedLongitude}&z=16&output=embed`}
-            title="Mapa da localizacao"
+            title="Mapa da localização"
           />
         ) : (
-          <span>Informe latitude e longitude ou use a localizacao atual.</span>
+          <span>Informe latitude e longitude ou use a localização atual.</span>
         )}
       </div>
       <div className="crm-location-nudge" aria-label="Ajustar mapa">
         <button
           disabled={disabled || isSaving}
           onClick={() => nudge(0.0002, 0)}
+          title="Mover para o Norte"
           type="button"
         >
           N
@@ -112,6 +113,7 @@ export function LocationDialog({
         <button
           disabled={disabled || isSaving}
           onClick={() => nudge(0, -0.0002)}
+          title="Mover para o Oeste"
           type="button"
         >
           O
@@ -119,6 +121,7 @@ export function LocationDialog({
         <button
           disabled={disabled || isSaving}
           onClick={() => nudge(0, 0.0002)}
+          title="Mover para o Leste"
           type="button"
         >
           L
@@ -126,6 +129,7 @@ export function LocationDialog({
         <button
           disabled={disabled || isSaving}
           onClick={() => nudge(-0.0002, 0)}
+          title="Mover para o Sul"
           type="button"
         >
           S
@@ -145,11 +149,11 @@ export function LocationDialog({
         />
       </label>
       <label>
-        Endereco
+        Endereço
         <input
           disabled={disabled || isSaving}
           onChange={(event) => setAddress(event.target.value)}
-          placeholder="Rua, numero, bairro"
+          placeholder="Rua, número, bairro"
           value={address}
         />
       </label>

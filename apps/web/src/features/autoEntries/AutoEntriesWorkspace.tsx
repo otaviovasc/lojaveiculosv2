@@ -9,7 +9,6 @@ import {
 import {
   FeatureAlert,
   FeatureEmptyState,
-  FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { useOptionalAccountSession } from "../account/accountSession";
@@ -27,6 +26,7 @@ import {
 } from "./autoEntriesDirtyState";
 import { Toast } from "../../components/ui/Toast";
 import { AutoEntriesCommandBar } from "./AutoEntriesCommandBar";
+import { AutoEntriesLoadingSkeleton } from "./AutoEntriesLoadingSkeleton";
 import { AutoEntriesNotices } from "./AutoEntriesNotices";
 import { AutoEntriesTabs } from "./AutoEntriesTabs";
 import { AutoEntryDomainPanel } from "./AutoEntryDomainPanel";
@@ -169,10 +169,7 @@ export function AutoEntriesWorkspace({
         onRefresh={() => void workspace.refresh()}
       />
       {workspace.loadState.kind === "loading" ? (
-        <FeatureLoadingState
-          className="feature-empty"
-          title="Carregando regras"
-        />
+        <AutoEntriesLoadingSkeleton />
       ) : workspace.loadState.kind === "error" ? (
         <>
           <FeatureAlert title="As regras não puderam ser carregadas">

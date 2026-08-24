@@ -26,7 +26,7 @@ export const llmsText = `# Loja Veiculos API
 - Download finance entry document: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/download\n- Stream finance entry document content: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/content
 - Update recurring finance entry: PATCH /api/v1/finance/recurring-entries/{recurringEntryId}\n- Cancel recurring finance entry: DELETE /api/v1/finance/recurring-entries/{recurringEntryId}
 - Materialize recurring finance entries: POST /api/v1/finance/recurring-entries/materialize
-- Core home dashboard: GET /api/v1/analytics/home\n- Analytics reports dashboard: GET /api/v1/analytics/dashboard\n- Compliance snapshot: GET /api/v1/compliance/snapshot
+- Core home dashboard: GET /api/v1/analytics/home\n- Analytics reports dashboard: GET /api/v1/analytics/dashboard\n- Executive analytics PDF: GET /api/v1/analytics/dashboard.pdf\n- Compliance snapshot: GET /api/v1/compliance/snapshot
 - Marketplace overview: GET /api/v1/marketplaces/overview\n- Create marketplace OAuth URL: POST /api/v1/marketplaces/connect-url
 - Complete marketplace OAuth: POST /api/v1/marketplaces/oauth/complete\n- Upsert marketplace connection: PUT /api/v1/marketplaces/integrations/{provider}
 - Queue marketplace sync: POST /api/v1/marketplaces/integrations/{provider}/sync-jobs\n- Run marketplace sync: POST /api/v1/marketplaces/sync-jobs/{jobId}/run
@@ -211,6 +211,7 @@ export const llmsText = `# Loja Veiculos API
 ## Current analytics endpoints
 - GET /api/v1/analytics/home: returns the core store dashboard summary; requires dashboard.read and is not entitlement-gated.
 - GET /api/v1/analytics/dashboard: returns the selected DB-backed period with inventory, sales, lead funnel, source attribution, owner vehicle margins, finance planned/paid category totals, CRM interactions, document status/kind totals, and marketing availability; requires analytics.read and the analytics entitlement. Closed-sales totals count only current revisions closed in the period, open receivables are pending revenue due in the period, and availableAskingValueCents sums each published listing asking price once rather than once per unit. Owner and finance data additionally require finance.read, CRM data requires crm.pipeline.read or crm.access, and document data requires documents.read. Without finance.read, financialAvailability is restricted, base revenue/ticket/margin/overdue values are null, financial KPI strings are omitted, and owner/finance sections return zero or empty values with an explicit restriction reason. Other restricted sections also return an explicit reason with zero or empty values. Marketing reports unavailable until visit/click events are persisted.
+- GET /api/v1/analytics/dashboard.pdf: materializes the selected period as downloadable PDF bytes; requires analytics.read, finance.read, and the analytics entitlement.
 
 ## Current compliance endpoints
 - GET /api/v1/compliance/snapshot: returns LGPD workflow, access review, audit export, retention, provider webhook, and secret-rotation posture; requires compliance.manage and compliance entitlement.

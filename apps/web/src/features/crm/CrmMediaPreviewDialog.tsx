@@ -82,8 +82,8 @@ export function CrmMediaPreviewDialog({
         </DialogTitle>
         <header className="crm-media-dialog-header">
           <button
-            aria-label="Fechar pre-visualizacao"
-            className="crm-media-icon"
+            aria-label="Fechar pré-visualização"
+            className="crm-media-icon cursor-pointer"
             onClick={onClose}
             title="Fechar"
             type="button"
@@ -99,7 +99,7 @@ export function CrmMediaPreviewDialog({
           </div>
           <button
             aria-label="Remover anexo atual"
-            className="crm-media-icon crm-media-icon-danger"
+            className="crm-media-icon crm-media-icon-danger cursor-pointer"
             onClick={() => onRemove(activeIndex)}
             title="Remover"
             type="button"
@@ -138,10 +138,10 @@ export function CrmMediaPreviewDialog({
             <div className="crm-media-dialog-add">
               <button
                 aria-label={
-                  allowVideo ? "Adicionar foto ou video" : "Adicionar foto"
+                  allowVideo ? "Adicionar foto ou vídeo" : "Adicionar foto"
                 }
                 onClick={onPickImages}
-                title={allowVideo ? "Foto ou video" : "Foto"}
+                title={allowVideo ? "Foto ou vídeo" : "Foto"}
                 type="button"
               >
                 <ImageIcon />
@@ -158,9 +158,9 @@ export function CrmMediaPreviewDialog({
               ) : null}
               {allowAudio ? (
                 <button
-                  aria-label="Adicionar audio"
+                  aria-label="Adicionar áudio"
                   onClick={onPickAudio}
-                  title="Audio"
+                  title="Áudio"
                   type="button"
                 >
                   <Music />
@@ -171,7 +171,7 @@ export function CrmMediaPreviewDialog({
 
           <div className="crm-media-caption-row">
             <textarea
-              aria-label="Legenda da midia"
+              aria-label="Legenda da mídia"
               disabled={disabled || !allowCaption}
               onChange={(event) => onCaptionChange(event.target.value)}
               onKeyDown={(event) => {

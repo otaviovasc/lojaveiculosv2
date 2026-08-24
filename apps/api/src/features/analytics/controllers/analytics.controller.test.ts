@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { EntitlementKey } from "@lojaveiculosv2/shared";
+import { PDFDocument } from "pdf-lib";
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import type {
@@ -51,6 +52,39 @@ describe("analytics dashboard route", () => {
       from: "2026-06-01",
       to: "2026-06-30",
     });
+  });
+
+  it("materializes the executive report as downloadable PDF bytes", async () => {
+    const app = createApp(createAnalyticsServices(), {
+      permissions: ["analytics.read", "finance.read"],
+    });
+
+    const response = await app.request(
+      "/dashboard.pdf?from=2026-06-01&to=2026-06-30",
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/pdf");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("content-disposition")).toBe(
+      'attachment; filename="relatorio-executivo-2026-06-01-a-2026-06-30.pdf"',
+    );
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    expect(new TextDecoder().decode(bytes.slice(0, 8))).toContain("%PDF");
+    expect(bytes.byteLength).toBeGreaterThan(1_000);
+    const document = await PDFDocument.load(bytes);
+    expect(document.getTitle()).toBe("Relatório executivo");
+    expect(document.getAuthor()).toBe("Loja Veículos OS");
+  });
+
+  it("requires finance access for the executive PDF", async () => {
+    const app = createApp(createAnalyticsServices());
+
+    const response = await app.request(
+      "/dashboard.pdf?from=2026-06-01&to=2026-06-30",
+    );
+
+    expect(response.status).toBe(403);
   });
 
   it("keeps finance, CRM, and document report values behind their permissions", async () => {
@@ -143,6 +177,9 @@ describe("analytics dashboard route", () => {
 
 function createServicesStub() {
   const services: AnalyticsServices = {
+    exportExecutiveReport: vi.fn(async () => {
+      throw new Error("Unexpected executive report request.");
+    }),
     getHomeDashboard: vi.fn(async () => {
       throw new Error("Unexpected home dashboard request.");
     }),

@@ -154,12 +154,12 @@ export function InventoryReport({
           previous={comparison?.inventory.averagePriceCents}
         />
       </MetricDeck>
-      <FeatureSection
-        className="reports-section-surface"
-        description="Idade das unidades disponíveis desde a aquisição; quando ausente, usa a criação do anúncio."
-        title="Idade do estoque"
-      >
-        {ageRows.some((row) => row.value > 0) ? (
+      {ageRows.some((row) => row.value > 0) ? (
+        <FeatureSection
+          className="reports-section-surface"
+          description="Idade das unidades disponíveis desde a aquisição; quando ausente, usa a criação do anúncio."
+          title="Idade do estoque"
+        >
           <div className="reports-bars">
             {ageRows.map((row) => (
               <BarRow
@@ -170,15 +170,15 @@ export function InventoryReport({
               />
             ))}
           </div>
-        ) : (
-          <FeatureEmptyState
-            body="Nenhuma unidade disponível entrou nas faixas de idade."
-            density="compact"
-            icon={Warehouse}
-            title="Sem estoque disponível"
-          />
-        )}
-      </FeatureSection>
+        </FeatureSection>
+      ) : (
+        <FeatureEmptyState
+          body="Nenhuma unidade disponível entrou nas faixas de idade."
+          density="compact"
+          icon={Warehouse}
+          title="Idade do estoque"
+        />
+      )}
     </div>
   );
 }
@@ -193,27 +193,23 @@ function Breakdown({
   title: string;
 }) {
   const max = Math.max(...items.map((row) => row.value), 0);
+  if (!items.length) {
+    return (
+      <FeatureEmptyState
+        body={empty}
+        density="compact"
+        icon={Inbox}
+        title={title}
+      />
+    );
+  }
   return (
     <FeatureSection className="reports-section-surface" title={title}>
-      {items.length ? (
-        <div className="reports-bars">
-          {items.map((row) => (
-            <BarRow
-              key={row.key}
-              label={row.label}
-              max={max}
-              value={row.value}
-            />
-          ))}
-        </div>
-      ) : (
-        <FeatureEmptyState
-          body={empty}
-          density="compact"
-          icon={Inbox}
-          title="Sem dados no período"
-        />
-      )}
+      <div className="reports-bars">
+        {items.map((row) => (
+          <BarRow key={row.key} label={row.label} max={max} value={row.value} />
+        ))}
+      </div>
     </FeatureSection>
   );
 }

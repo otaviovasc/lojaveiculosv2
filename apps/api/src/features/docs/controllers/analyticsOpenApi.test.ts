@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyticsSchemas } from "./analyticsOpenApi.js";
+import { analyticsPaths, analyticsSchemas } from "./analyticsOpenApi.js";
 import { llmsText } from "./llmsText.js";
 
 describe("analytics API documentation", () => {
@@ -56,6 +56,13 @@ describe("analytics API documentation", () => {
     expect(analyticsSchemas.HomeDashboard.properties).not.toHaveProperty(
       "finance",
     );
+  });
+
+  it("documents the materialized executive PDF download", () => {
+    expect(
+      analyticsPaths["/api/v1/analytics/dashboard.pdf"].get.responses["200"]
+        .content["application/pdf"].schema,
+    ).toEqual({ format: "binary", type: "string" });
   });
 
   it("documents secondary report permissions and unavailable marketing data", () => {

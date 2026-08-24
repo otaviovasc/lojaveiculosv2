@@ -33,7 +33,7 @@ export function ProductPicker({
         <input
           disabled={disabled || isLoading}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Nome, descricao ou codigo"
+          placeholder="Nome, descrição ou código"
           value={query}
         />
       </label>
@@ -120,7 +120,7 @@ function renderCatalogProducts(input: {
     return (
       <div className="crm-catalog-loading">
         <Loader2 className="crm-spin" />
-        Carregando catalogo
+        Carregando catálogo...
       </div>
     );
   }
@@ -137,12 +137,12 @@ function renderCatalogProducts(input: {
       ))}
       {!input.products.length ? (
         <p className="crm-action-error">
-          Nenhum produto encontrado no catalogo.
+          Nenhum produto encontrado no catálogo.
         </p>
       ) : null}
       {input.hasMore ? (
         <button
-          className="crm-catalog-load-more"
+          className="crm-catalog-load-more cursor-pointer"
           disabled={input.disabled || input.isLoadingMore}
           onClick={() => void input.onLoadMore()}
           type="button"
@@ -167,7 +167,7 @@ function CatalogProductButton({
     <button
       aria-label={`Enviar produto ${product.name}`}
       aria-pressed={selected}
-      className="crm-catalog-product"
+      className="crm-catalog-product cursor-pointer"
       onClick={() => onSelect(product.id)}
       type="button"
     >
@@ -205,19 +205,19 @@ function formatProductMeta(product: CrmWhatsappCatalogProduct) {
       product.quantity !== null && product.quantity !== undefined
         ? `${product.quantity} un.`
         : null,
-      product.retailerId ? `Cod. ${product.retailerId}` : null,
+      product.retailerId ? `Cód. ${product.retailerId}` : null,
     ]
       .filter(Boolean)
-      .join(" · ") || "Produto do catalogo"
+      .join(" · ") || "Produto do catálogo"
   );
 }
 
 function formatAvailability(value: string) {
   const labels: Record<string, string> = {
-    available: "Disponivel",
-    in_stock: "Disponivel",
+    available: "Disponível",
+    in_stock: "Disponível",
     out_of_stock: "Sem estoque",
-    preorder: "Pre-venda",
+    preorder: "Pré-venda",
   };
   return labels[value.toLocaleLowerCase("pt-BR")] ?? value;
 }

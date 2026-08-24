@@ -15,6 +15,7 @@ import {
   FeatureCardHeader,
   FeatureCardTitle,
 } from "../../components/ui/FeatureCards";
+import { getRoleLabel } from "../settings/settingsLabels";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import {
   familyRules,
@@ -163,7 +164,7 @@ export function AutoEntryTeamRosterCard({
                           {seller.label}
                         </strong>
                         <span className="rounded-md border border-line bg-app px-1.5 py-0.5 text-xs font-bold text-muted uppercase tracking-wider">
-                          {seller.role || seller.detail}
+                          {getRoleLabel(seller.role)}
                         </span>
                       </div>
 

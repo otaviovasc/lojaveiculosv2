@@ -268,7 +268,7 @@ export function BillingSignupFlow({
                           className={cn("size-7 shrink-0", theme.iconColor)}
                           aria-hidden="true"
                         />
-                        <strong className="text-xl md:text-2xl font-black text-foreground">
+                        <strong className="text-xl md:text-2xl font-[950] text-foreground">
                           {plan.name}
                         </strong>
                       </div>
@@ -454,7 +454,7 @@ export function BillingSignupFlow({
                             aria-hidden="true"
                           />
                           <div>
-                            <h4 className="text-lg font-black text-foreground leading-snug">
+                            <h4 className="text-lg font-[950] text-foreground leading-snug">
                               {addon.name}
                             </h4>
                             <span className="text-xs font-semibold text-muted block mt-0.5">

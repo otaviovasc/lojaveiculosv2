@@ -260,8 +260,8 @@ describe("CrmComposer", () => {
     });
     await user.upload(input!, file);
 
-    expect(screen.getByLabelText("Legenda da midia")).toBeDisabled();
-    expect(screen.queryByLabelText("Adicionar audio")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Legenda da mídia")).toBeDisabled();
+    expect(screen.queryByLabelText("Adicionar áudio")).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Adicionar documento"),
     ).not.toBeInTheDocument();
