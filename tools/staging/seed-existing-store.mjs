@@ -150,6 +150,20 @@ export async function runSeed(input, env = process.env) {
       targetStore,
       targetUser,
     });
+    await addExistingFinanceRuleMappings(
+      mapping,
+      source,
+      target,
+      sourceScope,
+      targetStore,
+    );
+    await addExistingStoreSingletonMappings(
+      mapping,
+      source,
+      target,
+      sourceScope,
+      targetStore,
+    );
     const metadata = await resolveScopedTableMetadata(source, target);
     const plans = await buildSeedPlans(source, metadata, mapping);
     const preview = summarizePlans(plans, {
@@ -286,6 +300,67 @@ function createMapping(input) {
   return { stringReplacements };
 }
 
+async function addExistingFinanceRuleMappings(
+  mapping,
+  source,
+  target,
+  sourceScope,
+  targetStore,
+) {
+  const [sourceRules, targetRules] = await Promise.all([
+    source`SELECT id, rule_key, seller_user_id
+      FROM finance_auto_entry_rules
+      WHERE tenant_id=${sourceScope.tenantId} AND store_id=${sourceScope.storeId}`,
+    target`SELECT id, rule_key, seller_user_id
+      FROM finance_auto_entry_rules
+      WHERE tenant_id=${targetStore.tenant_id} AND store_id=${targetStore.id}`,
+  ]);
+  const targetByKey = new Map(
+    targetRules.map((rule) => [
+      `${rule.rule_key}\u0000${rule.seller_user_id ?? ""}`,
+      rule.id,
+    ]),
+  );
+  const skippedRuleIds = new Set();
+  for (const sourceRule of sourceRules) {
+    const sellerUserId = sourceRule.seller_user_id
+      ? remapSeedValue(sourceRule.seller_user_id, mapping)
+      : "";
+    const targetRuleId = targetByKey.get(
+      `${sourceRule.rule_key}\u0000${sellerUserId}`,
+    );
+    if (!targetRuleId) continue;
+    mapping.stringReplacements.push([sourceRule.id, targetRuleId]);
+    skippedRuleIds.add(sourceRule.id);
+  }
+  mapping.skipRows = new Map([["finance_auto_entry_rules", skippedRuleIds]]);
+}
+
+async function addExistingStoreSingletonMappings(
+  mapping,
+  source,
+  target,
+  sourceScope,
+  targetStore,
+) {
+  for (const tableName of ["store_profiles", "store_public_site_settings"]) {
+    const [sourceRow] = await source.unsafe(
+      `SELECT id FROM "${tableName}" WHERE tenant_id=$1 AND store_id=$2 LIMIT 1`,
+      [sourceScope.tenantId, sourceScope.storeId],
+    );
+    const [targetRow] = await target.unsafe(
+      `SELECT id FROM "${tableName}" WHERE tenant_id=$1 AND store_id=$2 LIMIT 1`,
+      [targetStore.tenant_id, targetStore.id],
+    );
+    if (!sourceRow || !targetRow) continue;
+    mapping.stringReplacements.push([sourceRow.id, targetRow.id]);
+    const skippedRows = mapping.skipRows?.get(tableName) ?? new Set();
+    skippedRows.add(sourceRow.id);
+    mapping.skipRows ??= new Map();
+    mapping.skipRows.set(tableName, skippedRows);
+  }
+}
+
 async function resolveScopedTableMetadata(source, target) {
   const [sourceTables, targetTables, foreignKeys] = await Promise.all([
     listTableMetadata(source),
@@ -365,7 +440,9 @@ async function buildSeedPlans(source, metadata, mapping) {
       );
     plans.push({
       columns: tableMeta.columns,
-      rows: rows.map((row) => remapRow(row, mapping)),
+      rows: rows
+        .filter((row) => !mapping.skipRows?.get(tableName)?.has(row.id))
+        .map((row) => remapRow(row, mapping)),
       tableName,
     });
   }
