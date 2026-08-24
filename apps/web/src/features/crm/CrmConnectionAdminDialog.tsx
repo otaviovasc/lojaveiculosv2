@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PauseCircle, PlayCircle, Wrench } from "lucide-react";
+import { ArrowRightLeft, PauseCircle, PlayCircle, Wrench } from "lucide-react";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { isConnectedConnection } from "./crmConnectionSelection";
@@ -24,6 +24,7 @@ export function CrmConnectionManageDialog({
   onRefresh,
   onRefreshStatus,
   onRepair,
+  onReplace,
   onSetConnectionPaused,
 }: {
   canManage?: boolean;
@@ -34,6 +35,7 @@ export function CrmConnectionManageDialog({
   onRefresh: () => Promise<void> | void;
   onRefreshStatus?: () => Promise<void>;
   onRepair?: () => void;
+  onReplace?: () => void;
   onSetConnectionPaused?: (
     connectionId: CrmConnectionId,
     paused: boolean,
@@ -132,6 +134,23 @@ export function CrmConnectionManageDialog({
               <small>
                 Reabre o pareamento da conexão existente; o histórico do CRM é
                 preservado.
+              </small>
+            </div>
+          ) : null}
+          {onReplace ? (
+            <div className="crm-connection-management-actions">
+              <button
+                className="crm-action crm-action-secondary"
+                disabled={!canManage || disabled || lifecycleBusy}
+                onClick={onReplace}
+                type="button"
+              >
+                <ArrowRightLeft aria-hidden="true" />
+                Trocar instância desta loja
+              </button>
+              <small>
+                A conexão atual continua ativa enquanto as novas credenciais são
+                verificadas.
               </small>
             </div>
           ) : null}

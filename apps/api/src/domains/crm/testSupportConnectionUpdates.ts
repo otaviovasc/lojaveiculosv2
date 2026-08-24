@@ -15,6 +15,12 @@ export function updateTestCrmConnection(
       item.tenantId === input.tenantId,
   );
   if (!connection) return null;
+  if (
+    input.expectedRevision !== undefined &&
+    (connection.revision ?? 0) !== input.expectedRevision
+  ) {
+    return null;
+  }
   Object.assign(connection, {
     ...(input.credentialsRef ? { credentialsRef: input.credentialsRef } : {}),
     ...(input.displayName ? { displayName: input.displayName } : {}),
@@ -29,5 +35,6 @@ export function updateTestCrmConnection(
     ...(input.status ? { status: input.status } : {}),
     ...(input.webhookUrl !== undefined ? { webhookUrl: input.webhookUrl } : {}),
   });
+  connection.revision = (connection.revision ?? 0) + 1;
   return normalizeTestCrmConnection(connection);
 }

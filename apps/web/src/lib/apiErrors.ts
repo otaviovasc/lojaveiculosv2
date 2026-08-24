@@ -93,6 +93,8 @@ export function getApiErrorRecovery(error: unknown): ApiErrorRecovery | null {
 
   if (
     code === "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE" ||
+    code === "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS" ||
+    code === "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE" ||
     code.includes("CONFIGURATION") ||
     code.includes("CONNECTION_SETUP")
   ) {
@@ -158,6 +160,16 @@ function readString(value: unknown) {
   return trimmed || undefined;
 }
 
+function readConnectionProvider(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const provider = (value as { provider?: unknown }).provider;
+  return provider === "zapi" || provider === "meta_cloud" || provider === "olx"
+    ? provider
+    : null;
+}
+
 function codeForStatus(status: number) {
   if (status === 400) return "REQUEST_VALIDATION_ERROR";
   if (status === 401) return "HTTP_AUTHENTICATION_REQUIRED";
@@ -171,6 +183,7 @@ function codeForStatus(status: number) {
 
 function friendlyMessage(input: {
   code?: string;
+  details?: unknown;
   message: string;
   status: number;
 }) {
@@ -198,8 +211,23 @@ function friendlyMessage(input: {
       return "A conexão atual não oferece esta ação. Verifique a configuração do canal.";
     case "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED":
       return "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.";
-    case "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS":
-      return "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.";
+    case "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS": {
+      const provider = readConnectionProvider(input.details);
+      if (provider === "zapi") {
+        return "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.";
+      }
+      if (provider === "meta_cloud") {
+        return "Já existe uma conexão oficial para esta loja. Abra a conexão existente para revisar ou reautorizar o canal.";
+      }
+      if (provider === "olx") {
+        return "Já existe uma conexão OLX Chat para esta loja. Abra a conexão existente para revisar a autorização.";
+      }
+      return "Já existe uma conexão para este canal. Abra a conexão existente para revisar a configuração.";
+    }
+    case "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED":
+      return "A conexão Z-API foi encontrada. Confirme as novas credenciais da mesma instância para continuar.";
+    case "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED":
+      return "A conexão Z-API foi encontrada. Confirme a troca para a nova instância para continuar.";
     case "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE":
       return "As credenciais Z-API ficaram incompletas. Abra a conexão existente, use Reparar conexão e informe novamente o ID e o token da mesma instância.";
     case "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT":

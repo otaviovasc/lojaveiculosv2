@@ -41,6 +41,12 @@ export function readZapiSetupStep({
   if (!isEntitled) return 1;
   if (!connection) return 2;
   if (connection.setup?.status !== "configured") return 3;
+  if (
+    connection.live?.providerStatus === "disconnected" ||
+    connection.live?.providerStatus === "error"
+  ) {
+    return 4;
+  }
   if (connection.readiness) return connection.readiness.ready ? 5 : 4;
   if (
     connection.ready !== true ||

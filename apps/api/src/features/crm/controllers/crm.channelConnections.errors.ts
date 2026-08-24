@@ -7,11 +7,16 @@ import { CrmConnectionSetupProviderError } from "../../../domains/crm/ports/crmC
 import {
   CrmChannelConnectionCredentialStateError,
   CrmChannelConnectionProviderAlreadyExistsError,
+  CrmZapiConnectionConflictError,
 } from "../../../domains/crm/channelConnections/connectionCreation.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { OlxChatSetupRetryTargetError } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
 import { CrmZapiCredentialVerificationError } from "../../../domains/crm/services/CrmChannelConnectionService/verifyUpdatedZapiCredentials.js";
 import { ZapiIdentityReplacementRequiresSupportError } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnectionIdentity.js";
+import {
+  ZapiReplacementNotFoundError,
+  ZapiReplacementRevisionConflictError,
+} from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnection.js";
 
 export function handleCrmMessagingConnectionError(
   context: Context,
@@ -41,6 +46,18 @@ export function handleCrmMessagingConnectionError(
       status: 409,
     });
   }
+  if (error instanceof CrmZapiConnectionConflictError) {
+    return jsonApiError(context, {
+      code:
+        error.details.nextAction === "repair_credentials"
+          ? "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED"
+          : "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED",
+      details: error.details,
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
   if (error instanceof CrmChannelConnectionCredentialStateError) {
     return jsonApiError(context, {
       code: "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE",
@@ -52,6 +69,23 @@ export function handleCrmMessagingConnectionError(
   if (error instanceof ZapiIdentityReplacementRequiresSupportError) {
     return jsonApiError(context, {
       code: "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof ZapiReplacementNotFoundError) {
+    return jsonApiError(context, {
+      code: "CRM_ZAPI_REPLACEMENT_NOT_FOUND",
+      error,
+      message: error.message,
+      status: 404,
+    });
+  }
+  if (error instanceof ZapiReplacementRevisionConflictError) {
+    return jsonApiError(context, {
+      code: "CRM_ZAPI_REPLACEMENT_REVISION_CONFLICT",
+      details: error.details,
       error,
       message: error.message,
       status: 409,

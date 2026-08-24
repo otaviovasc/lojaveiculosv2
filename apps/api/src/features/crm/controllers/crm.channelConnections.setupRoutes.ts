@@ -3,16 +3,15 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { whatsappComposioSenderSchema } from "./crm.controller.schemas.js";
 import {
   whatsappZapiCredentialsSchema,
+  whatsappZapiReplacementSchema,
   whatsappZapiPairingCodeSchema,
 } from "./crm.channelConnections.schemas.js";
 import { parseCrmMessagingJson } from "./crm.messaging.controller.support.js";
-import {
-  CrmMessagingValidationError,
-  handleCrmMessaging,
-} from "./crm.messaging.errors.js";
+import { handleCrmMessaging } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
 import { readWebhookRequestBase } from "./crm.webhookRequestBase.js";
 import { toChannelConnectionOverviewItem } from "./crm.channelConnection.dto.js";
+import { readConnectionId } from "./crm.channelConnections.routeSupport.js";
 
 type ConnectionSetupRouteOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -69,6 +68,9 @@ export function registerCrmChannelConnectionSetupRoutes(
           serviceContext,
           {
             connectionId,
+            ...(input.expectedRevision !== undefined
+              ? { expectedRevision: input.expectedRevision }
+              : {}),
             instanceId: input.instanceId,
             instanceToken: input.instanceToken,
             ...readWebhookRequestBase(context),
@@ -91,6 +93,51 @@ export function registerCrmChannelConnectionSetupRoutes(
           { connectionId },
         );
         return context.json(toChannelConnectionOverviewItem(connection));
+      }),
+  );
+
+  crmFeature.post(
+    "/channel-connections/:connectionId/zapi/replacement",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const input = await parseCrmMessagingJson(
+          context,
+          whatsappZapiReplacementSchema,
+        );
+        const serviceContext = await createContext(context);
+        const result = await services.startZapiConnectionReplacement(
+          serviceContext,
+          { connectionId, ...input, ...readWebhookRequestBase(context) },
+        );
+        return context.json({
+          connection: toChannelConnectionOverviewItem(result.connection),
+          operationId: result.operationId,
+          status: result.status,
+        });
+      }),
+  );
+
+  crmFeature.get(
+    "/channel-connections/:connectionId/zapi/replacement/:operationId",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const operationId = readConnectionId(context.req.param("operationId"));
+        const serviceContext = await createContext(context);
+        const result = await services.getZapiConnectionReplacementStatus(
+          serviceContext,
+          { connectionId, operationId },
+        );
+        return context.json({
+          connection: toChannelConnectionOverviewItem(result.connection),
+          operationId: result.operationId,
+          status: result.status,
+        });
       }),
   );
 
@@ -199,13 +246,4 @@ export function registerCrmChannelConnectionSetupRoutes(
         );
       }),
   );
-}
-
-function readConnectionId(value: string | undefined) {
-  if (!value) {
-    throw new CrmMessagingValidationError(
-      "Route param connectionId is invalid.",
-    );
-  }
-  return value;
 }

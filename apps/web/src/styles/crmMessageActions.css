@@ -134,6 +134,18 @@
   }
 }
 
+@media (max-width: 30rem) {
+  .crm-shell .crm-bubble {
+    padding-right: 0.625rem;
+    padding-left: 0.625rem;
+  }
+
+  .crm-message-actions {
+    max-width: calc(100% - 0.75rem);
+    right: 0.25rem;
+  }
+}
+
 .crm-quoted-message {
   background: color-mix(in srgb, var(--color-text) 6%, transparent);
   border-left: 0.1875rem solid var(--color-accent);

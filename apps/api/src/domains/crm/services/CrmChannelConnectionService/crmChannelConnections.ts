@@ -197,6 +197,9 @@ export async function updateCrmChannelConnection(
         ...(metadata ? { metadata } : {}),
         ...(input.status ? { status: input.status } : {}),
         connectionId: current.id,
+        ...(input.expectedRevision !== undefined
+          ? { expectedRevision: input.expectedRevision }
+          : {}),
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
       });
@@ -210,6 +213,7 @@ export async function updateCrmChannelConnection(
           context,
           { connectionId: updated.id, ...input.webhookSetupTarget },
           priorCredentialState,
+          updated.revision,
           repository,
           scope,
           ports,

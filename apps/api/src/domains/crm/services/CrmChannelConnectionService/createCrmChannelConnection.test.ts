@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AuthorizationError } from "../../../../shared/authorization.js";
 import { createTestCrmConnectionRepository } from "../../testSupportConnections.js";
-import {
-  CrmChannelConnectionCredentialStateError,
-  CrmChannelConnectionProviderAlreadyExistsError,
-} from "../../channelConnections/connectionCreation.js";
+import { CrmZapiConnectionConflictError } from "../../channelConnections/connectionCreation.js";
 import { createCrmChannelConnection } from "./createCrmChannelConnection.js";
 import {
   createContext,
@@ -107,17 +104,16 @@ describe("createCrmChannelConnection", () => {
         },
         ports,
       ),
-    ).rejects.toBeInstanceOf(CrmChannelConnectionProviderAlreadyExistsError);
+    ).rejects.toMatchObject({
+      details: {
+        identityRelation: "different_instance",
+        nextAction: "replace_instance",
+      },
+    });
   });
 
   it("atomically configures an unconfigured Z-API connection exactly once", async () => {
-    const repository = createTestCrmConnectionRepository([
-      {
-        ...unconfiguredZapiConnection(),
-        broker: "direct",
-        channel: "whatsapp",
-      },
-    ]);
+    const repository = createTestCrmConnectionRepository();
     const ports = createPorts(2, repository);
 
     const results = await Promise.allSettled([
@@ -153,9 +149,7 @@ describe("createCrmChannelConnection", () => {
     expect(rejected).toMatchObject({
       status: "rejected",
     });
-    expect(rejectionReason).toBeInstanceOf(
-      CrmChannelConnectionProviderAlreadyExistsError,
-    );
+    expect(rejectionReason).toBeInstanceOf(CrmZapiConnectionConflictError);
     const [stored] = await repository.listConnections({
       storeId: storeId as never,
       tenantId: tenantId as never,
@@ -196,7 +190,12 @@ describe("createCrmChannelConnection", () => {
         },
         createPorts(2, repository),
       ),
-    ).rejects.toBeInstanceOf(CrmChannelConnectionCredentialStateError);
+    ).rejects.toMatchObject({
+      details: {
+        identityRelation: "same_instance",
+        nextAction: "repair_credentials",
+      },
+    });
     expect(partial.credentialsRef).toEqual({
       mode: "stored",
       stored: { instanceId: "sealed:existing-instance" },

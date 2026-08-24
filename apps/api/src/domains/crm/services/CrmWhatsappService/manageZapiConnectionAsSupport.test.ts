@@ -31,7 +31,7 @@ describe("updateZapiCredentialsAsSupport", () => {
     );
   });
 
-  it("archives a different instance and creates a new UUID and webhook secret", async () => {
+  it("replaces a different instance in place and rotates the webhook secret", async () => {
     const { audit, ports, repository } = setup();
     const result = await updateZapiCredentialsAsSupport(
       supportContext(audit),
@@ -39,17 +39,53 @@ describe("updateZapiCredentialsAsSupport", () => {
       ports,
     );
     const connections = await repository.listConnections({ storeId, tenantId });
-    const archived = connections.find(({ id }) => id === "connection-one");
-    const replacement = connections.find(({ id }) => id === result.id);
+    const replacement = connections.find(({ id }) => id === "connection-one");
 
-    expect(result.id).not.toBe("connection-one");
-    expect(archived?.status).toBe("archived");
+    expect(result.id).toBe("connection-one");
+    expect(connections).toHaveLength(1);
     expect(replacement?.externalInstanceId).toBe("instance-two");
     expect(stored(replacement, "webhookSecret")).not.toBe("sealed:webhook-one");
     expect(stored(replacement, "instanceToken")).toBe("sealed:token-two");
     expect(audit.events.map((event) => event.action)).toContain(
-      "crm.provider.zapi.connection.identity_replace",
+      "crm.provider.zapi.connection.replaced",
     );
+  });
+
+  it("keeps the current instance operational when candidate callbacks fail verification", async () => {
+    const { audit, configureWebhooks, ports, repository } = setup();
+    configureWebhooks.mockResolvedValueOnce({
+      results: [
+        {
+          error: null,
+          ok: false,
+          status: 503,
+          type: "received",
+          url: "https://api.example.test/api/v1/crm/whatsapp/webhooks/zapi/connection-one/received",
+          verified: false,
+        },
+      ],
+    });
+
+    await expect(
+      updateZapiCredentialsAsSupport(
+        supportContext(audit),
+        updateInput("instance-two", "token-two"),
+        ports,
+      ),
+    ).rejects.toMatchObject({ code: "provider_rejected" });
+
+    await expect(
+      repository.findConnectionById("connection-one"),
+    ).resolves.toMatchObject({
+      externalInstanceId: "instance-one",
+      status: "sandbox",
+    });
+    expect(
+      stored(
+        await repository.findConnectionById("connection-one"),
+        "webhookSecret",
+      ),
+    ).toBe("sealed:webhook-one");
   });
 });
 
@@ -62,6 +98,21 @@ function setup() {
   ]);
   let sequence = 0;
   const repository = createTestCrmConnectionRepository([connection()]);
+  const configureWebhooks = vi.fn(
+    async (
+      _connection: CrmConnection,
+      input: { webhooks: readonly { type: string; url: string }[] },
+    ) => ({
+      results: input.webhooks.map((webhook) => ({
+        error: null,
+        ok: true,
+        status: 200,
+        type: webhook.type,
+        url: webhook.url,
+        verified: true,
+      })),
+    }),
+  );
   const ports = {
     crmConnectionCredentialVault: {
       open: async ({ sealed }: { sealed: string }) =>
@@ -77,23 +128,7 @@ function setup() {
     crmConnectionRepository: repository,
     crmRepository: {} as never,
     crmMessagingGateway: {
-      configureWebhooks: vi.fn(
-        async (
-          _connection: CrmConnection,
-          input: {
-            webhooks: readonly { type: string; url: string }[];
-          },
-        ) => ({
-          results: input.webhooks.map((webhook) => ({
-            error: null,
-            ok: true,
-            status: 200,
-            type: webhook.type,
-            url: webhook.url,
-            verified: true,
-          })),
-        }),
-      ),
+      configureWebhooks,
       getConnectionStatus: vi.fn(async () => ({
         checkedAt: new Date("2026-08-12T12:00:00.000Z"),
         connected: false,
@@ -115,7 +150,7 @@ function setup() {
       })),
     },
   };
-  return { audit, ports, repository };
+  return { audit, configureWebhooks, ports, repository };
 }
 
 function connection(): CrmConnection {
@@ -168,7 +203,7 @@ function updateInput(instanceId: string, instanceToken: string) {
   };
 }
 
-function stored(connection: CrmConnection | undefined, key: string) {
+function stored(connection: CrmConnection | null | undefined, key: string) {
   const value = connection?.credentialsRef.stored;
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)[key]

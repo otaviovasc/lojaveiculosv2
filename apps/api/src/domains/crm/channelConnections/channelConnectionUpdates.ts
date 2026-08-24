@@ -4,6 +4,7 @@ import { CrmMessageActionError } from "../messaging/crmMessagingErrors.js";
 export type UpdateCrmChannelConnectionInput = {
   catalogPhone?: string | null;
   connectionId: string;
+  expectedRevision?: number;
   displayName?: string;
   externalInstanceId?: string;
   instanceCredentials?: {

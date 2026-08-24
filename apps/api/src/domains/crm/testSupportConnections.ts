@@ -24,6 +24,15 @@ export function createTestCrmConnectionRepository(
       return [];
     },
     async createConnection(input) {
+      const duplicate = connections.some(
+        (connection) =>
+          connection.storeId === input.storeId &&
+          connection.tenantId === input.tenantId &&
+          connection.channel === input.channel &&
+          connection.provider === input.provider &&
+          connection.status !== "archived",
+      );
+      if (duplicate) throw new Error("CRM_CONNECTION_PROVIDER_ALREADY_EXISTS");
       const connection: CrmConnection = {
         broker: input.broker,
         channel: input.channel,
@@ -35,6 +44,7 @@ export function createTestCrmConnectionRepository(
         metadata: input.metadata ?? {},
         phone: input.phone ?? null,
         provider: input.provider,
+        revision: 0,
         status: input.status ?? "sandbox",
         storeId: input.storeId,
         tenantId: input.tenantId,

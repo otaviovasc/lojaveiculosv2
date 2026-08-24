@@ -139,6 +139,7 @@ export function toCrmConnection(
     metadata,
     phone: readString(metadata.phone),
     provider: row.provider,
+    revision: row.revision,
     status: row.state,
     storeId: row.storeId as StoreId,
     tenantId: row.tenantId as TenantId,
@@ -171,6 +172,9 @@ export async function updateCanonicalCrmConnection(
         eq(crmChannelConnections.id, input.connectionId),
         eq(crmChannelConnections.storeId, input.storeId),
         eq(crmChannelConnections.tenantId, input.tenantId),
+        ...(input.expectedRevision === undefined
+          ? []
+          : [eq(crmChannelConnections.revision, input.expectedRevision)]),
       ),
     )
     .limit(1);
@@ -206,6 +210,7 @@ export async function updateCanonicalCrmConnection(
       externalInstanceId: next.externalInstanceId,
       metadata: next.metadata,
       state: next.state,
+      revision: sql`${crmChannelConnections.revision} + 1`,
       updatedAt: new Date(),
       webhookUrl: next.webhookUrl,
     })
@@ -214,6 +219,9 @@ export async function updateCanonicalCrmConnection(
         eq(crmChannelConnections.id, input.connectionId),
         eq(crmChannelConnections.storeId, input.storeId),
         eq(crmChannelConnections.tenantId, input.tenantId),
+        ...(input.expectedRevision === undefined
+          ? []
+          : [eq(crmChannelConnections.revision, input.expectedRevision)]),
       ),
     )
     .returning();

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, QrCode } from "lucide-react";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { AppApiError, formatApiErrorDisplay } from "../../lib/apiErrors";
 import { ConnectionSectionCard } from "./CrmConnectionAdminParts";
 import {
   CrmWhatsappZapiPairingStage,
@@ -32,6 +32,7 @@ import {
   type PairingBlock,
   readZapiConnectionStateKey,
 } from "./CrmWhatsappZapiSetupTypes";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 
 export function CrmWhatsappZapiSetup({
   allowance,
@@ -40,6 +41,7 @@ export function CrmWhatsappZapiSetup({
   canRepairCredentials = false,
   connection,
   handlers,
+  initialCredentialMode,
   onBack,
   onConnection,
   zapiAddonContract,
@@ -63,6 +65,12 @@ export function CrmWhatsappZapiSetup({
   );
   const [showCredentials, setShowCredentials] = useState(false);
   const [showRepairCredentials, setShowRepairCredentials] = useState(false);
+  const [showReplacementCredentials, setShowReplacementCredentials] =
+    useState(false);
+  const credentialModeAfterConnectionRef = useRef<
+    "repair" | "replacement" | null
+  >(null);
+  const errorAfterConnectionChangeRef = useRef<string | null>(null);
   const autoRefreshInFlightRef = useRef(false);
   const actionGenerationRef = useRef(0);
   const currentConnectionIdRef = useRef<string | null>(connection?.id ?? null);
@@ -111,8 +119,18 @@ export function CrmWhatsappZapiSetup({
     setPairingBlock(null);
     setPairingMethod("qr");
     setPhone("");
-    setShowRepairCredentials(false);
-  }, [connection?.id]);
+    const pendingMode = credentialModeAfterConnectionRef.current;
+    const pendingError = errorAfterConnectionChangeRef.current;
+    credentialModeAfterConnectionRef.current = null;
+    errorAfterConnectionChangeRef.current = null;
+    setShowRepairCredentials(
+      pendingMode === "repair" || initialCredentialMode === "repair",
+    );
+    setShowReplacementCredentials(
+      pendingMode === "replacement" || initialCredentialMode === "replacement",
+    );
+    setError(pendingError);
+  }, [connection?.id, initialCredentialMode]);
 
   useEffect(() => {
     if (!qr?.expiresAt && !pairingCode?.expiresAt) return undefined;
@@ -184,15 +202,22 @@ export function CrmWhatsappZapiSetup({
   };
 
   const saveCredentials = async () => {
-    const repairingConnection = showRepairCredentials ? connection : null;
+    const repairingConnection =
+      showRepairCredentials || showReplacementCredentials ? connection : null;
     if (repairingConnection ? !canRepairCredentials : !canSetup) return;
     if (!credentials.instanceId.trim() || !credentials.instanceToken.trim()) {
       setError("Informe o ID e o token da instância Z-API.");
       return;
     }
-    if (repairingConnection && !handlers.onRepairZapiCredentials) {
+    if (showRepairCredentials && !handlers.onRepairZapiCredentials) {
       setError(
         "A atualização segura das credenciais não está disponível neste momento.",
+      );
+      return;
+    }
+    if (showReplacementCredentials && !handlers.onReplaceZapiConnection) {
+      setError(
+        "A troca segura da instância não está disponível neste momento.",
       );
       return;
     }
@@ -200,12 +225,24 @@ export function CrmWhatsappZapiSetup({
     setBusy("credentials");
     setError(null);
     try {
-      const updated = repairingConnection
-        ? await handlers.onRepairZapiCredentials!(repairingConnection.id, {
-            instanceId: credentials.instanceId.trim(),
-            instanceToken: credentials.instanceToken.trim(),
-          })
-        : await handlers.onCreate(buildZapiConnectionInput(credentials));
+      const updated = showReplacementCredentials
+        ? (
+            await handlers.onReplaceZapiConnection!(repairingConnection!.id, {
+              expectedRevision: repairingConnection!.revision ?? 0,
+              idempotencyKey: crypto.randomUUID(),
+              instanceId: credentials.instanceId.trim(),
+              instanceToken: credentials.instanceToken.trim(),
+            })
+          ).connection
+        : repairingConnection
+          ? await handlers.onRepairZapiCredentials!(repairingConnection.id, {
+              ...(repairingConnection.revision !== undefined
+                ? { expectedRevision: repairingConnection.revision }
+                : {}),
+              instanceId: credentials.instanceId.trim(),
+              instanceToken: credentials.instanceToken.trim(),
+            })
+          : await handlers.onCreate(buildZapiConnectionInput(credentials));
       if (!updated) {
         throw new Error(
           repairingConnection
@@ -216,14 +253,127 @@ export function CrmWhatsappZapiSetup({
       if (!isCurrentAction(actionGeneration)) return;
       setCredentials(emptyCredentials);
       setShowRepairCredentials(false);
+      setShowReplacementCredentials(false);
       onConnection(updated);
     } catch (caught) {
       if (isCurrentAction(actionGeneration)) {
+        if (
+          caught instanceof AppApiError &&
+          isExistingZapiConflictCode(caught.code, caught.details)
+        ) {
+          const details = readConflictDetails(caught.details);
+          let refreshed: readonly CrmProviderConnection[] | undefined;
+          try {
+            if (handlers.onRefreshConnectionsWithPayload) {
+              refreshed =
+                (await handlers.onRefreshConnectionsWithPayload()) ?? undefined;
+            } else {
+              await handlers.onRefreshConnections();
+            }
+          } catch {
+            setError(
+              "A conexão Z-API já existe, mas não foi possível atualizar a lista de conexões. Tente novamente.",
+            );
+            return;
+          }
+          const existing = refreshed?.find(
+            (candidate) =>
+              candidate.provider === "zapi" &&
+              (details?.connectionId === undefined ||
+                String(candidate.id) === details.connectionId) &&
+              (candidate.state ?? candidate.status) !== "archived",
+          );
+          if (existing) {
+            if (canRepairCredentials && handlers.onRepairZapiCredentials) {
+              credentialModeAfterConnectionRef.current =
+                details?.nextAction === "replace_instance"
+                  ? "replacement"
+                  : "repair";
+            }
+            onConnection(existing);
+            setCredentials(emptyCredentials);
+            if (canRepairCredentials && handlers.onRepairZapiCredentials) {
+              setShowRepairCredentials(
+                details?.nextAction !== "replace_instance",
+              );
+              setShowReplacementCredentials(
+                details?.nextAction === "replace_instance",
+              );
+              setError(null);
+            } else {
+              const message =
+                "A conexão existente foi localizada. Um administrador da loja precisa concluir o reparo das credenciais.";
+              errorAfterConnectionChangeRef.current = message;
+              setError(message);
+            }
+          } else {
+            setError(
+              "A conexão Z-API já existe, mas não foi possível carregá-la agora. Atualize esta tela e abra a conexão existente para reparar as credenciais.",
+            );
+          }
+          return;
+        }
+        if (
+          caught instanceof AppApiError &&
+          (caught.code === "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED" ||
+            caught.code === "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED")
+        ) {
+          const details = readConflictDetails(caught.details);
+          let refreshed: readonly CrmProviderConnection[] | undefined;
+          try {
+            if (handlers.onRefreshConnectionsWithPayload) {
+              refreshed =
+                (await handlers.onRefreshConnectionsWithPayload()) ?? undefined;
+            } else {
+              await handlers.onRefreshConnections();
+            }
+          } catch {
+            setError(
+              "A conexão Z-API foi encontrada, mas não foi possível atualizar a lista de conexões. Tente novamente.",
+            );
+            return;
+          }
+          const exact = refreshed?.find(
+            (candidate) => String(candidate.id) === details?.connectionId,
+          );
+          if (exact) {
+            if (canRepairCredentials) {
+              credentialModeAfterConnectionRef.current =
+                caught.code === "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED"
+                  ? "replacement"
+                  : "repair";
+            }
+            onConnection(exact);
+            if (
+              canRepairCredentials &&
+              caught.code === "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED"
+            ) {
+              setShowRepairCredentials(true);
+            } else if (
+              canRepairCredentials &&
+              caught.code === "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED"
+            ) {
+              setShowReplacementCredentials(true);
+            } else {
+              const message =
+                "A conexão foi encontrada. Um administrador da loja precisa concluir esta operação.";
+              errorAfterConnectionChangeRef.current = message;
+              setError(message);
+            }
+          } else {
+            setError(
+              "A conexão Z-API foi encontrada, mas ainda não apareceu na lista. Atualize as conexões e tente novamente.",
+            );
+          }
+          return;
+        }
         setError(
           formatApiErrorDisplay(
             caught,
             repairingConnection
-              ? "Não foi possível atualizar as credenciais da conexão."
+              ? showReplacementCredentials
+                ? "Não foi possível trocar a instância Z-API. A conexão atual foi preservada."
+                : "Não foi possível atualizar as credenciais da conexão."
               : "Não foi possível salvar a conexão Z-API.",
           ),
         );
@@ -448,17 +598,20 @@ export function CrmWhatsappZapiSetup({
             showCredentials={showCredentials}
           />
         ) : null}
-        {(step === 3 || step === 4) && connection && showRepairCredentials ? (
+        {(step === 2 || step === 3 || step === 4) &&
+        connection &&
+        (showRepairCredentials || showReplacementCredentials) ? (
           <CredentialsStage
             busy={busy}
             canSubmit={canRepairCredentials}
             credentials={credentials}
             error={error}
-            mode="repair"
+            mode={showReplacementCredentials ? "replacement" : "repair"}
             onCancel={() => {
               setCredentials(emptyCredentials);
               setError(null);
               setShowRepairCredentials(false);
+              setShowReplacementCredentials(false);
             }}
             onChange={setCredentials}
             onSave={() => void saveCredentials()}
@@ -466,7 +619,10 @@ export function CrmWhatsappZapiSetup({
             showCredentials={showCredentials}
           />
         ) : null}
-        {step === 3 && connection && !showRepairCredentials ? (
+        {step === 3 &&
+        connection &&
+        !showRepairCredentials &&
+        !showReplacementCredentials ? (
           <>
             <ZapiWebhookSetupStatus
               canConfigure={canSetup}
@@ -485,7 +641,10 @@ export function CrmWhatsappZapiSetup({
             />
           </>
         ) : null}
-        {step === 4 && connection && !showRepairCredentials ? (
+        {step === 4 &&
+        connection &&
+        !showRepairCredentials &&
+        !showReplacementCredentials ? (
           <>
             <CrmWhatsappZapiPairingStage
               busy={busy}
@@ -517,6 +676,23 @@ export function CrmWhatsappZapiSetup({
             />
           </>
         ) : null}
+        {(step === 3 || step === 4) &&
+        connection &&
+        !showRepairCredentials &&
+        !showReplacementCredentials &&
+        handlers.onReplaceZapiConnection ? (
+          <button
+            className="crm-action crm-action-secondary"
+            disabled={!canRepairCredentials || busy !== null}
+            onClick={() => {
+              setError(null);
+              setShowReplacementCredentials(true);
+            }}
+            type="button"
+          >
+            Trocar instância desta loja
+          </button>
+        ) : null}
         {step === 5 && connection ? (
           <ZapiReadyState
             canDisconnect={canSetup && Boolean(handlers.onDisconnectZapi)}
@@ -533,7 +709,10 @@ export function CrmWhatsappZapiSetup({
               : {})}
           />
         ) : null}
-        {step !== 2 && !showRepairCredentials && error ? (
+        {step !== 2 &&
+        !showRepairCredentials &&
+        !showReplacementCredentials &&
+        error ? (
           <p className="crm-connection-error" role="alert">
             {error}
           </p>
@@ -544,5 +723,37 @@ export function CrmWhatsappZapiSetup({
         Ver outros canais
       </button>
     </ConnectionSectionCard>
+  );
+}
+
+function readConflictDetails(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const details = value as Record<string, unknown>;
+  const provider =
+    details.provider === "zapi" ||
+    details.provider === "meta_cloud" ||
+    details.provider === "olx"
+      ? details.provider
+      : undefined;
+  const connectionId =
+    typeof details.connectionId === "string" ? details.connectionId : undefined;
+  const nextAction =
+    details.nextAction === "repair_credentials" ||
+    details.nextAction === "replace_instance"
+      ? details.nextAction
+      : undefined;
+  return connectionId || nextAction || provider
+    ? { connectionId, nextAction, provider }
+    : null;
+}
+
+function isExistingZapiConflictCode(
+  code: string | undefined,
+  details: unknown,
+) {
+  if (code === "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE") return true;
+  return (
+    code === "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS" &&
+    readConflictDetails(details)?.provider === "zapi"
   );
 }

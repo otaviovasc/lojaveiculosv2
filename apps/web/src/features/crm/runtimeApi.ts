@@ -120,6 +120,14 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).repairZapiConnectionCredentials(connectionId, input),
+    replaceZapiConnection: async (connectionId, input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).replaceZapiConnection(connectionId, input),
+    getZapiReplacementStatus: async (connectionId, operationId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).getZapiReplacementStatus(connectionId, operationId),
     configureZapiWebhooks: async (connectionId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

@@ -202,6 +202,11 @@ export const crmChannelConnections = pgTable(
         table.externalConnectionId,
       )
       .where(sql`${table.externalConnectionId} IS NOT NULL`),
+    uniqueIndex("crm_channel_connections_zapi_store_current_unique")
+      .on(table.tenantId, table.storeId, table.channel, table.provider)
+      .where(
+        sql`${table.broker} = 'direct' AND ${table.channel} = 'whatsapp' AND ${table.provider} = 'zapi' AND ${table.state} <> 'archived'`,
+      ),
     index("crm_channel_connections_store_state_idx").on(
       table.storeId,
       table.state,

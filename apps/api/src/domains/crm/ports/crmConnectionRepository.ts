@@ -24,6 +24,7 @@ export type CrmConnection = {
   metadata: Record<string, unknown>;
   phone: string | null;
   provider: CrmConnectionProvider;
+  revision?: number;
   status: CrmConnectionConfiguredStatus;
   storeId: StoreId;
   tenantId: TenantId;
@@ -72,6 +73,7 @@ export type UpdateCrmConnectionInput = {
   status?: CrmConnectionConfiguredStatus;
   storeId: StoreId;
   tenantId: TenantId;
+  expectedRevision?: number;
   webhookUrl?: string | null;
 };
 

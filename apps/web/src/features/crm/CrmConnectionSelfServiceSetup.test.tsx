@@ -206,6 +206,46 @@ describe("CrmConnectionSelfServiceSetup", () => {
     expect(handlers.onCreate).not.toHaveBeenCalled();
   });
 
+  it("opens direct replacement from a ready Z-API connection", async () => {
+    const handlers = createHandlers();
+    handlers.onReplaceZapiConnection = vi.fn(async () => ({
+      connection: createZapiConnection("active"),
+      operationId: "replacement-1",
+      status: "verifying" as const,
+    }));
+    const connection = createZapiConnection("active");
+
+    render(
+      <CrmConnectionSelfServiceSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        availableSetups={[]}
+        canPair
+        canRepairCredentials
+        canSetup
+        connections={[connection]}
+        handlers={handlers}
+        startAtDirectory
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Z-API principal/i }));
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Trocar instância desta loja",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Trocar instância desta loja",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Confirmar troca da instância" }),
+    ).toBeVisible();
+  });
+
   it("keeps the existing connection selected when another instance id is rejected", async () => {
     const handlers = createHandlers();
     const disconnected = createZapiSetupConnection("configured");

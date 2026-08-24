@@ -218,6 +218,40 @@ describe("Brazilian contact masks", () => {
     expect(selection).toEqual({ start: 9, end: 9 });
   });
 
+  it("skips punctuation while recalculating a masked caret", () => {
+    const selection = { start: -1, end: -1 };
+    const input = {
+      value: "123.4",
+      selectionStart: 5,
+      selectionEnd: 5,
+      setSelectionRange(start: number, end: number) {
+        selection.start = start;
+        selection.end = end;
+      },
+    };
+
+    applyInputMask(input, formatBrazilianCpf);
+
+    expect(selection).toEqual({ start: 5, end: 5 });
+  });
+
+  it("moves a caret past punctuation when it ends before a separator", () => {
+    const selection = { start: -1, end: -1 };
+    const input = {
+      value: "123.4",
+      selectionStart: 3,
+      selectionEnd: 3,
+      setSelectionRange(start: number, end: number) {
+        selection.start = start;
+        selection.end = end;
+      },
+    };
+
+    applyInputMask(input, formatBrazilianCpf);
+
+    expect(selection).toEqual({ start: 4, end: 4 });
+  });
+
   it.each([
     ["01310930", "01310-930"],
     ["01310-930 extra", "01310-930"],

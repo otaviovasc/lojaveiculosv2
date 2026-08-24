@@ -34,6 +34,16 @@ export const whatsappZapiPairingCodeSchema = z
 
 export const whatsappZapiCredentialsSchema = z
   .object({
+    expectedRevision: z.number().int().nonnegative().optional(),
+    instanceId: z.string().trim().min(1).max(191),
+    instanceToken: z.string().trim().min(1).max(500),
+  })
+  .strict();
+
+export const whatsappZapiReplacementSchema = z
+  .object({
+    expectedRevision: z.number().int().nonnegative(),
+    idempotencyKey: z.string().trim().min(8).max(200),
     instanceId: z.string().trim().min(1).max(191),
     instanceToken: z.string().trim().min(1).max(500),
   })

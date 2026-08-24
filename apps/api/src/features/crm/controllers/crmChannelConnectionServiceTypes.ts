@@ -30,6 +30,10 @@ import type {
 } from "../../../domains/crm/services/CrmWhatsappService/manageZapiConnectionAsSupport.js";
 import type { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
 import type { repairZapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairZapiConnectionCredentials.js";
+import type {
+  getZapiConnectionReplacementStatus,
+  startZapiConnectionReplacement,
+} from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnection.js";
 
 type ContextService<Input, Output> = (
   context: ServiceContext,
@@ -85,6 +89,14 @@ export type CrmChannelConnectionServices = {
   repairZapiConnectionCredentials: ContextService<
     Parameters<typeof repairZapiConnectionCredentials>[1],
     Awaited<ReturnType<typeof repairZapiConnectionCredentials>>
+  >;
+  startZapiConnectionReplacement: ContextService<
+    Parameters<typeof startZapiConnectionReplacement>[1],
+    Awaited<ReturnType<typeof startZapiConnectionReplacement>>
+  >;
+  getZapiConnectionReplacementStatus: ContextService<
+    Parameters<typeof getZapiConnectionReplacementStatus>[1],
+    Awaited<ReturnType<typeof getZapiConnectionReplacementStatus>>
   >;
   retryOlxChatSetup: ContextService<
     Parameters<typeof retryOlxChatSetup>[1],

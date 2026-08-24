@@ -117,6 +117,8 @@ export type CrmProviderConnection = {
   metadata?: CrmConnectionMetadata;
   phone?: string | null;
   provider: CrmProvider;
+  revision?: number | undefined;
+  routingStatus?: "ready" | "preserved" | "deferred" | undefined;
   readiness?: {
     ready: boolean;
     reason: string | null;
@@ -223,8 +225,20 @@ export type CrmCreateConnectionInput =
     };
 
 export type CrmZapiCredentialsInput = {
+  expectedRevision?: number;
   instanceId: string;
   instanceToken: string;
+};
+
+export type CrmZapiReplacementInput = CrmZapiCredentialsInput & {
+  expectedRevision: number;
+  idempotencyKey: string;
+};
+
+export type CrmZapiReplacementResult = {
+  connection: CrmProviderConnection;
+  operationId: string;
+  status: "verifying" | "verified" | "failed" | "completed";
 };
 
 export type CrmWhatsappZapiPairingQr = {

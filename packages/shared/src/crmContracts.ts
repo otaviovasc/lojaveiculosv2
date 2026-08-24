@@ -45,6 +45,14 @@ export const crmConnectionReadinessReasonCodes = [
   "ready",
 ] as const;
 
+export const crmConnectionRoutingStatuses = [
+  "ready",
+  "preserved",
+  "deferred",
+] as const;
+export type CrmConnectionRoutingStatus =
+  (typeof crmConnectionRoutingStatuses)[number];
+
 export const crmConnectionReadinessSchema = z
   .object({
     ready: z.boolean(),
@@ -61,11 +69,13 @@ export const crmChannelConnectionSchema = z
     id: z.string().trim().min(1),
     channel: z.enum(crmChannels),
     provider: z.enum(crmProviders),
+    revision: z.number().int().nonnegative().optional(),
     displayName: z.string().trim().min(1),
     state: z.enum(crmConnectionStates),
     readiness: crmConnectionReadinessSchema,
     capabilities: z.array(z.enum(crmConnectionCapabilities)).readonly(),
     isDefault: z.boolean(),
+    routingStatus: z.enum(crmConnectionRoutingStatuses).optional(),
   })
   .strict();
 export type CrmChannelConnectionDto = z.infer<

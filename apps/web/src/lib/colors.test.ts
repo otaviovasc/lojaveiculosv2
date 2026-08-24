@@ -60,6 +60,22 @@ describe("color contrast helpers", () => {
     expect(contrastRatio(readable, hex("f8f5f0"))).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("preserves invalid or already-readable colors and chooses a light target on dark surfaces", () => {
+    expect(getReadableColorOnBackground("not-a-color", hex("ffffff"))).toBe(
+      "not-a-color",
+    );
+    expect(getReadableColorOnBackground(hex("000000"), "not-a-color")).toBe(
+      hex("000000"),
+    );
+    expect(getReadableColorOnBackground(hex("000000"), hex("ffffff"))).toBe(
+      hex("000000"),
+    );
+
+    const readable = getReadableColorOnBackground(hex("111111"), hex("151515"));
+    expect(readable).not.toBe(hex("111111"));
+    expect(contrastRatio(readable, hex("151515"))).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("uses light text on dark solid stage colors", () => {
     expect(getTextColorForBackground(hex("182ab8"))).toBe(hex("ffffff"));
   });

@@ -155,10 +155,7 @@ export function FeatureAnchoredPopover({
       const availableHeight = openAbove
         ? aboveSpace - offset
         : belowSpace - offset;
-      const nextMaxHeight = Math.max(
-        minimumPanelHeight,
-        Math.min(maxHeight, availableHeight),
-      );
+      const nextMaxHeight = Math.max(1, Math.min(maxHeight, availableHeight));
       const renderedHeight = Math.min(measuredHeight, nextMaxHeight);
       const top = openAbove
         ? Math.max(edgePadding, anchorRect.top - offset - renderedHeight)

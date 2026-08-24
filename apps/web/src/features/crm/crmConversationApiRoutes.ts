@@ -102,6 +102,20 @@ export const crmConversationRoutes = {
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/credentials`,
       baseUrl,
     ),
+  zapiReplacement: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/replacement`,
+      baseUrl,
+    ),
+  zapiReplacementStatus: (
+    connectionId: CrmConnectionId,
+    operationId: string,
+    baseUrl?: string,
+  ) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/replacement/${encodeURIComponent(operationId)}`,
+      baseUrl,
+    ),
   zapiStatusRefresh: (connectionId: CrmConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/status/refresh`,

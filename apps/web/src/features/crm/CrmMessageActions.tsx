@@ -1,5 +1,10 @@
 import { Reply, SmilePlus, Trash2, X } from "lucide-react";
-import { useRef, useState, type KeyboardEvent } from "react";
+import {
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MutableRefObject,
+} from "react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import type { CrmMessage } from "./crmConversationTypes";
@@ -27,6 +32,7 @@ export function MessageActions({
 }) {
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const reactionButtonRef = useRef<HTMLButtonElement>(null);
+  const actionInFlightRef = useRef(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reactionOpen, setReactionOpen] = useState(false);
   const hasActions = Boolean(onReply || onReact || onDelete);
@@ -81,14 +87,19 @@ export function MessageActions({
               disabled={Boolean(actionsDisabled)}
               message={message}
               onPick={async (value) => {
-                const accepted = await onReact(message, value);
+                const accepted = await runMessageAction(actionInFlightRef, () =>
+                  onReact(message, value),
+                );
                 if (accepted) setReactionOpen(false);
                 return accepted;
               }}
               onRemove={
                 onRemoveReaction
                   ? async (targetMessage) => {
-                      const accepted = await onRemoveReaction(targetMessage);
+                      const accepted = await runMessageAction(
+                        actionInFlightRef,
+                        () => onRemoveReaction(targetMessage),
+                      );
                       if (accepted) setReactionOpen(false);
                       return accepted;
                     }
@@ -132,7 +143,9 @@ export function MessageActions({
               disabled={Boolean(actionsDisabled)}
               onCancel={() => setDeleteOpen(false)}
               onConfirm={async () => {
-                const accepted = await onDelete(message);
+                const accepted = await runMessageAction(actionInFlightRef, () =>
+                  onDelete(message),
+                );
                 if (accepted) setDeleteOpen(false);
                 return accepted;
               }}
@@ -142,6 +155,19 @@ export function MessageActions({
       ) : null}
     </div>
   );
+}
+
+async function runMessageAction(
+  inFlightRef: MutableRefObject<boolean>,
+  action: () => Promise<boolean>,
+) {
+  if (inFlightRef.current) return false;
+  inFlightRef.current = true;
+  try {
+    return await action();
+  } finally {
+    inFlightRef.current = false;
+  }
 }
 
 const COMMON_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];

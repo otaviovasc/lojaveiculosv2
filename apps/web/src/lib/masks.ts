@@ -155,9 +155,9 @@ function findCaretAfterDigits(value: string, requestedDigits: number): number {
   let index = 0;
 
   while (index < value.length && seenDigits < targetDigits) {
-    if (/\d/.test(value[index] ?? "")) seenDigits += 1;
+    if (/\d/.test(value.charAt(index))) seenDigits += 1;
     index += 1;
   }
-  while (index < value.length && !/\d/.test(value[index] ?? "")) index += 1;
+  while (index < value.length && !/\d/.test(value.charAt(index))) index += 1;
   return index;
 }
