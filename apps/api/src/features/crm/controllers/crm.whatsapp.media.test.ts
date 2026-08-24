@@ -104,15 +104,37 @@ describe("CRM WhatsApp media webhooks", () => {
         metadata: { media?: Record<string, unknown> };
       };
     };
-    expect(body.message.mediaUrl).toBe(
-      "https://cdn.local/crm-whatsapp/car.jpg",
-    );
+    expect(body.message.mediaUrl).toBeNull();
     expect(body.message.metadata.media).toMatchObject({
-      contentType: "image/png",
-      mirrorStatus: "stored",
-      providerUrl: "https://zapi.test/media/car.jpg",
-      sizeBytes: 3,
-      storageKey: "crm-whatsapp/car.jpg",
+      mirrorStatus: "pending",
+    });
+
+    await vi.waitFor(async () => {
+      const [cycle] = await whatsappRepository.listConversationCycles({
+        limit: 10,
+        offset: 0,
+        storeId,
+        tenantId,
+      });
+      const stored = cycle
+        ? (
+            await whatsappRepository.listMessages({
+              cycleId: cycle.id,
+              limit: 10,
+              offset: 0,
+              storeId,
+              tenantId,
+            })
+          )[0]
+        : null;
+      expect(stored?.mediaUrl).toBe("https://cdn.local/crm-whatsapp/car.jpg");
+      expect(stored?.metadata.media).toMatchObject({
+        contentType: "image/png",
+        mirrorStatus: "stored",
+        providerUrl: "https://zapi.test/media/car.jpg",
+        sizeBytes: 3,
+        storageKey: "crm-whatsapp/car.jpg",
+      });
     });
 
     const putInput = putObject.mock.calls[0]?.[0];

@@ -94,6 +94,7 @@ export function subscribeCrmEvents(input: {
         input.onEvent(parseRealtimeEvent(JSON.parse(event.data)));
       } catch {
         input.onError?.(new Error("Invalid CRM WhatsApp realtime event."));
+        scheduleReconnect();
       }
     };
     crmSseEventNames.forEach((eventName) => {

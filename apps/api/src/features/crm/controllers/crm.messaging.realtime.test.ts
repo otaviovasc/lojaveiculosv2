@@ -1,6 +1,8 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { CrmMessage } from "../../../domains/crm/ports/crmConversationRepositoryModels.js";
+import { createTestCrmConversationCycle } from "../../../domains/crm/testSupportWhatsapp.js";
 import { createCrmRealtimeBroker } from "../../../infrastructure/crm/crmRealtimeBroker.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
@@ -139,6 +141,63 @@ function createConnectionStatusEvent(
     storeId,
     tenantId,
     type: "connection_status" as const,
+  };
+}
+
+function createMessageEvent() {
+  const now = new Date("2026-08-24T12:00:00.000Z");
+  const message: CrmMessage = {
+    channel: "WHATSAPP",
+    channelMessageId: "domain-only-message-id",
+    connectionId,
+    content: "Ola",
+    createdAt: now,
+    cycleId: "cycle-1",
+    deletedAt: null,
+    direction: "INBOUND",
+    externalId: "external-1",
+    id: "message-1",
+    mediaType: null,
+    mediaUrl: null,
+    metadata: {},
+    providerTimestamp: now,
+    senderOrigin: "customer",
+    senderType: "CUSTOMER",
+    status: "DELIVERED",
+    storeId,
+    tenantId,
+    type: "TEXT",
+    updatedAt: now,
+  };
+  return {
+    connectionId,
+    conversationCycle: createTestCrmConversationCycle({
+      channel: "WHATSAPP",
+      connectionId,
+      id: "cycle-1",
+      storeId,
+      tenantId,
+    }),
+    message,
+    storeId,
+    tenantId,
+    type: "message" as const,
+  };
+}
+
+function readSseData(stream: string, eventName: string) {
+  const frame = stream
+    .split("\n\n")
+    .find((candidate) => candidate.includes(`event: ${eventName}\n`));
+  expect(frame).toBeDefined();
+  const data = frame
+    ?.split("\n")
+    .find((line) => line.startsWith("data: "))
+    ?.slice("data: ".length);
+  expect(data).toBeDefined();
+  return JSON.parse(data!) as Record<string, unknown> & {
+    conversationCycle: Record<string, unknown>;
+    message: Record<string, unknown>;
   };
 }
 

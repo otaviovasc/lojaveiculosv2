@@ -175,6 +175,39 @@ describe("CRM WhatsApp realtime API", () => {
     unsubscribe();
   });
 
+  it("reconnects after an invalid realtime event instead of staying degraded", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("EventSource", FakeEventSource);
+    const onError = vi.fn();
+    const postJson = vi
+      .fn()
+      .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-1" })
+      .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-2" });
+
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "/events",
+      eventsTicketRoute: "/events/ticket",
+      onError,
+      onEvent: vi.fn(),
+      postJson,
+    });
+    await flushPromises();
+
+    FakeEventSource.instances[0]!.emit(
+      { type: "message", conversationCycle: {}, message: {} },
+      "invalid-1",
+      "message",
+    );
+
+    expect(onError).toHaveBeenCalledOnce();
+    expect(FakeEventSource.instances[0]!.close).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await flushPromises();
+    expect(FakeEventSource.instances[1]?.url).toBe("/events?ticket=ticket-2");
+
+    unsubscribe();
+  });
+
   it("dispatches backend conversation-cycle event names", async () => {
     vi.stubGlobal("EventSource", FakeEventSource);
     const events: CrmRealtimeEvent[] = [];

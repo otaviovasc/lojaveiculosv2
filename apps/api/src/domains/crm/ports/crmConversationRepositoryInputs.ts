@@ -150,6 +150,7 @@ export type UpdateCrmMessageInput = {
   externalId?: string | null;
   messageId: string;
   metadata?: Record<string, unknown>;
+  mediaUrl?: string | null;
   providerTimestamp?: Date | null;
   status?: CrmMessageStatus;
   storeId: StoreId;

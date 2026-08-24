@@ -9,6 +9,7 @@ import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { assertConversationRead } from "./crm.messaging.controller.support.js";
 import { handleCrmMessaging } from "./crm.messaging.errors.js";
+import { toCrmRealtimeEventDto } from "./crm.messaging.realtime.dto.js";
 import { resolveCrmQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
 
 export type RegisterCrmMessagingRealtimeRoutesOptions = {
@@ -199,10 +200,11 @@ function readOptionalString(value: unknown) {
 }
 
 function formatSseEnvelope(envelope: CrmRealtimeEventEnvelope) {
+  const event = toCrmRealtimeEventDto(envelope.event);
   return [
     `id: ${envelope.id}`,
-    `event: ${envelope.event.type}`,
-    `data: ${JSON.stringify(envelope.event)}`,
+    `event: ${event.type}`,
+    `data: ${JSON.stringify(event)}`,
     "",
     "",
   ].join("\n");
