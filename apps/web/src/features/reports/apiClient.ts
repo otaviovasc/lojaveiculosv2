@@ -2,6 +2,9 @@ import { readApiJson } from "../../lib/apiErrors";
 import type { ReportsAuth, ReportsDashboard, ReportsPeriod } from "./types";
 
 export type ReportsApi = {
+  downloadExecutiveReport: (
+    period: ReportsPeriod,
+  ) => Promise<{ blob: Blob; fileName: string }>;
   getDashboard: (period: ReportsPeriod) => Promise<ReportsDashboard>;
 };
 
@@ -17,6 +20,24 @@ export function createReportsApi({
   fetch,
 }: CreateReportsApiOptions): ReportsApi {
   return {
+    downloadExecutiveReport: async (period) => {
+      const response = await fetch(
+        createEndpoint(
+          `/analytics/dashboard.pdf?from=${period.from}&to=${period.to}`,
+          baseUrl,
+        ),
+        { headers: createHeaders(auth) },
+      );
+      if (!response.ok) await readJson<never>(response);
+      return {
+        blob: await response.blob(),
+        fileName:
+          response.headers
+            .get("content-disposition")
+            ?.match(/filename="?([^";]+)"?/i)?.[1] ??
+          `relatorio-executivo-${period.from}-a-${period.to}.pdf`,
+      };
+    },
     getDashboard: (period) =>
       fetch(
         createEndpoint(

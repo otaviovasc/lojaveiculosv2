@@ -75,6 +75,7 @@
     "billing:catalog:reconcile": "pnpm --filter @lojaveiculosv2/api billing:catalog:reconcile",
     "billing:asaas:webhook-smoke": "node tools/qa/asaas-billing-webhook-smoke.mjs",
     "billing:grant-all": "pnpm --filter @lojaveiculosv2/api exec tsx ../../tools/billing/grant-user-all-features.mjs",
+    "staging:seed-store": "node tools/staging/seed-existing-store.mjs",
     "qa:seed:local": "node tools/qa/local-seed-smoke.mjs",
     "qa:document-artifact": "pnpm --filter @lojaveiculosv2/api exec tsx ../../tools/qa/render-workflow-pdf-evidence.ts",
     "qa:all-document-artifacts": "pnpm --filter @lojaveiculosv2/api exec tsx ../../tools/qa/render-all-document-pdfs.ts",

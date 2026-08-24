@@ -174,4 +174,40 @@ export const analyticsPaths = {
       },
     },
   },
+  "/api/v1/analytics/dashboard.pdf": {
+    get: {
+      tags: ["Analytics"],
+      summary: "Download the store executive analytics report",
+      operationId: "downloadAnalyticsExecutiveReport",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: "query",
+          name: "from",
+          required: false,
+          schema: { type: "string", format: "date" },
+          description:
+            "Start of the reporting period (YYYY-MM-DD). Defaults to 30 days ago.",
+        },
+        {
+          in: "query",
+          name: "to",
+          required: false,
+          schema: { type: "string", format: "date" },
+          description:
+            "End of the reporting period (YYYY-MM-DD). Defaults to today.",
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Materialized executive report PDF.",
+          content: {
+            "application/pdf": {
+              schema: { type: "string", format: "binary" },
+            },
+          },
+        },
+      },
+    },
+  },
 } as const;

@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
 import { useRemoteSearch } from "../../../lib/useRemoteSearch";
 import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
 import type { InventoryListingSummary } from "../model/types";
@@ -230,103 +234,83 @@ export default function TestDriveWizard({
     }
   };
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 no-print"
+  return (
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent
+          className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden"
+          padding="none"
+          radius="3xl"
+          surface="panel"
         >
-          <motion.div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={onClose}
-          />
+          {/* Header */}
+          <DialogHeader className="border-b border-line">
+            <div>
+              <DialogTitle className="text-lg font-black text-app-text">
+                Termo de Test Drive
+              </DialogTitle>
+              <DialogDescription className="text-xs font-bold text-muted">
+                Passo{" "}
+                {step === "lead"
+                  ? "1 de 2: Cliente"
+                  : step === "details"
+                    ? "2 de 2: Condutor"
+                    : "Sucesso"}
+              </DialogDescription>
+            </div>
+          </DialogHeader>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-panel border border-line rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] z-10"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-line">
-              <div>
-                <h2 className="text-lg font-black text-app-text">
-                  Termo de Test Drive
-                </h2>
-                <p className="text-xs font-bold text-muted">
-                  Passo{" "}
-                  {step === "lead"
-                    ? "1 de 2: Cliente"
-                    : step === "details"
-                      ? "2 de 2: Condutor"
-                      : "Sucesso"}
-                </p>
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {notice ? (
+              <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-bold text-danger">
+                {notice}
               </div>
-              <button
-                onClick={onClose}
-                className="w-9 h-9 rounded-full bg-app-elevated hover:bg-line/45 flex items-center justify-center transition-colors text-app-text cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            ) : null}
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {notice ? (
-                <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-bold text-danger">
-                  {notice}
-                </div>
-              ) : null}
+            {step === "lead" && (
+              <TestDriveLeadStep
+                driver={driver}
+                isNewLead={isNewLead}
+                leads={leads}
+                loading={loading}
+                onDriverChange={setDriver}
+                onSearchLeads={setSearchLead}
+                onSelectLead={handleSelectLead}
+                searchLead={searchLead}
+                selectedLead={selectedLead}
+                setIsNewLead={setIsNewLead}
+                setSelectedLead={setSelectedLead}
+              />
+            )}
 
-              {step === "lead" && (
-                <TestDriveLeadStep
-                  driver={driver}
-                  isNewLead={isNewLead}
-                  leads={leads}
-                  loading={loading}
-                  onDriverChange={setDriver}
-                  onSearchLeads={setSearchLead}
-                  onSelectLead={handleSelectLead}
-                  searchLead={searchLead}
-                  selectedLead={selectedLead}
-                  setIsNewLead={setIsNewLead}
-                  setSelectedLead={setSelectedLead}
-                />
-              )}
+            {step === "details" && (
+              <TestDriveDetailsStep
+                cepLoading={cepLoading}
+                departureTime={departureTime}
+                driver={driver}
+                fetchCepAddress={(value) => void fetchCepAddress(value)}
+                onDepartureTimeChange={setDepartureTime}
+                onDriverChange={setDriver}
+                onReturnTimeChange={setReturnTime}
+                returnTime={returnTime}
+              />
+            )}
 
-              {step === "details" && (
-                <TestDriveDetailsStep
-                  cepLoading={cepLoading}
-                  departureTime={departureTime}
-                  driver={driver}
-                  fetchCepAddress={(value) => void fetchCepAddress(value)}
-                  onDepartureTimeChange={setDepartureTime}
-                  onDriverChange={setDriver}
-                  onReturnTimeChange={setReturnTime}
-                  returnTime={returnTime}
-                />
-              )}
+            {step === "success" && <TestDriveSuccessStep />}
+          </div>
 
-              {step === "success" && <TestDriveSuccessStep />}
-            </div>
-
-            <TestDriveWizardFooter
-              onBack={() => setStep("lead")}
-              onClose={onClose}
-              onNext={handleNextStep}
-              onPrint={() => setShowPrint(true)}
-              onSubmit={() => void handleSubmit()}
-              step={step}
-              submitting={submitting}
-            />
-          </motion.div>
-        </motion.div>
-      )}
+          <TestDriveWizardFooter
+            onBack={() => setStep("lead")}
+            onClose={onClose}
+            onNext={handleNextStep}
+            onPrint={() => setShowPrint(true)}
+            onSubmit={() => void handleSubmit()}
+            step={step}
+            submitting={submitting}
+          />
+        </DialogContent>
+      </Dialog>
 
       {showPrint && (
         <TestDrivePrintPreview
@@ -339,7 +323,6 @@ export default function TestDriveWizard({
           storeSettings={storeSettings ?? null}
         />
       )}
-    </AnimatePresence>,
-    document.body,
+    </>
   );
 }

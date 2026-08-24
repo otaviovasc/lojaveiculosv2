@@ -44,6 +44,61 @@ test("keeps document model authoring usable across viewports", async ({
     await saveQaScreenshot(page, testInfo, `documents-builder-${viewport}`);
     await expectViewportSafe(page);
 
+    const sidebar = page.getByRole("complementary", {
+      name: "Biblioteca de modelos",
+    });
+    const createTemplateButton = sidebar.getByRole("button", {
+      name: "Novo modelo",
+    });
+    await expect(createTemplateButton).toBeVisible();
+
+    if (viewport === "desktop") {
+      const templateList = page.locator(".documents-builder-template-list");
+      const scrollMetrics = await templateList.evaluate((list) => {
+        const firstTemplate = list.firstElementChild;
+        for (let index = 0; index < 30; index += 1) {
+          if (firstTemplate) {
+            list.append(firstTemplate.cloneNode(true));
+          }
+        }
+
+        return {
+          clientHeight: list.clientHeight,
+          overflowY: getComputedStyle(list).overflowY,
+          scrollHeight: list.scrollHeight,
+        };
+      });
+
+      expect(scrollMetrics.overflowY).toBe("auto");
+      expect(scrollMetrics.scrollHeight).toBeGreaterThan(
+        scrollMetrics.clientHeight,
+      );
+
+      const footerMetrics = await sidebar.evaluate((node) => {
+        const list = node.querySelector(".documents-builder-template-list");
+        const button = node.querySelector(
+          ".documents-builder-sidebar-create-btn",
+        );
+        const listBottom = list?.getBoundingClientRect().bottom ?? 0;
+        const buttonRect = button?.getBoundingClientRect();
+        const sidebarBottom = node.getBoundingClientRect().bottom;
+
+        return {
+          buttonBottom: buttonRect?.bottom ?? 0,
+          buttonTop: buttonRect?.top ?? 0,
+          listBottom,
+          sidebarBottom,
+        };
+      });
+
+      expect(footerMetrics.buttonTop).toBeGreaterThanOrEqual(
+        footerMetrics.listBottom,
+      );
+      expect(footerMetrics.buttonBottom).toBeLessThanOrEqual(
+        footerMetrics.sidebarBottom,
+      );
+    }
+
     const previewButton = page.getByRole("button", {
       name: "Prévia PDF",
     });

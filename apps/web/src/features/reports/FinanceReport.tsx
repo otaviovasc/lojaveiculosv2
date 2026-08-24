@@ -76,12 +76,12 @@ export function FinanceReport({
         />
       </MetricDeck>
 
-      <FeatureSection
-        className="reports-section-surface"
-        description="Valores previstos usam o vencimento. Valores realizados usam a data de pagamento."
-        title="Saídas por categoria"
-      >
-        {categories.length ? (
+      {categories.length ? (
+        <FeatureSection
+          className="reports-section-surface"
+          description="Valores previstos usam o vencimento. Valores realizados usam a data de pagamento."
+          title="Saídas por categoria"
+        >
           <div className="reports-category-breakdown">
             {categories.map((row) => (
               <div className="reports-category-breakdown__row" key={row.key}>
@@ -98,15 +98,15 @@ export function FinanceReport({
               </div>
             ))}
           </div>
-        ) : (
-          <FeatureEmptyState
-            body="Não há saídas com vencimento no período selecionado."
-            density="compact"
-            icon={ReceiptText}
-            title="Nenhuma saída prevista"
-          />
-        )}
-      </FeatureSection>
+        </FeatureSection>
+      ) : (
+        <FeatureEmptyState
+          body="Não há saídas com vencimento no período selecionado."
+          density="compact"
+          icon={ReceiptText}
+          title="Saídas por categoria"
+        />
+      )}
     </div>
   );
 }

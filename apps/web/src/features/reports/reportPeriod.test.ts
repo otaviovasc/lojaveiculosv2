@@ -4,6 +4,7 @@ import {
   isValidPeriod,
   isValidReportDate,
   readReportsViewState,
+  syncReportsViewState,
 } from "./reportPeriod";
 
 describe("report period validation", () => {
@@ -32,5 +33,21 @@ describe("report period validation", () => {
       customPeriod: { from: "2026-02-09", to: "2026-03-10" },
       preset: "30d",
     });
+  });
+
+  it("preserves the window location hash when synchronizing view state", () => {
+    window.history.replaceState(null, "", "/dashboard#/reports");
+
+    syncReportsViewState({
+      compare: false,
+      customPeriod: { from: "2026-06-01", to: "2026-06-30" },
+      preset: "30d",
+      search: "",
+      tab: "summary",
+    });
+
+    expect(window.location.hash).toBe("#/reports");
+    expect(window.location.search).toBe("?tab=summary&period=30d");
+    expect(window.location.pathname).toBe("/dashboard");
   });
 });

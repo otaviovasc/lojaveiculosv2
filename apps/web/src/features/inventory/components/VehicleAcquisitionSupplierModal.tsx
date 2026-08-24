@@ -114,134 +114,145 @@ export function VehicleAcquisitionSupplierModal({
         ) : null}
 
         {error ? (
-          <div className="bg-accent-soft/20 border border-accent-soft text-accent-strong text-xs font-bold rounded-lg p-2.5 mb-4">
+          <div
+            aria-live="assertive"
+            className="bg-danger/10 border border-danger/30 text-danger text-xs font-bold rounded-lg p-2.5 mb-4"
+            role="alert"
+          >
             {error}
           </div>
         ) : null}
 
-        <div className="grid gap-3 mb-6">
-          <InventoryField label="Nome" required>
-            <InventoryInput
-              disabled={isSaving}
-              onChange={(event) =>
-                updateDraft("displayName", event.target.value)
-              }
-              value={draft.displayName}
-              placeholder="Ex: Auto Avaliar, João da Silva"
-            />
-          </InventoryField>
-
-          <div className="grid gap-3 grid-cols-2">
-            <InventoryField label="Tipo">
-              <InventorySelect
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSave();
+          }}
+        >
+          <div className="grid gap-3 mb-6">
+            <InventoryField label="Nome" required>
+              <InventoryInput
                 disabled={isSaving}
-                onChange={(value) => updateDraft("kind", value)}
-                options={supplierKindOptions}
-                value={draft.kind}
+                onChange={(event) =>
+                  updateDraft("displayName", event.target.value)
+                }
+                value={draft.displayName}
+                placeholder="Ex: Auto Avaliar, João da Silva"
               />
             </InventoryField>
-            <TextField
-              autoComplete="off"
-              disabled={isSaving}
-              inputMode="numeric"
-              label="Documento (CPF/CNPJ)"
-              maxLength={18}
-              onChange={(value) =>
-                updateDraft("documentNumber", formatBrazilianDocument(value))
-              }
-              placeholder="000.000.000-00"
-              value={draft.documentNumber}
-            />
-          </div>
 
-          <div className="grid gap-3 grid-cols-2">
-            <TextField
-              autoComplete="tel"
-              disabled={isSaving}
-              inputMode="tel"
-              label="Telefone"
-              maxLength={15}
-              onChange={(value) =>
-                updateDraft("phone", formatBrazilianPhone(value))
-              }
-              placeholder="(11) 98765-4321"
-              type="tel"
-              value={draft.phone}
-            />
-            <TextField
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isSaving}
-              inputMode="email"
-              label="E-mail"
-              onChange={(value) => updateDraft("email", value)}
-              placeholder="fornecedor@exemplo.com"
-              spellCheck={false}
-              type="email"
-              value={draft.email}
-            />
-          </div>
-
-          {showIntegrationFields ? (
-            <div className="grid gap-3 grid-cols-2 pt-2 border-t border-line/30">
+            <div className="grid gap-3 grid-cols-2">
+              <InventoryField label="Tipo">
+                <InventorySelect
+                  disabled={isSaving}
+                  onChange={(value) => updateDraft("kind", value)}
+                  options={supplierKindOptions}
+                  value={draft.kind}
+                />
+              </InventoryField>
               <TextField
+                autoComplete="off"
                 disabled={isSaving}
-                label="Provedor"
-                onChange={(value) => updateDraft("provider", value)}
-                value={draft.provider}
-              />
-              <TextField
-                disabled={isSaving}
-                label="Código externo"
-                onChange={(value) => updateDraft("externalProviderId", value)}
-                value={draft.externalProviderId}
+                inputMode="numeric"
+                label="Documento (CPF/CNPJ)"
+                maxLength={18}
+                onChange={(value) =>
+                  updateDraft("documentNumber", formatBrazilianDocument(value))
+                }
+                placeholder="000.000.000-00"
+                value={draft.documentNumber}
               />
             </div>
-          ) : null}
-        </div>
 
-        <DialogFooter className="flex gap-2 justify-between">
-          <div>
-            {supplier && onArchive ? (
-              <IconButton
+            <div className="grid gap-3 grid-cols-2">
+              <TextField
+                autoComplete="tel"
                 disabled={isSaving}
-                icon={<Archive className="size-3.5" />}
-                label="Arquivar"
-                onClick={() => {
-                  void (async () => {
-                    if (onArchive) {
-                      try {
-                        setError(null);
-                        await onArchive();
-                        onClose();
-                      } catch (e) {
-                        setError("Não foi possível arquivar o fornecedor.");
-                      }
-                    }
-                  })();
-                }}
+                inputMode="tel"
+                label="Telefone"
+                maxLength={15}
+                onChange={(value) =>
+                  updateDraft("phone", formatBrazilianPhone(value))
+                }
+                placeholder="(11) 98765-4321"
+                type="tel"
+                value={draft.phone}
               />
+              <TextField
+                autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect="off"
+                disabled={isSaving}
+                inputMode="email"
+                label="E-mail"
+                onChange={(value) => updateDraft("email", value)}
+                placeholder="fornecedor@exemplo.com"
+                spellCheck={false}
+                type="email"
+                value={draft.email}
+              />
+            </div>
+
+            {showIntegrationFields ? (
+              <div className="grid gap-3 grid-cols-2 pt-2 border-t border-line/30">
+                <TextField
+                  disabled={isSaving}
+                  label="Provedor"
+                  onChange={(value) => updateDraft("provider", value)}
+                  value={draft.provider}
+                />
+                <TextField
+                  disabled={isSaving}
+                  label="Código externo"
+                  onChange={(value) => updateDraft("externalProviderId", value)}
+                  value={draft.externalProviderId}
+                />
+              </div>
             ) : null}
           </div>
-          <div className="flex gap-2">
-            <button
-              className="min-h-9 rounded-lg px-4 text-xs font-black border border-line text-app-text hover:bg-line/25 transition-all cursor-pointer"
-              onClick={onClose}
-              type="button"
-              disabled={isSaving}
-            >
-              Cancelar
-            </button>
-            <IconButton
-              disabled={isSaving}
-              icon={<Save className="size-3.5" />}
-              label="Salvar"
-              onClick={() => void handleSave()}
-              variant="primary"
-            />
-          </div>
-        </DialogFooter>
+
+          <DialogFooter className="flex gap-2 justify-between">
+            <div>
+              {supplier && onArchive ? (
+                <IconButton
+                  disabled={isSaving}
+                  icon={<Archive className="size-3.5" />}
+                  label="Arquivar"
+                  onClick={() => {
+                    void (async () => {
+                      if (onArchive) {
+                        try {
+                          setError(null);
+                          await onArchive();
+                          onClose();
+                        } catch {
+                          setError("Não foi possível arquivar o fornecedor.");
+                        }
+                      }
+                    })();
+                  }}
+                />
+              ) : null}
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="min-h-9 rounded-lg px-4 text-xs font-black border border-line text-app-text hover:bg-line/25 transition-all cursor-pointer disabled:opacity-50"
+                onClick={onClose}
+                type="button"
+                disabled={isSaving}
+              >
+                Cancelar
+              </button>
+              <IconButton
+                disabled={isSaving}
+                icon={<Save className="size-3.5" />}
+                label="Salvar"
+                onClick={() => void handleSave()}
+                variant="primary"
+              />
+            </div>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

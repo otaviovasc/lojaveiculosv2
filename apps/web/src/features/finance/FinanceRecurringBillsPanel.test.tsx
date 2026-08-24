@@ -8,6 +8,22 @@ import type { FinanceRecurringEntry } from "./types";
 describe("FinanceRecurringBillsPanel", () => {
   afterEach(() => cleanup());
 
+  it("uses the branded empty state when there are no recurring entries", () => {
+    const { container } = render(<FinanceRecurringBillsPanel items={[]} />);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Nenhuma recorrência encontrada",
+      }),
+    ).toBeInTheDocument();
+    const emptyState = container.querySelector(".feature-empty-state");
+    expect(emptyState).toBeInTheDocument();
+    expect(emptyState).toHaveClass("h-full", "w-full");
+    expect(
+      screen.queryByText("Nenhuma recorrência cadastrada."),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows the exhausted badge and the occurrences progress", () => {
     render(
       <FinanceRecurringBillsPanel

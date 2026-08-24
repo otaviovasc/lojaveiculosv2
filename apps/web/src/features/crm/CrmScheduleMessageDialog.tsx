@@ -81,7 +81,7 @@ export function CrmScheduleMessageDialog({
         content: content.trim(),
       });
       if (!accepted) {
-        setLocalError("Nao foi possivel agendar a mensagem.");
+        setLocalError("Não foi possível agendar a mensagem.");
         return;
       }
       setScheduledAt("");
@@ -100,7 +100,7 @@ export function CrmScheduleMessageDialog({
     try {
       const accepted = await onCancel(scheduledMessageId);
       if (accepted) await loadMessages();
-      else setLocalError("Nao foi possivel cancelar o agendamento.");
+      else setLocalError("Não foi possível cancelar o agendamento.");
     } finally {
       setCancellingId(null);
     }
@@ -114,7 +114,7 @@ export function CrmScheduleMessageDialog({
       const accepted = await onProcessDue();
       if (accepted) await loadMessages();
       else
-        setLocalError("Nao foi possivel processar os agendamentos vencidos.");
+        setLocalError("Não foi possível processar os agendamentos vencidos.");
     } finally {
       setIsProcessing(false);
     }
@@ -209,7 +209,7 @@ export function CrmScheduleMessageDialog({
           />
         ) : (
           <p className="crm-schedule-empty">
-            Sem permissao para listar agendamentos.
+            Sem permissão para listar agendamentos.
           </p>
         )}
       </div>

@@ -13,6 +13,8 @@ const modulePathAliases: Record<string, ModuleId> = {
   "page-builder": "custom-pages",
   paginas: "custom-pages",
   personalizar: "public-site",
+  relatorio: "reports",
+  relatorios: "reports",
   "site-publico": "public-site",
 };
 

@@ -5,6 +5,7 @@ import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi"
 import type { InventoryListingSummary } from "../inventory/model/types";
 import { createSettingsApi } from "../settings/apiClient";
 import { createSettingsApiOptions } from "../settings/runtimeApi";
+import { getRoleLabel } from "../settings/settingsLabels";
 import type { RoleKey, StoreMemberOptionView } from "../settings/types";
 import type { ProductCrmLead } from "../crm/productCrmTypes";
 
@@ -242,7 +243,7 @@ function mergeSellerOptions(
 }
 
 function roleLabel(role: RoleKey) {
-  return roleLabels[role];
+  return getRoleLabel(role);
 }
 
 function toRoleKey(role: string | null | undefined): RoleKey {
@@ -250,20 +251,17 @@ function toRoleKey(role: string | null | undefined): RoleKey {
 }
 
 function isRoleKey(role: string | null | undefined): role is RoleKey {
-  return (
-    typeof role === "string" &&
-    Object.prototype.hasOwnProperty.call(roleLabels, role)
-  );
+  return typeof role === "string" && roleKeys.has(role as RoleKey);
 }
 
-const roleLabels: Record<RoleKey, string> = {
-  admin: "Admin",
-  agency: "Agencia",
-  investor: "Investidor",
-  owner: "Proprietario",
-  salesman: "Vendedor",
-  supervisor: "Supervisor",
-};
+const roleKeys = new Set<RoleKey>([
+  "admin",
+  "agency",
+  "investor",
+  "owner",
+  "salesman",
+  "supervisor",
+]);
 
 function formatCents(value: number | null) {
   if (!value) return null;

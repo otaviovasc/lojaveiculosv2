@@ -74,11 +74,12 @@ export function syncReportsViewState(state: ReportsViewState) {
   state.compare ? params.set("compare", "1") : params.delete("compare");
   state.search ? params.set("q", state.search) : params.delete("q");
   const query = params.toString();
-  window.history.replaceState(
-    null,
-    "",
-    query ? `${window.location.pathname}?${query}` : window.location.pathname,
-  );
+  const nextSearch = query ? `?${query}` : "";
+  const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextUrl !== currentUrl) {
+    window.history.replaceState(null, "", nextUrl);
+  }
 }
 
 export function resolvePeriod(state: ReportsViewState, now = new Date()) {

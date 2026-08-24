@@ -19,14 +19,14 @@ export function FeatureEmptyState({
   className?: string;
   density?: "compact" | "default";
   icon: FeatureIcon;
-  title: ReactNode;
+  title?: ReactNode;
   tone?: "accent" | "blue" | "green" | "neutral" | "warning";
 }) {
   return (
     <div
       className={cx(
-        "feature-empty-state glass-panel-branded flex flex-col items-center justify-center p-12 text-center",
-        density === "compact" && "!p-6",
+        "feature-empty-state glass-panel-branded flex w-full h-full min-h-[200px] flex-1 flex-col items-center justify-center p-8 text-center",
+        density === "compact" && "!p-5 min-h-[140px]",
         className,
       )}
     >
@@ -37,13 +37,17 @@ export function FeatureEmptyState({
           tone !== "accent" && `feature-empty-state__chip--${tone}`,
         )}
       >
-        <IconComponent aria-hidden="true" className="size-7" />
+        <IconComponent aria-hidden="true" className="size-6" />
       </span>
-      <h3 className="feature-empty-state__title mt-5">{title}</h3>
-      <div className="mt-2 flex w-full justify-center">
+      {title ? (
+        <h3 className="feature-empty-state__title mt-4">{title}</h3>
+      ) : null}
+      <div
+        className={cx(title ? "mt-2" : "mt-3", "flex w-full justify-center")}
+      >
         <p className="w-full max-w-md text-sm font-medium text-muted">{body}</p>
       </div>
-      {action ? <div className="mt-6">{action}</div> : null}
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }

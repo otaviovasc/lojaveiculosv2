@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pencil, Plus, Upload } from "lucide-react";
+import { AlertTriangle, Pencil, Plus, RotateCcw, Upload } from "lucide-react";
 import { DatePickerField } from "../../../components/ui/DatePickerField";
 import { formatCurrencyValue, parseCurrencyInput } from "../../../lib/masks";
 import {
@@ -252,18 +252,27 @@ export function FinanceiroCostVoidDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md" radius="xl" surface="panel">
-        <DialogHeader>
-          <DialogTitle>Estornar custo</DialogTitle>
-          <DialogDescription>
-            {cost
-              ? `${cost.account} (${cost.kindLabel}) continuará no histórico como estornado.`
-              : "O custo continuará visível no histórico."}
-          </DialogDescription>
+        <DialogHeader className="mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-danger/30 bg-danger/10 text-danger">
+              <AlertTriangle aria-hidden="true" className="size-4.5" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-black uppercase tracking-wider text-app-text">
+                Estornar custo
+              </DialogTitle>
+              <DialogDescription className="text-xs font-bold text-muted">
+                {cost
+                  ? `${cost.account} (${cost.kindLabel}) continuará no histórico como estornado.`
+                  : "O custo continuará visível no histórico."}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         {status ? (
           <p
             aria-live="polite"
-            className="rounded-lg border border-danger/30 bg-danger/10 p-2.5 text-xs font-bold text-danger"
+            className="mb-4 rounded-lg border border-danger/30 bg-danger/10 p-2.5 text-xs font-bold text-danger"
           >
             {status}
           </p>
@@ -278,8 +287,13 @@ export function FinanceiroCostVoidDialog({
             value={reason}
           />
         </InventoryField>
-        <DialogFooter divider paddingTop="md">
+        <DialogFooter
+          className="flex justify-end gap-2"
+          divider
+          paddingTop="md"
+        >
           <button
+            className="min-h-9 cursor-pointer rounded-lg border border-line px-4 text-xs font-black text-app-text transition-all hover:bg-line/25 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSaving}
             onClick={() => onOpenChange(false)}
             type="button"
@@ -287,14 +301,15 @@ export function FinanceiroCostVoidDialog({
             Voltar
           </button>
           <button
-            className="rounded-lg bg-danger px-4 py-2 text-xs font-black text-inverse disabled:opacity-60"
+            className="flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg bg-danger px-4 text-xs font-black text-white transition-all hover:bg-danger/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSaving || reason.trim().length < 3}
             onClick={() =>
               void onVoid(reason.trim()).then((ok) => ok && onOpenChange(false))
             }
             type="button"
           >
-            {isSaving ? "Estornando..." : "Confirmar estorno"}
+            <RotateCcw aria-hidden="true" className="size-3.5" />
+            <span>{isSaving ? "Estornando..." : "Confirmar estorno"}</span>
           </button>
         </DialogFooter>
       </DialogContent>

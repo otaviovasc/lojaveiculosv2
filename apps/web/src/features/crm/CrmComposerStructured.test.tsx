@@ -20,14 +20,14 @@ describe("CrmComposer structured sends", () => {
 
     await openAttachment(user, "Enviar catalogo");
     const dialog = screen.getByRole("dialog");
-    expect(await within(dialog).findByText("Catalogo da loja")).toBeVisible();
+    expect(await within(dialog).findByText("Catálogo da loja")).toBeVisible();
     await user.click(within(dialog).getByRole("button", { name: "Enviar" }));
 
     expect(callbacks.onSendCatalog).toHaveBeenCalledWith({
       catalogPhone: "5511940231407",
       catalogUrl: "https://loja.local/test-store",
-      message: "Confira nosso catalogo de veiculos:",
-      title: "Catalogo da loja",
+      message: "Confira nosso catálogo de veículos:",
+      title: "Catálogo da loja",
     });
   });
 
@@ -65,7 +65,7 @@ describe("CrmComposer structured sends", () => {
     const dialog = screen.getByRole("dialog");
 
     expect(
-      await within(dialog).findByText(/Nao foi possivel carregar/),
+      await within(dialog).findByText(/Não foi possível carregar/),
     ).toBeVisible();
     await expect(
       within(dialog).getByRole("button", { name: "Enviar" }),
@@ -114,8 +114,8 @@ describe("CrmComposer structured sends", () => {
     await openAttachment(user, "Localizacao");
     await user.type(screen.getByLabelText("Latitude"), "-23.56168");
     await user.type(screen.getByLabelText("Longitude"), "-46.65598");
-    await user.type(screen.getByLabelText("Endereco"), "Av. Paulista, 1000");
-    expect(screen.getByTitle("Mapa da localizacao")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Endereço"), "Av. Paulista, 1000");
+    expect(screen.getByTitle("Mapa da localização")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "N" }));
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", {

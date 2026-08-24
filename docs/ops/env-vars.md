@@ -18,6 +18,9 @@ environment variables for public smoke-test URLs.
 | `API_BASE_URL`                       | Yes      | staging, production        | No     | Public API URL consumed by the web app.                                                                  |
 | `DATABASE_URL`                       | Yes      | staging, production        | Yes    | Product database URL. Prefer `${{ Postgres.DATABASE_URL }}` on Railway.                                  |
 | `AUDIT_DATABASE_URL`                 | Yes      | staging, production        | Yes    | Audit database URL. Prefer `${{ AuditPostgres.DATABASE_URL }}` on Railway.                               |
+| `STAGING_DB`                         | No       | staging                    | Yes    | Staging product database URL alias for maintenance and grant scripts.                                    |
+| `STAGING_AUDIT_DB`                   | No       | staging                    | Yes    | Staging audit database URL alias for maintenance and grant scripts.                                      |
+| `SEED_SOURCE_DATABASE_URL`           | No       | local, staging             | Yes    | Local source database URL for staging store seed migration scripts.                                      |
 | `DB_POOL_MAX`                        | Yes      | staging, production        | No     | Runtime DB pool limit.                                                                                   |
 | `AUDIT_DB_POOL_MAX`                  | No       | staging, production        | No     | Audit DB pool limit. Defaults to `DB_POOL_MAX`.                                                          |
 | `DB_CLOSE_TIMEOUT_SECONDS`           | Yes      | staging, production        | No     | Graceful database close timeout in seconds.                                                              |

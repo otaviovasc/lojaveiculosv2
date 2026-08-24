@@ -1,4 +1,4 @@
-import { AlertTriangle, Car, FileX2 } from "lucide-react";
+import { AlertTriangle, Car } from "lucide-react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
@@ -47,6 +47,20 @@ export function OwnerReport({
             Number(right.marginStatus === "complete"),
         )
       : dashboard.owner.vehicles;
+  const filteredRows = filterRows(rows, search);
+  if (!filteredRows.length) {
+    return (
+      <FeatureEmptyState
+        body={
+          search
+            ? "Nenhum veículo corresponde à busca atual."
+            : "Nenhuma venda foi registrada no período selecionado."
+        }
+        icon={Car}
+        title={tab === "sold" ? "Veículos vendidos" : "Custos e margens"}
+      />
+    );
+  }
   return (
     <FeatureSection
       className="reports-section-surface"
@@ -57,7 +71,7 @@ export function OwnerReport({
       }
       title={tab === "sold" ? "Veículos vendidos" : "Custos e margens"}
     >
-      <VehicleLedger rows={filterRows(rows, search)} />
+      <VehicleLedger rows={filteredRows} />
     </FeatureSection>
   );
 }
@@ -123,33 +137,26 @@ function OwnerSummary({
         />
       </MetricDeck>
 
-      <FeatureAlert>
-        <FileX2 aria-hidden="true" className="size-4" />O PDF executivo ainda
-        não possui materialização byte a byte no V2. Os números abaixo são
-        consultados no banco, mas nenhum arquivo foi sintetizado para download.
-      </FeatureAlert>
-
-      <FeatureSection
-        className="reports-section-surface"
-        description="Vendas sem aquisição registrada ficam fora da margem apurada."
-        title="Vendas que precisam de atenção"
-      >
-        {dashboard.owner.missingAcquisitionCount > 0 ? (
+      {dashboard.owner.missingAcquisitionCount > 0 ? (
+        <FeatureSection
+          className="reports-section-surface"
+          description="Vendas sem aquisição registrada ficam fora da margem apurada."
+          title="Vendas que precisam de atenção"
+        >
           <VehicleLedger
             rows={dashboard.owner.vehicles
               .filter((row) => row.marginStatus === "missing_acquisition")
               .slice(0, 6)}
           />
-        ) : (
-          <FeatureEmptyState
-            body="Todas as vendas do período têm aquisição registrada para cálculo da margem."
-            density="compact"
-            icon={Car}
-            title="Custos de aquisição completos"
-            tone="green"
-          />
-        )}
-      </FeatureSection>
+        </FeatureSection>
+      ) : (
+        <FeatureEmptyState
+          body="Todas as vendas do período têm aquisição registrada para cálculo da margem."
+          density="compact"
+          icon={Car}
+          tone="green"
+        />
+      )}
 
       {dashboard.attention.pendingChecklistsCount > 0 ? (
         <FeatureAlert>
@@ -172,7 +179,6 @@ function VehicleLedger({ rows }: { rows: readonly OwnerVehicleReportRow[] }) {
         body="Nenhuma venda corresponde ao período e à busca atual."
         density="compact"
         icon={Car}
-        title="Nenhum veículo encontrado"
       />
     );
   }

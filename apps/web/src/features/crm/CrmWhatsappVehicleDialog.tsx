@@ -107,7 +107,7 @@ export function VehicleDialog({
           setIsSaving(false);
         }
       }}
-      title="Enviar veiculo"
+      title="Enviar veículo"
     >
       <label className="crm-search-field">
         Buscar no estoque
@@ -125,7 +125,7 @@ export function VehicleDialog({
       {isLoading ? (
         <div className="crm-catalog-loading">
           <Loader2 className="crm-spin" />
-          Carregando estoque
+          Carregando estoque...
         </div>
       ) : (
         <div className="crm-vehicle-picker">
@@ -139,7 +139,7 @@ export function VehicleDialog({
           ))}
           {!filteredVehicles.length ? (
             <p className="crm-action-error">
-              Nenhum veiculo encontrado no estoque.
+              Nenhum veículo encontrado no estoque.
             </p>
           ) : null}
         </div>
@@ -166,7 +166,7 @@ function VehicleOptionButton({
   return (
     <button
       aria-pressed={selected}
-      className="crm-vehicle-option"
+      className="crm-vehicle-option cursor-pointer"
       disabled={disabled}
       onClick={() => onSelect(vehicle.unitId ?? vehicle.listingId)}
       type="button"
@@ -180,7 +180,7 @@ function VehicleOptionButton({
       </span>
       <span className="crm-vehicle-copy">
         <strong>{vehicle.title}</strong>
-        <small>{detail.join(" · ") || "Veiculo do estoque"}</small>
+        <small>{detail.join(" · ") || "Veículo do estoque"}</small>
         <small>
           {[vehicle.plate, vehicle.stockNumber, vehicle.colorName]
             .filter(Boolean)
@@ -218,10 +218,10 @@ function filterVehicles(vehicles: readonly CrmVehicleOption[], query: string) {
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     acquired: "Comprado",
-    available: "Disponivel",
+    available: "Disponível",
     delivered: "Entregue",
     inactive: "Inativo",
-    in_preparation: "Preparacao",
+    in_preparation: "Preparação",
     reserved: "Reservado",
     sold: "Vendido",
   };

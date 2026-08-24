@@ -1,6 +1,9 @@
 import { Ban, Pencil, Repeat2 } from "lucide-react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import {
+  FeatureEmptyState,
+  FeatureStatusBadge,
+} from "../../components/ui/FeatureStates";
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import { financeStatusLabels } from "./FinanceFormParts";
 import {
@@ -22,14 +25,28 @@ export function FinanceRecurringBillsPanel({
   onCancel?: (entry: FinanceRecurringEntry) => void;
   onEdit?: (entry: FinanceRecurringEntry) => void;
 }) {
+  const isEmpty = items.length === 0;
+  const sectionLayout = isEmpty
+    ? {
+        className: "flex h-full flex-col",
+        headerClassName: "p-5",
+        padding: "none" as const,
+      }
+    : { padding: "default" as const };
+
   return (
     <FeatureSection
+      {...sectionLayout}
       description="Regras recorrentes com próximo vencimento, frequência e valor."
       icon={<Repeat2 className="size-5" />}
       title="Recorrências"
     >
-      <div className="mt-3 grid gap-2 xl:grid-cols-2">
-        {items.length ? (
+      <div
+        className={
+          isEmpty ? "min-h-0 flex-1" : "mt-3 grid gap-2 xl:grid-cols-2"
+        }
+      >
+        {!isEmpty ? (
           items.map((entry) => {
             const exhaustedAt = entry.metadata?.exhaustedAt;
             const occurrences = entry.metadata?.occurrences;
@@ -97,9 +114,13 @@ export function FinanceRecurringBillsPanel({
             );
           })
         ) : (
-          <p className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
-            Nenhuma recorrência cadastrada.
-          </p>
+          <FeatureEmptyState
+            body="Cadastre uma recorrência para acompanhar os próximos vencimentos."
+            className="h-full w-full"
+            density="compact"
+            icon={Repeat2}
+            title="Nenhuma recorrência encontrada"
+          />
         )}
       </div>
     </FeatureSection>

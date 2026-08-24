@@ -204,13 +204,19 @@ pnpm billing:grant-all -- <userId> --reason="Integration QA" --apply
 ```
 
 Without `--apply`, the command is a dry run. Applied grants require
-`APP_ENV=staging`, `DATABASE_URL`, and `AUDIT_DATABASE_URL`, expire one calendar
-month after execution, write `store_entitlement_events`, and fail if the
-required audit database record cannot be persisted. The command resolves the
+`APP_ENV=staging` and product/audit database URLs (`DATABASE_URL` and
+`AUDIT_DATABASE_URL`, or the staging aliases `STAGING_DB` and
+`STAGING_AUDIT_DB`), expire one calendar month after execution, write
+`store_entitlement_events`, and fail if the required audit database record
+cannot be persisted. The command resolves the
 explicit active catalog pointer and grants the union of included plan features
 and active add-on features from that exact version. Its preview prints the
-catalog version and feature keys. It does not create subscription items,
-payments, provider-success records, or paid Z-API capacity.
+catalog version and feature keys. When `crm_zapi` is present in that catalog,
+an applied grant also converges each reachable store to `paid_awaiting_setup`
+and creates the corresponding Z-API subscription item if needed. This remains
+an audited staging operator exception: it deliberately leaves provider
+payment, checkout, and event evidence absent, and setup remains required
+before the contract becomes `active`.
 
 ## Provider Integration
 
