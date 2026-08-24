@@ -9,7 +9,7 @@ import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createPublicApi, type PublicApi } from "./apiClient";
 import { PublicApiClientList } from "./PublicApiClientList";
-import { publicApiBasePath } from "./publicApiCatalog";
+import { allPublicApiScopes, publicApiBasePath } from "./publicApiCatalog";
 import { PublicApiKeyCreator } from "./PublicApiKeyCreator";
 import { PublicApiReferencePanel } from "./PublicApiReferencePanel";
 import { PublicApiRevokeDialog } from "./PublicApiRevokeDialog";
@@ -24,11 +24,9 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
   const deploymentBaseUrl = useMemo(readPublicApiDeploymentBaseUrl, []);
   const apiBaseUrl = `${deploymentBaseUrl.replace(/\/$/, "")}${publicApiBasePath}`;
   const [clients, setClients] = useState<PublicApiClient[]>([]);
-  const [name, setName] = useState("Agente de vendas IA");
+  const [name, setName] = useState("Acesso total");
   const [scopes, setScopes] = useState<PublicApiScope[]>([
-    "inventory.read",
-    "lead.create",
-    "lead.read",
+    ...allPublicApiScopes,
   ]);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -214,6 +212,7 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
 function copySuccessMessage(id: string) {
   if (id === "base-url") return "URL base copiada.";
   if (id === "created-key") return "Chave copiada com segurança.";
+  if (id === "llms-txt") return "URL do llms.txt copiada.";
   if (id.includes(":")) return "Exemplo curl copiado.";
   return "URL do artefato copiada.";
 }

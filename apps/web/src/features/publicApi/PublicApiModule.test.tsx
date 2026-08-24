@@ -17,8 +17,8 @@ describe("PublicApiModule", () => {
     await waitFor(() => expect(api.listClients).toHaveBeenCalledOnce());
     expect(screen.getByText(/\/api\/v1\/external-api\/docs$/)).toBeVisible();
     expect(
-      screen.getByText(/\/api\/v1\/external-api\/llms\.txt$/),
-    ).toBeVisible();
+      screen.getAllByText(/\/api\/v1\/external-api\/llms\.txt$/).length,
+    ).toBeGreaterThan(0);
     expect(
       screen.getByText(/\/api\/v1\/external-api\/manifest$/),
     ).toBeVisible();

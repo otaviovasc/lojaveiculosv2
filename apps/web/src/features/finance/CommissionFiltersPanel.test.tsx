@@ -47,7 +47,7 @@ describe("CommissionFiltersPanel", () => {
       ".datepicker-range-picker",
     );
 
-    expect(filterGrid).toHaveClass("xl:grid-cols-4");
+    expect(filterGrid?.className).toContain("xl:grid-cols-[minmax(0,1.45fr)");
     expect(dateRange).not.toBeNull();
     expect(within(dateRange!).getByText("De:")).toBeVisible();
     expect(within(dateRange!).getByText("Até:")).toBeVisible();
