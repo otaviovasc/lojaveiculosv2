@@ -50,7 +50,9 @@ export async function persistZapiCanonicalInbound(
     profilePhotoStorageKey:
       profilePhoto.status === "stored" ? profilePhoto.storageKey : null,
     profilePhotoUrl:
-      profilePhoto.status === "stored" ? profilePhoto.profilePhotoUrl : null,
+      profilePhoto.status === "stored"
+        ? profilePhoto.profilePhotoUrl
+        : (message.profilePhotoUrl ?? null),
     secondaryPhone: lidOnly ? null : message.phone,
     sender: "customer",
     senderOrigin: "customer",

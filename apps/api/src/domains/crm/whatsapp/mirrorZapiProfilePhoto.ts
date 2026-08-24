@@ -17,7 +17,11 @@ export type MirrorZapiProfilePhotoInput = {
 
 export type MirrorZapiProfilePhotoResult =
   | { profilePhotoUrl: string; status: "stored"; storageKey: string }
-  | { errorName?: string; status: "failed" | "unavailable" };
+  | {
+      errorName?: string;
+      sourcePhotoUrl?: string;
+      status: "failed" | "unavailable";
+    };
 
 const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
 const supportedContentTypes = new Map([
@@ -104,7 +108,10 @@ export async function mirrorZapiProfilePhoto(
   input: MirrorZapiProfilePhotoInput,
 ): Promise<MirrorZapiProfilePhotoResult> {
   if (!input.photoUrl || !input.remoteMediaFetcher || !input.storage) {
-    return { status: "unavailable" };
+    return {
+      ...(input.photoUrl ? { sourcePhotoUrl: input.photoUrl } : {}),
+      status: "unavailable",
+    };
   }
 
   try {
@@ -117,6 +124,7 @@ export async function mirrorZapiProfilePhoto(
     if (!contentType || !extension) {
       return {
         errorName: "UnsupportedProfilePhotoContentType",
+        sourcePhotoUrl: input.photoUrl,
         status: "failed",
       };
     }
@@ -142,6 +150,7 @@ export async function mirrorZapiProfilePhoto(
   } catch (error) {
     return {
       errorName: error instanceof Error ? error.name : "UnknownError",
+      sourcePhotoUrl: input.photoUrl,
       status: "failed",
     };
   }

@@ -189,7 +189,8 @@ function scheduleOptionalZapiMirroring(
     ports,
   )
     .then(async (result) => {
-      if (result.status !== "stored") return;
+      if (result.status !== "stored" && !("conversationCycle" in result))
+        return;
       await getCrmRealtimePublisher(ports).publish({
         connectionId: input.connection.id,
         conversationCycle: result.conversationCycle,

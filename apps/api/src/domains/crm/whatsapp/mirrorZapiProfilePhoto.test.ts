@@ -67,6 +67,7 @@ describe("mirrorZapiProfilePhoto", () => {
       mirrorZapiProfilePhoto(profileInput(fetchMedia, putObject)),
     ).resolves.toEqual({
       errorName: "UnsupportedProfilePhotoContentType",
+      sourcePhotoUrl: "https://zapi.test/profile.jpg",
       status: "failed",
     });
     expect(putObject).not.toHaveBeenCalled();

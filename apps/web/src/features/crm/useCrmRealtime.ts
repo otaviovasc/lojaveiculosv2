@@ -27,10 +27,6 @@ type RealtimeOptions = {
   onVisibleInboundMessage?: (cycle: CrmConversationCycle) => void;
   refreshConnections: () => Promise<void>;
   refreshSessionCounts: () => Promise<void>;
-  refreshSessions: (options?: {
-    preserveLocalOnly?: boolean;
-    snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
-  }) => Promise<void>;
   removeSession: (cycleId: CrmConversationCycleId) => void;
   updateRealtimeMessageStatus: (
     input: Extract<CrmRealtimeEvent, { type: "message_status" }>,
@@ -50,7 +46,6 @@ export function useCrmRealtime({
   onVisibleInboundMessage,
   refreshConnections,
   refreshSessionCounts,
-  refreshSessions,
   removeSession,
   updateRealtimeMessageStatus,
 }: RealtimeOptions) {
@@ -66,7 +61,6 @@ export function useCrmRealtime({
     onVisibleInboundMessage,
     refreshConnections,
     refreshSessionCounts,
-    refreshSessions,
     removeSession,
     updateRealtimeMessageStatus,
   });
@@ -80,7 +74,6 @@ export function useCrmRealtime({
     onVisibleInboundMessage,
     refreshConnections,
     refreshSessionCounts,
-    refreshSessions,
     removeSession,
     updateRealtimeMessageStatus,
   };
@@ -96,7 +89,19 @@ export function useCrmRealtime({
     }
     publishStatus("connecting");
     let active = true;
-    let reconciliationGeneration = 0;
+    let streamEstablished = false;
+    let degradedTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearDegradedTimer = () => {
+      if (degradedTimer) globalThis.clearTimeout(degradedTimer);
+      degradedTimer = null;
+    };
+    const scheduleDegradedStatus = () => {
+      if (degradedTimer || !streamEstablished) return;
+      degradedTimer = globalThis.setTimeout(() => {
+        degradedTimer = null;
+        if (active && streamEstablished) publishStatus("degraded");
+      }, 10_000);
+    };
     const handleRealtimeEvent = (event: CrmRealtimeEvent) => {
       if (!active) return;
       const latest = latestHandlersRef.current;
@@ -164,46 +169,34 @@ export function useCrmRealtime({
         if (String(event.cycleId) === String(latest.activeCycleId)) {
           latest.updateRealtimeMessageStatus(event);
         }
-        void latest
-          .refreshSessions({ preserveLocalOnly: true })
-          .catch(() => undefined);
         return;
       }
       if (event.type === "connection_status") {
         void latest.refreshConnections().catch(() => undefined);
       }
     };
-    const reconcileBeforeConnected = async (generation: number) => {
-      publishStatus("connecting");
-      const latest = latestHandlersRef.current;
-      await Promise.all([
-        latest.refreshConnections(),
-        latest.refreshSessions({
-          preserveLocalOnly: true,
-          snapshotKind: "reconciled",
-        }),
-        latest.refreshSessionCounts(),
-      ]);
-      if (!active || generation !== reconciliationGeneration) return;
-      publishStatus("connected");
-    };
     const unsubscribe = api.subscribeEvents({
       connectionId,
       onError: (caught) => {
         void caught;
         if (!active) return;
-        reconciliationGeneration += 1;
+        if (streamEstablished) {
+          scheduleDegradedStatus();
+          return;
+        }
         publishStatus("degraded");
       },
       onEvent: handleRealtimeEvent,
       onStatus: (nextStatus) => {
         if (!active) return;
-        const generation = ++reconciliationGeneration;
         if (nextStatus === "connected") {
-          void reconcileBeforeConnected(generation).catch(() => {
-            if (!active || generation !== reconciliationGeneration) return;
-            publishStatus("degraded");
-          });
+          streamEstablished = true;
+          clearDegradedTimer();
+          publishStatus("connected");
+          return;
+        }
+        if (streamEstablished) {
+          scheduleDegradedStatus();
           return;
         }
         publishStatus(nextStatus);
@@ -211,7 +204,7 @@ export function useCrmRealtime({
     });
     return () => {
       active = false;
-      reconciliationGeneration += 1;
+      clearDegradedTimer();
       unsubscribe();
     };
   }, [api, connectionId, hasConnectionsError]);

@@ -313,9 +313,8 @@ describe("useCrmRealtime", () => {
     expect(secondUnsubscribe).toHaveBeenCalledTimes(1);
   });
 
-  it("reports connected only after the stream reconciliation succeeds", async () => {
+  it("reports connected without reloading the CRM when the stream opens", async () => {
     let onStreamStatus: ((status: CrmRealtimeStatus) => void) | undefined;
-    let finishReconciliation: (() => void) | undefined;
     const api = {
       subscribeEvents: vi.fn(
         (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
@@ -327,12 +326,6 @@ describe("useCrmRealtime", () => {
     const onStatus = vi.fn();
     const refreshConnections = vi.fn(async () => undefined);
     const refreshSessionCounts = vi.fn(async () => undefined);
-    const refreshSessions = vi.fn(
-      () =>
-        new Promise<void>((resolve) => {
-          finishReconciliation = resolve;
-        }),
-    );
     render(
       <Harness
         api={api}
@@ -340,32 +333,64 @@ describe("useCrmRealtime", () => {
         onStatus={onStatus}
         refreshConnections={refreshConnections}
         refreshSessionCounts={refreshSessionCounts}
-        refreshSessions={refreshSessions}
       />,
     );
-    await waitFor(() => expect(onStreamStatus).toBeDefined());
+    expect(onStreamStatus).toBeDefined();
 
     act(() => onStreamStatus?.("connected"));
 
-    expect(onStatus).not.toHaveBeenCalledWith("connected");
-    expect(refreshConnections).toHaveBeenCalledTimes(1);
-    expect(refreshSessions).toHaveBeenCalledWith({
-      preserveLocalOnly: true,
-      snapshotKind: "reconciled",
-    });
-    expect(refreshSessionCounts).toHaveBeenCalledTimes(1);
-
-    finishReconciliation?.();
-    await waitFor(() => expect(onStatus).toHaveBeenLastCalledWith("connected"));
+    expect(onStatus).toHaveBeenLastCalledWith("connected");
+    expect(refreshConnections).not.toHaveBeenCalled();
+    expect(refreshSessionCounts).not.toHaveBeenCalled();
     expect(api.subscribeEvents).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the CRM visually connected during a short reconnect", async () => {
+    vi.useFakeTimers();
+    let onStreamError: ((error: Error) => void) | undefined;
+    let onStreamStatus: ((status: CrmRealtimeStatus) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onStreamError = input.onError;
+          onStreamStatus = input.onStatus;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    const onStatus = vi.fn();
+    render(
+      <Harness
+        api={api}
+        mergeCycles={vi.fn()}
+        onStatus={onStatus}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+    expect(onStreamStatus).toBeDefined();
+
+    act(() => onStreamStatus?.("connected"));
+    act(() => {
+      onStreamStatus?.("degraded");
+      onStreamError?.(new Error("stream failed"));
+      onStreamStatus?.("connecting");
+    });
+
+    expect(onStatus).toHaveBeenLastCalledWith("connected");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(9_999);
+    });
+    expect(onStatus).toHaveBeenLastCalledWith("connected");
+
+    act(() => onStreamStatus?.("connected"));
+    expect(onStatus).toHaveBeenLastCalledWith("connected");
+  });
+
   it.each(["status", "error"] as const)(
-    "does not publish stale connected after a later transport %s",
-    async (failureSignal) => {
+    "does not publish connecting/degraded churn after a later transport %s",
+    (failureSignal) => {
       let onStreamError: ((error: Error) => void) | undefined;
       let onStreamStatus: ((status: CrmRealtimeStatus) => void) | undefined;
-      let finishReconciliation: (() => void) | undefined;
       const api = {
         subscribeEvents: vi.fn(
           (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
@@ -376,26 +401,17 @@ describe("useCrmRealtime", () => {
         ),
       } as unknown as CrmConversationApi;
       const onStatus = vi.fn();
-      const refreshSessions = vi.fn(
-        () =>
-          new Promise<void>((resolve) => {
-            finishReconciliation = resolve;
-          }),
-      );
       render(
         <Harness
           api={api}
           mergeCycles={vi.fn()}
           onStatus={onStatus}
           refreshSessionCounts={vi.fn(async () => undefined)}
-          refreshSessions={refreshSessions}
         />,
       );
-      await waitFor(() => expect(onStreamStatus).toBeDefined());
+      expect(onStreamStatus).toBeDefined();
 
       act(() => onStreamStatus?.("connected"));
-      expect(refreshSessions).toHaveBeenCalledTimes(1);
-
       act(() => {
         if (failureSignal === "status") {
           onStreamStatus?.("degraded");
@@ -403,15 +419,7 @@ describe("useCrmRealtime", () => {
         }
         onStreamError?.(new Error("stream failed"));
       });
-      expect(onStatus).toHaveBeenLastCalledWith("degraded");
-
-      await act(async () => {
-        finishReconciliation?.();
-        await Promise.resolve();
-      });
-
-      expect(onStatus).not.toHaveBeenCalledWith("connected");
-      expect(onStatus).toHaveBeenLastCalledWith("degraded");
+      expect(onStatus).toHaveBeenLastCalledWith("connected");
     },
   );
 });
@@ -426,7 +434,6 @@ function Harness({
   onStatus,
   refreshConnections = vi.fn(async () => undefined),
   refreshSessionCounts,
-  refreshSessions = vi.fn(async () => undefined),
   removeSession = vi.fn(),
 }: {
   api: CrmConversationApi;
@@ -440,7 +447,6 @@ function Harness({
   onStatus?: (status: CrmRealtimeStatus) => void;
   refreshConnections?: () => Promise<void>;
   refreshSessionCounts: () => Promise<void>;
-  refreshSessions?: () => Promise<void>;
   removeSession?: (cycleId: CrmConversationCycle["id"]) => void;
 }) {
   useCrmRealtime({
@@ -455,7 +461,6 @@ function Harness({
     ...(onStatus ? { onStatus } : {}),
     refreshConnections,
     refreshSessionCounts,
-    refreshSessions,
     updateRealtimeMessageStatus: vi.fn(),
   });
   return null;

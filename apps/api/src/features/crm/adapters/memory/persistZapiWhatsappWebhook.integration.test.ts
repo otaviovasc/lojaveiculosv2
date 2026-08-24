@@ -83,7 +83,9 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
           media: { mirrorStatus: "stored", storageKey: "crm/car.jpg" },
         },
       },
-      parsed: message(),
+      parsed: message({
+        profilePhotoUrl: "https://zapi.test/profiles/buyer.jpg",
+      }),
       profilePhoto: { status: "unavailable" as const },
     };
 
@@ -118,6 +120,9 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
       ],
     });
     expect(snapshot.threads).toHaveLength(1);
+    expect(snapshot.messages[0]?.profilePhotoUrl).toBe(
+      "https://zapi.test/profiles/buyer.jpg",
+    );
     expect(ingestMessage).not.toHaveBeenCalled();
     expect(upsertConversationCycleContext).not.toHaveBeenCalled();
     await expect(

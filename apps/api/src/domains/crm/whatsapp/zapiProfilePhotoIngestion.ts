@@ -64,6 +64,23 @@ export async function ingestZapiProfilePhoto(
       );
       return { ...result, conversationCycle };
     }
+    if ("sourcePhotoUrl" in result && result.sourcePhotoUrl) {
+      const conversationCycle = await repository.upsertConversationCycleContext(
+        {
+          ...(message.chatLid ? { customerChatId: message.chatLid } : {}),
+          ...(message.customerDisplayName
+            ? { customerDisplayName: message.customerDisplayName }
+            : {}),
+          customerPhone: message.phone,
+          channel: "WHATSAPP",
+          connectionId: connection.id,
+          profilePhotoUrl: result.sourcePhotoUrl,
+          storeId: connection.storeId,
+          tenantId: connection.tenantId,
+        },
+      );
+      return { ...result, conversationCycle };
+    }
   } catch (error) {
     result = {
       errorName: error instanceof Error ? error.name : "UnknownError",
