@@ -8,8 +8,10 @@ import { toCrmChannelDto } from "./crm.channel.dto.js";
 import { toCrmMessageDto } from "./crm.message.dto.js";
 import type { CrmServices } from "./crmServices.js";
 
-function toIsoString(value: Date | null): string | null {
-  return value?.toISOString() ?? null;
+function toIsoString(value: Date | string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string") return value;
+  return value.toISOString();
 }
 
 export function toConversationCycleDto(

@@ -33,6 +33,7 @@ export function subscribeCrmEvents(input: {
   let eventSource: EventSource | null = null;
   let lastEventId: string | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectAttempts = 0;
   let connectGeneration = 0;
   const seenEventIds = new Set<string>();
@@ -47,7 +48,13 @@ export function subscribeCrmEvents(input: {
     reconnectTimer = null;
   };
 
+  const clearStableConnectionTimer = () => {
+    if (stableConnectionTimer) globalThis.clearTimeout(stableConnectionTimer);
+    stableConnectionTimer = null;
+  };
+
   const scheduleReconnect = () => {
+    clearStableConnectionTimer();
     closeEventSource();
     if (reconnectTimer || closed) return;
     input.onStatus?.("degraded");
@@ -80,10 +87,17 @@ export function subscribeCrmEvents(input: {
     );
     eventSource = source;
     source.onopen = () => {
-      reconnectAttempts = 0;
+      if (closed || eventSource !== source) return;
+      clearStableConnectionTimer();
+      stableConnectionTimer = globalThis.setTimeout(() => {
+        if (eventSource !== source || closed) return;
+        reconnectAttempts = 0;
+        stableConnectionTimer = null;
+      }, 5_000);
       input.onStatus?.("connected");
     };
     const handleMessage = (event: MessageEvent) => {
+      if (closed || eventSource !== source) return;
       try {
         if (event.lastEventId) {
           if (seenEventIds.has(event.lastEventId)) return;
@@ -101,7 +115,7 @@ export function subscribeCrmEvents(input: {
       source.addEventListener(eventName, handleMessage as EventListener);
     });
     source.onerror = () => {
-      if (closed) return;
+      if (closed || eventSource !== source) return;
       scheduleReconnect();
     };
   };
@@ -116,6 +130,7 @@ export function subscribeCrmEvents(input: {
     connectGeneration += 1;
     input.onStatus?.("offline");
     clearReconnect();
+    clearStableConnectionTimer();
     closeEventSource();
   };
 }
