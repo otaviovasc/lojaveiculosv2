@@ -20,29 +20,56 @@ export async function ingestZapiProfilePhoto(
 ) {
   const { connection, message } = input;
   const gateway = getCrmMessagingGateway(ports);
-  const result = await mirrorNewZapiProfilePhoto({
-    ...(message.chatLid ? { customerChatId: message.chatLid } : {}),
-    ...(message.customerDisplayName
-      ? { customerDisplayName: message.customerDisplayName }
-      : {}),
-    customerPhone: message.phone,
-    connectionId: connection.id,
-    contactIdentity: message.chatLid ?? message.phone,
-    ...(message.profilePhotoUrl ? { photoUrl: message.profilePhotoUrl } : {}),
-    ...(!message.fromMe &&
-    connection.provider === "zapi" &&
-    gateway.getProfilePhotoUrl
-      ? {
-          resolvePhotoUrl: () =>
-            gateway.getProfilePhotoUrl!(connection, { phone: message.phone }),
-        }
-      : {}),
-    remoteMediaFetcher: ports.crmMediaFetcher ?? null,
-    repository: getCrmConversationRepository(ports),
-    storage: getCrmMediaStorage(ports),
-    storeId: connection.storeId,
-    tenantId: connection.tenantId,
-  });
+  const repository = getCrmConversationRepository(ports);
+  let result;
+  try {
+    result = await mirrorNewZapiProfilePhoto({
+      ...(message.chatLid ? { customerChatId: message.chatLid } : {}),
+      ...(message.customerDisplayName
+        ? { customerDisplayName: message.customerDisplayName }
+        : {}),
+      customerPhone: message.phone,
+      connectionId: connection.id,
+      contactIdentity: message.chatLid ?? message.phone,
+      ...(message.profilePhotoUrl ? { photoUrl: message.profilePhotoUrl } : {}),
+      ...(!message.fromMe &&
+      connection.provider === "zapi" &&
+      gateway.getProfilePhotoUrl
+        ? {
+            resolvePhotoUrl: () =>
+              gateway.getProfilePhotoUrl!(connection, { phone: message.phone }),
+          }
+        : {}),
+      remoteMediaFetcher: ports.crmMediaFetcher ?? null,
+      repository,
+      storage: getCrmMediaStorage(ports),
+      storeId: connection.storeId,
+      tenantId: connection.tenantId,
+    });
+    if (result.status === "stored") {
+      const conversationCycle = await repository.upsertConversationCycleContext(
+        {
+          ...(message.chatLid ? { customerChatId: message.chatLid } : {}),
+          ...(message.customerDisplayName
+            ? { customerDisplayName: message.customerDisplayName }
+            : {}),
+          customerPhone: message.phone,
+          channel: "WHATSAPP",
+          connectionId: connection.id,
+          profilePhotoStorageKey: result.storageKey,
+          profilePhotoUrl: result.profilePhotoUrl,
+          storeId: connection.storeId,
+          tenantId: connection.tenantId,
+        },
+      );
+      return { ...result, conversationCycle };
+    }
+  } catch (error) {
+    result = {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      status: "failed" as const,
+    };
+  }
   if (result.status === "failed") {
     logCrmServiceEvent(
       context,

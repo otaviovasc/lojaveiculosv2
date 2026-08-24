@@ -125,6 +125,7 @@ export function updateMemoryCrmMessage(
   if (input.deletedAt !== undefined) message.deletedAt = input.deletedAt;
   if (input.externalId !== undefined) message.externalId = input.externalId;
   if (input.metadata) message.metadata = input.metadata;
+  if (input.mediaUrl !== undefined) message.mediaUrl = input.mediaUrl;
   if (input.providerTimestamp !== undefined) {
     message.providerTimestamp = input.providerTimestamp;
   }

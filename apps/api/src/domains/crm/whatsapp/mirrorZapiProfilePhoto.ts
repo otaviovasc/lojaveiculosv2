@@ -65,9 +65,11 @@ export async function mirrorNewZapiProfilePhoto(
     if (result.status === "stored") return result;
     lastResult = result;
   }
-  const fallbackPhotoUrl = input.resolvePhotoUrl
+  const fallback = input.resolvePhotoUrl
     ? await safelyResolvePhotoUrl(input.resolvePhotoUrl)
-    : null;
+    : { photoUrl: null };
+  if ("errorName" in fallback) return { ...fallback, status: "failed" };
+  const fallbackPhotoUrl = fallback.photoUrl;
   if (
     fallbackPhotoUrl &&
     fallbackPhotoUrl.trim() &&
@@ -90,9 +92,11 @@ async function safelyResolvePhotoUrl(
   resolvePhotoUrl: () => Promise<string | null>,
 ) {
   try {
-    return await resolvePhotoUrl();
-  } catch {
-    return null;
+    return { photoUrl: await resolvePhotoUrl() };
+  } catch (error) {
+    return {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    };
   }
 }
 

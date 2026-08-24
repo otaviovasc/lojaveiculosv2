@@ -163,6 +163,7 @@ export async function updateCrmMessage(
       ...(input.metadata || input.providerTimestamp !== undefined
         ? { metadata: updatedMetadata }
         : {}),
+      ...(input.mediaUrl !== undefined ? { mediaUrl: input.mediaUrl } : {}),
       ...(input.providerTimestamp !== undefined
         ? { occurredAt: input.providerTimestamp ?? existing.occurredAt }
         : {}),

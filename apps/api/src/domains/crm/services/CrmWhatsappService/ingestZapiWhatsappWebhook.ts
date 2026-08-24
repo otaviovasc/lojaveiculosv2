@@ -1,6 +1,7 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
+  getCrmConversationRepository,
   getCrmMediaStorage,
   getCrmRealtimePublisher,
   type CrmServicePorts,
@@ -8,6 +9,7 @@ import {
 import {
   parseZapiContactIdentity,
   parseZapiInboundMessage,
+  type ParsedZapiInboundMessage,
 } from "../../whatsapp/parseZapiInboundMessage.js";
 import {
   isZapiNotificationPayload,
@@ -32,12 +34,19 @@ import {
 } from "../../whatsapp/publishZapiWhatsappAttendance.js";
 import { ingestZapiProfilePhoto } from "../../whatsapp/zapiProfilePhotoIngestion.js";
 import { persistZapiWhatsappWebhook } from "../../whatsapp/persistZapiWhatsappWebhook.js";
+import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
+import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
 
 const permission = "crm.messages.ingest" as const;
 export type {
   IngestZapiWhatsappWebhookInput,
   IngestZapiWhatsappWebhookResult,
 } from "../../whatsapp/ingestZapiWhatsappWebhookTypes.js";
+type OptionalMirrorInput = {
+  connection: CrmConnection;
+  conversationCycle: CrmConversationCycle;
+  message: ParsedZapiInboundMessage;
+};
 
 export async function ingestZapiWhatsappWebhook(
   context: ServiceContext,
@@ -69,22 +78,8 @@ export async function ingestZapiWhatsappWebhook(
     }
     return { reason: "not_processable", status: "ignored" };
   }
-  const media = await mirrorZapiWhatsappMedia({
-    connectionId: connection.id,
-    externalId: parsed.externalId,
-    ...(parsed.mediaType ? { mediaType: parsed.mediaType } : {}),
-    ...(parsed.mediaUrl ? { mediaUrl: parsed.mediaUrl } : {}),
-    metadata: parsed.metadata,
-    remoteMediaFetcher: ports.crmMediaFetcher ?? null,
-    storage: getCrmMediaStorage(ports),
-    storeId: connection.storeId,
-    tenantId: connection.tenantId,
-  });
-  const profilePhoto = await ingestZapiProfilePhoto(
-    context,
-    { connection, message: parsed },
-    ports,
-  );
+  const media = pendingZapiMedia(parsed);
+  const profilePhoto = { status: "unavailable" as const };
   const auditInput: CrmServiceAuditInput = {
     action: "crm.provider.zapi.webhook.received",
     category: "data_change" as const,
@@ -107,15 +102,15 @@ export async function ingestZapiWhatsappWebhook(
   const { attendanceTransition, result, transition } = persisted;
   const message = result.message;
   const conversationCycle = result.conversationCycle;
+  await getCrmRealtimePublisher(ports).publish({
+    connectionId: connection.id,
+    message,
+    conversationCycle,
+    storeId: connection.storeId,
+    tenantId: connection.tenantId,
+    type: "message",
+  });
   if (result.createdMessage) {
-    await getCrmRealtimePublisher(ports).publish({
-      connectionId: connection.id,
-      message,
-      conversationCycle,
-      storeId: connection.storeId,
-      tenantId: connection.tenantId,
-      type: "message",
-    });
     await publishZapiWhatsappAttendanceEnded(
       context,
       { connection, result, transition },
@@ -143,10 +138,111 @@ export async function ingestZapiWhatsappWebhook(
     tenantId: connection.tenantId,
     type: "conversationCycle",
   });
+  scheduleOptionalZapiMirroring(
+    context,
+    { connection, conversationCycle, message: parsed },
+    ports,
+  );
 
   return {
     message,
     conversationCycle,
     status: result.createdMessage ? "stored" : "duplicate",
   };
+}
+
+function pendingZapiMedia(message: ParsedZapiInboundMessage) {
+  if (!message.mediaType || !message.mediaUrl) {
+    return { metadata: message.metadata };
+  }
+  const current = message.metadata.media;
+  return {
+    metadata: {
+      ...message.metadata,
+      media: {
+        ...(current && typeof current === "object" && !Array.isArray(current)
+          ? current
+          : {}),
+        mirrorStatus: "pending",
+      },
+    },
+  };
+}
+
+function scheduleOptionalZapiMirroring(
+  context: ServiceContext,
+  input: OptionalMirrorInput,
+  ports: CrmServicePorts,
+) {
+  const onFailure = (stage: "media" | "profile_photo") => (error: unknown) =>
+    logCrmServiceEvent(context, "crm.provider.zapi.webhook.mirror_failed", {
+      connectionId: input.connection.id,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      stage,
+    });
+  void mirrorPersistedZapiMedia(input, ports).catch((error) =>
+    onFailure("media")(error),
+  );
+  void ingestZapiProfilePhoto(
+    context,
+    { connection: input.connection, message: input.message },
+    ports,
+  )
+    .then(async (result) => {
+      if (result.status !== "stored") return;
+      await getCrmRealtimePublisher(ports).publish({
+        connectionId: input.connection.id,
+        conversationCycle: result.conversationCycle,
+        storeId: input.connection.storeId,
+        tenantId: input.connection.tenantId,
+        type: "conversationCycle",
+      });
+    })
+    .catch(onFailure("profile_photo"));
+}
+
+async function mirrorPersistedZapiMedia(
+  input: OptionalMirrorInput,
+  ports: CrmServicePorts,
+) {
+  if (!input.message.mediaType || !input.message.mediaUrl) return;
+  const mirrored = await mirrorZapiWhatsappMedia({
+    connectionId: input.connection.id,
+    externalId: input.message.externalId,
+    mediaType: input.message.mediaType,
+    mediaUrl: input.message.mediaUrl,
+    metadata: input.message.metadata,
+    remoteMediaFetcher: ports.crmMediaFetcher ?? null,
+    storage: getCrmMediaStorage(ports),
+    storeId: input.connection.storeId,
+    tenantId: input.connection.tenantId,
+  });
+  const repository = getCrmConversationRepository(ports);
+  const existing = await repository.findMessageByExternalId({
+    connectionId: input.connection.id,
+    externalId: input.message.externalId,
+    storeId: input.connection.storeId,
+    tenantId: input.connection.tenantId,
+  });
+  if (!existing) throw backgroundError("PersistedZapiMessageNotFound");
+  const updated = await repository.updateMessage({
+    messageId: existing.id,
+    metadata: mirrored.metadata,
+    ...(mirrored.mediaUrl !== undefined ? { mediaUrl: mirrored.mediaUrl } : {}),
+    storeId: input.connection.storeId,
+    tenantId: input.connection.tenantId,
+  });
+  if (!updated) throw backgroundError("PersistedZapiMessageUpdateFailed");
+  await getCrmRealtimePublisher(ports).publish({
+    connectionId: input.connection.id,
+    conversationCycle: input.conversationCycle,
+    message: updated,
+    storeId: input.connection.storeId,
+    tenantId: input.connection.tenantId,
+    type: "message",
+  });
+}
+
+function backgroundError(name: string) {
+  return Object.assign(new Error(name), { name });
 }

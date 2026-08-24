@@ -104,6 +104,23 @@ describe("mirrorZapiProfilePhoto", () => {
       url: "https://zapi.test/current-profile.png",
     });
   });
+
+  it("reports authenticated profile URL resolution failures truthfully", async () => {
+    const input = profileInput(vi.fn(), vi.fn());
+    delete input.photoUrl;
+    await expect(
+      mirrorNewZapiProfilePhoto({
+        ...input,
+        customerPhone: "5511999999999",
+        repository: {
+          findConversationCycleByIdentity: vi.fn(async () => null),
+        } as never,
+        resolvePhotoUrl: async () => {
+          throw new TypeError("provider unavailable");
+        },
+      }),
+    ).resolves.toEqual({ errorName: "TypeError", status: "failed" });
+  });
 });
 
 function profileInput(
