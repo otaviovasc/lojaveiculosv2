@@ -21,10 +21,10 @@ describe("DocumentsTable responsive contract", () => {
     expect(table.parentElement).toHaveClass("hidden", "md:block");
     expect(
       within(table).getByRole("columnheader", { name: "Status" }),
-    ).toHaveClass("w-36", "min-w-36");
+    ).toHaveClass("w-32", "min-w-32");
     expect(
       within(table).getByRole("columnheader", { name: "Ações" }),
-    ).toHaveClass("w-40", "min-w-40");
+    ).toHaveClass("w-36", "min-w-36");
     expect(within(table).getByText("Emitido")).toHaveClass(
       "min-w-max",
       "whitespace-nowrap",

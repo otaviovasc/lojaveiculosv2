@@ -1,7 +1,9 @@
 import {
+  Bot,
   Check,
   ChevronDown,
   Copy,
+  ExternalLink,
   FileJson,
   KeyRound,
   Route,
@@ -32,6 +34,7 @@ export function PublicApiReferencePanel({
 }) {
   const [view, setView] = useState<"endpoints" | "resources">("resources");
   const apiBaseUrl = `${deploymentBaseUrl.replace(/\/$/, "")}${publicApiBasePath}`;
+  const llmsTxtUrl = `${apiBaseUrl}/llms.txt`;
 
   return (
     <FeatureSection
@@ -98,6 +101,41 @@ export function PublicApiReferencePanel({
             ]}
             value={view}
           />
+        </div>
+      </div>
+
+      <div className="public-api-llms-cta">
+        <span aria-hidden="true" className="public-api-llms-cta__icon">
+          <Bot aria-hidden="true" className="size-5" />
+        </span>
+        <div className="public-api-llms-cta__info">
+          <strong>Para agentes de IA</strong>
+          <small>
+            Cole o llms.txt no ChatGPT, Claude, Cursor ou outro agente: é o
+            índice completo de rotas, escopos e exemplos em um arquivo só.
+          </small>
+        </div>
+        <div className="public-api-llms-cta__endpoint">
+          <code>{llmsTxtUrl}</code>
+          <FeatureRowAction
+            ariaLabel={
+              copiedId === "llms-txt"
+                ? "URL do llms.txt copiada"
+                : "Copiar URL do llms.txt"
+            }
+            icon={copiedId === "llms-txt" ? Check : Copy}
+            onClick={() => void onCopy(llmsTxtUrl, "llms-txt")}
+            tooltip="Copiar URL do llms.txt"
+          />
+          <a
+            aria-label="Abrir llms.txt em nova aba"
+            className="public-api-llms-cta__open"
+            href={llmsTxtUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <ExternalLink aria-hidden="true" className="size-4" />
+          </a>
         </div>
       </div>
 

@@ -104,7 +104,7 @@ export function DocumentWorkspaceMobileList({
               </FeatureStatusBadge>
             </div>
 
-            <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-line/60 pt-3 text-xs">
+            <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-line/60 pt-2.5 text-xs">
               <DocumentMobileField
                 label="Tipo"
                 value={documentKindBadge(document)}
@@ -123,7 +123,7 @@ export function DocumentWorkspaceMobileList({
               />
             </dl>
 
-            <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-line/60 pt-3">
+            <div className="mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-line/60 pt-2.5">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <DocumentOriginBadge document={document} />
                 {vehicle?.plate ? (

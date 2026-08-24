@@ -3,6 +3,7 @@ import {
   BookOpen,
   CarFront,
   FileJson,
+  ListChecks,
   ShieldCheck,
   Sparkles,
   UsersRound,
@@ -73,6 +74,10 @@ const scopeGroupOrder: PublicApiScopeOption["group"][] = [
   "CRM",
 ];
 
+export const allPublicApiScopes: PublicApiScope[] = scopeOptions
+  .map((entry) => entry.scope)
+  .sort();
+
 export const scopeGroups: PublicApiScopeGroup[] = scopeGroupOrder.map(
   (label) => ({
     label,
@@ -81,6 +86,13 @@ export const scopeGroups: PublicApiScopeGroup[] = scopeGroupOrder.map(
 );
 
 export const scopePresets: PublicApiScopePreset[] = [
+  {
+    description: "Todos os escopos disponíveis para integrações completas.",
+    icon: ListChecks,
+    label: "Acesso total",
+    name: "full-access",
+    scopes: [...allPublicApiScopes],
+  },
   {
     description: "Busca de veículos, detalhes seguros e criação de leads.",
     icon: Bot,

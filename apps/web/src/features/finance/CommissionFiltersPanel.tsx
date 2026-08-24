@@ -41,7 +41,7 @@ export function CommissionFiltersPanel({
           </button>
         ) : null}
       </div>
-      <div className="commission-filter-grid grid items-end gap-3.5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="commission-filter-grid grid items-end gap-3.5 md:grid-cols-2 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div className="grid min-w-0 gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
           <span>Período</span>
           <div className="datepicker-range-picker min-w-0 w-full">
