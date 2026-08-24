@@ -917,21 +917,14 @@
   font-weight: 900;
   min-width: 0;
   outline: none;
+  text-align: center;
   width: 3.5rem;
   -moz-appearance: textfield;
 }
 
-.auto-entry-timing__select {
-  flex: 1 1 9rem;
-  min-width: 0;
-}
-
-.auto-entry-timing__select .custom-select-trigger {
-  background: transparent;
-  border: 0;
-  min-height: 2.75rem;
-  padding-inline: var(--app-space-sm);
-  width: 100%;
+.auto-entry-timing__field::placeholder {
+  color: var(--color-muted);
+  font-weight: 700;
 }
 
 .auto-entry-timing__field::-webkit-outer-spin-button,

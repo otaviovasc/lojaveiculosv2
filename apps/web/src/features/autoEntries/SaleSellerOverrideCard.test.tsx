@@ -102,17 +102,17 @@ describe("SaleSellerOverrideCard", () => {
   it.each([
     {
       expectedTiming: { day: 15, kind: "day_of_month" },
+      inputLabel: "Dia do mês",
       mode: "Dia do mês",
-      picker: "Escolher dia do mês",
     },
     {
       expectedTiming: { day: 22, kind: "next_month_day" },
+      inputLabel: "Dia do próximo mês",
       mode: "Próx. mês",
-      picker: "Escolher dia do próximo mês",
     },
   ] as const)(
     "lets the user choose a day for $mode",
-    async ({ expectedTiming, mode, picker }) => {
+    async ({ expectedTiming, inputLabel, mode }) => {
       const onSave = vi.fn<
         (mutations: readonly AutoEntryRuleMutation[]) => Promise<void>
       >(async () => undefined);
@@ -145,9 +145,9 @@ describe("SaleSellerOverrideCard", () => {
           screen.getByRole("group", { name: "Momento do lançamento" }),
         ).getByRole("button", { name: mode }),
       );
-      await user.click(screen.getByRole("button", { name: picker }));
-      await user.click(
-        screen.getByRole("option", { name: String(expectedTiming.day) }),
+      await user.type(
+        screen.getByLabelText(inputLabel),
+        String(expectedTiming.day),
       );
       await user.click(
         screen.getByRole("button", { name: "Salvar configuração" }),
