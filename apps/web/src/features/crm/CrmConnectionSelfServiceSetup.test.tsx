@@ -71,6 +71,27 @@ describe("CrmConnectionSelfServiceSetup", () => {
     expect(screen.getByText(/permissões de gerenciar conexões/i)).toBeVisible();
   });
 
+  it("pauses new setup when the store billing contract is unavailable", () => {
+    render(
+      <CrmConnectionSelfServiceSetup
+        allowance={{ limit: 0, remaining: 0, used: 0 }}
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+        ]}
+        billingState={{
+          code: "BILLING_CONTRACT_UNAVAILABLE",
+          status: "unavailable",
+        }}
+        canPair={false}
+        canSetup
+        handlers={createHandlers()}
+      />,
+    );
+
+    expect(screen.getByText(/contrato de billing desta loja/i)).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Z-API/i })).toBeNull();
+  });
+
   it("keeps existing management visible without exposing setup actions", async () => {
     const connection = createZapiConnection("active");
     render(
@@ -154,6 +175,10 @@ describe("CrmConnectionSelfServiceSetup", () => {
         availableSetups={[
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
         ]}
+        billingState={{
+          code: "BILLING_CONTRACT_UNAVAILABLE",
+          status: "unavailable",
+        }}
         canPair
         canRepairCredentials
         canSetup

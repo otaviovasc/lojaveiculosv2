@@ -3,6 +3,7 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 import type {
   CrmConnectionAllowance,
+  CrmConnectionBillingState,
   CrmAvailableSetup,
   CrmProviderConnection,
   CrmWhatsappZapiAddonContract,
@@ -53,6 +54,7 @@ type ConnectionAdminProps = {
   selfService?: {
     allowance: CrmConnectionAllowance;
     availableSetups: readonly CrmAvailableSetup[];
+    billingState?: CrmConnectionBillingState;
     canPair: boolean;
     canRepairCredentials?: boolean;
     canSetup: boolean;
@@ -109,6 +111,9 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
             existingConnection={readInitialConnection(connections)}
             handlers={selfService.handlers}
             startAtDirectory={!readPendingComposioConnectionId()}
+            {...(selfService.billingState !== undefined
+              ? { billingState: selfService.billingState }
+              : {})}
             {...(selfService.zapiAddonContract !== undefined
               ? { zapiAddonContract: selfService.zapiAddonContract }
               : {})}

@@ -2,6 +2,7 @@ import { and, desc, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
 import {
   addons,
   plans,
+  stores,
   subscriptionItems,
   subscriptions,
 } from "@lojaveiculosv2/db";
@@ -71,11 +72,70 @@ export async function updateStoreSubscriptionSelection(
       and(
         eq(subscriptionItems.subscriptionId, subscription.id),
         eq(subscriptionItems.storeId, input.storeId),
+        eq(subscriptionItems.tenantId, input.tenantId),
+        or(
+          isNull(subscriptionItems.startsAt),
+          lte(subscriptionItems.startsAt, now),
+        ),
         or(isNull(subscriptionItems.endsAt), gt(subscriptionItems.endsAt, now)),
+      ),
+    );
+  const activeGlobalPlanItems = await db
+    .select()
+    .from(subscriptionItems)
+    .where(
+      and(
+        eq(subscriptionItems.subscriptionId, subscription.id),
+        eq(subscriptionItems.itemType, "plan"),
+        isNull(subscriptionItems.storeId),
+        eq(subscriptionItems.tenantId, input.tenantId),
+        or(
+          isNull(subscriptionItems.startsAt),
+          lte(subscriptionItems.startsAt, now),
+        ),
+        or(isNull(subscriptionItems.endsAt), gt(subscriptionItems.endsAt, now)),
+      ),
+    );
+  const activeStores = await db
+    .select({ id: stores.id })
+    .from(stores)
+    .where(
+      and(
+        eq(stores.tenantId, input.tenantId),
+        eq(stores.isDeleted, false),
+        isNull(stores.deletedAt),
       ),
     );
   const resetDraft =
     subscription.status === "trialing" || subscription.status === "expired";
+  if (activeGlobalPlanItems.length > 1) {
+    throw new BillingSelectionError(
+      "This billing account has multiple unallocated plans and needs billing repair.",
+    );
+  }
+  const globalPlanItem = activeGlobalPlanItems[0];
+  const canPromoteGlobalPlan =
+    globalPlanItem &&
+    activeStores.length === 1 &&
+    activeStores[0]?.id === input.storeId;
+  if (globalPlanItem && !canPromoteGlobalPlan) {
+    throw new BillingSelectionError(
+      "This billing account needs store allocation before the plan can be changed.",
+    );
+  }
+  const globalPlanMatchesSelection =
+    canPromoteGlobalPlan && globalPlanItem.planId === plan.id;
+  if (canPromoteGlobalPlan && globalPlanMatchesSelection) {
+    await db
+      .update(subscriptionItems)
+      .set({ storeId: input.storeId, updatedAt: now })
+      .where(eq(subscriptionItems.id, globalPlanItem.id));
+  } else if (canPromoteGlobalPlan) {
+    await db
+      .update(subscriptionItems)
+      .set({ endsAt: now, updatedAt: now })
+      .where(eq(subscriptionItems.id, globalPlanItem.id));
+  }
   if (resetDraft && activeItems.length) {
     await db
       .delete(subscriptionItems)
@@ -105,6 +165,7 @@ export async function updateStoreSubscriptionSelection(
 
   const retainedItems = resetDraft ? [] : activeItems;
   if (
+    !globalPlanMatchesSelection &&
     !retainedItems.some(
       (item) => item.itemType === "plan" && item.planId === plan.id,
     )

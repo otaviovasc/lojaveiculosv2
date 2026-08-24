@@ -3,6 +3,7 @@ import type {
   CrmChannel,
   CrmChannelConnectionDto,
   CrmConnectionAllowance,
+  CrmConnectionBillingState,
   CrmConversationCycleCountsResponse,
   CrmConversationCycleDto,
   CrmConversationCycleStatus,
@@ -15,6 +16,7 @@ import type {
 export type {
   CrmAvailableSetup,
   CrmConnectionAllowance,
+  CrmConnectionBillingState,
   CrmConversationCycleCountsResponse as CrmConversationCycleCounts,
   CrmConversationCycleStatus,
   CrmHumanAttendanceState,

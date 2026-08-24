@@ -4,6 +4,7 @@ import { asError } from "./crmConversationHookSupport";
 import type {
   CrmComposioCompleteResult,
   CrmAvailableSetup,
+  CrmConnectionBillingState,
   CrmConnectionAllowance,
   CrmConnectionId,
   CrmCreateConnectionInput,
@@ -26,6 +27,10 @@ export function useCrmConnections(api: CrmConversationApi) {
   const [availableSetups, setAvailableSetups] = useState<CrmAvailableSetup[]>(
     [],
   );
+  const [billingState, setBillingState] = useState<CrmConnectionBillingState>({
+    code: null,
+    status: "available",
+  });
   const [connections, setConnections] = useState<CrmProviderConnection[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +76,9 @@ export function useCrmConnections(api: CrmConversationApi) {
       setConnections(nextConnections);
       setAllowance(payload.allowance);
       setAvailableSetups(payload.availableSetups);
+      setBillingState(
+        payload.billingState ?? { code: null, status: "available" },
+      );
       setError(null);
     },
     [],
@@ -435,6 +443,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     setConnections([]);
     setAllowance(fallbackAllowance);
     setAvailableSetups([]);
+    setBillingState({ code: null, status: "available" });
     setZapiAddonContract(null);
     setIsLoading(true);
     setError(null);
@@ -463,6 +472,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     allowance,
     authorizeComposio,
     availableSetups,
+    billingState,
     completeComposio,
     configureZapiWebhooks,
     connections,

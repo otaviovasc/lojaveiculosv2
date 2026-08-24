@@ -32,6 +32,10 @@ export type CreateCrmChannelConnectionInput =
 export type CrmChannelConnectionOverview = {
   allowance: BillingQuotaAllowance;
   availableSetups: readonly CrmChannelConnectionSetupIdentity[];
+  billingState?: {
+    code: "BILLING_CONTRACT_UNAVAILABLE" | null;
+    status: "available" | "unavailable";
+  };
   connections: readonly CrmChannelConnection[];
 };
 

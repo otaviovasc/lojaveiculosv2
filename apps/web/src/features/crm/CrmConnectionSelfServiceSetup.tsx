@@ -8,6 +8,7 @@ import type {
   CrmComposioCompleteResult,
   CrmAvailableSetup,
   CrmConnectionAllowance,
+  CrmConnectionBillingState,
   CrmCreateConnectionInput,
   CrmConnectionId,
   CrmOfficialChannelSetupProvider,
@@ -88,6 +89,7 @@ export type CrmConnectionSelfServiceHandlers = {
 export function CrmConnectionSelfServiceSetup({
   allowance,
   availableSetups,
+  billingState,
   canPair,
   canSetup,
   canRepairCredentials = false,
@@ -101,6 +103,7 @@ export function CrmConnectionSelfServiceSetup({
 }: {
   allowance: CrmConnectionAllowance;
   availableSetups: readonly CrmAvailableSetup[];
+  billingState?: CrmConnectionBillingState;
   canPair: boolean;
   canRepairCredentials?: boolean;
   canSetup: boolean;
@@ -112,6 +115,8 @@ export function CrmConnectionSelfServiceSetup({
   startAtDirectory?: boolean;
   zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
 }) {
+  const billingUnavailable = billingState?.status === "unavailable";
+  const setupAllowed = canSetup && !billingUnavailable;
   const [provider, setProvider] = useState<CrmSetupProvider | null>(
     startAtDirectory ? null : readSetupProvider(existingConnection),
   );
@@ -281,6 +286,13 @@ export function CrmConnectionSelfServiceSetup({
             : "Você pode consultar conexões existentes. Para adicionar ou alterar canais, seu usuário precisa das permissões de gerenciar conexões e integrações."}
         </div>
       ) : null}
+      {billingUnavailable ? (
+        <div className="crm-setup-notice" role="status">
+          Não foi possível confirmar o contrato de billing desta loja. As
+          conexões existentes continuam disponíveis; novas conexões e alterações
+          ficam pausadas até a reconciliação do billing.
+        </div>
+      ) : null}
       <CrmChannelDirectory
         availableSetups={[...availableSetups]}
         connections={connections}
@@ -293,7 +305,7 @@ export function CrmConnectionSelfServiceSetup({
         onRepairConnection={chooseConnectionForRepair}
         onRedirect={onRedirect}
         showRepairActions={canRepairCredentials}
-        showSetupActions={canSetup}
+        showSetupActions={setupAllowed}
         zapiAddonContract={zapiAddonContract}
       />
       <FeatureDialog
@@ -323,7 +335,7 @@ export function CrmConnectionSelfServiceSetup({
             allowance={allowance}
             canPair={canPair}
             canRepairCredentials={canRepairCredentials}
-            canSetup={canSetup}
+            canSetup={setupAllowed}
             connection={connection?.provider === "zapi" ? connection : null}
             handlers={handlers}
             {...(initialZapiCredentialMode
@@ -336,7 +348,7 @@ export function CrmConnectionSelfServiceSetup({
         ) : isOfficialSetupProvider(provider) ? (
           <CrmOfficialChannelSetup
             completion={completion}
-            canSetup={canSetup}
+            canSetup={setupAllowed}
             connection={
               connection &&
               isComposioConnectionForProvider(connection, officialChannel)
