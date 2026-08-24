@@ -34,7 +34,7 @@ describe("CRM realtime DTO", () => {
       storeId,
       tenantId,
     });
-    await broker.publish(createMessageEvent());
+    await broker.publish(serializeEvent(createMessageEvent()));
     const ticketResponse = await app.request("/api/v1/crm/events/ticket", {
       body: JSON.stringify({ connectionId, lastEventId: cursor!.id }),
       headers: { "Content-Type": "application/json" },
@@ -63,6 +63,10 @@ describe("CRM realtime DTO", () => {
     expect(event.conversationCycle).not.toHaveProperty("tenantId");
   });
 });
+
+function serializeEvent<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
 
 function createZapiConnection() {
   return {

@@ -101,6 +101,41 @@ describe("ingestZapiWhatsappWebhook optional media", () => {
       expect.objectContaining({ type: "message" }),
     );
   });
+
+  it("publishes the persisted profile photo update after background mirroring", async () => {
+    dependencies.ingestZapiProfilePhoto.mockResolvedValue({
+      conversationCycle: {
+        id: "cycle-1",
+        profilePhotoUrl: "https://cdn.local/profile.jpg",
+      },
+      profilePhotoUrl: "https://cdn.local/profile.jpg",
+      status: "stored",
+      storageKey: "crm/profile.jpg",
+    });
+
+    await ingestZapiWhatsappWebhook(
+      context(),
+      {
+        connectionId: "connection-1",
+        payload: {
+          messageId: "message-external-2",
+          phone: "5511999999999",
+          senderPhoto: "https://zapi.test/profile/photo.jpg",
+          text: { message: "Ola" },
+          timestamp: 1_783_029_600,
+        },
+      },
+      ports(),
+    );
+
+    await vi.waitFor(() => {
+      expect(dependencies.publish).toHaveBeenCalledTimes(3);
+      expect(dependencies.publish.mock.calls.at(-1)?.[0]).toMatchObject({
+        conversationCycle: { profilePhotoUrl: "https://cdn.local/profile.jpg" },
+        type: "conversationCycle",
+      });
+    });
+  });
 });
 
 function context() {
