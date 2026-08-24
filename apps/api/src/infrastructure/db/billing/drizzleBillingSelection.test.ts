@@ -95,4 +95,92 @@ describe("updateStoreSubscriptionSelection", () => {
       } as never),
     ).rejects.toBeInstanceOf(BillingSelectionError);
   });
+
+  it("promotes a legacy global plan when the tenant has one store", async () => {
+    const db = createFakeBillingAccountDb({
+      plans: [plan],
+      stores: [{ id: "store_1", isDeleted: false, tenantId: "tenant_1" }],
+      subscriptionItems: [
+        {
+          id: "global_plan_item",
+          itemType: "plan",
+          planId: "plan_1",
+          storeId: null,
+          subscriptionId: "subscription_1",
+          tenantId: "tenant_1",
+        },
+      ],
+      subscriptions: [
+        { id: "subscription_1", status: "active", tenantId: "tenant_1" },
+      ],
+    });
+
+    await updateStoreSubscriptionSelection(db, input as never);
+
+    expect(
+      db.inserted.filter((entry) => entry.table === subscriptionItems),
+    ).toHaveLength(0);
+    expect(
+      db.inserted.find((entry) => entry.table === subscriptionItems),
+    ).toBeUndefined();
+  });
+
+  it("does not silently duplicate a global plan across multiple stores", async () => {
+    const db = createFakeBillingAccountDb({
+      plans: [plan],
+      stores: [
+        { id: "store_1", isDeleted: false, tenantId: "tenant_1" },
+        { id: "store_2", isDeleted: false, tenantId: "tenant_1" },
+      ],
+      subscriptionItems: [
+        {
+          id: "global_plan_item",
+          itemType: "plan",
+          planId: "plan_1",
+          storeId: null,
+          subscriptionId: "subscription_1",
+          tenantId: "tenant_1",
+        },
+      ],
+      subscriptions: [
+        { id: "subscription_1", status: "active", tenantId: "tenant_1" },
+      ],
+    });
+
+    await expect(
+      updateStoreSubscriptionSelection(db, input as never),
+    ).rejects.toThrow("needs store allocation");
+  });
+
+  it("rejects ambiguous legacy billing allocations", async () => {
+    const db = createFakeBillingAccountDb({
+      plans: [plan],
+      stores: [{ id: "store_1", isDeleted: false, tenantId: "tenant_1" }],
+      subscriptionItems: [
+        {
+          id: "global_plan_item_1",
+          itemType: "plan",
+          planId: "plan_1",
+          storeId: null,
+          subscriptionId: "subscription_1",
+          tenantId: "tenant_1",
+        },
+        {
+          id: "global_plan_item_2",
+          itemType: "plan",
+          planId: "plan_1",
+          storeId: null,
+          subscriptionId: "subscription_1",
+          tenantId: "tenant_1",
+        },
+      ],
+      subscriptions: [
+        { id: "subscription_1", status: "active", tenantId: "tenant_1" },
+      ],
+    });
+
+    await expect(
+      updateStoreSubscriptionSelection(db, input as never),
+    ).rejects.toThrow("multiple unallocated plans");
+  });
 });

@@ -6,6 +6,7 @@ import {
   plans,
   subscriptionItems,
   subscriptions,
+  stores,
   tenants,
 } from "@lojaveiculosv2/db";
 import type { DrizzleBillingAccountClient } from "./drizzleBillingAccount.js";
@@ -20,6 +21,7 @@ type FakeBillingRows = {
   plans: readonly Row[];
   subscriptionItems: readonly Row[];
   subscriptions: readonly Row[];
+  stores: readonly Row[];
   tenants: readonly Row[];
 };
 
@@ -44,6 +46,7 @@ export function createFakeBillingAccountDb(
     [plans, [...(overrides.plans ?? [])]],
     [subscriptionItems, [...(overrides.subscriptionItems ?? [])]],
     [subscriptions, [...(overrides.subscriptions ?? [])]],
+    [stores, [...(overrides.stores ?? [])]],
     [tenants, [...(overrides.tenants ?? [])]],
   ]);
   const inserted: { row: Row; table: unknown }[] = [];

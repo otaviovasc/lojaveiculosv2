@@ -4,6 +4,7 @@ import { createTestCrmConnectionRepository } from "../../testSupportConnections.
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import type { UpsertCrmChannelRoutingPolicyInput } from "../../ports/crmRoutingPolicyRepository.js";
 import { crmChannelConnectionCapabilityFacts } from "../../channelConnections/connectionCreation.js";
+import { BillingContractUnavailableError } from "../../../billing/ports/billingQuotaGuard.js";
 import {
   createZapiWebhookSetupIntent,
   withZapiWebhookSetupState,
@@ -17,6 +18,19 @@ const storeId = "11111111-1111-4111-8111-111111111111";
 const tenantId = "22222222-2222-4222-8222-222222222222";
 
 describe("getCrmChannelConnectionOverview", () => {
+  it("returns existing connections when the store contract needs billing repair", async () => {
+    const overview = await getCrmChannelConnectionOverview(
+      createContext(["crm"]),
+      createPortsThatNeedBillingRepair(),
+    );
+
+    expect(overview.allowance).toEqual({ limit: 0, remaining: 0, used: 0 });
+    expect(overview.billingState).toEqual({
+      code: "BILLING_CONTRACT_UNAVAILABLE",
+      status: "unavailable",
+    });
+  });
+
   it("keeps Z-API discoverable when contracted capacity is not active", async () => {
     const overview = await getCrmChannelConnectionOverview(
       createContext(["crm"]),
@@ -169,5 +183,17 @@ function createPorts(limit: number): CrmServicePorts {
     },
     crmConnectionRepository: createTestCrmConnectionRepository(),
     crmRepository: {} as never,
+  };
+}
+
+function createPortsThatNeedBillingRepair(): CrmServicePorts {
+  return {
+    ...createPorts(0),
+    billingQuotaGuard: {
+      assertAvailable: vi.fn(async () => undefined),
+      getAllowance: vi.fn(async () => {
+        throw new BillingContractUnavailableError();
+      }),
+    },
   };
 }

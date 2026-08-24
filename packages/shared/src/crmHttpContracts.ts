@@ -47,6 +47,16 @@ export type CrmConnectionAllowance = z.infer<
   typeof crmConnectionAllowanceSchema
 >;
 
+export const crmConnectionBillingStateSchema = z
+  .object({
+    code: z.literal("BILLING_CONTRACT_UNAVAILABLE").nullable(),
+    status: z.enum(["available", "unavailable"]),
+  })
+  .strict();
+export type CrmConnectionBillingState = z.infer<
+  typeof crmConnectionBillingStateSchema
+>;
+
 export const crmAvailableSetupSchema = z
   .object({
     broker: z.enum(crmCredentialBrokers),
@@ -90,6 +100,7 @@ export const crmConnectionOverviewSchema = z
   .object({
     allowance: crmConnectionAllowanceSchema,
     availableSetups: z.array(crmAvailableSetupSchema),
+    billingState: crmConnectionBillingStateSchema.optional(),
     connections: z.array(crmConnectionOverviewItemSchema),
   })
   .strict();

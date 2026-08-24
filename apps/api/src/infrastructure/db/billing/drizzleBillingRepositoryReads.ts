@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { storeEntitlements, subscriptionItems } from "@lojaveiculosv2/db";
 import type {
   BillingSubscription,
@@ -49,10 +49,8 @@ export async function findSubscription(
       and(
         eq(subscriptionItems.subscriptionId, subscription.id),
         eq(subscriptionItems.itemType, "plan"),
-        or(
-          eq(subscriptionItems.storeId, input.storeId),
-          isNull(subscriptionItems.storeId),
-        ),
+        eq(subscriptionItems.storeId, input.storeId),
+        eq(subscriptionItems.tenantId, input.tenantId),
       ),
     )
     .orderBy(desc(subscriptionItems.createdAt))

@@ -1,4 +1,5 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import { BillingContractUnavailableError } from "../../../billing/ports/billingQuotaGuard.js";
 import {
   connectionIdentityKey,
   setupProviderForConnection,
@@ -30,11 +31,24 @@ export async function buildCrmChannelConnectionOverview(
   if (!getAllowance) {
     throw new Error("Billing quota allowance resolver is unavailable.");
   }
-  const allowance = await getAllowance({
-    quotaKey: "crm_zapi",
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
-  });
+  let allowance = { limit: 0, remaining: 0, used: 0 };
+  let billingState: CrmChannelConnectionOverview["billingState"] = {
+    code: null,
+    status: "available",
+  };
+  try {
+    allowance = await getAllowance({
+      quotaKey: "crm_zapi",
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
+    });
+  } catch (error) {
+    if (!(error instanceof BillingContractUnavailableError)) throw error;
+    billingState = {
+      code: "BILLING_CONTRACT_UNAVAILABLE",
+      status: "unavailable",
+    };
+  }
   const configured = new Set(
     connections
       .filter((connection) => connection.status !== "archived")
@@ -52,6 +66,7 @@ export async function buildCrmChannelConnectionOverview(
       if (identity.provider === "zapi") return true;
       return entitlements.includes("crm");
     }),
+    billingState,
     connections,
   };
 }

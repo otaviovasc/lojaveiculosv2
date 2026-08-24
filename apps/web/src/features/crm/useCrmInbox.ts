@@ -602,6 +602,7 @@ export function useCrmInbox(
     assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
     availableConnectionSetups: connections.availableSetups,
+    connectionBillingState: connections.billingState,
     canAssignSessions: assignmentState.canAssignSessions,
     canStartConversation:
       canSendMessages && conversationStartCapability.canStart,

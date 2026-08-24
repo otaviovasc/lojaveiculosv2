@@ -262,6 +262,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                     selfService={{
                       allowance: inbox.connectionAllowance,
                       availableSetups: inbox.availableConnectionSetups,
+                      billingState: inbox.connectionBillingState,
                       canPair: inbox.permissions.canConnectionPair,
                       canRepairCredentials:
                         inbox.permissions.canConnectionCredentialsManage,
