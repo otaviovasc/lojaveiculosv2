@@ -1,5 +1,6 @@
 export type R2StorageKeyInput = {
   fileName: string;
+  idempotencyKey?: string;
   scopeSegments: readonly string[];
 };
 
@@ -9,7 +10,12 @@ export function createR2StorageKey(
   environmentPrefix: string,
 ): string {
   const fileName = sanitizeR2FileName(input.fileName);
-  const uniqueName = `${Date.now()}-${uniqueId}-${fileName}`;
+  const stableId = input.idempotencyKey
+    ? sanitizeScopeSegment(input.idempotencyKey)
+    : "";
+  const uniqueName = stableId
+    ? `${stableId}-${fileName}`
+    : `${Date.now()}-${uniqueId}-${fileName}`;
 
   return [
     sanitizeScopeSegment(environmentPrefix),

@@ -18,6 +18,16 @@ export async function synchronizeCanonicalMessage(
     external_bot_idempotency_key: effect.idempotencyKey,
     external_bot_integration_id: effect.integrationId,
     external_bot_model_version: effect.modelVersion,
+    ...(effect.preparedMedia
+      ? {
+          media: {
+            contentType: effect.preparedMedia.contentType,
+            mirrorStatus: "stored",
+            sizeBytes: effect.preparedMedia.sizeBytes,
+            storageKey: effect.preparedMedia.storageKey,
+          },
+        }
+      : {}),
     provider_operation_id: providerOperation.id,
   });
   await db.execute(sql`

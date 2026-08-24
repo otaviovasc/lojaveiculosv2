@@ -9,6 +9,10 @@ import {
 } from "./drizzleExternalBotEffectRuntimeMapping.js";
 export type { AuthorizedExternalBotEffect } from "./drizzleExternalBotEffectRuntimeMapping.js";
 export {
+  persistPreparedExternalBotMedia,
+  type PreparedExternalBotMedia,
+} from "./drizzleExternalBotPreparedMedia.js";
+export {
   ExternalBotCanonicalSyncIndeterminateError,
   synchronizeExternalBotEffectOutcome,
 } from "./drizzleExternalBotEffectSynchronization.js";
@@ -29,7 +33,7 @@ export async function loadAuthorizedExternalBotEffect(
     !markProviderAttempt ||
     (attemptRows as unknown as ExternalBotRow[]).length === 1;
   const rows = await db.execute(sql`
-    select effect.id,effect.idempotency_key,effect.provider,
+    select effect.id,effect.idempotency_key,effect.provider,effect.result as effect_result,
       effect.provider_connection_id,effect.store_id,effect.tenant_id,
       command.action_type,command.expected_attendance_revision,
       command.expected_revision,command.input,

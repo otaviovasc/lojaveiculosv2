@@ -115,6 +115,52 @@ describe("external bot canonical effect runtime", () => {
     expect(query).toContain("synchronized.provider_message_id is not null");
   });
 
+  it("loads a prepared durable media URL instead of the external source", async () => {
+    const originalUrl = "https://provider.example/audio.mp3?expires=1";
+    const publicUrl = "https://cdn.example/crm/bot/audio.mp3";
+    const execute = vi.fn().mockResolvedValue([
+      authorizedRow({
+        action_type: "message.send_media",
+        connection_metadata: {
+          capabilities: { inbound: true, media: true, outbound: true },
+          connected: true,
+          credentialsRef: { env: { instanceId: "ZAPI_INSTANCE_ID" } },
+        },
+        effect_result: {
+          preparedMedia: {
+            contentType: "audio/mpeg",
+            originalUrl,
+            publicUrl,
+            sizeBytes: 3,
+            storageKey: "staging/crm/bot/audio.mp3",
+          },
+        },
+        input: {
+          command: { payload: { mediaType: "audio", mediaUrl: originalUrl } },
+          integrationId: ids.integration,
+          modelVersion: "v1",
+        },
+      }),
+    ]);
+
+    await expect(
+      loadAuthorizedExternalBotEffect({ execute } as never, ids.effect, {
+        markProviderAttempt: false,
+      }),
+    ).resolves.toMatchObject({
+      command: { payload: { mediaType: "audio", mediaUrl: publicUrl } },
+      preparedMedia: {
+        originalUrl,
+        publicUrl,
+        storageKey: "staging/crm/bot/audio.mp3",
+      },
+    });
+
+    expect(render(execute.mock.calls[0]![0] as SQL)).toContain(
+      "effect.result as effect_result",
+    );
+  });
+
   it("persists and verifies one directly scoped canonical outbound", async () => {
     const execute = vi
       .fn()
