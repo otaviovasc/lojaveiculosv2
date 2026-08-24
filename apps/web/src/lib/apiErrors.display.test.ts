@@ -92,9 +92,29 @@ describe("API error display helpers", () => {
       "A Z-API não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token e tente novamente.",
     ],
     [
+      "CRM_WHATSAPP_GATEWAY_ERROR",
+      502,
+      "A conexão com o WhatsApp falhou temporariamente. Verifique o canal e tente novamente.",
+    ],
+    [
       "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
       409,
-      "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.",
+      "Já existe uma conexão para este canal. Abra a conexão existente para revisar a configuração.",
+    ],
+    [
+      "CRM_WHATSAPP_NOT_FOUND",
+      404,
+      "Esta conversa não está mais disponível. Atualize a lista e selecione outro atendimento.",
+    ],
+    [
+      "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED",
+      409,
+      "A conexão Z-API foi encontrada. Confirme as novas credenciais da mesma instância para continuar.",
+    ],
+    [
+      "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED",
+      409,
+      "A conexão Z-API foi encontrada. Confirme a troca para a nova instância para continuar.",
     ],
     [
       "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE",
@@ -110,6 +130,21 @@ describe("API error display helpers", () => {
       "FISCAL_ARTIFACT_UNAVAILABLE",
       409,
       "O arquivo fiscal oficial ainda não está disponível. Atualize o status da nota e tente novamente.",
+    ],
+    [
+      "VEHICLE_UNIT_IDENTIFIER_CONFLICT",
+      409,
+      "Já existe um veículo nesta loja com a mesma placa, estoque ou chassi.",
+    ],
+    [
+      "DOCUMENT_POLICY_ERROR",
+      409,
+      "O documento não pôde ser vinculado a esta unidade. Atualize a tela e tente novamente.",
+    ],
+    [
+      "INVENTORY_STORAGE_SCOPE_ERROR",
+      409,
+      "O arquivo não pôde ser vinculado ao veículo. Atualize a tela e tente novamente.",
     ],
     [
       "CRM_LEAD_NOT_FOUND",
@@ -149,10 +184,46 @@ describe("API error display helpers", () => {
     expect(error.userMessage).toBe(expected);
   });
 
+  it.each([
+    [
+      "zapi",
+      "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.",
+    ],
+    [
+      "meta_cloud",
+      "Já existe uma conexão oficial para esta loja. Abra a conexão existente para revisar ou reautorizar o canal.",
+    ],
+    [
+      "olx",
+      "Já existe uma conexão OLX Chat para esta loja. Abra a conexão existente para revisar a autorização.",
+    ],
+  ])(
+    "uses provider-specific copy for duplicate %s connections",
+    (provider, expected) => {
+      const error = new AppApiError({
+        code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
+        details: { provider },
+        message: "Provider connection already exists.",
+        status: 409,
+      });
+
+      expect(error.userMessage).toBe(expected);
+    },
+  );
+
   it("handles generic and unknown values in display helpers", () => {
     expect(
       getApiErrorDisplay(new Error("Connection failed"), "Fallback"),
     ).toEqual({ message: "Connection failed" });
+    expect(
+      getApiErrorDisplay(
+        new AppApiError({
+          message: "Technical API failure",
+          status: 422,
+        }),
+        "Fallback",
+      ),
+    ).toEqual({ message: "Technical API failure" });
     expect(getApiErrorDisplay({ message: "not trusted" }, "Fallback")).toEqual({
       message: "Fallback",
     });
@@ -163,6 +234,8 @@ describe("API error display helpers", () => {
     ["AUTHORIZATION_DENIED", 403, null],
     ["CRM_WHATSAPP_VALIDATION_ERROR", 400, "refresh"],
     ["CRM_WHATSAPP_SESSION_REVISION_CONFLICT", 409, "refresh"],
+    ["CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS", 409, "configure"],
+    ["CRM_ZAPI_CREDENTIAL_PARTIAL_STATE", 409, "configure"],
     ["CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE", 409, "configure"],
     ["CRM_WHATSAPP_PROVIDER_RATE_LIMITED", 429, "retry"],
     ["INTERNAL_SERVER_ERROR", 500, "retry"],
@@ -178,4 +251,12 @@ describe("API error display helpers", () => {
       expect(getApiErrorRecovery(error)?.kind ?? null).toBe(expected);
     },
   );
+
+  it("returns no recovery action for an unclassified API error", () => {
+    expect(
+      getApiErrorRecovery(
+        new AppApiError({ message: "Technical API failure", status: 422 }),
+      ),
+    ).toBeNull();
+  });
 });

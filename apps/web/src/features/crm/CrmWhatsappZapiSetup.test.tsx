@@ -93,6 +93,226 @@ describe("CrmWhatsappZapiSetup", () => {
     expect(screen.getByLabelText("ID da instância")).toHaveValue("");
   });
 
+  it("recovers a duplicate create into the existing connection repair flow", async () => {
+    const handlers = createHandlers();
+    const existing = createDisconnectedConnection("existing-connection");
+    handlers.onCreate = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
+        details: { provider: "zapi" },
+        message: "Provider connection already exists.",
+        status: 409,
+      });
+    });
+    handlers.onRefreshConnectionsWithPayload = vi.fn(async () => [existing]);
+    handlers.onRepairZapiCredentials = vi.fn(async () => existing);
+
+    function Harness() {
+      const [connection, setConnection] =
+        useState<CrmProviderConnection | null>(null);
+      return (
+        <CrmWhatsappZapiSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          canPair={false}
+          canRepairCredentials
+          canSetup
+          connection={connection}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={setConnection}
+          zapiAddonContract={createZapiContract("active")}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    fireEvent.change(screen.getByLabelText("ID da instância"), {
+      target: { value: "instance-1" },
+    });
+    fireEvent.change(screen.getByLabelText("Token da instância"), {
+      target: { value: "instance-token" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar credenciais" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Atualizar credenciais da Z-API",
+      }),
+    ).toBeVisible();
+    expect(handlers.onRefreshConnectionsWithPayload).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByText("Reparo seguro da conexão existente"),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Já existe uma conexão Z-API"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("reports when a canonical conflict cannot be reconciled", async () => {
+    const handlers = createHandlers();
+    handlers.onCreate = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED",
+        details: {
+          connectionId: "missing-connection",
+          expectedRevision: 1,
+          identityRelation: "same_instance",
+          nextAction: "repair_credentials",
+        },
+        message: "Existing Z-API connection requires repair.",
+        status: 409,
+      });
+    });
+    handlers.onRefreshConnectionsWithPayload = vi.fn(async () => []);
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={false}
+        canRepairCredentials
+        canSetup
+        connection={null}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    await saveZapiCredentials();
+
+    expect(
+      await screen.findByText(
+        "A conexão Z-API foi encontrada, mas ainda não apareceu na lista. Atualize as conexões e tente novamente.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("reports a recovery error when refreshing connections fails", async () => {
+    const handlers = createHandlers();
+    handlers.onCreate = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
+        details: { provider: "zapi" },
+        message: "Provider connection already exists.",
+        status: 409,
+      });
+    });
+    handlers.onRefreshConnectionsWithPayload = vi.fn(async () => {
+      throw new Error("network unavailable");
+    });
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={false}
+        canRepairCredentials
+        canSetup
+        connection={null}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    await saveZapiCredentials();
+
+    expect(
+      await screen.findByText(
+        "A conexão Z-API já existe, mas não foi possível atualizar a lista de conexões. Tente novamente.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("does not route a non-Z-API provider conflict into Z-API repair", async () => {
+    const handlers = createHandlers();
+    handlers.onCreate = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
+        details: { provider: "meta_cloud" },
+        message: "Official provider connection already exists.",
+        status: 409,
+      });
+    });
+    handlers.onRefreshConnectionsWithPayload = vi.fn(async () => [
+      createDisconnectedConnection("existing-zapi"),
+    ]);
+
+    render(
+      <CrmWhatsappZapiSetup
+        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        canPair={false}
+        canRepairCredentials
+        canSetup
+        connection={null}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        zapiAddonContract={createZapiContract("active")}
+      />,
+    );
+
+    await saveZapiCredentials();
+
+    expect(
+      await screen.findByText(
+        "Já existe uma conexão oficial para esta loja. Abra a conexão existente para revisar ou reautorizar o canal.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Atualizar credenciais da Z-API" }),
+    ).not.toBeInTheDocument();
+    expect(handlers.onRefreshConnectionsWithPayload).not.toHaveBeenCalled();
+  });
+
+  it("keeps the administrator guidance after selecting an existing connection", async () => {
+    const handlers = createHandlers();
+    const existing = createDisconnectedConnection("existing-connection");
+    handlers.onCreate = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED",
+        details: {
+          connectionId: existing.id,
+          expectedRevision: 1,
+          identityRelation: "same_instance",
+          nextAction: "repair_credentials",
+        },
+        message: "Existing Z-API connection requires repair.",
+        status: 409,
+      });
+    });
+    handlers.onRefreshConnectionsWithPayload = vi.fn(async () => [existing]);
+
+    function Harness() {
+      const [connection, setConnection] =
+        useState<CrmProviderConnection | null>(null);
+      return (
+        <CrmWhatsappZapiSetup
+          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          canPair={false}
+          canRepairCredentials={false}
+          canSetup
+          connection={connection}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={setConnection}
+          zapiAddonContract={createZapiContract("active")}
+        />
+      );
+    }
+
+    render(<Harness />);
+    await saveZapiCredentials();
+
+    expect(
+      await screen.findByText(
+        "A conexão foi encontrada. Um administrador da loja precisa concluir esta operação.",
+      ),
+    ).toBeVisible();
+  });
+
   it("lets an authorized user enter credentials when the add-on is paid and awaiting setup", async () => {
     const handlers = createHandlers();
     const created = createDisconnectedConnection();
@@ -731,6 +951,16 @@ function createHandlers(): CrmConnectionSelfServiceHandlers {
     onRefreshConnections: vi.fn(async () => undefined),
     onSelectComposioSender: vi.fn(),
   };
+}
+
+async function saveZapiCredentials() {
+  fireEvent.change(screen.getByLabelText("ID da instância"), {
+    target: { value: "instance-1" },
+  });
+  fireEvent.change(screen.getByLabelText("Token da instância"), {
+    target: { value: "instance-token" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Salvar credenciais" }));
 }
 
 function createZapiContract(
