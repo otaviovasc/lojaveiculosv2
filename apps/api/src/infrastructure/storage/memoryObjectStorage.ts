@@ -39,10 +39,13 @@ function createStorageKey(
     | CreateObjectUploadInput
     | {
         fileName: string;
+        idempotencyKey?: string;
         scopeSegments: readonly string[];
       },
 ): string {
-  return [localEnvironmentPrefix, ...input.scopeSegments, input.fileName].join(
-    "/",
-  );
+  const fileName =
+    "idempotencyKey" in input && input.idempotencyKey
+      ? `${input.idempotencyKey}-${input.fileName}`
+      : input.fileName;
+  return [localEnvironmentPrefix, ...input.scopeSegments, fileName].join("/");
 }

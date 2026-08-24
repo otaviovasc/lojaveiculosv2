@@ -29,6 +29,7 @@ export function authorizedExternalBotEffectRow(
     connection_state: "active",
     display_name: "Canonical Z-API",
     expected_revision: 3,
+    effect_result: {},
     id: ids.effect,
     idempotency_key: "bot-effect-key",
     input: {

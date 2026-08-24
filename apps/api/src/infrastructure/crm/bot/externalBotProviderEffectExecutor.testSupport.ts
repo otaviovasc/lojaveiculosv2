@@ -6,6 +6,14 @@ import { createExternalBotProviderEffectExecutor } from "./externalBotProviderEf
 export function createExternalBotEffectExecutor(
   sendText: ReturnType<typeof vi.fn>,
   overrides: {
+    mediaFetcher?: {
+      fetchMedia: ReturnType<typeof vi.fn>;
+      validateUrl: ReturnType<typeof vi.fn>;
+    };
+    mediaStorage?: {
+      deleteObject?: ReturnType<typeof vi.fn>;
+      putObject: ReturnType<typeof vi.fn>;
+    };
     sendMedia?: ReturnType<typeof vi.fn>;
     sendTemplate?: ReturnType<typeof vi.fn>;
   } = {},
@@ -18,8 +26,10 @@ export function createExternalBotEffectExecutor(
       sendText,
     } as never,
     logger: createNoopServiceLogger(),
+    mediaFetcher: overrides.mediaFetcher,
+    mediaStorage: overrides.mediaStorage,
     providerOperationPorts: {} as never,
-  });
+  } as never);
 }
 
 export function externalBotEffectFixture(

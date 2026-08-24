@@ -6,6 +6,7 @@ import {
 } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
 import { resolveCrmConnectionRoute } from "../../../domains/crm/services/CrmRoutingService/routingResolution.js";
 import type { ExternalBotRow } from "./drizzleExternalBotShared.js";
+import type { PreparedExternalBotMedia } from "./drizzleExternalBotPreparedMedia.js";
 
 type CanonicalChannel = "instagram" | "olx_chat" | "whatsapp";
 
@@ -32,6 +33,7 @@ export type AuthorizedExternalBotEffect = {
   providerAddress: string;
   providerConnectionId: string;
   providerOperation?: { id: string; occurredAt: Date };
+  preparedMedia?: PreparedExternalBotMedia;
   requestDigest: string;
   storeId: string;
   tenantId: string;
@@ -44,6 +46,7 @@ export function mapAuthorizedExternalBotEffect(
   const input = readRecord(row.input);
   const commandInput = readRecord(input.command);
   const payload = readRecord(commandInput.payload);
+  const preparedMedia = readPreparedMedia(row.effect_result, payload.mediaUrl);
   const action = String(row.action_type);
   const command =
     action === "message.send_text" && typeof payload.text === "string"
@@ -58,7 +61,7 @@ export function mapAuthorizedExternalBotEffect(
                 ? { caption: payload.caption }
                 : {}),
               mediaType: payload.mediaType,
-              mediaUrl: payload.mediaUrl,
+              mediaUrl: preparedMedia?.publicUrl ?? payload.mediaUrl,
             },
           } as const)
         : action === "message.send_template" &&
@@ -111,6 +114,7 @@ export function mapAuthorizedExternalBotEffect(
     provider: row.provider as AuthorizedExternalBotEffect["provider"],
     providerAddress,
     providerConnectionId: String(row.provider_connection_id),
+    ...(preparedMedia ? { preparedMedia } : {}),
     ...(operationId
       ? {
           providerOperation: {
@@ -123,6 +127,32 @@ export function mapAuthorizedExternalBotEffect(
     storeId: String(row.store_id),
     tenantId: String(row.tenant_id),
     threadId: String(row.thread_id),
+  };
+}
+
+function readPreparedMedia(
+  effectResult: unknown,
+  originalUrl: unknown,
+): PreparedExternalBotMedia | null {
+  const media = readRecord(readRecord(effectResult).preparedMedia);
+  if (
+    typeof originalUrl !== "string" ||
+    readString(media.originalUrl) !== originalUrl ||
+    !readString(media.contentType) ||
+    !readString(media.publicUrl) ||
+    !readString(media.storageKey) ||
+    typeof media.sizeBytes !== "number" ||
+    !Number.isSafeInteger(media.sizeBytes) ||
+    media.sizeBytes <= 0
+  ) {
+    return null;
+  }
+  return {
+    contentType: readString(media.contentType)!,
+    originalUrl,
+    publicUrl: readString(media.publicUrl)!,
+    sizeBytes: media.sizeBytes,
+    storageKey: readString(media.storageKey)!,
   };
 }
 

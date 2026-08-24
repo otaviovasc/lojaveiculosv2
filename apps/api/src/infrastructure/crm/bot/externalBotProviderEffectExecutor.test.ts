@@ -12,6 +12,7 @@ vi.mock("../../db/crm/drizzleExternalBotEffectRuntime.js", () => ({
     readonly code = "canonical_sync_indeterminate";
   },
   loadAuthorizedExternalBotEffect: vi.fn(),
+  persistPreparedExternalBotMedia: vi.fn(async () => undefined),
   synchronizeExternalBotEffectOutcome: vi.fn(),
   wasExternalBotProviderAttempted: vi.fn(),
 }));
@@ -108,41 +109,6 @@ describe("external bot provider effect executor", () => {
       expect.anything(),
       { effect, providerOperation: effect.providerOperation },
     );
-  });
-
-  it("sends media with outbound and media capabilities", async () => {
-    const effect = fixture({
-      action: "message.send_media",
-      payload: {
-        caption: "Vehicle photo",
-        mediaType: "image",
-        mediaUrl: "https://cdn.example.com/vehicle.jpg",
-      },
-    });
-    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
-    const sendMedia = vi.fn().mockResolvedValue(providerResult);
-    const executor = createExecutor(vi.fn(), { sendMedia });
-
-    await expect(executor.execute(workerInput())).resolves.toMatchObject({
-      kind: "succeeded",
-    });
-    expect(resolveCrmProviderOperation).toHaveBeenCalledWith(
-      expect.objectContaining({ requiredCapabilities: ["outbound", "media"] }),
-    );
-    expect(sendMedia).toHaveBeenCalledWith(expect.anything(), {
-      caption: "Vehicle photo",
-      mediaType: "image",
-      mediaUrl: "https://cdn.example.com/vehicle.jpg",
-      phone: "5511999999999",
-    });
-    expect(
-      vi.mocked(synchronizeExternalBotEffectOutcome).mock.calls[0]?.[1],
-    ).toMatchObject({
-      effect,
-      providerOperation: {
-        id: providerResult.externalId,
-      },
-    });
   });
 
   it("sends templates with stable variable ordering and template capabilities", async () => {

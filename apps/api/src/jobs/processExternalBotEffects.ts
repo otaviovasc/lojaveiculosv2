@@ -9,10 +9,12 @@ import {
 } from "../infrastructure/db/audit/drizzleAuditSink.js";
 import { createExternalBotProviderEffectExecutor } from "../infrastructure/crm/bot/externalBotProviderEffectExecutor.js";
 import { createRuntimeCrmMessagingProviderGateway } from "../infrastructure/crm/crmMessagingProviderRouter.js";
+import { createSafeCrmRemoteMediaFetcher } from "../infrastructure/crm/safeCrmRemoteMediaFetcher.js";
 import { runExternalBotEffectWorkerOnce } from "../infrastructure/crm/bot/runExternalBotEffectWorker.js";
 import { loadAuthorizedExternalBotEffect } from "../infrastructure/db/crm/drizzleExternalBotEffectRuntime.js";
 import { createConsoleServiceLogger } from "../shared/serviceContext.js";
 import { createDrizzleCrmConnectionRepository } from "../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
+import { createRuntimeObjectStorage } from "../infrastructure/db/runtimeObjectStorage.js";
 import {
   createDrizzleCrmRoutingConnectionRepository,
   createDrizzleCrmRoutingPolicyRepository,
@@ -27,6 +29,7 @@ const logger = createConsoleServiceLogger({
 });
 
 async function main() {
+  const mediaStorage = createRuntimeObjectStorage(process.env);
   const productClient = postgres(requireEnv("DATABASE_URL"), { max: 1 });
   const auditClient = postgres(requireEnv("AUDIT_DATABASE_URL"), { max: 1 });
   try {
@@ -40,6 +43,8 @@ async function main() {
       db,
       gateway: createRuntimeCrmMessagingProviderGateway(process.env),
       logger,
+      mediaFetcher: createSafeCrmRemoteMediaFetcher(),
+      ...(mediaStorage ? { mediaStorage } : {}),
       providerOperationPorts: {
         crmConnectionRepository: createDrizzleCrmConnectionRepository(db),
         crmRoutingConnectionRepository:
@@ -67,6 +72,7 @@ async function main() {
     await Promise.all([
       productClient.end({ timeout: 5 }),
       auditClient.end({ timeout: 5 }),
+      mediaStorage?.close?.(),
     ]);
   }
 }
