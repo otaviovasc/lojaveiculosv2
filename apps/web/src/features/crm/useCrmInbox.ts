@@ -575,7 +575,6 @@ export function useCrmInbox(
     onVisibleInboundMessage: markVisibleInboundRead,
     refreshConnections: connections.refreshConnections,
     refreshSessionCounts,
-    refreshSessions,
     removeSession,
     updateRealtimeMessageStatus,
   });

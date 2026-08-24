@@ -486,7 +486,7 @@ describe("useCrmInbox realtime queue integration", () => {
     },
   );
 
-  it("prunes an inaccessible cycle after a complete reconnect snapshot", async () => {
+  it("keeps the queue stable while SSE reconnects", async () => {
     hookMocks.messages.evictSessionMessages.mockClear();
     let onStatus:
       | ((status: "connected" | "connecting" | "degraded" | "offline") => void)
@@ -522,15 +522,13 @@ describe("useCrmInbox realtime queue integration", () => {
     act(() => onStatus?.("connected"));
 
     await waitFor(() => {
-      expect(result.current.conversationCycles).toEqual([]);
-      expect(result.current.activeSession).toBeNull();
+      expect(result.current.conversationCycles).toHaveLength(1);
+      expect(result.current.activeSession?.id).toBe("cycle-1");
     });
-    expect(hookMocks.messages.evictSessionMessages).toHaveBeenCalledWith(
-      "cycle-1",
-    );
+    expect(hookMocks.messages.evictSessionMessages).not.toHaveBeenCalled();
   });
 
-  it("preserves a cached pagination miss after an incomplete reconnect snapshot", async () => {
+  it("keeps cached pagination while SSE reconnects", async () => {
     hookMocks.messages.evictSessionMessages.mockClear();
     let onStatus:
       | ((status: "connected" | "connecting" | "degraded" | "offline") => void)
@@ -571,7 +569,7 @@ describe("useCrmInbox realtime queue integration", () => {
     act(() => onStatus?.("connected"));
 
     await waitFor(() =>
-      expect(result.current.conversationCycles).toHaveLength(41),
+      expect(result.current.conversationCycles).toHaveLength(1),
     );
     expect(result.current.activeSession?.id).toBe(mine.id);
     expect(hookMocks.messages.evictSessionMessages).not.toHaveBeenCalled();
