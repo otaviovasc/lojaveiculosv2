@@ -145,12 +145,7 @@ describe("CRM messaging connection selection", () => {
     };
     const uiDemo = {
       ...createConnection("meta_cloud", "ui-demo"),
-      metadata: {
-        catalogPhone: null,
-        connectedPhone: null,
-        migrationUnit: null,
-        purpose: "crm_ui_demo",
-      },
+      purpose: "ui_demo" as const,
       state: "sandbox" as const,
     };
 

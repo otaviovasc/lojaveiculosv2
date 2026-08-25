@@ -63,6 +63,24 @@ describe("canonical CRM contracts", () => {
         capabilities: { outbound: true },
       }).success,
     ).toBe(false);
+    expect(
+      crmChannelConnectionSchema.parse({
+        ...connection,
+        purpose: "ui_demo",
+        readiness: {
+          ready: false,
+          reason: "Demonstração somente leitura",
+          reasonCode: "not_authorized",
+        },
+        state: "sandbox",
+      }),
+    ).toMatchObject({ purpose: "ui_demo", state: "sandbox" });
+    expect(
+      crmChannelConnectionSchema.safeParse({
+        ...connection,
+        purpose: "internal_fixture",
+      }).success,
+    ).toBe(false);
   });
 
   it("publishes the typed external-bot action registry", () => {

@@ -14,10 +14,12 @@ import type { useCrmInbox } from "./useCrmInbox";
 import type {
   CrmConversationCycleId,
   CrmMessage,
+  CrmProviderConnection,
 } from "./crmConversationTypes";
 import type { CrmScope } from "./CrmScopedNav";
 import type { MessageComposerHandle } from "./CrmComposer";
 import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
+import { isUiDemoConnection } from "./crmConnectionSelection";
 
 export function CrmConversationWorkspace({
   inbox,
@@ -47,8 +49,17 @@ export function CrmConversationWorkspace({
     ? (inbox.connections.find(
         (connection) =>
           String(connection.id) === String(inbox.activeSession?.connection?.id),
-      ) ?? null)
-    : null;
+      ) ??
+      (inbox.activeSessionConnection as CrmProviderConnection | null) ??
+      null)
+    : ((inbox.activeSessionConnection as CrmProviderConnection | null) ?? null);
+  const activeChatConnection =
+    activeSessionConnection ??
+    inbox.activeConnection ??
+    (inbox.activeSession?.connection as CrmProviderConnection | undefined) ??
+    null;
+  const isDemoActive = isUiDemoConnection(activeChatConnection);
+  const isDemoView = isUiDemoConnection(inbox.activeConnection);
   const providerCapabilities = readCrmConnectionCapabilities(
     activeSessionConnection,
   );
@@ -336,9 +347,23 @@ export function CrmConversationWorkspace({
               </>
             ) : (
               <CrmReadOnlyComposer
-                reason={
-                  inbox.permissions.canSend ? inbox.sendUnavailableReason : null
-                }
+                {...(isDemoActive
+                  ? {
+                      reason:
+                        "Histórico fictício para explorar o CRM. Conecte um canal oficial para enviar mensagens reais.",
+                      title: "Demonstração · somente leitura",
+                      ...(inbox.permissions.canConnectionSetup
+                        ? {
+                            actionLabel: "Configurar canal",
+                            onAction: () => onScopeChange("connection"),
+                          }
+                        : {}),
+                    }
+                  : {
+                      reason: inbox.permissions.canSend
+                        ? inbox.sendUnavailableReason
+                        : null,
+                    })}
               />
             )}
           </>
@@ -348,12 +373,26 @@ export function CrmConversationWorkspace({
               <span aria-hidden="true" className="crm-empty-conversation-icon">
                 <MessageSquareText />
               </span>
-              <span className="crm-empty-conversation-tag">WhatsApp CRM</span>
+              <span className="crm-empty-conversation-tag">
+                {isDemoView ? "Demonstração" : "WhatsApp CRM"}
+              </span>
               <h2>Selecione uma conversa</h2>
               <p>
-                Escolha um contato na fila ao lado para visualizar o histórico
-                de mensagens, negociações de veículos, propostas e agendamentos.
+                {isDemoView
+                  ? "Histórico fictício para explorar o CRM. Escolha um contato na fila ao lado para navegar nas conversas de demonstração."
+                  : "Escolha um contato na fila ao lado para visualizar o histórico de mensagens, negociações de veículos, propostas e agendamentos."}
               </p>
+              {isDemoView && inbox.permissions.canConnectionSetup ? (
+                <div className="crm-empty-conversation-action">
+                  <button
+                    className="crm-action"
+                    onClick={() => onScopeChange("connection")}
+                    type="button"
+                  >
+                    Configurar canal
+                  </button>
+                </div>
+              ) : null}
               <div className="crm-empty-conversation-shortcuts">
                 <span>
                   <kbd>Alt</kbd> + <kbd>1</kbd> Focar lista

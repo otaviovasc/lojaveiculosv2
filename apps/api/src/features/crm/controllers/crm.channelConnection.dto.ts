@@ -14,6 +14,10 @@ export function toChannelConnectionDto(
     id: connection.id,
     isDefault: connection.isDefault,
     provider: connection.provider,
+    ...(connection.state === "sandbox" &&
+    connection.metadata.purpose === "crm_ui_demo"
+      ? { purpose: "ui_demo" as const }
+      : {}),
     ...(connection.revision !== undefined
       ? { revision: connection.revision }
       : {}),
