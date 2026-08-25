@@ -104,6 +104,28 @@ describe("CrmInbox synchronization status", () => {
     );
   });
 
+  it("keeps sandbox history visibly read-only even when realtime is connected", () => {
+    inboxMock.current = {
+      ...createInbox("connected"),
+      connections: [
+        {
+          displayName: "WhatsApp fictício para demo de UI",
+          id: "connection-1",
+          provider: "meta_cloud",
+          state: "sandbox",
+        },
+      ],
+    } as ReturnType<typeof useCrmInbox>;
+
+    render(
+      <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
+    );
+
+    expect(screen.getByLabelText("Status da sincronização")).toHaveTextContent(
+      "Demonstração · somente leitura",
+    );
+  });
+
   it("renders inbox failures as a toast instead of a layout banner", () => {
     inboxMock.current = createInbox("connected", new Error("backend down"));
 
@@ -188,6 +210,14 @@ function createInbox(
 ) {
   return {
     availableTags: [],
+    connections: [
+      {
+        displayName: "Loja",
+        id: "connection-1",
+        provider: "zapi",
+        state: "active",
+      },
+    ],
     connectionError: null,
     connectionId: "connection-1",
     connectionIsLoading: false,

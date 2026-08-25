@@ -103,6 +103,27 @@ describe("CRM connection capabilities", () => {
     });
   });
 
+  it("keeps sandbox conversations explicitly read-only", () => {
+    expect(
+      readCrmSendReadiness({
+        capabilities: ["inbound", "media", "text"],
+        displayName: "WhatsApp fictício para demo de UI",
+        id: "connection_demo",
+        provider: "meta_cloud",
+        readiness: {
+          ready: false,
+          reason: "sandbox",
+          reasonCode: "provider_not_connected",
+        },
+        state: "sandbox",
+      }),
+    ).toEqual({
+      canSend: false,
+      reason:
+        "Esta conexão de demonstração é somente leitura. Nenhuma mensagem oficial será enviada.",
+    });
+  });
+
   it("closes composer capabilities and send readiness for a paused connection", () => {
     const pausedConnection = {
       capabilities: zapiCapabilities,

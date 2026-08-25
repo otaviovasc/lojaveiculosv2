@@ -2,7 +2,7 @@ import { Check, ChevronDown, Plug } from "lucide-react";
 import { useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import type { CrmProviderConnection } from "./crmConversationTypes";
-import { isConnectedConnection } from "./crmConnectionSelection";
+import { isInboxBrowsableConnection } from "./crmConnectionSelection";
 import {
   readCrmChannelLabel,
   readCrmProviderLabel,
@@ -21,13 +21,13 @@ export function CrmConnectionFilter({
   onChange: (connectionId: string) => void;
   onSetup?: () => void;
 }) {
-  const connectedConnections = connections.filter(isConnectedConnection);
+  const browsableConnections = connections.filter(isInboxBrowsableConnection);
   const selectedId = String(connectionFilterId ?? fallbackConnectionId ?? "");
   const selectedConnection =
-    connectedConnections.find(
+    browsableConnections.find(
       (connection) => String(connection.id) === selectedId,
     ) ??
-    connectedConnections.find((connection) => connection.isDefault) ??
+    browsableConnections.find((connection) => connection.isDefault) ??
     null;
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -46,11 +46,11 @@ export function CrmConnectionFilter({
             ? "crm-icon-action crm-connection-filter-action crm-icon-action-active"
             : "crm-icon-action crm-connection-filter-action"
         }
-        disabled={connectedConnections.length <= 1}
+        disabled={browsableConnections.length <= 1}
         onClick={() => setOpen((current) => !current)}
         ref={anchorRef}
         title={
-          connectedConnections.length === 0
+          browsableConnections.length === 0
             ? "Nenhum canal pronto. Configure uma conexão."
             : `Canal: ${selectedLabel}`
         }
@@ -61,7 +61,7 @@ export function CrmConnectionFilter({
         ) : (
           <Plug aria-hidden="true" className="crm-connection-filter-icon" />
         )}
-        {connectedConnections.length > 1 ? (
+        {browsableConnections.length > 1 ? (
           <ChevronDown
             aria-hidden="true"
             className="crm-connection-filter-chevron"
@@ -74,8 +74,8 @@ export function CrmConnectionFilter({
         isOpen={open}
         onClose={() => setOpen(false)}
       >
-        <div aria-label="Canais conectados" role="listbox">
-          {connectedConnections.map((connection) => {
+        <div aria-label="Canais disponíveis" role="listbox">
+          {browsableConnections.map((connection) => {
             const selected = String(connection.id) === selectedId;
             return (
               <button
@@ -91,14 +91,14 @@ export function CrmConnectionFilter({
                     return;
                   }
                   event.preventDefault();
-                  const currentIndex = connectedConnections.findIndex(
+                  const currentIndex = browsableConnections.findIndex(
                     (item) => String(item.id) === String(connection.id),
                   );
                   const offset = event.key === "ArrowDown" ? 1 : -1;
                   const next =
-                    connectedConnections[
-                      (currentIndex + offset + connectedConnections.length) %
-                        connectedConnections.length
+                    browsableConnections[
+                      (currentIndex + offset + browsableConnections.length) %
+                        browsableConnections.length
                     ];
                   if (next) onChange(String(next.id));
                 }}
@@ -121,7 +121,7 @@ export function CrmConnectionFilter({
           })}
         </div>
       </FeatureAnchoredPopover>
-      {connectedConnections.length === 0 && onSetup ? (
+      {browsableConnections.length === 0 && onSetup ? (
         <button
           className="crm-connection-filter-setup"
           onClick={onSetup}

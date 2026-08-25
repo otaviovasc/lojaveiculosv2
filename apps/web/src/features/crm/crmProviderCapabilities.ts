@@ -107,6 +107,13 @@ export function readCrmSendReadiness(connection: CrmProviderConnection | null) {
       reason: "O canal ainda não foi identificado.",
     };
   }
+  if (connection.state === "sandbox") {
+    return {
+      canSend: false,
+      reason:
+        "Esta conexão de demonstração é somente leitura. Nenhuma mensagem oficial será enviada.",
+    };
+  }
   if (
     connection.state === "paused" ||
     connection.state === "archived" ||
