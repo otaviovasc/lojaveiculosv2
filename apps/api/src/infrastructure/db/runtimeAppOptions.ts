@@ -52,6 +52,7 @@ import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 import { createRuntimeFinanceServices } from "./runtimeFinanceServices.js";
 import { createRuntimeSalesServices } from "./runtimeSalesServices.js";
 import type { RuntimeHttpAppOptionsInput } from "./runtimeAppOptionsTypes.js";
+import { readCrmPushPublicConfig } from "../crm/push/crmPushRuntimeConfig.js";
 import { createRuntimeCredereFinancingServices } from "../financing/runtimeCredereFinancingServices.js";
 import { createDrizzleCrmBotEntitlementResolver } from "./crm/resolveCrmBotEntitlements.js";
 import { createRuntimeOlxCrmOnboarding } from "../marketplace/runtimeOlxCrmOnboarding.js";
@@ -132,6 +133,7 @@ export function createRuntimeHttpAppOptions({
         crmRealtimeBroker.olxWebhookSecurity,
       ),
     crmCoreRepository: createDrizzleCrmCoreRepository(crmDb),
+    crmPushPublicConfig: readCrmPushPublicConfig(env),
     crmRealtimeBroker,
     ...(externalBotManager ? { externalBotManager } : {}),
     resolveCrmBotEntitlements: createDrizzleCrmBotEntitlementResolver(

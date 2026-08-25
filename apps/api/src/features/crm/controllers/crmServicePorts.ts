@@ -19,6 +19,7 @@ import { createDrizzleCrmWebhookEventRepository } from "../../../infrastructure/
 import { createDrizzleCrmOutboundIntentRepository } from "../../../infrastructure/db/crm/drizzleCrmOutboundIntentRepository.js";
 import { createDrizzleCrmConversationRepository } from "../../../infrastructure/db/crm/drizzleCrmConversationRepository.js";
 import { createDrizzleCrmConversationCycleCommandRepository } from "../../../infrastructure/db/crm/drizzleCrmConversationCycleCommandRepository.js";
+import { createDrizzleCrmPushRepository } from "../../../infrastructure/db/crm/drizzleCrmPushRepository.js";
 import { createDrizzleCrmStatisticsReadModel } from "../../../infrastructure/db/crm/drizzleCrmStatisticsReadModel.js";
 import { emptyCrmStatisticsSnapshot } from "../../../domains/crm/readModels/crmStatisticsReadModel.js";
 import {
@@ -85,6 +86,9 @@ export function resolveCrmPorts(
           options.drizzleClient,
         ),
         crmPipelineRepository: createDrizzleCrmPipelineRepository(
+          options.drizzleClient,
+        ),
+        crmPushRepository: createDrizzleCrmPushRepository(
           options.drizzleClient,
         ),
         crmRepository: createDrizzleCrmRepository(options.drizzleClient),
@@ -177,6 +181,9 @@ export function resolveCrmPorts(
             tx as DrizzleCrmClient,
           ),
           crmPipelineRepository: createDrizzleCrmPipelineRepository(
+            tx as DrizzleCrmClient,
+          ),
+          crmPushRepository: createDrizzleCrmPushRepository(
             tx as DrizzleCrmClient,
           ),
           crmRepository: createDrizzleCrmRepository(tx as DrizzleCrmClient),

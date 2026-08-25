@@ -7,6 +7,7 @@ import { createMemoryCrmAssigneeMembershipRepository } from "../adapters/memory/
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
+import { createMemoryCrmPushRepository } from "../../../domains/crm/testSupportCrmPush.js";
 import { createCrmFeature } from "./crm.controller.js";
 import { createTestCrmConnectionCredentialVault } from "./crm.channelConnections.testSupport.js";
 import { createTestCrmMessagingGateway } from "./crm.messagingGateway.testSupport.js";
@@ -106,6 +107,10 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
           tenantId: null,
         });
       },
+      pushPublicConfig: options.pushPublicConfig ?? {
+        appId: null,
+        deliveryMode: "off",
+      },
       services: createCrmServices({
         ports: {
           ...(options.billingQuotaGuard
@@ -176,6 +181,8 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
           crmPipelineRepository:
             options.crmPipelineRepository ??
             createMemoryCrmPipelineRepository(),
+          crmPushRepository:
+            options.crmPushRepository ?? createMemoryCrmPushRepository(),
           crmRepository: options.crmRepository ?? createMemoryCrmRepository(),
           crmVisitRepository:
             options.crmVisitRepository ?? createMemoryCrmVisitRepository(),

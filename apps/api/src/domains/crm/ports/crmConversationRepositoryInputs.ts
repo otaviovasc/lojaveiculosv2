@@ -107,6 +107,7 @@ export type UpdateCrmConversationCycleInput = {
   humanHandlingStartedAt?: Date | null;
   humanTakeoverAt?: Date | null;
   interventionId?: string | null;
+  incrementPushNotificationGeneration?: boolean;
   lastAssignedAt?: Date | null;
   lastCustomerReadAt?: Date | null;
   lastReadAt?: Date | null;

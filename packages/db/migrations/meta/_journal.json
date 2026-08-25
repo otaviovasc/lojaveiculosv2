@@ -477,6 +477,13 @@
       "when": 1787702400000,
       "tag": "0067_external_api_idempotency_replay",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1787788800000,
+      "tag": "0068_crm_push_notifications",
+      "breakpoints": true
     }
   ]
 }

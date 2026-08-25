@@ -68,6 +68,7 @@ export async function markConversationCycleReadState(
             const updated = await getCrmConversationRepository(
               transactionPorts,
             ).updateConversationCycle({
+              incrementPushNotificationGeneration: true,
               lastReadAt: input.unread ? null : new Date(),
               expectedRevision: candidate.revision,
               cycleId: input.cycleId,

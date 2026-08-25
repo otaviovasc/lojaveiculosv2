@@ -5,6 +5,7 @@ import { AppBootScreen } from "../../components/ui";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { cleanupCrmPushBeforeLogout } from "../crm/push/logoutCleanup";
 import "../../styles/account-auth.css";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
 import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
@@ -136,13 +137,17 @@ export function LocalDevAuthPage() {
   const navigate = useNavigate();
   const selectedAccount = readLocalDevAccount();
 
-  function signIn(account: LocalDevAccount) {
+  async function signIn(account: LocalDevAccount) {
+    if (selectedAccount && selectedAccount.userId !== account.userId) {
+      await cleanupCrmPushBeforeLogout();
+    }
     selectLocalDevAccount(account.userId);
     clearCurrentStoreSlug(account.userId);
     void navigate("/auth/session", { replace: true });
   }
 
-  function signOut() {
+  async function signOut() {
+    await cleanupCrmPushBeforeLogout();
     if (selectedAccount) clearCurrentStoreSlug(selectedAccount.userId);
     clearLocalDevAccount();
   }
@@ -158,7 +163,7 @@ export function LocalDevAuthPage() {
             <button
               aria-label={`${account.name}, ${roleLabel(account.role)}, ${account.email}`}
               className="account-profile-row group"
-              onClick={() => signIn(account)}
+              onClick={() => void signIn(account)}
               type="button"
             >
               <div className="flex flex-col gap-1 text-left">
@@ -185,7 +190,7 @@ export function LocalDevAuthPage() {
 
       {selectedAccount ? (
         <div className="account-profile-signout">
-          <button onClick={signOut} type="button">
+          <button onClick={() => void signOut()} type="button">
             <LogOut aria-hidden className="size-4" />
             Sair de {selectedAccount.name}
           </button>

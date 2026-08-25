@@ -1,7 +1,8 @@
-import { SignInButton, UserButton, useUser } from "@clerk/react-router";
+import { SignInButton, useUser } from "@clerk/react-router";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useClerkAuthConfiguration } from "../account/ClerkAuthProvider";
+import { UserAccountButton } from "../account/UserAccountButton";
 import { readLocalDevAccount } from "../account/localDevAuth";
 
 export function LandingAuthActions({
@@ -129,7 +130,7 @@ function ConfiguredLandingAuthActions({
           Abrir painel
           <ArrowRight className="size-4" />
         </Link>
-        <UserButton />
+        <UserAccountButton compact />
       </>
     );
   }

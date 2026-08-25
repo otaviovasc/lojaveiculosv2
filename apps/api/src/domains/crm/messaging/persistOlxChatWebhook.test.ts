@@ -8,8 +8,10 @@ import type { CrmWebhookEventRepository } from "../ports/crmWebhookEventReposito
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 import { createTestCrmConversationCycle } from "../testSupportWhatsapp.js";
 import { createTestCrmPipelineRepository } from "../testSupportPipeline.js";
+import { createMemoryCrmPushRepository } from "../testSupportCrmPush.js";
 import type { ParsedOlxChatWebhook } from "./parseOlxChatWebhook.js";
 import { persistOlxChatWebhook } from "./persistOlxChatWebhook.js";
+import { createOlxChatWebhookTestContext as context } from "./persistOlxChatWebhook.testSupport.js";
 
 const storeId = "store-1" as StoreId;
 const tenantId = "tenant-1" as TenantId;
@@ -17,7 +19,7 @@ const tenantId = "tenant-1" as TenantId;
 describe("persistOlxChatWebhook", () => {
   it("refuses to persist seller echoes as inbound customer messages", () => {
     expect(() =>
-      persistOlxChatWebhook({} as CrmServicePorts, {
+      persistOlxChatWebhook(context(), {} as CrmServicePorts, {
         connection: connection(),
         parsed: parsed({ origin: "seller", senderType: "account" }),
         providerEventId: "event-1",
@@ -33,7 +35,7 @@ describe("persistOlxChatWebhook", () => {
       crmCanonicalInboundRepository: { ingestInboundMessage: canonical },
     } satisfies CrmServicePorts;
 
-    const result = await persistOlxChatWebhook(ports, {
+    const result = await persistOlxChatWebhook(context(), ports, {
       connection: connection(),
       parsed: parsed({ origin: "buyer", senderType: "system" }),
       providerEventId: "event-1",
@@ -76,9 +78,11 @@ describe("persistOlxChatWebhook", () => {
         messageId: "canonical-message-1",
         threadId: "thread-1",
       });
-    const legacy = createLegacyPorts();
+    const legacy = createLegacyPorts("customer");
+    const pushRepository = createMemoryCrmPushRepository();
     const ports = {
       ...legacy,
+      crmPushRepository: pushRepository,
       crmCanonicalInboundRepository: {
         ingestInboundMessage: canonical,
       } satisfies CrmCanonicalInboundRepository,
@@ -88,8 +92,8 @@ describe("persistOlxChatWebhook", () => {
       parsed: parsed({ origin: "buyer", senderType: "buyer" }),
       providerEventId: "event-1",
     };
-    await persistOlxChatWebhook(ports, input);
-    await persistOlxChatWebhook(ports, input);
+    await persistOlxChatWebhook(context(), ports, input);
+    await persistOlxChatWebhook(context(), ports, input);
     expect(canonical).toHaveBeenCalledWith(
       expect.objectContaining({
         channel: "olx_chat",
@@ -113,6 +117,7 @@ describe("persistOlxChatWebhook", () => {
     expect(
       legacy.crmWebhookEventRepository?.stageEffects,
     ).toHaveBeenCalledOnce();
+    expect(pushRepository.listIntents()).toHaveLength(1);
   });
 });
 
@@ -129,7 +134,9 @@ function canonicalResult() {
   };
 }
 
-function createLegacyPorts(): CrmServicePorts {
+function createLegacyPorts(
+  senderOrigin: "customer" | "system" = "system",
+): CrmServicePorts {
   const lead = createLead();
   const conversationCycle = createTestCrmConversationCycle({
     channel: "OLX_CHAT",
@@ -157,8 +164,8 @@ function createLegacyPorts(): CrmServicePorts {
             direction: "INBOUND",
             externalId: "message-1",
             id: "canonical-message-1",
-            senderOrigin: "system",
-            senderType: "SYSTEM",
+            senderOrigin,
+            senderType: senderOrigin === "customer" ? "CUSTOMER" : "SYSTEM",
           }) as never,
       ),
       ingestMessage: vi.fn(async () => ({

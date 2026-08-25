@@ -28,6 +28,7 @@ import {
   opaqueMetaMediaReference,
   serializedMetaEvent,
 } from "../../messaging/metaWebhookProcessingSupport.js";
+import { enqueueCreatedInboundCrmPushIntent as enqueuePush } from "../../messaging/enqueueCreatedInboundCrmPushIntent.js";
 
 const permission = "crm.messages.ingest";
 const ingestibleConnectionStatuses = new Set(["active", "sandbox"]);
@@ -198,6 +199,7 @@ async function ingestMessage(
       type: metaMessageType(event),
     });
     if (result.createdMessage) {
+      await enqueuePush(context, result, transactionPorts);
       await createCrmMessageActivity(transactionPorts, {
         connectionId: connection.id,
         content: metaMessageContent(event),

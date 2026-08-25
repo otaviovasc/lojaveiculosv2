@@ -10,6 +10,13 @@ export const crmPermissionDescriptors = [
   },
   {
     description:
+      "Visualizar a fila geral, incluindo conversas não atribuídas, sem poder transferir atendimentos.",
+    key: "crm.conversations.read_unassigned",
+    label: "Visualizar fila geral",
+    risk: "low",
+  },
+  {
+    description:
       "Cadastrar a configuração inicial e gravar credenciais write-only de um canal.",
     key: "crm.messaging.connection.setup",
     label: "Configurar novo canal",

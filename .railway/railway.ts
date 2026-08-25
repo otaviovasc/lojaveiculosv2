@@ -70,6 +70,8 @@ export default defineRailway((context) => {
       CRM_META_APP_SECRET: context.shared.CRM_META_APP_SECRET,
       CRM_META_WEBHOOK_VERIFY_TOKEN:
         context.shared.CRM_META_WEBHOOK_VERIFY_TOKEN,
+      CRM_PUSH_DELIVERY_MODE: context.shared.CRM_PUSH_DELIVERY_MODE,
+      CRM_PUSH_REQUEST_TIMEOUT_MS: "10000",
       CRM_ZAPI_API_BASE_URL: context.shared.CRM_ZAPI_API_BASE_URL,
       CRM_ZAPI_CLIENT_TOKEN: context.shared.CRM_ZAPI_CLIENT_TOKEN,
       DATABASE_URL: productDatabase.env.DATABASE_URL,
@@ -88,6 +90,8 @@ export default defineRailway((context) => {
       MERCADO_LIVRE_CLIENT_SECRET: context.shared.MERCADO_LIVRE_CLIENT_SECRET,
       MERCADO_LIVRE_TOKEN_URL: context.shared.MERCADO_LIVRE_TOKEN_URL,
       NODE_ENV: "production",
+      ONESIGNAL_API_KEY: context.shared.ONESIGNAL_API_KEY,
+      ONESIGNAL_APP_ID: context.shared.ONESIGNAL_APP_ID,
       OPENROUTER_API_KEY: context.shared.OPENROUTER_API_KEY,
       OPENROUTER_DEFAULT_MODEL: context.shared.OPENROUTER_DEFAULT_MODEL,
       OPENROUTER_DOCUMENTS_MODEL: context.shared.OPENROUTER_DOCUMENTS_MODEL,
@@ -293,6 +297,34 @@ export default defineRailway((context) => {
     start: "pnpm --filter @lojaveiculosv2/api crm:retention:process",
   });
 
+  const crmPushWorker = service("lojaveiculosv2-crm-push-worker", {
+    source: appSource,
+    build: "pnpm --filter @lojaveiculosv2/api build",
+    deploy: {
+      cronSchedule: "* * * * *",
+      restartPolicyType: "NEVER",
+    },
+    env: {
+      APP_ENV: appEnvironment,
+      CRM_PUSH_BATCH_SIZE: "25",
+      CRM_PUSH_CLEANUP_BATCH_SIZE: "100",
+      CRM_PUSH_DELIVERY_MODE: api.env.CRM_PUSH_DELIVERY_MODE,
+      CRM_PUSH_LEASE_DURATION_MS: "60000",
+      CRM_PUSH_MAX_ATTEMPTS: "8",
+      CRM_PUSH_REQUEST_TIMEOUT_MS: api.env.CRM_PUSH_REQUEST_TIMEOUT_MS,
+      CRM_PUSH_TERMINAL_RETENTION_DAYS: "30",
+      DATABASE_URL: productDatabase.env.DATABASE_URL,
+      DB_CLOSE_TIMEOUT_SECONDS: "5",
+      DB_POOL_MAX: "1",
+      LOG_LEVEL: api.env.LOG_LEVEL,
+      NODE_ENV: "production",
+      ONESIGNAL_API_KEY: api.env.ONESIGNAL_API_KEY,
+      ONESIGNAL_APP_ID: api.env.ONESIGNAL_APP_ID,
+      PUBLIC_APP_URL: api.env.PUBLIC_APP_URL,
+    },
+    start: "pnpm --filter @lojaveiculosv2/api crm:push:process",
+  });
+
   return project("respectful-respect", {
     resources: [
       productDatabase,
@@ -304,6 +336,7 @@ export default defineRailway((context) => {
       billingReconciliationWorker,
       marketplaceReconciliationWorker,
       crmRetentionWorker,
+      crmPushWorker,
     ],
   });
 });

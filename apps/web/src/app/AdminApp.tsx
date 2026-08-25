@@ -7,6 +7,7 @@ import { FeatureLoadingState } from "../components/ui/FeatureStates";
 import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { useOptionalAccountSession } from "../features/account/accountSession";
 import { AppErrorBoundary } from "../features/system/AppErrorBoundary";
+import { CrmPushProvider } from "../features/crm/push/CrmPushProvider";
 import {
   AutoEntriesWorkspace,
   BillingModule,
@@ -64,92 +65,98 @@ export function AdminApp() {
   }, []);
 
   return (
-    <AppShell activeModule={activeModule} onNavigate={navigate}>
-      <AppErrorBoundary layout="fill">
-        <Suspense
-          fallback={
-            <DelayedFallback>
-              <FeatureLoadingState title={`Carregando ${activeModule.title}`} />
-            </DelayedFallback>
-          }
-        >
-          <div className="module-content-enter" key={activeModuleId}>
-            {owner &&
-            !moduleEntitlement.canUse &&
-            moduleEntitlement.featureKey ? (
-              <BillingUpgradePanel
-                featureKey={moduleEntitlement.featureKey}
-                managedByAgency={managedByAgency}
-                module={activeModule}
-                onOpenBilling={() => navigate("billing")}
-              />
-            ) : !modulePermission.canView ? (
-              <PermissionRestrictedPanel
-                title={modulePermission.title}
-                {...(modulePermission.description
-                  ? { description: modulePermission.description }
-                  : {})}
-              />
-            ) : activeSurface === "dashboard" ? (
-              <DashboardHome
-                canViewAnalytics={canViewAnalytics}
-                onNavigate={navigate}
-              />
-            ) : activeSurface === "inventory" ? (
-              <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
-            ) : activeSurface === "checklists" ? (
-              <ChecklistModule />
-            ) : activeSurface === "finance-auto-entries" ? (
-              <AutoEntriesWorkspace />
-            ) : activeSurface === "crm-leads" ? (
-              <CrmModule routeSurface="leads" />
-            ) : activeSurface === "sales" ? (
-              <SalesModule />
-            ) : activeSurface === "crm-whatsapp" ? (
-              <CrmModule routeSurface="conversations" />
-            ) : activeSurface === "billing" ? (
-              <BillingModule />
-            ) : activeSurface === "documents" ? (
-              <DocumentsModule />
-            ) : activeSurface === "reports" ? (
-              <ReportsModule />
-            ) : activeSurface === "finance-expenses" ? (
-              <FinanceModule
-                defaultActiveType="expense"
-                onNavigate={navigate}
-              />
-            ) : activeSurface === "finance-commissions" ? (
-              <FinanceModule
-                defaultActiveType="commission"
-                onNavigate={navigate}
-              />
-            ) : activeSurface === "storefront-design" ? (
-              <StorefrontCustomizationModule
-                key="customize"
-                initialTab="design"
-              />
-            ) : activeSurface === "storefront-pages" ? (
-              <StorefrontCustomizationModule
-                key="custom-pages"
-                initialTab="pages"
-              />
-            ) : activeSurface === "public-api" ? (
-              <PublicApiModule />
-            ) : activeSurface === "marketplaces" ? (
-              <MarketplaceModule />
-            ) : activeSurface === "fiscal" ? (
-              <FiscalModule />
-            ) : activeSurface === "settings" ? (
-              <SettingsModule key="settings" />
-            ) : activeSurface === "simulations" ? (
-              <SimulationsPage />
-            ) : (
-              <ModulePlaceholder module={activeModule} />
-            )}
-          </div>
-        </Suspense>
-      </AppErrorBoundary>
-    </AppShell>
+    <CrmPushProvider>
+      <AppShell activeModule={activeModule} onNavigate={navigate}>
+        <AppErrorBoundary layout="fill">
+          <Suspense
+            fallback={
+              <DelayedFallback>
+                <FeatureLoadingState
+                  title={`Carregando ${activeModule.title}`}
+                />
+              </DelayedFallback>
+            }
+          >
+            <div className="module-content-enter" key={activeModuleId}>
+              {owner &&
+              !moduleEntitlement.canUse &&
+              moduleEntitlement.featureKey ? (
+                <BillingUpgradePanel
+                  featureKey={moduleEntitlement.featureKey}
+                  managedByAgency={managedByAgency}
+                  module={activeModule}
+                  onOpenBilling={() => navigate("billing")}
+                />
+              ) : !modulePermission.canView ? (
+                <PermissionRestrictedPanel
+                  title={modulePermission.title}
+                  {...(modulePermission.description
+                    ? { description: modulePermission.description }
+                    : {})}
+                />
+              ) : activeSurface === "dashboard" ? (
+                <DashboardHome
+                  canViewAnalytics={canViewAnalytics}
+                  onNavigate={navigate}
+                />
+              ) : activeSurface === "inventory" ? (
+                <InventoryListPage
+                  stores={inventoryStoreLinks(accountSession)}
+                />
+              ) : activeSurface === "checklists" ? (
+                <ChecklistModule />
+              ) : activeSurface === "finance-auto-entries" ? (
+                <AutoEntriesWorkspace />
+              ) : activeSurface === "crm-leads" ? (
+                <CrmModule routeSurface="leads" />
+              ) : activeSurface === "sales" ? (
+                <SalesModule />
+              ) : activeSurface === "crm-whatsapp" ? (
+                <CrmModule routeSurface="conversations" />
+              ) : activeSurface === "billing" ? (
+                <BillingModule />
+              ) : activeSurface === "documents" ? (
+                <DocumentsModule />
+              ) : activeSurface === "reports" ? (
+                <ReportsModule />
+              ) : activeSurface === "finance-expenses" ? (
+                <FinanceModule
+                  defaultActiveType="expense"
+                  onNavigate={navigate}
+                />
+              ) : activeSurface === "finance-commissions" ? (
+                <FinanceModule
+                  defaultActiveType="commission"
+                  onNavigate={navigate}
+                />
+              ) : activeSurface === "storefront-design" ? (
+                <StorefrontCustomizationModule
+                  key="customize"
+                  initialTab="design"
+                />
+              ) : activeSurface === "storefront-pages" ? (
+                <StorefrontCustomizationModule
+                  key="custom-pages"
+                  initialTab="pages"
+                />
+              ) : activeSurface === "public-api" ? (
+                <PublicApiModule />
+              ) : activeSurface === "marketplaces" ? (
+                <MarketplaceModule />
+              ) : activeSurface === "fiscal" ? (
+                <FiscalModule />
+              ) : activeSurface === "settings" ? (
+                <SettingsModule key="settings" />
+              ) : activeSurface === "simulations" ? (
+                <SimulationsPage />
+              ) : (
+                <ModulePlaceholder module={activeModule} />
+              )}
+            </div>
+          </Suspense>
+        </AppErrorBoundary>
+      </AppShell>
+    </CrmPushProvider>
   );
 }
 

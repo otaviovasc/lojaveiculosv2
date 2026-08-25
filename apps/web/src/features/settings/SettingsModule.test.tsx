@@ -3,6 +3,11 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SettingsApi } from "./apiClient";
+import type { SessionBootstrap } from "../account/apiClient";
+import { AccountSessionProvider } from "../account/accountSession";
+import type { CrmPushApi } from "../crm/push/apiClient";
+import { CrmPushProvider } from "../crm/push/CrmPushProvider";
+import type { CrmPushBrowser } from "../crm/push/types";
 import { SettingsModule } from "./SettingsModule";
 import type { StoreSettingsSnapshot } from "./types";
 
@@ -59,6 +64,32 @@ describe("SettingsModule", () => {
         publicSite: { customDomain: "veiculos.novadominio.br" },
       }),
     );
+  });
+
+  it("shows only notifications and skips management APIs for CRM-only users", async () => {
+    const settingsApi = createUnavailableApi();
+
+    render(
+      <AccountSessionProvider session={crmOnlySession()}>
+        <CrmPushProvider api={pushApi()} browser={pushBrowser()}>
+          <SettingsModule api={settingsApi} initialTab="store" />
+        </CrmPushProvider>
+      </AccountSessionProvider>,
+    );
+
+    expect(
+      await screen.findByRole("tab", { name: "Notificações" }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("region", { name: "Notificações do CRM" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("tab", { name: "Perfil da Loja" })).toBeNull();
+    expect(screen.queryByRole("tab", { name: "Domínio" })).toBeNull();
+    expect(
+      screen.queryByRole("tab", { name: "Papéis e Permissões" }),
+    ).toBeNull();
+    expect(settingsApi.getStoreSettings).not.toHaveBeenCalled();
+    expect(settingsApi.getRoleManagement).not.toHaveBeenCalled();
   });
 });
 
@@ -128,5 +159,64 @@ function settingsSnapshot(): StoreSettingsSnapshot {
     },
     storeId: "store_1",
     tenantId: "tenant_1",
+  };
+}
+
+function crmOnlySession(): SessionBootstrap {
+  const store = {
+    effectivePermissions: ["crm.conversations.read"],
+    entitlements: ["crm"],
+    role: "seller",
+    status: "active" as const,
+    storeId: "store_1",
+    storeName: "Loja 1",
+    storeSlug: "loja-1",
+    tenantId: "tenant_1",
+    tenantName: "Tenant 1",
+  };
+  return {
+    defaultStore: store,
+    needsOnboarding: false,
+    platformAdmin: false,
+    stores: [store],
+    tenantMemberships: [],
+    user: {
+      clerkUserId: "clerk_1",
+      email: "seller@example.com",
+      id: "user_1",
+      name: "Seller",
+    },
+  };
+}
+
+function pushApi(): CrmPushApi {
+  return {
+    disableSubscription: vi.fn(async () => undefined),
+    getSettings: vi.fn(async () => ({
+      appId: "app-id",
+      deliveryMode: "live" as const,
+      preference: { enabled: true },
+      subscription: { enabled: true, id: "subscription-1" },
+    })),
+    registerSubscription: vi.fn(async () => undefined),
+    updatePreference: vi.fn(async () => undefined),
+  };
+}
+
+function pushBrowser(): CrmPushBrowser {
+  return {
+    getSnapshot: () => ({
+      optedIn: true,
+      permission: "granted",
+      subscriptionId: "subscription-1",
+    }),
+    initialize: vi.fn(async () => undefined),
+    isSupported: () => true,
+    login: vi.fn(async () => undefined),
+    logout: vi.fn(async () => undefined),
+    optIn: vi.fn(async () => undefined),
+    optOut: vi.fn(async () => undefined),
+    requestPermission: vi.fn(async () => undefined),
+    waitForSubscriptionId: vi.fn(async () => "subscription-1"),
   };
 }

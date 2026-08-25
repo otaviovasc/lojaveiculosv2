@@ -34,6 +34,7 @@ export type PermissionKey =
   | "crm.conversations.assign"
   | "crm.conversations.manage"
   | "crm.conversations.read"
+  | "crm.conversations.read_unassigned"
   | "crm.manage"
   | "crm.messages.ingest"
   | "crm.messages.send"

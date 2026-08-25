@@ -22,6 +22,8 @@ import type { CrmConversationRepository } from "../../../domains/crm/ports/crmCo
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import type { ServiceLogger } from "../../../shared/serviceContext.js";
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
+import type { CrmPushRepository } from "../../../domains/crm/ports/crmPushRepository.js";
+import type { CrmPushPublicConfig } from "./crm.push.routes.js";
 
 export type CreateCrmTestAppOptions = {
   audit?: AuditSink;
@@ -40,6 +42,7 @@ export type CreateCrmTestAppOptions = {
   crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
   crmPipelineRepository?: CrmPipelineRepository;
+  crmPushRepository?: CrmPushRepository;
   crmRealtimeBroker?: CrmRealtimeBroker;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRoutingConnectionRepository?: CrmServicePorts["crmRoutingConnectionRepository"];
@@ -54,6 +57,7 @@ export type CreateCrmTestAppOptions = {
   entitlements?: EntitlementKey[];
   logger?: ServiceLogger;
   permissions?: PermissionKey[];
+  pushPublicConfig?: CrmPushPublicConfig;
   supportPermissions?: PermissionKey[];
   resolveBotEntitlements?: ResolveCrmBotEntitlements;
   transaction?: CrmServicePorts["transaction"];
