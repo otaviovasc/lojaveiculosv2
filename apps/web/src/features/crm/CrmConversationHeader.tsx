@@ -21,6 +21,7 @@ import {
   formatCycleAvatarInitials,
   formatCycleName,
 } from "./crmConversationModel";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import {
   readCrmChannelLabel,
   readCrmProviderLabel,
@@ -157,10 +158,10 @@ export function ChatHeader({
               <p>
                 {cycle.vehicle?.title ??
                   (cycle.customerPhone &&
-                  cycle.customerPhone !== formatCycleName(cycle)
-                    ? cycle.customerPhone
+                  formatCrmPhone(cycle.customerPhone) !== formatCycleName(cycle)
+                    ? formatCrmPhone(cycle.customerPhone)
                     : null) ??
-                  "Negociacao"}
+                  "Negociação"}
               </p>
             </span>
           </button>
@@ -169,10 +170,8 @@ export function ChatHeader({
             data-channel={(cycle.channel ?? "whatsapp").toLowerCase()}
           >
             <MessageCircleMore aria-hidden="true" />
-            {readCrmChannelLabel(cycle.channel)}
-            <small>
-              {readCrmProviderLabel(cycle.connection?.provider ?? "unknown")}
-            </small>
+            {readCrmProviderLabel(cycle.connection?.provider ?? "unknown") ||
+              readCrmChannelLabel(cycle.channel)}
           </span>
           <CrmHumanAttendanceBadge cycle={cycle} />
           <SessionTagRow
@@ -389,8 +388,8 @@ export function ChatHeader({
                 }
                 className={
                   assignedToCurrentUser
-                    ? "crm-action crm-action-muted"
-                    : "crm-action"
+                    ? "crm-action crm-action-muted crm-action-assumir"
+                    : "crm-action crm-action-assumir"
                 }
                 disabled={
                   disabled || pendingActions?.assign || assignedToCurrentUser
@@ -398,7 +397,7 @@ export function ChatHeader({
                 onClick={() => onAssign(currentUserId)}
                 type="button"
               >
-                <UserCheck aria-hidden="true" className="size-4" />
+                <UserCheck aria-hidden="true" className="size-3.5 shrink-0" />
                 <span className="crm-action-label">
                   {assignedToCurrentUser ? "Meu atendimento" : "Assumir"}
                 </span>
@@ -407,12 +406,12 @@ export function ChatHeader({
             {canCloseSession ? (
               <button
                 aria-label="Concluir"
-                className="crm-action"
+                className="crm-action crm-action-concluir"
                 disabled={disabled}
                 onClick={onClose}
                 type="button"
               >
-                <CheckCheck aria-hidden="true" className="size-4" />
+                <CheckCheck aria-hidden="true" className="size-3.5 shrink-0" />
                 <span className="crm-action-label">Concluir</span>
               </button>
             ) : null}

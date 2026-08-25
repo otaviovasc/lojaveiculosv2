@@ -1,5 +1,6 @@
-import { Pause, Play, Volume2, RotateCcw } from "lucide-react";
+import { Volume2, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Morphicon } from "../../components/ui/Morphicon";
 
 export function CrmAudioPlayer({
   outgoing = false,
@@ -24,9 +25,10 @@ export function CrmAudioPlayer({
       hash = (hash << 5) - hash + src.charCodeAt(i);
       hash |= 0;
     }
-    for (let i = 0; i < 28; i++) {
-      const pseudo = Math.abs(Math.sin((hash + i * 13) * 0.7));
-      bars.push(Math.round(25 + pseudo * 65));
+    const count = 42;
+    for (let i = 0; i < count; i++) {
+      const pseudo = Math.abs(Math.sin((hash + i * 11) * 0.7));
+      bars.push(Math.round(20 + pseudo * 75));
     }
     return bars;
   }, [src]);
@@ -174,10 +176,13 @@ export function CrmAudioPlayer({
       >
         {hasError ? (
           <RotateCcw className="size-4" />
-        ) : isPlaying ? (
-          <Pause className="size-4 fill-current" />
         ) : (
-          <Play className="size-4 fill-current ml-0.5" />
+          <Morphicon
+            active={isPlaying}
+            className={`size-4 fill-current ${!isPlaying ? "ml-0.5" : ""}`}
+            name="play-pause"
+            size={16}
+          />
         )}
       </button>
 

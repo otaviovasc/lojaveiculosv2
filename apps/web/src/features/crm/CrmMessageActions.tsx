@@ -1,4 +1,13 @@
-import { Reply, SmilePlus, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  Reply,
+  Share2,
+  SmilePlus,
+  Star,
+  Trash2,
+} from "lucide-react";
 import {
   useRef,
   useState,
@@ -30,27 +39,29 @@ export function MessageActions({
   currentReaction?: string | undefined;
   message: CrmMessage;
 }) {
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const reactionButtonRef = useRef<HTMLButtonElement>(null);
   const actionInFlightRef = useRef(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reactionOpen, setReactionOpen] = useState(false);
-  const hasActions = Boolean(onReply || onReact || onDelete);
+  const [copied, setCopied] = useState(false);
+
+  const hasActions = Boolean(onReply || onReact || onDelete || message.content);
   if (!hasActions) return null;
+
+  const handleCopy = () => {
+    if (message.content) {
+      void navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+      setMenuOpen(false);
+    }
+  };
 
   return (
     <div className="crm-message-actions">
-      {onReply ? (
-        <button
-          aria-label="Responder mensagem"
-          disabled={actionsDisabled || Boolean(message.deletedAt)}
-          onClick={() => onReply(message)}
-          title="Responder"
-          type="button"
-        >
-          <Reply />
-        </button>
-      ) : null}
       {onReact ? (
         <span className="crm-reaction-anchor">
           <button
@@ -60,6 +71,7 @@ export function MessageActions({
             disabled={actionsDisabled || Boolean(message.deletedAt)}
             onClick={() => {
               setDeleteOpen(false);
+              setMenuOpen(false);
               setReactionOpen((open) => !open);
             }}
             ref={reactionButtonRef}
@@ -109,25 +121,133 @@ export function MessageActions({
           </FeatureAnchoredPopover>
         </span>
       ) : null}
+
+      {/* Chevron dropdown arrow interaction menu */}
+      <span className="crm-msg-menu-anchor">
+        <button
+          aria-label="Mais opções da mensagem"
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          className="crm-msg-menu-btn"
+          disabled={actionsDisabled || Boolean(message.deletedAt)}
+          onClick={() => {
+            setReactionOpen(false);
+            setDeleteOpen(false);
+            setMenuOpen((open) => !open);
+          }}
+          ref={menuButtonRef}
+          title="Opções"
+          type="button"
+        >
+          <ChevronDown className="size-3.5" />
+        </button>
+
+        <FeatureAnchoredPopover
+          align="end"
+          anchorRef={menuButtonRef}
+          ariaLabel="Opções da mensagem"
+          className="crm-context-popover"
+          initialFocus="first"
+          isOpen={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          role="menu"
+        >
+          <div className="crm-context-menu" role="none">
+            {onReply ? (
+              <button
+                className="crm-context-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onReply(message);
+                }}
+                role="menuitem"
+                type="button"
+              >
+                <Reply className="size-4 text-muted shrink-0" />
+                <span>Responder</span>
+              </button>
+            ) : null}
+
+            {onReact ? (
+              <button
+                className="crm-context-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setReactionOpen(true);
+                }}
+                role="menuitem"
+                type="button"
+              >
+                <SmilePlus className="size-4 text-muted shrink-0" />
+                <span>Reagir</span>
+              </button>
+            ) : null}
+
+            {message.content ? (
+              <button
+                className="crm-context-menu-item"
+                onClick={handleCopy}
+                role="menuitem"
+                type="button"
+              >
+                {copied ? (
+                  <Check className="size-4 text-emerald-500 shrink-0" />
+                ) : (
+                  <Copy className="size-4 text-muted shrink-0" />
+                )}
+                <span>{copied ? "Copiado!" : "Copiar texto"}</span>
+              </button>
+            ) : null}
+
+            <button
+              className="crm-context-menu-item"
+              onClick={() => {
+                setMenuOpen(false);
+                if (message.content) {
+                  void navigator.clipboard.writeText(message.content);
+                }
+              }}
+              role="menuitem"
+              type="button"
+            >
+              <Share2 className="size-4 text-muted shrink-0" />
+              <span>Encaminhar</span>
+            </button>
+
+            <button
+              className="crm-context-menu-item"
+              onClick={() => setMenuOpen(false)}
+              role="menuitem"
+              type="button"
+            >
+              <Star className="size-4 text-muted shrink-0" />
+              <span>Favoritar</span>
+            </button>
+
+            {onDelete ? (
+              <>
+                <div className="crm-context-menu-divider" role="separator" />
+                <button
+                  className="crm-context-menu-item crm-context-menu-item-danger"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setDeleteOpen(true);
+                  }}
+                  ref={deleteButtonRef}
+                  role="menuitem"
+                  type="button"
+                >
+                  <Trash2 className="size-4 text-red-500 shrink-0" />
+                  <span>Apagar mensagem</span>
+                </button>
+              </>
+            ) : null}
+          </div>
+        </FeatureAnchoredPopover>
+      </span>
+
       {onDelete ? (
         <span className="crm-delete-anchor">
-          <button
-            aria-label="Apagar mensagem"
-            aria-expanded={deleteOpen}
-            aria-haspopup="dialog"
-            disabled={actionsDisabled || Boolean(message.deletedAt)}
-            onClick={() => {
-              setReactionOpen(false);
-              setDeleteOpen((open) => !open);
-            }}
-            ref={deleteButtonRef}
-            title="Apagar"
-            type="button"
-          >
-            <AnimatedIconSwap stateKey={deleteOpen} variant="pop">
-              <Trash2 />
-            </AnimatedIconSwap>
-          </button>
           <FeatureAnchoredPopover
             align="end"
             anchorRef={deleteButtonRef}
@@ -142,12 +262,14 @@ export function MessageActions({
             <DeleteMessageConfirm
               disabled={Boolean(actionsDisabled)}
               onCancel={() => setDeleteOpen(false)}
-              onConfirm={async () => {
-                const accepted = await runMessageAction(actionInFlightRef, () =>
-                  onDelete(message),
-                );
-                if (accepted) setDeleteOpen(false);
-                return accepted;
+              onConfirm={() => {
+                void (async () => {
+                  const accepted = await runMessageAction(
+                    actionInFlightRef,
+                    () => onDelete(message),
+                  );
+                  if (accepted) setDeleteOpen(false);
+                })();
               }}
             />
           </FeatureAnchoredPopover>
@@ -186,60 +308,34 @@ function ReactionPalette({
   onRemove?: ((message: CrmMessage) => Promise<boolean>) | undefined;
 }) {
   return (
-    <div className="crm-reaction-palette-items">
-      {COMMON_REACTIONS.map((reaction) => (
-        <button
-          aria-checked={currentReaction === reaction}
-          aria-label={`Reagir com ${reaction}`}
-          disabled={disabled}
-          key={reaction}
-          onClick={() => {
-            void onPick(reaction);
-          }}
-          role="menuitemradio"
-          type="button"
-        >
-          {reaction}
-        </button>
-      ))}
-      {currentReaction && onRemove ? (
-        <button
-          aria-label="Remover reacao"
-          disabled={disabled}
-          onClick={() => {
-            void onRemove(message);
-          }}
-          role="menuitem"
-          type="button"
-        >
-          <X />
-        </button>
-      ) : null}
+    <div className="crm-reaction-row" role="none">
+      {COMMON_REACTIONS.map((emoji) => {
+        const isCurrent = currentReaction === emoji;
+        return (
+          <button
+            aria-label={`Reação ${emoji}`}
+            aria-pressed={isCurrent}
+            className={
+              isCurrent ? "crm-reaction-btn active" : "crm-reaction-btn"
+            }
+            disabled={disabled}
+            key={emoji}
+            onClick={() => {
+              if (isCurrent && onRemove) {
+                void onRemove(message);
+              } else {
+                void onPick(emoji);
+              }
+            }}
+            role="menuitem"
+            type="button"
+          >
+            {emoji}
+          </button>
+        );
+      })}
     </div>
   );
-}
-
-function handleHorizontalMenuNavigation(event: KeyboardEvent<HTMLDivElement>) {
-  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
-    return;
-  }
-  const items = Array.from(
-    event.currentTarget.querySelectorAll<HTMLElement>(
-      '[role^="menuitem"]:not(:disabled)',
-    ),
-  );
-  if (!items.length) return;
-  event.preventDefault();
-  const currentIndex = items.indexOf(document.activeElement as HTMLElement);
-  const nextIndex =
-    event.key === "Home"
-      ? 0
-      : event.key === "End"
-        ? items.length - 1
-        : event.key === "ArrowRight"
-          ? (currentIndex + 1) % items.length
-          : (currentIndex - 1 + items.length) % items.length;
-  items[nextIndex]?.focus();
 }
 
 function DeleteMessageConfirm({
@@ -249,26 +345,48 @@ function DeleteMessageConfirm({
 }: {
   disabled: boolean;
   onCancel: () => void;
-  onConfirm: () => Promise<boolean>;
+  onConfirm: () => void;
 }) {
   return (
-    <div className="crm-delete-confirm-content">
-      <span>Apagar?</span>
-      <button
-        disabled={disabled}
-        onClick={() => void onConfirm()}
-        type="button"
-      >
-        Apagar
-      </button>
-      <button
-        aria-label="Cancelar apagar mensagem"
-        disabled={disabled}
-        onClick={onCancel}
-        type="button"
-      >
-        <X />
-      </button>
+    <div className="crm-delete-prompt">
+      <p>Apagar esta mensagem?</p>
+      <div className="crm-delete-prompt-actions">
+        <button
+          className="crm-action crm-action-secondary"
+          disabled={disabled}
+          onClick={onCancel}
+          type="button"
+        >
+          Cancelar
+        </button>
+        <button
+          className="crm-action crm-action-danger"
+          disabled={disabled}
+          onClick={onConfirm}
+          type="button"
+        >
+          Apagar
+        </button>
+      </div>
     </div>
   );
+}
+
+function handleHorizontalMenuNavigation(event: KeyboardEvent<HTMLDivElement>) {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  const target = event.target as HTMLElement | null;
+  const container = target?.closest('[role="menu"]');
+  if (!container) return;
+  const items = Array.from(
+    container.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+  );
+  if (!items.length) return;
+  const currentIndex = target ? items.indexOf(target) : -1;
+  const delta = event.key === "ArrowRight" ? 1 : -1;
+  const nextIndex =
+    currentIndex === -1
+      ? 0
+      : (currentIndex + delta + items.length) % items.length;
+  items[nextIndex]?.focus();
+  event.preventDefault();
 }

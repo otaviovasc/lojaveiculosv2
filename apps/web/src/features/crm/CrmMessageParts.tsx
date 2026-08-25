@@ -34,6 +34,7 @@ import {
 
 export function MessageList({
   actionsDisabled,
+  fallbackAssigneeName,
   isLoading,
   messages,
   onDelete,
@@ -46,6 +47,7 @@ export function MessageList({
   olderMessagesError = false,
   onLoadOlder,
 }: MessageActionHandlers & {
+  fallbackAssigneeName?: string | null;
   hasOlderMessages?: boolean;
   isLoading: boolean;
   isLoadingOlderMessages?: boolean;
@@ -263,6 +265,9 @@ export function MessageList({
               {group.kind === "media" ? (
                 <CrmMediaMessageGroup
                   actionsDisabled={actionsDisabled}
+                  {...(fallbackAssigneeName !== undefined
+                    ? { fallbackAssigneeName }
+                    : {})}
                   messages={group.messages}
                   onDelete={onDelete}
                   onMediaClick={handleMediaClick}
@@ -273,6 +278,9 @@ export function MessageList({
               ) : (
                 <MessageBubble
                   actionsDisabled={actionsDisabled}
+                  {...(fallbackAssigneeName !== undefined
+                    ? { fallbackAssigneeName }
+                    : {})}
                   message={group.message}
                   onDelete={onDelete}
                   onMediaClick={handleMediaClick}

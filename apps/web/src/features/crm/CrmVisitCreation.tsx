@@ -12,6 +12,7 @@ import {
 } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { crmConversationCycleHash } from "./crmRouteState";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import { CrmWorkflowPanel } from "./CrmWorkflow";
 import type { CrmConversationCycle } from "./crmConversationTypes";
 import type { CrmVehicleOption } from "./crmConversationExtraTypes";
@@ -60,11 +61,14 @@ export function VisitCreationStep({
             <div>
               <strong>
                 {activeSession.customerDisplayName ??
-                  activeSession.customerPhone ??
-                  "Contato sem nome"}
+                  (activeSession.customerPhone
+                    ? formatCrmPhone(activeSession.customerPhone)
+                    : "Contato sem nome")}
               </strong>
               <small>
-                {activeSession.customerPhone ?? "Telefone nao informado"}
+                {activeSession.customerPhone
+                  ? formatCrmPhone(activeSession.customerPhone)
+                  : "Telefone não informado"}
               </small>
             </div>
             <div className="crm-visit-contact-links">
@@ -159,8 +163,9 @@ export function VisitCreationStep({
           label="Cliente"
           value={
             activeSession?.customerDisplayName ??
-            activeSession?.customerPhone ??
-            "Contato sem nome"
+            (activeSession?.customerPhone
+              ? formatCrmPhone(activeSession.customerPhone)
+              : "Contato sem nome")
           }
         />
         <ReviewItem

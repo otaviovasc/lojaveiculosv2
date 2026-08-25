@@ -14,6 +14,7 @@ import {
   QueueQuickFilterRow,
   QueueTagFilterMenu,
 } from "./CrmQueueToolbarParts";
+import { useDragToScroll } from "../../lib/useDragToScroll";
 import { CrmConnectionFilter } from "./CrmConnectionFilter";
 import type {
   CrmAssignableMember,
@@ -98,14 +99,13 @@ export function CrmQueueToolbar({
   startConversationUnavailableReason?: string | null;
   unreadOnly: boolean;
 }) {
+  const smartFiltersDragRef = useDragToScroll<HTMLDivElement>();
+
   return (
     <header className="crm-toolbar">
       <div className="crm-toolbar-top">
         <div className="crm-toolbar-title-wrap">
-          <h2>CRM</h2>
-          <span className="crm-toolbar-count">
-            {sessionCount} {sessionCount === 1 ? "conversa" : "conversas"}
-          </span>
+          <h2>Conversas</h2>
         </div>
         <div className="crm-toolbar-actions">
           <CrmConnectionFilter
@@ -207,6 +207,7 @@ export function CrmQueueToolbar({
       <div
         className="crm-smart-filters"
         aria-label="Filtros inteligentes"
+        ref={smartFiltersDragRef}
         role="group"
       >
         <button

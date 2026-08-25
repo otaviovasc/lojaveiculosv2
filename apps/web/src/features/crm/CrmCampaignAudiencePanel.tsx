@@ -5,6 +5,7 @@ import type {
   CampaignLeadFilters,
 } from "./crmCampaignSources";
 import { formatCycleName } from "./crmConversationModel";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
 
 export function CampaignAudiencePanel({
@@ -92,7 +93,11 @@ export function CampaignAudiencePanel({
               type="button"
             >
               <span>{formatCycleName(cycle)}</span>
-              <small>{cycle.customerPhone ?? "sem telefone"}</small>
+              <small>
+                {cycle.customerPhone
+                  ? formatCrmPhone(cycle.customerPhone)
+                  : "sem telefone"}
+              </small>
               {selected ? <Check aria-hidden="true" /> : null}
             </button>
           );

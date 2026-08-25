@@ -71,20 +71,23 @@
   background: transparent;
   border: 0;
   border-bottom: 1px solid
-    color-mix(in srgb, var(--color-line) 65%, transparent);
+    color-mix(in srgb, var(--color-line) 70%, transparent);
   border-radius: 0;
   color: var(--color-text);
   display: flex;
+  flex: 0 0 auto;
+  flex-shrink: 0;
   gap: 0.75rem;
   margin: 0;
-  min-height: 5.5rem;
-  padding: 0.875rem 1rem;
+  min-height: 4.5rem;
+  height: auto;
+  padding: 0.625rem 0.875rem;
   text-align: left;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.15s ease;
   width: 100%;
   position: relative;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Ambient channel backdrops matching Conexao cards */
@@ -227,8 +230,8 @@
   color: inherit;
   display: flex;
   flex: 1;
-  gap: 0.875rem;
-  min-height: 4.25rem;
+  gap: 0.75rem;
+  min-height: auto;
   min-width: 0;
   padding: 0;
   text-align: left;
@@ -239,18 +242,19 @@
 .crm-avatar {
   align-items: center;
   background: color-mix(in srgb, var(--color-text) 8%, var(--color-app));
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   color: var(--color-text);
   display: flex;
   flex: 0 0 auto;
-  font-size: var(--font-size-sm);
-  font-weight: 800;
-  height: 3.5rem;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  height: 2.625rem;
   justify-content: center;
+  margin-top: 0;
   overflow: hidden;
   position: relative;
-  width: 3.5rem;
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text) 7%, transparent);
+  width: 2.625rem;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 5%, transparent);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -280,7 +284,16 @@
   gap: 0.5rem;
   min-width: 0;
   width: 100%;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
+}
+
+.crm-cycle-heading {
+  align-items: baseline;
+  display: flex;
+  flex: 1;
+  gap: 0.45rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .crm-session-top strong,
@@ -294,6 +307,15 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-cycle-phone-pill {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
@@ -316,7 +338,8 @@
   gap: 0.5rem;
   min-width: 0;
   width: 100%;
-  margin-top: 0.125rem;
+  margin-top: 0.05rem;
+  margin-bottom: 0.25rem;
 }
 
 .crm-session-preview,
@@ -363,8 +386,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  margin-top: 0.4rem;
+  row-gap: 0.25rem;
+  margin-top: 0.25rem;
   min-width: 0;
+  width: 100%;
 }
 
 .crm-session-chip,
@@ -376,20 +401,22 @@
   align-items: center;
   background: color-mix(in srgb, var(--color-text) 5%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
-  border-radius: 0.5rem;
+  border-radius: 0.45rem;
   color: var(--color-muted);
   display: inline-flex;
   font-size: var(--font-size-xs);
-  font-weight: 800;
+  font-weight: 750;
   gap: 0.25rem;
-  letter-spacing: 0.04em;
-  max-width: 10rem;
-  min-height: 1.35rem;
+  letter-spacing: 0.03em;
+  max-width: 100%;
+  min-height: 1.25rem;
+  height: 1.25rem;
   overflow: hidden;
-  padding: 0.1rem 0.45rem;
+  padding: 0.05rem 0.4rem;
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .crm-session-chip svg,
@@ -458,4 +485,177 @@
   justify-content: center;
   padding: 3rem 1.5rem;
   text-align: center;
+}
+
+/* Pull-to-refresh Indicator */
+.crm-pull-refresh-indicator {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  transition:
+    height 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease;
+  width: 100%;
+  z-index: 10;
+}
+
+.crm-pull-refresh-bubble {
+  align-items: center;
+  backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--color-panel) 90%, var(--color-app));
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.crm-pull-refresh-bubble.crm-pull-ready {
+  border-color: var(--color-success);
+  color: var(--color-text);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+}
+
+/* Conversation List End of List & Footer */
+.crm-cycle-list-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 2.5rem;
+  padding: 1.5rem 1.25rem 4rem;
+  width: 100%;
+}
+
+.crm-cycle-list-end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  width: 100%;
+}
+
+.crm-cycle-list-end-line {
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-line) 70%, transparent);
+}
+
+.crm-cycle-list-end-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.875rem;
+  border-radius: 9999px;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-line) 85%, transparent);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* Chat Row Hover Interaction Menu */
+.crm-cycle-action-anchor {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 5;
+}
+
+.crm-cycle-menu-btn {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-panel) 92%, var(--color-app));
+  border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+  border-radius: 50%;
+  color: var(--color-muted);
+  display: inline-flex;
+  height: 1.5rem;
+  justify-content: center;
+  width: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  transform: scale(0.9);
+  cursor: pointer;
+}
+
+.crm-cycle:hover .crm-cycle-menu-btn,
+.crm-cycle-menu-btn[aria-expanded="true"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.crm-cycle-menu-btn:hover {
+  background: var(--color-app);
+  color: var(--color-text);
+  border-color: var(--color-line);
+}
+
+/* Context Menus (Popovers) */
+.crm-context-popover {
+  background: var(--color-panel) !important;
+  border: 1px solid var(--color-line) !important;
+  border-radius: 0.625rem !important;
+  padding: 0.25rem !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.crm-context-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 12.5rem;
+}
+
+.crm-context-menu-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.45rem;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+  gap: 0.625rem;
+  padding: 0.45rem 0.625rem;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.crm-context-menu-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 6%, var(--color-panel));
+  color: var(--color-text);
+}
+
+.crm-context-menu-item-danger {
+  color: var(--color-danger, #ef4444);
+}
+
+.crm-context-menu-item-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #ef4444;
+}
+
+.crm-context-menu-divider {
+  background: color-mix(in srgb, var(--color-line) 80%, transparent);
+  height: 1px;
+  margin: 0.25rem 0;
+  width: 100%;
 }

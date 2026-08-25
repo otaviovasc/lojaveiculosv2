@@ -9,6 +9,7 @@ import { findDefaultFreeTextStartConnection } from "./crmConnectionSelection";
 import { readCrmCapabilities } from "./crmPermissions";
 import { MessageList } from "./CrmMessageParts";
 import { formatLeadName } from "./crmPipelineModels";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import type {
   CrmProviderConnection,
   CrmConversationCycle,
@@ -154,7 +155,7 @@ export function CrmLeadChatModal({
       className="feature-dialog--large max-w-4xl crm-lead-chat-dialog"
       description={
         cycle
-          ? `${cycle.customerPhone || lead.buyerPhone || "Sem telefone"} · ${cycle.status}`
+          ? `${formatCrmPhone(cycle.customerPhone || lead.buyerPhone) || "Sem telefone"} · ${cycle.status}`
           : "Nenhuma conversa vinculada a este lead ainda."
       }
       icon={<MessageSquare aria-hidden="true" />}

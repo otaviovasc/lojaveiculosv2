@@ -14,14 +14,14 @@
 }
 
 .crm-shell {
-  grid-template-columns: minmax(20rem, 24rem) minmax(27rem, 1fr);
+  grid-template-columns: minmax(22rem, 26rem) minmax(26rem, 1fr);
   max-width: 100%;
 }
 
 .crm-shell[data-details-open="true"] {
   grid-template-columns:
-    minmax(21rem, 25rem)
-    minmax(27rem, 1fr)
+    minmax(22rem, 26rem)
+    minmax(24rem, 1fr)
     minmax(18rem, 22rem);
 }
 
@@ -201,7 +201,7 @@
     120px 120px;
   content: "";
   inset: 0;
-  opacity: 0.22;
+  opacity: 0.42;
   pointer-events: none;
   position: absolute;
   z-index: -1;
@@ -209,8 +209,8 @@
 
 :root[data-theme="dark"] .crm-messages::before,
 .dark .crm-messages::before {
-  filter: invert(1);
-  opacity: 0.08;
+  filter: invert(1) contrast(1.1);
+  opacity: 0.22;
 }
 
 .crm-message-day {
@@ -233,11 +233,20 @@
 .crm-bubble {
   background: var(--color-panel);
   border: 1px solid color-mix(in srgb, var(--color-line) 85%, transparent);
-  border-radius: 1rem;
+  border-radius: 1.125rem;
   border-top-left-radius: 0.25rem;
   color: var(--color-text);
+  min-width: 0;
+  width: fit-content;
   max-width: min(34rem, 84%);
+  padding: 0.75rem 1rem 0.625rem;
   box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+}
+
+.crm-bubble:has(.crm-media),
+.crm-bubble:has(.crm-media-grid) {
+  padding: 0.5rem 0.5rem 0.45rem;
+  max-width: min(26rem, 84%);
 }
 
 .crm-bubble-out {

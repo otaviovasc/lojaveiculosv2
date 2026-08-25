@@ -8,6 +8,7 @@ import { createRuntimeCrmConversationApi } from "./runtimeApi";
 import { findDefaultFreeTextStartConnection } from "./crmConnectionSelection";
 import { readCrmCapabilities } from "./crmPermissions";
 import { crmConversationCycleHash } from "./crmRouteState";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import type {
   CrmProviderConnection,
   CrmConversationCycle,
@@ -131,7 +132,8 @@ export function CrmLeadConversationPanel({ api, lead }: Props) {
                 "Lead sem nome"}
             </h3>
             <p className="mt-1 text-xs font-bold text-muted">
-              {linkedSession.customerPhone || lead.buyerPhone || "Sem telefone"}{" "}
+              {formatCrmPhone(linkedSession.customerPhone || lead.buyerPhone) ||
+                "Sem telefone"}{" "}
               · {linkedSession.status}
             </p>
           </div>

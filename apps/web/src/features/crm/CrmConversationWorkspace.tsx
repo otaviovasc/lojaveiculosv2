@@ -164,7 +164,7 @@ export function CrmConversationWorkspace({
             visible={showSelectionMode}
           />
         </CrmQueueToolbar>
-        {inbox.isLoading ? (
+        {inbox.isLoading && !inbox.conversationCycles.length ? (
           <SessionListSkeleton />
         ) : (
           <SessionList
@@ -172,10 +172,20 @@ export function CrmConversationWorkspace({
             hasMore={inbox.hasMoreSessions}
             isLoadingMore={inbox.isLoadingMoreSessions}
             onLoadMore={() => void inbox.loadMoreSessions()}
+            onRefresh={() =>
+              void inbox.refreshSessions({ preserveLocalOnly: true })
+            }
             onSelect={(cycleId) => {
               setDetailsOpen(false);
               onCycleChange(cycleId);
               focusPane("chat");
+            }}
+            onToggleRead={(cycle) => {
+              if (cycle.unreadCount) {
+                void inbox.actions.markCycleRead(cycle.id);
+              } else {
+                void inbox.actions.markCycleUnread(cycle.id);
+              }
             }}
             onToggleSelected={inbox.toggleSelectedSession}
             selectedCycleIds={inbox.selectedCycleIds}
@@ -266,12 +276,13 @@ export function CrmConversationWorkspace({
               cycle={activeSession}
             />
             <MessageList
-              key={`${String(activeSession.id)}:${String(
-                inbox.connectionFilterId ?? "automatic",
-              )}`}
+              key={String(activeSession.id)}
               actionsDisabled={inbox.isSending || !inbox.canSendText}
+              fallbackAssigneeName={activeSession.assignedMember?.name ?? null}
               hasOlderMessages={inbox.hasOlderMessages}
-              isLoading={inbox.isLoadingMessages}
+              isLoading={
+                !inbox.hasLoadedActiveMessages || inbox.isLoadingMessages
+              }
               isLoadingOlderMessages={inbox.isLoadingOlderMessages}
               messages={inbox.messages}
               onDelete={
@@ -310,9 +321,7 @@ export function CrmConversationWorkspace({
                   </p>
                 ) : null}
                 <MessageComposer
-                  key={`${String(activeSession.id)}:${String(
-                    activeSessionConnection?.id ?? "unknown",
-                  )}:${String(inbox.connectionFilterId ?? "automatic")}`}
+                  key={String(activeSession.id)}
                   capabilities={providerCapabilities}
                   ref={composerRef}
                   catalogUrl={inbox.catalogUrl}

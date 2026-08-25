@@ -21,6 +21,7 @@ import {
 
 export function CrmMediaMessageGroup({
   actionsDisabled,
+  fallbackAssigneeName,
   messages,
   onDelete,
   onMediaClick,
@@ -28,13 +29,16 @@ export function CrmMediaMessageGroup({
   onRemoveReaction,
   onReply,
 }: MessageActionHandlers & {
+  fallbackAssigneeName?: string | null;
   messages: CrmMessageView[];
   onMediaClick?: ((url: string) => void) | undefined;
 }) {
   const first = messages[0];
   const last = messages[messages.length - 1];
   const outgoing = first?.direction === "OUTBOUND";
-  const senderLabel = first ? getSenderLabel(first) : null;
+  const senderLabel = first
+    ? getSenderLabel(first, fallbackAssigneeName)
+    : null;
   const captions = messages.map(readCaption).filter(Boolean);
   const reaction = last ? readReaction(last.metadata) : undefined;
   const delivery = readDeliveryPresentation(last?.status ?? "unknown");
@@ -61,7 +65,11 @@ export function CrmMediaMessageGroup({
           onReply={onReply}
         />
       ) : null}
-      {senderLabel ? <strong>{senderLabel}</strong> : null}
+      {senderLabel ? (
+        <div className="crm-message-attribution">
+          <strong>{senderLabel}</strong>
+        </div>
+      ) : null}
       <div
         className={`crm-media-grid crm-media-grid-${Math.min(messages.length, 4)}`}
       >

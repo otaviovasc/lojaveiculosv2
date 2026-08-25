@@ -6,6 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
+import { useDragToScroll } from "../../lib/useDragToScroll";
 import { countForFilter } from "./crmQueueState";
 import type {
   CrmAssignableMember,
@@ -43,6 +44,7 @@ export function QueueQuickFilterRow({
   quickFilter: CrmConversationCycleFilter;
   conversationCycleCounts: CrmConversationCycleCounts;
 }) {
+  const dragRef = useDragToScroll<HTMLDivElement>();
   const othersButtonRef = useRef<HTMLButtonElement>(null);
   const othersButtonId = useId();
   const othersListboxId = useId();
@@ -70,7 +72,12 @@ export function QueueQuickFilterRow({
     );
   if (!canAssign) {
     return (
-      <div className="crm-filter-row" aria-label="Filtros rápidos" role="group">
+      <div
+        className="crm-filter-row"
+        aria-label="Filtros rápidos"
+        ref={dragRef}
+        role="group"
+      >
         <QuickFilterButton
           active
           count={countForFilter(conversationCycleCounts, "mine")}
@@ -81,7 +88,12 @@ export function QueueQuickFilterRow({
     );
   }
   return (
-    <div className="crm-filter-row" aria-label="Filtros rápidos" role="group">
+    <div
+      className="crm-filter-row"
+      aria-label="Filtros rápidos"
+      ref={dragRef}
+      role="group"
+    >
       {quickFilterOptions.slice(0, 3).map((option) => (
         <QuickFilterButton
           active={quickFilter === option.value}

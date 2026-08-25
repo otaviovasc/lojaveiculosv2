@@ -13,6 +13,7 @@ type UseCrmInboxLifecycleInput = {
     isLoading: boolean;
     refreshConnections: () => Promise<unknown>;
   };
+  conversationCyclesCount?: number;
   markCycleReadOnce: (cycle: CrmConversationCycle) => void;
   hasLoadedActiveMessages: boolean;
   manualUnreadCycleIdsRef: { current: Set<CrmConversationCycleId> };
@@ -34,6 +35,7 @@ export function useCrmInboxLifecycle({
   asError,
   connectionId,
   connections,
+  conversationCyclesCount = 0,
   markCycleReadOnce,
   hasLoadedActiveMessages,
   manualUnreadCycleIdsRef,
@@ -70,8 +72,12 @@ export function useCrmInboxLifecycle({
       return;
     }
     let active = true;
-    setIsLoadingSessions(true);
-    void refreshSessions()
+    if (!conversationCyclesCount) {
+      setIsLoadingSessions(true);
+    }
+    void refreshSessions({
+      preserveLocalOnly: Boolean(conversationCyclesCount),
+    })
       .catch((caught) => {
         if (active) setError(asError(caught));
       })

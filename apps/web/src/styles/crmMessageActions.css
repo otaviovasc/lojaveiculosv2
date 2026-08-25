@@ -64,9 +64,30 @@
 }
 
 .crm-reaction-anchor,
+.crm-msg-menu-anchor,
 .crm-delete-anchor {
   display: inline-flex;
   position: relative;
+}
+
+.crm-msg-menu-btn {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--color-muted);
+  display: inline-flex;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crm-msg-menu-btn:hover,
+.crm-msg-menu-btn[aria-expanded="true"] {
+  background: var(--color-app);
+  color: var(--color-text);
 }
 
 .crm-reaction-palette,

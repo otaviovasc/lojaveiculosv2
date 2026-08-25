@@ -187,7 +187,11 @@ export function useCrmMessages({
     let active = true;
     let inFlight: Promise<void> | null = null;
     let inFlightToken: symbol | null = null;
-    setIsLoadingMessages(true);
+    const hasCachedMessages =
+      (messagesBySessionRef.current.get(activeCycleId)?.length ?? 0) > 0;
+    if (!hasCachedMessages) {
+      setIsLoadingMessages(true);
+    }
     const loadMessages = () => {
       if (inFlight) return inFlight;
       const requestToken = Symbol("crm-message-poll");
@@ -330,9 +334,11 @@ export function useCrmMessages({
       return false;
     if (typeof activeCycleId !== "string" || !text.trim()) return false;
     const replyTo = options.replyToMessage;
-    const optimistic = createOptimisticTextMessage(
-      text.trim(),
-      replyTo
+    const optimistic = createOptimisticTextMessage(text.trim(), {
+      ...(activeSession.assignedMember?.name
+        ? { authorName: activeSession.assignedMember.name }
+        : {}),
+      ...(replyTo
         ? {
             replyTo: {
               content: replyTo.content,
@@ -343,8 +349,8 @@ export function useCrmMessages({
               type: replyTo.type,
             },
           }
-        : undefined,
-    );
+        : {}),
+    });
     const idempotencyKey =
       options.idempotencyKey ?? optimistic.clientId ?? crypto.randomUUID();
     updateSessionMessages(activeCycleId, (current) => [...current, optimistic]);
