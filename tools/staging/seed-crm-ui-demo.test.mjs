@@ -38,6 +38,7 @@ describe("CRM UI demo fixture", () => {
         dispatchEnabled: false,
         fixtureNamespace: CRM_UI_DEMO_NAMESPACE,
         officialOperation: false,
+        purpose: "crm_ui_demo",
       },
     });
     expect(first.contacts).toHaveLength(10);

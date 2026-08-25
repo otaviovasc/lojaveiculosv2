@@ -17,6 +17,13 @@ export function resolveCrmInboxConnectionSelection(input: {
   const sandboxIds = input.connections
     .filter((connection) => connection.state === "sandbox")
     .map((connection) => String(connection.id));
+  const preferredReadOnlyDemoIds = input.connections
+    .filter(
+      (connection) =>
+        connection.state === "sandbox" &&
+        connection.metadata?.purpose === "crm_ui_demo",
+    )
+    .map((connection) => String(connection.id));
   const browsableIds = new Set(
     input.connections
       .filter(isInboxBrowsableConnection)
@@ -34,9 +41,11 @@ export function resolveCrmInboxConnectionSelection(input: {
       ? channelDefault.connection.id
       : null;
   const readOnlySandboxId =
-    connectedIds.size === 0 && sandboxIds.length === 1
-      ? (sandboxIds[0] ?? null)
-      : null;
+    preferredReadOnlyDemoIds.length === 1
+      ? (preferredReadOnlyDemoIds[0] ?? null)
+      : connectedIds.size === 0 && sandboxIds.length === 1
+        ? (sandboxIds[0] ?? null)
+        : null;
   const viewConnectionId =
     filteredId ??
     (defaultId && connectedIds.has(defaultId) ? defaultId : readOnlySandboxId);
