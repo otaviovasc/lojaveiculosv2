@@ -1,14 +1,19 @@
 import type { CrmProvider } from "@lojaveiculosv2/shared";
+import type { CrmConnectionConfiguredStatus } from "./crmConversationTypes";
 
 export function readCrmConnectionStatus(input: {
   hasConnection: boolean;
   isLoading: boolean;
   connectionError: Error | null;
   provider?: CrmProvider | null;
+  state?: CrmConnectionConfiguredStatus;
 }): {
   label: string;
   tone: "error" | "loading" | "neutral" | "offline" | "online";
 } {
+  if (input.state === "sandbox") {
+    return { label: "Demonstração · somente leitura", tone: "neutral" };
+  }
   if (input.hasConnection) {
     return {
       label: input.provider

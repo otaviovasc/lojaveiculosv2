@@ -5,7 +5,7 @@ import { useRemoteSearch } from "../../lib/useRemoteSearch";
 import type { CrmConversationApi } from "./crmConversationApi";
 import {
   buildStorefrontUrl,
-  isConnectedConnection,
+  isInboxBrowsableConnection,
   readConversationStartCapability,
   resolveCrmInboxConnectionSelection,
 } from "./crmConnectionSelection";
@@ -133,7 +133,7 @@ export function useCrmInbox(
       !connections.connections.some(
         (connection) =>
           String(connection.id) === connectionFilterId &&
-          isConnectedConnection(connection),
+          isInboxBrowsableConnection(connection),
       )
     ) {
       setConnectionFilterId(null);

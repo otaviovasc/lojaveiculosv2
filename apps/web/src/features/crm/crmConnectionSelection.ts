@@ -14,8 +14,16 @@ export function resolveCrmInboxConnectionSelection(input: {
       .filter(isConnectedConnection)
       .map((connection) => String(connection.id)),
   );
+  const sandboxIds = input.connections
+    .filter((connection) => connection.state === "sandbox")
+    .map((connection) => String(connection.id));
+  const browsableIds = new Set(
+    input.connections
+      .filter(isInboxBrowsableConnection)
+      .map((connection) => String(connection.id)),
+  );
   const filteredId =
-    input.connectionFilterId && connectedIds.has(input.connectionFilterId)
+    input.connectionFilterId && browsableIds.has(input.connectionFilterId)
       ? input.connectionFilterId
       : null;
   const channelDefault = input.routingPolicy?.channels.find(
@@ -25,8 +33,13 @@ export function resolveCrmInboxConnectionSelection(input: {
     channelDefault?.ready && channelDefault.connection?.id
       ? channelDefault.connection.id
       : null;
+  const readOnlySandboxId =
+    connectedIds.size === 0 && sandboxIds.length === 1
+      ? (sandboxIds[0] ?? null)
+      : null;
   const viewConnectionId =
-    filteredId ?? (defaultId && connectedIds.has(defaultId) ? defaultId : null);
+    filteredId ??
+    (defaultId && connectedIds.has(defaultId) ? defaultId : readOnlySandboxId);
 
   if (!input.hasActiveSession) {
     return {
@@ -51,6 +64,12 @@ export function isConnectedConnection(
   connection: Pick<CrmProviderConnection, "readiness" | "state">,
 ) {
   return connection.state === "active" && connection.readiness?.ready === true;
+}
+
+export function isInboxBrowsableConnection(
+  connection: Pick<CrmProviderConnection, "readiness" | "state">,
+) {
+  return isConnectedConnection(connection) || connection.state === "sandbox";
 }
 
 export function findDefaultFreeTextStartConnection(

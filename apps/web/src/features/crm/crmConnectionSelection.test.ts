@@ -79,6 +79,65 @@ describe("CRM messaging connection selection", () => {
     ).toBeNull();
   });
 
+  it("selects a lone sandbox connection for read-only conversation browsing", () => {
+    const sandbox = {
+      ...createConnection("meta_cloud", "demo"),
+      readiness: {
+        ready: false,
+        reason: "sandbox",
+        reasonCode: "provider_not_connected",
+      },
+      state: "sandbox" as const,
+    };
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [sandbox],
+        hasActiveSession: false,
+        routingPolicy: null,
+      }),
+    ).toEqual({
+      operationalConnectionId: "demo",
+      viewConnectionId: "demo",
+    });
+    expect(isConnectedConnection(sandbox)).toBe(false);
+  });
+
+  it("requires an explicit filter when multiple sandbox histories exist", () => {
+    const first = {
+      ...createConnection("meta_cloud", "demo-one"),
+      state: "sandbox" as const,
+    };
+    const second = {
+      ...createConnection("meta_cloud", "demo-two"),
+      state: "sandbox" as const,
+    };
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [first, second],
+        hasActiveSession: false,
+        routingPolicy: null,
+      }),
+    ).toEqual({ operationalConnectionId: null, viewConnectionId: null });
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: "demo-two",
+        connections: [first, second],
+        hasActiveSession: false,
+        routingPolicy: null,
+      }),
+    ).toEqual({
+      operationalConnectionId: "demo-two",
+      viewConnectionId: "demo-two",
+    });
+  });
+
   it("fails closed when multiple ready channels need an explicit route", () => {
     const instagram = createConnection("meta_cloud", "instagram");
     const official = createConnection("meta_cloud", "official");

@@ -81,10 +81,16 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
     typeof document === "undefined" ? "CRM" : document.title,
   );
   const unreadCount = totalUnreadCycles(inbox.conversationCycles);
+  const selectedConnection = inbox.connectionId
+    ? inbox.connections.find(
+        (connection) => String(connection.id) === String(inbox.connectionId),
+      )
+    : null;
   const providerStatus = readCrmConnectionStatus({
     hasConnection: inbox.hasConnection,
     isLoading: inbox.connectionIsLoading,
     connectionError: inbox.connectionError,
+    ...(selectedConnection?.state ? { state: selectedConnection.state } : {}),
   });
   const status = readSynchronizedChannelStatus(
     providerStatus,

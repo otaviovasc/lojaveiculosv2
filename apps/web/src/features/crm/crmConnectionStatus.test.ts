@@ -17,6 +17,20 @@ describe("readCrmConnectionStatus", () => {
     ).toEqual({ label: "Canal conectado", tone: "online" });
   });
 
+  it("never presents a sandbox history as a live provider connection", () => {
+    expect(
+      readCrmConnectionStatus({
+        connectionError: null,
+        hasConnection: true,
+        isLoading: false,
+        state: "sandbox",
+      }),
+    ).toEqual({
+      label: "Demonstração · somente leitura",
+      tone: "neutral",
+    });
+  });
+
   it("describes loading, provider errors, and disconnected states", () => {
     expect(
       readCrmConnectionStatus({
