@@ -122,6 +122,37 @@ export function MessageActions({
         </span>
       ) : null}
 
+      {onReply ? (
+        <button
+          aria-label="Responder mensagem"
+          className="crm-msg-reply-btn"
+          disabled={actionsDisabled || Boolean(message.deletedAt)}
+          onClick={() => onReply(message)}
+          title="Responder"
+          type="button"
+        >
+          <Reply className="size-3.5" />
+        </button>
+      ) : null}
+
+      {onDelete ? (
+        <button
+          aria-label="Apagar mensagem"
+          className="crm-msg-delete-btn"
+          disabled={actionsDisabled || Boolean(message.deletedAt)}
+          onClick={() => {
+            setMenuOpen(false);
+            setReactionOpen(false);
+            setDeleteOpen(true);
+          }}
+          ref={deleteButtonRef}
+          title="Apagar mensagem"
+          type="button"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      ) : null}
+
       {/* Chevron dropdown arrow interaction menu */}
       <span className="crm-msg-menu-anchor">
         <button
@@ -233,7 +264,6 @@ export function MessageActions({
                     setMenuOpen(false);
                     setDeleteOpen(true);
                   }}
-                  ref={deleteButtonRef}
                   role="menuitem"
                   type="button"
                 >
@@ -313,8 +343,8 @@ function ReactionPalette({
         const isCurrent = currentReaction === emoji;
         return (
           <button
-            aria-label={`Reação ${emoji}`}
-            aria-pressed={isCurrent}
+            aria-checked={isCurrent}
+            aria-label={`Reagir com ${emoji}`}
             className={
               isCurrent ? "crm-reaction-btn active" : "crm-reaction-btn"
             }
@@ -327,13 +357,25 @@ function ReactionPalette({
                 void onPick(emoji);
               }
             }}
-            role="menuitem"
+            role="menuitemradio"
             type="button"
           >
             {emoji}
           </button>
         );
       })}
+      {currentReaction && onRemove ? (
+        <button
+          aria-label="Remover reacao"
+          className="crm-reaction-btn"
+          disabled={disabled}
+          onClick={() => void onRemove(message)}
+          role="menuitem"
+          type="button"
+        >
+          <Trash2 aria-hidden="true" className="size-3.5" />
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -378,7 +420,9 @@ function handleHorizontalMenuNavigation(event: KeyboardEvent<HTMLDivElement>) {
   const container = target?.closest('[role="menu"]');
   if (!container) return;
   const items = Array.from(
-    container.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+    container.querySelectorAll<HTMLElement>(
+      '[role="menuitem"], [role="menuitemradio"]',
+    ),
   );
   if (!items.length) return;
   const currentIndex = target ? items.indexOf(target) : -1;

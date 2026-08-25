@@ -90,6 +90,7 @@ export function CrmScopedNav({
   return (
     <>
       <nav className="crm-scope-nav" aria-label="WhatsApp CRM">
+        <strong className="crm-scope-brand">CRM</strong>
         <FeatureTabs
           activeClassName="crm-scope-tab-active"
           ariaLabel="Áreas do WhatsApp CRM"

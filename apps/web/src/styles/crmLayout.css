@@ -44,6 +44,14 @@
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
+.crm-scope-brand {
+  color: var(--color-text);
+  flex: 0 0 auto;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
 .crm-scope-trailing {
   align-items: center;
   display: flex;

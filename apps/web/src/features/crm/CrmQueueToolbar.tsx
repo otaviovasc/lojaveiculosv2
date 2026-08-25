@@ -105,7 +105,8 @@ export function CrmQueueToolbar({
     <header className="crm-toolbar">
       <div className="crm-toolbar-top">
         <div className="crm-toolbar-title-wrap">
-          <h2>Conversas</h2>
+          <h2 aria-label="CRM">Conversas</h2>
+          <span className="crm-toolbar-count">{sessionCount} conversas</span>
         </div>
         <div className="crm-toolbar-actions">
           <CrmConnectionFilter

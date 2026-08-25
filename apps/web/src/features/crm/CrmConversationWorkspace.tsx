@@ -276,7 +276,7 @@ export function CrmConversationWorkspace({
               cycle={activeSession}
             />
             <MessageList
-              key={String(activeSession.id)}
+              key={`${String(activeSession.id)}:${inbox.connectionFilterId ?? activeSessionConnection?.id ?? "default"}`}
               actionsDisabled={inbox.isSending || !inbox.canSendText}
               fallbackAssigneeName={activeSession.assignedMember?.name ?? null}
               hasOlderMessages={inbox.hasOlderMessages}
@@ -321,7 +321,7 @@ export function CrmConversationWorkspace({
                   </p>
                 ) : null}
                 <MessageComposer
-                  key={String(activeSession.id)}
+                  key={`${String(activeSession.id)}:${inbox.connectionFilterId ?? activeSessionConnection?.id ?? "default"}`}
                   capabilities={providerCapabilities}
                   ref={composerRef}
                   catalogUrl={inbox.catalogUrl}

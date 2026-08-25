@@ -140,6 +140,7 @@ export function MessageDeliveryStatus({
     return (
       <span className="crm-delivery-pending" role="status" title="Enviando...">
         <Clock3 className="size-3 animate-pulse text-muted" />
+        <span>Envio pendente</span>
       </span>
     );
   }
@@ -178,6 +179,7 @@ export function MessageDeliveryStatus({
       title="Envio não confirmado"
     >
       <CircleHelp className="size-3 text-muted" />
+      <span>Envio não confirmado</span>
     </span>
   );
 }

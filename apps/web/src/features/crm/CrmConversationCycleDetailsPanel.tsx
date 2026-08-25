@@ -320,7 +320,7 @@ function readAttention(cycle: CrmConversationCycle) {
 function readTransportLabel(provider?: string | null) {
   switch (provider) {
     case "meta_cloud":
-      return "Meta Cloud API";
+      return "Meta Cloud";
     case "olx":
     case "olx_chat":
       return "OLX Chat";
@@ -329,7 +329,7 @@ function readTransportLabel(provider?: string | null) {
     case null:
     case undefined:
     default:
-      return "Meta Cloud API";
+      return "Meta Cloud";
   }
 }
 

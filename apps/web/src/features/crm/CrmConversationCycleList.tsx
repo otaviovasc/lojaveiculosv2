@@ -190,6 +190,7 @@ export function SessionList({
                       formatCycleName(cycle) ? (
                       <span className="crm-cycle-phone-pill">
                         {formatCrmPhone(cycle.customerPhone)}
+                        <span className="sr-only">{cycle.customerPhone}</span>
                       </span>
                     ) : null}
                   </span>
@@ -312,7 +313,7 @@ export function SessionList({
             <span className="crm-cycle-list-end-line" />
             <div className="crm-cycle-list-end-badge">
               <Check className="size-3 text-emerald-500" />
-              <span>Todas as conversas carregadas</span>
+              <span>Todas as conversas foram carregadas.</span>
             </div>
             <span className="crm-cycle-list-end-line" />
           </div>

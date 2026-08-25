@@ -367,7 +367,7 @@ export function getSenderOriginLabel(message: CrmMessage) {
   }
   switch (message.senderOrigin ?? "unknown") {
     case "human_channel":
-      return "Enviado pelo aparelho";
+      return "Enviado diretamente pelo canal";
     case "external_bot":
       return "Bot externo";
     case "customer":
