@@ -138,6 +138,36 @@ describe("CRM messaging connection selection", () => {
     });
   });
 
+  it("prefers the explicit read-only demo when other sandbox histories exist", () => {
+    const existing = {
+      ...createConnection("zapi", "existing-demo"),
+      state: "sandbox" as const,
+    };
+    const uiDemo = {
+      ...createConnection("meta_cloud", "ui-demo"),
+      metadata: {
+        catalogPhone: null,
+        connectedPhone: null,
+        migrationUnit: null,
+        purpose: "crm_ui_demo",
+      },
+      state: "sandbox" as const,
+    };
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [existing, uiDemo],
+        hasActiveSession: false,
+        routingPolicy: null,
+      }),
+    ).toEqual({
+      operationalConnectionId: "ui-demo",
+      viewConnectionId: "ui-demo",
+    });
+  });
+
   it("fails closed when multiple ready channels need an explicit route", () => {
     const instagram = createConnection("meta_cloud", "instagram");
     const official = createConnection("meta_cloud", "official");

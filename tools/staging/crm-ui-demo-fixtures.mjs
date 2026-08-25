@@ -37,7 +37,10 @@ export function buildCrmUiDemoFixtures(input) {
     broker: "composio",
     channel: "whatsapp",
     displayName: "WhatsApp ficticio para demo de UI",
-    metadata: fixtureMetadata("connection"),
+    metadata: {
+      ...fixtureMetadata("connection"),
+      purpose: "crm_ui_demo",
+    },
     provider: "meta_cloud",
     state: "sandbox",
   };
