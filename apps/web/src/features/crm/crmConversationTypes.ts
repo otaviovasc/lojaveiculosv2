@@ -119,6 +119,7 @@ export type CrmProviderConnection = {
   metadata?: CrmConnectionMetadata;
   phone?: string | null;
   provider: CrmProvider;
+  purpose?: CrmChannelConnectionDto["purpose"];
   revision?: number | undefined;
   routingStatus?: "ready" | "preserved" | "deferred" | undefined;
   readiness?: {

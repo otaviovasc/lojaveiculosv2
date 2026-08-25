@@ -20,6 +20,9 @@ export const crmConnectionStates = [
 ] as const;
 export type CrmConnectionState = (typeof crmConnectionStates)[number];
 
+export const crmConnectionPurposes = ["ui_demo"] as const;
+export type CrmConnectionPurpose = (typeof crmConnectionPurposes)[number];
+
 export const crmConnectionCapabilities = [
   "catalog",
   "delete",
@@ -75,6 +78,7 @@ export const crmChannelConnectionSchema = z
     readiness: crmConnectionReadinessSchema,
     capabilities: z.array(z.enum(crmConnectionCapabilities)).readonly(),
     isDefault: z.boolean(),
+    purpose: z.enum(crmConnectionPurposes).optional(),
     routingStatus: z.enum(crmConnectionRoutingStatuses).optional(),
   })
   .strict();

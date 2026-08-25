@@ -60,7 +60,27 @@ vi.mock("./CrmConversationCycleList", () => ({
 }));
 vi.mock("./CrmQueueBulkBar", () => ({ CrmQueueBulkBar: () => null }));
 vi.mock("./CrmReadOnlyComposer", () => ({
-  CrmReadOnlyComposer: () => null,
+  CrmReadOnlyComposer: ({
+    actionLabel,
+    onAction,
+    reason,
+    title,
+  }: {
+    actionLabel?: string;
+    onAction?: () => void;
+    reason?: string;
+    title?: string;
+  }) => (
+    <div role="note">
+      <strong>{title}</strong>
+      <span>{reason}</span>
+      {onAction ? (
+        <button onClick={onAction} type="button">
+          {actionLabel}
+        </button>
+      ) : null}
+    </div>
+  ),
 }));
 vi.mock("./CrmNewConversationDialog", () => ({
   CrmNewConversationDialog: () => null,
@@ -184,6 +204,62 @@ describe("CrmConversationWorkspace conclusion", () => {
       screen.getByRole("button", { name: "Voltar para conversas" }),
     );
     expect(onCycleChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it("keeps demo history visible and routes setup from the read-only composer", async () => {
+    const user = userEvent.setup();
+    const onScopeChange = vi.fn();
+    const demoConnection = {
+      ...createConnection("ui-demo"),
+      purpose: "ui_demo" as const,
+      readiness: {
+        ready: false,
+        reason: "Demonstração somente leitura",
+        reasonCode: "not_authorized" as const,
+      },
+      state: "sandbox" as const,
+      status: "sandbox" as const,
+    };
+    const inbox = createInbox({
+      closeCycle: vi.fn(async () => true),
+      concludeCycle: vi.fn(async () => true),
+    });
+
+    render(
+      <CrmConversationWorkspace
+        inbox={
+          {
+            ...inbox,
+            activeConnection: demoConnection,
+            activeSession: {
+              ...inbox.activeSession,
+              connection: demoConnection,
+            },
+            activeSessionConnection: demoConnection,
+            connections: [demoConnection],
+            permissions: {
+              ...inbox.permissions,
+              canConnectionSetup: true,
+              canSend: true,
+            },
+            sendUnavailableReason:
+              "Esta conexão de demonstração é somente leitura.",
+          } as unknown as ReturnType<typeof useCrmInbox>
+        }
+        onCycleChange={vi.fn()}
+        onScopeChange={onScopeChange}
+        routeCycleId="cycle-1"
+      />,
+    );
+
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Demonstração · somente leitura",
+    );
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Histórico fictício para explorar o CRM",
+    );
+    await user.click(screen.getByRole("button", { name: "Configurar canal" }));
+    expect(onScopeChange).toHaveBeenCalledWith("connection");
   });
 });
 

@@ -30,6 +30,7 @@ import {
   readPendingComposioConnection,
 } from "./crmComposioOAuth";
 import { needsConnectionRepair } from "./CrmChannelDirectoryParts";
+import { isUiDemoConnection } from "./crmConnectionSelection";
 
 export type CrmConnectionSelfServiceHandlers = {
   onAuthorizeComposio: (
@@ -117,14 +118,18 @@ export function CrmConnectionSelfServiceSetup({
 }) {
   const billingUnavailable = billingState?.status === "unavailable";
   const setupAllowed = canSetup && !billingUnavailable;
+  const initialConnection =
+    existingConnection && !isUiDemoConnection(existingConnection)
+      ? existingConnection
+      : null;
   const [provider, setProvider] = useState<CrmSetupProvider | null>(
-    startAtDirectory ? null : readSetupProvider(existingConnection),
+    startAtDirectory ? null : readSetupProvider(initialConnection),
   );
   const [officialChannel, setOfficialChannel] = useState<
     "instagram" | "whatsapp"
-  >(existingConnection?.channel === "instagram" ? "instagram" : "whatsapp");
+  >(initialConnection?.channel === "instagram" ? "instagram" : "whatsapp");
   const [connection, setConnection] = useState<CrmProviderConnection | null>(
-    existingConnection,
+    initialConnection,
   );
   const [managedConnectionId, setManagedConnectionId] = useState<string | null>(
     null,
@@ -141,13 +146,19 @@ export function CrmConnectionSelfServiceSetup({
 
   const managedConnection = managedConnectionId
     ? (connections.find(
-        (candidate) => String(candidate.id) === managedConnectionId,
+        (candidate) =>
+          String(candidate.id) === managedConnectionId &&
+          !isUiDemoConnection(candidate),
       ) ?? null)
     : null;
 
   useEffect(() => {
-    setConnection(existingConnection);
-    const nextProvider = readSetupProvider(existingConnection);
+    const candidate =
+      existingConnection && !isUiDemoConnection(existingConnection)
+        ? existingConnection
+        : null;
+    setConnection(candidate);
+    const nextProvider = readSetupProvider(candidate);
     if (!startAtDirectory && nextProvider) {
       setProvider(nextProvider);
     }
@@ -157,7 +168,9 @@ export function CrmConnectionSelfServiceSetup({
   useEffect(() => {
     if (!selectedConnectionId) return;
     const refreshedConnection = connections.find(
-      (candidate) => String(candidate.id) === selectedConnectionId,
+      (candidate) =>
+        String(candidate.id) === selectedConnectionId &&
+        !isUiDemoConnection(candidate),
     );
     if (!refreshedConnection) return;
     setConnection((current) =>
@@ -178,7 +191,8 @@ export function CrmConnectionSelfServiceSetup({
       connections.find(
         (candidate) =>
           isConnectionForSetupProvider(candidate, nextProvider, channel) &&
-          (candidate.state ?? candidate.status) !== "archived",
+          (candidate.state ?? candidate.status) !== "archived" &&
+          !isUiDemoConnection(candidate),
       ) ??
         (existingConnection &&
         isConnectionForSetupProvider(
@@ -186,7 +200,9 @@ export function CrmConnectionSelfServiceSetup({
           nextProvider,
           channel,
         ) &&
-        (existingConnection.state ?? existingConnection.status) !== "archived"
+        (existingConnection.state ?? existingConnection.status) !==
+          "archived" &&
+        !isUiDemoConnection(existingConnection)
           ? existingConnection
           : null),
     );
@@ -299,10 +315,14 @@ export function CrmConnectionSelfServiceSetup({
         {...(marketplaceApi ? { marketplaceApi } : {})}
         onChoose={chooseProvider}
         onConnectionsChanged={handlers.onRefreshConnections}
-        onManageConnection={(candidate) =>
-          setManagedConnectionId(String(candidate.id))
-        }
-        onRepairConnection={chooseConnectionForRepair}
+        onManageConnection={(candidate) => {
+          if (isUiDemoConnection(candidate)) return;
+          setManagedConnectionId(String(candidate.id));
+        }}
+        onRepairConnection={(candidate) => {
+          if (isUiDemoConnection(candidate)) return;
+          chooseConnectionForRepair(candidate);
+        }}
         onRedirect={onRedirect}
         showRepairActions={canRepairCredentials}
         showSetupActions={setupAllowed}

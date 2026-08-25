@@ -99,4 +99,46 @@ describe("CRM connection overview contract", () => {
     if (!live) throw new Error("Expected live connection status.");
     expect(typeof live.checkedAt).toBe("string");
   });
+
+  it("projects only the safe UI-demo purpose for a sandbox connection", async () => {
+    const metadata = { purpose: "crm_ui_demo" };
+    const demoConnection: CrmConnection = {
+      broker: "composio",
+      canonical: projectCanonicalCrmConnectionRow({
+        broker: "composio",
+        channel: "whatsapp",
+        metadata,
+        provider: "meta_cloud",
+        state: "sandbox",
+      }),
+      channel: "whatsapp",
+      credentialsRef: {},
+      displayName: "Demonstração do CRM",
+      externalConnectionId: null,
+      externalInstanceId: null,
+      id: "connection_demo",
+      metadata,
+      phone: null,
+      provider: "meta_cloud",
+      status: "sandbox",
+      storeId: "store_1" as StoreId,
+      tenantId: "tenant_1" as TenantId,
+      webhookUrl: null,
+    };
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        demoConnection,
+      ]),
+    });
+
+    const response = await app.request("/api/v1/crm/channel-connections");
+    const body = crmConnectionOverviewSchema.parse(await response.json());
+
+    expect(response.status).toBe(200);
+    expect(body.connections[0]).toMatchObject({
+      id: "connection_demo",
+      purpose: "ui_demo",
+      state: "sandbox",
+    });
+  });
 });

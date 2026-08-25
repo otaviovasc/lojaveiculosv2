@@ -488,6 +488,62 @@ describe("CrmConnectionSelfServiceSetup", () => {
     },
   );
 
+  it("does not reuse the read-only UI demo as an official provider setup", async () => {
+    const handlers = createHandlers();
+    const created = createOfficialConnection("meta_cloud", "whatsapp");
+    handlers.onCreate = vi.fn(async () => created);
+    handlers.onAuthorizeComposio = vi.fn(async () => ({
+      expiresAt: "2026-08-18T13:00:00.000Z",
+      redirectUrl: "https://provider.local/meta_cloud",
+    }));
+    const onRedirect = vi.fn();
+    const uiDemo = {
+      ...createOfficialConnection("meta_cloud", "whatsapp"),
+      id: "ui-demo",
+      purpose: "ui_demo" as const,
+      readiness: {
+        ready: false,
+        reason: "Demonstração somente leitura",
+        reasonCode: "not_authorized" as const,
+      },
+      state: "sandbox" as const,
+      status: "sandbox" as const,
+    };
+
+    render(
+      <CrmConnectionSelfServiceSetup
+        allowance={{ limit: 2, remaining: 1, used: 1 }}
+        availableSetups={[
+          { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
+        ]}
+        canPair={false}
+        canSetup={true}
+        connections={[uiDemo]}
+        handlers={handlers}
+        onRedirect={onRedirect}
+        startAtDirectory
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /WhatsApp Oficial.*Autorize/i }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Autorizar com a Meta/i }),
+    );
+
+    await waitFor(() => {
+      expect(handlers.onCreate).toHaveBeenCalledWith({
+        channel: "whatsapp",
+        provider: "meta_cloud",
+      });
+      expect(handlers.onAuthorizeComposio).toHaveBeenCalledWith(created.id);
+      expect(onRedirect).toHaveBeenCalledWith(
+        "https://provider.local/meta_cloud",
+      );
+    });
+  });
+
   it("refreshes the real provider status from the manage dialog", async () => {
     const connection = createZapiConnection("active");
     const onRefreshZapiStatus = vi.fn(async () => connection);

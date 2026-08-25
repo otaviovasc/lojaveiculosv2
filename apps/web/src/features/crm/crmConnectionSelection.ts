@@ -2,6 +2,12 @@ import type { CrmProvider } from "@lojaveiculosv2/shared";
 import type { CrmProviderConnection } from "./crmConversationTypes";
 import type { CrmRoutingPolicy } from "./crmRoutingTypes";
 
+export function isUiDemoConnection(
+  connection: Pick<CrmProviderConnection, "purpose"> | null | undefined,
+) {
+  return connection?.purpose === "ui_demo";
+}
+
 export function resolveCrmInboxConnectionSelection(input: {
   activeSessionConnectionId: string | null;
   connectionFilterId: string | null;
@@ -20,8 +26,7 @@ export function resolveCrmInboxConnectionSelection(input: {
   const preferredReadOnlyDemoIds = input.connections
     .filter(
       (connection) =>
-        connection.state === "sandbox" &&
-        connection.metadata?.purpose === "crm_ui_demo",
+        connection.state === "sandbox" && isUiDemoConnection(connection),
     )
     .map((connection) => String(connection.id));
   const browsableIds = new Set(
