@@ -48,6 +48,22 @@ describe("production SPA server", () => {
     );
   });
 
+  it("serves the OneSignal worker at the stable root path", async () => {
+    const worker =
+      'importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");';
+    const runtime = await startServer({
+      files: { "OneSignalSDKWorker.js": worker },
+    });
+
+    const response = await fetch(`${runtime.origin}/OneSignalSDKWorker.js`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe(
+      "text/javascript; charset=utf-8",
+    );
+    await expect(response.text()).resolves.toBe(worker);
+  });
+
   it("does not return the SPA document for missing assets", async () => {
     const runtime = await startServer();
 

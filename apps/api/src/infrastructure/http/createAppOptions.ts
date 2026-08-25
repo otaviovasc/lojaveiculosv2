@@ -36,6 +36,7 @@ import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 import type { ReadinessResult } from "../runtime/readiness.js";
 import type { ServiceLogger } from "../../shared/serviceLogger.js";
 import type { ExternalBotManagerPorts } from "../../domains/crm/bot/ports/externalBotPorts.js";
+import type { CrmPushPublicConfig } from "../../features/crm/controllers/crm.push.routes.js";
 
 export type CreateAppOptions = {
   agencyStatsServices?: AgencyStatsServices;
@@ -48,6 +49,7 @@ export type CreateAppOptions = {
   complianceServices?: ComplianceServices;
   crmRealtimeBroker?: CrmRealtimeBroker;
   crmFinancialProductTransactionRunner?: CrmFinancialProductTransactionRunner;
+  crmPushPublicConfig?: CrmPushPublicConfig;
   crmCoreRepository?: CrmCoreRepository;
   resolveCrmBotEntitlements?: ResolveCrmBotEntitlements;
   crmServices?: CrmServices;

@@ -150,6 +150,11 @@ export function cleanSessionUpdate(
       ? { lastCustomerReadAt: input.lastCustomerReadAt }
       : {}),
     ...(input.lastReadAt !== undefined ? { lastReadAt: input.lastReadAt } : {}),
+    ...(input.incrementPushNotificationGeneration
+      ? {
+          pushNotificationGeneration: sql`${conversationCycles.pushNotificationGeneration} + 1`,
+        }
+      : {}),
     ...(input.status ? canonicalStatusUpdate(input.status) : {}),
     metadata: {
       ...metadata,

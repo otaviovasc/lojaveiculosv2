@@ -61,6 +61,7 @@ import type {
   RecoverOlxWebhookEffectsResult,
 } from "../../../domains/crm/services/CrmMessagingService/recoverOlxWebhookEffects.js";
 import type { RecoverOlxLeadWebhooksResult } from "../../../domains/crm/services/CrmMessagingService/recoverOlxLeadWebhooks.js";
+import type { CrmPushServices } from "./crmPushBindings.js";
 
 type CrmContextService<Input, Output> = (
   context: ServiceContext,
@@ -183,4 +184,4 @@ export type CrmMessagingServices = CrmQuickMessageServices &
       ConversationCycleCommandResponse
     >;
     updateCrmTag: CrmContextService<UpdateCrmTagInput, CrmTag>;
-  };
+  } & CrmPushServices;

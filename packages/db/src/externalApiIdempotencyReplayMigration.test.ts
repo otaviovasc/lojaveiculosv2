@@ -51,7 +51,7 @@ describe("external API idempotency replay schema", () => {
       'octet_length("response_body"::text) <= 524288',
     );
     expect(migrationSql).toContain("SET \"status\" = 'failed'");
-    expect(journal.entries.at(-1)).toEqual({
+    expect(journal.entries).toContainEqual({
       idx: 67,
       tag: "0067_external_api_idempotency_replay",
       version: "7",

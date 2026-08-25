@@ -175,7 +175,7 @@ export async function ingestOlxChatWebhook(
   }
 
   try {
-    const result = await persistOlxChatWebhook(ports, {
+    const result = await persistOlxChatWebhook(context, ports, {
       connection,
       parsed,
       providerEventId: claimed.id,

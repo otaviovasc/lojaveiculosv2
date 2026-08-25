@@ -156,4 +156,10 @@ export type SettingsStatus =
   | { kind: "saved" }
   | { kind: "saving" };
 
-export type SettingsTab = "domain" | "roles" | "store";
+export type SettingsTab = "domain" | "notifications" | "roles" | "store";
+
+export type SettingsAccess = {
+  domain: boolean;
+  roles: boolean;
+  store: boolean;
+};

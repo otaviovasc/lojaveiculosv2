@@ -9,6 +9,7 @@ export * from "./schema/leads.js";
 export * from "./schema/crm.js";
 export * from "./schema/crmRouting.js";
 export * from "./schema/crmCore.js";
+export * from "./schema/crmCore/push.js";
 export * from "./schema/crmRetention.js";
 export * from "./schema/crmPipeline.js";
 export * from "./schema/crmQuickMessages.js";

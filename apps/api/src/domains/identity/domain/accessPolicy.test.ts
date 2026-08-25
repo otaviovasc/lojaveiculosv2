@@ -110,6 +110,7 @@ describe("access policy", () => {
         "crm.messaging.connection.setup",
         "crm.messaging.connection.pair",
         "crm.conversations.read",
+        "crm.conversations.read_unassigned",
         "crm.messages.send",
         "crm.conversations.assign",
         "crm.conversations.manage",
@@ -172,7 +173,7 @@ describe("access policy", () => {
     const owner = resolvePermissions({ role: "owner" });
     const salesman = resolvePermissions({ role: "salesman" });
     const supervisor = resolvePermissions({ role: "supervisor" });
-    const operatorPermissions = [
+    const managerPermissions = [
       "crm.conversations.read",
       "crm.messages.send",
       "crm.conversations.assign",
@@ -188,10 +189,13 @@ describe("access policy", () => {
       reason: "Missing permission: crm.messages.send",
     });
     for (const permissions of [owner, salesman, supervisor]) {
-      for (const permission of operatorPermissions) {
+      for (const permission of managerPermissions) {
         expect(canAccess(permissions, permission)).toEqual({ allowed: true });
       }
     }
+    expect(canAccess(salesman, "crm.conversations.read_unassigned")).toEqual({
+      allowed: true,
+    });
   });
 
   it("keeps automation approval manager-only by default", () => {

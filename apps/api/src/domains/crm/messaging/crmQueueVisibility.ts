@@ -4,11 +4,17 @@ import type { CrmQueueVisibility } from "../ports/crmConversationRepository.js";
 import type { CrmRealtimeEvent } from "../ports/crmRealtimePublisher.js";
 
 const assignPermission = "crm.conversations.assign";
+const readUnassignedPermission = "crm.conversations.read_unassigned";
 
 export function resolveCrmQueueVisibility(
   context: ServiceContext,
 ): CrmQueueVisibility {
-  if (context.permissions.includes(assignPermission)) return { kind: "global" };
+  if (
+    context.permissions.includes(assignPermission) ||
+    context.permissions.includes(readUnassignedPermission)
+  ) {
+    return { kind: "global" };
+  }
   if (context.actor.kind === "user") {
     return { kind: "assigned", userId: context.actor.id as UserId };
   }

@@ -33,13 +33,17 @@ vi.mock("@clerk/react-router", () => ({
       {children}
     </div>
   ),
-  UserButton: () => null,
   useUser: clerk.useUser,
+}));
+
+vi.mock("../account/UserAccountButton", () => ({
+  UserAccountButton: () => <button type="button">Conta segura</button>,
 }));
 
 describe("LandingAuthActions", () => {
   beforeEach(() => {
     localStorage.clear();
+    clerk.useUser.mockReturnValue({ isLoaded: true, isSignedIn: false });
   });
 
   afterEach(() => {
@@ -99,5 +103,22 @@ describe("LandingAuthActions", () => {
       "href",
       "/sign-in",
     );
+  });
+
+  it("uses the cleanup-aware account control for a signed-in user", () => {
+    vi.stubEnv("VITE_LOCAL_AUTH_BYPASS", "false");
+    vi.stubEnv("VITE_CLERK_PUBLISHABLE_KEY", "pk_test_local");
+    clerk.useUser.mockReturnValue({ isLoaded: true, isSignedIn: true });
+
+    render(
+      <MemoryRouter>
+        <ClerkAuthProvider>
+          <LandingAuthActions primaryLabel="Começar" />
+        </ClerkAuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "Conta segura" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Começar" })).toBeNull();
   });
 });

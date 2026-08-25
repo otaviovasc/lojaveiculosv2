@@ -9,8 +9,11 @@ import { findOrCreateCrmMessagingLead } from "./leadLinking.js";
 import { stageOlxWebhookEffects } from "./olxWebhookEffectOutbox.js";
 import { persistCanonicalInbound } from "./persistCanonicalInbound.js";
 import { hydrateCanonicalInbound } from "./hydrateCanonicalInbound.js";
+import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { enqueueCreatedInboundCrmPushIntent } from "./enqueueCreatedInboundCrmPushIntent.js";
 
 export function persistOlxChatWebhook(
+  context: ServiceContext,
   ports: CrmServicePorts,
   input: {
     connection: CrmConnection;
@@ -70,6 +73,14 @@ export function persistOlxChatWebhook(
       message: { externalId: parsed.externalMessageId },
     });
     if (canonical.created) {
+      if (persisted.message.senderOrigin === "customer") {
+        await enqueueCreatedInboundCrmPushIntent(
+          context,
+          persisted,
+          transactionPorts,
+          canonical.threadId,
+        );
+      }
       await createCrmMessageActivity(transactionPorts, {
         connectionId: connection.id,
         content: parsed.message,

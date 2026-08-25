@@ -76,6 +76,25 @@ describe("Drizzle CRM conversation-cycle predicates", () => {
       "crm_conversation_cycles.revision + 1",
     );
   });
+
+  it("increments the push generation only when the mutation requests invalidation", () => {
+    const unchanged = cleanSessionUpdate({
+      cycleId: "conversation-cycle-1",
+      storeId,
+      tenantId,
+    });
+    const invalidated = cleanSessionUpdate({
+      cycleId: "conversation-cycle-1",
+      incrementPushNotificationGeneration: true,
+      storeId,
+      tenantId,
+    });
+
+    expect(unchanged).not.toHaveProperty("pushNotificationGeneration");
+    expect(
+      renderDrizzleSql(invalidated.pushNotificationGeneration!).sql,
+    ).toContain("crm_conversation_cycles.push_notification_generation + 1");
+  });
 });
 
 function renderDrizzleSql(fragment: SQL) {

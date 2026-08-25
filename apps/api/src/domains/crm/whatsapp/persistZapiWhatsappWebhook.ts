@@ -22,6 +22,7 @@ import { interventionActorKind } from "../messaging/humanAttendanceTransition.js
 import { transitionConfirmedHumanOutboundAttendance } from "../messaging/outboundAttendance.js";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 import type { ParsedZapiInboundMessage } from "./parseZapiInboundMessage.js";
+import { enqueueCreatedInboundCrmPushIntent } from "../messaging/enqueueCreatedInboundCrmPushIntent.js";
 
 export async function persistZapiWhatsappWebhook(
   context: ServiceContext,
@@ -88,6 +89,12 @@ export async function persistZapiWhatsappWebhook(
         message: parsed,
       });
       if (result.createdMessage) {
+        await enqueueCreatedInboundCrmPushIntent(
+          context,
+          result,
+          transactionPorts,
+          canonical.threadId,
+        );
         await createCrmMessageActivity(transactionPorts, {
           connectionId: connection.id,
           content: parsed.content,

@@ -191,6 +191,9 @@ export function createApp(options: CreateAppOptions = {}) {
         options.crmFinancialProductTransactionRunner,
       financeServices: options.financeServices,
       externalBotManager: options.externalBotManager,
+      ...(options.crmPushPublicConfig
+        ? { pushPublicConfig: options.crmPushPublicConfig }
+        : {}),
       realtimeBroker: options.crmRealtimeBroker,
       resolveBotEntitlements: options.resolveCrmBotEntitlements,
       webhookContextFactory: createCrmWebhookContextFactory(options.audit),

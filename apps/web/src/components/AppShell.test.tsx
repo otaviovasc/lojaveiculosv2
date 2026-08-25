@@ -8,13 +8,13 @@ import {
   persistCurrentStoreSlug,
   readCurrentStoreSlug,
 } from "../features/account/currentStore";
-import type { StoreSettingsSnapshot } from "../features/settings/types";
-import { createSettingsApiOptions } from "../features/settings/runtimeApi";
 import {
-  AppShell,
   readStoreWorkspaceState,
   switchStoreWorkspace,
-} from "./AppShell";
+} from "../features/account/storeWorkspace";
+import type { StoreSettingsSnapshot } from "../features/settings/types";
+import { createSettingsApiOptions } from "../features/settings/runtimeApi";
+import { AppShell } from "./AppShell";
 
 vi.mock("../features/settings/runtimeApi", () => ({
   createSettingsApiOptions: vi.fn(),

@@ -30,6 +30,7 @@ import {
 } from "./crm.leads.routes.js";
 import { registerCrmRoutingRoutes } from "./crm.routing.routes.js";
 import { registerCrmMetaWebhookRoutes } from "./crm.metaWebhookRoutes.js";
+import type { CrmPushPublicConfig } from "./crm.push.routes.js";
 
 export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
@@ -43,6 +44,7 @@ export type CreateCrmFeatureOptions = {
   externalBotManager?: ExternalBotManagerPorts | undefined;
   realtimeBroker?: CrmRealtimeBroker | undefined;
   resolveBotEntitlements?: ResolveCrmBotEntitlements | undefined;
+  pushPublicConfig?: CrmPushPublicConfig | undefined;
   services?: CrmServices;
   webhookContextFactory?: CrmContextFactory;
 };
@@ -116,6 +118,10 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     ...(options.resolveBotEntitlements
       ? { resolveBotEntitlements: options.resolveBotEntitlements }
       : {}),
+    pushPublicConfig: options.pushPublicConfig ?? {
+      appId: null,
+      deliveryMode: "off",
+    },
     services,
   });
 

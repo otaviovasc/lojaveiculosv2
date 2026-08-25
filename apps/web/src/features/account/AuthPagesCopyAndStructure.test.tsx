@@ -30,6 +30,7 @@ vi.mock("@clerk/react-router", () => ({
     isSignedIn: false,
     userId: null,
   }),
+  useClerk: () => ({ signOut: vi.fn() }),
   useUser: () => ({
     isLoaded: true,
     user: {

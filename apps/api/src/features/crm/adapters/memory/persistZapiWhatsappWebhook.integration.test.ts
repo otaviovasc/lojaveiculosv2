@@ -7,6 +7,7 @@ import { createMemoryCrmCanonicalInboundRepository } from "./crmCanonicalInbound
 import { createMemoryCrmPipelineRepository } from "./crmPipelineRepository.js";
 import { createMemoryCrmRepository } from "./crmRepository.js";
 import { createMemoryCrmConversationRepository } from "./crmConversationRepository.js";
+import { createMemoryCrmPushRepository } from "../../../../domains/crm/testSupportCrmPush.js";
 import {
   connection,
   context,
@@ -25,6 +26,8 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
       whatsappRepository,
       "upsertConversationCycleContext",
     );
+    const pushRepository = createMemoryCrmPushRepository();
+    const transactionalPushRepository = createMemoryCrmPushRepository();
     const canonicalRepository = {
       async ingestInboundMessage(
         input: Parameters<typeof canonical.ingestInboundMessage>[0],
@@ -67,11 +70,22 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
         );
       },
     );
-    const ports = {
+    const basePorts = {
       crmCanonicalInboundRepository: canonicalRepository,
       crmPipelineRepository: createMemoryCrmPipelineRepository(),
+      crmPushRepository: pushRepository,
       crmRepository,
       crmConversationRepository: whatsappRepository,
+    } satisfies CrmServicePorts;
+    const ports = {
+      ...basePorts,
+      transaction: async <T>(
+        action: (ports: CrmServicePorts) => Promise<T>,
+      ): Promise<T> =>
+        action({
+          ...basePorts,
+          crmPushRepository: transactionalPushRepository,
+        }),
     } satisfies CrmServicePorts;
     const input = {
       attribution: null,
@@ -120,6 +134,8 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
       ],
     });
     expect(snapshot.threads).toHaveLength(1);
+    expect(pushRepository.listIntents()).toHaveLength(0);
+    expect(transactionalPushRepository.listIntents()).toHaveLength(1);
     expect(snapshot.messages[0]?.profilePhotoUrl).toBe(
       "https://zapi.test/profiles/buyer.jpg",
     );

@@ -46,7 +46,12 @@ const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   sales: gate(["sale.read"], "vendas"),
   simulations: gate(["sale.read"], "simulações"),
   settings: gate(
-    ["store_profile.manage", "store_public_site.manage", "users.manage"],
+    [
+      "store_profile.manage",
+      "store_public_site.manage",
+      "users.manage",
+      "crm.conversations.read",
+    ],
     "configurações e permissões",
     "any",
   ),

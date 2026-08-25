@@ -52,6 +52,7 @@ import type { CrmMessagingServices } from "./crmMessagingServiceBindings.types.j
 import { createCrmCampaignBindings } from "./crmCampaignBindings.js";
 import { buildWebhookBindings } from "./crmWhatsappWebhookBindings.js";
 import { createCrmChannelConnectionBindings } from "./crmChannelConnectionBindings.js";
+import { createCrmPushBindings } from "./crmPushBindings.js";
 
 type CatalogBindings = Pick<
   CrmMessagingServices,
@@ -220,5 +221,6 @@ export function createCrmMessagingServiceBindings(
     ...buildWebhookBindings(ports),
     ...buildWebhookEventBindings(ports),
     ...createCrmQuickMessageBindings(ports),
+    ...createCrmPushBindings(ports),
   };
 }

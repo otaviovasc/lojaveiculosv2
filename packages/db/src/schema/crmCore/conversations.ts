@@ -121,6 +121,9 @@ export const conversationCycles = pgTable(
     messageCount: integer("message_count").notNull().default(0),
     metadata: jsonb("metadata").notNull().default({}),
     opportunityId: uuid("opportunity_id").references(() => opportunities.id),
+    pushNotificationGeneration: integer("push_notification_generation")
+      .notNull()
+      .default(0),
     revision: revisionColumn(),
     state: conversationCycleState("state").notNull().default("active"),
     threadId: uuid("thread_id")
@@ -166,6 +169,10 @@ export const conversationCycles = pgTable(
     check(
       "conversation_cycles_message_count_nonnegative",
       sql`${table.messageCount} >= 0`,
+    ),
+    check(
+      "conversation_cycles_push_notification_generation_nonnegative",
+      sql`${table.pushNotificationGeneration} >= 0`,
     ),
     check(
       "conversation_cycles_closed_state_check",

@@ -22,6 +22,8 @@ import type {
 import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
 import type { CrmOutcomeRepository } from "../../ports/crmOutcomeRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
+import type { CrmPushDeliveryProvider } from "../../ports/crmPushDeliveryProvider.js";
+import type { CrmPushRepository } from "../../ports/crmPushRepository.js";
 import type { CrmRealtimePublisher } from "../../ports/crmRealtimePublisher.js";
 import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
 import type { CrmRepository } from "../../ports/crmRepository.js";
@@ -55,6 +57,8 @@ export type CrmServicePorts = {
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
   composioChannelOnboardingProvider?: ComposioCrmOnboardingProvider;
   crmPipelineRepository?: CrmPipelineRepository;
+  crmPushDeliveryProvider?: CrmPushDeliveryProvider;
+  crmPushRepository?: CrmPushRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRepository: CrmRepository;
   crmVisitRepository?: CrmVisitRepository;
