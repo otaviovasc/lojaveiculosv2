@@ -6,6 +6,7 @@ import {
   createOneSignalHttpClient,
   createShadowCrmPushDeliveryProvider,
 } from "../infrastructure/crm/onesignalHttpClient.js";
+import { toCrmPushWorkerErrorMetadata } from "../infrastructure/crm/push/crmPushWorkerErrorMetadata.js";
 import { readCrmPushRuntimeConfig } from "../infrastructure/crm/push/crmPushRuntimeConfig.js";
 import { drainDisabledCrmPushIntents } from "../infrastructure/crm/push/drainDisabledCrmPushIntents.js";
 import { runCrmPushWorkerOnce } from "../infrastructure/crm/push/runCrmPushWorkerOnce.js";
@@ -77,8 +78,6 @@ function requireEnv(name: string): string {
 }
 
 void main().catch((error) => {
-  logger.error("crm.push.worker.failed", {
-    errorName: error instanceof Error ? error.name : "UnknownError",
-  });
+  logger.error("crm.push.worker.failed", toCrmPushWorkerErrorMetadata(error));
   process.exitCode = 1;
 });

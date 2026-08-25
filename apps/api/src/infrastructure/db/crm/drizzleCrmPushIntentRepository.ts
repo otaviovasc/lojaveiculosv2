@@ -17,12 +17,16 @@ export function createCrmPushIntentOperations(
 ): IntentOperations {
   return {
     async claimDeliveryBatch(input) {
+      const now = input.now.toISOString();
+      const leaseExpiresAt = new Date(
+        input.now.getTime() + input.leaseDurationMs,
+      ).toISOString();
       const rows = await db.execute(sql`
         with candidates as (
           select id from crm_push_notification_outbox
           where (
-            (state = 'pending' and next_attempt_at <= ${input.now})
-            or (state = 'processing' and lease_expires_at <= ${input.now})
+            (state = 'pending' and next_attempt_at <= ${now})
+            or (state = 'processing' and lease_expires_at <= ${now})
           )
           order by next_attempt_at, created_at
           for update skip locked
@@ -30,9 +34,9 @@ export function createCrmPushIntentOperations(
         )
         update crm_push_notification_outbox as outbox
         set attempt_count = outbox.attempt_count + 1,
-          lease_expires_at = ${new Date(input.now.getTime() + input.leaseDurationMs)},
+          lease_expires_at = ${leaseExpiresAt},
           lease_token = gen_random_uuid(), state = 'processing',
-          updated_at = ${input.now}
+          updated_at = ${now}
         from candidates where outbox.id = candidates.id
         returning outbox.*
       `);
