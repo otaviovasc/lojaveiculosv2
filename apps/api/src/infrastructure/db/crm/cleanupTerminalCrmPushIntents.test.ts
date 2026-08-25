@@ -24,6 +24,10 @@ describe("terminal CRM push cleanup", () => {
     expect(query.sql).toContain("for update skip locked");
     expect(query.sql).not.toContain("state = 'pending'");
     expect(query.sql).not.toContain("state = 'processing'");
+    expect(query.params.slice(0, 2)).toEqual([
+      "2026-01-01T00:00:00.000Z",
+      "2026-01-01T00:00:00.000Z",
+    ]);
     expect(query.params.at(-1)).toBe(100);
   });
 });
