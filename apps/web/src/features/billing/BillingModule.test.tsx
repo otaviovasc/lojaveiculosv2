@@ -33,12 +33,28 @@ afterEach(() => {
 });
 
 describe("BillingModule v3", () => {
-  it("renders the five cumulative monthly plans and the Escala quote price", async () => {
+  it("offers only paid plans and shows Free in the current-plan section", async () => {
     render(<BillingModule api={api()} />);
-    for (const name of ["Free", "Essencial", "Operação", "Gestão", "Escala"]) {
-      await screen.findAllByRole("radio");
+    const planOptions = await screen.findAllByRole("radio");
+    expect(planOptions).toHaveLength(4);
+    for (const name of ["Essencial", "Operação", "Gestão", "Escala"]) {
       expect(planRadio(name)).toBeVisible();
     }
+    expect(
+      planOptions.some(
+        (option) => option.querySelector("strong")?.textContent === "Free",
+      ),
+    ).toBe(false);
+    const currentPlan = screen.getByRole("region", {
+      name: "Seu plano atual",
+    });
+    expect(within(currentPlan).getByText("Free")).toBeVisible();
+    expect(
+      within(currentPlan).getByText("Construtor completo da vitrine"),
+    ).toBeVisible();
+    expect(
+      within(currentPlan).getByText("Até 10 veículos em estoque"),
+    ).toBeVisible();
     expect(screen.getByText(/A partir de R\$ 897/)).toBeVisible();
     expect(screen.getByText("CRM completo")).toBeVisible();
     expect(screen.getByText("AI Studio")).toBeVisible();
@@ -212,14 +228,6 @@ describe("BillingModule v3", () => {
       screen.getByRole("button", { name: "Agendar mudança" }),
     ).toBeEnabled();
 
-    fireEvent.click(planRadio("Free"));
-    expect(
-      screen.getByText(/mudança para Free.*próxima renovação/i),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: "Agendar plano Free" }),
-    ).toBeEnabled();
-
     fireEvent.click(planRadio("Escala"));
     expect(screen.getByText(/depende de uma proposta aprovada/i)).toBeVisible();
     expect(
@@ -227,19 +235,49 @@ describe("BillingModule v3", () => {
     ).toBeEnabled();
   });
 
-  it("blocks a paid-to-Free transition while provider readiness is unknown", async () => {
+  it("shows the effective paid plan without exposing Free as a downgrade card", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.getOverview).mockResolvedValue(paidOverview());
+    render(<BillingModule api={billingApi} />);
+    const planOptions = await screen.findAllByRole("radio");
+    expect(
+      planOptions.some(
+        (option) => option.querySelector("strong")?.textContent === "Free",
+      ),
+    ).toBe(false);
+    const currentPlan = screen.getByRole("region", {
+      name: "Seu plano atual",
+    });
+    expect(within(currentPlan).getByText("Essencial")).toBeVisible();
+    expect(within(currentPlan).getByText("Domínio próprio")).toBeVisible();
+    expect(within(currentPlan).getByText("Reservas e vendas")).toBeVisible();
+    fireEvent.click(
+      within(currentPlan).getByRole("button", {
+        name: "Agendar mudança para Free",
+      }),
+    );
+    await waitFor(() =>
+      expect(billingApi.createPlanHire).toHaveBeenCalledWith(
+        expect.objectContaining({ planId: plan("free", 1, 0).id }),
+      ),
+    );
+  });
+
+  it("blocks the discreet Free downgrade action when provider readiness fails", async () => {
     const billingApi = api();
     vi.mocked(billingApi.getOverview).mockResolvedValue(paidOverview());
     vi.mocked(billingApi.getProviderStatus).mockRejectedValueOnce(
       new Error("offline"),
     );
     render(<BillingModule api={billingApi} />);
-    await screen.findAllByRole("radio");
-    fireEvent.click(planRadio("Free"));
+    const currentPlan = await screen.findByRole("region", {
+      name: "Seu plano atual",
+    });
     expect(
-      screen.getByRole("button", { name: "Agendar plano Free" }),
+      within(currentPlan).getByRole("button", {
+        name: "Agendar mudança para Free",
+      }),
     ).toBeDisabled();
-    expect(screen.getByText(/checkout bloqueado/i)).toBeVisible();
   });
 
   it("uses a warning billing-phase pill when reconciliation is required", async () => {
