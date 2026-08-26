@@ -1,9 +1,20 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { AccountAccessGate } from "./AccountAccessGate";
+import {
+  useAccountSession,
+  useOptionalAccountSessionRefresh,
+} from "./accountSession";
 import type { SessionBootstrap } from "./apiClient";
 import {
   SessionBootstrapHandoffProvider,
@@ -96,6 +107,31 @@ describe("AccountAccessGate", () => {
     expect(await screen.findByText("Onboarding pronto")).toBeInTheDocument();
   });
 
+  it("refreshes the protected session without replacing the active screen", async () => {
+    bootstrap
+      .mockResolvedValueOnce(sessionWithManagedStore(["inventory"]))
+      .mockResolvedValueOnce(sessionWithManagedStore(["inventory", "crm"]));
+
+    render(
+      <MemoryRouter>
+        <SessionBootstrapHandoffProvider>
+          <AccountAccessGate
+            access="store"
+            getToken={vi.fn(async () => "token-1")}
+            userId="user_1"
+          >
+            <RefreshSessionProbe />
+          </AccountAccessGate>
+        </SessionBootstrapHandoffProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("inventory")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Atualizar acesso" }));
+    expect(await screen.findByText("inventory,crm")).toBeInTheDocument();
+    expect(bootstrap).toHaveBeenCalledTimes(2);
+  });
+
   it("shows an actionable state instead of loading forever when no access is active", async () => {
     bootstrap.mockResolvedValue(sessionWithInvitedStore());
 
@@ -152,6 +188,19 @@ function HandoffProbe({
   return null;
 }
 
+function RefreshSessionProbe() {
+  const session = useAccountSession();
+  const refreshSession = useOptionalAccountSessionRefresh();
+  return (
+    <div>
+      <span>{session.stores[0]?.entitlements?.join(",")}</span>
+      <button onClick={() => void refreshSession?.()} type="button">
+        Atualizar acesso
+      </button>
+    </div>
+  );
+}
+
 function sessionNeedingOnboarding(): SessionBootstrap {
   return {
     defaultStore: null,
@@ -168,13 +217,16 @@ function sessionNeedingOnboarding(): SessionBootstrap {
   };
 }
 
-function sessionWithManagedStore(): SessionBootstrap {
+function sessionWithManagedStore(
+  entitlements: readonly string[] = [],
+): SessionBootstrap {
   return {
     defaultStore: null,
     needsOnboarding: false,
     platformAdmin: false,
     stores: [
       {
+        entitlements,
         effectivePermissions: ["inventory.read"],
         role: "agency",
         status: "active",

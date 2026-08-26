@@ -97,6 +97,23 @@ export function planCapabilityHighlights(
   ];
 }
 
+export function planLimitHighlights(plan: BillingPlan) {
+  const plateLimit = plan.features.find(
+    (feature) => feature.featureKey === "plate_lookup",
+  )?.limitValue;
+  return [
+    plan.limits.vehicleLimit == null
+      ? "Limite de veículos sob proposta"
+      : `Até ${plan.limits.vehicleLimit.toLocaleString("pt-BR")} veículos em estoque`,
+    plan.limits.sellerLimit == null
+      ? "Limite de usuários sob proposta"
+      : `Até ${plan.limits.sellerLimit.toLocaleString("pt-BR")} usuário${plan.limits.sellerLimit === 1 ? "" : "s"}`,
+    plateLimit == null
+      ? "Consultas de placa sob proposta"
+      : `${plateLimit.toLocaleString("pt-BR")} consultas de placa/mês`,
+  ];
+}
+
 export const statusLabels: Record<BillingEntitlementStatus, string> = {
   active: "Ativo",
   inactive: "Inativo",

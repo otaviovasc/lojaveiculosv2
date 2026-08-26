@@ -5,6 +5,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { useOptionalAccountSessionRefresh } from "../account/accountSession";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { cn } from "../../lib/utils";
 import "../../styles/billing-composition.css";
@@ -12,6 +13,11 @@ import "../../styles/billing-panels.css";
 import "../../styles/billing-upgrade.css";
 import { createBillingApi, type BillingApi } from "./apiClient";
 import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
+import {
+  BillingActivationSuccessDialog,
+  resolveBillingActivationSuccess,
+  type BillingActivationSuccess,
+} from "./BillingActivationSuccessDialog";
 import {
   readBillingCheckoutReturn,
   redirectToCheckout,
@@ -39,6 +45,7 @@ const legacyActiveHireStorageKey = "lojaveiculos.billing.active-hire";
 
 export function BillingModule({ api }: { api?: BillingApi }) {
   const billingApi = useMemo(() => api ?? createRuntimeBillingApi(), [api]);
+  const refreshAccountSession = useOptionalAccountSessionRefresh();
   const overviewGeneration = useRef(0);
   const actionGeneration = useRef(0);
   const overviewRef = useRef<BillingOverview | null>(null);
@@ -58,6 +65,8 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   const [activeTab, setActiveTab] = useState<"subscription" | "details">(
     "subscription",
   );
+  const [activationSuccess, setActivationSuccess] =
+    useState<BillingActivationSuccess | null>(null);
   const checkoutReturn = readBillingCheckoutReturn("store");
   const activeHireStorageKey = overview
     ? scopedActiveHireStorageKey(overview.tenantId, overview.storeId)
@@ -152,9 +161,20 @@ export function BillingModule({ api }: { api?: BillingApi }) {
               planHireIdempotencyFallback.current,
             );
           if (nextHire.status === "paid_active") {
-            const nextOverview = await loadOverview();
+            const [nextOverview, sessionRefreshed] = await Promise.all([
+              loadOverview(),
+              refreshAccountSession?.() ?? Promise.resolve(true),
+            ]);
             if (cancelled) return;
             if (!nextOverview) return;
+            setActivationSuccess(
+              resolveBillingActivationSuccess(
+                nextHire,
+                scopedOverview,
+                nextOverview,
+                sessionRefreshed,
+              ),
+            );
           }
           if (activeHireStorageKey)
             removeStoredHireIfCurrent(activeHireStorageKey, pollingHireId);
@@ -177,7 +197,13 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [activeHireStorageKey, billingApi, loadOverview, pollingHireId]);
+  }, [
+    activeHireStorageKey,
+    billingApi,
+    loadOverview,
+    pollingHireId,
+    refreshAccountSession,
+  ]);
 
   const createHire = async (plan: BillingPlan) => {
     const generation = ++actionGeneration.current;
@@ -252,6 +278,12 @@ export function BillingModule({ api }: { api?: BillingApi }) {
 
   return (
     <FeaturePageShell className="billing-shell" variant="content">
+      {activationSuccess ? (
+        <BillingActivationSuccessDialog
+          activation={activationSuccess}
+          onDismiss={() => setActivationSuccess(null)}
+        />
+      ) : null}
       {error ? (
         <FeatureAlert className="billing-alert">{error}</FeatureAlert>
       ) : null}

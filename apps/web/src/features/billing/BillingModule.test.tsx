@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +14,8 @@ import type { BillingApi } from "./apiClient";
 import { AppApiError } from "../../lib/apiErrors";
 import { BillingModule } from "./BillingModule";
 import { BillingActivationTimeline } from "./BillingSignupFlow";
+import { AccountSessionProvider } from "../account/accountSession";
+import type { SessionBootstrap } from "../account/apiClient";
 import type {
   BillingOverview,
   BillingPlan,
@@ -24,6 +27,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   window.sessionStorage.clear();
+  window.localStorage.clear();
   window.history.replaceState({}, "", "/");
   vi.useRealTimers();
 });
@@ -256,6 +260,10 @@ describe("BillingModule v3", () => {
     window.sessionStorage.setItem(scopedHireKey, "hire_1");
     window.sessionStorage.setItem(essentialIdempotencyKey, "stable_key");
     const billingApi = api();
+    const refreshSession = vi.fn(async () => true);
+    vi.mocked(billingApi.getOverview)
+      .mockResolvedValueOnce(overview())
+      .mockResolvedValueOnce(paidOverview());
     vi.mocked(billingApi.getPlanHire)
       .mockResolvedValueOnce(hire(plan("essencial", 2, 19_700).id))
       .mockResolvedValueOnce({
@@ -266,7 +274,14 @@ describe("BillingModule v3", () => {
         status: "paid_active",
       });
 
-    render(<BillingModule api={billingApi} />);
+    render(
+      <AccountSessionProvider
+        refreshSession={refreshSession}
+        session={billingSession()}
+      >
+        <BillingModule api={billingApi} />
+      </AccountSessionProvider>,
+    );
     await act(async () => {
       await Promise.resolve();
       await Promise.resolve();
@@ -280,8 +295,55 @@ describe("BillingModule v3", () => {
 
     expect(billingApi.getPlanHire).toHaveBeenCalledTimes(2);
     expect(billingApi.getOverview).toHaveBeenCalledTimes(2);
+    expect(refreshSession).toHaveBeenCalledTimes(1);
     expect(window.sessionStorage.getItem(scopedHireKey)).toBeNull();
     expect(window.sessionStorage.getItem(essentialIdempotencyKey)).toBeNull();
+
+    const dialog = screen.getByRole("dialog", {
+      name: "Plano Essencial ativado",
+    });
+    expect(dialog).toHaveTextContent(/pagamento foi confirmado/i);
+    expect(within(dialog).getByText("Domínio próprio")).toBeVisible();
+    expect(within(dialog).getByText("Reservas e vendas")).toBeVisible();
+    expect(within(dialog).getByText(/75 veículos em estoque/)).toBeVisible();
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Explorar recursos" }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      window.localStorage.getItem(
+        "lojaveiculos.billing.activation-seen.tenant_1.store_1.hire_1",
+      ),
+    ).toBe("seen");
+  });
+
+  it("does not reopen an activation already acknowledged in this browser", async () => {
+    vi.useFakeTimers();
+    window.sessionStorage.setItem(scopedHireKey, "hire_1");
+    window.localStorage.setItem(
+      "lojaveiculos.billing.activation-seen.tenant_1.store_1.hire_1",
+      "seen",
+    );
+    const billingApi = api();
+    vi.mocked(billingApi.getOverview)
+      .mockResolvedValueOnce(overview())
+      .mockResolvedValueOnce(paidOverview());
+    vi.mocked(billingApi.getPlanHire).mockResolvedValueOnce({
+      ...hire(plan("essencial", 2, 19_700).id),
+      activatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      phase: "paid_active",
+      status: "paid_active",
+    });
+
+    render(<BillingModule api={billingApi} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("ignores a spoofed callback hire id and polls the persisted hire", async () => {
@@ -618,6 +680,32 @@ function providerStatus(): BillingProviderStatus {
     missingConfiguration: [],
     provider: "asaas",
     webhookConfigured: true,
+  };
+}
+
+function billingSession(): SessionBootstrap {
+  return {
+    defaultStore: {
+      effectivePermissions: ["billing.manage"],
+      entitlements: ["storefront", "inventory", "lead_capture"],
+      role: "owner",
+      status: "active",
+      storeId: "store_1",
+      storeName: "Loja Teste",
+      storeSlug: "loja-teste",
+      tenantId: "tenant_1",
+      tenantName: "Loja Teste",
+    },
+    needsOnboarding: false,
+    platformAdmin: false,
+    stores: [],
+    tenantMemberships: [],
+    user: {
+      clerkUserId: "clerk_user_1",
+      email: "owner@example.com",
+      id: "user_1",
+      name: "Owner",
+    },
   };
 }
 
