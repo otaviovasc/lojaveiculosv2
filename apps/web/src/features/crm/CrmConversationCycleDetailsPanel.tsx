@@ -728,7 +728,6 @@ export function CrmConversationCycleDetailsPanel({
           onClick={() => setGalleryViewerUrl(null)}
           type="button"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="mídia" src={galleryViewerUrl} />
         </button>
       ) : null}
