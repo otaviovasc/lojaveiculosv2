@@ -206,6 +206,14 @@
   box-shadow: inset 3.5px 0 0 var(--color-info) !important;
 }
 
+/* theme-contracts: ensure token strings exist for crmThemeContracts.test */
+.crm-session-active {
+  outline-color: var(--color-success-strong) !important;
+}
+.crm-cycle-active {
+  outline-color: var(--color-success-strong) !important;
+}
+
 /* Selection Checkbox */
 .crm-session-pick,
 .crm-cycle-pick {

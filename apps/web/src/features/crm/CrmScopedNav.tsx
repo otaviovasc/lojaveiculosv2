@@ -97,12 +97,15 @@ export function CrmScopedNav({
           className="crm-scope-tabs"
           onChange={onChange}
           optionClassName="crm-scope-tab"
-          options={scopes.map((scope) => ({
-            ariaLabel: scope.label,
-            icon: scope.icon,
-            label: createScopeLabel(scope, { tagCount, unreadCount }),
-            value: scope.id,
-          }))}
+          options={scopes.map((scope) => {
+            const badge = readBadge(scope.id, { tagCount, unreadCount });
+            return {
+              ariaLabel: badge ? `${scope.label} ${badge}` : scope.label,
+              icon: scope.icon,
+              label: createScopeLabel(scope, { tagCount, unreadCount }),
+              value: scope.id,
+            };
+          })}
           value={activeScope}
         />
         <div className="crm-scope-trailing">

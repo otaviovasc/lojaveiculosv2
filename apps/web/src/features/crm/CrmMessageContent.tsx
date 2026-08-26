@@ -389,7 +389,7 @@ function LocationMessageCard({
           />
           {safeHref ? (
             <a
-              aria-label={`Ver ${title} no Google Maps`}
+              aria-label="Abrir mapa no Google Maps"
               className="crm-location-map-overlay-btn"
               href={safeHref}
               rel="noreferrer"

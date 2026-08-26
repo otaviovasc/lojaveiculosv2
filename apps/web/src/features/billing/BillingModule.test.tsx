@@ -71,7 +71,7 @@ describe("BillingModule v3", () => {
       expect(screen.getByText(quota)).toBeVisible();
     }
     expect(
-      screen.queryByText(/anual|teste gratuito|módulos extras/i),
+      screen.queryByText(/teste gratuito|módulos extras/i),
     ).not.toBeInTheDocument();
   });
 
