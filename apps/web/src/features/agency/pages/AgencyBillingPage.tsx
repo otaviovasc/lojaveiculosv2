@@ -42,6 +42,7 @@ import { AgencyBillingAllocation } from "./AgencyBillingSummarySections";
 export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const requestGeneration = useRef(0);
   const actionGeneration = useRef(0);
+  const planHireIdempotencyFallback = useRef(new Map<string, string>());
   const { agencyTenant, agencyTenants, selectAgencyTenant } =
     useAgencyTenantSelection();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -159,6 +160,12 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     if (!agencyTenant || !selectedStoreId) return;
     const tenantId = agencyTenant.tenantId;
     const storeId = selectedStoreId;
+    const idempotencyKey = readOrCreateAgencyPlanIdempotencyKey(
+      tenantId,
+      storeId,
+      plan.id,
+      planHireIdempotencyFallback.current,
+    );
     const generation = ++actionGeneration.current;
     setSubmitting(true);
     setError(null);
@@ -166,11 +173,33 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
       const billingApi = api ?? (await createRuntimeAgencyBillingApi());
       const nextHire = await billingApi.createStorePlanHire(tenantId, storeId, {
         billingTypes: ["CREDIT_CARD"],
-        idempotencyKey: createIdempotencyKey(plan.id),
+        idempotencyKey,
         planId: plan.id,
       });
       if (generation !== actionGeneration.current) return;
+      if (
+        nextHire.tenantId !== tenantId ||
+        nextHire.storeId !== storeId ||
+        nextHire.planId !== plan.id
+      ) {
+        clearAgencyPlanIdempotencyKey(
+          tenantId,
+          storeId,
+          plan.id,
+          planHireIdempotencyFallback.current,
+        );
+        throw new Error(
+          "A contratação retornada não corresponde ao plano e à loja selecionados.",
+        );
+      }
       setHire(nextHire);
+      if (isBillingPlanHireTerminal(nextHire))
+        clearAgencyPlanIdempotencyKey(
+          tenantId,
+          storeId,
+          plan.id,
+          planHireIdempotencyFallback.current,
+        );
       if (!isBillingPlanHireTerminal(nextHire)) {
         storeAgencyHire(hireStorageKey(tenantId, storeId), nextHire.id);
         setPollingHireId(nextHire.id);
@@ -187,7 +216,8 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   };
 
   const requestQuote = async (plan: BillingPlan) => {
-    if (!agencyTenant || !selectedStoreId) return;
+    if (!agencyTenant || !selectedStoreId || quoteRequested || quoteRequesting)
+      return;
     const tenantId = agencyTenant.tenantId;
     const storeId = selectedStoreId;
     const generation = ++actionGeneration.current;
@@ -223,8 +253,25 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
           pollingHireId,
         );
         if (cancelled) return;
+        if (next.tenantId !== tenantId || next.storeId !== storeId) {
+          removeAgencyHireIfCurrent(
+            hireStorageKey(tenantId, storeId),
+            pollingHireId,
+          );
+          setPollingHireId(null);
+          setError(
+            "A contratação retornada não pertence à loja selecionada. Tente novamente; se persistir, informe o ID da contratação ao suporte.",
+          );
+          return;
+        }
         setHire(next);
         if (isBillingPlanHireTerminal(next)) {
+          clearAgencyPlanIdempotencyKey(
+            tenantId,
+            storeId,
+            next.planId,
+            planHireIdempotencyFallback.current,
+          );
           removeAgencyHireIfCurrent(
             hireStorageKey(tenantId, storeId),
             pollingHireId,
@@ -350,6 +397,7 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
                 onQuoteRequest={requestQuote}
                 overview={panelOverview}
                 providerStatus={providerStatus}
+                quoteRequested={quoteRequested}
                 quoteRequesting={quoteRequesting}
                 selectedPlanId={selectedPlanId}
                 submitting={submitting}
@@ -415,4 +463,55 @@ function createIdempotencyKey(planId: string) {
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `agency-${planId}-${random}`;
+}
+
+function agencyPlanIdempotencyStorageKey(
+  tenantId: string,
+  storeId: string,
+  planId: string,
+) {
+  return `lojaveiculos.agency.billing.plan-hire-idempotency.${tenantId}.${storeId}.${planId}`;
+}
+
+function readOrCreateAgencyPlanIdempotencyKey(
+  tenantId: string,
+  storeId: string,
+  planId: string,
+  fallback: Map<string, string>,
+) {
+  const storageKey = agencyPlanIdempotencyStorageKey(tenantId, storeId, planId);
+  try {
+    const stored = window.sessionStorage.getItem(storageKey);
+    if (stored) {
+      fallback.set(storageKey, stored);
+      return stored;
+    }
+    const fallbackKey = fallback.get(storageKey);
+    if (fallbackKey) return fallbackKey;
+    const created = createIdempotencyKey(planId);
+    window.sessionStorage.setItem(storageKey, created);
+    fallback.set(storageKey, created);
+    return created;
+  } catch {
+    const stored = fallback.get(storageKey);
+    if (stored) return stored;
+    const created = createIdempotencyKey(planId);
+    fallback.set(storageKey, created);
+    return created;
+  }
+}
+
+function clearAgencyPlanIdempotencyKey(
+  tenantId: string,
+  storeId: string,
+  planId: string,
+  fallback: Map<string, string>,
+) {
+  const storageKey = agencyPlanIdempotencyStorageKey(tenantId, storeId, planId);
+  fallback.delete(storageKey);
+  try {
+    window.sessionStorage.removeItem(storageKey);
+  } catch {
+    // The server remains authoritative if browser storage becomes unavailable.
+  }
 }

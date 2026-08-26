@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { billingPlanQuotes, plans, stores } from "@lojaveiculosv2/db";
 import type { BillingPlanHireRepository } from "../../../domains/billing/ports/billingPlanHireRepository.js";
 import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
@@ -19,6 +19,9 @@ export async function approveBillingPlanQuote(
   db: DrizzleBillingClient,
   input: ApproveQuoteInput,
 ) {
+  if (!Number.isSafeInteger(input.quotedCents) || input.quotedCents <= 0) {
+    throw unavailablePlanHire("quote_price_invalid");
+  }
   const [quote] = await db
     .update(billingPlanQuotes)
     .set({
@@ -46,42 +49,94 @@ export async function requestBillingPlanQuote(
   db: DrizzleBillingClient,
   input: RequestQuoteInput,
 ) {
-  const catalogVersion = await findActiveBillingCatalogVersion(db);
-  if (!catalogVersion) throw unavailablePlanHire("catalog_unavailable");
-  const [plan] = await db
-    .select({ id: plans.id })
-    .from(plans)
-    .innerJoin(
-      stores,
-      and(
-        eq(stores.id, input.storeId),
-        eq(stores.tenantId, input.tenantId),
-        eq(stores.isDeleted, false),
-      ),
-    )
-    .where(
-      and(
-        eq(plans.id, input.planId),
-        eq(plans.catalogVersion, catalogVersion),
-        eq(plans.code, "escala"),
-        eq(plans.status, "active"),
-      ),
-    )
-    .limit(1);
-  if (!plan) throw unavailablePlanHire("quote_plan_unavailable");
-  const [quote] = await db
-    .insert(billingPlanQuotes)
-    .values({
-      catalogVersion,
-      planId: plan.id,
-      requestedByActorId: input.actorId,
-      status: "requested",
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-    })
-    .returning();
-  if (!quote) throw new Error("Billing plan quote was not persisted.");
-  return toPlanQuote(quote);
+  return db.transaction(async (transaction) => {
+    const tx = transaction as DrizzleBillingClient;
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`${input.tenantId}:${input.storeId}:${input.planId}:plan-quote`}, 31))`,
+    );
+    const catalogVersion = await findActiveBillingCatalogVersion(tx);
+    if (!catalogVersion) throw unavailablePlanHire("catalog_unavailable");
+    const [plan] = await tx
+      .select({ id: plans.id })
+      .from(plans)
+      .innerJoin(
+        stores,
+        and(
+          eq(stores.id, input.storeId),
+          eq(stores.tenantId, input.tenantId),
+          eq(stores.isDeleted, false),
+        ),
+      )
+      .where(
+        and(
+          eq(plans.id, input.planId),
+          eq(plans.catalogVersion, catalogVersion),
+          eq(plans.code, "escala"),
+          eq(plans.status, "active"),
+        ),
+      )
+      .limit(1);
+    if (!plan) throw unavailablePlanHire("quote_plan_unavailable");
+
+    const now = new Date();
+    const scope = and(
+      eq(billingPlanQuotes.catalogVersion, catalogVersion),
+      eq(billingPlanQuotes.planId, plan.id),
+      eq(billingPlanQuotes.storeId, input.storeId),
+      eq(billingPlanQuotes.tenantId, input.tenantId),
+    );
+    const [requested] = await tx
+      .select()
+      .from(billingPlanQuotes)
+      .where(
+        and(
+          scope,
+          eq(billingPlanQuotes.status, "requested"),
+          or(
+            isNull(billingPlanQuotes.expiresAt),
+            gt(billingPlanQuotes.expiresAt, now),
+          ),
+        ),
+      )
+      .orderBy(desc(billingPlanQuotes.createdAt))
+      .limit(1);
+    if (requested) return toPlanQuote(requested);
+
+    const [approved] = await tx
+      .select()
+      .from(billingPlanQuotes)
+      .where(
+        and(
+          scope,
+          eq(billingPlanQuotes.status, "approved"),
+          isNotNull(billingPlanQuotes.approvedAt),
+          isNotNull(billingPlanQuotes.approvedByActorId),
+          isNotNull(billingPlanQuotes.quotedCents),
+          gt(billingPlanQuotes.quotedCents, 0),
+          or(
+            isNull(billingPlanQuotes.expiresAt),
+            gt(billingPlanQuotes.expiresAt, now),
+          ),
+        ),
+      )
+      .orderBy(desc(billingPlanQuotes.createdAt))
+      .limit(1);
+    if (approved) return toPlanQuote(approved);
+
+    const [quote] = await tx
+      .insert(billingPlanQuotes)
+      .values({
+        catalogVersion,
+        planId: plan.id,
+        requestedByActorId: input.actorId,
+        status: "requested",
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      })
+      .returning();
+    if (!quote) throw new Error("Billing plan quote was not persisted.");
+    return toPlanQuote(quote);
+  });
 }
 
 export async function resolveBillingPlanQuote(

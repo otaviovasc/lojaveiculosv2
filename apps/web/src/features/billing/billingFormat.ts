@@ -1,4 +1,8 @@
-import type { BillingEntitlementStatus, EntitlementKey } from "./types";
+import type {
+  BillingEntitlementStatus,
+  BillingPlan,
+  EntitlementKey,
+} from "./types";
 
 export const featureLabels: Record<EntitlementKey, string> = {
   analytics: "Relatórios",
@@ -45,6 +49,70 @@ export const featureValueCopy: Record<EntitlementKey, string> = {
   sales: "Reservas, clientes e fechamento de vendas.",
   storefront: "Construtor completo no subdomínio Loja Veículos.",
 };
+
+export const billingCapabilityLabels: Readonly<Record<string, string>> = {
+  advanced_automation: "Automação avançada",
+  ai_studio: "AI Studio",
+  analytics: "Indicadores e análises",
+  basic_lead_inbox: "Caixa de entrada básica",
+  byok_zapi: "Z-API com credenciais próprias",
+  checklists: "Checklists operacionais",
+  commissions: "Comissões",
+  compliance: "Compliance",
+  connected_financing_when_verified:
+    "Financiamento conectado quando verificado",
+  custom_domain: "Domínio próprio",
+  customers: "Gestão de clientes",
+  document_templates: "Modelos de documentos",
+  document_workspace: "Central de documentos",
+  finance: "Gestão financeira",
+  finance_auto_entry_rules: "Regras de lançamentos automáticos",
+  fiscal: "Gestão fiscal",
+  full_crm: "CRM completo",
+  internal_financing_workflow: "Fluxo interno de financiamento",
+  marketplaces: "Marketplaces",
+  official_channels: "Canais oficiais",
+  public_api_and_webhooks: "Public API e webhooks",
+  public_interest_capture: "Captura pública de interessados",
+  reservations_and_sales: "Reservas e vendas",
+  resale_analysis_ai: "Análise inteligente de revenda",
+  storefront_builder: "Construtor completo da vitrine",
+  vehicle_listing_control: "Cadastro e controle de veículos",
+};
+
+export function planCapabilityHighlights(
+  plan: BillingPlan,
+  previousPlan: BillingPlan | null,
+) {
+  const previous = new Set(previousPlan?.capabilities ?? []);
+  const additions = plan.capabilities.filter(
+    (capability) => !previous.has(capability),
+  );
+  return [
+    ...(previousPlan ? [`Tudo do ${previousPlan.name}`] : []),
+    ...additions.map(
+      (capability) =>
+        billingCapabilityLabels[capability] ?? capability.replaceAll("_", " "),
+    ),
+  ];
+}
+
+export function planLimitHighlights(plan: BillingPlan) {
+  const plateLimit = plan.features.find(
+    (feature) => feature.featureKey === "plate_lookup",
+  )?.limitValue;
+  return [
+    plan.limits.vehicleLimit == null
+      ? "Limite de veículos sob proposta"
+      : `Até ${plan.limits.vehicleLimit.toLocaleString("pt-BR")} veículos em estoque`,
+    plan.limits.sellerLimit == null
+      ? "Limite de usuários sob proposta"
+      : `Até ${plan.limits.sellerLimit.toLocaleString("pt-BR")} usuário${plan.limits.sellerLimit === 1 ? "" : "s"}`,
+    plateLimit == null
+      ? "Consultas de placa sob proposta"
+      : `${plateLimit.toLocaleString("pt-BR")} consultas de placa/mês`,
+  ];
+}
 
 export const statusLabels: Record<BillingEntitlementStatus, string> = {
   active: "Ativo",

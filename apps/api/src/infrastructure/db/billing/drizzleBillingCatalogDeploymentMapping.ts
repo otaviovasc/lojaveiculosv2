@@ -7,6 +7,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type {
   BillingCatalogAddonLimits,
   BillingCatalogDefinition,
+  BillingCatalogPlan,
 } from "../../../domains/billing/catalog/billingCatalogDefinition.js";
 
 export type BillingCatalogDeploymentClient = PostgresJsDatabase<typeof schema>;
@@ -47,8 +48,7 @@ export async function loadPersistedBillingCatalog(
       status: addon.status,
     })),
     plans: planRows.map((plan) => ({
-      capabilities: fromDatabaseCapabilities(plan.limits),
-      checkoutMode: fromDatabaseCheckoutMode(plan.limits),
+      ...fromDatabasePlanMetadata(plan.limits),
       code: plan.code,
       features: featureRows
         .filter((feature) => feature.planId === plan.id)
@@ -64,7 +64,6 @@ export async function loadPersistedBillingCatalog(
       limits: fromDatabasePlanLimits(plan.limits),
       monthlyPriceCents: plan.monthlyPriceCents,
       name: plan.name,
-      selectionRank: fromDatabaseSelectionRank(plan.limits),
       status: plan.status,
     })),
     publishedAt: versionRow.publishedAt.toISOString(),
@@ -86,6 +85,22 @@ export function toDatabaseAddonLimits(limits: BillingCatalogAddonLimits) {
     ...(limits.includedChannels !== undefined
       ? { included_channels: [...limits.includedChannels] }
       : {}),
+  };
+}
+
+export function toDatabasePlanLimits(plan: BillingCatalogPlan) {
+  return {
+    ...(plan.capabilities !== undefined
+      ? { capabilities: [...plan.capabilities] }
+      : {}),
+    ...(plan.checkoutMode !== undefined
+      ? { checkout_mode: plan.checkoutMode }
+      : {}),
+    ...(plan.selectionRank !== undefined
+      ? { selection_rank: plan.selectionRank }
+      : {}),
+    seller_limit: plan.limits.sellerLimit,
+    vehicle_limit: plan.limits.vehicleLimit,
   };
 }
 
@@ -118,23 +133,40 @@ function fromDatabasePlanLimits(value: unknown) {
   };
 }
 
-function fromDatabaseCapabilities(value: unknown): readonly string[] {
-  const capabilities = asRecord(value).capabilities;
-  return Array.isArray(capabilities)
-    ? capabilities.filter((item): item is string => typeof item === "string")
-    : [];
-}
-
-function fromDatabaseCheckoutMode(
+export function fromDatabasePlanMetadata(
   value: unknown,
-): "checkout" | "free" | "quote_required" {
-  const mode = asRecord(value).checkout_mode;
-  return mode === "free" || mode === "quote_required" ? mode : "checkout";
-}
-
-function fromDatabaseSelectionRank(value: unknown): number {
-  const rank = asRecord(value).selection_rank;
-  return typeof rank === "number" && Number.isInteger(rank) ? rank : 0;
+): Pick<BillingCatalogPlan, "capabilities" | "checkoutMode" | "selectionRank"> {
+  const limits = asRecord(value);
+  const capabilities = limits.capabilities;
+  const checkoutMode = limits.checkout_mode;
+  const selectionRank = limits.selection_rank;
+  return {
+    ...(Object.hasOwn(limits, "capabilities")
+      ? {
+          capabilities: Array.isArray(capabilities)
+            ? capabilities.filter(
+                (item): item is string => typeof item === "string",
+              )
+            : [],
+        }
+      : {}),
+    ...(Object.hasOwn(limits, "checkout_mode")
+      ? {
+          checkoutMode:
+            checkoutMode === "free" || checkoutMode === "quote_required"
+              ? checkoutMode
+              : "checkout",
+        }
+      : {}),
+    ...(Object.hasOwn(limits, "selection_rank")
+      ? {
+          selectionRank:
+            typeof selectionRank === "number" && Number.isInteger(selectionRank)
+              ? selectionRank
+              : 0,
+        }
+      : {}),
+  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

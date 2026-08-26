@@ -75,7 +75,8 @@ export function toPlanQuote(row: typeof billingPlanQuotes.$inferSelect) {
 
 export function planCheckoutMode(plan: typeof plans.$inferSelect) {
   const limits = asRecord(plan.limits);
-  if (limits.checkoutMode === "quote_required" || plan.code === "escala") {
+  const checkoutMode = limits.checkout_mode ?? limits.checkoutMode;
+  if (checkoutMode === "quote_required" || plan.code === "escala") {
     return "quote_required" as const;
   }
   return plan.monthlyPriceCents === 0
@@ -84,7 +85,8 @@ export function planCheckoutMode(plan: typeof plans.$inferSelect) {
 }
 
 export function planSelectionRank(plan: typeof plans.$inferSelect): number {
-  const value = asRecord(plan.limits).selectionRank;
+  const limits = asRecord(plan.limits);
+  const value = limits.selection_rank ?? limits.selectionRank;
   return typeof value === "number" && Number.isInteger(value) ? value : 0;
 }
 

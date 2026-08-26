@@ -1,5 +1,11 @@
 import { RefreshCcw } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { AppBootScreen } from "../../components/ui";
 import {
@@ -46,10 +52,30 @@ export function AccountAccessGate({
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const getTokenRef = useRef(getToken);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     getTokenRef.current = getToken;
   }, [getToken]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const session = await loadRuntimeSessionBootstrap(getTokenRef.current);
+      if (!mountedRef.current) return false;
+      persistBootstrapSelection(session, access, userId);
+      setBootstrap(session);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [access, userId]);
 
   useEffect(() => {
     if (!bootstrap && handedOffBootstrap) {
@@ -70,15 +96,7 @@ export function AccountAccessGate({
     async function loadBootstrap() {
       try {
         const session = await loadRuntimeSessionBootstrap(getTokenRef.current);
-        if (session.defaultStore) {
-          persistCurrentStoreSlug(session.defaultStore.storeSlug, userId);
-        } else if (access === "store") {
-          persistSelectedStoreForStoreAccess(session, userId);
-        } else if (!hasActiveStoreAccess(session)) {
-          clearCurrentStoreSlug(userId);
-        } else {
-          keepSelectedManagedStore(session, userId);
-        }
+        persistBootstrapSelection(session, access, userId);
         if (!cancelled) setBootstrap(session);
       } catch (err) {
         if (!cancelled) {
@@ -143,10 +161,26 @@ export function AccountAccessGate({
   }
 
   return (
-    <AccountSessionProvider session={bootstrap}>
+    <AccountSessionProvider refreshSession={refreshSession} session={bootstrap}>
       {children}
     </AccountSessionProvider>
   );
+}
+
+function persistBootstrapSelection(
+  session: SessionBootstrap,
+  access: AccountAccess,
+  actorKey: string | null | undefined,
+) {
+  if (session.defaultStore) {
+    persistCurrentStoreSlug(session.defaultStore.storeSlug, actorKey);
+  } else if (access === "store") {
+    persistSelectedStoreForStoreAccess(session, actorKey);
+  } else if (!hasActiveStoreAccess(session)) {
+    clearCurrentStoreSlug(actorKey);
+  } else {
+    keepSelectedManagedStore(session, actorKey);
+  }
 }
 
 function isAllowed(access: AccountAccess, bootstrap: SessionBootstrap) {

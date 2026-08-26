@@ -125,8 +125,9 @@ describe("AgencyBillingPage", () => {
       await screen.findByRole("heading", { name: "Loja Centro" }),
     ).toBeVisible();
     expect(screen.getByText(/resumo segue disponível/i)).toBeVisible();
+    fireEvent.click(planRadio("Essencial"));
     expect(
-      screen.getByRole("button", { name: "Continuar para pagamento" }),
+      screen.getByRole("button", { name: "Agendar mudança" }),
     ).toBeDisabled();
   });
 
@@ -143,9 +144,8 @@ describe("AgencyBillingPage", () => {
     );
 
     await screen.findByRole("heading", { name: "Loja Centro" });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continuar para pagamento" }),
-    );
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(screen.getByRole("button", { name: "Agendar mudança" }));
     fireEvent.click(screen.getByRole("button", { name: "Loja selecionada" }));
     fireEvent.click(screen.getByRole("option", { name: "Loja Norte" }));
     await act(async () => pendingHire.resolve(planHire("store_center")));
@@ -159,11 +159,75 @@ describe("AgencyBillingPage", () => {
       ),
     ).toBeNull();
   });
+
+  it("reuses the store-scoped idempotency key after a lost response", async () => {
+    const api = createApi();
+    vi.mocked(api.createStorePlanHire)
+      .mockRejectedValueOnce(new Error("connection lost after commit"))
+      .mockResolvedValueOnce(planHire("store_center", "plan_essencial"));
+    render(
+      <AccountSessionProvider session={session()}>
+        <MemoryRouter initialEntries={["/agency/admin/unified-billing"]}>
+          <AgencyBillingPage api={api} />
+        </MemoryRouter>
+      </AccountSessionProvider>,
+    );
+
+    await screen.findByRole("heading", { name: "Loja Centro" });
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(screen.getByRole("button", { name: "Agendar mudança" }));
+    await waitFor(() =>
+      expect(api.createStorePlanHire).toHaveBeenCalledTimes(1),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Agendar mudança" }),
+    );
+    await waitFor(() =>
+      expect(api.createStorePlanHire).toHaveBeenCalledTimes(2),
+    );
+
+    const firstInput = vi.mocked(api.createStorePlanHire).mock.calls[0]?.[2];
+    const secondInput = vi.mocked(api.createStorePlanHire).mock.calls[1]?.[2];
+    expect(firstInput?.idempotencyKey).toBe(secondInput?.idempotencyKey);
+  });
+
+  it("rejects a polled hire payload from another store", async () => {
+    const storageKey =
+      "lojaveiculos.agency.billing.hire.tenant_agency.store_center";
+    window.sessionStorage.setItem(storageKey, "hire_wrong_store");
+    const api = createApi();
+    vi.mocked(api.getStorePlanHire).mockResolvedValueOnce(
+      planHire("store_north", "plan_essencial"),
+    );
+    render(
+      <AccountSessionProvider session={session()}>
+        <MemoryRouter initialEntries={["/agency/admin/unified-billing"]}>
+          <AgencyBillingPage api={api} />
+        </MemoryRouter>
+      </AccountSessionProvider>,
+    );
+
+    expect(
+      await screen.findByText(/não pertence à loja selecionada/i),
+    ).toBeVisible();
+    expect(window.sessionStorage.getItem(storageKey)).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Ativação da assinatura" }),
+    ).not.toBeInTheDocument();
+  });
 });
 
 function LocationProbe() {
   const location = useLocation();
   return <output data-testid="location">{location.search}</output>;
+}
+
+function planRadio(name: string) {
+  const match = screen
+    .getAllByRole("radio")
+    .find((element) => element.querySelector("strong")?.textContent === name);
+  if (!match) throw new Error(`Plan ${name} not found.`);
+  return match;
 }
 
 function createApi(): AgencyApi {
@@ -212,7 +276,7 @@ function store(storeId: string, storeName: string): AgencyManagedStoreOverview {
     createdAt: "2026-08-01T12:00:00.000Z",
     entitlementCount: 0,
     entitlementMatrix: [],
-    monthlyAmountCents: 54_899,
+    monthlyAmountCents: 39_700,
     planCode: "operacao",
     planName: "Operação",
     storeId,
@@ -232,7 +296,8 @@ function providerStatus(): BillingProviderStatus {
   };
 }
 
-function planHire(storeId: string): BillingPlanHire {
+function planHire(storeId: string, planId = "plan_operacao"): BillingPlanHire {
+  const planCode = planId.replace("plan_", "");
   return {
     activatedAt: null,
     catalogVersion: "2026-08-v3",
@@ -244,8 +309,12 @@ function planHire(storeId: string): BillingPlanHire {
     id: "hire_center",
     idempotencyKey: "agency-hire-center",
     phase: "payment_pending",
-    planId: "plan_operacao",
-    planSnapshot: { code: "operacao", name: "Operação", selectionRank: 3 },
+    planId,
+    planSnapshot: {
+      code: planCode,
+      name: planCode === "essencial" ? "Essencial" : "Operação",
+      selectionRank: planCode === "essencial" ? 2 : 3,
+    },
     providerCheckoutId: "checkout_center",
     providerPaymentId: null,
     providerSubscriptionId: null,

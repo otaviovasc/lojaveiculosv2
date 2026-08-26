@@ -79,7 +79,6 @@ respectful-respect
     lojaveiculosv2-web
     lojaveiculosv2-crm-schedule-worker (Railway cron, every 5 minutes)
     lojaveiculosv2-billing-reconciliation-worker (Railway cron, every 5 minutes)
-    lojaveiculosv2-billing-product-event-worker (Railway cron, every 5 minutes)
     lojaveiculosv2-crm-retention-worker (Railway cron, hourly at minute 17; dry-run)
     product Postgres
     audit Postgres
@@ -92,8 +91,8 @@ Use accepted commits from `main` for production and `staging` for staging.
 GitHub source autodeploy is enabled per environment: `staging` tracks the
 `staging` branch and `production` tracks `main`, so promoting a verified branch
 deploys without manual uploads. Redis is enabled for CRM realtime fanout and
-replay. The workers are short-lived scheduled-message, CRM retention, durable
-billing reconciliation, and billing product-event delivery crons; PR
+replay. The workers are short-lived scheduled-message, CRM retention, and
+durable billing reconciliation crons; product-event delivery, PR
 environments, permanent queue consumers, and speculative cron services remain
 disabled until measured value justifies cost.
 

@@ -8,8 +8,7 @@
    `release:verify`, merges the branch into `staging`, and pushes it.
 4. Pushing `staging` triggers the Railway staging auto-deploy (GitHub source,
    branch `staging`) for the API, web, CRM schedule worker, CRM retention
-   worker, billing reconciliation worker, and billing product-event worker
-   services.
+   worker, and billing reconciliation worker services.
 5. Wait for the staging API and web deployments to reach `SUCCESS`, then
    verify the first CRM schedule and retention worker cron executions exit
    successfully. Retention must report `dryRun: true`.
@@ -62,11 +61,9 @@ as a break-glass path when the GitHub auto-deploy is unhealthy.
 - Billing reconciliation worker start: `pnpm run billing:asaas:reconcile`.
 - Billing reconciliation worker cron: `*/5 * * * *` UTC with restart policy
   `NEVER`. It must not run provider reconciliation as a build or deploy hook.
-- Billing product-event worker build: `pnpm --filter @lojaveiculosv2/api build`.
-- Billing product-event worker start:
-  `pnpm --filter @lojaveiculosv2/api billing:product-events:process`.
-- Billing product-event worker cron: `*/5 * * * *` UTC with restart policy
-  `NEVER`. Its sink URL and bearer token remain sealed service variables.
+- Billing product-event delivery is not currently provisioned as a Railway
+  service. The durable outbox remains available for a future reviewed analytics
+  sink and is independent from billing activation.
 - CRM retention worker build: `pnpm --filter @lojaveiculosv2/api build`.
 - CRM retention worker start: `pnpm run crm:retention:process`.
 - CRM retention worker cron: `17 * * * *` UTC with restart policy `NEVER`.
@@ -126,12 +123,9 @@ Also verify:
   idempotent rows are the durable analytics handoff; `pending` rows require a
   delivery/replay plan and do not prove that an analytics destination received
   the event.
-- Confirm the billing product-event worker's latest cron execution exited
-  successfully and emitted `metric.billing_product_event.outbox`. Treat
-  `alert.billing_product_event.delivery_attention_required`, failed rows, or a
-  pending age above 900 seconds as a production-release blocker. During the
-  staging Asaas acceptance run, an explicitly unconfigured sink may retain the
-  durable backlog; record that degraded state instead of claiming delivery.
+- Product-event delivery is deferred in staging. Do not claim analytics
+  delivery; pending outbox rows are expected and do not block Asaas lifecycle
+  acceptance while no collector is configured.
 - The CRM retention worker's most recent cron execution succeeded, reports
   `dryRun: true`, and has no blocked or failed store scopes.
 - Sentry release has no new high-frequency exception.
@@ -145,10 +139,10 @@ rollback is required; contracted subscription-item prices remain unchanged.
 ## Cost Controls
 
 - Keep one replica per persistent app service until measured load requires more.
-- Keep one Redis service and the required short-lived CRM, retention, billing
-  reconciliation, and billing product-event cron workers per persistent
-  environment. Do not add permanent consumers or other cron services without a
-  measured backlog or reliability requirement.
+- Keep one Redis service and the required short-lived CRM, retention, and
+  billing reconciliation cron workers per persistent environment. Do not add
+  permanent consumers or other cron services without a measured backlog or
+  reliability requirement.
 - Keep PR environments and Railway buckets disabled by default.
 - Upload only the app services included in the verified release; pushes to the
   environment branch redeploy all app services, so batch changes into one

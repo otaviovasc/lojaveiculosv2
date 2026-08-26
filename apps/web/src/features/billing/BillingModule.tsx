@@ -5,6 +5,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { useOptionalAccountSessionRefresh } from "../account/accountSession";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { cn } from "../../lib/utils";
 import "../../styles/billing-composition.css";
@@ -12,6 +13,11 @@ import "../../styles/billing-panels.css";
 import "../../styles/billing-upgrade.css";
 import { createBillingApi, type BillingApi } from "./apiClient";
 import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
+import {
+  BillingActivationSuccessDialog,
+  resolveBillingActivationSuccess,
+  type BillingActivationSuccess,
+} from "./BillingActivationSuccessDialog";
 import {
   readBillingCheckoutReturn,
   redirectToCheckout,
@@ -39,8 +45,11 @@ const legacyActiveHireStorageKey = "lojaveiculos.billing.active-hire";
 
 export function BillingModule({ api }: { api?: BillingApi }) {
   const billingApi = useMemo(() => api ?? createRuntimeBillingApi(), [api]);
+  const refreshAccountSession = useOptionalAccountSessionRefresh();
   const overviewGeneration = useRef(0);
   const actionGeneration = useRef(0);
+  const overviewRef = useRef<BillingOverview | null>(null);
+  const planHireIdempotencyFallback = useRef(new Map<string, string>());
   const [overview, setOverview] = useState<BillingOverview | null>(null);
   const [providerStatus, setProviderStatus] =
     useState<BillingProviderStatus | null>(null);
@@ -56,6 +65,8 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   const [activeTab, setActiveTab] = useState<"subscription" | "details">(
     "subscription",
   );
+  const [activationSuccess, setActivationSuccess] =
+    useState<BillingActivationSuccess | null>(null);
   const checkoutReturn = readBillingCheckoutReturn("store");
   const activeHireStorageKey = overview
     ? scopedActiveHireStorageKey(overview.tenantId, overview.storeId)
@@ -71,6 +82,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       throw cause;
     }
     if (generation !== overviewGeneration.current) return null;
+    overviewRef.current = nextOverview;
     setOverview(nextOverview);
     setSelectedPlanId(
       nextOverview.subscription?.plan?.id ??
@@ -83,6 +95,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
 
   useEffect(() => {
     let active = true;
+    overviewRef.current = null;
     setOverview(null);
     setError(null);
     setProviderStatus(null);
@@ -107,6 +120,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
     setPollingIndeterminate(false);
     setSubmitting(false);
     setQuoteRequesting(false);
+    setQuoteRequested(false);
     if (!activeHireStorageKey) {
       setPollingHireId(null);
       return;
@@ -123,12 +137,44 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       try {
         const nextHire = await billingApi.getPlanHire(pollingHireId);
         if (cancelled) return;
+        const scopedOverview = overviewRef.current;
+        if (scopedOverview && !hireMatchesOverview(nextHire, scopedOverview)) {
+          clearPlanIdempotencyKey(
+            scopedOverview,
+            nextHire.planId,
+            planHireIdempotencyFallback.current,
+          );
+          if (activeHireStorageKey)
+            removeStoredHireIfCurrent(activeHireStorageKey, pollingHireId);
+          setPollingHireId(null);
+          setError(
+            "A contratação retornada não pertence a esta loja ou catálogo. Tente novamente; se persistir, informe o ID da contratação ao suporte.",
+          );
+          return;
+        }
         setHire(nextHire);
         if (isBillingPlanHireTerminal(nextHire)) {
+          if (scopedOverview)
+            clearPlanIdempotencyKey(
+              scopedOverview,
+              nextHire.planId,
+              planHireIdempotencyFallback.current,
+            );
           if (nextHire.status === "paid_active") {
-            const nextOverview = await loadOverview();
+            const [nextOverview, sessionRefreshed] = await Promise.all([
+              loadOverview(),
+              refreshAccountSession?.() ?? Promise.resolve(true),
+            ]);
             if (cancelled) return;
             if (!nextOverview) return;
+            setActivationSuccess(
+              resolveBillingActivationSuccess(
+                nextHire,
+                scopedOverview,
+                nextOverview,
+                sessionRefreshed,
+              ),
+            );
           }
           if (activeHireStorageKey)
             removeStoredHireIfCurrent(activeHireStorageKey, pollingHireId);
@@ -151,20 +197,51 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [activeHireStorageKey, billingApi, loadOverview, pollingHireId]);
+  }, [
+    activeHireStorageKey,
+    billingApi,
+    loadOverview,
+    pollingHireId,
+    refreshAccountSession,
+  ]);
 
   const createHire = async (plan: BillingPlan) => {
     const generation = ++actionGeneration.current;
+    if (!overview) return;
+    const idempotencyKey = readOrCreatePlanIdempotencyKey(
+      overview,
+      plan.id,
+      planHireIdempotencyFallback.current,
+    );
     setSubmitting(true);
     setError(null);
     try {
       const nextHire = await billingApi.createPlanHire({
         billingTypes: ["CREDIT_CARD"],
-        idempotencyKey: createIdempotencyKey(plan.id),
+        idempotencyKey,
         planId: plan.id,
       });
       if (generation !== actionGeneration.current) return;
+      if (
+        !hireMatchesOverview(nextHire, overview) ||
+        nextHire.planId !== plan.id
+      ) {
+        clearPlanIdempotencyKey(
+          overview,
+          plan.id,
+          planHireIdempotencyFallback.current,
+        );
+        throw new Error(
+          "A contratação retornada não corresponde ao plano e à loja selecionados.",
+        );
+      }
       setHire(nextHire);
+      if (isBillingPlanHireTerminal(nextHire))
+        clearPlanIdempotencyKey(
+          overview,
+          plan.id,
+          planHireIdempotencyFallback.current,
+        );
       if (!isBillingPlanHireTerminal(nextHire) && activeHireStorageKey) {
         storeActiveHire(activeHireStorageKey, nextHire.id);
         setPollingHireId(nextHire.id);
@@ -183,6 +260,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   };
 
   const requestQuote = async (plan: BillingPlan) => {
+    if (quoteRequested || quoteRequesting) return;
     const generation = ++actionGeneration.current;
     setQuoteRequesting(true);
     setError(null);
@@ -200,6 +278,12 @@ export function BillingModule({ api }: { api?: BillingApi }) {
 
   return (
     <FeaturePageShell className="billing-shell" variant="content">
+      {activationSuccess ? (
+        <BillingActivationSuccessDialog
+          activation={activationSuccess}
+          onDismiss={() => setActivationSuccess(null)}
+        />
+      ) : null}
       {error ? (
         <FeatureAlert className="billing-alert">{error}</FeatureAlert>
       ) : null}
@@ -274,16 +358,29 @@ export function BillingModule({ api }: { api?: BillingApi }) {
               onQuoteRequest={requestQuote}
               overview={overview}
               providerStatus={providerStatus}
+              quoteRequested={quoteRequested}
               quoteRequesting={quoteRequesting}
               selectedPlanId={selectedPlanId}
               submitting={submitting}
             />
           ) : (
-            <div className="space-y-6 px-2 pb-8 md:px-4">
-              <BillingKpiGrid overview={overview} />
-              <BillingAutomaticBillingPanel overview={overview} />
-              <BillingAllocationTable allocations={overview.allocations} />
-              <BillingEventList events={overview.entitlementEvents} />
+            <div className="billing-details-workspace relative space-y-6 px-2 pb-8 md:px-4">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute right-1/4 top-0 h-[300px] w-[500px] rounded-full bg-accent-strong/15 blur-[120px]"
+              />
+              <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft px-3.5 py-1 text-xs font-extrabold text-accent-strong">
+                  <Receipt aria-hidden="true" className="size-3.5" />
+                  Detalhes da assinatura
+                </span>
+              </header>
+              <div className="relative z-10 space-y-6">
+                <BillingKpiGrid overview={overview} />
+                <BillingAutomaticBillingPanel overview={overview} />
+                <BillingAllocationTable allocations={overview.allocations} />
+                <BillingEventList events={overview.entitlementEvents} />
+              </div>
             </div>
           )}
         </div>
@@ -310,13 +407,13 @@ function Tab({
         "flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-bold",
         active
           ? "border-accent-strong text-foreground"
-          : "border-transparent text-muted",
+          : "border-transparent text-muted hover:text-foreground",
       )}
       onClick={onClick}
       role="tab"
       type="button"
     >
-      <Icon aria-hidden="true" className="size-4" />
+      <Icon aria-hidden="true" className="size-4 text-accent-strong" />
       {label}
     </button>
   );
@@ -371,6 +468,57 @@ function createIdempotencyKey(planId: string) {
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `web-${planId}-${random}`;
+}
+
+function planIdempotencyStorageKey(overview: BillingOverview, planId: string) {
+  return `lojaveiculos.billing.plan-hire-idempotency.${overview.tenantId}.${overview.storeId}.${planId}`;
+}
+
+function readOrCreatePlanIdempotencyKey(
+  overview: BillingOverview,
+  planId: string,
+  fallback: Map<string, string>,
+) {
+  const storageKey = planIdempotencyStorageKey(overview, planId);
+  try {
+    const stored = window.sessionStorage.getItem(storageKey);
+    if (stored) {
+      fallback.set(storageKey, stored);
+      return stored;
+    }
+    const fallbackKey = fallback.get(storageKey);
+    if (fallbackKey) return fallbackKey;
+    const created = createIdempotencyKey(planId);
+    window.sessionStorage.setItem(storageKey, created);
+    fallback.set(storageKey, created);
+    return created;
+  } catch {
+    const stored = fallback.get(storageKey);
+    if (stored) return stored;
+    const created = createIdempotencyKey(planId);
+    fallback.set(storageKey, created);
+    return created;
+  }
+}
+
+function clearPlanIdempotencyKey(
+  overview: BillingOverview,
+  planId: string,
+  fallback: Map<string, string>,
+) {
+  const storageKey = planIdempotencyStorageKey(overview, planId);
+  fallback.delete(storageKey);
+  try {
+    window.sessionStorage.removeItem(storageKey);
+  } catch {
+    // Storage can be unavailable in hardened browser contexts.
+  }
+}
+
+function hireMatchesOverview(hire: BillingPlanHire, overview: BillingOverview) {
+  return (
+    hire.tenantId === overview.tenantId && hire.storeId === overview.storeId
+  );
 }
 
 function removeStoredHireIfCurrent(storageKey: string, hireId: string) {

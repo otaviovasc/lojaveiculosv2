@@ -11,6 +11,9 @@ export function createMemoryBillingPlanHireRepository(): BillingPlanHireReposito
   const quotes = new Map<string, BillingPlanQuoteRecord>();
   return {
     async approveQuote(input) {
+      if (!Number.isSafeInteger(input.quotedCents) || input.quotedCents <= 0) {
+        throw new Error("Billing plan quote price is invalid.");
+      }
       const quote = quotes.get(input.quoteId);
       if (!quote) throw new Error("Billing plan quote was not found.");
       const approved = {
@@ -146,6 +149,27 @@ export function createMemoryBillingPlanHireRepository(): BillingPlanHireReposito
           candidate.id === input.planId && candidate.code === "escala",
       );
       if (!plan) throw new Error("Escala plan is unavailable.");
+      const now = new Date();
+      const scopedQuotes = [...quotes.values()].filter(
+        (quote) =>
+          quote.catalogVersion === currentBillingCatalog.version &&
+          quote.planId === plan.id &&
+          quote.storeId === input.storeId &&
+          quote.tenantId === input.tenantId,
+      );
+      const existing =
+        scopedQuotes.find(
+          (quote) =>
+            quote.status === "requested" &&
+            (!quote.expiresAt || quote.expiresAt > now),
+        ) ??
+        scopedQuotes.find(
+          (quote) =>
+            quote.status === "approved" &&
+            Boolean(quote.quotedCents && quote.quotedCents > 0) &&
+            (!quote.expiresAt || quote.expiresAt > now),
+        );
+      if (existing) return existing;
       const quote = {
         catalogVersion: currentBillingCatalog.version,
         expiresAt: null,

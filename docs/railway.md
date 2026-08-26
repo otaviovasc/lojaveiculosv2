@@ -8,9 +8,9 @@ The target is the Railway project `respectful-respect`
 (`fcb43bc7-1d5d-40c2-96cd-420f34d99b5b`) with isolated `production` and
 `staging` environments.
 
-Staging declares the API, web, CRM schedule worker, billing reconciliation
-worker, billing product-event worker, product Postgres, audit Postgres, and
-Redis. Production remains empty.
+Staging declares the API, web, CRM schedule, retention and push workers, billing
+reconciliation worker, product Postgres, audit Postgres, and Redis. Production
+remains empty.
 
 Staging public domains are:
 
@@ -69,8 +69,8 @@ Each persistent environment should contain:
 - `lojaveiculosv2-web`
 - `lojaveiculosv2-api`
 - `lojaveiculosv2-crm-schedule-worker`
+- `lojaveiculosv2-crm-push-worker`
 - `lojaveiculosv2-billing-reconciliation-worker`
-- `lojaveiculosv2-billing-product-event-worker`
 - `lojaveiculosv2-crm-retention-worker`
 - product Postgres
 - audit Postgres
@@ -114,9 +114,9 @@ separate because audit isolation is a product invariant, not optional capacity.
 - Billing reconciliation worker: `*/5 * * * *` UTC; it claims durable billing
   tasks and exits. Provider writes occur only during scheduled executions,
   never during build or deploy.
-- Billing product-event worker: `*/5 * * * *` UTC with restart policy `NEVER`;
-  it delivers the durable product-event outbox to the configured HTTPS sink and
-  exits. Sink URL/token stay sealed on that service.
+- Billing product-event delivery is deferred until an external analytics sink
+  is selected. Durable outbox writes remain active and do not participate in
+  checkout, payment confirmation, plan activation, or Asaas reconciliation.
 - Marketplace reconciliation remains deferred until its worker is explicitly
   approved for provisioning; it is not part of the current Railway plan.
 - CRM retention worker: `17 * * * *` UTC with restart policy `NEVER`. The first
