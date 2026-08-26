@@ -8,7 +8,6 @@ import {
   Lock,
   MessageCircleQuestion,
   Receipt,
-  ShieldCheck,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -19,6 +18,7 @@ import {
   planCapabilityHighlights,
   planLimitHighlights,
 } from "./billingFormat";
+import { BillingCurrentPlanSection } from "./BillingCurrentPlanSection";
 import { isBillingPlanHireTerminal } from "./billingPlanHireState";
 import type {
   BillingOverview,
@@ -54,9 +54,12 @@ export function BillingSignupFlow({
   selectedPlanId: string | null;
   submitting?: boolean;
 }) {
-  const plans = overview.plans
+  const allPlans = overview.plans
     .filter((plan) => plan.status === "active")
     .sort((a, b) => a.selectionRank - b.selectionRank);
+  const plans = allPlans.filter((plan) => plan.checkoutMode !== "free");
+  const freePlan =
+    allPlans.find((plan) => plan.checkoutMode === "free") ?? null;
   const selectedPlan =
     plans.find((plan) => plan.id === selectedPlanId) ?? plans[0] ?? null;
   const providerReady = Boolean(
@@ -66,9 +69,10 @@ export function BillingSignupFlow({
   const currentPlanId =
     overview.effectiveContract?.planId ??
     overview.subscription?.plan?.id ??
-    plans.find((plan) => plan.code === "free")?.id ??
+    allPlans.find((plan) => plan.code === "free")?.id ??
     null;
-  const currentPlan = plans.find((plan) => plan.id === currentPlanId) ?? null;
+  const currentPlan =
+    allPlans.find((plan) => plan.id === currentPlanId) ?? null;
   const selectedIsCurrent = selectedPlan?.id === currentPlanId;
   const paidPlanChange = Boolean(
     currentPlan &&
@@ -131,7 +135,7 @@ export function BillingSignupFlow({
           </div>
           <div
             aria-label="Planos disponíveis"
-            className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5"
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-4"
             role="radiogroup"
           >
             {plans.map((plan, index) => {
@@ -141,7 +145,7 @@ export function BillingSignupFlow({
               const Icon = theme.icon;
               const capabilities = planCapabilityHighlights(
                 plan,
-                plans[index - 1] ?? null,
+                previousCatalogPlan(plan, allPlans),
               );
               return (
                 <button
@@ -171,7 +175,7 @@ export function BillingSignupFlow({
                       )}
                     />
                   </div>
-                  {current || index === 1 ? (
+                  {current || index === 0 ? (
                     <span className="absolute -top-3.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent-strong px-3.5 py-0.5 text-xs font-black uppercase tracking-widest text-accent-strong-foreground">
                       {current ? "Plano atual" : "Recomendado para sua loja"}
                     </span>
@@ -247,6 +251,14 @@ export function BillingSignupFlow({
           </div>
         </section>
         {hire ? <BillingActivationTimeline hire={hire} /> : null}
+        <BillingCurrentPlanSection
+          freeChangeDisabled={!canManage || busy || !providerReady}
+          {...(currentPlan && currentPlan.monthlyPriceCents > 0 && freePlan
+            ? { onScheduleFree: () => void onPlanHire(freePlan) }
+            : {})}
+          overview={overview}
+          plan={currentPlan}
+        />
       </div>
 
       <aside
@@ -312,8 +324,6 @@ export function BillingSignupFlow({
                 <Loader2 aria-hidden="true" className="size-5 animate-spin" />
               ) : selectedPlan?.checkoutMode === "quote_required" ? (
                 <MessageCircleQuestion aria-hidden="true" className="size-4" />
-              ) : selectedPlan?.checkoutMode === "free" ? (
-                <ShieldCheck aria-hidden="true" className="size-4" />
               ) : (
                 <Lock aria-hidden="true" className="size-4" />
               )}
@@ -326,12 +336,8 @@ export function BillingSignupFlow({
                     : selectedPlan?.checkoutMode === "quote_required"
                       ? "Solicitar proposta"
                       : paidPlanChange
-                        ? selectedPlan?.code === "free"
-                          ? "Agendar plano Free"
-                          : "Agendar mudança"
-                        : selectedPlan?.checkoutMode === "free"
-                          ? "Usar plano Free"
-                          : "Continuar para pagamento"}
+                        ? "Agendar mudança"
+                        : "Continuar para pagamento"}
             </button>
           )}
         </div>
@@ -363,8 +369,6 @@ function checkoutMessage({
     return "A contratação depende de uma proposta aprovada pelo servidor.";
   if (paidPlanChange)
     return `A mudança para ${selectedPlan?.name ?? "o novo plano"} será agendada para a próxima renovação. O plano atual permanece ativo até lá.`;
-  if (selectedPlan?.checkoutMode === "free")
-    return "O Free é permanente e não expira.";
   return "Acesso pago somente após confirmação do pagamento.";
 }
 
@@ -374,6 +378,11 @@ function getPlanTheme(plan: BillingPlan) {
   if (/growth|operacao|operação/.test(identity)) return planThemes.operation;
   if (/pro|escala/.test(identity)) return planThemes.scale;
   return planThemes.base;
+}
+
+function previousCatalogPlan(plan: BillingPlan, plans: readonly BillingPlan[]) {
+  const index = plans.findIndex((candidate) => candidate.id === plan.id);
+  return index > 0 ? (plans[index - 1] ?? null) : null;
 }
 
 const planThemes = {
