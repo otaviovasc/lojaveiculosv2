@@ -5,6 +5,7 @@ import { createSpedyHttpFiscalProviderGateway } from "../fiscal/spedyHttpFiscalP
 import { createServiceContext } from "../../shared/serviceContext.js";
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
 import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
+import { createMemoryBillingPlanHireRepository } from "../../features/billing/adapters/memory/billingPlanHireRepository.js";
 import { createMemoryBillingRepository } from "../../features/billing/adapters/memory/billingRepository.js";
 import { createFiscalFeature } from "../../features/fiscal/controllers/fiscal.controller.js";
 import { createFiscalServices } from "../../features/fiscal/controllers/fiscalServices.js";
@@ -31,6 +32,7 @@ describe("production smoke contracts", () => {
           createUserContext(["billing.manage"], audit),
         services: createBillingServices({
           ports: {
+            billingPlanHireRepository: createMemoryBillingPlanHireRepository(),
             billingRepository: createMemoryBillingRepository(),
             paymentProviderGateway: createAsaasPaymentProviderGateway({
               ASAAS_API_KEY: "token",

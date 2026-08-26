@@ -18,6 +18,10 @@ export type BillingServicePorts = {
   publicAppUrl?: string;
 };
 
+export type BillingServicesPorts = BillingServicePorts & {
+  billingPlanHireRepository: BillingPlanHireRepository;
+};
+
 export function getBillingPlanHireRepository(
   ports: BillingServicePorts,
 ): BillingPlanHireRepository {

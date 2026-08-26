@@ -19,7 +19,10 @@ import type {
   BillingOverview,
 } from "../../../domains/billing/ports/billingRepository.js";
 import type { PaymentProviderStatus } from "../../../domains/billing/ports/paymentProviderGateway.js";
-import type { BillingServicePorts } from "../../../domains/billing/services/BillingService/serviceSupport.js";
+import type {
+  BillingServicePorts,
+  BillingServicesPorts,
+} from "../../../domains/billing/services/BillingService/serviceSupport.js";
 import {
   createDrizzleBillingRepository,
   type DrizzleBillingClient,
@@ -66,7 +69,7 @@ export type BillingServices = {
 };
 
 export type CreateBillingServicesOptions =
-  | { drizzleClient?: never; ports?: BillingServicePorts }
+  | { drizzleClient?: never; ports?: BillingServicesPorts }
   | { drizzleClient: DrizzleBillingClient; ports?: never };
 
 export function createBillingServices(
@@ -95,7 +98,7 @@ export function createBillingServices(
 
 function resolvePorts(
   options: CreateBillingServicesOptions,
-): BillingServicePorts {
+): BillingServicesPorts {
   if ("ports" in options && options.ports) return options.ports;
   if ("drizzleClient" in options) {
     return {
