@@ -24,6 +24,8 @@ export function createRuntimeFetch(baseFetch?: typeof fetch): typeof fetch {
   const base = baseFetch ?? ((input, init) => window.fetch(input, init));
 
   return async (input, init) => {
+    if (isAwsPresignedRequest(input)) return base(input, init);
+
     const token = await readClerkToken();
     const response = await base(
       input,
@@ -40,6 +42,27 @@ export function createRuntimeFetch(baseFetch?: typeof fetch): typeof fetch {
     if (!refreshedToken || refreshedToken === token) return response;
     return base(input, withAuthorization(init, refreshedToken));
   };
+}
+
+function isAwsPresignedRequest(input: RequestInfo | URL): boolean {
+  const rawUrl =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+  let url: URL;
+  try {
+    url = new URL(rawUrl, window.location.href);
+  } catch {
+    return false;
+  }
+
+  return (
+    url.searchParams.has("X-Amz-Algorithm") &&
+    url.searchParams.has("X-Amz-Credential") &&
+    url.searchParams.has("X-Amz-Signature")
+  );
 }
 
 function withAuthorization(

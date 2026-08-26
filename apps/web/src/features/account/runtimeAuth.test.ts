@@ -83,6 +83,24 @@ describe("createRuntimeFetch", () => {
     expect(headers.get("Content-Type")).toBe("application/json");
   });
 
+  it("does not attach Clerk authorization to presigned object storage requests", async () => {
+    stubClerkGetToken(async () => "clerk-token");
+    const baseFetch = vi.fn<typeof fetch>(async () => new Response());
+    const uploadUrl =
+      "https://account.r2.cloudflarestorage.com/bucket/image.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=key&X-Amz-Signature=signature";
+    const init: RequestInit = {
+      body: new Blob(["image"], { type: "image/png" }),
+      headers: { "content-type": "image/png" },
+      method: "PUT",
+    };
+
+    await createRuntimeFetch(baseFetch)(uploadUrl, init);
+
+    expect(baseFetch).toHaveBeenCalledWith(uploadUrl, init);
+    const headers = new Headers(baseFetch.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("Authorization")).toBeNull();
+  });
+
   it("leaves the request untouched when no Clerk token is available", async () => {
     (window as ClerkWindow).Clerk = { status: "ready" };
     const baseFetch = vi.fn<typeof fetch>(async () => new Response("{}"));
