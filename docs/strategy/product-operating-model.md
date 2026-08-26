@@ -144,35 +144,34 @@ state.
 
 ### CRM commercial decision — 2026-08
 
-- **Segment and outcome:** the initial ICP gets one CRM inbox for Official
-  WhatsApp and Instagram, with the optional ability to keep a Loja-managed
-  Z-API connection.
-- **Billing:** immutable catalog `2026-08-v1` prices CRM at R$179/month and the
-  optional Z-API service at R$100/month. The dealership pays Meta directly;
-  Loja pays Composio and includes a soft allowance of 10,000 tool executions
-  per store and billing month. There is no automatic overage charge or cutoff.
-- **Renewal rule:** an existing customer can schedule or cancel Z-API for the
-  next existing due date. No immediate charge or proration occurs, and other
-  subscription items remain unchanged. Loja buys the provider month and starts
-  setup only after matching payment evidence.
-- **Purchase and setup authority:** Z-API is always visible in the customer
-  Conexao tab as an optional buyable integration. Its price and SKU come only
-  from the active server-owned catalog and existing paid add-on flow; clients
-  must not supply pricing or constants, and a purchase must never show success
-  without billing evidence. Only an entitled, authorized customer store
-  owner/admin, or a billing-authorized scoped actor under existing policy, may
-  enter initial instance credentials. Credentials are write-only and
-  encrypted/reference-backed; the UI shows status, never stored credential
-  fields. After setup, the customer pairs through QR or phone code. Webhook
-  configuration is backend/support managed and never customer-facing. Support
-  retains recovery, troubleshooting, rotation/revocation, disconnect, and
-  exceptional setup ownership.
-- **Leading metrics:** CRM attach rate, paid-Z-API setup time, verified first
-  conversation, integration allowance consumption, provider failure rate, and
-  support minutes per activated store.
-- **Degraded state:** pending payment, awaiting setup, partial configuration,
-  disconnected, or provider unavailable are explicit states. None imply a
-  message was sent or an official channel is active.
+- **Segment and outcome:** the initial ICP gets a store-scoped CRM inbox when
+  its effective plan includes `crm`, with Z-API retained as a transport under
+  that entitlement rather than as a separately purchased integration.
+- **Billing:** the immutable `2026-08-v3` catalog is the only source of plan
+  prices and capabilities. Free is permanent; paid plans activate only after a
+  plan hire has verified payment evidence and atomically projected its
+  effective contract. There are no active feature add-ons or Z-API billing
+  items. The dealership pays Meta directly; Loja pays any provider costs under
+  its plan margin policy.
+- **Plan changes:** the server persists a plan hire before contacting Asaas,
+  correlates checkout and later payment events with the hire and provider
+  identifiers, and exposes activation/reconciliation state while polling.
+  Unmatched events remain pending reconciliation. Paid access is never
+  activated from a browser callback alone.
+- **Setup authority:** only an entitled, authorized store actor or explicitly
+  scoped support actor may enter Z-API credentials. The write-only form accepts
+  the store-scoped `instanceId`, `instanceToken`, and `clientToken`; each value
+  is encrypted with tenant/store/purpose-bound context. Existing imported
+  connections marked `credentials_incomplete` preserve history but require
+  re-entry before provider I/O. Webhook configuration is backend/support
+  managed and never customer-facing.
+- **Leading metrics:** CRM activation time, verified first conversation,
+  provider failure rate, reconciliation age, and support minutes per active
+  store.
+- **Degraded state:** pending payment, activation pending, reconciliation
+  failed, credentials incomplete, disconnected, or provider unavailable are
+  explicit states. None imply a message was sent or an official channel is
+  active.
 
 ## Roadmap Decision Test
 
@@ -290,7 +289,7 @@ Track:
 - GRR and NRR;
 - MRR, new MRR, expansion, contraction, voluntary churn, involuntary churn;
 - annual-prepay share;
-- plan/add-on/provider gross margin;
+- plan/provider gross margin;
 - implementation revenue and delivery margin;
 - support minutes and provider cost per active store.
 
@@ -397,7 +396,8 @@ and product policy.
   rewrite it.
 - Entitlements are a projection of contract/subscription items plus explicit,
   audited exceptions with an expiry.
-- Every trial has `starts_at`, `ends_at`, and an automatic state transition.
+- Free is a permanent effective contract with no trial expiry. Paid access is
+  created only through a verified plan-hire lifecycle.
 - Every paid provider cost has an allowance, pass-through, or explicit margin
   policy.
 - Enforce user, store, stock, lookup, message, fiscal, integration, storage, and
@@ -412,8 +412,9 @@ and product policy.
 
 ## Go-To-Market Model
 
-Until retention is proven, prefer paid, founder-led implementation over an
-unbounded free trial.
+Until retention is proven, prefer paid, founder-led implementation while
+keeping the permanent Free contract limited to its published quotas and
+capabilities.
 
 Sales motion:
 

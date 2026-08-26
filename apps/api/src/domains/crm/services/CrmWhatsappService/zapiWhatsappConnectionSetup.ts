@@ -6,6 +6,7 @@ import {
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   CrmConnectionSetupProviderError,
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
   type ZapiSetupCredentials,
@@ -133,7 +134,7 @@ async function loadZapiSetupTarget(
     );
   }
   const scope = requireCrmMessagingScope(context);
-  assertEntitlement(context as never, "crm_zapi");
+  assertEntitlement(context as never, "crm");
   logCrmServiceEvent(context, "crm.provider.zapi.connection.setup.started", {
     connectionId,
   });
@@ -159,17 +160,26 @@ export async function openZapiSetupCredentials(
   ports: CrmServicePorts,
 ): Promise<ZapiSetupCredentials> {
   const stored = readRecord(connection.credentialsRef.stored);
+  const sealedClientToken = readString(stored.clientToken);
   const sealedInstanceId = readString(stored.instanceId);
   const sealedInstanceToken = readString(stored.instanceToken);
-  if (!sealedInstanceId || !sealedInstanceToken) {
-    throw new CrmConnectionNotFoundError(connection.id);
+  if (!sealedClientToken || !sealedInstanceId || !sealedInstanceToken) {
+    throw new CrmConnectionSetupProviderError(
+      "Z-API credentials are incomplete. Re-enter all three credentials before provider operations.",
+      "configuration_error",
+    );
   }
   const vault = getCrmConnectionCredentialVault(ports);
   const scope = {
     storeId: connection.storeId,
     tenantId: connection.tenantId,
   };
-  const [instanceId, instanceToken] = await Promise.all([
+  const [clientToken, instanceId, instanceToken] = await Promise.all([
+    vault.open({
+      ...scope,
+      purpose: ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
+      sealed: sealedClientToken,
+    }),
     vault.open({
       ...scope,
       purpose: ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
@@ -181,7 +191,7 @@ export async function openZapiSetupCredentials(
       sealed: sealedInstanceToken,
     }),
   ]);
-  return { instanceId, instanceToken };
+  return { clientToken, instanceId, instanceToken };
 }
 
 function setupAudit(action: string, connectionId: string) {

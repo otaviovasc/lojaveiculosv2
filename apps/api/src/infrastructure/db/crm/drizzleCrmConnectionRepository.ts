@@ -61,7 +61,7 @@ export function createDrizzleCrmConnectionRepository(
       const [configured] = await db
         .update(crmChannelConnections)
         .set({
-          externalInstanceId: input.externalInstanceId,
+          externalInstanceId: null,
           metadata: sql`${crmChannelConnections.metadata} || jsonb_build_object('credentialsRef', ${JSON.stringify(input.credentialsRef)}::jsonb)`,
           updatedAt: new Date(),
         })
@@ -74,6 +74,7 @@ export function createDrizzleCrmConnectionRepository(
             sql`${crmChannelConnections.state} <> 'archived'`,
             sql`coalesce(nullif(btrim(${crmChannelConnections.metadata}->'credentialsRef'->'stored'->>'instanceId'), ''), '') = ''`,
             sql`coalesce(nullif(btrim(${crmChannelConnections.metadata}->'credentialsRef'->'stored'->>'instanceToken'), ''), '') = ''`,
+            sql`coalesce(nullif(btrim(${crmChannelConnections.metadata}->'credentialsRef'->'stored'->>'clientToken'), ''), '') = ''`,
           ),
         )
         .returning();
@@ -102,9 +103,12 @@ export function createDrizzleCrmConnectionRepository(
       );
       const instanceId = readConfiguredString(stored.instanceId);
       const instanceToken = readConfiguredString(stored.instanceToken);
+      const clientToken = readConfiguredString(stored.clientToken);
       return {
         status:
-          instanceId && instanceToken ? "already_configured" : "partial_state",
+          clientToken && instanceId && instanceToken
+            ? "already_configured"
+            : "partial_state",
       };
     },
     async claimZapiWebhookSetup(input) {

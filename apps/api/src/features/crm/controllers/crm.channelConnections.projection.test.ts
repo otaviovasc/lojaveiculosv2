@@ -38,17 +38,26 @@ describe("CRM connection overview contract", () => {
         updatedAt: "2026-08-19T18:01:00.000Z",
       },
     };
+    const credentialsRef = {
+      mode: "stored",
+      stored: {
+        clientToken: "sealed:client-token",
+        instanceId: "sealed:instance-id",
+        instanceToken: "sealed:instance-token",
+      },
+    };
     const legacyTransport: CrmConnection = {
       broker: "direct",
       canonical: projectCanonicalCrmConnectionRow({
         broker: "direct",
         channel: "whatsapp",
+        credentialsRef,
         metadata,
         provider: "zapi",
         state: "active",
       }),
       channel: "whatsapp",
-      credentialsRef: {},
+      credentialsRef,
       displayName: "WhatsApp Z-API",
       externalConnectionId: null,
       externalInstanceId: null,

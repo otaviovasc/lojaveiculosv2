@@ -35,9 +35,6 @@ export function registerCrmChannelConnectionRoutes(
       return context.json({
         allowance: overview.allowance,
         availableSetups: overview.availableSetups,
-        ...(overview.billingState
-          ? { billingState: overview.billingState }
-          : {}),
         connections: overview.connections.map(toChannelConnectionOverviewItem),
       });
     }),
@@ -55,6 +52,7 @@ export function registerCrmChannelConnectionRoutes(
         input.provider === "zapi"
           ? {
               channel: "whatsapp",
+              clientToken: input.clientToken,
               displayName: input.displayName ?? "WhatsApp",
               instanceId: input.instanceId,
               instanceToken: input.instanceToken,

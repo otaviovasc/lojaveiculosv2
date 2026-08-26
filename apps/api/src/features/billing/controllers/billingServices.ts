@@ -1,32 +1,23 @@
-import type { StoreId } from "@lojaveiculosv2/shared";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { createBillingProviderCheckout } from "../../../domains/billing/services/BillingService/createBillingProviderCheckout.js";
-import type { CreateBillingProviderCheckoutInput } from "../../../domains/billing/services/BillingService/createBillingProviderCheckout.js";
+import { createBillingPlanHire } from "../../../domains/billing/services/BillingService/createBillingPlanHire.js";
+import type { CreateBillingPlanHireInput } from "../../../domains/billing/services/BillingService/createBillingPlanHire.js";
+import { getBillingPlanHire } from "../../../domains/billing/services/BillingService/getBillingPlanHire.js";
+import type { BillingPlanHireRecord } from "../../../domains/billing/ports/billingPlanHireRepository.js";
+import type { BillingPlanQuoteRecord } from "../../../domains/billing/ports/billingPlanHireRepository.js";
+import {
+  approveBillingPlanQuote,
+  requestBillingPlanQuote,
+} from "../../../domains/billing/services/BillingService/manageBillingPlanQuote.js";
 import { getAgencyBillingProviderStatus } from "../../../domains/billing/services/BillingService/getAgencyBillingProviderStatus.js";
 import { getAgencyTenantOverview } from "../../../domains/billing/services/BillingService/getAgencyTenantOverview.js";
 import { getBillingOverview } from "../../../domains/billing/services/BillingService/getBillingOverview.js";
 import { getBillingProviderStatus } from "../../../domains/billing/services/BillingService/getBillingProviderStatus.js";
 import { processBillingProviderWebhook } from "../../../domains/billing/services/BillingService/processBillingProviderWebhook.js";
 import type { ProcessBillingProviderWebhookInput } from "../../../domains/billing/services/BillingService/processBillingProviderWebhook.js";
-import { syncBillingProviderSubscription } from "../../../domains/billing/services/BillingService/syncBillingProviderSubscription.js";
-import type { BillingProviderSubscriptionSyncResult } from "../../../domains/billing/ports/billingProviderRepository.js";
-import type { BillingProviderCheckoutSessionResult } from "../../../domains/billing/ports/billingProviderRepository.js";
-import type { SyncBillingProviderSubscriptionInput } from "../../../domains/billing/services/BillingService/syncBillingProviderSubscription.js";
-import { updateAgencyStoreEntitlement } from "../../../domains/billing/services/BillingService/updateAgencyStoreEntitlement.js";
-import type { UpdateAgencyStoreEntitlementServiceInput } from "../../../domains/billing/services/BillingService/updateAgencyStoreEntitlement.js";
-import { updateStoreEntitlement } from "../../../domains/billing/services/BillingService/updateStoreEntitlement.js";
-import { updateBillingSelection } from "../../../domains/billing/services/BillingService/updateBillingSelection.js";
-import type { UpdateStoreEntitlementServiceInput } from "../../../domains/billing/services/BillingService/updateStoreEntitlement.js";
 import type {
   AgencyTenantOverview,
-  BillingAddonContract,
   BillingOverview,
 } from "../../../domains/billing/ports/billingRepository.js";
-import {
-  cancelZapiAddon,
-  requestZapiAddon,
-  updateAgencyBillingSelection,
-} from "../../../domains/billing/services/BillingService/zapiAddonContract.js";
 import type { PaymentProviderStatus } from "../../../domains/billing/ports/paymentProviderGateway.js";
 import type { BillingServicePorts } from "../../../domains/billing/services/BillingService/serviceSupport.js";
 import {
@@ -36,16 +27,26 @@ import {
 import { createDrizzleBillingProviderRepository } from "../../../infrastructure/db/billing/drizzleBillingProviderRepository.js";
 import { createDrizzleBillingWebhookRepository } from "../../../infrastructure/db/billing/drizzleBillingWebhookRepository.js";
 import { createAsaasPaymentProviderGateway } from "../../../infrastructure/billing/asaasPaymentProviderGateway.js";
+import { createDrizzleBillingPlanHireRepository } from "../../../infrastructure/db/billing/drizzleBillingPlanHireRepository.js";
 import { createMemoryBillingProviderRepository } from "../adapters/memory/billingProviderRepository.js";
 import { createMemoryBillingRepository } from "../adapters/memory/billingRepository.js";
 import { createMemoryBillingWebhookRepository } from "../adapters/memory/billingWebhookRepository.js";
 import { createMemoryPaymentProviderGateway } from "../adapters/memory/paymentProviderGateway.js";
+import { createMemoryBillingPlanHireRepository } from "../adapters/memory/billingPlanHireRepository.js";
 
 export type BillingServices = {
-  cancelZapiAddon: (
+  approvePlanQuote: (
     context: ServiceContext,
-    input?: { storeId?: StoreId },
-  ) => Promise<BillingAddonContract>;
+    input: { expiresAt: Date; quoteId: string; quotedCents: number },
+  ) => Promise<BillingPlanQuoteRecord>;
+  createPlanHire: (
+    context: ServiceContext,
+    input: CreateBillingPlanHireInput,
+  ) => Promise<BillingPlanHireRecord>;
+  getPlanHire: (
+    context: ServiceContext,
+    hireId: string,
+  ) => Promise<BillingPlanHireRecord>;
   getAgencyOverview: (context: ServiceContext) => Promise<AgencyTenantOverview>;
   getAgencyProviderStatus: (
     context: ServiceContext,
@@ -58,34 +59,10 @@ export type BillingServices = {
     context: ServiceContext,
     input: ProcessBillingProviderWebhookInput,
   ) => ReturnType<typeof processBillingProviderWebhook>;
-  requestZapiAddon: (
+  requestPlanQuote: (
     context: ServiceContext,
-    input?: { storeId?: StoreId },
-  ) => Promise<BillingAddonContract>;
-  syncProviderSubscription: (
-    context: ServiceContext,
-    input: SyncBillingProviderSubscriptionInput,
-  ) => Promise<BillingProviderSubscriptionSyncResult>;
-  createProviderCheckout: (
-    context: ServiceContext,
-    input: CreateBillingProviderCheckoutInput,
-  ) => Promise<BillingProviderCheckoutSessionResult>;
-  updateAgencyEntitlement: (
-    context: ServiceContext,
-    input: UpdateAgencyStoreEntitlementServiceInput,
-  ) => Promise<AgencyTenantOverview>;
-  updateAgencySelection: (
-    context: ServiceContext,
-    input: { addonIds: readonly string[]; planId: string; storeId: StoreId },
-  ) => Promise<BillingOverview>;
-  updateEntitlement: (
-    context: ServiceContext,
-    input: UpdateStoreEntitlementServiceInput,
-  ) => Promise<BillingOverview>;
-  updateSelection: (
-    context: ServiceContext,
-    input: { addonIds: readonly string[]; planId: string },
-  ) => Promise<BillingOverview>;
+    planId: string,
+  ) => Promise<BillingPlanQuoteRecord>;
 };
 
 export type CreateBillingServicesOptions =
@@ -98,29 +75,21 @@ export function createBillingServices(
   const ports = resolvePorts(options);
 
   return {
-    cancelZapiAddon: (context, input = {}) =>
-      cancelZapiAddon(context, input, ports),
+    approvePlanQuote: (context, input) =>
+      approveBillingPlanQuote(context, input, ports),
+    createPlanHire: (context, input) =>
+      createBillingPlanHire(context, input, ports),
     getAgencyOverview: (context) => getAgencyTenantOverview(context, ports),
     getAgencyProviderStatus: (context) =>
       getAgencyBillingProviderStatus(context, ports),
     getOverview: (context) => getBillingOverview(context, ports),
+    getPlanHire: (context, hireId) =>
+      getBillingPlanHire(context, hireId, ports),
     getProviderStatus: (context) => getBillingProviderStatus(context, ports),
     processAsaasWebhook: (context, input) =>
       processBillingProviderWebhook(context, input, ports),
-    requestZapiAddon: (context, input = {}) =>
-      requestZapiAddon(context, input, ports),
-    createProviderCheckout: (context, input) =>
-      createBillingProviderCheckout(context, input, ports),
-    syncProviderSubscription: (context, input) =>
-      syncBillingProviderSubscription(context, input, ports),
-    updateAgencyEntitlement: (context, input) =>
-      updateAgencyStoreEntitlement(context, input, ports),
-    updateAgencySelection: (context, input) =>
-      updateAgencyBillingSelection(context, input, ports),
-    updateEntitlement: (context, input) =>
-      updateStoreEntitlement(context, input, ports),
-    updateSelection: (context, input) =>
-      updateBillingSelection(context, input, ports),
+    requestPlanQuote: (context, planId) =>
+      requestBillingPlanQuote(context, planId, ports),
   };
 }
 
@@ -130,6 +99,9 @@ function resolvePorts(
   if ("ports" in options && options.ports) return options.ports;
   if ("drizzleClient" in options) {
     return {
+      billingPlanHireRepository: createDrizzleBillingPlanHireRepository(
+        options.drizzleClient,
+      ),
       billingProviderRepository: createDrizzleBillingProviderRepository(
         options.drizzleClient,
       ),
@@ -146,6 +118,7 @@ function resolvePorts(
   }
 
   return {
+    billingPlanHireRepository: createMemoryBillingPlanHireRepository(),
     billingProviderRepository: createMemoryBillingProviderRepository(),
     billingRepository: createMemoryBillingRepository(),
     billingWebhookRepository: createMemoryBillingWebhookRepository(),

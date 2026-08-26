@@ -47,7 +47,7 @@ export function assertProviderEffectAllowed(
       409,
     );
   }
-  assertEntitlement(context as StoreScopedServiceContext, "crm_zapi");
+  assertEntitlement(context as StoreScopedServiceContext, "crm");
   if (readZapiWebhookSetupState(connection.metadata)?.status !== "configured") {
     throw new CrmMessageActionError(
       "Z-API setup is not configured for provider operations.",

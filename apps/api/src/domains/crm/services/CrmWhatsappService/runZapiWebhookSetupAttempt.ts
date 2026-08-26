@@ -23,7 +23,6 @@ import {
   requireCrmMessagingScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import { getCrmZapiSetupCompletionReporter } from "../CrmService/crmConnectionSetupSupport.js";
 import { logCrmServiceEvent } from "../CrmMessagingService/serviceSupport.js";
 import { openZapiWebhookSecret } from "../../whatsapp/zapiWebhookSecret.js";
 import { CrmConnectionNotFoundError } from "../../messaging/crmMessagingErrors.js";
@@ -39,6 +38,7 @@ export type RunZapiWebhookSetupInput = {
   canonicalApiOrigin: string;
   connectionId: string;
   forceReconfigure?: boolean;
+  webhookSecretSlot?: "current" | "pending";
 };
 export type RunZapiWebhookSetupResult = {
   connectionStatus: "active" | "disconnected" | "unverified";
@@ -53,7 +53,7 @@ export async function runZapiWebhookSetupAttempt(
 ): Promise<RunZapiWebhookSetupResult> {
   assertPermission(context, "crm.messaging.connection.setup");
   const scope = requireCrmMessagingScope(context);
-  assertEntitlement(context as never, "crm_zapi");
+  assertEntitlement(context as never, "crm");
   const repository = getCrmConnectionRepository(ports);
   const connection = await repository.findConnectionById(input.connectionId);
   if (
@@ -74,7 +74,6 @@ export async function runZapiWebhookSetupAttempt(
   const current = persistedSetup ?? createZapiWebhookSetupIntent(connection.id);
   if (current.status === "configured" && !input.forceReconfigure) {
     await auditZapiWebhookSetupResult(context, connection.id, current);
-    await reportConfiguredSetup(context, connection.id, current, ports);
     const connectionStatus = await reconcileZapiConnectionStatus(
       context,
       connection,
@@ -109,7 +108,6 @@ export async function runZapiWebhookSetupAttempt(
     const setup = latest ? readZapiWebhookSetupState(latest.metadata) : null;
     if (!setup) throw new Error("Z-API setup target is unavailable.");
     if (latest && setup.status === "configured") {
-      await reportConfiguredSetup(context, connection.id, setup, ports);
       const connectionStatus = await reconcileZapiConnectionStatus(
         context,
         latest,
@@ -138,7 +136,11 @@ export async function runZapiWebhookSetupAttempt(
   const endpoints = buildWhatsappWebhookEndpoints({
     baseUrl,
     connectionId: connection.id,
-    token: await openZapiWebhookSecret(connection, ports),
+    token: await openZapiWebhookSecret(
+      connection,
+      ports,
+      input.webhookSecretSlot ?? "current",
+    ),
   });
   let response: { results: readonly CrmMessagingWebhookConfigResult[] };
   try {
@@ -163,7 +165,6 @@ export async function runZapiWebhookSetupAttempt(
   await auditZapiWebhookSetupResult(context, connection.id, setup);
   let connectionStatus: "active" | "disconnected" | "unverified" = "unverified";
   if (setup.status === "configured") {
-    await reportConfiguredSetup(context, connection.id, setup, ports);
     const configuredConnection =
       (await repository.findConnectionById(connection.id)) ?? connection;
     connectionStatus = await reconcileZapiConnectionStatus(
@@ -173,26 +174,6 @@ export async function runZapiWebhookSetupAttempt(
     );
   }
   return { connectionStatus, results: response.results, setup };
-}
-async function reportConfiguredSetup(
-  context: ServiceContext,
-  connectionId: string,
-  setup: ZapiWebhookSetupState,
-  ports: CrmServicePorts,
-) {
-  try {
-    await getCrmZapiSetupCompletionReporter(ports)?.completeSetup(context, {
-      connectionId,
-    });
-  } catch (error) {
-    logCrmServiceEvent(context, "crm.provider.zapi.setup_report.failed", {
-      errorName: error instanceof Error ? error.name : "UnknownError",
-      operation: "report_setup_completed",
-      provider: "zapi",
-      setupStatus: setup.status,
-      supportCode: setup.supportCode,
-    });
-  }
 }
 async function persistSetupState(
   connection: CrmConnection,

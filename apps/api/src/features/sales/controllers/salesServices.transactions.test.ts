@@ -117,6 +117,7 @@ describe("sales transaction composition", () => {
 function context() {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
+    entitlements: ["sales"],
     permissions: ["sale.draft", "sale.reserve"],
     request: { requestId: "req_1" },
     storeId: "store_1",

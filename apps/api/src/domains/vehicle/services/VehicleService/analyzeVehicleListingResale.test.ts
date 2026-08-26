@@ -157,7 +157,7 @@ describe("analyzeVehicleListingResale", () => {
     expect(analyze).not.toHaveBeenCalled();
   });
 
-  it("rejects stores without simulations before invoking the provider", async () => {
+  it("rejects stores without AI access before invoking the provider", async () => {
     const ports = createInMemoryVehiclePorts([createListing()]);
     const analyze = vi.fn();
     ports.resaleAnalysisProvider = {
@@ -170,7 +170,7 @@ describe("analyzeVehicleListingResale", () => {
 
     await expect(
       analyzeVehicleListingResale(context, { listingId: "listing_1" }, ports),
-    ).rejects.toThrow("Missing entitlement: simulations");
+    ).rejects.toThrow("Missing entitlement: ai");
     expect(analyze).not.toHaveBeenCalled();
   });
 });

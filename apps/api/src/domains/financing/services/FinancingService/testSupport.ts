@@ -163,7 +163,7 @@ export function createStoreContext(
       storeId: overrides.storeId ?? "store_1",
       tenantId: overrides.tenantId ?? "tenant_1",
     }),
-    entitlements: overrides.entitlements ?? ["simulations"],
+    entitlements: overrides.entitlements ?? ["financing"],
   };
 }
 

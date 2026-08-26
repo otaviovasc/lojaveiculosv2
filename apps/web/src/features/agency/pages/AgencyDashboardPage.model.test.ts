@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { mapAgencyOverviewToStores } from "./AgencyDashboardPage.model";
+import { storeModuleRequirements } from "./AgencyDashboardPage";
 import type { AgencyTenantOverview } from "../apiClient";
 
 describe("AgencyDashboardPage model", () => {
+  it("uses the canonical financing entitlement for simulation quick access", () => {
+    expect(storeModuleRequirements.simulations).toBe("financing");
+  });
+
   it("maps tenant overview stores into dashboard rows", () => {
     const stores = mapAgencyOverviewToStores({
-      addons: [],
       allocations: [],
       authority: {
         currentActorCanManage: true,
@@ -35,7 +39,7 @@ describe("AgencyDashboardPage model", () => {
       },
       plans: [],
       subscription: {
-        currentPeriodEnd: "2026-08-01T00:00:00.000Z",
+        currentPeriodEnd: null,
         currentPeriodStart: null,
         id: "subscription_1",
         plan: null,
@@ -49,8 +53,8 @@ describe("AgencyDashboardPage model", () => {
           entitlementCount: 3,
           entitlementMatrix: [],
           monthlyAmountCents: 29900,
-          planCode: "growth",
-          planName: "Growth",
+          planCode: "free",
+          planName: "Free",
           storeId: "store_1",
           storeName: "Auto Prime",
           storeSlug: "auto-prime",
@@ -71,7 +75,9 @@ describe("AgencyDashboardPage model", () => {
         _count: { veiculos: 7 },
         data_criacao: "2026-07-01T00:00:00.000Z",
         nome_da_loja: "Auto Prime",
-        plano: "Growth",
+        is_permanent_plan: true,
+        plan_end_date: null,
+        plano: "Free",
         status_assinatura: "ATIVA",
         subdominio: "auto-prime",
       }),

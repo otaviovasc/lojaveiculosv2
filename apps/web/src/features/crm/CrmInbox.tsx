@@ -266,9 +266,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                     onRoutingPolicyChange={inbox.refreshRoutingPolicy}
                     routingApi={conversationApi}
                     selfService={{
-                      allowance: inbox.connectionAllowance,
                       availableSetups: inbox.availableConnectionSetups,
-                      billingState: inbox.connectionBillingState,
                       canPair: inbox.permissions.canConnectionPair,
                       canRepairCredentials:
                         inbox.permissions.canConnectionCredentialsManage,
@@ -329,7 +327,6 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         },
                         onRequestZapiPairingCode: inbox.requestZapiPairingCode,
                         onRequestZapiPairingQr: inbox.requestZapiPairingQr,
-                        onRequestZapiAddon: inbox.requestZapiAddon,
                         onRefreshZapiStatus: async (connectionId) => {
                           const result =
                             await inbox.refreshZapiConnectionStatus(
@@ -352,7 +349,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         },
                         onSetConnectionPaused: inbox.setConnectionPaused,
                       },
-                      zapiAddonContract: inbox.zapiAddonContract,
+                      isCrmEntitled: inbox.isCrmEntitled,
                     }}
                   />
                 </section>

@@ -308,8 +308,12 @@ old Repasses conversation JSON fields.
 - `POST /crm/whatsapp/webhooks/zapi/:connectionId/disconnected`
 - `POST /crm/whatsapp/webhooks/zapi/:connectionId/chat-presence`
 
-Outside local/test, callbacks require `CRM_ZAPI_WEBHOOK_TOKEN` via
-`x-crm-webhook-token` or `?token=...`.
+Callbacks authenticate against the connection-scoped webhook secret generated
+and sealed by the service. Secrets are bound to the connection and are not
+provided by a global environment token or exposed in query strings. A
+connection marked `credentials_incomplete` must remain paused until its
+store-scoped `instanceId`, `instanceToken`, and `clientToken` are re-entered;
+history remains available during that degraded state.
 
 ### Official Meta Webhook
 

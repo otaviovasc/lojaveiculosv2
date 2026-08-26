@@ -160,6 +160,10 @@ export const crmChannelConnections = pgTable(
       "crm_channel_connections_supported_triple_check",
       sql`(${table.channel} = 'whatsapp' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'instagram' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'whatsapp' AND ${table.provider} = 'zapi' AND ${table.broker} = 'direct') OR (${table.channel} = 'olx_chat' AND ${table.provider} = 'olx' AND ${table.broker} = 'direct')`,
     ),
+    check(
+      "crm_channel_connections_zapi_instance_redacted_check",
+      sql`${table.provider} <> 'zapi' OR ${table.externalInstanceId} IS NULL`,
+    ),
     foreignKey({
       columns: [
         table.tenantId,

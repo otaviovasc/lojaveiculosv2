@@ -19,6 +19,11 @@ import type { BillingCatalogDeploymentClient } from "../infrastructure/db/billin
 import { createDrizzleBillingCatalogDeploymentRepository } from "../infrastructure/db/billing/drizzleBillingCatalogDeploymentRepository.js";
 import { findActiveBillingCatalogVersion } from "../infrastructure/db/billing/drizzleActiveBillingCatalog.js";
 import {
+  fallbackExpiredPastDueSubscriptions,
+  runBillingPackagingCutover,
+} from "../infrastructure/db/billing/drizzleBillingPackagingCutover.js";
+import type { DrizzleBillingClient } from "../infrastructure/db/billing/drizzleBillingRepository.js";
+import {
   createConsoleServiceLogger,
   createServiceContext,
 } from "../shared/serviceContext.js";
@@ -64,6 +69,15 @@ async function main(): Promise<void> {
       await reconcileWithAuditWait(context, activeDefinition, ports);
     }
     await reconcileWithAuditWait(context, currentBillingCatalog, ports);
+    const billingDb = productDb as DrizzleBillingClient;
+    const cutover = await runBillingPackagingCutover(billingDb);
+    const freeFallbacks = await fallbackExpiredPastDueSubscriptions(billingDb);
+    context.logger.info("billing.packaging_cutover.completed", {
+      convertedStores: cutover.convertedStores,
+      freeFallbacks,
+      status: cutover.status,
+      version: currentBillingCatalog.version,
+    });
   } finally {
     await productClient.end();
     await audit?.close();

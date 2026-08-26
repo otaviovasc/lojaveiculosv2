@@ -7,14 +7,11 @@ import type {
   CrmComposioAuthorization,
   CrmComposioCompleteResult,
   CrmAvailableSetup,
-  CrmConnectionAllowance,
-  CrmConnectionBillingState,
   CrmCreateConnectionInput,
   CrmConnectionId,
   CrmOfficialChannelSetupProvider,
   CrmProviderConnection,
   CrmSetupProvider,
-  CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiWebhookSetupResult,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
@@ -75,7 +72,6 @@ export type CrmConnectionSelfServiceHandlers = {
   onRefreshZapiStatus?: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmProviderConnection>;
-  onRequestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
   onSetConnectionPaused?: (
     connectionId: CrmConnectionId,
     paused: boolean,
@@ -87,36 +83,31 @@ export type CrmConnectionSelfServiceHandlers = {
 };
 
 export function CrmConnectionSelfServiceSetup({
-  allowance,
   availableSetups,
-  billingState,
   canPair,
   canSetup,
   canRepairCredentials = false,
   connections = [],
   existingConnection = null,
   handlers,
+  isCrmEntitled,
   marketplaceApi,
   onRedirect = (url) => window.location.assign(url),
   startAtDirectory = false,
-  zapiAddonContract = null,
 }: {
-  allowance: CrmConnectionAllowance;
   availableSetups: readonly CrmAvailableSetup[];
-  billingState?: CrmConnectionBillingState;
   canPair: boolean;
   canRepairCredentials?: boolean;
   canSetup: boolean;
   connections?: readonly CrmProviderConnection[];
   existingConnection?: CrmProviderConnection | null;
   handlers: CrmConnectionSelfServiceHandlers;
+  isCrmEntitled: boolean;
   marketplaceApi?: MarketplaceApi;
   onRedirect?: (url: string) => void;
   startAtDirectory?: boolean;
-  zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
 }) {
-  const billingUnavailable = billingState?.status === "unavailable";
-  const setupAllowed = canSetup && !billingUnavailable;
+  const setupAllowed = canSetup;
   const [provider, setProvider] = useState<CrmSetupProvider | null>(
     startAtDirectory ? null : readSetupProvider(existingConnection),
   );
@@ -131,7 +122,11 @@ export function CrmConnectionSelfServiceSetup({
   );
   const [initialZapiCredentialMode, setInitialZapiCredentialMode] = useState<
     "repair" | "replacement" | undefined
-  >();
+  >(
+    existingConnection && needsConnectionRepair(existingConnection)
+      ? "repair"
+      : undefined,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [completion, setCompletion] =
@@ -196,7 +191,7 @@ export function CrmConnectionSelfServiceSetup({
 
   const chooseConnectionForRepair = (candidate: CrmProviderConnection) => {
     resetSetupProgress();
-    setInitialZapiCredentialMode(undefined);
+    setInitialZapiCredentialMode("repair");
     setConnection(candidate);
     setOfficialChannel("whatsapp");
     setProvider("zapi");
@@ -286,13 +281,6 @@ export function CrmConnectionSelfServiceSetup({
             : "Você pode consultar conexões existentes. Para adicionar ou alterar canais, seu usuário precisa das permissões de gerenciar conexões e integrações."}
         </div>
       ) : null}
-      {billingUnavailable ? (
-        <div className="crm-setup-notice" role="status">
-          Não foi possível confirmar o contrato de billing desta loja. As
-          conexões existentes continuam disponíveis; novas conexões e alterações
-          ficam pausadas até a reconciliação do billing.
-        </div>
-      ) : null}
       <CrmChannelDirectory
         availableSetups={[...availableSetups]}
         connections={connections}
@@ -304,9 +292,9 @@ export function CrmConnectionSelfServiceSetup({
         }
         onRepairConnection={chooseConnectionForRepair}
         onRedirect={onRedirect}
-        showRepairActions={canRepairCredentials}
+        showRepairActions={canRepairCredentials && isCrmEntitled}
         showSetupActions={setupAllowed}
-        zapiAddonContract={zapiAddonContract}
+        showZapiSetupActions={setupAllowed && isCrmEntitled}
       />
       <FeatureDialog
         className="feature-dialog--large crm-connection-dialog"
@@ -332,7 +320,6 @@ export function CrmConnectionSelfServiceSetup({
       >
         {provider === "zapi" ? (
           <CrmWhatsappZapiSetup
-            allowance={allowance}
             canPair={canPair}
             canRepairCredentials={canRepairCredentials}
             canSetup={setupAllowed}
@@ -343,7 +330,6 @@ export function CrmConnectionSelfServiceSetup({
               : {})}
             onBack={closeSetup}
             onConnection={setConnection}
-            zapiAddonContract={zapiAddonContract}
           />
         ) : isOfficialSetupProvider(provider) ? (
           <CrmOfficialChannelSetup

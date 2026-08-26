@@ -23,16 +23,7 @@ import {
   listEntitlementEvents,
 } from "./drizzleBillingOverviewSupport.js";
 import { listStoreScopedAllocations } from "./drizzleStoreBillingAllocationSupport.js";
-import { updateStoreSubscriptionSelection } from "./drizzleBillingSelection.js";
 import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
-import {
-  cancelZapiAddonContract,
-  confirmZapiAddonCancellationSync,
-  completeZapiAddonContractSetup,
-  listAddonContracts,
-  markZapiAddonContractScheduled,
-  requestZapiAddonContract,
-} from "./drizzleBillingAddonContracts.js";
 import {
   findSubscription,
   listEntitlements,
@@ -49,34 +40,11 @@ export function createDrizzleBillingRepository(
         projectSelectedEntitlements(tx as DrizzleBillingClient, input),
       );
     },
-    async cancelZapiAddon(input) {
-      return db.transaction((tx) =>
-        cancelZapiAddonContract(tx as DrizzleBillingClient, input),
-      );
-    },
-    async confirmZapiAddonCancellationSync(input) {
-      return db.transaction((tx) =>
-        confirmZapiAddonCancellationSync(tx as DrizzleBillingClient, input),
-      );
-    },
-    async completeZapiAddonSetup(input) {
-      return db.transaction((tx) =>
-        completeZapiAddonContractSetup(tx as DrizzleBillingClient, input),
-      );
-    },
     async getOverview(input) {
       return getOverview(db, input);
     },
     async getTenantOverview(input) {
       return getTenantOverview(db, input);
-    },
-    async markZapiAddonScheduled(input) {
-      return markZapiAddonContractScheduled(db, input);
-    },
-    async requestZapiAddon(input) {
-      return db.transaction((tx) =>
-        requestZapiAddonContract(tx as DrizzleBillingClient, input),
-      );
     },
     async storeExistsInTenant(input) {
       const [store] = await db
@@ -92,13 +60,6 @@ export function createDrizzleBillingRepository(
         )
         .limit(1);
       return Boolean(store);
-    },
-    async updateSubscriptionSelection(input) {
-      return db.transaction(async (tx) => {
-        const txDb = tx as DrizzleBillingClient;
-        await updateStoreSubscriptionSelection(txDb, input);
-        return getOverview(txDb, input);
-      });
     },
     async updateStoreEntitlement(input) {
       return db.transaction(async (tx) => {
@@ -160,21 +121,14 @@ async function getOverview(
   },
 ): Promise<BillingOverview> {
   const catalogVersion = await findActiveBillingCatalogVersion(db);
-  const [
-    addons,
-    addonContracts,
-    billingPlans,
-    entitlements,
-    subscription,
-    events,
-  ] = await Promise.all([
-    listAddons(db, catalogVersion),
-    listAddonContracts(db, input),
-    listPlans(db, catalogVersion),
-    listEntitlements(db, input),
-    findSubscription(db, input),
-    listEntitlementEvents(db, input),
-  ]);
+  const [addons, billingPlans, entitlements, subscription, events] =
+    await Promise.all([
+      listAddons(db, catalogVersion),
+      listPlans(db, catalogVersion),
+      listEntitlements(db, input),
+      findSubscription(db, input),
+      listEntitlementEvents(db, input),
+    ]);
   const [allocations, chargeables, financialSummary] = await Promise.all([
     listStoreScopedAllocations(db, input, billingPlans, subscription),
     listChargeables(db, input, billingPlans, subscription),
@@ -182,7 +136,6 @@ async function getOverview(
   ]);
 
   return createBillingOverview({
-    addonContracts,
     addons,
     allocations,
     authority: createBillingAuthority({

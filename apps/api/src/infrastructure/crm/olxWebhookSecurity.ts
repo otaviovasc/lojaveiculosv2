@@ -100,6 +100,16 @@ export function createOlxWebhookSourceFingerprint(input: {
     .digest("hex");
 }
 
+export function createZapiWebhookSourceFingerprint(input: {
+  clientAddress: string | null;
+  connectionId: string;
+}) {
+  const clientAddress = normalizeClientAddress(input.clientAddress);
+  return createHash("sha256")
+    .update(`zapi\0${input.connectionId}\0${clientAddress}`)
+    .digest("hex");
+}
+
 export function isOlxWebhookSourceAllowed(
   clientAddress: string | null,
   env: Record<string, string | undefined> = process.env,
@@ -115,7 +125,7 @@ function bucketKey(input: Parameters<CrmOlxWebhookSecurity["consume"]>[0]) {
   if (input.scope === "unauthenticated") {
     if (!/^[a-f0-9]{64}$/u.test(input.sourceFingerprint)) {
       throw new CrmOlxWebhookSecurityUnavailableError(
-        "OLX webhook source fingerprint is invalid.",
+        "CRM provider webhook source fingerprint is invalid.",
       );
     }
     return `unauthenticated:${input.sourceFingerprint}`;
@@ -137,7 +147,7 @@ function parseRedisCount(value: unknown) {
   const count = typeof value === "number" ? value : Number(value);
   if (!Number.isSafeInteger(count) || count < 1) {
     throw new CrmOlxWebhookSecurityUnavailableError(
-      "Redis returned an invalid OLX webhook rate-limit result.",
+      "Redis returned an invalid CRM provider webhook rate-limit result.",
     );
   }
   return count;

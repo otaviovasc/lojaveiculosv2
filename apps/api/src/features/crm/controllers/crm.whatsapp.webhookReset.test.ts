@@ -12,6 +12,8 @@ import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConne
 import { createTestApp } from "./crm.controller.testSupport.js";
 import {
   createZapiWebhookTestConnection,
+  webhookSetupStoreId,
+  webhookSetupTenantId,
   secureWebhookSetupOptions,
   webhookSetupConnectionId,
   webhookSupportRequest,
@@ -84,6 +86,13 @@ describe("CRM WhatsApp webhook reset", () => {
       callbacks.every(({ url }) => url.startsWith("https://api.trusted.test/")),
     ).toBe(true);
     expect(JSON.stringify(body)).not.toContain("webhook-secret");
+    const [rotated] = await repository.listConnections({
+      storeId: webhookSetupStoreId,
+      tenantId: webhookSetupTenantId,
+    });
+    expect(rotated?.credentialsRef).not.toMatchObject({
+      stored: { webhookSecret: "sealed:webhook-secret" },
+    });
 
     const repeated = await app.request(
       `/api/v1/crm/whatsapp/support/zapi/connections/${webhookSetupConnectionId}/webhooks/reset`,
@@ -128,5 +137,59 @@ describe("CRM WhatsApp webhook reset", () => {
     expect(official.status).toBe(409);
     expect(untrusted.status).toBe(409);
     expect(configureWebhooks).not.toHaveBeenCalled();
+  });
+
+  it("keeps the current secret active when provider reset verification fails", async () => {
+    process.env.API_BASE_URL = "https://api.trusted.test";
+    const configureWebhooks = vi.fn(
+      async (
+        _connection: CrmConnection,
+        input: CrmMessagingConfigureWebhooksInput,
+      ): Promise<CrmMessagingConfigureWebhooksResult> => ({
+        results: input.webhooks.map((webhook) => ({
+          error: "provider rejected callback",
+          ok: false,
+          status: 503,
+          type: webhook.type,
+          url: webhook.url,
+          verified: false,
+        })),
+      }),
+    );
+    const repository = createMemoryCrmConnectionRepository([
+      createZapiWebhookTestConnection(),
+    ]);
+    const app = createTestApp({
+      ...secureWebhookSetupOptions(),
+      crmConnectionRepository: repository,
+      crmMessagingGateway: { configureWebhooks },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/support/zapi/connections/${webhookSetupConnectionId}/webhooks/reset`,
+      webhookSupportRequest(),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      setup: { status: "failed" },
+      tokenApplied: false,
+    });
+    const current = await repository.findConnectionById(
+      webhookSetupConnectionId,
+    );
+    const stored = current?.credentialsRef.stored;
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+      throw new Error("Expected stored Z-API webhook credentials.");
+    }
+    expect(stored).toMatchObject({ webhookSecret: "sealed:webhook-secret" });
+    expect(
+      "pendingWebhookSecret" in stored &&
+        typeof stored.pendingWebhookSecret === "string",
+    ).toBe(true);
+    expect(
+      "pendingWebhookSecretExpiresAt" in stored &&
+        typeof stored.pendingWebhookSecretExpiresAt === "string",
+    ).toBe(true);
   });
 });

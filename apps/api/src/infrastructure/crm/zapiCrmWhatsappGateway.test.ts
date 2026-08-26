@@ -1,6 +1,12 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
+import {
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
+  ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
+  ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
+} from "../../domains/crm/ports/crmConnectionSetupProvider.js";
+import { createCrmConnectionCredentialVault } from "./crmConnectionCredentialVault.js";
 import { createZapiCrmWhatsappGateway } from "./zapiCrmWhatsappGateway.js";
 
 describe("Z-API profile photo gateway", () => {
@@ -15,18 +21,10 @@ describe("Z-API profile photo gateway", () => {
           },
         ),
     );
-    const gateway = createZapiCrmWhatsappGateway(
-      {
-        CRM_ZAPI_CLIENT_TOKEN: "client-token",
-        ZAPI_API_BASE_URL: "https://api.z-api.io",
-        ZAPI_INSTANCE_ID: "instance-1",
-        ZAPI_INSTANCE_TOKEN: "instance-token",
-      },
-      fetchImpl,
-    );
+    const gateway = createZapiCrmWhatsappGateway(env, fetchImpl);
 
     await expect(
-      gateway.getProfilePhotoUrl?.(connection(), {
+      gateway.getProfilePhotoUrl?.(await connection(), {
         phone: "5511999999999",
       }),
     ).resolves.toBe("https://pps.whatsapp.net/current.jpg");
@@ -42,32 +40,52 @@ describe("Z-API profile photo gateway", () => {
 
   it("treats a contact without a profile photo as empty", async () => {
     const gateway = createZapiCrmWhatsappGateway(
-      {
-        CRM_ZAPI_CLIENT_TOKEN: "client-token",
-        CRM_ZAPI_API_BASE_URL: "https://api.z-api.io",
-        ZAPI_API_BASE_URL: "https://api.z-api.io",
-        ZAPI_INSTANCE_ID: "instance-1",
-        ZAPI_INSTANCE_TOKEN: "instance-token",
-      },
+      env,
       vi.fn<typeof fetch>(async () => new Response(null, { status: 404 })),
     );
 
     await expect(
-      gateway.getProfilePhotoUrl?.(connection(), { phone: "5511999999999" }),
+      gateway.getProfilePhotoUrl?.(await connection(), {
+        phone: "5511999999999",
+      }),
     ).resolves.toBeNull();
   });
 });
 
-function connection(): CrmConnection {
+const env = {
+  CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY: "zapi-gateway-test-key",
+  CRM_ZAPI_API_BASE_URL: "https://api.z-api.io",
+};
+
+async function connection(): Promise<CrmConnection> {
+  const scope = {
+    storeId: "store-1" as StoreId,
+    tenantId: "tenant-1" as TenantId,
+  };
+  const vault = createCrmConnectionCredentialVault(env);
+  const [clientToken, instanceId, instanceToken] = await Promise.all([
+    vault.seal({
+      ...scope,
+      plaintext: "client-token",
+      purpose: ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
+    }),
+    vault.seal({
+      ...scope,
+      plaintext: "instance-1",
+      purpose: ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
+    }),
+    vault.seal({
+      ...scope,
+      plaintext: "instance-token",
+      purpose: ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
+    }),
+  ]);
   return {
     broker: "direct",
     channel: "whatsapp",
     credentialsRef: {
-      env: {
-        apiBaseUrl: "ZAPI_API_BASE_URL",
-        instanceId: "ZAPI_INSTANCE_ID",
-        instanceToken: "ZAPI_INSTANCE_TOKEN",
-      },
+      mode: "stored",
+      stored: { clientToken, instanceId, instanceToken },
     },
     displayName: "Z-API",
     externalConnectionId: null,
@@ -77,8 +95,7 @@ function connection(): CrmConnection {
     phone: null,
     provider: "zapi",
     status: "active",
-    storeId: "store-1" as StoreId,
-    tenantId: "tenant-1" as TenantId,
+    ...scope,
     webhookUrl: null,
   };
 }

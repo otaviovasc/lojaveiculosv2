@@ -114,7 +114,7 @@ export async function insertStoreDefaults(
     endsAt: Date | null;
     entitlements: readonly EntitlementKey[];
     startsAt: Date;
-    status: "active" | "trialing";
+    status: "active";
   },
 ) {
   await Promise.all([
@@ -227,7 +227,7 @@ function toEntitlement(
     catalogVersion: string;
     endsAt: Date | null;
     startsAt: Date;
-    status: "active" | "trialing";
+    status: "active";
   },
 ) {
   return {
@@ -235,10 +235,7 @@ function toEntitlement(
     featureKey,
     metadata: {
       catalogVersion: billing.catalogVersion,
-      sourceDetail:
-        billing.status === "trialing"
-          ? "safe_trial_catalog"
-          : "billing_catalog",
+      sourceDetail: "billing_catalog",
     },
     source: "billing_catalog",
     startsAt: billing.startsAt,

@@ -8,6 +8,7 @@ import {
   auditFinanceServiceEvent,
   getFinanceRepository,
   logFinanceServiceEvent,
+  requireFinanceScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
@@ -28,6 +29,7 @@ export async function getFinanceSummary(
   ports?: FinanceServicePorts,
 ): Promise<FinanceSummary> {
   assertPermission(context, permission);
+  const scope = requireFinanceScope(context);
   const repository = getFinanceRepository(ports);
   const bundles: FinanceEntryBundle[] = [];
   const limit = 200;
@@ -37,8 +39,8 @@ export async function getFinanceSummary(
     const page = await repository.list({
       limit: limit + 1,
       offset,
-      storeId: context.storeId,
-      tenantId: context.tenantId,
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
     });
     const pageBundles = page.slice(0, limit);
     bundles.push(...pageBundles);

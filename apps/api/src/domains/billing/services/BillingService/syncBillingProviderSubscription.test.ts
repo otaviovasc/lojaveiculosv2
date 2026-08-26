@@ -221,9 +221,6 @@ function createProviderRepository(totalCents = 54899) {
         providerCustomerId: input.providerCustomerId,
       };
     },
-    async saveProviderCheckout() {
-      throw new Error("Unused provider checkout.");
-    },
     async saveProviderSubscription(input) {
       savedSubscription = input;
       return {

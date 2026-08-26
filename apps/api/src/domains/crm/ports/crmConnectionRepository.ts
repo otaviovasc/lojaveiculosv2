@@ -98,7 +98,6 @@ export type CrmConnectionRepository = {
   configureInitialZapiCredentials: (input: {
     connectionId: string;
     credentialsRef: Record<string, unknown>;
-    externalInstanceId: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<ConfigureInitialZapiCredentialsResult>;

@@ -19,7 +19,7 @@ import { mirrorZapiWhatsappMedia } from "../../whatsapp/mirrorZapiWhatsappMedia.
 import { enqueueCrmMessageExternalBotEvent } from "../../bot/externalBotEventForwarding.js";
 import {
   logCrmServiceEvent,
-  readZapiConnection,
+  readZapiConnection as readConnection,
   recordCrmServiceMutation,
   type CrmServiceAuditInput,
 } from "../CrmMessagingService/serviceSupport.js";
@@ -57,7 +57,7 @@ export async function ingestZapiWhatsappWebhook(
   logCrmServiceEvent(context, "crm.provider.zapi.webhook.received", {
     connectionId: input.connectionId,
   });
-  const connection = await readZapiConnection(input.connectionId, ports);
+  const connection = await readConnection(context, input.connectionId, ports);
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
 
   const detectedAt = new Date();

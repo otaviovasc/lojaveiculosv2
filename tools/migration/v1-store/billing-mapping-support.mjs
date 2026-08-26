@@ -1,42 +1,12 @@
 import { json, nullableString } from "./common.mjs";
 import { decimalToCents } from "./money.mjs";
 
-const CORE_FEATURES = ["analytics", "automation", "compliance", "subdomain"];
-
 const PLANS = {
-  BASICO: { features: CORE_FEATURES, monthlyPriceCents: 0 },
-  PREMIUM: { features: CORE_FEATURES, monthlyPriceCents: 9997 },
-  PRO: {
-    features: [
-      ...CORE_FEATURES,
-      "custom_domain",
-      "external_api",
-      "marketplace",
-      "plate_lookup",
-      "simulations",
-    ],
-    monthlyPriceCents: 17990,
-  },
-  ESTOQUE: {
-    features: [
-      ...CORE_FEATURES,
-      "external_api",
-      "marketplace",
-      "plate_lookup",
-      "simulations",
-    ],
-    monthlyPriceCents: 14999,
-  },
-  TOPXCAR: {
-    features: [
-      ...CORE_FEATURES,
-      "external_api",
-      "marketplace",
-      "plate_lookup",
-      "simulations",
-    ],
-    monthlyPriceCents: 9997,
-  },
+  BASICO: { monthlyPriceCents: 0 },
+  PREMIUM: { monthlyPriceCents: 9997 },
+  PRO: { monthlyPriceCents: 17990 },
+  ESTOQUE: { monthlyPriceCents: 14999 },
+  TOPXCAR: { monthlyPriceCents: 9997 },
 };
 
 const COMBOS = {
@@ -58,14 +28,8 @@ export function resolveLegacyPlan(store, customPlan) {
     .trim()
     .toUpperCase();
   if (customPlan) {
-    const features = [...CORE_FEATURES];
-    if (customPlan.custom_domain) features.push("custom_domain");
-    if (customPlan.api_integrations)
-      features.push("external_api", "marketplace");
-    if (customPlan.auto_placa_lookup) features.push("plate_lookup");
     return {
       comboAddons: [],
-      features,
       isPaid: true,
       legacyCode,
       monthlyPriceCents: decimalToCents(
@@ -81,7 +45,6 @@ export function resolveLegacyPlan(store, customPlan) {
     throw new Error(`Unsupported V1 billing plan: ${legacyCode}`);
   return {
     comboAddons: combo?.addons ?? [],
-    features: [...definition.features],
     isPaid: baseCode !== "BASICO",
     legacyCode,
     monthlyPriceCents: definition.monthlyPriceCents,
@@ -104,7 +67,6 @@ export function resolveLegacySubscription(store, plan, now) {
   const active = ["ACTIVE", "ATIVA"].includes(status);
   if (!inactive && !explicitlyPastDue && !active)
     throw new Error(`Unsupported V1 subscription status: ${status}`);
-  const trialing = !plan.isPaid && active && periodEnd && periodEnd > now;
   const expired = !plan.isPaid && active && (!periodEnd || periodEnd <= now);
   const pastDue =
     plan.isPaid &&
@@ -112,23 +74,17 @@ export function resolveLegacySubscription(store, plan, now) {
     (explicitlyPastDue || Boolean(periodEnd && periodEnd <= now));
   const v2Status = inactive
     ? "cancelled"
-    : trialing
-      ? "trialing"
-      : expired
-        ? "expired"
-        : pastDue
-          ? "past_due"
-          : "active";
+    : expired
+      ? "expired"
+      : pastDue
+        ? "past_due"
+        : "active";
   const hasAccess = !inactive && !expired && (!periodEnd || periodEnd > now);
   return {
     accessEndsAt: periodEnd,
     currentPeriodEnd: periodEnd,
     currentPeriodStart: startsAt,
-    entitlementStatus: trialing
-      ? "trialing"
-      : hasAccess
-        ? "active"
-        : "inactive",
+    entitlementStatus: hasAccess ? "active" : "inactive",
     hasAccess,
     itemEndsAt: hasAccess ? null : (periodEnd ?? now),
     providerSubscriptionId:

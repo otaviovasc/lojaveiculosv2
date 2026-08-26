@@ -43,6 +43,39 @@ describe("useFinanceAccess", () => {
     expect(result.current.canUpdate).toBe(true);
     expect(result.current.canGenerateReceipt).toBe(false);
   });
+
+  it("keeps commission read, rule management, and settlement independent", () => {
+    const supervisor = renderHook(() => useFinanceAccess(false, false, false), {
+      wrapper: sessionWrapper(["commissions.read", "commissions.rules.manage"]),
+    });
+
+    expect(supervisor.result.current).toMatchObject({
+      canManageCommissionRules: true,
+      canReadCommissions: true,
+      canSettleCommissions: false,
+    });
+
+    const owner = renderHook(() => useFinanceAccess(false, false, false), {
+      wrapper: sessionWrapper(["commissions.read", "commissions.settle"]),
+    });
+    expect(owner.result.current).toMatchObject({
+      canManageCommissionRules: false,
+      canReadCommissions: true,
+      canSettleCommissions: true,
+    });
+  });
+
+  it("does not infer commission authority from an injected API", () => {
+    const { result } = renderHook(() => useFinanceAccess(true, false, false), {
+      wrapper: sessionWrapper([]),
+    });
+
+    expect(result.current).toMatchObject({
+      canManageCommissionRules: false,
+      canReadCommissions: false,
+      canSettleCommissions: false,
+    });
+  });
 });
 
 function sessionWrapper(effectivePermissions: readonly string[]) {

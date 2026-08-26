@@ -87,7 +87,8 @@ function parseNextDueDate(): Date {
   return date;
 }
 
-function maskProviderId(value: string): string {
+function maskProviderId(value: string | null): string {
+  if (!value) return "none";
   if (value.length <= 10) return "***";
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }

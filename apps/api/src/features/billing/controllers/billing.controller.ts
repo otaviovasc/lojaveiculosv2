@@ -12,10 +12,8 @@ import {
   handleBilling,
 } from "./billing.controller.errors.js";
 import {
-  createBillingProviderCheckoutSchema,
-  syncBillingProviderSubscriptionSchema,
-  updateBillingSelectionSchema,
-  updateEntitlementSchema,
+  createBillingPlanHireSchema,
+  requestBillingPlanQuoteSchema,
 } from "./billing.controller.schemas.js";
 import { billingServices, type BillingServices } from "./billingServices.js";
 
@@ -65,88 +63,48 @@ export function createBillingFeature(
     }),
   );
 
-  feature.put("/selection", async (context) =>
+  feature.post("/plan-hires", async (context) =>
     handleBilling(context, async () => {
-      const input = await parseJson(context, updateBillingSelectionSchema);
+      const input = await parseJson(context, createBillingPlanHireSchema);
       const serviceContext = await createProtectedContext(
         context,
         contextFactory,
       );
       return context.json(
-        await services.updateSelection(serviceContext, input),
-      );
-    }),
-  );
-
-  feature.post("/addons/zapi/request", async (context) =>
-    handleBilling(context, async () => {
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      return context.json({
-        contract: await services.requestZapiAddon(serviceContext),
-      });
-    }),
-  );
-
-  feature.delete("/addons/zapi/request", async (context) =>
-    handleBilling(context, async () => {
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      return context.json({
-        contract: await services.cancelZapiAddon(serviceContext),
-      });
-    }),
-  );
-
-  feature.post("/provider/subscription/sync", async (context) =>
-    handleBilling(context, async () => {
-      const input = await parseJson(
-        context,
-        syncBillingProviderSubscriptionSchema,
-      );
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      return context.json(
-        await services.syncProviderSubscription(serviceContext, {
-          ...(input.billingType ? { billingType: input.billingType } : {}),
-          ...(input.nextDueDate
-            ? { nextDueDate: new Date(`${input.nextDueDate}T00:00:00.000Z`) }
-            : {}),
-          ...(typeof input.updatePendingPayments === "boolean"
-            ? { updatePendingPayments: input.updatePendingPayments }
-            : {}),
-        }),
-      );
-    }),
-  );
-
-  feature.post("/provider/checkout", async (context) =>
-    handleBilling(context, async () => {
-      const input = await parseJson(
-        context,
-        createBillingProviderCheckoutSchema,
-      );
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      return context.json(
-        await services.createProviderCheckout(serviceContext, {
+        await services.createPlanHire(serviceContext, {
+          idempotencyKey: input.idempotencyKey,
+          planId: input.planId,
+          ...(input.quoteId ? { quoteId: input.quoteId } : {}),
           ...(input.billingTypes ? { billingTypes: input.billingTypes } : {}),
-          ...(input.minutesToExpire
-            ? { minutesToExpire: input.minutesToExpire }
-            : {}),
-          ...(input.nextDueDate
-            ? { nextDueDate: new Date(`${input.nextDueDate}T00:00:00.000Z`) }
-            : {}),
           returnPath: "/billing",
         }),
+        201,
+      );
+    }),
+  );
+
+  feature.get("/plan-hires/:hireId", async (context) =>
+    handleBilling(context, async () => {
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.getPlanHire(serviceContext, context.req.param("hireId")),
+      );
+    }),
+  );
+
+  feature.post("/plan-quotes", async (context) =>
+    handleBilling(context, async () => {
+      const input = await parseJson(context, requestBillingPlanQuoteSchema);
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.requestPlanQuote(serviceContext, input.planId),
+        201,
       );
     }),
   );
@@ -160,35 +118,6 @@ export function createBillingFeature(
           payload,
           provider: "asaas",
           webhookToken: context.req.header("asaas-access-token") ?? null,
-        }),
-      );
-    }),
-  );
-
-  feature.patch("/entitlements/:featureKey", async (context) =>
-    handleBilling(context, async () => {
-      const input = await parseJson(context, updateEntitlementSchema);
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      const featureKey = context.req.param("featureKey");
-      if (featureKey !== input.featureKey) {
-        throw new BillingRequestValidationError("Feature key route mismatch.");
-      }
-
-      return context.json(
-        await services.updateEntitlement(serviceContext, {
-          featureKey: input.featureKey,
-          status: input.status,
-          ...(input.endsAt !== undefined
-            ? { endsAt: parseDateOrNull(input.endsAt) }
-            : {}),
-          ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
-          ...(input.reason !== undefined ? { reason: input.reason } : {}),
-          ...(input.startsAt !== undefined
-            ? { startsAt: parseDateOrNull(input.startsAt) }
-            : {}),
         }),
       );
     }),
@@ -232,6 +161,3 @@ async function parseWebhookJson(
   }
   throw new BillingWebhookValidationError("Webhook body is invalid.");
 }
-
-const parseDateOrNull = (value: string | null): Date | null =>
-  value ? new Date(value) : null;

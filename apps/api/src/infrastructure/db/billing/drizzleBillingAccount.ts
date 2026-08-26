@@ -70,7 +70,7 @@ export async function ensureBillingCustomer(
       email: profile?.contactEmail ?? null,
       name: tenant.legalName ?? tenant.tradingName,
       provider: "asaas",
-      providerCustomerId: `local_asaas_customer_${tenant.id}`,
+      providerCustomerId: null,
       tenantId: tenant.id,
     })
     .onConflictDoNothing({
@@ -112,26 +112,19 @@ export async function ensureSubscription(
     .limit(1);
   if (existing) return existing;
 
-  const now = new Date();
   const [subscription] = await db
     .insert(subscriptions)
     .values({
       billingCustomerId,
-      currentPeriodEnd: addDays(now, 14),
-      currentPeriodStart: now,
+      currentPeriodEnd: null,
+      currentPeriodStart: new Date(),
       provider: "asaas",
-      providerSubscriptionId: `local_asaas_subscription_${tenantId}`,
-      status: "trialing",
+      providerSubscriptionId: null,
+      status: "active",
       tenantId,
     })
     .returning();
   if (!subscription)
     throw new Error("Billing subscription was not provisioned.");
   return subscription;
-}
-
-function addDays(date: Date, days: number) {
-  const result = new Date(date);
-  result.setUTCDate(result.getUTCDate() + days);
-  return result;
 }

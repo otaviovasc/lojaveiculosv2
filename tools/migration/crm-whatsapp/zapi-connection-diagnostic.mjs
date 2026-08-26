@@ -17,9 +17,9 @@ if (!runRealE2e && !args.force) {
 
 const config = {
   apiBaseUrl: requiredEnv("CRM_ZAPI_API_BASE_URL"),
-  instanceId: requiredEnv("CRM_ZAPI_TEST_INSTANCE_ID"),
-  instanceToken: requiredEnv("CRM_ZAPI_TEST_INSTANCE_TOKEN"),
-  clientToken: requiredEnv("CRM_ZAPI_TEST_CLIENT_TOKEN"),
+  ...readConnectionCredentials(
+    args.credentialsFile ?? requiredEnv("CRM_ZAPI_CONNECTION_FILE"),
+  ),
   pairPhone: args.pairPhone ?? process.env.CRM_ZAPI_TEST_PAIR_PHONE ?? "",
 };
 
@@ -102,7 +102,12 @@ function parseEnvLine(line) {
 }
 
 function parseArgs(rawArgs) {
-  const parsed = { force: false, pairPhone: undefined, statusOnly: false };
+  const parsed = {
+    credentialsFile: undefined,
+    force: false,
+    pairPhone: undefined,
+    statusOnly: false,
+  };
 
   for (let index = 0; index < rawArgs.length; index += 1) {
     const arg = rawArgs[index];
@@ -115,6 +120,15 @@ function parseArgs(rawArgs) {
     }
     if (arg === "--status-only") {
       parsed.statusOnly = true;
+      continue;
+    }
+    if (arg === "--credentials-file") {
+      const value = rawArgs[index + 1];
+      if (!value || value.startsWith("--")) {
+        fail("--credentials-file requires a path.");
+      }
+      parsed.credentialsFile = value;
+      index += 1;
       continue;
     }
     if (arg === "--pair-phone") {
@@ -130,6 +144,23 @@ function parseArgs(rawArgs) {
   }
 
   return parsed;
+}
+
+function readConnectionCredentials(path) {
+  let value;
+  try {
+    value = JSON.parse(readFileSync(resolve(path), "utf8"));
+  } catch {
+    fail("CRM_ZAPI_CONNECTION_FILE must point to a readable JSON file.");
+  }
+  const credentials = {};
+  for (const key of ["instanceId", "instanceToken", "clientToken"]) {
+    const credential =
+      typeof value?.[key] === "string" ? value[key].trim() : "";
+    if (!credential) fail(`Z-API connection credential ${key} is required.`);
+    credentials[key] = credential;
+  }
+  return credentials;
 }
 
 function requiredEnv(name) {

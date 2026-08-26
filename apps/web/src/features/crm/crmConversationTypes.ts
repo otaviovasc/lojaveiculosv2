@@ -2,8 +2,6 @@ import type {
   CrmAvailableSetup,
   CrmChannel,
   CrmChannelConnectionDto,
-  CrmConnectionAllowance,
-  CrmConnectionBillingState,
   CrmConversationCycleCountsResponse,
   CrmConversationCycleDto,
   CrmConversationCycleStatus,
@@ -15,8 +13,6 @@ import type {
 
 export type {
   CrmAvailableSetup,
-  CrmConnectionAllowance,
-  CrmConnectionBillingState,
   CrmConversationCycleCountsResponse as CrmConversationCycleCounts,
   CrmConversationCycleStatus,
   CrmHumanAttendanceState,
@@ -198,25 +194,10 @@ export type CrmSetupProvider = Extract<CrmProvider, "meta_cloud" | "zapi">;
 
 export type CrmOfficialChannelSetupProvider = Exclude<CrmSetupProvider, "zapi">;
 
-export type CrmWhatsappZapiAddonContractStatus =
-  "active" | "cancelled" | "paid_awaiting_setup" | "pending" | "scheduled";
-
-export type CrmWhatsappZapiAddonContract = {
-  addonCode: "crm_zapi";
-  cancellationScheduledFor: string | null;
-  id: string;
-  monthlyPriceCents: number;
-  paidAt: string | null;
-  scheduledFor: string | null;
-  setupCompletedAt: string | null;
-  status: CrmWhatsappZapiAddonContractStatus;
-  storeId: string;
-  supportCode: string | null;
-};
-
 export type CrmCreateConnectionInput =
   | {
       channel: "whatsapp";
+      clientToken: string;
       instanceId: string;
       instanceToken: string;
       provider: "zapi";
@@ -227,6 +208,7 @@ export type CrmCreateConnectionInput =
     };
 
 export type CrmZapiCredentialsInput = {
+  clientToken: string;
   expectedRevision?: number;
   instanceId: string;
   instanceToken: string;

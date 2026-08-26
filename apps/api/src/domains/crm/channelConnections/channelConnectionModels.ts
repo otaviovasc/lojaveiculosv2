@@ -187,7 +187,9 @@ function hasStoredInstanceCredentials(credentialsRef: Record<string, unknown>) {
       ? (credentialsRef.stored as Record<string, unknown>)
       : {};
   return Boolean(
-    readString(stored.instanceId) && readString(stored.instanceToken),
+    readString(stored.clientToken) &&
+    readString(stored.instanceId) &&
+    readString(stored.instanceToken),
   );
 }
 

@@ -30,6 +30,7 @@ export type CrmChannelConnectionProjection = {
 export function projectCanonicalCrmConnectionRow(input: {
   broker: CrmCredentialBroker;
   channel: CrmChannel;
+  credentialsRef?: Record<string, unknown>;
   metadata: Record<string, unknown>;
   provider: CrmProvider;
   state: CrmConnectionState;
@@ -40,7 +41,11 @@ export function projectCanonicalCrmConnectionRow(input: {
   );
   const connected = input.metadata.connected === true;
   const degraded = input.metadata.degraded === true || input.state === "error";
-  const errorCode = readString(input.metadata.errorCode);
+  const errorCode =
+    input.provider === "zapi" &&
+    !hasCompleteZapiCredentials(input.credentialsRef ?? input.metadata)
+      ? "credentials_incomplete"
+      : readString(input.metadata.errorCode);
   return {
     broker: input.broker,
     capabilities,
@@ -141,12 +146,16 @@ function canonicalReadiness(input: {
   }
   if (
     input.errorCode === "pending_webhook" ||
-    input.errorCode === "not_authorized"
+    input.errorCode === "not_authorized" ||
+    input.errorCode === "credentials_incomplete"
   ) {
     return {
       ready: false,
       reason: input.errorCode,
-      reasonCode: input.errorCode,
+      reasonCode:
+        input.errorCode === "credentials_incomplete"
+          ? "not_authorized"
+          : input.errorCode,
     };
   }
   if (input.degraded || input.state === "error") {
@@ -168,6 +177,18 @@ function canonicalReadiness(input: {
     };
   }
   return { ready: true, reason: null, reasonCode: "ready" };
+}
+
+function hasCompleteZapiCredentials(source: Record<string, unknown>) {
+  const credentialsRef = source.credentialsRef
+    ? readRecord(source.credentialsRef)
+    : source;
+  const stored = readRecord(credentialsRef.stored);
+  return Boolean(
+    readString(stored.clientToken) &&
+    readString(stored.instanceId) &&
+    readString(stored.instanceToken),
+  );
 }
 
 function canonicalUnavailableReason(input: {

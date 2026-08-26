@@ -1,6 +1,7 @@
 import {
   createPlanFeatures,
   defineBillingCatalog,
+  historicalBillingCatalogFeatureKeys,
 } from "../billingCatalogDefinition.js";
 
 const trialCore = [
@@ -177,6 +178,7 @@ function plan(input: {
   return {
     code: input.code,
     features: createPlanFeatures({
+      featureKeys: historicalBillingCatalogFeatureKeys,
       included: input.included,
       includedInTrial: input.includedInTrial,
       ...(input.plateLookupLimit

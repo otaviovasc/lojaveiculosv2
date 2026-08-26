@@ -1,4 +1,4 @@
--- Local product seed v2 postconditions.
+-- Local product seed v3 postconditions.
 -- Keep this file free of writes: failures roll the whole seed transaction back.
 
 DO $$
@@ -58,12 +58,12 @@ BEGIN
   IF EXISTS (
     WITH expected(role_key, expected_count) AS (
       VALUES
-        ('agency'::role_template_key, 110),
-        ('admin'::role_template_key, 102),
-        ('owner'::role_template_key, 110),
+        ('agency'::role_template_key, 116),
+        ('admin'::role_template_key, 108),
+        ('owner'::role_template_key, 116),
         ('investor'::role_template_key, 15),
-        ('salesman'::role_template_key, 47),
-        ('supervisor'::role_template_key, 78)
+        ('salesman'::role_template_key, 48),
+        ('supervisor'::role_template_key, 81)
     )
     SELECT 1
     FROM expected
@@ -119,264 +119,126 @@ $$;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM subscriptions
-    WHERE id = '14141414-1414-4414-8414-141414141414'
-      AND tenant_id = '77777777-7777-4777-8777-777777777777'
-      AND status = 'past_due'
-      AND current_period_start < current_period_end
-      AND current_period_end < now()
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: primary shared subscription must be past due';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1
-    FROM subscriptions
-    WHERE id = '25000000-0000-4000-8000-000000000003'
-      AND tenant_id = '77777777-7777-4777-8777-777777777778'
-      AND status = 'trialing'
-      AND current_period_start <= now()
-      AND current_period_end > now()
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: isolation subscription must be in trial';
-  END IF;
-
   IF (
     SELECT count(*)
-    FROM subscription_items
-    WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
-      AND ends_at IS NULL
+    FROM plans
+    WHERE catalog_version = '2026-08-v3'
+      AND status = 'active'
+      AND (code, monthly_price_cents) IN (
+        ('free', 0),
+        ('essencial', 19700),
+        ('operacao', 39700),
+        ('gestao', 59700),
+        ('escala', 89700)
+      )
   ) <> 5 THEN
-    RAISE EXCEPTION 'seed invariant: shared subscription allocations are incomplete';
+    RAISE EXCEPTION 'seed invariant: billing v3 plan catalog is incomplete';
   END IF;
 
-  IF (
-    SELECT count(*)
-    FROM subscription_items
-    WHERE subscription_id = '25000000-0000-4000-8000-000000000003'
-      AND ends_at IS NULL
-  ) <> 1 OR NOT EXISTS (
-    SELECT 1
-    FROM subscription_items
-    WHERE subscription_id = '25000000-0000-4000-8000-000000000003'
-      AND store_id = '66666666-6666-4666-8666-666666666668'
-      AND tenant_id = '77777777-7777-4777-8777-777777777778'
-      AND item_type = 'plan'
-      AND plan_id = '82221212-1212-4212-8212-121212121212'
-      AND ends_at IS NULL
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: trial must contain exactly one selected plan contract';
-  END IF;
-
-  IF (
-    SELECT count(DISTINCT item.subscription_id)
-    FROM subscription_items item
-    LEFT JOIN plans plan ON plan.id = item.plan_id
-    LEFT JOIN addons addon ON addon.id = item.addon_id
-    WHERE item.tenant_id IN (
-      '77777777-7777-4777-8777-777777777777',
-      '77777777-7777-4777-8777-777777777778'
-    )
-      AND item.ends_at IS NULL
-      AND COALESCE(plan.catalog_version, addon.catalog_version) = '2026-08-v1'
-  ) <> 1 OR (
-    SELECT count(*)
-    FROM subscription_items item
-    LEFT JOIN plans plan ON plan.id = item.plan_id
-    LEFT JOIN addons addon ON addon.id = item.addon_id
-    WHERE item.tenant_id IN (
-      '77777777-7777-4777-8777-777777777777',
-      '77777777-7777-4777-8777-777777777778'
-    )
-      AND item.ends_at IS NULL
-      AND COALESCE(plan.catalog_version, addon.catalog_version) = '2026-08-v1'
-  ) <> 3 OR EXISTS (
-    SELECT 1
-    FROM subscription_items item
-    LEFT JOIN plans plan ON plan.id = item.plan_id
-    LEFT JOIN addons addon ON addon.id = item.addon_id
-    WHERE item.tenant_id IN (
-      '77777777-7777-4777-8777-777777777777',
-      '77777777-7777-4777-8777-777777777778'
-    )
-      AND item.ends_at IS NULL
-      AND item.store_id <> '66666666-6666-4666-8666-666666666666'
-      AND COALESCE(plan.catalog_version, addon.catalog_version) <> '2026-08-v2'
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: only the explicit historical store contract may use catalog v1';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1
-    FROM subscription_items item
-    JOIN addons historical ON historical.id = item.addon_id
-    JOIN addons current
-      ON current.code = historical.code
-      AND current.catalog_version = '2026-08-v2'
-    WHERE item.id = '20000000-0000-4000-8000-000000000001'
-      AND historical.catalog_version = '2026-08-v1'
-      AND item.unit_amount_cents = 19990
-      AND current.monthly_price_cents = 5000
-      AND item.unit_amount_cents <> current.monthly_price_cents
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: active catalog pricing must not reprice the historical contract';
-  END IF;
-
-  IF (
-    SELECT count(*)
-    FROM addons
-    WHERE catalog_version = '2026-08-v2' AND status = 'active'
-  ) <> 6 THEN
-    RAISE EXCEPTION 'seed invariant: current add-on catalog is incomplete';
+  IF EXISTS (SELECT 1 FROM addons WHERE status = 'active') THEN
+    RAISE EXCEPTION 'seed invariant: billing v3 cannot expose active add-ons';
   END IF;
 
   IF EXISTS (
     SELECT 1
-    FROM store_entitlements
-    WHERE store_id = '66666666-6666-4666-8666-666666666668'
-      AND feature_key = 'crm'
-      AND status IN ('active', 'trialing')
-      AND (starts_at IS NULL OR starts_at <= now())
-      AND (ends_at IS NULL OR ends_at > now())
+    FROM plan_features feature
+    JOIN plans plan ON plan.id = feature.plan_id
+    WHERE plan.catalog_version = '2026-08-v3'
+      AND (feature.included_in_trial OR feature.trial_limit_value IS NOT NULL)
   ) THEN
-    RAISE EXCEPTION 'seed invariant: CRM paid add-on must be denied during the safe trial';
+    RAISE EXCEPTION 'seed invariant: billing v3 cannot retain trial semantics';
   END IF;
 
-  IF EXISTS (
-    SELECT 1
-    FROM subscription_items item
-    LEFT JOIN plans plan ON plan.id = item.plan_id
-    LEFT JOIN addons addon ON addon.id = item.addon_id
-    WHERE item.tenant_id IN (
-      '77777777-7777-4777-8777-777777777777',
-      '77777777-7777-4777-8777-777777777778'
+  IF (
+    SELECT count(*)
+    FROM stores store
+    WHERE store.id IN (
+      '66666666-6666-4666-8666-666666666666',
+      '66666666-6666-4666-8666-666666666667',
+      '66666666-6666-4666-8666-666666666668'
     )
       AND (
-        item.quantity <= 0
-        OR (
-          item.item_type = 'plan'
-          AND (
-            item.plan_id IS NULL
-            OR item.addon_id IS NOT NULL
-            OR item.unit_amount_cents <> plan.monthly_price_cents
-          )
-        )
-        OR (
-          item.item_type = 'addon'
-          AND (
-            item.addon_id IS NULL
-            OR item.plan_id IS NOT NULL
-            OR item.unit_amount_cents <> addon.monthly_price_cents
-          )
-        )
-      )
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: subscription items drifted from catalog pricing';
-  END IF;
-
-  IF EXISTS (
-    SELECT 1
-    FROM store_entitlements entitlement
-    WHERE entitlement.tenant_id IN (
-      '77777777-7777-4777-8777-777777777777',
-      '77777777-7777-4777-8777-777777777778'
-    )
-      AND entitlement.source = 'billing_catalog'
-      AND NOT (
-        entitlement.status = 'trialing'
-        AND entitlement.metadata->>'sourceDetail' = 'safe_trial_catalog'
-      )
-      AND NOT EXISTS (
-        SELECT 1
+        SELECT count(*)
         FROM subscription_items item
-        JOIN plan_features feature ON feature.plan_id = item.plan_id
-        WHERE item.store_id = entitlement.store_id
-          AND item.tenant_id = entitlement.tenant_id
+        JOIN plans plan ON plan.id = item.plan_id
+        WHERE item.store_id = store.id
+          AND item.tenant_id = store.tenant_id
+          AND item.ends_at IS NULL
           AND item.item_type = 'plan'
-          AND item.ends_at IS NULL
-          AND feature.feature_key = entitlement.feature_key
-          AND feature.included = 1
-      )
-      AND NOT EXISTS (
-        SELECT 1
-        FROM subscription_items item
-        JOIN addons addon ON addon.id = item.addon_id
-        WHERE item.store_id = entitlement.store_id
-          AND item.tenant_id = entitlement.tenant_id
-          AND item.item_type = 'addon'
-          AND item.ends_at IS NULL
-          AND addon.feature_key = entitlement.feature_key
-      )
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: catalog entitlement has no matching chargeable item';
+          AND item.addon_id IS NULL
+          AND item.unit_amount_cents = 0
+          AND plan.catalog_version = '2026-08-v3'
+          AND plan.code = 'free'
+      ) = 1
+  ) <> 3 THEN
+    RAISE EXCEPTION 'seed invariant: every store must have one effective Free contract';
   END IF;
 
   IF EXISTS (
     SELECT 1
-    FROM store_entitlements entitlement
-    WHERE entitlement.tenant_id IN (
+    FROM subscription_items item
+    WHERE item.tenant_id IN (
       '77777777-7777-4777-8777-777777777777',
       '77777777-7777-4777-8777-777777777778'
     )
-      AND (
-        entitlement.source NOT IN ('billing_catalog', 'local_seed_override')
-        OR (
-          entitlement.source = 'local_seed_override'
-          AND (
-            entitlement.metadata->>'fixture' IS DISTINCT FROM 'local_seed'
-            OR entitlement.metadata->>'overrideContractVersion'
-              IS DISTINCT FROM '2026-07-capability-v1'
-            OR COALESCE(entitlement.metadata->>'reason', '') = ''
-          )
-        )
-      )
+      AND item.ends_at IS NULL
+      AND item.item_type = 'addon'
   ) THEN
-    RAISE EXCEPTION 'seed invariant: entitlement source is not catalog or explicit override';
+    RAISE EXCEPTION 'seed invariant: local stores cannot have effective add-ons';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM subscriptions
+    WHERE tenant_id IN (
+      '77777777-7777-4777-8777-777777777777',
+      '77777777-7777-4777-8777-777777777778'
+    )
+      AND (status <> 'active' OR current_period_end IS NOT NULL)
+  ) THEN
+    RAISE EXCEPTION 'seed invariant: Free subscriptions must be active and open-ended';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM stores store
+    WHERE store.id IN (
+      '66666666-6666-4666-8666-666666666666',
+      '66666666-6666-4666-8666-666666666667',
+      '66666666-6666-4666-8666-666666666668'
+    )
+      AND (
+        SELECT count(*)
+        FROM store_entitlements entitlement
+        WHERE entitlement.store_id = store.id
+          AND entitlement.tenant_id = store.tenant_id
+          AND entitlement.status = 'active'
+          AND entitlement.ends_at IS NULL
+          AND entitlement.source = 'billing_catalog'
+          AND entitlement.feature_key IN (
+            'storefront', 'inventory', 'lead_capture', 'plate_lookup'
+          )
+          AND entitlement.metadata->>'catalogVersion' = '2026-08-v3'
+          AND entitlement.metadata->>'planCode' = 'free'
+      ) <> 4
+  ) THEN
+    RAISE EXCEPTION 'seed invariant: Free entitlement projection is incomplete';
   END IF;
 
   IF EXISTS (
     SELECT 1
     FROM store_entitlements
-    WHERE tenant_id = '77777777-7777-4777-8777-777777777777'
-      AND source = 'billing_catalog'
-      AND (
-        status = 'trialing'
-        OR metadata->>'billingStatus' IS DISTINCT FROM 'past_due'
+    WHERE tenant_id IN (
+      '77777777-7777-4777-8777-777777777777',
+      '77777777-7777-4777-8777-777777777778'
+    )
+      AND status = 'active'
+      AND (ends_at IS NULL OR ends_at > now())
+      AND feature_key NOT IN (
+        'storefront', 'inventory', 'lead_capture', 'plate_lookup'
       )
   ) THEN
-    RAISE EXCEPTION 'seed invariant: shared-account entitlements contradict dunning';
-  END IF;
-
-  IF EXISTS (
-    SELECT 1
-    FROM store_entitlements entitlement
-    JOIN subscriptions subscription
-      ON subscription.id = '25000000-0000-4000-8000-000000000003'
-    WHERE entitlement.store_id = '66666666-6666-4666-8666-666666666668'
-      AND entitlement.source = 'billing_catalog'
-      AND (
-        entitlement.status <> 'trialing'
-        OR entitlement.starts_at IS DISTINCT FROM subscription.current_period_start
-        OR entitlement.ends_at IS DISTINCT FROM subscription.current_period_end
-      )
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: trial entitlements must inherit subscription dates';
-  END IF;
-
-  IF EXISTS (
-    SELECT 1
-    FROM payments payment
-    WHERE payment.id = '25000000-0000-4000-8000-000000000021'
-      AND payment.amount_cents <> (
-        SELECT sum(item.quantity * item.unit_amount_cents)::integer
-        FROM subscription_items item
-        WHERE item.subscription_id = payment.subscription_id
-          AND item.ends_at IS NULL
-      )
-  ) THEN
-    RAISE EXCEPTION 'seed invariant: billing payment does not match subscription items';
+    RAISE EXCEPTION 'seed invariant: Free stores expose a paid entitlement';
   END IF;
 END
 $$;

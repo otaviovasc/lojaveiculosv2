@@ -55,7 +55,7 @@ describe("useCrmAssignableMembers", () => {
     session.stores = [
       {
         ...createSession().defaultStore!,
-        effectivePermissions: [],
+        effectivePermissions: ["crm.conversations.assign"],
         role: "agency",
         storeName: "Loja da agência",
         storeSlug: "agency-store",

@@ -27,7 +27,7 @@ export function BillingUpgradePanel({
   onOpenBilling: () => void;
 }) {
   const isCrm = featureKey === "crm";
-  const isSimulations = featureKey === "simulations";
+  const isSimulations = featureKey === "financing";
   const FeatureIcon = isCrm
     ? MessageSquare
     : isSimulations
@@ -50,12 +50,12 @@ export function BillingUpgradePanel({
           <div className="billing-locked-header-meta">
             <span className="billing-locked-eyebrow">
               <LockKeyhole aria-hidden="true" className="size-4" />
-              Recurso adicional
+              Recurso do catálogo
             </span>
             <span className="billing-locked-status">
               {managedByAgency
                 ? "Gerenciado pela agência"
-                : "Disponível para contratar"}
+                : "Disponível em outro plano"}
             </span>
           </div>
           <h1>{module.title}</h1>
@@ -96,7 +96,7 @@ export function BillingUpgradePanel({
 
           <aside className="billing-locked-cta">
             <span className="billing-locked-cta-label">
-              {managedByAgency ? "Próximo passo" : "Libere este recurso"}
+              {managedByAgency ? "Próximo passo" : "Inclua no seu plano"}
             </span>
             <h2>
               {managedByAgency
@@ -105,14 +105,14 @@ export function BillingUpgradePanel({
             </h2>
             <p>
               {managedByAgency
-                ? "A agência responsável precisa adicionar este recurso à assinatura da loja."
-                : "Compare o plano Growth e os pacotes adicionais. Você só confirma quando a composição fizer sentido."}
+                ? "A agência responsável precisa contratar um plano que inclua este recurso."
+                : "Compare os cinco planos cumulativos. Acesso pago só é liberado após a confirmação do pagamento."}
             </p>
             {!managedByAgency ? (
               <FeatureActionButton
                 className="billing-locked-cta-button"
                 icon={ArrowRight}
-                label="Ver plano e pacotes"
+                label="Ver planos"
                 onClick={onOpenBilling}
                 variant="primary"
               />

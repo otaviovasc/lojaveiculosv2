@@ -119,7 +119,7 @@ describe("Financing simulation lifecycle", () => {
         simulationInput(),
         createPorts(repository, { createSimulation }),
       ),
-    ).rejects.toThrow("Missing entitlement: simulations");
+    ).rejects.toThrow("Missing entitlement: financing");
     expect(createSimulation).not.toHaveBeenCalled();
   });
 

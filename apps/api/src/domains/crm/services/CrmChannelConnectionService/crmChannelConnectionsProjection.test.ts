@@ -128,7 +128,7 @@ describe("listCrmChannelConnections canonical projection", () => {
 function context() {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
-    entitlements: ["crm", "crm_zapi"],
+    entitlements: ["crm"],
     permissions: ["crm.conversations.read"],
     request: { requestId: "request_1" },
     storeId,
@@ -164,17 +164,29 @@ function connection(
   state: CrmConnection["status"],
   metadata: Record<string, unknown>,
 ): CrmConnection {
+  const credentialsRef =
+    provider === "zapi"
+      ? {
+          mode: "stored",
+          stored: {
+            clientToken: "sealed:client-token",
+            instanceId: "sealed:instance-id",
+            instanceToken: "sealed:instance-token",
+          },
+        }
+      : {};
   return {
     broker,
     canonical: projectCanonicalCrmConnectionRow({
       broker,
       channel,
+      credentialsRef,
       metadata,
       provider,
       state,
     }),
     channel,
-    credentialsRef: {},
+    credentialsRef,
     displayName: id,
     externalConnectionId: null,
     externalInstanceId: null,

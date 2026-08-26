@@ -6,6 +6,7 @@ import {
   resolveWebhookBaseUrl,
 } from "../../whatsapp/whatsappWebhookEndpoints.js";
 import { openZapiWebhookSecret } from "../../whatsapp/zapiWebhookSecret.js";
+import { assertTrustedZapiWebhookDestination } from "../../whatsapp/zapiWebhookDestination.js";
 import {
   getCrmMessagingGateway,
   type CrmServicePorts,
@@ -19,10 +20,14 @@ export async function verifyCandidateWebhooks(
   operationId: string,
   ports: CrmServicePorts,
 ) {
+  assertTrustedZapiWebhookDestination(
+    current.webhookUrl,
+    input.canonicalApiOrigin,
+  );
   const candidate: CrmConnection = {
     ...current,
     credentialsRef,
-    externalInstanceId: input.instanceId.trim(),
+    externalInstanceId: null,
   };
   const baseUrl = resolveWebhookBaseUrl({
     basePath: input.basePath,
@@ -73,4 +78,5 @@ export async function verifyCandidateWebhooks(
       true,
     );
   }
+  return response.results;
 }

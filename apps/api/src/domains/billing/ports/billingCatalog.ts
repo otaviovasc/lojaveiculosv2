@@ -9,7 +9,9 @@ export type BillingPlanFeature = {
 };
 
 export type BillingPlan = {
+  capabilities?: readonly string[];
   catalogVersion: string;
+  checkoutMode?: "checkout" | "free" | "quote_required";
   code: string;
   features: readonly BillingPlanFeature[];
   id: string;
@@ -19,6 +21,7 @@ export type BillingPlan = {
   };
   monthlyPriceCents: number;
   name: string;
+  selectionRank?: number;
   status: "active" | "archived" | "inactive";
 };
 

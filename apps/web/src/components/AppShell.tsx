@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import {
   filterNavigationGroups,
   getModuleEntitlement,
-  isActiveStoreOwner,
 } from "../app/modulePermissions";
 import { navigationGroups } from "../app/modules";
 import type {
@@ -89,8 +88,7 @@ export function AppShell({
           group.items.map((item) => ({
             ...toSidebarItem(
               item,
-              isActiveStoreOwner(accountSession) &&
-                !getModuleEntitlement(item.id, accountSession).canUse
+              !getModuleEntitlement(item.id, accountSession).canUse
                 ? "PRO"
                 : undefined,
             ),

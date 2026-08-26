@@ -26,6 +26,7 @@ export function requirePlatformInternalMonitoringAccess(
 ): void {
   if (
     context.actor.kind !== "user" ||
+    !context.platformAdmin ||
     context.storeId !== null ||
     context.tenantId !== null
   ) {

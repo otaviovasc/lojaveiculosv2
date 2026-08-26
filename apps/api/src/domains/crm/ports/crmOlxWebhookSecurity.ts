@@ -5,7 +5,7 @@ export type CrmOlxWebhookSecurity = {
       | {
           connectionId: string;
           now: Date;
-          provider: "olx";
+          provider: "olx" | "zapi";
           scope: "connection";
           storeId: string;
           tenantId: string;
@@ -17,7 +17,7 @@ export type CrmOlxWebhookSecurity = {
 };
 
 export class CrmOlxWebhookSecurityUnavailableError extends Error {
-  constructor(message = "OLX webhook rate limiting is unavailable.") {
+  constructor(message = "CRM provider webhook rate limiting is unavailable.") {
     super(message);
     this.name = "CrmOlxWebhookSecurityUnavailableError";
   }

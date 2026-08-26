@@ -17,10 +17,6 @@ describe("canonical CRM connection setup persistence", () => {
       smartphoneConnected: true,
     }));
     const ports = {
-      billingQuotaGuard: {
-        assertAvailable: vi.fn(async () => undefined),
-        getAllowance: vi.fn(async () => ({ limit: 1, remaining: 0, used: 1 })),
-      },
       crmConnectionCredentialVault: {
         open: vi.fn(async ({ sealed }: { sealed: string }) =>
           sealed.replace(/^sealed:/u, ""),
@@ -67,6 +63,7 @@ describe("canonical CRM connection setup persistence", () => {
       context(),
       {
         channel: "whatsapp",
+        clientToken: "client-secret",
         displayName: "WhatsApp principal",
         instanceId: "instance-1",
         instanceToken: "token-1",
@@ -125,7 +122,7 @@ const tenantId = "22222222-2222-4222-8222-222222222222";
 function context() {
   return createServiceContext({
     actor: { id: "user-1", kind: "user" },
-    entitlements: ["crm", "crm_zapi"],
+    entitlements: ["crm"],
     permissions: ["crm.messaging.connection.setup", "crm.conversations.read"],
     request: { requestId: "canonical-setup-test" },
     storeId,

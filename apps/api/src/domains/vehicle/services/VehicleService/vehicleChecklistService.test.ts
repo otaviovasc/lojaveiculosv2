@@ -110,6 +110,15 @@ describe("VehicleService checklists", () => {
     ).rejects.toThrow("Missing permission: inventory.checklist_read");
   });
 
+  it("rejects checklist access when permission alone is granted", async () => {
+    const context = createContext(["inventory.checklist_read"]);
+    context.entitlements = [];
+
+    await expect(
+      listVehicleChecklists(context, { unitId: "unit_1" }),
+    ).rejects.toThrow("Missing entitlement: checklists");
+  });
+
   it("builds fleet metrics from real item states and missing checklists", async () => {
     const context = createContext([
       "inventory.checklist_read",

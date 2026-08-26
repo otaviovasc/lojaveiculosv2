@@ -1,6 +1,28 @@
 import type { EntitlementKey } from "@lojaveiculosv2/shared";
 
 export const billingCatalogFeatureKeys = [
+  "storefront",
+  "inventory",
+  "lead_capture",
+  "sales",
+  "financing",
+  "documents",
+  "finance",
+  "commissions",
+  "checklists",
+  "ai",
+  "custom_domain",
+  "crm",
+  "automation",
+  "analytics",
+  "compliance",
+  "external_api",
+  "marketplace",
+  "plate_lookup",
+  "fiscal",
+] as const satisfies readonly EntitlementKey[];
+
+export const historicalBillingCatalogFeatureKeys = [
   "subdomain",
   "custom_domain",
   "crm",
@@ -24,16 +46,19 @@ export type BillingCatalogPlanFeature = {
 };
 
 export type BillingCatalogPlan = {
+  capabilities?: readonly string[];
+  checkoutMode?: "checkout" | "free" | "quote_required";
   code: string;
   features: readonly BillingCatalogPlanFeature[];
   id: string;
   isDefault: boolean;
   limits: {
-    sellerLimit: number;
-    vehicleLimit: number;
+    sellerLimit: number | null;
+    vehicleLimit: number | null;
   };
   monthlyPriceCents: number;
   name: string;
+  selectionRank?: number;
   status: "active" | "archived" | "inactive";
 };
 
@@ -68,6 +93,7 @@ export function defineBillingCatalog<const T extends BillingCatalogDefinition>(
 }
 
 export function createPlanFeatures(input: {
+  featureKeys?: readonly EntitlementKey[];
   included: readonly EntitlementKey[];
   includedInTrial: readonly EntitlementKey[];
   limits?: Partial<Record<EntitlementKey, number>>;
@@ -75,7 +101,7 @@ export function createPlanFeatures(input: {
 }): readonly BillingCatalogPlanFeature[] {
   const included = new Set(input.included);
   const includedInTrial = new Set(input.includedInTrial);
-  return billingCatalogFeatureKeys.map((featureKey) => ({
+  return (input.featureKeys ?? billingCatalogFeatureKeys).map((featureKey) => ({
     featureKey,
     included: included.has(featureKey),
     includedInTrial: includedInTrial.has(featureKey),

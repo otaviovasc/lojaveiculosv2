@@ -87,6 +87,7 @@ function createPairingApp(
         ...createConnection("zapi", {
           mode: "stored",
           stored: {
+            clientToken: "sealed:client-secret",
             instanceId: "sealed:instance-secret",
             instanceToken: "sealed:token-secret",
           },

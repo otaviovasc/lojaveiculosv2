@@ -8,8 +8,9 @@ export const internalMonitoringPlatformPaths = {
       ...scopedHealthGet,
       summary: "Read platform observability snapshot",
       description:
-        "Returns the platform-wide audit and log projection for platform administrators. The query contract is identical to scoped health, but no store or tenant filter is applied; safe metadata and request diagnostics remain the only exposed event context.",
+        "Returns the platform-wide audit and log projection only when the authenticated account has an active, non-delegable platform-administrator authority and audit.read. Store roles, agency roles, and audit.read alone do not grant access. The query contract is identical to scoped health, but no store or tenant filter is applied; safe metadata and request diagnostics remain the only exposed event context.",
       operationId: "getPlatformInternalHealthSnapshot",
+      security: [{ bearerAuth: ["platformAdmin", "audit.read"] }],
       responses: {
         "200": {
           description: "Platform-wide audit health snapshot.",

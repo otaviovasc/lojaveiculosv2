@@ -124,14 +124,11 @@ function createApis({ connected = true }: { connected?: boolean } = {}) {
     stores: [store("store_1", "Loja Centro"), store("store_2", "Loja Norte")],
   } as unknown as AgencyTenantOverview;
   const agency: AgencyApi = {
-    cancelStoreZapiRequest: vi.fn(),
-    createCheckout: vi.fn(),
+    createStorePlanHire: vi.fn(),
+    getStorePlanHire: vi.fn(),
     getOverview: vi.fn(async () => overview),
     getProviderStatus: vi.fn(),
-    requestStoreZapi: vi.fn(),
-    syncProviderSubscription: vi.fn(),
-    updateStoreEntitlement: vi.fn(),
-    updateStoreSelection: vi.fn(),
+    requestStorePlanQuote: vi.fn(),
   };
   const credere: AgencyCredereApi = {
     disconnect: vi.fn(async () => undefined),

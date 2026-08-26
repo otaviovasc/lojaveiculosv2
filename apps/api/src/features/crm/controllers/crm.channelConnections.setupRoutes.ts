@@ -1,6 +1,5 @@
 import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { whatsappComposioSenderSchema } from "./crm.controller.schemas.js";
 import {
   whatsappZapiCredentialsSchema,
   whatsappZapiReplacementSchema,
@@ -12,6 +11,7 @@ import type { CrmServices } from "./crmServices.js";
 import { readWebhookRequestBase } from "./crm.webhookRequestBase.js";
 import { toChannelConnectionOverviewItem } from "./crm.channelConnection.dto.js";
 import { readConnectionId } from "./crm.channelConnections.routeSupport.js";
+import { registerCrmComposioConnectionSetupRoutes } from "./crm.channelConnections.composioSetupRoutes.js";
 
 type ConnectionSetupRouteOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -68,6 +68,7 @@ export function registerCrmChannelConnectionSetupRoutes(
           serviceContext,
           {
             connectionId,
+            clientToken: input.clientToken,
             ...(input.expectedRevision !== undefined
               ? { expectedRevision: input.expectedRevision }
               : {}),
@@ -193,57 +194,8 @@ export function registerCrmChannelConnectionSetupRoutes(
         );
       }),
   );
-
-  crmFeature.post(
-    "/channel-connections/:connectionId/composio/authorize",
-    async (context) =>
-      handleCrmMessaging(context, async () => {
-        const connectionId = readConnectionId(
-          context.req.param("connectionId"),
-        );
-        const serviceContext = await createContext(context);
-        return context.json(
-          await services.authorizeComposioCrmChannelConnection(serviceContext, {
-            connectionId,
-          }),
-        );
-      }),
-  );
-
-  crmFeature.post(
-    "/channel-connections/:connectionId/composio/complete",
-    async (context) =>
-      handleCrmMessaging(context, async () => {
-        const connectionId = readConnectionId(
-          context.req.param("connectionId"),
-        );
-        const serviceContext = await createContext(context);
-        return context.json(
-          await services.completeComposioCrmChannelConnection(serviceContext, {
-            connectionId,
-          }),
-        );
-      }),
-  );
-
-  crmFeature.post(
-    "/channel-connections/:connectionId/composio/sender",
-    async (context) =>
-      handleCrmMessaging(context, async () => {
-        const connectionId = readConnectionId(
-          context.req.param("connectionId"),
-        );
-        const input = await parseCrmMessagingJson(
-          context,
-          whatsappComposioSenderSchema,
-        );
-        const serviceContext = await createContext(context);
-        return context.json(
-          await services.selectComposioChannelSender(serviceContext, {
-            connectionId,
-            senderId: input.senderId,
-          }),
-        );
-      }),
-  );
+  registerCrmComposioConnectionSetupRoutes(crmFeature, {
+    createContext,
+    services,
+  });
 }

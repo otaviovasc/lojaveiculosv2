@@ -8,7 +8,7 @@ const permissions = {
   close: "crm.conversations.manage",
   connectionPair: "crm.messaging.connection.pair",
   connectionSetup: "crm.messaging.connection.setup",
-  connectionCredentialsManage: "tenant.manage",
+  connectionCredentialsManage: "crm.messaging.credentials.rotate",
   botManage: "crm.bot.manage",
   botRead: "crm.bot.read",
   list: "crm.conversations.read",
@@ -93,11 +93,7 @@ export function hasCrmPermission(
   permission: (typeof permissions)[keyof typeof permissions],
 ) {
   const store = readSessionActiveStore(cycle);
-  return Boolean(
-    store &&
-    (store.role === "agency" ||
-      store.effectivePermissions?.includes(permission)),
-  );
+  return Boolean(store?.effectivePermissions?.includes(permission));
 }
 
 export function hasCrmConversationAccess(permissions: readonly string[]) {

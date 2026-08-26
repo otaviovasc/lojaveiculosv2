@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   agencyBillingOverview,
+  billingPlans,
   ownerBillingOverview,
 } from "./fixtures/billingUx";
 import { installLocalSession } from "./support/auth";
@@ -8,8 +9,8 @@ import { qaPersonas } from "./support/personas";
 import { expectAccessible, expectViewportSafe } from "./support/uiQuality";
 import { setQaViewport } from "./support/viewports";
 
-test.describe("billing plan and packages UX", () => {
-  test("individual owner understands trial, selection and first billing", async ({
+test.describe("billing v3 plan hiring UX", () => {
+  test("individual owner keeps permanent Free access and starts a durable paid hire", async ({
     page,
   }) => {
     await installLocalSession(page, {
@@ -20,45 +21,66 @@ test.describe("billing plan and packages UX", () => {
     await page.route("**/api/v1/billing/overview", (route) =>
       route.fulfill({ json: ownerBillingOverview }),
     );
+    await installPlanHireRoutes(page);
     await setQaViewport(page, "desktop");
     await page.goto("/billing");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Um plano completo para cada fase da loja",
+      }),
+    ).toBeVisible();
     if (!isBaselineCapture()) {
-      await expect(page.getByText("Sem plano", { exact: true })).toBeVisible();
       await expect(
-        page.getByRole("heading", { name: "Escolha seu plano" }),
+        page.getByRole("heading", {
+          name: "Um plano completo para cada fase da loja",
+        }),
       ).toBeVisible();
       await expect(
         page.getByRole("radiogroup", { name: "Planos disponíveis" }),
       ).toBeVisible();
-      await page.getByRole("radio", { name: /Growth/ }).click();
-      const paidPackageLabels = page.getByText("Fora do teste gratuito");
-      await expect(paidPackageLabels).toHaveCount(5);
-      await expect(paidPackageLabels.first()).toBeVisible();
+      for (const planName of [
+        "Free",
+        "Essencial",
+        "Operação",
+        "Gestão",
+        "Escala",
+      ]) {
+        await expect(
+          page.getByRole("radio", { name: new RegExp(`^${planName} `) }),
+        ).toBeVisible();
+      }
       await expect(
-        page.getByRole("heading", { name: "Marketplaces" }),
+        page.getByText("O Free é permanente e não expira."),
       ).toBeVisible();
+      await expect(page.getByRole("radio", { name: /^Escala / })).toContainText(
+        /A partir de R\$\s+897,00\/mês/,
+      );
       await expect(
-        page.getByRole("heading", { name: "NF-e integrada" }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("heading", { name: "API Pública" }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("heading", { name: "Simulações Pro" }),
-      ).toBeVisible();
+        page.getByText(
+          /teste gratuito|plano anual|módulos extras|comprar adicional|contratar adicional/i,
+        ),
+      ).toHaveCount(0);
+      await page.getByRole("radio", { name: /^Essencial / }).click();
+      const hireRequest = page.waitForRequest(
+        "**/api/v1/billing/plan-hires",
+        (request) => request.method() === "POST",
+      );
       await expect(
         page
-          .getByLabel("Resumo mensal")
-          .getByRole("button", { name: "Assinar agora" }),
+          .getByLabel("Resumo da contratação")
+          .getByRole("button", { name: "Continuar para pagamento" }),
       ).toBeVisible();
-      const monthlySummary = page.getByLabel("Resumo mensal");
-      await expect(
-        monthlySummary.getByText("Investimento mensal"),
-      ).toBeVisible();
-      await expect(
-        monthlySummary.getByText(/Checkout seguro pelo Asaas/),
-      ).toBeVisible();
+      await page
+        .getByRole("button", { name: "Continuar para pagamento" })
+        .click();
+      expect(
+        await hireRequest.then((request) => request.postDataJSON()),
+      ).toMatchObject({
+        planId: billingPlans[1]!.id,
+      });
+      await expect(page.getByRole("status")).toContainText(
+        "Pagamento pendente de confirmação.",
+      );
       await page.screenshot({
         fullPage: true,
         path: "/tmp/billing-owner-checkout-candidate-desktop.png",
@@ -81,7 +103,7 @@ test.describe("billing plan and packages UX", () => {
     });
   });
 
-  test("agency configures packages inside a selected store context", async ({
+  test("agency compares cumulative plans inside a selected store context", async ({
     page,
   }) => {
     await installAgencySession(page);
@@ -96,7 +118,6 @@ test.describe("billing plan and packages UX", () => {
       await expect(
         page.getByRole("heading", { name: "Auto Prime Centro" }),
       ).toBeVisible();
-      await expect(page.getByText("Configuração por loja")).toBeVisible();
       await expectCommercialPlan(page);
     }
     await expectViewportSafe(page);
@@ -120,13 +141,11 @@ test.describe("billing plan and packages UX", () => {
 async function expectCommercialPlan(page: Page) {
   await expect(
     page.getByRole("heading", {
-      name: "Uma base completa, com espaço para sua loja crescer",
+      name: "Um plano completo para cada fase da loja",
     }),
   ).toBeVisible();
-  await expect(
-    page.getByText("Plano base", { exact: true }).first(),
-  ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Growth" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /^Operação / })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /^Escala / })).toBeVisible();
 }
 
 async function waitForBillingContent(page: Page, expectPlan = true) {
@@ -135,9 +154,10 @@ async function waitForBillingContent(page: Page, expectPlan = true) {
     return;
   }
   if (!expectPlan) {
-    await expect(page.getByText("Sem plano", { exact: true })).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Escolha seu plano" }),
+      page.getByRole("heading", {
+        name: "Um plano completo para cada fase da loja",
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole("radiogroup", { name: "Planos disponíveis" }),
@@ -145,6 +165,37 @@ async function waitForBillingContent(page: Page, expectPlan = true) {
     return;
   }
   await expectCommercialPlan(page);
+}
+
+async function installPlanHireRoutes(page: Page) {
+  const hire = {
+    activatedAt: null,
+    catalogVersion: "2026-08-v3",
+    checkoutMode: "checkout",
+    checkoutUrl: null,
+    completedAt: null,
+    createdAt: "2026-08-25T12:00:00.000Z",
+    failureCode: null,
+    id: "hire_e2e_1",
+    idempotencyKey: "hire-e2e-idempotency",
+    phase: "payment_pending",
+    planId: billingPlans[1]!.id,
+    planSnapshot: { code: "essencial", name: "Essencial", selectionRank: 2 },
+    providerCheckoutId: "checkout_e2e_1",
+    providerPaymentId: null,
+    providerSubscriptionId: null,
+    quotedCents: 19_700,
+    status: "payment_pending",
+    storeId: "store_owner",
+    tenantId: "tenant_1",
+    updatedAt: "2026-08-25T12:00:00.000Z",
+  };
+  await page.route("**/api/v1/billing/plan-hires", (route) =>
+    route.fulfill({ json: hire, status: 201 }),
+  );
+  await page.route("**/api/v1/billing/plan-hires/hire_e2e_1", (route) =>
+    route.fulfill({ json: hire }),
+  );
 }
 
 function isBaselineCapture() {

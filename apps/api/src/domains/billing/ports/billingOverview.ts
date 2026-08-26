@@ -1,5 +1,4 @@
 import type { EntitlementKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type { BillingAddonContract } from "./billingAddonContract.js";
 import type { BillingAddon, BillingPlan } from "./billingCatalog.js";
 import type { BillingEntitlementStatus } from "./billingEntitlement.js";
 
@@ -116,7 +115,6 @@ export type AgencyTenantSummary = {
 export type AgencyManagedStoreOverview = {
   activeEntitlementCount: number;
   addonCount: number;
-  addonContracts: readonly BillingAddonContract[];
   createdAt: Date;
   entitlementCount: number;
   entitlementMatrix: readonly BillingEntitlementMatrixRow[];
@@ -140,7 +138,6 @@ export type BillingUsageAllowance = {
 };
 
 export type BillingOverview = {
-  addonContracts: readonly BillingAddonContract[];
   addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: BillingAuthority;
@@ -157,7 +154,6 @@ export type BillingOverview = {
 };
 
 export type AgencyTenantOverview = {
-  addonContracts: readonly BillingAddonContract[];
   addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: BillingAuthority;

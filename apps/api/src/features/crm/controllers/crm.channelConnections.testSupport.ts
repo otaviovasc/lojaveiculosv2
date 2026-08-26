@@ -15,7 +15,13 @@ export function createConfiguredZapiTestConnection(input: {
   const overrides = input.overrides ?? {};
   return {
     credentialsRef: {
-      stored: { webhookSecret: `sealed:${testZapiWebhookSecret}` },
+      mode: "stored",
+      stored: {
+        clientToken: "sealed:client-token",
+        instanceId: "sealed:instance-id",
+        instanceToken: "sealed:instance-token",
+        webhookSecret: `sealed:${testZapiWebhookSecret}`,
+      },
     },
     displayName: "ZAPI Test Connection",
     externalConnectionId: null,

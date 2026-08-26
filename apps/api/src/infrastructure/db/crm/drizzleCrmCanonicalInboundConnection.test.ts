@@ -48,6 +48,13 @@ function canonicalConnection(
     metadata: {
       capabilities: { inbound: true, outbound: true },
       connected: true,
+      credentialsRef: {
+        stored: {
+          clientToken: "sealed:client-token",
+          instanceId: "sealed:instance-id",
+          instanceToken: "sealed:instance-token",
+        },
+      },
     },
     provider: "zapi",
     state: "active",

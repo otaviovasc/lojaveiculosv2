@@ -2,7 +2,7 @@ import { targetId } from "./common.mjs";
 import { log } from "./log.mjs";
 import { seedBillingRecords } from "./target-billing-records.mjs";
 
-const CATALOG_VERSION = "2026-08-v1";
+const CATALOG_VERSION = "2026-08-v3";
 
 export async function seedLegacyBilling(tx, data, config, ids) {
   const billing = data.billing;
@@ -40,8 +40,7 @@ async function seedCustomer(tx, billing, config, ids) {
     await tx`SELECT id FROM billing_customers WHERE tenant_id=${ids.tenant} AND provider='asaas' LIMIT 1`;
   if (existing && existing.id !== id)
     throw new Error("V2 tenant already has a non-migration billing customer.");
-  const providerCustomerId =
-    billing.customer.providerCustomerId ?? `local_asaas_customer_${ids.tenant}`;
+  const providerCustomerId = billing.customer.providerCustomerId;
   const [customer] = await tx`INSERT INTO billing_customers
     (id, document_number, email, name, provider, provider_customer_id,
      tenant_id, created_at, updated_at)
@@ -52,11 +51,10 @@ async function seedCustomer(tx, billing, config, ids) {
       document_number=COALESCE(excluded.document_number, billing_customers.document_number),
       email=COALESCE(excluded.email, billing_customers.email),
       name=excluded.name,
-      provider_customer_id=CASE
-        WHEN billing_customers.provider_customer_id LIKE 'local\\_%'
-          THEN excluded.provider_customer_id
-        ELSE billing_customers.provider_customer_id
-      END,
+      provider_customer_id=COALESCE(
+        billing_customers.provider_customer_id,
+        excluded.provider_customer_id
+      ),
       updated_at=now()
     RETURNING id`;
   return customer;
@@ -68,9 +66,7 @@ async function seedSubscription(tx, billing, customerId, config, ids) {
     await tx`SELECT id FROM subscriptions WHERE tenant_id=${ids.tenant} ORDER BY created_at DESC LIMIT 1`;
   if (existing && existing.id !== id)
     throw new Error("V2 tenant already has a non-migration subscription.");
-  const providerSubscriptionId =
-    billing.subscription.providerSubscriptionId ??
-    `local_asaas_subscription_${ids.tenant}`;
+  const providerSubscriptionId = billing.subscription.providerSubscriptionId;
   const [subscription] = await tx`INSERT INTO subscriptions
     (id, billing_customer_id, current_period_end, current_period_start,
      provider, provider_subscription_id, status, tenant_id, created_at, updated_at)
@@ -82,11 +78,10 @@ async function seedSubscription(tx, billing, customerId, config, ids) {
       billing_customer_id=excluded.billing_customer_id,
       current_period_end=excluded.current_period_end,
       current_period_start=excluded.current_period_start,
-      provider_subscription_id=CASE
-        WHEN subscriptions.provider_subscription_id LIKE 'local\\_%'
-          THEN excluded.provider_subscription_id
-        ELSE subscriptions.provider_subscription_id
-      END,
+      provider_subscription_id=COALESCE(
+        subscriptions.provider_subscription_id,
+        excluded.provider_subscription_id
+      ),
       status=excluded.status,
       updated_at=now()
     RETURNING id`;
@@ -95,22 +90,18 @@ async function seedSubscription(tx, billing, customerId, config, ids) {
 
 async function readCatalog(tx, products) {
   const [plan] = await tx`SELECT id, code FROM plans
-    WHERE code='growth' AND catalog_version=${CATALOG_VERSION} LIMIT 1`;
+    WHERE code='free' AND catalog_version=${CATALOG_VERSION} LIMIT 1`;
   if (!plan)
     throw new Error(
-      `Missing V2 Growth plan in billing catalog ${CATALOG_VERSION}.`,
+      `Missing V2 Free plan in billing catalog ${CATALOG_VERSION}.`,
     );
-  const rows =
-    await tx`SELECT id, code FROM addons WHERE catalog_version=${CATALOG_VERSION}`;
-  const addons = new Map(rows.map((row) => [row.code, row.id]));
   for (const product of products) {
-    if (product.itemType === "plan") continue;
-    if (!addons.has(product.catalogCode))
+    if (product.itemType !== "plan" || product.catalogCode !== "free")
       throw new Error(
-        `Missing V2 add-on ${product.catalogCode} in billing catalog ${CATALOG_VERSION}.`,
+        `Only the effective Free contract may be imported into catalog ${CATALOG_VERSION}.`,
       );
   }
-  return { addons, planId: plan.id };
+  return { planId: plan.id };
 }
 
 async function seedSubscriptionItems(
@@ -131,9 +122,9 @@ async function seedSubscriptionItems(
       (id, addon_id, ends_at, item_type, plan_id, quantity, starts_at,
        store_id, subscription_id, tenant_id, unit_amount_cents, created_at, updated_at)
       VALUES (${id},
-        ${product.itemType === "addon" ? catalog.addons.get(product.catalogCode) : null},
+        ${null},
         ${product.endsAt}, ${product.itemType},
-        ${product.itemType === "plan" ? catalog.planId : null}, 1,
+        ${catalog.planId}, 1,
         ${product.startsAt}, ${ids.store}, ${subscriptionId}, ${ids.tenant},
         ${product.unitAmountCents}, now(), now())
       ON CONFLICT (id) DO UPDATE SET

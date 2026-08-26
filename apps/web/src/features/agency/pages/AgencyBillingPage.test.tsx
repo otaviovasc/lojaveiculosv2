@@ -12,7 +12,10 @@ import { useLocation, MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionBootstrap } from "../../account/apiClient";
 import { AccountSessionProvider } from "../../account/accountSession";
-import type { BillingProviderStatus } from "../../billing/types";
+import type {
+  BillingPlanHire,
+  BillingProviderStatus,
+} from "../../billing/types";
 import type {
   AgencyApi,
   AgencyManagedStoreOverview,
@@ -25,6 +28,7 @@ describe("AgencyBillingPage", () => {
   afterEach(() => {
     cleanup();
     window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   it("opens the requested store and keeps later store changes in the route", async () => {
@@ -103,6 +107,58 @@ describe("AgencyBillingPage", () => {
       screen.queryByRole("heading", { name: "Loja Centro" }),
     ).not.toBeInTheDocument();
   });
+
+  it("keeps the store overview visible when provider readiness fails", async () => {
+    const api = createApi();
+    vi.mocked(api.getProviderStatus).mockRejectedValueOnce(
+      new Error("offline"),
+    );
+    render(
+      <AccountSessionProvider session={session()}>
+        <MemoryRouter initialEntries={["/agency/admin/unified-billing"]}>
+          <AgencyBillingPage api={api} />
+        </MemoryRouter>
+      </AccountSessionProvider>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Loja Centro" }),
+    ).toBeVisible();
+    expect(screen.getByText(/resumo segue disponível/i)).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    ).toBeDisabled();
+  });
+
+  it("discards a hire response after the operator changes stores", async () => {
+    const api = createApi();
+    const pendingHire = deferred<BillingPlanHire>();
+    vi.mocked(api.createStorePlanHire).mockReturnValueOnce(pendingHire.promise);
+    render(
+      <AccountSessionProvider session={session()}>
+        <MemoryRouter initialEntries={["/agency/admin/unified-billing"]}>
+          <AgencyBillingPage api={api} />
+        </MemoryRouter>
+      </AccountSessionProvider>,
+    );
+
+    await screen.findByRole("heading", { name: "Loja Centro" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Loja selecionada" }));
+    fireEvent.click(screen.getByRole("option", { name: "Loja Norte" }));
+    await act(async () => pendingHire.resolve(planHire("store_center")));
+
+    expect(
+      screen.queryByRole("heading", { name: "Ativação da assinatura" }),
+    ).not.toBeInTheDocument();
+    expect(
+      window.sessionStorage.getItem(
+        "lojaveiculos.agency.billing.hire.tenant_agency.store_center",
+      ),
+    ).toBeNull();
+  });
 });
 
 function LocationProbe() {
@@ -112,14 +168,11 @@ function LocationProbe() {
 
 function createApi(): AgencyApi {
   return {
-    cancelStoreZapiRequest: vi.fn(),
-    createCheckout: vi.fn(),
+    createStorePlanHire: vi.fn(),
+    getStorePlanHire: vi.fn(),
     getOverview: vi.fn(async () => overview()),
     getProviderStatus: vi.fn(async () => providerStatus()),
-    requestStoreZapi: vi.fn(),
-    syncProviderSubscription: vi.fn(),
-    updateStoreEntitlement: vi.fn(),
-    updateStoreSelection: vi.fn(),
+    requestStorePlanQuote: vi.fn(),
   };
 }
 
@@ -135,7 +188,6 @@ function overview({
 } = {}): AgencyTenantOverview {
   const billing = createAgencyBillingOverview("active");
   return {
-    addons: billing.addons,
     allocations: billing.allocations,
     authority: billing.authority,
     chargePreview: billing.chargePreview,
@@ -161,8 +213,8 @@ function store(storeId: string, storeName: string): AgencyManagedStoreOverview {
     entitlementCount: 0,
     entitlementMatrix: [],
     monthlyAmountCents: 54_899,
-    planCode: "growth",
-    planName: "Growth",
+    planCode: "operacao",
+    planName: "Operação",
     storeId,
     storeName,
     storeSlug: storeName.toLocaleLowerCase("pt-BR").replaceAll(" ", "-"),
@@ -177,6 +229,31 @@ function providerStatus(): BillingProviderStatus {
     missingConfiguration: [],
     provider: "asaas",
     webhookConfigured: true,
+  };
+}
+
+function planHire(storeId: string): BillingPlanHire {
+  return {
+    activatedAt: null,
+    catalogVersion: "2026-08-v3",
+    checkoutMode: "checkout",
+    checkoutUrl: null,
+    completedAt: null,
+    createdAt: "2026-08-25T12:00:00.000Z",
+    failureCode: null,
+    id: "hire_center",
+    idempotencyKey: "agency-hire-center",
+    phase: "payment_pending",
+    planId: "plan_operacao",
+    planSnapshot: { code: "operacao", name: "Operação", selectionRank: 3 },
+    providerCheckoutId: "checkout_center",
+    providerPaymentId: null,
+    providerSubscriptionId: null,
+    quotedCents: 39_700,
+    status: "payment_pending",
+    storeId,
+    tenantId: "tenant_agency",
+    updatedAt: "2026-08-25T12:00:00.000Z",
   };
 }
 

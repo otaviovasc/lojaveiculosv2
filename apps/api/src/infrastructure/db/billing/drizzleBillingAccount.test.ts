@@ -22,16 +22,16 @@ describe("ensureTenantBillingAccount", () => {
     );
   });
 
-  it("creates the customer and a trialing subscription under a lock", async () => {
+  it("creates an active open-ended billing account under a lock", async () => {
     const db = createFakeBillingAccountDb({ tenants: [tenant] });
 
     const account = await ensureTenantBillingAccount(db, "tenant_1");
 
     expect(db.executeCalls).toHaveLength(1);
-    expect(account.customer.providerCustomerId).toBe(
-      "local_asaas_customer_tenant_1",
-    );
-    expect(account.subscription.status).toBe("trialing");
+    expect(account.customer.providerCustomerId).toBeNull();
+    expect(account.subscription.status).toBe("active");
+    expect(account.subscription.currentPeriodEnd).toBeNull();
+    expect(account.subscription.providerSubscriptionId).toBeNull();
     expect(account.subscription.billingCustomerId).toBe(account.customer.id);
   });
 });
@@ -62,7 +62,7 @@ describe("ensureBillingCustomer", () => {
     );
   });
 
-  it("creates a local asaas customer with the profile contacts", async () => {
+  it("creates an unbound Asaas customer with the profile contacts", async () => {
     const db = createFakeBillingAccountDb();
 
     const customer = await ensureBillingCustomer(db, tenant as never, {
@@ -75,7 +75,7 @@ describe("ensureBillingCustomer", () => {
       email: "contato@loja.com.br",
       name: "Loja LTDA",
       provider: "asaas",
-      providerCustomerId: "local_asaas_customer_tenant_1",
+      providerCustomerId: null,
       tenantId: "tenant_1",
     });
   });
@@ -98,18 +98,15 @@ describe("ensureSubscription", () => {
     );
   });
 
-  it("creates a 14-day trialing subscription when none exists", async () => {
+  it("creates an active open-ended subscription without provider placeholders", async () => {
     const db = createFakeBillingAccountDb();
 
     const subscription = await ensureSubscription(db, "tenant_1", "customer_1");
 
-    const start = subscription.currentPeriodStart as Date;
-    const end = subscription.currentPeriodEnd as Date;
-    expect(subscription.status).toBe("trialing");
+    expect(subscription.currentPeriodStart).toBeInstanceOf(Date);
+    expect(subscription.currentPeriodEnd).toBeNull();
+    expect(subscription.status).toBe("active");
     expect(subscription.provider).toBe("asaas");
-    expect(subscription.providerSubscriptionId).toBe(
-      "local_asaas_subscription_tenant_1",
-    );
-    expect(end.getTime() - start.getTime()).toBe(14 * 24 * 60 * 60 * 1000);
+    expect(subscription.providerSubscriptionId).toBeNull();
   });
 });

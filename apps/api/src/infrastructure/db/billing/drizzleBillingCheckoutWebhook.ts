@@ -2,7 +2,8 @@ import { and, eq } from "drizzle-orm";
 import {
   billingCheckoutSessions,
   billingCustomers,
-  subscriptionItems,
+  billingPlanHires,
+  billingPlanHireTransitions,
   subscriptions,
 } from "@lojaveiculosv2/db";
 import type {
@@ -10,8 +11,6 @@ import type {
   SyncBillingProviderCheckoutInput,
 } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
-import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
-import { activateInitialZapiContractAfterCheckout } from "./drizzleBillingAddonContracts.js";
 
 export async function syncProviderCheckout(
   db: DrizzleBillingClient,
@@ -29,7 +28,10 @@ async function syncProviderCheckoutTransaction(
   const [checkout] = await db
     .update(billingCheckoutSessions)
     .set({
-      raw: input.raw,
+      raw: {
+        providerCheckoutId: input.providerCheckoutId,
+        status: input.status,
+      },
       status: input.status,
       updatedAt: new Date(),
     })
@@ -47,7 +49,7 @@ async function syncProviderCheckoutTransaction(
   if (!checkout) {
     return {
       reason: "unknown_checkout",
-      status: "ignored",
+      status: "pending_reconciliation",
       storeId: null,
       tenantId: null,
     };
@@ -71,48 +73,83 @@ async function syncProviderCheckoutTransaction(
   }
 
   if (input.status === "paid") {
-    await db
-      .update(subscriptions)
+    const [before] = await db
+      .select()
+      .from(billingPlanHires)
+      .where(eq(billingPlanHires.id, checkout.planHireId ?? ""))
+      .limit(1);
+    if (!before || before.status === "paid_active") {
+      return {
+        status: "synced",
+        storeId: checkout.storeId as never,
+        tenantId: checkout.tenantId as never,
+      };
+    }
+    if (
+      ![
+        "created",
+        "checkout_created",
+        "payment_pending",
+        "activation_pending",
+      ].includes(before.status)
+    ) {
+      return {
+        reason: "non_monotonic_checkout_event",
+        status: "pending_reconciliation",
+        storeId: checkout.storeId as never,
+        tenantId: checkout.tenantId as never,
+      };
+    }
+    const [hire] = await db
+      .update(billingPlanHires)
       .set({
-        ...(input.currentPeriodEnd
-          ? { currentPeriodEnd: input.currentPeriodEnd }
-          : {}),
         ...(input.providerSubscriptionId
           ? { providerSubscriptionId: input.providerSubscriptionId }
           : {}),
-        provider: input.provider,
-        status: "active",
+        status: "activation_pending",
         updatedAt: new Date(),
       })
-      .where(eq(subscriptions.id, checkout.subscriptionId));
-    const activatedContracts = await activateInitialZapiContractAfterCheckout(
-      db,
-      {
-        paidAt: new Date(),
-        providerCheckoutId: input.providerCheckoutId,
-        ...(checkout.storeId ? { storeId: checkout.storeId } : {}),
-        subscriptionId: checkout.subscriptionId,
-        tenantId: checkout.tenantId,
-      },
-    );
-    const itemRows = await db
-      .select({ storeId: subscriptionItems.storeId })
-      .from(subscriptionItems)
-      .where(eq(subscriptionItems.subscriptionId, checkout.subscriptionId))
-      .limit(200);
-    const storeIds = [
-      ...new Set([
-        ...itemRows.flatMap((item) => (item.storeId ? [item.storeId] : [])),
-        ...activatedContracts.map((contract) => contract.storeId),
-      ]),
-    ];
-    for (const storeId of storeIds) {
-      await projectSelectedEntitlements(db, {
-        source: "billing_checkout",
-        storeId,
-        subscriptionId: checkout.subscriptionId,
-        tenantId: checkout.tenantId,
+      .where(eq(billingPlanHires.id, checkout.planHireId ?? ""))
+      .returning();
+    if (hire) {
+      await db.insert(billingPlanHireTransitions).values({
+        fromStatus: before.status,
+        hireId: hire.id,
+        metadata: { providerCheckoutId: input.providerCheckoutId },
+        storeId: hire.storeId,
+        tenantId: hire.tenantId,
+        toStatus: "activation_pending",
       });
+    }
+  }
+
+  if (input.status === "cancelled" || input.status === "expired") {
+    const [before] = await db
+      .select()
+      .from(billingPlanHires)
+      .where(eq(billingPlanHires.id, checkout.planHireId ?? ""))
+      .limit(1);
+    if (
+      before &&
+      !["paid_active", "downgrade_scheduled", "cancelled", "expired"].includes(
+        before.status,
+      )
+    ) {
+      const [hire] = await db
+        .update(billingPlanHires)
+        .set({ status: input.status, updatedAt: new Date() })
+        .where(eq(billingPlanHires.id, before.id))
+        .returning();
+      if (hire) {
+        await db.insert(billingPlanHireTransitions).values({
+          fromStatus: before.status,
+          hireId: hire.id,
+          metadata: { providerCheckoutId: input.providerCheckoutId },
+          storeId: hire.storeId,
+          tenantId: hire.tenantId,
+          toStatus: input.status,
+        });
+      }
     }
   }
 

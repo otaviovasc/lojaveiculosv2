@@ -6,6 +6,14 @@ const domainsRoot = new URL("../../apps/api/src/domains", import.meta.url)
 const nonEntrypointFiles = new Set([
   "auditVehicleServiceEvent.ts",
   "buildCrmChannelConnectionOverview.ts",
+  "billingPlanHireAudit.ts",
+  "billingPlanHireCallbacks.ts",
+  "billingPlanHireErrors.ts",
+  "billingWebhookResultStatus.ts",
+  "billingWebhookSync.ts",
+  "cancelEmptyBillingProviderSubscription.ts",
+  "changeBillingPlanAtRenewal.ts",
+  "checklistAccess.ts",
   "composioChannelConnectionSetup.types.ts",
   "composioInstagramConnectionSelection.ts",
   "composioWhatsappConnectionSelection.ts",
@@ -14,6 +22,7 @@ const nonEntrypointFiles = new Set([
   "crmLeadOutcomeMutationSupport.ts",
   "crmLeadOutcomePersistence.ts",
   "crmServiceErrors.ts",
+  "createBillingPlanHire.testSupport.ts",
   "financeAutoEntryEvaluator.ts",
   "financeAutoEntryLabels.ts",
   "financeAutoEntryRuleValidation.ts",
@@ -31,16 +40,17 @@ const nonEntrypointFiles = new Set([
   "marketplaceStockPlanRules.ts",
   "marketplaceStockPlanTypes.ts",
   "marketplaceStockBlockers.ts",
+  "manageZapiConnectionAsSupport.testSupport.ts",
   "materializeFinanceAutoEntries.ts",
   "claimMarketplaceSyncJob.ts",
   "reconcileMarketplaceClaim.ts",
   "runMarketplaceSyncJobAudit.ts",
   "runMarketplaceSyncJobSupport.ts",
   "planMarketplaceStockItem.ts",
+  "prepareZapiCredentialRotation.ts",
   "sendWhatsappVehicleSupport.ts",
   "serviceSupport.ts",
   "simulationSyncProjection.ts",
-  "verifyUpdatedZapiCredentials.ts",
   "summarizeMarketplaceStockPlan.ts",
   "testSupport.ts",
   "types.ts",
@@ -51,6 +61,7 @@ const nonEntrypointFiles = new Set([
   "routingReadModels.ts",
   "routingResolution.ts",
   "zapiWebhookSetupObservability.ts",
+  "zapiWebhookSecretRotation.ts",
   "zapiReplacementSupport.ts",
   "zapiReplacementWebhooks.ts",
   "zapiReplacementCutover.ts",
@@ -167,6 +178,7 @@ for (const file of domainFiles.filter(isServiceFile)) {
     !source.includes("auditWhatsappServiceEvent(") &&
     !source.includes("auditZapiWebhook(") &&
     !source.includes("auditZapiWebhookSetupResult(") &&
+    !source.includes("auditBillingPlanHire(") &&
     !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
     !source.includes("auditVehicleServiceEvent(") &&
@@ -188,6 +200,7 @@ for (const file of domainFiles.filter(isServiceFile)) {
     !source.includes("logWhatsappServiceEvent(") &&
     !source.includes("logSalesServiceEvent(") &&
     !source.includes("logVehicleServiceEvent(") &&
+    !source.includes("logZapiWebhookSetup(") &&
     !usesDelegatedContractHelper
   ) {
     failures.push(`${file}: service must write scoped structured logs`);

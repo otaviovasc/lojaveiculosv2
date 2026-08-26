@@ -16,7 +16,10 @@
   capabilities. OLX stock authorization uses the marketplace OAuth contract.
 - WhatsApp Oficial may be self-service when offered by the server. Instagram
   setup remains operator-assisted until an official Auth Config is available.
-- Keep Z-API visible when its add-on or connection allowance exists; a zero
-  generic allowance must not hide an active or paid add-on.
+- Expose Z-API setup only under the base `crm` entitlement. Z-API is a BYOK
+  transport, not a billable add-on; readiness comes from the connection DTO.
+- Collect `instanceId`, `instanceToken`, and `clientToken` as write-only,
+  store-scoped credentials. Never display stored values or imply readiness
+  while the server reports `credentials_incomplete`.
 - Use design tokens from the shared stylesheet chain. Do not add hardcoded color
   values or feature-local replacements for shared primitives.

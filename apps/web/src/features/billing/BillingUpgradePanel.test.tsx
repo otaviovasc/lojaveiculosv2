@@ -19,11 +19,9 @@ describe("BillingUpgradePanel", () => {
       />,
     );
 
-    expect(screen.getByText("Disponível para contratar")).toBeVisible();
+    expect(screen.getByText("Disponível em outro plano")).toBeVisible();
     expect(screen.getByText(/publicação e sincronização/i)).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ver plano e pacotes" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Ver planos" }));
     expect(onOpenBilling).toHaveBeenCalledOnce();
   });
 
@@ -40,7 +38,7 @@ describe("BillingUpgradePanel", () => {
     expect(screen.getByText("Gerenciado pela agência")).toBeVisible();
     expect(screen.getByText("Solicite à sua agência")).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: "Ver plano e pacotes" }),
+      screen.queryByRole("button", { name: "Ver planos" }),
     ).not.toBeInTheDocument();
   });
 });

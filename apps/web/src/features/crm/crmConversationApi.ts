@@ -30,7 +30,6 @@ import {
   crmCampaignRoutes,
 } from "./crmCampaignApiRoutes";
 import { subscribeCrmEvents } from "./crmRealtimeApi";
-import type { CrmWhatsappZapiAddonContract } from "./crmConversationTypes";
 import type { CrmStatisticsResponse } from "./crmStatisticsTypes";
 
 export {
@@ -150,10 +149,6 @@ export function createCrmConversationApi({
       postJson(
         crmConversationRoutes.zapiWebhooksConfigure(connectionId, baseUrl),
       ),
-    getZapiAddonContract: () =>
-      getJson<unknown>(crmConversationRoutes.billingOverview(baseUrl)).then(
-        readZapiAddonContract,
-      ),
     createScheduledMessage: (input) =>
       postJson(crmConversationRoutes.scheduledMessages(baseUrl), input),
     createTag: (input) => postJson(crmConversationRoutes.tags(baseUrl), input),
@@ -259,10 +254,6 @@ export function createCrmConversationApi({
       postJson(crmConversationRoutes.zapiStatusRefresh(connectionId, baseUrl)),
     retryOlxChatSetup: (connectionId) =>
       postJson(crmConversationRoutes.olxChatSetupRetry(connectionId, baseUrl)),
-    requestZapiAddon: () =>
-      postJson<{ contract: CrmWhatsappZapiAddonContract }>(
-        crmConversationRoutes.billingZapiRequest(baseUrl),
-      ).then((response) => response.contract),
     setConnectionPaused: (connectionId, paused) =>
       patchJson(crmConversationRoutes.connection(connectionId, baseUrl), {
         status: paused ? "paused" : "active",
@@ -392,53 +383,6 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value));
-}
-
-function readZapiAddonContract(
-  payload: unknown,
-): CrmWhatsappZapiAddonContract | null {
-  const record = asRecord(payload);
-  const contracts = Array.isArray(record.addonContracts)
-    ? record.addonContracts.filter(isRecord)
-    : [];
-  return contracts.find(isZapiAddonContract) ?? null;
-}
-
-function isZapiAddonContract(
-  value: Record<string, unknown>,
-): value is CrmWhatsappZapiAddonContract {
-  return (
-    value.addonCode === "crm_zapi" &&
-    typeof value.id === "string" &&
-    typeof value.monthlyPriceCents === "number" &&
-    isNullableString(value.cancellationScheduledFor) &&
-    isNullableString(value.paidAt) &&
-    isNullableString(value.scheduledFor) &&
-    isNullableString(value.setupCompletedAt) &&
-    isZapiAddonContractStatus(value.status) &&
-    typeof value.storeId === "string" &&
-    isNullableString(value.supportCode)
-  );
-}
-
-function isNullableString(value: unknown): value is string | null {
-  return value === null || typeof value === "string";
-}
-
-function isZapiAddonContractStatus(
-  value: unknown,
-): value is CrmWhatsappZapiAddonContract["status"] {
-  return (
-    value === "active" ||
-    value === "cancelled" ||
-    value === "paid_awaiting_setup" ||
-    value === "pending" ||
-    value === "scheduled"
-  );
 }
 
 function readNonNegativeNumber(value: unknown, fallback: number) {

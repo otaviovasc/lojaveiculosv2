@@ -42,7 +42,7 @@ describe("CRM start conversation", () => {
     },
   );
 
-  it("rejects Z-API without its entitlement before creating lead or message state", async () => {
+  it("rejects Z-API without the base CRM entitlement before creating state", async () => {
     const crmRepository = createMemoryCrmRepository();
     const conversationRepository = createMemoryCrmConversationRepository();
     const sendText = vi.fn();
@@ -53,7 +53,7 @@ describe("CRM start conversation", () => {
       crmRepository,
       crmMessagingGateway: { sendText },
       crmConversationRepository: conversationRepository,
-      entitlements: ["crm"],
+      entitlements: [],
     });
 
     const response = await requestStartConversation(app, {

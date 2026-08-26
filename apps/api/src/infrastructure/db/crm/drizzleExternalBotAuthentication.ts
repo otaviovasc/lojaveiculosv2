@@ -18,7 +18,7 @@ export function createExternalBotActionAuthenticator(
           inner join stores store on store.id=account.store_id and store.tenant_id=account.tenant_id and store.deleted_at is null
           inner join store_entitlements entitlement
             on entitlement.tenant_id=account.tenant_id and entitlement.store_id=account.store_id
-            and entitlement.feature_key='crm' and entitlement.status in ('active','trialing')
+            and entitlement.feature_key='crm' and entitlement.status='active'
             and (entitlement.starts_at is null or entitlement.starts_at <= now())
             and (entitlement.ends_at is null or entitlement.ends_at > now())
           where account.provider='crm_external_bot' and account.status='active'

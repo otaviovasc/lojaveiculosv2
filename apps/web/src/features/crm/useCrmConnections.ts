@@ -4,55 +4,28 @@ import { asError } from "./crmConversationHookSupport";
 import type {
   CrmComposioCompleteResult,
   CrmAvailableSetup,
-  CrmConnectionBillingState,
-  CrmConnectionAllowance,
   CrmConnectionId,
   CrmCreateConnectionInput,
   CrmProviderConnection,
-  CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiWebhookSetupResult,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
 } from "./crmConversationTypes";
 
-const fallbackAllowance: CrmConnectionAllowance = {
-  limit: 0,
-  remaining: 0,
-  used: 0,
-};
-
 export function useCrmConnections(api: CrmConversationApi) {
-  const [allowance, setAllowance] = useState(fallbackAllowance);
   const [availableSetups, setAvailableSetups] = useState<CrmAvailableSetup[]>(
     [],
   );
-  const [billingState, setBillingState] = useState<CrmConnectionBillingState>({
-    code: null,
-    status: "available",
-  });
   const [connections, setConnections] = useState<CrmProviderConnection[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [zapiAddonContract, setZapiAddonContract] =
-    useState<CrmWhatsappZapiAddonContract | null>(null);
   const requestGenerationRef = useRef(0);
   const connectionsRef = useRef<CrmProviderConnection[]>([]);
   const connectionMutationGenerationRef = useRef(new Map<string, number>());
   const preserveNextOperationalSnapshotRef = useRef(new Set<string>());
 
   const loadConnections = useCallback(() => api.listConnections(), [api]);
-  const loadZapiAddonContract = useCallback(async () => {
-    if (!api.getZapiAddonContract) return null;
-    try {
-      return await api.getZapiAddonContract();
-    } catch {
-      // Billing is an enrichment for the connection screen. A billing read
-      // failure must not hide an otherwise usable CRM connection list.
-      return null;
-    }
-  }, [api]);
-
   const applyConnectionsPayload = useCallback(
     (payload: Awaited<ReturnType<CrmConversationApi["listConnections"]>>) => {
       const nextConnections = payload.connections.map((incoming) => {
@@ -74,11 +47,7 @@ export function useCrmConnections(api: CrmConversationApi) {
       });
       connectionsRef.current = nextConnections;
       setConnections(nextConnections);
-      setAllowance(payload.allowance);
       setAvailableSetups(payload.availableSetups);
-      setBillingState(
-        payload.billingState ?? { code: null, status: "available" },
-      );
       setError(null);
     },
     [],
@@ -128,13 +97,9 @@ export function useCrmConnections(api: CrmConversationApi) {
   const refreshConnectionsAndRead = useCallback(async () => {
     const requestGeneration = ++requestGenerationRef.current;
     try {
-      const [payload, addonContract] = await Promise.all([
-        loadConnections(),
-        loadZapiAddonContract(),
-      ]);
+      const payload = await loadConnections();
       if (requestGeneration !== requestGenerationRef.current) return undefined;
       applyConnectionsPayload(payload);
-      setZapiAddonContract(addonContract);
       return payload.connections;
     } catch (caught) {
       if (requestGeneration === requestGenerationRef.current) {
@@ -143,7 +108,7 @@ export function useCrmConnections(api: CrmConversationApi) {
       }
     }
     return undefined;
-  }, [applyConnectionsPayload, loadConnections, loadZapiAddonContract]);
+  }, [applyConnectionsPayload, loadConnections]);
 
   const refreshConnections = useCallback(async () => {
     await refreshConnectionsAndRead();
@@ -311,20 +276,6 @@ export function useCrmConnections(api: CrmConversationApi) {
     ],
   );
 
-  const requestZapiAddon = useCallback(async () => {
-    if (!api.requestZapiAddon) {
-      throw new Error("A solicitação da Z-API não está disponível.");
-    }
-    try {
-      const contract = await api.requestZapiAddon();
-      setZapiAddonContract(contract);
-      return contract;
-    } catch (caught) {
-      setError(asError(caught));
-      throw caught;
-    }
-  }, [api]);
-
   const setConnectionPaused = useCallback(
     async (connectionId: CrmConnectionId, paused: boolean) => {
       if (!api.setConnectionPaused) {
@@ -441,17 +392,13 @@ export function useCrmConnections(api: CrmConversationApi) {
     let active = true;
     connectionsRef.current = [];
     setConnections([]);
-    setAllowance(fallbackAllowance);
     setAvailableSetups([]);
-    setBillingState({ code: null, status: "available" });
-    setZapiAddonContract(null);
     setIsLoading(true);
     setError(null);
-    void Promise.all([loadConnections(), loadZapiAddonContract()])
-      .then(([payload, addonContract]) => {
+    void loadConnections()
+      .then((payload) => {
         if (active && requestGeneration === requestGenerationRef.current) {
           applyConnectionsPayload(payload);
-          setZapiAddonContract(addonContract);
         }
       })
       .catch((caught) => {
@@ -466,13 +413,11 @@ export function useCrmConnections(api: CrmConversationApi) {
     return () => {
       active = false;
     };
-  }, [applyConnectionsPayload, loadConnections, loadZapiAddonContract]);
+  }, [applyConnectionsPayload, loadConnections]);
 
   return {
-    allowance,
     authorizeComposio,
     availableSetups,
-    billingState,
     completeComposio,
     configureZapiWebhooks,
     connections,
@@ -489,11 +434,9 @@ export function useCrmConnections(api: CrmConversationApi) {
     replaceZapiConnection,
     requestZapiPairingCode,
     requestZapiPairingQr,
-    requestZapiAddon,
     refreshZapiConnectionStatus,
     selectComposioSender,
     setConnectionPaused,
-    zapiAddonContract,
   };
 }
 

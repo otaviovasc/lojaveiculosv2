@@ -50,7 +50,7 @@ describe("CRM server-owned conversation start", () => {
             storeId: "store_1",
             tenantId: "tenant_1",
           }),
-          { entitlements: ["crm", "crm_zapi"] as const },
+          { entitlements: ["crm"] as const },
         ),
         {
           connectionId: "connection-system-start",

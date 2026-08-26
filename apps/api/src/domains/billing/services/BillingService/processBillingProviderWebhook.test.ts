@@ -174,9 +174,19 @@ describe("processBillingProviderWebhook", () => {
   it("syncs a received Asaas checkout payment event", async () => {
     const audit = createAuditSink();
     const context = createWebhookContext(audit);
+    const repository = createWebhookRepository();
+    let paymentUpserts = 0;
     const ports = {
       billingRepository: createBillingRepository(),
-      billingWebhookRepository: createWebhookRepository(),
+      billingWebhookRepository: {
+        ...repository,
+        async upsertProviderPayment(
+          input: Parameters<typeof repository.upsertProviderPayment>[0],
+        ) {
+          paymentUpserts += 1;
+          return repository.upsertProviderPayment(input);
+        },
+      },
       environment: "test",
       paymentProviderGateway: createProviderGateway("secret"),
     };
@@ -207,6 +217,7 @@ describe("processBillingProviderWebhook", () => {
       providerEventId: "evt_checkout_paid_1",
       status: "processed",
     });
+    expect(paymentUpserts).toBe(0);
 
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({

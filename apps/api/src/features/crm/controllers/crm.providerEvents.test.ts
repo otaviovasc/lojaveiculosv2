@@ -4,14 +4,53 @@ import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepo
 import { buildZapiProviderEventId } from "../../../domains/crm/whatsapp/zapiWebhookEventKey.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
-import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
+import {
+  createConfiguredZapiTestConnection,
+  createTestCrmConnectionCredentialVault,
+  withTestZapiWebhookToken,
+} from "./crm.channelConnections.testSupport.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
-
 describe("CRM provider event retry", () => {
+  it("minimizes processed Z-API payloads after durable handling", async () => {
+    const webhookEvents = createMemoryCrmWebhookEventRepository();
+    const app = createTestApp({
+      crmConnectionCredentialVault: createTestCrmConnectionCredentialVault(),
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmWebhookEventRepository: webhookEvents,
+    });
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/connected`,
+      {
+        body: JSON.stringify({
+          connected: true,
+          connectedPhone: "5511999999999",
+        }),
+        headers: withTestZapiWebhookToken({
+          "content-type": "application/json",
+        }),
+        method: "POST",
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const [event] = await webhookEvents.list({
+      limit: 1,
+      status: "processed",
+      storeId,
+      tenantId,
+    });
+    expect(event?.payload).toEqual({
+      retention: "minimized_after_processing",
+      webhookType: "connected",
+    });
+  });
+
   it("lists and retries ZAPI webhook event issues", async () => {
     const connections = createMemoryCrmConnectionRepository([
       createZapiConnection({ status: "disconnected" }),
@@ -99,9 +138,7 @@ describe("CRM provider event retry", () => {
     const app = createTestApp({
       crmWebhookEventRepository: webhookEvents,
     });
-
     const response = await app.request("/api/v1/crm/provider-events");
-
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       events: [
@@ -195,7 +232,6 @@ describe("CRM provider event retry", () => {
     const app = createTestApp({
       crmWebhookEventRepository: webhookEvents,
     });
-
     const response = await app.request("/api/v1/crm/provider-events");
 
     expect(response.status).toBe(200);
@@ -203,9 +239,7 @@ describe("CRM provider event retry", () => {
   });
 });
 
-function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
+function createZapiConnection(overrides: Partial<CrmConnection> = {}) {
   return createConfiguredZapiTestConnection({
     id: connectionId,
     overrides,

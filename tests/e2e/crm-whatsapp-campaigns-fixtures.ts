@@ -12,6 +12,7 @@ export function createCampaignBootstrap() {
     "crm.campaigns.read",
     "crm.messaging.connection.pair",
     "crm.messaging.connection.setup",
+    "crm.messaging.credentials.rotate",
     "crm.bot.manage",
     "crm.bot.proposals.decide",
     "crm.bot.read",
@@ -29,6 +30,7 @@ export function createCampaignBootstrap() {
   return {
     defaultStore: {
       effectivePermissions,
+      entitlements: ["crm"],
       role: "OWNER",
       status: "active",
       storeId: "50000000-0000-4000-8000-000000000001",

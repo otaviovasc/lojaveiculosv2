@@ -1,370 +1,212 @@
-const plan = {
-  catalogVersion: "2026-07-v1",
-  code: "growth",
-  features: [
-    {
-      featureKey: "subdomain",
-      included: true,
-      includedInTrial: true,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "crm",
-      included: false,
-      includedInTrial: false,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "plate_lookup",
-      included: true,
-      includedInTrial: true,
-      limitValue: 300,
-      trialLimitValue: 10,
-    },
-    {
-      featureKey: "automation",
-      included: true,
-      includedInTrial: true,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "analytics",
-      included: true,
-      includedInTrial: true,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "compliance",
-      included: true,
-      includedInTrial: true,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "custom_domain",
-      included: true,
-      includedInTrial: false,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "nfe",
-      included: false,
-      includedInTrial: false,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "external_api",
-      included: false,
-      includedInTrial: false,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "marketplace",
-      included: false,
-      includedInTrial: false,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "simulations",
-      included: false,
-      includedInTrial: false,
-      limitValue: null,
-      trialLimitValue: null,
-    },
+const catalogVersion = "2026-08-v3";
+const entitlementKeys = [
+  "storefront",
+  "inventory",
+  "lead_capture",
+  "sales",
+  "financing",
+  "crm",
+  "documents",
+  "fiscal",
+  "finance",
+  "commissions",
+  "analytics",
+  "compliance",
+  "checklists",
+  "marketplace",
+  "external_api",
+  "automation",
+  "ai",
+  "custom_domain",
+  "plate_lookup",
+] as const;
+
+const includedByPlan = {
+  free: ["storefront", "inventory", "lead_capture", "plate_lookup"],
+  essencial: [
+    "storefront",
+    "inventory",
+    "lead_capture",
+    "sales",
+    "financing",
+    "custom_domain",
+    "plate_lookup",
   ],
-  id: "plan_growth",
-  limits: { sellerLimit: 8, vehicleLimit: 300 },
-  monthlyPriceCents: 29900,
-  name: "Growth",
-  status: "active",
+  operacao: [
+    "storefront",
+    "inventory",
+    "lead_capture",
+    "sales",
+    "financing",
+    "crm",
+    "documents",
+    "custom_domain",
+    "plate_lookup",
+  ],
+  gestao: [
+    "storefront",
+    "inventory",
+    "lead_capture",
+    "sales",
+    "financing",
+    "crm",
+    "documents",
+    "fiscal",
+    "finance",
+    "commissions",
+    "analytics",
+    "compliance",
+    "checklists",
+    "custom_domain",
+    "plate_lookup",
+  ],
+  escala: entitlementKeys,
 } as const;
 
-const matrix = [
-  entitlement("subdomain", true, "active"),
-  entitlement("crm", false, "active"),
-  entitlement("plate_lookup", true, "active", 300),
-  entitlement("automation", true, "active"),
-  entitlement("nfe", false, "inactive"),
+const definitions = [
+  ["free", "Free", 0, 1, "free", 10, 1, 3],
+  ["essencial", "Essencial", 19_700, 2, "checkout", 75, 3, 25],
+  ["operacao", "Operação", 39_700, 3, "checkout", 150, 5, 75],
+  ["gestao", "Gestão", 59_700, 4, "checkout", 300, 10, 150],
+  ["escala", "Escala", 89_700, 5, "quote_required", null, null, null],
 ] as const;
 
-const catalogAddons = [
-  {
-    catalogVersion: "2026-07-v1",
-    code: "crm_whatsapp_instance",
-    featureKey: "crm",
-    id: "addon_crm_whatsapp",
-    includedInTrial: false,
-    monthlyPriceCents: 24999,
-    name: "CRM WhatsApp",
+export const billingPlans = definitions.map(
+  ([
+    code,
+    name,
+    monthlyPriceCents,
+    selectionRank,
+    checkoutMode,
+    vehicleLimit,
+    sellerLimit,
+    plateLimit,
+  ]) => ({
+    capabilities: [...includedByPlan[code]],
+    catalogVersion,
+    checkoutMode,
+    code,
+    features: entitlementKeys.map((featureKey) => ({
+      featureKey,
+      included: includedByPlan[code].includes(featureKey as never),
+      includedInTrial: false,
+      limitValue: featureKey === "plate_lookup" ? plateLimit : null,
+      trialLimitValue: null,
+    })),
+    id: `83262608-0000-4000-8000-00000000000${selectionRank}`,
+    limits: { sellerLimit, vehicleLimit },
+    monthlyPriceCents,
+    name,
+    selectionRank,
     status: "active",
-  },
-  {
-    catalogVersion: "2026-07-v1",
-    code: "marketplace_connectors",
-    featureKey: "marketplace",
-    id: "addon_marketplaces",
-    includedInTrial: false,
-    monthlyPriceCents: 14990,
-    name: "Marketplaces",
-    status: "active",
-  },
-  {
-    catalogVersion: "2026-07-v1",
-    code: "nfe_spedy",
-    featureKey: "nfe",
-    id: "addon_nfe",
-    includedInTrial: false,
-    monthlyPriceCents: 19990,
-    name: "NF-e integrada",
-    status: "active",
-  },
-  {
-    catalogVersion: "2026-07-v1",
-    code: "public_api_access",
-    featureKey: "external_api",
-    id: "addon_public_api",
-    includedInTrial: false,
-    monthlyPriceCents: 9990,
-    name: "API Pública",
-    status: "active",
-  },
-  {
-    catalogVersion: "2026-07-v1",
-    code: "simulations_pro",
-    featureKey: "simulations",
-    id: "addon_simulations",
-    includedInTrial: false,
-    monthlyPriceCents: 4990,
-    name: "Simulações Pro",
-    status: "active",
-  },
-] as const;
+  }),
+);
 
+const freePlan = billingPlans[0]!;
+const essencialPlan = billingPlans[1]!;
+const operacaoPlan = billingPlans[2]!;
 const stores = [
-  store("store_1", "Auto Prime Centro", "auto-prime-centro", 54899, matrix),
-  store(
-    "store_2",
-    "Auto Prime Norte",
-    "auto-prime-norte",
-    29900,
-    matrix.map((row) =>
-      row.featureKey === "automation" ? { ...row, status: "inactive" } : row,
-    ),
-  ),
+  store("store_1", "Auto Prime Centro", "auto-prime-centro", operacaoPlan),
+  store("store_2", "Auto Prime Norte", "auto-prime-norte", essencialPlan),
 ] as const;
 
-const lineItems = [
-  line("plan_1", "plan", "Growth", "store_1", "Auto Prime Centro", 29900),
-  line(
-    "addon_1",
-    "addon",
-    "CRM WhatsApp",
-    "store_1",
-    "Auto Prime Centro",
-    24999,
-  ),
-  line("plan_2", "plan", "Growth", "store_2", "Auto Prime Norte", 29900),
-] as const;
-
-export const ownerBillingOverview = trialOverviewForStore(stores[0]);
+export const ownerBillingOverview = overviewForStore(
+  store("store_owner", "Loja do Proprietário", "loja-proprietario", freePlan),
+  "store_owner",
+);
 
 export const agencyBillingOverview = {
-  addons: catalogAddons,
+  ...overviewForStore(stores[0], "agency"),
   allocations: stores.map(toAllocation),
-  authority: authority("agency"),
-  chargePreview: chargePreview(),
-  entitlementEvents: [],
-  financialSummary: financialSummary(),
-  plans: [plan],
+  chargePreview: chargePreview(stores),
+  financialSummary: financialSummary(59_400),
   stores,
-  subscription: subscription(),
   tenant: {
     tenantId: "tenant_1",
     tenantName: "Grupo Auto Prime",
     tenantSlug: "grupo-auto-prime",
   },
-  tenantId: "tenant_1",
 } as const;
 
-function overviewForStore(selectedStore: (typeof stores)[number]) {
-  return {
-    addons: catalogAddons,
-    allocations: [toAllocation(selectedStore)],
-    authority: authority("store_owner"),
-    chargePreview: chargePreview(selectedStore.storeId),
-    entitlementEvents: [],
-    entitlementMatrix: selectedStore.entitlementMatrix,
-    entitlements: [],
-    financialSummary: financialSummary(selectedStore.monthlyAmountCents),
-    plans: [plan],
-    storeId: selectedStore.storeId,
-    subscription: subscription(),
-    tenantId: "tenant_1",
-  } as const;
-}
-
-function trialOverviewForStore(selectedStore: (typeof stores)[number]) {
-  const trialEndsAt = "2026-08-14T00:00:00.000Z";
-  const safeTrialKeys = [
-    "analytics",
-    "automation",
-    "compliance",
-    "plate_lookup",
-    "subdomain",
-  ] as const;
-  const trialMatrix = plan.features.map((feature) =>
-    entitlement(
-      feature.featureKey,
-      feature.included,
-      safeTrialKeys.includes(
-        feature.featureKey as (typeof safeTrialKeys)[number],
-      )
-        ? "trialing"
-        : "inactive",
-      feature.trialLimitValue ?? feature.limitValue,
-    ),
-  );
-  return {
-    addons: catalogAddons,
-    allocations: [
-      {
-        ...toAllocation(selectedStore),
-        addonCount: 0,
-        monthlyAmountCents: 0,
-        planCode: null,
-        planName: null,
-        subscriptionStatus: "trialing",
-      },
-    ],
-    authority: authority("store_owner"),
-    chargePreview: emptyChargePreview(),
-    entitlementEvents: [],
-    entitlementMatrix: trialMatrix,
-    entitlements: safeTrialKeys.map((featureKey) => ({
-      endsAt: trialEndsAt,
-      featureKey,
-      metadata:
-        featureKey === "plate_lookup"
-          ? { limitValue: 10, sourceDetail: "safe_trial_catalog" }
-          : { sourceDetail: "safe_trial_catalog" },
-      source: "billing_catalog",
-      startsAt: "2026-07-15T00:00:00.000Z",
-      status: "trialing",
-    })),
-    financialSummary: financialSummary(0),
-    plans: [plan],
-    storeId: selectedStore.storeId,
-    subscription: {
-      currentPeriodEnd: trialEndsAt,
-      currentPeriodStart: "2026-07-15T00:00:00.000Z",
-      id: "subscription_trial",
-      plan: null,
-      status: "trialing",
-    },
-    tenantId: "tenant_1",
-  } as const;
-}
-
-function emptyChargePreview() {
-  return {
-    cadence: "monthly",
-    collectionMethod: "card_on_file",
-    collectionTiming: "cycle_end",
-    currency: "BRL",
-    hasAgencyDiscount: false,
-    lineItems: [],
-    prorationPolicy: "store_days_active",
-    subtotalCents: 0,
-    totalCents: 0,
-  } as const;
-}
-
-function entitlement(
-  featureKey: string,
-  includedInPlan: boolean,
-  status: string,
-  limitValue: number | null = null,
+function overviewForStore(
+  selectedStore: ReturnType<typeof store>,
+  managedBy: "agency" | "store_owner",
 ) {
   return {
-    endsAt: null,
-    featureKey,
-    includedInPlan,
-    limitValue,
-    source: "billing_console",
-    startsAt: null,
-    status,
-  };
+    addons: [],
+    allocations: [toAllocation(selectedStore)],
+    authority: authority(managedBy),
+    billingPhase:
+      selectedStore.plan.code === "free" ? "free_active" : "paid_active",
+    chargePreview: chargePreview([selectedStore]),
+    effectiveContract: {
+      currentPeriodEnd:
+        selectedStore.plan.code === "free" ? null : "2026-09-01T00:00:00.000Z",
+      currentPeriodStart: "2026-08-01T00:00:00.000Z",
+      planCode: selectedStore.plan.code,
+      planId: selectedStore.plan.id,
+      planName: selectedStore.plan.name,
+      unitAmountCents: selectedStore.plan.monthlyPriceCents,
+    },
+    entitlementEvents: [],
+    entitlementMatrix: selectedStore.entitlementMatrix,
+    entitlements: selectedStore.entitlementMatrix
+      .filter((row) => row.status === "active")
+      .map((row) => ({
+        endsAt: null,
+        featureKey: row.featureKey,
+        metadata: row.limitValue == null ? {} : { limitValue: row.limitValue },
+        source: "billing_catalog",
+        startsAt: "2026-08-01T00:00:00.000Z",
+        status: "active",
+      })),
+    financialSummary: financialSummary(selectedStore.plan.monthlyPriceCents),
+    plans: billingPlans,
+    storeId: selectedStore.storeId,
+    subscription: subscription(selectedStore.plan),
+    tenantId: "tenant_1",
+  } as const;
 }
 
 function store(
   storeId: string,
   storeName: string,
   storeSlug: string,
-  monthlyAmountCents: number,
-  entitlementMatrix: readonly ReturnType<typeof entitlement>[],
+  plan: (typeof billingPlans)[number],
 ) {
+  const entitlementMatrix = plan.features.map((feature) => ({
+    endsAt: null,
+    featureKey: feature.featureKey,
+    includedInPlan: feature.included,
+    limitValue: feature.limitValue,
+    source: feature.included ? "billing_catalog" : null,
+    startsAt: feature.included ? "2026-08-01T00:00:00.000Z" : null,
+    status: feature.included ? "active" : "inactive",
+  }));
   return {
     activeEntitlementCount: entitlementMatrix.filter(
-      (row) => row.status === "active" || row.status === "trialing",
+      (row) => row.status === "active",
     ).length,
-    addonCount: monthlyAmountCents > plan.monthlyPriceCents ? 1 : 0,
+    addonCount: 0,
     createdAt: "2026-01-01T00:00:00.000Z",
     entitlementCount: entitlementMatrix.length,
     entitlementMatrix,
-    monthlyAmountCents,
+    monthlyAmountCents: plan.monthlyPriceCents,
+    plan,
     planCode: plan.code,
     planName: plan.name,
     storeId,
     storeName,
     storeSlug,
     subscriptionStatus: "active",
-    vehicleCount: 24,
+    vehicleCount: 8,
   } as const;
 }
 
-function line(
-  id: string,
-  itemType: "addon" | "plan",
-  label: string,
-  storeId: string,
-  storeName: string,
-  amountCents: number,
-) {
-  return {
-    allocationPercent: (amountCents / 84799) * 100,
-    amountCents,
-    description: itemType === "plan" ? "Plano base" : "Pacote opcional",
-    endsAt: null,
-    fullAmountCents: amountCents,
-    id,
-    itemType,
-    kind: "subscription_item",
-    label,
-    periodEnd: "2026-07-31T00:00:00.000Z",
-    periodStart: "2026-07-01T00:00:00.000Z",
-    prorationApplied: false,
-    prorationFactor: 1,
-    quantity: 1,
-    sourceId: id,
-    startsAt: "2026-07-01T00:00:00.000Z",
-    storeId,
-    storeName,
-    unitAmountCents: amountCents,
-  } as const;
-}
-
-function toAllocation(selectedStore: (typeof stores)[number]) {
+function toAllocation(selectedStore: ReturnType<typeof store>) {
   return {
     activeEntitlementCount: selectedStore.activeEntitlementCount,
-    addonCount: selectedStore.addonCount,
+    addonCount: 0,
     monthlyAmountCents: selectedStore.monthlyAmountCents,
     planCode: selectedStore.planCode,
     planName: selectedStore.planName,
@@ -388,12 +230,9 @@ function authority(managedBy: "agency" | "store_owner") {
   } as const;
 }
 
-function chargePreview(storeId?: string) {
-  const selectedLines = storeId
-    ? lineItems.filter((item) => item.storeId === storeId)
-    : lineItems;
-  const totalCents = selectedLines.reduce(
-    (sum, item) => sum + item.amountCents,
+function chargePreview(selectedStores: readonly ReturnType<typeof store>[]) {
+  const totalCents = selectedStores.reduce(
+    (sum, selectedStore) => sum + selectedStore.plan.monthlyPriceCents,
     0,
   );
   return {
@@ -402,28 +241,55 @@ function chargePreview(storeId?: string) {
     collectionTiming: "cycle_end",
     currency: "BRL",
     hasAgencyDiscount: false,
-    lineItems: selectedLines,
+    lineItems: selectedStores.map((selectedStore) => ({
+      allocationPercent:
+        totalCents === 0
+          ? 0
+          : (selectedStore.plan.monthlyPriceCents / totalCents) * 100,
+      amountCents: selectedStore.plan.monthlyPriceCents,
+      description:
+        selectedStore.plan.code === "free"
+          ? "Contrato Free permanente"
+          : "Plano mensal efetivo",
+      endsAt: null,
+      fullAmountCents: selectedStore.plan.monthlyPriceCents,
+      id: `subscription_item_${selectedStore.storeId}`,
+      itemType: "plan",
+      kind: "subscription_item",
+      label: selectedStore.plan.name,
+      periodEnd:
+        selectedStore.plan.code === "free" ? null : "2026-09-01T00:00:00.000Z",
+      periodStart: "2026-08-01T00:00:00.000Z",
+      prorationApplied: false,
+      prorationFactor: 1,
+      quantity: 1,
+      sourceId: selectedStore.plan.id,
+      startsAt: "2026-08-01T00:00:00.000Z",
+      storeId: selectedStore.storeId,
+      storeName: selectedStore.storeName,
+      unitAmountCents: selectedStore.plan.monthlyPriceCents,
+    })),
     prorationPolicy: "store_days_active",
     subtotalCents: totalCents,
     totalCents,
   } as const;
 }
 
-function financialSummary(monthlyRecurringCents = 84799) {
+function financialSummary(monthlyRecurringCents: number) {
   return {
     monthlyRecurringCents,
-    nextDueAt: "2026-07-31T00:00:00.000Z",
-    openInvoiceCount: 1,
+    nextDueAt: monthlyRecurringCents === 0 ? null : "2026-09-01T00:00:00.000Z",
+    openInvoiceCount: 0,
     overdueInvoiceCount: 0,
     paidThisPeriodCents: monthlyRecurringCents,
   } as const;
 }
 
-function subscription() {
+function subscription(plan: (typeof billingPlans)[number]) {
   return {
-    currentPeriodEnd: "2026-07-31T00:00:00.000Z",
-    currentPeriodStart: "2026-07-01T00:00:00.000Z",
-    id: "subscription_1",
+    currentPeriodEnd: plan.code === "free" ? null : "2026-09-01T00:00:00.000Z",
+    currentPeriodStart: "2026-08-01T00:00:00.000Z",
+    id: `subscription_${plan.code}`,
     plan,
     status: "active",
   } as const;

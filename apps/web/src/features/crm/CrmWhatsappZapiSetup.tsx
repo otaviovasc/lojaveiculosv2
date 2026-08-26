@@ -8,7 +8,6 @@ import {
 } from "./CrmWhatsappZapiPairingStage";
 import {
   readZapiSetupStep,
-  ZapiContractState,
   ZapiReadyState,
   ZapiSetupProgress,
   ZapiWebhookSetupStatus,
@@ -35,7 +34,6 @@ import {
 import type { CrmProviderConnection } from "./crmConversationTypes";
 
 export function CrmWhatsappZapiSetup({
-  allowance,
   canPair,
   canSetup,
   canRepairCredentials = false,
@@ -44,7 +42,6 @@ export function CrmWhatsappZapiSetup({
   initialCredentialMode,
   onBack,
   onConnection,
-  zapiAddonContract,
 }: CrmWhatsappZapiSetupProps) {
   const [busy, setBusy] = useState<BusyState | null>(null);
   const [credentials, setCredentials] = useState(emptyCredentials);
@@ -83,10 +80,7 @@ export function CrmWhatsappZapiSetup({
         currentConnectionIdRef.current === connectionId),
     [],
   );
-  const isEntitled =
-    allowance.limit > 0 ||
-    ["active", "paid_awaiting_setup"].includes(zapiAddonContract?.status ?? "");
-  const resolvedStep = readZapiSetupStep({ connection, isEntitled });
+  const resolvedStep = readZapiSetupStep({ connection });
   const qrExpired = Boolean(qr && new Date(qr.expiresAt).getTime() <= now);
   const codeExpired = Boolean(
     pairingCode?.expiresAt && new Date(pairingCode.expiresAt).getTime() <= now,
@@ -102,8 +96,8 @@ export function CrmWhatsappZapiSetup({
   }
   const step =
     pairAgainForStateRevision === connectionStateRevisionRef.current &&
-    resolvedStep === 5
-      ? 4
+    resolvedStep === 4
+      ? 3
       : resolvedStep;
 
   useEffect(() => {
@@ -139,7 +133,7 @@ export function CrmWhatsappZapiSetup({
   }, [pairingCode?.expiresAt, qr?.expiresAt]);
 
   useEffect(() => {
-    if (step !== 3 && step !== 4 && step !== 5) return undefined;
+    if (step !== 2 && step !== 3 && step !== 4) return undefined;
 
     const refreshConnections = handlers.onRefreshConnections;
     const refreshZapiStatus = handlers.onRefreshZapiStatus;
@@ -156,7 +150,7 @@ export function CrmWhatsappZapiSetup({
       const actionGeneration = beginAction();
       autoRefreshInFlightRef.current = true;
       try {
-        if ((step === 4 || step === 5) && connectionId && refreshZapiStatus) {
+        if ((step === 3 || step === 4) && connectionId && refreshZapiStatus) {
           const refreshed = await refreshZapiStatus(connectionId);
           if (!isCurrentAction(actionGeneration, connectionId)) return;
           onConnection(refreshed);
@@ -184,29 +178,16 @@ export function CrmWhatsappZapiSetup({
     step,
   ]);
 
-  const requestAddon = async () => {
-    if (!canSetup) return;
-    if (!handlers.onRequestZapiAddon) {
-      setError("A solicitação da Z-API não está disponível neste momento.");
-      return;
-    }
-    const actionGeneration = beginAction();
-    await runAction({
-      action: handlers.onRequestZapiAddon,
-      busy: "addon",
-      fallbackError: "Não foi possível registrar a solicitação da Z-API.",
-      isCurrent: () => isCurrentAction(actionGeneration),
-      setBusy,
-      setError,
-    });
-  };
-
   const saveCredentials = async () => {
     const repairingConnection =
       showRepairCredentials || showReplacementCredentials ? connection : null;
     if (repairingConnection ? !canRepairCredentials : !canSetup) return;
-    if (!credentials.instanceId.trim() || !credentials.instanceToken.trim()) {
-      setError("Informe o ID e o token da instância Z-API.");
+    if (
+      !credentials.instanceId.trim() ||
+      !credentials.instanceToken.trim() ||
+      !credentials.clientToken.trim()
+    ) {
+      setError("Informe as três credenciais da conexão Z-API.");
       return;
     }
     if (showRepairCredentials && !handlers.onRepairZapiCredentials) {
@@ -230,6 +211,7 @@ export function CrmWhatsappZapiSetup({
             await handlers.onReplaceZapiConnection!(repairingConnection!.id, {
               expectedRevision: repairingConnection!.revision ?? 0,
               idempotencyKey: crypto.randomUUID(),
+              clientToken: credentials.clientToken.trim(),
               instanceId: credentials.instanceId.trim(),
               instanceToken: credentials.instanceToken.trim(),
             })
@@ -239,6 +221,7 @@ export function CrmWhatsappZapiSetup({
               ...(repairingConnection.revision !== undefined
                 ? { expectedRevision: repairingConnection.revision }
                 : {}),
+              clientToken: credentials.clientToken.trim(),
               instanceId: credentials.instanceId.trim(),
               instanceToken: credentials.instanceToken.trim(),
             })
@@ -577,16 +560,7 @@ export function CrmWhatsappZapiSetup({
     >
       <ZapiSetupProgress step={step} />
       <div className="crm-zapi-stage">
-        {step === 1 ? (
-          <ZapiContractState
-            canSetup={canSetup}
-            contract={zapiAddonContract}
-            isBusy={busy === "addon"}
-            isEntitled={isEntitled}
-            onRequest={() => void requestAddon()}
-          />
-        ) : null}
-        {step === 2 ? (
+        {step === 1 && !connection ? (
           <CredentialsStage
             busy={busy}
             canSubmit={canSetup}
@@ -598,7 +572,7 @@ export function CrmWhatsappZapiSetup({
             showCredentials={showCredentials}
           />
         ) : null}
-        {(step === 2 || step === 3 || step === 4) &&
+        {(step === 1 || step === 2 || step === 3) &&
         connection &&
         (showRepairCredentials || showReplacementCredentials) ? (
           <CredentialsStage
@@ -619,7 +593,7 @@ export function CrmWhatsappZapiSetup({
             showCredentials={showCredentials}
           />
         ) : null}
-        {step === 3 &&
+        {step === 2 &&
         connection &&
         !showRepairCredentials &&
         !showReplacementCredentials ? (
@@ -641,7 +615,7 @@ export function CrmWhatsappZapiSetup({
             />
           </>
         ) : null}
-        {step === 4 &&
+        {step === 3 &&
         connection &&
         !showRepairCredentials &&
         !showReplacementCredentials ? (
@@ -676,7 +650,7 @@ export function CrmWhatsappZapiSetup({
             />
           </>
         ) : null}
-        {(step === 3 || step === 4) &&
+        {(step === 2 || step === 3) &&
         connection &&
         !showRepairCredentials &&
         !showReplacementCredentials &&
@@ -693,7 +667,7 @@ export function CrmWhatsappZapiSetup({
             Trocar instância desta loja
           </button>
         ) : null}
-        {step === 5 && connection ? (
+        {step === 4 && connection ? (
           <ZapiReadyState
             canDisconnect={canSetup && Boolean(handlers.onDisconnectZapi)}
             connection={connection}
@@ -709,7 +683,8 @@ export function CrmWhatsappZapiSetup({
               : {})}
           />
         ) : null}
-        {step !== 2 &&
+        {step !== 1 &&
+        step !== 2 &&
         !showRepairCredentials &&
         !showReplacementCredentials &&
         error ? (

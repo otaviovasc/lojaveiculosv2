@@ -43,7 +43,7 @@ export type CrmWhatsappWebhookServices = {
     }
   >;
   authorizeZapiWebhook: CrmContextService<
-    { connectionId: string; token: string | null },
+    { connectionId: string; sourceFingerprint: string; token: string | null },
     { authorized: true; storeId: string; tenantId: string }
   >;
   configureWhatsappConnectionWebhooks: CrmContextService<

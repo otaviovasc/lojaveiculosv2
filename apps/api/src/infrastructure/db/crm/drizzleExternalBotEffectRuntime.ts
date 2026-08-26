@@ -93,7 +93,7 @@ export async function loadAuthorizedExternalBotEffect(
       on entitlement.tenant_id=effect.tenant_id
       and entitlement.store_id=effect.store_id
       and entitlement.feature_key='crm'
-      and entitlement.status in ('active','trialing')
+      and entitlement.status='active'
       and (entitlement.starts_at is null or entitlement.starts_at<=now())
       and (entitlement.ends_at is null or entitlement.ends_at>now())
     inner join lateral (

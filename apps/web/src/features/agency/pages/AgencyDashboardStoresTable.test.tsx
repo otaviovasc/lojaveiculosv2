@@ -142,6 +142,7 @@ function store(): AgencyStore {
     asaas_customer_id: null,
     data_criacao: "2026-08-01T12:00:00.000Z",
     id: "store_1",
+    is_permanent_plan: false,
     nome_da_loja: "Loja Centro",
     plan_end_date: "2099-12-31T12:00:00.000Z",
     plano: "Growth",

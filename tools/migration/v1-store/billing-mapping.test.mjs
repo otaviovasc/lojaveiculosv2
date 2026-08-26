@@ -8,7 +8,7 @@ import {
 const NOW = new Date("2026-07-27T12:00:00.000Z");
 const PERIOD_END = new Date("2026-08-27T12:00:00.000Z");
 
-test("maps active V1 plan, add-ons, Asaas ids, and payments to V2", () => {
+test("preserves provider evidence and payment history but projects Free", () => {
   const billing = prepareLegacyBillingMigration(
     data({
       addons: [
@@ -41,42 +41,29 @@ test("maps active V1 plan, add-ons, Asaas ids, and payments to V2", () => {
   assert.equal(billing.subscription.status, "active");
   assert.equal(billing.customer.providerCustomerId, "cus_v1");
   assert.equal(billing.subscription.providerSubscriptionId, "sub_v1");
-  assert.equal(product(billing, "growth").unitAmountCents, 17990);
-  assert.equal(product(billing, "crm_core").unitAmountCents, 17900);
-  assert.equal(
-    product(billing, "crm_core").startsAt.toISOString(),
-    NOW.toISOString(),
+  assert.equal(product(billing, "free").unitAmountCents, 0);
+  assert.deepEqual(
+    billing.entitlements.map((row) => row.featureKey),
+    ["storefront", "inventory", "lead_capture", "plate_lookup"],
   );
-  assert.equal(product(billing, "fiscal_spedy").unitAmountCents, 3500);
-  assert.equal(product(billing, "simulations_pro").unitAmountCents, 10000);
-  assert.equal(product(billing, "public_api_access").unitAmountCents, 0);
-  assert.equal(product(billing, "marketplace_connectors").unitAmountCents, 0);
-  assert.equal(entitlement(billing, "crm").status, "active");
-  assert.equal(
-    entitlement(billing, "crm").startsAt.toISOString(),
-    NOW.toISOString(),
-  );
-  assert.equal(entitlement(billing, "fiscal").status, "active");
-  assert.equal(entitlement(billing, "simulations").status, "active");
+  assert.ok(billing.entitlements.every((row) => row.status === "active"));
+  assert.equal(billing.subscription.currentPeriodEnd, null);
   assert.equal(billing.payments[0].amountCents, 46390);
   assert.equal(billing.payments[0].status, "paid");
 });
 
-test("maps combo plan add-ons even when old rows are missing", () => {
+test("retains combo add-ons as migration history without effective add-ons", () => {
   const billing = prepareLegacyBillingMigration(
     data({ store: store({ plano: "PRO_CRM_NFE" }) }),
     NOW,
   );
 
-  assert.equal(product(billing, "growth").unitAmountCents, 17990);
-  assert.equal(product(billing, "crm_core").unitAmountCents, 17900);
-  assert.equal(product(billing, "fiscal_spedy").unitAmountCents, 3500);
-  assert.equal(entitlement(billing, "crm").active, true);
-  assert.equal(entitlement(billing, "fiscal").active, true);
+  assert.equal(product(billing, "free").unitAmountCents, 0);
+  assert.equal(billing.products.length, 1);
   assert.equal(billing.addons.filter((row) => row.synthetic).length, 2);
 });
 
-test("maps custom plan features and preserves its contracted amount", () => {
+test("retains custom plan snapshot while making Free effective", () => {
   const billing = prepareLegacyBillingMigration(
     data({
       customPlan: {
@@ -90,17 +77,13 @@ test("maps custom plan features and preserves its contracted amount", () => {
     NOW,
   );
 
-  assert.equal(product(billing, "growth").unitAmountCents, 32145);
-  assert.equal(entitlement(billing, "custom_domain").active, true);
-  assert.equal(entitlement(billing, "external_api").active, true);
-  assert.equal(entitlement(billing, "marketplace").active, true);
-  assert.equal(
-    billing.entitlements.some((row) => row.featureKey === "plate_lookup"),
-    false,
-  );
+  assert.equal(product(billing, "free").unitAmountCents, 0);
+  assert.equal(billing.legacyContract.plan.monthlyPriceCents, 32145);
+  assert.equal(entitlement(billing, "plate_lookup").active, true);
+  assert.equal(entitlement(billing, "custom_domain"), undefined);
 });
 
-test("expires a free V1 trial and does not invent a paid plan item", () => {
+test("replaces an expired V1 free period with permanent Free", () => {
   const billing = prepareLegacyBillingMigration(
     data({
       store: store({
@@ -111,9 +94,10 @@ test("expires a free V1 trial and does not invent a paid plan item", () => {
     NOW,
   );
 
-  assert.equal(billing.subscription.status, "expired");
-  assert.equal(billing.products.length, 0);
-  assert.ok(billing.entitlements.every((row) => row.status === "inactive"));
+  assert.equal(billing.subscription.status, "active");
+  assert.equal(billing.subscription.currentPeriodEnd, null);
+  assert.equal(billing.products.length, 1);
+  assert.ok(billing.entitlements.every((row) => row.status === "active"));
 });
 
 test("rejects unknown V1 commercial records instead of silently granting", () => {

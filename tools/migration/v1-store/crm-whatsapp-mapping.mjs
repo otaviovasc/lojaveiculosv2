@@ -179,44 +179,20 @@ export function findLegacyLeadId(
   ).leadId;
 }
 
-export function mapRepassesConnection(connection, options = {}) {
+export function mapRepassesConnection(connection) {
   if (connection.provider !== "ZAPI")
     throw new Error(
       `Unsupported Repasses CRM provider ${connection.provider} on connection ${connection.id}.`,
     );
   const credentials = json(connection.credentials);
   const instanceId = nullableString(credentials.instanceId, 191);
-  const instanceToken = nullableString(credentials.token, 1000);
-  const hasStoredCredentials = Boolean(instanceId && instanceToken);
-  const sealCredential = options.sealCredential;
-  if (hasStoredCredentials && !sealCredential) {
-    throw new Error("A CRM credential sealer is required for Z-API import.");
-  }
-  const credentialsRef = hasStoredCredentials
-    ? {
-        mode: "stored",
-        stored: {
-          instanceId: sealCredential({
-            plaintext: instanceId,
-            purpose: "zapi.instance-id",
-          }),
-          instanceToken: sealCredential({
-            plaintext: instanceToken,
-            purpose: "zapi.instance-token",
-          }),
-        },
-      }
-    : {};
   return {
-    credentialsRef,
+    credentialsRef: {},
     externalInstanceId: null,
     lookupInstanceId: instanceId ?? nullableString(connection.instance_id, 191),
     provider: "zapi",
-    status: mapConnectionStatus(
-      connection,
-      hasStoredCredentials,
-      options.activate === true,
-    ),
+    readiness: "credentials_incomplete",
+    status: connection.deleted_at ? "archived" : "disconnected",
   };
 }
 
@@ -249,15 +225,4 @@ function compareNewestFirst(left, right) {
   );
   if (leftTime !== rightTime) return rightTime - leftTime;
   return right.id - left.id;
-}
-
-function mapConnectionStatus(connection, hasStoredCredentials, activate) {
-  if (!connection.is_active || connection.deleted_at) return "archived";
-  if (!hasStoredCredentials) return "disconnected";
-  if (!activate) return "paused";
-  if (connection.status === "CONNECTED") return "active";
-  if (connection.status === "ERROR" || connection.status === "BANNED")
-    return "error";
-  if (connection.status === "DISCONNECTED") return "disconnected";
-  return "paused";
 }

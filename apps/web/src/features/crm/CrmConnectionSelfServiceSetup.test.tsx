@@ -27,18 +27,17 @@ describe("CrmConnectionSelfServiceSetup", () => {
     window.sessionStorage.clear();
   });
 
-  it("routes Z-API contracting to billing without collecting credentials", async () => {
+  it("collects three write-only Z-API credentials without a billing step", async () => {
     const handlers = createHandlers();
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 0, remaining: 0, used: 0 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
         ]}
         canPair={false}
         canSetup={true}
         handlers={handlers}
-        zapiAddonContract={createZapiContract("scheduled")}
       />,
     );
 
@@ -52,15 +51,17 @@ describe("CrmConnectionSelfServiceSetup", () => {
     expect(dialog.querySelector(".crm-zapi-guided-card h3")).toHaveTextContent(
       "Conectar WhatsApp · Z-API",
     );
-    expect(screen.getByText(/ativada no próximo vencimento/i)).toBeVisible();
-    expect(screen.queryByLabelText(/token/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("ID da instância")).toBeVisible();
+    expect(screen.getByLabelText("Token da instância")).toBeVisible();
+    expect(screen.getByLabelText("Client-Token")).toBeVisible();
+    expect(screen.queryByText(/add-on|pagamento|assinatura/i)).toBeNull();
     expect(handlers.onCreate).not.toHaveBeenCalled();
   });
 
   it("keeps setup controls behind the setup permission", () => {
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        isCrmEntitled
         availableSetups={[]}
         canPair={false}
         canSetup={false}
@@ -71,24 +72,19 @@ describe("CrmConnectionSelfServiceSetup", () => {
     expect(screen.getByText(/permissões de gerenciar conexões/i)).toBeVisible();
   });
 
-  it("pauses new setup when the store billing contract is unavailable", () => {
+  it("hides Z-API setup when the base CRM entitlement is unavailable", () => {
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 0, remaining: 0, used: 0 }}
+        isCrmEntitled={false}
         availableSetups={[
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
         ]}
-        billingState={{
-          code: "BILLING_CONTRACT_UNAVAILABLE",
-          status: "unavailable",
-        }}
         canPair={false}
         canSetup
         handlers={createHandlers()}
       />,
     );
 
-    expect(screen.getByText(/contrato de billing desta loja/i)).toBeVisible();
     expect(screen.queryByRole("button", { name: /Z-API/i })).toBeNull();
   });
 
@@ -96,7 +92,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
     const connection = createZapiConnection("active");
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
@@ -124,7 +120,6 @@ describe("CrmConnectionSelfServiceSetup", () => {
     const configuring = createZapiSetupConnection("configuring");
     const configured = createZapiSetupConnection("configured");
     const props = {
-      allowance: { limit: 1, remaining: 0, used: 1 },
       availableSetups: [
         { broker: "direct", channel: "whatsapp", provider: "zapi" },
       ] satisfies CrmAvailableSetup[],
@@ -133,23 +128,30 @@ describe("CrmConnectionSelfServiceSetup", () => {
       canSetup: true,
       handlers,
       startAtDirectory: true,
-      zapiAddonContract: createZapiContract("active"),
     };
     const { rerender } = render(
-      <CrmConnectionSelfServiceSetup {...props} connections={[configuring]} />,
+      <CrmConnectionSelfServiceSetup
+        {...props}
+        connections={[configuring]}
+        isCrmEntitled
+      />,
     );
 
     const zapiSetupButtons = within(
       screen.getByRole("region", { name: "WhatsApp" }),
     ).getAllByRole("button");
     fireEvent.click(zapiSetupButtons[zapiSetupButtons.length - 1]!);
-    expect(screen.getByText("Etapa 3 de 5 · Configuração")).toBeVisible();
+    expect(screen.getByText("Etapa 2 de 4 · Configuração")).toBeVisible();
 
     rerender(
-      <CrmConnectionSelfServiceSetup {...props} connections={[configured]} />,
+      <CrmConnectionSelfServiceSetup
+        {...props}
+        connections={[configured]}
+        isCrmEntitled
+      />,
     );
 
-    expect(await screen.findByText("Etapa 4 de 5 · Pareamento")).toBeVisible();
+    expect(await screen.findByText("Etapa 3 de 4 · Pareamento")).toBeVisible();
   });
 
   it("repairs an existing disconnected Z-API connection without calling create", async () => {
@@ -171,21 +173,16 @@ describe("CrmConnectionSelfServiceSetup", () => {
     }));
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
         ]}
-        billingState={{
-          code: "BILLING_CONTRACT_UNAVAILABLE",
-          status: "unavailable",
-        }}
         canPair
         canRepairCredentials
         canSetup
         connections={[otherDisconnected, disconnected]}
         handlers={handlers}
         startAtDirectory
-        zapiAddonContract={createZapiContract("active")}
       />,
     );
 
@@ -195,17 +192,15 @@ describe("CrmConnectionSelfServiceSetup", () => {
     expect(repair).toBeVisible();
     fireEvent.click(repair);
 
-    expect(await screen.findByText("Etapa 4 de 5 · Pareamento")).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Atualizar credenciais da conexão",
-      }),
-    );
+    expect(await screen.findByText("Etapa 3 de 4 · Pareamento")).toBeVisible();
     fireEvent.change(screen.getByLabelText("ID da instância"), {
       target: { value: "instance-1" },
     });
     fireEvent.change(screen.getByLabelText("Token da instância"), {
       target: { value: "token-repaired" },
+    });
+    fireEvent.change(screen.getByLabelText("Client-Token"), {
+      target: { value: "client-repaired" },
     });
     fireEvent.click(
       screen.getByRole("button", { name: "Confirmar novas credenciais" }),
@@ -215,6 +210,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
       expect(handlers.onRepairZapiCredentials).toHaveBeenCalledWith(
         disconnected.id,
         {
+          clientToken: "client-repaired",
           instanceId: "instance-1",
           instanceToken: "token-repaired",
         },
@@ -242,7 +238,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        isCrmEntitled
         availableSetups={[]}
         canPair
         canRepairCredentials
@@ -250,7 +246,6 @@ describe("CrmConnectionSelfServiceSetup", () => {
         connections={[connection]}
         handlers={handlers}
         startAtDirectory
-        zapiAddonContract={createZapiContract("active")}
       />,
     );
 
@@ -285,7 +280,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
         ]}
@@ -295,7 +290,6 @@ describe("CrmConnectionSelfServiceSetup", () => {
         connections={[disconnected]}
         handlers={handlers}
         startAtDirectory
-        zapiAddonContract={createZapiContract("active")}
       />,
     );
 
@@ -304,16 +298,19 @@ describe("CrmConnectionSelfServiceSetup", () => {
         name: /Z-API principal.*Reparar conexão/i,
       }),
     );
-    fireEvent.click(
+    expect(
       await screen.findByRole("button", {
-        name: "Atualizar credenciais da conexão",
+        name: "Confirmar novas credenciais",
       }),
-    );
+    ).toBeVisible();
     fireEvent.change(screen.getByLabelText("ID da instância"), {
       target: { value: "instance-from-another-account" },
     });
     fireEvent.change(screen.getByLabelText("Token da instância"), {
       target: { value: "token-new" },
+    });
+    fireEvent.change(screen.getByLabelText("Client-Token"), {
+      target: { value: "client-new" },
     });
     fireEvent.click(
       screen.getByRole("button", { name: "Confirmar novas credenciais" }),
@@ -328,10 +325,10 @@ describe("CrmConnectionSelfServiceSetup", () => {
     expect(handlers.onCreate).not.toHaveBeenCalled();
   });
 
-  it("keeps Official WhatsApp available when only the Z-API quota is zero", () => {
+  it("keeps Official WhatsApp available independently from Z-API setup", () => {
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 0, remaining: 0, used: 0 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
         ]}
@@ -352,7 +349,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
   it("makes Instagram Official actionable when the server offers setup", () => {
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 2, remaining: 2, used: 0 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "composio", channel: "instagram", provider: "meta_cloud" },
         ]}
@@ -374,7 +371,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
   it("keeps WhatsApp Oficial visible and honest when it is unavailable", () => {
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 2, remaining: 2, used: 0 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
         ]}
@@ -399,7 +396,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
   it("makes WhatsApp Oficial actionable when it is available", () => {
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 2, remaining: 2, used: 0 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
         ]}
@@ -454,7 +451,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
       render(
         <CrmConnectionSelfServiceSetup
-          allowance={{ limit: 2, remaining: 2, used: 0 }}
+          isCrmEntitled
           availableSetups={[
             { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
             {
@@ -494,7 +491,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        isCrmEntitled
         availableSetups={[]}
         canPair={true}
         canSetup={true}
@@ -538,7 +535,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
       render(
         <CrmConnectionSelfServiceSetup
-          allowance={{ limit: 2, remaining: 0, used: 2 }}
+          isCrmEntitled
           availableSetups={[
             { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
             {
@@ -588,7 +585,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
       render(
         <CrmConnectionSelfServiceSetup
-          allowance={{ limit: 1, remaining: 0, used: 1 }}
+          isCrmEntitled
           availableSetups={[
             { broker: "direct", channel: "whatsapp", provider: "zapi" },
           ]}
@@ -615,7 +612,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
   it("closes the setup dialog with Escape", async () => {
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 1, used: 0 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
         ]}
@@ -639,7 +636,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
     });
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 1, used: 0 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
           { broker: "direct", channel: "whatsapp", provider: "zapi" },
@@ -647,7 +644,6 @@ describe("CrmConnectionSelfServiceSetup", () => {
         canPair={true}
         canSetup={true}
         handlers={handlers}
-        zapiAddonContract={createZapiContract("active")}
       />,
     );
 
@@ -678,7 +674,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
     render(
       <CrmConnectionSelfServiceSetup
-        allowance={{ limit: 1, remaining: 0, used: 1 }}
+        isCrmEntitled
         availableSetups={[
           { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
         ]}
@@ -710,24 +706,6 @@ function createHandlers(): CrmConnectionSelfServiceHandlers {
     onCreate: vi.fn(async () => null),
     onRefreshConnections: vi.fn(async () => undefined),
     onSelectComposioSender: vi.fn(),
-  };
-}
-
-function createZapiContract(
-  status:
-    "active" | "cancelled" | "paid_awaiting_setup" | "pending" | "scheduled",
-) {
-  return {
-    addonCode: "crm_zapi" as const,
-    cancellationScheduledFor: null,
-    id: "zapi_contract_1",
-    monthlyPriceCents: 10000,
-    paidAt: null,
-    scheduledFor: "2099-08-10T12:00:00.000Z",
-    setupCompletedAt: null,
-    status,
-    storeId: "store_1",
-    supportCode: "ZAPI-TEST",
   };
 }
 

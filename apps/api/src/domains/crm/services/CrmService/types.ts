@@ -1,5 +1,4 @@
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
-import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 import type {
   VehicleListingRepository,
   VehicleMediaRepository,
@@ -14,7 +13,6 @@ import type { CrmRoutingPolicyRepository } from "../../ports/crmRoutingPolicyRep
 import type {
   ComposioCrmOnboardingProvider,
   CrmConnectionCredentialVault,
-  CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
   OlxCrmWebhookSetupProvider,
   ZapiConnectionSetupProvider,
@@ -38,7 +36,6 @@ import type { CrmStatisticsReadModel } from "../../readModels/crmStatisticsReadM
 
 export type CrmServicePorts = {
   crmAssigneeMembershipRepository?: CrmAssigneeMembershipRepository;
-  billingQuotaGuard?: BillingQuotaGuard;
   crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
   externalBotManager?: ExternalBotManagerPorts;
   crmCanonicalInboundRepository?: CrmCanonicalInboundRepository;
@@ -53,7 +50,6 @@ export type CrmServicePorts = {
   crmProviderRuntime?: {
     olxChatEnabled: boolean;
   };
-  crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
   composioChannelOnboardingProvider?: ComposioCrmOnboardingProvider;
   crmPipelineRepository?: CrmPipelineRepository;

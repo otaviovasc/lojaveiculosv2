@@ -53,7 +53,7 @@ describe("Drizzle CRM connection repository", () => {
     expect(mapped.canonical).toMatchObject({
       capabilities: [],
       connected: false,
-      readiness: { ready: false, reasonCode: "disconnected" },
+      readiness: { ready: false, reasonCode: "not_authorized" },
     });
   });
 

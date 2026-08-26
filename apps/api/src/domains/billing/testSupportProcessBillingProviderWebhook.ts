@@ -36,9 +36,6 @@ export function createBillingRepository(): BillingRepository {
     storeExistsInTenant: async () => {
       throw new Error("Unused billing repository.");
     },
-    updateSubscriptionSelection: async () => {
-      throw new Error("Unused billing repository.");
-    },
     updateStoreEntitlement: async () => {
       throw new Error("Unused billing repository.");
     },

@@ -10,7 +10,7 @@ import {
 import { createCrmChannelConnection } from "./createCrmChannelConnection.js";
 
 describe("createCrmChannelConnection provider rules", () => {
-  it("does not apply the paid Z-API quota to official WhatsApp", async () => {
+  it("does not apply Z-API connection identity rules to official WhatsApp", async () => {
     const ports = createPorts(0);
 
     await expect(
@@ -93,7 +93,7 @@ describe("createCrmChannelConnection provider rules", () => {
   it("requires the CRM entitlement for Official WhatsApp", async () => {
     await expect(
       createCrmChannelConnection(
-        createContext(undefined, ["crm_zapi"]),
+        createContext(undefined, []),
         {
           channel: "whatsapp",
           displayName: "Atendimento",

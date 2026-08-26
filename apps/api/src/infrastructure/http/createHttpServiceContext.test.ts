@@ -110,7 +110,7 @@ describe("createHttpServiceContext", () => {
   it("falls back to the public storefront subdomain for store scope", async () => {
     const access: StoreAccessRecord = {
       billingManagedBy: "store_owner",
-      entitlements: ["subdomain"],
+      entitlements: ["storefront"],
       overrides: [],
       role: "owner",
       storeId: "store_1" as never,

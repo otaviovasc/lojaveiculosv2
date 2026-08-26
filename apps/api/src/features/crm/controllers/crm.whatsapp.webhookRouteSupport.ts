@@ -4,6 +4,7 @@ import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmM
 import { completeZapiWebhookAuthorization } from "../../../domains/crm/services/CrmWhatsappService/authorizeZapiWebhook.js";
 import {
   createOlxWebhookSourceFingerprint,
+  createZapiWebhookSourceFingerprint,
   isOlxWebhookSourceAllowed,
 } from "../../../infrastructure/crm/olxWebhookSecurity.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
@@ -13,6 +14,7 @@ import {
   type StoreScopedServiceContext,
 } from "../../../shared/serviceContext.js";
 import { CrmMessagingValidationError } from "./crm.messaging.errors.js";
+import { parseWebhookPayload } from "./crm.whatsapp.webhookPayload.js";
 import type { CrmServices } from "./crmServices.js";
 
 export async function authorizeWebhook(
@@ -28,10 +30,17 @@ export async function authorizeWebhook(
   }
   const token =
     context.req.header("x-crm-webhook-token") ??
+    readBearerToken(context.req.header("authorization")) ??
     context.req.query("token") ??
     null;
   const authorized = await services.authorizeZapiWebhook(serviceContext, {
     connectionId,
+    sourceFingerprint: createZapiWebhookSourceFingerprint({
+      // Do not trust caller-controlled proxy headers for the authentication
+      // bucket. The connection-scoped fingerprint remains stable at the edge.
+      clientAddress: null,
+      connectionId,
+    }),
     token,
   });
   const scopedContext = createAuthorizedWebhookContext(
@@ -62,7 +71,7 @@ export async function authorizeWebhook(
     );
     throw error;
   }
-  if (!entitlements.includes("crm_zapi")) {
+  if (!entitlements.includes("crm")) {
     await completeZapiWebhookAuthorization(
       scopedContext,
       {
@@ -183,17 +192,4 @@ export async function readWebhookInput(context: Context) {
     connectionId,
     payload: await parseWebhookPayload(context),
   };
-}
-
-async function parseWebhookPayload(context: Context) {
-  let body: unknown;
-  try {
-    body = await context.req.json();
-  } catch {
-    throw new CrmMessagingValidationError("Webhook body must be valid JSON.");
-  }
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    throw new CrmMessagingValidationError("Webhook body must be an object.");
-  }
-  return body as Record<string, unknown>;
 }

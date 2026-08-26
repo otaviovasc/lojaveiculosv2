@@ -13,7 +13,16 @@ export const customerTenantId = "tenant_1" as TenantId;
 
 export function createConnection(
   provider: "meta_cloud" | "zapi",
-  credentialsRef: Record<string, unknown> = {},
+  credentialsRef: Record<string, unknown> = provider === "zapi"
+    ? {
+        mode: "stored",
+        stored: {
+          clientToken: "sealed:client-token",
+          instanceId: "sealed:instance-id",
+          instanceToken: "sealed:instance-token",
+        },
+      }
+    : {},
 ): CrmConnection {
   return {
     broker: provider === "zapi" ? "direct" : "composio",

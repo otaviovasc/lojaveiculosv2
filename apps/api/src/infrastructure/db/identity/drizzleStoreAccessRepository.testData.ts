@@ -17,9 +17,9 @@ export function createStoreAccessRows(overrides: Partial<StoredRows> = {}) {
       },
       {
         endsAt: new Date("2099-01-01T00:00:00.000Z"),
-        featureKey: "subdomain",
+        featureKey: "storefront",
         startsAt: new Date("2026-01-01T00:00:00.000Z"),
-        status: "trialing",
+        status: "active",
         storeId,
       },
       {

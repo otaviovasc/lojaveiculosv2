@@ -1,15 +1,11 @@
 import { Hono } from "hono";
 import type { TenantId } from "@lojaveiculosv2/shared";
 import { createHttpAccountContext } from "../../../infrastructure/http/createHttpAccountContext.js";
+import { handleBilling } from "../../billing/controllers/billing.controller.errors.js";
 import {
-  BillingRequestValidationError,
-  handleBilling,
-} from "../../billing/controllers/billing.controller.errors.js";
-import {
-  createBillingProviderCheckoutSchema,
-  syncBillingProviderSubscriptionSchema,
-  updateBillingSelectionSchema,
-  updateEntitlementSchema,
+  approveBillingPlanQuoteSchema,
+  createBillingPlanHireSchema,
+  requestBillingPlanQuoteSchema,
 } from "../../billing/controllers/billing.controller.schemas.js";
 import {
   billingServices,
@@ -17,12 +13,10 @@ import {
 } from "../../billing/controllers/billingServices.js";
 import {
   agencyStoreBillingParamsSchema,
-  agencyStoreEntitlementParamsSchema,
   agencyTenantParamsSchema,
 } from "./agency.controller.schemas.js";
 import {
   createAgencyContext,
-  parseDateOrNull,
   parseJson,
   parseParams,
   type AgencyAccountContextFactory,
@@ -70,152 +64,95 @@ export function createAgencyFeature(options: CreateAgencyFeatureOptions = {}) {
   );
 
   feature.post(
-    "/tenants/:tenantId/billing/provider/subscription/sync",
-    async (context) =>
-      handleBilling(context, async () => {
-        const { tenantId } = parseParams(context, agencyTenantParamsSchema);
-        const input = await parseJson(
-          context,
-          syncBillingProviderSubscriptionSchema,
-        );
-        const serviceContext = await createAgencyContext(
-          context,
-          accountContextFactory,
-          tenantId as TenantId,
-        );
-        return context.json(
-          await services.syncProviderSubscription(serviceContext, {
-            ...(input.billingType ? { billingType: input.billingType } : {}),
-            ...(input.nextDueDate
-              ? { nextDueDate: new Date(`${input.nextDueDate}T00:00:00.000Z`) }
-              : {}),
-            ...(typeof input.updatePendingPayments === "boolean"
-              ? { updatePendingPayments: input.updatePendingPayments }
-              : {}),
-          }),
-        );
-      }),
-  );
-
-  feature.put(
-    "/tenants/:tenantId/stores/:storeId/billing/selection",
+    "/tenants/:tenantId/stores/:storeId/billing/plan-hires",
     async (context) =>
       handleBilling(context, async () => {
         const params = parseParams(context, agencyStoreBillingParamsSchema);
-        const input = await parseJson(context, updateBillingSelectionSchema);
-        const serviceContext = await createAgencyContext(
+        const input = await parseJson(context, createBillingPlanHireSchema);
+        const agencyContext = await createAgencyContext(
           context,
           accountContextFactory,
           params.tenantId as TenantId,
         );
         return context.json(
-          await services.updateAgencySelection(serviceContext, {
-            addonIds: input.addonIds,
-            planId: input.planId,
-            storeId: params.storeId as never,
-          }),
+          await services.createPlanHire(
+            { ...agencyContext, storeId: params.storeId as never },
+            {
+              idempotencyKey: input.idempotencyKey,
+              planId: input.planId,
+              ...(input.quoteId ? { quoteId: input.quoteId } : {}),
+              ...(input.billingTypes
+                ? { billingTypes: input.billingTypes }
+                : {}),
+              returnPath: "/agency/admin/unified-billing",
+            },
+          ),
+          201,
+        );
+      }),
+  );
+
+  feature.get(
+    "/tenants/:tenantId/stores/:storeId/billing/plan-hires/:hireId",
+    async (context) =>
+      handleBilling(context, async () => {
+        const params = parseParams(context, agencyStoreBillingParamsSchema);
+        const agencyContext = await createAgencyContext(
+          context,
+          accountContextFactory,
+          params.tenantId as TenantId,
+        );
+        return context.json(
+          await services.getPlanHire(
+            { ...agencyContext, storeId: params.storeId as never },
+            context.req.param("hireId"),
+          ),
         );
       }),
   );
 
   feature.post(
-    "/tenants/:tenantId/billing/provider/checkout",
+    "/tenants/:tenantId/stores/:storeId/billing/plan-quotes",
     async (context) =>
       handleBilling(context, async () => {
-        const { tenantId } = parseParams(context, agencyTenantParamsSchema);
-        const input = await parseJson(
-          context,
-          createBillingProviderCheckoutSchema,
-        );
-        const serviceContext = await createAgencyContext(
+        const params = parseParams(context, agencyStoreBillingParamsSchema);
+        const input = await parseJson(context, requestBillingPlanQuoteSchema);
+        const agencyContext = await createAgencyContext(
           context,
           accountContextFactory,
-          tenantId as TenantId,
+          params.tenantId as TenantId,
         );
         return context.json(
-          await services.createProviderCheckout(serviceContext, {
-            ...(input.billingTypes ? { billingTypes: input.billingTypes } : {}),
-            ...(input.minutesToExpire
-              ? { minutesToExpire: input.minutesToExpire }
-              : {}),
-            ...(input.nextDueDate
-              ? { nextDueDate: new Date(`${input.nextDueDate}T00:00:00.000Z`) }
-              : {}),
-            returnPath: "/agency/admin/unified-billing",
-          }),
+          await services.requestPlanQuote(
+            { ...agencyContext, storeId: params.storeId as never },
+            input.planId,
+          ),
+          201,
         );
       }),
   );
 
   feature.patch(
-    "/tenants/:tenantId/stores/:storeId/entitlements/:featureKey",
+    "/tenants/:tenantId/stores/:storeId/billing/plan-quotes/:quoteId/approve",
     async (context) =>
       handleBilling(context, async () => {
-        const params = parseParams(context, agencyStoreEntitlementParamsSchema);
-        const input = await parseJson(context, updateEntitlementSchema);
-        if (params.featureKey !== input.featureKey) {
-          throw new BillingRequestValidationError(
-            "Feature key route mismatch.",
-          );
-        }
-        const serviceContext = await createAgencyContext(
+        const params = parseParams(context, agencyStoreBillingParamsSchema);
+        const input = await parseJson(context, approveBillingPlanQuoteSchema);
+        const agencyContext = await createAgencyContext(
           context,
           accountContextFactory,
           params.tenantId as TenantId,
         );
         return context.json(
-          await services.updateAgencyEntitlement(serviceContext, {
-            featureKey: input.featureKey,
-            status: input.status,
-            storeId: params.storeId as never,
-            ...(input.endsAt !== undefined
-              ? { endsAt: parseDateOrNull(input.endsAt) }
-              : {}),
-            ...(input.metadata !== undefined
-              ? { metadata: input.metadata }
-              : {}),
-            ...(input.reason !== undefined ? { reason: input.reason } : {}),
-            ...(input.startsAt !== undefined
-              ? { startsAt: parseDateOrNull(input.startsAt) }
-              : {}),
-          }),
+          await services.approvePlanQuote(
+            { ...agencyContext, storeId: params.storeId as never },
+            {
+              expiresAt: new Date(input.expiresAt),
+              quoteId: context.req.param("quoteId"),
+              quotedCents: input.quotedCents,
+            },
+          ),
         );
-      }),
-  );
-
-  feature.post(
-    "/tenants/:tenantId/stores/:storeId/billing/addons/zapi/request",
-    async (context) =>
-      handleBilling(context, async () => {
-        const params = parseParams(context, agencyStoreBillingParamsSchema);
-        const serviceContext = await createAgencyContext(
-          context,
-          accountContextFactory,
-          params.tenantId as TenantId,
-        );
-        return context.json({
-          contract: await services.requestZapiAddon(serviceContext, {
-            storeId: params.storeId as never,
-          }),
-        });
-      }),
-  );
-
-  feature.delete(
-    "/tenants/:tenantId/stores/:storeId/billing/addons/zapi/request",
-    async (context) =>
-      handleBilling(context, async () => {
-        const params = parseParams(context, agencyStoreBillingParamsSchema);
-        const serviceContext = await createAgencyContext(
-          context,
-          accountContextFactory,
-          params.tenantId as TenantId,
-        );
-        return context.json({
-          contract: await services.cancelZapiAddon(serviceContext, {
-            storeId: params.storeId as never,
-          }),
-        });
       }),
   );
 

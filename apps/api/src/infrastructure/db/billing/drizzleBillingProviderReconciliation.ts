@@ -1,11 +1,11 @@
-import { and, eq, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, inArray, lte, or, sql } from "drizzle-orm";
 import {
-  billingAddonContracts,
   billingProviderReconciliations,
   subscriptions,
 } from "@lojaveiculosv2/db";
 import type { BillingProviderReconciliationRepository } from "../../../domains/billing/ports/billingProviderReconciliation.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { recordBillingProductEvent } from "./drizzleBillingProductEvents.js";
 
 export function createDrizzleBillingProviderReconciliationRepository(
   db: DrizzleBillingClient,
@@ -25,22 +25,19 @@ export function createDrizzleBillingProviderReconciliationRepository(
             eq(subscriptions.id, billingProviderReconciliations.subscriptionId),
           )
           .where(
-            and(
-              isNotNull(subscriptions.currentPeriodEnd),
-              or(
-                and(
-                  inArray(billingProviderReconciliations.status, [
-                    "queued",
-                    "retry",
-                  ]),
-                  lte(billingProviderReconciliations.availableAt, input.now),
-                ),
-                and(
-                  eq(billingProviderReconciliations.status, "processing"),
-                  lte(
-                    billingProviderReconciliations.processingStartedAt,
-                    input.staleBefore,
-                  ),
+            or(
+              and(
+                inArray(billingProviderReconciliations.status, [
+                  "queued",
+                  "retry",
+                ]),
+                lte(billingProviderReconciliations.availableAt, input.now),
+              ),
+              and(
+                eq(billingProviderReconciliations.status, "processing"),
+                lte(
+                  billingProviderReconciliations.processingStartedAt,
+                  input.staleBefore,
                 ),
               ),
             ),
@@ -48,7 +45,7 @@ export function createDrizzleBillingProviderReconciliationRepository(
           .orderBy(billingProviderReconciliations.availableAt)
           .limit(1)
           .for("update", { skipLocked: true });
-        if (!candidate?.subscription.currentPeriodEnd) return null;
+        if (!candidate) return null;
         const [claimed] = await client
           .update(billingProviderReconciliations)
           .set({
@@ -68,28 +65,40 @@ export function createDrizzleBillingProviderReconciliationRepository(
               attemptCount: claimed.attemptCount,
               id: claimed.id,
               kind: claimed.kind,
-              nextDueAt: candidate.subscription.currentPeriodEnd,
+              nextDueAt: reconciliationDate(candidate),
               processingToken: input.processingToken,
               subscriptionId: claimed.subscriptionId,
               tenantId: claimed.tenantId as never,
             }
           : null;
       }),
-    markRetry: async (input) => {
-      const [updated] = await db
-        .update(billingProviderReconciliations)
-        .set({
-          availableAt: input.availableAt,
-          lastError: input.errorMessage.slice(0, 2_000),
-          processingStartedAt: null,
-          processingToken: null,
-          status: "retry",
-          updatedAt: new Date(),
-        })
-        .where(claimFilter(input))
-        .returning({ id: billingProviderReconciliations.id });
-      return Boolean(updated);
-    },
+    markRetry: (input) =>
+      db.transaction(async (tx) => {
+        const client = tx as DrizzleBillingClient;
+        const [updated] = await client
+          .update(billingProviderReconciliations)
+          .set({
+            availableAt: input.availableAt,
+            lastError: input.errorMessage.slice(0, 2_000),
+            processingStartedAt: null,
+            processingToken: null,
+            status: "retry",
+            updatedAt: new Date(),
+          })
+          .where(claimFilter(input))
+          .returning();
+        if (!updated) return false;
+        await recordBillingProductEvent(client, {
+          eventName: "reconciliation_failed",
+          idempotencyKey: `billing-provider-reconciliation:${updated.id}:attempt:${updated.attemptCount}`,
+          properties: {
+            failureCode: "provider_reconciliation_retry",
+            source: updated.kind,
+          },
+          tenantId: updated.tenantId,
+        });
+        return true;
+      }),
     markSucceeded: (input) =>
       db.transaction(async (tx) => {
         const client = tx as DrizzleBillingClient;
@@ -104,53 +113,32 @@ export function createDrizzleBillingProviderReconciliationRepository(
           })
           .where(claimFilter(input))
           .returning();
-        if (!updated) return false;
-        if (updated.kind === "zapi_cancellation") {
-          await client
-            .update(billingAddonContracts)
-            .set({
-              cancellationSyncPending: false,
-              updatedAt: input.completedAt,
-            })
-            .where(
-              and(
-                eq(
-                  billingAddonContracts.subscriptionId,
-                  updated.subscriptionId,
-                ),
-                eq(billingAddonContracts.cancellationSyncPending, true),
-              ),
-            );
-        }
-        return true;
+        return Boolean(updated);
       }),
   };
 }
 
-export async function enqueueZapiCancellationReconciliation(
-  db: DrizzleBillingClient,
-  input: { subscriptionId: string; tenantId: string },
-) {
-  await db
-    .insert(billingProviderReconciliations)
-    .values({
-      kind: "zapi_cancellation",
-      subscriptionId: input.subscriptionId,
-      tenantId: input.tenantId,
-    })
-    .onConflictDoUpdate({
-      set: {
-        availableAt: new Date(),
-        completedAt: null,
-        lastError: null,
-        status: "queued",
-        updatedAt: new Date(),
-      },
-      target: [
-        billingProviderReconciliations.kind,
-        billingProviderReconciliations.subscriptionId,
-      ],
-    });
+function reconciliationDate(candidate: {
+  reconciliation: typeof billingProviderReconciliations.$inferSelect;
+  subscription: typeof subscriptions.$inferSelect;
+}) {
+  return deriveReconciliationDate({
+    createdAt: candidate.reconciliation.createdAt,
+    currentPeriodEnd: candidate.subscription.currentPeriodEnd,
+    currentPeriodStart: candidate.subscription.currentPeriodStart,
+  });
+}
+
+export function deriveReconciliationDate(input: {
+  createdAt: Date;
+  currentPeriodEnd: Date | null;
+  currentPeriodStart: Date | null;
+}) {
+  if (input.currentPeriodEnd) return input.currentPeriodEnd;
+  const basis = input.currentPeriodStart ?? input.createdAt;
+  const nextDueAt = new Date(basis);
+  nextDueAt.setUTCMonth(nextDueAt.getUTCMonth() + 1);
+  return nextDueAt;
 }
 
 function claimFilter(input: {

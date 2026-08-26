@@ -6,23 +6,32 @@ export type BillingAuth = {
 
 export type EntitlementKey =
   | "analytics"
+  | "ai"
   | "automation"
+  | "checklists"
+  | "commissions"
   | "compliance"
   | "crm"
-  | "crm_zapi"
   | "custom_domain"
+  | "documents"
   | "external_api"
+  | "finance"
+  | "financing"
   | "fiscal"
+  | "inventory"
+  | "lead_capture"
   | "marketplace"
   | "plate_lookup"
-  | "simulations"
-  | "subdomain";
+  | "sales"
+  | "storefront";
 
 export type BillingEntitlementStatus =
   "active" | "inactive" | "suspended" | "trialing";
 
 export type BillingPlan = {
+  capabilities: readonly string[];
   catalogVersion: string;
+  checkoutMode: "checkout" | "free" | "quote_required";
   code: string;
   features: readonly {
     featureKey: EntitlementKey;
@@ -38,21 +47,7 @@ export type BillingPlan = {
   };
   monthlyPriceCents: number;
   name: string;
-  status: "active" | "archived" | "inactive";
-};
-
-export type BillingAddon = {
-  catalogVersion: string;
-  code: string;
-  featureKey: EntitlementKey;
-  id: string;
-  includedInTrial: boolean;
-  limits?: {
-    composioToolExecutionsPerBillingMonth: number | null;
-    enforcement: "hard" | "soft" | null;
-  };
-  monthlyPriceCents: number;
-  name: string;
+  selectionRank: number;
   status: "active" | "archived" | "inactive";
 };
 
@@ -158,8 +153,6 @@ export type BillingEntitlementEvent = {
 };
 
 export type BillingOverview = {
-  addonContracts?: readonly BillingAddonContract[];
-  addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: BillingAuthority;
   chargePreview: BillingChargePreview;
@@ -171,26 +164,15 @@ export type BillingOverview = {
   storeId: string;
   subscription: BillingSubscription | null;
   tenantId: string;
-};
-
-export type BillingAddonContractStatus =
-  "active" | "cancelled" | "paid_awaiting_setup" | "pending" | "scheduled";
-
-export type BillingAddonContract = {
-  addonCode: string;
-  cancellationScheduledFor: string | null;
-  id: string;
-  monthlyPriceCents: number;
-  paidAt: string | null;
-  scheduledFor: string | null;
-  setupCompletedAt: string | null;
-  status: BillingAddonContractStatus;
-  storeId: string;
-  supportCode: string | null;
-};
-
-export type BillingAddonContractResponse = {
-  contract: BillingAddonContract;
+  billingPhase?: BillingPhase;
+  effectiveContract?: {
+    currentPeriodEnd: string | null;
+    currentPeriodStart: string | null;
+    planCode: string;
+    planId: string;
+    planName: string;
+    unitAmountCents: number;
+  } | null;
 };
 
 export type BillingProviderStatus = {
@@ -202,15 +184,17 @@ export type BillingProviderStatus = {
 
 export type BillingCheckoutBillingType = "CREDIT_CARD" | "PIX";
 
+export type CreateBillingPlanHireInput = {
+  billingTypes?: readonly BillingCheckoutBillingType[];
+  idempotencyKey: string;
+  planId: string;
+  quoteId?: string;
+};
+
+/** Input used by the presentational checkout summary. Hiring uses CreateBillingPlanHireInput. */
 export type CreateBillingCheckoutInput = {
   billingTypes?: readonly BillingCheckoutBillingType[];
   minutesToExpire?: number;
-  nextDueDate?: string;
-};
-
-export type UpdateBillingSelectionInput = {
-  addonIds: readonly string[];
-  planId: string;
 };
 
 export type SyncBillingProviderSubscriptionInput = {
@@ -219,20 +203,58 @@ export type SyncBillingProviderSubscriptionInput = {
   updatePendingPayments?: boolean;
 };
 
-export type BillingCheckoutSession = {
-  checkoutUrl: string;
-  expiresAt: string | null;
-  externalReference: string;
-  provider: "asaas";
-  providerCheckoutId: string;
-  subscriptionId: string;
+export type BillingPlanHireStatus =
+  | "created"
+  | "checkout_created"
+  | "payment_pending"
+  | "activation_pending"
+  | "paid_active"
+  | "downgrade_scheduled"
+  | "cancelled"
+  | "expired"
+  | "failed"
+  | "reconciliation_failed";
+
+export type BillingPhase =
+  | "free_active"
+  | "checkout_created"
+  | "payment_pending"
+  | "activation_pending"
+  | "paid_active"
+  | "past_due_grace"
+  | "downgrade_scheduled"
+  | "reconciliation_failed";
+
+export type BillingPlanHire = {
+  activatedAt: string | null;
+  catalogVersion: string;
+  checkoutMode: BillingPlan["checkoutMode"];
+  checkoutUrl: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  failureCode: string | null;
+  id: string;
+  idempotencyKey: string;
+  phase: BillingPhase;
+  planId: string;
+  planSnapshot: { code: string; name: string; selectionRank: number };
+  providerCheckoutId: string | null;
+  providerPaymentId: string | null;
+  providerSubscriptionId: string | null;
+  quotedCents: number;
+  status: BillingPlanHireStatus;
+  storeId: string;
+  tenantId: string;
+  updatedAt: string;
 };
 
-export type UpdateEntitlementInput = {
-  endsAt?: string | null;
-  featureKey: EntitlementKey;
-  metadata?: Record<string, unknown>;
-  reason?: string | null;
-  startsAt?: string | null;
-  status: BillingEntitlementStatus;
+export type BillingPlanQuote = {
+  catalogVersion: string;
+  expiresAt: string | null;
+  id: string;
+  planId: string;
+  quotedCents: number | null;
+  status: "approved" | "expired" | "rejected" | "requested" | "used";
+  storeId: string;
+  tenantId: string;
 };

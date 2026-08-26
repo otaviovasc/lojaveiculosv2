@@ -7,7 +7,6 @@ import {
   type StoreScopedServiceContext,
 } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmZapiSetupCompletionReporter } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import {
   createZapiWebhookSetupIntent,
@@ -16,9 +15,8 @@ import {
 import { runZapiWebhookSetupAttempt } from "../../../domains/crm/services/CrmWhatsappService/runZapiWebhookSetupAttempt.js";
 
 describe("runZapiWebhookSetupAttempt", () => {
-  it("persists partial state and never reports setup completion", async () => {
-    const report = vi.fn(async () => undefined);
-    const { connection, ports } = fixture({ failedType: "delivery", report });
+  it("persists partial provider setup state", async () => {
+    const { connection, ports } = fixture({ failedType: "delivery" });
 
     const result = await runZapiWebhookSetupAttempt(
       context(),
@@ -28,12 +26,10 @@ describe("runZapiWebhookSetupAttempt", () => {
 
     expect(result.setup.status).toBe("partial");
     expect(result.setup.lastErrorCode).toBe("provider_rejected");
-    expect(report).not.toHaveBeenCalled();
   });
 
-  it("configures once and retries only idempotent completion bookkeeping", async () => {
-    const report = vi.fn(async () => undefined);
-    const { connection, configure, ports } = fixture({ report });
+  it("configures once and returns the durable configured state on retry", async () => {
+    const { connection, configure, ports } = fixture({});
 
     const first = await runZapiWebhookSetupAttempt(
       context(),
@@ -49,10 +45,9 @@ describe("runZapiWebhookSetupAttempt", () => {
     expect(first.setup.status).toBe("configured");
     expect(second.setup.status).toBe("configured");
     expect(configure).toHaveBeenCalledTimes(1);
-    expect(report).toHaveBeenCalledTimes(2);
   });
 
-  it("does not report setup success until strict result audit persists", async () => {
+  it("does not expose setup success until strict result audit persists", async () => {
     const { connection, configure, ports } = fixture({});
     const auditFailure = new Error("audit unavailable");
 
@@ -148,11 +143,7 @@ describe("runZapiWebhookSetupAttempt", () => {
   });
 });
 
-function fixture(input: {
-  failedType?: string;
-  report?: CrmZapiSetupCompletionReporter["completeSetup"];
-  tenantId?: string;
-}) {
+function fixture(input: { failedType?: string; tenantId?: string }) {
   const connection = zapiConnection(input.tenantId ?? "tenant_a");
   const repository = createMemoryCrmConnectionRepository([connection]);
   const configure = vi.fn(
@@ -180,9 +171,6 @@ function fixture(input: {
     crmConnectionRepository: repository,
     crmRepository: createMemoryCrmRepository(),
     crmMessagingGateway: { configureWebhooks: configure } as never,
-    ...(input.report
-      ? { crmZapiSetupCompletionReporter: { completeSetup: input.report } }
-      : {}),
   };
   return {
     configure,
@@ -197,7 +185,7 @@ function context(audit?: {
   const base = createServiceContext({
     actor: { id: "support", kind: "user" },
     ...(audit ? { audit } : {}),
-    entitlements: ["crm", "crm_zapi"],
+    entitlements: ["crm"],
     permissions: [
       "crm.messaging.connection.setup",
       "crm.messaging.connection.setup",
@@ -208,7 +196,7 @@ function context(audit?: {
   });
   return {
     ...base,
-    entitlements: ["crm", "crm_zapi"],
+    entitlements: ["crm"],
     storeId: "store_a",
     tenantId: "tenant_a",
   };

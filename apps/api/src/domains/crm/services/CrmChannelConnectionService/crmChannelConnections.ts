@@ -27,25 +27,18 @@ import {
   type UpdateCrmChannelConnectionInput,
 } from "../../channelConnections/channelConnectionUpdates.js";
 import {
-  createZapiWebhookSetupIntent,
-  withZapiWebhookSetupState,
-} from "../../whatsapp/zapiWebhookSetupState.js";
-import {
   readConnectionLiveStatus,
   sealUpdatedZapiCredentials,
 } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
 import { persistReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
-import {
-  snapshotZapiCredentialState,
-  verifyUpdatedZapiCredentials,
-} from "./verifyUpdatedZapiCredentials.js";
 import { buildCrmChannelConnectionOverview } from "./buildCrmChannelConnectionOverview.js";
+import { prepareZapiCredentialRotation } from "./prepareZapiCredentialRotation.js";
 
 export type { CrmChannelConnection } from "../../channelConnections/channelConnectionModels.js";
 export type { UpdateCrmChannelConnectionInput } from "../../channelConnections/channelConnectionUpdates.js";
 const readPermission = "crm.conversations.read";
 const updatePermission = "crm.messaging.connection.setup";
-const credentialUpdatePermission = "tenant.manage";
+const credentialUpdatePermission = "crm.messaging.credentials.rotate";
 export async function getCrmChannelConnectionOverview(
   context: ServiceContext,
   ports: CrmServicePorts,
@@ -152,17 +145,11 @@ export async function updateCrmChannelConnection(
       ) {
         throw new CrmConnectionNotFoundError(input.connectionId);
       }
-      assertEntitlement(
-        context as never,
-        current.provider === "zapi" ? "crm_zapi" : "crm",
-      );
+      assertEntitlement(context as never, "crm");
       if (input.instanceCredentials) {
         assertEntitlement(context as never, "crm");
       }
       assertCredentialUpdateMatchesProvider(current, input);
-      const priorCredentialState = input.instanceCredentials
-        ? snapshotZapiCredentialState(current)
-        : null;
       const safeInput = input.instanceCredentials
         ? {
             ...input,
@@ -174,20 +161,26 @@ export async function updateCrmChannelConnection(
             ),
           }
         : input;
-      let metadata = buildUpdatedConnectionMetadata(
-        current.metadata,
-        safeInput,
-      );
-      if (input.instanceCredentials) {
-        metadata = withZapiWebhookSetupState(
-          metadata ?? current.metadata,
-          createZapiWebhookSetupIntent(current.id),
-        );
-      }
       const credentialsRef = buildUpdatedConnectionCredentialsRef(
         safeInput,
         current,
       );
+      let metadata = buildUpdatedConnectionMetadata(
+        current.metadata,
+        safeInput,
+      );
+      let verifiedCredentialState: Awaited<
+        ReturnType<typeof prepareZapiCredentialRotation>
+      > | null = null;
+      if (input.instanceCredentials && credentialsRef) {
+        verifiedCredentialState = await prepareZapiCredentialRotation(
+          current,
+          input,
+          credentialsRef,
+          ports,
+        );
+        metadata = verifiedCredentialState.metadata;
+      }
       const updated = await repository.updateConnection({
         ...(credentialsRef ? { credentialsRef } : {}),
         ...(input.displayName ? { displayName: input.displayName } : {}),
@@ -195,7 +188,16 @@ export async function updateCrmChannelConnection(
           ? { externalInstanceId: input.externalInstanceId }
           : {}),
         ...(metadata ? { metadata } : {}),
-        ...(input.status ? { status: input.status } : {}),
+        ...(verifiedCredentialState
+          ? {
+              ...(verifiedCredentialState.phone
+                ? { phone: verifiedCredentialState.phone }
+                : {}),
+              status: verifiedCredentialState.status,
+            }
+          : input.status
+            ? { status: input.status }
+            : {}),
         connectionId: current.id,
         ...(input.expectedRevision !== undefined
           ? { expectedRevision: input.expectedRevision }
@@ -204,21 +206,6 @@ export async function updateCrmChannelConnection(
         tenantId: scope.tenantId as never,
       });
       if (!updated) throw new CrmConnectionNotFoundError(input.connectionId);
-      if (
-        input.instanceCredentials &&
-        input.webhookSetupTarget &&
-        priorCredentialState
-      ) {
-        await verifyUpdatedZapiCredentials(
-          context,
-          { connectionId: updated.id, ...input.webhookSetupTarget },
-          priorCredentialState,
-          updated.revision,
-          repository,
-          scope,
-          ports,
-        );
-      }
       const finalConnection =
         (await repository.findConnectionById(updated.id)) ?? updated;
       const result = toCrmChannelConnection(

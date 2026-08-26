@@ -25,7 +25,7 @@ export function createMemoryCrmConnectionSetupMethods(
       const state = readZapiCredentialState(connection.credentialsRef);
       if (state !== "unconfigured") return { status: state };
       connection.credentialsRef = input.credentialsRef;
-      connection.externalInstanceId = input.externalInstanceId;
+      connection.externalInstanceId = null;
       return { connection: normalize(connection), status: "configured" };
     },
     async claimZapiWebhookSetup(input) {
@@ -116,10 +116,13 @@ function ownsLease(connection: CrmConnection, leaseOwner: string) {
 
 function readZapiCredentialState(credentialsRef: Record<string, unknown>) {
   const stored = readRecord(credentialsRef.stored);
+  const clientToken = readConfiguredString(stored.clientToken);
   const instanceId = readConfiguredString(stored.instanceId);
   const instanceToken = readConfiguredString(stored.instanceToken);
-  if (instanceId && instanceToken) return "already_configured" as const;
-  if (instanceId || instanceToken) return "partial_state" as const;
+  if (clientToken && instanceId && instanceToken)
+    return "already_configured" as const;
+  if (clientToken || instanceId || instanceToken)
+    return "partial_state" as const;
   return "unconfigured" as const;
 }
 

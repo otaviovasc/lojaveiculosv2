@@ -41,6 +41,7 @@ export type ReplacementState = {
 };
 
 export type StartZapiReplacementInput = {
+  clientToken: string;
   connectionId: string;
   expectedRevision: number;
   idempotencyKey: string;
@@ -87,7 +88,7 @@ export async function startZapiConnectionReplacement(
           entityId: current.id,
           entityType: "crm_whatsapp_connection",
           metadata: { operationId: existing.operationId, provider: "zapi" },
-          permission: "tenant.manage",
+          permission: credentialRotationPermission,
           summary: "Resumed a verified Z-API replacement",
         },
         () =>
@@ -137,7 +138,7 @@ export async function startZapiConnectionReplacement(
     ports,
   );
   const state: ReplacementState = {
-    candidateInstanceId: input.instanceId.trim(),
+    candidateInstanceId: "redacted",
     candidateCredentialsRef,
     expectedRevision: input.expectedRevision,
     idempotencyKey: input.idempotencyKey,
@@ -173,7 +174,7 @@ export async function startZapiConnectionReplacement(
       entityId: current.id,
       entityType: "crm_whatsapp_connection",
       metadata: { operationId, provider: "zapi" },
-      permission: "tenant.manage",
+      permission: credentialRotationPermission,
       summary: "Replaced the verified Z-API instance for the store",
     },
     () => cutoverVerifiedReplacement(context, staged, state, scope, ports),
@@ -184,11 +185,13 @@ export async function startZapiConnectionReplacement(
     entityId: current.id,
     entityType: "crm_whatsapp_connection",
     metadata: { operationId, provider: "zapi" },
-    permission: "tenant.manage",
+    permission: credentialRotationPermission,
     summary: "Completed a verified Z-API instance replacement",
   });
   return cutover;
 }
+
+const credentialRotationPermission = "crm.messaging.credentials.rotate";
 
 export async function getZapiConnectionReplacementStatus(
   context: ServiceContext,

@@ -89,7 +89,6 @@ import type {
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
-  CrmWhatsappZapiAddonContract,
   CrmWhatsappZapiWebhookSetupResult,
 } from "./crmConversationTypes";
 
@@ -134,7 +133,6 @@ export type CrmConversationApi = {
     connectionId: CrmConnectionId,
     operationId: string,
   ) => Promise<CrmZapiReplacementResult>;
-  getZapiAddonContract?: () => Promise<CrmWhatsappZapiAddonContract | null>;
   deleteMessage: (messageId: CrmMessage["id"]) => Promise<CrmMessage | null>;
   updateCycleAttendance: (
     cycleId: CrmConversationCycleId,
@@ -175,7 +173,6 @@ export type CrmConversationApi = {
   retryOlxChatSetup: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmOlxChatSetupRetryResult>;
-  requestZapiAddon?: () => Promise<CrmWhatsappZapiAddonContract>;
   setConnectionPaused?: (
     connectionId: CrmConnectionId,
     paused: boolean,

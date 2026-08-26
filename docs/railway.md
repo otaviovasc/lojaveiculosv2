@@ -9,8 +9,8 @@ The target is the Railway project `respectful-respect`
 `staging` environments.
 
 Staging declares the API, web, CRM schedule worker, billing reconciliation
-worker, marketplace reconciliation worker, product Postgres, audit Postgres,
-and Redis. Production remains empty.
+worker, billing product-event worker, product Postgres, audit Postgres, and
+Redis. Production remains empty.
 
 Staging public domains are:
 
@@ -70,7 +70,7 @@ Each persistent environment should contain:
 - `lojaveiculosv2-api`
 - `lojaveiculosv2-crm-schedule-worker`
 - `lojaveiculosv2-billing-reconciliation-worker`
-- `lojaveiculosv2-marketplace-reconciliation-worker`
+- `lojaveiculosv2-billing-product-event-worker`
 - `lojaveiculosv2-crm-retention-worker`
 - product Postgres
 - audit Postgres
@@ -114,11 +114,11 @@ separate because audit isolation is a product invariant, not optional capacity.
 - Billing reconciliation worker: `*/5 * * * *` UTC; it claims durable billing
   tasks and exits. Provider writes occur only during scheduled executions,
   never during build or deploy.
-- Marketplace reconciliation worker: `*/5 * * * *` UTC; it atomically claims
-  queued publication jobs, submits them to the bound provider account, polls
-  provider status for already-submitted jobs, recovers expired dispatch leases
-  into manual reconciliation, and exits. OLX submission tokens remain encrypted
-  private job state and are never exposed in API responses or logs.
+- Billing product-event worker: `*/5 * * * *` UTC with restart policy `NEVER`;
+  it delivers the durable product-event outbox to the configured HTTPS sink and
+  exits. Sink URL/token stay sealed on that service.
+- Marketplace reconciliation remains deferred until its worker is explicitly
+  approved for provisioning; it is not part of the current Railway plan.
 - CRM retention worker: `17 * * * *` UTC with restart policy `NEVER`. The first
   staging release is pinned to `CRM_RETENTION_DRY_RUN=true`; it reports scoped
   eligibility and legal-hold skips without anonymizing or purging CRM data.

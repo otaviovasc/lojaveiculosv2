@@ -74,7 +74,12 @@ describe("getPlatformInternalHealthSnapshot", () => {
     const repository = createRepository();
 
     const result = await getPlatformInternalHealthSnapshot(
-      createContext({ audit, storeId: null, tenantId: null }),
+      createContext({
+        audit,
+        platformAdmin: true,
+        storeId: null,
+        tenantId: null,
+      }),
       { limit: 250 },
       { internalMonitoringRepository: repository },
     );
@@ -96,7 +101,17 @@ describe("getPlatformInternalHealthSnapshot", () => {
   it("rejects store-scoped contexts", async () => {
     await expect(
       getPlatformInternalHealthSnapshot(
-        createContext({ tenantId: null }),
+        createContext({ platformAdmin: true, tenantId: null }),
+        { limit: 40 },
+        { internalMonitoringRepository: createRepository() },
+      ),
+    ).rejects.toBeInstanceOf(InternalMonitoringPlatformScopeError);
+  });
+
+  it("rejects unscoped audit readers without platform authority", async () => {
+    await expect(
+      getPlatformInternalHealthSnapshot(
+        createContext({ storeId: null, tenantId: null }),
         { limit: 40 },
         { internalMonitoringRepository: createRepository() },
       ),
@@ -112,6 +127,7 @@ function createContext(
     audit: overrides.audit ?? { record: vi.fn(async () => undefined) },
     logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
     permissions: overrides.permissions ?? ["audit.read"],
+    platformAdmin: overrides.platformAdmin ?? false,
     requestId: "req_1",
     storeId: "storeId" in overrides ? overrides.storeId : "store_1",
     tenantId: "tenantId" in overrides ? overrides.tenantId : "tenant_1",

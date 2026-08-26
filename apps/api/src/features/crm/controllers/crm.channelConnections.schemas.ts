@@ -13,6 +13,7 @@ export const crmCreateChannelConnectionSchema = z.union([
   z
     .object({
       channel: z.literal("whatsapp"),
+      clientToken: z.string().trim().min(1).max(500),
       displayName: z.string().trim().min(1).max(160).optional(),
       instanceId: z.string().trim().min(1).max(191),
       instanceToken: z.string().trim().min(1).max(500),
@@ -34,6 +35,7 @@ export const whatsappZapiPairingCodeSchema = z
 
 export const whatsappZapiCredentialsSchema = z
   .object({
+    clientToken: z.string().trim().min(1).max(500),
     expectedRevision: z.number().int().nonnegative().optional(),
     instanceId: z.string().trim().min(1).max(191),
     instanceToken: z.string().trim().min(1).max(500),
@@ -42,6 +44,7 @@ export const whatsappZapiCredentialsSchema = z
 
 export const whatsappZapiReplacementSchema = z
   .object({
+    clientToken: z.string().trim().min(1).max(500),
     expectedRevision: z.number().int().nonnegative(),
     idempotencyKey: z.string().trim().min(8).max(200),
     instanceId: z.string().trim().min(1).max(191),
@@ -104,6 +107,7 @@ export const whatsappZapiSupportScopeSchema = z
 
 export const whatsappZapiSupportCredentialsSchema = z
   .object({
+    clientToken: z.string().trim().min(1).max(500),
     displayName: z.string().trim().min(1).max(160).optional(),
     instanceId: z.string().trim().min(1).max(191),
     instanceToken: z.string().trim().min(1).max(500),

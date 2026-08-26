@@ -59,13 +59,11 @@ const hookMocks = vi.hoisted(() => {
       isLoading: false,
       refreshConnections: vi.fn(async () => undefined),
       repairZapiConnectionCredentials: resolveFalse,
-      requestZapiAddon: resolveFalse,
       requestZapiPairingCode: resolveFalse,
       requestZapiPairingQr: resolveFalse,
       refreshZapiConnectionStatus: resolveFalse,
       selectComposioSender: resolveFalse,
       setConnectionPaused: resolveFalse,
-      zapiAddonContract: null,
     },
     messages: {
       deleteMessage: resolveFalse,
@@ -220,7 +218,11 @@ describe("useCrmInbox realtime queue integration", () => {
     session.defaultStore = null;
     session.stores = [
       {
-        effectivePermissions: [],
+        effectivePermissions: [
+          "crm.conversations.assign",
+          "crm.conversations.read",
+          "crm.messages.send",
+        ],
         role: "agency",
         status: "active",
         storeId: "store-agency",

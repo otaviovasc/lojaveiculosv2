@@ -22,7 +22,7 @@ export async function inspectExternalBotScope(
     inner join tenants tenant on tenant.id=thread.tenant_id and tenant.deleted_at is null
     inner join stores store on store.id=thread.store_id and store.tenant_id=thread.tenant_id and store.deleted_at is null
     inner join store_entitlements entitlement on entitlement.tenant_id=thread.tenant_id and entitlement.store_id=thread.store_id
-      and entitlement.feature_key='crm' and entitlement.status in ('active','trialing')
+      and entitlement.feature_key='crm' and entitlement.status='active'
       and (entitlement.starts_at is null or entitlement.starts_at<=now()) and (entitlement.ends_at is null or entitlement.ends_at>now())
     inner join integration_accounts account on account.id=${scope.integrationId}::uuid and account.tenant_id=thread.tenant_id
       and account.store_id=thread.store_id and account.status='active' and account.provider='crm_external_bot'

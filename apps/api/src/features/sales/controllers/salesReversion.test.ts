@@ -235,6 +235,7 @@ function auditedContext(
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
     audit,
+    entitlements: ["sales"],
     permissions,
     request: { requestId: "req_revert" },
     storeId: "store_1",

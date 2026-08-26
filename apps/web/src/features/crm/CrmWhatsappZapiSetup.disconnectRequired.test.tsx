@@ -43,25 +43,12 @@ describe("CrmWhatsappZapiSetup disconnect-required pairing", () => {
           useState<CrmProviderConnection>(providerDisconnected);
         return (
           <CrmWhatsappZapiSetup
-            allowance={{ limit: 1, remaining: 0, used: 1 }}
             canPair={true}
             canSetup={true}
             connection={connection}
             handlers={handlers}
             onBack={vi.fn()}
             onConnection={setConnection}
-            zapiAddonContract={{
-              addonCode: "crm_zapi",
-              cancellationScheduledFor: null,
-              id: "contract_1",
-              monthlyPriceCents: 10000,
-              paidAt: "2026-08-13T12:00:00.000Z",
-              scheduledFor: null,
-              setupCompletedAt: "2026-08-13T12:00:00.000Z",
-              status: "active",
-              storeId: "store_1",
-              supportCode: "ZAPI-TEST",
-            }}
           />
         );
       }

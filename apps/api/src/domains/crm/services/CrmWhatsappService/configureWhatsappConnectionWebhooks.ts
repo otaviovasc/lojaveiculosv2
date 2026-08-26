@@ -23,6 +23,11 @@ import type { ZapiWebhookSetupState } from "../../whatsapp/zapiWebhookSetupState
 import { readConnectionLiveStatus } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
 import { toCrmChannelConnection } from "../../channelConnections/channelConnectionModels.js";
 import { persistInitialReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
+import { assertTrustedZapiWebhookDestination } from "../../whatsapp/zapiWebhookDestination.js";
+import {
+  promoteZapiWebhookSecret,
+  stageZapiWebhookSecretRotation,
+} from "./zapiWebhookSecretRotation.js";
 
 const setupPermission = "crm.messaging.connection.setup";
 
@@ -47,13 +52,16 @@ export async function configureWhatsappConnectionWebhooks(
 ): Promise<ConfigureCrmChannelConnectionWebhooksResult> {
   const operation = input.mode ?? "configure";
   assertPermission(context, setupPermission);
+  if (operation === "reset") {
+    assertPermission(context, "crm.messaging.credentials.rotate");
+  }
   if (context.actor.kind !== "user") {
     throw new AuthorizationError(
       "CRM WhatsApp webhook setup requires an authenticated store user.",
     );
   }
   const scope = requireCrmMessagingScope(context);
-  assertEntitlement(context as never, "crm_zapi");
+  assertEntitlement(context as never, "crm");
   logCrmServiceEvent(
     context,
     `crm.channel.whatsapp.connection.webhooks.${operation}.started`,
@@ -70,7 +78,6 @@ export async function configureWhatsappConnectionWebhooks(
       metadata: {
         connectionId: input.connectionId,
         operation,
-        tokenApplied: true,
       },
       permission: setupPermission,
       summary:
@@ -80,9 +87,7 @@ export async function configureWhatsappConnectionWebhooks(
     },
     async () => {
       const repository = getCrmConnectionRepository(ports);
-      const connection = await repository.findConnectionById(
-        input.connectionId,
-      );
+      let connection = await repository.findConnectionById(input.connectionId);
       if (
         !connection ||
         connection.storeId !== scope.storeId ||
@@ -96,7 +101,16 @@ export async function configureWhatsappConnectionWebhooks(
           409,
         );
       }
-      assertSecretDestinationIsTrusted(connection.webhookUrl, input);
+      assertTrustedZapiWebhookDestination(
+        connection.webhookUrl,
+        input.canonicalApiOrigin,
+      );
+      let pendingWebhookSecret: string | null = null;
+      if (operation === "reset") {
+        const staged = await stageZapiWebhookSecretRotation(connection, ports);
+        connection = staged.connection;
+        pendingWebhookSecret = staged.pendingWebhookSecret;
+      }
       const { results, setup } = await runZapiWebhookSetupAttempt(
         context,
         {
@@ -104,9 +118,23 @@ export async function configureWhatsappConnectionWebhooks(
           canonicalApiOrigin: input.canonicalApiOrigin,
           connectionId: connection.id,
           forceReconfigure: operation === "reset",
+          ...(operation === "reset"
+            ? { webhookSecretSlot: "pending" as const }
+            : {}),
         },
         ports,
       );
+      if (
+        operation === "reset" &&
+        setup.status === "configured" &&
+        pendingWebhookSecret
+      ) {
+        connection = await promoteZapiWebhookSecret(
+          connection.id,
+          pendingWebhookSecret,
+          ports,
+        );
+      }
       const updated =
         (await repository.findConnectionById(connection.id)) ?? connection;
       const readyConnection = toCrmChannelConnection(
@@ -139,30 +167,9 @@ export async function configureWhatsappConnectionWebhooks(
         connectionId: connection.id,
         results: results.map(redactWebhookResultUrl),
         setup,
-        tokenApplied: true,
+        tokenApplied: setup.status === "configured",
       };
     },
-  );
-}
-
-function assertSecretDestinationIsTrusted(
-  webhookUrl: string | null,
-  input: ConfigureCrmChannelConnectionWebhooksInput,
-) {
-  if (!webhookUrl) return;
-  try {
-    if (
-      new URL(webhookUrl).origin === new URL(input.canonicalApiOrigin).origin
-    ) {
-      return;
-    }
-  } catch {
-    // Invalid configured URLs already fall back to the request origin.
-    return;
-  }
-  throw new CrmMessageActionError(
-    "A custom webhook origin cannot receive the shared Z-API webhook token.",
-    409,
   );
 }
 

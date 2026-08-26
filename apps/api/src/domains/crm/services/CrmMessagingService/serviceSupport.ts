@@ -66,6 +66,7 @@ export async function auditCrmServiceEvent(
 }
 
 export async function readZapiConnection(
+  context: ServiceContext,
   connectionId: string,
   ports: CrmServicePorts,
 ) {
@@ -74,7 +75,11 @@ export async function readZapiConnection(
   if (
     !connection ||
     connection.provider !== "zapi" ||
-    connection.status === "archived"
+    connection.status === "archived" ||
+    !context.storeId ||
+    !context.tenantId ||
+    connection.storeId !== context.storeId ||
+    connection.tenantId !== context.tenantId
   ) {
     return null;
   }

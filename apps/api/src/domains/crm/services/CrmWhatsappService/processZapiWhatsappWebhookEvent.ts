@@ -43,7 +43,11 @@ export async function processZapiWhatsappWebhookEvent<
     connectionId: input.connectionId,
     webhookType: type,
   });
-  const connection = await readZapiConnection(input.connectionId, ports);
+  const connection = await readZapiConnection(
+    context,
+    input.connectionId,
+    ports,
+  );
   const repository = getCrmWebhookEventRepository(ports);
   const providerEventId = buildZapiProviderEventId({
     connectionId: input.connectionId,
@@ -89,6 +93,10 @@ export async function processZapiWhatsappWebhookEvent<
     const result = await process(context, input, ports);
     await repository.updateStatus({
       eventId: claimed.id,
+      payload: {
+        retention: "minimized_after_processing",
+        webhookType: type,
+      },
       processingToken,
       status: result.status === "ignored" ? "ignored" : "processed",
     });

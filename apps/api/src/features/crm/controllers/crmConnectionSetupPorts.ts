@@ -1,26 +1,23 @@
 import type {
   ComposioCrmOnboardingProvider,
   CrmConnectionCredentialVault,
-  CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
   OlxCrmWebhookSetupProvider,
   ZapiConnectionSetupProvider,
 } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
+import { CrmZapiSetupNotEligibleError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createComposioCrmConnectionSetupProvider } from "../../../infrastructure/crm/composioCrmConnectionSetupProvider.js";
 import { createCrmConnectionCredentialVault } from "../../../infrastructure/crm/crmConnectionCredentialVault.js";
 import { createZapiCrmConnectionSetupProvider } from "../../../infrastructure/crm/zapiCrmConnectionSetupProvider.js";
 import { createOlxCrmWebhookSetupProvider } from "../../../infrastructure/crm/olxCrmWebhookSetupProvider.js";
-import { completeZapiAddonSetup } from "../../../domains/billing/services/BillingService/zapiAddonContract.js";
 import { createDrizzleBillingRepository } from "../../../infrastructure/db/billing/drizzleBillingRepository.js";
 import type { DrizzleCrmClient } from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
-import { BillingContractUnavailableError } from "../../../domains/billing/ports/billingQuotaGuard.js";
 
 type ConnectionSetupPorts = Pick<
   CrmServicePorts,
   | "composioChannelOnboardingProvider"
   | "crmConnectionCredentialVault"
-  | "crmZapiSetupCompletionReporter"
   | "crmZapiSupportAuthorizer"
   | "olxCrmWebhookSetupProvider"
   | "zapiConnectionSetupProvider"
@@ -67,34 +64,25 @@ export function createCrmConnectionSetupPorts(
     configureLeads: (input) =>
       createOlxCrmWebhookSetupProvider().configureLeads(input),
   };
-  const reporter: CrmZapiSetupCompletionReporter | undefined = drizzleClient
-    ? {
-        completeSetup: async (context, input) => {
-          await completeZapiAddonSetup(context, input, {
-            billingRepository: createDrizzleBillingRepository(drizzleClient),
-          });
-        },
-      }
-    : undefined;
   const supportAuthorizer: CrmZapiSupportAuthorizer | undefined = drizzleClient
     ? {
-        assertPaidSetupEligible: async (input) => {
+        assertCrmSetupEligible: async (input) => {
           const repository = createDrizzleBillingRepository(drizzleClient);
           if (!(await repository.storeExistsInTenant(input))) {
-            throw new BillingContractUnavailableError();
+            throw new CrmZapiSetupNotEligibleError();
           }
           const overview = await repository.getOverview({
             currentActorCanManage: false,
             ...input,
           });
-          const eligible = overview.addonContracts.some(
-            (contract) =>
-              contract.addonCode === "crm_zapi" &&
-              ["active", "paid_awaiting_setup"].includes(contract.status),
+          const eligible = overview.entitlements.some(
+            (entitlement) =>
+              entitlement.featureKey === "crm" &&
+              entitlement.status === "active" &&
+              (!entitlement.startsAt || entitlement.startsAt <= new Date()) &&
+              (!entitlement.endsAt || entitlement.endsAt > new Date()),
           );
-          if (!eligible) {
-            throw new BillingContractUnavailableError();
-          }
+          if (!eligible) throw new CrmZapiSetupNotEligibleError();
         },
       }
     : undefined;
@@ -102,7 +90,6 @@ export function createCrmConnectionSetupPorts(
     composioChannelOnboardingProvider: composio,
     crmConnectionCredentialVault: credentialVault,
     olxCrmWebhookSetupProvider: olx,
-    ...(reporter ? { crmZapiSetupCompletionReporter: reporter } : {}),
     ...(supportAuthorizer
       ? { crmZapiSupportAuthorizer: supportAuthorizer }
       : {}),

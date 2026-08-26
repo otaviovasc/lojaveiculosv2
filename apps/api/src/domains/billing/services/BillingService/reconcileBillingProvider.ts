@@ -42,9 +42,9 @@ export async function reconcileNextBillingProvider(
     const result = await syncBillingProviderSubscription(
       taskContext,
       {
+        cancelWhenEmpty: true,
         nextDueDate: task.nextDueAt,
-        updatePendingPayments: false,
-        zapiLifecycleSync: true,
+        updatePendingPayments: true,
       },
       ports,
     );

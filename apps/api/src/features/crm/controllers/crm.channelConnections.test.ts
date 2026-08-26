@@ -216,7 +216,7 @@ function createZapiConnection(
       credentialsRef: {
         env: {
           apiBaseUrl: "CRM_ZAPI_API_BASE_URL",
-          clientToken: "CRM_ZAPI_TEST_CLIENT_TOKEN",
+          clientToken: "LEGACY_CLIENT_TOKEN_ENV",
           instanceId: "CRM_ZAPI_TEST_INSTANCE_ID",
           instanceToken: "CRM_ZAPI_TEST_INSTANCE_TOKEN",
         },

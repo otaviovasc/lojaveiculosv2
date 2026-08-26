@@ -1,7 +1,10 @@
 import type { TenantId } from "@lojaveiculosv2/shared";
 
 export type BillingProviderReconciliationKind =
-  "catalog_migration" | "zapi_cancellation";
+  | "catalog_migration"
+  | "free_fallback"
+  | "zapi_cancellation"
+  | "zapi_retirement";
 
 export type BillingProviderReconciliationTask = {
   attemptCount: number;

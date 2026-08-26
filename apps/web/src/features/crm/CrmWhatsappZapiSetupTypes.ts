@@ -1,14 +1,9 @@
-import type {
-  CrmConnectionAllowance,
-  CrmProviderConnection,
-  CrmWhatsappZapiAddonContract,
-} from "./crmConversationTypes";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 
 export type PairingBlock = "disconnect_required" | "waiting_disconnect" | null;
 
 export type CrmWhatsappZapiSetupProps = {
-  allowance: CrmConnectionAllowance;
   canPair: boolean;
   canRepairCredentials?: boolean;
   canSetup: boolean;
@@ -17,7 +12,6 @@ export type CrmWhatsappZapiSetupProps = {
   initialCredentialMode?: "repair" | "replacement";
   onBack: () => void;
   onConnection: (connection: CrmProviderConnection) => void;
-  zapiAddonContract: CrmWhatsappZapiAddonContract | null;
 };
 
 export function readZapiConnectionStateKey(

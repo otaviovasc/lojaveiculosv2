@@ -2,228 +2,265 @@
 import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
+  fireEvent,
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BillingApi } from "./apiClient";
-import type * as BillingCheckoutReturn from "./billingCheckoutReturn";
-import { redirectToCheckout } from "./billingCheckoutReturn";
+import { AppApiError } from "../../lib/apiErrors";
 import { BillingModule } from "./BillingModule";
+import { BillingActivationTimeline } from "./BillingSignupFlow";
 import type {
-  BillingAddon,
   BillingOverview,
   BillingPlan,
   BillingProviderStatus,
+  CreateBillingPlanHireInput,
 } from "./types";
-
-vi.mock("./billingCheckoutReturn", async (importOriginal) => {
-  const actual = await importOriginal<typeof BillingCheckoutReturn>();
-  return { ...actual, redirectToCheckout: vi.fn() };
-});
-
-const growthPlan: BillingPlan = {
-  catalogVersion: "2026-07-v1",
-  code: "growth",
-  features: [
-    {
-      featureKey: "crm",
-      included: true,
-      includedInTrial: true,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-    {
-      featureKey: "analytics",
-      included: true,
-      includedInTrial: true,
-      limitValue: null,
-      trialLimitValue: null,
-    },
-  ],
-  id: "plan_growth",
-  limits: { sellerLimit: 5, vehicleLimit: 100 },
-  monthlyPriceCents: 29900,
-  name: "Growth",
-  status: "active",
-};
-
-const marketplaceAddon: BillingAddon = {
-  catalogVersion: "2026-07-v1",
-  code: "marketplace_extra",
-  featureKey: "marketplace",
-  id: "addon_marketplace",
-  includedInTrial: false,
-  monthlyPriceCents: 24999,
-  name: "Marketplaces Extra",
-  status: "active",
-};
-
-const providerReady: BillingProviderStatus = {
-  configured: true,
-  missingConfiguration: [],
-  provider: "asaas",
-  webhookConfigured: true,
-};
-
-let assignSpy: ReturnType<typeof vi.fn>;
-
-beforeEach(() => {
-  assignSpy = vi.mocked(redirectToCheckout);
-  assignSpy.mockClear();
-});
 
 afterEach(() => {
   cleanup();
+  window.sessionStorage.clear();
+  window.history.replaceState({}, "", "/");
+  vi.useRealTimers();
 });
 
-describe("BillingModule signup flow", () => {
-  it("defaults to the visible plan and starts checkout without a hidden selection step", async () => {
-    const user = userEvent.setup();
-    const api = createBillingApiStub(trialOverview(), providerReady);
-    render(<BillingModule api={api} />);
+describe("BillingModule v3", () => {
+  it("renders the five cumulative monthly plans and the Escala quote price", async () => {
+    render(<BillingModule api={api()} />);
+    for (const name of ["Free", "Essencial", "Operação", "Gestão", "Escala"]) {
+      await screen.findAllByRole("radio");
+      expect(planRadio(name)).toBeVisible();
+    }
+    expect(screen.getByText(/A partir de R\$ 897/)).toBeVisible();
+    for (const quota of [
+      "10 veículos · 1 usuário · 3 consultas de placa/mês",
+      "75 veículos · 3 usuários · 25 consultas de placa/mês",
+      "150 veículos · 5 usuários · 75 consultas de placa/mês",
+      "300 veículos · 10 usuários · 150 consultas de placa/mês",
+    ]) {
+      expect(screen.getByText(quota)).toBeVisible();
+    }
+    expect(
+      screen.queryByText(/anual|teste gratuito|módulos extras/i),
+    ).not.toBeInTheDocument();
+  });
 
-    const planOption = await screen.findByRole("radio", { name: /Growth/ });
-    expect(planOption).toBeVisible();
-    await user.click(
-      screen.getByRole("checkbox", { name: /Marketplaces Extra/ }),
-    );
-    await user.click(
-      within(screen.getByLabelText("Resumo mensal")).getByRole("button", {
-        name: "Continuar para pagamento",
+  it("keeps the overview visible and blocks paid hiring when provider readiness fails", async () => {
+    const billingApi = api();
+    billingApi.getProviderStatus = vi
+      .fn()
+      .mockRejectedValue(new Error("offline"));
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Essencial"));
+    expect(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    ).toBeDisabled();
+    expect(screen.getByText(/resumo continua disponível/i)).toBeVisible();
+  });
+
+  it("shows an actionable billing error with its request id", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.createPlanHire).mockRejectedValueOnce(
+      new AppApiError({
+        message: "Provider unavailable",
+        requestId: "req_billing_123",
+        status: 503,
       }),
     );
-
-    await waitFor(() =>
-      expect(api.updateSelection).toHaveBeenCalledWith({
-        addonIds: ["addon_marketplace"],
-        planId: "plan_growth",
-      }),
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
     );
-    expect(api.createCheckout).toHaveBeenCalledWith({
-      billingTypes: ["CREDIT_CARD"],
-      minutesToExpire: 90,
+
+    expect(await screen.findByText(/req_billing_123/)).toHaveTextContent(
+      /Tente novamente.*suporte/i,
+    );
+  });
+
+  it("creates a durable hire and requests an Escala quote", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.createPlanHire).mockResolvedValueOnce({
+      ...hire(plan("essencial", 2, 19_700).id),
+      activatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      phase: "paid_active",
+      status: "paid_active",
     });
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
     await waitFor(() =>
-      expect(assignSpy).toHaveBeenCalledWith(
-        "https://asaas.example/checkout/1",
+      expect(billingApi.createPlanHire).toHaveBeenCalledWith(
+        expect.objectContaining({ planId: plan("essencial", 2, 19_700).id }),
       ),
     );
+    fireEvent.click(planRadio("Escala"));
+    fireEvent.click(screen.getByRole("button", { name: "Solicitar proposta" }));
+    await waitFor(() => expect(billingApi.requestPlanQuote).toHaveBeenCalled());
   });
 
-  it("offers the update path with provider sync on a paid store", async () => {
-    const user = userEvent.setup();
-    const overview = trialOverview();
-    overview.subscription = {
-      currentPeriodEnd: "2099-08-01T00:00:00.000Z",
-      currentPeriodStart: "2099-07-01T00:00:00.000Z",
-      id: "subscription_1",
-      plan: growthPlan,
-      status: "active",
-    };
-    const api = createBillingApiStub(overview, providerReady);
-    render(<BillingModule api={api} />);
+  it("polls beyond the first pending response and refreshes only after server activation", async () => {
+    vi.useFakeTimers();
+    window.sessionStorage.setItem(scopedHireKey, "hire_1");
+    const billingApi = api();
+    vi.mocked(billingApi.getPlanHire)
+      .mockResolvedValueOnce(hire(plan("essencial", 2, 19_700).id))
+      .mockResolvedValueOnce({
+        ...hire(plan("essencial", 2, 19_700).id),
+        activatedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        phase: "paid_active",
+        status: "paid_active",
+      });
 
-    const summary = await screen.findByLabelText("Resumo mensal");
-    await user.click(
-      within(summary).getByRole("button", { name: "Atualizar assinatura" }),
+    render(<BillingModule api={billingApi} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(billingApi.getPlanHire).toHaveBeenCalledTimes(1);
+    expect(billingApi.getOverview).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_500);
+    });
+
+    expect(billingApi.getPlanHire).toHaveBeenCalledTimes(2);
+    expect(billingApi.getOverview).toHaveBeenCalledTimes(2);
+    expect(window.sessionStorage.getItem(scopedHireKey)).toBeNull();
+  });
+
+  it("ignores a spoofed callback hire id and polls the persisted hire", async () => {
+    window.history.replaceState({}, "", "/billing?hireId=spoofed_hire");
+    window.sessionStorage.setItem(scopedHireKey, "trusted_hire");
+    const billingApi = api();
+    render(<BillingModule api={billingApi} />);
+    await waitFor(() =>
+      expect(billingApi.getPlanHire).toHaveBeenCalledWith("trusted_hire"),
     );
+    expect(billingApi.getPlanHire).not.toHaveBeenCalledWith("spoofed_hire");
+  });
+
+  it("migrates a matching legacy callback hire into the current store scope", async () => {
+    window.history.replaceState({}, "", "/billing?hireId=legacy_hire");
+    window.sessionStorage.setItem(
+      "lojaveiculos.billing.active-hire",
+      "legacy_hire",
+    );
+    const billingApi = api();
+    render(<BillingModule api={billingApi} />);
 
     await waitFor(() =>
-      expect(api.updateSelection).toHaveBeenCalledWith({
-        addonIds: [],
-        planId: "plan_growth",
-      }),
+      expect(billingApi.getPlanHire).toHaveBeenCalledWith("legacy_hire"),
     );
-    expect(api.syncProviderSubscription).toHaveBeenCalledWith({
-      billingType: "CREDIT_CARD",
-      nextDueDate: "2099-08-01",
-      updatePendingPayments: false,
-    });
-    expect(api.createCheckout).toHaveBeenCalledOnce();
+    expect(window.sessionStorage.getItem(scopedHireKey)).toBe("legacy_hire");
+    expect(
+      window.sessionStorage.getItem("lojaveiculos.billing.active-hire"),
+    ).toBeNull();
   });
 
-  it("keeps the flow read-only when the agency manages billing", async () => {
-    const overview = trialOverview();
-    overview.authority = {
-      currentActorCanManage: false,
-      managedBy: "agency",
-      managerLabel: "Agência",
-      ownerBillingAccess: "blocked_by_agency",
-      summary: "A agência gerencia a assinatura desta loja.",
-    };
-    const api = createBillingApiStub(overview, providerReady);
-    render(<BillingModule api={api} />);
+  it("cleans an unscoped legacy hire instead of polling it in another store", async () => {
+    window.sessionStorage.setItem(
+      "lojaveiculos.billing.active-hire",
+      "hire_from_another_store",
+    );
+    const billingApi = api();
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
 
-    await screen.findByRole("radio", { name: /Growth/ });
-
-    expect(screen.getByRole("radio", { name: /Growth/ })).toBeDisabled();
+    expect(billingApi.getPlanHire).not.toHaveBeenCalled();
     expect(
-      screen.queryByRole("button", { name: "Assinar agora" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Atualizar assinatura" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getAllByText(/Gerenciado pela agência/).length,
-    ).toBeGreaterThan(0);
+      window.sessionStorage.getItem("lojaveiculos.billing.active-hire"),
+    ).toBeNull();
+    expect(window.sessionStorage.getItem(scopedHireKey)).toBeNull();
   });
 
-  it("shows the pending state instead of checkout when the provider is not configured", async () => {
-    const user = userEvent.setup();
-    const api = createBillingApiStub(trialOverview(), {
-      configured: false,
-      missingConfiguration: ["ASAAS_API_KEY"],
-      provider: "asaas",
-      webhookConfigured: false,
+  it("does not surface a rejected action after its API generation is stale", async () => {
+    const firstApi = api();
+    const rejected = deferred<void>();
+    vi.mocked(firstApi.createPlanHire).mockImplementationOnce(async () => {
+      await rejected.promise;
+      throw new Error("stale billing failure");
     });
-    render(<BillingModule api={api} />);
+    const { rerender } = render(<BillingModule api={firstApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
 
-    await user.click(await screen.findByRole("radio", { name: /Growth/ }));
+    rerender(<BillingModule api={api()} />);
+    await act(async () => rejected.resolve());
 
-    const summary = screen.getByLabelText("Resumo mensal");
-    const cta = within(summary).getByRole("button", {
-      name: "Pagamento indisponível",
-    });
-    expect(cta).toBeDisabled();
-    expect(screen.getByText(/Nenhuma cobrança foi feita/)).toBeVisible();
-    expect(api.createCheckout).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText(/stale billing failure/i),
+    ).not.toBeInTheDocument();
   });
 
-  it("moves history and allocation details to the secondary tab", async () => {
-    const user = userEvent.setup();
-    const api = createBillingApiStub(trialOverview(), providerReady);
-    render(<BillingModule api={api} />);
-
-    await screen.findByRole("radio", { name: /Growth/ });
-    expect(
-      screen.queryByRole("heading", { name: "Histórico de recursos" }),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: "Detalhes" }));
-
-    expect(
-      screen.getByRole("heading", { name: "Histórico de recursos" }),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("heading", { name: "Alocação por loja" }),
-    ).toBeVisible();
+  it.each([
+    ["cancelled", "Checkout cancelado"],
+    ["expired", "Checkout expirado"],
+    ["failed", "A contratação falhou"],
+    ["reconciliation_failed", "precisa de conciliação"],
+  ] as const)("renders the accessible %s activation state", (status, copy) => {
+    render(
+      <BillingActivationTimeline
+        hire={{ ...hire(plan("essencial", 2, 19_700).id), status }}
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(copy);
   });
 });
 
-function trialOverview(): BillingOverview {
+const scopedHireKey = "lojaveiculos.billing.active-hire.tenant_1.store_1";
+
+function api(): BillingApi {
   return {
-    addons: [marketplaceAddon],
+    createPlanHire: vi.fn(async (input: CreateBillingPlanHireInput) =>
+      hire(input.planId),
+    ),
+    getPlanHire: vi.fn(async () => hire(plan("essencial", 2, 19_700).id)),
+    getOverview: vi.fn(async () => overview()),
+    getProviderStatus: vi.fn(async () => providerStatus()),
+    requestPlanQuote: vi.fn(async (planId: string) => ({
+      catalogVersion: "2026-08-v3",
+      expiresAt: null,
+      id: "quote_1",
+      planId,
+      quotedCents: null,
+      status: "requested" as const,
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    })),
+  };
+}
+
+function planRadio(name: string) {
+  const match = screen
+    .getAllByRole("radio")
+    .find((element) => element.querySelector("strong")?.textContent === name);
+  if (!match) throw new Error(`Plan ${name} not found.`);
+  return match;
+}
+
+function overview(): BillingOverview {
+  return {
     allocations: [],
     authority: {
       currentActorCanManage: true,
       managedBy: "store_owner",
-      managerLabel: "Dono da loja",
+      managerLabel: "Dono",
       ownerBillingAccess: "allowed",
-      summary: "Você gerencia a assinatura.",
+      summary: "",
     },
     chargePreview: {
       cadence: "monthly",
@@ -237,17 +274,7 @@ function trialOverview(): BillingOverview {
       totalCents: 0,
     },
     entitlementEvents: [],
-    entitlementMatrix: [
-      {
-        endsAt: null,
-        featureKey: "marketplace",
-        includedInPlan: false,
-        limitValue: null,
-        source: null,
-        startsAt: null,
-        status: "inactive",
-      },
-    ],
+    entitlementMatrix: [],
     entitlements: [],
     financialSummary: {
       monthlyRecurringCents: 0,
@@ -256,38 +283,113 @@ function trialOverview(): BillingOverview {
       overdueInvoiceCount: 0,
       paidThisPeriodCents: 0,
     },
-    plans: [growthPlan],
+    plans: [
+      plan("free", 1, 0),
+      plan("essencial", 2, 19_700),
+      plan("operacao", 3, 39_700),
+      plan("gestao", 4, 59_700),
+      plan("escala", 5, 89_700),
+    ],
     storeId: "store_1",
-    subscription: {
-      currentPeriodEnd: "2099-08-01T00:00:00.000Z",
-      currentPeriodStart: "2099-07-01T00:00:00.000Z",
-      id: "subscription_1",
-      plan: null,
-      status: "trialing",
-    },
+    subscription: null,
     tenantId: "tenant_1",
   };
 }
 
-function createBillingApiStub(
-  overview: BillingOverview,
-  providerStatus: BillingProviderStatus,
-): BillingApi {
-  return {
-    cancelZapiRequest: vi.fn().mockResolvedValue({ contract: {} }),
-    createCheckout: vi.fn().mockResolvedValue({
-      checkoutUrl: "https://asaas.example/checkout/1",
-      expiresAt: null,
-      externalReference: "ref_1",
-      provider: "asaas",
-      providerCheckoutId: "chk_1",
-      subscriptionId: "subscription_1",
-    }),
-    getOverview: vi.fn().mockResolvedValue(overview),
-    getProviderStatus: vi.fn().mockResolvedValue(providerStatus),
-    requestZapi: vi.fn().mockResolvedValue({ contract: {} }),
-    syncProviderSubscription: vi.fn().mockResolvedValue({}),
-    updateEntitlement: vi.fn(),
-    updateSelection: vi.fn().mockResolvedValue(overview),
+function plan(
+  code: string,
+  selectionRank: number,
+  monthlyPriceCents: number,
+): BillingPlan {
+  const names: Record<string, string> = {
+    free: "Free",
+    essencial: "Essencial",
+    operacao: "Operação",
+    gestao: "Gestão",
+    escala: "Escala",
   };
+  const quotas: Record<string, [number | null, number | null, number | null]> =
+    {
+      essencial: [75, 3, 25],
+      escala: [null, null, null],
+      free: [10, 1, 3],
+      gestao: [300, 10, 150],
+      operacao: [150, 5, 75],
+    };
+  const [vehicleLimit, sellerLimit, plateLookupLimit] = quotas[code] ?? [
+    null,
+    null,
+    null,
+  ];
+  return {
+    capabilities: [],
+    catalogVersion: "2026-08-v3",
+    checkoutMode:
+      code === "free"
+        ? "free"
+        : code === "escala"
+          ? "quote_required"
+          : "checkout",
+    code,
+    features: [
+      {
+        featureKey: "plate_lookup",
+        included: true,
+        includedInTrial: false,
+        limitValue: plateLookupLimit,
+        trialLimitValue: null,
+      },
+    ],
+    id: `83262608-0000-4000-8000-00000000000${selectionRank}`,
+    limits: {
+      sellerLimit,
+      vehicleLimit,
+    },
+    monthlyPriceCents,
+    name: names[code]!,
+    selectionRank,
+    status: "active",
+  };
+}
+
+function providerStatus(): BillingProviderStatus {
+  return {
+    configured: true,
+    missingConfiguration: [],
+    provider: "asaas",
+    webhookConfigured: true,
+  };
+}
+
+function hire(planId: string) {
+  return {
+    activatedAt: null,
+    catalogVersion: "2026-08-v3",
+    checkoutMode: "checkout" as const,
+    checkoutUrl: null,
+    completedAt: null,
+    createdAt: new Date().toISOString(),
+    failureCode: null,
+    id: "hire_1",
+    idempotencyKey: "idem_1",
+    phase: "payment_pending" as const,
+    planId,
+    planSnapshot: { code: "essencial", name: "Essencial", selectionRank: 2 },
+    providerCheckoutId: null,
+    providerPaymentId: null,
+    providerSubscriptionId: null,
+    quotedCents: 19_700,
+    status: "payment_pending" as const,
+    storeId: "store_1",
+    tenantId: "tenant_1",
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
 }

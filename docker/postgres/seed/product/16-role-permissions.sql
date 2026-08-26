@@ -1,4 +1,4 @@
--- Local product seed v2.
+-- Local product seed v3.
 -- Runtime permission projection for inspection/debugging.
 -- Canonical behavior remains apps/api/src/domains/identity/domain/accessPolicy.ts.
 -- Regenerate this projection whenever that policy changes.
@@ -488,7 +488,22 @@ VALUES
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'inventory.update_video'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.resale_analysis_generate'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.update_commercial_tags'),
-  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.update_video')
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'inventory.update_video'),
+  ('22222222-2222-4222-8222-222222222222', 'commissions.read'),
+  ('22222222-2222-4222-8222-222222222222', 'commissions.rules.manage'),
+  ('22222222-2222-4222-8222-222222222222', 'commissions.settle'),
+  ('22222222-2222-4222-8222-222222222222', 'crm.messaging.credentials.rotate'),
+  ('11111111-1111-4111-8111-111111111111', 'billing.manage'),
+  ('11111111-1111-4111-8111-111111111111', 'commissions.read'),
+  ('11111111-1111-4111-8111-111111111111', 'commissions.rules.manage'),
+  ('11111111-1111-4111-8111-111111111111', 'commissions.settle'),
+  ('11111111-1111-4111-8111-111111111111', 'crm.messaging.credentials.rotate'),
+  ('55555555-5555-4555-8555-555555555555', 'commissions.read'),
+  ('55555555-5555-4555-8555-555555555555', 'commissions.rules.manage'),
+  ('55555555-5555-4555-8555-555555555555', 'commissions.settle'),
+  ('55555555-5555-4555-8555-555555555555', 'crm.messaging.credentials.rotate'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'commissions.read'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'commissions.rules.manage')
 ON CONFLICT (role_template_id, permission_key) DO NOTHING;
 
--- Expected permission counts at generation time: {"agency":110,"admin":102,"owner":110,"investor":15,"salesman":47,"supervisor":78}
+-- Expected permission counts at generation time: {"agency":115,"admin":108,"owner":115,"investor":15,"salesman":48,"supervisor":81}

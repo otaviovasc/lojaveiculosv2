@@ -11,7 +11,7 @@ const zapiId = "24000000-0000-4000-8000-000000000111";
 const officialId = "24000000-0000-4000-8000-000000000112";
 
 describe("CRM connection entitlements", () => {
-  it("denies pausing Z-API without the Z-API entitlement", async () => {
+  it("denies pausing Z-API without the base CRM entitlement", async () => {
     const { audit, record } = createAuditSpy();
     const repository = createMemoryCrmConnectionRepository([
       createZapiConnection(),
@@ -19,7 +19,7 @@ describe("CRM connection entitlements", () => {
     const app = createTestApp({
       audit,
       crmConnectionRepository: repository,
-      entitlements: ["crm"],
+      entitlements: [],
     });
 
     const response = await patchStatus(app, zapiId);
@@ -28,21 +28,16 @@ describe("CRM connection entitlements", () => {
     await expect(repository.findConnectionById(zapiId)).resolves.toMatchObject({
       status: "active",
     });
-    expect(record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: "crm.channel_connection.update",
-        outcome: "failed",
-      }),
-    );
+    expect(record).not.toHaveBeenCalled();
   });
 
-  it("pauses Z-API when the store has the Z-API entitlement", async () => {
+  it("pauses Z-API when the store has the base CRM entitlement", async () => {
     const repository = createMemoryCrmConnectionRepository([
       createZapiConnection(),
     ]);
     const app = createTestApp({
       crmConnectionRepository: repository,
-      entitlements: ["crm", "crm_zapi"],
+      entitlements: ["crm"],
     });
 
     const response = await patchStatus(app, zapiId);

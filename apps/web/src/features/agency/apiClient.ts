@@ -1,9 +1,6 @@
 import { readApiJson } from "../../lib/apiErrors";
 import type {
   BillingChargePreview,
-  BillingAddon,
-  BillingAddonContract,
-  BillingAddonContractResponse,
   BillingEntitlementEvent,
   BillingEntitlementMatrixRow,
   BillingFinancialSummary,
@@ -11,12 +8,9 @@ import type {
   BillingProviderStatus,
   BillingStoreAllocation,
   BillingSubscription,
-  BillingOverview,
-  BillingCheckoutSession,
-  CreateBillingCheckoutInput,
-  EntitlementKey,
-  UpdateEntitlementInput,
-  UpdateBillingSelectionInput,
+  BillingPlanHire,
+  BillingPlanQuote,
+  CreateBillingPlanHireInput,
 } from "../billing/types";
 
 export type AgencyAuth = {
@@ -27,8 +21,6 @@ export type AgencyAuth = {
 };
 
 export type AgencyTenantOverview = {
-  addonContracts?: readonly BillingAddonContract[];
-  addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: {
     currentActorCanManage: boolean;
@@ -52,7 +44,6 @@ export type AgencyTenantOverview = {
 };
 
 export type AgencyManagedStoreOverview = {
-  addonContracts?: readonly BillingAddonContract[];
   activeEntitlementCount: number;
   addonCount: number;
   createdAt: string;
@@ -113,36 +104,27 @@ export type AgencyStatsReport = {
 };
 
 export type AgencyApi = {
-  cancelStoreZapiRequest: (
+  createStorePlanHire: (
     tenantId: string,
     storeId: string,
-  ) => Promise<BillingAddonContractResponse>;
-  createCheckout: (
+    input: CreateBillingPlanHireInput,
+  ) => Promise<BillingPlanHire>;
+  getStorePlanHire: (
     tenantId: string,
-    input: CreateBillingCheckoutInput,
-  ) => Promise<BillingCheckoutSession>;
+    storeId: string,
+    hireId: string,
+  ) => Promise<BillingPlanHire>;
   getOverview: (tenantId: string) => Promise<AgencyTenantOverview>;
   getStats?: (
     tenantId: string,
     input: AgencyStatsPeriod & { storeId?: string },
   ) => Promise<AgencyStatsReport>;
   getProviderStatus: (tenantId: string) => Promise<BillingProviderStatus>;
-  requestStoreZapi: (
+  requestStorePlanQuote: (
     tenantId: string,
     storeId: string,
-  ) => Promise<BillingAddonContractResponse>;
-  syncProviderSubscription: (tenantId: string) => Promise<unknown>;
-  updateStoreSelection: (
-    tenantId: string,
-    storeId: string,
-    input: UpdateBillingSelectionInput,
-  ) => Promise<BillingOverview>;
-  updateStoreEntitlement: (
-    tenantId: string,
-    storeId: string,
-    featureKey: EntitlementKey,
-    input: UpdateEntitlementInput,
-  ) => Promise<AgencyTenantOverview>;
+    planId: string,
+  ) => Promise<BillingPlanQuote>;
 };
 
 export function createAgencyApi(options: {
@@ -154,14 +136,9 @@ export function createAgencyApi(options: {
   const request = <T>(path: string, init?: RequestInit) =>
     options.fetch.call(globalThis, path, init).then(readJson<T>);
   return {
-    cancelStoreZapiRequest: (tenantId, storeId) =>
-      request<BillingAddonContractResponse>(
-        routes.storeZapiRequest(tenantId, storeId, options.baseUrl),
-        { headers: headers(auth), method: "DELETE" },
-      ),
-    createCheckout: (tenantId, input) =>
-      request<BillingCheckoutSession>(
-        routes.providerCheckout(tenantId, options.baseUrl),
+    createStorePlanHire: (tenantId, storeId, input) =>
+      request<BillingPlanHire>(
+        routes.storePlanHires(tenantId, storeId, options.baseUrl),
         {
           body: JSON.stringify(input),
           headers: headers(auth),
@@ -185,33 +162,18 @@ export function createAgencyApi(options: {
         routes.providerStatus(tenantId, options.baseUrl),
         { headers: headers(auth) },
       ),
-    requestStoreZapi: (tenantId, storeId) =>
-      request<BillingAddonContractResponse>(
-        routes.storeZapiRequest(tenantId, storeId, options.baseUrl),
-        { headers: headers(auth), method: "POST" },
+    getStorePlanHire: (tenantId, storeId, hireId) =>
+      request<BillingPlanHire>(
+        routes.storePlanHire(tenantId, storeId, hireId, options.baseUrl),
+        { headers: headers(auth) },
       ),
-    syncProviderSubscription: (tenantId) =>
-      request<unknown>(routes.providerSync(tenantId, options.baseUrl), {
-        body: JSON.stringify({ billingType: "PIX" }),
-        headers: headers(auth),
-        method: "POST",
-      }),
-    updateStoreSelection: (tenantId, storeId, input) =>
-      request<BillingOverview>(
-        routes.storeSelection(tenantId, storeId, options.baseUrl),
+    requestStorePlanQuote: (tenantId, storeId, planId) =>
+      request<BillingPlanQuote>(
+        routes.storePlanQuotes(tenantId, storeId, options.baseUrl),
         {
-          body: JSON.stringify(input),
+          body: JSON.stringify({ planId }),
           headers: headers(auth),
-          method: "PUT",
-        },
-      ),
-    updateStoreEntitlement: (tenantId, storeId, featureKey, input) =>
-      request<AgencyTenantOverview>(
-        routes.storeEntitlement(tenantId, storeId, featureKey, options.baseUrl),
-        {
-          body: JSON.stringify(input),
-          headers: headers(auth),
-          method: "PATCH",
+          method: "POST",
         },
       ),
   };
@@ -240,46 +202,24 @@ const routes = {
       `/agency/tenants/${encodeURIComponent(tenantId)}/billing/provider/status`,
       baseUrl,
     ),
-  providerSync: (tenantId: string, baseUrl?: string) =>
-    endpoint(
-      `/agency/tenants/${encodeURIComponent(
-        tenantId,
-      )}/billing/provider/subscription/sync`,
-      baseUrl,
-    ),
-  providerCheckout: (tenantId: string, baseUrl?: string) =>
-    endpoint(
-      `/agency/tenants/${encodeURIComponent(
-        tenantId,
-      )}/billing/provider/checkout`,
-      baseUrl,
-    ),
-  storeEntitlement: (
+  storePlanHire: (
     tenantId: string,
     storeId: string,
-    featureKey: EntitlementKey,
+    hireId: string,
     baseUrl?: string,
   ) =>
     endpoint(
-      `/agency/tenants/${encodeURIComponent(
-        tenantId,
-      )}/stores/${encodeURIComponent(storeId)}/entitlements/${encodeURIComponent(
-        featureKey,
-      )}`,
+      `/agency/tenants/${encodeURIComponent(tenantId)}/stores/${encodeURIComponent(storeId)}/billing/plan-hires/${encodeURIComponent(hireId)}`,
       baseUrl,
     ),
-  storeZapiRequest: (tenantId: string, storeId: string, baseUrl?: string) =>
+  storePlanHires: (tenantId: string, storeId: string, baseUrl?: string) =>
     endpoint(
-      `/agency/tenants/${encodeURIComponent(
-        tenantId,
-      )}/stores/${encodeURIComponent(storeId)}/billing/addons/zapi/request`,
+      `/agency/tenants/${encodeURIComponent(tenantId)}/stores/${encodeURIComponent(storeId)}/billing/plan-hires`,
       baseUrl,
     ),
-  storeSelection: (tenantId: string, storeId: string, baseUrl?: string) =>
+  storePlanQuotes: (tenantId: string, storeId: string, baseUrl?: string) =>
     endpoint(
-      `/agency/tenants/${encodeURIComponent(
-        tenantId,
-      )}/stores/${encodeURIComponent(storeId)}/billing/selection`,
+      `/agency/tenants/${encodeURIComponent(tenantId)}/stores/${encodeURIComponent(storeId)}/billing/plan-quotes`,
       baseUrl,
     ),
 } as const;

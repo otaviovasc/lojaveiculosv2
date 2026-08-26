@@ -114,6 +114,7 @@ function createTestHarness() {
       contextFactory: async () =>
         createServiceContext({
           actor: { id: "user-1", kind: "user" },
+          entitlements: ["sales"],
           permissions: [
             "sale.close",
             "sale.correct",

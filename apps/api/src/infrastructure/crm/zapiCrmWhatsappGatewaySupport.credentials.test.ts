@@ -6,20 +6,26 @@ import {
   isZapiProviderConnected,
   resolveZapiCredentials,
   toProviderStatus,
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 
 const env = {
   CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY: "test-only-key",
-  CRM_ZAPI_CLIENT_TOKEN: "central-client-token",
 };
 
 describe("resolveZapiCredentials stored token", () => {
   it("opens a tenant/store-bound encrypted instance token", async () => {
     const connection = createConnection();
     const vault = createCrmConnectionCredentialVault(env);
-    const [instanceId, instanceToken] = await Promise.all([
+    const [clientToken, instanceId, instanceToken] = await Promise.all([
+      vault.seal({
+        plaintext: "store-client-token",
+        purpose: ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
+        storeId: connection.storeId,
+        tenantId: connection.tenantId,
+      }),
       vault.seal({
         plaintext: "instance-1",
         purpose: ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
@@ -36,7 +42,7 @@ describe("resolveZapiCredentials stored token", () => {
     connection.credentialsRef = {
       env: { clientToken: "UNTRUSTED_CONNECTION_CLIENT_TOKEN" },
       stored: {
-        clientToken: "untrusted-connection-token",
+        clientToken,
         instanceId,
         instanceToken,
       },
@@ -44,14 +50,14 @@ describe("resolveZapiCredentials stored token", () => {
 
     expect(resolveZapiCredentials(connection, env)).toEqual({
       apiBaseUrl: "https://api.z-api.io",
-      clientToken: "central-client-token",
+      clientToken: "store-client-token",
       instanceId: "instance-1",
       instanceToken: "instance-secret",
       requestTimeoutMs: 10_000,
     });
   });
 
-  it("requires the canonical server-owned client token", () => {
+  it("rejects environment-only legacy credentials", () => {
     const connection = createConnection();
     connection.credentialsRef = {
       env: {
@@ -69,10 +75,10 @@ describe("resolveZapiCredentials stored token", () => {
         ZAPI_INSTANCE_ID: "instance-1",
         ZAPI_INSTANCE_TOKEN: "instance-secret",
       }),
-    ).toThrow("central client authentication is not configured");
+    ).toThrow("credentials are incomplete");
   });
 
-  it("uses the test client token only for the local environment", () => {
+  it("does not use local environment credential fallbacks", () => {
     const connection = createConnection();
     connection.credentialsRef = {
       env: {
@@ -82,30 +88,22 @@ describe("resolveZapiCredentials stored token", () => {
       },
     };
 
-    expect(
+    expect(() =>
       resolveZapiCredentials(connection, {
         APP_ENV: "local",
         CRM_ZAPI_API_BASE_URL: "https://api.z-api.io",
-        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
-        ZAPI_API_BASE_URL: "https://api.z-api.io",
-        ZAPI_INSTANCE_ID: "instance-1",
-        ZAPI_INSTANCE_TOKEN: "instance-secret",
-      }).clientToken,
-    ).toBe("local-test-client-token");
-    expect(() =>
-      resolveZapiCredentials(connection, {
-        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
         ZAPI_API_BASE_URL: "https://api.z-api.io",
         ZAPI_INSTANCE_ID: "instance-1",
         ZAPI_INSTANCE_TOKEN: "instance-secret",
       }),
-    ).toThrow("central client authentication is not configured");
+    ).toThrow("credentials are incomplete");
   });
 
   it("rejects plaintext stored instance tokens", () => {
     const connection = createConnection();
     connection.credentialsRef = {
       stored: {
+        clientToken: "plaintext-client-token",
         instanceId: "instance-1",
         instanceToken: "plaintext-secret",
       },

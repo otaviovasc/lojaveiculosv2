@@ -217,7 +217,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     expect(body.setup).toMatchObject({ attemptCount: 2, status: "partial" });
   });
 
-  it("requires customer setup permission and Z-API entitlement", async () => {
+  it("requires customer setup permission and the base CRM entitlement", async () => {
     process.env.API_BASE_URL = "https://api.trusted.test";
     const target = createZapiConnection({
       storeId: customerStoreId,
@@ -231,7 +231,7 @@ describe("CRM WhatsApp webhook auto-configuration", () => {
     const withoutEntitlement = createTestApp({
       ...secureSetupOptions(),
       crmConnectionRepository: createMemoryCrmConnectionRepository([target]),
-      entitlements: ["crm"],
+      entitlements: [],
     });
     const path = `/api/v1/crm/channel-connections/${connectionId}/zapi/webhooks/configure`;
 

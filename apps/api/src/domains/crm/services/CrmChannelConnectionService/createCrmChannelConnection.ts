@@ -10,7 +10,6 @@ import {
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import { getCrmBillingQuotaGuard } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   crmChannelConnectionCapabilityFacts,
   type CreateCrmChannelConnectionInput,
@@ -48,10 +47,7 @@ export async function createCrmChannelConnection(
     );
   }
   const scope = requireCrmMessagingScope(context);
-  assertEntitlement(
-    context as never,
-    input.provider === "zapi" ? "crm_zapi" : "crm",
-  );
+  assertEntitlement(context as never, "crm");
   logCrmServiceEvent(context, "crm.channel_connection.create.started", {
     channel: input.channel,
     provider: input.provider,
@@ -86,14 +82,6 @@ export async function createCrmChannelConnection(
               return existingZapiConflict(existing, input);
             throw new CrmChannelConnectionProviderAlreadyExistsError(input);
           }
-          if (input.provider === "zapi") {
-            const quotaGuard = getCrmBillingQuotaGuard(transactionPorts);
-            await quotaGuard.assertAvailable({
-              quotaKey: "crm_zapi",
-              storeId: scope.storeId,
-              tenantId: scope.tenantId,
-            });
-          }
           const credentialsRef =
             input.provider === "zapi"
               ? await sealZapiCredentials(input, scope, transactionPorts)
@@ -117,8 +105,7 @@ export async function createCrmChannelConnection(
               channel: input.channel,
               credentialsRef,
               displayName: input.displayName,
-              externalInstanceId:
-                input.provider === "zapi" ? input.instanceId : null,
+              externalInstanceId: null,
               metadata: {
                 capabilities:
                   crmChannelConnectionCapabilityFacts(setupIdentity),

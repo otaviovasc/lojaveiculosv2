@@ -4,6 +4,7 @@ import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createBillingFeature } from "./billing.controller.js";
 import { createBillingServices } from "./billingServices.js";
 import { createMemoryBillingProviderRepository } from "../adapters/memory/billingProviderRepository.js";
+import { createMemoryBillingPlanHireRepository } from "../adapters/memory/billingPlanHireRepository.js";
 import { createMemoryBillingRepository } from "../adapters/memory/billingRepository.js";
 import { createMemoryBillingWebhookRepository } from "../adapters/memory/billingWebhookRepository.js";
 import { createMemoryPaymentProviderGateway } from "../adapters/memory/paymentProviderGateway.js";
@@ -19,49 +20,33 @@ describe("billing controller webhooks", () => {
     });
   });
 
-  it("syncs the current subscription with the configured provider", async () => {
+  it("creates a durable plan hire and exposes it for polling", async () => {
     const app = createTestApp("secret");
-    const response = await app.request(
-      "/api/v1/billing/provider/subscription/sync",
-      {
-        body: JSON.stringify({
-          billingType: "PIX",
-          nextDueDate: "2026-07-10",
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      },
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      billingType: "PIX",
-      chargeTotalCents: 54899,
-      provider: "asaas",
-      status: "active",
-    });
-  });
-
-  it("creates a hosted provider checkout for the current subscription", async () => {
-    const app = createTestApp("secret");
-    const response = await app.request("/api/v1/billing/provider/checkout", {
+    const response = await app.request("/api/v1/billing/plan-hires", {
       body: JSON.stringify({
         billingTypes: ["CREDIT_CARD", "PIX"],
-        minutesToExpire: 60,
-        nextDueDate: "2026-07-10",
+        idempotencyKey: "hire-route-test-1",
+        planId: "83262608-0000-4000-8000-000000000002",
       }),
       headers: { "content-type": "application/json" },
       method: "POST",
     });
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
+    expect(response.status).toBe(201);
+    const hire = (await response.json()) as { id: string };
+    expect(hire).toMatchObject({
       checkoutUrl:
         "https://sandbox.asaas.com/checkoutSession/show?id=chk_memory_asaas",
-      provider: "asaas",
+      phase: "checkout_created",
+      planSnapshot: { code: "essencial" },
       providerCheckoutId: "chk_memory_asaas",
-      subscriptionId: "subscription_memory",
+      quotedCents: 19700,
+      status: "checkout_created",
     });
+
+    const poll = await app.request(`/api/v1/billing/plan-hires/${hire.id}`);
+    expect(poll.status).toBe(200);
+    await expect(poll.json()).resolves.toMatchObject({ id: hire.id });
   });
 
   it("accepts valid Asaas webhooks through an integration context", async () => {
@@ -127,6 +112,7 @@ function createTestApp(secret: string, permissions = ["billing.manage"]) {
         }),
       services: createBillingServices({
         ports: {
+          billingPlanHireRepository: createMemoryBillingPlanHireRepository(),
           billingProviderRepository: createMemoryBillingProviderRepository(),
           billingRepository: createMemoryBillingRepository(),
           billingWebhookRepository: createMemoryBillingWebhookRepository(),

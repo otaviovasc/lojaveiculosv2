@@ -4,35 +4,15 @@ import {
   createBillingOverview,
 } from "./billingOverviewModel.js";
 import { createChargeableItem } from "./billingChargePreviewModel.js";
-import type { BillingPlan } from "../ports/billingRepository.js";
-
-const trialPlan: BillingPlan = {
-  catalogVersion: "2026-07-v1",
-  code: "growth",
-  features: [
-    {
-      featureKey: "plate_lookup",
-      included: true,
-      includedInTrial: true,
-      limitValue: 300,
-      trialLimitValue: 10,
-    },
-  ],
-  id: "plan_growth",
-  limits: { sellerLimit: 8, vehicleLimit: 300 },
-  monthlyPriceCents: 29900,
-  name: "Growth",
-  status: "active",
-};
 
 describe("createBillingOverview", () => {
-  it("revokes scheduled Z-API access at period end without a payment", () => {
+  it("marks an active entitlement inactive after its effective end", () => {
     const now = new Date("2026-09-10T00:00:00.000Z");
     const overview = createBillingOverview({
       entitlements: [
         {
           endsAt: now,
-          featureKey: "crm_zapi",
+          featureKey: "crm",
           metadata: {},
           source: "billing_catalog",
           startsAt: new Date("2026-08-10T00:00:00.000Z"),
@@ -47,19 +27,20 @@ describe("createBillingOverview", () => {
     });
 
     expect(
-      overview.entitlementMatrix.find((row) => row.featureKey === "crm_zapi")
+      overview.entitlementMatrix.find((row) => row.featureKey === "crm")
         ?.status,
     ).toBe("inactive");
   });
+
   it("builds agency billing matrix and financial summary defaults", () => {
     const overview = createBillingOverview({
       allocations: [
         {
           activeEntitlementCount: 2,
-          addonCount: 1,
-          monthlyAmountCents: 49900,
-          planCode: "agency",
-          planName: "Agency",
+          addonCount: 0,
+          monthlyAmountCents: 59700,
+          planCode: "gestao",
+          planName: "Gestao",
           storeId: "store_1" as never,
           storeName: "Loja Centro",
           storeSlug: "loja-centro",
@@ -69,9 +50,9 @@ describe("createBillingOverview", () => {
       entitlements: [
         {
           endsAt: null,
-          featureKey: "marketplace",
+          featureKey: "finance",
           metadata: { limitValue: 120 },
-          source: "billing_console",
+          source: "billing_catalog",
           startsAt: null,
           status: "active",
         },
@@ -82,19 +63,16 @@ describe("createBillingOverview", () => {
       tenantId: "tenant_1" as never,
     });
 
-    const marketplace = overview.entitlementMatrix.find(
-      (row) => row.featureKey === "marketplace",
+    const finance = overview.entitlementMatrix.find(
+      (row) => row.featureKey === "finance",
     );
-
     expect(overview.allocations).toHaveLength(1);
-    expect(marketplace?.status).toBe("active");
-    expect(marketplace?.limitValue).toBe(120);
+    expect(finance).toMatchObject({ limitValue: 120, status: "active" });
     expect(overview.authority.managedBy).toBe("store_owner");
-    expect(overview.chargePreview.totalCents).toBe(49900);
-    expect(overview.chargePreview.hasAgencyDiscount).toBe(false);
+    expect(overview.chargePreview.totalCents).toBe(59700);
     expect(overview.chargePreview.lineItems[0]).toMatchObject({
       allocationPercent: 100,
-      amountCents: 49900,
+      amountCents: 59700,
       kind: "subscription_item",
       storeName: "Loja Centro",
     });
@@ -115,64 +93,7 @@ describe("createBillingOverview", () => {
     });
   });
 
-  it("shows a trial entitlement as inactive after its effective end", () => {
-    const overview = createBillingOverview({
-      entitlements: [
-        {
-          endsAt: new Date("2026-07-10T00:00:00.000Z"),
-          featureKey: "crm",
-          metadata: {},
-          source: "billing_catalog",
-          startsAt: new Date("2026-06-10T00:00:00.000Z"),
-          status: "trialing",
-        },
-      ],
-      now: new Date("2026-07-12T00:00:00.000Z"),
-      plans: [],
-      storeId: "store_1" as never,
-      subscription: null,
-      tenantId: "tenant_1" as never,
-    });
-
-    expect(
-      overview.entitlementMatrix.find((row) => row.featureKey === "crm")
-        ?.status,
-    ).toBe("inactive");
-  });
-
-  it("shows the trial-specific plate lookup limit", () => {
-    const overview = createBillingOverview({
-      entitlements: [
-        {
-          endsAt: new Date("2026-07-15T00:00:00.000Z"),
-          featureKey: "plate_lookup",
-          metadata: {},
-          source: "billing_catalog",
-          startsAt: new Date("2026-07-01T00:00:00.000Z"),
-          status: "trialing",
-        },
-      ],
-      now: new Date("2026-07-05T00:00:00.000Z"),
-      plans: [trialPlan],
-      storeId: "store_1" as never,
-      subscription: {
-        currentPeriodEnd: new Date("2026-07-15T00:00:00.000Z"),
-        currentPeriodStart: new Date("2026-07-01T00:00:00.000Z"),
-        id: "subscription_1",
-        plan: trialPlan,
-        status: "trialing",
-      },
-      tenantId: "tenant_1" as never,
-    });
-
-    expect(
-      overview.entitlementMatrix.find(
-        (row) => row.featureKey === "plate_lookup",
-      )?.limitValue,
-    ).toBe(10);
-  });
-
-  it("calculates charge preview from real subscription chargeables", () => {
+  it("calculates charge preview from the effective plan contract", () => {
     const periodStart = new Date("2026-07-01T00:00:00.000Z");
     const periodEnd = new Date("2026-07-31T00:00:00.000Z");
     const overview = createBillingOverview({
@@ -180,26 +101,14 @@ describe("createBillingOverview", () => {
         createChargeableItem({
           id: "item_plan",
           itemType: "plan",
-          label: "Growth",
+          label: "Gestao",
           periodEnd,
           periodStart,
           quantity: 1,
           startsAt: periodStart,
           storeId: "store_1" as never,
           storeName: "Loja Centro",
-          unitAmountCents: 29900,
-        }),
-        createChargeableItem({
-          id: "item_addon",
-          itemType: "addon",
-          label: "CRM WhatsApp",
-          periodEnd,
-          periodStart,
-          quantity: 1,
-          startsAt: new Date("2026-07-16T00:00:00.000Z"),
-          storeId: "store_1" as never,
-          storeName: "Loja Centro",
-          unitAmountCents: 24999,
+          unitAmountCents: 59700,
         }),
       ],
       entitlements: [],
@@ -209,23 +118,15 @@ describe("createBillingOverview", () => {
       tenantId: "tenant_1" as never,
     });
 
-    expect(overview.chargePreview.totalCents).toBe(42400);
+    expect(overview.chargePreview.totalCents).toBe(59700);
     expect(overview.chargePreview.lineItems).toEqual([
       expect.objectContaining({
-        allocationPercent: 70.52,
-        amountCents: 29900,
-        fullAmountCents: 29900,
+        allocationPercent: 100,
+        amountCents: 59700,
+        fullAmountCents: 59700,
         itemType: "plan",
         prorationApplied: false,
         prorationFactor: 1,
-      }),
-      expect.objectContaining({
-        allocationPercent: 29.48,
-        amountCents: 12500,
-        fullAmountCents: 24999,
-        itemType: "addon",
-        prorationApplied: true,
-        prorationFactor: 0.5,
       }),
     ]);
   });

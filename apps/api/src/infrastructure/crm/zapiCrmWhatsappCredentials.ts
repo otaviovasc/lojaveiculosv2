@@ -1,5 +1,6 @@
 import type { CrmConnection } from "../../domains/crm/ports/crmConnectionRepository.js";
 import {
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
 } from "../../domains/crm/ports/crmConnectionSetupProvider.js";
@@ -12,33 +13,23 @@ export function resolveZapiCredentials(
   env: Record<string, string | undefined>,
 ): ZapiCredentials {
   const envRefs = readEnvRefs(connection.credentialsRef);
-  const clientToken = readCentralClientToken(env);
-  if (!clientToken) {
+  const stored = readStoredCredentials(connection, env);
+  if (!stored) {
     throw new CrmMessagingGatewayError(
-      "ZAPI central client authentication is not configured",
+      "Z-API credentials are incomplete. Re-enter the instance ID, instance token, and client token.",
       409,
       undefined,
       "configuration_error",
     );
   }
-  const stored = readStoredCredentials(connection, env);
-  if (stored) {
-    return {
-      apiBaseUrl:
-        readOptionalEnv(env, envRefs.apiBaseUrl) ??
-        env.CRM_ZAPI_API_BASE_URL?.trim() ??
-        "https://api.z-api.io",
-      clientToken,
-      instanceId: stored.instanceId,
-      instanceToken: stored.instanceToken,
-      requestTimeoutMs: readRequestTimeoutMs(env.CRM_ZAPI_REQUEST_TIMEOUT_MS),
-    };
-  }
   return {
-    apiBaseUrl: readRequiredEnv(env, envRefs.apiBaseUrl, "apiBaseUrl"),
-    clientToken,
-    instanceId: readRequiredEnv(env, envRefs.instanceId, "instanceId"),
-    instanceToken: readRequiredEnv(env, envRefs.instanceToken, "instanceToken"),
+    apiBaseUrl:
+      readOptionalEnv(env, envRefs.apiBaseUrl) ??
+      env.CRM_ZAPI_API_BASE_URL?.trim() ??
+      "https://api.z-api.io",
+    clientToken: stored.clientToken,
+    instanceId: stored.instanceId,
+    instanceToken: stored.instanceToken,
     requestTimeoutMs: readRequestTimeoutMs(env.CRM_ZAPI_REQUEST_TIMEOUT_MS),
   };
 }
@@ -54,20 +45,7 @@ function readEnvRefs(credentialsRef: Record<string, unknown>) {
   const envRefs = readRecord(credentialsRef.env);
   return {
     apiBaseUrl: readString(envRefs.apiBaseUrl),
-    instanceId: readString(envRefs.instanceId),
-    instanceToken: readString(envRefs.instanceToken),
   };
-}
-
-export function readCentralClientToken(
-  env: Record<string, string | undefined>,
-) {
-  return (
-    env.CRM_ZAPI_CLIENT_TOKEN?.trim() ||
-    (env.APP_ENV === "local"
-      ? env.CRM_ZAPI_TEST_CLIENT_TOKEN?.trim()
-      : undefined)
-  );
 }
 
 function readStoredCredentials(
@@ -75,8 +53,15 @@ function readStoredCredentials(
   env: Record<string, string | undefined>,
 ) {
   const stored = readRecord(connection.credentialsRef.stored);
+  const sealedClientToken = readString(stored.clientToken);
   const sealedInstanceId = readString(stored.instanceId);
   const sealedInstanceToken = readString(stored.instanceToken);
+  const clientToken = decryptIfSealed(
+    connection,
+    sealedClientToken,
+    ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
+    env,
+  );
   const instanceId = decryptIfSealed(
     connection,
     sealedInstanceId,
@@ -90,9 +75,10 @@ function readStoredCredentials(
     env,
   );
   if (
+    sealedClientToken &&
     sealedInstanceId &&
     sealedInstanceToken &&
-    (!instanceId || !instanceToken)
+    (!clientToken || !instanceId || !instanceToken)
   ) {
     throw new CrmMessagingGatewayError(
       "Stored ZAPI credentials must use encrypted CRM credential storage",
@@ -101,7 +87,9 @@ function readStoredCredentials(
       "configuration_error",
     );
   }
-  return instanceId && instanceToken ? { instanceId, instanceToken } : null;
+  return clientToken && instanceId && instanceToken
+    ? { clientToken, instanceId, instanceToken }
+    : null;
 }
 
 function decryptIfSealed(
@@ -136,31 +124,6 @@ function readOptionalEnv(
   envName: string | null,
 ) {
   return envName ? env[envName]?.trim() || null : null;
-}
-
-function readRequiredEnv(
-  env: Record<string, string | undefined>,
-  envName: string | null,
-  credentialName: string,
-) {
-  if (!envName) {
-    throw new CrmMessagingGatewayError(
-      `ZAPI credential reference is missing: ${credentialName}`,
-      409,
-      undefined,
-      "configuration_error",
-    );
-  }
-  const value = env[envName]?.trim();
-  if (!value) {
-    throw new CrmMessagingGatewayError(
-      `ZAPI credential env var is not configured: ${envName}`,
-      409,
-      undefined,
-      "configuration_error",
-    );
-  }
-  return value;
 }
 
 function readRecord(value: unknown): Record<string, unknown> {

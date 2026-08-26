@@ -1,5 +1,4 @@
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
-import { createDrizzleBillingQuotaGuard } from "../../../infrastructure/db/billing/drizzleBillingQuotaGuard.js";
 import { createDrizzleCrmExternalBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmExternalBotIntegrationRepository.js";
 import { createDrizzleCrmAssigneeMembershipRepository } from "../../../infrastructure/db/crm/drizzleCrmAssigneeMembershipRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
@@ -62,9 +61,6 @@ export function resolveCrmPorts(
   const defaultPorts = options.drizzleClient
     ? {
         ...connectionSetupPorts,
-        billingQuotaGuard: createDrizzleBillingQuotaGuard(
-          options.drizzleClient,
-        ),
         crmExternalBotIntegrationRepository:
           createDrizzleCrmExternalBotIntegrationRepository(
             options.drizzleClient,
@@ -116,12 +112,6 @@ export function resolveCrmPorts(
       }
     : {
         ...connectionSetupPorts,
-        billingQuotaGuard: {
-          assertAvailable: async () => {
-            throw new Error("CRM instance allowance is exhausted.");
-          },
-          getAllowance: async () => ({ limit: 0, remaining: 0, used: 0 }),
-        },
         crmExternalBotIntegrationRepository:
           createMemoryCrmExternalBotIntegrationRepository(),
         crmAssigneeMembershipRepository:
@@ -156,9 +146,6 @@ export function resolveCrmPorts(
         const { transaction: _transaction, ...transactionPorts } = ports;
         return action({
           ...transactionPorts,
-          billingQuotaGuard: createDrizzleBillingQuotaGuard(
-            tx as DrizzleCrmClient,
-          ),
           crmExternalBotIntegrationRepository:
             createDrizzleCrmExternalBotIntegrationRepository(
               tx as DrizzleCrmClient,
@@ -221,6 +208,6 @@ function createAllowedInMemoryOlxWebhookSecurity(environment: string) {
     return createOlxWebhookSecurity();
   }
   throw new CrmOlxWebhookSecurityConfigurationError(
-    "Shared OLX webhook rate limiting must be configured outside local/test.",
+    "Shared CRM provider webhook rate limiting must be configured outside local/test.",
   );
 }

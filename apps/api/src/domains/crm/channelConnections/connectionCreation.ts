@@ -1,4 +1,3 @@
-import type { BillingQuotaAllowance } from "../../billing/ports/billingQuotaGuard.js";
 import type { CrmConnectionCapability } from "@lojaveiculosv2/shared";
 import type { CrmChannelConnection } from "./channelConnectionModels.js";
 
@@ -15,6 +14,7 @@ export type CreateCrmChannelConnectionInput =
   | {
       channel: "whatsapp";
       displayName: string;
+      clientToken: string;
       instanceId: string;
       instanceToken: string;
       provider: "zapi";
@@ -30,12 +30,8 @@ export type CreateCrmChannelConnectionInput =
     };
 
 export type CrmChannelConnectionOverview = {
-  allowance: BillingQuotaAllowance;
+  allowance: { limit: number; remaining: number; used: number };
   availableSetups: readonly CrmChannelConnectionSetupIdentity[];
-  billingState?: {
-    code: "BILLING_CONTRACT_UNAVAILABLE" | null;
-    status: "available" | "unavailable";
-  };
   connections: readonly CrmChannelConnection[];
 };
 

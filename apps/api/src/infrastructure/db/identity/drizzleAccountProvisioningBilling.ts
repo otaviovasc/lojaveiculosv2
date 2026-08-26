@@ -1,6 +1,5 @@
 import { and, desc, eq, lte } from "drizzle-orm";
 import {
-  addons,
   planFeatures,
   plans,
   subscriptionItems,
@@ -33,12 +32,11 @@ export async function insertBillingDefaults(
   profile: StoreProfileDraft | undefined,
 ) {
   await lockBillingAccount(db, tenant.id);
-  const { plan, trialEntitlements } = await selectPublishedCatalog(db);
+  const { entitlements, plan } = await selectPublishedCatalog(db);
   const customer = await ensureBillingCustomer(db, tenant, profile);
   const subscription = await ensureSubscription(db, tenant.id, customer.id);
   assertProvisionableSubscription(subscription);
-  const startsAt = subscription.currentPeriodStart ?? new Date();
-  const trialing = subscription.status === "trialing";
+  const startsAt = new Date();
   await db.insert(subscriptionItems).values(
     toStorePlanContractItem({
       plan,
@@ -50,10 +48,10 @@ export async function insertBillingDefaults(
   );
   return {
     catalogVersion: plan.catalogVersion,
-    entitlements: trialing ? trialEntitlements : [],
-    endsAt: trialing ? subscription.currentPeriodEnd : null,
+    entitlements,
+    endsAt: null,
     startsAt,
-    status: trialing ? ("trialing" as const) : ("active" as const),
+    status: "active" as const,
   };
 }
 
@@ -75,34 +73,16 @@ async function selectPublishedCatalog(db: DrizzleAccountProvisioningClient) {
     .orderBy(desc(plans.publishedAt))
     .limit(1);
   if (!plan) throw new BillingCatalogUnavailableError();
-  const [features, trialAddons] = await Promise.all([
-    db
-      .select()
-      .from(planFeatures)
-      .where(eq(planFeatures.planId, plan.id))
-      .limit(100),
-    db
-      .select()
-      .from(addons)
-      .where(
-        and(
-          eq(addons.status, "active"),
-          eq(addons.catalogVersion, catalogVersion),
-          eq(addons.includedInTrial, true),
-          lte(addons.publishedAt, now),
-        ),
-      )
-      .orderBy(desc(addons.publishedAt))
-      .limit(100),
-  ]);
+  const features = await db
+    .select()
+    .from(planFeatures)
+    .where(eq(planFeatures.planId, plan.id))
+    .limit(100);
   return {
+    entitlements: features
+      .filter((feature) => Boolean(feature.included))
+      .map((feature) => feature.featureKey as EntitlementKey),
     plan,
-    trialEntitlements: [
-      ...features
-        .filter((feature) => feature.includedInTrial)
-        .map((feature) => feature.featureKey as EntitlementKey),
-      ...trialAddons.map((addon) => addon.featureKey as EntitlementKey),
-    ],
   };
 }
 
@@ -110,14 +90,7 @@ function assertProvisionableSubscription(
   subscription: typeof subscriptions.$inferSelect,
 ) {
   if (subscription.status === "active") return;
-  if (
-    subscription.status === "trialing" &&
-    subscription.currentPeriodEnd &&
-    subscription.currentPeriodEnd > new Date()
-  ) {
-    return;
-  }
   throw new Error(
-    `Cannot provision a store against a ${subscription.status} billing subscription without a future period end.`,
+    `Cannot provision a store against a ${subscription.status} billing subscription.`,
   );
 }

@@ -28,7 +28,7 @@ describe("Drizzle store access repository", () => {
     expect(access).toEqual({
       accessOrigin: "direct_store_membership",
       billingManagedBy: "store_owner",
-      entitlements: ["crm", "subdomain"],
+      entitlements: ["crm", "storefront"],
       overrides: [
         { allowed: true, permission: "inventory.update_price" },
         { allowed: false, permission: "inventory.create" },
@@ -148,7 +148,7 @@ describe("Drizzle store access repository", () => {
     ).resolves.toBeNull();
   });
 
-  it("excludes trial entitlements after their effective expiry", async () => {
+  it("does not grant access from historical trial entitlements", async () => {
     const rows = createStoreAccessRows({
       entitlements: [
         {
@@ -162,7 +162,7 @@ describe("Drizzle store access repository", () => {
     });
     const repository = createDrizzleStoreAccessRepository(
       createFakeStoreAccessDb(rows),
-      () => new Date("2026-02-01T00:00:00.000Z"),
+      () => new Date("2026-01-15T00:00:00.000Z"),
     );
 
     const access = await repository.findByClerkUserAndStoreSlug({

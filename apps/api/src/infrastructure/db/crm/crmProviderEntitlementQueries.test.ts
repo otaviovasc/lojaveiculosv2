@@ -16,7 +16,7 @@ describe("CRM provider entitlement query contracts", () => {
       expect(source).toContain("storeEntitlements");
       expect(source).toContain('featureKey, "crm"');
       expect(source).toContain('status, "active"');
-      expect(source).toContain('status, "trialing"');
+      expect(source).not.toContain('status, "trialing"');
       expect(source).toContain("storeEntitlements.startsAt");
       expect(source).toContain("storeEntitlements.endsAt");
       expect(source).toContain("stores.isDeleted");

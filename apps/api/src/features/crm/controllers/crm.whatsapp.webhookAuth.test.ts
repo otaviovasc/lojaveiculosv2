@@ -1,15 +1,13 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
-import type { EntitlementKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
-import { createTestApp } from "./crm.controller.testSupport.js";
-
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
-const connectionA = "24000000-0000-4000-8000-000000000101";
-const connectionB = "24000000-0000-4000-8000-000000000102";
+import {
+  connectionA,
+  connectionB,
+  createWebhookAuthApp,
+  postReceived,
+  storeId,
+  tenantId,
+} from "./crm.whatsapp.webhookAuth.testSupport.js";
 
 describe("CRM WhatsApp webhook authentication", () => {
   it("requires the secret sealed for the addressed connection", async () => {
@@ -24,7 +22,7 @@ describe("CRM WhatsApp webhook authentication", () => {
   it("binds the token-authenticated connection scope before ingestion", async () => {
     const auditRecord = vi.fn<AuditSink["record"]>(async () => undefined);
     const audit = { record: auditRecord };
-    const app = createWebhookAuthApp(["crm", "crm_zapi"], audit);
+    const app = createWebhookAuthApp(["crm"], audit);
 
     expect((await postReceived(app, connectionA, "secret-a")).status).toBe(201);
     const authorizationAudits = auditRecord.mock.calls
@@ -50,10 +48,10 @@ describe("CRM WhatsApp webhook authentication", () => {
     });
   });
 
-  it("fails closed when the authenticated store lacks crm_zapi", async () => {
+  it("fails closed when the authenticated store lacks crm", async () => {
     const auditRecord = vi.fn<AuditSink["record"]>(async () => undefined);
     const audit = { record: auditRecord };
-    const app = createWebhookAuthApp(["crm"], audit);
+    const app = createWebhookAuthApp([], audit);
 
     const response = await postReceived(app, connectionA, "secret-a");
 
@@ -83,78 +81,3 @@ describe("CRM WhatsApp webhook authentication", () => {
     );
   });
 });
-
-function createWebhookAuthApp(
-  entitlements: EntitlementKey[] = ["crm", "crm_zapi"],
-  audit?: AuditSink,
-) {
-  return createTestApp({
-    ...(audit ? { audit } : {}),
-    crmConnectionCredentialVault: {
-      open: async ({ sealed }) => sealed.replace(/^sealed:/u, ""),
-      seal: async ({ plaintext }) => `sealed:${plaintext}`,
-    },
-    crmConnectionRepository: createMemoryCrmConnectionRepository([
-      createZapiConnection(connectionA, "secret-a", storeId, tenantId),
-      createZapiConnection(
-        connectionB,
-        "secret-b",
-        "store_2" as StoreId,
-        "tenant_2" as TenantId,
-      ),
-    ]),
-    crmConversationRepository: createMemoryCrmConversationRepository(),
-    resolveBotEntitlements: async ({ context, storeId, tenantId }) => {
-      expect(context).toMatchObject({ storeId, tenantId });
-      return entitlements;
-    },
-  });
-}
-
-function postReceived(
-  app: ReturnType<typeof createTestApp>,
-  connectionId: string,
-  token?: string,
-) {
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/received`,
-    {
-      body: JSON.stringify({
-        messageId: `zapi-auth-${connectionId}`,
-        phone: "5511999999999",
-        senderName: "Ana",
-        text: { message: "Ola" },
-        timestamp: 1783029600,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "x-crm-webhook-token": token } : {}),
-      },
-      method: "POST",
-    },
-  );
-}
-
-function createZapiConnection(
-  id: string,
-  secret: string,
-  connectionStoreId: StoreId,
-  connectionTenantId: TenantId,
-): CrmConnection {
-  return {
-    broker: "direct",
-    channel: "whatsapp",
-    credentialsRef: { stored: { webhookSecret: `sealed:${secret}` } },
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "active",
-    storeId: connectionStoreId,
-    tenantId: connectionTenantId,
-    webhookUrl: null,
-  };
-}

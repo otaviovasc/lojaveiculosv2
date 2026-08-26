@@ -200,13 +200,12 @@ function createZapiConnection(
     id: connectionId,
     overrides: {
       credentialsRef: {
-        env: {
-          apiBaseUrl: "CRM_ZAPI_API_BASE_URL",
-          clientToken: "CRM_ZAPI_TEST_CLIENT_TOKEN",
-          instanceId: "CRM_ZAPI_TEST_INSTANCE_ID",
-          instanceToken: "CRM_ZAPI_TEST_INSTANCE_TOKEN",
+        stored: {
+          clientToken: "sealed:client-token",
+          instanceId: "sealed:instance-id",
+          instanceToken: "sealed:instance-token",
         },
-        mode: "env",
+        mode: "stored",
       },
       ...overrides,
     },

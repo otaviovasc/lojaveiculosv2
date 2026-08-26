@@ -1,7 +1,6 @@
 import { CreditCard, RefreshCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import "../../../styles/billing-panels.css";
 import {
   FeatureActionButton,
   FeaturePageHeader,
@@ -11,14 +10,19 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../../components/ui/FeatureStates";
-import { Toast, type ToastTone } from "../../../components/ui/Toast";
 import { FeatureTabs } from "../../../components/ui/FeatureTabs";
-import { BillingEventList } from "../../billing/BillingPanels";
 import { BillingAutomaticBillingPanel } from "../../billing/BillingAutomaticBillingPanel";
 import { readBillingCheckoutReturn } from "../../billing/billingCheckoutReturn";
-import type { BillingCheckoutState } from "../../billing/BillingCheckoutPanel";
+import {
+  billingPlanHirePollDelays,
+  isBillingPlanHireTerminal,
+  trustedBillingPlanHireId,
+} from "../../billing/billingPlanHireState";
+import { BillingEventList } from "../../billing/BillingPanels";
+import { BillingSignupFlow } from "../../billing/BillingSignupFlow";
 import type {
-  BillingAddonContract,
+  BillingPlan,
+  BillingPlanHire,
   BillingProviderStatus,
 } from "../../billing/types";
 import type { AgencyApi, AgencyTenantOverview } from "../apiClient";
@@ -29,19 +33,15 @@ import {
 import {
   agencyBillingErrorMessage,
   createAgencyBillingPanelOverview,
-  startAgencyStoreCheckout,
-  type AgencyBillingStatus,
   type AgencyBillingTab,
 } from "./AgencyBillingPage.model";
 import { createRuntimeAgencyBillingApi } from "./AgencyBillingPage.runtime";
 import { AgencyBillingStoreEntitlements } from "./AgencyBillingStoreEntitlements";
-import {
-  AgencyBillingAllocation,
-  AgencyBillingStatusSummary,
-} from "./AgencyBillingSummarySections";
+import { AgencyBillingAllocation } from "./AgencyBillingSummarySections";
 
 export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const requestGeneration = useRef(0);
+  const actionGeneration = useRef(0);
   const { agencyTenant, agencyTenants, selectAgencyTenant } =
     useAgencyTenantSelection();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -51,52 +51,61 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(() =>
     searchParams.get("storeId"),
   );
-  const [status, setStatus] = useState<AgencyBillingStatus>({
-    kind: "loading",
-  });
-  const [checkoutState, setCheckoutState] = useState<BillingCheckoutState>({
-    kind: "idle",
-  });
-  const [activeTab, setActiveTab] = useState<AgencyBillingTab>("overview");
-  const [zapiRequestSaving, setZapiRequestSaving] = useState(false);
-  const [toast, setToast] = useState<{
-    title: string;
-    tone: ToastTone;
-  } | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<AgencyBillingTab>("overview");
+  const [error, setError] = useState<string | null>(null);
+  const [providerError, setProviderError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hire, setHire] = useState<BillingPlanHire | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [quoteRequesting, setQuoteRequesting] = useState(false);
+  const [quoteRequested, setQuoteRequested] = useState(false);
+  const [pollingHireId, setPollingHireId] = useState<string | null>(null);
+  const [pollingIndeterminate, setPollingIndeterminate] = useState(false);
   const checkoutReturn = readBillingCheckoutReturn("agency");
 
   const refresh = useCallback(async () => {
     const generation = ++requestGeneration.current;
     if (!agencyTenant) {
-      setStatus({
-        kind: "error",
-        message: "Nenhum tenant de agência ativo foi encontrado.",
-      });
+      setError("Nenhum tenant de agência ativo foi encontrado.");
+      setLoading(false);
       return;
     }
-    setStatus({ kind: "loading" });
+    setLoading(true);
+    setError(null);
+    setProviderError(false);
     setOverview(null);
     setProviderStatus(null);
+    let billingApi: AgencyApi;
     try {
-      const billingApi = api ?? (await createRuntimeAgencyBillingApi());
-      const [nextOverview, nextProviderStatus] = await Promise.all([
-        billingApi.getOverview(agencyTenant.tenantId),
-        billingApi.getProviderStatus(agencyTenant.tenantId),
-      ]);
+      billingApi = api ?? (await createRuntimeAgencyBillingApi());
+    } catch (cause) {
+      if (generation === requestGeneration.current) {
+        setError(agencyBillingErrorMessage(cause));
+        setLoading(false);
+      }
+      return;
+    }
+    try {
+      const nextOverview = await billingApi.getOverview(agencyTenant.tenantId);
       if (generation !== requestGeneration.current) return;
       setOverview(nextOverview);
-      setProviderStatus(nextProviderStatus);
       setSelectedStoreId((current) =>
         nextOverview.stores.some((store) => store.storeId === current)
           ? current
           : (nextOverview.stores[0]?.storeId ?? null),
       );
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      if (generation !== requestGeneration.current) return;
-      setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
+    } catch (cause) {
+      if (generation === requestGeneration.current)
+        setError(agencyBillingErrorMessage(cause));
+    } finally {
+      if (generation === requestGeneration.current) setLoading(false);
+    }
+    try {
+      const status = await billingApi.getProviderStatus(agencyTenant.tenantId);
+      if (generation === requestGeneration.current) setProviderStatus(status);
+    } catch {
+      if (generation === requestGeneration.current) setProviderError(true);
     }
   }, [agencyTenant, api]);
 
@@ -107,37 +116,6 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     };
   }, [refresh]);
 
-  useEffect(() => {
-    const requestedStoreId = searchParams.get("storeId");
-    if (
-      !requestedStoreId ||
-      !overview?.stores.some((store) => store.storeId === requestedStoreId)
-    ) {
-      return;
-    }
-    setSelectedStoreId(requestedStoreId);
-  }, [overview, searchParams]);
-
-  useEffect(() => {
-    if (
-      !selectedStoreId ||
-      !overview?.stores.some((store) => store.storeId === selectedStoreId) ||
-      searchParams.get("storeId") === selectedStoreId
-    ) {
-      return;
-    }
-    const nextSearchParams = new URLSearchParams(searchParams);
-    nextSearchParams.set("storeId", selectedStoreId);
-    setSearchParams(nextSearchParams, { replace: true });
-  }, [overview, searchParams, selectedStoreId, setSearchParams]);
-
-  const selectStore = (storeId: string) => {
-    setSelectedStoreId(storeId);
-    const nextSearchParams = new URLSearchParams(searchParams);
-    nextSearchParams.set("storeId", storeId);
-    setSearchParams(nextSearchParams, { replace: true });
-  };
-
   const panelOverview = useMemo(
     () => createAgencyBillingPanelOverview(overview, selectedStoreId),
     [overview, selectedStoreId],
@@ -145,87 +123,137 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
 
   useEffect(() => {
     if (!overview || !selectedStoreId) return;
-    const selectedStore = overview.stores.find(
-      (store) => store.storeId === selectedStoreId,
+    const store = overview.stores.find(
+      (candidate) => candidate.storeId === selectedStoreId,
     );
-    const selectedPlan = selectedStore?.planCode
-      ? overview.plans.find((plan) => plan.code === selectedStore.planCode)
-      : overview.plans.find((plan) => plan.status === "active");
-    setSelectedPlanId(selectedPlan?.id ?? null);
-    setSelectedAddonIds(
-      overview.addons.flatMap((addon) =>
-        (!selectedPlan ||
-          addon.catalogVersion === selectedPlan.catalogVersion) &&
-        selectedStore?.entitlementMatrix.some(
-          (row) =>
-            row.featureKey === addon.featureKey &&
-            (row.status === "active" || row.status === "trialing"),
-        )
-          ? [addon.id]
-          : [],
-      ),
+    setSelectedPlanId(
+      overview.plans.find((plan) => plan.code === store?.planCode)?.id ??
+        overview.plans.find((plan) => plan.code === "free")?.id ??
+        null,
     );
   }, [overview, selectedStoreId]);
 
-  const startCheckout: AgencyApi["createCheckout"] = async (
-    tenantId,
-    input,
-  ) => {
-    setCheckoutState({ kind: "starting" });
+  useEffect(() => {
+    actionGeneration.current += 1;
+    setHire(null);
+    setPollingIndeterminate(false);
+    setSubmitting(false);
+    setQuoteRequesting(false);
+    setQuoteRequested(false);
+    setPollingHireId(
+      agencyTenant && selectedStoreId
+        ? readTrustedAgencyHireId(agencyTenant.tenantId, selectedStoreId)
+        : null,
+    );
+  }, [agencyTenant, selectedStoreId]);
+
+  const selectStore = (storeId: string) => {
+    actionGeneration.current += 1;
+    setSelectedStoreId(storeId);
+    const next = new URLSearchParams(searchParams);
+    next.set("storeId", storeId);
+    setSearchParams(next, { replace: true });
+  };
+
+  const createHire = async (plan: BillingPlan) => {
+    if (!agencyTenant || !selectedStoreId) return;
+    const tenantId = agencyTenant.tenantId;
+    const storeId = selectedStoreId;
+    const generation = ++actionGeneration.current;
+    setSubmitting(true);
+    setError(null);
     try {
-      if (!selectedStoreId || !selectedPlanId) {
-        throw new Error("Selecione uma loja e um plano antes de continuar.");
-      }
       const billingApi = api ?? (await createRuntimeAgencyBillingApi());
-      const checkout = await startAgencyStoreCheckout({
-        addonIds: selectedAddonIds,
-        api: billingApi,
-        input,
-        planId: selectedPlanId,
-        storeId: selectedStoreId,
-        tenantId,
+      const nextHire = await billingApi.createStorePlanHire(tenantId, storeId, {
+        billingTypes: ["CREDIT_CARD"],
+        idempotencyKey: createIdempotencyKey(plan.id),
+        planId: plan.id,
       });
-      setCheckoutState({ kind: "started" });
-      window.location.assign(checkout.checkoutUrl);
-      return checkout;
-    } catch (error) {
-      setCheckoutState({ kind: "idle" });
-      setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
-      throw error;
+      if (generation !== actionGeneration.current) return;
+      setHire(nextHire);
+      if (!isBillingPlanHireTerminal(nextHire)) {
+        storeAgencyHire(hireStorageKey(tenantId, storeId), nextHire.id);
+        setPollingHireId(nextHire.id);
+      }
+      if (nextHire.checkoutUrl) {
+        window.location.assign(nextHire.checkoutUrl);
+      } else if (nextHire.status === "paid_active") await refresh();
+    } catch (cause) {
+      if (generation === actionGeneration.current)
+        setError(agencyBillingErrorMessage(cause));
+    } finally {
+      if (generation === actionGeneration.current) setSubmitting(false);
     }
   };
 
-  const updateZapiRequest = async (action: "cancel" | "request") => {
+  const requestQuote = async (plan: BillingPlan) => {
     if (!agencyTenant || !selectedStoreId) return;
-    setZapiRequestSaving(true);
+    const tenantId = agencyTenant.tenantId;
+    const storeId = selectedStoreId;
+    const generation = ++actionGeneration.current;
+    setQuoteRequesting(true);
+    setError(null);
     try {
       const billingApi = api ?? (await createRuntimeAgencyBillingApi());
-      const response =
-        action === "request"
-          ? await billingApi.requestStoreZapi(
-              agencyTenant.tenantId,
-              selectedStoreId,
-            )
-          : await billingApi.cancelStoreZapiRequest(
-              agencyTenant.tenantId,
-              selectedStoreId,
-            );
-      setOverview((current) =>
-        current
-          ? withAgencyStoreContract(current, selectedStoreId, response.contract)
-          : current,
-      );
-      setToast(
-        action === "request"
-          ? { title: "Solicitação Z-API enviada para a loja.", tone: "success" }
-          : { title: "Solicitação Z-API cancelada.", tone: "info" },
-      );
-    } catch (error) {
-      setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
+      await billingApi.requestStorePlanQuote(tenantId, storeId, plan.id);
+      if (generation !== actionGeneration.current) return;
+      setQuoteRequested(true);
+    } catch (cause) {
+      if (generation === actionGeneration.current)
+        setError(agencyBillingErrorMessage(cause));
     } finally {
-      setZapiRequestSaving(false);
+      if (generation === actionGeneration.current) setQuoteRequesting(false);
     }
   };
+
+  useEffect(() => {
+    if (!agencyTenant || !selectedStoreId || !pollingHireId) return;
+    const tenantId = agencyTenant.tenantId;
+    const storeId = selectedStoreId;
+    let cancelled = false;
+    let timer: number | undefined;
+    let attempt = 0;
+    setPollingIndeterminate(false);
+    const poll = async () => {
+      try {
+        const billingApi = api ?? (await createRuntimeAgencyBillingApi());
+        const next = await billingApi.getStorePlanHire(
+          tenantId,
+          storeId,
+          pollingHireId,
+        );
+        if (cancelled) return;
+        setHire(next);
+        if (isBillingPlanHireTerminal(next)) {
+          removeAgencyHireIfCurrent(
+            hireStorageKey(tenantId, storeId),
+            pollingHireId,
+          );
+          setPollingHireId(null);
+          if (next.status === "paid_active") {
+            await refresh();
+            if (cancelled) return;
+          }
+          return;
+        }
+      } catch (cause) {
+        if (attempt === billingPlanHirePollDelays.length - 1 && !cancelled)
+          setError(agencyBillingErrorMessage(cause));
+      }
+      attempt += 1;
+      if (attempt < billingPlanHirePollDelays.length)
+        timer = window.setTimeout(
+          () => void poll(),
+          billingPlanHirePollDelays[attempt],
+        );
+      else if (!cancelled) setPollingIndeterminate(true);
+    };
+    void poll();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [agencyTenant, api, pollingHireId, refresh, selectedStoreId]);
 
   return (
     <FeaturePageShell className="billing-shell" variant="content">
@@ -239,24 +267,29 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
             />
             <FeatureActionButton
               icon={RefreshCcw}
-              isBusy={status.kind === "loading"}
+              isBusy={loading}
               label="Atualizar"
               onClick={() => void refresh()}
             />
           </>
         }
-        description="Uma visão clara do investimento do grupo e dos pacotes que ajudam cada loja a crescer."
+        description="Contratos efetivos e planos cumulativos por loja, sem adicionais."
         eyebrow={
           <>
             <CreditCard aria-hidden="true" className="size-4" />
             Plano do grupo
           </>
         }
-        title="Planos e crescimento das lojas"
+        title="Planos das lojas"
       />
-
-      {status.kind === "error" ? (
-        <FeatureAlert className="billing-alert">{status.message}</FeatureAlert>
+      {error ? (
+        <FeatureAlert className="billing-alert">{error}</FeatureAlert>
+      ) : null}
+      {providerError ? (
+        <FeatureAlert className="billing-alert" tone="warning">
+          O resumo segue disponível, mas a prontidão do checkout não pôde ser
+          verificada.
+        </FeatureAlert>
       ) : null}
       {checkoutReturn ? (
         <FeatureAlert
@@ -267,26 +300,40 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
           {checkoutReturn.message}
         </FeatureAlert>
       ) : null}
-
+      {quoteRequested ? (
+        <FeatureAlert
+          className="billing-alert"
+          title="Proposta solicitada"
+          tone="success"
+        >
+          A solicitação do Escala foi registrada para esta loja. Nenhum checkout
+          foi criado.
+        </FeatureAlert>
+      ) : null}
+      {pollingIndeterminate ? (
+        <FeatureAlert
+          className="billing-alert"
+          title="Confirmação ainda em andamento"
+          tone="warning"
+        >
+          Não recebemos um estado final para a contratação {pollingHireId}. O
+          contrato efetivo atual segue válido. Atualize mais tarde ou informe o
+          ID ao suporte antes de iniciar outra contratação.
+        </FeatureAlert>
+      ) : null}
       {overview && panelOverview ? (
         <>
-          <AgencyBillingStatusSummary
-            checkoutState={checkoutState}
+          <AgencyBillingStoreEntitlements
+            onStoreChange={selectStore}
             overview={overview}
-            panelOverview={panelOverview}
-            providerStatus={providerStatus}
-            onCheckout={(input) =>
-              agencyTenant
-                ? startCheckout(agencyTenant.tenantId, input)
-                : Promise.reject(new Error("Agency tenant not found."))
-            }
+            selectedStoreId={selectedStoreId}
           />
           <FeatureTabs
             ariaLabel="Seções do plano do grupo"
             className="billing-tabs"
             onChange={setActiveTab}
             options={[
-              { label: "Plano e pacotes", value: "overview" },
+              { label: "Plano", value: "overview" },
               { label: "Cobrança", value: "billing" },
               { label: "Histórico", value: "history" },
             ]}
@@ -294,37 +341,18 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
           />
           {activeTab === "overview" ? (
             <>
-              <AgencyBillingStoreEntitlements
-                overview={overview}
-                panelOverview={panelOverview}
-                selectedStoreId={selectedStoreId}
-                zapiRequestSaving={zapiRequestSaving}
-                selectedAddonIds={selectedAddonIds}
-                onAddonToggle={(addonId) =>
-                  setSelectedAddonIds((current) => {
-                    const selectedAddon = overview.addons.find(
-                      (addon) => addon.id === addonId,
-                    );
-                    const zapiAddon = overview.addons.find(
-                      (addon) =>
-                        addon.code === "crm_zapi" &&
-                        addon.catalogVersion === selectedAddon?.catalogVersion,
-                    );
-                    if (selectedAddon?.code === "crm_core") {
-                      return current.includes(addonId)
-                        ? current.filter(
-                            (id) => id !== addonId && id !== zapiAddon?.id,
-                          )
-                        : [...current, addonId];
-                    }
-                    return current.includes(addonId)
-                      ? current.filter((id) => id !== addonId)
-                      : [...current, addonId];
-                  })
-                }
-                onCancelZapi={() => void updateZapiRequest("cancel")}
-                onRequestZapi={() => void updateZapiRequest("request")}
-                onStoreChange={selectStore}
+              <BillingSignupFlow
+                activationInProgress={Boolean(pollingHireId)}
+                canManage={overview.authority.currentActorCanManage}
+                hire={hire}
+                onPlanHire={createHire}
+                onPlanSelect={setSelectedPlanId}
+                onQuoteRequest={requestQuote}
+                overview={panelOverview}
+                providerStatus={providerStatus}
+                quoteRequesting={quoteRequesting}
+                selectedPlanId={selectedPlanId}
+                submitting={submitting}
               />
               <AgencyBillingAllocation overview={overview} />
             </>
@@ -336,41 +364,55 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
             <BillingEventList events={overview.entitlementEvents} />
           ) : null}
         </>
-      ) : status.kind === "loading" || !overview || !panelOverview ? (
+      ) : loading ? (
         <FeatureLoadingState title="Carregando cobrança da agência">
-          Sincronizando assinatura, alocações e cobrança consolidada.
+          Consultando contratos efetivos das lojas.
         </FeatureLoadingState>
-      ) : null}
-      {toast ? (
-        <Toast
-          onDismiss={() => setToast(null)}
-          title={toast.title}
-          tone={toast.tone}
-        />
       ) : null}
     </FeaturePageShell>
   );
 }
 
-function withAgencyStoreContract(
-  overview: AgencyTenantOverview,
-  storeId: string,
-  contract: BillingAddonContract,
-): AgencyTenantOverview {
-  return {
-    ...overview,
-    stores: overview.stores.map((store) =>
-      store.storeId === storeId
-        ? {
-            ...store,
-            addonContracts: [
-              ...(store.addonContracts ?? []).filter(
-                (candidate) => candidate.addonCode !== contract.addonCode,
-              ),
-              contract,
-            ],
-          }
-        : store,
-    ),
-  };
+function hireStorageKey(tenantId: string, storeId: string) {
+  return `lojaveiculos.agency.billing.hire.${tenantId}.${storeId}`;
+}
+
+function readTrustedAgencyHireId(tenantId: string, storeId: string) {
+  let storedHireId: string | null = null;
+  try {
+    storedHireId = window.sessionStorage.getItem(
+      hireStorageKey(tenantId, storeId),
+    );
+  } catch {
+    // Storage can be unavailable in hardened browser contexts.
+  }
+  return trustedBillingPlanHireId({
+    callbackHireId: new URLSearchParams(window.location.search).get("hireId"),
+    storedHireId,
+  });
+}
+
+function storeAgencyHire(storageKey: string, hireId: string) {
+  try {
+    window.sessionStorage.setItem(storageKey, hireId);
+  } catch {
+    // Polling in the active page still works without browser storage.
+  }
+}
+
+function removeAgencyHireIfCurrent(storageKey: string, hireId: string) {
+  try {
+    if (window.sessionStorage.getItem(storageKey) === hireId) {
+      window.sessionStorage.removeItem(storageKey);
+    }
+  } catch {
+    // The server remains authoritative if browser storage becomes unavailable.
+  }
+}
+function createIdempotencyKey(planId: string) {
+  const random =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `agency-${planId}-${random}`;
 }

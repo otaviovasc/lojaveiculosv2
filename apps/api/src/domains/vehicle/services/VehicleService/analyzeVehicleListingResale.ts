@@ -25,7 +25,7 @@ export async function analyzeVehicleListingResale(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
   assertPermission(context, permission);
-  assertEntitlement(context as StoreScopedServiceContext, "simulations");
+  assertEntitlement(context as StoreScopedServiceContext, "ai");
   const repository = getListingRepository(ports);
   const listing = await findScopedListing(context, repository, input.listingId);
   const provider = ports?.resaleAnalysisProvider;

@@ -64,10 +64,62 @@ describe("createHttpAccountContext", () => {
     expect(platform.serviceContext.permissions).toContain(
       "financing.connection.manage",
     );
+    expect(platform.serviceContext.permissions).toContain(
+      "crm.messaging.support.manage",
+    );
+    expect(platform.serviceContext.platformAdmin).toBe(true);
+    expect(agency.serviceContext.platformAdmin).toBe(false);
+    expect(regular.serviceContext.platformAdmin).toBe(false);
+    expect(agency.serviceContext.permissions).not.toContain(
+      "crm.messaging.support.manage",
+    );
+    expect(regular.serviceContext.permissions).not.toContain(
+      "crm.messaging.support.manage",
+    );
     expect(regular.serviceContext.permissions).not.toContain(
       "financing.connection.manage",
     );
     expect(regular.serviceContext.permissions).not.toContain("analytics.read");
+  });
+
+  it("does not delegate platform authority to owner or agency accounts", async () => {
+    const ownerContext = await captureContext(
+      new Request("https://api.local/api/v1/session/bootstrap", {
+        headers: { "x-clerk-user-id": "clerk_owner" },
+      }),
+    );
+    const agencyContext = await captureContext(
+      new Request("https://api.local/api/v1/agency/tenants/tenant_1", {
+        headers: { "x-clerk-user-id": "clerk_agency" },
+      }),
+    );
+
+    const owner = await createHttpAccountContext(ownerContext, {
+      repository: createRepository(),
+    });
+    const agency = await createHttpAccountContext(agencyContext, {
+      repository: createRepository({ agency: true }),
+      tenantId: "tenant_1",
+    });
+
+    expect(owner.serviceContext.platformAdmin).toBe(false);
+    expect(agency.serviceContext.platformAdmin).toBe(false);
+    expect(agency.serviceContext.permissions).toContain("billing.manage");
+  });
+
+  it("materializes platform authority from an active platform membership", async () => {
+    const context = await captureContext(
+      new Request("https://api.local/api/v1/internal/platform/health", {
+        headers: { "x-clerk-user-id": "clerk_platform_admin" },
+      }),
+    );
+
+    const repository = createRepository({ platformAdmin: true });
+    const account = await createHttpAccountContext(context, { repository });
+
+    expect(account.serviceContext.platformAdmin).toBe(true);
+    expect(account.serviceContext.permissions).toContain("audit.read");
+    expect(repository.hasActivePlatformAdmin).toHaveBeenCalledWith("user_1");
   });
 
   it("denies agency account permissions for a soft-deleted tenant", async () => {

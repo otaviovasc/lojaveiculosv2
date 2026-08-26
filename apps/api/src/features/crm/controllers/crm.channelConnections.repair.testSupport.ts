@@ -31,7 +31,10 @@ export function createRepairApp(
     crmMessagingGateway: {
       configureWebhooks: effects.configureWebhooks ?? vi.fn(),
     },
-    permissions: ["crm.messaging.connection.setup", "tenant.manage"],
+    permissions: [
+      "crm.messaging.connection.setup",
+      "crm.messaging.credentials.rotate",
+    ],
     zapiConnectionSetupProvider: {
       getPairingCode: vi.fn(),
       getQrCode: vi.fn(),
@@ -48,6 +51,7 @@ export function requestCredentialRepair(
     `/api/v1/crm/channel-connections/${connectionId}/zapi/credentials`,
     {
       body: JSON.stringify({
+        clientToken: "replacement-client-token",
         instanceId,
         instanceToken: "replacement-token",
       }),
@@ -66,6 +70,7 @@ export function disconnectedConnection(): CrmConnection {
     ...createConnection("zapi", {
       mode: "stored",
       stored: {
+        clientToken: "sealed:expired-client-token",
         instanceId: "sealed:instance-1",
         instanceToken: "sealed:expired-token",
       },
