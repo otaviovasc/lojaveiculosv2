@@ -1,17 +1,13 @@
 # Billing observability
 
-Run both billing jobs on recurring Railway schedules after migrations:
+Run provider reconciliation on its recurring Railway schedule after migrations:
 
 ```bash
 pnpm --filter @lojaveiculosv2/api billing:asaas:reconcile
-pnpm --filter @lojaveiculosv2/api billing:product-events:process
 ```
 
-Both jobs run every five minutes as short-lived Railway cron services with
-restart policy `NEVER`. The product-event worker owns only product Postgres and
-its sink settings. Keep `BILLING_PRODUCT_EVENT_SINK_URL` and
-`BILLING_PRODUCT_EVENT_SINK_TOKEN` as sealed service variables; never replace
-them with literals in `.railway/railway.ts`.
+The reconciliation job runs every five minutes as a short-lived Railway cron
+service with restart policy `NEVER`.
 
 The reconciliation job emits `metric.billing.lifecycle` with pending and oldest
 reconciliation age, unmatched webhook count, activation/projection failures,
@@ -20,13 +16,15 @@ counts. `alert.billing_reconciliation.attention_required` is actionable and
 must page the billing owner when its numeric fields are non-zero or the oldest
 pending event is over 15 minutes.
 
-The product-event worker uses bounded `FOR UPDATE SKIP LOCKED` claims and lease
-tokens. Delivery is at least once; the configured HTTP receiver must honor the
-`Idempotency-Key` header. Retryable HTTP/network failures use capped exponential
-backoff. Permanent failures and exhausted retries remain in the outbox as
-`failed`; rows are never deleted by the worker.
+The optional product-event delivery job uses bounded
+`FOR UPDATE SKIP LOCKED` claims and lease tokens. Delivery is at least once; the
+configured HTTP receiver must honor the `Idempotency-Key` header. Retryable
+HTTP/network failures use capped exponential backoff. Permanent failures and
+exhausted retries remain in the outbox as `failed`; rows are never deleted by
+the worker.
 
-When `BILLING_PRODUCT_EVENT_SINK_URL` is absent, the job emits
+It is not currently provisioned as a Railway service. When run manually without
+`BILLING_PRODUCT_EVENT_SINK_URL`, the job emits
 `billing.product_event.worker_disabled`, reports the durable backlog, and does
 not claim or mark events as processed. It still emits backlog alerts when age
 or failed-row thresholds are exceeded. This is a degraded configuration, not a
@@ -62,11 +60,10 @@ wildcard mode.
 
 Alert on:
 
-- `alert.billing_product_event.delivery_attention_required`;
 - `alert.billing_reconciliation.attention_required`;
 - `oldestPendingAgeSeconds > 900` or
   `oldestPendingReconciliationAgeSeconds > 900`;
-- any `failedCount`, `activationOrProjectionFailureCount`,
+- any `activationOrProjectionFailureCount`,
   `missingContractCount`, or `reconciliationFailedHireCount` above zero.
 
 Logs contain only operational identifiers and bounded failure codes. Do not add

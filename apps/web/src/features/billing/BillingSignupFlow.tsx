@@ -3,13 +3,18 @@ import {
   CheckCircle2,
   CircleAlert,
   Clock3,
-  ExternalLink,
+  Crown,
   Loader2,
+  Lock,
   MessageCircleQuestion,
+  Receipt,
   ShieldCheck,
+  Sparkles,
+  Zap,
 } from "lucide-react";
+import { AnimatedCounter } from "../../components/ui/CountUp";
 import { cn } from "../../lib/utils";
-import { featureLabels, money } from "./billingFormat";
+import { money, planCapabilityHighlights } from "./billingFormat";
 import { isBillingPlanHireTerminal } from "./billingPlanHireState";
 import type {
   BillingOverview,
@@ -17,34 +22,6 @@ import type {
   BillingPlanHire,
   BillingProviderStatus,
 } from "./types";
-
-const capabilityCopy: Record<string, readonly string[]> = {
-  free: [
-    "Construtor completo da vitrine no subdomínio Loja Veículos",
-    "Cadastro, publicação e controle de veículos",
-    "Captura de interessados com caixa de entrada básica",
-  ],
-  essencial: [
-    "Tudo do Free e domínio próprio",
-    "Reservas, vendas e clientes",
-    "Financiamento interno e provedor conectado quando verificado",
-  ],
-  operacao: [
-    "Tudo do Essencial e CRM completo",
-    "Canais oficiais e Z-API com credenciais próprias",
-    "Central de documentos, uploads e modelos",
-  ],
-  gestao: [
-    "Tudo do Operação e gestão fiscal e financeira",
-    "Comissões, indicadores, compliance e checklists",
-    "Regras de lançamentos financeiros automáticos",
-  ],
-  escala: [
-    "Tudo do Gestão e marketplaces",
-    "Public API, webhooks e automação avançada",
-    "AI Studio e análise inteligente de revenda",
-  ],
-};
 
 export function BillingSignupFlow({
   activationInProgress: activationInProgressOverride = false,
@@ -55,6 +32,7 @@ export function BillingSignupFlow({
   onQuoteRequest,
   overview,
   providerStatus,
+  quoteRequested = false,
   quoteRequesting = false,
   selectedPlanId,
   submitting = false,
@@ -67,6 +45,7 @@ export function BillingSignupFlow({
   onQuoteRequest: (plan: BillingPlan) => Promise<void>;
   overview: BillingOverview;
   providerStatus: BillingProviderStatus | null;
+  quoteRequested?: boolean;
   quoteRequesting?: boolean;
   selectedPlanId: string | null;
   submitting?: boolean;
@@ -80,191 +59,374 @@ export function BillingSignupFlow({
     providerStatus?.configured && providerStatus.webhookConfigured,
   );
   const requiresCheckout = selectedPlan?.checkoutMode === "checkout";
+  const currentPlanId =
+    overview.effectiveContract?.planId ??
+    overview.subscription?.plan?.id ??
+    plans.find((plan) => plan.code === "free")?.id ??
+    null;
+  const currentPlan = plans.find((plan) => plan.id === currentPlanId) ?? null;
+  const selectedIsCurrent = selectedPlan?.id === currentPlanId;
+  const paidPlanChange = Boolean(
+    currentPlan &&
+    currentPlan.monthlyPriceCents > 0 &&
+    selectedPlan &&
+    selectedPlan.id !== currentPlan.id &&
+    selectedPlan.checkoutMode !== "quote_required",
+  );
+  const providerRequired = Boolean(requiresCheckout || paidPlanChange);
+  const selectedQuoteRequested = Boolean(
+    quoteRequested && selectedPlan?.checkoutMode === "quote_required",
+  );
   const activationInProgress = Boolean(
     activationInProgressOverride || (hire && !isBillingPlanHireTerminal(hire)),
   );
+  const busy = submitting || quoteRequesting || activationInProgress;
   const disabled =
     !canManage ||
     !selectedPlan ||
-    submitting ||
-    quoteRequesting ||
-    activationInProgress ||
-    (requiresCheckout && !providerReady);
+    selectedIsCurrent ||
+    selectedQuoteRequested ||
+    busy ||
+    (providerRequired && !providerReady);
+  const phasePresentation = billingPhasePresentation(overview);
+  const PhaseIcon = phasePresentation.icon;
 
   return (
-    <div className="billing-sota-workspace relative space-y-6 px-2 pb-36 md:px-4">
-      <header className="border-b border-line/70 pb-4">
-        <p className="text-xs font-black uppercase tracking-widest text-accent-strong">
-          Catálogo mensal {plans[0]?.catalogVersion ?? "vigente"}
-        </p>
-        <h2 className="mt-2 text-2xl font-black text-foreground">
-          Um plano completo para cada fase da loja
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          Os recursos são cumulativos. Nenhum adicional é necessário.
-        </p>
-        <p className="mt-3 flex items-center gap-2 text-xs font-bold text-foreground">
-          <ShieldCheck
-            aria-hidden="true"
-            className="size-4 text-accent-strong"
-          />
-          Contrato efetivo: {effectivePlanName(overview)} ·{" "}
-          {billingPhaseLabel(overview)}
-        </p>
-      </header>
+    <div className="billing-sota-workspace relative space-y-4 px-2 pb-36 md:px-4">
       <div
-        aria-label="Planos disponíveis"
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-5"
-        role="radiogroup"
-      >
-        {plans.map((plan) => {
-          const selected = plan.id === selectedPlan?.id;
-          const isEscala = plan.checkoutMode === "quote_required";
-          return (
-            <button
-              aria-checked={selected}
-              className={cn(
-                "flex min-h-[390px] flex-col rounded-3xl border p-5 text-left transition",
-                selected
-                  ? "border-accent-strong bg-accent-soft/50 ring-2 ring-accent-strong/20"
-                  : "border-line bg-app-surface hover:border-accent-strong/60",
-              )}
-              disabled={
-                !canManage ||
-                submitting ||
-                quoteRequesting ||
-                activationInProgress
-              }
-              key={plan.id}
-              onClick={() => onPlanSelect(plan.id)}
-              role="radio"
-              type="button"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <strong className="text-xl font-black text-foreground">
-                    {plan.name}
-                  </strong>
-                  <p className="mt-2 text-2xl font-black text-foreground">
-                    {isEscala
-                      ? `A partir de ${money(plan.monthlyPriceCents)}`
-                      : plan.monthlyPriceCents === 0
-                        ? "R$ 0"
-                        : money(plan.monthlyPriceCents)}
-                    <span className="text-xs font-bold text-muted">/mês</span>
-                  </p>
-                </div>
-                <span
-                  aria-hidden="true"
+        aria-hidden="true"
+        className="pointer-events-none absolute right-1/4 top-0 h-[300px] w-[500px] rounded-full bg-accent-strong/15 blur-[120px]"
+      />
+      <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-2">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-xs font-extrabold",
+            phasePresentation.className,
+          )}
+        >
+          <PhaseIcon aria-hidden="true" className="size-3.5" />
+          {effectivePlanName(overview)} · {billingPhaseLabel(overview)}
+        </span>
+        <div className="flex shrink-0 items-center gap-1 rounded-2xl border border-line bg-app-elevated p-1">
+          <span className="rounded-md bg-accent-strong px-4 py-1.5 text-xs font-black text-accent-strong-foreground">
+            Cobrança mensal
+          </span>
+        </div>
+      </header>
+
+      <div className="relative z-10 space-y-6">
+        <section className="space-y-6 pt-2">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-accent-strong">
+              <Crown
+                aria-hidden="true"
+                className="size-4 text-warning-strong"
+              />
+              Planos cumulativos · {plans[0]?.catalogVersion ?? "vigente"}
+            </span>
+          </div>
+          <div
+            aria-label="Planos disponíveis"
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5"
+            role="radiogroup"
+          >
+            {plans.map((plan, index) => {
+              const selected = plan.id === selectedPlan?.id;
+              const current = plan.id === currentPlanId;
+              const theme = getPlanTheme(plan);
+              const Icon = theme.icon;
+              const capabilities = planCapabilityHighlights(
+                plan,
+                plans[index - 1] ?? null,
+              );
+              return (
+                <button
+                  aria-checked={selected}
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-full border",
-                    selected
-                      ? "border-accent-strong bg-accent-strong text-accent-strong-foreground"
-                      : "border-line",
+                    "group relative flex min-h-[460px] flex-col justify-between rounded-3xl p-7 text-left transition-all md:p-8",
+                    selected ? theme.cardSelected : theme.cardDefault,
+                    !canManage || busy
+                      ? "cursor-not-allowed opacity-75"
+                      : "cursor-pointer",
                   )}
+                  disabled={!canManage || busy}
+                  key={plan.id}
+                  onClick={() => onPlanSelect(plan.id)}
+                  role="radio"
+                  type="button"
                 >
-                  {selected ? <Check className="size-4" /> : null}
-                </span>
-              </div>
-              <ul className="mt-6 space-y-3 text-xs font-semibold text-muted">
-                {(
-                  capabilityCopy[plan.code] ??
-                  plan.features
-                    .filter((feature) => feature.included)
-                    .map((feature) => featureLabels[feature.featureKey])
-                ).map((capability) => (
-                  <li className="flex gap-2" key={capability}>
-                    <CheckCircle2
-                      aria-hidden="true"
-                      className="mt-0.5 size-4 shrink-0 text-success-strong"
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
+                  >
+                    <Icon
+                      className={cn(
+                        "absolute -bottom-8 -right-8 size-48 -rotate-12 select-none stroke-[1.2] transition-all duration-300 group-hover:scale-110",
+                        theme.iconColor,
+                        selected ? "opacity-20" : "opacity-10",
+                      )}
                     />
-                    {capability}
-                  </li>
-                ))}
-              </ul>
-              <PlanLimits plan={plan} />
-            </button>
-          );
-        })}
+                  </div>
+                  {current || index === 1 ? (
+                    <span className="absolute -top-3.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent-strong px-3.5 py-0.5 text-xs font-black uppercase tracking-widest text-accent-strong-foreground">
+                      {current ? "Plano atual" : "Recomendado para sua loja"}
+                    </span>
+                  ) : null}
+                  <div className="relative">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Icon
+                          aria-hidden="true"
+                          className={cn("size-7 shrink-0", theme.iconColor)}
+                        />
+                        <strong className="text-xl font-[950] text-foreground md:text-2xl">
+                          {plan.name}
+                        </strong>
+                      </div>
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "flex size-6.5 shrink-0 items-center justify-center rounded-full border-2 transition-transform active:scale-90",
+                          selected
+                            ? theme.checkBg
+                            : "border-line bg-app-surface/80 text-transparent",
+                        )}
+                      >
+                        <Check className="size-3.5 stroke-[3]" />
+                      </span>
+                    </div>
+                    <div className="mb-6">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black tracking-tight text-foreground md:text-4xl">
+                          {plan.checkoutMode === "quote_required"
+                            ? `A partir de ${money(plan.monthlyPriceCents)}`
+                            : money(plan.monthlyPriceCents)}
+                        </span>
+                        <span className="text-xs font-bold text-muted">
+                          /mês
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-3 border-t border-line/40 pt-5 text-xs font-medium text-muted">
+                      {planLimitHighlights(plan).map((limit) => (
+                        <div
+                          className="flex items-start gap-2.5 font-bold text-foreground"
+                          key={limit}
+                        >
+                          <CheckCircle2
+                            aria-hidden="true"
+                            className="mt-0.5 size-4 shrink-0 text-success-strong"
+                          />
+                          <span className="leading-snug">{limit}</span>
+                        </div>
+                      ))}
+                      {capabilities.map((capability) => (
+                        <div
+                          className="flex items-start gap-2.5"
+                          key={capability}
+                        >
+                          <Check
+                            aria-hidden="true"
+                            className={cn(
+                              "mt-0.5 size-3.5 shrink-0",
+                              theme.iconColor,
+                            )}
+                          />
+                          <span className="leading-snug">{capability}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+        {hire ? <BillingActivationTimeline hire={hire} /> : null}
       </div>
-      {hire ? <BillingActivationTimeline hire={hire} /> : null}
+
       <aside
         aria-label="Resumo da contratação"
-        className="billing-bottom-bar border-t border-line bg-app-panel px-6 py-4"
+        className="billing-bottom-bar border-t border-line bg-app-panel px-6 py-4.5"
       >
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <span className="text-xs font-black uppercase tracking-widest text-accent-strong">
-              {selectedPlan?.name ?? "Selecione um plano"}
-            </span>
-            <p className="mt-1 text-sm font-semibold text-muted">
-              {requiresCheckout && !providerReady
-                ? "Checkout bloqueado até Asaas e webhook estarem configurados. Nenhuma cobrança foi feita."
-                : activationInProgress
-                  ? `A contratação ${hire?.id} está em processamento. Aguarde a confirmação do servidor.`
-                  : selectedPlan?.checkoutMode === "free"
-                    ? "O Free é permanente e não expira."
-                    : selectedPlan?.checkoutMode === "quote_required"
-                      ? "A contratação depende de uma proposta aprovada pelo servidor."
-                      : "Acesso pago somente após confirmação do pagamento."}
-            </p>
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 md:flex-row md:items-center md:gap-8">
+          <div className="flex items-center gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-accent-strong">
+              <Receipt aria-hidden="true" className="size-6" />
+            </div>
+            <div>
+              <span className="text-xs font-black uppercase tracking-widest text-accent-strong">
+                Investimento total recorrente
+              </span>
+              <div className="mt-0.5 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
+                  <AnimatedCounter
+                    value={
+                      selectedPlan?.checkoutMode === "quote_required"
+                        ? `A partir de ${money(selectedPlan.monthlyPriceCents)}`
+                        : money(selectedPlan?.monthlyPriceCents ?? 0)
+                    }
+                  />
+                </span>
+                <span className="text-xs font-extrabold text-muted">/mês</span>
+                <span className="ml-2 hidden border-l border-line pl-3 text-xs font-bold text-muted lg:inline">
+                  {selectedPlan
+                    ? `Plano ${selectedPlan.name}`
+                    : "Selecione um plano"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs font-semibold text-muted">
+                {checkoutMessage({
+                  activationInProgress,
+                  hire,
+                  providerReady,
+                  paidPlanChange,
+                  providerRequired,
+                  selectedPlan,
+                })}
+              </p>
+            </div>
           </div>
-          <button
-            className="billing-checkout-button flex items-center justify-center gap-2 px-8 py-4 text-sm font-black"
-            disabled={disabled}
-            onClick={() =>
-              selectedPlan
-                ? void (selectedPlan.checkoutMode === "quote_required"
-                    ? onQuoteRequest(selectedPlan)
-                    : onPlanHire(selectedPlan))
-                : undefined
-            }
-            type="button"
-          >
-            {submitting || quoteRequesting || activationInProgress ? (
-              <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-            ) : selectedPlan?.checkoutMode === "quote_required" ? (
-              <MessageCircleQuestion aria-hidden="true" className="size-4" />
-            ) : selectedPlan?.checkoutMode === "free" ? (
-              <ShieldCheck aria-hidden="true" className="size-4" />
-            ) : (
-              <ExternalLink aria-hidden="true" className="size-4" />
-            )}
-            {activationInProgress
-              ? "Ativação em andamento"
-              : selectedPlan?.checkoutMode === "quote_required"
-                ? "Solicitar proposta"
-                : selectedPlan?.checkoutMode === "free"
-                  ? "Usar plano Free"
-                  : "Continuar para pagamento"}
-          </button>
+          {!canManage ? (
+            <div className="rounded-xl border border-line bg-app-elevated px-4 py-3 text-xs font-semibold text-muted">
+              Contratação disponível apenas para gestores autorizados
+            </div>
+          ) : (
+            <button
+              className="billing-checkout-button flex w-full items-center justify-center gap-2.5 rounded-2xl px-9 py-4 text-sm font-black transition-transform hover:scale-[1.02] active:scale-[0.98] md:w-auto"
+              disabled={disabled}
+              onClick={() =>
+                selectedPlan
+                  ? void (selectedPlan.checkoutMode === "quote_required"
+                      ? onQuoteRequest(selectedPlan)
+                      : onPlanHire(selectedPlan))
+                  : undefined
+              }
+              type="button"
+            >
+              {busy ? (
+                <Loader2 aria-hidden="true" className="size-5 animate-spin" />
+              ) : selectedPlan?.checkoutMode === "quote_required" ? (
+                <MessageCircleQuestion aria-hidden="true" className="size-4" />
+              ) : selectedPlan?.checkoutMode === "free" ? (
+                <ShieldCheck aria-hidden="true" className="size-4" />
+              ) : (
+                <Lock aria-hidden="true" className="size-4" />
+              )}
+              {activationInProgress
+                ? "Ativação em andamento"
+                : selectedIsCurrent
+                  ? "Plano atual"
+                  : selectedQuoteRequested
+                    ? "Proposta já solicitada"
+                    : selectedPlan?.checkoutMode === "quote_required"
+                      ? "Solicitar proposta"
+                      : paidPlanChange
+                        ? selectedPlan?.code === "free"
+                          ? "Agendar plano Free"
+                          : "Agendar mudança"
+                        : selectedPlan?.checkoutMode === "free"
+                          ? "Usar plano Free"
+                          : "Continuar para pagamento"}
+            </button>
+          )}
         </div>
       </aside>
     </div>
   );
 }
 
-function PlanLimits({ plan }: { plan: BillingPlan }) {
+function planLimitHighlights(plan: BillingPlan) {
   const plateLimit = plan.features.find(
     (feature) => feature.featureKey === "plate_lookup",
   )?.limitValue;
-  const labels = [
+  return [
     plan.limits.vehicleLimit == null
       ? "Limite de veículos sob proposta"
-      : `${plan.limits.vehicleLimit} veículos`,
+      : `Até ${plan.limits.vehicleLimit.toLocaleString("pt-BR")} veículos em estoque`,
     plan.limits.sellerLimit == null
       ? "Limite de usuários sob proposta"
-      : `${plan.limits.sellerLimit} usuário${plan.limits.sellerLimit === 1 ? "" : "s"}`,
+      : `Até ${plan.limits.sellerLimit.toLocaleString("pt-BR")} usuário${plan.limits.sellerLimit === 1 ? "" : "s"}`,
     plateLimit == null
-      ? "Consultas sob proposta"
-      : `${plateLimit} consultas de placa/mês`,
+      ? "Consultas de placa sob proposta"
+      : `${plateLimit.toLocaleString("pt-BR")} consultas de placa/mês`,
   ];
-  return (
-    <p className="mt-auto border-t border-line/50 pt-5 text-xs font-bold text-foreground">
-      {labels.join(" · ")}
-    </p>
-  );
 }
+
+function checkoutMessage({
+  activationInProgress,
+  hire,
+  paidPlanChange,
+  providerReady,
+  providerRequired,
+  selectedPlan,
+}: {
+  activationInProgress: boolean;
+  hire: BillingPlanHire | null;
+  paidPlanChange: boolean;
+  providerReady: boolean;
+  providerRequired: boolean;
+  selectedPlan: BillingPlan | null;
+}) {
+  if (providerRequired && !providerReady)
+    return "Checkout bloqueado até Asaas e webhook estarem configurados. Nenhuma cobrança foi feita.";
+  if (activationInProgress)
+    return `A contratação ${hire?.id} está em processamento. Aguarde a confirmação do servidor.`;
+  if (selectedPlan?.checkoutMode === "quote_required")
+    return "A contratação depende de uma proposta aprovada pelo servidor.";
+  if (paidPlanChange)
+    return `A mudança para ${selectedPlan?.name ?? "o novo plano"} será agendada para a próxima renovação. O plano atual permanece ativo até lá.`;
+  if (selectedPlan?.checkoutMode === "free")
+    return "O Free é permanente e não expira.";
+  return "Acesso pago somente após confirmação do pagamento.";
+}
+
+function getPlanTheme(plan: BillingPlan) {
+  const identity = `${plan.code} ${plan.name}`.toLowerCase();
+  if (/premium|gestao|gestão/.test(identity)) return planThemes.management;
+  if (/growth|operacao|operação/.test(identity)) return planThemes.operation;
+  if (/pro|escala/.test(identity)) return planThemes.scale;
+  return planThemes.base;
+}
+
+const planThemes = {
+  base: {
+    cardDefault:
+      "bg-accent-soft/30 border-accent/30 hover:border-accent-strong/60",
+    cardSelected:
+      "bg-accent-soft/50 border-2 border-accent-strong ring-2 ring-accent-strong/20",
+    checkBg:
+      "bg-accent-strong text-accent-strong-foreground border-accent-strong",
+    icon: Sparkles,
+    iconColor: "text-accent-strong",
+  },
+  management: {
+    cardDefault:
+      "bg-purple-500/10 border-purple-500/30 hover:border-purple-500/60",
+    cardSelected:
+      "bg-purple-500/25 border-2 border-purple-500 ring-2 ring-purple-500/20",
+    checkBg: "bg-purple-500 text-white border-purple-500",
+    icon: Sparkles,
+    iconColor: "text-purple-500",
+  },
+  operation: {
+    cardDefault: "bg-cyan-500/10 border-cyan-500/30 hover:border-cyan-500/60",
+    cardSelected:
+      "bg-cyan-500/25 border-2 border-cyan-500 ring-2 ring-cyan-500/20",
+    checkBg: "bg-cyan-500 text-white border-cyan-500",
+    icon: Zap,
+    iconColor: "text-cyan-500",
+  },
+  scale: {
+    cardDefault:
+      "bg-amber-500/10 border-amber-500/30 hover:border-amber-500/60",
+    cardSelected:
+      "bg-amber-500/25 border-2 border-amber-500 ring-2 ring-amber-500/20",
+    checkBg: "bg-amber-500 text-white border-amber-500",
+    icon: Crown,
+    iconColor: "text-amber-500",
+  },
+} as const;
 
 export function BillingActivationTimeline({ hire }: { hire: BillingPlanHire }) {
   const terminalFailure = [
@@ -339,23 +501,49 @@ function effectivePlanName(overview: BillingOverview) {
 }
 
 function billingPhaseLabel(overview: BillingOverview) {
-  const phase =
+  const labels = {
+    activation_pending: "ativação pendente",
+    checkout_created: "checkout criado",
+    downgrade_scheduled: "mudança agendada",
+    free_active: "permanente",
+    paid_active: "assinatura ativa",
+    past_due_grace: "carência de pagamento",
+    payment_pending: "pagamento pendente",
+    reconciliation_failed: "conciliação necessária",
+  } satisfies Record<NonNullable<BillingOverview["billingPhase"]>, string>;
+  return labels[effectiveBillingPhase(overview)];
+}
+
+function billingPhasePresentation(overview: BillingOverview) {
+  const phase = effectiveBillingPhase(overview);
+  if (phase === "free_active" || phase === "paid_active") {
+    return {
+      className: "border-success-subtle bg-success-soft text-success-strong",
+      icon: CheckCircle2,
+    };
+  }
+  if (phase === "reconciliation_failed") {
+    return {
+      className: "border-warning-subtle bg-warning-soft text-warning-strong",
+      icon: CircleAlert,
+    };
+  }
+  return {
+    className: "border-warning-subtle bg-warning-soft text-warning-strong",
+    icon: Clock3,
+  };
+}
+
+function effectiveBillingPhase(
+  overview: BillingOverview,
+): NonNullable<BillingOverview["billingPhase"]> {
+  return (
     overview.billingPhase ??
     (overview.subscription?.status === "past_due"
       ? "past_due_grace"
       : overview.subscription?.plan?.code === "free" ||
           !overview.subscription?.plan
         ? "free_active"
-        : "paid_active");
-  const labels = {
-    activation_pending: "ativação pendente",
-    checkout_created: "checkout criado",
-    downgrade_scheduled: "mudança agendada",
-    free_active: "permanente",
-    paid_active: "pago e ativo",
-    past_due_grace: "carência de pagamento",
-    payment_pending: "pagamento pendente",
-    reconciliation_failed: "conciliação necessária",
-  } satisfies Record<NonNullable<BillingOverview["billingPhase"]>, string>;
-  return labels[phase];
+        : "paid_active")
+  );
 }

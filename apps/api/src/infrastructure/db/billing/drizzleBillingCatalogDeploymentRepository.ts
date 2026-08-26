@@ -21,6 +21,7 @@ import {
 import {
   loadPersistedBillingCatalog,
   toDatabaseAddonLimits,
+  toDatabasePlanLimits,
   type BillingCatalogDeploymentClient,
   type BillingCatalogVersionRow,
 } from "./drizzleBillingCatalogDeploymentMapping.js";
@@ -99,13 +100,7 @@ async function installAndActivate(
       code: plan.code,
       id: plan.id,
       isDefault: plan.isDefault,
-      limits: {
-        capabilities: plan.capabilities ? [...plan.capabilities] : [],
-        checkout_mode: plan.checkoutMode ?? "checkout",
-        selection_rank: plan.selectionRank ?? 0,
-        seller_limit: plan.limits.sellerLimit,
-        vehicle_limit: plan.limits.vehicleLimit,
-      },
+      limits: toDatabasePlanLimits(plan),
       monthlyPriceCents: plan.monthlyPriceCents,
       name: plan.name,
       publishedAt,

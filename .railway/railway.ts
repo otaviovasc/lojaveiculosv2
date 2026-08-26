@@ -239,33 +239,6 @@ export default defineRailway((context) => {
     },
   );
 
-  const billingProductEventWorker = service(
-    "lojaveiculosv2-billing-product-event-worker",
-    {
-      source: appSource,
-      build: "pnpm --filter @lojaveiculosv2/api build",
-      deploy: {
-        cronSchedule: "*/5 * * * *",
-        restartPolicyType: "NEVER",
-      },
-      env: {
-        APP_ENV: appEnvironment,
-        BILLING_PRODUCT_EVENT_BATCH_SIZE: "50",
-        BILLING_PRODUCT_EVENT_LEASE_DURATION_MS: "30000",
-        BILLING_PRODUCT_EVENT_MAX_ATTEMPTS: "10",
-        BILLING_PRODUCT_EVENT_MAX_PENDING_AGE_SECONDS: "900",
-        BILLING_PRODUCT_EVENT_SINK_TIMEOUT_MS: "5000",
-        BILLING_PRODUCT_EVENT_SINK_TOKEN: preserve(),
-        BILLING_PRODUCT_EVENT_SINK_URL: preserve(),
-        DATABASE_URL: productDatabase.env.DATABASE_URL,
-        DB_POOL_MAX: "2",
-        LOG_LEVEL: api.env.LOG_LEVEL,
-        NODE_ENV: "production",
-      },
-      start: "pnpm --filter @lojaveiculosv2/api billing:product-events:process",
-    },
-  );
-
   const crmRetentionWorker = service("lojaveiculosv2-crm-retention-worker", {
     source: appSource,
     build: "pnpm --filter @lojaveiculosv2/api build",
@@ -327,7 +300,6 @@ export default defineRailway((context) => {
       web,
       crmScheduleWorker,
       billingReconciliationWorker,
-      billingProductEventWorker,
       crmRetentionWorker,
       crmPushWorker,
     ],

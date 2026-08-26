@@ -149,7 +149,7 @@ describe("module permissions", () => {
     expect(getModulePermission("simulations", session).canView).toBe(true);
   });
 
-  it("does not bypass commercial entitlements for owners", () => {
+  it("keeps authorized commercial modules visible and locked for owners", () => {
     const session = sessionForRole(
       "owner",
       [
@@ -167,11 +167,11 @@ describe("module permissions", () => {
       .map((item) => item.id);
 
     expect(visibleIds).toContain("billing");
-    expect(visibleIds).not.toContain("crm");
-    expect(visibleIds).not.toContain("fiscal");
-    expect(visibleIds).not.toContain("marketplaces");
-    expect(visibleIds).not.toContain("public-api");
-    expect(visibleIds).not.toContain("simulations");
+    expect(visibleIds).toContain("crm");
+    expect(visibleIds).toContain("fiscal");
+    expect(visibleIds).toContain("marketplaces");
+    expect(visibleIds).toContain("public-api");
+    expect(getModuleEntitlement("crm", session).canUse).toBe(false);
   });
 
   it("keeps billing permission-driven for agency-managed store owners", () => {
@@ -189,7 +189,7 @@ describe("module permissions", () => {
     expect(visibleIds).not.toContain("marketplaces");
   });
 
-  it("keeps entitlement filtering for operational roles", () => {
+  it("keeps entitled and locked modules visible for authorized operational roles", () => {
     const withoutFiscal = sessionForRole("manager", ["fiscal.manage"], []);
     const withFiscal = sessionForRole("manager", ["fiscal.manage"], ["fiscal"]);
 
@@ -197,7 +197,8 @@ describe("module permissions", () => {
       filterNavigationGroups(navigationGroups, withoutFiscal)
         .flatMap((group) => group.items)
         .some((item) => item.id === "fiscal"),
-    ).toBe(false);
+    ).toBe(true);
+    expect(getModuleEntitlement("fiscal", withoutFiscal).canUse).toBe(false);
     expect(
       filterNavigationGroups(navigationGroups, withFiscal)
         .flatMap((group) => group.items)

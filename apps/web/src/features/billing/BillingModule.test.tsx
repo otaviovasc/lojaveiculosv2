@@ -22,6 +22,7 @@ import type {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   window.sessionStorage.clear();
   window.history.replaceState({}, "", "/");
   vi.useRealTimers();
@@ -35,11 +36,17 @@ describe("BillingModule v3", () => {
       expect(planRadio(name)).toBeVisible();
     }
     expect(screen.getByText(/A partir de R\$ 897/)).toBeVisible();
+    expect(screen.getByText("CRM completo")).toBeVisible();
+    expect(screen.getByText("AI Studio")).toBeVisible();
     for (const quota of [
-      "10 veículos · 1 usuário · 3 consultas de placa/mês",
-      "75 veículos · 3 usuários · 25 consultas de placa/mês",
-      "150 veículos · 5 usuários · 75 consultas de placa/mês",
-      "300 veículos · 10 usuários · 150 consultas de placa/mês",
+      "Até 10 veículos em estoque",
+      "Até 75 veículos em estoque",
+      "Até 150 veículos em estoque",
+      "Até 300 veículos em estoque",
+      "3 consultas de placa/mês",
+      "25 consultas de placa/mês",
+      "75 consultas de placa/mês",
+      "150 consultas de placa/mês",
     ]) {
       expect(screen.getByText(quota)).toBeVisible();
     }
@@ -83,6 +90,67 @@ describe("BillingModule v3", () => {
     );
   });
 
+  it("reuses the store and plan idempotency key after a lost response", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.createPlanHire)
+      .mockRejectedValueOnce(new Error("lost response"))
+      .mockResolvedValueOnce(hire(plan("essencial", 2, 19_700).id));
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
+    await screen.findByText(/lost response/i);
+
+    const firstInput = vi.mocked(billingApi.createPlanHire).mock.calls[0]?.[0];
+    expect(firstInput?.idempotencyKey).toBeTruthy();
+    expect(window.sessionStorage.getItem(essentialIdempotencyKey)).toBe(
+      firstInput?.idempotencyKey,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
+    await waitFor(() =>
+      expect(billingApi.createPlanHire).toHaveBeenCalledTimes(2),
+    );
+    expect(
+      vi.mocked(billingApi.createPlanHire).mock.calls[1]?.[0].idempotencyKey,
+    ).toBe(firstInput?.idempotencyKey);
+  });
+
+  it("keeps a mount-local idempotency key when session storage is blocked", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("storage blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage blocked");
+    });
+    const billingApi = api();
+    vi.mocked(billingApi.createPlanHire)
+      .mockRejectedValueOnce(new Error("lost response"))
+      .mockResolvedValueOnce(hire(plan("essencial", 2, 19_700).id));
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
+    await screen.findByText(/lost response/i);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
+    await waitFor(() =>
+      expect(billingApi.createPlanHire).toHaveBeenCalledTimes(2),
+    );
+    expect(
+      vi.mocked(billingApi.createPlanHire).mock.calls[0]?.[0].idempotencyKey,
+    ).toBe(
+      vi.mocked(billingApi.createPlanHire).mock.calls[1]?.[0].idempotencyKey,
+    );
+  });
+
   it("creates a durable hire and requests an Escala quote", async () => {
     const billingApi = api();
     vi.mocked(billingApi.createPlanHire).mockResolvedValueOnce({
@@ -108,9 +176,85 @@ describe("BillingModule v3", () => {
     await waitFor(() => expect(billingApi.requestPlanQuote).toHaveBeenCalled());
   });
 
+  it("prevents a duplicate Escala quote request in the current store session", async () => {
+    const billingApi = api();
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Escala"));
+    fireEvent.click(screen.getByRole("button", { name: "Solicitar proposta" }));
+
+    const requested = await screen.findByRole("button", {
+      name: "Proposta já solicitada",
+    });
+    expect(requested).toBeDisabled();
+    fireEvent.click(requested);
+    expect(billingApi.requestPlanQuote).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables the effective plan and explains renewal-time paid plan changes", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.getOverview).mockResolvedValue(paidOverview());
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+
+    expect(planRadio("Essencial")).toBeEnabled();
+    expect(screen.getAllByText("Plano atual")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Plano atual" })).toBeDisabled();
+    fireEvent.click(planRadio("Operação"));
+    expect(
+      screen.getByText(/mudança para Operação.*próxima renovação/i),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Agendar mudança" }),
+    ).toBeEnabled();
+
+    fireEvent.click(planRadio("Free"));
+    expect(
+      screen.getByText(/mudança para Free.*próxima renovação/i),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Agendar plano Free" }),
+    ).toBeEnabled();
+
+    fireEvent.click(planRadio("Escala"));
+    expect(screen.getByText(/depende de uma proposta aprovada/i)).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Solicitar proposta" }),
+    ).toBeEnabled();
+  });
+
+  it("blocks a paid-to-Free transition while provider readiness is unknown", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.getOverview).mockResolvedValue(paidOverview());
+    vi.mocked(billingApi.getProviderStatus).mockRejectedValueOnce(
+      new Error("offline"),
+    );
+    render(<BillingModule api={billingApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Free"));
+    expect(
+      screen.getByRole("button", { name: "Agendar plano Free" }),
+    ).toBeDisabled();
+    expect(screen.getByText(/checkout bloqueado/i)).toBeVisible();
+  });
+
+  it("uses a warning billing-phase pill when reconciliation is required", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.getOverview).mockResolvedValue({
+      ...overview(),
+      billingPhase: "reconciliation_failed",
+    });
+    render(<BillingModule api={billingApi} />);
+
+    const copy = await screen.findByText(/Free · conciliação necessária/i);
+    expect(copy).toHaveClass("bg-warning-soft", "text-warning-strong");
+    expect(copy.querySelector(".lucide-circle-alert")).toBeInTheDocument();
+  });
+
   it("polls beyond the first pending response and refreshes only after server activation", async () => {
     vi.useFakeTimers();
     window.sessionStorage.setItem(scopedHireKey, "hire_1");
+    window.sessionStorage.setItem(essentialIdempotencyKey, "stable_key");
     const billingApi = api();
     vi.mocked(billingApi.getPlanHire)
       .mockResolvedValueOnce(hire(plan("essencial", 2, 19_700).id))
@@ -137,6 +281,7 @@ describe("BillingModule v3", () => {
     expect(billingApi.getPlanHire).toHaveBeenCalledTimes(2);
     expect(billingApi.getOverview).toHaveBeenCalledTimes(2);
     expect(window.sessionStorage.getItem(scopedHireKey)).toBeNull();
+    expect(window.sessionStorage.getItem(essentialIdempotencyKey)).toBeNull();
   });
 
   it("ignores a spoofed callback hire id and polls the persisted hire", async () => {
@@ -222,6 +367,8 @@ describe("BillingModule v3", () => {
 });
 
 const scopedHireKey = "lojaveiculos.billing.active-hire.tenant_1.store_1";
+const essentialIdempotencyKey =
+  "lojaveiculos.billing.plan-hire-idempotency.tenant_1.store_1.83262608-0000-4000-8000-000000000002";
 
 function api(): BillingApi {
   return {
@@ -296,6 +443,32 @@ function overview(): BillingOverview {
   };
 }
 
+function paidOverview(): BillingOverview {
+  const base = overview();
+  const essential = base.plans.find(
+    (candidate) => candidate.code === "essencial",
+  )!;
+  return {
+    ...base,
+    billingPhase: "paid_active",
+    effectiveContract: {
+      currentPeriodEnd: "2026-09-26T00:00:00.000Z",
+      currentPeriodStart: "2026-08-26T00:00:00.000Z",
+      planCode: essential.code,
+      planId: essential.id,
+      planName: essential.name,
+      unitAmountCents: essential.monthlyPriceCents,
+    },
+    subscription: {
+      currentPeriodEnd: "2026-09-26T00:00:00.000Z",
+      currentPeriodStart: "2026-08-26T00:00:00.000Z",
+      id: "subscription_paid",
+      plan: essential,
+      status: "active",
+    },
+  };
+}
+
 function plan(
   code: string,
   selectionRank: number,
@@ -322,7 +495,7 @@ function plan(
     null,
   ];
   return {
-    capabilities: [],
+    capabilities: planCapabilities[code] ?? [],
     catalogVersion: "2026-08-v3",
     checkoutMode:
       code === "free"
@@ -351,6 +524,93 @@ function plan(
     status: "active",
   };
 }
+
+const planCapabilities: Readonly<Record<string, readonly string[]>> = {
+  essencial: [
+    "storefront_builder",
+    "vehicle_listing_control",
+    "public_interest_capture",
+    "basic_lead_inbox",
+    "custom_domain",
+    "reservations_and_sales",
+    "customers",
+    "internal_financing_workflow",
+    "connected_financing_when_verified",
+  ],
+  escala: [
+    "storefront_builder",
+    "vehicle_listing_control",
+    "public_interest_capture",
+    "basic_lead_inbox",
+    "custom_domain",
+    "reservations_and_sales",
+    "customers",
+    "internal_financing_workflow",
+    "connected_financing_when_verified",
+    "full_crm",
+    "official_channels",
+    "byok_zapi",
+    "document_workspace",
+    "document_templates",
+    "fiscal",
+    "finance",
+    "commissions",
+    "analytics",
+    "compliance",
+    "checklists",
+    "finance_auto_entry_rules",
+    "marketplaces",
+    "public_api_and_webhooks",
+    "advanced_automation",
+    "ai_studio",
+    "resale_analysis_ai",
+  ],
+  free: [
+    "storefront_builder",
+    "vehicle_listing_control",
+    "public_interest_capture",
+    "basic_lead_inbox",
+  ],
+  gestao: [
+    "storefront_builder",
+    "vehicle_listing_control",
+    "public_interest_capture",
+    "basic_lead_inbox",
+    "custom_domain",
+    "reservations_and_sales",
+    "customers",
+    "internal_financing_workflow",
+    "connected_financing_when_verified",
+    "full_crm",
+    "official_channels",
+    "byok_zapi",
+    "document_workspace",
+    "document_templates",
+    "fiscal",
+    "finance",
+    "commissions",
+    "analytics",
+    "compliance",
+    "checklists",
+    "finance_auto_entry_rules",
+  ],
+  operacao: [
+    "storefront_builder",
+    "vehicle_listing_control",
+    "public_interest_capture",
+    "basic_lead_inbox",
+    "custom_domain",
+    "reservations_and_sales",
+    "customers",
+    "internal_financing_workflow",
+    "connected_financing_when_verified",
+    "full_crm",
+    "official_channels",
+    "byok_zapi",
+    "document_workspace",
+    "document_templates",
+  ],
+};
 
 function providerStatus(): BillingProviderStatus {
   return {

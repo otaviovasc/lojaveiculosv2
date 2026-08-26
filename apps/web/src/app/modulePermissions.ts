@@ -112,10 +112,7 @@ function canShowNavigationItem(
   item: NavigationItem,
   session: SessionBootstrap,
 ) {
-  return (
-    getModulePermission(item.id, session).canView &&
-    hasModuleEntitlement(item, session)
-  );
+  return getModulePermission(item.id, session).canView;
 }
 
 function navigationItem(moduleId: ModuleId) {
@@ -147,10 +144,4 @@ function hasModulePermissions(
   return rule.mode === "any"
     ? rule.permissions.some(check)
     : rule.permissions.every(check);
-}
-
-function hasModuleEntitlement(item: NavigationItem, session: SessionBootstrap) {
-  if (!item.entitlementKey) return true;
-  const entitlements = readSessionActiveStore(session)?.entitlements;
-  return Boolean(entitlements?.includes(item.entitlementKey));
 }
