@@ -119,20 +119,21 @@ async function installAndActivate(
       })),
     ),
   );
-  await db.insert(addons).values(
-    input.catalog.addons.map((addon) => ({
-      catalogVersion: input.catalog.version,
-      code: addon.code,
-      featureKey: addon.featureKey,
-      id: addon.id,
-      includedInTrial: addon.includedInTrial,
-      limits: toDatabaseAddonLimits(addon.limits),
-      monthlyPriceCents: addon.monthlyPriceCents,
-      name: addon.name,
-      publishedAt,
-      status: addon.status,
-    })),
-  );
+  const addonRows = input.catalog.addons.map((addon) => ({
+    catalogVersion: input.catalog.version,
+    code: addon.code,
+    featureKey: addon.featureKey,
+    id: addon.id,
+    includedInTrial: addon.includedInTrial,
+    limits: toDatabaseAddonLimits(addon.limits),
+    monthlyPriceCents: addon.monthlyPriceCents,
+    name: addon.name,
+    publishedAt,
+    status: addon.status,
+  }));
+  if (addonRows.length > 0) {
+    await db.insert(addons).values(addonRows);
+  }
   await assertPersistedCatalogMatches(db, versionRow, input.checksum);
   return activate(db, versionRow, input);
 }
