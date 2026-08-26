@@ -135,18 +135,28 @@ export function CrmConversationCycleDetailsPanel({
         ) {
           const meta = (msg.metadata as Record<string, unknown> | undefined)
             ?.media as Record<string, unknown> | undefined;
-          const caption =
+          const rawCaption =
             (typeof meta?.caption === "string" ? meta.caption : undefined) ??
-            msg.content;
+            (typeof msg.content === "string" ? msg.content : undefined);
           const clean =
-            caption === `[${msg.type.toLowerCase()}]` ? undefined : caption;
-          media.push({ url: mediaUrl, type: msg.type, caption: clean });
+            rawCaption === `[${msg.type.toLowerCase()}]`
+              ? undefined
+              : rawCaption;
+          if (clean === undefined) {
+            media.push({ url: mediaUrl, type: msg.type });
+          } else {
+            media.push({ url: mediaUrl, type: msg.type, caption: clean });
+          }
         } else if (msg.type === "DOCUMENT") {
           const meta = (msg.metadata as Record<string, unknown> | undefined)
             ?.media as Record<string, unknown> | undefined;
           const name =
             typeof meta?.fileName === "string" ? meta.fileName : undefined;
-          docs.push({ url: mediaUrl, name });
+          if (name === undefined) {
+            docs.push({ url: mediaUrl });
+          } else {
+            docs.push({ url: mediaUrl, name });
+          }
         } else {
           docs.push({ url: mediaUrl });
         }
@@ -260,7 +270,7 @@ export function CrmConversationCycleDetailsPanel({
             <Morphicon
               className="size-4"
               name="volume-mute"
-              state={muted ? "mute" : "volume"}
+              active={muted}
               size={16}
             />
             <small>{muted ? "Ativar som" : "Silenciar"}</small>
@@ -276,7 +286,7 @@ export function CrmConversationCycleDetailsPanel({
             <Morphicon
               className="size-4"
               name="search-close"
-              state="search"
+              active={false}
               size={16}
             />
             <small>Pesquisar</small>

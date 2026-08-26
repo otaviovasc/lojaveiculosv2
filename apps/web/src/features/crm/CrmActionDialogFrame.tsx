@@ -21,7 +21,7 @@ export function CrmActionDialogShell({
       open
     >
       <DialogContent
-        className={cx("max-w-none crm-action-panel", panelClassName)}
+        className={cx("max-w-none crm-action-panel", panelClassName ?? "")}
         padding="none"
         showCloseButton={false}
         surface="panel"
@@ -57,7 +57,7 @@ export function ActionDialog({
   return (
     <CrmActionDialogShell
       onClose={onClose}
-      panelClassName={panelClassName}
+      {...(panelClassName ? { panelClassName } : {})}
       title={title}
     >
       <header>

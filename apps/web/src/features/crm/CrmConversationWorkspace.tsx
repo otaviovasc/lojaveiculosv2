@@ -144,9 +144,12 @@ export function CrmConversationWorkspace({
           tagId,
         );
       else
-        void inbox.actions.addCycleTag(cycleId as CrmConversationCycleId, {
-          tagId,
-        });
+        void inbox.actions.addCycleTag(
+          cycleId as CrmConversationCycleId,
+          { tagId } as unknown as Parameters<
+            typeof inbox.actions.addCycleTag
+          >[1],
+        );
     };
     window.addEventListener("crm:jump-to-message", onJump);
     window.addEventListener("crm:toggle-tag", onToggleTag);
@@ -530,8 +533,8 @@ export function CrmConversationWorkspace({
       {newConversationOpen ? (
         <CrmNewConversationDialog
           disabled={inbox.isStartingConversation || !inbox.canStartConversation}
-          initialBuyerName={newConversationDraft?.buyerName}
-          initialPhone={newConversationDraft?.phone}
+          initialBuyerName={newConversationDraft?.buyerName ?? ""}
+          initialPhone={newConversationDraft?.phone ?? ""}
           onClose={() => {
             setNewConversationOpen(false);
             setNewConversationDraft(null);
