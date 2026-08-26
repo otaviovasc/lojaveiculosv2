@@ -191,7 +191,7 @@
     var(--color-line)
   ) !important;
   box-shadow:
-    inset 3.5px 0 0 var(--color-accent) !important,
+    inset 3.5px 0 0 var(--color-accent),
     0 8px 22px -12px color-mix(in srgb, var(--color-accent) 28%, transparent),
     0 1px 3px 0 color-mix(in srgb, var(--color-text) 6%, transparent) !important;
 }
