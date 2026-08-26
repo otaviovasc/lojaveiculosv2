@@ -1,6 +1,7 @@
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { useEffect, useMemo, useState } from "react";
 import { Car, User, SendHorizontal, Phone, Mail } from "lucide-react";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import { useOptionalAccountSession } from "../account/accountSession";
 import { readCrmCapabilities } from "./crmPermissions";
@@ -55,7 +56,11 @@ export function CrmLeadDetailsSidebar({
         <div className="flex flex-col gap-2 text-xs font-bold text-muted/95 mt-1">
           <div className="flex items-center gap-2">
             <Phone className="size-3.5 text-muted shrink-0" />
-            <span>{lead.buyerPhone || "Sem telefone"}</span>
+            <span>
+              {lead.buyerPhone
+                ? formatCrmPhone(lead.buyerPhone)
+                : "Sem telefone"}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Mail className="size-3.5 text-muted shrink-0" />

@@ -5,6 +5,8 @@ import type {
   CrmConversationCycle,
 } from "./crmConversationTypes";
 
+import { formatCrmPhone } from "./crmPhoneFormat";
+
 export type CrmMessageView = CrmMessage & {
   clientId?: string;
   quotedMessageText?: string;
@@ -15,7 +17,9 @@ const contactNameParticles = new Set(["da", "das", "de", "do", "dos", "e"]);
 export function formatCycleName(cycle: CrmConversationCycle) {
   const name = cycle.customerDisplayName?.trim();
   if (name && name !== ".") return name;
-  return cycle.customerPhone ?? "Contato sem nome";
+  return cycle.customerPhone
+    ? formatCrmPhone(cycle.customerPhone)
+    : "Contato sem nome";
 }
 
 export function formatContactInitials(name?: string | null) {
@@ -327,30 +331,51 @@ function mediaMessageType(mediaType: CrmSendMediaType) {
   return mediaType === "video" ? "VIDEO" : "DOCUMENT";
 }
 
-export function getSenderLabel(message: CrmMessage) {
+export function getSenderLabel(
+  message: CrmMessage,
+  fallbackAssigneeName?: string | null,
+) {
+  if (message.direction === "INBOUND") {
+    return null;
+  }
   const metadata = message.metadata ?? {};
-  if (typeof metadata.authorName === "string") return metadata.authorName;
+  if (typeof metadata.authorName === "string" && metadata.authorName.trim()) {
+    return metadata.authorName.trim();
+  }
+  if (typeof metadata.senderName === "string" && metadata.senderName.trim()) {
+    return metadata.senderName.trim();
+  }
+  if (typeof metadata.userName === "string" && metadata.userName.trim()) {
+    return metadata.userName.trim();
+  }
+  if (typeof metadata.agentName === "string" && metadata.agentName.trim()) {
+    return metadata.agentName.trim();
+  }
+  if (fallbackAssigneeName && fallbackAssigneeName.trim()) {
+    return fallbackAssigneeName.trim();
+  }
   if (message.senderType === "AI") return "IA";
   if (message.senderType === "SYSTEM") return "Sistema";
+  if (message.senderOrigin === "external_bot") return "Bot externo";
   if (message.direction === "OUTBOUND") return "Atendente";
   return null;
 }
 
 export function getSenderOriginLabel(message: CrmMessage) {
+  if (message.direction === "INBOUND") {
+    return null;
+  }
   switch (message.senderOrigin ?? "unknown") {
-    case "customer":
-      return "Cliente";
-    case "human_crm":
-      return "Atendente CRM";
     case "human_channel":
       return "Enviado diretamente pelo canal";
     case "external_bot":
       return "Bot externo";
+    case "customer":
+    case "human_crm":
     case "system":
-      return "Sistema";
     case "unknown":
     default:
-      return "Origem desconhecida";
+      return null;
   }
 }
 

@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle2, CircleSlash } from "lucide-react";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import type { CampaignRecipientReviewRow } from "./CrmCampaignRecipientReview";
 
 export function ReviewStat({
@@ -102,7 +103,11 @@ function RecipientReviewRow({
         placeholder="cliente"
         value={row.name}
       />
-      <span>{row.phone || row.rawPhone || "sem telefone"}</span>
+      <span>
+        {row.phone || row.rawPhone
+          ? formatCrmPhone(row.phone || row.rawPhone)
+          : "sem telefone"}
+      </span>
       <span>{row.source === "csv" ? "CSV" : "Conversa"}</span>
       <span>
         <StatusIcon aria-hidden="true" />

@@ -1,5 +1,6 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { cx, type FeatureIcon } from "./featureShared";
+import { useDragToScroll } from "../../lib/useDragToScroll";
 
 type FeatureTabOption<Value extends string> = {
   icon?: FeatureIcon | undefined;
@@ -26,6 +27,7 @@ export function FeatureTabs<Value extends string>({
   value: Value;
   variant?: "default" | "panel" | "split";
 }) {
+  const dragRef = useDragToScroll<HTMLDivElement>();
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const activeIndex = options.findIndex((option) => option.value === value);
 
@@ -55,6 +57,7 @@ export function FeatureTabs<Value extends string>({
   return (
     <div
       aria-label={ariaLabel}
+      ref={dragRef}
       className={cx(
         variant === "panel" &&
           "inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-line/60 bg-panel/75 p-1 shadow-sm backdrop-blur-md",

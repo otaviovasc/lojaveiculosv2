@@ -1,5 +1,5 @@
 import {
-  AlertTriangle,
+  AlertCircle,
   Check,
   CheckCheck,
   CircleHelp,
@@ -20,6 +20,7 @@ import type { CrmMessage } from "./crmConversationTypes";
 
 export function MessageBubble({
   actionsDisabled,
+  fallbackAssigneeName,
   message,
   onDelete,
   onMediaClick,
@@ -28,16 +29,19 @@ export function MessageBubble({
   onRemoveReaction,
   onReply,
 }: MessageActionHandlers & {
+  fallbackAssigneeName?: string | null;
   message: CrmMessage;
   onMediaClick?: ((url: string) => void) | undefined;
   onQuoteClick?: ((quoteId?: string) => void) | undefined;
 }) {
   const outgoing = message.direction === "OUTBOUND";
-  const senderLabel = getSenderLabel(message);
+  const senderLabel = getSenderLabel(message, fallbackAssigneeName);
+  const senderOrigin = getSenderOriginLabel(message);
   const reaction = readReaction(message.metadata);
   const delivery = readDeliveryPresentation(message.status);
   const channel = (message.channel ?? "whatsapp").toLowerCase();
   const elementId = `crm-msg-${message.id}`;
+  const showAttribution = Boolean(senderLabel || senderOrigin);
 
   return (
     <article
@@ -55,10 +59,14 @@ export function MessageBubble({
         onRemoveReaction={onRemoveReaction}
         onReply={onReply}
       />
-      <div className="crm-message-attribution">
-        {senderLabel ? <strong>{senderLabel}</strong> : null}
-        <span>{getSenderOriginLabel(message)}</span>
-      </div>
+      {showAttribution ? (
+        <div className="crm-message-attribution">
+          {senderLabel ? <strong>{senderLabel}</strong> : null}
+          {senderOrigin && senderOrigin !== senderLabel ? (
+            <span>{senderOrigin}</span>
+          ) : null}
+        </div>
+      ) : null}
       <QuotedMessage
         metadata={message.metadata}
         onClick={onQuoteClick ? () => onQuoteClick() : undefined}
@@ -115,39 +123,63 @@ export function MessageDeliveryStatus({
 }: {
   delivery: MessageDeliveryPresentation;
 }) {
-  if (!delivery.label) {
-    const isRead = delivery.status === "read";
-    const isDelivered = delivery.status === "delivered";
-    if (isRead) {
-      return (
-        <CheckCheck
-          aria-label="Mensagem lida"
-          className="size-3.5 crm-delivery-read"
-        />
-      );
-    }
-    if (isDelivered) {
-      return (
-        <CheckCheck
-          aria-label="Mensagem enviada"
-          className="size-3.5 opacity-60"
-        />
-      );
-    }
+  if (delivery.status === "failed") {
     return (
-      <Check aria-label="Mensagem enviada" className="size-3.5 opacity-60" />
+      <span
+        className="crm-delivery-failed"
+        role="status"
+        title="Falha no envio"
+      >
+        <AlertCircle className="size-3" />
+        <span>Falha no envio</span>
+      </span>
     );
   }
-  const Icon =
-    delivery.status === "pending"
-      ? Clock3
-      : delivery.status === "failed"
-        ? AlertTriangle
-        : CircleHelp;
+
+  if (delivery.status === "pending") {
+    return (
+      <span className="crm-delivery-pending" role="status" title="Enviando...">
+        <Clock3 className="size-3 animate-pulse text-muted" />
+        <span>Envio pendente</span>
+      </span>
+    );
+  }
+
+  if (delivery.status === "read") {
+    return (
+      <CheckCheck
+        aria-label="Mensagem lida"
+        className="size-3.5 crm-delivery-read text-sky-400"
+      />
+    );
+  }
+
+  if (delivery.status === "delivered") {
+    return (
+      <CheckCheck
+        aria-label="Mensagem entregue"
+        className="size-3.5 text-muted opacity-75"
+      />
+    );
+  }
+
+  if (delivery.status === "sent") {
+    return (
+      <Check
+        aria-label="Mensagem enviada"
+        className="size-3.5 text-muted opacity-75"
+      />
+    );
+  }
+
   return (
-    <span className="crm-message-delivery" role="status">
-      <Icon aria-hidden="true" />
-      {delivery.label}
+    <span
+      className="crm-delivery-indeterminate"
+      role="status"
+      title="Envio não confirmado"
+    >
+      <CircleHelp className="size-3 text-muted" />
+      <span>Envio não confirmado</span>
     </span>
   );
 }

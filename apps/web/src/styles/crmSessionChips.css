@@ -1,8 +1,8 @@
 .crm-session-main .crm-avatar {
-  height: 3.5rem;
+  height: 2.625rem;
   overflow: hidden;
-  width: 3.5rem;
-  border-radius: 1rem;
+  width: 2.625rem;
+  border-radius: 0.75rem;
 }
 
 .crm-session-main .crm-avatar img {
@@ -21,10 +21,12 @@
   border-radius: 0.5rem;
   color: var(--color-muted);
   display: inline-flex;
+  flex-direction: row;
+  flex-shrink: 0;
   font-size: var(--font-size-xs);
-  font-weight: 800;
+  font-weight: 750;
   gap: 0.25rem;
-  max-width: 10rem;
+  max-width: 12rem;
   min-height: 1.35rem;
   overflow: hidden;
   padding: 0.1rem 0.45rem;

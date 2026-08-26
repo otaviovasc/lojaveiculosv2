@@ -37,44 +37,53 @@
   gap: 0.75rem;
   height: 3.5rem;
   min-height: 3.5rem;
-  padding: 0 1rem;
+  padding: 0 0.875rem;
   position: relative;
+  width: 100%;
   z-index: 20;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
-.crm-scope-title {
-  align-items: center;
-  border-right: 1px solid var(--color-line);
-  display: flex;
+.crm-scope-brand {
+  color: var(--color-text);
   flex: 0 0 auto;
-  gap: 0.625rem;
-  min-width: 0;
-  padding-right: 1rem;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: 0.04em;
 }
 
-.crm-scope-title > strong {
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
+.crm-scope-trailing {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .crm-scope-status {
   align-items: center;
   border-radius: 9999px;
   display: inline-flex;
+  flex-direction: row;
+  flex: 0 0 auto;
+  flex-shrink: 0;
   font-size: var(--font-size-xs);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   gap: 0.375rem;
-  max-width: 14rem;
   min-height: 1.5rem;
   padding: 0.125rem 0.625rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow: visible;
   transition: all 0.2s ease;
+}
+
+.crm-scope-status > span {
+  flex-shrink: 0;
 }
 
 .crm-status-online {
@@ -135,11 +144,19 @@
 /* Tabs */
 .crm-scope-tabs {
   align-items: center;
+  cursor: grab;
   display: flex;
+  flex: 1 1 auto;
   gap: 0.25rem;
   min-width: 0;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
   scrollbar-width: none;
+  width: 100%;
+}
+
+.crm-scope-tabs:active {
+  cursor: grabbing;
 }
 
 .crm-scope-tabs::-webkit-scrollbar {
@@ -153,11 +170,13 @@
   border-radius: 0.625rem;
   color: var(--color-muted);
   display: inline-flex;
-  flex: 0 0 auto;
+  flex-direction: row;
+  flex: 1 1 0%;
   gap: 0.45rem;
   justify-content: center;
   min-height: 2.25rem;
-  padding: 0.35rem 0.75rem;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
   text-align: center;
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -171,6 +190,14 @@
   color: var(--color-text);
 }
 
+.crm-scope-tab > span {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
 .crm-scope-tab strong {
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -178,6 +205,7 @@
 }
 
 .crm-scope-tab svg {
+  flex-shrink: 0;
   height: 1rem;
   width: 1rem;
   opacity: 0.85;
@@ -380,12 +408,38 @@
 /* Empty Conversation State - Modern Card */
 .crm-empty-conversation-state {
   align-items: center;
+  background: color-mix(in srgb, var(--color-app) 95%, var(--color-panel));
   display: flex;
   flex: 1;
   justify-content: center;
   min-height: 0;
   padding: 2rem;
   width: 100%;
+  position: relative;
+  isolation: isolate;
+}
+
+.crm-empty-conversation-state::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.42;
+  background-image:
+    url("/images/crm-whatsapp-chat-wallpaper.jpg"),
+    url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23154D37' fill-opacity='0.16' fill-rule='evenodd'%3E%3Cpath d='M12 12h6v2h-6v6h-2v-6H4v-2h6V6h2v6z'/%3E%3Cpath d='M92 92h6v2h-6v6h-2v-6h-6v-2h6v-6h2v6z'/%3E%3Ccircle cx='60' cy='25' r='1.5'/%3E%3Ccircle cx='62' cy='25' r='1.5'/%3E%3Ccircle cx='60' cy='27' r='1.5'/%3E%3Ccircle cx='62' cy='27' r='1.5'/%3E%3Ccircle cx='25' cy='90' r='1.5'/%3E%3Ccircle cx='27' cy='90' r='1.5'/%3E%3Ccircle cx='25' cy='92' r='1.5'/%3E%3Ccircle cx='27' cy='92' r='1.5'/%3E%3Cpath d='M105 20l-10 10m8-10l-10 10m12-8l-10 10' stroke='%23154D37' stroke-opacity='0.22' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='100' cy='55' r='7' stroke='%23154D37' stroke-opacity='0.22' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='20' cy='55' r='5' stroke='%23154D37' stroke-opacity='0.22' stroke-width='1.5' fill='none'/%3E%3Cpath d='M55 95l5 10h-10z' fill='none' stroke='%23154D37' stroke-opacity='0.22' stroke-width='1.5'/%3E%3Cpath d='M50 60c2-2 4-2 6 0s4 2 6 0' fill='none' stroke='%23154D37' stroke-opacity='0.12' stroke-width='1.5' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: repeat;
+  background-size:
+    28rem 28rem,
+    120px 120px;
+}
+
+:root[data-theme="dark"] .crm-empty-conversation-state::before,
+.dark .crm-empty-conversation-state::before {
+  opacity: 0.22;
+  filter: invert(1) contrast(1.1);
 }
 
 .crm-empty-conversation-card {

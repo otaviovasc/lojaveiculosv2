@@ -90,18 +90,7 @@ export function CrmScopedNav({
   return (
     <>
       <nav className="crm-scope-nav" aria-label="WhatsApp CRM">
-        <div className="crm-scope-title">
-          <strong>CRM</strong>
-          <span
-            aria-atomic="true"
-            aria-live="polite"
-            className={`crm-status crm-scope-status crm-status-${connectionTone}`}
-            role="status"
-          >
-            <span aria-hidden="true" />
-            {connectionLabel}
-          </span>
-        </div>
+        <strong className="crm-scope-brand">CRM</strong>
         <FeatureTabs
           activeClassName="crm-scope-tab-active"
           ariaLabel="Áreas do WhatsApp CRM"
@@ -115,6 +104,17 @@ export function CrmScopedNav({
           }))}
           value={activeScope}
         />
+        <div className="crm-scope-trailing">
+          <span
+            aria-atomic="true"
+            aria-live="polite"
+            className={`crm-status crm-scope-status crm-status-${connectionTone}`}
+            role="status"
+          >
+            <span aria-hidden="true" />
+            {connectionLabel}
+          </span>
+        </div>
       </nav>
       <CrmConversationMobileNav
         activeScope={activeScope}
