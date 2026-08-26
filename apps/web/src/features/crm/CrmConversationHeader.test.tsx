@@ -101,7 +101,7 @@ describe("CrmConversationHeader", () => {
     });
   });
 
-  it("shows the current human attendance state in the chat header", () => {
+  it("does not show human attendance badges in the chat header", () => {
     render(
       <ChatHeader
         assignableMembers={[]}
@@ -130,9 +130,8 @@ describe("CrmConversationHeader", () => {
       />,
     );
 
-    expect(screen.getByText("Em atendimento Humano")).toHaveClass(
-      "crm-human-attendance-in-service",
-    );
+    expect(screen.queryByText("Em atendimento Humano")).not.toBeInTheDocument();
+    expect(screen.queryByText("Aguardando Humano")).not.toBeInTheDocument();
   });
 
   it("groups conversation, workflow, and attendance actions by purpose", () => {

@@ -45,8 +45,8 @@ export function InventoryCreateSidebar({
   const checklist = [
     { label: "Loja", completed: hasStore },
     { label: "Marca e modelo", completed: hasCatalog },
-    { label: "Valor de aquisição", completed: hasAcquisitionPrice },
-    { label: "Valor de venda", completed: hasPrice },
+    { label: "Aquisição", completed: hasAcquisitionPrice },
+    { label: "Venda", completed: hasPrice },
   ];
 
   const completedCount = checklist.filter((item) => item.completed).length;
@@ -161,18 +161,20 @@ function PreviewCardContent({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 border-t border-line/60 pt-4 text-xs">
-          <div>
-            <span className="block text-xs font-black text-muted uppercase tracking-wider">
-              Valor de aquisição
+        <div className="grid grid-cols-2 gap-2 border-t border-line/60 pt-4 text-xs">
+          <div className="min-w-0">
+            <span className="block whitespace-nowrap text-xs font-black uppercase tracking-[0.08em] text-muted sm:tracking-wider">
+              Aquisição
             </span>
-            <span className="font-bold text-app-text">{acquisitionPrice}</span>
+            <span className="block truncate font-bold text-app-text">
+              {acquisitionPrice}
+            </span>
           </div>
-          <div>
-            <span className="block text-xs font-black text-muted uppercase tracking-wider">
-              Valor de Venda
+          <div className="min-w-0">
+            <span className="block whitespace-nowrap text-xs font-black uppercase tracking-[0.08em] text-muted sm:tracking-wider">
+              Venda
             </span>
-            <span className="font-bold text-accent-strong text-sm">
+            <span className="block truncate font-bold text-sm text-accent-strong">
               {sellPrice}
             </span>
           </div>
@@ -249,14 +251,18 @@ function ProgressCardContent({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent hover:bg-accent-strong hover:text-accent-strong-foreground text-accent-foreground font-black text-sm transition-all disabled:opacity-75 cursor-pointer"
+        className="group relative flex min-h-[52px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,var(--color-accent),color-mix(in_srgb,var(--color-accent)_82%,black))] px-6 text-sm font-black tracking-tight text-accent-foreground transition-all hover:brightness-[1.04] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100 disabled:active:scale-100 cursor-pointer"
       >
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-18deg] bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-full group-hover:opacity-100 will-change-transform"
+        />
         {isSubmitting ? (
-          <LoaderCircle className="size-4 animate-spin" />
+          <LoaderCircle className="relative z-10 size-5 animate-spin" />
         ) : (
-          <Check className="size-4" />
+          <Check className="relative z-10 size-5 stroke-[3]" />
         )}
-        <span>Salvar Veículo</span>
+        <span className="relative z-10 text-sm">Salvar Veículo</span>
       </button>
 
       <SubmitStatusPanel

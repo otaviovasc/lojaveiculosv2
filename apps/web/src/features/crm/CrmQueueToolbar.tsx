@@ -1,15 +1,14 @@
 import {
-  Check,
+  CheckCheck,
   CheckSquare,
   Headset,
   Hourglass,
   Plus,
-  Search,
   Tags,
   Wrench,
-  X,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { Morphicon } from "../../components/ui/Morphicon";
 import {
   QueueQuickFilterRow,
   QueueTagFilterMenu,
@@ -100,13 +99,13 @@ export function CrmQueueToolbar({
   unreadOnly: boolean;
 }) {
   const smartFiltersDragRef = useDragToScroll<HTMLDivElement>();
+  void sessionCount;
 
   return (
     <header className="crm-toolbar">
       <div className="crm-toolbar-top">
         <div className="crm-toolbar-title-wrap">
           <h2 aria-label="CRM">Conversas</h2>
-          <span className="crm-toolbar-count">{sessionCount} conversas</span>
         </div>
         <div className="crm-toolbar-actions">
           <CrmConnectionFilter
@@ -138,20 +137,33 @@ export function CrmQueueToolbar({
           </button>
           <button
             aria-label="Nova conversa"
-            className="crm-icon-action crm-new-cycle-action crm-new-session-action"
+            className="crm-toolbar-new-conversation"
             disabled={!canStartConversation}
             onClick={onStartConversation}
             title={startConversationUnavailableReason ?? "Nova conversa"}
             type="button"
           >
             <Plus aria-hidden="true" />
+            <span>Nova conversa</span>
           </button>
         </div>
       </div>
 
-      <div className="crm-search-row">
+      <div
+        className={
+          selectionMode
+            ? "crm-search-row crm-search-row-selection-active"
+            : "crm-search-row"
+        }
+      >
         <label className="crm-search">
-          <Search aria-hidden="true" className="crm-search-icon" />
+          <Morphicon
+            active={Boolean(search)}
+            aria-hidden="true"
+            className="crm-search-icon"
+            name="search-close"
+            size={15}
+          />
           <input
             aria-label="Pesquisar conversas por nome ou telefone"
             onChange={(event) => onSearch(event.target.value)}
@@ -165,7 +177,12 @@ export function CrmQueueToolbar({
               onClick={() => onSearch("")}
               type="button"
             >
-              <X aria-hidden="true" />
+              <Morphicon
+                active={true}
+                aria-hidden="true"
+                name="check-cross"
+                size={12}
+              />
             </button>
           ) : null}
         </label>
@@ -184,7 +201,12 @@ export function CrmQueueToolbar({
           type="button"
         >
           {selectionMode ? (
-            <X aria-hidden="true" />
+            <Morphicon
+              active={true}
+              aria-hidden="true"
+              name="check-cross"
+              size={15}
+            />
           ) : (
             <CheckSquare aria-hidden="true" />
           )}
@@ -288,7 +310,7 @@ export function CrmQueueToolbar({
           }
           type="button"
         >
-          <Check aria-hidden="true" />
+          <CheckCheck aria-hidden="true" />
           Concluídos
           {conversationCycleCounts.statuses.COMPLETED > 0 ? (
             <span>{conversationCycleCounts.statuses.COMPLETED}</span>

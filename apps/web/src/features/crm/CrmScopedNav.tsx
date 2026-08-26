@@ -98,6 +98,7 @@ export function CrmScopedNav({
           onChange={onChange}
           optionClassName="crm-scope-tab"
           options={scopes.map((scope) => ({
+            ariaLabel: scope.label,
             icon: scope.icon,
             label: createScopeLabel(scope, { tagCount, unreadCount }),
             value: scope.id,
@@ -131,9 +132,20 @@ function createScopeLabel(
   counts: { tagCount: number; unreadCount: number },
 ) {
   const badge = readBadge(scope.id, counts);
+  const label =
+    scope.id === "schedules" ? (
+      <>
+        <span className="crm-scope-tab-label-full">{scope.label}</span>
+        <span aria-hidden="true" className="crm-scope-tab-label-compact">
+          Agendar Msg
+        </span>
+      </>
+    ) : (
+      scope.label
+    );
   return (
     <>
-      <strong>{scope.label}</strong>
+      <strong>{label}</strong>
       {badge ? (
         <>
           {" "}

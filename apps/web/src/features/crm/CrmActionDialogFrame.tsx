@@ -16,7 +16,7 @@ export function CrmActionDialogShell({
 }) {
   return (
     <Dialog
-      containerClassName="p-4"
+      containerClassName="crm-action-dialog"
       onOpenChange={(open) => !open && onClose()}
       open
     >
@@ -36,25 +36,40 @@ export function CrmActionDialogShell({
 export function ActionDialog({
   children,
   disabled,
+  description,
   icon,
   onClose,
   onSubmit,
+  panelClassName,
   submitLabel = "Enviar",
   title,
 }: {
   children: ReactNode;
   disabled?: boolean;
+  description?: string;
   icon: ReactNode;
   onClose: () => void;
   onSubmit: () => Promise<void>;
+  panelClassName?: string;
   submitLabel?: string;
   title: string;
 }) {
   return (
-    <CrmActionDialogShell onClose={onClose} title={title}>
+    <CrmActionDialogShell
+      onClose={onClose}
+      panelClassName={panelClassName}
+      title={title}
+    >
       <header>
         <span>{icon}</span>
-        <h2>{title}</h2>
+        {description ? (
+          <div>
+            <h2>{title}</h2>
+            <p>{description}</p>
+          </div>
+        ) : (
+          <h2>{title}</h2>
+        )}
         <button
           aria-label="Fechar"
           className="crm-icon-action"

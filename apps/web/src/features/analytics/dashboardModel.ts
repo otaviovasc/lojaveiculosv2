@@ -58,7 +58,7 @@ export function createDashboardStats(
     },
     {
       deltaLabel: canReadFinance
-        ? `${dashboard.sales.closedCount} vendas fechadas no período`
+        ? `${dashboard.sales.closedCount} vendas fechadas`
         : "Acesso financeiro restrito",
       label: "Ticket médio",
       value:

@@ -18,7 +18,10 @@ export function AuthEntryLayout({
       <div aria-hidden="true" className="account-auth-glow" />
       <div className="account-auth-grid">
         <div className="account-auth-brand">
-          <Logo className="h-10" variant="full" />
+          <div className="onboarding-logo">
+            <Logo className="h-10 onboarding-logo-light" variant="full" />
+            <Logo className="h-10 onboarding-logo-dark" variant="full-white" />
+          </div>
           <div className="space-y-3">
             <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-black text-foreground tracking-tight">
               {title}
@@ -40,9 +43,7 @@ export function AuthEntryLayout({
             </ul>
           ) : null}
         </div>
-        <div className="account-glass-card account-auth-surface">
-          {children}
-        </div>
+        <div className="account-auth-card">{children}</div>
       </div>
     </main>
   );

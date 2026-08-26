@@ -1,17 +1,20 @@
 import {
   BookOpen,
   Car,
-  Contact,
   Download,
   ExternalLink,
   FileSpreadsheet,
   FileText,
+  Mail,
   MapPin,
+  MessageSquarePlus,
   PackageSearch,
   Phone,
   Play,
+  User,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { formatCrmPhone } from "./crmPhoneFormat";
 import {
   readCoordinate,
   readOptionalHref,
@@ -125,15 +128,7 @@ export function MessageContent({
   }
 
   if (message.type === "LOCATION") {
-    const location = readRecord(metadata.location);
-    return (
-      <AttachmentLink
-        icon={<MapPin aria-hidden="true" className="size-5" />}
-        label={message.content || "Localizacao"}
-        {...readOptionalHref(locationHref(location))}
-        {...readOptionalMeta(readString(location.address))}
-      />
-    );
+    return <LocationMessageCard message={message} metadata={metadata} />;
   }
 
   if (message.type === "CATALOG") {
@@ -141,24 +136,7 @@ export function MessageContent({
   }
 
   if (message.type === "CONTACT") {
-    const contact = readRecord(metadata.contact);
-    const phone = readString(contact.phone);
-    return (
-      <div className="crm-attachment crm-contact-card">
-        <div className="crm-contact-icon">
-          <Contact aria-hidden="true" className="size-5" />
-        </div>
-        <div className="crm-contact-body">
-          <strong>{message.content || "Contato"}</strong>
-          {phone ? (
-            <small className="crm-contact-phone">
-              <Phone className="size-3 inline mr-1" />
-              {phone}
-            </small>
-          ) : null}
-        </div>
-      </div>
-    );
+    return <ContactMessageCard message={message} metadata={metadata} />;
   }
 
   if (message.mediaUrl) {
@@ -376,6 +354,174 @@ function AttachmentLink({
     >
       {content}
     </a>
+  );
+}
+
+function LocationMessageCard({
+  message,
+  metadata,
+}: {
+  message: CrmMessage;
+  metadata: Record<string, unknown>;
+}) {
+  const location = readRecord(metadata.location);
+  const latitude = readCoordinate(location.latitude);
+  const longitude = readCoordinate(location.longitude);
+  const title =
+    readString(location.name) ??
+    (message.content && message.content !== "Localização"
+      ? message.content
+      : "Localização da loja");
+  const address = readString(location.address);
+  const href = locationHref(location);
+  const safeHref = href ? sanitizeCrmMessageUrl(href) : undefined;
+  const hasCoordinates = latitude !== null && longitude !== null;
+
+  return (
+    <div className="crm-location-card">
+      {hasCoordinates ? (
+        <div className="crm-location-map-wrap">
+          <iframe
+            className="crm-location-map-frame"
+            loading="lazy"
+            src={`https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`}
+            title={`Mapa: ${title}`}
+          />
+          {safeHref ? (
+            <a
+              aria-label={`Ver ${title} no Google Maps`}
+              className="crm-location-map-overlay-btn"
+              href={safeHref}
+              rel="noreferrer"
+              target="_blank"
+              title="Abrir no Google Maps"
+            >
+              <span className="crm-location-overlay-pill">
+                <ExternalLink aria-hidden="true" className="size-3.5" />
+                <span>Abrir mapa</span>
+              </span>
+            </a>
+          ) : null}
+        </div>
+      ) : null}
+      <a
+        aria-label={`${title}${address ? ` - ${address}` : ""}`}
+        className="crm-location-info-row"
+        href={safeHref || "#"}
+        rel={safeHref ? "noreferrer" : undefined}
+        target={safeHref ? "_blank" : undefined}
+      >
+        <div className="crm-location-pin-badge">
+          <MapPin aria-hidden="true" className="size-4" />
+        </div>
+        <div className="crm-location-copy">
+          <strong className="crm-location-title">{title}</strong>
+          {address ? (
+            <span className="crm-location-addr">{address}</span>
+          ) : null}
+        </div>
+        {safeHref ? (
+          <ExternalLink
+            aria-hidden="true"
+            className="crm-location-arrow size-4 text-muted"
+          />
+        ) : null}
+      </a>
+    </div>
+  );
+}
+
+function ContactMessageCard({
+  message,
+  metadata,
+}: {
+  message: CrmMessage;
+  metadata: Record<string, unknown>;
+}) {
+  const contact = readRecord(metadata.contact);
+  const name =
+    readString(contact.name) ??
+    readString(contact.displayName) ??
+    message.content ??
+    "Contato";
+  const rawPhone = readString(contact.phone) ?? readString(contact.phoneNumber);
+  const formattedPhone = rawPhone ? formatCrmPhone(rawPhone) : undefined;
+  const cleanPhone = rawPhone ? rawPhone.replace(/\D/g, "") : undefined;
+  const organization = readString(contact.organization);
+  const email = readString(contact.email);
+  const avatarUrl =
+    readString(contact.avatarUrl) ?? readString(contact.profilePhotoUrl);
+
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toLocaleUpperCase("pt-BR"))
+    .join("");
+
+  return (
+    <div className="crm-contact-card">
+      <div className="crm-contact-card-header">
+        <div className="crm-contact-card-avatar">
+          {avatarUrl ? (
+            <img
+              alt={name}
+              className="crm-contact-avatar-img"
+              src={avatarUrl}
+            />
+          ) : initials ? (
+            <span className="crm-contact-initials">{initials}</span>
+          ) : (
+            <User aria-hidden="true" className="size-5" />
+          )}
+        </div>
+        <div className="crm-contact-card-info">
+          <strong className="crm-contact-card-name">{name}</strong>
+          {organization ? (
+            <span className="crm-contact-card-org">{organization}</span>
+          ) : (
+            <span className="crm-contact-card-badge">Contato</span>
+          )}
+        </div>
+      </div>
+
+      {formattedPhone || email ? (
+        <div className="crm-contact-card-details">
+          {formattedPhone ? (
+            <div className="crm-contact-detail-item">
+              <Phone aria-hidden="true" className="size-3.5 text-muted" />
+              <span className="crm-contact-phone-text">{formattedPhone}</span>
+            </div>
+          ) : null}
+          {email ? (
+            <div className="crm-contact-detail-item">
+              <Mail aria-hidden="true" className="size-3.5 text-muted" />
+              <span className="crm-contact-email-text">{email}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {cleanPhone ? (
+        <div className="crm-contact-card-actions">
+          <button
+            className="crm-contact-action-btn crm-contact-action-chat"
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent("crm:start-conversation", {
+                  detail: { buyerName: name, phone: cleanPhone },
+                }),
+              );
+            }}
+            title="Iniciar conversa no CRM"
+            type="button"
+          >
+            <MessageSquarePlus aria-hidden="true" className="size-3.5" />
+            <span>Conversar</span>
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

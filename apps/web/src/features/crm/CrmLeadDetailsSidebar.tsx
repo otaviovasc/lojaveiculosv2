@@ -1,7 +1,8 @@
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { useEffect, useMemo, useState } from "react";
-import { Car, User, SendHorizontal, Phone, Mail } from "lucide-react";
+import { Car, SendHorizontal, Phone, Mail } from "lucide-react";
 import { formatCrmPhone } from "./crmPhoneFormat";
+import { readLeadAvatarUrl } from "./crmLeadAvatar";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import { useOptionalAccountSession } from "../account/accountSession";
 import { readCrmCapabilities } from "./crmPermissions";
@@ -51,7 +52,17 @@ export function CrmLeadDetailsSidebar({
           <span className="text-sm font-black text-app-text uppercase">
             {leadName}
           </span>
-          <User className="size-4 text-muted shrink-0 mt-0.5" />
+          {readLeadAvatarUrl(lead) ? (
+            <img
+              alt={leadName}
+              className="size-9 shrink-0 rounded-full border border-line/40 object-cover bg-app-elevated"
+              src={readLeadAvatarUrl(lead) as string}
+            />
+          ) : (
+            <span className="grid size-9 shrink-0 place-items-center rounded-full border border-line/40 bg-app-elevated text-xs font-black text-app-text">
+              {leadName.slice(0, 2).toUpperCase() || "?"}
+            </span>
+          )}
         </div>
         <div className="flex flex-col gap-2 text-xs font-bold text-muted/95 mt-1">
           <div className="flex items-center gap-2">

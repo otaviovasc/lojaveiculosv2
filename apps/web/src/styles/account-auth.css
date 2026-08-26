@@ -78,9 +78,29 @@
   }
 }
 
-/* The single elevated surface: only the interactive content gets the card. */
+/* The single elevated surface: only the interactive content gets the card.
+   Sign-in uses a flat panel to avoid cards-on-cards nesting; onboarding keeps
+   the glass variant. */
 .account-auth-surface {
   width: 100%;
+}
+
+.account-auth-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-panel);
+  padding: 1.75rem;
+}
+
+@media (max-width: 640px) {
+  .account-auth-card {
+    padding: 1.25rem;
+    border-radius: 1.125rem;
+  }
 }
 
 .account-glass-card {
@@ -239,4 +259,32 @@
   flex-shrink: 0;
   width: 1.125rem;
   height: 1.125rem;
+}
+
+.onboarding-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding-logo-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .onboarding-logo-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .onboarding-logo-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .onboarding-logo-light {
+    display: none;
+  }
+
+  :root:not([data-theme]) .onboarding-logo-dark {
+    display: block;
+  }
 }

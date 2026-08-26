@@ -17,11 +17,12 @@ export function BillingCurrentPlanSection({
   overview: BillingOverview;
   plan: BillingPlan | null;
 }) {
-  const planName =
+  const rawPlanName =
     overview.effectiveContract?.planName ??
     overview.subscription?.plan?.name ??
     plan?.name ??
     "Free";
+  const planName = rawPlanName === "Free" ? "Grátis" : rawPlanName;
   const monthlyPriceCents =
     overview.effectiveContract?.unitAmountCents ??
     overview.subscription?.plan?.monthlyPriceCents ??
@@ -79,7 +80,7 @@ export function BillingCurrentPlanSection({
               type="button"
             >
               <ArrowDownRight aria-hidden="true" className="size-3.5" />
-              Agendar mudança para Free
+              Agendar mudança para Grátis
             </button>
           ) : null}
         </div>

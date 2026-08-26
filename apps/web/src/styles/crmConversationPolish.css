@@ -16,13 +16,11 @@
 .crm-shell {
   grid-template-columns: minmax(22rem, 26rem) minmax(26rem, 1fr);
   max-width: 100%;
+  position: relative;
 }
 
 .crm-shell[data-details-open="true"] {
-  grid-template-columns:
-    minmax(22rem, 26rem)
-    minmax(24rem, 1fr)
-    minmax(18rem, 22rem);
+  grid-template-columns: minmax(22rem, 26rem) minmax(26rem, 1fr);
 }
 
 .crm-list {
@@ -80,6 +78,8 @@
   max-width: 100%;
   min-height: 4rem;
   padding: 0.625rem 1rem;
+  position: relative;
+  isolation: isolate;
 }
 
 .crm-chat-header-main,
@@ -263,6 +263,154 @@
   color: inherit;
 }
 
+/* Prompt — WhatsApp header spark (premium, not flat) */
+.crm-prompt-button {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-accent) 14%, var(--color-panel)) 0%,
+    color-mix(in srgb, var(--color-accent) 8%, var(--color-panel)) 100%
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 22%, var(--color-line));
+  color: color-mix(in srgb, var(--color-accent) 78%, var(--color-text));
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.crm-prompt-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 80% at 80% 0%,
+    color-mix(in srgb, var(--color-accent) 18%, transparent),
+    transparent 55%
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.crm-prompt-button:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-prompt-button:active {
+  transform: scale(0.97);
+}
+
+/* Header search — WhatsApp slide-over (search in header, not drawer) */
+.crm-header-search-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.5rem 0 0.75rem;
+  background: var(--color-panel);
+  z-index: 5;
+  animation: crmHeaderSearchIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-header-search-overlay input {
+  flex: 1;
+  min-width: 0;
+  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  height: 2.1rem;
+  padding: 0 0.875rem;
+  outline: none;
+}
+
+.crm-header-search-overlay input:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-line));
+}
+
+.crm-header-search-count {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.crm-header-search-nav:disabled {
+  opacity: 0.42;
+}
+
+.crm-prompt-popover {
+  min-width: 18rem;
+  max-width: 22rem;
+}
+
+.crm-prompt-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+
+.crm-prompt-title {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.crm-prompt-menu button {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: 0.65rem;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  gap: 0.55rem;
+  justify-content: flex-start;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.14s ease;
+  width: 100%;
+}
+
+.crm-prompt-menu button:hover {
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, var(--color-accent) 18%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-prompt-menu button:active {
+  transform: scale(0.99);
+}
+
+@keyframes crmHeaderSearchIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Context panel */
 .crm-details-panel {
   background: var(--color-panel);
@@ -275,10 +423,7 @@
   }
 
   .crm-shell[data-details-open="true"] {
-    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr) minmax(
-        15rem,
-        18rem
-      );
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr);
   }
 }
 

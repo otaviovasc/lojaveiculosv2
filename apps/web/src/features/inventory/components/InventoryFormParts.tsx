@@ -27,11 +27,12 @@ type FieldProps = {
 export const InventoryPanel = forwardRef<
   HTMLElement,
   {
+    bodyClassName?: string | undefined;
     children: ReactNode;
     icon: ReactNode;
     title: string;
   }
->(function InventoryPanel({ children, icon, title }, ref) {
+>(function InventoryPanel({ bodyClassName, children, icon, title }, ref) {
   return (
     <section className="glass-panel-branded dashboard-card" ref={ref}>
       <div className="card-header card-header-gradient border-b border-line/40">
@@ -42,7 +43,9 @@ export const InventoryPanel = forwardRef<
           <h3 className="card-header-title">{title}</h3>
         </div>
       </div>
-      <div className="card-body">{children}</div>
+      <div className={["card-body", bodyClassName].filter(Boolean).join(" ")}>
+        {children}
+      </div>
     </section>
   );
 });

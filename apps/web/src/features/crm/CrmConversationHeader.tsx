@@ -2,30 +2,29 @@ import {
   ArrowLeft,
   Bot,
   CalendarClock,
+  CheckCheck,
+  ChevronDown,
+  ChevronUp,
   EllipsisVertical,
   ExternalLink,
-  CheckCheck,
   MailCheck,
   MailOpen,
-  MessageCircleMore,
+  Search,
+  Sparkles,
   Tag,
   UserCheck,
   UserRound,
+  Wand2,
+  X,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { ChatAssignmentSelect } from "./CrmConversationHeaderAssignment";
-import { CrmHumanAttendanceBadge } from "./CrmHumanAttendanceBadge";
-import { SessionTagRow } from "./CrmConversationHeaderTags";
 import {
   formatCycleAvatarInitials,
   formatCycleName,
 } from "./crmConversationModel";
 import { formatCrmPhone } from "./crmPhoneFormat";
-import {
-  readCrmChannelLabel,
-  readCrmProviderLabel,
-} from "./crmConnectionStatus";
 import { TagMenu } from "./CrmTagMenu";
 import type {
   CrmAddConversationCycleTagInput,
@@ -45,10 +44,12 @@ export function ChatHeader({
   canScheduleMessages,
   canToggleIntervention,
   currentUserId,
+  messages = [],
   onAssign,
   onBack,
   onClose,
   onAddTag,
+  onInsertPrompt,
   onMarkRead,
   onMarkUnread,
   onOpenDetails,
@@ -68,10 +69,12 @@ export function ChatHeader({
   canScheduleMessages: boolean;
   canToggleIntervention: boolean;
   currentUserId?: string | null;
+  messages?: { id: string; content: string }[];
   onAddTag: (input: CrmAddConversationCycleTagInput) => Promise<boolean>;
   onAssign: (agentId: string | null) => void;
   onBack?: () => void;
   onClose: () => void;
+  onInsertPrompt?: (text: string) => void;
   onMarkRead: () => void;
   onMarkUnread: () => void;
   onOpenDetails: () => void;
@@ -85,13 +88,42 @@ export function ChatHeader({
 }) {
   const identityButtonRef = useRef<HTMLButtonElement>(null);
   const moreActionsButtonRef = useRef<HTMLButtonElement>(null);
+  const promptButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const restoreStableFocusRef = useRef(false);
   const tagButtonRef = useRef<HTMLButtonElement>(null);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
+  const [headerQuery, setHeaderQuery] = useState("");
+  const [headerIdx, setHeaderIdx] = useState(0);
   const [tagMenuSource, setTagMenuSource] = useState<"desktop" | "mobile">(
     "desktop",
   );
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
+  void onRemoveTag;
+
+  const headerResults = useMemo(() => {
+    const q = headerQuery.trim().toLowerCase();
+    if (!q) return [];
+    return messages.filter((m) => m.content.toLowerCase().includes(q));
+  }, [headerQuery, messages]);
+
+  useEffect(() => {
+    if (!headerSearchOpen) return;
+    setHeaderIdx(0);
+  }, [headerQuery, headerSearchOpen]);
+
+  const jumpTo = (idx: number) => {
+    const target = headerResults[idx];
+    if (!target) return;
+    setHeaderIdx(idx);
+    window.dispatchEvent(
+      new CustomEvent("crm:jump-to-message", {
+        detail: { messageId: target.id },
+      }),
+    );
+  };
   const disabled = Boolean(actionsDisabled);
   const assignedToCurrentUser =
     Boolean(currentUserId) && cycle.assignedUserId === currentUserId;
@@ -115,6 +147,22 @@ export function ChatHeader({
       breakpoint.removeEventListener("change", closeResponsivePopovers);
     };
   }, [moreActionsOpen, tagMenuOpen]);
+
+  useEffect(() => {
+    const open = () => {
+      setHeaderSearchOpen(true);
+      window.requestAnimationFrame(() => searchInputRef.current?.focus());
+    };
+    window.addEventListener(
+      "crm:open-header-search" as never,
+      open as EventListener,
+    );
+    return () =>
+      window.removeEventListener(
+        "crm:open-header-search" as never,
+        open as EventListener,
+      );
+  }, []);
 
   useLayoutEffect(() => {
     if (moreActionsOpen || tagMenuOpen || !restoreStableFocusRef.current) {
@@ -165,23 +213,42 @@ export function ChatHeader({
               </p>
             </span>
           </button>
-          <span
-            className="crm-chat-channel-pill"
-            data-channel={(cycle.channel ?? "whatsapp").toLowerCase()}
-          >
-            <MessageCircleMore aria-hidden="true" />
-            {readCrmProviderLabel(cycle.connection?.provider ?? "unknown") ||
-              readCrmChannelLabel(cycle.channel)}
-          </span>
-          <CrmHumanAttendanceBadge cycle={cycle} />
-          <SessionTagRow
-            disabled={disabled || pendingActions?.tag || !canTagSessions}
-            onRemoveTag={onRemoveTag}
-            tags={cycle.tags ?? []}
-          />
         </div>
       </div>
       <div className="crm-header-actions">
+        {/* Prompt — WhatsApp header inspiration, AI spark */}
+        <div className="crm-header-action-group crm-header-prompt-group">
+          <button
+            ref={promptButtonRef}
+            aria-expanded={promptOpen}
+            aria-haspopup="dialog"
+            aria-label="Prompt IA"
+            className="crm-icon-action crm-prompt-button"
+            onClick={() => setPromptOpen((v) => !v)}
+            title="Prompt IA — sugerir resposta"
+            type="button"
+          >
+            <Sparkles aria-hidden="true" className="size-[18px]" />
+          </button>
+        </div>
+        {/* Search — opens in-header WhatsApp-style bar */}
+        <div className="crm-header-action-group">
+          <button
+            aria-label="Pesquisar nesta conversa"
+            className={`crm-icon-action ${headerSearchOpen ? "crm-icon-action-active" : ""}`}
+            onClick={() => {
+              setHeaderSearchOpen(true);
+              window.requestAnimationFrame(() =>
+                searchInputRef.current?.focus(),
+              );
+              if (headerResults[headerIdx]) jumpTo(headerIdx);
+            }}
+            title="Pesquisar"
+            type="button"
+          >
+            <Search aria-hidden="true" className="size-[18px]" />
+          </button>
+        </div>
         {canMarkRead || canTagSessions ? (
           <div
             aria-label="Ações da conversa"
@@ -418,6 +485,135 @@ export function ChatHeader({
           </div>
         ) : null}
       </div>
+      {headerSearchOpen ? (
+        <div className="crm-header-search-overlay" role="search">
+          <Search aria-hidden="true" className="size-4 text-muted shrink-0" />
+          <input
+            ref={searchInputRef}
+            aria-label="Pesquisar nesta conversa"
+            placeholder="Pesquisar nesta conversa"
+            value={headerQuery}
+            onChange={(event) => setHeaderQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setHeaderSearchOpen(false);
+                setHeaderQuery("");
+              }
+              if (event.key === "Enter" && headerResults.length) {
+                event.preventDefault();
+                if (event.shiftKey)
+                  jumpTo(
+                    (headerIdx - 1 + headerResults.length) %
+                      headerResults.length,
+                  );
+                else jumpTo((headerIdx + 1) % headerResults.length);
+              }
+            }}
+          />
+          <span className="crm-header-search-count" aria-live="polite">
+            {headerQuery
+              ? headerResults.length
+                ? `${headerIdx + 1} de ${headerResults.length}`
+                : "Nenhum"
+              : ""}
+          </span>
+          <button
+            aria-label="Anterior"
+            className="crm-icon-action crm-header-search-nav"
+            disabled={!headerResults.length}
+            onClick={() =>
+              jumpTo(
+                (headerIdx - 1 + headerResults.length) % headerResults.length,
+              )
+            }
+            type="button"
+          >
+            <ChevronUp className="size-4" />
+          </button>
+          <button
+            aria-label="Próximo"
+            className="crm-icon-action crm-header-search-nav"
+            disabled={!headerResults.length}
+            onClick={() => jumpTo((headerIdx + 1) % headerResults.length)}
+            type="button"
+          >
+            <ChevronDown className="size-4" />
+          </button>
+          <button
+            aria-label="Fechar pesquisa"
+            className="crm-icon-action"
+            onClick={() => {
+              setHeaderSearchOpen(false);
+              setHeaderQuery("");
+            }}
+            type="button"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      ) : null}
+      <FeatureAnchoredPopover
+        align="end"
+        anchorRef={promptButtonRef}
+        ariaLabel="Prompt IA"
+        className="crm-prompt-popover"
+        isOpen={promptOpen}
+        onClose={() => setPromptOpen(false)}
+        role="dialog"
+      >
+        <div className="crm-prompt-menu">
+          <p className="crm-prompt-title">
+            <Sparkles className="size-3.5" /> Prompt IA
+          </p>
+          <p className="crm-details-muted text-xs">
+            Gere um rascunho e insira no compositor. Inspirado no WhatsApp —
+            rápido como sugerir resposta.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setPromptOpen(false);
+              const suggestion = `Olá ${cycle.customerPhone ? formatCrmPhone(cycle.customerPhone) : ""} — obrigado pelo contato sobre ${cycle.vehicle?.title ?? "o veículo"}! Como posso ajudar no próximo passo?`;
+              onInsertPrompt?.(suggestion);
+            }}
+          >
+            <Wand2 className="size-4" /> Sugerir resposta acolhedora
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPromptOpen(false);
+              onInsertPrompt?.(
+                `Resumo: ${cycle.vehicle?.title ?? "Negociação"} — ${cycle.unreadCount ? `${cycle.unreadCount} não lidas` : "em andamento"}. Próximo passo: confirmar visita/test drive.`,
+              );
+            }}
+          >
+            <Search className="size-4" /> Resumir conversa
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPromptOpen(false);
+              onInsertPrompt?.(
+                "Prezados, formalizando nossa proposta com condições e prazos conforme alinhado. Fico à disposição para enviar documentação.",
+              );
+            }}
+          >
+            <Tag className="size-4" /> Tom formal
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPromptOpen(false);
+              onInsertPrompt?.(
+                "Oi! Que bom falar com você 😊 me conta qual horário funciona melhor para você dar uma olhada no veículo?",
+              );
+            }}
+          >
+            <Sparkles className="size-4" /> Tom descontraído
+          </button>
+        </div>
+      </FeatureAnchoredPopover>
       <FeatureAnchoredPopover
         align="end"
         anchorRef={tagAnchorRef}

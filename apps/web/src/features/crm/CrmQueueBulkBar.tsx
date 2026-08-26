@@ -1,15 +1,12 @@
 import {
-  CheckCheck,
   CheckSquare,
   ListChecks,
   Loader2,
-  MailCheck,
-  MailOpen,
   Tags,
   UserRound,
-  X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Morphicon } from "../../components/ui/Morphicon";
 import { CrmSelect } from "./CrmFormControls";
 import { selectedCountLabel, type CrmBulkActionDraft } from "./crmQueueState";
 import type { CrmAssignableMember, CrmTag } from "./crmConversationTypes";
@@ -95,30 +92,41 @@ export function CrmQueueBulkBar({
   return (
     <section className="crm-bulk-bar" aria-label="Ações em massa">
       <div className="crm-bulk-heading">
+        <div className="crm-bulk-heading-top">
+          <div className="crm-bulk-title-wrap">
+            <strong>
+              {hasSelection
+                ? selectedCountLabel(selectedCount)
+                : "Selecione conversas"}
+            </strong>
+          </div>
+          <button
+            aria-label="Limpar ações"
+            className="crm-bulk-clear"
+            disabled={!hasSelection && !hasAction}
+            onClick={() => {
+              onClear();
+              resetDraft();
+            }}
+            title="Limpar ações"
+            type="button"
+          >
+            <Morphicon
+              active={true}
+              aria-hidden="true"
+              name="check-cross"
+              size={12}
+            />
+            <span>Limpar ações</span>
+          </button>
+        </div>
         <button
           className="crm-bulk-select-page"
           onClick={onSelectAll}
           type="button"
         >
           <CheckSquare aria-hidden="true" />
-          Selecionar página
-        </button>
-        <strong>
-          {hasSelection
-            ? selectedCountLabel(selectedCount)
-            : "Selecione conversas"}
-        </strong>
-        <button
-          className="crm-bulk-clear"
-          disabled={!hasSelection && !hasAction}
-          onClick={() => {
-            onClear();
-            resetDraft();
-          }}
-          type="button"
-        >
-          Limpar ações
-          <X aria-hidden="true" />
+          <span>Selecionar página</span>
         </button>
       </div>
 
@@ -178,7 +186,14 @@ export function CrmQueueBulkBar({
               <BulkToggle
                 active={readState === "unread"}
                 disabled={!hasSelection || isApplying}
-                icon={<MailOpen />}
+                icon={
+                  <Morphicon
+                    active={readState === "unread"}
+                    aria-hidden="true"
+                    name="mail-read-unread"
+                    size={14}
+                  />
+                }
                 label="Não lidas"
                 onClick={() =>
                   setReadState((current) =>
@@ -189,7 +204,14 @@ export function CrmQueueBulkBar({
               <BulkToggle
                 active={readState === "read"}
                 disabled={!hasSelection || isApplying}
-                icon={<MailCheck />}
+                icon={
+                  <Morphicon
+                    active={false}
+                    aria-hidden="true"
+                    name="mail-read-unread"
+                    size={14}
+                  />
+                }
                 label="Lidas"
                 onClick={() =>
                   setReadState((current) =>
@@ -203,7 +225,14 @@ export function CrmQueueBulkBar({
             <BulkToggle
               active={close}
               disabled={!hasSelection || isApplying}
-              icon={<CheckCheck />}
+              icon={
+                <Morphicon
+                  active={close}
+                  aria-hidden="true"
+                  name="check"
+                  size={14}
+                />
+              }
               label="Concluir"
               onClick={() => setClose((current) => !current)}
             />
@@ -223,7 +252,16 @@ export function CrmQueueBulkBar({
           onClick={() => void applyDraft()}
           type="button"
         >
-          {isApplying ? <Loader2 className="crm-spin" /> : <ListChecks />}
+          {isApplying ? (
+            <Loader2 className="crm-spin" />
+          ) : (
+            <Morphicon
+              active={true}
+              aria-hidden="true"
+              name="check"
+              size={16}
+            />
+          )}
           Confirmar em {selectedCount} conversa{selectedCount === 1 ? "" : "s"}
         </button>
       </footer>

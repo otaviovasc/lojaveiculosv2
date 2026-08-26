@@ -22,7 +22,7 @@ export function DashboardHomeKpis({
         const KpiIcon = getKpiIcon(stat.label);
         const cardContent = (
           <>
-            {canViewAnalytics ? <div className="gloss-overlay" /> : null}
+            <div className="gloss-overlay" />
             <div className="kpi-card-content">
               <div className="kpi-card-header">
                 <div className="kpi-icon-container">
@@ -81,14 +81,14 @@ function getInteractiveKpiClass(tone: string) {
 function getStaticKpiClass(tone: string) {
   switch (tone) {
     case "green":
-      return "kpi-card-premium kpi-gradient-green";
+      return "kpi-card-premium kpi-gradient-green group w-full text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015]";
     case "blue":
-      return "kpi-card-premium kpi-gradient-blue";
+      return "kpi-card-premium kpi-gradient-blue group w-full text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015]";
     case "violet":
-      return "kpi-card-premium kpi-gradient-violet";
+      return "kpi-card-premium kpi-gradient-violet group w-full text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015]";
     case "pink":
     default:
-      return "kpi-card-premium kpi-gradient-pink";
+      return "kpi-card-premium kpi-gradient-pink group w-full text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015]";
   }
 }
 

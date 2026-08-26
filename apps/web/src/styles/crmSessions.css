@@ -1,12 +1,20 @@
-/* CRM Sessions / Cycle List Styling */
+/* CRM Sessions / Cycle List Styling — layered card stack */
 .crm-session-list,
 .crm-cycle-list {
-  background: var(--color-panel);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 98%, var(--color-panel)) 0%,
+    var(--color-panel) 100%
+  );
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  gap: 0.32rem;
+  padding: 0.45rem 0.5rem 0.75rem;
+  scrollbar-color: color-mix(in srgb, var(--color-line-strong) 22%, transparent)
+    transparent;
 }
 
 /* Tag filter row */
@@ -64,30 +72,33 @@
   width: 0.45rem;
 }
 
-/* Session / Cycle Item */
+/* Session / Cycle Item — single stroke, no inset highlight */
 .crm-session,
 .crm-cycle {
   align-items: center;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--color-line) 70%, transparent);
-  border-radius: 0;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+  border-radius: 0.875rem;
   color: var(--color-text);
   display: flex;
   flex: 0 0 auto;
   flex-shrink: 0;
   gap: 0.75rem;
   margin: 0;
-  min-height: 4.5rem;
+  min-height: 4.75rem;
   height: auto;
-  padding: 0.625rem 0.875rem;
+  padding: 0.7rem 0.8rem 0.68rem;
   text-align: left;
-  transition: all 0.15s ease;
+  transition:
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
   width: 100%;
   position: relative;
   cursor: pointer;
   overflow: visible;
+  box-shadow: 0 1px 3px 0 color-mix(in srgb, var(--color-text) 6%, transparent);
 }
 
 /* Ambient channel backdrops matching Conexao cards */
@@ -139,12 +150,15 @@
 
 .crm-session:hover,
 .crm-cycle:hover {
-  background: color-mix(in srgb, var(--color-text) 3.5%, var(--color-panel));
-  border-bottom-color: color-mix(
+  background: var(--color-surface-raised, var(--color-panel));
+  border-color: color-mix(
     in srgb,
-    var(--color-success) 35%,
+    var(--color-line-strong) 18%,
     var(--color-line)
   );
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -14px
+    color-mix(in srgb, var(--color-text) 16%, transparent);
 }
 
 .crm-cycle[data-channel="whatsapp"]:hover:not(.crm-cycle-active) {
@@ -168,10 +182,18 @@
 .crm-cycle-active {
   background: color-mix(
     in srgb,
-    var(--color-success) 10%,
+    var(--color-accent) 9%,
     var(--color-panel)
   ) !important;
-  box-shadow: inset 3.5px 0 0 var(--color-success-strong) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 24%,
+    var(--color-line)
+  ) !important;
+  box-shadow:
+    inset 3.5px 0 0 var(--color-accent) !important,
+    0 8px 22px -12px color-mix(in srgb, var(--color-accent) 28%, transparent),
+    0 1px 3px 0 color-mix(in srgb, var(--color-text) 6%, transparent) !important;
 }
 
 .crm-session-selected,
@@ -394,27 +416,49 @@
 
 .crm-session-chip,
 .crm-cycle-chip,
-.crm-session-tag-chip,
-.crm-cycle-tag-chip,
 .crm-session-status,
 .crm-cycle-status {
   align-items: center;
   background: color-mix(in srgb, var(--color-text) 5%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
-  border-radius: 0.45rem;
+  border-radius: 9999px;
   color: var(--color-muted);
   display: inline-flex;
   font-size: var(--font-size-xs);
-  font-weight: 750;
-  gap: 0.25rem;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  gap: 0.3rem;
+  letter-spacing: 0.02em;
   max-width: 100%;
-  min-height: 1.25rem;
-  height: 1.25rem;
+  min-height: 1.5rem;
+  height: auto;
   overflow: hidden;
-  padding: 0.05rem 0.4rem;
+  padding: 0.2rem 0.55rem;
   text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.crm-session-tag-chip,
+.crm-cycle-tag-chip,
+.crm-tag-chip {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+  border-radius: 9999px;
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: 0;
+  max-width: 100%;
+  min-height: 1.5rem;
+  height: auto;
+  overflow: hidden;
+  padding: 0.2rem 0.55rem;
+  text-overflow: ellipsis;
+  text-transform: none;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -422,10 +466,57 @@
 .crm-session-chip svg,
 .crm-cycle-chip svg,
 .crm-session-status svg,
-.crm-cycle-status svg {
+.crm-cycle-status svg,
+.crm-tag-chip svg,
+.crm-cycle-tag-chip svg {
   flex: 0 0 auto;
   height: 0.7rem;
   width: 0.7rem;
+}
+
+.crm-tag-row,
+.crm-details-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.crm-tag-chip button,
+.crm-cycle-tag-chip button {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  border: 0;
+  border-radius: 9999px;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1rem;
+  justify-content: center;
+  margin-left: 0.15rem;
+  padding: 0;
+  width: 1rem;
+  flex: 0 0 auto;
+  transition: all 0.15s ease;
+}
+
+.crm-tag-chip button:hover,
+.crm-cycle-tag-chip button:hover {
+  background: color-mix(in srgb, var(--color-text) 16%, transparent);
+  color: var(--color-text);
+}
+
+.crm-tag-chip button svg,
+.crm-cycle-tag-chip button svg {
+  height: 0.625rem;
+  width: 0.625rem;
+}
+
+.crm-tag-dot {
+  border-radius: 9999px;
+  flex: 0 0 auto;
+  height: 0.5rem;
+  width: 0.5rem;
 }
 
 .crm-session-chip-wide,

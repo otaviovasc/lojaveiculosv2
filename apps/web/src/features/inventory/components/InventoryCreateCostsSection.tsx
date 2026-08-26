@@ -33,8 +33,8 @@ export function InventoryCreateCostsSection({
             Custos e Precificação
           </h3>
           <p className="text-xs font-bold text-muted">
-            Defina o valor de aquisição (custo) e o valor anunciado. As
-            sugestões FIPE ficam ocultas até você pedir.
+            Defina a aquisição (custo) e a venda anunciada. As sugestões FIPE
+            ficam ocultas até você pedir.
           </p>
         </div>
         <button
@@ -67,14 +67,14 @@ export function InventoryCreateCostsSection({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <InventoryField label="Valor de aquisição" required>
+        <InventoryField label="Aquisição" required>
           <InventoryCurrencyInput
             onValueChange={(value) => onChange("acquisitionPrice")(value)}
             placeholder="0,00"
             value={form.acquisitionPrice}
           />
         </InventoryField>
-        <InventoryField label="Valor de venda anunciado" required>
+        <InventoryField label="Venda anunciada" required>
           <InventoryCurrencyInput
             onValueChange={(value) => onChange("price")(value)}
             placeholder="0,00"

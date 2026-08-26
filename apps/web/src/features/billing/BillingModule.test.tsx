@@ -48,14 +48,14 @@ describe("BillingModule v3", () => {
     const currentPlan = screen.getByRole("region", {
       name: "Seu plano atual",
     });
-    expect(within(currentPlan).getByText("Free")).toBeVisible();
+    expect(within(currentPlan).getByText("Grátis")).toBeVisible();
     expect(
       within(currentPlan).getByText("Construtor completo da vitrine"),
     ).toBeVisible();
     expect(
       within(currentPlan).getByText("Até 10 veículos em estoque"),
     ).toBeVisible();
-    expect(screen.getByText(/A partir de R\$ 897/)).toBeVisible();
+    expect(screen.getByText(/R\$ 897/)).toBeVisible();
     expect(screen.getByText("CRM completo")).toBeVisible();
     expect(screen.getByText("AI Studio")).toBeVisible();
     for (const quota of [
@@ -253,7 +253,7 @@ describe("BillingModule v3", () => {
     expect(within(currentPlan).getByText("Reservas e vendas")).toBeVisible();
     fireEvent.click(
       within(currentPlan).getByRole("button", {
-        name: "Agendar mudança para Free",
+        name: "Agendar mudança para Grátis",
       }),
     );
     await waitFor(() =>
@@ -275,7 +275,7 @@ describe("BillingModule v3", () => {
     });
     expect(
       within(currentPlan).getByRole("button", {
-        name: "Agendar mudança para Free",
+        name: "Agendar mudança para Grátis",
       }),
     ).toBeDisabled();
   });
@@ -288,7 +288,7 @@ describe("BillingModule v3", () => {
     });
     render(<BillingModule api={billingApi} />);
 
-    const copy = await screen.findByText(/Free · conciliação necessária/i);
+    const copy = await screen.findByText(/Grátis · conciliação necessária/i);
     expect(copy).toHaveClass("bg-warning-soft", "text-warning-strong");
     expect(copy.querySelector(".lucide-circle-alert")).toBeInTheDocument();
   });

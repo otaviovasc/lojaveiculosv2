@@ -62,7 +62,7 @@ describe("CrmQueueToolbar", () => {
     );
 
     expect(screen.getByRole("heading", { name: "CRM" })).toBeInTheDocument();
-    expect(screen.getByText("3 conversas")).toBeInTheDocument();
+    expect(screen.queryByText("3 conversas")).not.toBeInTheDocument();
     expect(
       screen.getByRole("group", { name: "Filtros inteligentes" }),
     ).toBeInTheDocument();

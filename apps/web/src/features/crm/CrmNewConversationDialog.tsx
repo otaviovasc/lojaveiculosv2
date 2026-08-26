@@ -33,20 +33,23 @@ export type StartConversationDraft =
 
 export function CrmNewConversationDialog({
   disabled,
+  initialBuyerName = "",
+  initialPhone = "",
   onClose,
   onStart,
   provider = "zapi",
 }: {
   disabled?: boolean;
+  initialBuyerName?: string;
+  initialPhone?: string;
   onClose: () => void;
   onStart: (input: StartConversationDraft) => Promise<boolean>;
   provider?: Extract<CrmProvider, "meta_cloud" | "zapi">;
 }) {
-  const [buyerName, setBuyerName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [buyerName, setBuyerName] = useState(initialBuyerName);
+  const [phone, setPhone] = useState(() => formatBrazilianPhone(initialPhone));
   const [text, setText] = useState("");
   const [templateName, setTemplateName] = useState("");
-  const [templateLanguage, setTemplateLanguage] = useState("pt_BR");
   const [templateParameters, setTemplateParameters] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [phoneTouched, setPhoneTouched] = useState(false);
@@ -58,13 +61,13 @@ export function CrmNewConversationDialog({
   const messageIsValid = text.trim().length > 0;
   const templateIsValid =
     /^[a-z0-9_]+$/u.test(templateName.trim()) &&
-    templateLanguage.trim().length >= 2 &&
     templateParameters.every((parameter) => parameter.trim().length > 0);
   const canSubmit =
     phoneIsValid && (usesTemplate ? templateIsValid : messageIsValid);
   return (
     <ActionDialog
       disabled={disabled || isSaving || !canSubmit}
+      description="Envie a primeira mensagem e abra um novo atendimento."
       icon={<MessageSquarePlus />}
       onClose={onClose}
       onSubmit={async () => {
@@ -96,7 +99,7 @@ export function CrmNewConversationDialog({
                           ],
                         }
                       : {}),
-                    languageCode: templateLanguage.trim(),
+                    languageCode: "pt_BR",
                     name: templateName.trim(),
                   },
                 }
@@ -120,6 +123,7 @@ export function CrmNewConversationDialog({
           setIsSaving(false);
         }
       }}
+      panelClassName="crm-new-conversation-panel"
       submitLabel={isSaving ? "Iniciando..." : "Iniciar conversa"}
       title="Nova conversa"
     >
@@ -128,7 +132,7 @@ export function CrmNewConversationDialog({
         {usesTemplate ? (
           <p>
             A API oficial exige um template previamente aprovado pela Meta para
-            a primeira mensagem.
+            a primeira mensagem. A conversa será criada na conexão ativa.
           </p>
         ) : (
           <p>
@@ -136,44 +140,54 @@ export function CrmNewConversationDialog({
             enviada pelo WhatsApp da loja.
           </p>
         )}
+        <div className="crm-new-conversation-meta" aria-hidden="true">
+          <span data-variant="channel">
+            <i /> {usesTemplate ? "WhatsApp Oficial" : "WhatsApp"}
+          </span>
+          <span data-variant="hint">Conexão ativa · envio imediato</span>
+        </div>
       </div>
-      <label>
-        Nome
-        <input
-          disabled={disabled || isSaving}
-          onChange={(event) => {
-            setBuyerName(event.target.value);
-            setSubmitError(null);
-          }}
-          placeholder="Nome do cliente"
-          value={buyerName}
-        />
-      </label>
-      <label>
-        WhatsApp
-        <input
-          aria-describedby={
-            !phoneIsValid && phoneTouched
-              ? "crm-new-conversation-phone-error"
-              : undefined
-          }
-          aria-invalid={!phoneIsValid && phoneTouched}
-          disabled={disabled || isSaving}
-          inputMode="tel"
-          onBlur={() => setPhoneTouched(true)}
-          onChange={(event) => {
-            setPhone(formatBrazilianPhone(event.target.value));
-            setSubmitError(null);
-          }}
-          placeholder="(11) 99999-9999"
-          value={phone}
-        />
-        {!phoneIsValid && phoneTouched ? (
-          <CrmFieldError id="crm-new-conversation-phone-error">
-            Informe um WhatsApp válido com DDD.
-          </CrmFieldError>
-        ) : null}
-      </label>
+      <div className="crm-action-grid">
+        <label>
+          Nome
+          <input
+            autoComplete="name"
+            disabled={disabled || isSaving}
+            onChange={(event) => {
+              setBuyerName(event.target.value);
+              setSubmitError(null);
+            }}
+            placeholder="Nome do cliente"
+            value={buyerName}
+          />
+        </label>
+        <label>
+          WhatsApp
+          <input
+            aria-describedby={
+              !phoneIsValid && phoneTouched
+                ? "crm-new-conversation-phone-error"
+                : undefined
+            }
+            aria-invalid={!phoneIsValid && phoneTouched}
+            autoComplete="tel"
+            disabled={disabled || isSaving}
+            inputMode="tel"
+            onBlur={() => setPhoneTouched(true)}
+            onChange={(event) => {
+              setPhone(formatBrazilianPhone(event.target.value));
+              setSubmitError(null);
+            }}
+            placeholder="(11) 99999-9999"
+            value={phone}
+          />
+          {!phoneIsValid && phoneTouched ? (
+            <CrmFieldError id="crm-new-conversation-phone-error">
+              Informe um WhatsApp válido com DDD.
+            </CrmFieldError>
+          ) : null}
+        </label>
+      </div>
       {usesTemplate ? (
         <>
           <label>
@@ -194,19 +208,6 @@ export function CrmNewConversationDialog({
               }}
               placeholder="primeiro_contato"
               value={templateName}
-            />
-          </label>
-          <label>
-            Idioma do template
-            <input
-              autoComplete="off"
-              disabled={disabled || isSaving}
-              onChange={(event) => {
-                setTemplateLanguage(event.target.value);
-                setSubmitError(null);
-              }}
-              placeholder="pt_BR"
-              value={templateLanguage}
             />
           </label>
           <div className="crm-template-parameters">

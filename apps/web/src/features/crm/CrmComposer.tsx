@@ -17,6 +17,7 @@ import { readMediaType } from "./crmMediaFiles";
 
 export type MessageComposerHandle = {
   openFiles: (files: readonly File[]) => void;
+  insertPrompt: (text: string) => void;
 };
 
 export const MessageComposer = forwardRef<
@@ -100,7 +101,18 @@ export const MessageComposer = forwardRef<
     [capabilities, setFiles],
   );
 
-  useImperativeHandle(ref, () => ({ openFiles }), [openFiles]);
+  const insertPrompt = useCallback(
+    (promptText: string) => {
+      onTextChange(promptText);
+      window.requestAnimationFrame(() => textareaRef.current?.focus());
+    },
+    [onTextChange, textareaRef],
+  );
+
+  useImperativeHandle(ref, () => ({ openFiles, insertPrompt }), [
+    openFiles,
+    insertPrompt,
+  ]);
 
   const openDialog = (nextDialog: ComposerDialog) => {
     setDialog(nextDialog);
