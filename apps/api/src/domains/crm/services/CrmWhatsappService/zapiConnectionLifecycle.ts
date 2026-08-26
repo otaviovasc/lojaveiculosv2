@@ -110,7 +110,7 @@ async function loadLifecycleTarget(
     );
   }
   const scope = requireCrmMessagingScope(context);
-  assertEntitlement(context as never, "crm_zapi");
+  assertEntitlement(context as never, "crm");
   const connection = await getCrmConnectionRepository(ports).findConnectionById(
     input.connectionId,
   );

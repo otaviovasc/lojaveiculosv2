@@ -4,20 +4,12 @@ import {
   mapRepassesConnection,
 } from "./crm-whatsapp-mapping.mjs";
 import { nullableString, targetId } from "./common.mjs";
-import { createCrmCredentialSealer } from "./crm-credential-sealer.mjs";
 
 export async function seedWhatsappConnections(tx, source, config, ids) {
-  const seal = createCrmCredentialSealer();
   for (const connection of source.connections) {
     const channels = connectionChannels(source, connection.id);
     for (const channel of channels) {
-      const mapped = mapConnectionForChannel(
-        connection,
-        channel,
-        config,
-        seal,
-        ids,
-      );
+      const mapped = mapConnectionForChannel(connection, channel);
       const displayName = nullableString(
         connection.name ||
           connection.instance_name ||
@@ -64,6 +56,7 @@ export async function seedWhatsappConnections(tx, source, config, ids) {
             sourceUuid: connection.uuid,
           },
           migration: {
+            credentialReadiness: mapped.readiness ?? null,
             historicalImportOnly: channel === "olx_chat",
             importedConnectionState: mapped.status,
             mediaStrategy: "keep_legacy_urls",
@@ -97,21 +90,18 @@ function connectionChannels(source, connectionId) {
   return channels;
 }
 
-function mapConnectionForChannel(connection, channel, config, seal, ids) {
+function mapConnectionForChannel(connection, channel) {
   if (channel === "olx_chat") {
     return {
       credentialsRef: {},
       externalInstanceId: null,
       lookupInstanceId: null,
       provider: "olx",
+      readiness: null,
       status: "paused",
     };
   }
-  return mapRepassesConnection(connection, {
-    activate: config.activateWhatsappConnections,
-    sealCredential: (input) =>
-      seal({ ...input, storeId: ids.store, tenantId: ids.tenant }),
-  });
+  return mapRepassesConnection(connection);
 }
 
 async function resolveConnectionId(

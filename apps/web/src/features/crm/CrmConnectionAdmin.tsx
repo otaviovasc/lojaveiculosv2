@@ -2,11 +2,8 @@ import { lazy, Suspense, useState, type ReactNode } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 import type {
-  CrmConnectionAllowance,
-  CrmConnectionBillingState,
   CrmAvailableSetup,
   CrmProviderConnection,
-  CrmWhatsappZapiAddonContract,
 } from "./crmConversationTypes";
 import {
   isComposioConnectionForProvider,
@@ -52,14 +49,12 @@ type ConnectionAdminProps = {
   >;
   canManageRouting?: boolean;
   selfService?: {
-    allowance: CrmConnectionAllowance;
     availableSetups: readonly CrmAvailableSetup[];
-    billingState?: CrmConnectionBillingState;
     canPair: boolean;
     canRepairCredentials?: boolean;
     canSetup: boolean;
     handlers: CrmConnectionSelfServiceHandlers;
-    zapiAddonContract?: CrmWhatsappZapiAddonContract | null;
+    isCrmEntitled: boolean;
   };
 };
 
@@ -102,7 +97,6 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
       {selfService ? (
         <ConnectionSetupBoundary>
           <CrmConnectionSelfServiceSetup
-            allowance={selfService.allowance}
             availableSetups={selfService.availableSetups}
             canPair={selfService.canPair}
             canRepairCredentials={selfService.canRepairCredentials ?? false}
@@ -110,13 +104,8 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
             connections={connections}
             existingConnection={readInitialConnection(connections)}
             handlers={selfService.handlers}
+            isCrmEntitled={selfService.isCrmEntitled}
             startAtDirectory={!readPendingComposioConnectionId()}
-            {...(selfService.billingState !== undefined
-              ? { billingState: selfService.billingState }
-              : {})}
-            {...(selfService.zapiAddonContract !== undefined
-              ? { zapiAddonContract: selfService.zapiAddonContract }
-              : {})}
           />
         </ConnectionSetupBoundary>
       ) : (
@@ -132,7 +121,6 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
               }
               showRepairActions={false}
               showSetupActions={false}
-              zapiAddonContract={null}
             />
           ) : (
             <p className="crm-connection-empty">

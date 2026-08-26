@@ -1,4 +1,4 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import {
   createZapiWebhookSetupIntent,
@@ -20,6 +20,7 @@ export function createZapiWebhookTestConnection(
     credentialsRef: {
       mode: "stored",
       stored: {
+        clientToken: "sealed:client-token",
         instanceId: "zapi-instance-1",
         instanceToken: "zapi-secret",
         webhookSecret: "sealed:webhook-secret",
@@ -27,7 +28,7 @@ export function createZapiWebhookTestConnection(
     },
     displayName: "ZAPI Test Connection",
     externalConnectionId: null,
-    externalInstanceId: "zapi-instance-1",
+    externalInstanceId: null,
     id: webhookSetupConnectionId,
     metadata: withZapiWebhookSetupState(
       {},
@@ -44,6 +45,7 @@ export function createZapiWebhookTestConnection(
 }
 
 export function secureWebhookSetupOptions() {
+  const supportPermissions: PermissionKey[] = ["crm.messaging.support.manage"];
   return {
     crmConnectionCredentialVault: {
       open: async ({ sealed }: { sealed: string }) =>
@@ -52,10 +54,10 @@ export function secureWebhookSetupOptions() {
         `sealed:${plaintext}`,
     },
     crmZapiSupportAuthorizer: {
-      assertPaidSetupEligible: async () => undefined,
+      assertCrmSetupEligible: async () => undefined,
     },
-    entitlements: ["crm", "crm_zapi"] as ("crm" | "crm_zapi")[],
-    supportPermissions: ["tenant.manage"] as "tenant.manage"[],
+    entitlements: ["crm"] as "crm"[],
+    supportPermissions,
   };
 }
 

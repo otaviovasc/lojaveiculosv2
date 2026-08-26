@@ -12,6 +12,8 @@
     "ops:reset-environment": "tsx src/jobs/resetEnvironment.ts",
     "billing:asaas:sync-smoke": "tsx src/jobs/syncBillingProviderSubscription.ts",
     "billing:asaas:reconcile": "tsx src/jobs/processBillingProviderReconciliations.ts",
+    "billing:product-events:process": "tsx src/jobs/processBillingProductEvents.ts",
+    "billing:product-events:requeue": "tsx src/jobs/requeueBillingProductEvent.ts",
     "billing:catalog:reconcile": "tsx src/jobs/reconcileBillingCatalog.ts",
     "crm:schedule:process": "tsx src/jobs/processCrmScheduledMessages.ts",
     "crm:connections:cleanup": "tsx src/jobs/archiveAbandonedCrmConnections.ts",

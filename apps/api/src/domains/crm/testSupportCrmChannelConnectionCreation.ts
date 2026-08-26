@@ -1,5 +1,4 @@
 import { vi } from "vitest";
-import { BillingQuotaExceededError } from "../billing/ports/billingQuotaGuard.js";
 import { createServiceContext } from "../../shared/serviceContext.js";
 import { createTestCrmConnectionRepository } from "./testSupportConnections.js";
 import type { CrmServicePorts } from "./services/CrmService/serviceSupport.js";
@@ -12,7 +11,7 @@ export function createContext(
     "crm.messaging.connection.setup",
     "crm.routing.default.manage",
   ],
-  entitlements: ("crm" | "crm_zapi")[] = ["crm", "crm_zapi"],
+  entitlements: "crm"[] = ["crm"],
 ) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
@@ -25,56 +24,24 @@ export function createContext(
 }
 
 export function createPorts(
-  limit = 1,
+  _legacyLimit = 1,
   repository = createTestCrmConnectionRepository(),
 ): CrmServicePorts {
   return {
-    billingQuotaGuard: createQuotaGuard(limit),
     crmConnectionCredentialVault: createCredentialVault(),
     crmConnectionRepository: repository,
     crmRepository: {} as never,
-    transaction: (action) =>
-      action(createPortsForTransaction(repository, limit)),
+    transaction: (action) => action(createPortsForTransaction(repository)),
   };
 }
 
 function createPortsForTransaction(
   repository: ReturnType<typeof createTestCrmConnectionRepository>,
-  limit: number,
 ): CrmServicePorts {
   return {
-    billingQuotaGuard: {
-      ...createQuotaGuard(limit),
-      assertAvailable: vi.fn(async () => {
-        const used = (
-          await repository.listConnections({
-            storeId: storeId as never,
-            tenantId: tenantId as never,
-          })
-        ).filter((connection) => connection.status !== "archived").length;
-        if (used >= limit) {
-          throw new BillingQuotaExceededError({
-            current: used,
-            limit,
-            quotaKey: "crm_zapi",
-          });
-        }
-      }),
-    },
     crmConnectionCredentialVault: createCredentialVault(),
     crmConnectionRepository: repository,
     crmRepository: {} as never,
-  };
-}
-
-function createQuotaGuard(limit: number) {
-  return {
-    assertAvailable: vi.fn(async () => undefined),
-    getAllowance: vi.fn(async () => ({
-      limit,
-      remaining: limit,
-      used: 0,
-    })),
   };
 }
 

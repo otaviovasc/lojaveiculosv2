@@ -347,6 +347,7 @@ describe("CRM WhatsApp API", () => {
     await api.requestZapiPairingCode("connection_1", "5511999999999");
     await api.disconnectZapiConnection("connection_1");
     await api.repairZapiConnectionCredentials("connection_1", {
+      clientToken: "client_repaired",
       instanceId: "instance_repaired",
       instanceToken: "token_repaired",
     });
@@ -388,6 +389,7 @@ describe("CRM WhatsApp API", () => {
       input: "/api/v1/crm/channel-connections/connection_1/zapi/credentials",
       init: {
         body: JSON.stringify({
+          clientToken: "client_repaired",
           instanceId: "instance_repaired",
           instanceToken: "token_repaired",
         }),

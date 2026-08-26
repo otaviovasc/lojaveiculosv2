@@ -64,9 +64,6 @@ export function createRepository(): BillingRepository {
     getOverview,
     getTenantOverview,
     storeExistsInTenant,
-    updateSubscriptionSelection: async () => {
-      throw new Error("Unused billing repository.");
-    },
     updateStoreEntitlement: update,
   };
 }
@@ -100,7 +97,6 @@ function createTenantOverview(
 ): AgencyTenantOverview {
   const overview = createOverview(storeId, targetTenantId, status);
   return {
-    addonContracts: [],
     addons: [],
     allocations: [],
     authority: overview.authority,
@@ -110,7 +106,6 @@ function createTenantOverview(
     plans: [],
     stores: [
       {
-        addonContracts: [],
         activeEntitlementCount: status === "active" ? 1 : 0,
         addonCount: 0,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),

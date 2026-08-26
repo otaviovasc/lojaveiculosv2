@@ -155,6 +155,7 @@ function context(): ServiceContext {
       warn: vi.fn(),
     },
     permissions: ["crm.manage"],
+    platformAdmin: false,
     requestId: "request_1",
     storeId: "store_1",
     tenantId: "tenant_1",

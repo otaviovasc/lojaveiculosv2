@@ -150,20 +150,4 @@ export function assertConfigured(config) {
     throw new Error(
       "A Repasses CRM archive path is required for the whatsapp module.",
     );
-  if (
-    config.apply &&
-    config.modules?.has("whatsapp") &&
-    !process.env.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY
-  )
-    throw new Error(
-      "CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY is required to import WhatsApp credentials.",
-    );
-  if (
-    config.apply &&
-    config.activateWhatsappConnections &&
-    !process.env.CRM_ZAPI_CLIENT_TOKEN
-  )
-    throw new Error(
-      "CRM_ZAPI_CLIENT_TOKEN is required to activate imported Z-API connections.",
-    );
 }

@@ -98,10 +98,13 @@ describe("CRM WhatsApp permissions", () => {
     });
   });
 
-  it("requires both setup and tenant management to repair credentials", () => {
+  it("requires setup and the scoped rotation permission to repair credentials", () => {
     expect(
       readCrmCapabilities(
-        createSession(["crm.messaging.connection.setup", "tenant.manage"]),
+        createSession([
+          "crm.messaging.connection.setup",
+          "crm.messaging.credentials.rotate",
+        ]),
       ),
     ).toMatchObject({ canConnectionCredentialsManage: true });
     expect(
@@ -143,7 +146,7 @@ describe("CRM WhatsApp permissions", () => {
     expect(hasCrmConversationAccess(["lead.read"])).toBe(false);
   });
 
-  it("uses the agency-selected store when the session has no default store", () => {
+  it("denies agency CRM actions when the selected store has no explicit permissions", () => {
     persistCurrentStoreSlug("agency-store", "clerk_user");
     const session = createSession([]);
     session.defaultStore = null;
@@ -161,7 +164,32 @@ describe("CRM WhatsApp permissions", () => {
     ];
 
     expect(readCrmCapabilities(session)).toMatchObject({
-      canAssign: true,
+      canAssign: false,
+      canList: false,
+      canRead: false,
+      canSend: false,
+    });
+  });
+
+  it("allows only explicitly granted CRM actions for an agency-selected store", () => {
+    persistCurrentStoreSlug("agency-store", "clerk_user");
+    const session = createSession([]);
+    session.defaultStore = null;
+    session.stores = [
+      {
+        effectivePermissions: ["crm.conversations.read", "crm.messages.send"],
+        role: "agency",
+        status: "active",
+        storeId: "store_agency",
+        storeName: "Loja da agência",
+        storeSlug: "agency-store",
+        tenantId: "tenant_agency",
+        tenantName: "Agência",
+      },
+    ];
+
+    expect(readCrmCapabilities(session)).toMatchObject({
+      canAssign: false,
       canList: true,
       canRead: true,
       canSend: true,

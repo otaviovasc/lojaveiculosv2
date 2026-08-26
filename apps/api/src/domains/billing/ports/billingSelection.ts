@@ -6,12 +6,3 @@ export type ActivateBillingSelectionInput = {
   subscriptionId: string;
   tenantId: TenantId;
 };
-
-export type UpdateBillingSelectionInput = {
-  addonIds: readonly string[];
-  billingManagedBy?: "agency" | "store_owner";
-  currentActorCanManage?: boolean;
-  planId: string;
-  storeId: StoreId;
-  tenantId: TenantId;
-};

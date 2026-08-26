@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, or } from "drizzle-orm";
 import {
   addons,
   payments,
@@ -148,8 +148,7 @@ export async function listChargeables(
   const storesById = new Map(storeRows.map((store) => [store.id, store]));
   const plansById = new Map(billingPlans.map((plan) => [plan.id, plan]));
   const addonsById = new Map(addonRows.map((addon) => [addon.id, addon]));
-  const isFirstBilling =
-    subscription.status === "trialing" || subscription.status === "expired";
+  const isFirstBilling = subscription.status === "expired";
 
   return itemRows.map((item) => {
     const itemType = item.itemType;
@@ -178,10 +177,20 @@ function listSubscriptionItems(
   db: DrizzleBillingClient,
   subscriptionId: string,
 ) {
+  const now = new Date();
   return db
     .select()
     .from(subscriptionItems)
-    .where(eq(subscriptionItems.subscriptionId, subscriptionId))
+    .where(
+      and(
+        eq(subscriptionItems.subscriptionId, subscriptionId),
+        or(
+          isNull(subscriptionItems.startsAt),
+          lte(subscriptionItems.startsAt, now),
+        ),
+        or(isNull(subscriptionItems.endsAt), gt(subscriptionItems.endsAt, now)),
+      ),
+    )
     .limit(200);
 }
 

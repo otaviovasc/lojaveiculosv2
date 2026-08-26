@@ -9,7 +9,7 @@ import {
   platformPermissionGroup,
   storefrontPermissionGroup,
 } from "./storefrontPermissionCatalog.js";
-import type { PermissionGroup } from "./permissionCatalogTypes.js";
+import { permission, type PermissionGroup } from "./permissionCatalogTypes.js";
 
 export type {
   PermissionDescriptor,
@@ -33,6 +33,30 @@ export const visibleRoleKeys = [
 
 export const permissionGroups: readonly PermissionGroup[] = [
   ...operationalPermissionGroups,
+  {
+    key: "commissions",
+    label: "Comissões",
+    permissions: [
+      permission(
+        "commissions.read",
+        "Visualizar comissões",
+        "Consultar regras, apurações e histórico de comissões da loja.",
+        "medium",
+      ),
+      permission(
+        "commissions.rules.manage",
+        "Gerenciar regras de comissão",
+        "Criar, editar e desativar regras usadas para calcular comissões.",
+        "high",
+      ),
+      permission(
+        "commissions.settle",
+        "Liquidar comissões",
+        "Confirmar ou estornar a liquidação financeira de comissões.",
+        "high",
+      ),
+    ],
+  },
   automationPermissionGroup,
   crmPermissionGroup,
   storefrontPermissionGroup,

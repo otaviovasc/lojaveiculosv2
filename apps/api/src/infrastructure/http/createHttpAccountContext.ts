@@ -84,25 +84,29 @@ export async function createHttpAccountContext(
     );
   }
   const accountAuth = await resolveAccountAuthorization(profile, options);
+  const serviceContext = createServiceContext({
+    actor: {
+      externalId: profile.clerkUserId,
+      id: accountAuth.actorId,
+      kind: "user",
+    },
+    audit,
+    logger,
+    permissions: accountAuth.permissions,
+    request,
+    source: {
+      component: "http",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    },
+    ...(options.tenantId ? { tenantId: options.tenantId } : {}),
+  });
   return {
     profile,
-    serviceContext: createServiceContext({
-      actor: {
-        externalId: profile.clerkUserId,
-        id: accountAuth.actorId,
-        kind: "user",
-      },
-      audit,
-      logger,
-      permissions: accountAuth.permissions,
-      request,
-      source: {
-        component: "http",
-        environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
-        service: "api",
-      },
-      ...(options.tenantId ? { tenantId: options.tenantId } : {}),
-    }),
+    serviceContext: {
+      ...serviceContext,
+      platformAdmin: accountAuth.platformAdmin,
+    },
   };
 }
 
@@ -115,6 +119,7 @@ async function resolveAccountAuthorization(
     return {
       actorId: profile.clerkUserId,
       permissions: [...permissions],
+      platformAdmin: false,
     };
   }
 
@@ -128,6 +133,7 @@ async function resolveAccountAuthorization(
   if (isPlatformAdmin) {
     permissions.add("audit.read");
     permissions.add("billing.manage");
+    permissions.add("crm.messaging.support.manage");
     permissions.add("financing.connection.manage");
     permissions.add("tenant.manage");
     permissions.add("store.manage");
@@ -149,6 +155,7 @@ async function resolveAccountAuthorization(
   return {
     actorId: user.id,
     permissions: [...permissions],
+    platformAdmin: isPlatformAdmin,
   };
 }
 

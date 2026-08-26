@@ -7,9 +7,9 @@ import type { CrmRoutingPolicyRepository } from "./ports/crmRoutingPolicyReposit
 import { createTestCrmRoutingRepositories } from "./testSupportRoutingRepositories.js";
 import {
   normalizeTestCrmConnection,
-  readConfiguredString,
   readRecord,
 } from "./testSupportConnectionValues.js";
+import { configureInitialTestZapiCredentials } from "./testSupportConnectionCredentials.js";
 import { upsertTestOlxConnection } from "./testSupportOlxConnections.js";
 import { updateTestCrmConnection } from "./testSupportConnectionUpdates.js";
 export function createTestCrmConnectionRepository(
@@ -61,26 +61,7 @@ export function createTestCrmConnectionRepository(
       };
     },
     async configureInitialZapiCredentials(input) {
-      const connection = connections.find(
-        (item) =>
-          item.id === input.connectionId &&
-          item.storeId === input.storeId &&
-          item.tenantId === input.tenantId &&
-          item.provider === "zapi" &&
-          item.status !== "archived",
-      );
-      if (!connection) return { status: "not_found" };
-      const stored = readRecord(connection.credentialsRef.stored);
-      const instanceId = readConfiguredString(stored.instanceId);
-      const instanceToken = readConfiguredString(stored.instanceToken);
-      if (instanceId && instanceToken) return { status: "already_configured" };
-      if (instanceId || instanceToken) return { status: "partial_state" };
-      connection.credentialsRef = input.credentialsRef;
-      connection.externalInstanceId = input.externalInstanceId;
-      return {
-        connection: normalizeTestCrmConnection(connection),
-        status: "configured",
-      };
+      return configureInitialTestZapiCredentials(connections, input);
     },
     async claimZapiWebhookSetup(input) {
       const connection = connections.find(

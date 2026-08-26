@@ -22,6 +22,7 @@ import type {
 import { updateVerifiedZapiConnectionIdentity } from "./replaceZapiConnectionIdentity.js";
 
 export type RepairZapiConnectionCredentialsInput = ZapiSupportWebhookTarget & {
+  clientToken: string;
   connectionId: string;
   expectedRevision?: number;
   idempotencyKey?: string;
@@ -40,9 +41,8 @@ export async function repairZapiConnectionCredentials(
     );
   }
   assertPermission(context, "crm.messaging.connection.setup");
-  assertPermission(context, "tenant.manage");
+  assertPermission(context, credentialRotationPermission);
   assertEntitlement(context as never, "crm");
-  assertEntitlement(context as never, "crm_zapi");
   const scope = requireCrmMessagingScope(context);
   logCrmServiceEvent(context, "crm.provider.zapi.connection.repair.started", {
     connectionId: input.connectionId,
@@ -56,7 +56,7 @@ export async function repairZapiConnectionCredentials(
       entityId: input.connectionId,
       entityType: "crm_whatsapp_connection",
       metadata: { provider: "zapi" },
-      permission: "tenant.manage",
+      permission: credentialRotationPermission,
       summary: "Repaired credentials for an existing Z-API connection",
     },
     () =>
@@ -72,3 +72,5 @@ export async function repairZapiConnectionCredentials(
       ),
   );
 }
+
+const credentialRotationPermission = "crm.messaging.credentials.rotate";

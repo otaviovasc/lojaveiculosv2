@@ -484,6 +484,69 @@
       "when": 1787788800000,
       "tag": "0068_crm_push_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1787792400000,
+      "tag": "0069_production_billing_packaging_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1787796000000,
+      "tag": "0070_billing_reconciliation_replay",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1787799600000,
+      "tag": "0071_zapi_byok_credentials_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1787803200000,
+      "tag": "0072_billing_product_event_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1787806800000,
+      "tag": "0073_billing_lifecycle_monotonicity",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1787810400000,
+      "tag": "0074_billing_product_event_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1787814000000,
+      "tag": "0075_developer_admin_store_membership_invariant",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1787817600000,
+      "tag": "0076_atomic_monthly_plate_lookup_quota",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1787821200000,
+      "tag": "0077_billing_product_event_requeue",
+      "breakpoints": true
     }
   ]
 }

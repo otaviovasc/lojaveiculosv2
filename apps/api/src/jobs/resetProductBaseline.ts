@@ -88,6 +88,9 @@ export async function seedProductBaseline(sql: TransactionSql): Promise<void> {
         ${plan.id}, ${currentBillingCatalog.version}, ${plan.code},
         ${plan.isDefault},
         ${sql.json({
+          capabilities: plan.capabilities ? [...plan.capabilities] : [],
+          checkout_mode: plan.checkoutMode ?? "checkout",
+          selection_rank: plan.selectionRank ?? 0,
           seller_limit: plan.limits.sellerLimit,
           vehicle_limit: plan.limits.vehicleLimit,
         })},

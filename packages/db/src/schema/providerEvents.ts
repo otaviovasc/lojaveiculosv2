@@ -28,6 +28,7 @@ const includeCrmScopeForeignKeys =
 export const providerEventStatus = pgEnum("provider_event_status", [
   "received",
   "processing",
+  "pending_reconciliation",
   "processed",
   "failed",
   "ignored",

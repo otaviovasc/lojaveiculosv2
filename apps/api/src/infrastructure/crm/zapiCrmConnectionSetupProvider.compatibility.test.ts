@@ -3,9 +3,9 @@ import { createZapiCrmConnectionSetupProvider } from "./zapiCrmConnectionSetupPr
 
 const env = {
   CRM_ZAPI_API_BASE_URL: "https://zapi.test",
-  CRM_ZAPI_CLIENT_TOKEN: "central-client-secret",
 };
 const credentials = {
+  clientToken: "store-client-secret",
   instanceId: "instance-1",
   instanceToken: "instance-secret",
 };

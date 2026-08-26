@@ -11,11 +11,9 @@ import { BillingSummaryCard as SummaryCard } from "./BillingSummaryCard";
 import { featureLabels, isEnabled, money, statusLabels } from "./billingFormat";
 import { Badge } from "../../components/ui/badge";
 
-export { BillingPlanComposition } from "./BillingPlanComposition";
-
 export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
-  const activePackages = overview.entitlementMatrix.filter(
-    (row) => !row.includedInPlan && isEnabled(row.status),
+  const includedCapabilities = overview.entitlementMatrix.filter(
+    (row) => row.includedInPlan && isEnabled(row.status),
   ).length;
 
   return (
@@ -40,9 +38,9 @@ export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
         className="billing-kpi-card billing-kpi-card--info"
         decorativeIcon
         icon={<PackageCheck aria-hidden="true" className="size-7" />}
-        label="Pacotes adicionais"
+        label="Recursos do plano"
         showIcon={false}
-        value={`${activePackages} ativo${activePackages === 1 ? "" : "s"}`}
+        value={`${includedCapabilities} ativo${includedCapabilities === 1 ? "" : "s"}`}
       />
       <SummaryCard
         className="billing-kpi-card billing-kpi-card--warning"
@@ -91,7 +89,6 @@ export function BillingAllocationTable({
               <th>Loja</th>
               <th>Plano</th>
               <th>Status</th>
-              <th>Pacotes</th>
               <th>Mensal</th>
             </tr>
           </thead>
@@ -112,7 +109,6 @@ export function BillingAllocationTable({
                       {subscriptionStatusLabel(allocation.subscriptionStatus)}
                     </Badge>
                   </td>
-                  <td>{allocation.addonCount}</td>
                   <td className="font-black text-accent-strong">
                     {money(allocation.monthlyAmountCents)}
                   </td>
@@ -120,7 +116,7 @@ export function BillingAllocationTable({
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-muted">
+                <td colSpan={4} className="py-6 text-center text-muted">
                   Nenhuma loja alocada individualmente neste contrato.
                 </td>
               </tr>
@@ -149,7 +145,7 @@ function subscriptionStatusLabel(
     cancelled: "Encerrada",
     expired: "Expirada",
     past_due: "Pagamento pendente",
-    trialing: "Em teste",
+    trialing: "Contrato legado",
   } as const;
   return status ? labels[status] : "Sem assinatura";
 }

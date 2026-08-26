@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createAsaasPaymentProviderGateway } from "./asaasPaymentProviderGateway.js";
+import { AsaasGatewayError } from "./asaasPaymentProviderHttp.js";
+import { cancelAsaasSubscription } from "./asaasPaymentProviderSync.js";
 
 const longCheckoutDescription =
   "Plano mensal com acesso ao console operacional da loja e aos recursos " +
@@ -75,6 +77,45 @@ describe("createAsaasPaymentProviderGateway checkout", () => {
     });
     expect(fetcher.calls[0]?.body).not.toHaveProperty("customerData");
     expect(fetcher.calls[0]?.url).toContain("/checkouts");
+  });
+
+  it("cancels the existing recurrence for a scheduled Free downgrade", async () => {
+    const fetcher = createFetchSequence([{}]);
+    const gateway = createAsaasPaymentProviderGateway(
+      {
+        ASAAS_API_KEY: "token",
+        ASAAS_API_URL: "https://api-sandbox.asaas.com/v3",
+        ASAAS_RUNTIME_IMPLEMENTATION: "http",
+        ASAAS_WEBHOOK_SECRET: "secret",
+        ASAAS_WEBHOOK_URL:
+          "https://api.example.com/api/v1/billing/webhooks/asaas",
+        PUBLIC_APP_URL: "https://app.example.com",
+      },
+      { fetcher: fetcher.fetcher },
+    );
+
+    await expect(
+      gateway.cancelSubscription?.("sub_real"),
+    ).resolves.toBeUndefined();
+    expect(fetcher.calls[0]).toMatchObject({
+      body: null,
+      method: "DELETE",
+      url: "https://api-sandbox.asaas.com/v3/subscriptions/sub_real",
+    });
+  });
+
+  it("treats an already-removed provider recurrence as an idempotent cancellation", async () => {
+    await expect(
+      cancelAsaasSubscription(
+        {
+          checkoutBaseUrl: "https://example.com/checkout",
+          request: vi.fn(async () => {
+            throw new AsaasGatewayError("asaas_request_failed", "missing", 404);
+          }),
+        },
+        "sub_removed",
+      ),
+    ).resolves.toBeUndefined();
   });
 });
 

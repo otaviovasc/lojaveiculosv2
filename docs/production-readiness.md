@@ -10,9 +10,9 @@ Before broad customer onboarding or any V1 shutdown:
 
 - Rehearse and accept at least three representative V1 store migrations with
   rerunnable importers, parity evidence, and rollback.
-- Fix server-owned price-book versioning, CRM packaging, trial expiry,
-  subscription-to-entitlement reconciliation, quotas, dunning, and cancellation
-  reasons.
+- Verify the immutable server-owned catalog, cumulative CRM packaging,
+  plan-hire-to-entitlement reconciliation, quotas, dunning, and cancellation
+  reasons. Free is permanent; there is no trial-expiry path.
 - Add minimal SaaS product events, activation milestones, account health, and
   cohort retention reporting.
 - Split private documents/finance artifacts from public media storage and move

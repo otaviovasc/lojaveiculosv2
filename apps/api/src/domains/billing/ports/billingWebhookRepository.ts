@@ -3,7 +3,12 @@ import type { BillingSubscription } from "./billingRepository.js";
 
 export type BillingProvider = "asaas";
 export type BillingProviderEventStatus =
-  "failed" | "ignored" | "processed" | "processing" | "received";
+  | "failed"
+  | "ignored"
+  | "pending_reconciliation"
+  | "processed"
+  | "processing"
+  | "received";
 
 export type BillingProviderWebhookEvent = {
   createdAt: Date;
@@ -48,18 +53,23 @@ export type UpsertBillingProviderPaymentInput = {
   paidAt: Date | null;
   provider: BillingProvider;
   providerCustomerId: string | null;
+  providerCheckoutId?: string | null;
   providerPaymentId: string;
   providerEventId: string;
   providerSubscriptionId: string | null;
   raw: Record<string, unknown>;
+  requestId?: string;
   status: BillingPaymentWebhookStatus;
 };
 
 export type SyncBillingProviderSubscriptionInput = {
   currentPeriodEnd: Date | null;
+  eventOccurredAt?: Date | null;
+  externalReference: string | null;
   provider: BillingProvider;
+  providerEventId?: string;
   providerSubscriptionId: string;
-  status: BillingSubscription["status"];
+  status: BillingSubscription["status"] | "unknown";
 };
 
 export type SyncBillingProviderCheckoutInput = {
@@ -74,7 +84,7 @@ export type SyncBillingProviderCheckoutInput = {
 
 export type BillingProviderSyncResult = {
   reason?: string;
-  status: "ignored" | "synced";
+  status: "ignored" | "pending_reconciliation" | "synced";
   storeId: StoreId | null;
   tenantId: TenantId | null;
 };

@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   oneCalendarMonthFrom,
   parseGrantArgs,
-  planZapiOperatorOverride,
   resolveGrantDatabaseUrls,
 } from "./grant-user-all-features.mjs";
 
@@ -43,21 +42,6 @@ test("grants one calendar month without date overflow", () => {
     oneCalendarMonthFrom(new Date("2026-07-27T12:00:00.000Z")).toISOString(),
     "2026-08-27T12:00:00.000Z",
   );
-});
-
-test("keeps paid or active Z-API contracts on rerun", () => {
-  assert.equal(
-    planZapiOperatorOverride({ status: "paid_awaiting_setup" }),
-    "keep",
-  );
-  assert.equal(planZapiOperatorOverride({ status: "active" }), "keep");
-});
-
-test("promotes pending Z-API contracts and recreates cancelled ones", () => {
-  assert.equal(planZapiOperatorOverride({ status: "pending" }), "activate");
-  assert.equal(planZapiOperatorOverride({ status: "scheduled" }), "activate");
-  assert.equal(planZapiOperatorOverride({ status: "cancelled" }), "create");
-  assert.equal(planZapiOperatorOverride(null), "create");
 });
 
 test("uses staging database aliases when generic URLs are absent", () => {

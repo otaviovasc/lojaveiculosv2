@@ -47,6 +47,8 @@ export async function loadPersistedBillingCatalog(
       status: addon.status,
     })),
     plans: planRows.map((plan) => ({
+      capabilities: fromDatabaseCapabilities(plan.limits),
+      checkoutMode: fromDatabaseCheckoutMode(plan.limits),
       code: plan.code,
       features: featureRows
         .filter((feature) => feature.planId === plan.id)
@@ -62,6 +64,7 @@ export async function loadPersistedBillingCatalog(
       limits: fromDatabasePlanLimits(plan.limits),
       monthlyPriceCents: plan.monthlyPriceCents,
       name: plan.name,
+      selectionRank: fromDatabaseSelectionRank(plan.limits),
       status: plan.status,
     })),
     publishedAt: versionRow.publishedAt.toISOString(),
@@ -110,9 +113,28 @@ function fromDatabaseAddonLimits(value: unknown): BillingCatalogAddonLimits {
 function fromDatabasePlanLimits(value: unknown) {
   const limits = asRecord(value);
   return {
-    sellerLimit: requireNumber(limits.seller_limit, "seller_limit"),
-    vehicleLimit: requireNumber(limits.vehicle_limit, "vehicle_limit"),
+    sellerLimit: nullableNumber(limits.seller_limit, "seller_limit"),
+    vehicleLimit: nullableNumber(limits.vehicle_limit, "vehicle_limit"),
   };
+}
+
+function fromDatabaseCapabilities(value: unknown): readonly string[] {
+  const capabilities = asRecord(value).capabilities;
+  return Array.isArray(capabilities)
+    ? capabilities.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function fromDatabaseCheckoutMode(
+  value: unknown,
+): "checkout" | "free" | "quote_required" {
+  const mode = asRecord(value).checkout_mode;
+  return mode === "free" || mode === "quote_required" ? mode : "checkout";
+}
+
+function fromDatabaseSelectionRank(value: unknown): number {
+  const rank = asRecord(value).selection_rank;
+  return typeof rank === "number" && Number.isInteger(rank) ? rank : 0;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -121,7 +143,8 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function requireNumber(value: unknown, key: string): number {
+function nullableNumber(value: unknown, key: string): number | null {
+  if (value === null) return null;
   if (typeof value === "number" && Number.isFinite(value)) return value;
   throw new Error(`Persisted billing catalog is missing numeric ${key}.`);
 }

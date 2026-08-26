@@ -46,9 +46,11 @@ export type ServiceContext = {
   auditFailureTier?: AuditFailureTier;
   billingManagedBy?: BillingManagedBy;
   correlationId?: string;
+  entitlements?: readonly string[];
   logger: ServiceLogger;
   membershipRole?: RoleKey;
   permissions: string[];
+  readonly platformAdmin: boolean;
   request?: ServiceRequestContext;
   requestId: string;
   source?: ServiceContextSource;
@@ -140,6 +142,7 @@ export function createServiceContext(
     ...(input.entitlements ? { entitlements: [...input.entitlements] } : {}),
     ...(input.membershipRole ? { membershipRole: input.membershipRole } : {}),
     permissions: [...(input.permissions ?? [])],
+    platformAdmin: false,
     request,
     requestId: request.requestId,
     storeId: input.storeId ?? null,

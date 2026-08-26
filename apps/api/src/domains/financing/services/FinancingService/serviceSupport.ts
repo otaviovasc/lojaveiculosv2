@@ -141,7 +141,7 @@ export function requireFinancingScope(context: ServiceContext): {
 } {
   if (!context.storeId) throw new FinancingScopeError("storeId");
   if (!context.tenantId) throw new FinancingScopeError("tenantId");
-  assertEntitlement(context as StoreScopedServiceContext, "simulations");
+  assertEntitlement(context as StoreScopedServiceContext, "financing");
   return {
     storeId: context.storeId as StoreId,
     tenantId: context.tenantId as TenantId,

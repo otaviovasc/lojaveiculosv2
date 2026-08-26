@@ -28,6 +28,7 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       if (!event) return null;
       const claimable =
         event.status === "failed" ||
+        event.status === "pending_reconciliation" ||
         event.status === "received" ||
         (event.status === "processing" &&
           (!event.processingStartedAt ||
@@ -78,7 +79,7 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       if (!existing) {
         return {
           reason: "unknown_checkout",
-          status: "ignored",
+          status: "pending_reconciliation",
           storeId: null,
           tenantId: null,
         };
@@ -90,7 +91,7 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       if (!existing) {
         return {
           reason: "unknown_subscription",
-          status: "ignored",
+          status: "pending_reconciliation",
           storeId: null,
           tenantId: null,
         };
@@ -124,7 +125,7 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       if (!scope) {
         return {
           reason: "unknown_subscription",
-          status: "ignored",
+          status: "pending_reconciliation",
           storeId: null,
           tenantId: null,
         };

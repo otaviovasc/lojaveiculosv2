@@ -11,9 +11,8 @@ export const llmsText = `# Loja Veiculos API
 - Public storefront lead capture: POST /api/v1/public/storefront/listings/{listingSlug}/leads
 - Role management matrix: GET /api/v1/identity/roles
 - Update member access: PATCH /api/v1/identity/memberships/{membershipId}/access
-- Store billing: GET /api/v1/billing/overview, GET /api/v1/billing/provider/status, POST /api/v1/billing/provider/checkout, PATCH /api/v1/billing/entitlements/{featureKey}
-- Agency tenant billing: GET /api/v1/agency/tenants/{tenantId}/overview, GET /api/v1/agency/tenants/{tenantId}/billing/provider/status, POST /api/v1/agency/tenants/{tenantId}/billing/provider/checkout, POST /api/v1/agency/tenants/{tenantId}/billing/provider/subscription/sync
-- Update agency-managed store entitlement: PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}
+- Store billing: GET /api/v1/billing/overview, GET /api/v1/billing/provider/status, POST /api/v1/billing/plan-hires, GET /api/v1/billing/plan-hires/{hireId}, POST /api/v1/billing/plan-quotes
+- Agency store billing: GET /api/v1/agency/tenants/{tenantId}/overview, GET /api/v1/agency/tenants/{tenantId}/billing/provider/status, POST /api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-hires, GET /api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-hires/{hireId}, POST /api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-quotes
 - Fiscal overview: GET /api/v1/fiscal/overview\n- List fiscal service recipients: GET /api/v1/fiscal/recipients
 - Create fiscal service recipient: POST /api/v1/fiscal/recipients\n- List fiscal NFS-e templates: GET /api/v1/fiscal/templates
 - Create fiscal NFS-e template: POST /api/v1/fiscal/templates\n- Preview fiscal NFS-e template: POST /api/v1/fiscal/templates/preview
@@ -103,7 +102,7 @@ export const llmsText = `# Loja Veiculos API
 - inventory.sell: required to sell vehicle units and emit sale documents.
 - inventory.delete: reserved for vehicle deletion workflows.
 - users.manage: required to list and update store role/permission management.
-- billing.manage: required to read store billing, read agency tenant billing, sync billing providers, and mutate store entitlements.
+- billing.manage: required to read billing, create or poll plan hires, and request server-owned quotes.
 - dashboard.read: required to read the core operational home dashboard.
 - analytics.read: required to read detailed commercial reports.
 - compliance.manage: required to read and operate LGPD/security controls.
@@ -168,7 +167,7 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/listings/{listingId}/status: changes non-workflow lifecycle status; requires inventory.update_status.
 ## Current identity endpoints
 - GET /api/v1/session/bootstrap: resolves the authenticated Clerk user, store access, tenant memberships, platform admin flag, and onboarding status.
-- POST /api/v1/onboarding/owner-store: creates the first owner store with trial entitlements; validates CNPJ and returns field-level validation issues with requestId on 400.
+- POST /api/v1/onboarding/owner-store: creates the first owner store with a permanent Free contract and projected entitlements; validates CNPJ and returns field-level validation issues with requestId on 400.
 - POST /api/v1/admin/agencies: creates an agency tenant and optional first-user invitation; requires platform/tenant management access.
 - POST /api/v1/agency/stores: creates one store under an active agency tenant; requires agency tenant role and store.manage.
 - GET /api/v1/identity/roles: returns agency, owner, supervisor, salesman, and investor role templates, grouped permission catalog, memberships, assignability, base permissions, effective permissions, and overrides.
@@ -176,10 +175,9 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/identity/invitations/{invitationId}/resend: resends a pending, failed, sent, or expired identity invitation.
 - PATCH /api/v1/identity/memberships/{membershipId}/access: updates one member role and exact allow/deny permission overrides. Agency actors can manage owners; owners can manage supervisors, salespeople, and investors.
 ## Current billing endpoints
-- /api/v1/billing/*: store-scoped overview, provider status, hosted Asaas checkout, and entitlement update routes for the active store; entitlement updates write product history and critical audit; requires billing.manage.
+- /api/v1/billing/*: store-scoped overview, provider readiness, plan-hire creation/polling, and server-owned Escala quotes; only verified payment evidence activates a paid contract; requires billing.manage.
 - GET /api/v1/agency/tenants/{tenantId}/overview: agency tenant-scoped overview for an active agency tenant membership or platform admin support access; returns tenant, managed stores, vehicle counts, persisted subscription_items charge preview, financial summary, and entitlement events.
-- GET/POST /api/v1/agency/tenants/{tenantId}/billing/provider/*: agency tenant-scoped Asaas readiness, hosted checkout, and subscription sync from persisted subscription_items; checkout and sync write critical audit.
-- PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}: updates one agency-managed store entitlement and writes critical audit.
+- Agency billing mirrors plan-hire creation, polling, and quote requests under the selected managed store; it does not expose direct entitlement mutation.
 ## Current fiscal endpoints
 - GET /api/v1/fiscal/overview: returns SPEDY readiness, NF-e document summary, recent documents, and fiscal events; requires fiscal.manage and nfe entitlement.
 - GET/POST /api/v1/fiscal/recipients: lists and creates store-scoped NFS-e tomadores/financeiras; writes require fiscal.recipient.manage and nfe entitlement.
@@ -257,7 +255,7 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and an Idempotency-Key deduplication key.
 ## Current internal monitoring endpoints
 - GET /api/v1/internal/health: returns scoped admin observability with filterable audit events, safe diagnostic metadata, request/source context, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; supports limit, actorId, action, category, correlationId, criticality, entityId, entityType, outcome, providerName, requestId, severity, from, and to; requires audit.read.
-- GET /api/v1/internal/platform/health: returns the same safe, filterable observability projection across all stores and tenants; requires a platform administrator context and audit.read. Use requestId/correlationId/action/entity/provider filters to build an AI-ready incident context.
+- GET /api/v1/internal/platform/health: returns the same safe, filterable observability projection across all stores and tenants; requires both active, non-delegable platformAdmin authority and audit.read. Store/agency roles and audit.read alone are insufficient. Use requestId/correlationId/action/entity/provider filters to build an AI-ready incident context.
 
 ## Finance side effects
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.

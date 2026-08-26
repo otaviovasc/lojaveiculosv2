@@ -1,10 +1,9 @@
-import { and, count, eq, gte, inArray, ne } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import {
-  crmChannelConnections,
+  billingQuotaUsageReservations,
   identityInvitations,
   storeMemberships,
   vehicleListings,
-  vehiclePlateLookups,
 } from "@lojaveiculosv2/db";
 import type { BillingQuotaKey } from "../../../domains/billing/ports/billingQuotaGuard.js";
 import type { DrizzleBillingQuotaClient } from "./drizzleBillingQuotaGuard.js";
@@ -12,7 +11,7 @@ import type { DrizzleBillingQuotaClient } from "./drizzleBillingQuotaGuard.js";
 export async function countBillingQuotaUsage(
   db: DrizzleBillingQuotaClient,
   input: { quotaKey: BillingQuotaKey; storeId: string; tenantId: string },
-  periodStart: Date | null,
+  usageWindow: { end: Date; start: Date } | null,
 ) {
   if (input.quotaKey === "seller") {
     const [[members], [invitations]] = await Promise.all([
@@ -52,32 +51,21 @@ export async function countBillingQuotaUsage(
       );
     return Number(row?.value ?? 0);
   }
-  if (input.quotaKey === "crm_zapi") {
-    const [row] = await db
-      .select({ value: count() })
-      .from(crmChannelConnections)
-      .where(
-        and(
-          eq(crmChannelConnections.storeId, input.storeId),
-          eq(crmChannelConnections.tenantId, input.tenantId),
-          eq(crmChannelConnections.channel, "whatsapp"),
-          eq(crmChannelConnections.provider, "zapi"),
-          eq(crmChannelConnections.broker, "direct"),
-          ne(crmChannelConnections.state, "archived"),
-        ),
-      );
-    return Number(row?.value ?? 0);
-  }
+  if (!usageWindow) return 0;
   const [row] = await db
     .select({ value: count() })
-    .from(vehiclePlateLookups)
+    .from(billingQuotaUsageReservations)
     .where(
       and(
-        eq(vehiclePlateLookups.storeId, input.storeId),
-        eq(vehiclePlateLookups.tenantId, input.tenantId),
-        ...(periodStart
-          ? [gte(vehiclePlateLookups.fetchedAt, periodStart)]
-          : []),
+        eq(billingQuotaUsageReservations.storeId, input.storeId),
+        eq(billingQuotaUsageReservations.tenantId, input.tenantId),
+        eq(billingQuotaUsageReservations.quotaKey, "plate_lookup"),
+        eq(billingQuotaUsageReservations.periodStart, usageWindow.start),
+        inArray(billingQuotaUsageReservations.status, [
+          "reserved",
+          "succeeded",
+          "provider_failed",
+        ]),
       ),
     );
   return Number(row?.value ?? 0);

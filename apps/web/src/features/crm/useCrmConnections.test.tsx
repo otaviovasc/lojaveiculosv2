@@ -89,6 +89,7 @@ describe("useCrmConnections", () => {
       await expect(
         result.current.createConnection({
           channel: "whatsapp",
+          clientToken: "client-replacement",
           provider: "zapi",
           instanceId: "instance-existing",
           instanceToken: "token-replacement",
@@ -190,13 +191,21 @@ describe("useCrmConnections", () => {
     await act(async () => {
       repaired = await result.current.repairZapiConnectionCredentials(
         "connection_1",
-        { instanceId: "instance-1", instanceToken: "token_new" },
+        {
+          clientToken: "client_new",
+          instanceId: "instance-1",
+          instanceToken: "token_new",
+        },
       );
     });
 
     expect(repairZapiConnectionCredentials).toHaveBeenCalledWith(
       "connection_1",
-      { instanceId: "instance-1", instanceToken: "token_new" },
+      {
+        clientToken: "client_new",
+        instanceId: "instance-1",
+        instanceToken: "token_new",
+      },
     );
     expect(repaired.id).toBe("connection_1");
     expect(repaired.readiness?.ready).toBe(true);
@@ -225,6 +234,7 @@ describe("useCrmConnections", () => {
     await act(async () => {
       resolved = await result.current.createConnection({
         channel: "whatsapp",
+        clientToken: "client-created",
         instanceId: "instance-created",
         instanceToken: "token-created",
         provider: "zapi",

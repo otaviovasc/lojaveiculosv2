@@ -28,6 +28,9 @@ export async function processZapiWhatsappConnectedWebhook(
   ports: CrmServicePorts,
 ): Promise<ZapiWebhookResult> {
   const parsed = parseZapiConnected(input.payload);
+  if (!parsed.status) {
+    return ignoreUnverifiedConnectionEvidence(context, input, ports);
+  }
   return updateConnectionState(
     context,
     input.connectionId,
@@ -67,7 +70,11 @@ export async function processZapiWhatsappChatPresenceWebhook(
   logCrmServiceEvent(context, "crm.provider.zapi.webhook.chat_presence", {
     connectionId: input.connectionId,
   });
-  const connection = await readZapiConnection(input.connectionId, ports);
+  const connection = await readZapiConnection(
+    context,
+    input.connectionId,
+    ports,
+  );
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
   await auditCrmServiceEvent(context, {
     action: "crm.provider.zapi.webhook.chat_presence",
@@ -101,7 +108,7 @@ async function updateConnectionState(
   ports: CrmServicePorts,
 ): Promise<ZapiWebhookResult> {
   assertPermission(context, permission);
-  const connection = await readZapiConnection(connectionId, ports);
+  const connection = await readZapiConnection(context, connectionId, ports);
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
   const previousPhone = connection.phone;
   const previousStatus = connection.status;
@@ -150,6 +157,24 @@ async function updateConnectionState(
     type: "connection_status",
   });
   return { status: "accepted" };
+}
+
+async function ignoreUnverifiedConnectionEvidence(
+  context: ServiceContext,
+  input: ZapiWebhookInput,
+  ports: CrmServicePorts,
+): Promise<ZapiWebhookResult> {
+  assertPermission(context, permission);
+  const connection = await readZapiConnection(
+    context,
+    input.connectionId,
+    ports,
+  );
+  if (!connection) return { reason: "connection_not_found", status: "ignored" };
+  await auditZapiWebhook(context, connection, "connected", {
+    ignoredReason: "provider_connection_evidence_missing",
+  });
+  return { reason: "connection_evidence_missing", status: "ignored" };
 }
 
 function capitalize(value: string) {

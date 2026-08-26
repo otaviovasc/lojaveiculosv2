@@ -76,6 +76,7 @@ export async function resolveStoreContext(
     logger: input.logger,
     membershipRole: access.role,
     permissions,
+    platformAdmin: false,
     requestId: input.requestId,
     storeId: access.storeId,
     tenantId: access.tenantId,

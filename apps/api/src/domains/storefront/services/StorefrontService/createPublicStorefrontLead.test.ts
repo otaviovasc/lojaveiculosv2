@@ -164,6 +164,7 @@ function createPublicContext(audit = { record: vi.fn(async () => undefined) }) {
       "public_storefront.lead_create",
       "public_storefront.read",
     ],
+    platformAdmin: false,
     requestId: "req_1",
     storeId: null,
     tenantId: null,

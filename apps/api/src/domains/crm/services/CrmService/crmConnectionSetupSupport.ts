@@ -1,19 +1,10 @@
-import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 import type {
   ComposioCrmOnboardingProvider,
   ComposioInstagramOnboardingProvider,
   CrmConnectionCredentialVault,
-  CrmZapiSetupCompletionReporter,
   ZapiConnectionSetupProvider,
 } from "../../ports/crmConnectionSetupProvider.js";
 import { CrmScopeError, type CrmServicePorts } from "./serviceSupport.js";
-
-export function getCrmBillingQuotaGuard(
-  ports: CrmServicePorts,
-): BillingQuotaGuard {
-  if (!ports.billingQuotaGuard) throw new CrmScopeError("billingQuotaGuard");
-  return ports.billingQuotaGuard;
-}
 
 export function getCrmConnectionCredentialVault(
   ports: CrmServicePorts,
@@ -53,12 +44,6 @@ export function getZapiConnectionSetupProvider(
     throw new CrmScopeError("zapiConnectionSetupProvider");
   }
   return ports.zapiConnectionSetupProvider;
-}
-
-export function getCrmZapiSetupCompletionReporter(
-  ports: CrmServicePorts,
-): CrmZapiSetupCompletionReporter | null {
-  return ports.crmZapiSetupCompletionReporter ?? null;
 }
 
 export function getCrmZapiSupportAuthorizer(ports: CrmServicePorts) {

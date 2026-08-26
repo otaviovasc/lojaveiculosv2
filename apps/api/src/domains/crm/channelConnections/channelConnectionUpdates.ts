@@ -8,6 +8,7 @@ export type UpdateCrmChannelConnectionInput = {
   displayName?: string;
   externalInstanceId?: string;
   instanceCredentials?: {
+    clientToken: string;
     instanceId: string;
     instanceToken: string;
     webhookSecret?: string;
@@ -76,13 +77,11 @@ export function toStoredCredentialsRef(
       ...(typeof currentEnv.apiBaseUrl === "string"
         ? { apiBaseUrl: currentEnv.apiBaseUrl }
         : {}),
-      ...(typeof currentEnv.clientToken === "string"
-        ? { clientToken: currentEnv.clientToken }
-        : {}),
     },
     mode: "stored",
     stored: {
       ...readStoredCredentials(current.credentialsRef),
+      clientToken: input.clientToken,
       instanceId: input.instanceId,
       instanceToken: input.instanceToken,
       ...(input.webhookSecret ? { webhookSecret: input.webhookSecret } : {}),

@@ -147,48 +147,33 @@ test("does not guess when two leads share the same phone", () => {
   );
 });
 
-test("maps stored Z-API credentials without exposing them in metadata", () => {
-  const mapped = mapRepassesConnection(
-    {
-      credentials: { instanceId: "instance", token: "secret" },
-      id: 30,
-      is_active: true,
-      provider: "ZAPI",
-      status: "CONNECTED",
-    },
-    {
-      activate: true,
-      sealCredential: ({ plaintext, purpose }) =>
-        `sealed:${purpose}:${plaintext}`,
-    },
-  );
+test("retires imported Z-API credentials until all three are re-entered", () => {
+  const mapped = mapRepassesConnection({
+    credentials: { instanceId: "instance", token: "secret" },
+    id: 30,
+    is_active: true,
+    provider: "ZAPI",
+    status: "CONNECTED",
+  });
   assert.deepEqual(mapped, {
-    credentialsRef: {
-      mode: "stored",
-      stored: {
-        instanceId: "sealed:zapi.instance-id:instance",
-        instanceToken: "sealed:zapi.instance-token:secret",
-      },
-    },
+    credentialsRef: {},
     externalInstanceId: null,
     lookupInstanceId: "instance",
     provider: "zapi",
-    status: "active",
+    readiness: "credentials_incomplete",
+    status: "disconnected",
   });
 });
 
-test("keeps an imported connection paused until cutover activation", () => {
-  const mapped = mapRepassesConnection(
-    {
-      credentials: { instanceId: "instance", token: "secret" },
-      id: 30,
-      is_active: true,
-      provider: "ZAPI",
-      status: "CONNECTED",
-    },
-    { sealCredential: ({ plaintext }) => `sealed:${plaintext}` },
-  );
-  assert.equal(mapped.status, "paused");
+test("archives deleted imported Z-API connections", () => {
+  const mapped = mapRepassesConnection({
+    credentials: { instanceId: "instance", token: "secret" },
+    deleted_at: "2026-08-25T00:00:00Z",
+    id: 30,
+    is_active: false,
+    provider: "ZAPI",
+  });
+  assert.equal(mapped.status, "archived");
 });
 
 test("maps unsupported legacy session states and deleted sessions safely", () => {

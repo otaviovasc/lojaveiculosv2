@@ -14,23 +14,20 @@ assertSafeLocalDatabaseOperation("qa:seed:local", ["DATABASE_URL"]);
 
 const db = postgres(process.env.DATABASE_URL ?? localDatabaseUrl, { max: 1 });
 
-async function assertPrimaryZapiEntitlement() {
-  const [entitlement] = await db`
-    select source, status
+async function assertZapiBillingRetired() {
+  const [state] = await db`
+    select count(*)::int as "activeContracts"
     from store_entitlements
-    where tenant_id = ${seedIds.primaryTenant}
-      and store_id = ${seedIds.primaryStore}
-      and feature_key = 'crm_zapi'
-      and source = 'local_seed_override'
+    where feature_key = 'crm_zapi'
       and status = 'active'
       and starts_at <= now()
       and (ends_at is null or ends_at > now())
   `;
   assert(
-    entitlement,
-    "Primary Z-API test store must have an effective local crm_zapi entitlement.",
+    state.activeContracts === 0,
+    "Z-API must not have an effective billing entitlement.",
   );
-  return entitlement;
+  return state;
 }
 
 try {
@@ -38,7 +35,7 @@ try {
     identity: await assertSeedIdentity(db),
     workflows: await assertSeedWorkflows(db),
     infrastructure: await assertSeedInfrastructure(db),
-    zapiEntitlement: await assertPrimaryZapiEntitlement(),
+    zapiBillingRetirement: await assertZapiBillingRetired(),
   };
   console.info(JSON.stringify(summary, null, 2));
 } finally {

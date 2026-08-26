@@ -58,10 +58,6 @@ export const crmConversationRoutes = {
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}`,
       baseUrl,
     ),
-  billingOverview: (baseUrl?: string) =>
-    createCrmEndpoint("/billing/overview", baseUrl),
-  billingZapiRequest: (baseUrl?: string) =>
-    createCrmEndpoint("/billing/addons/zapi/request", baseUrl),
   composioAuthorize: (connectionId: CrmConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/composio/authorize`,

@@ -4,17 +4,19 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmCreateConnectionInput } from "./crmConversationTypes";
 
 export type ZapiCredentialsDraft = {
+  clientToken: string;
   instanceId: string;
   instanceToken: string;
 };
 
 export const emptyCredentials: ZapiCredentialsDraft = {
+  clientToken: "",
   instanceId: "",
   instanceToken: "",
 };
 
 export type BusyState =
-  "addon" | "code" | "credentials" | "disconnect" | "qr" | "refresh";
+  "code" | "credentials" | "disconnect" | "qr" | "refresh";
 
 export function RepairCredentialsButton({
   busy,
@@ -46,6 +48,7 @@ export function buildZapiConnectionInput(
 ): CrmCreateConnectionInput {
   return {
     channel: "whatsapp",
+    clientToken: credentials.clientToken.trim(),
     instanceId: credentials.instanceId.trim(),
     instanceToken: credentials.instanceToken.trim(),
     provider: "zapi",
@@ -75,7 +78,7 @@ export function CredentialsStage({
   onToggleVisibility: () => void;
   showCredentials: boolean;
 }) {
-  const invalid = error?.startsWith("Informe o ID") ?? false;
+  const invalid = error?.startsWith("Informe as três") ?? false;
   return (
     <section
       aria-labelledby="zapi-credentials-title"
@@ -101,9 +104,8 @@ export function CredentialsStage({
                 : "Credenciais da instância Z-API"}
           </h4>
           <p>
-            O ID e o token da instância são enviados uma única vez, não ficam
-            salvos no navegador e nunca retornam pela API. O Client-Token da
-            plataforma é aplicado pelo servidor.
+            O ID, o token da instância e o Client-Token são enviados uma única
+            vez, não ficam salvos no navegador e nunca retornam pela API.
           </p>
           {mode === "replacement" ? (
             <p>
@@ -132,6 +134,7 @@ export function CredentialsStage({
       </div>
       <div className="crm-zapi-credential-fields">
         <CredentialField
+          disabled={!canSubmit}
           invalid={invalid}
           label="ID da instância"
           onChange={(value) => onChange({ ...credentials, instanceId: value })}
@@ -139,6 +142,7 @@ export function CredentialsStage({
           value={credentials.instanceId}
         />
         <CredentialField
+          disabled={!canSubmit}
           invalid={invalid}
           label="Token da instância"
           onChange={(value) =>
@@ -146,6 +150,14 @@ export function CredentialsStage({
           }
           showValue={showCredentials}
           value={credentials.instanceToken}
+        />
+        <CredentialField
+          disabled={!canSubmit}
+          invalid={invalid}
+          label="Client-Token"
+          onChange={(value) => onChange({ ...credentials, clientToken: value })}
+          showValue={showCredentials}
+          value={credentials.clientToken}
         />
       </div>
       {error ? (
@@ -194,12 +206,14 @@ export function CredentialsStage({
 }
 
 function CredentialField({
+  disabled,
   invalid,
   label,
   onChange,
   showValue,
   value,
 }: {
+  disabled: boolean;
   invalid: boolean;
   label: string;
   onChange: (value: string) => void;
@@ -213,6 +227,7 @@ function CredentialField({
       <input
         aria-invalid={invalid}
         autoComplete="off"
+        disabled={disabled}
         id={inputId}
         onChange={(event) => onChange(event.target.value)}
         spellCheck={false}

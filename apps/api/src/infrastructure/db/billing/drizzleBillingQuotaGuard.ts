@@ -1,7 +1,6 @@
 import { and, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
-  addons,
   planFeatures,
   plans,
   subscriptionItems,
@@ -15,9 +14,12 @@ import {
   type BillingQuotaKey,
 } from "../../../domains/billing/ports/billingQuotaGuard.js";
 import { countBillingQuotaUsage } from "./drizzleBillingQuotaUsage.js";
-import { findLocalZapiTestOverrideLimit } from "./drizzleBillingLocalZapiOverride.js";
+import {
+  createDrizzleBillingQuotaReservationMethods,
+  resolveQuotaUsageWindow,
+} from "./drizzleBillingQuotaReservations.js";
 
-export { isLocalZapiTestOverrideMetadata } from "./drizzleBillingLocalZapiOverride.js";
+export { resolveQuotaUsageWindow } from "./drizzleBillingQuotaReservations.js";
 
 export type DrizzleBillingQuotaClient = PostgresJsDatabase<typeof schema>;
 
@@ -32,16 +34,11 @@ export function createDrizzleBillingQuotaGuard(
   }) {
     const checkedAt = now();
     const resolution = await resolveQuotaContract(db, input, checkedAt);
-    const limit =
-      resolution.kind === "local_zapi_test_override"
-        ? resolution.limit
-        : await resolveLimit(db, resolution.contract, input, checkedAt);
+    const limit = await resolveLimit(db, resolution.contract, input);
     const used = await countBillingQuotaUsage(
       db,
       input,
-      resolution.kind === "local_zapi_test_override"
-        ? null
-        : resolution.contract.periodStart,
+      resolveQuotaUsageWindow(input.quotaKey, checkedAt),
     );
     const effectiveLimit = limit ?? Number.MAX_SAFE_INTEGER;
     return {
@@ -57,17 +54,12 @@ export function createDrizzleBillingQuotaGuard(
         sql`select pg_advisory_xact_lock(hashtextextended(${`${input.storeId}:${input.quotaKey}`}, 29))`,
       );
       const resolution = await resolveQuotaContract(db, input, checkedAt);
-      const limit =
-        resolution.kind === "local_zapi_test_override"
-          ? resolution.limit
-          : await resolveLimit(db, resolution.contract, input, checkedAt);
+      const limit = await resolveLimit(db, resolution.contract, input);
       if (limit === null) return;
       const current = await countBillingQuotaUsage(
         db,
         input,
-        resolution.kind === "local_zapi_test_override"
-          ? null
-          : resolution.contract.periodStart,
+        resolveQuotaUsageWindow(input.quotaKey, checkedAt),
       );
       if (current + (input.increment ?? 1) <= limit) return;
       throw new BillingQuotaExceededError({
@@ -76,6 +68,14 @@ export function createDrizzleBillingQuotaGuard(
         quotaKey: input.quotaKey,
       });
     },
+    ...createDrizzleBillingQuotaReservationMethods(
+      db,
+      now,
+      async (client, input, checkedAt) => {
+        const resolution = await resolveQuotaContract(client, input, checkedAt);
+        return resolveLimit(client, resolution.contract, input);
+      },
+    ),
     getAllowance,
   };
 }
@@ -92,19 +92,34 @@ async function resolveQuotaContract(
     };
   } catch (error) {
     if (!(error instanceof BillingContractUnavailableError)) throw error;
-
-    const localOverrideLimit = await findLocalZapiTestOverrideLimit(
-      db,
-      input,
-      now,
-    );
-    if (localOverrideLimit === null) throw error;
-
     return {
-      kind: "local_zapi_test_override" as const,
-      limit: localOverrideLimit,
+      contract: await findFreeFallbackContract(db, now),
+      kind: "free_fallback" as const,
     };
   }
+}
+
+async function findFreeFallbackContract(
+  db: DrizzleBillingQuotaClient,
+  now: Date,
+) {
+  const [plan] = await db
+    .select({ limits: plans.limits, planId: plans.id })
+    .from(plans)
+    .where(
+      and(
+        eq(plans.catalogVersion, "2026-08-v3"),
+        eq(plans.code, "free"),
+        eq(plans.status, "active"),
+        lte(plans.publishedAt, now),
+      ),
+    )
+    .limit(1);
+  if (!plan) throw new BillingContractUnavailableError();
+  return {
+    ...plan,
+    subscriptionId: "free-fallback",
+  };
 }
 
 async function findEffectiveContract(
@@ -115,10 +130,8 @@ async function findEffectiveContract(
   const [contract] = await db
     .select({
       limits: plans.limits,
-      periodStart: subscriptions.currentPeriodStart,
       planId: plans.id,
       subscriptionId: subscriptions.id,
-      subscriptionStatus: subscriptions.status,
     })
     .from(subscriptionItems)
     .innerJoin(
@@ -131,7 +144,7 @@ async function findEffectiveContract(
         eq(subscriptionItems.itemType, "plan"),
         eq(subscriptionItems.storeId, input.storeId),
         eq(subscriptionItems.tenantId, input.tenantId),
-        inArray(subscriptions.status, ["active", "trialing"]),
+        inArray(subscriptions.status, ["active", "past_due"]),
         or(
           isNull(subscriptions.currentPeriodStart),
           lte(subscriptions.currentPeriodStart, now),
@@ -157,44 +170,11 @@ async function resolveLimit(
   contract: {
     limits: unknown;
     planId: string;
-    subscriptionId: string;
-    subscriptionStatus:
-      "active" | "cancelled" | "expired" | "past_due" | "trialing";
   },
   input: {
     quotaKey: BillingQuotaKey;
-    storeId: string;
-    tenantId: string;
   },
-  now: Date,
 ): Promise<number | null> {
-  if (input.quotaKey === "crm_zapi") {
-    const [row] = await db
-      .select({
-        quantity: sql<number>`coalesce(sum(${subscriptionItems.quantity}), 0)`,
-      })
-      .from(subscriptionItems)
-      .innerJoin(addons, eq(addons.id, subscriptionItems.addonId))
-      .where(
-        and(
-          eq(subscriptionItems.itemType, "addon"),
-          eq(subscriptionItems.subscriptionId, contract.subscriptionId),
-          eq(subscriptionItems.storeId, input.storeId),
-          eq(subscriptionItems.tenantId, input.tenantId),
-          eq(addons.code, "crm_zapi"),
-          eq(addons.status, "active"),
-          or(
-            isNull(subscriptionItems.startsAt),
-            lte(subscriptionItems.startsAt, now),
-          ),
-          or(
-            isNull(subscriptionItems.endsAt),
-            gt(subscriptionItems.endsAt, now),
-          ),
-        ),
-      );
-    return Number(row?.quantity ?? 0);
-  }
   if (input.quotaKey === "seller")
     return readLimit(contract.limits, "seller_limit");
   if (input.quotaKey === "vehicle")
@@ -213,18 +193,14 @@ async function resolveLimit(
       ),
     )
     .limit(1);
-  return resolveFeatureLimit(contract.subscriptionStatus, feature);
+  return resolveFeatureLimit(feature);
 }
 
 export function resolveFeatureLimit(
-  subscriptionStatus:
-    "active" | "cancelled" | "expired" | "past_due" | "trialing",
   feature: { limit: number | null; trialLimit: number | null } | undefined,
 ): number | null {
   if (!feature) return null;
-  return subscriptionStatus === "trialing"
-    ? (feature.trialLimit ?? feature.limit)
-    : feature.limit;
+  return feature.limit;
 }
 
 function readLimit(value: unknown, key: string) {

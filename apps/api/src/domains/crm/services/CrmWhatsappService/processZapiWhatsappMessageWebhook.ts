@@ -106,7 +106,11 @@ async function processMessageStatus(
   },
   ports: CrmServicePorts,
 ): Promise<ZapiWebhookResult> {
-  const connection = await readZapiConnection(input.connectionId, ports);
+  const connection = await readZapiConnection(
+    context,
+    input.connectionId,
+    ports,
+  );
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
   const repository = getCrmConversationRepository(ports);
   let processed = 0;
@@ -155,7 +159,7 @@ async function markMessagesReadByMe(
   externalIds: string[],
   ports: CrmServicePorts,
 ): Promise<ZapiWebhookResult> {
-  const connection = await readZapiConnection(connectionId, ports);
+  const connection = await readZapiConnection(context, connectionId, ports);
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
   const repository = getCrmConversationRepository(ports);
   const cycleIds = new Set<string>();

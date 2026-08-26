@@ -86,7 +86,7 @@ export function createStoreApp(
               ? { membershipRole: contextOptions.membershipRole }
               : {}),
           }),
-          { entitlements: ["simulations"] },
+          { entitlements: ["financing"] },
         ),
       services,
     }),

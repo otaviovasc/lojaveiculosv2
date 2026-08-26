@@ -19,7 +19,8 @@ export function recurringTotalCents(
 
 export function getPaymentProviderGateway(
   ports: BillingServicePorts,
-): Required<Pick<PaymentProviderGateway, "syncCustomer" | "syncSubscription">> {
+): PaymentProviderGateway &
+  Required<Pick<PaymentProviderGateway, "syncCustomer" | "syncSubscription">> {
   if (!ports.paymentProviderGateway?.syncCustomer) {
     throw new BillingProviderSyncError(
       "missing_provider_customer_sync",
@@ -34,8 +35,6 @@ export function getPaymentProviderGateway(
       503,
     );
   }
-  return {
-    syncCustomer: ports.paymentProviderGateway.syncCustomer,
-    syncSubscription: ports.paymentProviderGateway.syncSubscription,
-  };
+  return ports.paymentProviderGateway as PaymentProviderGateway &
+    Required<Pick<PaymentProviderGateway, "syncCustomer" | "syncSubscription">>;
 }

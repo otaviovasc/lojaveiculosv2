@@ -92,7 +92,7 @@ async function seedEvent(tx, featureKey, previousStatus, nextStatus, ids) {
       'v1-store-migration', ${featureKey},
       ${tx.json({ migrationRunId: ids.run, migrationSource: "v1_store" })},
       ${nextStatus}, ${previousStatus},
-      'Projected from the V1 store billing contract.', 'v1_store_migration',
+      'V1 migration defaulted the store to permanent Free.', 'v1_store_migration',
       ${ids.store}, ${ids.tenant}, now(), now())
     ON CONFLICT (id) DO NOTHING`;
 }

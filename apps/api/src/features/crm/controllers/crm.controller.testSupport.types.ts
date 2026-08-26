@@ -5,7 +5,6 @@ import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBo
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type {
   CrmConnectionCredentialVault,
-  CrmZapiSetupCompletionReporter,
   CrmZapiSupportAuthorizer,
 } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
@@ -27,7 +26,6 @@ import type { CrmPushPublicConfig } from "./crm.push.routes.js";
 
 export type CreateCrmTestAppOptions = {
   audit?: AuditSink;
-  billingQuotaGuard?: CrmServicePorts["billingQuotaGuard"];
   composioChannelOnboardingProvider?: CrmServicePorts["composioChannelOnboardingProvider"];
   crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
   crmCanonicalInboundRepository?: CrmServicePorts["crmCanonicalInboundRepository"];
@@ -39,7 +37,6 @@ export type CreateCrmTestAppOptions = {
   olxCrmWebhookSetupProvider?: CrmServicePorts["olxCrmWebhookSetupProvider"];
   olxCrmCallbackOrigin?: string;
   olxChatEnabled?: boolean;
-  crmZapiSetupCompletionReporter?: CrmZapiSetupCompletionReporter;
   crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
   crmPipelineRepository?: CrmPipelineRepository;
   crmPushRepository?: CrmPushRepository;

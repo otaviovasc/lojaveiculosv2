@@ -29,7 +29,6 @@ import {
   listChargeables,
 } from "./drizzleBillingOverviewSupport.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
-import { listAddonContracts } from "./drizzleBillingAddonContracts.js";
 import { listActiveBillingStores } from "./drizzleBillingStoreDirectory.js";
 
 export async function getTenantOverview(
@@ -55,7 +54,6 @@ export async function getTenantOverview(
 
   const [
     addons,
-    addonContracts,
     billingPlans,
     storeRows,
     entitlementRows,
@@ -63,7 +61,6 @@ export async function getTenantOverview(
     events,
   ] = await Promise.all([
     listAddons(db, catalogVersion),
-    listAddonContracts(db, input),
     listPlans(db, catalogVersion),
     listActiveBillingStores(db, input.tenantId),
     db
@@ -91,7 +88,6 @@ export async function getTenantOverview(
   ]);
   const storesOverview = storeRows.map((store) =>
     toAgencyManagedStoreOverview({
-      addonContracts,
       billingPlans,
       chargeables,
       entitlementRows,
@@ -103,7 +99,6 @@ export async function getTenantOverview(
   );
 
   return {
-    addonContracts,
     addons,
     allocations: storesOverview.map(toAllocation),
     authority: createBillingAuthority({
@@ -160,7 +155,6 @@ async function listTenantEntitlementEvents(
 }
 
 function toAgencyManagedStoreOverview(input: {
-  addonContracts: AgencyTenantOverview["addonContracts"];
   billingPlans: readonly BillingPlan[];
   chargeables: Awaited<ReturnType<typeof listChargeables>>;
   entitlementRows: (typeof storeEntitlements.$inferSelect)[];
@@ -194,9 +188,6 @@ function toAgencyManagedStoreOverview(input: {
       isEffectiveEntitlement(item),
     ).length,
     addonCount: chargeables.filter((item) => item.itemType === "addon").length,
-    addonContracts: input.addonContracts.filter(
-      (contract) => contract.storeId === input.store.id,
-    ),
     createdAt: input.store.createdAt,
     entitlementCount: entitlements.length,
     entitlementMatrix: createEntitlementMatrix({ entitlements, subscription }),

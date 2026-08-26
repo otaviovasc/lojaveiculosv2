@@ -136,6 +136,7 @@ function createFeature() {
     contextFactory: async (context) =>
       createServiceContext({
         actor: { id: "user_1", kind: "user" },
+        entitlements: ["finance"],
         permissions:
           context.req.header("x-mode") === "read_only"
             ? ["finance.read"]

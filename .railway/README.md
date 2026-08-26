@@ -10,7 +10,8 @@ Use this file to describe the Railway project you want: services, databases, buc
 
 This repository intentionally defines only the minimum persistent topology:
 API, web, product Postgres, separate audit Postgres, Redis for CRM realtime,
-and short-lived CRM, billing, and marketplace reconciliation cron workers.
+and short-lived CRM, billing reconciliation, and billing product-event cron
+workers.
 Buckets, PR environments, and permanent queue consumers remain deferred until
 measured usage requires them. The app services auto-deploy from GitHub: the `staging`
 environment tracks the `staging` branch and `production` tracks `main`, so a

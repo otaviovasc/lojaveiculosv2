@@ -107,7 +107,7 @@ async function lockAuthorizedContext(
     inner join store_entitlements entitlement
       on entitlement.tenant_id=command.tenant_id
       and entitlement.store_id=command.store_id and entitlement.feature_key='crm'
-      and entitlement.status in ('active','trialing')
+      and entitlement.status='active'
       and (entitlement.starts_at is null or entitlement.starts_at<=now())
       and (entitlement.ends_at is null or entitlement.ends_at>now())
     where command.id=${input.actionId}::uuid and command.state='executing'

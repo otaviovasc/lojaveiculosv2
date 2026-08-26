@@ -24,7 +24,9 @@ export async function materializeSaleAutoEntryEvents(
       event,
       ports,
     );
-    await materializeFinanceAutoEntries(context, resolvedEvent, ports);
+    await materializeFinanceAutoEntries(context, resolvedEvent, ports, {
+      entitlement: "sales",
+    });
   }
 }
 

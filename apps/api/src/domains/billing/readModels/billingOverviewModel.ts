@@ -16,22 +16,28 @@ import type {
 import { createChargePreview } from "./billingChargePreviewModel.js";
 
 export const billingFeatureOrder = [
-  "subdomain",
+  "storefront",
+  "inventory",
+  "lead_capture",
+  "sales",
+  "financing",
+  "documents",
+  "finance",
+  "commissions",
+  "checklists",
+  "ai",
   "custom_domain",
   "crm",
-  "crm_zapi",
+  "fiscal",
   "automation",
   "analytics",
   "compliance",
   "external_api",
   "marketplace",
   "plate_lookup",
-  "simulations",
-  "fiscal",
 ] satisfies EntitlementKey[];
 
 export function createBillingOverview(input: {
-  addonContracts?: BillingOverview["addonContracts"];
   addons?: readonly BillingAddon[];
   allocations?: readonly BillingStoreAllocation[];
   authority?: BillingAuthority;
@@ -49,7 +55,6 @@ export function createBillingOverview(input: {
 }): BillingOverview {
   const allocations = input.allocations ?? [];
   return {
-    addonContracts: input.addonContracts ?? [],
     addons: input.addons ?? [],
     allocations,
     authority: input.authority ?? defaultBillingAuthority(),
@@ -84,9 +89,7 @@ function createUsageAllowances(
   entitlements: readonly StoreEntitlement[],
 ): BillingOverview["usageAllowances"] {
   const crmEnabled = entitlements.some(
-    (item) =>
-      item.featureKey === "crm" &&
-      (item.status === "active" || item.status === "trialing"),
+    (item) => item.featureKey === "crm" && item.status === "active",
   );
   const policy = addons.find((addon) => addon.code === "crm_core")?.limits;
   const allowance = policy?.composioToolExecutionsPerBillingMonth;
@@ -140,9 +143,7 @@ export function createEntitlementMatrix(input: {
       includedInPlan: planFeature?.included ?? false,
       limitValue: entitlementLimit(
         entitlement,
-        input.subscription?.status === "trialing"
-          ? (planFeature?.trialLimitValue ?? planFeature?.limitValue ?? null)
-          : (planFeature?.limitValue ?? null),
+        planFeature?.limitValue ?? null,
       ),
       source: entitlement?.source ?? null,
       startsAt: entitlement?.startsAt ?? null,
@@ -154,7 +155,7 @@ export function createEntitlementMatrix(input: {
 }
 
 export function isUsableEntitlement(status: BillingEntitlementStatus): boolean {
-  return status === "active" || status === "trialing";
+  return status === "active";
 }
 
 export function isEffectiveEntitlement(

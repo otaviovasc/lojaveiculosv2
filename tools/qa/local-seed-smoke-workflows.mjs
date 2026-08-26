@@ -23,16 +23,18 @@ export async function assertBilling(db) {
     group by store_id
     order by store_id
   `;
-  const expected = new Map([
-    [seedIds.primaryStore, [3, 67790]],
-    [seedIds.branchStore, [2, 47800]],
-    [seedIds.foreignStore, [1, 29900]],
+  const expected = new Set([
+    seedIds.primaryStore,
+    seedIds.branchStore,
+    seedIds.foreignStore,
   ]);
   for (const row of rows) {
-    const values = expected.get(row.storeId);
-    assert(values, `Unexpected seeded billing store ${row.storeId}.`);
     assert(
-      row.items === values[0] && row.monthlyCents === values[1],
+      expected.has(row.storeId),
+      `Unexpected seeded billing store ${row.storeId}.`,
+    );
+    assert(
+      row.items === 1 && row.monthlyCents === 0,
       `Billing allocation mismatch for ${row.storeId}.`,
     );
   }
@@ -44,10 +46,14 @@ export async function assertBilling(db) {
        where id = '14141414-1414-4414-8414-141414141414') as "sharedStatus",
       (select status from subscriptions
        where id = '25000000-0000-4000-8000-000000000003') as "isolationStatus",
-      count(*) filter (where store_id = ${seedIds.branchStore}
-        and status = 'suspended')::int as "branchSuspended",
-      count(*) filter (where store_id = ${seedIds.foreignStore}
-        and status = 'trialing')::int as "foreignTrialing"
+      (select current_period_end from subscriptions
+       where id = '14141414-1414-4414-8414-141414141414') as "sharedEndsAt",
+      (select current_period_end from subscriptions
+       where id = '25000000-0000-4000-8000-000000000003') as "isolationEndsAt",
+      count(*) filter (where status = 'active' and ends_at is null
+        and feature_key in ('storefront', 'inventory', 'lead_capture', 'plate_lookup'))::int as "freeEntitlements",
+      count(*) filter (where status = 'active' and ends_at is null
+        and feature_key not in ('storefront', 'inventory', 'lead_capture', 'plate_lookup'))::int as "paidEntitlements"
     from store_entitlements
   `;
   const [catalog] = await db`
@@ -58,91 +64,66 @@ export async function assertBilling(db) {
        where status = 'active') as "activeVersion",
       (select checksum from billing_catalog_versions
        where status = 'active') as checksum,
-      (select count(*)::int from addons
-       where catalog_version = '2026-08-v2' and status = 'active') as "currentAddons",
-      (select count(distinct item.subscription_id)::int
-       from subscription_items item
-       left join plans plan on plan.id = item.plan_id
-       left join addons addon on addon.id = item.addon_id
-       where item.ends_at is null
-         and item.tenant_id in (${seedIds.primaryTenant}, ${seedIds.foreignTenant})
-         and coalesce(plan.catalog_version, addon.catalog_version) = '2026-08-v1'
-      ) as "historicalSubscriptions",
-      (select count(*)::int
-       from subscription_items item
-       left join plans plan on plan.id = item.plan_id
-       left join addons addon on addon.id = item.addon_id
-       where item.ends_at is null
-         and item.tenant_id in (${seedIds.primaryTenant}, ${seedIds.foreignTenant})
-         and coalesce(plan.catalog_version, addon.catalog_version) = '2026-08-v1'
-      ) as "historicalItems",
+      (select count(*)::int from addons where status = 'active') as "currentAddons",
+      (select count(*)::int from plans
+       where catalog_version = '2026-08-v3' and status = 'active') as "currentPlans",
       (select count(distinct item.store_id)::int
        from subscription_items item
-       left join plans plan on plan.id = item.plan_id
-       left join addons addon on addon.id = item.addon_id
+       join plans plan on plan.id = item.plan_id
        where item.ends_at is null
          and item.tenant_id in (${seedIds.primaryTenant}, ${seedIds.foreignTenant})
-         and coalesce(plan.catalog_version, addon.catalog_version) = '2026-08-v2'
+         and plan.catalog_version = '2026-08-v3' and plan.code = 'free'
       ) as "currentStores",
-      (select unit_amount_cents from subscription_items
-       where id = '20000000-0000-4000-8000-000000000001') as "historicalFiscalCents",
-      (select monthly_price_cents from addons
-       where code = 'fiscal_spedy' and catalog_version = '2026-08-v2') as "currentFiscalCents",
-      (select count(*)::int from store_entitlements
-       where store_id = ${seedIds.foreignStore} and feature_key = 'crm'
-         and status in ('active', 'trialing')
-         and (starts_at is null or starts_at <= now())
-         and (ends_at is null or ends_at > now())) as "trialCrmEffective"
+      (select (limits->>'vehicle_limit')::int from plans
+       where code = 'free' and catalog_version = '2026-08-v3') as "freeVehicleLimit",
+      (select (limits->>'seller_limit')::int from plans
+       where code = 'free' and catalog_version = '2026-08-v3') as "freeSellerLimit",
+      (select feature.limit_value from plan_features feature
+       join plans plan on plan.id = feature.plan_id
+       where plan.code = 'free' and plan.catalog_version = '2026-08-v3'
+         and feature.feature_key = 'plate_lookup') as "freePlateLimit"
   `;
   assert(
-    states.branchSuspended >= 2,
-    "Past-due branch must exercise suspended entitlements.",
+    states.sharedStatus === "active" &&
+      states.isolationStatus === "active" &&
+      states.sharedEndsAt === null &&
+      states.isolationEndsAt === null,
+    "Seed Free subscriptions must be active and open-ended.",
   );
   assert(
-    states.foreignTrialing >= 4,
-    "Isolation store must exercise the four-feature safe trial.",
+    states.freeEntitlements === 12 && states.paidEntitlements === 0,
+    "Seed stores must project only the four permanent Free entitlements.",
   );
   assert(
-    states.sharedStatus === "past_due" && states.isolationStatus === "trialing",
-    "Seed subscriptions do not exercise coherent dunning and trial states.",
-  );
-  assert(
-    catalog.activePointers === 1 && catalog.activeVersion === "2026-08-v2",
-    "Billing catalog must expose exactly one active 2026-08-v2 pointer.",
+    catalog.activePointers === 1 && catalog.activeVersion === "2026-08-v3",
+    "Billing catalog must expose exactly one active 2026-08-v3 pointer.",
   );
   assert(
     catalog.checksum ===
-      "af3fb0636be02707d94adebb39d3d81200dcb69c78690c2b171b7bc1d4a68cf7",
+      "32d2f1fe963c01124ffe5469ad166c68bc569c052409861ef12216065ed1ff3d",
     "Active billing catalog checksum does not match the current definition.",
   );
   assert(
-    catalog.currentAddons === 6,
-    "Current billing catalog add-ons are incomplete.",
+    catalog.currentAddons === 0 && catalog.currentPlans === 5,
+    "Billing v3 must expose five plans and no active add-ons.",
   );
   assert(
-    catalog.historicalSubscriptions === 1 &&
-      catalog.historicalItems === 3 &&
-      catalog.currentStores === 2,
-    "Exactly one three-item subscription may retain a historical contract; current fixtures must use v2.",
+    catalog.currentStores === 3,
+    "Every seeded store must use the current Free contract.",
   );
   assert(
-    catalog.historicalFiscalCents === 19990 &&
-      catalog.currentFiscalCents === 5000,
-    "Catalog activation repriced or erased the historical fiscal contract.",
-  );
-  assert(
-    catalog.trialCrmEffective === 0,
-    "CRM must remain denied when the trial has no paid CRM add-on.",
+    catalog.freeVehicleLimit === 10 &&
+      catalog.freeSellerLimit === 1 &&
+      catalog.freePlateLimit === 3,
+    "Free quotas must be 10 vehicles, one user, and three plate lookups.",
   );
   return {
     activeCatalog: catalog.activeVersion,
     allocations: rows.length,
-    branchSuspended: states.branchSuspended,
     currentAddons: catalog.currentAddons,
+    currentPlans: catalog.currentPlans,
     currentStores: catalog.currentStores,
-    historicalItems: catalog.historicalItems,
-    historicalSubscriptions: catalog.historicalSubscriptions,
-    trialCrmEffective: catalog.trialCrmEffective,
+    freeEntitlements: states.freeEntitlements,
   };
 }
 

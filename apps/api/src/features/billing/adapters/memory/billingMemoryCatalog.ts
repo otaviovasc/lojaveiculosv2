@@ -7,13 +7,16 @@ import type {
 
 export const memoryBillingPlans: readonly BillingPlan[] =
   currentBillingCatalog.plans.map((plan) => ({
+    capabilities: plan.capabilities ?? [],
     catalogVersion: currentBillingCatalog.version,
+    checkoutMode: plan.checkoutMode ?? "checkout",
     code: plan.code,
     features: plan.features,
     id: plan.id,
     limits: plan.limits,
     monthlyPriceCents: plan.monthlyPriceCents,
     name: plan.name,
+    selectionRank: plan.selectionRank ?? 0,
     status: plan.status,
   }));
 
@@ -39,14 +42,14 @@ const defaultPlan = currentBillingCatalog.plans.find((plan) => plan.isDefault);
 if (!defaultPlan)
   throw new Error("Memory billing catalog has no default plan.");
 
-export const memoryTrialEntitlements: readonly StoreEntitlement[] =
+export const memoryDefaultEntitlements: readonly StoreEntitlement[] =
   defaultPlan.features
-    .filter((feature) => feature.includedInTrial)
+    .filter((feature) => feature.included)
     .map((feature) => ({
-      endsAt: new Date("2099-08-01T00:00:00.000Z"),
+      endsAt: null,
       featureKey: feature.featureKey,
       metadata: { catalogVersion: currentBillingCatalog.version },
       source: "memory_seed",
       startsAt: null,
-      status: "trialing",
+      status: "active",
     }));

@@ -31,14 +31,15 @@ import {
   getPaymentProviderGateway,
   recurringTotalCents,
 } from "../../readModels/billingProviderSubscriptionSyncSupport.js";
+import { cancelEmptyBillingProviderSubscription } from "./cancelEmptyBillingProviderSubscription.js";
 
 export { BillingProviderSyncError };
 
 export type SyncBillingProviderSubscriptionInput = {
   billingType?: PaymentProviderBillingType;
+  cancelWhenEmpty?: boolean;
   nextDueDate?: Date;
   updatePendingPayments?: boolean;
-  zapiLifecycleSync?: boolean;
 };
 
 export async function syncBillingProviderSubscription(
@@ -59,36 +60,8 @@ export async function syncBillingProviderSubscription(
       ...(scope.storeId ? { storeId: scope.storeId } : {}),
       tenantId: scope.tenantId,
     }),
+    input.cancelWhenEmpty ? { allowEmptyChargePreview: true } : {},
   );
-  if (!input.zapiLifecycleSync) {
-    const overview = scope.storeId
-      ? await ports.billingRepository.getOverview({
-          billingManagedBy: context.billingManagedBy ?? "store_owner",
-          currentActorCanManage: context.permissions.includes("billing.manage"),
-          storeId: scope.storeId,
-          tenantId: scope.tenantId,
-        })
-      : await ports.billingRepository.getTenantOverview({
-          currentActorCanManage: context.permissions.includes("billing.manage"),
-          tenantId: scope.tenantId,
-        });
-    const zapiAddonIds = new Set(
-      overview.addons
-        .filter((addon) => addon.code === "crm_zapi")
-        .map((addon) => addon.id),
-    );
-    if (
-      account.chargePreview.lineItems.some(
-        (item) => item.sourceId && zapiAddonIds.has(item.sourceId),
-      )
-    ) {
-      throw new BillingProviderSyncError(
-        "zapi_requires_server_owned_renewal",
-        "Z-API billing changes use the server-owned renewal workflow.",
-        409,
-      );
-    }
-  }
   const subscription = account.subscription;
   const billingType = input.billingType ?? "PIX";
   const renewalDate = input.nextDueDate ?? tomorrow();
@@ -112,6 +85,16 @@ export async function syncBillingProviderSubscription(
   );
 
   try {
+    if (chargeTotalCents <= 0 && input.cancelWhenEmpty) {
+      return cancelEmptyBillingProviderSubscription(
+        context,
+        account,
+        billingType,
+        nextDueDate,
+        repository,
+        gateway,
+      );
+    }
     const customer = await gateway.syncCustomer({
       documentNumber: account.billingCustomer.documentNumber,
       email: account.billingCustomer.email,

@@ -23,6 +23,7 @@ import type {
 type CredentialRotationInput = ZapiSupportScope &
   ZapiSupportWebhookTarget & {
     allowIdentityReplacement?: boolean;
+    clientToken: string;
     connectionId: string;
     expectedRevision?: number;
     idempotencyKey?: string;
@@ -42,7 +43,7 @@ export async function updateVerifiedZapiConnectionIdentity(
   input: CredentialRotationInput,
   ports: CrmServicePorts,
 ) {
-  assertPermission(context, "tenant.manage");
+  assertPermission(context, credentialRotationPermission);
   logCrmServiceEvent(
     context,
     "crm.provider.zapi.connection.identity_update.started",
@@ -89,6 +90,7 @@ export async function updateVerifiedZapiConnectionIdentity(
         connectionId: current.id,
         expectedRevision: current.revision ?? 0,
         idempotencyKey: input.idempotencyKey ?? crypto.randomUUID(),
+        clientToken: input.clientToken,
         instanceId: input.instanceId,
         instanceToken: input.instanceToken,
         basePath: input.basePath,
@@ -105,8 +107,8 @@ export async function updateVerifiedZapiConnectionIdentity(
       ...(input.expectedRevision !== undefined
         ? { expectedRevision: input.expectedRevision }
         : {}),
-      externalInstanceId: input.instanceId.trim(),
       instanceCredentials: {
+        clientToken: input.clientToken,
         instanceId: input.instanceId,
         instanceToken: input.instanceToken,
       },
@@ -120,11 +122,13 @@ export async function updateVerifiedZapiConnectionIdentity(
     entityId: updated.id,
     entityType: "crm_whatsapp_connection",
     metadata: { identityOutcome: "same_instance", provider: "zapi" },
-    permission: "tenant.manage",
+    permission: credentialRotationPermission,
     summary: "Rotated credentials for the verified Z-API instance",
   });
   return updated;
 }
+
+const credentialRotationPermission = "crm.messaging.credentials.rotate";
 
 async function readCurrentZapiInstanceId(
   connection: CrmConnection,

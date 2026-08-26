@@ -33,10 +33,7 @@ export function createDrizzleCrmBotEntitlementResolver(
         and(
           eq(storeEntitlements.storeId, storeId),
           eq(storeEntitlements.tenantId, tenantId),
-          or(
-            eq(storeEntitlements.status, "active"),
-            eq(storeEntitlements.status, "trialing"),
-          ),
+          eq(storeEntitlements.status, "active"),
           or(
             isNull(storeEntitlements.startsAt),
             lte(storeEntitlements.startsAt, now),

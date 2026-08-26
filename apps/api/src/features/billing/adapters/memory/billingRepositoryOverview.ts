@@ -18,26 +18,24 @@ export function toMemoryBillingOverview(
   tenantId: string,
   entitlements: StoreEntitlement[],
   entitlementEvents: BillingEntitlementEvent[],
-  addonContracts: BillingOverview["addonContracts"],
   billingManagedBy: "agency" | "store_owner" = "store_owner",
   currentActorCanManage = true,
 ): BillingOverview {
   return createBillingOverview({
-    addonContracts,
     addons: memoryBillingAddons,
     allocations: [
       {
         activeEntitlementCount: entitlements.filter(
-          (item) => item.status === "active" || item.status === "trialing",
+          (item) => item.status === "active",
         ).length,
-        addonCount: 1,
-        monthlyAmountCents: 54899,
-        planCode: "growth",
-        planName: "Growth",
+        addonCount: 0,
+        monthlyAmountCents: 0,
+        planCode: "free",
+        planName: "Free",
         storeId: storeId as never,
         storeName: "Loja principal",
         storeSlug: "test-store",
-        subscriptionStatus: "trialing",
+        subscriptionStatus: "active",
       },
     ],
     authority: createBillingAuthority({
@@ -47,7 +45,7 @@ export function toMemoryBillingOverview(
     entitlementEvents,
     entitlements,
     financialSummary: {
-      monthlyRecurringCents: 54899,
+      monthlyRecurringCents: 0,
       nextDueAt: null,
       openInvoiceCount: 0,
       overdueInvoiceCount: 0,
@@ -56,11 +54,11 @@ export function toMemoryBillingOverview(
     plans: memoryBillingPlans,
     storeId: storeId as never,
     subscription: {
-      currentPeriodEnd: new Date("2099-08-01T00:00:00.000Z"),
+      currentPeriodEnd: null,
       currentPeriodStart: null,
       id: "subscription_memory",
       plan: memoryBillingPlans[0] ?? null,
-      status: "trialing",
+      status: "active",
     },
     tenantId: tenantId as never,
   });
@@ -70,7 +68,6 @@ export function toMemoryTenantOverview(
   overview: BillingOverview,
 ): AgencyTenantOverview {
   return {
-    addonContracts: overview.addonContracts,
     addons: overview.addons,
     allocations: overview.allocations,
     authority: overview.authority,
@@ -81,9 +78,6 @@ export function toMemoryTenantOverview(
     stores: overview.allocations.map((allocation) => ({
       activeEntitlementCount: allocation.activeEntitlementCount,
       addonCount: allocation.addonCount,
-      addonContracts: overview.addonContracts.filter(
-        (contract) => contract.storeId === allocation.storeId,
-      ),
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       entitlementCount: overview.entitlements.length,
       entitlementMatrix: overview.entitlementMatrix,

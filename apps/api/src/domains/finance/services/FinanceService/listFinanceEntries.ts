@@ -10,6 +10,7 @@ import {
   auditFinanceServiceEvent,
   getFinanceRepository,
   logFinanceServiceEvent,
+  requireFinanceScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
@@ -36,16 +37,17 @@ export async function listFinanceEntries(
   ports?: FinanceServicePorts,
 ): Promise<FinanceEntryListResult> {
   assertPermission(context, permission);
+  const scope = requireFinanceScope(context);
   const limit = clampLimit(input.limit);
   const offset = clampOffset(input.offset);
   const entries = await getFinanceRepository(ports).list({
     limit: limit + 1,
     offset,
     status: input.status ?? null,
-    storeId: context.storeId,
+    storeId: scope.storeId,
     targetId: input.targetId ?? null,
     targetType: input.targetType ?? null,
-    tenantId: context.tenantId,
+    tenantId: scope.tenantId,
     type: input.type ?? null,
   });
   const pageEntries = entries.slice(0, limit);

@@ -28,7 +28,6 @@ describe("CrmChannelDirectory", () => {
         marketplaceApi={createMarketplaceApi()}
         onChoose={vi.fn()}
         onRedirect={onRedirect}
-        zapiAddonContract={null}
       />,
     );
 
@@ -51,7 +50,6 @@ describe("CrmChannelDirectory", () => {
         ]}
         marketplaceApi={createMarketplaceApi(false, createOlxState())}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -79,7 +77,6 @@ describe("CrmChannelDirectory", () => {
         ]}
         marketplaceApi={createMarketplaceApi(false, state)}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -97,7 +94,6 @@ describe("CrmChannelDirectory", () => {
         ]}
         marketplaceApi={createMarketplaceApi(true)}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -126,7 +122,6 @@ describe("CrmChannelDirectory", () => {
         ]}
         marketplaceApi={api}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -154,7 +149,6 @@ describe("CrmChannelDirectory", () => {
         marketplaceApi={createMarketplaceApi()}
         onChoose={onChoose}
         onManageConnection={onManage}
-        zapiAddonContract={null}
       />,
     );
 
@@ -200,7 +194,6 @@ describe("CrmChannelDirectory", () => {
         onManageConnection={onManage}
         onRepairConnection={onRepair}
         showRepairActions
-        zapiAddonContract={null}
       />,
     );
 
@@ -250,7 +243,6 @@ describe("CrmChannelDirectory", () => {
         onChoose={onChoose}
         onRepairConnection={onRepair}
         showRepairActions
-        zapiAddonContract={null}
       />,
     );
 
@@ -282,7 +274,6 @@ describe("CrmChannelDirectory", () => {
         connections={[instagram]}
         marketplaceApi={createMarketplaceApi()}
         onChoose={onChoose}
-        zapiAddonContract={null}
       />,
     );
 
@@ -312,7 +303,6 @@ describe("CrmChannelDirectory", () => {
         connections={[{ ...createZapiConnection(), ...override }]}
         marketplaceApi={createMarketplaceApi()}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -337,7 +327,6 @@ describe("CrmChannelDirectory", () => {
         ]}
         marketplaceApi={createMarketplaceApi(false, state)}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -452,7 +441,6 @@ describe("CrmChannelDirectory premium grouping", () => {
         connections={[createZapiConnection(), createDefaultOlxConnection()]}
         marketplaceApi={createMarketplaceApi(false, createOlxState())}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -481,7 +469,6 @@ describe("CrmChannelDirectory premium grouping", () => {
         marketplaceApi={createMarketplaceApi()}
         onChoose={vi.fn()}
         onManageConnection={onManageConnection}
-        zapiAddonContract={null}
       />,
     );
 
@@ -505,7 +492,6 @@ describe("CrmChannelDirectory premium grouping", () => {
         connections={[orphan]}
         marketplaceApi={createMarketplaceApi()}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 
@@ -563,7 +549,6 @@ describe("CrmChannelDirectory premium grouping", () => {
         marketplaceApi={createMarketplaceApi(false, state)}
         onChoose={vi.fn()}
         onConnectionsChanged={onConnectionsChanged}
-        zapiAddonContract={null}
       />,
     );
 
@@ -623,7 +608,6 @@ describe("CrmChannelDirectory premium grouping", () => {
         crmApi={{ retryOlxChatSetup }}
         marketplaceApi={createMarketplaceApi(false, state)}
         onChoose={vi.fn()}
-        zapiAddonContract={null}
       />,
     );
 

@@ -1,3 +1,4 @@
+import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { DocumentRepository } from "../../ports/documentRepository.js";
 import type { DocumentLinkTargetValidator } from "../../ports/documentLinkTargetValidator.js";
@@ -32,6 +33,7 @@ export function requireDocumentWorkspaceScope(context: ServiceContext): {
   if (!context.storeId || !context.tenantId) {
     throw new Error("Document workspace requires tenant and store scope.");
   }
+  assertEntitlement(context, "documents");
 
   return { storeId: context.storeId, tenantId: context.tenantId };
 }

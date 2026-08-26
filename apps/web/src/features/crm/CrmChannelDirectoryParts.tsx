@@ -5,10 +5,7 @@ import {
   readConnectionReadinessBadge,
 } from "./crmChannelPresentation";
 import { readCrmProviderLabel } from "./crmConnectionStatus";
-import type {
-  CrmProviderConnection,
-  CrmWhatsappZapiAddonContract,
-} from "./crmConversationTypes";
+import type { CrmProviderConnection } from "./crmConversationTypes";
 import {
   InstagramLogo,
   MetaLogo,
@@ -162,62 +159,4 @@ export function ChannelIdentity({
       </span>
     </span>
   );
-}
-
-export function ZapiAddonBadge({
-  contract,
-}: {
-  contract: CrmWhatsappZapiAddonContract | null;
-}) {
-  if (contract?.status === "active") {
-    return (
-      <span className="crm-channel-badge" data-tone="success">
-        Adicional ativo
-      </span>
-    );
-  }
-  if (contract?.status === "pending") {
-    return (
-      <span className="crm-channel-badge" data-tone="warning">
-        Pagamento pendente
-      </span>
-    );
-  }
-  if (contract?.status === "scheduled") {
-    return (
-      <span className="crm-channel-badge" data-tone="warning">
-        Ativação agendada
-      </span>
-    );
-  }
-  if (contract?.status === "paid_awaiting_setup") {
-    return (
-      <span className="crm-channel-badge" data-tone="warning">
-        Em preparação
-      </span>
-    );
-  }
-  return (
-    <span className="crm-channel-badge" data-tone="muted">
-      Adicional opcional
-    </span>
-  );
-}
-
-export function readZapiChooserDescription(
-  contract: CrmWhatsappZapiAddonContract | null,
-) {
-  if (contract?.status === "pending") {
-    return "Solicitação registrada; aguardando confirmação de pagamento.";
-  }
-  if (contract?.status === "scheduled") {
-    return "Ativação programada para o próximo vencimento da assinatura.";
-  }
-  if (contract?.status === "paid_awaiting_setup") {
-    return "Pagamento confirmado; a equipe está preparando a conexão.";
-  }
-  if (contract?.status === "active") {
-    return "Adicional ativo. Informe as credenciais uma única vez para parear o telefone.";
-  }
-  return "Integração opcional paga. O valor e as condições vêm da assinatura da loja.";
 }

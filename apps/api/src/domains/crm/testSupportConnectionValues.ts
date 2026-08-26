@@ -22,6 +22,7 @@ export function normalizeTestCrmConnection(connection: CrmConnection) {
   connection.canonical = projectCanonicalCrmConnectionRow({
     broker: identity.credentialBroker,
     channel: identity.channel,
+    credentialsRef: connection.credentialsRef,
     metadata: connection.metadata,
     provider: identity.provider,
     state: connection.status,

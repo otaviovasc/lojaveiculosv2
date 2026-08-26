@@ -87,6 +87,7 @@ export function context(permissions: string[], audit?: AuditSink) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
     ...(audit ? { audit } : {}),
+    entitlements: ["sales"],
     permissions,
     request: { requestId: "req_1" },
     storeId,

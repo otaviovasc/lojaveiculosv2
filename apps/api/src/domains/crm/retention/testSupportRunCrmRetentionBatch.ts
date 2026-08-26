@@ -31,6 +31,7 @@ export function createRetentionContext(
     audit,
     logger,
     permissions: ["crm.manage"],
+    platformAdmin: false,
     requestId: "retention_request_1",
     storeId: "store_1",
     tenantId: "tenant_1",

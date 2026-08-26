@@ -175,7 +175,6 @@ function createConnection(
 
 function createSelfService() {
   return {
-    allowance: { limit: 1, remaining: 0, used: 1 },
     availableSetups: [
       {
         broker: "composio" as const,
@@ -185,6 +184,7 @@ function createSelfService() {
     ],
     canPair: true,
     canSetup: true,
+    isCrmEntitled: true,
     handlers: {
       onAuthorizeComposio: vi.fn(),
       onCompleteComposio: vi.fn(),

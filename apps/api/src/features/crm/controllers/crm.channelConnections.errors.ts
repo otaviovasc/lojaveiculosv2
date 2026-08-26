@@ -1,9 +1,8 @@
 import type { Context } from "hono";
 import {
-  BillingContractUnavailableError,
-  BillingQuotaExceededError,
-} from "../../../domains/billing/ports/billingQuotaGuard.js";
-import { CrmConnectionSetupProviderError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
+  CrmConnectionSetupProviderError,
+  CrmZapiSetupNotEligibleError,
+} from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import {
   CrmChannelConnectionCredentialStateError,
   CrmChannelConnectionProviderAlreadyExistsError,
@@ -11,7 +10,7 @@ import {
 } from "../../../domains/crm/channelConnections/connectionCreation.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { OlxChatSetupRetryTargetError } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
-import { CrmZapiCredentialVerificationError } from "../../../domains/crm/services/CrmChannelConnectionService/verifyUpdatedZapiCredentials.js";
+import { CrmZapiCredentialVerificationError } from "../../../domains/crm/services/CrmChannelConnectionService/prepareZapiCredentialRotation.js";
 import { ZapiIdentityReplacementRequiresSupportError } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnectionIdentity.js";
 import {
   ZapiReplacementNotFoundError,
@@ -99,22 +98,9 @@ export function handleCrmMessagingConnectionError(
       status: 502,
     });
   }
-  if (error instanceof BillingQuotaExceededError) {
+  if (error instanceof CrmZapiSetupNotEligibleError) {
     return jsonApiError(context, {
-      code: "CRM_WHATSAPP_CONNECTION_ALLOWANCE_EXHAUSTED",
-      details: {
-        limit: error.limit,
-        quotaKey: error.quotaKey,
-        used: error.current,
-      },
-      error,
-      message: error.message,
-      status: 409,
-    });
-  }
-  if (error instanceof BillingContractUnavailableError) {
-    return jsonApiError(context, {
-      code: "BILLING_CONTRACT_UNAVAILABLE",
+      code: "CRM_ZAPI_SETUP_NOT_ELIGIBLE",
       error,
       message: error.message,
       status: 409,

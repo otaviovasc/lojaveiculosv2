@@ -168,6 +168,7 @@ function createTestHarness() {
 function createTestContext() {
   return createServiceContext({
     actor: { id: "user-1", kind: "user" },
+    entitlements: ["sales"],
     permissions: [
       "sale.cancel",
       "sale.close",

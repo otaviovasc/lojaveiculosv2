@@ -13,6 +13,7 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
+import { assertEntitlement } from "../../../../shared/authorization.js";
 import type {
   SaleRecord,
   SalesRepository,
@@ -124,6 +125,7 @@ export function requireSaleScope(context: ServiceContext): SaleScope {
   if (!context.storeId || !context.tenantId) {
     throw new Error("Sales service requires tenant and store scope.");
   }
+  assertEntitlement(context, "sales");
   return { storeId: context.storeId, tenantId: context.tenantId };
 }
 

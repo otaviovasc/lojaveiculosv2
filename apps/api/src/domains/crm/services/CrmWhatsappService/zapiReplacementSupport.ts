@@ -47,9 +47,8 @@ export function authorizeReplacement(context: ServiceContext) {
     );
   }
   assertPermission(context, "crm.messaging.connection.setup");
-  assertPermission(context, "tenant.manage");
+  assertPermission(context, credentialRotationPermission);
   assertEntitlement(context as StoreScopedServiceContext, "crm");
-  assertEntitlement(context as StoreScopedServiceContext, "crm_zapi");
 }
 
 export function assertCurrentConnection(
@@ -94,6 +93,7 @@ export async function verifyCandidateCredentials(
   ports: CrmServicePorts,
 ) {
   return getZapiConnectionSetupProvider(ports).validateStatus({
+    clientToken: input.clientToken,
     instanceId: input.instanceId.trim(),
     instanceToken: input.instanceToken,
   });
@@ -108,6 +108,7 @@ export async function sealCandidate(
   return sealZapiCredentials(
     {
       channel: "whatsapp",
+      clientToken: input.clientToken,
       displayName: current.displayName,
       instanceId: input.instanceId,
       instanceToken: input.instanceToken,
@@ -119,6 +120,8 @@ export async function sealCandidate(
     { reuseWebhookSecret: false },
   );
 }
+
+const credentialRotationPermission = "crm.messaging.credentials.rotate";
 
 export async function toReplacementResult(
   context: ServiceContext,

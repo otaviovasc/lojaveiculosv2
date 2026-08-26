@@ -32,7 +32,6 @@ import {
   getModuleEntitlement,
   getModulePermission,
   isActiveStoreAgencyManaged,
-  isActiveStoreOwner,
 } from "./modulePermissions";
 import { moduleSurfaceById } from "./moduleRoutes";
 import { useModuleState } from "./moduleState";
@@ -49,7 +48,6 @@ export function AdminApp() {
     activeModuleId,
     accountSession,
   );
-  const owner = isActiveStoreOwner(accountSession);
   const managedByAgency = isActiveStoreAgencyManaged(accountSession);
   const canViewAnalytics = accountSession
     ? getModulePermission("reports", accountSession).canView &&
@@ -78,21 +76,19 @@ export function AdminApp() {
             }
           >
             <div className="module-content-enter" key={activeModuleId}>
-              {owner &&
-              !moduleEntitlement.canUse &&
-              moduleEntitlement.featureKey ? (
-                <BillingUpgradePanel
-                  featureKey={moduleEntitlement.featureKey}
-                  managedByAgency={managedByAgency}
-                  module={activeModule}
-                  onOpenBilling={() => navigate("billing")}
-                />
-              ) : !modulePermission.canView ? (
+              {!modulePermission.canView ? (
                 <PermissionRestrictedPanel
                   title={modulePermission.title}
                   {...(modulePermission.description
                     ? { description: modulePermission.description }
                     : {})}
+                />
+              ) : !moduleEntitlement.canUse && moduleEntitlement.featureKey ? (
+                <BillingUpgradePanel
+                  featureKey={moduleEntitlement.featureKey}
+                  managedByAgency={managedByAgency}
+                  module={activeModule}
+                  onOpenBilling={() => navigate("billing")}
                 />
               ) : activeSurface === "dashboard" ? (
                 <DashboardHome

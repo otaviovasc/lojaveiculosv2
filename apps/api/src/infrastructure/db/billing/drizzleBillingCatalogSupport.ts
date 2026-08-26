@@ -34,7 +34,9 @@ export async function listPlans(
   ]);
 
   return planRows.map((plan) => ({
+    capabilities: planCapabilities(plan.limits),
     catalogVersion: plan.catalogVersion,
+    checkoutMode: planCheckoutMode(plan.limits),
     code: plan.code,
     features: featureRows
       .filter((feature) => feature.planId === plan.id)
@@ -49,6 +51,7 @@ export async function listPlans(
     limits: toPlanLimits(plan.limits),
     monthlyPriceCents: plan.monthlyPriceCents,
     name: plan.name,
+    selectionRank: planSelectionRank(plan.limits),
     status: plan.status,
   }));
 }
@@ -157,7 +160,9 @@ export async function findPlan(
     .limit(100);
 
   return {
+    capabilities: planCapabilities(plan.limits),
     catalogVersion: plan.catalogVersion,
+    checkoutMode: planCheckoutMode(plan.limits),
     code: plan.code,
     features: features.map((feature) => ({
       featureKey: feature.featureKey as never,
@@ -170,6 +175,7 @@ export async function findPlan(
     limits: toPlanLimits(plan.limits),
     monthlyPriceCents: plan.monthlyPriceCents,
     name: plan.name,
+    selectionRank: planSelectionRank(plan.limits),
     status: plan.status,
   };
 }
@@ -187,4 +193,29 @@ function toPlanLimits(value: unknown): NonNullable<BillingPlan["limits"]> {
 
 function toFiniteNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function planCapabilities(value: unknown): readonly string[] {
+  const capabilities = asRecord(value).capabilities;
+  return Array.isArray(capabilities)
+    ? capabilities.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function planCheckoutMode(
+  value: unknown,
+): "checkout" | "free" | "quote_required" {
+  const mode = asRecord(value).checkout_mode;
+  return mode === "free" || mode === "quote_required" ? mode : "checkout";
+}
+
+function planSelectionRank(value: unknown): number {
+  const rank = asRecord(value).selection_rank;
+  return typeof rank === "number" && Number.isInteger(rank) ? rank : 0;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

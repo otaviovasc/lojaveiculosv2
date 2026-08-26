@@ -47,6 +47,7 @@ describe("listDocumentWorkspace", () => {
     const context = createServiceContext({
       actor: { id: "user_1", kind: "user" },
       audit,
+      entitlements: ["documents"],
       logger,
       permissions: ["documents.read"],
       request: { requestId: "req_1" },
@@ -98,6 +99,7 @@ describe("listDocumentWorkspace", () => {
     }
     const context = createServiceContext({
       actor: { id: "user_1", kind: "user" },
+      entitlements: ["documents"],
       permissions: ["documents.read"],
       request: { requestId: "req_page" },
       storeId: "store_1",
@@ -139,6 +141,7 @@ describe("listDocumentWorkspace", () => {
     });
     const context = createServiceContext({
       actor: { id: "user_1", kind: "user" },
+      entitlements: ["documents"],
       permissions: ["documents.read"],
       request: { requestId: "req_multiple_links" },
       storeId: "store_1",
@@ -200,6 +203,7 @@ describe("listDocumentWorkspace", () => {
     });
     const context = createServiceContext({
       actor: { id: "user_1", kind: "user" },
+      entitlements: ["documents"],
       permissions: ["documents.read"],
       request: { requestId: "req_server_filters" },
       storeId: "store_1",
@@ -224,23 +228,5 @@ describe("listDocumentWorkspace", () => {
     expect(page.documents).toEqual([
       expect.objectContaining({ id: older.id, targetId: "unit_1" }),
     ]);
-  });
-
-  it("requires the workspace read permission", async () => {
-    const context = createServiceContext({
-      request: { requestId: "req_denied" },
-      storeId: "store_1",
-      tenantId: "tenant_1",
-    });
-
-    await expect(
-      listDocumentWorkspace(
-        context,
-        {},
-        {
-          documentRepository: createTestDocumentRepository(),
-        },
-      ),
-    ).rejects.toThrow("Missing permission: documents.read");
   });
 });

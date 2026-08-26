@@ -1,8 +1,8 @@
 import type {
   BillingOverview,
-  BillingCheckoutSession,
+  BillingPlanHire,
   BillingProviderStatus,
-  CreateBillingCheckoutInput,
+  CreateBillingPlanHireInput,
 } from "../../billing/types";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { AgencyApi, AgencyTenantOverview } from "../apiClient";
@@ -54,8 +54,6 @@ export function createAgencyBillingPanelOverview(
     : null;
 
   return {
-    addonContracts: selectedStore?.addonContracts ?? [],
-    addons: overview.addons,
     allocations: overview.allocations,
     authority: overview.authority,
     chargePreview: overview.chargePreview,
@@ -104,21 +102,6 @@ export function createAgencyBillingCanonicalState(
       metricLabel: "Ativa",
       title: "Assinatura ativa",
       tone: "success",
-    };
-  }
-
-  if (subscription?.status === "trialing") {
-    return {
-      canCheckout: providerReady,
-      description: providerReady
-        ? `O plano ${planName} está em período de teste. Escolha os pacotes da loja e conclua a primeira assinatura.`
-        : `O plano ${planName} está em período de teste. A conexão de cobrança precisa ser concluída antes da primeira assinatura.`,
-      integrationRequirements,
-      kind: "current",
-      label: "Situação atual",
-      metricLabel: "Em teste",
-      title: "Período de teste ativo",
-      tone: "info",
     };
   }
 
@@ -184,27 +167,23 @@ export function agencyBillingConfigurationLabels(
 }
 
 export function agencyBillingErrorMessage(error: unknown) {
-  return formatApiErrorDisplay(
+  const message = formatApiErrorDisplay(
     error,
     "Não foi possível carregar o faturamento da agência.",
   );
+  return `${message} Tente novamente; se persistir, informe o ID do erro ou da contratação ao suporte.`;
 }
 
-export async function startAgencyStoreCheckout({
-  addonIds,
+export async function startAgencyStorePlanHire({
   api,
   input,
-  planId,
   storeId,
   tenantId,
 }: {
-  addonIds: readonly string[];
-  api: Pick<AgencyApi, "createCheckout" | "updateStoreSelection">;
-  input: CreateBillingCheckoutInput;
-  planId: string;
+  api: Pick<AgencyApi, "createStorePlanHire">;
+  input: CreateBillingPlanHireInput;
   storeId: string;
   tenantId: string;
-}): Promise<BillingCheckoutSession> {
-  await api.updateStoreSelection(tenantId, storeId, { addonIds, planId });
-  return api.createCheckout(tenantId, input);
+}): Promise<BillingPlanHire> {
+  return api.createStorePlanHire(tenantId, storeId, input);
 }

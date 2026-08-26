@@ -11,89 +11,90 @@ import { assertBilling } from "./local-seed-smoke-workflows.mjs";
 import { seedIds } from "./local-seed-smoke-support.mjs";
 
 const currentChecksum =
-  "af3fb0636be02707d94adebb39d3d81200dcb69c78690c2b171b7bc1d4a68cf7";
+  "32d2f1fe963c01124ffe5469ad166c68bc569c052409861ef12216065ed1ff3d";
 
 describe("local seed commercial policy", () => {
-  it("accepts one historical contract beside current catalog fixtures", async () => {
+  it("accepts permanent Free for every seeded store", async () => {
     const summary = await assertBilling(
       fakeDb([
         [
-          { items: 3, monthlyCents: 67790, storeId: seedIds.primaryStore },
-          { items: 2, monthlyCents: 47800, storeId: seedIds.branchStore },
-          { items: 1, monthlyCents: 29900, storeId: seedIds.foreignStore },
+          { items: 1, monthlyCents: 0, storeId: seedIds.primaryStore },
+          { items: 1, monthlyCents: 0, storeId: seedIds.branchStore },
+          { items: 1, monthlyCents: 0, storeId: seedIds.foreignStore },
         ],
         [
           {
-            branchSuspended: 3,
-            foreignTrialing: 5,
-            isolationStatus: "trialing",
-            sharedStatus: "past_due",
+            freeEntitlements: 12,
+            isolationEndsAt: null,
+            isolationStatus: "active",
+            paidEntitlements: 0,
+            sharedEndsAt: null,
+            sharedStatus: "active",
           },
         ],
         [
           {
             activePointers: 1,
-            activeVersion: "2026-08-v2",
+            activeVersion: "2026-08-v3",
             checksum: currentChecksum,
-            currentAddons: 6,
-            currentFiscalCents: 5000,
-            currentStores: 2,
-            historicalFiscalCents: 19990,
-            historicalItems: 3,
-            historicalSubscriptions: 1,
-            trialCrmEffective: 0,
+            currentAddons: 0,
+            currentPlans: 5,
+            currentStores: 3,
+            freePlateLimit: 3,
+            freeSellerLimit: 1,
+            freeVehicleLimit: 10,
           },
         ],
       ]),
     );
 
     expect(summary).toMatchObject({
-      activeCatalog: "2026-08-v2",
-      currentAddons: 6,
-      currentStores: 2,
-      historicalItems: 3,
-      historicalSubscriptions: 1,
-      trialCrmEffective: 0,
+      activeCatalog: "2026-08-v3",
+      currentAddons: 0,
+      currentPlans: 5,
+      currentStores: 3,
+      freeEntitlements: 12,
     });
   });
 
-  it("rejects trial CRM access without the paid add-on", async () => {
+  it("rejects paid entitlements in the Free fixture", async () => {
     await expect(
       assertBilling(
         fakeDb([
           [
-            { items: 3, monthlyCents: 67790, storeId: seedIds.primaryStore },
-            { items: 2, monthlyCents: 47800, storeId: seedIds.branchStore },
-            { items: 1, monthlyCents: 29900, storeId: seedIds.foreignStore },
+            { items: 1, monthlyCents: 0, storeId: seedIds.primaryStore },
+            { items: 1, monthlyCents: 0, storeId: seedIds.branchStore },
+            { items: 1, monthlyCents: 0, storeId: seedIds.foreignStore },
           ],
           [
             {
-              branchSuspended: 3,
-              foreignTrialing: 5,
-              isolationStatus: "trialing",
-              sharedStatus: "past_due",
+              freeEntitlements: 12,
+              isolationEndsAt: null,
+              isolationStatus: "active",
+              paidEntitlements: 1,
+              sharedEndsAt: null,
+              sharedStatus: "active",
             },
           ],
           [
             {
               activePointers: 1,
-              activeVersion: "2026-08-v2",
+              activeVersion: "2026-08-v3",
               checksum: currentChecksum,
-              currentAddons: 6,
-              currentFiscalCents: 5000,
-              currentStores: 2,
-              historicalFiscalCents: 19990,
-              historicalItems: 3,
-              historicalSubscriptions: 1,
-              trialCrmEffective: 1,
+              currentAddons: 0,
+              currentPlans: 5,
+              currentStores: 3,
+              freePlateLimit: 3,
+              freeSellerLimit: 1,
+              freeVehicleLimit: 10,
             },
           ],
         ]),
       ),
-    ).rejects.toThrow("CRM must remain denied");
+    ).rejects.toThrow("only the four permanent Free entitlements");
   });
 
-  it("keeps current scenarios on v2 and labels the sole v1 contract", async () => {
+  it("keeps current scenarios on v3 Free without add-ons or trials", async () => {
     const [billing, scenarios, invariants] = await Promise.all([
       readFile(
         new URL(
@@ -118,12 +119,21 @@ describe("local seed commercial policy", () => {
       ),
     ]);
 
-    expect(scenarios).toContain("2026-08-v2");
-    expect(scenarios).not.toContain("2026-08-v1");
-    expect(billing).toContain("historical_contract_not_repriced");
-    expect(invariants).toContain(
-      "active catalog pricing must not reprice the historical contract",
+    expect(billing).toContain("2026-08-v3");
+    expect(billing).toContain(
+      "Every store receives one permanent Free contract",
     );
+    expect(billing).toContain(
+      "GREATEST(now(), starts_at + interval '1 microsecond')",
+    );
+    expect(scenarios).toContain("no synthetic trial");
+    expect(invariants).toContain(
+      "every store must have one effective Free contract",
+    );
+    for (const fixture of [billing, scenarios, invariants]) {
+      expect(fixture).not.toContain("crm_zapi");
+      expect(fixture).not.toContain("safe_trial");
+    }
   });
 });
 
@@ -206,7 +216,7 @@ describe("local permission smoke safety and personas", () => {
       expect(projection).toContain("crm.messaging.connection.pair");
     }
     expect(localProjection).toContain(
-      '{"agency":110,"admin":102,"owner":110,"investor":15,"salesman":47,"supervisor":78}',
+      '{"agency":116,"admin":108,"owner":116,"investor":15,"salesman":48,"supervisor":81}',
     );
     expect(migration).toContain(
       'DELETE FROM "membership_permission_overrides"',

@@ -31,6 +31,13 @@ export const crmPermissionDescriptors = [
   },
   {
     description:
+      "Substituir credenciais write-only de uma conexão da loja sem revelar valores existentes.",
+    key: "crm.messaging.credentials.rotate",
+    label: "Rotacionar credenciais do canal",
+    risk: "high",
+  },
+  {
+    description:
       "Escolher a conexão padrão usada para operações de saída em cada canal do CRM.",
     key: "crm.routing.default.manage",
     label: "Gerenciar rotas padrão",

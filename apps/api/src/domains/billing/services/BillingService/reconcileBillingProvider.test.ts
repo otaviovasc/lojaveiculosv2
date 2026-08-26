@@ -11,7 +11,7 @@ import { createUnusedBillingRepository } from "../../testSupportBillingRepositor
 import { reconcileNextBillingProvider } from "./reconcileBillingProvider.js";
 
 describe("reconcileNextBillingProvider", () => {
-  it("reconciles a migrated CRM and Z-API subscription without changing renewal", async () => {
+  it("reconciles a migrated catalog and recalculates pending payments", async () => {
     const fixture = createFixture("catalog_migration", [17900, 10000, 5000]);
     const result = await reconcileNextBillingProvider(
       workerContext(),
@@ -23,15 +23,15 @@ describe("reconcileNextBillingProvider", () => {
     expect(fixture.syncSubscription).toHaveBeenCalledWith(
       expect.objectContaining({
         nextDueDate: "2026-09-10",
-        updatePendingPayments: false,
+        updatePendingPayments: true,
         valueCents: 32900,
       }),
     );
     expect(fixture.repository.markSucceeded).toHaveBeenCalledOnce();
   });
 
-  it("keeps a Z-API cancellation queued when Asaas does not acknowledge it", async () => {
-    const fixture = createFixture("zapi_cancellation", [17900]);
+  it("keeps a Z-API retirement queued when Asaas does not acknowledge it", async () => {
+    const fixture = createFixture("zapi_retirement", [17900]);
     fixture.syncSubscription.mockRejectedValueOnce(
       new Error("Asaas unavailable"),
     );
@@ -49,8 +49,8 @@ describe("reconcileNextBillingProvider", () => {
     );
   });
 
-  it("acknowledges the next R$179 renewal after a Z-API reversal", async () => {
-    const fixture = createFixture("zapi_cancellation", [17900]);
+  it("recalculates pending renewal payments after Z-API retirement", async () => {
+    const fixture = createFixture("zapi_retirement", [17900]);
     await reconcileNextBillingProvider(
       workerContext(),
       { now, processingToken: "claim_1" },
@@ -60,11 +60,33 @@ describe("reconcileNextBillingProvider", () => {
     expect(fixture.syncSubscription).toHaveBeenCalledWith(
       expect.objectContaining({
         nextDueDate: "2026-09-10",
-        updatePendingPayments: false,
+        updatePendingPayments: true,
         valueCents: 17900,
       }),
     );
     expect(fixture.repository.markSucceeded).toHaveBeenCalledOnce();
+  });
+
+  it("cancels the provider recurrence while keeping the local Free contract active", async () => {
+    const fixture = createFixture("catalog_migration", []);
+
+    const result = await reconcileNextBillingProvider(
+      workerContext(),
+      { now, processingToken: "claim_1" },
+      fixture.ports,
+    );
+
+    expect(result.status).toBe("succeeded");
+    expect(fixture.cancelSubscription).toHaveBeenCalledWith("sub_asaas");
+    expect(fixture.syncSubscription).not.toHaveBeenCalled();
+    expect(
+      fixture.billingProviderRepository.saveProviderSubscription,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentPeriodEnd: null,
+        status: "active",
+      }),
+    );
   });
 });
 
@@ -72,7 +94,7 @@ const now = new Date("2026-08-20T12:00:00.000Z");
 const nextDueAt = new Date("2026-09-10T18:00:00.000Z");
 
 function createFixture(
-  kind: "catalog_migration" | "zapi_cancellation",
+  kind: "catalog_migration" | "zapi_retirement",
   amounts: readonly number[],
 ) {
   const task = {
@@ -97,7 +119,9 @@ function createFixture(
     providerSubscriptionId: "sub_asaas",
     status: "ACTIVE" as const,
   }));
+  const cancelSubscription = vi.fn(async () => undefined);
   const gateway: PaymentProviderGateway = {
+    cancelSubscription,
     getProviderStatus: vi.fn(),
     syncCustomer: vi.fn(async () => ({
       created: false,
@@ -107,6 +131,8 @@ function createFixture(
     syncSubscription,
   };
   return {
+    billingProviderRepository,
+    cancelSubscription,
     ports: {
       billingProviderReconciliationRepository: repository,
       billingProviderRepository,
@@ -155,7 +181,6 @@ function providerRepository(
         },
       };
     },
-    saveProviderCheckout: vi.fn(),
     saveProviderCustomer: vi.fn(async () => null),
     saveProviderSubscription: vi.fn(
       async (

@@ -1,35 +1,21 @@
 import { readApiJson } from "../../lib/apiErrors";
 import type {
   BillingAuth,
-  BillingAddonContractResponse,
-  BillingCheckoutSession,
   BillingOverview,
+  BillingPlanHire,
+  BillingPlanQuote,
   BillingProviderStatus,
-  CreateBillingCheckoutInput,
-  EntitlementKey,
-  SyncBillingProviderSubscriptionInput,
-  UpdateEntitlementInput,
-  UpdateBillingSelectionInput,
+  CreateBillingPlanHireInput,
 } from "./types";
 
 export type BillingApi = {
-  cancelZapiRequest: () => Promise<BillingAddonContractResponse>;
-  createCheckout: (
-    input: CreateBillingCheckoutInput,
-  ) => Promise<BillingCheckoutSession>;
+  createPlanHire: (
+    input: CreateBillingPlanHireInput,
+  ) => Promise<BillingPlanHire>;
+  getPlanHire: (hireId: string) => Promise<BillingPlanHire>;
   getOverview: () => Promise<BillingOverview>;
   getProviderStatus: () => Promise<BillingProviderStatus>;
-  requestZapi: () => Promise<BillingAddonContractResponse>;
-  syncProviderSubscription: (
-    input: SyncBillingProviderSubscriptionInput,
-  ) => Promise<unknown>;
-  updateSelection: (
-    input: UpdateBillingSelectionInput,
-  ) => Promise<BillingOverview>;
-  updateEntitlement: (
-    featureKey: EntitlementKey,
-    input: UpdateEntitlementInput,
-  ) => Promise<BillingOverview>;
+  requestPlanQuote: (planId: string) => Promise<BillingPlanQuote>;
 };
 
 export type CreateBillingApiOptions = {
@@ -44,17 +30,16 @@ export function createBillingApi({
   fetch,
 }: CreateBillingApiOptions): BillingApi {
   return {
-    cancelZapiRequest: () =>
-      fetch(billingRoutes.zapiRequest(baseUrl), {
-        headers: createBillingHeaders(auth),
-        method: "DELETE",
-      }).then(readJson<BillingAddonContractResponse>),
-    createCheckout: (input) =>
-      fetch(billingRoutes.providerCheckout(baseUrl), {
+    createPlanHire: (input) =>
+      fetch(billingRoutes.planHires(baseUrl), {
         body: JSON.stringify(input),
         headers: createBillingHeaders(auth),
         method: "POST",
-      }).then(readJson<BillingCheckoutSession>),
+      }).then(readJson<BillingPlanHire>),
+    getPlanHire: (hireId) =>
+      fetch(billingRoutes.planHire(hireId, baseUrl), {
+        headers: createBillingHeaders(auth),
+      }).then(readJson<BillingPlanHire>),
     getOverview: () =>
       fetch(billingRoutes.overview(baseUrl), {
         headers: createBillingHeaders(auth),
@@ -63,50 +48,29 @@ export function createBillingApi({
       fetch(billingRoutes.providerStatus(baseUrl), {
         headers: createBillingHeaders(auth),
       }).then(readJson<BillingProviderStatus>),
-    requestZapi: () =>
-      fetch(billingRoutes.zapiRequest(baseUrl), {
+    requestPlanQuote: (planId) =>
+      fetch(billingRoutes.planQuotes(baseUrl), {
+        body: JSON.stringify({ planId }),
         headers: createBillingHeaders(auth),
         method: "POST",
-      }).then(readJson<BillingAddonContractResponse>),
-    syncProviderSubscription: (input) =>
-      fetch(billingRoutes.providerSync(baseUrl), {
-        body: JSON.stringify(input),
-        headers: createBillingHeaders(auth),
-        method: "POST",
-      }).then(readJson<unknown>),
-    updateSelection: (input) =>
-      fetch(billingRoutes.selection(baseUrl), {
-        body: JSON.stringify(input),
-        headers: createBillingHeaders(auth),
-        method: "PUT",
-      }).then(readJson<BillingOverview>),
-    updateEntitlement: (featureKey, input) =>
-      fetch(billingRoutes.entitlement(featureKey, baseUrl), {
-        body: JSON.stringify(input),
-        headers: createBillingHeaders(auth),
-        method: "PATCH",
-      }).then(readJson<BillingOverview>),
+      }).then(readJson<BillingPlanQuote>),
   };
 }
 
 export const billingRoutes = {
-  entitlement: (featureKey: EntitlementKey, baseUrl?: string) =>
-    createBillingEndpoint(
-      `/billing/entitlements/${encodeURIComponent(featureKey)}`,
-      baseUrl,
-    ),
   overview: (baseUrl?: string) =>
     createBillingEndpoint("/billing/overview", baseUrl),
-  providerCheckout: (baseUrl?: string) =>
-    createBillingEndpoint("/billing/provider/checkout", baseUrl),
+  planHire: (hireId: string, baseUrl?: string) =>
+    createBillingEndpoint(
+      `/billing/plan-hires/${encodeURIComponent(hireId)}`,
+      baseUrl,
+    ),
+  planHires: (baseUrl?: string) =>
+    createBillingEndpoint("/billing/plan-hires", baseUrl),
+  planQuotes: (baseUrl?: string) =>
+    createBillingEndpoint("/billing/plan-quotes", baseUrl),
   providerStatus: (baseUrl?: string) =>
     createBillingEndpoint("/billing/provider/status", baseUrl),
-  providerSync: (baseUrl?: string) =>
-    createBillingEndpoint("/billing/provider/subscription/sync", baseUrl),
-  selection: (baseUrl?: string) =>
-    createBillingEndpoint("/billing/selection", baseUrl),
-  zapiRequest: (baseUrl?: string) =>
-    createBillingEndpoint("/billing/addons/zapi/request", baseUrl),
 } as const;
 
 function createBillingHeaders(auth: BillingAuth): HeadersInit {

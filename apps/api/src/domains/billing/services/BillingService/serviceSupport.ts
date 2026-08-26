@@ -5,9 +5,11 @@ import type { BillingProviderReconciliationRepository } from "../../ports/billin
 import type { BillingRepository } from "../../ports/billingRepository.js";
 import type { BillingWebhookRepository } from "../../ports/billingWebhookRepository.js";
 import type { PaymentProviderGateway } from "../../ports/paymentProviderGateway.js";
+import type { BillingPlanHireRepository } from "../../ports/billingPlanHireRepository.js";
 
 export type BillingServicePorts = {
   billingProviderRepository?: BillingProviderRepository;
+  billingPlanHireRepository?: BillingPlanHireRepository;
   billingProviderReconciliationRepository?: BillingProviderReconciliationRepository;
   billingRepository: BillingRepository;
   billingWebhookRepository?: BillingWebhookRepository;
@@ -15,6 +17,15 @@ export type BillingServicePorts = {
   paymentProviderGateway?: PaymentProviderGateway;
   publicAppUrl?: string;
 };
+
+export function getBillingPlanHireRepository(
+  ports: BillingServicePorts,
+): BillingPlanHireRepository {
+  if (!ports.billingPlanHireRepository) {
+    throw new BillingScopeError("billingPlanHireRepository");
+  }
+  return ports.billingPlanHireRepository;
+}
 
 export class BillingScopeError extends Error {
   constructor(fieldName: string) {

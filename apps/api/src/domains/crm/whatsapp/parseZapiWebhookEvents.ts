@@ -16,7 +16,7 @@ export type ParsedZapiStatus = {
 
 export type ParsedZapiConnectionEvent = {
   connectedPhone: string | null;
-  status: CrmConnectionConfiguredStatus;
+  status: CrmConnectionConfiguredStatus | null;
 };
 
 export function parseZapiDelivery(payload: Record<string, unknown>) {
@@ -39,12 +39,20 @@ export function parseZapiStatus(payload: Record<string, unknown>) {
 
 export function parseZapiConnected(payload: Record<string, unknown>) {
   const rawStatus = readString(payload.status)?.toUpperCase();
-  const connected =
-    payload.connected === false || rawStatus === "DISCONNECTED" ? false : true;
+  const status =
+    payload.connected === true ||
+    payload.smartphoneConnected === true ||
+    rawStatus === "CONNECTED"
+      ? "active"
+      : payload.connected === false ||
+          payload.smartphoneConnected === false ||
+          rawStatus === "DISCONNECTED"
+        ? "disconnected"
+        : null;
   return {
     connectedPhone:
       readString(payload.connectedPhone) ?? readString(payload.phone) ?? null,
-    status: connected ? "active" : "disconnected",
+    status,
   } satisfies ParsedZapiConnectionEvent;
 }
 

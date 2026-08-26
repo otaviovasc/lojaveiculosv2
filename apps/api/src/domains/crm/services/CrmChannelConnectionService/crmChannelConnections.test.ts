@@ -4,7 +4,6 @@ import { createTestCrmConnectionRepository } from "../../testSupportConnections.
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import type { UpsertCrmChannelRoutingPolicyInput } from "../../ports/crmRoutingPolicyRepository.js";
 import { crmChannelConnectionCapabilityFacts } from "../../channelConnections/connectionCreation.js";
-import { BillingContractUnavailableError } from "../../../billing/ports/billingQuotaGuard.js";
 import {
   createZapiWebhookSetupIntent,
   withZapiWebhookSetupState,
@@ -18,26 +17,22 @@ const storeId = "11111111-1111-4111-8111-111111111111";
 const tenantId = "22222222-2222-4222-8222-222222222222";
 
 describe("getCrmChannelConnectionOverview", () => {
-  it("returns existing connections when the store contract needs billing repair", async () => {
+  it("renders connection setup from CRM state alone", async () => {
     const overview = await getCrmChannelConnectionOverview(
       createContext(["crm"]),
-      createPortsThatNeedBillingRepair(),
+      createPorts(),
     );
 
-    expect(overview.allowance).toEqual({ limit: 0, remaining: 0, used: 0 });
-    expect(overview.billingState).toEqual({
-      code: "BILLING_CONTRACT_UNAVAILABLE",
-      status: "unavailable",
-    });
+    expect(overview.allowance).toEqual({ limit: 1, remaining: 1, used: 0 });
   });
 
-  it("keeps Z-API discoverable when contracted capacity is not active", async () => {
+  it("keeps Z-API discoverable without an add-on capacity", async () => {
     const overview = await getCrmChannelConnectionOverview(
       createContext(["crm"]),
-      createPorts(0),
+      createPorts(),
     );
 
-    expect(overview.allowance).toEqual({ limit: 0, remaining: 0, used: 0 });
+    expect(overview.allowance).toEqual({ limit: 1, remaining: 1, used: 0 });
     expect(overview.availableSetups).toEqual([
       { broker: "direct", channel: "whatsapp", provider: "zapi" },
       { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
@@ -47,12 +42,12 @@ describe("getCrmChannelConnectionOverview", () => {
 
   it("keeps Z-API discoverable without entitlement or capacity", async () => {
     const withoutCapacity = await getCrmChannelConnectionOverview(
-      createContext(["crm", "crm_zapi"]),
-      createPorts(0),
+      createContext(["crm"]),
+      createPorts(),
     );
     const withoutEntitlement = await getCrmChannelConnectionOverview(
       createContext(["crm"]),
-      createPorts(1),
+      createPorts(),
     );
 
     expect(withoutCapacity.availableSetups).toEqual([
@@ -75,7 +70,14 @@ describe("updateCrmChannelConnection", () => {
       {
         broker: "direct",
         channel: "whatsapp",
-        credentialsRef: {},
+        credentialsRef: {
+          mode: "stored",
+          stored: {
+            clientToken: "sealed:client-token",
+            instanceId: "sealed:instance-id",
+            instanceToken: "sealed:instance-token",
+          },
+        },
         displayName: "WhatsApp",
         externalConnectionId: null,
         externalInstanceId: null,
@@ -115,7 +117,7 @@ describe("updateCrmChannelConnection", () => {
     const updated = await updateCrmChannelConnection(
       createServiceContext({
         actor: { id: "user_1", kind: "user" },
-        entitlements: ["crm", "crm_zapi"],
+        entitlements: ["crm"],
         permissions: ["crm.messaging.connection.setup"],
         request: { requestId: "request_1" },
         storeId,
@@ -160,7 +162,7 @@ describe("updateCrmChannelConnection", () => {
   });
 });
 
-function createContext(entitlements: ("crm" | "crm_zapi")[]) {
+function createContext(entitlements: "crm"[]) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
     entitlements,
@@ -171,29 +173,9 @@ function createContext(entitlements: ("crm" | "crm_zapi")[]) {
   });
 }
 
-function createPorts(limit: number): CrmServicePorts {
+function createPorts(): CrmServicePorts {
   return {
-    billingQuotaGuard: {
-      assertAvailable: vi.fn(async () => undefined),
-      getAllowance: vi.fn(async () => ({
-        limit,
-        remaining: limit,
-        used: 0,
-      })),
-    },
     crmConnectionRepository: createTestCrmConnectionRepository(),
     crmRepository: {} as never,
-  };
-}
-
-function createPortsThatNeedBillingRepair(): CrmServicePorts {
-  return {
-    ...createPorts(0),
-    billingQuotaGuard: {
-      assertAvailable: vi.fn(async () => undefined),
-      getAllowance: vi.fn(async () => {
-        throw new BillingContractUnavailableError();
-      }),
-    },
   };
 }

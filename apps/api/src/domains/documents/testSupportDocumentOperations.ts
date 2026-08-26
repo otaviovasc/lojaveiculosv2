@@ -19,6 +19,7 @@ export function createDocumentOperationTestContext(
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
     audit: options.audit ?? { record: vi.fn(async () => undefined) },
+    entitlements: ["documents"],
     permissions: options.permissions ?? [
       "documents.preview",
       "documents.download",

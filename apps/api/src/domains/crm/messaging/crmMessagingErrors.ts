@@ -48,9 +48,9 @@ export class CrmCampaignNotFoundError extends Error {
 }
 
 export class CrmMessageActionError extends Error {
-  readonly status: 400 | 409 | 422;
+  readonly status: 400 | 409 | 422 | 429;
 
-  constructor(message: string, status: 400 | 409 | 422 = 422) {
+  constructor(message: string, status: 400 | 409 | 422 | 429 = 422) {
     super(message);
     this.name = "CrmMessageActionError";
     this.status = status;

@@ -1,7 +1,5 @@
 import { and, eq, inArray, isNull, or, gt, lte } from "drizzle-orm";
 import {
-  addons,
-  billingAddonContracts,
   planFeatures,
   storeEntitlementEvents,
   storeEntitlements,
@@ -13,7 +11,7 @@ import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 export async function projectSelectedEntitlements(
   db: DrizzleBillingClient,
   input: {
-    source: "billing_checkout" | "billing_selection";
+    source: "billing_checkout" | "billing_plan_hire" | "billing_selection";
     storeId: string;
     subscriptionId: string;
     tenantId: string;
@@ -21,7 +19,10 @@ export async function projectSelectedEntitlements(
 ) {
   const now = new Date();
   const [subscription] = await db
-    .select({ status: subscriptions.status })
+    .select({
+      currentPeriodEnd: subscriptions.currentPeriodEnd,
+      status: subscriptions.status,
+    })
     .from(subscriptions)
     .where(
       and(
@@ -31,7 +32,11 @@ export async function projectSelectedEntitlements(
     )
     .limit(1);
   const subscriptionGrantsAccess =
-    subscription?.status === "active" || subscription?.status === "trialing";
+    subscription?.status === "active" ||
+    (subscription?.status === "past_due" &&
+      Boolean(
+        subscription.currentPeriodEnd && subscription.currentPeriodEnd > now,
+      ));
   const items = await db
     .select()
     .from(subscriptionItems)
@@ -47,32 +52,13 @@ export async function projectSelectedEntitlements(
       ),
     );
   const planIds = items.flatMap((item) => (item.planId ? [item.planId] : []));
-  const addonIds = items.flatMap((item) =>
-    item.addonId ? [item.addonId] : [],
-  );
-  const [features, addonRows, addonContracts, current] = await Promise.all([
+  const [features, current] = await Promise.all([
     planIds.length
       ? db
           .select()
           .from(planFeatures)
           .where(inArray(planFeatures.planId, planIds))
       : [],
-    addonIds.length
-      ? db.select().from(addons).where(inArray(addons.id, addonIds))
-      : [],
-    db
-      .select()
-      .from(billingAddonContracts)
-      .where(
-        and(
-          eq(billingAddonContracts.subscriptionId, input.subscriptionId),
-          eq(billingAddonContracts.storeId, input.storeId),
-          inArray(billingAddonContracts.status, [
-            "paid_awaiting_setup",
-            "active",
-          ]),
-        ),
-      ),
     db
       .select()
       .from(storeEntitlements)
@@ -89,15 +75,6 @@ export async function projectSelectedEntitlements(
           ...features
             .filter((feature) => feature.included === 1)
             .map((feature) => feature.featureKey),
-          ...addonRows
-            .filter(
-              (addon) =>
-                addon.code !== "crm_zapi" ||
-                addonContracts.some(
-                  (contract) => contract.addonId === addon.id,
-                ),
-            )
-            .map((addon) => addon.featureKey),
         ]
       : [],
   );
@@ -110,20 +87,6 @@ export async function projectSelectedEntitlements(
   }
   for (const featureKey of selected) {
     const entitlement = current.find((item) => item.featureKey === featureKey);
-    const zapiCancellation = addonContracts.find(
-      (contract) =>
-        contract.cancellationScheduledFor &&
-        contract.cancellationScheduledFor > now,
-    );
-    if (
-      featureKey === "crm_zapi" &&
-      zapiCancellation &&
-      entitlement?.status === "active" &&
-      entitlement.endsAt?.getTime() ===
-        zapiCancellation.cancellationScheduledFor?.getTime()
-    ) {
-      continue;
-    }
     if (entitlement && shouldPreserveExternalEntitlement(entitlement, now))
       continue;
     if (entitlement?.status === "active" && !entitlement.endsAt) continue;

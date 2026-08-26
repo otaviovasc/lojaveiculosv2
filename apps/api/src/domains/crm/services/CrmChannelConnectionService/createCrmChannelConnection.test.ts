@@ -12,13 +12,14 @@ import {
 } from "../../testSupportCrmChannelConnectionCreation.js";
 
 describe("createCrmChannelConnection", () => {
-  it("creates a store-scoped sandbox connection inside the quota transaction", async () => {
+  it("creates a store-scoped sandbox connection inside the repository transaction", async () => {
     const ports = createPorts();
 
     const connection = await createCrmChannelConnection(
       createContext(),
       {
         channel: "whatsapp",
+        clientToken: "client-secret",
         displayName: "Atendimento",
         instanceId: "instance_1",
         instanceToken: "raw-secret",
@@ -40,7 +41,7 @@ describe("createCrmChannelConnection", () => {
         "conversation_start",
       ],
       displayName: "Atendimento",
-      externalInstanceId: "instance_1",
+      externalInstanceId: null,
       provider: "zapi",
       status: "sandbox",
     });
@@ -49,10 +50,11 @@ describe("createCrmChannelConnection", () => {
       tenantId: tenantId as never,
     });
     expect(stored).toHaveLength(1);
-    expect(stored?.[0]?.externalInstanceId).toBe("instance_1");
+    expect(stored?.[0]?.externalInstanceId).toBeNull();
     expect(stored?.[0]?.credentialsRef).toMatchObject({
       mode: "stored",
       stored: {
+        clientToken: "sealed:client-secret",
         instanceId: "sealed:instance_1",
         instanceToken: "sealed:raw-secret",
       },
@@ -68,6 +70,7 @@ describe("createCrmChannelConnection", () => {
         createContext([]),
         {
           channel: "whatsapp",
+          clientToken: "client-secret",
           displayName: "Atendimento",
           instanceId: "instance_1",
           instanceToken: "raw-secret",
@@ -84,6 +87,7 @@ describe("createCrmChannelConnection", () => {
       createContext(),
       {
         channel: "whatsapp",
+        clientToken: "client-secret",
         displayName: "Principal",
         instanceId: "instance_1",
         instanceToken: "raw-secret",
@@ -97,6 +101,7 @@ describe("createCrmChannelConnection", () => {
         createContext(),
         {
           channel: "whatsapp",
+          clientToken: "client-secret-2",
           displayName: "Secundária",
           instanceId: "instance_2",
           instanceToken: "raw-secret-2",
@@ -106,8 +111,8 @@ describe("createCrmChannelConnection", () => {
       ),
     ).rejects.toMatchObject({
       details: {
-        identityRelation: "different_instance",
-        nextAction: "replace_instance",
+        identityRelation: "same_instance",
+        nextAction: "repair_credentials",
       },
     });
   });
@@ -121,6 +126,7 @@ describe("createCrmChannelConnection", () => {
         createContext(),
         {
           channel: "whatsapp",
+          clientToken: "client-token-first",
           displayName: "Primeira",
           instanceId: "instance_first",
           instanceToken: "token_first",
@@ -132,6 +138,7 @@ describe("createCrmChannelConnection", () => {
         createContext(),
         {
           channel: "whatsapp",
+          clientToken: "client-token-second",
           displayName: "Segunda",
           instanceId: "instance_second",
           instanceToken: "token_second",
@@ -183,6 +190,7 @@ describe("createCrmChannelConnection", () => {
         createContext(),
         {
           channel: "whatsapp",
+          clientToken: "replacement-client-token",
           displayName: "Atendimento",
           instanceId: "replacement-instance",
           instanceToken: "replacement-token",

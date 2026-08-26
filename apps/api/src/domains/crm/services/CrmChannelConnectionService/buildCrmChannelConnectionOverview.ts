@@ -1,5 +1,4 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import { BillingContractUnavailableError } from "../../../billing/ports/billingQuotaGuard.js";
 import {
   connectionIdentityKey,
   setupProviderForConnection,
@@ -9,7 +8,6 @@ import type {
   CrmChannelConnectionOverview,
   CrmChannelConnectionSetupIdentity,
 } from "../../channelConnections/connectionCreation.js";
-import { getCrmBillingQuotaGuard } from "../CrmService/crmConnectionSetupSupport.js";
 import {
   requireCrmMessagingScope,
   type CrmServicePorts,
@@ -27,28 +25,6 @@ export async function buildCrmChannelConnectionOverview(
   connections: readonly CrmChannelConnection[],
 ): Promise<CrmChannelConnectionOverview> {
   const scope = requireCrmMessagingScope(context);
-  const getAllowance = getCrmBillingQuotaGuard(ports).getAllowance;
-  if (!getAllowance) {
-    throw new Error("Billing quota allowance resolver is unavailable.");
-  }
-  let allowance = { limit: 0, remaining: 0, used: 0 };
-  let billingState: CrmChannelConnectionOverview["billingState"] = {
-    code: null,
-    status: "available",
-  };
-  try {
-    allowance = await getAllowance({
-      quotaKey: "crm_zapi",
-      storeId: scope.storeId,
-      tenantId: scope.tenantId,
-    });
-  } catch (error) {
-    if (!(error instanceof BillingContractUnavailableError)) throw error;
-    billingState = {
-      code: "BILLING_CONTRACT_UNAVAILABLE",
-      status: "unavailable",
-    };
-  }
   const configured = new Set(
     connections
       .filter((connection) => connection.status !== "archived")
@@ -59,14 +35,21 @@ export async function buildCrmChannelConnectionOverview(
     "entitlements" in context && Array.isArray(context.entitlements)
       ? context.entitlements
       : [];
+  const activeZapiCount = connections.filter(
+    (connection) =>
+      connection.provider === "zapi" && connection.status !== "archived",
+  ).length;
   return {
-    allowance,
+    allowance: {
+      limit: 1,
+      remaining: Math.max(0, 1 - activeZapiCount),
+      used: activeZapiCount,
+    },
     availableSetups: availableSetups.filter((identity) => {
       if (configured.has(connectionIdentityKey(identity))) return false;
       if (identity.provider === "zapi") return true;
       return entitlements.includes("crm");
     }),
-    billingState,
     connections,
   };
 }

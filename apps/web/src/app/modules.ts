@@ -69,18 +69,38 @@ export const navigationGroups: NavigationGroup[] = [
     label: "Operação diária",
     items: [
       { icon: Home, id: "dashboard", label: "Início" },
-      { icon: Car, id: "inventory", label: "Veículos" },
-      { icon: BadgeDollarSign, id: "sales", label: "Vendas" },
-      { icon: Users, id: "customers", label: "Clientes" },
+      {
+        entitlementKey: "inventory",
+        icon: Car,
+        id: "inventory",
+        label: "Veículos",
+      },
+      {
+        entitlementKey: "sales",
+        icon: BadgeDollarSign,
+        id: "sales",
+        label: "Vendas",
+      },
+      {
+        entitlementKey: "sales",
+        icon: Users,
+        id: "customers",
+        label: "Clientes",
+      },
       {
         entitlementKey: "crm",
         icon: MessageCircle,
         id: "crm",
         label: "WhatsApp",
       },
-      { icon: FileText, id: "documents", label: "Documentos" },
       {
-        entitlementKey: "simulations",
+        entitlementKey: "documents",
+        icon: FileText,
+        id: "documents",
+        label: "Documentos",
+      },
+      {
+        entitlementKey: "financing",
         icon: Calculator,
         id: "simulations",
         label: "Simulações",
@@ -90,10 +110,25 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "Gestão",
     items: [
-      { icon: Bot, id: "auto-entries", label: "Lançamentos" },
-      { icon: HandCoins, id: "commissions", label: "Comissões" },
+      {
+        entitlementKey: "finance",
+        icon: Bot,
+        id: "auto-entries",
+        label: "Lançamentos",
+      },
+      {
+        entitlementKey: "commissions",
+        icon: HandCoins,
+        id: "commissions",
+        label: "Comissões",
+      },
       { icon: Receipt, id: "billing", label: "Assinatura" },
-      { icon: Receipt, id: "expenses", label: "Gastos" },
+      {
+        entitlementKey: "finance",
+        icon: Receipt,
+        id: "expenses",
+        label: "Gastos",
+      },
       {
         entitlementKey: "fiscal",
         icon: FileText,
@@ -107,6 +142,7 @@ export const navigationGroups: NavigationGroup[] = [
         label: "Relatórios",
       },
       {
+        entitlementKey: "checklists",
         icon: ShieldCheck,
         id: "checklists",
         label: "Checklists",
@@ -117,13 +153,13 @@ export const navigationGroups: NavigationGroup[] = [
     label: "Canais",
     items: [
       {
-        entitlementKey: "subdomain",
+        entitlementKey: "storefront",
         icon: Palette,
         id: "public-site",
         label: "Personalizar",
       },
       {
-        entitlementKey: "subdomain",
+        entitlementKey: "storefront",
         icon: FileText,
         id: "custom-pages",
         label: "Páginas",

@@ -28,6 +28,7 @@ export function registerCrmWhatsappZapiSupportRoutes(
       return context.json(
         await options.services.createZapiConnectionAsSupport(serviceContext, {
           ...supportScope(input),
+          clientToken: input.clientToken,
           instanceId: input.instanceId,
           instanceToken: input.instanceToken,
           displayName: input.displayName ?? "Z-API",
@@ -52,6 +53,7 @@ export function registerCrmWhatsappZapiSupportRoutes(
             serviceContext,
             {
               ...supportScope(input),
+              clientToken: input.clientToken,
               instanceId: input.instanceId,
               instanceToken: input.instanceToken,
               connectionId: context.req.param("connectionId"),

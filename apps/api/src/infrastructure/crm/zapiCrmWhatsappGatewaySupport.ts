@@ -3,12 +3,14 @@ import {
   type CrmMessagingProviderStatus,
 } from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
 } from "../../domains/crm/ports/crmConnectionSetupProvider.js";
 export { resolveZapiCredentials } from "./zapiCrmWhatsappCredentials.js";
 
 export {
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
 };

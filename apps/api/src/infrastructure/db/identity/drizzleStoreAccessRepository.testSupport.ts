@@ -206,7 +206,7 @@ function findEntitlementRows(rows: StoredRows) {
     .filter(
       (entitlement) =>
         entitlement.storeId === access.storeId &&
-        (entitlement.status === "active" || entitlement.status === "trialing"),
+        entitlement.status === "active",
     )
     .map((entitlement) => ({
       endsAt: entitlement.endsAt,

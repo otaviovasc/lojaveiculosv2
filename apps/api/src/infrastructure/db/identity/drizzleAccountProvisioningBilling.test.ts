@@ -16,22 +16,23 @@ const store = {
 };
 
 describe("account provisioning billing defaults", () => {
-  it("persists a store plan contract for quota-backed actions during trial", async () => {
+  it("persists a permanent Free contract and its included entitlements", async () => {
     const db = createFakeBillingAccountDb({
       planFeatures: [
         {
           featureKey: "analytics",
-          includedInTrial: true,
+          included: 1,
+          includedInTrial: false,
           planId: "plan_1",
           trialLimitValue: null,
         },
       ],
       plans: [
         {
-          catalogVersion: "2026-07-v1",
+          catalogVersion: "2026-08-v3",
           id: "plan_1",
           isDefault: true,
-          monthlyPriceCents: 29900,
+          monthlyPriceCents: 0,
           publishedAt: new Date("2026-07-01T00:00:00.000Z"),
           status: "active",
         },
@@ -54,9 +55,10 @@ describe("account provisioning billing defaults", () => {
       quantity: 1,
       storeId: "store_1",
       tenantId: "tenant_1",
-      unitAmountCents: 29900,
+      unitAmountCents: 0,
     });
     expect(planItem?.subscriptionId).toBeTruthy();
+    expect(planItem?.endsAt).toBeUndefined();
   });
 
   it("keeps paid items separate from the safe trial catalog", () => {
@@ -122,9 +124,11 @@ describe("account provisioning billing defaults", () => {
     expect(source).not.toContain(".insert(planFeatures)");
     expect(source).toContain("toStorePlanContractItem");
     expect(source).toContain("catalogVersion");
-    expect(source).toContain("includedInTrial");
+    expect(source).toContain("feature.included");
     expect(source).toContain("../billing/drizzleBillingAccount.js");
-    expect(billingAccount).toContain("addDays(now, 14)");
+    expect(billingAccount).toContain("currentPeriodEnd: null");
+    expect(billingAccount).toContain('status: "active"');
+    expect(billingAccount).not.toContain("local_asaas_");
     expect(
       existsSync(
         new URL("../billing/drizzleBillingPlanContract.ts", import.meta.url),
@@ -132,13 +136,14 @@ describe("account provisioning billing defaults", () => {
     ).toBe(true);
   });
 
-  it("marks newly provisioned trial entitlements as safe trial catalog rows", () => {
+  it("marks newly provisioned entitlements as permanent catalog rows", () => {
     const source = readFileSync(
       new URL("./drizzleAccountProvisioningWrites.ts", import.meta.url),
       "utf8",
     );
 
-    expect(source).toContain('"safe_trial_catalog"');
+    expect(source).toContain('sourceDetail: "billing_catalog"');
+    expect(source).not.toContain('"safe_trial_catalog"');
   });
 
   it("publishes the paid expansion catalog with server-owned prices", () => {

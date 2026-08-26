@@ -1,20 +1,13 @@
 import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
-import {
-  providerEvents,
-  subscriptionItems,
-  subscriptions,
-} from "@lojaveiculosv2/db";
+import { providerEvents } from "@lojaveiculosv2/db";
 import type {
-  BillingProviderSyncResult,
   BillingProviderWebhookEvent,
   BillingWebhookRepository,
-  SyncBillingProviderSubscriptionInput,
 } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { syncProviderCheckout } from "./drizzleBillingCheckoutWebhook.js";
-import { resolveStoreId } from "./drizzleBillingWebhookScope.js";
-import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
 import { upsertProviderPayment } from "./drizzleBillingPaymentWebhook.js";
+import { syncProviderSubscription } from "./drizzleBillingSubscriptionWebhook.js";
 
 export function createDrizzleBillingWebhookRepository(
   db: DrizzleBillingClient,
@@ -37,6 +30,7 @@ export function createDrizzleBillingWebhookRepository(
             eq(providerEvents.id, input.eventId),
             or(
               eq(providerEvents.status, "failed"),
+              eq(providerEvents.status, "pending_reconciliation"),
               eq(providerEvents.status, "received"),
               and(
                 eq(providerEvents.status, "processing"),
@@ -85,7 +79,9 @@ export function createDrizzleBillingWebhookRepository(
       return syncProviderCheckout(db, input);
     },
     async syncProviderSubscription(input) {
-      return syncProviderSubscription(db, input);
+      return db.transaction((tx) =>
+        syncProviderSubscription(tx as DrizzleBillingClient, input),
+      );
     },
     async updateStatus(input) {
       const filters = [eq(providerEvents.id, input.eventId)];
@@ -99,7 +95,8 @@ export function createDrizzleBillingWebhookRepository(
         .update(providerEvents)
         .set({
           errorMessage: input.errorMessage ?? null,
-          processedAt: new Date(),
+          processedAt:
+            input.status === "pending_reconciliation" ? null : new Date(),
           processingStartedAt: null,
           processingToken: null,
           status: input.status,
@@ -115,55 +112,6 @@ export function createDrizzleBillingWebhookRepository(
         upsertProviderPayment(tx as DrizzleBillingClient, input),
       );
     },
-  };
-}
-
-async function syncProviderSubscription(
-  db: DrizzleBillingClient,
-  input: SyncBillingProviderSubscriptionInput,
-): Promise<BillingProviderSyncResult> {
-  const [subscription] = await db
-    .update(subscriptions)
-    .set({
-      currentPeriodEnd: input.currentPeriodEnd,
-      status: input.status,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(subscriptions.provider, input.provider),
-        eq(subscriptions.providerSubscriptionId, input.providerSubscriptionId),
-      ),
-    )
-    .returning();
-  if (!subscription) {
-    return {
-      reason: "unknown_subscription",
-      status: "ignored",
-      storeId: null,
-      tenantId: null,
-    };
-  }
-
-  const affectedStores = await db
-    .selectDistinct({ storeId: subscriptionItems.storeId })
-    .from(subscriptionItems)
-    .where(eq(subscriptionItems.subscriptionId, subscription.id));
-  for (const affected of affectedStores) {
-    if (!affected.storeId) continue;
-    await projectSelectedEntitlements(db, {
-      source: "billing_selection",
-      storeId: affected.storeId,
-      subscriptionId: subscription.id,
-      tenantId: subscription.tenantId,
-    });
-  }
-
-  const storeId = await resolveStoreId(db, subscription.id);
-  return {
-    status: "synced",
-    storeId: storeId as never,
-    tenantId: subscription.tenantId as never,
   };
 }
 

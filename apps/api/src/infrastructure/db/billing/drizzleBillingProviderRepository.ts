@@ -1,12 +1,7 @@
 import { desc, eq } from "drizzle-orm";
-import {
-  billingCheckoutSessions,
-  billingCustomers,
-  subscriptions,
-} from "@lojaveiculosv2/db";
+import { billingCustomers, subscriptions } from "@lojaveiculosv2/db";
 import type {
   BillingProviderAccount,
-  BillingProviderCheckoutRecord,
   BillingProviderCustomerRecord,
   BillingProviderRepository,
   BillingProviderSubscriptionRecord,
@@ -16,7 +11,6 @@ import {
   createDrizzleBillingRepository,
   type DrizzleBillingClient,
 } from "./drizzleBillingRepository.js";
-import { ensureInitialZapiContractForCheckout } from "./drizzleBillingAddonContracts.js";
 
 export function createDrizzleBillingProviderRepository(
   db: DrizzleBillingClient,
@@ -62,53 +56,6 @@ export function createDrizzleBillingProviderRepository(
         .returning();
       return row ? toCustomerRecord(row) : null;
     },
-    async saveProviderCheckout(input) {
-      return db.transaction(async (tx) => {
-        const txDb = tx as DrizzleBillingClient;
-        const [row] = await txDb
-          .insert(billingCheckoutSessions)
-          .values({
-            callbackUrls: input.callbackUrls,
-            checkoutUrl: input.checkoutUrl,
-            expiresAt: input.expiresAt,
-            externalReference: input.externalReference,
-            provider: input.provider,
-            providerCheckoutId: input.providerCheckoutId,
-            raw: input.raw,
-            status: input.status,
-            storeId: input.storeId,
-            subscriptionId: input.subscriptionId,
-            tenantId: input.tenantId,
-          })
-          .onConflictDoUpdate({
-            set: {
-              callbackUrls: input.callbackUrls,
-              checkoutUrl: input.checkoutUrl,
-              expiresAt: input.expiresAt,
-              externalReference: input.externalReference,
-              raw: input.raw,
-              status: input.status,
-              storeId: input.storeId,
-              subscriptionId: input.subscriptionId,
-              tenantId: input.tenantId,
-              updatedAt: new Date(),
-            },
-            target: [
-              billingCheckoutSessions.provider,
-              billingCheckoutSessions.providerCheckoutId,
-            ],
-          })
-          .returning();
-        if (row) {
-          await ensureInitialZapiContractForCheckout(txDb, {
-            ...(input.storeId ? { storeId: input.storeId } : {}),
-            subscriptionId: input.subscriptionId,
-            tenantId: input.tenantId,
-          });
-        }
-        return row ? toCheckoutRecord(row) : null;
-      });
-    },
     async saveProviderSubscription(input) {
       const [row] = await db
         .update(subscriptions)
@@ -124,23 +71,6 @@ export function createDrizzleBillingProviderRepository(
         .returning();
       return row ? toSubscriptionRecord(row) : null;
     },
-  };
-}
-
-function toCheckoutRecord(
-  row: typeof billingCheckoutSessions.$inferSelect,
-): BillingProviderCheckoutRecord {
-  return {
-    checkoutUrl: row.checkoutUrl,
-    expiresAt: row.expiresAt,
-    externalReference: row.externalReference,
-    id: row.id,
-    provider: row.provider as "asaas",
-    providerCheckoutId: row.providerCheckoutId,
-    status: row.status,
-    storeId: row.storeId,
-    subscriptionId: row.subscriptionId,
-    tenantId: row.tenantId,
   };
 }
 

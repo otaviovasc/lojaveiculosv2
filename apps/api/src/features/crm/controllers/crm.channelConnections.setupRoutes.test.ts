@@ -14,19 +14,13 @@ import {
 import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM channel connection setup routes", () => {
-  it("keeps Z-API discoverable but denies first configuration without entitlement", async () => {
-    const app = createTestApp({
-      entitlements: ["crm"],
-      billingQuotaGuard: {
-        assertAvailable: vi.fn(),
-        getAllowance: vi.fn(async () => ({ limit: 0, remaining: 0, used: 0 })),
-      },
-    });
+  it("allows Z-API setup with the base CRM entitlement", async () => {
+    const app = createTestApp({ entitlements: ["crm"] });
     const overview = await app.request("/api/v1/crm/channel-connections");
     expect(overview.status).toBe(200);
     const overviewBody: unknown = await overview.json();
     expect(jsonObject(overviewBody)).toMatchObject({
-      allowance: { limit: 0, remaining: 0, used: 0 },
+      allowance: { limit: 1, remaining: 1, used: 0 },
       availableSetups: arrayContaining([
         { broker: "direct", channel: "whatsapp", provider: "zapi" },
       ]),
@@ -35,6 +29,7 @@ describe("CRM channel connection setup routes", () => {
     const response = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify({
         channel: "whatsapp",
+        clientToken: "client-token-1",
         instanceId: "instance-1",
         instanceToken: "instance-secret-1",
         provider: "zapi",
@@ -43,7 +38,7 @@ describe("CRM channel connection setup routes", () => {
       method: "POST",
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).not.toBe(403);
   });
 
   it("encrypts authorized credentials and requires disconnect before pairing", async () => {
@@ -75,10 +70,6 @@ describe("CRM channel connection setup routes", () => {
       smartphoneConnected: true,
     };
     const app = createTestApp({
-      billingQuotaGuard: {
-        assertAvailable: vi.fn(async () => undefined),
-        getAllowance: vi.fn(async () => ({ limit: 1, remaining: 1, used: 0 })),
-      },
       crmConnectionCredentialVault: {
         open: vi.fn(async ({ sealed }: { sealed: string }) =>
           sealed.replace(/^sealed:[^:]+:/u, ""),
@@ -104,6 +95,7 @@ describe("CRM channel connection setup routes", () => {
     });
     const credentials = {
       channel: "whatsapp",
+      clientToken: "client-token-1",
       instanceId: "instance-1",
       instanceToken: "instance-secret-1",
       provider: "zapi",
@@ -135,6 +127,7 @@ describe("CRM channel connection setup routes", () => {
       credentialsRef: {
         mode: "stored",
         stored: {
+          clientToken: "sealed:zapi.client-token:client-token-1",
           instanceId: "sealed:zapi.instance-id:instance-1",
           instanceToken: "sealed:zapi.instance-token:instance-secret-1",
         },
@@ -199,14 +192,11 @@ describe("CRM channel connection setup routes", () => {
     const repository = createMemoryCrmConnectionRepository([own, foreign]);
     const app = createTestApp({
       crmConnectionRepository: repository,
-      billingQuotaGuard: {
-        assertAvailable: vi.fn(async () => undefined),
-        getAllowance: vi.fn(async () => ({ limit: 1, remaining: 1, used: 0 })),
-      },
     });
     const response = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify({
         channel: "whatsapp",
+        clientToken: "client-token-own",
         instanceId: "instance-own",
         instanceToken: "instance-secret",
         provider: "zapi",

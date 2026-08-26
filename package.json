@@ -83,7 +83,7 @@
     "test:quality-tools": "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions --dir ../../tools/quality --root ../..",
     "test:coverage": "pnpm -r test:coverage",
     "test:seed-document-pdf": "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/storage/seed-product-document-pdf.test.mjs --root ../..",
-    "test:seed-tools": "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/db/push-product-schema.test.mjs tools/db/reset-local-databases-core.test.mjs tools/migration/crm-whatsapp/composio-connection-support.test.mjs tools/qa/local-seed-smoke-policy.test.mjs tools/qa/local-seed-smoke-providers.test.mjs tools/staging/seed-crm-ui-demo.test.mjs tools/storage/seed-product-media-placeholder.test.mjs tools/storage/storageScriptEnv.test.mjs --root ../..",
+    "test:seed-tools": "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/db/backfill-missing-billing-accounts.test.mjs tools/db/push-product-schema.test.mjs tools/db/reset-local-databases-core.test.mjs tools/migration/crm-whatsapp/composio-connection-support.test.mjs tools/qa/local-seed-smoke-policy.test.mjs tools/qa/local-seed-smoke-providers.test.mjs tools/staging/seed-crm-ui-demo.test.mjs tools/storage/seed-product-media-placeholder.test.mjs tools/storage/storageScriptEnv.test.mjs --root ../..",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api exec vitest run src/infrastructure/http/productionSmoke.test.ts",
     "qa:permissions:local": "node tools/qa/local-permission-smoke.mjs",
     "check:format": "node tools/quality/check-format-changed.mjs",

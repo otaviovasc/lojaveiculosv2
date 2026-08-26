@@ -178,32 +178,32 @@ export as a data-access audit event.
 
 ## Billing Contract Direction
 
-A trial is a billing phase of a selected store plan, not the absence of a
-billing contract. Every active or trialing store subscription must have an
-effective store-scoped `subscription_items` plan row. Quota guards resolve
-limits from that immutable catalog selection, while subscription status and
-period dates decide whether access is effective and whether provider billing
-may occur.
+Free is the permanent default contract. Every store is provisioned atomically
+with one open-ended Free `subscription_items` plan row and its entitlement
+projection. New-account paths have no trial phase.
 
 The current server-owned catalog is a versioned domain definition. Deployment
 materializes a missing version transactionally and changes one explicit active
-catalog pointer only after the persisted plan, feature, and add-on rows match
-the canonical checksum. Deployed versions are immutable and superseded
-versions cannot be reactivated. Runtime catalog reads resolve through that
-pointer rather than guessing the newest version from a sortable string. Each
-billing overview pins the pointer once so a concurrent activation cannot mix
-plans and add-ons from different versions.
+catalog pointer only after the persisted plan and feature rows match the
+canonical checksum. Deployed versions are immutable and superseded versions
+cannot be reactivated. Runtime catalog reads resolve through that pointer
+rather than guessing the newest version from a sortable string. Each billing
+overview pins the pointer once so a concurrent activation cannot mix plans or
+capabilities from different versions. Catalog v3 has no active feature
+add-ons; future add-ons, if introduced, must be explicit usage packs or
+professional services.
 
-Catalog activation does not migrate commercial contracts. The copied
-`subscription_items.unit_amount_cents` remains the contracted amount until a
-separate, explicit billing reconciliation changes it with provider evidence and
-audit history.
+Catalog activation does not mutate paid access. A choice is first persisted as
+a durable `billing_plan_hires` aggregate; `subscription_items` changes only
+after confirmed/received Asaas payment evidence is correlated and the contract,
+provider identities, entitlements, audit evidence, and hire completion can be
+committed atomically. Checkout redirects never activate access.
 
-Trial-safe `store_entitlements` remain a separate projection. They determine
-which optional capabilities are available during the trial; deleting paid
-entitlements must not delete the underlying plan selection needed by core
-vehicle and user quotas. New provisioning and migration backfills must preserve
-this invariant for every store in the tenant.
+Unmatched provider events remain pending reconciliation. If paid evidence is
+temporarily inconsistent, Free remains effective until an unambiguous repair.
+Past-due paid access has a seven-day grace period and then falls back to Free
+without deleting customer data. Detailed invariants live in
+`docs/billing-business-rules.md`.
 
 ## RENAVE And Fiscal Reconciliation Direction
 

@@ -20,7 +20,7 @@ export const billingSchemas = {
       startsAt: { type: ["string", "null"], format: "date-time" },
       status: {
         type: "string",
-        enum: ["active", "inactive", "suspended", "trialing"],
+        enum: ["active", "inactive", "suspended"],
       },
     },
   },
@@ -149,56 +149,10 @@ export const billingPaths = {
       responses: {
         "200": {
           description:
-            "Webhook accepted, idempotently recorded, and synchronized or ignored.",
+            "Webhook accepted and idempotently processed or retained for reconciliation.",
         },
         "403": {
           description: "Invalid Asaas webhook token.",
-        },
-      },
-    },
-  },
-  "/api/v1/billing/entitlements/{featureKey}": {
-    patch: {
-      tags: ["Billing"],
-      summary: "Update one store entitlement",
-      operationId: "updateBillingEntitlement",
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        {
-          in: "path",
-          name: "featureKey",
-          required: true,
-          schema: { type: "string" },
-        },
-      ],
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: {
-              type: "object",
-              additionalProperties: true,
-              required: ["featureKey", "status"],
-              properties: {
-                featureKey: { type: "string" },
-                reason: { type: ["string", "null"] },
-                status: {
-                  type: "string",
-                  enum: ["active", "inactive", "suspended", "trialing"],
-                },
-              },
-            },
-          },
-        },
-      },
-      responses: {
-        "200": {
-          description: "Updated billing overview.",
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/BillingOverview" },
-            },
-          },
         },
       },
     },

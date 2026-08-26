@@ -1,9 +1,4 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHash,
-  randomBytes,
-} from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import type {
   CrmConnectionCredentialVault,
   CrmCredentialScope,
@@ -103,5 +98,34 @@ function readKey(env: Record<string, string | undefined>) {
       "configuration_error",
     );
   }
-  return createHash("sha256").update(configuredKey).digest();
+  const encoded = configuredKey.startsWith("v1:")
+    ? configuredKey.slice(3)
+    : null;
+  if (encoded && /^[A-Za-z0-9_-]{43}$/u.test(encoded)) {
+    const decoded = Buffer.from(encoded, "base64url");
+    if (decoded.length === 32 && decoded.toString("base64url") === encoded) {
+      return decoded;
+    }
+  }
+  if (allowsLegacyTestKey(env, configuredKey)) {
+    return Buffer.from(configuredKey.padEnd(32, "\0").slice(0, 32), "utf8");
+  }
+  throw new CrmConnectionSetupProviderError(
+    "CRM connection credential encryption key must use the v1 base64url format",
+    "configuration_error",
+  );
+}
+
+function allowsLegacyTestKey(
+  env: Record<string, string | undefined>,
+  configuredKey: string,
+) {
+  const deployed = [env.APP_ENV, env.NODE_ENV].some((value) =>
+    ["production", "staging"].includes(value?.toLowerCase() ?? ""),
+  );
+  return (
+    !deployed &&
+    process.env.NODE_ENV === "test" &&
+    configuredKey.toLowerCase().includes("test")
+  );
 }

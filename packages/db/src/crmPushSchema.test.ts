@@ -120,7 +120,11 @@ describe("CRM push schema", () => {
     );
     expect(migrationSql).not.toMatch(/^(?:INSERT INTO|UPDATE|DELETE FROM)\b/im);
     expect(migrationSql).not.toContain("ONESIGNAL_API_KEY");
-    expect(journal.entries.at(-1)).toEqual({
+    expect(
+      journal.entries.find(
+        (entry) => entry.tag === "0068_crm_push_notifications",
+      ),
+    ).toEqual({
       idx: 68,
       tag: "0068_crm_push_notifications",
       version: "7",

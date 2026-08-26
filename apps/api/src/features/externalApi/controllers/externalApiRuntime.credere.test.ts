@@ -138,7 +138,7 @@ function integrationContext(): ServiceContext {
       storeId: "store_1",
       tenantId: "tenant_1",
     }),
-    entitlements: ["external_api", "simulations"],
+    entitlements: ["external_api", "financing"],
   } as ServiceContext;
 }
 

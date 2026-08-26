@@ -9,14 +9,10 @@ import {
 import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM support connection setup routes", () => {
-  it("lets platform support create a paid Z-API connection without persisting plaintext", async () => {
+  it("lets platform support create an entitled Z-API connection without persisting plaintext", async () => {
     const repository = createMemoryCrmConnectionRepository();
     const app = createTestApp({
-      entitlements: ["crm", "crm_zapi"],
-      billingQuotaGuard: {
-        assertAvailable: vi.fn(async () => undefined),
-        getAllowance: vi.fn(async () => ({ limit: 1, remaining: 1, used: 0 })),
-      },
+      entitlements: ["crm"],
       crmConnectionCredentialVault: {
         open: vi.fn(async ({ sealed }: { sealed: string }) => sealed),
         seal: vi.fn(
@@ -31,14 +27,15 @@ describe("CRM support connection setup routes", () => {
       },
       crmConnectionRepository: repository,
       crmZapiSupportAuthorizer: {
-        assertPaidSetupEligible: vi.fn(async () => undefined),
+        assertCrmSetupEligible: vi.fn(async () => undefined),
       },
-      supportPermissions: ["tenant.manage"],
+      supportPermissions: ["crm.messaging.support.manage"],
     });
     const response = await app.request(
       "/api/v1/crm/whatsapp/support/zapi/connections",
       {
         body: JSON.stringify({
+          clientToken: "client-token-1",
           instanceId: "instance-1",
           instanceToken: "secret-1",
           storeId,
@@ -58,11 +55,12 @@ describe("CRM support connection setup routes", () => {
         credentialsRef: {
           mode: "stored",
           stored: {
+            clientToken: "sealed:zapi.client-token:client-token-1",
             instanceId: "sealed:zapi.instance-id:instance-1",
             instanceToken: "sealed:zapi.instance-token:secret-1",
           },
         },
-        externalInstanceId: "instance-1",
+        externalInstanceId: null,
         provider: "zapi",
       },
     ]);
@@ -74,7 +72,7 @@ describe("CRM support connection setup routes", () => {
   it("rejects a store or agency account on the support setup route", async () => {
     const authorize = vi.fn(async () => undefined);
     const app = createTestApp({
-      crmZapiSupportAuthorizer: { assertPaidSetupEligible: authorize },
+      crmZapiSupportAuthorizer: { assertCrmSetupEligible: authorize },
       supportPermissions: ["billing.manage"],
     });
 
@@ -82,6 +80,7 @@ describe("CRM support connection setup routes", () => {
       "/api/v1/crm/whatsapp/support/zapi/connections",
       {
         body: JSON.stringify({
+          clientToken: "client-token-1",
           instanceId: "instance-1",
           instanceToken: "secret-1",
           storeId,
@@ -102,7 +101,7 @@ describe("CRM support connection setup routes", () => {
       expiresInSeconds: 30,
     }));
     const app = createTestApp({
-      entitlements: ["crm", "crm_zapi"],
+      entitlements: ["crm"],
       crmConnectionCredentialVault: {
         open: vi.fn(async ({ sealed }: { sealed: string }) =>
           sealed.replace(/^sealed:/, ""),
@@ -113,15 +112,16 @@ describe("CRM support connection setup routes", () => {
         createConnection("zapi", {
           mode: "stored",
           stored: {
+            clientToken: "sealed:client-token-1",
             instanceId: "sealed:instance-1",
             instanceToken: "sealed:token-1",
           },
         }),
       ]),
       crmZapiSupportAuthorizer: {
-        assertPaidSetupEligible: vi.fn(async () => undefined),
+        assertCrmSetupEligible: vi.fn(async () => undefined),
       },
-      supportPermissions: ["tenant.manage"],
+      supportPermissions: ["crm.messaging.support.manage"],
       zapiConnectionSetupProvider: {
         getPairingCode: vi.fn(),
         getQrCode,
@@ -144,6 +144,7 @@ describe("CRM support connection setup routes", () => {
 
     expect(response.status).toBe(200);
     expect(getQrCode).toHaveBeenCalledWith({
+      clientToken: "client-token-1",
       instanceId: "instance-1",
       instanceToken: "token-1",
     });

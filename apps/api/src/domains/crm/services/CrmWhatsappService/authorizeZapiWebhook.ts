@@ -6,9 +6,11 @@ import {
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   getCrmConnectionRepository,
+  getCrmOlxWebhookSecurity,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import { openZapiWebhookSecret } from "../../whatsapp/zapiWebhookSecret.js";
+import { openAcceptedZapiWebhookSecrets } from "../../whatsapp/zapiWebhookSecret.js";
+import { CrmMessageActionError } from "../../messaging/crmMessagingErrors.js";
 import {
   auditCrmServiceEvent,
   logCrmServiceEvent,
@@ -18,7 +20,11 @@ const permission = "crm.messages.ingest" as const;
 
 export async function authorizeZapiWebhook(
   context: ServiceContext,
-  input: { connectionId: string; token: string | null },
+  input: {
+    connectionId: string;
+    sourceFingerprint: string;
+    token: string | null;
+  },
   ports: CrmServicePorts,
 ) {
   assertPermission(context, permission);
@@ -29,6 +35,8 @@ export async function authorizeZapiWebhook(
   });
   await auditAuthorization(context, input.connectionId, "attempted");
   try {
+    const security = getCrmOlxWebhookSecurity(ports);
+    const now = security.now();
     const connection = await getCrmConnectionRepository(
       ports,
     ).findConnectionById(input.connectionId);
@@ -38,21 +46,37 @@ export async function authorizeZapiWebhook(
       connection.status === "archived" ||
       !input.token
     ) {
-      throw denied();
+      return rejectUnauthenticated(security, now, input.sourceFingerprint);
     }
-    let expected: string;
+    let expected: string[];
     try {
-      expected = await openZapiWebhookSecret(connection, ports);
+      expected = await openAcceptedZapiWebhookSecrets(connection, ports, now);
     } catch {
-      throw denied();
+      return rejectUnauthenticated(security, now, input.sourceFingerprint);
     }
     const receivedBuffer = Buffer.from(input.token);
-    const expectedBuffer = Buffer.from(expected);
+    const matches = expected.reduce((matched, candidate) => {
+      const candidateBuffer = Buffer.from(candidate);
+      return (
+        (receivedBuffer.length === candidateBuffer.length &&
+          timingSafeEqual(receivedBuffer, candidateBuffer)) ||
+        matched
+      );
+    }, false);
+    if (!matches) {
+      return rejectUnauthenticated(security, now, input.sourceFingerprint);
+    }
     if (
-      receivedBuffer.length !== expectedBuffer.length ||
-      !timingSafeEqual(receivedBuffer, expectedBuffer)
+      !(await security.consume({
+        connectionId: connection.id,
+        now,
+        provider: "zapi",
+        scope: "connection",
+        storeId: connection.storeId,
+        tenantId: connection.tenantId,
+      }))
     ) {
-      throw denied();
+      throw rateLimited();
     }
     return {
       authorized: true as const,
@@ -117,4 +141,24 @@ async function auditAuthorization(
 
 function denied() {
   return new AuthorizationError("Invalid CRM WhatsApp webhook token.");
+}
+
+async function rejectUnauthenticated(
+  security: ReturnType<typeof getCrmOlxWebhookSecurity>,
+  now: Date,
+  sourceFingerprint: string,
+): Promise<never> {
+  const accepted = await security.consume({
+    now,
+    scope: "unauthenticated",
+    sourceFingerprint,
+  });
+  throw accepted ? denied() : rateLimited();
+}
+
+function rateLimited() {
+  return new CrmMessageActionError(
+    "Z-API webhook rate limit was reached.",
+    429,
+  );
 }

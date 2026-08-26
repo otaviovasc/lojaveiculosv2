@@ -11,6 +11,7 @@ import {
   type AgencySort,
   type AgencyStore,
   type AgencyStatusFilter,
+  getPlanStatus,
   mapAgencyOverviewToStores,
 } from "./AgencyDashboardPage.model";
 import {
@@ -165,32 +166,62 @@ export function AgencyDashboardPage() {
       if (!matchesSearch) return false;
 
       if (statusFilter !== "all") {
-        const endDate = new Date(store.plan_end_date);
         const now = new Date();
-        const isExpired = endDate.getTime() <= now.getTime();
+        const endDate = store.plan_end_date
+          ? new Date(store.plan_end_date)
+          : null;
+        const isExpired = endDate ? endDate.getTime() <= now.getTime() : false;
         const isActiveStatus =
           store.status_assinatura.toUpperCase() === "ATIVA";
-        const daysLeft = Math.ceil(
-          (endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
-        );
+        const daysLeft = endDate
+          ? Math.ceil(
+              (endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
+            )
+          : null;
 
         switch (statusFilter) {
           case "active":
-            if (!isActiveStatus || isExpired || daysLeft <= 5) return false;
+            if (
+              !isActiveStatus ||
+              (!store.is_permanent_plan &&
+                (!endDate || isExpired || (daysLeft ?? 0) <= 5))
+            )
+              return false;
             break;
           case "expiring":
-            if (!isActiveStatus || daysLeft <= 0 || daysLeft > 5) return false;
+            if (
+              !isActiveStatus ||
+              store.is_permanent_plan ||
+              daysLeft === null ||
+              daysLeft <= 0 ||
+              daysLeft > 5
+            )
+              return false;
             break;
           case "expired":
-            if (!isActiveStatus || !isExpired || daysLeft <= -7) return false;
+            if (
+              !isActiveStatus ||
+              store.is_permanent_plan ||
+              !isExpired ||
+              daysLeft === null ||
+              daysLeft <= -7
+            )
+              return false;
             break;
           case "inactive":
-            if (isActiveStatus && (!isExpired || daysLeft > -7)) return false;
+            if (
+              isActiveStatus &&
+              (store.is_permanent_plan ||
+                !isExpired ||
+                (daysLeft !== null && daysLeft > -7))
+            )
+              return false;
             break;
         }
       }
 
       if (planEndDateFrom || planEndDateTo) {
+        if (!store.plan_end_date) return false;
         const planDate = new Date(store.plan_end_date);
         if (planEndDateFrom && planDate < new Date(planEndDateFrom))
           return false;
@@ -203,17 +234,11 @@ export function AgencyDashboardPage() {
       switch (sortBy) {
         case "status": {
           const getStatusPriority = (store: AgencyStore) => {
-            const endDate = new Date(store.plan_end_date);
-            const now = new Date();
-            const isExpired = endDate.getTime() <= now.getTime();
-            const isActive = store.status_assinatura.toUpperCase() === "ATIVA";
-            const daysLeft = Math.ceil(
-              (endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
-            );
-
-            if (!isActive || (isExpired && daysLeft <= -7)) return 3;
-            if (isExpired) return 2;
-            if (daysLeft <= 5) return 1;
+            const label = getPlanStatus(store).label;
+            if (label === "Inativo") return 3;
+            if (label === "Expirou") return 2;
+            if (label === "Vence em breve" || label === "Renovação a confirmar")
+              return 1;
             return 0;
           };
           return getStatusPriority(a) - getStatusPriority(b);
@@ -314,12 +339,12 @@ export function AgencyDashboardPage() {
   );
 }
 
-const storeModuleRequirements: Record<
+export const storeModuleRequirements: Record<
   AgencyStoreModuleId,
-  "crm" | "external_api" | "fiscal" | "simulations"
+  "crm" | "external_api" | "financing" | "fiscal"
 > = {
   crm: "crm",
   fiscal: "fiscal",
   "public-api": "external_api",
-  simulations: "simulations",
+  simulations: "financing",
 };

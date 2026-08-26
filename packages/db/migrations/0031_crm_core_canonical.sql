@@ -1,3 +1,10 @@
+-- PostgreSQL requires enum values added by an earlier migration to be
+-- committed before a later migration can use them. Drizzle executes all
+-- pending migrations in one transaction, so establish the boundary here,
+-- after 0023's enum change and migration-ledger insert are both durable.
+COMMIT;--> statement-breakpoint
+BEGIN;--> statement-breakpoint
+
 CREATE TYPE "public"."acquisition_source" AS ENUM('olx', 'meta_ad', 'mobiauto', 'site', 'manual');--> statement-breakpoint
 CREATE TYPE "public"."external_authorization_state" AS ENUM('pending', 'authorized', 'restricted', 'revoked', 'error');--> statement-breakpoint
 CREATE TYPE "public"."bot_action_command_state" AS ENUM('accepted', 'authorized', 'claimed', 'executing', 'provider_succeeded', 'completed', 'retryable_failed', 'indeterminate', 'dead_letter', 'cancelled');--> statement-breakpoint

@@ -92,9 +92,12 @@ otherwise the importer creates its deterministic connection id.
 For cutover:
 
 1. Run a dry rehearsal and review parity plus lead/assignment link rates.
-2. Ensure `CRM_ZAPI_CLIENT_TOKEN` is available to the migration process and
-   configured in the V2 API environment. Applied imports refuse cutover
-   activation when this value is absent.
+2. Confirm the destination store has the `crm` entitlement and that the
+   store-scoped Z-API connection can accept all three write-only credentials:
+   `instanceId`, `instanceToken`, and `clientToken`. Existing imported rows may
+   be marked `credentials_incomplete`; migration must preserve history and
+   require credential re-entry before provider I/O. No global Z-API client
+   token is read or configured by the migration.
 3. Freeze or drain Repasses ingress briefly, take the final dump, and apply the
    importer.
 4. Switch the Z-API webhook to V2 before reopening message handling; do not let

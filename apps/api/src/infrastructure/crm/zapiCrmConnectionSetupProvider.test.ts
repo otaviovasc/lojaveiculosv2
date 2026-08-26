@@ -3,15 +3,15 @@ import { createZapiCrmConnectionSetupProvider } from "./zapiCrmConnectionSetupPr
 
 const env = {
   CRM_ZAPI_API_BASE_URL: "https://zapi.test",
-  CRM_ZAPI_CLIENT_TOKEN: "central-client-secret",
 };
 const credentials = {
+  clientToken: "store-client-secret",
   instanceId: "instance-1",
   instanceToken: "instance-secret",
 };
 
 describe("createZapiCrmConnectionSetupProvider", () => {
-  it("uses the local test client token only in local development", async () => {
+  it("uses the store-scoped client token instead of environment fallbacks", async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () =>
       Response.json({ connected: true }),
     );
@@ -19,7 +19,6 @@ describe("createZapiCrmConnectionSetupProvider", () => {
       {
         APP_ENV: "local",
         CRM_ZAPI_API_BASE_URL: "https://zapi.test",
-        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
       },
       fetchImpl,
     );
@@ -29,16 +28,10 @@ describe("createZapiCrmConnectionSetupProvider", () => {
     });
     expect(
       new Headers(fetchImpl.mock.calls[0]?.[1]?.headers).get("Client-Token"),
-    ).toBe("local-test-client-token");
-    expect(() =>
-      createZapiCrmConnectionSetupProvider({
-        APP_ENV: "staging",
-        CRM_ZAPI_TEST_CLIENT_TOKEN: "local-test-client-token",
-      }),
-    ).toThrow("Z-API client authentication is not configured");
+    ).toBe("store-client-secret");
   });
 
-  it("validates status with central client authentication", async () => {
+  it("validates status with store-scoped client authentication", async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () =>
       Response.json({
         connected: true,
@@ -59,7 +52,7 @@ describe("createZapiCrmConnectionSetupProvider", () => {
     );
     expect(requestInit?.method).toBe("GET");
     expect(new Headers(requestInit?.headers).get("Client-Token")).toBe(
-      "central-client-secret",
+      "store-client-secret",
     );
   });
 

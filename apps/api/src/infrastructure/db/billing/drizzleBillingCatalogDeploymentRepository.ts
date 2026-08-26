@@ -100,6 +100,9 @@ async function installAndActivate(
       id: plan.id,
       isDefault: plan.isDefault,
       limits: {
+        capabilities: plan.capabilities ? [...plan.capabilities] : [],
+        checkout_mode: plan.checkoutMode ?? "checkout",
+        selection_rank: plan.selectionRank ?? 0,
         seller_limit: plan.limits.sellerLimit,
         vehicle_limit: plan.limits.vehicleLimit,
       },

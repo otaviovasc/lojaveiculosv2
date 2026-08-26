@@ -32,6 +32,7 @@ export async function createZapiConnectionAsSupport(
   input: ZapiSupportScope &
     ZapiSupportWebhookTarget & {
       displayName: string;
+      clientToken: string;
       instanceId: string;
       instanceToken: string;
     },
@@ -42,6 +43,7 @@ export async function createZapiConnectionAsSupport(
     scoped,
     {
       channel: "whatsapp",
+      clientToken: input.clientToken,
       displayName: input.displayName,
       instanceId: input.instanceId,
       instanceToken: input.instanceToken,
@@ -57,6 +59,7 @@ export async function updateZapiCredentialsAsSupport(
   input: ZapiSupportScope &
     ZapiSupportWebhookTarget & {
       connectionId: string;
+      clientToken: string;
       instanceId: string;
       instanceToken: string;
     },
@@ -102,19 +105,24 @@ async function authorizeSupport(
   scope: ZapiSupportScope,
   ports: CrmServicePorts,
 ): Promise<StoreScopedServiceContext> {
-  assertPermission(context, "tenant.manage");
-  if (context.actor.kind !== "user" || context.storeId !== null) {
+  assertPermission(context, supportManagePermission);
+  if (
+    context.actor.kind !== "user" ||
+    context.storeId !== null ||
+    context.tenantId !== null
+  ) {
     throw new AuthorizationError(
       "Z-API provider setup requires a platform support account context.",
     );
   }
-  await getCrmZapiSupportAuthorizer(ports).assertPaidSetupEligible(scope);
+  await getCrmZapiSupportAuthorizer(ports).assertCrmSetupEligible(scope);
   const scoped: StoreScopedServiceContext = {
     ...context,
-    entitlements: ["crm", "crm_zapi"],
+    entitlements: ["crm"],
     permissions: [
       ...new Set([
         ...context.permissions,
+        "crm.messaging.credentials.rotate",
         "crm.messaging.connection.pair",
         "crm.messaging.connection.setup",
         "crm.conversations.read",
@@ -135,10 +143,12 @@ async function authorizeSupport(
     action: "crm.provider.zapi.connection.support.authorize",
     category: "data_access",
     metadata: { provider: "zapi" },
-    permission: "tenant.manage",
+    permission: supportManagePermission,
     storeId: scope.storeId,
     summary: "Authorized paid Z-API support setup",
     tenantId: scope.tenantId,
   });
   return scoped;
 }
+
+const supportManagePermission = "crm.messaging.support.manage";

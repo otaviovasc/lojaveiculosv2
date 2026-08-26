@@ -37,7 +37,7 @@ export async function cutoverVerifiedReplacement(
     getCrmConnectionRepository(transactionPorts).updateConnection({
       connectionId: current.id,
       credentialsRef: candidateCredentialsRef,
-      externalInstanceId: state.candidateInstanceId,
+      externalInstanceId: null,
       ...(current.revision !== undefined
         ? { expectedRevision: current.revision }
         : {}),

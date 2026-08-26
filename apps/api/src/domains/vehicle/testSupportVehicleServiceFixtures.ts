@@ -10,9 +10,10 @@ export function createContext(
   return {
     actor: { id: "user_1", kind: "user" },
     audit: { record: vi.fn(async () => undefined) },
-    entitlements: ["simulations"],
+    entitlements: ["ai", "checklists"],
     logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
     permissions: [...permissions],
+    platformAdmin: false,
     requestId: "req_1",
     storeId: "store_1",
     tenantId: "tenant_1",

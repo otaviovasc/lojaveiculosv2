@@ -2,7 +2,12 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { CrmConnectionProvider } from "./crmConnectionRepository.js";
 
 export type CrmProviderWebhookEventStatus =
-  "failed" | "ignored" | "processed" | "processing" | "received";
+  | "failed"
+  | "ignored"
+  | "pending_reconciliation"
+  | "processed"
+  | "processing"
+  | "received";
 
 export type CrmProviderWebhookEventProvider = CrmConnectionProvider;
 

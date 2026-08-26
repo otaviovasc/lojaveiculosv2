@@ -3,6 +3,7 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 
 export const ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE = "zapi.instance-id";
 export const ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE = "zapi.instance-token";
+export const ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE = "zapi.client-token";
 export const ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE = "zapi.webhook-secret";
 export const CRM_EXTERNAL_BOT_WEBHOOK_SECRET_CREDENTIAL_PURPOSE =
   "crm-bot.webhook-secret";
@@ -36,6 +37,7 @@ export type OlxCrmWebhookSetupDiagnostics = {
 };
 
 export type ZapiSetupCredentials = {
+  clientToken: string;
   instanceId: string;
   instanceToken: string;
 };
@@ -70,19 +72,19 @@ export type ZapiConnectionSetupProvider = {
   ) => Promise<ZapiSetupStatus>;
 };
 
-export type CrmZapiSetupCompletionReporter = {
-  completeSetup: (
-    context: ServiceContext,
-    input: { connectionId: string },
-  ) => Promise<void>;
-};
-
 export type CrmZapiSupportAuthorizer = {
-  assertPaidSetupEligible: (input: {
+  assertCrmSetupEligible: (input: {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<void>;
 };
+
+export class CrmZapiSetupNotEligibleError extends Error {
+  constructor() {
+    super("The store is not eligible for Z-API setup.");
+    this.name = "CrmZapiSetupNotEligibleError";
+  }
+}
 
 export type ComposioConnectLink = {
   connectedAccountId: string;

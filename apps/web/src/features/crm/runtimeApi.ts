@@ -132,13 +132,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).configureZapiWebhooks(connectionId),
-    getZapiAddonContract: async () => {
-      const api = createCrmConversationApi(await createProductCrmApiOptions());
-      if (!api.getZapiAddonContract) {
-        throw new Error("A consulta do add-on Z-API não está disponível.");
-      }
-      return api.getZapiAddonContract();
-    },
     createQuickMessage: async (input) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -280,13 +273,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).retryOlxChatSetup(connectionId),
-    requestZapiAddon: async () => {
-      const api = createCrmConversationApi(await createProductCrmApiOptions());
-      if (!api.requestZapiAddon) {
-        throw new Error("A solicitação do add-on Z-API não está disponível.");
-      }
-      return api.requestZapiAddon();
-    },
     retryProviderEvent: async (eventId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

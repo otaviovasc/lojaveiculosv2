@@ -8,6 +8,7 @@ import { BillingWebhookValidationError } from "./billingWebhookErrors.js";
 export type ParsedAsaasWebhook = {
   checkout?: Parameters<BillingWebhookRepository["syncProviderCheckout"]>[0];
   eventType: string;
+  occurredAt: Date | null;
   payment?: Omit<
     Parameters<BillingWebhookRepository["upsertProviderPayment"]>[0],
     "providerEventId"
@@ -26,6 +27,7 @@ export function parseAsaasWebhook(
   const checkout = readRecord(payload.checkout);
   const payment = readRecord(payload.payment);
   const subscription = readRecord(payload.subscription);
+  const occurredAt = parseAsaasDate(readString(payload.dateCreated));
 
   return {
     ...(checkout
@@ -42,6 +44,7 @@ export function parseAsaasWebhook(
         }
       : {}),
     eventType,
+    occurredAt,
     ...(payment
       ? {
           payment: {
@@ -52,6 +55,9 @@ export function parseAsaasWebhook(
             paidAt: paymentPaidAt(payment),
             provider: "asaas",
             providerCustomerId: readString(payment.customer),
+            providerCheckoutId:
+              readString(payment.checkoutSession) ??
+              readString(payment.checkout),
             providerPaymentId: requiredString(payment.id, "payment.id"),
             providerSubscriptionId: readString(payment.subscription),
             raw: payment,
@@ -66,6 +72,7 @@ export function parseAsaasWebhook(
             currentPeriodEnd: parseAsaasDate(
               readString(subscription.nextDueDate),
             ),
+            externalReference: readString(subscription.externalReference),
             provider: "asaas",
             providerSubscriptionId: requiredString(
               subscription.id,
@@ -120,14 +127,14 @@ function paymentStatus(eventType: string): BillingPaymentWebhookStatus {
 function subscriptionStatus(
   eventType: string,
   status: string | null,
-): BillingSubscription["status"] {
+): BillingSubscription["status"] | "unknown" {
   if (eventType === "SUBSCRIPTION_DELETED") return "cancelled";
   if (eventType === "SUBSCRIPTION_INACTIVATED") return "cancelled";
   if (status === "ACTIVE") return "active";
   if (status === "OVERDUE") return "past_due";
   if (status === "EXPIRED") return "expired";
   if (status === "INACTIVE" || status === "DELETED") return "cancelled";
-  return "trialing";
+  return "unknown";
 }
 
 function readCheckoutSubscriptionId(

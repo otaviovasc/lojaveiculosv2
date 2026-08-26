@@ -90,7 +90,7 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
           tenantId: resolvedTenantId,
         });
         entitlementResolutions++;
-        return ["crm", "crm_zapi"];
+        return ["crm"];
       },
     });
 
@@ -165,6 +165,37 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
       metadata: { connected: false, providerConnected: false },
       status: "disconnected",
     });
+  });
+
+  it("ignores and audits connected callbacks without affirmative provider evidence", async () => {
+    const connectionRepository = createMemoryCrmConnectionRepository([
+      createZapiConnection({ status: "sandbox" }),
+    ]);
+    const { app, auditRecord } = await createWebhookTestApp({
+      connectionRepository,
+    });
+
+    const response = await postWebhook(app, "connected", {
+      connectedPhone: "5511940231407",
+      status: "UNKNOWN",
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      reason: "connection_evidence_missing",
+      status: "ignored",
+    });
+    await expect(
+      connectionRepository.findConnectionById(connectionId),
+    ).resolves.toMatchObject({ phone: null, status: "sandbox" });
+    expect(
+      auditRecord.mock.calls.some(
+        ([event]) =>
+          event.action === "crm.provider.zapi.webhook.connected" &&
+          event.metadata?.ignoredReason ===
+            "provider_connection_evidence_missing",
+      ),
+    ).toBe(true);
   });
 
   it("acknowledges chat presence callbacks", async () => {

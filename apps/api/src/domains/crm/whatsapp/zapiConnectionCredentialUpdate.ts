@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import {
+  ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
   ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
@@ -15,7 +16,7 @@ import type { CrmChannelConnectionLiveStatus } from "../channelConnections/chann
 import { readZapiWebhookSetupState } from "./zapiWebhookSetupState.js";
 
 export async function sealUpdatedZapiCredentials(
-  input: { instanceId: string; instanceToken: string },
+  input: { clientToken: string; instanceId: string; instanceToken: string },
   current: CrmConnection,
   scope: { storeId: string; tenantId: string },
   ports: CrmServicePorts,
@@ -27,26 +28,32 @@ export async function sealUpdatedZapiCredentials(
   };
   const currentStored = readRecord(current.credentialsRef.stored);
   const existingWebhookSecret = readString(currentStored.webhookSecret);
-  const [instanceId, instanceToken, webhookSecret] = await Promise.all([
-    vault.seal({
-      ...credentialScope,
-      plaintext: input.instanceId,
-      purpose: ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
-    }),
-    vault.seal({
-      ...credentialScope,
-      plaintext: input.instanceToken,
-      purpose: ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
-    }),
-    existingWebhookSecret
-      ? Promise.resolve(existingWebhookSecret)
-      : vault.seal({
-          ...credentialScope,
-          plaintext: randomBytes(32).toString("base64url"),
-          purpose: ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
-        }),
-  ]);
-  return { instanceId, instanceToken, webhookSecret };
+  const [clientToken, instanceId, instanceToken, webhookSecret] =
+    await Promise.all([
+      vault.seal({
+        ...credentialScope,
+        plaintext: input.clientToken,
+        purpose: ZAPI_CLIENT_TOKEN_CREDENTIAL_PURPOSE,
+      }),
+      vault.seal({
+        ...credentialScope,
+        plaintext: input.instanceId,
+        purpose: ZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
+      }),
+      vault.seal({
+        ...credentialScope,
+        plaintext: input.instanceToken,
+        purpose: ZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
+      }),
+      existingWebhookSecret
+        ? Promise.resolve(existingWebhookSecret)
+        : vault.seal({
+            ...credentialScope,
+            plaintext: randomBytes(32).toString("base64url"),
+            purpose: ZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
+          }),
+    ]);
+  return { clientToken, instanceId, instanceToken, webhookSecret };
 }
 
 export async function readConnectionLiveStatus(
@@ -58,7 +65,7 @@ export async function readConnectionLiveStatus(
     connection.provider !== "zapi" ||
     ("entitlements" in context &&
       Array.isArray(context.entitlements) &&
-      context.entitlements.includes("crm_zapi") &&
+      context.entitlements.includes("crm") &&
       readZapiWebhookSetupState(connection.metadata)?.status === "configured");
   if (connection.status !== "active" || !zapiConfigured) {
     return {

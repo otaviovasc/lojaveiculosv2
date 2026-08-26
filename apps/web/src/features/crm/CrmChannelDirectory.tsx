@@ -7,13 +7,10 @@ import type {
   CrmAvailableSetup,
   CrmProviderConnection,
   CrmSetupProvider,
-  CrmWhatsappZapiAddonContract,
 } from "./crmConversationTypes";
 import {
   ChannelIdentity,
   ConnectedChannelRow,
-  readZapiChooserDescription,
-  ZapiAddonBadge,
 } from "./CrmChannelDirectoryParts";
 import { CrmOlxChannelCard } from "./CrmChannelDirectoryOlx";
 import { isComposioConnectionForProvider } from "./crmComposioOAuth";
@@ -30,7 +27,7 @@ export function CrmChannelDirectory({
   onRedirect,
   showSetupActions = true,
   showRepairActions = false,
-  zapiAddonContract,
+  showZapiSetupActions = showSetupActions,
 }: {
   availableSetups: readonly CrmAvailableSetup[];
   connections?: readonly CrmProviderConnection[];
@@ -46,7 +43,7 @@ export function CrmChannelDirectory({
   onRedirect?: (url: string) => void;
   showRepairActions?: boolean;
   showSetupActions?: boolean;
-  zapiAddonContract: CrmWhatsappZapiAddonContract | null;
+  showZapiSetupActions?: boolean;
 }) {
   const officialAvailable = availableSetups.some(
     (setup) =>
@@ -102,7 +99,7 @@ export function CrmChannelDirectory({
               />
             </li>
           ))}
-          {showSetupActions && !hasExistingZapiConnection ? (
+          {showZapiSetupActions && !hasExistingZapiConnection ? (
             <li>
               <button
                 className="crm-channel-row"
@@ -121,10 +118,13 @@ export function CrmChannelDirectory({
                 <span className="crm-channel-body">
                   <span className="crm-channel-title">
                     <strong>Z-API</strong>
-                    <ZapiAddonBadge contract={zapiAddonContract} />
+                    <span className="crm-channel-badge" data-tone="muted">
+                      Credencial da loja
+                    </span>
                   </span>
                   <span className="crm-channel-description">
-                    {readZapiChooserDescription(zapiAddonContract)}
+                    Cadastre as três credenciais da loja para configurar este
+                    transporte do CRM.
                   </span>
                   <ChannelIdentity
                     broker="Credencial direta"

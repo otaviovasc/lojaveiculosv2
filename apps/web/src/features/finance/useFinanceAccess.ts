@@ -26,6 +26,11 @@ export function useFinanceAccess(
   const canCreate = hasInjectedApi || permissions.includes("finance.create");
   const canOpenReceipt = hasInjectedApi || permissions.includes("finance.read");
   const canUpdate = hasInjectedApi || permissions.includes("finance.update");
+  const canReadCommissions = permissions.includes("commissions.read");
+  const canManageCommissionRules = permissions.includes(
+    "commissions.rules.manage",
+  );
+  const canSettleCommissions = permissions.includes("commissions.settle");
   const canAttach =
     canUpdate &&
     (hasInjectedApi || permissions.includes("finance.attach_document"));
@@ -75,6 +80,9 @@ export function useFinanceAccess(
     canCreate,
     canGenerateReceipt,
     canOpenReceipt,
+    canManageCommissionRules,
+    canReadCommissions,
+    canSettleCommissions,
     canUpdate,
     sellerOptions,
     vehicleOptions,

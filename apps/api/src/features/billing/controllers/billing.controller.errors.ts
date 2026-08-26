@@ -14,9 +14,8 @@ import {
   BillingWebhookValidationError,
 } from "../../../domains/billing/readModels/billingWebhookErrors.js";
 import { BillingProviderSyncError } from "../../../domains/billing/services/BillingService/syncBillingProviderSubscription.js";
-import { BillingCheckoutError } from "../../../domains/billing/services/BillingService/createBillingProviderCheckout.js";
-import { BillingSelectionError } from "../../../domains/billing/services/BillingService/updateBillingSelection.js";
-import { BillingAddonContractError } from "../../../domains/billing/ports/billingRepository.js";
+import { BillingPlanHireRepositoryError } from "../../../domains/billing/ports/billingPlanHireRepository.js";
+import { BillingPlanHireError } from "../../../domains/billing/services/BillingService/createBillingPlanHire.js";
 
 export class BillingRequestValidationError extends Error {
   constructor(message: string) {
@@ -43,15 +42,31 @@ export async function handleBilling(
     if (
       error instanceof BillingRequestValidationError ||
       error instanceof BillingWebhookValidationError ||
-      error instanceof BillingScopeError ||
-      error instanceof BillingSelectionError ||
-      error instanceof BillingAddonContractError
+      error instanceof BillingScopeError
     ) {
       return jsonApiError(context, {
         code: "BILLING_REQUEST_ERROR",
         error,
         message: error.message,
         status: 400,
+      });
+    }
+    if (
+      error instanceof BillingPlanHireError ||
+      error instanceof BillingPlanHireRepositoryError
+    ) {
+      return jsonApiError(context, {
+        code: error.code,
+        error,
+        message: error.message,
+        status:
+          error.code === "BILLING_PLAN_HIRE_NOT_FOUND"
+            ? 404
+            : error.code === "BILLING_PROVIDER_UNAVAILABLE"
+              ? 503
+              : error.code === "hire_in_progress"
+                ? 409
+                : 400,
       });
     }
     if (error instanceof BillingWebhookAuthenticationError) {
@@ -65,15 +80,6 @@ export async function handleBilling(
     if (error instanceof BillingProviderSyncError) {
       return jsonApiError(context, {
         code: "BILLING_PROVIDER_SYNC_FAILED",
-        details: { reason: error.reason },
-        error,
-        message: error.message,
-        status: syncErrorStatus(error.status),
-      });
-    }
-    if (error instanceof BillingCheckoutError) {
-      return jsonApiError(context, {
-        code: "BILLING_CHECKOUT_FAILED",
         details: { reason: error.reason },
         error,
         message: error.message,

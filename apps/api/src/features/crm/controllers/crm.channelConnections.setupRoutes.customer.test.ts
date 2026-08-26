@@ -23,6 +23,7 @@ describe("CRM customer connection setup routes", () => {
           ...createConnection("zapi", {
             mode: "stored",
             stored: {
+              clientToken: "sealed:client-secret",
               instanceId: "sealed:instance-secret",
               instanceToken: "sealed:token-secret",
             },
@@ -101,6 +102,7 @@ describe("CRM customer connection setup routes", () => {
     const response = await app.request("/api/v1/crm/channel-connections", {
       body: JSON.stringify({
         channel: "whatsapp",
+        clientToken: "client-token-1",
         instanceId: "instance-1",
         instanceToken: "instance-secret-1",
         provider: "zapi",

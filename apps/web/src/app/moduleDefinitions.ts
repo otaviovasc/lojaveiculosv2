@@ -13,7 +13,7 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
   },
   billing: {
     action: "Definir faturas",
-    description: "Cobranças, planos e add-ons com estados de bloqueio claros.",
+    description: "Contratos, planos cumulativos e cobrança com estados claros.",
     eyebrow: "Financeiro",
     id: "billing",
     title: "Assinatura",

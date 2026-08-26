@@ -9,6 +9,10 @@ export type PermissionOverride = {
 export type PermissionDecision =
   { allowed: true } | { allowed: false; reason: string };
 
+const platformOnlyPermissions = new Set<PermissionKey>([
+  "crm.messaging.support.manage",
+]);
+
 export function resolvePermissions(input: {
   overrides?: readonly PermissionOverride[];
   role: RoleKey;
@@ -16,6 +20,7 @@ export function resolvePermissions(input: {
   const permissions = new Set(defaultRolePermissions[input.role]);
 
   for (const override of input.overrides ?? []) {
+    if (platformOnlyPermissions.has(override.permission)) continue;
     if (override.allowed) {
       permissions.add(override.permission);
     } else {

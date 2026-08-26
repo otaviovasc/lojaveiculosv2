@@ -602,7 +602,7 @@ export function useCrmInbox(
     assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
     availableConnectionSetups: connections.availableSetups,
-    connectionBillingState: connections.billingState,
+    isCrmEntitled: activeStore?.entitlements?.includes("crm") === true,
     canAssignSessions: assignmentState.canAssignSessions,
     canStartConversation:
       canSendMessages && conversationStartCapability.canStart,
@@ -614,7 +614,6 @@ export function useCrmInbox(
     connectionFilterId,
     connectionId,
     connectionError: connections.error,
-    connectionAllowance: connections.allowance,
     connectionIsLoading: connections.isLoading,
     connections: connections.connections,
     createConnection: connections.createConnection,
@@ -630,7 +629,6 @@ export function useCrmInbox(
     refreshRoutingPolicy: routing.refresh,
     requestZapiPairingCode: connections.requestZapiPairingCode,
     requestZapiPairingQr: connections.requestZapiPairingQr,
-    requestZapiAddon: connections.requestZapiAddon,
     refreshZapiConnectionStatus: connections.refreshZapiConnectionStatus,
     selectComposioConnectionSender: connections.selectComposioSender,
     setConnectionPaused: connections.setConnectionPaused,
@@ -712,7 +710,6 @@ export function useCrmInbox(
     unreadOnly,
     updateQuickMessage: quickMessageState.updateQuickMessage,
     updateTag: tagState.updateTag,
-    zapiAddonContract: connections.zapiAddonContract,
     actions: {
       ...sessionActions.actions,
       ...bulkSelection.actions,

@@ -10,11 +10,10 @@ import {
   getBillingWebhookRepository,
   type BillingServicePorts,
 } from "./serviceSupport.js";
-import {
-  parseAsaasWebhook,
-  type ParsedAsaasWebhook,
-} from "../../readModels/asaasWebhookParser.js";
+import { parseAsaasWebhook } from "../../readModels/asaasWebhookParser.js";
 import { BillingWebhookAuthenticationError } from "../../readModels/billingWebhookErrors.js";
+import { webhookResultStatus } from "./billingWebhookResultStatus.js";
+import { syncBillingWebhookEvidence } from "./billingWebhookSync.js";
 
 const permission = "billing.webhook.ingest" as const;
 const processingLeaseMs = 5 * 60 * 1_000;
@@ -28,7 +27,7 @@ export type ProcessBillingProviderWebhookInput = {
 export type BillingProviderWebhookResult = {
   eventId: string;
   providerEventId: string;
-  status: "duplicate" | "ignored" | "processed";
+  status: "duplicate" | "ignored" | "pending_reconciliation" | "processed";
 };
 
 export async function processBillingProviderWebhook(
@@ -87,7 +86,13 @@ export async function processBillingProviderWebhook(
   }
 
   try {
-    const sync = await syncWebhook(webhook, repository);
+    const sync = await syncBillingWebhookEvidence(
+      webhook,
+      repository,
+      ports,
+      context.requestId,
+    );
+    const resultStatus = webhookResultStatus(sync.status);
     context.logger.info(
       "billing.webhook.asaas.record.completed",
       createServiceLogMetadata(context, {
@@ -102,7 +107,7 @@ export async function processBillingProviderWebhook(
     await repository.updateStatus({
       eventId: claimed.id,
       processingToken,
-      status: sync.status === "synced" ? "processed" : "ignored",
+      status: resultStatus,
       storeId: sync.storeId,
       tenantId: sync.tenantId,
     });
@@ -111,14 +116,14 @@ export async function processBillingProviderWebhook(
       eventId: recorded.event.id,
       outcome: "succeeded",
       providerEventId: webhook.providerEventId,
-      status: sync.status === "synced" ? "processed" : "ignored",
+      status: resultStatus,
       summary: "Processed Asaas billing webhook",
       sync,
     });
     return {
       eventId: recorded.event.id,
       providerEventId: webhook.providerEventId,
-      status: sync.status === "synced" ? "processed" : "ignored",
+      status: resultStatus,
     };
   } catch (error) {
     await repository.updateStatus({
@@ -146,30 +151,6 @@ function assertWebhookToken(
 ): void {
   if (ports.paymentProviderGateway?.verifyWebhookToken?.(token)) return;
   throw new BillingWebhookAuthenticationError("Invalid Asaas webhook token.");
-}
-
-async function syncWebhook(
-  webhook: ParsedAsaasWebhook,
-  repository: ReturnType<typeof getBillingWebhookRepository>,
-): Promise<BillingProviderSyncResult> {
-  if (webhook.checkout) {
-    return repository.syncProviderCheckout(webhook.checkout);
-  }
-  if (webhook.payment) {
-    return repository.upsertProviderPayment({
-      ...webhook.payment,
-      providerEventId: webhook.providerEventId,
-    });
-  }
-  if (webhook.subscription) {
-    return repository.syncProviderSubscription(webhook.subscription);
-  }
-  return {
-    reason: "unsupported_event",
-    status: "ignored",
-    storeId: null,
-    tenantId: null,
-  };
 }
 
 async function auditWebhook(

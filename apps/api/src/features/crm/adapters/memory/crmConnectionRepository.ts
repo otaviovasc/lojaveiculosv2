@@ -212,6 +212,7 @@ function normalizeConnection(connection: CrmConnection) {
   connection.canonical = projectCanonicalCrmConnectionRow({
     broker: connection.broker,
     channel: connection.channel,
+    credentialsRef: connection.credentialsRef,
     metadata: connection.metadata,
     provider: connection.provider,
     state: connection.status,

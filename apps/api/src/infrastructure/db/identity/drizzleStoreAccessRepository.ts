@@ -69,10 +69,7 @@ export function createDrizzleStoreAccessRepository(
               and(
                 eq(storeEntitlements.storeId, access.storeId),
                 eq(storeEntitlements.tenantId, access.tenantId),
-                or(
-                  eq(storeEntitlements.status, "active"),
-                  eq(storeEntitlements.status, "trialing"),
-                ),
+                eq(storeEntitlements.status, "active"),
                 or(
                   isNull(storeEntitlements.startsAt),
                   lte(storeEntitlements.startsAt, checkedAt),

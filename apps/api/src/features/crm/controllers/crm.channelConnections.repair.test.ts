@@ -22,7 +22,7 @@ describe("CRM channel connection repair", () => {
     const repository = disconnectedZapiRepository();
     const app = createTestApp({
       crmConnectionRepository: repository,
-      permissions: ["tenant.manage"],
+      permissions: ["crm.messaging.credentials.rotate"],
     });
     const response = await requestCredentialRepair(app, "replacement-instance");
 
@@ -38,7 +38,7 @@ describe("CRM channel connection repair", () => {
     ]);
   });
 
-  it("requires tenant credential-management permission", async () => {
+  it("requires credential-rotation permission", async () => {
     const app = createTestApp({
       permissions: ["crm.messaging.connection.setup"],
     });
@@ -47,12 +47,15 @@ describe("CRM channel connection repair", () => {
     expect(response.status).toBe(403);
   });
 
-  it("requires the Z-API entitlement", async () => {
+  it("requires the base CRM entitlement", async () => {
     const repository = disconnectedZapiRepository();
     const app = createTestApp({
       crmConnectionRepository: repository,
-      entitlements: ["crm"],
-      permissions: ["crm.messaging.connection.setup", "tenant.manage"],
+      entitlements: [],
+      permissions: [
+        "crm.messaging.connection.setup",
+        "crm.messaging.credentials.rotate",
+      ],
     });
     const response = await requestCredentialRepair(app, "replacement-instance");
 
@@ -75,7 +78,10 @@ describe("CRM channel connection repair", () => {
     const app = createTestApp({
       crmConnectionRepository: repository,
       crmMessagingGateway: { configureWebhooks },
-      permissions: ["crm.messaging.connection.setup", "tenant.manage"],
+      permissions: [
+        "crm.messaging.connection.setup",
+        "crm.messaging.credentials.rotate",
+      ],
       zapiConnectionSetupProvider: {
         getPairingCode: vi.fn(),
         getQrCode: vi.fn(),
@@ -133,7 +139,7 @@ describe("CRM channel connection repair", () => {
       permissions: [
         "crm.conversations.read",
         "crm.messaging.connection.setup",
-        "tenant.manage",
+        "crm.messaging.credentials.rotate",
       ],
       zapiConnectionSetupProvider: {
         getPairingCode: vi.fn(),
@@ -150,6 +156,7 @@ describe("CRM channel connection repair", () => {
       `/api/v1/crm/channel-connections/${connectionId}/zapi/credentials`,
       {
         body: JSON.stringify({
+          clientToken: "replacement-client-token",
           instanceId: "instance-1",
           instanceToken: "replacement-token",
         }),

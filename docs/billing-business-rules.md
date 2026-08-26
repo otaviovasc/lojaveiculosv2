@@ -1,354 +1,186 @@
 # Billing Business Rules
 
-This document is the source of truth for Loja Veiculos V2 billing behavior.
-Update it whenever pricing, ownership, provider integration, or entitlement
-rules change.
+This document is the source of truth for Loja Veiculos V2 packaging, contracts,
+provider activation, and billing-derived access.
 
-## Commercial Readiness
+## Catalog
 
-The base commercial contract is now enforced by the runtime:
+The immutable current catalog is `2026-08-v3`. Catalog v2 remains registered
+only so historical rows can be interpreted; it must never become active again.
+All prices are monthly BRL cents and come from the server-owned catalog.
 
-- onboarding selects the latest published default catalog and never writes plan,
-  feature, or add-on definitions;
-- Growth and the expansion add-ons are separate chargeable products. CRM uses
-  the immutable `2026-08-v2` catalog; add-ons are not included in the trial or
-  base plan;
-- a fresh store receives a 14-day trial with only the catalog features explicitly
-  marked `included_in_trial`: analytics, automation, compliance, plate lookup,
-  and the platform storefront subdomain; custom domain and other cost-bearing
-  or critical integrations are excluded;
-- trial stores retain an effective Growth plan subscription item so plan quotas
-  and core stock operations, including vehicle creation, work throughout the
-  original trial period;
-- trial grants inherit the subscription start and end, expired grants are
-  excluded from authenticated and external-API access, and billing reads expose
-  an elapsed trial as `expired`;
-- seller/team, vehicle-stock, and monthly plate-lookup limits are checked in the
-  business operation before the paid or persistent action runs;
-- vehicle creation and store invitations repeat their quota check inside the
-  database transaction used for persistence.
+| Plan      | Monthly cents | Vehicles |  Users | Plate lookups |
+| --------- | ------------: | -------: | -----: | ------------: |
+| Free      |             0 |       10 |      1 |             3 |
+| Essencial |        19,700 |       75 |      3 |            25 |
+| Operação  |        39,700 |      150 |      5 |            75 |
+| Gestão    |        59,700 |      300 |     10 |           150 |
+| Escala    |   from 89,700 |   quoted | quoted |        quoted |
 
-The following lifecycle capabilities remain incomplete and are separate from
-the base plan/entitlement leakage repaired above:
+Plans are cumulative:
 
-- cancellation reasons, dunning/grace policy, annual contracts, usage rating,
-  and measured provider-cost margin are incomplete.
+- Free: storefront builder on the Loja subdomain, inventory control, public
+  interest capture, and the basic inbox.
+- Essencial: Free plus custom domain, reservations/sales, customers, internal
+  financing, and a connected financing provider only when readiness is
+  verified.
+- Operação: Essencial plus full CRM, official channels, store-owned Z-API
+  credentials, and the standalone document workspace/templates.
+- Gestão: Operação plus fiscal, finance, commissions, analytics, compliance,
+  checklists, and finance auto-entry rules.
+- Escala: Gestão plus marketplaces, Public API/webhooks, advanced automation,
+  AI Studio, and resale-analysis AI.
 
-Target billing and product metrics are documented in
-`docs/strategy/product-operating-model.md`.
+Catalog v3 has no active add-ons and no browser-calculated annual discount.
+Future add-ons may represent explicit usage packs or professional services, not
+features already included in a plan. Standard sale documents remain part of
+`sales`; `documents` unlocks the standalone document center.
 
-## Account Authority
+## Effective Access
 
-- `tenants` are billing/legal accounts.
-- `stores` are operating dealerships.
-- If a store is managed by an agency, the agency tenant manages billing.
-- If a store is not agency-managed, the store owner manages billing.
-- There is no agency platform fee and no agency discount in the default model.
-- Owners of agency-managed stores must not receive `billing.manage`; operational
-  store permissions remain separate from billing authority.
+Free is a permanent, active, open-ended contract. Every new store is created
+atomically with its Free `subscription_items` plan row and entitlement
+projection. There is no trial creation, trial projection, or trial expiry in
+new-account flows.
 
-## Commercial Model
+`subscription_items` contains effective or scheduled contracts only. A paid
+plan choice is recorded in `billing_plan_hires` and cannot change current
+access before verified payment. At most one open hire and one effective plan
+window may exist per store.
 
-- Billing is monthly and denominated in BRL cents.
-- A subscription belongs to the tenant that pays.
-- Subscription items are the chargeable source of truth:
-  - `plan` items price the base store OS plan.
-  - `addon` items price optional recurring modules, such as CRM.
-- Current `2026-08-v2` pricing:
-  - Básico: `0` cents monthly.
-  - Premium: `9997` cents monthly.
-  - Estoque: `14999` cents monthly.
-  - Pro: `17990` cents monthly.
-  - Growth: `29900` cents monthly.
-  - CRM: `17900` cents monthly. It includes Official WhatsApp and Instagram.
-  - Optional Z-API for CRM: `10000` cents monthly, for a combined CRM price of
-    `27900` cents monthly.
-  - NF-e integrated with Spedy add-on: `5000` cents monthly.
-  - Marketplace connectors add-on: `14990` cents monthly.
-  - Public API access add-on: `9990` cents monthly.
-  - Simulations Pro add-on: `4990` cents monthly.
-- A store owner may select products and complete the first Asaas checkout at any
-  point during the 14-day trial. Successful provider evidence activates the paid
-  subscription; the trial end is not a purchase lock.
-- Growth limits in catalog `2026-08-v2`:
-  - 8 active/pending team seats per store;
-  - 300 non-deleted vehicle listings per store;
-  - 300 paid plate lookups per billing period.
-- Trial stores may perform 10 plate lookups during the trial. Activating the
-  paid Growth plan changes the plate-lookup allowance to 300 per billing period.
-- The dealership pays Meta's own messaging charges directly. Loja Veiculos
-  pays Composio and includes 10,000 integration tool executions per store and
-  billing month in CRM. This allowance is initially soft: exceeding it does
-  not create an automatic overage charge or service cutoff.
-- Loja Veiculos buys and configures the optional Z-API instance only after the
-  matching subscription renewal has been paid. Z-API costs a full provider
-  month, so it is never prorated or activated mid-period.
-- An active customer can request or cancel Z-API before renewal. The request is
-  scheduled for the existing next due date, leaves the current invoice and all
-  unrelated add-ons unchanged, and becomes usable only after payment evidence
-  and support setup. An active Z-API cancellation remains effective through
-  the already-paid period and removes the item at renewal.
-- Owners and billing-authorized agency operators can purchase CRM and request
-  or cancel Z-API for the store they manage. Prices and add-on identities come
-  only from the server-owned catalog.
+Billing controls entitlements; roles control permissions. A feature action
+requires both. Billing and settings remain available to actors with
+`billing.manage` while the store is on Free. An inconsistent paid contract
+falls back to Free capability and quota behavior until reconciliation repairs
+it; customers never receive an internal missing-contract error.
 
-## Catalog Publication
+Canonical entitlements are `storefront`, `inventory`, `lead_capture`,
+`sales`, `financing`, `documents`, `finance`, `commissions`,
+`checklists`, `ai`, `crm`, `fiscal`, `analytics`, `compliance`,
+`marketplace`, `external_api`, `automation`, `custom_domain`, and
+`plate_lookup`.
 
-- The canonical current definition is
-  `apps/api/src/domains/billing/catalog/currentBillingCatalog.ts`; it selects an
-  immutable version from `catalog/versions/`.
-- Every price, feature-composition, or limit change requires a new version and
-  new plan/add-on IDs. A deployed version is never edited or reactivated after
-  it is superseded. Keep every canonical definition from v2 onward in the
-  server registry so deploy reconciliation can finish pending audit evidence
-  for the active predecessor before publishing its successor.
-- API startup runs migrations and then `pnpm run billing:catalog:reconcile`.
-  Reconciliation takes a database advisory lock, validates the complete
-  definition, installs missing rows in one transaction, verifies their
-  checksum, and atomically changes the explicit active-version pointer.
-- Repeated deploys are no-ops. If the same version name differs from its stored
-  definition or relational rows, startup fails closed instead of overwriting
-  production data. A future-dated version is also rejected.
-- Activation emits required audit evidence. If the audit database is
-  temporarily unavailable after the product transaction commits, the claim is
-  released and the next startup retries the pending evidence. A leased atomic
-  claim prevents multiple API replicas from emitting duplicate activation
-  events, and the event's deterministic ID makes a retry idempotent if the
-  audit insert succeeds before the product-side marker is written.
-- Existing `subscription_items.unit_amount_cents` values are contracted prices.
-  Catalog publication never rewrites them; any future customer-price migration
-  requires a separate, explicit billing-reconciliation policy.
-- Local seeds and the memory adapter consume the same current definition. SQL
-  migration rows remain immutable historical inputs, not a second editable
-  current catalog. The activation migration records the deployed
-  `2026-08-v1` relational price book as a superseded historical snapshot before
-  v2 becomes active.
+Quota windows are server-owned and use the UTC calendar month (`YYYY-MM`),
+not the date on which a store was created or a subscription was paid. Plate
+lookup usage therefore resets at `00:00 UTC` on the first day of each month.
+The vehicle and user quotas are current admission limits. A vehicle creation
+or user invitation is rejected when it would exceed the effective plan quota;
+an existing user is never deactivated merely because a paid plan is
+downgraded. Downgrade handling must preserve existing users and only block
+additional invitations until the membership count is within the new limit.
 
-## Expansion Package Contract
+## Plan Hiring
 
-The first expansion catalog targets independent used-vehicle stores already
-operating the Growth plan. Prices are initial commercial hypotheses and must be
-changed only through a new catalog version.
+Store managers use:
 
-| Package         | Customer outcome                                          | Leading metric                           | Entitlement    | Support owner             | Degraded state                                                           |
-| --------------- | --------------------------------------------------------- | ---------------------------------------- | -------------- | ------------------------- | ------------------------------------------------------------------------ |
-| CRM             | Centralize Official WhatsApp and Instagram conversations  | Median first-response time               | `crm`          | Messaging/provider owner  | Connection unavailable; no message is represented as sent                |
-| Z-API for CRM   | Add a Loja-managed WhatsApp Web connection when requested | Paid setups completed within support SLA | `crm_zapi`     | CRM integration support   | Scheduled or awaiting setup; no provider access is represented as active |
-| NF-e integrated | Emit and reconcile fiscal documents in the sale flow      | Accepted emission rate                   | `fiscal`       | Fiscal/provider owner     | Provider unavailable; no official document is represented as issued      |
-| Marketplaces    | Publish and reconcile inventory across supported channels | Listings synchronized without error      | `marketplace`  | Channel integration owner | Channel unavailable; no listing is represented as published              |
-| Public API      | Connect approved external inventory and lead workflows    | Successful scoped API requests           | `external_api` | Platform/API owner        | Access denied or unavailable with an explicit error contract             |
-| Simulations Pro | Compare commercial scenarios before closing               | Simulations completed before proposal    | `simulations`  | Sales workflow owner      | Simulation unavailable; no financing approval is implied                 |
+- `POST /api/v1/billing/plan-hires`;
+- `GET /api/v1/billing/plan-hires/:hireId`;
+- `POST /api/v1/billing/plan-quotes` for Escala.
 
-Custom domain is excluded from the trial but included in the paid Growth plan.
-The platform storefront subdomain and 10 plate lookups are included in the
-trial. Plate lookup remains part of Growth with its paid catalog allowance;
-neither custom domain nor plate lookup is duplicated as an add-on.
+Agency routes mirror these operations under the selected tenant/store. Only an
+approved, unexpired, versioned quote can create an Escala hire.
 
-## Charge Calculation
+Every hire stores the tenant/store, immutable catalog version and plan
+snapshot, quoted cents, idempotency key, checkout mode, provider correlation
+IDs, status, failure code, and append-only transitions. Relevant phases are
+`free_active`, `checkout_created`, `payment_pending`,
+`activation_pending`, `paid_active`, `past_due_grace`,
+`downgrade_scheduled`, and `reconciliation_failed`.
 
-- The charge preview is built from persisted `subscription_items` when present.
-- Each chargeable line exposes:
-  - unit amount;
-  - quantity;
-  - full amount;
-  - period start and end;
-  - starts/ends dates;
-  - proration factor;
-  - final amount;
-  - allocation percent of the monthly total.
-- `fullAmountCents = unitAmountCents * quantity`.
-- `amountCents = round(fullAmountCents * prorationFactor)`.
-- If a line starts or ends inside the current billing period, proration is based
-  on active milliseconds inside that period.
-- Store allocation is reporting, not pricing. Price must come from chargeable
-  subscription items.
+Paid-to-paid changes and voluntary downgrades are renewal-boundary operations
+without proration. An existing paid contract remains effective until its
+scheduled end. Customer data is never deleted by a plan change.
 
-## Agency Billing
+## Asaas Evidence and Activation
 
-- Agencies are not charged for being agencies.
-- Agency-managed stores roll up to the agency tenant billing account.
-- Store billing routes under `/api/v1/billing/*` are store-scoped and require a
-  store context with billing authority.
-- Agency billing routes under `/api/v1/agency/tenants/:tenantId/*` are tenant
-  scoped and require an active agency tenant membership or platform admin
-  support access.
-- The agency payment method should be charged monthly for all active store
-  subscription items and usage attached to the tenant.
-- A direct Asaas sync creates or updates the tenant-level provider subscription
-  from the current charge preview. It does not invent billing lines; price must
-  already exist in `subscription_items`.
-- If a subscription spans multiple stores, provider payment records may be
-  tenant-level with `store_id = null`; the UI must use charge preview lines for
-  per-store allocation.
+The server persists the hire before calling Asaas and sends the hire ID as
+`externalReference`. The returned checkout ID is the primary correlation key.
+Browser redirects are hints only; the UI polls the scoped hire and never marks
+payment or access as successful.
 
-## Entitlements
+Events are correlated, in order, by known payment ID, provider subscription ID,
+checkout session ID, external reference, and a bounded provider lookup.
+Unmatched events remain `pending_reconciliation`; they are not terminally
+ignored. Reconciliation may use checkout-session and subscription-payment
+lookups to bind missing provider identities.
 
-- Billing controls entitlements.
-- Permissions control who may use or manage entitled features.
-- Enabling an entitlement without a matching subscription item is allowed only
-  as an explicit billing-console action with audit evidence.
-- Customer-facing package cards are commercial read models. They must not call
-  the entitlement override endpoint as a substitute for adding or removing a
-  subscription item.
-- Every entitlement change must record `store_entitlement_events` and an audit
-  event.
+`CHECKOUT_PAID` moves a hire to `activation_pending`. Only confirmed or
+received payment evidence with an unambiguous hire and exact server-owned
+amount can atomically:
 
-### Staging operator exception
+1. persist/bind the payment and provider identities;
+2. end the prior effective plan;
+3. create the new effective contract;
+4. project entitlements;
+5. complete the hire and record operational evidence.
 
-For time-limited integration testing in staging, an operator may grant every
-feature in the active server-owned catalog to all stores reachable through one
-user's active store or tenant memberships:
+Duplicate and out-of-order events are idempotent. An overdue subscription keeps
+paid access for seven days. When grace expires, the worker atomically activates
+Free and reprojects entitlements without deleting business data.
 
-```bash
-pnpm billing:grant-all -- <userId> --reason="Integration QA" --apply
-```
+Checkout is disabled unless both Asaas runtime and webhook configuration are
+ready. Provider-backed modules must expose ready/degraded states and must never
+claim an official operation when the provider is unavailable.
 
-Without `--apply`, the command is a dry run. Applied grants require
-`APP_ENV=staging` and product/audit database URLs (`DATABASE_URL` and
-`AUDIT_DATABASE_URL`, or the staging aliases `STAGING_DB` and
-`STAGING_AUDIT_DB`), expire one calendar month after execution, write
-`store_entitlement_events`, and fail if the required audit database record
-cannot be persisted. The command resolves the
-explicit active catalog pointer and grants the union of included plan features
-and active add-on features from that exact version. Its preview prints the
-catalog version and feature keys. When `crm_zapi` is present in that catalog,
-an applied grant also converges each reachable store to `paid_awaiting_setup`
-and creates the corresponding Z-API subscription item if needed. This remains
-an audited staging operator exception: it deliberately leaves provider
-payment, checkout, and event evidence absent, and setup remains required
-before the contract becomes `active`.
+## Z-API BYOK
 
-## Provider Integration
+Z-API is a CRM transport included wherever `crm` is entitled. It has no
+billing product, quota, purchase route, or cancellation route.
 
-- Asaas is the default billing provider.
-- Runtime readiness requires:
-  - `ASAAS_RUNTIME_IMPLEMENTATION=http`;
-  - `ASAAS_API_URL`;
-  - `ASAAS_API_KEY`;
-  - `PUBLIC_APP_URL`;
-  - `ASAAS_WEBHOOK_SECRET`;
-  - `ASAAS_WEBHOOK_URL`.
-- Customer sync must search Asaas by `externalReference` before creating a
-  customer because Asaas can create duplicate customers.
-- The customer-facing hire flow is hosted Asaas Checkout:
-  - store-scoped owners call `POST /api/v1/billing/provider/checkout`;
-  - agencies call
-    `POST /api/v1/agency/tenants/:tenantId/billing/provider/checkout`;
-  - checkout sessions are persisted in `billing_checkout_sessions`;
-  - checkout `externalReference` uses
-    `lojaveiculos:subscription:<subscriptionId>:checkout:<nonce>`;
-  - callback URLs are generated from `PUBLIC_APP_URL` and route back to the
-    billing UI with `?checkout=success|cancelled|expired`;
-  - browser redirects improve UX only. They must not mark payments as paid.
-- Subscription sync uses:
-  - customer `externalReference = lojaveiculos:tenant:<tenantId>`;
-  - subscription `externalReference = lojaveiculos:subscription:<subscriptionId>`;
-  - `cycle = MONTHLY`;
-  - value from `chargePreview.totalCents`;
-  - `updatePendingPayments = true` when updating an existing provider
-    subscription.
-- Seed/local smoke uses `PIX` by default. Production card-on-file still needs a
-  card tokenization or hosted-checkout collection flow before `CREDIT_CARD`
-  should be made the default.
-- Checkout webhooks update `billing_checkout_sessions`. `CHECKOUT_PAID` also
-  activates the local subscription linked to the checkout session; payment and
-  subscription webhooks remain the source of truth for provider payment and
-  provider subscription ids when Asaas sends them.
-- The public Asaas webhook endpoint is:
+Each store writes `instanceId`, `instanceToken`, and `clientToken`. All
+three are sealed independently with tenant/store/purpose-bound vault context
+and are never returned. There is no global Client-Token fallback. Existing
+connections have legacy credential-bearing metadata and callback URLs scrubbed
+during cutover and become `credentials_incomplete`; conversations, routing,
+and history remain intact, but provider I/O stays disabled until credential
+re-entry and webhook-secret rotation.
 
-```text
-POST /api/v1/billing/webhooks/asaas
-```
+Credential rotation requires `crm.messaging.credentials.rotate`. Scoped
+platform support requires `crm.messaging.support.manage`. Z-API webhook
+handling applies bounded payload validation, rate limiting, secret rotation,
+query-token redaction, and sanitized persisted evidence.
 
-- The endpoint must validate `asaas-access-token` against
-  `ASAAS_WEBHOOK_SECRET`.
-- Webhooks are at-least-once delivery. Persist the provider event id before
-  processing and treat duplicate processed/ignored events as no-ops.
-- Provider events are persisted in `provider_events` with:
-  - `provider = asaas`;
-  - environment from `APP_ENV`/`NODE_ENV`;
-  - the Asaas event `id` as `provider_event_id`.
-- Payment webhooks update `payments` by `(provider, provider_payment_id)`.
-- Subscription webhooks update `subscriptions` by
-  `(provider, provider_subscription_id)`.
-- Unknown subscriptions/customers are ignored after event persistence, not
-  fabricated.
+## Authority and Operations
 
-## Status Mapping
+The paying legal account is the tenant; stores are operating dealerships.
+Store owners/admins or authorized agency operators may manage billing for the
+selected store. Prices, quotas, capabilities, and quotes never come from client
+input.
 
-- `PAYMENT_RECEIVED` -> `payments.status = paid`.
-- `PAYMENT_OVERDUE` -> `payments.status = overdue`.
-- refund events -> `payments.status = refunded`.
-- deleted, cancelled boleto, capture refused, or risk reproof events ->
-  `payments.status = cancelled`.
-- Other payment events remain `pending`.
-- `SUBSCRIPTION_CREATED` or `SUBSCRIPTION_UPDATED` with Asaas `ACTIVE` ->
-  `subscriptions.status = active`.
-- `SUBSCRIPTION_INACTIVATED` or `SUBSCRIPTION_DELETED` ->
-  `subscriptions.status = cancelled`.
-- Asaas `OVERDUE` -> `subscriptions.status = past_due`.
-- Asaas `EXPIRED` -> `subscriptions.status = expired`.
+Catalog reconciliation and the idempotent packaging cutover run during deploy.
+The billing reconciliation worker replays pending Asaas evidence, processes
+provider reconciliation work, and performs expired-grace Free fallbacks.
+Every material transition carries request, tenant, store, hire, checkout,
+subscription, payment, and provider-event identifiers where available, without
+secrets, provider payloads, or customer message/document contents.
 
-## Live Test Checklist
+### Billing operations and staging acceptance
 
-1. Set local or staging `.env` values for all Asaas variables.
-2. Run DB migration/push and seed so the billing subscription/customer rows
-   exist.
-3. Start the API and confirm:
+The billing reconciliation worker runs every five minutes in UTC. Each run
+emits `job.billing_provider_reconciliation.completed` with
+`pendingReconciliationCount`, `oldestPendingReconciliationAgeSeconds`,
+`reconciliationFailedHireCount`, `missingContractCount`,
+`replayedProviderEvents`, and `freeFallbacks`. It emits
+`alert.billing_reconciliation.attention_required` when a non-deleted store has
+no effective plan, a hire is in `reconciliation_failed`, or the oldest pending
+provider event is older than 900 seconds. Operators must investigate the
+corresponding sanitized identifiers and keep the worker retryable; never mark
+an unmatched provider event as successfully reconciled by hand.
 
-```bash
-curl -H "authorization: Bearer <token>" \
-  "$API_BASE_URL/api/v1/billing/provider/status"
-```
+Before promoting billing changes, staging must exercise the real Asaas sandbox
+for Essencial, Operação, Gestão, and an approved Escala quote. For each paid
+hire, verify the local hire is created before checkout, the checkout and
+`externalReference` are persisted, a checkout event without a subscription ID
+does not activate access, and a later confirmed/received payment binds the
+real provider IDs and atomically produces `paid_active`. Repeat or reorder
+webhooks, poll the server-owned hire state, cross the first due-date boundary,
+and verify the effective entitlements remain correct. Record any
+`pending_reconciliation` or `reconciliation_failed` result with its request and
+provider-event IDs before promotion.
 
-4. Create a hosted checkout for the authenticated store owner:
-
-```bash
-curl -X POST -H "authorization: Bearer <token>" \
-  -H "content-type: application/json" \
-  "$API_BASE_URL/api/v1/billing/provider/checkout" \
-  -d '{"billingTypes":["CREDIT_CARD","PIX"],"minutesToExpire":90}'
-```
-
-Open the returned `checkoutUrl`, complete the sandbox payment, and return to
-the billing UI. Treat the browser return as pending until the webhook is
-processed.
-
-5. Synchronize the seeded billing subscription with Asaas sandbox when testing
-   the direct provider sync path:
-
-```bash
-pnpm run billing:asaas:sync-smoke
-```
-
-This command creates or reuses the Asaas customer, creates or updates the Asaas
-subscription from the calculated chargeables, stores provider ids in Postgres,
-and prints only masked provider ids.
-
-6. Configure the Asaas webhook URL as:
-
-```text
-$PUBLIC_API_URL/api/v1/billing/webhooks/asaas
-```
-
-7. Configure the Asaas webhook auth token equal to `ASAAS_WEBHOOK_SECRET`.
-8. Enable checkout, payment, and subscription webhook events in Asaas sandbox.
-9. Trigger a sandbox checkout/payment/subscription event.
-10. Confirm:
-
-- the endpoint returns HTTP 200;
-- `provider_events` has one row for the Asaas event id;
-- duplicate delivery does not create a second event;
-- checkout events update `billing_checkout_sessions`;
-- `payments` or `subscriptions` reflects the provider status;
-- audit records show `billing.webhook.asaas.processed`.
-
-For a local ngrok smoke against the seeded billing subscription, run:
-
-```bash
-pnpm run billing:asaas:webhook-smoke
-```
-
-This command reads `.env` directly, sends a synthetic Asaas
-`PAYMENT_RECEIVED` webhook to `ASAAS_WEBHOOK_URL`, and expects a processed
-response. It does not print provider secrets.
+Billing product milestones are written to the idempotent
+`billing_product_event_outbox` with statuses `pending`, `processed`, or
+`failed`. The table is a durable product-analytics handoff, separate from the
+audit trail and operational logs. Until a delivery consumer is enabled, keep
+these rows available for replay and do not treat their presence as proof that
+an analytics destination received the event.

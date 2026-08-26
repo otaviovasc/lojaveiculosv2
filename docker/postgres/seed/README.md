@@ -9,11 +9,11 @@ non-local database.
 
 ## Topology
 
-| Account           | Store                 | Purpose                                                            |
-| ----------------- | --------------------- | ------------------------------------------------------------------ |
-| Grupo Horizonte   | `test-store`          | Full acquisition-to-cash workflow and every local login persona    |
-| Grupo Horizonte   | `test-store-sorocaba` | Same-tenant multi-store and past-due/degraded entitlement behavior |
-| Rota 27 Seminovos | `isolation-store`     | Foreign-tenant isolation and minimal trial behavior                |
+| Account           | Store                 | Purpose                                                         |
+| ----------------- | --------------------- | --------------------------------------------------------------- |
+| Grupo Horizonte   | `test-store`          | Full acquisition-to-cash workflow and every local login persona |
+| Grupo Horizonte   | `test-store-sorocaba` | Same-tenant multi-store behavior under permanent Free           |
+| Rota 27 Seminovos | `isolation-store`     | Foreign-tenant isolation under permanent Free                   |
 
 The canonical browser/API personas keep their stable Clerk ids:
 
@@ -52,16 +52,17 @@ development R2 keys use the `l/seed/vehicles/` prefix.
 
 The SQL fixture never claims that an official provider operation succeeded.
 
-- Z-API stores environment-variable names, not credentials. `db:reset` and
-  `db:seed` check the same shared test instance read-only while the database row
-  remains `sandbox`; no provider result is written around the service/audit
-  path. Local conversations carry no provider ids or delivery evidence. Use
-  `pnpm run crm:zapi:diagnose` explicitly when the instance needs pairing.
-- Asaas rows use `local_*` placeholder ids and pending/overdue/cancelled states.
-  The seed authenticates against the configured Asaas sandbox with a read-only
-  customer-list request. It deliberately does not create a customer or
-  subscription because repeated resets must not accumulate external resources.
-  Use `pnpm run billing:asaas:sync-smoke` explicitly for a mutating rehearsal.
+- Z-API connections remain `credentials_incomplete` until an operator enters
+  the store-scoped instance id, instance token, and client token through the
+  write-only connection flow. An optional local diagnostic reads those three
+  values from one per-connection credentials file and never persists them in
+  the seed. Local conversations carry no provider ids or delivery evidence.
+- Asaas customer, subscription, checkout, and payment ids remain null in the
+  SQL fixture because no provider call succeeded. The seed authenticates
+  against the configured Asaas sandbox with a read-only customer-list request
+  and does not create external resources. Paid tiers must be tested through a
+  fresh plan hire and verified sandbox payment; repeated resets must not
+  accumulate provider resources.
 - Marketplace accounts are inactive/error and listings are not submitted.
 - Fiscal rows are draft/validation-failed and explicitly say that no official
   operation occurred. RENAVE is intentionally unavailable and unseeded.

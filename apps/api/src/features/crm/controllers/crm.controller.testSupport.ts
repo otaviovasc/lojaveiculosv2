@@ -30,6 +30,7 @@ export const defaultWhatsappPermissions = [
   "crm.attendances.manage",
   "crm.messaging.connection.pair",
   "crm.messaging.connection.setup",
+  "crm.messaging.credentials.rotate",
   "crm.routing.default.manage",
   "crm.conversations.read",
   "crm.conversations.read",
@@ -89,7 +90,7 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
             storeId: "store_1",
             tenantId: "tenant_1",
           }),
-          { entitlements: options.entitlements ?? ["crm", "crm_zapi"] },
+          { entitlements: options.entitlements ?? ["crm"] },
         ),
       webhookContextFactory: async (context) => {
         const actor = resolveCrmWebhookActor(new URL(context.req.url).pathname);
@@ -113,9 +114,6 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
       },
       services: createCrmServices({
         ports: {
-          ...(options.billingQuotaGuard
-            ? { billingQuotaGuard: options.billingQuotaGuard }
-            : {}),
           ...(options.composioChannelOnboardingProvider
             ? {
                 composioChannelOnboardingProvider:
@@ -159,12 +157,6 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
             : {}),
           ...(routingPolicyRepository
             ? { crmRoutingPolicyRepository: routingPolicyRepository }
-            : {}),
-          ...(options.crmZapiSetupCompletionReporter
-            ? {
-                crmZapiSetupCompletionReporter:
-                  options.crmZapiSetupCompletionReporter,
-              }
             : {}),
           ...(options.crmZapiSupportAuthorizer
             ? { crmZapiSupportAuthorizer: options.crmZapiSupportAuthorizer }
@@ -230,7 +222,7 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
       }),
       resolveBotEntitlements:
         options.resolveBotEntitlements ??
-        (async () => options.entitlements ?? ["crm", "crm_zapi"]),
+        (async () => options.entitlements ?? ["crm"]),
       ...(options.crmRealtimeBroker
         ? { realtimeBroker: options.crmRealtimeBroker }
         : {}),

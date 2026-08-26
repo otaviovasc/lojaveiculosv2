@@ -12,7 +12,7 @@ describe("Drizzle agency tenant store access", () => {
     expect(access).toMatchObject({
       accessOrigin: "tenant_agency_fallback",
       billingManagedBy: "agency",
-      entitlements: ["crm", "subdomain"],
+      entitlements: ["crm", "storefront"],
       overrides: [],
       role: "agency",
       storeId: "store_1",

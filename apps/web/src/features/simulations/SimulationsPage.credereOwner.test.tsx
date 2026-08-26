@@ -142,7 +142,7 @@ function session(input: {
 }): SessionBootstrap {
   const store = {
     effectivePermissions: ["sale.read"],
-    entitlements: ["simulations"],
+    entitlements: ["financing"],
     role: input.role,
     status: "active" as const,
     storeId: "store_1",
