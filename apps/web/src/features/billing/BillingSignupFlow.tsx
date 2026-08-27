@@ -451,7 +451,6 @@ function getPlanTheme(plan: BillingPlan) {
   if (/premium|gestao|gestão/.test(identity)) return planThemes.management;
   if (/growth|operacao|operação/.test(identity)) return planThemes.operation;
   if (/pro|escala/.test(identity)) return planThemes.scale;
-  if (/essencial/.test(identity)) return planThemes.essencial;
   return planThemes.base;
 }
 
@@ -468,14 +467,6 @@ const planThemes = {
     checkBg: "bg-blue-500 text-white border-blue-500",
     icon: Sparkles,
     iconColor: "text-blue-500",
-  },
-  essencial: {
-    cardDefault: "bg-success/10 border-success/30 hover:border-success/60",
-    cardSelected:
-      "bg-success/25 border-2 border-success ring-2 ring-success/20",
-    checkBg: "bg-success text-white border-success",
-    icon: Sparkles,
-    iconColor: "text-success",
   },
   management: {
     cardDefault:
