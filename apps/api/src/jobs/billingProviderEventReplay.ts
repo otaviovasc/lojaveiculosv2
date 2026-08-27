@@ -59,7 +59,11 @@ export async function replayPendingProviderEvents(
   }
   const webhookToken = process.env.ASAAS_WEBHOOK_SECRET ?? null;
   if (!webhookToken) return 0;
-  const events = await replayCandidates(input.db, input.environment, now);
+  const events = await billingProviderEventReplayCandidatesQuery(
+    input.db,
+    input.environment,
+    now,
+  );
   let replayed = 0;
   for (const event of orderReplayCandidates(events).filter((candidate) =>
     billingProviderEventCanReplay(candidate, now),
@@ -132,7 +136,7 @@ export async function requeueExhaustedProviderEvent(input: {
   return Boolean(requeued);
 }
 
-async function replayCandidates(
+export function billingProviderEventReplayCandidatesQuery(
   db: DrizzleBillingClient,
   environment: string,
   now: Date,
@@ -162,7 +166,7 @@ async function replayCandidates(
               "failed",
               "pending_reconciliation",
             ]),
-            sql`${productSchema.providerEvents.updatedAt} + make_interval(secs => least(${providerEventRetryMaxMs / 1_000}, ${providerEventRetryBaseMs / 1_000} * power(2, greatest(${productSchema.providerEvents.processingAttempts} - 1, 0)))) <= ${now}`,
+            sql`${productSchema.providerEvents.updatedAt} + make_interval(secs => least(${providerEventRetryMaxMs / 1_000}, ${providerEventRetryBaseMs / 1_000} * power(2, greatest(${productSchema.providerEvents.processingAttempts} - 1, 0)))) <= ${sql.param(now, productSchema.providerEvents.updatedAt)}`,
           ),
           and(
             eq(productSchema.providerEvents.status, "processing"),
