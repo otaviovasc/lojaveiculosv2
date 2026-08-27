@@ -20,8 +20,8 @@ export function SessionTagRow({
             className="crm-tag-chip"
             key={tag.id}
             style={{
-              backgroundColor: `color-mix(in srgb, ${tagColor} 16%, var(--color-panel))`,
-              borderColor: `color-mix(in srgb, ${tagColor} 35%, var(--color-line))`,
+              backgroundColor: `color-mix(in srgb, ${tagColor} 14%, var(--color-panel))`,
+              borderColor: `color-mix(in srgb, ${tagColor} 28%, var(--color-line))`,
               color: "var(--color-text)",
             }}
           >

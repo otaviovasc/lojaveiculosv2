@@ -41,6 +41,10 @@ export function CrmConversationWorkspace({
   const [selectionMode, setSelectionMode] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [newConversationOpen, setNewConversationOpen] = useState(false);
+  const [newConversationDraft, setNewConversationDraft] = useState<{
+    buyerName?: string;
+    phone?: string;
+  } | null>(null);
   const [conclusionOpen, setConclusionOpen] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<CrmMessage | null>(null);
   const selectedCount = inbox.selectedSessions.length;
@@ -65,10 +69,95 @@ export function CrmConversationWorkspace({
   );
 
   useEffect(() => {
+    const handleStartConversation = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        buyerName?: string;
+        phone?: string;
+      }>;
+      if (customEvent.detail) {
+        setNewConversationDraft(customEvent.detail);
+        setNewConversationOpen(true);
+      }
+    };
+    window.addEventListener("crm:start-conversation", handleStartConversation);
+    return () => {
+      window.removeEventListener(
+        "crm:start-conversation",
+        handleStartConversation,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     setReplyToMessage(null);
     setDetailsOpen(false);
     setConclusionOpen(false);
   }, [inbox.activeCycleId, inbox.connectionFilterId]);
+
+  useEffect(() => {
+    if (!detailsOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setDetailsOpen(false);
+        focusPane("chat");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [detailsOpen]);
+
+  useEffect(() => {
+    const onJump = (event: Event) => {
+      const { messageId } = (event as CustomEvent<{ messageId: string }>)
+        .detail;
+      if (!messageId) return;
+      const el =
+        shellRef.current?.querySelector<HTMLElement>(
+          `[data-message-id="${String(messageId)}"]`,
+        ) ??
+        shellRef.current?.querySelector<HTMLElement>(
+          `#crm-msg-${String(messageId).replace(/"/g, "")}`,
+        );
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("crm-message-highlight");
+        setTimeout(() => el.classList.remove("crm-message-highlight"), 1800);
+      } else {
+        // fallback: smooth scroll messages container toward bottom where hit likely is
+        const scroller =
+          shellRef.current?.querySelector<HTMLElement>(".crm-messages");
+        scroller?.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
+      }
+    };
+    const onToggleTag = (event: Event) => {
+      const { tagId, cycleId } = (
+        event as CustomEvent<{ tagId: string; cycleId: string }>
+      ).detail;
+      if (!tagId || !cycleId) return;
+      const target = inbox.conversationCycles.find(
+        (c) => String(c.id) === String(cycleId),
+      );
+      const hasTag = target?.tags?.some((t) => String(t.id) === String(tagId));
+      if (hasTag)
+        void inbox.actions.removeCycleTag(
+          cycleId as CrmConversationCycleId,
+          tagId,
+        );
+      else
+        void inbox.actions.addCycleTag(
+          cycleId as CrmConversationCycleId,
+          { tagId } as unknown as Parameters<
+            typeof inbox.actions.addCycleTag
+          >[1],
+        );
+    };
+    window.addEventListener("crm:jump-to-message", onJump);
+    window.addEventListener("crm:toggle-tag", onToggleTag);
+    return () => {
+      window.removeEventListener("crm:jump-to-message", onJump);
+      window.removeEventListener("crm:toggle-tag", onToggleTag);
+    };
+  }, [inbox]);
 
   useEffect(() => {
     setMobilePane(routeCycleId ? "chat" : "list");
@@ -83,7 +172,9 @@ export function CrmConversationWorkspace({
           : pane === "chat"
             ? ".crm-chat"
             : ".crm-details-panel";
-      shellRef.current?.querySelector<HTMLElement>(selector)?.focus();
+      shellRef.current
+        ?.querySelector<HTMLElement>(selector)
+        ?.focus({ preventScroll: true });
     });
   };
 
@@ -221,6 +312,8 @@ export function CrmConversationWorkspace({
               }}
               assignableMembers={inbox.assignableMembers}
               availableTags={inbox.availableTags}
+              messages={inbox.messages}
+              onInsertPrompt={(text) => composerRef.current?.insertPrompt(text)}
               canAssignSession={
                 inbox.permissions.canAssign && inbox.canAssignSessions
               }
@@ -415,8 +508,21 @@ export function CrmConversationWorkspace({
         )}
       </section>
       {activeSession && detailsOpen ? (
+        <button
+          aria-label="Fechar detalhes"
+          className="crm-details-scrim"
+          onClick={() => {
+            setDetailsOpen(false);
+            focusPane("chat");
+          }}
+          type="button"
+        />
+      ) : null}
+      {activeSession ? (
         <CrmConversationCycleDetailsPanel
           assignableMembers={inbox.assignableMembers}
+          isOpen={detailsOpen}
+          messages={inbox.messages}
           onClose={() => {
             setDetailsOpen(false);
             focusPane("chat");
@@ -427,10 +533,18 @@ export function CrmConversationWorkspace({
       {newConversationOpen ? (
         <CrmNewConversationDialog
           disabled={inbox.isStartingConversation || !inbox.canStartConversation}
-          onClose={() => setNewConversationOpen(false)}
+          initialBuyerName={newConversationDraft?.buyerName ?? ""}
+          initialPhone={newConversationDraft?.phone ?? ""}
+          onClose={() => {
+            setNewConversationOpen(false);
+            setNewConversationDraft(null);
+          }}
           onStart={async (input) => {
             const accepted = await inbox.startConversation(input);
-            if (accepted) focusPane("chat");
+            if (accepted) {
+              focusPane("chat");
+              setNewConversationDraft(null);
+            }
             return accepted;
           }}
           provider={

@@ -1,6 +1,17 @@
-/* CRM Scoped Layout & Top Navigation */
+/* CRM Scoped Layout & Top Navigation — layered depth system */
 .crm-page {
-  background: var(--color-app);
+  background:
+    radial-gradient(
+      1200px 500px at 18% -10%,
+      color-mix(in srgb, var(--color-accent-soft) 55%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      900px 420px at 92% 0%,
+      color-mix(in srgb, var(--color-app-elevated) 72%, transparent) 0%,
+      transparent 62%
+    ),
+    var(--color-app);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -11,7 +22,7 @@
 }
 
 .crm-shell {
-  background: var(--color-app);
+  background: var(--color-surface);
   display: grid;
   flex: 1;
   grid-template-columns: minmax(21rem, 25rem) minmax(27rem, 1fr);
@@ -19,20 +30,23 @@
   min-width: 0;
   overflow: hidden;
   width: 100%;
+  position: relative;
+  transition: none !important;
 }
 
+/* details now overlays chat — grid stays 2 columns */
 .crm-shell[data-details-open="true"] {
-  grid-template-columns:
-    minmax(21rem, 25rem)
-    minmax(27rem, 1fr)
-    minmax(18rem, 22rem);
+  grid-template-columns: minmax(21rem, 25rem) minmax(27rem, 1fr);
 }
 
-/* Scoped Top Bar Navigation */
+/* Scoped Top Bar Navigation — glass + single elevation */
 .crm-scope-nav {
   align-items: center;
-  background: var(--color-panel);
-  border-bottom: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-panel) 84%, transparent);
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-line-strong) 18%, var(--color-line));
   display: flex;
   gap: 0.75rem;
   height: 3.5rem;
@@ -41,7 +55,8 @@
   position: relative;
   width: 100%;
   z-index: 20;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 6px 18px -14px
+    color-mix(in srgb, var(--color-text) 12%, transparent);
 }
 
 .crm-scope-brand {
@@ -49,7 +64,19 @@
   flex: 0 0 auto;
   font-size: var(--font-size-sm);
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.crm-scope-brand::after {
+  content: "OS";
+  margin-left: 0.4rem;
+  color: var(--color-accent-strong);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  font-size: var(--font-size-xs);
+  vertical-align: super;
+  opacity: 0.92;
 }
 
 .crm-scope-trailing {
@@ -204,6 +231,24 @@
   line-height: 1.2;
 }
 
+.crm-scope-tab-label-compact {
+  display: inline;
+}
+
+.crm-scope-tab-label-full {
+  display: none;
+}
+
+@media (min-width: 1601px) {
+  .crm-scope-tab-label-full {
+    display: inline;
+  }
+
+  .crm-scope-tab-label-compact {
+    display: none;
+  }
+}
+
 .crm-scope-tab svg {
   flex-shrink: 0;
   height: 1rem;
@@ -233,9 +278,11 @@
 
 .crm-scope-tab-badge {
   align-items: center;
-  background: #10b981;
+  background: var(--color-accent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent-strong) 22%, var(--color-accent));
   border-radius: 9999px;
-  color: #ffffff;
+  color: var(--color-accent-foreground);
   display: inline-flex;
   flex: 0 0 auto;
   font-size: var(--font-size-xs);
@@ -245,18 +292,31 @@
   justify-content: center;
   min-width: 1.15rem;
   padding: 0 0.35rem;
+  box-shadow: 0 1px 4px -1px
+    color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 .crm-scope-tab-active {
-  background: color-mix(in srgb, #10b981 12%, transparent);
-  color: var(--color-success-soft-foreground);
-  font-weight: 700;
+  background: color-mix(
+    in srgb,
+    var(--color-accent-soft) 92%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 18%, var(--color-line));
+  color: var(--color-accent-strong);
+  font-weight: 750;
+  box-shadow: 0 1px 2px 0
+    color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 :root[data-theme="dark"] .crm-scope-tab-active,
 .dark .crm-scope-tab-active {
-  background: rgba(16, 185, 129, 0.16);
-  color: #34d399;
+  background: color-mix(in srgb, var(--color-accent) 9%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 28%, transparent);
+  color: white;
+  box-shadow: 0 2px 12px -8px
+    color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -555,11 +615,9 @@
 }
 
 @media (max-width: 1180px) and (min-width: 861px) {
-  .crm-shell {
-    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr) minmax(
-        15rem,
-        18rem
-      );
+  .crm-shell,
+  .crm-shell[data-details-open="true"] {
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr);
   }
 }
 

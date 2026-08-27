@@ -47,6 +47,7 @@ export function MessageBubble({
     <article
       className={outgoing ? "crm-bubble crm-bubble-out" : "crm-bubble"}
       data-channel={channel}
+      data-message-id={String(message.id)}
       data-message-status={delivery.status}
       id={elementId}
     >
@@ -139,7 +140,7 @@ export function MessageDeliveryStatus({
   if (delivery.status === "pending") {
     return (
       <span className="crm-delivery-pending" role="status" title="Enviando...">
-        <Clock3 className="size-3 animate-pulse text-muted" />
+        <Clock3 className="size-3 animate-spin" aria-hidden="true" />
         <span>Envio pendente</span>
       </span>
     );

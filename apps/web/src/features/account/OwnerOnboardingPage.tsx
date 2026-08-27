@@ -92,7 +92,10 @@ export function OwnerOnboardingPage() {
     <main className="account-auth-shell">
       <div aria-hidden="true" className="account-auth-glow" />
       <div className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-6">
-        <Logo className="h-10" variant="full" />
+        <div className="onboarding-logo">
+          <Logo className="h-10 onboarding-logo-light" variant="full" />
+          <Logo className="h-10 onboarding-logo-dark" variant="full-white" />
+        </div>
 
         <div className="w-full space-y-6">
           <header className="space-y-2 text-center">

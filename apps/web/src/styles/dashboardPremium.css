@@ -101,22 +101,48 @@
 .gloss-overlay {
   position: absolute;
   top: 0;
-  left: -100%;
-  width: 50%;
+  left: -75%;
+  width: 65%;
   height: 100%;
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.22) 50%,
     rgba(255, 255, 255, 0) 100%
   );
-  transform: skewX(-25deg);
-  transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: skewX(-18deg);
+  transition: left 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
+  will-change: left;
+  z-index: 12;
 }
 
-.kpi-card-premium:hover .gloss-overlay {
-  left: 130%;
+.kpi-card-premium:hover .gloss-overlay,
+.feature-kpi-card:hover .gloss-overlay,
+.sales-primary-button:hover .gloss-overlay,
+.billing-checkout-button:hover .gloss-overlay,
+.billing-cta-shimmer:hover .gloss-overlay {
+  left: 135%;
+}
+
+.sales-primary-button .gloss-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.34) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gloss-overlay {
+    transition: none;
+  }
+
+  .kpi-card-premium:hover .gloss-overlay,
+  .feature-kpi-card:hover .gloss-overlay {
+    left: -75%;
+  }
 }
 
 .neon-progress-green {

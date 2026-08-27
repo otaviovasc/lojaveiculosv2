@@ -6,8 +6,10 @@ import {
   Bot,
   Car,
   Check,
+  CheckCheck,
   ChevronDown,
   Circle,
+  Clock3,
   MailCheck,
   MailOpen,
   Megaphone,
@@ -219,11 +221,11 @@ export function SessionList({
                           className="crm-cycle-tag-chip"
                           style={{
                             backgroundColor: tag.color
-                              ? `${tag.color}18`
+                              ? `color-mix(in srgb, ${tag.color} 14%, var(--color-panel))`
                               : undefined,
                             color: "var(--color-text)",
                             borderColor: tag.color
-                              ? `${tag.color}40`
+                              ? `color-mix(in srgb, ${tag.color} 28%, var(--color-line))`
                               : undefined,
                           }}
                         >
@@ -499,15 +501,20 @@ function SessionStatusBadge({
     EXPIRED: "Expirada",
     MINIBOT_ACTIVE: "Bot ativo",
   };
+  const StatusIcon =
+    status === "MINIBOT_ACTIVE"
+      ? Bot
+      : status === "COMPLETED"
+        ? CheckCheck
+        : status === "EXPIRED"
+          ? Clock3
+          : Circle;
+
   return (
     <span
       className={`crm-cycle-status crm-cycle-status-${status.toLowerCase()}`}
     >
-      {status === "MINIBOT_ACTIVE" ? (
-        <Bot aria-hidden="true" />
-      ) : (
-        <Circle aria-hidden="true" />
-      )}
+      <StatusIcon aria-hidden="true" />
       {labels[status]}
     </span>
   );

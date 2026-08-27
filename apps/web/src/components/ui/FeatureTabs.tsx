@@ -3,6 +3,7 @@ import { cx, type FeatureIcon } from "./featureShared";
 import { useDragToScroll } from "../../lib/useDragToScroll";
 
 type FeatureTabOption<Value extends string> = {
+  ariaLabel?: string;
   icon?: FeatureIcon | undefined;
   label: ReactNode;
   value: Value;
@@ -73,6 +74,7 @@ export function FeatureTabs<Value extends string>({
         return (
           <button
             aria-selected={active}
+            aria-label={option.ariaLabel}
             className={cx(optionClassName, active && activeClassName)}
             key={option.value}
             onClick={() => onChange(option.value)}

@@ -12,6 +12,7 @@ import { useCrmLeadOwnerName } from "./useCrmLeadOwnerName";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { ProductCrmLead } from "./productCrmTypes";
 import { sourceLabels } from "./crmPipelineConfig";
+import { readLeadAvatarUrl } from "./crmLeadAvatar";
 
 type Props = {
   lead: ProductCrmLead;
@@ -66,9 +67,18 @@ export function CrmLeadCard({
     >
       {/* Defined card header */}
       <header className="-mx-4 -mt-4 rounded-t-[7px] flex items-center gap-2 border-b border-line/50 bg-line/10 px-4 py-2.5">
-        <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line/50 bg-app-elevated text-xs font-black text-app-text">
-          {leadInitials}
-        </span>
+        {readLeadAvatarUrl(lead) ? (
+          <img
+            alt={leadName}
+            className="size-7 shrink-0 rounded-full border border-line/50 object-cover bg-app-elevated"
+            src={readLeadAvatarUrl(lead) as string}
+            loading="lazy"
+          />
+        ) : (
+          <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line/50 bg-app-elevated text-xs font-black text-app-text">
+            {leadInitials}
+          </span>
+        )}
         <h4 className="min-w-0 flex-1 truncate font-black text-xs text-app-text tracking-wider">
           {leadName}
         </h4>

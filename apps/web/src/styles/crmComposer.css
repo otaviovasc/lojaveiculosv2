@@ -1,11 +1,12 @@
-/* CRM Message Composer Styling */
+/* CRM Message Composer Styling — single line + soft shadow */
 .crm-composer {
   background: var(--color-panel);
-  border-top: 1px solid var(--color-line);
-  padding: 0.75rem 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+  padding: 0.75rem 1rem 0.85rem;
   position: relative;
   z-index: 15;
-  box-shadow: 0 -1px 3px color-mix(in srgb, var(--color-text) 5%, transparent);
+  box-shadow: 0 -6px 16px -14px
+    color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 /* Replying to draft bar */

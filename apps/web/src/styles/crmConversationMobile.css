@@ -68,6 +68,13 @@
   .crm-details-panel {
     border-left: 0;
     box-shadow: none;
+    position: relative !important;
+    transform: none !important;
+    width: 100% !important;
+  }
+
+  .crm-details-overlay {
+    display: none;
   }
 
   .crm-shell .crm-details-header [data-mobile-only="true"] {

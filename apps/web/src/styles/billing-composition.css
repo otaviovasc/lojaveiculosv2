@@ -94,7 +94,35 @@
   box-shadow: none;
 }
 
-/* SOTA Flat Bottom Bar accounting for Sidebar offset */
+@keyframes billing-cta-idle {
+  0%,
+  70%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 14px rgba(225, 31, 38, 0.18);
+  }
+  15% {
+    transform: scale(1.025);
+    box-shadow: 0 8px 24px rgba(225, 31, 38, 0.28);
+  }
+}
+
+.billing-cta-shimmer {
+  animation: billing-cta-idle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .billing-cta-shimmer {
+    animation: none;
+  }
+}
+
+.billing-cta-shimmer:disabled {
+  animation: none;
+}
+
+/* Bottom bar - fixed overlay for checkout CTA */
 .billing-bottom-bar {
   position: fixed;
   bottom: 0;

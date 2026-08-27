@@ -97,11 +97,15 @@ export function CrmScopedNav({
           className="crm-scope-tabs"
           onChange={onChange}
           optionClassName="crm-scope-tab"
-          options={scopes.map((scope) => ({
-            icon: scope.icon,
-            label: createScopeLabel(scope, { tagCount, unreadCount }),
-            value: scope.id,
-          }))}
+          options={scopes.map((scope) => {
+            const badge = readBadge(scope.id, { tagCount, unreadCount });
+            return {
+              ariaLabel: badge ? `${scope.label} ${badge}` : scope.label,
+              icon: scope.icon,
+              label: createScopeLabel(scope, { tagCount, unreadCount }),
+              value: scope.id,
+            };
+          })}
           value={activeScope}
         />
         <div className="crm-scope-trailing">
@@ -131,9 +135,20 @@ function createScopeLabel(
   counts: { tagCount: number; unreadCount: number },
 ) {
   const badge = readBadge(scope.id, counts);
+  const label =
+    scope.id === "schedules" ? (
+      <>
+        <span className="crm-scope-tab-label-full">{scope.label}</span>
+        <span aria-hidden="true" className="crm-scope-tab-label-compact">
+          Agendar Msg
+        </span>
+      </>
+    ) : (
+      scope.label
+    );
   return (
     <>
-      <strong>{scope.label}</strong>
+      <strong>{label}</strong>
       {badge ? (
         <>
           {" "}

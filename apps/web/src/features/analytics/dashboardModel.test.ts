@@ -70,7 +70,7 @@ describe("dashboard model", () => {
 
     expect(dashboard.inventory.soldListings).toBe(9);
     expect(stats[1]).toMatchObject({
-      deltaLabel: "2 vendas fechadas no período",
+      deltaLabel: "2 vendas fechadas",
       label: "Ticket médio",
     });
     expect(normalizeSpaces(stats[1]?.value ?? "")).toBe("R$ 120.000");

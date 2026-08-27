@@ -67,7 +67,14 @@ describe("Auth Pages Copy & Visual Structure", () => {
     // Two-zone composition: brand pane + exactly one elevated auth surface.
     expect(container.querySelector(".account-auth-grid")).toBeInTheDocument();
     expect(container.querySelector(".account-auth-brand")).toBeInTheDocument();
-    expect(container.querySelectorAll(".account-glass-card")).toHaveLength(1);
+    expect(container.querySelectorAll(".account-auth-card")).toHaveLength(1);
+    // Logo must be theme-aware (light + dark variants via onboarding-logo pattern).
+    expect(
+      container.querySelector(".onboarding-logo-light"),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".onboarding-logo-dark"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/Estoque, vendas e despesas em um só painel/i),
     ).toBeInTheDocument();
@@ -104,7 +111,7 @@ describe("Auth Pages Copy & Visual Structure", () => {
     ).toBeInTheDocument();
 
     // Profiles render as restrained rows inside the single auth surface.
-    expect(container.querySelectorAll(".account-glass-card")).toHaveLength(1);
+    expect(container.querySelectorAll(".account-auth-card")).toHaveLength(1);
     expect(
       container.querySelector(".account-profile-list"),
     ).toBeInTheDocument();

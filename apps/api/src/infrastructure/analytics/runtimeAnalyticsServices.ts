@@ -135,7 +135,7 @@ function createKpis(
     ...(canReadFinance
       ? [
           {
-            deltaLabel: `${salesMetrics.closedCount} vendas no periodo`,
+            deltaLabel: `${salesMetrics.closedCount} vendas`,
             label: "GMV fechado",
             value: money(salesMetrics.revenueCents),
           },

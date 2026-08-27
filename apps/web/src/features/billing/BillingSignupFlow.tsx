@@ -11,6 +11,7 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
+import { useState } from "react";
 import { AnimatedCounter } from "../../components/ui/CountUp";
 import { cn } from "../../lib/utils";
 import {
@@ -60,6 +61,11 @@ export function BillingSignupFlow({
   const plans = allPlans.filter((plan) => plan.checkoutMode !== "free");
   const freePlan =
     allPlans.find((plan) => plan.checkoutMode === "free") ?? null;
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
+    "monthly",
+  );
+  const isAnnual = billingCycle === "annual";
+  const annualDiscountFactor = isAnnual ? 0.85 : 1;
   const selectedPlan =
     plans.find((plan) => plan.id === selectedPlanId) ?? plans[0] ?? null;
   const providerReady = Boolean(
@@ -116,9 +122,33 @@ export function BillingSignupFlow({
           {effectivePlanName(overview)} · {billingPhaseLabel(overview)}
         </span>
         <div className="flex shrink-0 items-center gap-1 rounded-2xl border border-line bg-app-elevated p-1">
-          <span className="rounded-md bg-accent-strong px-4 py-1.5 text-xs font-black text-accent-strong-foreground">
+          <button
+            className={cn(
+              "rounded-md px-4 py-1.5 text-xs font-black transition-all",
+              billingCycle === "monthly"
+                ? "bg-accent-strong text-accent-strong-foreground"
+                : "text-muted hover:text-foreground",
+            )}
+            onClick={() => setBillingCycle("monthly")}
+            type="button"
+          >
             Cobrança mensal
-          </span>
+          </button>
+          <button
+            className={cn(
+              "flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-black transition-all",
+              billingCycle === "annual"
+                ? "bg-accent-strong text-accent-strong-foreground"
+                : "text-muted hover:text-foreground",
+            )}
+            onClick={() => setBillingCycle("annual")}
+            type="button"
+          >
+            <span>Plano anual</span>
+            <span className="rounded-full bg-success-strong px-2 py-0.5 text-xs font-extrabold uppercase tracking-wider text-white">
+              -15% OFF
+            </span>
+          </button>
         </div>
       </header>
 
@@ -130,7 +160,7 @@ export function BillingSignupFlow({
                 aria-hidden="true"
                 className="size-4 text-warning-strong"
               />
-              Planos cumulativos · {plans[0]?.catalogVersion ?? "vigente"}
+              Planos cumulativos
             </span>
           </div>
           <div
@@ -151,7 +181,7 @@ export function BillingSignupFlow({
                 <button
                   aria-checked={selected}
                   className={cn(
-                    "group relative flex min-h-[460px] flex-col justify-between rounded-3xl p-7 text-left transition-all md:p-8",
+                    "group relative flex min-h-[380px] flex-col justify-between overflow-hidden rounded-3xl p-6 text-left transition-all",
                     selected ? theme.cardSelected : theme.cardDefault,
                     !canManage || busy
                       ? "cursor-not-allowed opacity-75"
@@ -165,13 +195,13 @@ export function BillingSignupFlow({
                 >
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
+                    className="pointer-events-none absolute inset-0 overflow-hidden"
                   >
                     <Icon
                       className={cn(
-                        "absolute -bottom-8 -right-8 size-48 -rotate-12 select-none stroke-[1.2] transition-all duration-300 group-hover:scale-110",
+                        "absolute -bottom-6 -right-6 size-36 -rotate-12 select-none stroke-[1.2] transition-all duration-300 group-hover:scale-110",
                         theme.iconColor,
-                        selected ? "opacity-20" : "opacity-10",
+                        selected ? "opacity-15" : "opacity-8",
                       )}
                     />
                   </div>
@@ -187,7 +217,7 @@ export function BillingSignupFlow({
                           aria-hidden="true"
                           className={cn("size-7 shrink-0", theme.iconColor)}
                         />
-                        <strong className="text-xl font-[950] text-foreground md:text-2xl">
+                        <strong className="text-lg font-[950] text-foreground md:text-xl">
                           {plan.name}
                         </strong>
                       </div>
@@ -204,16 +234,28 @@ export function BillingSignupFlow({
                       </span>
                     </div>
                     <div className="mb-6">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black tracking-tight text-foreground md:text-4xl">
-                          {plan.checkoutMode === "quote_required"
-                            ? `A partir de ${money(plan.monthlyPriceCents)}`
-                            : money(plan.monthlyPriceCents)}
+                      <div className="flex flex-wrap items-baseline gap-1.5">
+                        <span className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
+                          {money(
+                            Math.round(
+                              plan.monthlyPriceCents * annualDiscountFactor,
+                            ),
+                          )}
                         </span>
                         <span className="text-xs font-bold text-muted">
                           /mês
                         </span>
+                        {isAnnual && plan.monthlyPriceCents > 0 ? (
+                          <span className="ml-1 rounded-full bg-success-soft px-2 py-0.5 text-xs font-extrabold text-success-strong">
+                            -15% no anual
+                          </span>
+                        ) : null}
                       </div>
+                      {isAnnual && plan.monthlyPriceCents > 0 ? (
+                        <span className="mt-1 block text-xs font-semibold text-muted line-through">
+                          {money(plan.monthlyPriceCents)}/mês no mensal
+                        </span>
+                      ) : null}
                     </div>
                     <div className="space-y-3 border-t border-line/40 pt-5 text-xs font-medium text-muted">
                       {planLimitHighlights(plan).map((limit) => (
@@ -263,35 +305,66 @@ export function BillingSignupFlow({
 
       <aside
         aria-label="Resumo da contratação"
-        className="billing-bottom-bar border-t border-line bg-app-panel px-6 py-4.5"
+        className="billing-bottom-bar border-t border-line bg-app-panel px-6 py-4"
       >
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 md:flex-row md:items-center md:gap-8">
-          <div className="flex items-center gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-accent-strong">
-              <Receipt aria-hidden="true" className="size-6" />
-            </div>
-            <div>
-              <span className="text-xs font-black uppercase tracking-widest text-accent-strong">
-                Investimento total recorrente
-              </span>
-              <div className="mt-0.5 flex items-baseline gap-2">
-                <span className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
+          <div className="flex min-w-0 flex-1 items-start gap-3.5">
+            <Receipt
+              aria-hidden="true"
+              className="mt-1 size-5 shrink-0 text-accent-strong"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-widest text-accent-strong">
+                  Investimento recorrente
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="hidden h-3 w-px bg-line md:block"
+                />
+                <span className="text-xs font-bold text-muted">
+                  {selectedPlan
+                    ? `Plano ${selectedPlan.name === "Free" ? "Grátis" : selectedPlan.name}`
+                    : "Selecione um plano"}
+                </span>
+                <span className="hidden items-baseline gap-1.5 md:inline-flex">
+                  <span className="text-base font-black tracking-tight text-foreground">
+                    <AnimatedCounter
+                      value={money(
+                        Math.round(
+                          (selectedPlan?.monthlyPriceCents ?? 0) *
+                            annualDiscountFactor,
+                        ),
+                      )}
+                    />
+                  </span>
+                  <span className="text-xs font-bold text-muted">/mês</span>
+                  {isAnnual && (selectedPlan?.monthlyPriceCents ?? 0) > 0 ? (
+                    <span className="ml-1 rounded-full bg-success-soft px-2 py-0.5 text-xs font-black text-success-strong">
+                      -15% anual
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              <div className="mt-1 flex items-baseline gap-1.5 md:hidden">
+                <span className="text-2xl font-black tracking-tight text-foreground">
                   <AnimatedCounter
-                    value={
-                      selectedPlan?.checkoutMode === "quote_required"
-                        ? `A partir de ${money(selectedPlan.monthlyPriceCents)}`
-                        : money(selectedPlan?.monthlyPriceCents ?? 0)
-                    }
+                    value={money(
+                      Math.round(
+                        (selectedPlan?.monthlyPriceCents ?? 0) *
+                          annualDiscountFactor,
+                      ),
+                    )}
                   />
                 </span>
                 <span className="text-xs font-extrabold text-muted">/mês</span>
-                <span className="ml-2 hidden border-l border-line pl-3 text-xs font-bold text-muted lg:inline">
-                  {selectedPlan
-                    ? `Plano ${selectedPlan.name}`
-                    : "Selecione um plano"}
-                </span>
+                {isAnnual && (selectedPlan?.monthlyPriceCents ?? 0) > 0 ? (
+                  <span className="rounded-full bg-success-soft px-2 py-0.5 text-xs font-black text-success-strong">
+                    -15% anual
+                  </span>
+                ) : null}
               </div>
-              <p className="mt-1 text-xs font-semibold text-muted">
+              <p className="mt-1.5 max-w-[58ch] text-xs font-medium leading-relaxed text-muted">
                 {checkoutMessage({
                   activationInProgress,
                   hire,
@@ -309,7 +382,7 @@ export function BillingSignupFlow({
             </div>
           ) : (
             <button
-              className="billing-checkout-button flex w-full items-center justify-center gap-2.5 rounded-2xl px-9 py-4 text-sm font-black transition-transform hover:scale-[1.02] active:scale-[0.98] md:w-auto"
+              className="billing-checkout-button billing-cta-shimmer relative flex w-full max-w-[360px] shrink-0 items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-8 py-3.5 text-sm font-black transition-all hover:scale-[1.02] active:scale-[0.98] md:w-auto md:min-w-[280px]"
               disabled={disabled}
               onClick={() =>
                 selectedPlan
@@ -320,6 +393,7 @@ export function BillingSignupFlow({
               }
               type="button"
             >
+              <div aria-hidden="true" className="gloss-overlay" />
               {busy ? (
                 <Loader2 aria-hidden="true" className="size-5 animate-spin" />
               ) : selectedPlan?.checkoutMode === "quote_required" ? (
@@ -377,6 +451,7 @@ function getPlanTheme(plan: BillingPlan) {
   if (/premium|gestao|gestão/.test(identity)) return planThemes.management;
   if (/growth|operacao|operação/.test(identity)) return planThemes.operation;
   if (/pro|escala/.test(identity)) return planThemes.scale;
+  if (/essencial/.test(identity)) return planThemes.essencial;
   return planThemes.base;
 }
 
@@ -393,6 +468,14 @@ const planThemes = {
     checkBg: "bg-blue-500 text-white border-blue-500",
     icon: Sparkles,
     iconColor: "text-blue-500",
+  },
+  essencial: {
+    cardDefault: "bg-success/10 border-success/30 hover:border-success/60",
+    cardSelected:
+      "bg-success/25 border-2 border-success ring-2 ring-success/20",
+    checkBg: "bg-success text-white border-success",
+    icon: Sparkles,
+    iconColor: "text-success",
   },
   management: {
     cardDefault:
@@ -487,11 +570,11 @@ function activationLabel(hire: BillingPlanHire) {
 }
 
 function effectivePlanName(overview: BillingOverview) {
-  return (
+  const raw =
     overview.effectiveContract?.planName ??
     overview.subscription?.plan?.name ??
-    "Free"
-  );
+    "Free";
+  return raw === "Free" ? "Grátis" : raw;
 }
 
 function billingPhaseLabel(overview: BillingOverview) {

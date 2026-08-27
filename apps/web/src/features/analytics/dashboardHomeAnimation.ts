@@ -53,7 +53,7 @@ export const DASHBOARD_RESOURCE_SLIDE_TRANSITION = {
 
 export const dashboardResources: readonly DashboardResource[] = [
   {
-    desc: "Sincronize seu estoque automaticamente com os maiores portais e ERPs do Brasil. Ganhe agilidade e elimine o erro humano com integração total via API.",
+    desc: "Publique seu estoque nos principais portais via API, sem retrabalho.",
     panelClass: "dashboard-resource-api",
     tag: "Agilidade",
     title: "Estoque via API (Portais)",
@@ -82,7 +82,7 @@ export const dashboardResources: readonly DashboardResource[] = [
 ];
 
 const fallbackDashboardResource: DashboardResource = {
-  desc: "Sincronize seu estoque automaticamente com os maiores portais e ERPs do Brasil. Ganhe agilidade e elimine o erro humano com integração total via API.",
+  desc: "Publique seu estoque nos principais portais via API, sem retrabalho.",
   panelClass: "dashboard-resource-api",
   tag: "Agilidade",
   title: "Estoque via API (Portais)",

@@ -202,8 +202,8 @@ export function InventoryCreatePage({
   const analysisReadiness = getCreateResaleAnalysisReadiness(form, lookup);
 
   return (
-    <main className="content-frame animate-fade-in text-app-text">
-      <div className="flex flex-col gap-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
+    <main className="content-frame !px-2 sm:!px-3 lg:!px-4 !pt-2 sm:!pt-3 !pb-6 animate-fade-in text-app-text">
+      <div className="flex flex-col gap-2 pb-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h2 className="text-2xl font-black tracking-wide uppercase lg:text-3xl">
             Cadastrar Veículo
