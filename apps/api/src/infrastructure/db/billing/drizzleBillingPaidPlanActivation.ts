@@ -1,6 +1,5 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, lte, or } from "drizzle-orm";
 import {
-  billingCustomers,
   billingPlanHires,
   billingPlanHireTransitions,
   subscriptionItems,
@@ -8,9 +7,23 @@ import {
 } from "@lojaveiculosv2/db";
 import type { UpsertBillingProviderPaymentInput } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
-import { markHireReconciliationFailed } from "./drizzleBillingPaymentHireState.js";
+import { validatePaidActivationEvidence } from "./drizzleBillingPaymentHireState.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { recordBillingProductEvent } from "./drizzleBillingProductEvents.js";
+import { bindPaidPlanProviderCustomer } from "./drizzleBillingPaidPlanIdentity.js";
+import { lockEffectivePlanContract } from "./drizzleBillingContractLock.js";
+import { recordPaidActivationObservability } from "./drizzleBillingPaidActivationAudit.js";
+import { repairPaidActiveProviderIdentity } from "./drizzleBillingPaidActiveRepair.js";
+import {
+  activationIsDue,
+  addBillingMonth,
+  paidEvidenceCanActivateHire,
+} from "./drizzleBillingPaidActivationRules.js";
+import {
+  hasRealProviderSubscriptionId,
+  loadPlanHireForActivation,
+  stageActivationPendingProviderIdentity,
+} from "./drizzleBillingPaidActivationIdentity.js";
 import {
   endActivePlanItems,
   finalizeScheduledPaidPlanActivations,
@@ -32,28 +45,34 @@ export async function activatePaidPlanHire(
 ): Promise<boolean> {
   const { input, paymentId, scope } = args;
   if (!scope.storeId || !scope.subscriptionId) return false;
-  await db.execute(
-    sql`select pg_advisory_xact_lock(hashtextextended(${`${scope.tenantId}:${scope.storeId}:plan-activation`}, 31))`,
-  );
-  const [hire] = await db
-    .select()
-    .from(billingPlanHires)
-    .where(
-      and(
-        eq(billingPlanHires.id, scope.hireId),
-        eq(billingPlanHires.storeId, scope.storeId),
-        eq(billingPlanHires.tenantId, scope.tenantId),
-      ),
-    )
-    .limit(1);
+  await lockEffectivePlanContract(db, scope.tenantId, scope.storeId);
+  const hire = await loadPlanHireForActivation(db, {
+    hireId: scope.hireId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
   if (!hire) return false;
-  if (hire.status === "paid_active") return true;
-  if (!paidEvidenceCanActivateHire(hire, input.amountCents)) {
-    await markHireReconciliationFailed(db, hire, input, "payment_mismatch");
+  if (hire.status === "paid_active" && input.amountCents !== hire.quotedCents) {
     return false;
   }
+  if (!(await validatePaidActivationEvidence(db, hire, input))) return false;
 
   const observedAt = new Date();
+  const lifecycleObservedAt = input.providerEventOccurredAt ?? observedAt;
+  if (!hasRealProviderSubscriptionId(input.providerSubscriptionId)) {
+    if (hire.status !== "paid_active") {
+      await stageActivationPendingProviderIdentity(db, hire, input);
+    }
+    return false;
+  }
+  if (hire.status === "paid_active") {
+    return repairPaidActiveProviderIdentity(db, {
+      hire,
+      observation: input,
+      observedAt,
+      paymentId,
+    });
+  }
   if (
     hire.status === "activation_pending" &&
     hire.effectiveSubscriptionItemId &&
@@ -64,18 +83,20 @@ export async function activatePaidPlanHire(
     return true;
   }
   const now = input.paidAt ?? observedAt;
-  await bindProviderCustomer(
+  const customerBound = await bindPaidPlanProviderCustomer(
     db,
     scope.subscriptionId,
+    scope.storeId,
     scope.tenantId,
     input,
     now,
   );
+  if (!customerBound) return false;
   await recordBillingProductEvent(db, {
     eventName: "provider_bound",
     hireId: hire.id,
     idempotencyKey: `billing-hire:${hire.id}:payment-bound`,
-    providerCheckoutId: input.providerCheckoutId,
+    providerCheckoutId: input.providerCheckoutId ?? null,
     providerEventId: input.providerEventId,
     providerPaymentId: input.providerPaymentId,
     providerSubscriptionId: input.providerSubscriptionId,
@@ -109,12 +130,16 @@ export async function activatePaidPlanHire(
     .returning({ id: subscriptionItems.id });
   if (!contract) throw new Error("Paid billing contract was not persisted.");
 
-  const periodEnd = input.dueAt ? addMonth(input.dueAt) : addMonth(now);
-  await db
+  const periodEnd = input.dueAt
+    ? addBillingMonth(input.dueAt)
+    : addBillingMonth(now);
+  const [updatedSubscription] = await db
     .update(subscriptions)
     .set({
       currentPeriodEnd: periodEnd,
       currentPeriodStart: activationAt,
+      providerLifecycleEventId: input.providerEventId,
+      providerLifecycleObservedAt: lifecycleObservedAt,
       ...(input.providerSubscriptionId
         ? { providerSubscriptionId: input.providerSubscriptionId }
         : {}),
@@ -126,9 +151,29 @@ export async function activatePaidPlanHire(
       and(
         eq(subscriptions.id, scope.subscriptionId),
         eq(subscriptions.tenantId, scope.tenantId),
+        eq(subscriptions.storeId, scope.storeId),
+        ...(input.providerSubscriptionId
+          ? [
+              or(
+                isNull(subscriptions.providerSubscriptionId),
+                eq(
+                  subscriptions.providerSubscriptionId,
+                  input.providerSubscriptionId,
+                ),
+              ),
+            ]
+          : []),
+        or(
+          isNull(subscriptions.providerLifecycleObservedAt),
+          lte(subscriptions.providerLifecycleObservedAt, lifecycleObservedAt),
+        ),
       ),
-    );
-  await db
+    )
+    .returning({ id: subscriptions.id });
+  if (!updatedSubscription) {
+    throw new Error("Paid billing subscription changed during activation.");
+  }
+  const [updatedHire] = await db
     .update(billingPlanHires)
     .set({
       activatedAt: observedAt,
@@ -142,7 +187,33 @@ export async function activatePaidPlanHire(
       status: "paid_active",
       updatedAt: observedAt,
     })
-    .where(eq(billingPlanHires.id, hire.id));
+    .where(
+      and(
+        eq(billingPlanHires.id, hire.id),
+        eq(billingPlanHires.storeId, hire.storeId),
+        eq(billingPlanHires.tenantId, hire.tenantId),
+        eq(billingPlanHires.status, hire.status),
+        or(
+          isNull(billingPlanHires.providerPaymentId),
+          eq(billingPlanHires.providerPaymentId, input.providerPaymentId),
+        ),
+        ...(input.providerSubscriptionId
+          ? [
+              or(
+                isNull(billingPlanHires.providerSubscriptionId),
+                eq(
+                  billingPlanHires.providerSubscriptionId,
+                  input.providerSubscriptionId,
+                ),
+              ),
+            ]
+          : []),
+      ),
+    )
+    .returning({ id: billingPlanHires.id });
+  if (!updatedHire) {
+    throw new Error("Billing plan hire changed during activation.");
+  }
   await db.insert(billingPlanHireTransitions).values({
     fromStatus: hire.status,
     hireId: hire.id,
@@ -158,69 +229,16 @@ export async function activatePaidPlanHire(
     subscriptionId: scope.subscriptionId,
     tenantId: scope.tenantId,
   });
-  await recordBillingProductEvent(db, {
-    eventName: "contract_activated",
-    hireId: hire.id,
-    idempotencyKey: `billing-hire:${hire.id}:contract-activated`,
-    properties: {
-      catalogVersion: hire.catalogVersion,
-      planId: hire.planId,
-      quotedCents: hire.quotedCents,
-    },
-    providerCheckoutId: input.providerCheckoutId,
-    providerEventId: input.providerEventId,
-    providerPaymentId: input.providerPaymentId,
-    providerSubscriptionId: input.providerSubscriptionId,
-    storeId: hire.storeId,
-    tenantId: hire.tenantId,
+  await recordPaidActivationObservability(db, {
+    hire,
+    observation: input,
+    occurredAt: observedAt,
+    paymentId,
   });
   return true;
 }
 
-export function paidEvidenceCanActivateHire(
-  hire: Pick<typeof billingPlanHires.$inferSelect, "quotedCents" | "status">,
-  amountCents: number,
-) {
-  return (
-    hire.status !== "downgrade_scheduled" && amountCents === hire.quotedCents
-  );
-}
-
-export function activationIsDue(effectiveAt: Date, observedAt: Date) {
-  return effectiveAt <= observedAt;
-}
-
-async function bindProviderCustomer(
-  db: DrizzleBillingClient,
-  subscriptionId: string,
-  tenantId: string,
-  input: UpsertBillingProviderPaymentInput,
-  now: Date,
-) {
-  if (!input.providerCustomerId) return;
-  const [subscription] = await db
-    .select({ billingCustomerId: subscriptions.billingCustomerId })
-    .from(subscriptions)
-    .where(
-      and(
-        eq(subscriptions.id, subscriptionId),
-        eq(subscriptions.tenantId, tenantId),
-      ),
-    )
-    .limit(1);
-  if (!subscription) return;
-  await db
-    .update(billingCustomers)
-    .set({
-      provider: input.provider,
-      providerCustomerId: input.providerCustomerId,
-      updatedAt: now,
-    })
-    .where(eq(billingCustomers.id, subscription.billingCustomerId));
-}
-
-function addMonth(date: Date): Date {
-  const result = new Date(date);
-  result.setUTCMonth(result.getUTCMonth() + 1);
-  return result;
-}
+export {
+  activationIsDue,
+  paidEvidenceCanActivateHire,
+} from "./drizzleBillingPaidActivationRules.js";

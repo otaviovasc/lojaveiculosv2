@@ -25,9 +25,13 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
     providerSubscriptionId: null,
     status: "active",
   };
+  let accountScope: { storeId: string; tenantId: string } | null = null;
 
   return {
     async getProviderAccount(input): Promise<BillingProviderAccount> {
+      if (input.storeId) {
+        accountScope = { storeId: input.storeId, tenantId: input.tenantId };
+      }
       const overview = await getBillingProviderOverview(
         billingRepository,
         input,
@@ -39,7 +43,18 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
       };
     },
     async saveProviderCustomer(input) {
-      if (input.billingCustomerId !== billingCustomer.id) return null;
+      if (
+        input.billingCustomerId !== billingCustomer.id ||
+        !scopeMatches(accountScope, input)
+      ) {
+        return null;
+      }
+      if (
+        billingCustomer.providerCustomerId &&
+        billingCustomer.providerCustomerId !== input.providerCustomerId
+      ) {
+        return null;
+      }
       billingCustomer = {
         ...billingCustomer,
         provider: input.provider,
@@ -48,7 +63,26 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
       return billingCustomer;
     },
     async saveProviderSubscription(input) {
-      if (input.subscriptionId !== subscription.id) return null;
+      if (
+        input.subscriptionId !== subscription.id ||
+        !scopeMatches(accountScope, input)
+      ) {
+        return null;
+      }
+      if (
+        input.expectedStatus &&
+        input.expectedStatus !== subscription.status
+      ) {
+        return null;
+      }
+      const identityCanChange = input.providerSubscriptionId
+        ? !subscription.providerSubscriptionId ||
+          subscription.providerSubscriptionId === input.providerSubscriptionId
+        : input.expectedProviderSubscriptionId
+          ? subscription.providerSubscriptionId ===
+            input.expectedProviderSubscriptionId
+          : !subscription.providerSubscriptionId;
+      if (!identityCanChange) return null;
       subscription = {
         currentPeriodEnd: input.currentPeriodEnd,
         currentPeriodStart: input.currentPeriodStart,
@@ -60,4 +94,14 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
       return subscription;
     },
   };
+}
+
+function scopeMatches(
+  expected: { storeId: string; tenantId: string } | null,
+  actual: { storeId: string; tenantId: string },
+) {
+  return (
+    expected?.storeId === actual.storeId &&
+    expected.tenantId === actual.tenantId
+  );
 }

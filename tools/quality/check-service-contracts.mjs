@@ -52,6 +52,7 @@ const nonEntrypointFiles = new Set([
   "serviceSupport.ts",
   "simulationSyncProjection.ts",
   "summarizeMarketplaceStockPlan.ts",
+  "syncBillingProviderSubscription.testSupport.ts",
   "testSupport.ts",
   "types.ts",
   "executeExternalBotActionSupport.ts",
@@ -179,6 +180,7 @@ for (const file of domainFiles.filter(isServiceFile)) {
     !source.includes("auditZapiWebhook(") &&
     !source.includes("auditZapiWebhookSetupResult(") &&
     !source.includes("auditBillingPlanHire(") &&
+    !source.includes("createDurableBillingAuditIntent(") &&
     !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
     !source.includes("auditVehicleServiceEvent(") &&

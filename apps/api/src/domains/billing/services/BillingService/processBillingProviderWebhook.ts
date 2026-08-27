@@ -85,46 +85,24 @@ export async function processBillingProviderWebhook(
     };
   }
 
+  await auditWebhook(context, {
+    action: "billing.webhook.asaas.observed",
+    eventId: recorded.event.id,
+    outcome: "succeeded",
+    providerEventId: webhook.providerEventId,
+    status: "observed",
+    summary: "Observed Asaas billing webhook before applying provider evidence",
+    sync: { status: "pending_reconciliation", storeId: null, tenantId: null },
+  });
+
+  let sync: BillingProviderSyncResult;
   try {
-    const sync = await syncBillingWebhookEvidence(
+    sync = await syncBillingWebhookEvidence(
       webhook,
       repository,
       ports,
       context.requestId,
     );
-    const resultStatus = webhookResultStatus(sync.status);
-    context.logger.info(
-      "billing.webhook.asaas.record.completed",
-      createServiceLogMetadata(context, {
-        eventType: webhook.eventType,
-        providerEventId: webhook.providerEventId,
-        syncStatus: sync.status,
-        ...(sync.reason ? { syncReason: sync.reason } : {}),
-        ...(sync.storeId ? { syncStoreId: sync.storeId } : {}),
-        ...(sync.tenantId ? { syncTenantId: sync.tenantId } : {}),
-      }),
-    );
-    await repository.updateStatus({
-      eventId: claimed.id,
-      processingToken,
-      status: resultStatus,
-      storeId: sync.storeId,
-      tenantId: sync.tenantId,
-    });
-    await auditWebhook(context, {
-      action: "billing.webhook.asaas.processed",
-      eventId: recorded.event.id,
-      outcome: "succeeded",
-      providerEventId: webhook.providerEventId,
-      status: resultStatus,
-      summary: "Processed Asaas billing webhook",
-      sync,
-    });
-    return {
-      eventId: recorded.event.id,
-      providerEventId: webhook.providerEventId,
-      status: resultStatus,
-    };
   } catch (error) {
     await repository.updateStatus({
       errorMessage: error instanceof Error ? error.name : "UnknownError",
@@ -132,7 +110,7 @@ export async function processBillingProviderWebhook(
       processingToken,
       status: "failed",
     });
-    await auditWebhook(context, {
+    await auditWebhookBestEffort(context, {
       action: "billing.webhook.asaas.failed",
       eventId: recorded.event.id,
       outcome: "failed",
@@ -143,6 +121,51 @@ export async function processBillingProviderWebhook(
     });
     throw error;
   }
+
+  const resultStatus = webhookResultStatus(sync.status);
+  const metadata = createServiceLogMetadata(context, {
+    eventType: webhook.eventType,
+    providerEventId: webhook.providerEventId,
+    syncStatus: sync.status,
+    ...(sync.reason ? { syncReason: sync.reason } : {}),
+    ...(sync.storeId ? { syncStoreId: sync.storeId } : {}),
+    ...(sync.tenantId ? { syncTenantId: sync.tenantId } : {}),
+  });
+  context.logger.info("billing.webhook.asaas.record.completed", metadata);
+  if (sync.reason === "checkout_diverged_from_authoritative_payment") {
+    context.logger.warn(
+      "metric.billing.webhook.checkout_payment_divergence",
+      metadata,
+    );
+  }
+  const updated = await repository.updateStatus({
+    eventId: claimed.id,
+    processingToken,
+    status: resultStatus,
+    storeId: sync.storeId,
+    tenantId: sync.tenantId,
+  });
+  if (!updated) {
+    context.logger.error(
+      "alert.billing.webhook.claim_lost_after_sync",
+      metadata,
+    );
+  } else {
+    await auditWebhookBestEffort(context, {
+      action: "billing.webhook.asaas.processed",
+      eventId: recorded.event.id,
+      outcome: "succeeded",
+      providerEventId: webhook.providerEventId,
+      status: resultStatus,
+      summary: "Processed Asaas billing webhook",
+      sync,
+    });
+  }
+  return {
+    eventId: recorded.event.id,
+    providerEventId: webhook.providerEventId,
+    status: resultStatus,
+  };
 }
 
 function assertWebhookToken(
@@ -160,7 +183,7 @@ async function auditWebhook(
     eventId: string;
     outcome: "failed" | "succeeded";
     providerEventId: string;
-    status: BillingProviderWebhookResult["status"] | "failed";
+    status: BillingProviderWebhookResult["status"] | "failed" | "observed";
     summary: string;
     sync: BillingProviderSyncResult;
   },
@@ -184,4 +207,23 @@ async function auditWebhook(
     tenantId: input.sync.tenantId ?? null,
     summary: input.summary,
   });
+}
+
+async function auditWebhookBestEffort(
+  context: ServiceContext,
+  input: Parameters<typeof auditWebhook>[1],
+) {
+  try {
+    await auditWebhook(context, input);
+  } catch (error) {
+    context.logger.error(
+      "alert.billing.webhook.outcome_audit_failed",
+      createServiceLogMetadata(context, {
+        auditAction: input.action,
+        errorName: error instanceof Error ? error.name : "UnknownError",
+        providerEventId: input.providerEventId,
+        status: input.status,
+      }),
+    );
+  }
 }

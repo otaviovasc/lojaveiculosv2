@@ -19,9 +19,9 @@ import type {
   BillingOverview,
 } from "../../../domains/billing/ports/billingRepository.js";
 import type { PaymentProviderStatus } from "../../../domains/billing/ports/paymentProviderGateway.js";
-import type {
-  BillingServicePorts,
-  BillingServicesPorts,
+import {
+  BillingCompositionError,
+  type BillingServicesPorts,
 } from "../../../domains/billing/services/BillingService/serviceSupport.js";
 import {
   createDrizzleBillingRepository,
@@ -31,11 +31,6 @@ import { createDrizzleBillingProviderRepository } from "../../../infrastructure/
 import { createDrizzleBillingWebhookRepository } from "../../../infrastructure/db/billing/drizzleBillingWebhookRepository.js";
 import { createAsaasPaymentProviderGateway } from "../../../infrastructure/billing/asaasPaymentProviderGateway.js";
 import { createDrizzleBillingPlanHireRepository } from "../../../infrastructure/db/billing/drizzleBillingPlanHireRepository.js";
-import { createMemoryBillingProviderRepository } from "../adapters/memory/billingProviderRepository.js";
-import { createMemoryBillingRepository } from "../adapters/memory/billingRepository.js";
-import { createMemoryBillingWebhookRepository } from "../adapters/memory/billingWebhookRepository.js";
-import { createMemoryPaymentProviderGateway } from "../adapters/memory/paymentProviderGateway.js";
-import { createMemoryBillingPlanHireRepository } from "../adapters/memory/billingPlanHireRepository.js";
 
 export type BillingServices = {
   approvePlanQuote: (
@@ -66,14 +61,15 @@ export type BillingServices = {
     context: ServiceContext,
     planId: string,
   ) => Promise<BillingPlanQuoteRecord>;
+  verifyAsaasWebhookToken: (token: string | null) => boolean;
 };
 
 export type CreateBillingServicesOptions =
-  | { drizzleClient?: never; ports?: BillingServicesPorts }
+  | { drizzleClient?: never; ports: BillingServicesPorts }
   | { drizzleClient: DrizzleBillingClient; ports?: never };
 
 export function createBillingServices(
-  options: CreateBillingServicesOptions = {},
+  options: CreateBillingServicesOptions,
 ): BillingServices {
   const ports = resolvePorts(options);
 
@@ -93,6 +89,8 @@ export function createBillingServices(
       processBillingProviderWebhook(context, input, ports),
     requestPlanQuote: (context, planId) =>
       requestBillingPlanQuote(context, planId, ports),
+    verifyAsaasWebhookToken: (token) =>
+      ports.paymentProviderGateway?.verifyWebhookToken?.(token) ?? false,
   };
 }
 
@@ -120,15 +118,22 @@ function resolvePorts(
     };
   }
 
-  return {
-    billingPlanHireRepository: createMemoryBillingPlanHireRepository(),
-    billingProviderRepository: createMemoryBillingProviderRepository(),
-    billingRepository: createMemoryBillingRepository(),
-    billingWebhookRepository: createMemoryBillingWebhookRepository(),
-    environment: "test",
-    paymentProviderGateway: createMemoryPaymentProviderGateway(),
-    publicAppUrl: "http://localhost:5173",
-  };
+  throw new BillingCompositionError();
 }
 
-export const billingServices = createBillingServices();
+export const unavailableBillingServices: BillingServices = {
+  approvePlanQuote: unavailable,
+  createPlanHire: unavailable,
+  getAgencyOverview: unavailable,
+  getAgencyProviderStatus: unavailable,
+  getOverview: unavailable,
+  getPlanHire: unavailable,
+  getProviderStatus: unavailable,
+  processAsaasWebhook: unavailable,
+  requestPlanQuote: unavailable,
+  verifyAsaasWebhookToken: () => false,
+};
+
+async function unavailable(): Promise<never> {
+  throw new BillingCompositionError();
+}

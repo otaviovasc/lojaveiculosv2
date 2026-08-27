@@ -11,8 +11,8 @@ import {
   type BillingServicePorts,
 } from "./serviceSupport.js";
 import { changeBillingPlanAtRenewal } from "./changeBillingPlanAtRenewal.js";
-import { auditBillingPlanHire } from "./billingPlanHireAudit.js";
 import { callbackUrls, isoDate } from "./billingPlanHireCallbacks.js";
+import { createDurableBillingAuditIntent } from "./billingPlanHireAudit.js";
 import { BillingPlanHireError } from "./billingPlanHireErrors.js";
 
 export { BillingPlanHireError } from "./billingPlanHireErrors.js";
@@ -33,8 +33,10 @@ export async function createBillingPlanHire(
   assertPermission(context, "billing.manage");
   const scope = requireBillingScope(context);
   const repository = getBillingPlanHireRepository(ports);
+  const audit = createDurableBillingAuditIntent(context);
   const prepared = await repository.prepareHire({
     actorId: context.actor.id,
+    audit,
     billingTypes: input.billingTypes ?? ["CREDIT_CARD", "PIX"],
     idempotencyKey: input.idempotencyKey,
     planId: input.planId,
@@ -53,14 +55,12 @@ export async function createBillingPlanHire(
         quotedCents: prepared.hire.quotedCents,
       }),
     );
-    await auditBillingPlanHire(
-      context,
-      prepared.hire,
-      "billing.plan_hire.created",
-    );
   }
 
-  if (!prepared.created || prepared.hire.status === "paid_active") {
+  if (
+    prepared.hire.status !== "created" &&
+    prepared.hire.status !== "payment_pending"
+  ) {
     return prepared.hire;
   }
   const gateway = ports.paymentProviderGateway;
@@ -78,9 +78,15 @@ export async function createBillingPlanHire(
   }
 
   if (prepared.providerTransition) {
+    const request = await repository.beginCheckoutRequest({
+      hireId: prepared.hire.id,
+      requestId: context.requestId,
+      ...scope,
+    });
+    if (!request.claimed) return request.hire;
     return changeBillingPlanAtRenewal(
       context,
-      prepared,
+      { ...prepared, hire: request.hire },
       repository,
       gateway,
       scope,
@@ -98,60 +104,54 @@ export async function createBillingPlanHire(
     );
   }
 
+  const request = await repository.beginCheckoutRequest({
+    hireId: prepared.hire.id,
+    requestId: context.requestId,
+    ...scope,
+  });
+  if (!request.claimed) return request.hire;
+
   const callback = callbackUrls(
     ports.publicAppUrl,
     input.returnPath ?? "/billing",
-    prepared.hire.id,
+    request.hire.id,
   );
-  try {
-    const checkout = await gateway.createCheckout({
-      billingTypes: prepared.billingTypes,
-      callback,
-      ...(prepared.customerData ? { customerData: prepared.customerData } : {}),
-      externalReference: prepared.hire.id,
-      items: [
-        {
-          description: `Plano ${prepared.hire.planSnapshot.name}`,
-          name: prepared.hire.planSnapshot.name,
-          quantity: 1,
-          valueCents: prepared.hire.quotedCents,
-        },
-      ],
-      minutesToExpire: 60,
-      nextDueDate: isoDate(new Date()),
-    });
-    const hire = await repository.bindCheckout({
-      callbackUrls: callback,
-      checkoutUrl: checkout.checkoutUrl,
-      expiresAt: checkout.expiresAt,
-      hireId: prepared.hire.id,
-      providerCheckoutId: checkout.providerCheckoutId,
-      raw: {
-        externalReference: checkout.externalReference,
-        providerCheckoutId: checkout.providerCheckoutId,
+  const checkout = await gateway.createCheckout({
+    billingTypes: prepared.billingTypes,
+    callback,
+    ...(prepared.customerData ? { customerData: prepared.customerData } : {}),
+    externalReference: request.hire.id,
+    items: [
+      {
+        description: `Plano ${request.hire.planSnapshot.name}`,
+        name: request.hire.planSnapshot.name,
+        quantity: 1,
+        valueCents: request.hire.quotedCents,
       },
-      requestId: context.requestId,
-      ...scope,
-    });
-    context.logger.info(
-      "billing.plan_hire.checkout_created",
-      createServiceLogMetadata(context, {
-        hireId: hire.id,
-        providerCheckoutId: hire.providerCheckoutId,
-      }),
-    );
-    await auditBillingPlanHire(
-      context,
-      hire,
-      "billing.plan_hire.checkout_created",
-    );
-    return hire;
-  } catch (error) {
-    await repository.failHire({
-      failureCode: "checkout_creation_failed",
-      hireId: prepared.hire.id,
-      ...scope,
-    });
-    throw error;
-  }
+    ],
+    minutesToExpire: 60,
+    nextDueDate: isoDate(new Date()),
+  });
+  const hire = await repository.bindCheckout({
+    audit,
+    callbackUrls: callback,
+    checkoutUrl: checkout.checkoutUrl,
+    expiresAt: checkout.expiresAt,
+    hireId: request.hire.id,
+    providerCheckoutId: checkout.providerCheckoutId,
+    raw: {
+      externalReference: checkout.externalReference,
+      providerCheckoutId: checkout.providerCheckoutId,
+    },
+    requestId: context.requestId,
+    ...scope,
+  });
+  context.logger.info(
+    "billing.plan_hire.checkout_created",
+    createServiceLogMetadata(context, {
+      hireId: hire.id,
+      providerCheckoutId: hire.providerCheckoutId,
+    }),
+  );
+  return hire;
 }

@@ -39,19 +39,23 @@ export async function reconcileNextBillingProvider(
     createServiceLogMetadata(taskContext, taskMetadata(task)),
   );
   try {
-    const result = await syncBillingProviderSubscription(
-      taskContext,
-      {
-        cancelWhenEmpty: true,
-        nextDueDate: task.nextDueAt,
-        updatePendingPayments: true,
-      },
-      ports,
-    );
-    if (result.nextDueDate !== billingDate(task.nextDueAt)) {
+    const result =
+      task.kind === "subscription_cancellation"
+        ? await cancelProviderSubscription(task, ports)
+        : await reconcileProviderSubscription(taskContext, task, ports);
+    if (
+      result.nextDueDate &&
+      result.nextDueDate !== billingDate(task.nextDueAt)
+    ) {
       throw new Error("Provider changed the billing renewal date.");
     }
     const completed = await repository.markSucceeded({
+      ...(task.kind === "subscription_cancellation" &&
+      task.targetProviderSubscriptionId
+        ? {
+            cancelledProviderSubscriptionId: task.targetProviderSubscriptionId,
+          }
+        : {}),
       completedAt: input.now,
       processingToken: task.processingToken,
       reconciliationId: task.id,
@@ -94,6 +98,36 @@ export async function reconcileNextBillingProvider(
   }
 }
 
+async function reconcileProviderSubscription(
+  context: ServiceContext,
+  task: BillingProviderReconciliationTask,
+  ports: BillingServicePorts,
+) {
+  return syncBillingProviderSubscription(
+    context,
+    {
+      cancelWhenEmpty: true,
+      nextDueDate: task.nextDueAt,
+      updatePendingPayments: true,
+    },
+    ports,
+  );
+}
+
+async function cancelProviderSubscription(
+  task: BillingProviderReconciliationTask,
+  ports: BillingServicePorts,
+) {
+  if (task.targetProviderSubscriptionId) {
+    const cancelSubscription = ports.paymentProviderGateway?.cancelSubscription;
+    if (!cancelSubscription) {
+      throw new Error("Provider subscription cancellation is unavailable.");
+    }
+    await cancelSubscription(task.targetProviderSubscriptionId);
+  }
+  return { chargeTotalCents: 0, nextDueDate: null };
+}
+
 function tenantWorkerContext(
   context: ServiceContext,
   task: BillingProviderReconciliationTask,
@@ -101,7 +135,7 @@ function tenantWorkerContext(
   return {
     ...context,
     billingManagedBy: "agency",
-    storeId: null,
+    storeId: task.storeId,
     tenantId: task.tenantId,
   };
 }
@@ -120,6 +154,7 @@ function taskMetadata(task: BillingProviderReconciliationTask) {
     attemptCount: task.attemptCount,
     kind: task.kind,
     reconciliationId: task.id,
+    storeId: task.storeId,
     subscriptionId: task.subscriptionId,
   };
 }
@@ -146,7 +181,7 @@ async function recordAudit(
     },
     outcome,
     requestId: context.requestId,
-    storeId: null,
+    storeId: task.storeId,
     tenantId: task.tenantId,
     summary: "Reconciled server-owned Asaas recurring billing",
   });

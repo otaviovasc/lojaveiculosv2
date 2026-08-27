@@ -122,6 +122,9 @@ export function createApp(options: CreateAppOptions = {}) {
       contextFactory,
       webhookContextFactory: createBillingWebhookContextFactory(options.audit),
       ...(options.billingServices ? { services: options.billingServices } : {}),
+      ...(options.billingWebhookRateLimiter
+        ? { webhookRateLimiter: options.billingWebhookRateLimiter }
+        : {}),
     }),
   );
   const agencyAccountContextFactory = installAgencyRoutes(app, options);

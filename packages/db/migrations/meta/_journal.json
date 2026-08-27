@@ -547,6 +547,20 @@
       "when": 1787821200000,
       "tag": "0077_billing_product_event_requeue",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1787824800000,
+      "tag": "0078_store_scoped_billing_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1787828400000,
+      "tag": "0079_billing_audit_outbox",
+      "breakpoints": true
     }
   ]
 }

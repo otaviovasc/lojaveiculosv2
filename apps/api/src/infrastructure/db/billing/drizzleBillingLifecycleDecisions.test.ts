@@ -10,7 +10,7 @@ import {
 import { statusAfterCheckoutBinding } from "./drizzleBillingPlanHireLifecycle.js";
 import { assertIdempotentHireMatches } from "./drizzleBillingPlanHirePreparation.js";
 import { graceDeadline } from "./drizzleBillingPaymentGrace.js";
-import { overdueEvidenceCanEnterGrace } from "./drizzleBillingPaymentRecovery.js";
+import { overdueEvidenceCanEnterGrace } from "./drizzleBillingOverduePayment.js";
 import { observedPaymentCanSetPending } from "./drizzleBillingPaymentHireState.js";
 import { deriveReconciliationDate } from "./drizzleBillingProviderReconciliation.js";
 import {
@@ -19,18 +19,29 @@ import {
 } from "./drizzleBillingSubscriptionWebhook.js";
 import { shouldApplyProviderLifecycle } from "./drizzleBillingSubscriptionLifecycle.js";
 import { needsFreeFallbackReconciliation } from "./drizzleBillingFallbackReconciliation.js";
+import { fallbackStoreIds } from "./drizzleBillingFreeFallback.js";
 import {
   periodStartFromNextDueDate,
   renewedBillingPeriod,
 } from "./billingPeriod.js";
 
 describe("billing lifecycle decisions", () => {
+  it("always includes the subscription store in Free fallback repair", () => {
+    expect(fallbackStoreIds("store_primary", [])).toEqual(["store_primary"]);
+    expect(
+      fallbackStoreIds("store_primary", ["store_primary", "store_legacy"]),
+    ).toEqual(["store_legacy", "store_primary"]);
+  });
+
   it("does not let late checkout binding regress confirmed payment", () => {
     expect(statusAfterCheckoutBinding("paid_active")).toBe("paid_active");
     expect(statusAfterCheckoutBinding("activation_pending")).toBe(
       "activation_pending",
     );
     expect(statusAfterCheckoutBinding("created")).toBe("checkout_created");
+    expect(statusAfterCheckoutBinding("payment_pending")).toBe(
+      "payment_pending",
+    );
   });
 
   it("lets authoritative paid evidence repair out-of-order terminal states", () => {
@@ -111,17 +122,31 @@ describe("billing lifecycle decisions", () => {
     expect(isActionablePaidObservation("paid", "paid")).toBe(true);
     expect(observedPaymentCanSetPending("activation_pending")).toBe(false);
     expect(observedPaymentCanSetPending("paid_active")).toBe(false);
+    expect(observedPaymentCanSetPending("cancelled")).toBe(false);
+    expect(observedPaymentCanSetPending("expired")).toBe(false);
     expect(
-      overdueEvidenceCanEnterGrace(
-        new Date("2026-09-01T00:00:00.000Z"),
-        new Date("2026-08-01T00:00:00.000Z"),
-      ),
+      overdueEvidenceCanEnterGrace({
+        currentPeriodEnd: new Date("2026-10-01T00:00:00.000Z"),
+        currentPeriodStart: new Date("2026-09-01T00:00:00.000Z"),
+        dueAt: new Date("2026-08-01T00:00:00.000Z"),
+        provider: "asaas",
+        providerSubscriptionId: "sub_current",
+        status: "active",
+        subscriptionProvider: "asaas",
+        subscriptionProviderId: "sub_current",
+      }),
     ).toBe(false);
     expect(
-      overdueEvidenceCanEnterGrace(
-        new Date("2026-09-01T00:00:00.000Z"),
-        new Date("2026-09-01T00:00:00.000Z"),
-      ),
+      overdueEvidenceCanEnterGrace({
+        currentPeriodEnd: new Date("2026-10-01T00:00:00.000Z"),
+        currentPeriodStart: new Date("2026-09-01T00:00:00.000Z"),
+        dueAt: new Date("2026-10-01T00:00:00.000Z"),
+        provider: "asaas",
+        providerSubscriptionId: "sub_current",
+        status: "active",
+        subscriptionProvider: "asaas",
+        subscriptionProviderId: "sub_current",
+      }),
     ).toBe(true);
   });
 
@@ -138,6 +163,20 @@ describe("billing lifecycle decisions", () => {
           currentPeriodEnd: new Date("2026-09-01T00:00:00.000Z"),
           observedAt: new Date("2026-08-24T12:00:00.000Z"),
           status: "active",
+        },
+      ),
+    ).toBe(false);
+    expect(
+      shouldApplyProviderLifecycle(
+        {
+          currentPeriodEnd: new Date("2026-09-25T00:00:00.000Z"),
+          providerLifecycleObservedAt: new Date("2026-08-26T12:00:00.000Z"),
+          status: "active",
+        },
+        {
+          currentPeriodEnd: new Date("2026-09-25T00:00:00.000Z"),
+          observedAt: new Date("2026-08-26T11:59:59.000Z"),
+          status: "past_due",
         },
       ),
     ).toBe(false);

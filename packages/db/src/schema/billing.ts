@@ -62,6 +62,7 @@ export const billingProviderReconciliationKind = pgEnum(
   [
     "catalog_migration",
     "free_fallback",
+    "subscription_cancellation",
     "zapi_cancellation",
     "zapi_retirement",
   ],
@@ -275,6 +276,9 @@ export const subscriptions = pgTable(
       withTimezone: true,
     }),
     status: subscriptionStatus("status").notNull().default("active"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
@@ -287,10 +291,29 @@ export const subscriptions = pgTable(
             foreignColumns: [billingCustomers.id, billingCustomers.tenantId],
             name: "subscriptions_customer_tenant_fk",
           }),
+          foreignKey({
+            columns: [table.storeId, table.tenantId],
+            foreignColumns: [stores.id, stores.tenantId],
+            name: "subscriptions_store_tenant_fk",
+          }),
         ]
       : []),
     index("subscriptions_tenant_status_idx").on(table.tenantId, table.status),
-    uniqueIndex("subscriptions_id_tenant_unique").on(table.id, table.tenantId),
+    index("subscriptions_tenant_store_created_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.createdAt,
+    ),
+    uniqueIndex("subscriptions_id_tenant_store_unique").on(
+      table.id,
+      table.tenantId,
+      table.storeId,
+    ),
+    uniqueIndex("subscriptions_tenant_store_provider_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.provider,
+    ),
     uniqueIndex("subscriptions_provider_subscription_unique").on(
       table.provider,
       table.providerSubscriptionId,
@@ -308,7 +331,9 @@ export const subscriptionItems = pgTable(
     planId: uuid("plan_id").references(() => plans.id),
     quantity: integer("quantity").notNull().default(1),
     startsAt: timestamp("starts_at", { withTimezone: true }),
-    storeId: uuid("store_id").references(() => stores.id),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
     subscriptionId: uuid("subscription_id")
       .notNull()
       .references(() => subscriptions.id),
@@ -326,9 +351,13 @@ export const subscriptionItems = pgTable(
             name: "subscription_items_store_tenant_fk",
           }),
           foreignKey({
-            columns: [table.subscriptionId, table.tenantId],
-            foreignColumns: [subscriptions.id, subscriptions.tenantId],
-            name: "subscription_items_subscription_tenant_fk",
+            columns: [table.subscriptionId, table.tenantId, table.storeId],
+            foreignColumns: [
+              subscriptions.id,
+              subscriptions.tenantId,
+              subscriptions.storeId,
+            ],
+            name: "subscription_items_subscription_scope_fk",
           }),
         ]
       : []),
@@ -371,6 +400,28 @@ export const payments = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    ...(includeBillingScopeForeignKeys
+      ? [
+          foreignKey({
+            columns: [table.storeId, table.tenantId],
+            foreignColumns: [stores.id, stores.tenantId],
+            name: "payments_store_tenant_fk",
+          }),
+          foreignKey({
+            columns: [table.subscriptionId, table.tenantId, table.storeId],
+            foreignColumns: [
+              subscriptions.id,
+              subscriptions.tenantId,
+              subscriptions.storeId,
+            ],
+            name: "payments_subscription_scope_fk",
+          }),
+        ]
+      : []),
+    check(
+      "payments_subscription_store_check",
+      sql`${table.subscriptionId} IS NULL OR ${table.storeId} IS NOT NULL`,
+    ),
     index("payments_external_reference_idx").on(table.externalReference),
     index("payments_tenant_status_idx").on(table.tenantId, table.status),
     uniqueIndex("payments_provider_payment_unique").on(
@@ -381,6 +432,7 @@ export const payments = pgTable(
       table.id,
       table.subscriptionId,
       table.tenantId,
+      table.storeId,
     ),
   ],
 );
@@ -479,9 +531,13 @@ export const billingPlanHires = pgTable(
             name: "billing_plan_hires_store_tenant_fk",
           }),
           foreignKey({
-            columns: [table.subscriptionId, table.tenantId],
-            foreignColumns: [subscriptions.id, subscriptions.tenantId],
-            name: "billing_plan_hires_subscription_tenant_fk",
+            columns: [table.subscriptionId, table.tenantId, table.storeId],
+            foreignColumns: [
+              subscriptions.id,
+              subscriptions.tenantId,
+              subscriptions.storeId,
+            ],
+            name: "billing_plan_hires_subscription_scope_fk",
           }),
           foreignKey({
             columns: [
@@ -605,6 +661,12 @@ export const billingProviderReconciliations = pgTable(
     status: billingProviderReconciliationStatus("status")
       .notNull()
       .default("queued"),
+    targetProviderSubscriptionId: varchar("target_provider_subscription_id", {
+      length: 191,
+    }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
     subscriptionId: uuid("subscription_id")
       .notNull()
       .references(() => subscriptions.id),
@@ -613,12 +675,28 @@ export const billingProviderReconciliations = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    check(
+      "billing_provider_reconciliations_target_shape_check",
+      sql`(
+        (${table.kind}::text = 'subscription_cancellation' AND ${table.targetProviderSubscriptionId} IS NOT NULL) OR
+        (${table.kind}::text <> 'subscription_cancellation' AND ${table.targetProviderSubscriptionId} IS NULL)
+      )`,
+    ),
     ...(includeBillingScopeForeignKeys
       ? [
           foreignKey({
-            columns: [table.subscriptionId, table.tenantId],
-            foreignColumns: [subscriptions.id, subscriptions.tenantId],
-            name: "billing_provider_reconciliations_subscription_tenant_fk",
+            columns: [table.storeId, table.tenantId],
+            foreignColumns: [stores.id, stores.tenantId],
+            name: "billing_provider_reconciliations_store_tenant_fk",
+          }),
+          foreignKey({
+            columns: [table.subscriptionId, table.tenantId, table.storeId],
+            foreignColumns: [
+              subscriptions.id,
+              subscriptions.tenantId,
+              subscriptions.storeId,
+            ],
+            name: "billing_provider_reconciliations_subscription_scope_fk",
           }),
         ]
       : []),
@@ -627,10 +705,12 @@ export const billingProviderReconciliations = pgTable(
       table.availableAt,
       table.processingStartedAt,
     ),
-    uniqueIndex("billing_provider_reconciliations_kind_subscription_unique").on(
-      table.kind,
-      table.subscriptionId,
-    ),
+    uniqueIndex("billing_provider_reconciliations_non_target_unique")
+      .on(table.kind, table.subscriptionId)
+      .where(sql`${table.targetProviderSubscriptionId} IS NULL`),
+    uniqueIndex("billing_provider_reconciliations_target_unique")
+      .on(table.kind, table.subscriptionId, table.targetProviderSubscriptionId)
+      .where(sql`${table.targetProviderSubscriptionId} IS NOT NULL`),
   ],
 );
 
@@ -689,9 +769,13 @@ export const billingAddonContracts = pgTable(
             name: "billing_addon_contracts_store_tenant_fk",
           }),
           foreignKey({
-            columns: [table.subscriptionId, table.tenantId],
-            foreignColumns: [subscriptions.id, subscriptions.tenantId],
-            name: "billing_addon_contracts_subscription_tenant_fk",
+            columns: [table.subscriptionId, table.tenantId, table.storeId],
+            foreignColumns: [
+              subscriptions.id,
+              subscriptions.tenantId,
+              subscriptions.storeId,
+            ],
+            name: "billing_addon_contracts_subscription_scope_fk",
           }),
           foreignKey({
             columns: [
@@ -713,11 +797,13 @@ export const billingAddonContracts = pgTable(
               table.activatedByPaymentId,
               table.subscriptionId,
               table.tenantId,
+              table.storeId,
             ],
             foreignColumns: [
               payments.id,
               payments.subscriptionId,
               payments.tenantId,
+              payments.storeId,
             ],
             name: "billing_addon_contracts_payment_scope_fk",
           }),

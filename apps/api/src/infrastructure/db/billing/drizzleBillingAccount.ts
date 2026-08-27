@@ -13,6 +13,7 @@ export type BillingCustomerProfile = {
 export async function ensureTenantBillingAccount(
   db: DrizzleBillingAccountClient,
   tenantId: string,
+  storeId: string,
   profile?: BillingCustomerProfile,
 ) {
   const [tenant] = await db
@@ -23,7 +24,12 @@ export async function ensureTenantBillingAccount(
   if (!tenant) throw new Error("Billing tenant was not found.");
   await lockBillingAccount(db, tenantId);
   const customer = await ensureBillingCustomer(db, tenant, profile);
-  const subscription = await ensureSubscription(db, tenantId, customer.id);
+  const subscription = await ensureSubscription(
+    db,
+    tenantId,
+    storeId,
+    customer.id,
+  );
   return { customer, subscription, tenant };
 }
 
@@ -102,12 +108,18 @@ async function findBillingCustomer(
 export async function ensureSubscription(
   db: DrizzleBillingAccountClient,
   tenantId: string,
+  storeId: string,
   billingCustomerId: string,
 ) {
   const [existing] = await db
     .select()
     .from(subscriptions)
-    .where(eq(subscriptions.tenantId, tenantId))
+    .where(
+      and(
+        eq(subscriptions.tenantId, tenantId),
+        eq(subscriptions.storeId, storeId),
+      ),
+    )
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
   if (existing) return existing;
@@ -121,6 +133,7 @@ export async function ensureSubscription(
       provider: "asaas",
       providerSubscriptionId: null,
       status: "active",
+      storeId,
       tenantId,
     })
     .returning();

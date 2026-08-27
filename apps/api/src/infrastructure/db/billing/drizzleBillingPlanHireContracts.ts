@@ -1,5 +1,9 @@
 import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
-import { subscriptionItems } from "@lojaveiculosv2/db";
+import {
+  billingPlanHires,
+  billingPlanHireTransitions,
+  subscriptionItems,
+} from "@lojaveiculosv2/db";
 import type { plans, subscriptions } from "@lojaveiculosv2/db";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
@@ -72,4 +76,79 @@ export function findEffectivePlanItems(
         or(isNull(subscriptionItems.endsAt), gt(subscriptionItems.endsAt, now)),
       ),
     );
+}
+
+export async function supersedeScheduledFreePlanContracts(
+  db: DrizzleBillingClient,
+  input: {
+    replacementAt: Date;
+    storeId: string;
+    supersedingHireId: string;
+    tenantId: string;
+  },
+) {
+  const scheduled = await db
+    .select({ hire: billingPlanHires, item: subscriptionItems })
+    .from(billingPlanHires)
+    .innerJoin(
+      subscriptionItems,
+      eq(subscriptionItems.id, billingPlanHires.effectiveSubscriptionItemId),
+    )
+    .where(
+      and(
+        eq(billingPlanHires.status, "downgrade_scheduled"),
+        eq(billingPlanHires.storeId, input.storeId),
+        eq(billingPlanHires.tenantId, input.tenantId),
+        eq(subscriptionItems.itemType, "plan"),
+        eq(subscriptionItems.unitAmountCents, 0),
+        or(
+          isNull(subscriptionItems.endsAt),
+          gt(subscriptionItems.endsAt, input.replacementAt),
+        ),
+      ),
+    );
+  let superseded = 0;
+  for (const candidate of scheduled) {
+    const [cancelled] = await db
+      .update(billingPlanHires)
+      .set({
+        completedAt: input.replacementAt,
+        effectiveSubscriptionItemId: null,
+        failureCode: "superseded_by_paid_hire",
+        status: "cancelled",
+        updatedAt: input.replacementAt,
+      })
+      .where(
+        and(
+          eq(billingPlanHires.id, candidate.hire.id),
+          eq(billingPlanHires.status, "downgrade_scheduled"),
+        ),
+      )
+      .returning({ id: billingPlanHires.id });
+    if (!cancelled) continue;
+    await db.insert(billingPlanHireTransitions).values({
+      failureCode: "superseded_by_paid_hire",
+      fromStatus: "downgrade_scheduled",
+      hireId: candidate.hire.id,
+      metadata: { supersedingHireId: input.supersedingHireId },
+      storeId: candidate.hire.storeId,
+      tenantId: candidate.hire.tenantId,
+      toStatus: "cancelled",
+    });
+    if (
+      candidate.item.startsAt &&
+      candidate.item.startsAt < input.replacementAt
+    ) {
+      await db
+        .update(subscriptionItems)
+        .set({ endsAt: input.replacementAt, updatedAt: input.replacementAt })
+        .where(eq(subscriptionItems.id, candidate.item.id));
+    } else {
+      await db
+        .delete(subscriptionItems)
+        .where(eq(subscriptionItems.id, candidate.item.id));
+    }
+    superseded += 1;
+  }
+  return superseded;
 }

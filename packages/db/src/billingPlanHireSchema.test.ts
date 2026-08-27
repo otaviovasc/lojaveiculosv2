@@ -6,6 +6,7 @@ import {
   billingPlanHires,
   billingPlanHireTransitions,
   billingPlanQuotes,
+  billingProviderReconciliations,
   subscriptionItems,
   subscriptions,
 } from "./index.js";
@@ -34,6 +35,13 @@ const zapiCredentialsMigration = readFileSync(
 const lifecycleMigration = readFileSync(
   new URL(
     "../migrations/0073_billing_lifecycle_monotonicity.sql",
+    import.meta.url,
+  ),
+  "utf8",
+).toLowerCase();
+const storeScopeMigration = readFileSync(
+  new URL(
+    "../migrations/0078_store_scoped_billing_subscriptions.sql",
     import.meta.url,
   ),
   "utf8",
@@ -73,6 +81,7 @@ describe("billing plan hire schema", () => {
       expect.arrayContaining([
         "provider_lifecycle_event_id",
         "provider_lifecycle_observed_at",
+        "store_id",
       ]),
     );
     expect(lifecycleMigration).toContain(
@@ -106,7 +115,7 @@ describe("billing plan hire schema", () => {
         "billing_plan_hires_effective_item_scope_fk",
         "billing_plan_hires_quote_scope_fk",
         "billing_plan_hires_store_tenant_fk",
-        "billing_plan_hires_subscription_tenant_fk",
+        "billing_plan_hires_subscription_scope_fk",
       ]),
     );
     expect(
@@ -114,6 +123,51 @@ describe("billing plan hire schema", () => {
         foreignKey.getName(),
       ),
     ).toContain("billing_checkout_sessions_plan_hire_scope_fk");
+  });
+
+  it("enforces store-scoped recurring contracts and payment identity", () => {
+    const subscriptionConfig = getTableConfig(subscriptions);
+    expect(
+      subscriptionConfig.foreignKeys.map((key) => key.getName()),
+    ).toContain("subscriptions_store_tenant_fk");
+    expect(
+      subscriptionConfig.indexes.map((index) => index.config.name),
+    ).toContain("subscriptions_id_tenant_store_unique");
+    expect(storeScopeMigration).toContain(
+      'create temp table "billing_subscription_store_targets"',
+    );
+    expect(storeScopeMigration).toContain(
+      'constraint "payments_subscription_scope_fk"',
+    );
+    expect(storeScopeMigration).toContain(
+      "add value if not exists 'subscription_cancellation'",
+    );
+    expect(
+      getTableConfig(billingProviderReconciliations).columns.map(
+        ({ name }) => name,
+      ),
+    ).toContain("target_provider_subscription_id");
+    expect(storeScopeMigration).toContain(
+      'add column if not exists "target_provider_subscription_id" varchar(191)',
+    );
+    expect(
+      getTableConfig(billingProviderReconciliations).indexes.map(
+        (index) => index.config.name,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        "billing_provider_reconciliations_non_target_unique",
+        "billing_provider_reconciliations_target_unique",
+      ]),
+    );
+    expect(
+      getTableConfig(billingProviderReconciliations).checks.map(
+        ({ name }) => name,
+      ),
+    ).toContain("billing_provider_reconciliations_target_shape_check");
+    expect(storeScopeMigration).toMatch(
+      /on conflict \("kind", "subscription_id"\)\s+where "target_provider_subscription_id" is null\s+do nothing/,
+    );
   });
 
   it("enforces effective plan row shape and non-overlapping store contracts", () => {

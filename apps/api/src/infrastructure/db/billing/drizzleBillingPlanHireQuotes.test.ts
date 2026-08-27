@@ -19,7 +19,8 @@ describe("Drizzle billing plan quote requests", () => {
       id: existing.id,
       status: "requested",
     });
-    expect(fake.insert).not.toHaveBeenCalled();
+    expect(fake.insertedValues).toBeUndefined();
+    expect(fake.auditValues).toEqual([]);
     expect(fake.transaction).toHaveBeenCalledTimes(1);
     const lock = new PgDialect().sqlToQuery(fake.executed[0] as SQL);
     expect(lock.sql).toContain("pg_advisory_xact_lock");
@@ -81,7 +82,7 @@ describe("Drizzle billing plan quote requests", () => {
       id: created.id,
       status: "requested",
     });
-    expect(fake.insert).toHaveBeenCalledTimes(1);
+    expect(fake.insert).toHaveBeenCalledTimes(2);
     expect(fake.insertedValues).toMatchObject({
       catalogVersion,
       planId,
@@ -89,6 +90,22 @@ describe("Drizzle billing plan quote requests", () => {
       storeId,
       tenantId,
     });
+    expect(fake.auditValues).toEqual([
+      expect.objectContaining({
+        action: "billing.plan_quote.requested",
+        actorId: "actor_1",
+        entityId: created.id,
+        entityType: "billing_plan_quote",
+        idempotencyKey: `billing-audit:quote:${created.id}:requested`,
+        metadata: {
+          catalogVersion,
+          planId,
+          quoteId: created.id,
+          status: "requested",
+        },
+        requestId: "request_1",
+      }),
+    ]);
     const requestedWhere = new PgDialect().sqlToQuery(fake.wheres[2] as SQL);
     expect(requestedWhere.params).toEqual(
       expect.arrayContaining([
@@ -103,12 +120,17 @@ describe("Drizzle billing plan quote requests", () => {
 });
 
 function fakeDb(selectResults: unknown[][], inserted = quoteRow({})) {
+  const auditValues: unknown[] = [];
   const executed: unknown[] = [];
   const events: string[] = [];
   const wheres: unknown[] = [];
   let insertedValues: unknown;
   const insert = vi.fn(() => ({
     values(value: unknown) {
+      if (isAuditValue(value)) {
+        auditValues.push(value);
+        return { onConflictDoNothing: vi.fn(async () => undefined) };
+      }
       insertedValues = value;
       return { returning: vi.fn(async () => [inserted]) };
     },
@@ -140,6 +162,7 @@ function fakeDb(selectResults: unknown[][], inserted = quoteRow({})) {
   };
   return {
     db: { transaction } as unknown as DrizzleBillingClient,
+    auditValues,
     events,
     executed,
     get insertedValues() {
@@ -151,9 +174,23 @@ function fakeDb(selectResults: unknown[][], inserted = quoteRow({})) {
   };
 }
 
+function isAuditValue(value: unknown): value is { action: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "action" in value &&
+    typeof value.action === "string"
+  );
+}
+
 function input() {
   return {
     actorId: "actor_1",
+    audit: {
+      actorId: "actor_1",
+      actorKind: "user" as const,
+      requestId: "request_1",
+    },
     planId,
     storeId: storeId as never,
     tenantId: tenantId as never,

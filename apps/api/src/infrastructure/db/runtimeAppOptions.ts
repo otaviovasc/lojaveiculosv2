@@ -123,6 +123,7 @@ export function createRuntimeHttpAppOptions({
     billingServices: createBillingServices({
       ports: createRuntimeBillingServicePorts(db, env),
     }),
+    billingWebhookRateLimiter: crmRealtimeBroker.billingWebhookRateLimiter,
     complianceServices: createRuntimeComplianceServices(),
     crmFinancialProductTransactionRunner:
       createRuntimeCrmFinancialProductTransactionRunner(

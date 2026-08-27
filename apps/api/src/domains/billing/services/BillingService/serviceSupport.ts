@@ -19,14 +19,17 @@ export type BillingServicePorts = {
 };
 
 export type BillingServicesPorts = BillingServicePorts & {
+  billingProviderRepository: BillingProviderRepository;
   billingPlanHireRepository: BillingPlanHireRepository;
+  billingWebhookRepository: BillingWebhookRepository;
+  paymentProviderGateway: PaymentProviderGateway;
 };
 
 export function getBillingPlanHireRepository(
   ports: BillingServicePorts,
 ): BillingPlanHireRepository {
   if (!ports.billingPlanHireRepository) {
-    throw new BillingScopeError("billingPlanHireRepository");
+    throw new BillingCompositionError();
   }
   return ports.billingPlanHireRepository;
 }
@@ -35,6 +38,15 @@ export class BillingScopeError extends Error {
   constructor(fieldName: string) {
     super(`Billing service requires ${fieldName}.`);
     this.name = "BillingScopeError";
+  }
+}
+
+export class BillingCompositionError extends Error {
+  constructor() {
+    super(
+      "Billing services are unavailable because runtime composition is incomplete.",
+    );
+    this.name = "BillingCompositionError";
   }
 }
 
@@ -72,7 +84,7 @@ export function getBillingWebhookRepository(
   ports: BillingServicePorts,
 ): BillingWebhookRepository {
   if (!ports.billingWebhookRepository) {
-    throw new BillingScopeError("billingWebhookRepository");
+    throw new BillingCompositionError();
   }
   return ports.billingWebhookRepository;
 }
@@ -81,7 +93,7 @@ export function getBillingProviderRepository(
   ports: BillingServicePorts,
 ): BillingProviderRepository {
   if (!ports.billingProviderRepository) {
-    throw new BillingScopeError("billingProviderRepository");
+    throw new BillingCompositionError();
   }
   return ports.billingProviderRepository;
 }

@@ -36,7 +36,9 @@ export const billingCheckoutSessions = pgTable(
     }).notNull(),
     raw: jsonb("raw").notNull().default({}),
     status: billingCheckoutStatus("status").notNull().default("created"),
-    storeId: uuid("store_id").references(() => stores.id),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
     subscriptionId: uuid("subscription_id")
       .notNull()
       .references(() => subscriptions.id),
@@ -45,6 +47,15 @@ export const billingCheckoutSessions = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.subscriptionId, table.tenantId, table.storeId],
+      foreignColumns: [
+        subscriptions.id,
+        subscriptions.tenantId,
+        subscriptions.storeId,
+      ],
+      name: "billing_checkout_sessions_subscription_scope_fk",
+    }),
     foreignKey({
       columns: [table.planHireId, table.tenantId, table.storeId],
       foreignColumns: [

@@ -1,5 +1,6 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { PaymentProviderCheckoutBillingType } from "./paymentProviderGateway.js";
+import type { BillingAuditIntent } from "./billingAuditOutbox.js";
 
 export class BillingPlanHireRepositoryError extends Error {
   constructor(
@@ -82,6 +83,16 @@ export type PreparedBillingPlanHire = {
   } | null;
 };
 
+export type BillingSubscriptionCancellationSupersession =
+  | {
+      state: "none";
+      targetProviderSubscriptionId: null;
+    }
+  | {
+      state: "completed" | "in_flight" | "revoked";
+      targetProviderSubscriptionId: string | null;
+    };
+
 export type BillingPlanQuoteRecord = {
   catalogVersion: string;
   expiresAt: Date | null;
@@ -96,6 +107,7 @@ export type BillingPlanQuoteRecord = {
 export type BillingPlanHireRepository = {
   approveQuote: (input: {
     actorId: string;
+    audit: BillingAuditIntent;
     expiresAt: Date;
     quoteId: string;
     quotedCents: number;
@@ -103,6 +115,7 @@ export type BillingPlanHireRepository = {
     tenantId: TenantId;
   }) => Promise<BillingPlanQuoteRecord>;
   bindCheckout: (input: {
+    audit: BillingAuditIntent;
     callbackUrls: Record<string, string>;
     checkoutUrl: string;
     expiresAt: Date | null;
@@ -113,6 +126,15 @@ export type BillingPlanHireRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<BillingPlanHireRecord>;
+  beginCheckoutRequest: (input: {
+    hireId: string;
+    requestId?: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<{
+    claimed: boolean;
+    hire: BillingPlanHireRecord;
+  }>;
   bindRenewal: (input: {
     effectiveAt: Date;
     hireId: string;
@@ -133,6 +155,7 @@ export type BillingPlanHireRepository = {
   }) => Promise<BillingPlanHireRecord | null>;
   prepareHire: (input: {
     actorId: string;
+    audit: BillingAuditIntent;
     billingTypes: readonly PaymentProviderCheckoutBillingType[];
     idempotencyKey: string;
     planId: string;
@@ -143,14 +166,27 @@ export type BillingPlanHireRepository = {
   }) => Promise<PreparedBillingPlanHire>;
   requestQuote: (input: {
     actorId: string;
+    audit: BillingAuditIntent;
     planId: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<BillingPlanQuoteRecord>;
+  restoreFreeDowngradeCancellation: (input: {
+    hireId: string;
+    providerSubscriptionId: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<void>;
   scheduleFreeDowngrade: (input: {
     effectiveAt: Date;
     hireId: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<BillingPlanHireRecord>;
+  supersedeFreeDowngrade: (input: {
+    effectiveAt: Date;
+    hireId: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<BillingSubscriptionCancellationSupersession>;
 };

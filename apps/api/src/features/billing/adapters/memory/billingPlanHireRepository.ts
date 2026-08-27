@@ -25,15 +25,44 @@ export function createMemoryBillingPlanHireRepository(): BillingPlanHireReposito
       quotes.set(approved.id, approved);
       return approved;
     },
+    async beginCheckoutRequest(input) {
+      const current = hires.get(input.hireId);
+      if (
+        !current ||
+        current.storeId !== input.storeId ||
+        current.tenantId !== input.tenantId
+      ) {
+        throw new Error("Billing plan hire was not found.");
+      }
+      const reclaimable =
+        current.status === "payment_pending" &&
+        !current.checkoutUrl &&
+        !current.providerCheckoutId &&
+        !current.providerSubscriptionId &&
+        Date.now() - current.updatedAt.getTime() >= 65 * 60 * 1_000;
+      if (current.status !== "created" && !reclaimable) {
+        return { claimed: false, hire: current };
+      }
+      const now = new Date();
+      const updated: BillingPlanHireRecord = {
+        ...current,
+        phase: "payment_pending",
+        status: "payment_pending",
+        updatedAt: now,
+      };
+      hires.set(current.id, updated);
+      return { claimed: true, hire: updated };
+    },
     async bindCheckout(input) {
       const current = hires.get(input.hireId);
       if (!current) throw new Error("Billing plan hire was not found.");
+      const pending = current.status === "payment_pending";
       const updated: BillingPlanHireRecord = {
         ...current,
         checkoutUrl: input.checkoutUrl,
-        phase: "checkout_created",
+        phase: pending ? "payment_pending" : "checkout_created",
         providerCheckoutId: input.providerCheckoutId,
-        status: "checkout_created",
+        status: pending ? "payment_pending" : "checkout_created",
         updatedAt: new Date(),
       };
       hires.set(updated.id, updated);
@@ -183,6 +212,7 @@ export function createMemoryBillingPlanHireRepository(): BillingPlanHireReposito
       quotes.set(quote.id, quote);
       return quote;
     },
+    async restoreFreeDowngradeCancellation() {},
     async scheduleFreeDowngrade(input) {
       const current = hires.get(input.hireId);
       if (!current) throw new Error("Billing plan hire was not found.");
@@ -194,6 +224,9 @@ export function createMemoryBillingPlanHireRepository(): BillingPlanHireReposito
       };
       hires.set(updated.id, updated);
       return updated;
+    },
+    async supersedeFreeDowngrade() {
+      return { state: "none", targetProviderSubscriptionId: null };
     },
   };
 }

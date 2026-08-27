@@ -1,4 +1,7 @@
-import { assertPermission } from "../../../../shared/authorization.js";
+import {
+  assertPermission,
+  AuthorizationError,
+} from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
   type ServiceContext,
@@ -9,6 +12,7 @@ import {
   requireBillingScope,
   type BillingServicePorts,
 } from "./serviceSupport.js";
+import { createDurableBillingAuditIntent } from "./billingPlanHireAudit.js";
 
 export async function requestBillingPlanQuote(
   context: ServiceContext,
@@ -18,10 +22,11 @@ export async function requestBillingPlanQuote(
   assertPermission(context, "billing.manage");
   const quote = await getBillingPlanHireRepository(ports).requestQuote({
     actorId: context.actor.id,
+    audit: createDurableBillingAuditIntent(context),
     planId,
     ...requireBillingScope(context),
   });
-  await recordQuote(context, quote, "billing.plan_quote.requested");
+  logQuote(context, quote, "billing.plan_quote.requested");
   return quote;
 }
 
@@ -35,16 +40,36 @@ export async function approveBillingPlanQuote(
   ports: BillingServicePorts,
 ): Promise<BillingPlanQuoteRecord> {
   assertPermission(context, "billing.manage");
+  assertPlatformQuoteApprovalAuthority(context);
   const quote = await getBillingPlanHireRepository(ports).approveQuote({
     actorId: context.actor.id,
+    audit: createDurableBillingAuditIntent(context),
     ...input,
     ...requireBillingScope(context),
   });
-  await recordQuote(context, quote, "billing.plan_quote.approved");
+  logQuote(context, quote, "billing.plan_quote.approved");
   return quote;
 }
 
-async function recordQuote(
+function assertPlatformQuoteApprovalAuthority(context: ServiceContext): void {
+  if (context.actor.kind === "user" && context.platformAdmin) return;
+  context.logger.warn(
+    "billing.plan_quote.approval.denied",
+    createServiceLogMetadata(context, {
+      reason: "platform_admin_required",
+    }),
+  );
+  throw new BillingPlanQuoteApprovalError();
+}
+
+export class BillingPlanQuoteApprovalError extends AuthorizationError {
+  constructor() {
+    super("Escala quote approval requires platform administrator authority.");
+    this.name = "BillingPlanQuoteApprovalError";
+  }
+}
+
+function logQuote(
   context: ServiceContext,
   quote: BillingPlanQuoteRecord,
   action: "billing.plan_quote.approved" | "billing.plan_quote.requested",
@@ -57,21 +82,4 @@ async function recordQuote(
     status: quote.status,
   };
   context.logger.info(action, createServiceLogMetadata(context, metadata));
-  await context.audit.record({
-    action,
-    actor: context.actor,
-    category: "data_change",
-    criticality: "critical",
-    entityId: quote.id,
-    entityType: "billing_plan_quote",
-    metadata,
-    outcome: "succeeded",
-    requestId: context.requestId,
-    storeId: quote.storeId,
-    summary:
-      action === "billing.plan_quote.approved"
-        ? "Approved server-owned Escala quote"
-        : "Requested server-owned Escala quote",
-    tenantId: quote.tenantId,
-  });
 }

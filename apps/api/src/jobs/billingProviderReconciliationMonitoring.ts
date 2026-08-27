@@ -6,6 +6,7 @@ import {
   eq,
   gt,
   gte,
+  inArray,
   isNull,
   lte,
   notExists,
@@ -24,6 +25,9 @@ export async function billingMonitoringSnapshot(db: DrizzleBillingClient) {
     activationFailures,
     recentGraceEntries,
     recentFreeFallbacks,
+    pendingBillingAudits,
+    pendingBillingAuditCount,
+    deadLetterBillingAuditCount,
   ] = await Promise.all([
     db
       .select({ createdAt: productSchema.providerEvents.createdAt })
@@ -118,10 +122,41 @@ export async function billingMonitoringSnapshot(db: DrizzleBillingClient) {
           gte(productSchema.billingProductEventOutbox.occurredAt, recentSince),
         ),
       ),
+    db
+      .select({ occurredAt: productSchema.billingAuditOutbox.occurredAt })
+      .from(productSchema.billingAuditOutbox)
+      .where(
+        inArray(productSchema.billingAuditOutbox.state, [
+          "pending",
+          "delivering",
+        ]),
+      )
+      .orderBy(asc(productSchema.billingAuditOutbox.occurredAt))
+      .limit(1),
+    db
+      .select({ count: count() })
+      .from(productSchema.billingAuditOutbox)
+      .where(
+        inArray(productSchema.billingAuditOutbox.state, [
+          "pending",
+          "delivering",
+        ]),
+      ),
+    db
+      .select({ count: count() })
+      .from(productSchema.billingAuditOutbox)
+      .where(eq(productSchema.billingAuditOutbox.state, "dead_letter")),
   ]);
   const oldestPending = pendingEvents[0]?.createdAt ?? null;
+  const auditHealth = billingAuditHealth({
+    deadLetterCount: deadLetterBillingAuditCount[0]?.count ?? 0,
+    now,
+    oldestPendingAt: pendingBillingAudits[0]?.occurredAt ?? null,
+    pendingCount: pendingBillingAuditCount[0]?.count ?? 0,
+  });
   return {
     activationOrProjectionFailureCount: activationFailures[0]?.count ?? 0,
+    ...auditHealth,
     freeFallbackCount24h: recentFreeFallbacks[0]?.count ?? 0,
     graceEntryCount24h: recentGraceEntries[0]?.count ?? 0,
     missingContractCount: missingContracts[0]?.count ?? 0,
@@ -135,4 +170,42 @@ export async function billingMonitoringSnapshot(db: DrizzleBillingClient) {
     reconciliationFailedHireCount: failedHires[0]?.count ?? 0,
     unmatchedWebhookCount: pendingEventCount[0]?.count ?? 0,
   };
+}
+
+export function billingAuditHealth(input: {
+  deadLetterCount: number;
+  now: Date;
+  oldestPendingAt: Date | null;
+  pendingCount: number;
+}) {
+  return {
+    billingAuditDeadLetterCount: input.deadLetterCount,
+    billingAuditPendingCount: input.pendingCount,
+    oldestBillingAuditPendingAgeSeconds: input.oldestPendingAt
+      ? Math.max(
+          0,
+          Math.floor(
+            (input.now.getTime() - input.oldestPendingAt.getTime()) / 1_000,
+          ),
+        )
+      : 0,
+  };
+}
+
+export function billingMonitoringNeedsAttention(input: {
+  activationOrProjectionFailureCount: number;
+  billingAuditDeadLetterCount: number;
+  missingContractCount: number;
+  oldestBillingAuditPendingAgeSeconds: number;
+  oldestPendingReconciliationAgeSeconds: number;
+  reconciliationFailedHireCount: number;
+}) {
+  return (
+    input.activationOrProjectionFailureCount > 0 ||
+    input.billingAuditDeadLetterCount > 0 ||
+    input.missingContractCount > 0 ||
+    input.oldestBillingAuditPendingAgeSeconds > 900 ||
+    input.oldestPendingReconciliationAgeSeconds > 900 ||
+    input.reconciliationFailedHireCount > 0
+  );
 }

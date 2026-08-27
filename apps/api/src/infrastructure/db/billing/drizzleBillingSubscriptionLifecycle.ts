@@ -1,28 +1,33 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { subscriptions } from "@lojaveiculosv2/db";
 import type { SyncBillingProviderSubscriptionInput } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import { enterPastDueGrace } from "./drizzleBillingPaymentGrace.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { laterDate, periodStartFromNextDueDate } from "./billingPeriod.js";
+import { lockEffectivePlanContract } from "./drizzleBillingContractLock.js";
 
 export async function applyProviderSubscriptionLifecycle(
   db: DrizzleBillingClient,
   input: {
     currentPeriodEnd: Date | null;
     eventOccurredAt: Date | null;
+    expectedProvider: string;
+    expectedProviderSubscriptionId: string;
     preserveLocalAccess: boolean;
     providerEventId: string | null;
     status: Exclude<SyncBillingProviderSubscriptionInput["status"], "unknown">;
-    storeId: string | null;
+    storeId: string;
     subscriptionId: string;
     tenantId: string;
   },
-) {
-  if (input.preserveLocalAccess) return;
+): Promise<"applied" | "conflict" | "ignored" | "preserved"> {
+  await lockEffectivePlanContract(db, input.tenantId, input.storeId);
   const [current] = await db
     .select({
       currentPeriodEnd: subscriptions.currentPeriodEnd,
       currentPeriodStart: subscriptions.currentPeriodStart,
+      provider: subscriptions.provider,
+      providerSubscriptionId: subscriptions.providerSubscriptionId,
       providerLifecycleObservedAt: subscriptions.providerLifecycleObservedAt,
       status: subscriptions.status,
     })
@@ -30,11 +35,15 @@ export async function applyProviderSubscriptionLifecycle(
     .where(
       and(
         eq(subscriptions.id, input.subscriptionId),
+        eq(subscriptions.storeId, input.storeId),
         eq(subscriptions.tenantId, input.tenantId),
       ),
     )
     .limit(1);
-  if (!current) return;
+  if (!current || !subscriptionLifecycleIdentityMatches(current, input)) {
+    return "conflict";
+  }
+  if (input.preserveLocalAccess) return "preserved";
   const observedAt = input.eventOccurredAt ?? new Date();
   if (
     !shouldApplyProviderLifecycle(current, {
@@ -43,14 +52,16 @@ export async function applyProviderSubscriptionLifecycle(
       status: input.status,
     })
   ) {
-    return;
+    return "ignored";
   }
   if (input.status === "past_due") {
-    await enterPastDueGrace(db, {
+    const applied = await enterPastDueGrace(db, {
       ...input,
+      expectedProvider: input.expectedProvider,
+      expectedProviderSubscriptionId: input.expectedProviderSubscriptionId,
       providerLifecycleObservedAt: observedAt,
     });
-    return;
+    return applied ? "applied" : "ignored";
   }
   const currentPeriodStart =
     input.status === "active"
@@ -59,7 +70,7 @@ export async function applyProviderSubscriptionLifecycle(
           periodStartFromNextDueDate(input.currentPeriodEnd),
         )
       : current.currentPeriodStart;
-  await db
+  const [updated] = await db
     .update(subscriptions)
     .set({
       currentPeriodEnd: input.currentPeriodEnd,
@@ -72,9 +83,41 @@ export async function applyProviderSubscriptionLifecycle(
     .where(
       and(
         eq(subscriptions.id, input.subscriptionId),
+        eq(subscriptions.storeId, input.storeId),
         eq(subscriptions.tenantId, input.tenantId),
+        eq(subscriptions.provider, input.expectedProvider),
+        eq(
+          subscriptions.providerSubscriptionId,
+          input.expectedProviderSubscriptionId,
+        ),
+        eq(subscriptions.status, current.status),
+        current.providerLifecycleObservedAt
+          ? eq(
+              subscriptions.providerLifecycleObservedAt,
+              current.providerLifecycleObservedAt,
+            )
+          : isNull(subscriptions.providerLifecycleObservedAt),
       ),
-    );
+    )
+    .returning({ id: subscriptions.id });
+  return updated ? "applied" : "conflict";
+}
+
+export function subscriptionLifecycleIdentityMatches(
+  current: {
+    provider: string;
+    providerSubscriptionId: string | null;
+  } | null,
+  expected: {
+    expectedProvider: string;
+    expectedProviderSubscriptionId: string;
+  },
+) {
+  return Boolean(
+    current &&
+    current.provider === expected.expectedProvider &&
+    current.providerSubscriptionId === expected.expectedProviderSubscriptionId,
+  );
 }
 
 export function shouldApplyProviderLifecycle(

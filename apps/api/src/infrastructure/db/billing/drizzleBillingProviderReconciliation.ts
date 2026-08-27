@@ -22,7 +22,17 @@ export function createDrizzleBillingProviderReconciliationRepository(
           .from(billingProviderReconciliations)
           .innerJoin(
             subscriptions,
-            eq(subscriptions.id, billingProviderReconciliations.subscriptionId),
+            and(
+              eq(
+                subscriptions.id,
+                billingProviderReconciliations.subscriptionId,
+              ),
+              eq(
+                subscriptions.tenantId,
+                billingProviderReconciliations.tenantId,
+              ),
+              eq(subscriptions.storeId, billingProviderReconciliations.storeId),
+            ),
           )
           .where(
             or(
@@ -67,6 +77,9 @@ export function createDrizzleBillingProviderReconciliationRepository(
               kind: claimed.kind,
               nextDueAt: reconciliationDate(candidate),
               processingToken: input.processingToken,
+              targetProviderSubscriptionId:
+                claimed.targetProviderSubscriptionId,
+              storeId: claimed.storeId as never,
               subscriptionId: claimed.subscriptionId,
               tenantId: claimed.tenantId as never,
             }
@@ -95,6 +108,7 @@ export function createDrizzleBillingProviderReconciliationRepository(
             failureCode: "provider_reconciliation_retry",
             source: updated.kind,
           },
+          storeId: updated.storeId,
           tenantId: updated.tenantId,
         });
         return true;
@@ -113,6 +127,22 @@ export function createDrizzleBillingProviderReconciliationRepository(
           })
           .where(claimFilter(input))
           .returning();
+        if (updated && input.cancelledProviderSubscriptionId) {
+          await client
+            .update(subscriptions)
+            .set({ providerSubscriptionId: null, updatedAt: input.completedAt })
+            .where(
+              and(
+                eq(subscriptions.id, updated.subscriptionId),
+                eq(subscriptions.tenantId, updated.tenantId),
+                eq(subscriptions.storeId, updated.storeId),
+                eq(
+                  subscriptions.providerSubscriptionId,
+                  input.cancelledProviderSubscriptionId,
+                ),
+              ),
+            );
+        }
         return Boolean(updated);
       }),
   };

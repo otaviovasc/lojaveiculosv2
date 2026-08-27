@@ -178,9 +178,10 @@ async function seedFixture(
   `;
   await sql`
     INSERT INTO subscriptions (
-      id, billing_customer_id, provider, status, tenant_id
+      id, billing_customer_id, provider, status, store_id, tenant_id
     ) VALUES (
-      ${fixture.subscriptionId}, ${fixture.billingCustomerId}, 'asaas', 'active', ${fixture.tenantId}
+      ${fixture.subscriptionId}, ${fixture.billingCustomerId}, 'asaas',
+      'active', ${fixture.storeId}, ${fixture.tenantId}
     )
   `;
   await sql`

@@ -164,13 +164,13 @@ export const agencyBillingPaths = {
       },
     },
   },
-  "/api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-quotes/{quoteId}/approve":
+  "/api/v1/agency/platform/tenants/{tenantId}/stores/{storeId}/billing/plan-quotes/{quoteId}/approve":
     {
       patch: {
-        tags: ["Agency", "Billing"],
-        summary: "Approve a versioned Escala quote for a managed store",
-        operationId: "approveAgencyBillingPlanQuote",
-        security: [{ bearerAuth: [] }],
+        tags: ["Platform", "Billing"],
+        summary: "Approve a versioned Escala quote as a platform admin",
+        operationId: "approvePlatformBillingPlanQuote",
+        security: [{ bearerAuth: ["platformAdmin", "billing.manage"] }],
         parameters: [
           tenantIdParam,
           storeIdParam,
@@ -200,7 +200,7 @@ export const agencyBillingPaths = {
         responses: {
           "200": {
             description:
-              "Versioned store quote approved by an authorized agency actor.",
+              "Versioned store quote approved by a platform administrator.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/BillingPlanQuote" },

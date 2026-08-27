@@ -1,17 +1,31 @@
 import { and, desc, eq } from "drizzle-orm";
-import {
-  billingPlanHires,
-  payments,
-  subscriptionItems,
-  subscriptions,
-} from "@lojaveiculosv2/db";
+import { billingPlanHires, payments, subscriptions } from "@lojaveiculosv2/db";
 import type { UpsertBillingProviderPaymentInput } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import {
+  findProviderSubscriptionScope,
+  paymentScopeMatchesHire,
+  providerIdentitiesMatchHire,
+  providerIdentitiesMatchSubscriptionScope,
+  providerScopedIdentitiesCanBind,
+} from "./drizzleBillingWebhookIdentity.js";
 
 export async function resolvePaymentScope(
   db: DrizzleBillingClient,
   input: UpsertBillingProviderPaymentInput,
 ) {
+  const referencedHire = input.externalReference
+    ? await findReferencedHire(db, input.externalReference)
+    : null;
+  if (
+    !externalReferenceMatchesCandidate(
+      input.externalReference,
+      referencedHire,
+      referencedHire,
+    )
+  ) {
+    return null;
+  }
   const [existingPayment] = await db
     .select()
     .from(payments)
@@ -23,10 +37,18 @@ export async function resolvePaymentScope(
     )
     .limit(1);
   if (existingPayment) {
-    const explicitHireReference = await referencesKnownHire(
-      db,
-      input.externalReference,
-    );
+    if (
+      !existingPayment.storeId ||
+      !existingPayment.subscriptionId ||
+      !existingPayment.tenantId
+    ) {
+      return null;
+    }
+    const existingPaymentScope = {
+      storeId: existingPayment.storeId,
+      subscriptionId: existingPayment.subscriptionId,
+      tenantId: existingPayment.tenantId,
+    };
     const hire = await findHireForPayment(db, {
       externalReference:
         input.externalReference ?? existingPayment.externalReference,
@@ -36,29 +58,50 @@ export async function resolvePaymentScope(
       providerPaymentId: input.providerPaymentId,
       providerSubscriptionId: input.providerSubscriptionId,
     });
-    if ((explicitHireReference || input.providerCheckoutId) && !hire) {
+    if (
+      (referencedHire || input.providerCheckoutId) &&
+      !externalReferenceMatchesCandidate(
+        input.externalReference,
+        referencedHire,
+        hire,
+      )
+    ) {
+      return null;
+    }
+    if (
+      hire &&
+      (!paymentScopeMatchesHire(existingPayment, hire) ||
+        !(await providerIdentitiesMatchHire(db, hire, input, true)))
+    ) {
+      return null;
+    }
+    if (
+      !(await providerIdentitiesMatchSubscriptionScope(
+        db,
+        existingPaymentScope,
+        input,
+      ))
+    ) {
       return null;
     }
     return {
       hireId: hire?.id ?? null,
-      storeId: existingPayment.storeId,
-      subscriptionId: existingPayment.subscriptionId,
-      tenantId: existingPayment.tenantId,
+      ...existingPaymentScope,
     };
   }
 
   if (input.providerSubscriptionId) {
-    const explicitHireReference = await referencesKnownHire(
-      db,
-      input.externalReference,
-    );
     const hire = await findHireForPayment(db, input);
-    if (hire) return hireScope(hire);
-    const subscription = await findSubscription(db, input);
+    if (hire && (await providerIdentitiesMatchHire(db, hire, input))) {
+      return hireScope(hire);
+    }
+    const subscription = await findProviderSubscriptionScope(db, input);
     if (subscription) {
-      if (input.providerCheckoutId || explicitHireReference) return null;
+      if (input.providerCheckoutId || referencedHire) return null;
+      if (!providerScopedIdentitiesCanBind(subscription, input)) return null;
       return {
-        storeId: await resolveStoreId(db, subscription.id),
+        hireId: null,
+        storeId: subscription.storeId,
         subscriptionId: subscription.id,
         tenantId: subscription.tenantId,
       };
@@ -67,23 +110,34 @@ export async function resolvePaymentScope(
 
   if (input.providerCheckoutId || input.externalReference) {
     const hire = await findHireForPayment(db, input);
-    if (hire) return hireScope(hire);
+    if (hire && (await providerIdentitiesMatchHire(db, hire, input))) {
+      return hireScope(hire);
+    }
   }
 
   return null;
 }
 
-async function referencesKnownHire(
+async function findReferencedHire(
   db: DrizzleBillingClient,
-  externalReference: string | null | undefined,
+  externalReference: string,
 ) {
-  if (!externalReference) return false;
   const [hire] = await db
-    .select({ id: billingPlanHires.id })
+    .select()
     .from(billingPlanHires)
     .where(eq(billingPlanHires.id, externalReference))
     .limit(1);
-  return Boolean(hire);
+  return hire ?? null;
+}
+
+export function externalReferenceMatchesCandidate<T extends { id: string }>(
+  externalReference: string | null | undefined,
+  referencedHire: T | null,
+  candidate: T | null,
+) {
+  return externalReference
+    ? Boolean(referencedHire && referencedHire.id === candidate?.id)
+    : true;
 }
 
 async function findHireForPayment(
@@ -177,29 +231,10 @@ export async function resolveStoreId(
   db: DrizzleBillingClient,
   subscriptionId: string,
 ): Promise<string | null> {
-  const rows = await db
-    .select()
-    .from(subscriptionItems)
-    .where(eq(subscriptionItems.subscriptionId, subscriptionId))
-    .limit(20);
-  const storeIds = [...new Set(rows.map((row) => row.storeId).filter(Boolean))];
-  return storeIds.length === 1 ? (storeIds[0] ?? null) : null;
-}
-
-async function findSubscription(
-  db: DrizzleBillingClient,
-  input: UpsertBillingProviderPaymentInput,
-) {
-  if (!input.providerSubscriptionId) return null;
   const [subscription] = await db
-    .select()
+    .select({ storeId: subscriptions.storeId })
     .from(subscriptions)
-    .where(
-      and(
-        eq(subscriptions.provider, input.provider),
-        eq(subscriptions.providerSubscriptionId, input.providerSubscriptionId),
-      ),
-    )
+    .where(eq(subscriptions.id, subscriptionId))
     .limit(1);
-  return subscription ?? null;
+  return subscription?.storeId ?? null;
 }

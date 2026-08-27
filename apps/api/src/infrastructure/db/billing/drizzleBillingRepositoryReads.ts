@@ -1,13 +1,11 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, or } from "drizzle-orm";
 import { storeEntitlements, subscriptionItems } from "@lojaveiculosv2/db";
 import type {
   BillingSubscription,
   StoreEntitlement,
 } from "../../../domains/billing/ports/billingRepository.js";
-import {
-  findPlan,
-  findTenantSubscription,
-} from "./drizzleBillingCatalogSupport.js";
+import { findPlan } from "./drizzleBillingCatalogSupport.js";
+import { findTenantSubscription } from "./drizzleBillingSubscriptionReads.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
 export async function listEntitlements(
@@ -39,6 +37,7 @@ export async function findSubscription(
   db: DrizzleBillingClient,
   input: { storeId: string; tenantId: string },
 ): Promise<BillingSubscription | null> {
+  const now = new Date();
   const subscription = await findTenantSubscription(db, input);
   if (!subscription) return null;
 
@@ -51,9 +50,15 @@ export async function findSubscription(
         eq(subscriptionItems.itemType, "plan"),
         eq(subscriptionItems.storeId, input.storeId),
         eq(subscriptionItems.tenantId, input.tenantId),
+        lte(subscriptionItems.startsAt, now),
+        or(isNull(subscriptionItems.endsAt), gt(subscriptionItems.endsAt, now)),
       ),
     )
-    .orderBy(desc(subscriptionItems.createdAt))
+    .orderBy(
+      desc(subscriptionItems.startsAt),
+      desc(subscriptionItems.createdAt),
+      desc(subscriptionItems.id),
+    )
     .limit(1);
   const plan = item?.planId ? await findPlan(db, item.planId) : null;
 
@@ -64,4 +69,15 @@ function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+export function planItemIsEffectiveAt(
+  item: { endsAt: Date | null; startsAt: Date | null },
+  now: Date,
+) {
+  return Boolean(
+    item.startsAt &&
+    item.startsAt <= now &&
+    (!item.endsAt || item.endsAt > now),
+  );
 }

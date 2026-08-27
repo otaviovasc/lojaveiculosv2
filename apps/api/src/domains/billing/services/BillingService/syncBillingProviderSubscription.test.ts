@@ -1,15 +1,11 @@
 import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
-import type { BillingProviderRepository } from "../../ports/billingProviderRepository.js";
 import type { PaymentProviderGateway } from "../../ports/paymentProviderGateway.js";
-import {
-  createChargePreview,
-  createChargeableItem,
-} from "../../readModels/billingChargePreviewModel.js";
 import type { BillingProviderSyncError } from "./syncBillingProviderSubscription.js";
 import { syncBillingProviderSubscription } from "./syncBillingProviderSubscription.js";
 import { createUnusedBillingRepository } from "../../testSupportBillingRepository.js";
+import { createProviderRepository } from "./syncBillingProviderSubscription.testSupport.js";
 
 describe("syncBillingProviderSubscription", () => {
   it("creates provider customer and subscription from calculated chargeables", async () => {
@@ -51,9 +47,17 @@ describe("syncBillingProviderSubscription", () => {
       }),
     );
     expect(providerRepository.savedCustomer?.providerCustomerId).toBe("cus_1");
+    expect(providerRepository.savedCustomer).toMatchObject({
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
     expect(providerRepository.savedSubscription?.providerSubscriptionId).toBe(
       "sub_1",
     );
+    expect(providerRepository.savedSubscription).toMatchObject({
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
     expect(
       billingRepository.activateSubscriptionSelection,
     ).toHaveBeenCalledWith({
@@ -104,6 +108,78 @@ describe("syncBillingProviderSubscription", () => {
     expect(gateway.syncCustomer).not.toHaveBeenCalled();
     expect(gateway.syncSubscription).not.toHaveBeenCalled();
   });
+
+  it("stops before subscription creation when provider customer binding conflicts", async () => {
+    const providerRepository = createProviderRepository();
+    providerRepository.repository.saveProviderCustomer = vi.fn(
+      async () => null,
+    );
+    const gateway = createGateway();
+
+    await expect(
+      syncBillingProviderSubscription(
+        createContext(createAuditSink()),
+        {},
+        {
+          billingProviderRepository: providerRepository.repository,
+          billingRepository: createUnusedBillingRepository(),
+          paymentProviderGateway: gateway.gateway,
+        },
+      ),
+    ).rejects.toMatchObject({
+      reason: "provider_customer_identity_conflict",
+      status: 409,
+    });
+    expect(gateway.syncSubscription).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when confirmed payment changes the contract during provider observation", async () => {
+    const providerRepository = createProviderRepository();
+    providerRepository.repository.saveProviderSubscription = vi.fn(
+      async () => null,
+    );
+    const gateway = createGateway("OVERDUE");
+    const billingRepository = createUnusedBillingRepository();
+
+    await expect(
+      syncBillingProviderSubscription(
+        createContext(createAuditSink()),
+        {},
+        {
+          billingProviderRepository: providerRepository.repository,
+          billingRepository,
+          paymentProviderGateway: gateway.gateway,
+        },
+      ),
+    ).rejects.toMatchObject({
+      reason: "provider_subscription_state_changed",
+      status: 409,
+    });
+    expect(
+      billingRepository.activateSubscriptionSelection,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("does not project paid entitlements from an OVERDUE provider observation", async () => {
+    const providerRepository = createProviderRepository();
+    const gateway = createGateway("OVERDUE");
+    const billingRepository = createUnusedBillingRepository();
+
+    await expect(
+      syncBillingProviderSubscription(
+        createContext(createAuditSink()),
+        {},
+        {
+          billingProviderRepository: providerRepository.repository,
+          billingRepository,
+          paymentProviderGateway: gateway.gateway,
+        },
+      ),
+    ).resolves.toMatchObject({ status: "past_due" });
+    expect(
+      billingRepository.activateSubscriptionSelection,
+    ).not.toHaveBeenCalled();
+  });
 });
 
 function createContext(audit: AuditSink) {
@@ -123,7 +199,7 @@ function createAuditSink(): AuditSink {
   return { record };
 }
 
-function createGateway() {
+function createGateway(status: "ACTIVE" | "OVERDUE" = "ACTIVE") {
   const syncCustomer = vi.fn(async () => ({
     created: true,
     provider: "asaas" as const,
@@ -134,7 +210,7 @@ function createGateway() {
     currentPeriodEnd: new Date("2026-08-10T00:00:00.000Z"),
     provider: "asaas" as const,
     providerSubscriptionId: "sub_1",
-    status: "ACTIVE" as const,
+    status,
   }));
   const gateway: PaymentProviderGateway = {
     async getProviderStatus() {
@@ -149,97 +225,4 @@ function createGateway() {
     syncSubscription,
   };
   return { gateway, syncCustomer, syncSubscription };
-}
-
-function createProviderRepository(totalCents = 54899) {
-  let savedCustomer:
-    Parameters<BillingProviderRepository["saveProviderCustomer"]>[0] | null =
-    null;
-  let savedSubscription:
-    | Parameters<BillingProviderRepository["saveProviderSubscription"]>[0]
-    | null = null;
-  const repository: BillingProviderRepository = {
-    async getProviderAccount() {
-      return {
-        billingCustomer: {
-          documentNumber: "11222333000181",
-          email: "billing-test@lojaveiculos.com.br",
-          id: "billing_customer_1",
-          name: "Loja Teste LTDA",
-          provider: "asaas",
-          providerCustomerId: "local_asaas_customer_test",
-        },
-        chargePreview:
-          totalCents > 0
-            ? createChargePreview({
-                chargeables: [
-                  createChargeableItem({
-                    id: "subscription_item_1",
-                    itemType: "plan",
-                    label: "Growth",
-                    periodEnd: new Date("2026-07-31T00:00:00.000Z"),
-                    periodStart: new Date("2026-07-01T00:00:00.000Z"),
-                    quantity: 1,
-                    startsAt: new Date("2026-07-01T00:00:00.000Z"),
-                    storeId: "store_1" as never,
-                    storeName: "Loja Teste",
-                    unitAmountCents: 29900,
-                  }),
-                  createChargeableItem({
-                    id: "subscription_item_2",
-                    itemType: "addon",
-                    label: "CRM WhatsApp",
-                    periodEnd: new Date("2026-07-31T00:00:00.000Z"),
-                    periodStart: new Date("2026-07-01T00:00:00.000Z"),
-                    quantity: 1,
-                    startsAt: new Date("2026-07-01T00:00:00.000Z"),
-                    storeId: "store_1" as never,
-                    storeName: "Loja Teste",
-                    unitAmountCents: 24999,
-                  }),
-                ],
-              })
-            : createChargePreview({ chargeables: [] }),
-        subscription: {
-          currentPeriodEnd: null,
-          currentPeriodStart: null,
-          id: "subscription_1",
-          provider: "asaas",
-          providerSubscriptionId: "local_asaas_subscription_test",
-          status: "trialing",
-        },
-      };
-    },
-    async saveProviderCustomer(input) {
-      savedCustomer = input;
-      return {
-        documentNumber: "11222333000181",
-        email: "billing-test@lojaveiculos.com.br",
-        id: input.billingCustomerId,
-        name: "Loja Teste LTDA",
-        provider: input.provider,
-        providerCustomerId: input.providerCustomerId,
-      };
-    },
-    async saveProviderSubscription(input) {
-      savedSubscription = input;
-      return {
-        currentPeriodEnd: input.currentPeriodEnd,
-        currentPeriodStart: input.currentPeriodStart,
-        id: input.subscriptionId,
-        provider: input.provider,
-        providerSubscriptionId: input.providerSubscriptionId,
-        status: input.status,
-      };
-    },
-  };
-  return {
-    repository,
-    get savedCustomer() {
-      return savedCustomer;
-    },
-    get savedSubscription() {
-      return savedSubscription;
-    },
-  };
 }

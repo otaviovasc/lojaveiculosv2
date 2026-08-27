@@ -1,9 +1,8 @@
 import { and, asc, desc, eq, lte } from "drizzle-orm";
-import { addons, planFeatures, plans, subscriptions } from "@lojaveiculosv2/db";
+import { addons, planFeatures, plans } from "@lojaveiculosv2/db";
 import type {
   BillingAddon,
   BillingPlan,
-  BillingSubscription,
 } from "../../../domains/billing/ports/billingRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
@@ -111,34 +110,6 @@ function toAddonLimits(value: unknown): NonNullable<BillingAddon["limits"]> {
     enforcement:
       enforcement === "soft" || enforcement === "hard" ? enforcement : null,
     includedChannels,
-  };
-}
-
-export async function findTenantSubscription(
-  db: DrizzleBillingClient,
-  input: { tenantId: string },
-  now: Date = new Date(),
-): Promise<BillingSubscription | null> {
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.tenantId, input.tenantId))
-    .orderBy(desc(subscriptions.createdAt))
-    .limit(1);
-  if (!subscription) return null;
-  const status =
-    subscription.status === "trialing" &&
-    subscription.currentPeriodEnd &&
-    subscription.currentPeriodEnd <= now
-      ? "expired"
-      : subscription.status;
-
-  return {
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    currentPeriodStart: subscription.currentPeriodStart,
-    id: subscription.id,
-    plan: null,
-    status,
   };
 }
 

@@ -1,4 +1,4 @@
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 import {
   billingPlanHires,
   billingPlanHireTransitions,
@@ -14,7 +14,11 @@ export async function finalizeScheduledFreeDowngrades(
   now: Date = new Date(),
 ): Promise<number> {
   const due = await db
-    .select({ hire: billingPlanHires, startsAt: subscriptionItems.startsAt })
+    .select({
+      hire: billingPlanHires,
+      itemId: subscriptionItems.id,
+      startsAt: subscriptionItems.startsAt,
+    })
     .from(billingPlanHires)
     .innerJoin(
       subscriptionItems,
@@ -36,22 +40,38 @@ export async function finalizeScheduledFreeDowngrades(
       await txDb.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`${candidate.hire.tenantId}:${candidate.hire.storeId}:plan-activation`}, 31))`,
       );
-      const [hire] = await txDb
-        .select()
+      const [current] = await txDb
+        .select({ hire: billingPlanHires, item: subscriptionItems })
         .from(billingPlanHires)
+        .innerJoin(
+          subscriptionItems,
+          eq(
+            subscriptionItems.id,
+            billingPlanHires.effectiveSubscriptionItemId,
+          ),
+        )
         .where(
           and(
             eq(billingPlanHires.id, candidate.hire.id),
             eq(billingPlanHires.status, "downgrade_scheduled"),
+            eq(subscriptionItems.id, candidate.itemId),
+            eq(subscriptionItems.itemType, "plan"),
+            eq(subscriptionItems.unitAmountCents, 0),
+            lte(subscriptionItems.startsAt, now),
+            or(
+              isNull(subscriptionItems.endsAt),
+              gt(subscriptionItems.endsAt, now),
+            ),
           ),
         )
         .limit(1);
-      if (!hire) return;
+      if (!current) return;
+      const { hire, item } = current;
       await txDb
         .update(subscriptions)
         .set({
           currentPeriodEnd: null,
-          currentPeriodStart: candidate.startsAt ?? now,
+          currentPeriodStart: item.startsAt ?? now,
           status: "active",
           updatedAt: now,
         })

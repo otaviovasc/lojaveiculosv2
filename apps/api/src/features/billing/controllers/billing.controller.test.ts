@@ -10,6 +10,35 @@ import { createMemoryBillingWebhookRepository } from "../adapters/memory/billing
 import { createMemoryPaymentProviderGateway } from "../adapters/memory/paymentProviderGateway.js";
 
 describe("billing controller webhooks", () => {
+  it("returns service unavailable instead of using in-memory billing implicitly", async () => {
+    const app = new Hono();
+    app.route(
+      "/api/v1/billing",
+      createBillingFeature({
+        contextFactory: async () =>
+          createServiceContext({
+            actor: { id: "user_1", kind: "user" },
+            permissions: ["billing.manage"],
+            request: { requestId: "request_missing_composition" },
+            storeId: "store_1",
+            tenantId: "tenant_1",
+          }),
+      }),
+    );
+
+    const response = await app.request("/api/v1/billing/provider/status");
+
+    expect(response.status).toBe(503);
+    const body = (await response.json()) as {
+      code?: string;
+      requestId?: unknown;
+    };
+    expect(body).toMatchObject({
+      code: "BILLING_SERVICE_UNAVAILABLE",
+    });
+    expect(typeof body.requestId).toBe("string");
+  });
+
   it("denies store-scoped billing for owners blocked by agency billing", async () => {
     const app = createTestApp("secret", []);
     const response = await app.request("/api/v1/billing/overview");
@@ -37,11 +66,11 @@ describe("billing controller webhooks", () => {
     expect(hire).toMatchObject({
       checkoutUrl:
         "https://sandbox.asaas.com/checkoutSession/show?id=chk_memory_asaas",
-      phase: "checkout_created",
+      phase: "payment_pending",
       planSnapshot: { code: "essencial" },
       providerCheckoutId: "chk_memory_asaas",
       quotedCents: 19700,
-      status: "checkout_created",
+      status: "payment_pending",
     });
 
     const poll = await app.request(`/api/v1/billing/plan-hires/${hire.id}`);
@@ -87,7 +116,7 @@ describe("billing controller webhooks", () => {
       method: "POST",
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({
       code: "BILLING_WEBHOOK_AUTHENTICATION_FAILED",
     });

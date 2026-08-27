@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import type { AuditEvent } from "@lojaveiculosv2/audit";
+import { describe, expect, it, vi } from "vitest";
 import {
   createAuditSink,
   createBillingRepository,
@@ -62,5 +63,57 @@ describe("processBillingProviderWebhook combined evidence", () => {
       ),
     ).resolves.toMatchObject({ status: "processed" });
     expect(observations).toEqual(["checkout:chk_memory", "payment:paid"]);
+  });
+
+  it("processes confirmed payment when checkout state is terminal and records the divergence", async () => {
+    const repository = createWebhookRepository();
+    const auditEvents: AuditEvent[] = [];
+    const audit = {
+      record: vi.fn(async (event: AuditEvent) => {
+        auditEvents.push(event);
+      }),
+    };
+    const syncProviderCheckout = vi.fn(async () => ({
+      reason: "non_monotonic_checkout_event",
+      status: "pending_reconciliation" as const,
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+    }));
+
+    await expect(
+      processBillingProviderWebhook(
+        createWebhookContext(audit),
+        {
+          payload: {
+            checkout: { id: "chk_terminal", status: "CANCELED" },
+            event: "PAYMENT_CONFIRMED",
+            id: "evt_terminal_checkout_paid",
+            payment: {
+              confirmedDate: "2026-08-25",
+              id: "pay_terminal_checkout",
+              subscription: "sub_memory",
+              value: 197,
+            },
+          },
+          provider: "asaas",
+          webhookToken: "secret",
+        },
+        {
+          billingRepository: createBillingRepository(),
+          billingWebhookRepository: { ...repository, syncProviderCheckout },
+          environment: "test",
+          paymentProviderGateway: createProviderGateway("secret"),
+        },
+      ),
+    ).resolves.toMatchObject({ status: "processed" });
+    expect(syncProviderCheckout).toHaveBeenCalledTimes(2);
+    expect(
+      auditEvents.some(
+        (event) =>
+          event.action === "billing.webhook.asaas.processed" &&
+          event.metadata?.reason ===
+            "checkout_diverged_from_authoritative_payment",
+      ),
+    ).toBe(true);
   });
 });

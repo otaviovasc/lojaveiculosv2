@@ -72,21 +72,67 @@ export async function syncAsaasSubscription(
   input: PaymentProviderSubscriptionInput,
 ): Promise<PaymentProviderSubscriptionResult> {
   const body = subscriptionBody(input);
-  const subscription = input.existingProviderSubscriptionId
+  const correlatedProviderSubscriptionId =
+    input.existingProviderSubscriptionId ??
+    (await findSubscriptionByExternalReference(
+      client,
+      input.externalReference,
+    ));
+  const subscription = correlatedProviderSubscriptionId
     ? await client.request(
         "PUT",
-        `/subscriptions/${encodeURIComponent(input.existingProviderSubscriptionId)}`,
+        `/subscriptions/${encodeURIComponent(correlatedProviderSubscriptionId)}`,
         { body },
       )
     : await client.request("POST", "/subscriptions", { body });
+  const returnedProviderSubscriptionId = requiredString(
+    subscription.id,
+    "subscription.id",
+  );
+  if (
+    correlatedProviderSubscriptionId &&
+    returnedProviderSubscriptionId !== correlatedProviderSubscriptionId
+  ) {
+    throw new AsaasGatewayError(
+      "asaas_subscription_identity_mismatch",
+      "Asaas returned a different subscription identity after update.",
+      409,
+    );
+  }
 
   return {
-    created: !input.existingProviderSubscriptionId,
+    created: !correlatedProviderSubscriptionId,
     currentPeriodEnd: parseAsaasDate(readString(subscription.nextDueDate)),
     provider: "asaas",
-    providerSubscriptionId: requiredString(subscription.id, "subscription.id"),
+    providerSubscriptionId: returnedProviderSubscriptionId,
     status: asaasSubscriptionStatus(readString(subscription.status)),
   };
+}
+
+async function findSubscriptionByExternalReference(
+  client: AsaasClient,
+  externalReference: string,
+) {
+  const result = await client.request("GET", "/subscriptions", {
+    query: { externalReference, limit: "2" },
+  });
+  const matches = readRecordArray(result.data);
+  if (result.hasMore === true || matches.length > 1) {
+    throw new AsaasGatewayError(
+      "asaas_subscription_correlation_ambiguous",
+      "Multiple Asaas subscriptions match the billing external reference.",
+      409,
+    );
+  }
+  const match = matches[0];
+  if (match && readString(match.externalReference) !== externalReference) {
+    throw new AsaasGatewayError(
+      "asaas_subscription_correlation_ambiguous",
+      "Asaas returned a subscription outside the requested external reference.",
+      409,
+    );
+  }
+  return match ? requiredString(match.id, "subscription.id") : null;
 }
 
 export async function cancelAsaasSubscription(
@@ -109,9 +155,17 @@ async function findCustomer(
   query: Record<string, string>,
 ): Promise<PaymentProviderCustomerResult | null> {
   const result = await client.request("GET", "/customers", {
-    query: { ...query, limit: "1" },
+    query: { ...query, limit: "2" },
   });
-  const first = readRecordArray(result.data)[0];
+  const matches = readRecordArray(result.data);
+  if (result.hasMore === true || matches.length > 1) {
+    throw new AsaasGatewayError(
+      "asaas_customer_correlation_ambiguous",
+      "Multiple Asaas customers match the billing identity.",
+      409,
+    );
+  }
+  const first = matches[0];
   const customerId = first ? readString(first.id) : null;
   if (!customerId) return null;
   return {
