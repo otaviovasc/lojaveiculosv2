@@ -11,10 +11,15 @@ describe("Vitest resource policy", () => {
     (workspaceName) => {
       const config = createCoverageConfig(workspaceName);
 
-      expect(config.test.maxWorkers).toBe("75%");
+      expect(config.test.maxWorkers).toBe(
+        workspaceName === "@lojaveiculosv2/api" ? 4 : "75%",
+      );
       expect(config.test.expect).toEqual({
         requireAssertions: true,
       });
+      expect(config.test.coverage.exclude).toContain(
+        "src/**/*.rawDb.testSupport.ts",
+      );
       expect(config.test.coverage.thresholds).toEqual({
         ...coveragePolicies[workspaceName],
         ...(scopedCoveragePolicies[workspaceName] ?? {}),

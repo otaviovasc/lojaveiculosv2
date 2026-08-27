@@ -3,6 +3,7 @@ const excludedPatterns = [
   "src/**/*.d.ts",
   "src/**/*.test.ts",
   "src/**/*.test.tsx",
+  "src/**/*.rawDb.testSupport.ts",
   "src/**/*.spec.ts",
   "src/**/*.spec.tsx",
   "src/main.ts",
@@ -71,6 +72,9 @@ export function createCoverageConfig(workspaceName) {
   const thresholds = coveragePolicies[workspaceName];
   if (!thresholds)
     throw new Error(`Missing coverage policy for ${workspaceName}`);
+  // The instrumented API suite has hundreds of files; a percentage-based pool
+  // can spawn enough forks to time out on high-core development machines.
+  const maxWorkers = workspaceName === "@lojaveiculosv2/api" ? 4 : "75%";
   return {
     test: {
       expect: {
@@ -78,7 +82,7 @@ export function createCoverageConfig(workspaceName) {
       },
       // Vitest applies VITEST_MAX_WORKERS after config resolution, so callers
       // can lower this portable default further for constrained environments.
-      maxWorkers: "75%",
+      maxWorkers,
       coverage: {
         exclude: excludedPatterns,
         include: sourcePatterns,
