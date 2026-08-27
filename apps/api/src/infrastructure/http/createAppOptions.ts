@@ -4,6 +4,7 @@ import type { AgencyStatsServices } from "../../features/agency/controllers/agen
 import type { AgencyTeamAccessServices } from "../../features/agency/controllers/agencyTeamAccessServices.js";
 import type { AutomationServices } from "../../features/automation/controllers/automationServices.js";
 import type { BillingServices } from "../../features/billing/controllers/billingServices.js";
+import type { BillingWebhookRateLimiter } from "../../domains/billing/ports/billingWebhookRateLimiter.js";
 import type { ComplianceServices } from "../../features/compliance/controllers/complianceServices.js";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import type { ResolveCrmBotEntitlements } from "../../domains/crm/ports/crmBotEntitlementResolver.js";
@@ -46,6 +47,7 @@ export type CreateAppOptions = {
   audit?: AuditSink;
   accountProvisioningServices?: AccountProvisioningServices;
   billingServices?: BillingServices;
+  billingWebhookRateLimiter?: BillingWebhookRateLimiter;
   complianceServices?: ComplianceServices;
   crmRealtimeBroker?: CrmRealtimeBroker;
   crmFinancialProductTransactionRunner?: CrmFinancialProductTransactionRunner;

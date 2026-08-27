@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { billingCustomers, subscriptions } from "@lojaveiculosv2/db";
 import type {
   BillingProviderAccount,
@@ -11,6 +11,7 @@ import {
   createDrizzleBillingRepository,
   type DrizzleBillingClient,
 } from "./drizzleBillingRepository.js";
+import { saveDrizzleBillingProviderSubscription } from "./drizzleBillingProviderSubscriptionSave.js";
 
 export function createDrizzleBillingProviderRepository(
   db: DrizzleBillingClient,
@@ -19,10 +20,16 @@ export function createDrizzleBillingProviderRepository(
 
   return {
     async getProviderAccount(input): Promise<BillingProviderAccount | null> {
+      if (!input.storeId) return null;
       const [subscription] = await db
         .select()
         .from(subscriptions)
-        .where(eq(subscriptions.tenantId, input.tenantId))
+        .where(
+          and(
+            eq(subscriptions.tenantId, input.tenantId),
+            eq(subscriptions.storeId, input.storeId),
+          ),
+        )
         .orderBy(desc(subscriptions.createdAt))
         .limit(1);
       if (!subscription) return null;
@@ -45,6 +52,18 @@ export function createDrizzleBillingProviderRepository(
       };
     },
     async saveProviderCustomer(input) {
+      const [ownedSubscription] = await db
+        .select({ id: subscriptions.id })
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.billingCustomerId, input.billingCustomerId),
+            eq(subscriptions.tenantId, input.tenantId),
+            eq(subscriptions.storeId, input.storeId),
+          ),
+        )
+        .limit(1);
+      if (!ownedSubscription) return null;
       const [row] = await db
         .update(billingCustomers)
         .set({
@@ -52,23 +71,21 @@ export function createDrizzleBillingProviderRepository(
           providerCustomerId: input.providerCustomerId,
           updatedAt: new Date(),
         })
-        .where(eq(billingCustomers.id, input.billingCustomerId))
+        .where(
+          and(
+            eq(billingCustomers.id, input.billingCustomerId),
+            eq(billingCustomers.tenantId, input.tenantId),
+            or(
+              isNull(billingCustomers.providerCustomerId),
+              eq(billingCustomers.providerCustomerId, input.providerCustomerId),
+            ),
+          ),
+        )
         .returning();
       return row ? toCustomerRecord(row) : null;
     },
     async saveProviderSubscription(input) {
-      const [row] = await db
-        .update(subscriptions)
-        .set({
-          currentPeriodEnd: input.currentPeriodEnd,
-          currentPeriodStart: input.currentPeriodStart,
-          provider: input.provider,
-          providerSubscriptionId: input.providerSubscriptionId,
-          status: input.status,
-          updatedAt: new Date(),
-        })
-        .where(eq(subscriptions.id, input.subscriptionId))
-        .returning();
+      const row = await saveDrizzleBillingProviderSubscription(db, input);
       return row ? toSubscriptionRecord(row) : null;
     },
   };

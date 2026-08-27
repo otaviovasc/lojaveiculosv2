@@ -24,14 +24,24 @@ export function createRepository(
     async approveQuote() {
       throw new Error("not used");
     },
+    async beginCheckoutRequest() {
+      return {
+        claimed: true,
+        hire: {
+          ...hire,
+          phase: "payment_pending",
+          status: "payment_pending",
+        },
+      };
+    },
     async bindCheckout(input) {
       order.push("bind");
       return {
         ...hire,
         checkoutUrl: input.checkoutUrl,
-        phase: "checkout_created",
+        phase: "payment_pending",
         providerCheckoutId: input.providerCheckoutId,
-        status: "checkout_created",
+        status: "payment_pending",
       };
     },
     async bindRenewal() {
@@ -54,8 +64,12 @@ export function createRepository(
     async requestQuote() {
       throw new Error("not used");
     },
+    async restoreFreeDowngradeCancellation() {},
     async scheduleFreeDowngrade() {
       return hire;
+    },
+    async supersedeFreeDowngrade() {
+      return { state: "none", targetProviderSubscriptionId: null };
     },
   };
 }

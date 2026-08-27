@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   billingPackagingCutovers,
   stores,
@@ -11,11 +11,8 @@ import {
   findEffectiveCutoverPlanItems,
 } from "./drizzleBillingCutoverSupport.js";
 import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
-import { finalizeScheduledFreeDowngrades } from "./drizzleBillingFreeTransitions.js";
-import { finalizeScheduledPaidPlanActivations } from "./drizzleBillingScheduledPaidActivation.js";
-import { recordBillingProductEvent } from "./drizzleBillingProductEvents.js";
-import { enqueueFreeFallbackReconciliation } from "./drizzleBillingFallbackReconciliation.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+export { fallbackExpiredPastDueSubscriptions } from "./drizzleBillingFreeFallback.js";
 
 export { finalizeScheduledFreeDowngrades } from "./drizzleBillingFreeTransitions.js";
 
@@ -60,7 +57,11 @@ export async function runBillingPackagingCutover(
       await txDb.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`${store.tenantId}:${store.id}:billing-cutover`}, 31))`,
       );
-      const account = await ensureTenantBillingAccount(txDb, store.tenantId);
+      const account = await ensureTenantBillingAccount(
+        txDb,
+        store.tenantId,
+        store.id,
+      );
       const effectiveItems = await findEffectiveCutoverPlanItems(
         txDb,
         store,
@@ -110,140 +111,4 @@ export async function runBillingPackagingCutover(
       .where(eq(billingPackagingCutovers.version, cutoverVersion));
     return { convertedStores: storeRows.length, status: "completed" as const };
   });
-}
-
-export async function fallbackExpiredPastDueSubscriptions(
-  db: DrizzleBillingClient,
-  now: Date = new Date(),
-): Promise<number> {
-  await finalizeScheduledPaidPlanActivations(db, now);
-  await finalizeScheduledFreeDowngrades(db, now);
-  const freePlan = await findCutoverFreePlan(db);
-  const expired = await db
-    .select()
-    .from(subscriptions)
-    .where(
-      and(
-        eq(subscriptions.status, "past_due"),
-        lte(subscriptions.currentPeriodEnd, now),
-      ),
-    )
-    .limit(1_000);
-  let converted = 0;
-  for (const subscription of expired) {
-    await db.transaction(async (tx) => {
-      const txDb = tx as DrizzleBillingClient;
-      await txDb.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${`${subscription.tenantId}:${subscription.id}:free-fallback`}, 31))`,
-      );
-      const [stillExpired] = await txDb
-        .select({ id: subscriptions.id })
-        .from(subscriptions)
-        .where(
-          and(
-            eq(subscriptions.id, subscription.id),
-            eq(subscriptions.status, "past_due"),
-            lte(subscriptions.currentPeriodEnd, now),
-          ),
-        )
-        .limit(1);
-      if (!stillExpired) return;
-      const affectedStores = await txDb
-        .selectDistinct({ storeId: subscriptionItems.storeId })
-        .from(subscriptionItems)
-        .where(
-          and(
-            eq(subscriptionItems.subscriptionId, subscription.id),
-            eq(subscriptionItems.itemType, "plan"),
-            or(
-              isNull(subscriptionItems.startsAt),
-              lte(subscriptionItems.startsAt, now),
-            ),
-            or(
-              isNull(subscriptionItems.endsAt),
-              gt(subscriptionItems.endsAt, now),
-            ),
-          ),
-        );
-      await txDb
-        .update(subscriptions)
-        .set({
-          currentPeriodEnd: null,
-          currentPeriodStart: now,
-          status: "active",
-          updatedAt: now,
-        })
-        .where(eq(subscriptions.id, subscription.id));
-      for (const row of affectedStores) {
-        if (!row.storeId) continue;
-        const [scheduledFree] = await txDb
-          .select({ id: subscriptionItems.id })
-          .from(subscriptionItems)
-          .where(
-            and(
-              eq(subscriptionItems.subscriptionId, subscription.id),
-              eq(subscriptionItems.storeId, row.storeId),
-              eq(subscriptionItems.itemType, "plan"),
-              eq(subscriptionItems.planId, freePlan.id),
-              eq(subscriptionItems.unitAmountCents, 0),
-              isNull(subscriptionItems.endsAt),
-            ),
-          )
-          .limit(1);
-        await txDb
-          .update(subscriptionItems)
-          .set({ endsAt: now, updatedAt: now })
-          .where(
-            and(
-              eq(subscriptionItems.subscriptionId, subscription.id),
-              eq(subscriptionItems.storeId, row.storeId!),
-              eq(subscriptionItems.itemType, "plan"),
-              or(
-                isNull(subscriptionItems.startsAt),
-                lte(subscriptionItems.startsAt, now),
-              ),
-              or(
-                isNull(subscriptionItems.endsAt),
-                gt(subscriptionItems.endsAt, now),
-              ),
-            ),
-          );
-        if (scheduledFree) {
-          await txDb
-            .update(subscriptionItems)
-            .set({ startsAt: now, updatedAt: now })
-            .where(eq(subscriptionItems.id, scheduledFree.id));
-        } else {
-          await txDb.insert(subscriptionItems).values({
-            itemType: "plan",
-            planId: freePlan.id,
-            quantity: 1,
-            startsAt: now,
-            storeId: row.storeId,
-            subscriptionId: subscription.id,
-            tenantId: subscription.tenantId,
-            unitAmountCents: 0,
-          });
-        }
-        await projectSelectedEntitlements(txDb, {
-          source: "billing_plan_hire",
-          storeId: row.storeId!,
-          subscriptionId: subscription.id,
-          tenantId: subscription.tenantId,
-        });
-        await recordBillingProductEvent(txDb, {
-          eventName: "free_fallback",
-          idempotencyKey: `billing-free-fallback:${subscription.id}:${row.storeId}:${now.toISOString()}`,
-          properties: { reason: "grace_expired" },
-          storeId: row.storeId,
-          tenantId: subscription.tenantId,
-        });
-        converted += 1;
-      }
-      await enqueueFreeFallbackReconciliation(txDb, subscription, now);
-    });
-  }
-  await finalizeScheduledFreeDowngrades(db, now);
-  await finalizeScheduledPaidPlanActivations(db, now);
-  return converted;
 }

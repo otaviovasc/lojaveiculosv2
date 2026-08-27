@@ -11,6 +11,7 @@ const DEFAULT_SOURCE_DATABASE_URL =
 const EXCLUDED_TABLES = new Set([
   "addons",
   "billing_addon_contracts",
+  "billing_audit_outbox",
   "billing_catalog_versions",
   "billing_customers",
   "billing_provider_reconciliations",

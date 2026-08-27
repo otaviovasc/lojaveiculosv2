@@ -1,6 +1,7 @@
 import { createClient } from "redis";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import type { CrmOlxWebhookSecurity } from "../../domains/crm/ports/crmOlxWebhookSecurity.js";
+import type { BillingWebhookRateLimiter } from "../../domains/billing/ports/billingWebhookRateLimiter.js";
 import { createCrmRealtimeBroker } from "./crmRealtimeBroker.js";
 import {
   createOlxWebhookSecurity,
@@ -11,8 +12,13 @@ import {
   parseRedisRealtimeEnvelope,
   redisCrmRealtimeChannel,
 } from "./redisCrmRealtimePersistence.js";
+import {
+  createMemoryAsaasWebhookRateLimiter,
+  createRedisAsaasWebhookRateLimiter,
+} from "../billing/asaasWebhookRateLimiter.js";
 
 export type ClosableCrmRealtimeBroker = CrmRealtimeBroker & {
+  billingWebhookRateLimiter: BillingWebhookRateLimiter;
   close: () => Promise<void>;
   olxWebhookSecurity: CrmOlxWebhookSecurity;
   ready: () => Promise<void>;
@@ -51,6 +57,10 @@ export function createRedisCrmRealtimeBroker(
   );
 
   return {
+    billingWebhookRateLimiter: createRedisAsaasWebhookRateLimiter(
+      commandClient,
+      ensureCommandClient,
+    ),
     close() {
       closePromise ??= closeClients();
       return closePromise;
@@ -213,6 +223,7 @@ export function createRuntimeCrmRealtimeBroker(
     );
   }
   return Object.assign(createCrmRealtimeBroker(), {
+    billingWebhookRateLimiter: createMemoryAsaasWebhookRateLimiter(),
     close: async () => undefined,
     olxWebhookSecurity: createOlxWebhookSecurity(),
     ready: async () => undefined,

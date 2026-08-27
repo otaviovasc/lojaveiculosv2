@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import type { PaymentProviderGateway } from "../../domains/billing/ports/paymentProviderGateway.js";
 import { getAsaasProviderStatus } from "./asaasPaymentProviderConfig.js";
 import { createAsaasClient } from "./asaasPaymentProviderHttp.js";
@@ -39,11 +40,24 @@ export function createAsaasPaymentProviderGateway(
       return syncAsaasSubscription(createAsaasClient(env, fetcher), input);
     },
     verifyWebhookToken(token) {
-      return Boolean(
-        env.ASAAS_WEBHOOK_SECRET && token === env.ASAAS_WEBHOOK_SECRET,
-      );
+      return verifyAsaasWebhookToken(env.ASAAS_WEBHOOK_SECRET, token);
     },
   };
+}
+
+export function verifyAsaasWebhookToken(
+  configuredSecret: string | undefined,
+  token: string | null,
+) {
+  const expected = tokenDigest(configuredSecret ?? "");
+  const received = tokenDigest(token ?? "");
+  return (
+    Boolean(configuredSecret && token) && timingSafeEqual(expected, received)
+  );
+}
+
+function tokenDigest(value: string) {
+  return createHash("sha256").update(`asaas-webhook\0${value}`).digest();
 }
 
 export { getAsaasProviderStatus };

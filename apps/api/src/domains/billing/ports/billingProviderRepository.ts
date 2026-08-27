@@ -40,15 +40,23 @@ export type SaveBillingProviderCustomerInput = {
   billingCustomerId: string;
   provider: PaymentProvider;
   providerCustomerId: string;
+  storeId: StoreId;
+  tenantId: TenantId;
 };
 
 export type SaveBillingProviderSubscriptionInput = {
   currentPeriodEnd: Date | null;
   currentPeriodStart: Date | null;
+  expectedProviderSubscriptionId?: string | null;
+  expectedStatus?: BillingProviderSubscriptionRecord["status"];
+  observationStartedAt?: Date;
+  observedAt?: Date;
   provider: PaymentProvider;
   providerSubscriptionId: string | null;
   status: BillingProviderSubscriptionRecord["status"];
+  storeId: StoreId;
   subscriptionId: string;
+  tenantId: TenantId;
 };
 
 export type BillingProviderRepository = {

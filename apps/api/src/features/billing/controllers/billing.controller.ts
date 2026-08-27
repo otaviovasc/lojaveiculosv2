@@ -6,7 +6,9 @@ import {
   HttpContextAuthenticationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { createHttpIntegrationServiceContext } from "../../../infrastructure/http/httpIntegrationServiceContext.js";
-import { BillingWebhookValidationError } from "../../../domains/billing/readModels/billingWebhookErrors.js";
+import { BillingWebhookAuthenticationError } from "../../../domains/billing/readModels/billingWebhookErrors.js";
+import type { BillingWebhookRateLimiter } from "../../../domains/billing/ports/billingWebhookRateLimiter.js";
+import { createDefaultAsaasWebhookRateLimiter } from "../../../infrastructure/billing/asaasWebhookRateLimiter.js";
 import {
   BillingRequestValidationError,
   handleBilling,
@@ -15,7 +17,14 @@ import {
   createBillingPlanHireSchema,
   requestBillingPlanQuoteSchema,
 } from "./billing.controller.schemas.js";
-import { billingServices, type BillingServices } from "./billingServices.js";
+import {
+  unavailableBillingServices,
+  type BillingServices,
+} from "./billingServices.js";
+import {
+  parseBoundedAsaasWebhook,
+  rateLimitAsaasWebhook,
+} from "./billingWebhookHttpSecurity.js";
 
 export type BillingContextFactory = (
   context: Context,
@@ -25,13 +34,14 @@ export type CreateBillingFeatureOptions = {
   contextFactory?: BillingContextFactory;
   services?: BillingServices;
   webhookContextFactory?: BillingContextFactory;
+  webhookRateLimiter?: BillingWebhookRateLimiter;
 };
 
 export function createBillingFeature(
   options: CreateBillingFeatureOptions = {},
 ) {
   const feature = new Hono();
-  const services = options.services ?? billingServices;
+  const services = options.services ?? unavailableBillingServices;
   const contextFactory =
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
   const webhookContextFactory =
@@ -42,6 +52,8 @@ export function createBillingFeature(
         displayName: "Asaas",
         permissions: ["billing.webhook.ingest"],
       }));
+  const webhookRateLimiter =
+    options.webhookRateLimiter ?? createDefaultAsaasWebhookRateLimiter();
 
   feature.get("/overview", async (context) =>
     handleBilling(context, async () => {
@@ -111,13 +123,20 @@ export function createBillingFeature(
 
   feature.post("/webhooks/asaas", async (context) =>
     handleBilling(context, async () => {
+      const webhookToken = context.req.header("asaas-access-token") ?? null;
+      if (!webhookToken || !services.verifyAsaasWebhookToken(webhookToken)) {
+        throw new BillingWebhookAuthenticationError(
+          "Invalid Asaas webhook token.",
+        );
+      }
+      await rateLimitAsaasWebhook(context, webhookRateLimiter, webhookToken);
       const serviceContext = await webhookContextFactory(context);
-      const payload = await parseWebhookJson(context);
+      const payload = await parseBoundedAsaasWebhook(context);
       return context.json(
         await services.processAsaasWebhook(serviceContext, {
           payload,
           provider: "asaas",
-          webhookToken: context.req.header("asaas-access-token") ?? null,
+          webhookToken,
         }),
       );
     }),
@@ -146,18 +165,4 @@ async function parseJson<Schema extends z.ZodType>(
   } catch {
     throw new BillingRequestValidationError("Request body is invalid.");
   }
-}
-
-async function parseWebhookJson(
-  context: Context,
-): Promise<Record<string, unknown>> {
-  try {
-    const input: unknown = await context.req.json();
-    if (input && typeof input === "object" && !Array.isArray(input)) {
-      return input as Record<string, unknown>;
-    }
-  } catch {
-    // Normalized below.
-  }
-  throw new BillingWebhookValidationError("Webhook body is invalid.");
 }

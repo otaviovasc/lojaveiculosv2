@@ -53,9 +53,11 @@ export type UpsertBillingProviderPaymentInput = {
   paidAt: Date | null;
   provider: BillingProvider;
   providerCustomerId: string | null;
+  providerEvidenceVerified?: boolean;
   providerCheckoutId?: string | null;
   providerPaymentId: string;
   providerEventId: string;
+  providerEventOccurredAt?: Date | null;
   providerSubscriptionId: string | null;
   raw: Record<string, unknown>;
   requestId?: string;

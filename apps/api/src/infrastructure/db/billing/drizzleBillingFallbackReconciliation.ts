@@ -1,4 +1,5 @@
 import { billingProviderReconciliations } from "@lojaveiculosv2/db";
+import { isNull } from "drizzle-orm";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
 export async function enqueueFreeFallbackReconciliation(
@@ -6,6 +7,7 @@ export async function enqueueFreeFallbackReconciliation(
   subscription: {
     id: string;
     providerSubscriptionId: string | null;
+    storeId: string;
     tenantId: string;
   },
   now: Date,
@@ -19,6 +21,7 @@ export async function enqueueFreeFallbackReconciliation(
       availableAt: now,
       kind: "free_fallback",
       status: "queued",
+      storeId: subscription.storeId,
       subscriptionId: subscription.id,
       tenantId: subscription.tenantId,
     })
@@ -36,6 +39,9 @@ export async function enqueueFreeFallbackReconciliation(
         billingProviderReconciliations.kind,
         billingProviderReconciliations.subscriptionId,
       ],
+      targetWhere: isNull(
+        billingProviderReconciliations.targetProviderSubscriptionId,
+      ),
     });
 }
 

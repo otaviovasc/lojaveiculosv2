@@ -3,6 +3,7 @@ import { billingPlanQuotes, plans, stores } from "@lojaveiculosv2/db";
 import type { BillingPlanHireRepository } from "../../../domains/billing/ports/billingPlanHireRepository.js";
 import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { enqueueBillingAudit } from "./drizzleBillingAuditOutboxMutation.js";
 import {
   toPlanQuote,
   unavailablePlanHire,
@@ -22,27 +23,32 @@ export async function approveBillingPlanQuote(
   if (!Number.isSafeInteger(input.quotedCents) || input.quotedCents <= 0) {
     throw unavailablePlanHire("quote_price_invalid");
   }
-  const [quote] = await db
-    .update(billingPlanQuotes)
-    .set({
-      approvedAt: new Date(),
-      approvedByActorId: input.actorId,
-      expiresAt: input.expiresAt,
-      quotedCents: input.quotedCents,
-      status: "approved",
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(billingPlanQuotes.id, input.quoteId),
-        eq(billingPlanQuotes.storeId, input.storeId),
-        eq(billingPlanQuotes.tenantId, input.tenantId),
-        eq(billingPlanQuotes.status, "requested"),
-      ),
-    )
-    .returning();
-  if (!quote) throw unavailablePlanHire("quote_unavailable");
-  return toPlanQuote(quote);
+  return db.transaction(async (transaction) => {
+    const tx = transaction as DrizzleBillingClient;
+    const now = new Date();
+    const [quote] = await tx
+      .update(billingPlanQuotes)
+      .set({
+        approvedAt: now,
+        approvedByActorId: input.actorId,
+        expiresAt: input.expiresAt,
+        quotedCents: input.quotedCents,
+        status: "approved",
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(billingPlanQuotes.id, input.quoteId),
+          eq(billingPlanQuotes.storeId, input.storeId),
+          eq(billingPlanQuotes.tenantId, input.tenantId),
+          eq(billingPlanQuotes.status, "requested"),
+        ),
+      )
+      .returning();
+    if (!quote) throw unavailablePlanHire("quote_unavailable");
+    await enqueueQuoteAudit(tx, input.audit, quote, "approved", now);
+    return toPlanQuote(quote);
+  });
 }
 
 export async function requestBillingPlanQuote(
@@ -135,7 +141,40 @@ export async function requestBillingPlanQuote(
       })
       .returning();
     if (!quote) throw new Error("Billing plan quote was not persisted.");
+    await enqueueQuoteAudit(
+      tx,
+      input.audit,
+      quote,
+      "requested",
+      quote.createdAt,
+    );
     return toPlanQuote(quote);
+  });
+}
+
+async function enqueueQuoteAudit(
+  db: DrizzleBillingClient,
+  audit: RequestQuoteInput["audit"],
+  quote: typeof billingPlanQuotes.$inferSelect,
+  action: "approved" | "requested",
+  occurredAt: Date,
+) {
+  await enqueueBillingAudit(db, {
+    action: `billing.plan_quote.${action}`,
+    audit,
+    entityId: quote.id,
+    entityType: "billing_plan_quote",
+    idempotencyKey: `billing-audit:quote:${quote.id}:${action}`,
+    metadata: {
+      catalogVersion: quote.catalogVersion,
+      planId: quote.planId,
+      quoteId: quote.id,
+      ...(quote.quotedCents === null ? {} : { quotedCents: quote.quotedCents }),
+      status: quote.status,
+    },
+    occurredAt,
+    storeId: quote.storeId,
+    tenantId: quote.tenantId,
   });
 }
 

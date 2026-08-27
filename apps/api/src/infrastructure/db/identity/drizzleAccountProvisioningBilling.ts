@@ -34,7 +34,12 @@ export async function insertBillingDefaults(
   await lockBillingAccount(db, tenant.id);
   const { entitlements, plan } = await selectPublishedCatalog(db);
   const customer = await ensureBillingCustomer(db, tenant, profile);
-  const subscription = await ensureSubscription(db, tenant.id, customer.id);
+  const subscription = await ensureSubscription(
+    db,
+    tenant.id,
+    store.id,
+    customer.id,
+  );
   assertProvisionableSubscription(subscription);
   const startsAt = new Date();
   await db.insert(subscriptionItems).values(

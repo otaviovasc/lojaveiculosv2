@@ -1,16 +1,12 @@
-import { and, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, isNull, lte } from "drizzle-orm";
 import {
-  billingCheckoutSessions,
   billingPlanHires,
   billingPlanQuotes,
   plans,
   storeProfiles,
   stores,
 } from "@lojaveiculosv2/db";
-import type {
-  BillingPlanHireRepository,
-  BillingPlanHireStatus,
-} from "../../../domains/billing/ports/billingPlanHireRepository.js";
+import type { BillingPlanHireStatus } from "../../../domains/billing/ports/billingPlanHireRepository.js";
 import { ensureTenantBillingAccount } from "./drizzleBillingAccount.js";
 import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
 import {
@@ -27,8 +23,15 @@ import {
 } from "./drizzleBillingPlanHireSupport.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { recordBillingProductEvent } from "./drizzleBillingProductEvents.js";
+import {
+  assertNoOpenHire,
+  findExistingHire,
+  lockPlanHire,
+  type PrepareHireInput,
+} from "./drizzleBillingPlanHirePreparationExisting.js";
+import { enqueueBillingAudit } from "./drizzleBillingAuditOutboxMutation.js";
 
-type PrepareHireInput = Parameters<BillingPlanHireRepository["prepareHire"]>[0];
+export { assertIdempotentHireMatches } from "./drizzleBillingPlanHirePreparationExisting.js";
 
 export async function prepareBillingPlanHire(
   db: DrizzleBillingClient,
@@ -38,7 +41,25 @@ export async function prepareBillingPlanHire(
     const txDb = tx as DrizzleBillingClient;
     await lockPlanHire(txDb, input);
     const existing = await findExistingHire(txDb, input);
-    if (existing) return existing;
+    if (existing) {
+      await enqueueBillingAudit(txDb, {
+        action: "billing.plan_hire.created",
+        audit: input.audit,
+        entityId: existing.hire.id,
+        entityType: "billing_plan_hire",
+        idempotencyKey: `billing-audit:hire:${existing.hire.id}:created`,
+        metadata: {
+          catalogVersion: existing.hire.catalogVersion,
+          planId: existing.hire.planId,
+          quotedCents: existing.hire.quotedCents,
+          status: existing.hire.status,
+        },
+        occurredAt: existing.hire.createdAt,
+        storeId: existing.hire.storeId,
+        tenantId: existing.hire.tenantId,
+      });
+      return existing;
+    }
     await assertNoOpenHire(txDb, input);
 
     const catalogVersion = await findActiveBillingCatalogVersion(txDb);
@@ -72,7 +93,11 @@ export async function prepareBillingPlanHire(
       .limit(1);
     if (!store) throw unavailablePlanHire("store_unavailable");
 
-    const account = await ensureTenantBillingAccount(txDb, input.tenantId);
+    const account = await ensureTenantBillingAccount(
+      txDb,
+      input.tenantId,
+      input.storeId,
+    );
     const effectiveItems = await findEffectivePlanItems(txDb, input);
     const currentPaid = effectiveItems.find((item) => item.unitAmountCents > 0);
     const sameEffective = effectiveItems.find(
@@ -151,6 +176,22 @@ export async function prepareBillingPlanHire(
       storeId: hire.storeId,
       tenantId: hire.tenantId,
     });
+    await enqueueBillingAudit(txDb, {
+      action: "billing.plan_hire.created",
+      audit: input.audit,
+      entityId: hire.id,
+      entityType: "billing_plan_hire",
+      idempotencyKey: `billing-audit:hire:${hire.id}:created`,
+      metadata: {
+        catalogVersion,
+        planId: plan.id,
+        quotedCents: hire.quotedCents,
+        status: hire.status,
+      },
+      occurredAt: hire.createdAt,
+      storeId: hire.storeId,
+      tenantId: hire.tenantId,
+    });
     return {
       billingTypes: input.billingTypes,
       created: true,
@@ -170,77 +211,4 @@ export async function prepareBillingPlanHire(
         : null,
     };
   });
-}
-
-async function lockPlanHire(db: DrizzleBillingClient, input: PrepareHireInput) {
-  await db.execute(
-    sql`select pg_advisory_xact_lock(hashtextextended(${`${input.tenantId}:${input.storeId}:plan-hire`}, 31))`,
-  );
-}
-
-async function findExistingHire(
-  db: DrizzleBillingClient,
-  input: PrepareHireInput,
-) {
-  const [existing] = await db
-    .select()
-    .from(billingPlanHires)
-    .where(
-      and(
-        eq(billingPlanHires.tenantId, input.tenantId),
-        eq(billingPlanHires.storeId, input.storeId),
-        eq(billingPlanHires.idempotencyKey, input.idempotencyKey),
-      ),
-    )
-    .limit(1);
-  if (!existing) return null;
-  assertIdempotentHireMatches(existing, input);
-  const [checkout] = await db
-    .select({ checkoutUrl: billingCheckoutSessions.checkoutUrl })
-    .from(billingCheckoutSessions)
-    .where(eq(billingCheckoutSessions.planHireId, existing.id))
-    .orderBy(desc(billingCheckoutSessions.createdAt))
-    .limit(1);
-  return {
-    billingTypes: input.billingTypes,
-    created: false,
-    customerData: null,
-    hire: toPlanHire(existing, checkout?.checkoutUrl ?? null),
-    providerTransition: null,
-  };
-}
-
-export function assertIdempotentHireMatches(
-  existing: Pick<typeof billingPlanHires.$inferSelect, "planId" | "quoteId">,
-  input: Pick<PrepareHireInput, "planId" | "quoteId">,
-) {
-  if (
-    existing.planId !== input.planId ||
-    existing.quoteId !== (input.quoteId ?? null)
-  ) {
-    throw unavailablePlanHire("idempotency_key_conflict");
-  }
-}
-
-async function assertNoOpenHire(
-  db: DrizzleBillingClient,
-  input: PrepareHireInput,
-) {
-  const [openHire] = await db
-    .select({ id: billingPlanHires.id })
-    .from(billingPlanHires)
-    .where(
-      and(
-        eq(billingPlanHires.tenantId, input.tenantId),
-        eq(billingPlanHires.storeId, input.storeId),
-        inArray(billingPlanHires.status, [
-          "created",
-          "checkout_created",
-          "payment_pending",
-          "activation_pending",
-        ]),
-      ),
-    )
-    .limit(1);
-  if (openHire) throw unavailablePlanHire("hire_in_progress");
 }

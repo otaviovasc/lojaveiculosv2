@@ -1,8 +1,9 @@
-import type { TenantId } from "@lojaveiculosv2/shared";
+import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 
 export type BillingProviderReconciliationKind =
   | "catalog_migration"
   | "free_fallback"
+  | "subscription_cancellation"
   | "zapi_cancellation"
   | "zapi_retirement";
 
@@ -12,6 +13,8 @@ export type BillingProviderReconciliationTask = {
   kind: BillingProviderReconciliationKind;
   nextDueAt: Date;
   processingToken: string;
+  targetProviderSubscriptionId: string | null;
+  storeId: StoreId;
   subscriptionId: string;
   tenantId: TenantId;
 };
@@ -29,6 +32,7 @@ export type BillingProviderReconciliationRepository = {
     processingToken: string;
   }) => Promise<boolean>;
   markSucceeded: (input: {
+    cancelledProviderSubscriptionId?: string | null;
     completedAt: Date;
     reconciliationId: string;
     processingToken: string;

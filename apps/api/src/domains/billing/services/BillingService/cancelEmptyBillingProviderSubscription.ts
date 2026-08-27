@@ -37,14 +37,24 @@ export async function cancelEmptyBillingProviderSubscription(
     account.billingCustomer.providerCustomerId,
   );
   await gateway.cancelSubscription(providerSubscriptionId);
-  await repository.saveProviderSubscription({
+  const savedSubscription = await repository.saveProviderSubscription({
     currentPeriodEnd: null,
     currentPeriodStart: account.subscription.currentPeriodStart,
+    expectedProviderSubscriptionId: providerSubscriptionId,
     provider: "asaas",
     providerSubscriptionId: null,
     status: "active",
+    storeId: context.storeId as never,
     subscriptionId: account.subscription.id,
+    tenantId: context.tenantId as never,
   });
+  if (!savedSubscription) {
+    throw new BillingProviderSyncError(
+      "provider_subscription_cancellation_reconciliation_required",
+      "The provider recurrence was cancelled, but local subscription identity changed and requires reconciliation.",
+      409,
+    );
+  }
   await context.audit.record({
     action: "billing.provider_subscription.sync",
     actor: context.actor,

@@ -2,6 +2,7 @@ import type { AuditEvent } from "@lojaveiculosv2/audit";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
+import { currentBillingCatalog } from "../../../domains/billing/catalog/currentBillingCatalog.js";
 import { createMemoryBillingPlanHireRepository } from "../../billing/adapters/memory/billingPlanHireRepository.js";
 import { createMemoryBillingProviderRepository } from "../../billing/adapters/memory/billingProviderRepository.js";
 import { createMemoryBillingRepository } from "../../billing/adapters/memory/billingRepository.js";
@@ -71,10 +72,10 @@ describe("agency controller", () => {
     expect(createResponse.status).toBe(201);
     const hire = (await createResponse.json()) as { id: string };
     expect(hire).toMatchObject({
-      phase: "checkout_created",
+      phase: "payment_pending",
       planSnapshot: { code: "operacao" },
       quotedCents: 39700,
-      status: "checkout_created",
+      status: "payment_pending",
       storeId,
       tenantId,
     });
@@ -85,9 +86,56 @@ describe("agency controller", () => {
     expect(pollResponse.status).toBe(200);
     await expect(pollResponse.json()).resolves.toMatchObject({ id: hire.id });
   });
+
+  it("does not expose Escala quote approval to agency accounts", async () => {
+    const app = createTestApp(createAudit());
+
+    const response = await app.request(
+      `/api/v1/agency/tenants/${tenantId}/stores/${storeId}/billing/plan-quotes/quote_1/approve`,
+      {
+        body: JSON.stringify({
+          expiresAt: "2026-09-30T00:00:00.000Z",
+          quotedCents: 89700,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("denies the platform approval route to a common agency account", async () => {
+    const app = createTestApp(createAudit());
+    const quote = await requestEscalaQuote(app);
+
+    const response = await approveEscalaQuote(app, quote.id);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "AUTHORIZATION_DENIED",
+    });
+  });
+
+  it("approves an Escala quote through the platform-admin route", async () => {
+    const app = createTestApp(createAudit(), true);
+    const quote = await requestEscalaQuote(app);
+
+    const response = await approveEscalaQuote(app, quote.id);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      id: quote.id,
+      quotedCents: 89700,
+      status: "approved",
+    });
+  });
 });
 
-function createTestApp(audit: ReturnType<typeof createAudit>) {
+function createTestApp(
+  audit: ReturnType<typeof createAudit>,
+  platformAdmin = false,
+) {
   const app = new Hono();
   app.route(
     "/api/v1/agency",
@@ -99,18 +147,21 @@ function createTestApp(audit: ReturnType<typeof createAudit>) {
           emailVerified: true,
           name: "Seed Agency",
         },
-        serviceContext: createServiceContext({
-          actor: {
-            externalId: "clerk_seed_agency",
-            id: "user_agency",
-            kind: "user",
-          },
-          audit,
-          billingManagedBy: "agency",
-          permissions: ["billing.manage", "store.manage"],
-          request: { requestId: "request_1" },
-          tenantId: scope.tenantId,
-        }),
+        serviceContext: {
+          ...createServiceContext({
+            actor: {
+              externalId: "clerk_seed_agency",
+              id: "user_agency",
+              kind: "user",
+            },
+            audit,
+            billingManagedBy: "agency",
+            permissions: ["billing.manage", "store.manage"],
+            request: { requestId: "request_1" },
+            tenantId: scope.tenantId,
+          }),
+          platformAdmin,
+        },
       }),
       services: createBillingServices({
         ports: {
@@ -129,6 +180,37 @@ function createTestApp(audit: ReturnType<typeof createAudit>) {
     }),
   );
   return app;
+}
+
+async function requestEscalaQuote(app: Hono) {
+  const escala = currentBillingCatalog.plans.find(
+    (plan) => plan.code === "escala",
+  );
+  if (!escala) throw new Error("Escala test plan is unavailable.");
+  const response = await app.request(
+    `/api/v1/agency/tenants/${tenantId}/stores/${storeId}/billing/plan-quotes`,
+    {
+      body: JSON.stringify({ planId: escala.id }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  expect(response.status).toBe(201);
+  return (await response.json()) as { id: string };
+}
+
+function approveEscalaQuote(app: Hono, quoteId: string) {
+  return app.request(
+    `/api/v1/agency/platform/tenants/${tenantId}/stores/${storeId}/billing/plan-quotes/${quoteId}/approve`,
+    {
+      body: JSON.stringify({
+        expiresAt: "2026-09-30T00:00:00.000Z",
+        quotedCents: 89700,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "PATCH",
+    },
+  );
 }
 
 function createAudit() {

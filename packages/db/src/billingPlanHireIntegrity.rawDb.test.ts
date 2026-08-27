@@ -13,6 +13,7 @@ const migrations = [
   "0073_billing_lifecycle_monotonicity.sql",
   "0074_billing_product_event_delivery.sql",
   "0077_billing_product_event_requeue.sql",
+  "0078_store_scoped_billing_subscriptions.sql",
 ].map((name) =>
   readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
 );
@@ -38,7 +39,7 @@ type Scope = {
 
 describe.skipIf(!runRawDb)("billing plan hire integrity on Postgres", () => {
   beforeAll(async () => {
-    const sql = openDatabase();
+    const sql = openDatabase(1);
     try {
       const [overlapConstraint] = await sql<{ exists: boolean }[]>`
         SELECT EXISTS (
@@ -49,12 +50,51 @@ describe.skipIf(!runRawDb)("billing plan hire integrity on Postgres", () => {
       if (!overlapConstraint?.exists) {
         await sql.unsafe(migrations[0]!);
       }
-      await sql.unsafe(migrations[1]!);
-      await sql.unsafe(migrations[2]!);
-      await sql.unsafe(migrations[3]!);
-      await sql.unsafe(migrations[4]!);
-      await sql.unsafe(migrations[5]!);
-      await sql.unsafe(migrations[6]!);
+      const [markers] = await sql<
+        Array<{ prerequisitesComplete: boolean; storeScopeComplete: boolean }>
+      >`
+        SELECT
+          EXISTS (
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'billing_provider_reconciliations_target_shape_check'
+          ) AS "storeScopeComplete",
+          (
+            EXISTS (
+              SELECT 1 FROM pg_constraint
+              WHERE conname = 'crm_channel_connections_zapi_instance_redacted_check'
+            ) AND EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = current_schema()
+                AND table_name = 'billing_plan_hires'
+                AND column_name = 'effective_at'
+            ) AND EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = current_schema()
+                AND table_name = 'billing_product_event_outbox'
+                AND column_name = 'next_attempt_at'
+            ) AND EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = current_schema()
+                AND table_name = 'billing_product_event_outbox'
+                AND column_name = 'requeue_count'
+            )
+          ) AS "prerequisitesComplete"
+      `;
+      if (markers?.storeScopeComplete && !markers.prerequisitesComplete) {
+        throw new Error(
+          "Store-scoped billing marker exists without 0071-0077 prerequisites.",
+        );
+      }
+      if (!markers?.storeScopeComplete) {
+        await sql.unsafe(migrations[1]!);
+        await sql.unsafe(migrations[2]!);
+        await sql.unsafe(migrations[3]!);
+        await sql.unsafe(migrations[4]!);
+        await sql.unsafe(migrations[5]!);
+        await sql.unsafe(migrations[6]!);
+      }
+      await sql.unsafe(migrations[7]!);
+      await sql.unsafe("COMMIT");
     } finally {
       await sql.end();
     }
@@ -246,14 +286,123 @@ describe.skipIf(!runRawDb)("billing plan hire integrity on Postgres", () => {
       await sql.end();
     }
   });
+
+  it("isolates provider recurrence state between stores in the same tenant", async () => {
+    const sql = openDatabase();
+    const tenantId = randomUUID();
+    const customerId = randomUUID();
+    const firstStoreId = randomUUID();
+    const secondStoreId = randomUUID();
+    const planId = randomUUID();
+    const firstSubscriptionId = randomUUID();
+    const secondSubscriptionId = randomUUID();
+
+    try {
+      await sql`
+        INSERT INTO tenants (id, legal_name, slug, trading_name)
+        VALUES (${tenantId}, 'Shared tenant', ${`shared-${tenantId}`}, 'Shared tenant')
+      `;
+      await sql`
+        INSERT INTO stores (id, public_slug, tenant_id, trading_name)
+        VALUES
+          (${firstStoreId}, ${`first-${firstStoreId}`}, ${tenantId}, 'First store'),
+          (${secondStoreId}, ${`second-${secondStoreId}`}, ${tenantId}, 'Second store')
+      `;
+      await sql`
+        INSERT INTO billing_customers (id, name, provider, tenant_id)
+        VALUES (${customerId}, 'Shared payer', 'asaas', ${tenantId})
+      `;
+      await sql`
+        INSERT INTO plans (
+          id, catalog_version, code, limits, monthly_price_cents, name, status
+        ) VALUES (
+          ${planId}, 'store-scope-test', ${`scope-${planId}`}, '{}', 0,
+          'Store scope test', 'active'
+        )
+      `;
+      await sql`
+        INSERT INTO subscriptions (
+          id, billing_customer_id, current_period_end, current_period_start,
+          provider, provider_subscription_id, status, store_id, tenant_id
+        ) VALUES
+          (
+            ${firstSubscriptionId}, ${customerId}, '2026-09-01', '2026-08-01',
+            'asaas', 'asaas-first-store', 'active', ${firstStoreId}, ${tenantId}
+          ),
+          (
+            ${secondSubscriptionId}, ${customerId}, '2026-09-15', '2026-08-15',
+            'asaas', 'asaas-second-store', 'past_due', ${secondStoreId}, ${tenantId}
+          )
+      `;
+
+      await sql`
+        UPDATE subscriptions
+        SET status = 'cancelled', current_period_end = '2026-08-31'
+        WHERE id = ${firstSubscriptionId}
+          AND tenant_id = ${tenantId}
+          AND store_id = ${firstStoreId}
+      `;
+      const rows = await sql<
+        Array<{
+          currentPeriodEnd: Date | null;
+          providerSubscriptionId: string | null;
+          status: string;
+          storeId: string;
+        }>
+      >`
+        SELECT
+          current_period_end AS "currentPeriodEnd",
+          provider_subscription_id AS "providerSubscriptionId",
+          status,
+          store_id AS "storeId"
+        FROM subscriptions
+        WHERE tenant_id = ${tenantId}
+        ORDER BY store_id
+      `;
+
+      expect(rows).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            providerSubscriptionId: "asaas-first-store",
+            status: "cancelled",
+            storeId: firstStoreId,
+          }),
+          expect.objectContaining({
+            providerSubscriptionId: "asaas-second-store",
+            status: "past_due",
+            storeId: secondStoreId,
+          }),
+        ]),
+      );
+      await expect(
+        sql`
+          INSERT INTO subscription_items (
+            item_type, plan_id, store_id, subscription_id, tenant_id,
+            unit_amount_cents
+          )
+          VALUES (
+            'plan', ${planId}, ${secondStoreId}, ${firstSubscriptionId},
+            ${tenantId}, 0
+          )
+        `,
+      ).rejects.toMatchObject({ code: "23503" });
+    } finally {
+      await sql`DELETE FROM subscriptions WHERE id IN (${firstSubscriptionId}, ${secondSubscriptionId})`;
+      await sql`DELETE FROM billing_customers WHERE id = ${customerId}`;
+      await sql`DELETE FROM plans WHERE id = ${planId}`;
+      await sql`DELETE FROM stores WHERE id IN (${firstStoreId}, ${secondStoreId})`;
+      await sql`DELETE FROM tenants WHERE id = ${tenantId}`;
+      await sql.end();
+    }
+  });
 });
 
-function openDatabase() {
+function openDatabase(max = 4) {
   expect(
     process.env.DATABASE_URL,
     "DATABASE_URL is required for raw billing plan hire validation",
   ).toBeTruthy();
-  return postgres(process.env.DATABASE_URL ?? "", { max: 4, prepare: false });
+  return postgres(process.env.DATABASE_URL ?? "", { max, prepare: false });
 }
 
 async function createFixture(
@@ -346,8 +495,12 @@ async function insertSubscription(
   input: { id: string; scope: Scope },
 ) {
   await sql`
-    INSERT INTO subscriptions (id, billing_customer_id, status, tenant_id)
-    VALUES (${input.id}, ${input.scope.customerId}, 'active', ${input.scope.tenantId})
+    INSERT INTO subscriptions (
+      id, billing_customer_id, status, store_id, tenant_id
+    ) VALUES (
+      ${input.id}, ${input.scope.customerId}, 'active',
+      ${input.scope.storeId}, ${input.scope.tenantId}
+    )
   `;
 }
 

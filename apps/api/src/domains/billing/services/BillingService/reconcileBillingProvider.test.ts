@@ -88,6 +88,25 @@ describe("reconcileNextBillingProvider", () => {
       }),
     );
   });
+
+  it("retries reconciliation when provider deletion succeeds but local identity CAS misses", async () => {
+    const fixture = createFixture("catalog_migration", []);
+    fixture.billingProviderRepository.saveProviderSubscription = vi.fn(
+      async () => null,
+    );
+
+    const result = await reconcileNextBillingProvider(
+      workerContext(),
+      { now, processingToken: "claim_1" },
+      fixture.ports,
+    );
+
+    expect(result.status).toBe("retry");
+    expect(fixture.repository.markSucceeded).not.toHaveBeenCalled();
+    const retryInput = vi.mocked(fixture.repository.markRetry).mock
+      .calls[0]?.[0];
+    expect(retryInput?.errorMessage).toContain("requires reconciliation");
+  });
 });
 
 const now = new Date("2026-08-20T12:00:00.000Z");
@@ -103,6 +122,8 @@ function createFixture(
     kind,
     nextDueAt,
     processingToken: "claim_1",
+    targetProviderSubscriptionId: "sub_asaas",
+    storeId: "store_1" as never,
     subscriptionId: "subscription_1",
     tenantId: "tenant_1" as never,
   };
@@ -181,7 +202,16 @@ function providerRepository(
         },
       };
     },
-    saveProviderCustomer: vi.fn(async () => null),
+    saveProviderCustomer: vi.fn<
+      BillingProviderRepository["saveProviderCustomer"]
+    >(async (input) => ({
+      documentNumber: null,
+      email: null,
+      id: input.billingCustomerId,
+      name: "Tenant",
+      provider: input.provider,
+      providerCustomerId: input.providerCustomerId,
+    })),
     saveProviderSubscription: vi.fn(
       async (
         input: Parameters<

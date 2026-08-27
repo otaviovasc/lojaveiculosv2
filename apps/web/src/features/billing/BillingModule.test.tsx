@@ -40,6 +40,15 @@ describe("BillingModule v3", () => {
     for (const name of ["Essencial", "Operação", "Gestão", "Escala"]) {
       expect(planRadio(name)).toBeVisible();
     }
+    expect(planRadio("Essencial")).toHaveClass(
+      "bg-blue-500/25",
+      "border-blue-500",
+    );
+    fireEvent.click(planRadio("Operação"));
+    expect(planRadio("Essencial")).toHaveClass(
+      "bg-blue-500/10",
+      "border-blue-500/30",
+    );
     expect(
       planOptions.some(
         (option) => option.querySelector("strong")?.textContent === "Free",

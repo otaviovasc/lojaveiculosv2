@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import * as auditSchema from "@lojaveiculosv2/audit-db";
 import * as productSchema from "@lojaveiculosv2/db";
-import { and, asc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { reconcileNextBillingProvider } from "../domains/billing/services/BillingService/reconcileBillingProvider.js";
-import { processBillingProviderWebhook } from "../domains/billing/services/BillingService/processBillingProviderWebhook.js";
 import { createAsaasPaymentProviderGateway } from "../infrastructure/billing/asaasPaymentProviderGateway.js";
 import {
   createDrizzleAuditSink,
   type DrizzleAuditSinkClient,
 } from "../infrastructure/db/audit/drizzleAuditSink.js";
 import { createDrizzleBillingProviderReconciliationRepository } from "../infrastructure/db/billing/drizzleBillingProviderReconciliation.js";
+import { createDrizzleBillingAuditOutbox } from "../infrastructure/db/billing/drizzleBillingAuditOutbox.js";
 import { createDrizzleBillingProviderRepository } from "../infrastructure/db/billing/drizzleBillingProviderRepository.js";
 import { createDrizzleBillingWebhookRepository } from "../infrastructure/db/billing/drizzleBillingWebhookRepository.js";
 import { fallbackExpiredPastDueSubscriptions } from "../infrastructure/db/billing/drizzleBillingPackagingCutover.js";
@@ -24,7 +24,17 @@ import {
   createConsoleServiceLogger,
   createServiceContext,
 } from "../shared/serviceContext.js";
-import { billingMonitoringSnapshot } from "./billingProviderReconciliationMonitoring.js";
+import {
+  billingMonitoringNeedsAttention,
+  billingMonitoringSnapshot,
+} from "./billingProviderReconciliationMonitoring.js";
+import { replayPendingProviderEvents } from "./billingProviderEventReplay.js";
+import { deliverBillingAuditOutbox } from "./billingAuditOutboxDelivery.js";
+
+export {
+  replayPendingProviderEvents,
+  requeueExhaustedProviderEvent,
+} from "./billingProviderEventReplay.js";
 
 export { billingMonitoringSnapshot } from "./billingProviderReconciliationMonitoring.js";
 
@@ -79,20 +89,41 @@ async function main() {
       ports,
     });
     const freeFallbacks = await fallbackExpiredPastDueSubscriptions(db);
+    const auditOutbox = audit
+      ? await deliverBillingAuditOutbox({
+          audit: audit.sink,
+          batchSize: 50,
+          context: createServiceContext({
+            actor: { id: "billing_audit_outbox", kind: "system" },
+            audit: audit.sink,
+            logger,
+            permissions: ["billing.manage"],
+            request: { requestId: `billing_audit_${randomUUID()}` },
+            source: {
+              component: "billing-audit-outbox",
+              service: "api",
+            },
+          }),
+          leaseDurationMs: 30_000,
+          maxAttempts: 8,
+          repository: createDrizzleBillingAuditOutbox(db),
+        })
+      : { claimed: 0, deadLettered: 0, delivered: 0, retried: 0 };
+    if (!audit) {
+      logger.error("alert.billing_audit_outbox.delivery_disabled", {
+        reason: "audit_database_not_configured",
+      });
+    }
     const monitoring = await billingMonitoringSnapshot(db);
     logger.info("job.billing_provider_reconciliation.completed", {
       freeFallbacks,
+      auditOutbox,
       ...monitoring,
       processed,
       replayedProviderEvents,
     });
     logger.info("metric.billing.lifecycle", monitoring);
-    if (
-      monitoring.activationOrProjectionFailureCount > 0 ||
-      monitoring.missingContractCount > 0 ||
-      monitoring.oldestPendingReconciliationAgeSeconds > 900 ||
-      monitoring.reconciliationFailedHireCount > 0
-    ) {
+    if (billingMonitoringNeedsAttention(monitoring)) {
       logger.error(
         "alert.billing_reconciliation.attention_required",
         monitoring,
@@ -102,62 +133,6 @@ async function main() {
     await sql.end();
     await audit?.close();
   }
-}
-
-async function replayPendingProviderEvents(input: {
-  audit?: ReturnType<typeof createDrizzleAuditSink>;
-  db: DrizzleBillingClient;
-  environment: string;
-  ports: Parameters<typeof processBillingProviderWebhook>[2];
-}) {
-  const webhookToken = process.env.ASAAS_WEBHOOK_SECRET ?? null;
-  if (!webhookToken) return 0;
-  const events = await input.db
-    .select({
-      id: productSchema.providerEvents.id,
-      payload: productSchema.providerEvents.payload,
-    })
-    .from(productSchema.providerEvents)
-    .where(
-      and(
-        eq(productSchema.providerEvents.provider, "asaas"),
-        eq(productSchema.providerEvents.environment, input.environment),
-        eq(productSchema.providerEvents.status, "pending_reconciliation"),
-      ),
-    )
-    .orderBy(asc(productSchema.providerEvents.createdAt))
-    .limit(50);
-  let replayed = 0;
-  for (const event of events) {
-    try {
-      const result = await processBillingProviderWebhook(
-        createServiceContext({
-          actor: { id: "billing_provider_event_replay", kind: "system" },
-          ...(input.audit ? { audit: input.audit } : {}),
-          logger,
-          permissions: ["billing.webhook.ingest"],
-          request: { requestId: `billing_event_replay_${randomUUID()}` },
-          source: {
-            component: "billing-provider-event-replay",
-            service: "api",
-          },
-        }),
-        {
-          payload: event.payload as Record<string, unknown>,
-          provider: "asaas",
-          webhookToken,
-        },
-        input.ports,
-      );
-      if (result.status === "processed") replayed += 1;
-    } catch (error) {
-      logger.error("job.billing_provider_event_replay.failed", {
-        errorName: error instanceof Error ? error.name : "Error",
-        providerEventRecordId: event.id,
-      });
-    }
-  }
-  return replayed;
 }
 
 function createAuditSink() {
@@ -177,10 +152,19 @@ function requireEnv(name: string) {
   return value;
 }
 
-void main().catch((error) => {
-  logger.error("job.billing_provider_reconciliation.failed", {
-    errorMessage: error instanceof Error ? error.message : String(error),
-    errorName: error instanceof Error ? error.name : "Error",
+if (isDirectExecution()) {
+  void main().catch((error) => {
+    logger.error("job.billing_provider_reconciliation.failed", {
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorName: error instanceof Error ? error.name : "Error",
+    });
+    process.exitCode = 1;
   });
-  process.exitCode = 1;
-});
+}
+
+function isDirectExecution() {
+  const entrypoint = process.argv[1];
+  return Boolean(
+    entrypoint && import.meta.url === pathToFileURL(entrypoint).href,
+  );
+}

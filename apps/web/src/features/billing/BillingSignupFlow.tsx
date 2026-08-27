@@ -387,14 +387,12 @@ function previousCatalogPlan(plan: BillingPlan, plans: readonly BillingPlan[]) {
 
 const planThemes = {
   base: {
-    cardDefault:
-      "bg-accent-soft/30 border-accent/30 hover:border-accent-strong/60",
+    cardDefault: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500/60",
     cardSelected:
-      "bg-accent-soft/50 border-2 border-accent-strong ring-2 ring-accent-strong/20",
-    checkBg:
-      "bg-accent-strong text-accent-strong-foreground border-accent-strong",
+      "bg-blue-500/25 border-2 border-blue-500 ring-2 ring-blue-500/20",
+    checkBg: "bg-blue-500 text-white border-blue-500",
     icon: Sparkles,
-    iconColor: "text-accent-strong",
+    iconColor: "text-blue-500",
   },
   management: {
     cardDefault:

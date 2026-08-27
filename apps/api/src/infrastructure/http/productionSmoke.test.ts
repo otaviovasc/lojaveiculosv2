@@ -5,7 +5,10 @@ import { createSpedyHttpFiscalProviderGateway } from "../fiscal/spedyHttpFiscalP
 import { createServiceContext } from "../../shared/serviceContext.js";
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
 import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
+import { createMemoryBillingPlanHireRepository } from "../../features/billing/adapters/memory/billingPlanHireRepository.js";
+import { createMemoryBillingProviderRepository } from "../../features/billing/adapters/memory/billingProviderRepository.js";
 import { createMemoryBillingRepository } from "../../features/billing/adapters/memory/billingRepository.js";
+import { createMemoryBillingWebhookRepository } from "../../features/billing/adapters/memory/billingWebhookRepository.js";
 import { createFiscalFeature } from "../../features/fiscal/controllers/fiscal.controller.js";
 import { createFiscalServices } from "../../features/fiscal/controllers/fiscalServices.js";
 import { createMemoryFiscalRepository } from "../../features/fiscal/adapters/memory/fiscalRepository.js";
@@ -31,7 +34,10 @@ describe("production smoke contracts", () => {
           createUserContext(["billing.manage"], audit),
         services: createBillingServices({
           ports: {
+            billingPlanHireRepository: createMemoryBillingPlanHireRepository(),
+            billingProviderRepository: createMemoryBillingProviderRepository(),
             billingRepository: createMemoryBillingRepository(),
+            billingWebhookRepository: createMemoryBillingWebhookRepository(),
             paymentProviderGateway: createAsaasPaymentProviderGateway({
               ASAAS_API_KEY: "token",
               ASAAS_API_URL: "https://sandbox.asaas.com/api/v3",

@@ -8,8 +8,8 @@ import {
   requestBillingPlanQuoteSchema,
 } from "../../billing/controllers/billing.controller.schemas.js";
 import {
-  billingServices,
   type BillingServices,
+  unavailableBillingServices,
 } from "../../billing/controllers/billingServices.js";
 import {
   agencyStoreBillingParamsSchema,
@@ -31,7 +31,7 @@ export type CreateAgencyFeatureOptions = {
 
 export function createAgencyFeature(options: CreateAgencyFeatureOptions = {}) {
   const feature = new Hono();
-  const services = options.services ?? billingServices;
+  const services = options.services ?? unavailableBillingServices;
   const accountContextFactory =
     options.accountContextFactory ??
     ((context, scope) =>
@@ -133,19 +133,19 @@ export function createAgencyFeature(options: CreateAgencyFeatureOptions = {}) {
   );
 
   feature.patch(
-    "/tenants/:tenantId/stores/:storeId/billing/plan-quotes/:quoteId/approve",
+    "/platform/tenants/:tenantId/stores/:storeId/billing/plan-quotes/:quoteId/approve",
     async (context) =>
       handleBilling(context, async () => {
         const params = parseParams(context, agencyStoreBillingParamsSchema);
         const input = await parseJson(context, approveBillingPlanQuoteSchema);
-        const agencyContext = await createAgencyContext(
+        const platformContext = await createAgencyContext(
           context,
           accountContextFactory,
           params.tenantId as TenantId,
         );
         return context.json(
           await services.approvePlanQuote(
-            { ...agencyContext, storeId: params.storeId as never },
+            { ...platformContext, storeId: params.storeId as never },
             {
               expiresAt: new Date(input.expiresAt),
               quoteId: context.req.param("quoteId"),

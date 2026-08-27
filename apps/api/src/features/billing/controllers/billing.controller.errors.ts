@@ -6,6 +6,7 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
+  BillingCompositionError,
   BillingScopeError,
   BillingStoreNotFoundError,
 } from "../../../domains/billing/services/BillingService/serviceSupport.js";
@@ -13,6 +14,12 @@ import {
   BillingWebhookAuthenticationError,
   BillingWebhookValidationError,
 } from "../../../domains/billing/readModels/billingWebhookErrors.js";
+import { BillingWebhookRateLimiterUnavailableError } from "../../../domains/billing/ports/billingWebhookRateLimiter.js";
+import {
+  BillingWebhookPayloadTooLargeError,
+  BillingWebhookRateLimitedError,
+  BillingWebhookStructureError,
+} from "./billingWebhookHttpSecurity.js";
 import { BillingProviderSyncError } from "../../../domains/billing/services/BillingService/syncBillingProviderSubscription.js";
 import { BillingPlanHireRepositoryError } from "../../../domains/billing/ports/billingPlanHireRepository.js";
 import { BillingPlanHireError } from "../../../domains/billing/services/BillingService/createBillingPlanHire.js";
@@ -31,6 +38,14 @@ export async function handleBilling(
   try {
     return await action();
   } catch (error) {
+    if (error instanceof BillingCompositionError) {
+      return jsonApiError(context, {
+        code: "BILLING_SERVICE_UNAVAILABLE",
+        error,
+        message: error.message,
+        status: 503,
+      });
+    }
     if (error instanceof BillingStoreNotFoundError) {
       return jsonApiError(context, {
         code: "BILLING_STORE_NOT_FOUND",
@@ -49,6 +64,40 @@ export async function handleBilling(
         error,
         message: error.message,
         status: 400,
+      });
+    }
+    if (error instanceof BillingWebhookPayloadTooLargeError) {
+      return jsonApiError(context, {
+        code: "BILLING_WEBHOOK_PAYLOAD_TOO_LARGE",
+        error,
+        message: error.message,
+        status: 413,
+      });
+    }
+    if (error instanceof BillingWebhookStructureError) {
+      return jsonApiError(context, {
+        code: "BILLING_WEBHOOK_INVALID",
+        error,
+        message: error.message,
+        status: 422,
+      });
+    }
+    if (error instanceof BillingWebhookRateLimitedError) {
+      context.header("Retry-After", String(error.retryAfterSeconds));
+      return jsonApiError(context, {
+        code: "BILLING_WEBHOOK_RATE_LIMITED",
+        details: { retryAfterSeconds: error.retryAfterSeconds },
+        error,
+        message: error.message,
+        status: 429,
+      });
+    }
+    if (error instanceof BillingWebhookRateLimiterUnavailableError) {
+      return jsonApiError(context, {
+        code: "BILLING_WEBHOOK_SECURITY_UNAVAILABLE",
+        error,
+        message: "Billing webhook security is unavailable.",
+        status: 503,
       });
     }
     if (
@@ -74,7 +123,7 @@ export async function handleBilling(
         code: "BILLING_WEBHOOK_AUTHENTICATION_FAILED",
         error,
         message: error.message,
-        status: 403,
+        status: 401,
       });
     }
     if (error instanceof BillingProviderSyncError) {

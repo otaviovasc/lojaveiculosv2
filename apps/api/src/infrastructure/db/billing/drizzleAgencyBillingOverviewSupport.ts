@@ -18,11 +18,8 @@ import {
   createEntitlementMatrix,
   isEffectiveEntitlement,
 } from "../../../domains/billing/readModels/billingOverviewModel.js";
-import {
-  findTenantSubscription,
-  listAddons,
-  listPlans,
-} from "./drizzleBillingCatalogSupport.js";
+import { listAddons, listPlans } from "./drizzleBillingCatalogSupport.js";
+import { listTenantStoreSubscriptions } from "./drizzleBillingSubscriptionReads.js";
 import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
 import {
   getFinancialSummary,
@@ -57,7 +54,7 @@ export async function getTenantOverview(
     billingPlans,
     storeRows,
     entitlementRows,
-    subscription,
+    storeSubscriptions,
     events,
   ] = await Promise.all([
     listAddons(db, catalogVersion),
@@ -68,31 +65,51 @@ export async function getTenantOverview(
       .from(storeEntitlements)
       .where(eq(storeEntitlements.tenantId, input.tenantId))
       .limit(500),
-    findTenantSubscription(db, input),
+    listTenantStoreSubscriptions(db, input),
     listTenantEntitlementEvents(db, input),
   ]);
-  const [chargeables, financialSummary, vehicleRows] = await Promise.all([
-    listChargeables(db, input, billingPlans, subscription),
-    getFinancialSummary(db, input, subscription),
-    db
-      .select({ storeId: vehicleListings.storeId })
-      .from(vehicleListings)
-      .where(
-        and(
-          eq(vehicleListings.tenantId, input.tenantId),
-          eq(vehicleListings.isDeleted, false),
-          isNull(vehicleListings.deletedAt),
+  const [chargeableGroups, tenantFinancialSummary, vehicleRows] =
+    await Promise.all([
+      Promise.all(
+        storeSubscriptions.map(({ subscription }) =>
+          listChargeables(db, input, billingPlans, subscription),
         ),
-      )
-      .limit(10_000),
-  ]);
+      ),
+      getFinancialSummary(db, input, null),
+      db
+        .select({ storeId: vehicleListings.storeId })
+        .from(vehicleListings)
+        .where(
+          and(
+            eq(vehicleListings.tenantId, input.tenantId),
+            eq(vehicleListings.isDeleted, false),
+            isNull(vehicleListings.deletedAt),
+          ),
+        )
+        .limit(10_000),
+    ]);
+  const chargeables = chargeableGroups.flat();
+  const financialSummary = {
+    ...tenantFinancialSummary,
+    monthlyRecurringCents: chargeables.reduce(
+      (sum, item) => sum + item.fullAmountCents,
+      0,
+    ),
+  };
+  const subscriptionsByStore = new Map(
+    storeSubscriptions.map((item) => [item.storeId, item.subscription]),
+  );
+  const subscription =
+    storeSubscriptions.length === 1
+      ? (storeSubscriptions[0]?.subscription ?? null)
+      : null;
   const storesOverview = storeRows.map((store) =>
     toAgencyManagedStoreOverview({
       billingPlans,
       chargeables,
       entitlementRows,
       store,
-      subscription,
+      subscription: subscriptionsByStore.get(store.id) ?? null,
       vehicleCount: vehicleRows.filter((row) => row.storeId === store.id)
         .length,
     }),

@@ -24,7 +24,6 @@ import {
 import {
   getBillingProviderRepository,
   requireBillingScope,
-  requireTenantBillingScope,
   type BillingServicePorts,
 } from "./serviceSupport.js";
 import {
@@ -48,16 +47,15 @@ export async function syncBillingProviderSubscription(
   ports: BillingServicePorts,
 ): Promise<BillingProviderSubscriptionSyncResult> {
   assertPermission(context, "billing.manage");
-  const scope = context.storeId
-    ? requireBillingScope(context)
-    : { ...requireTenantBillingScope(context), storeId: null };
+  const scope = requireBillingScope(context);
+  const observationStartedAt = new Date();
   const repository = getBillingProviderRepository(ports);
   const gateway = getPaymentProviderGateway(ports);
   const account = assertSyncableAccount(
     await repository.getProviderAccount({
       billingManagedBy: context.billingManagedBy ?? "store_owner",
       currentActorCanManage: context.permissions.includes("billing.manage"),
-      ...(scope.storeId ? { storeId: scope.storeId } : {}),
+      storeId: scope.storeId,
       tenantId: scope.tenantId,
     }),
     input.cancelWhenEmpty ? { allowEmptyChargePreview: true } : {},
@@ -104,11 +102,19 @@ export async function syncBillingProviderSubscription(
       externalReference: customerExternalReference(scope.tenantId),
       name: account.billingCustomer.name,
     });
-    await repository.saveProviderCustomer({
+    const savedCustomer = await repository.saveProviderCustomer({
       billingCustomerId: account.billingCustomer.id,
       provider: customer.provider,
       providerCustomerId: customer.providerCustomerId,
+      ...scope,
     });
+    if (!savedCustomer) {
+      throw new BillingProviderSyncError(
+        "provider_customer_identity_conflict",
+        "The provider customer identity conflicts with this store account.",
+        409,
+      );
+    }
 
     const providerSubscription = await gateway.syncSubscription({
       billingType,
@@ -123,15 +129,26 @@ export async function syncBillingProviderSubscription(
       valueCents: chargeTotalCents,
     });
     const localStatus = toLocalSubscriptionStatus(providerSubscription);
-    await repository.saveProviderSubscription({
+    const savedSubscription = await repository.saveProviderSubscription({
       currentPeriodEnd: providerSubscription.currentPeriodEnd,
       currentPeriodStart: subscription.currentPeriodStart ?? new Date(),
+      expectedStatus: subscription.status,
+      observationStartedAt,
+      observedAt: new Date(),
       provider: providerSubscription.provider,
       providerSubscriptionId: providerSubscription.providerSubscriptionId,
       status: localStatus,
       subscriptionId: subscription.id,
+      ...scope,
     });
-    if (scope.storeId) {
+    if (!savedSubscription) {
+      throw new BillingProviderSyncError(
+        "provider_subscription_state_changed",
+        "The local subscription changed while provider state was observed and requires reconciliation.",
+        409,
+      );
+    }
+    if (savedSubscription.status === "active") {
       await ports.billingRepository.activateSubscriptionSelection({
         source: "billing_selection",
         storeId: scope.storeId,

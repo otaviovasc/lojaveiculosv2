@@ -99,6 +99,17 @@ describe("createRuntimeAppDependencies", () => {
     expect(ports.publicAppUrl).toBe("http://localhost:5173");
   });
 
+  it("wires plan hiring into DB-backed billing services", () => {
+    const ports = createRuntimeBillingServicePorts(
+      {},
+      {
+        APP_ENV: "local",
+      },
+    );
+
+    expect(ports.billingPlanHireRepository).toBeDefined();
+  });
+
   it("rejects DB-backed app-options creation because the caller cannot close resources", async () => {
     postgresState.clients.length = 0;
 

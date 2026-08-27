@@ -20,7 +20,7 @@ export async function changeBillingPlanAtRenewal(
   scope: ReturnType<typeof requireBillingScope>,
 ): Promise<BillingPlanHireRecord> {
   const transition = prepared.providerTransition;
-  if (!transition?.providerSubscriptionId) {
+  if (!transition) {
     await repository.failHire({
       failureCode: "provider_subscription_identity_missing",
       hireId: prepared.hire.id,
@@ -32,28 +32,27 @@ export async function changeBillingPlanAtRenewal(
     );
   }
 
-  try {
-    if (prepared.hire.checkoutMode === "free") {
-      if (!gateway.cancelSubscription) {
-        throw new BillingPlanHireError(
-          "BILLING_PROVIDER_UNAVAILABLE",
-          "Provider subscription cancellation is unavailable.",
-        );
-      }
-      await gateway.cancelSubscription(transition.providerSubscriptionId);
-      const hire = await repository.scheduleFreeDowngrade({
-        effectiveAt: transition.effectiveAt,
-        hireId: prepared.hire.id,
-        ...scope,
-      });
-      await auditBillingPlanHire(
-        context,
-        hire,
-        "billing.plan_hire.downgrade_scheduled",
-      );
-      return hire;
-    }
+  if (prepared.hire.checkoutMode === "free") {
+    const hire = await repository.scheduleFreeDowngrade({
+      effectiveAt: transition.effectiveAt,
+      hireId: prepared.hire.id,
+      ...scope,
+    });
+    await auditBillingPlanHire(
+      context,
+      hire,
+      "billing.plan_hire.downgrade_scheduled",
+    );
+    return hire;
+  }
 
+  const cancellation = await repository.supersedeFreeDowngrade({
+    effectiveAt: transition.effectiveAt,
+    hireId: prepared.hire.id,
+    ...scope,
+  });
+  let hire: BillingPlanHireRecord;
+  try {
     if (!gateway.syncCustomer || !gateway.syncSubscription) {
       throw new BillingPlanHireError(
         "BILLING_PROVIDER_UNAVAILABLE",
@@ -80,30 +79,56 @@ export async function changeBillingPlanAtRenewal(
         : "PIX",
       customerId: customer.providerCustomerId,
       description: `Plano ${prepared.hire.planSnapshot.name}`,
-      existingProviderSubscriptionId: transition.providerSubscriptionId,
+      ...(canReuseProviderSubscription(cancellation.state) &&
+      transition.providerSubscriptionId
+        ? {
+            existingProviderSubscriptionId: transition.providerSubscriptionId,
+          }
+        : {}),
       externalReference: prepared.hire.id,
       nextDueDate: isoDate(transition.effectiveAt),
       updatePendingPayments: false,
       valueCents: prepared.hire.quotedCents,
     });
-    const hire = await repository.bindRenewal({
+    hire = await repository.bindRenewal({
       effectiveAt: transition.effectiveAt,
       hireId: prepared.hire.id,
       providerSubscriptionId: providerSubscription.providerSubscriptionId,
       ...scope,
     });
-    await auditBillingPlanHire(
-      context,
-      hire,
-      "billing.plan_hire.renewal_change_scheduled",
-    );
-    return hire;
   } catch (error) {
+    let restorationError: unknown;
+    if (cancellation.state === "revoked" && transition.providerSubscriptionId) {
+      try {
+        await repository.restoreFreeDowngradeCancellation({
+          hireId: prepared.hire.id,
+          providerSubscriptionId: transition.providerSubscriptionId,
+          ...scope,
+        });
+      } catch (restoreError) {
+        restorationError = restoreError;
+      }
+    }
     await repository.failHire({
       failureCode: "provider_renewal_change_failed",
       hireId: prepared.hire.id,
       ...scope,
     });
+    if (restorationError) throw restorationError;
     throw error;
   }
+  await auditBillingPlanHire(
+    context,
+    hire,
+    "billing.plan_hire.renewal_change_scheduled",
+  );
+  return hire;
+}
+
+function canReuseProviderSubscription(
+  state: Awaited<
+    ReturnType<BillingPlanHireRepository["supersedeFreeDowngrade"]>
+  >["state"],
+) {
+  return state === "none" || state === "revoked";
 }

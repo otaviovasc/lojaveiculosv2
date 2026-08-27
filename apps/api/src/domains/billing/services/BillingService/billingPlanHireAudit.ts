@@ -1,5 +1,17 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import type { BillingAuditIntent } from "../../ports/billingAuditOutbox.js";
 import type { BillingPlanHireRecord } from "../../ports/billingPlanHireRepository.js";
+
+/** Captures the identity stored atomically with a billing audit outbox event. */
+export function createDurableBillingAuditIntent(
+  context: ServiceContext,
+): BillingAuditIntent {
+  return {
+    actorId: context.actor.id,
+    actorKind: context.actor.kind,
+    requestId: context.requestId,
+  };
+}
 
 export async function auditBillingPlanHire(
   context: ServiceContext,

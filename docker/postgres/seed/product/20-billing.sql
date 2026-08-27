@@ -144,11 +144,12 @@ ON CONFLICT (tenant_id, provider) DO UPDATE SET
 
 INSERT INTO subscriptions (
   id, billing_customer_id, current_period_end, current_period_start,
-  provider, provider_subscription_id, status, tenant_id
+  provider, provider_subscription_id, status, store_id, tenant_id
 )
 VALUES
-  ('14141414-1414-4414-8414-141414141414', '13131313-1313-4313-8313-131313131313', null, date_trunc('day', now()), 'asaas', null, 'active', '77777777-7777-4777-8777-777777777777'),
-  ('25000000-0000-4000-8000-000000000003', '25000000-0000-4000-8000-000000000001', null, date_trunc('day', now()), 'asaas', null, 'active', '77777777-7777-4777-8777-777777777778')
+  ('14141414-1414-4414-8414-141414141414', '13131313-1313-4313-8313-131313131313', null, date_trunc('day', now()), 'asaas', null, 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('14141414-1414-4414-8414-141414141415', '13131313-1313-4313-8313-131313131313', null, date_trunc('day', now()), 'asaas', null, 'active', '66666666-6666-4666-8666-666666666667', '77777777-7777-4777-8777-777777777777'),
+  ('25000000-0000-4000-8000-000000000003', '25000000-0000-4000-8000-000000000001', null, date_trunc('day', now()), 'asaas', null, 'active', '66666666-6666-4666-8666-666666666668', '77777777-7777-4777-8777-777777777778')
 ON CONFLICT (id) DO UPDATE SET
   billing_customer_id = EXCLUDED.billing_customer_id,
   current_period_end = null,
@@ -158,6 +159,7 @@ ON CONFLICT (id) DO UPDATE SET
     EXCLUDED.provider_subscription_id
   ),
   status = 'active',
+  store_id = EXCLUDED.store_id,
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
@@ -190,8 +192,9 @@ SELECT
   1,
   date_trunc('day', now()),
   store.id,
-  CASE store.tenant_id
-    WHEN '77777777-7777-4777-8777-777777777777'::uuid THEN '14141414-1414-4414-8414-141414141414'::uuid
+  CASE store.id
+    WHEN '66666666-6666-4666-8666-666666666666'::uuid THEN '14141414-1414-4414-8414-141414141414'::uuid
+    WHEN '66666666-6666-4666-8666-666666666667'::uuid THEN '14141414-1414-4414-8414-141414141415'::uuid
     ELSE '25000000-0000-4000-8000-000000000003'::uuid
   END,
   store.tenant_id,

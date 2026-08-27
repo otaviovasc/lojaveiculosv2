@@ -31,6 +31,7 @@ export * from "./schema/billingProductEvents.js";
 export * from "./schema/billingEntitlementEvents.js";
 export * from "./schema/billingCheckout.js";
 export * from "./schema/billingQuotaUsage.js";
+export * from "./schema/billingAuditOutbox.js";
 export * from "./schema/bankingReserve.js";
 export * from "./schema/providerEvents.js";
 export * from "./schema/integrations.js";

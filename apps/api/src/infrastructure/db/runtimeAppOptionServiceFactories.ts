@@ -1,4 +1,4 @@
-import type { BillingServicePorts } from "../../domains/billing/services/BillingService/serviceSupport.js";
+import type { BillingServicesPorts } from "../../domains/billing/services/BillingService/serviceSupport.js";
 import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
 import {
   createExternalApiServices,
@@ -13,6 +13,7 @@ import {
   type SettingsServices,
 } from "../../features/settings/controllers/settingsServices.js";
 import { createAsaasPaymentProviderGateway } from "../billing/asaasPaymentProviderGateway.js";
+import { createDrizzleBillingPlanHireRepository } from "./billing/drizzleBillingPlanHireRepository.js";
 import { createDrizzleBillingProviderRepository } from "./billing/drizzleBillingProviderRepository.js";
 import {
   createDrizzleBillingQuotaGuard,
@@ -39,9 +40,12 @@ export { createDrizzleBillingQuotaGuard };
 export function createRuntimeBillingServicePorts(
   db: unknown,
   env: Record<string, string | undefined>,
-): BillingServicePorts {
+): BillingServicesPorts {
   const publicAppUrl = env.PUBLIC_APP_URL?.trim();
   return {
+    billingPlanHireRepository: createDrizzleBillingPlanHireRepository(
+      db as DrizzleBillingClient,
+    ),
     billingProviderRepository: createDrizzleBillingProviderRepository(
       db as DrizzleBillingClient,
     ),
