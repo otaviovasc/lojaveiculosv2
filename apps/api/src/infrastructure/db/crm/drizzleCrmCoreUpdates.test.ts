@@ -12,7 +12,7 @@ const scope = {
   tenantId: "00000000-0000-4000-8000-000000000003",
 };
 
-describe("Drizzle CRM core opportunity updates", () => {
+describe("Drizzle CRM core updates", () => {
   it("merges a partial pipeline update into persisted metadata", async () => {
     const { db, updatedValues } = opportunityDb();
 
@@ -41,6 +41,20 @@ describe("Drizzle CRM core opportunity updates", () => {
     expect(
       opportunityMetadataPatch({ pipelineId: null, pipelineStageId: null }),
     ).toEqual({ pipelineId: null, pipelineStageId: null });
+  });
+
+  it("requires attendance mutations to use the canonical writer", async () => {
+    await expect(
+      updateDrizzleCrmCore({} as DrizzleCrmCoreClient, {
+        ...scope,
+        expectedRevision: 1,
+        id: "conversation-1",
+        patch: { attendanceState: "human_active" },
+        resource: "conversations",
+      }),
+    ).rejects.toThrow(
+      "CRM attendance mutations must use the canonical conversation writer.",
+    );
   });
 });
 

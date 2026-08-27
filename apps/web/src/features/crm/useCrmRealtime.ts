@@ -25,6 +25,7 @@ type RealtimeOptions = {
   ) => void;
   onStatus?: (status: CrmRealtimeStatus) => void;
   onVisibleInboundMessage?: (cycle: CrmConversationCycle) => void;
+  reconcileSessions?: () => Promise<unknown>;
   refreshConnections: () => Promise<void>;
   refreshSessionCounts: () => Promise<void>;
   removeSession: (cycleId: CrmConversationCycleId) => void;
@@ -44,6 +45,7 @@ export function useCrmRealtime({
   mergeCycles,
   onStatus,
   onVisibleInboundMessage,
+  reconcileSessions,
   refreshConnections,
   refreshSessionCounts,
   removeSession,
@@ -59,6 +61,7 @@ export function useCrmRealtime({
     mergeCycles,
     onStatus,
     onVisibleInboundMessage,
+    reconcileSessions,
     refreshConnections,
     refreshSessionCounts,
     removeSession,
@@ -72,6 +75,7 @@ export function useCrmRealtime({
     mergeCycles,
     onStatus,
     onVisibleInboundMessage,
+    reconcileSessions,
     refreshConnections,
     refreshSessionCounts,
     removeSession,
@@ -89,17 +93,17 @@ export function useCrmRealtime({
     }
     publishStatus("connecting");
     let active = true;
-    let streamEstablished = false;
+    let hasConnected = false;
     let degradedTimer: ReturnType<typeof setTimeout> | null = null;
     const clearDegradedTimer = () => {
       if (degradedTimer) globalThis.clearTimeout(degradedTimer);
       degradedTimer = null;
     };
     const scheduleDegradedStatus = () => {
-      if (degradedTimer || !streamEstablished) return;
+      if (degradedTimer) return;
       degradedTimer = globalThis.setTimeout(() => {
         degradedTimer = null;
-        if (active && streamEstablished) publishStatus("degraded");
+        if (active) publishStatus("degraded");
       }, 10_000);
     };
     const handleRealtimeEvent = (event: CrmRealtimeEvent) => {
@@ -180,26 +184,25 @@ export function useCrmRealtime({
       onError: (caught) => {
         void caught;
         if (!active) return;
-        if (streamEstablished) {
-          scheduleDegradedStatus();
-          return;
-        }
-        publishStatus("degraded");
+        publishStatus("connecting");
+        scheduleDegradedStatus();
       },
       onEvent: handleRealtimeEvent,
       onStatus: (nextStatus) => {
         if (!active) return;
         if (nextStatus === "connected") {
-          streamEstablished = true;
           clearDegradedTimer();
           publishStatus("connected");
+          if (hasConnected) {
+            void latestHandlersRef.current
+              .reconcileSessions?.()
+              .catch(() => undefined);
+          }
+          hasConnected = true;
           return;
         }
-        if (streamEstablished) {
-          scheduleDegradedStatus();
-          return;
-        }
-        publishStatus(nextStatus);
+        publishStatus("connecting");
+        scheduleDegradedStatus();
       },
     });
     return () => {

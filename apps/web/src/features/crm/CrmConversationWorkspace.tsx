@@ -163,9 +163,32 @@ export function CrmConversationWorkspace({
     setMobilePane(routeCycleId ? "chat" : "list");
   }, [routeCycleId]);
 
+  useEffect(() => {
+    if (!activeSession || !inbox.canSendText || detailsOpen) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const activeElement = document.activeElement as HTMLElement | null;
+      const focusMayMove =
+        !activeElement ||
+        activeElement === document.body ||
+        activeElement === shellRef.current ||
+        Boolean(activeElement.closest(".crm-list"));
+      if (focusMayMove) composerRef.current?.focusInput();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeSession?.id, detailsOpen, inbox.canSendText, routeCycleId]);
+
   const focusPane = (pane: "chat" | "context" | "list") => {
     setMobilePane(pane);
     window.requestAnimationFrame(() => {
+      if (
+        pane === "chat" &&
+        activeSession &&
+        inbox.canSendText &&
+        !detailsOpen
+      ) {
+        composerRef.current?.focusInput();
+        return;
+      }
       const selector =
         pane === "list"
           ? ".crm-list"
@@ -294,7 +317,9 @@ export function CrmConversationWorkspace({
         {activeSession ? (
           <>
             <ChatHeader
-              actionsDisabled={inbox.isMutatingSession}
+              actionsDisabled={
+                inbox.isBlockingMutation || inbox.isMutatingSession
+              }
               pendingActions={{
                 assign: inbox.isSessionActionPending(
                   activeSession.id,
@@ -370,7 +395,7 @@ export function CrmConversationWorkspace({
             />
             <MessageList
               key={`${String(activeSession.id)}:${inbox.connectionFilterId ?? activeSessionConnection?.id ?? "default"}`}
-              actionsDisabled={inbox.isSending || !inbox.canSendText}
+              actionsDisabled={inbox.isBlockingMutation || !inbox.canSendText}
               fallbackAssigneeName={activeSession.assignedMember?.name ?? null}
               hasOlderMessages={inbox.hasOlderMessages}
               isLoading={

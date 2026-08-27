@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAccountSession } from "../account/accountSession";
 import { readSessionActiveStore } from "../account/sessionPermissions";
 import { useRemoteSearch } from "../../lib/useRemoteSearch";
+import { AppApiError, getApiErrorRecovery } from "../../lib/apiErrors";
 import type { CrmConversationApi } from "./crmConversationApi";
 import {
   buildStorefrontUrl,
@@ -45,6 +46,25 @@ import type {
 } from "./crmConversationTypes";
 
 const CRM_SESSION_PAGE_SIZE = 40;
+const crmErrorIds = new WeakMap<Error, string>();
+let crmErrorSequence = 0;
+
+function isPersistentCrmError(error: Error) {
+  return (
+    error instanceof AppApiError &&
+    (error.status === 401 ||
+      error.status === 403 ||
+      getApiErrorRecovery(error)?.kind === "configure")
+  );
+}
+
+function readCrmErrorId(error: Error) {
+  const existing = crmErrorIds.get(error);
+  if (existing) return existing;
+  const next = `crm-error-${++crmErrorSequence}`;
+  crmErrorIds.set(error, next);
+  return next;
+}
 
 export function useCrmInbox(
   api: CrmConversationApi,
@@ -87,6 +107,9 @@ export function useCrmInbox(
     () => readCrmCapabilities(accountSession),
     [accountSession, activeStore?.storeId],
   );
+  const storeScopeKey = activeStore?.storeId ?? null;
+  const previousStoreIdRef = useRef(storeScopeKey);
+  const hasCurrentScopeAccess = permissions.canList && permissions.canRead;
   const queueAccess = useCrmQueueAccess({
     canAssign: permissions.canAssign,
     currentUserId,
@@ -102,11 +125,43 @@ export function useCrmInbox(
   const assignmentState = useCrmAssignableMembers(accountSession);
   const listVehicles = useCrmVehicleInventory();
   const activeSession = useMemo(
-    () => visibleSessions.find((cycle) => cycle.id === activeCycleId) ?? null,
-    [activeCycleId, visibleSessions],
+    () =>
+      hasCurrentScopeAccess
+        ? (conversationCycles.find((cycle) => cycle.id === activeCycleId) ??
+          null)
+        : null,
+    [activeCycleId, conversationCycles, hasCurrentScopeAccess],
   );
   const connections = useCrmConnections(api);
   const routing = useCrmRoutingPolicy(api, permissions.canList);
+  const displayedError = error ?? connections.error ?? routing.error;
+  const errorId = useMemo(
+    () =>
+      displayedError && !isPersistentCrmError(displayedError)
+        ? readCrmErrorId(displayedError)
+        : null,
+    [displayedError],
+  );
+  const clearError = useCallback(
+    (targetErrorId: string) => {
+      if (
+        !displayedError ||
+        crmErrorIds.get(displayedError) !== targetErrorId
+      ) {
+        return;
+      }
+      if (displayedError === error) {
+        setError(null);
+        return;
+      }
+      if (displayedError === connections.error) {
+        connections.clearError();
+        return;
+      }
+      if (displayedError === routing.error) routing.clearError();
+    },
+    [connections, displayedError, error, routing],
+  );
   const connectionSelection = useMemo(
     () =>
       resolveCrmInboxConnectionSelection({
@@ -243,14 +298,33 @@ export function useCrmInbox(
     api,
     canLoadMessages,
     canSendMessages,
+    hasMessageAccess: permissions.canRead,
+    hasSendPermission: permissions.canSend,
     mergeCycles,
+    scopeKey: activeStore?.storeId ?? null,
     setError,
   });
   const {
+    evictAllSessionMessages,
     evictSessionMessages,
     mergeRealtimeMessage,
     updateRealtimeMessageStatus,
   } = messageState;
+  useEffect(() => {
+    const storeId = storeScopeKey;
+    if (previousStoreIdRef.current === storeId) return;
+    previousStoreIdRef.current = storeId;
+    evictAllSessionMessages();
+    setSessions([]);
+    setActiveCycleId(null);
+  }, [evictAllSessionMessages, storeScopeKey]);
+
+  useEffect(() => {
+    if (permissions.canList && permissions.canRead) return;
+    evictAllSessionMessages();
+    setSessions([]);
+    setActiveCycleId(null);
+  }, [evictAllSessionMessages, permissions.canList, permissions.canRead]);
   const removeSession = useCallback(
     (cycleId: CrmConversationCycleId) => {
       evictSessionMessages(cycleId);
@@ -431,7 +505,8 @@ export function useCrmInbox(
               current &&
               !authorizedCycleIds?.has(current)
             ? null
-            : options.preserveLocalOnly && current
+            : current &&
+                sessionsRef.current.some((cycle) => cycle.id === current)
               ? current
               : (resolved[0]?.id ?? null),
       );
@@ -563,7 +638,7 @@ export function useCrmInbox(
   );
 
   useCrmRealtime({
-    activeCycleId,
+    activeCycleId: hasCurrentScopeAccess ? activeCycleId : null,
     api,
     canAccessSessionSnapshot,
     connectionId: operationalConnectionId,
@@ -573,6 +648,11 @@ export function useCrmInbox(
     mergeCycles,
     onStatus: setRealtimeStatus,
     onVisibleInboundMessage: markVisibleInboundRead,
+    reconcileSessions: () =>
+      refreshSessions({
+        preserveLocalOnly: true,
+        snapshotKind: "reconciled",
+      }),
     refreshConnections: connections.refreshConnections,
     refreshSessionCounts,
     removeSession,
@@ -598,7 +678,7 @@ export function useCrmInbox(
 
   return {
     activeSession,
-    activeCycleId,
+    activeCycleId: hasCurrentScopeAccess ? activeCycleId : null,
     assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
     availableConnectionSetups: connections.availableSetups,
@@ -610,6 +690,7 @@ export function useCrmInbox(
     activeConnection,
     activeSessionConnection,
     catalogUrl,
+    clearError,
     clearSelectedSessions: bulkSelection.clearSelectedSessions,
     connectionFilterId,
     connectionId,
@@ -639,7 +720,8 @@ export function useCrmInbox(
     deleteMessage: messageState.deleteMessage,
     deleteQuickMessage: quickMessageState.deleteQuickMessage,
     deleteTag: tagState.deleteTag,
-    error: error ?? connections.error ?? routing.error,
+    error: displayedError,
+    errorId,
     hasConnection: Boolean(connectionId),
     hasLoadedActiveMessages: messageState.hasLoadedActiveMessages,
     hasOlderMessages: messageState.hasOlderMessages,
@@ -654,6 +736,8 @@ export function useCrmInbox(
     isSessionActionPending: sessionActions.isSessionActionPending,
     isConcludingSession: sessionActions.isConcludingSession,
     isSending: messageState.isSending,
+    hasPendingTextMessages: messageState.hasPendingTextMessages,
+    isBlockingMutation: messageState.isBlockingMutation,
     isStartingConversation: conversationState.isStartingConversation,
     realtimeStatus,
     cancelScheduledMessage: scheduledMessages.cancelScheduledMessage,
@@ -662,7 +746,7 @@ export function useCrmInbox(
     listVehicles,
     loadOlderMessages: messageState.loadOlderMessages,
     loadMoreSessions,
-    messages: messageState.messages,
+    messages: hasCurrentScopeAccess ? messageState.messages : [],
     olderMessagesError: messageState.olderMessagesError,
     otherAssigneeId,
     permissions,
@@ -689,7 +773,7 @@ export function useCrmInbox(
     sendText: messageState.sendText,
     sendVehicle: messageState.sendVehicle,
     conversationCycleCounts,
-    conversationCycles: visibleSessions,
+    conversationCycles: hasCurrentScopeAccess ? visibleSessions : [],
     setActiveCycleId: selectSession,
     setConnectionFilterId,
     setHumanAttendanceFilter,

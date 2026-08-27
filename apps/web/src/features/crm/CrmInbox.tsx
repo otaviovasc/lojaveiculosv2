@@ -101,6 +101,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
     inbox.error,
     "Não foi possível carregar o WhatsApp.",
   );
+  const transientErrorId = inbox.errorId;
 
   useEffect(() => {
     const syncRouteFromHash = () => {
@@ -187,6 +188,15 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
     <main className="crm-page">
       {inbox.error ? (
         <CrmNotice
+          durationMs={transientErrorId ? 10_000 : null}
+          inline={!transientErrorId}
+          {...(transientErrorId
+            ? {
+                onDismiss: () => {
+                  inbox.clearError(transientErrorId);
+                },
+              }
+            : {})}
           {...(errorRecovery
             ? {
                 actionLabel:
@@ -211,13 +221,17 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
               }
             : {})}
           message={errorDisplay.message}
+          {...(transientErrorId ? { noticeId: transientErrorId } : {})}
           {...(errorDisplay.requestId
             ? { requestId: errorDisplay.requestId }
             : {})}
         />
       ) : null}
       {!inbox.permissions.canList ? (
-        <CrmNotice message="Seu usuario nao tem permissao para visualizar o WhatsApp CRM." />
+        <CrmNotice
+          inline
+          message="Seu usuario nao tem permissao para visualizar o WhatsApp CRM."
+        />
       ) : null}
       {inbox.permissions.canList ? (
         <>
@@ -437,7 +451,7 @@ export function readSynchronizedChannelStatus(
     return { label: "Sincronizado", tone: "online" as const };
   }
   if (realtimeStatus === "connecting") {
-    return { label: "Reconciliando", tone: "loading" as const };
+    return { label: "Reconectando", tone: "loading" as const };
   }
   return {
     label:

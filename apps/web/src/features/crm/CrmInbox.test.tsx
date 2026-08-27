@@ -78,20 +78,21 @@ vi.mock("./crmOlxOauthReturn", () => ({
 describe("CrmInbox synchronization status", () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     localStorage.clear();
     inboxMock.workspaceMounts = 0;
     inboxMock.workspaceNodes = new WeakSet<HTMLButtonElement>();
     window.history.replaceState(null, "", "/");
   });
 
-  it("shows Reconciliando until successful stream reconciliation becomes Sincronizado", () => {
+  it("shows Reconectando until successful stream reconciliation becomes Sincronizado", () => {
     inboxMock.current = createInbox("connecting");
     const rendered = render(
       <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
     );
 
     expect(screen.getByLabelText("Status da sincronização")).toHaveTextContent(
-      "Reconciliando",
+      "Reconectando",
     );
 
     inboxMock.current = createInbox("connected");
@@ -126,16 +127,54 @@ describe("CrmInbox synchronization status", () => {
     );
   });
 
-  it("renders inbox failures as a toast instead of a layout banner", () => {
+  it("keeps connection and routing failures inline", () => {
     inboxMock.current = createInbox("connected", new Error("backend down"));
 
     render(
       <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
     );
 
-    expect(screen.getByRole("alert")).toHaveAttribute("data-ui", "toast");
-    expect(document.querySelector(".crm-note")).not.toBeInTheDocument();
+    expect(screen.getByRole("note")).toHaveClass("crm-note");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByText("backend down")).toBeVisible();
+  });
+
+  it("expires the matching transient inbox error after ten seconds", async () => {
+    vi.useFakeTimers();
+    const clearError = vi.fn();
+    inboxMock.current = {
+      ...createInbox("connected", new Error("send failed")),
+      clearError,
+      errorId: "error-1",
+    } as ReturnType<typeof useCrmInbox>;
+
+    render(
+      <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
+    );
+    expect(screen.getByRole("alert")).toHaveAttribute("data-ui", "toast");
+
+    await act(async () => vi.advanceTimersByTime(10_000));
+
+    expect(clearError).toHaveBeenCalledWith("error-1");
+  });
+
+  it("clears the matching transient inbox error when its toast is closed", async () => {
+    const clearError = vi.fn();
+    const user = userEvent.setup();
+    inboxMock.current = {
+      ...createInbox("connected", new Error("send failed")),
+      clearError,
+      errorId: "error-2",
+    } as ReturnType<typeof useCrmInbox>;
+
+    render(
+      <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Fechar notificação" }),
+    );
+
+    expect(clearError).toHaveBeenCalledWith("error-2");
   });
 
   it("keeps scope and selected conversation synchronized with browser history", async () => {
@@ -221,7 +260,9 @@ function createInbox(
     connectionError: null,
     connectionId: "connection-1",
     connectionIsLoading: false,
+    clearError: vi.fn(),
     error,
+    errorId: null,
     hasConnection: true,
     permissions: {
       canCampaignRead: false,

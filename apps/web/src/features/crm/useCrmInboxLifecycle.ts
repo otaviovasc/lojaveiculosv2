@@ -23,6 +23,7 @@ type UseCrmInboxLifecycleInput = {
   };
   refreshSessions: (options?: {
     preserveLocalOnly?: boolean;
+    snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
   }) => Promise<unknown>;
   search: string | null;
   setSessions: (value: SetStateAction<CrmConversationCycle[]>) => void;
@@ -67,7 +68,7 @@ export function useCrmInboxLifecycle({
     if (search === null) return;
     if (connections.isLoading) return;
     if (connections.error || !connectionId || !permissions.canList) {
-      setSessions([]);
+      if (!permissions.canList) setSessions([]);
       setIsLoadingSessions(false);
       return;
     }
@@ -77,6 +78,7 @@ export function useCrmInboxLifecycle({
     }
     void refreshSessions({
       preserveLocalOnly: Boolean(conversationCyclesCount),
+      snapshotKind: "reconciled",
     })
       .catch((caught) => {
         if (active) setError(asError(caught));
@@ -105,7 +107,10 @@ export function useCrmInboxLifecycle({
       return;
     }
     const interval = window.setInterval(() => {
-      void refreshSessions({ preserveLocalOnly: true }).catch(() => undefined);
+      void refreshSessions({
+        preserveLocalOnly: true,
+        snapshotKind: "reconciled",
+      }).catch(() => undefined);
     }, 15_000);
     const onVisible = () => {
       if (document.visibilityState === "visible") {
@@ -116,9 +121,10 @@ export function useCrmInboxLifecycle({
         ) {
           markCycleReadOnce(activeSession);
         }
-        void refreshSessions({ preserveLocalOnly: true }).catch(
-          () => undefined,
-        );
+        void refreshSessions({
+          preserveLocalOnly: true,
+          snapshotKind: "reconciled",
+        }).catch(() => undefined);
       }
     };
     document.addEventListener("visibilitychange", onVisible);

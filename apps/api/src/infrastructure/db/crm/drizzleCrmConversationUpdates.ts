@@ -4,17 +4,19 @@ import {
   conversationThreads,
 } from "@lojaveiculosv2/db";
 import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { ConversationCycleRevisionConflictError } from "../../../domains/crm/messaging/crmMessagingErrors.js";
 import type { UpdateCrmConversationCycleInput } from "../../../domains/crm/ports/crmConversationRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   readRecord,
   toConversationCycle,
 } from "./drizzleCrmConversationMappers.js";
-import {
-  cleanAttendanceUpdate,
-  matchesExpectedAttendanceState,
-} from "./drizzleCrmConversationCyclePreview.js";
+import { matchesExpectedAttendanceState } from "./drizzleCrmConversationCyclePreview.js";
 import { persistAttendanceTransitionEventIfChanged } from "./drizzleCrmAttendanceEvents.js";
+import {
+  changesAttendanceState,
+  updateConversationAttendance,
+} from "./drizzleCrmAttendanceUpdates.js";
 import {
   canonicalConversationCycleSelection,
   countUnreadMessages,
@@ -28,6 +30,10 @@ export async function updateConversationCycle(
   const current = await findCanonicalSession(db, input);
   if (!current || !matchesExpectedAttendanceState(current.attendance, input))
     return null;
+  const attendanceStateChanged = changesAttendanceState(
+    current.attendance,
+    input,
+  );
   const [cycle] = await db
     .update(conversationCycles)
     .set(cleanSessionUpdate(input, current.cycle.metadata))
@@ -35,6 +41,24 @@ export async function updateConversationCycle(
     .returning();
   if (!cycle) return null;
 
+  let attendance = current.attendance;
+  if (attendanceStateChanged) {
+    const updated = await updateConversationAttendance(
+      db,
+      input,
+      current.attendance,
+    );
+    if (!updated) {
+      throw new ConversationCycleRevisionConflictError(input.cycleId);
+    }
+    attendance = updated;
+    await persistAttendanceTransitionEventIfChanged({
+      current: current.attendance,
+      db,
+      nextState: attendance.state,
+      update: input,
+    });
+  }
   if (input.status) {
     await db
       .update(conversationThreads)
@@ -53,47 +77,21 @@ export async function updateConversationCycle(
         ),
       );
   }
-
-  const attendancePatch = cleanAttendanceUpdate(input, current.attendance);
-  const nextAttendanceState = attendancePatch.state ?? current.attendance.state;
-  await persistAttendanceTransitionEventIfChanged({
-    current: current.attendance,
-    db,
-    nextState: nextAttendanceState,
-    update: input,
-  });
-  const [attendance] = Object.keys(attendancePatch).length
-    ? await db
-        .update(conversationAttendances)
-        .set(attendancePatch)
-        .where(
-          and(
-            eq(conversationAttendances.cycleId, input.cycleId),
-            eq(conversationAttendances.storeId, input.storeId),
-            eq(conversationAttendances.tenantId, input.tenantId),
-            eq(conversationAttendances.state, current.attendance.state),
-            eq(
-              conversationAttendances.stateVersion,
-              current.attendance.stateVersion,
-            ),
-            current.attendance.interventionId === null
-              ? isNull(conversationAttendances.interventionId)
-              : eq(
-                  conversationAttendances.interventionId,
-                  current.attendance.interventionId,
-                ),
-          ),
-        )
-        .returning()
-    : [current.attendance];
-  if (!attendance) throw new Error("Canonical CRM attendance was not found.");
+  if (!attendanceStateChanged) {
+    const updated = await updateConversationAttendance(
+      db,
+      input,
+      current.attendance,
+    );
+    if (!updated) throw new Error("Canonical CRM attendance was not found.");
+    attendance = updated;
+  }
   const row = { attendance, cycle, thread: current.thread };
   return hydrateConversationCycle(
     db,
     toConversationCycle(row, await countUnreadMessages(db, row)),
   );
 }
-
 export function updateConversationCycleWithTransaction(
   db: DrizzleCrmClient,
   input: UpdateCrmConversationCycleInput,
@@ -105,7 +103,6 @@ export function updateConversationCycleWithTransaction(
     ? execute(db)
     : db.transaction(async (tx) => execute(tx as DrizzleCrmClient));
 }
-
 export function sessionUpdateFilters(
   input: UpdateCrmConversationCycleInput,
 ): SQL[] {
@@ -130,7 +127,6 @@ export function sessionUpdateFilters(
   }
   return filters;
 }
-
 export function cleanSessionUpdate(
   input: UpdateCrmConversationCycleInput,
   persistedMetadata: unknown = {},
@@ -166,7 +162,6 @@ export function cleanSessionUpdate(
     updatedAt: new Date(),
   };
 }
-
 function canonicalStatusUpdate(
   status: NonNullable<UpdateCrmConversationCycleInput["status"]>,
 ) {
@@ -181,7 +176,6 @@ function canonicalStatusUpdate(
       return { closedAt: null, state: "active" as const };
   }
 }
-
 function expectedStatusSql(
   status: NonNullable<UpdateCrmConversationCycleInput["expectedStatus"]>,
 ): SQL {

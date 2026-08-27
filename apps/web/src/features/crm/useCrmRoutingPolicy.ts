@@ -31,5 +31,7 @@ export function useCrmRoutingPolicy(
     void refresh();
   }, [refresh]);
 
-  return { error, isLoading, policy, refresh };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { clearError, error, isLoading, policy, refresh };
 }

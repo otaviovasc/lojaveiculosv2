@@ -181,7 +181,7 @@ async function applyMigrationsThrough0057() {
 
   for (const migration of migrations) {
     const sql = await readFile(new URL(migration, migrationDirectory), "utf8");
-    runPsql(sql);
+    runMigrationPsql(sql);
   }
 }
 
@@ -246,17 +246,27 @@ async function verifyFailFastAndApplyCanonicalCutover() {
   runPsql(canonicalNamesMigration);
   assert0059PostMigrationCatalog();
 
-  for (const migrationName of [
-    "0060_external_bot_security_completion.sql",
-    "0061_canonical_crm_dead_schema_cleanup.sql",
-    "0062_external_bot_action_registry_effects.sql",
-  ]) {
+  const migrationDirectory = new URL(
+    "../../packages/db/migrations/",
+    import.meta.url,
+  );
+  const followUpMigrations = (await readdir(migrationDirectory))
+    .filter((name) => /^\d{4}_.+\.sql$/u.test(name) && name >= "0060_")
+    .sort();
+  for (const migrationName of followUpMigrations) {
     const followUpMigration = await readFile(
-      new URL(`../../packages/db/migrations/${migrationName}`, import.meta.url),
+      new URL(migrationName, migrationDirectory),
       "utf8",
     );
-    runPsql(followUpMigration);
+    runMigrationPsql(followUpMigration);
   }
+}
+
+function runMigrationPsql(input) {
+  // The production migrator wraps each file in a transaction. Reproduce that
+  // boundary here so explicit BEGIN migrations persist and ON COMMIT DROP
+  // fixtures remain available for the complete migration file.
+  runPsql(`BEGIN;\n${input}\nCOMMIT;`);
 }
 
 function getGuardBlock(migration) {
@@ -864,20 +874,20 @@ async function seedScope(url) {
 }
 
 function runCanonicalInboundTest(url) {
+  const testFiles = process.argv.includes("--attendance-only")
+    ? [
+        "src/infrastructure/db/crm/drizzleCrmConversationAttendance.rawDb.test.ts",
+      ]
+    : [
+        "src/infrastructure/db/crm/drizzleCrmCanonicalInbound.rawDb.test.ts",
+        "src/infrastructure/db/crm/drizzleCrmConversationAttendance.rawDb.test.ts",
+        "src/infrastructure/db/crm/drizzleCrmConversationConsistency.rawDb.test.ts",
+        "src/infrastructure/db/crm/drizzleExternalBotEffectHandoff.rawDb.test.ts",
+        "src/infrastructure/db/crm/drizzleExternalBotEffectRuntime.rawDb.test.ts",
+      ];
   const result = spawnSync(
     "pnpm",
-    [
-      "--filter",
-      "@lojaveiculosv2/api",
-      "exec",
-      "vitest",
-      "run",
-      "src/infrastructure/db/crm/drizzleCrmCanonicalInbound.rawDb.test.ts",
-      "src/infrastructure/db/crm/drizzleCrmWhatsappAttendance.rawDb.test.ts",
-      "src/infrastructure/db/crm/drizzleCrmWhatsappConsistency.rawDb.test.ts",
-      "src/infrastructure/db/crm/drizzleExternalBotEffectHandoff.rawDb.test.ts",
-      "src/infrastructure/db/crm/drizzleExternalBotEffectRuntime.rawDb.test.ts",
-    ],
+    ["--filter", "@lojaveiculosv2/api", "exec", "vitest", "run", ...testFiles],
     {
       cwd: repoRoot,
       env: {

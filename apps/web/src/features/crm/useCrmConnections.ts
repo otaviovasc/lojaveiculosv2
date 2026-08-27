@@ -113,6 +113,7 @@ export function useCrmConnections(api: CrmConversationApi) {
   const refreshConnections = useCallback(async () => {
     await refreshConnectionsAndRead();
   }, [refreshConnectionsAndRead]);
+  const clearError = useCallback(() => setError(null), []);
 
   const createConnection = useCallback(
     async (input: CrmCreateConnectionInput) => {
@@ -421,6 +422,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     completeComposio,
     configureZapiWebhooks,
     connections,
+    clearError,
     createConnection,
     disconnectZapiConnection,
     error,

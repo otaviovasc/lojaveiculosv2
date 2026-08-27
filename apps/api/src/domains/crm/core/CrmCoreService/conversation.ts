@@ -104,7 +104,6 @@ export async function recordInboundConversation(
     expectedRevision: input.expectedRevision,
     id: current.id,
     patch: {
-      attendanceState: current.attendanceState,
       pipelineId: current.pipelineId,
       pipelineStageId: current.pipelineStageId,
       threadState: "open",

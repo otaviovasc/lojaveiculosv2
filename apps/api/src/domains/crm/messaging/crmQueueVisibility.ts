@@ -110,7 +110,9 @@ export function updateCrmRealtimeAssignmentBoundary(
     current &&
     current.revision !== null &&
     observed.boundary.revision !== null &&
-    observed.boundary.revision < current.revision
+    (observed.boundary.revision < current.revision ||
+      (observed.boundary.revision === current.revision &&
+        observed.boundary.assignedUserId !== current.assignedUserId))
   ) {
     return;
   }
@@ -118,6 +120,67 @@ export function updateCrmRealtimeAssignmentBoundary(
     return;
   }
   boundaries.set(observed.cycleKey, observed.boundary);
+}
+
+export function isStaleCrmRealtimeAssignmentEvent(
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
+  event: CrmRealtimeEvent,
+) {
+  const observed = readCrmRealtimeConversationCycleBoundary(event);
+  if (!observed || observed.boundary.revision === null) return false;
+  const current = boundaries.get(observed.cycleKey);
+  return Boolean(
+    current?.revision !== null &&
+    current?.revision !== undefined &&
+    (observed.boundary.revision < current.revision ||
+      (observed.boundary.revision === current.revision &&
+        observed.boundary.assignedUserId !== current.assignedUserId)),
+  );
+}
+
+export function filterCrmRealtimeReplayByHistoricalVisibility<
+  T extends { event: CrmRealtimeEvent },
+>(
+  history: readonly T[],
+  startIndex: number,
+  visibility: CrmQueueVisibility,
+): T[] {
+  const boundaries = new Map<string, CrmRealtimeAssignmentBoundary>();
+  const visible: T[] = [];
+  history.forEach((item, index) => {
+    const isStale = isStaleCrmRealtimeAssignmentEvent(boundaries, item.event);
+    updateCrmRealtimeAssignmentBoundary(boundaries, item.event);
+    if (index < startIndex) return;
+    if (visibility.kind === "assigned" && isStale) return;
+    const observed = readCrmRealtimeConversationCycleBoundary(item.event);
+    if (
+      matchesCrmRealtimeQueueVisibility(
+        visibility,
+        item.event,
+        observed ? boundaries.get(observed.cycleKey) : undefined,
+      )
+    ) {
+      visible.push(item);
+    }
+  });
+  if (visibility.kind !== "assigned") return visible;
+  const lastRevocationByCycle = new Map<string, number>();
+  visible.forEach((item, index) => {
+    if (
+      item.event.type !== "conversationCycle" ||
+      item.event.revokedUserId !== visibility.userId
+    ) {
+      return;
+    }
+    const observed = readCrmRealtimeConversationCycleBoundary(item.event);
+    if (observed) lastRevocationByCycle.set(observed.cycleKey, index);
+  });
+  return visible.filter((item, index) => {
+    const observed = readCrmRealtimeConversationCycleBoundary(item.event);
+    if (!observed) return true;
+    const lastRevocation = lastRevocationByCycle.get(observed.cycleKey);
+    return lastRevocation === undefined || index >= lastRevocation;
+  });
 }
 
 function assignmentBoundaryKey(event: CrmRealtimeEvent, cycleId: string) {

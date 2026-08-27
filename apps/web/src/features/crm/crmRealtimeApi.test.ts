@@ -205,7 +205,70 @@ describe("CRM WhatsApp realtime API", () => {
     await flushPromises();
     expect(FakeEventSource.instances[1]?.url).toBe("/events?ticket=ticket-2");
 
+    expect(postJson).toHaveBeenLastCalledWith("/events/ticket", {
+      connectionId: undefined,
+      lastEventId: undefined,
+    });
+
     unsubscribe();
+  });
+
+  it("does not advance the replay cursor until the complete frame is valid", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("EventSource", FakeEventSource);
+    const postJson = vi
+      .fn()
+      .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-1" })
+      .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-2" });
+
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "/events",
+      eventsTicketRoute: "/events/ticket",
+      onEvent: vi.fn(),
+      postJson,
+    });
+    await flushPromises();
+
+    FakeEventSource.instances[0]!.emit(
+      { type: "message", conversationCycle: {}, message: {} },
+      "invalid-cursor",
+      "message",
+    );
+    await vi.advanceTimersByTimeAsync(1_000);
+    await flushPromises();
+
+    expect(postJson).toHaveBeenLastCalledWith("/events/ticket", {
+      connectionId: undefined,
+      lastEventId: undefined,
+    });
+
+    unsubscribe();
+  });
+
+  it("cancels obsolete ticket requests without opening a stale event source", async () => {
+    vi.stubGlobal("EventSource", FakeEventSource);
+    let resolveTicket:
+      ((ticket: { expiresAt: string; ticket: string }) => void) | undefined;
+    const postJson = vi.fn(
+      () =>
+        new Promise<{ expiresAt: string; ticket: string }>((resolve) => {
+          resolveTicket = resolve;
+        }),
+    );
+
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "/events",
+      eventsTicketRoute: "/events/ticket",
+      onEvent: vi.fn(),
+      postJson: postJson as unknown as Parameters<
+        typeof subscribeCrmEvents
+      >[0]["postJson"],
+    });
+    unsubscribe();
+    resolveTicket?.({ expiresAt: "2030-01-01", ticket: "stale-ticket" });
+    await flushPromises();
+
+    expect(FakeEventSource.instances).toHaveLength(0);
   });
 
   it("dispatches backend conversation-cycle event names", async () => {

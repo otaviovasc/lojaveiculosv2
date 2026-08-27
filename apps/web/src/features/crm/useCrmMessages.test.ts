@@ -33,7 +33,7 @@ describe("useCrmMessages", () => {
     ]);
   });
 
-  it("replaces matching local echoes when the realtime server message arrives", () => {
+  it("does not reconcile realtime echoes by message content", () => {
     const localEcho = {
       ...createMessage({
         content: "Resposta",
@@ -51,8 +51,167 @@ describe("useCrmMessages", () => {
     });
 
     expect(mergeRealtimeMessageIntoHistory([localEcho], serverMessage)).toEqual(
-      [serverMessage],
+      [localEcho, serverMessage],
     );
+  });
+
+  it("accepts text immediately and drains requests in FIFO order", async () => {
+    const api = createApi();
+    let resolveFirst: ((message: CrmMessage) => void) | undefined;
+    vi.mocked(api.sendText)
+      .mockImplementationOnce(
+        () =>
+          new Promise<CrmMessage>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(
+        createMessage({
+          content: "Segunda",
+          direction: "OUTBOUND",
+          id: "server-second",
+          status: "SENT",
+        }),
+      );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await expect(latest!.sendText("Primeira")).resolves.toBe(true);
+      await expect(latest!.sendText("Segunda")).resolves.toBe(true);
+    });
+
+    expect(api.sendText).toHaveBeenCalledTimes(1);
+    expect(latest!.isSending).toBe(false);
+    expect(latest!.hasPendingTextMessages).toBe(true);
+    expect(latest!.isBlockingMutation).toBe(true);
+    expect(
+      latest!.messages.filter(
+        (message) => message.content !== "Mensagem carregada",
+      ),
+    ).toHaveLength(2);
+
+    await act(async () => {
+      resolveFirst?.(
+        createMessage({
+          content: "Primeira",
+          direction: "OUTBOUND",
+          id: "server-first",
+          status: "SENT",
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(api.sendText).toHaveBeenCalledTimes(2));
+    expect(
+      vi.mocked(api.sendText).mock.calls.map(([input]) => input.text),
+    ).toEqual(["Primeira", "Segunda"]);
+    await waitFor(() => expect(latest!.hasPendingTextMessages).toBe(false));
+  });
+
+  it("keeps identical queued messages distinct by client identity", async () => {
+    const api = createApi();
+    let resolveFirst: ((message: CrmMessage) => void) | undefined;
+    vi.mocked(api.sendText)
+      .mockImplementationOnce(
+        () =>
+          new Promise<CrmMessage>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(
+        createMessage({
+          content: "Mesmo texto",
+          direction: "OUTBOUND",
+          id: "server-second",
+          status: "SENT",
+        }),
+      );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await latest!.sendText("Mesmo texto", { idempotencyKey: "key-one" });
+      await latest!.sendText("Mesmo texto", { idempotencyKey: "key-two" });
+    });
+
+    const optimistic = latest!.messages.filter(
+      (message) => message.content === "Mesmo texto",
+    );
+    expect(optimistic).toHaveLength(2);
+    expect(new Set(optimistic.map((message) => message.clientId)).size).toBe(2);
+    expect(
+      optimistic.map((message) => message.metadata?.idempotencyKey),
+    ).toEqual(["key-one", "key-two"]);
+
+    await act(async () => {
+      resolveFirst?.(
+        createMessage({
+          content: "Mesmo texto",
+          direction: "OUTBOUND",
+          id: "server-first",
+          status: "SENT",
+        }),
+      );
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(api.sendText).toHaveBeenCalledTimes(2));
+    expect(
+      vi.mocked(api.sendText).mock.calls.map(([input]) => input.idempotencyKey),
+    ).toEqual(["key-one", "key-two"]);
+  });
+
+  it("drops queued text for an evicted conversation", async () => {
+    const api = createApi();
+    vi.mocked(api.sendText).mockImplementation(
+      () => new Promise(() => undefined),
+    );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await latest!.sendText("Em voo");
+      await latest!.sendText("Na fila");
+    });
+    act(() => latest!.evictSessionMessages("session_1"));
+
+    expect(latest!.messages).toEqual([]);
+    expect(latest!.hasPendingTextMessages).toBe(false);
+    expect(api.sendText).toHaveBeenCalledTimes(1);
   });
 
   it("does not reload messages when the active cycle preview changes", async () => {

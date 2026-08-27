@@ -1,31 +1,55 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CrmConversationWorkspace } from "./CrmConversationWorkspace";
 import type { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import type { useCrmInbox } from "./useCrmInbox";
 
 vi.mock("./CrmConversationParts", () => ({
-  ChatHeader: ({ onBack, onClose }: ComponentProps<typeof ChatHeader>) => (
+  ChatHeader: ({
+    actionsDisabled,
+    onBack,
+    onClose,
+  }: ComponentProps<typeof ChatHeader>) => (
     <>
+      <input aria-label="Buscar mensagens" />
+      <input aria-label="Prompt IA" />
       <button onClick={onBack} type="button">
         Voltar para conversas
       </button>
-      <button onClick={onClose} type="button">
+      <button disabled={actionsDisabled} onClick={onClose} type="button">
         Concluir
       </button>
     </>
   ),
-  MessageComposer: ({ onSend }: ComponentProps<typeof MessageComposer>) => {
+  MessageComposer: forwardRef(function MockMessageComposer(
+    { disabled, onSend }: ComponentProps<typeof MessageComposer>,
+    ref,
+  ) {
     const [draft, setDraft] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+    useImperativeHandle(ref, () => ({
+      focusInput: () => inputRef.current?.focus({ preventScroll: true }),
+      insertPrompt: (text: string) => setDraft(text),
+      openFiles: () => undefined,
+    }));
     return (
       <div>
         <input
           aria-label="Rascunho"
+          disabled={disabled}
           onChange={(event) => setDraft(event.target.value)}
+          ref={inputRef}
           value={draft}
         />
         <button onClick={() => void onSend(draft)} type="button">
@@ -33,13 +57,16 @@ vi.mock("./CrmConversationParts", () => ({
         </button>
       </div>
     );
-  },
+  }),
 }));
 vi.mock("./CrmMessageParts", () => ({
-  MessageList: () => {
+  MessageList: ({ actionsDisabled }: { actionsDisabled?: boolean }) => {
     const [reactionOpen, setReactionOpen] = useState(false);
     return (
       <div>
+        <button disabled={actionsDisabled} type="button">
+          Ação da mensagem
+        </button>
         <button onClick={() => setReactionOpen(true)} type="button">
           Abrir reações
         </button>
@@ -157,6 +184,10 @@ describe("CrmConversationWorkspace conclusion", () => {
       />,
     );
 
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveFocus(),
+    );
+
     await user.type(screen.getByRole("textbox", { name: "Rascunho" }), "oi");
     await user.click(screen.getByRole("button", { name: "Abrir reações" }));
     expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveValue("oi");
@@ -204,6 +235,95 @@ describe("CrmConversationWorkspace conclusion", () => {
       screen.getByRole("button", { name: "Voltar para conversas" }),
     );
     expect(onCycleChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it("keeps header search and Prompt IA focused across conversation updates", async () => {
+    const connection = createConnection("connection-1");
+    const baseInbox = createInbox({
+      closeCycle: vi.fn(async () => true),
+      concludeCycle: vi.fn(async () => true),
+    });
+    const editableInbox = {
+      ...baseInbox,
+      activeSessionConnection: connection,
+      canSendText: true,
+      connections: [connection],
+    } as unknown as ReturnType<typeof useCrmInbox>;
+    const rendered = render(
+      <CrmConversationWorkspace
+        inbox={editableInbox}
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveFocus(),
+    );
+
+    const search = screen.getByRole("textbox", { name: "Buscar mensagens" });
+    search.focus();
+    rendered.rerender(
+      <CrmConversationWorkspace
+        inbox={{
+          ...editableInbox,
+          activeSession: { ...editableInbox.activeSession!, id: "cycle-2" },
+        }}
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-2"
+      />,
+    );
+    await actAnimationFrame();
+    expect(search).toHaveFocus();
+
+    const prompt = screen.getByRole("textbox", { name: "Prompt IA" });
+    prompt.focus();
+    rendered.rerender(
+      <CrmConversationWorkspace
+        inbox={{
+          ...editableInbox,
+          activeSession: { ...editableInbox.activeSession!, id: "cycle-3" },
+        }}
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-3"
+      />,
+    );
+    await actAnimationFrame();
+    expect(prompt).toHaveFocus();
+  });
+
+  it("keeps text editing available while pending text blocks destructive actions", () => {
+    const connection = createConnection("connection-1");
+    const baseInbox = createInbox({
+      closeCycle: vi.fn(async () => true),
+      concludeCycle: vi.fn(async () => true),
+    });
+    render(
+      <CrmConversationWorkspace
+        inbox={
+          {
+            ...baseInbox,
+            activeSessionConnection: connection,
+            canSendText: true,
+            connections: [connection],
+            hasPendingTextMessages: true,
+            isBlockingMutation: true,
+            isSending: false,
+          } as unknown as ReturnType<typeof useCrmInbox>
+        }
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Rascunho" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Concluir" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Ação da mensagem" }),
+    ).toBeDisabled();
   });
 
   it("keeps demo history visible and routes setup from the read-only composer", async () => {
@@ -287,6 +407,12 @@ function createConnection(id: string) {
   };
 }
 
+async function actAnimationFrame() {
+  await new Promise<void>((resolve) =>
+    window.requestAnimationFrame(() => resolve()),
+  );
+}
+
 function createInbox({
   closeCycle,
   concludeCycle,
@@ -331,6 +457,8 @@ function createInbox({
     connections: [],
     currentUserId: "7",
     humanAttendanceFilter: "all",
+    hasPendingTextMessages: false,
+    isBlockingMutation: false,
     isConcludingSession: false,
     isLoading: false,
     isLoadingMessages: false,

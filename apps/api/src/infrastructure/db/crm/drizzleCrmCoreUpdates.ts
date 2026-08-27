@@ -4,7 +4,6 @@ import {
   contactIdentityCandidates,
   contacts,
   consentReceipts,
-  conversationAttendances,
   conversationThreads,
   factProposals,
   opportunities,
@@ -136,54 +135,40 @@ async function updateRow<R extends CrmCoreResource>(
       const patch = input.patch as Partial<
         CreateCrmCoreEntity<"conversations">
       >;
-      return db.transaction(async (tx) => {
-        const rows = await tx
-          .update(conversationThreads)
-          .set({
-            ...(patch.threadState !== undefined
-              ? { state: patch.threadState }
-              : {}),
-            ...(patch.unreadCount !== undefined ||
-            patch.pipelineId !== undefined ||
-            patch.pipelineStageId !== undefined
-              ? {
-                  metadata: {
-                    ...(patch.unreadCount !== undefined
-                      ? { unreadCount: patch.unreadCount }
-                      : {}),
-                    ...(patch.pipelineId !== undefined
-                      ? { pipelineId: patch.pipelineId }
-                      : {}),
-                    ...(patch.pipelineStageId !== undefined
-                      ? { pipelineStageId: patch.pipelineStageId }
-                      : {}),
-                  },
-                }
-              : {}),
-            revision: revision(conversationThreads.revision),
-            updatedAt: new Date(),
-          })
-          .where(scopedRevision(conversationThreads, input))
-          .returning({ id: conversationThreads.id });
-        if (rows.length !== 1) return false;
-        if (patch.attendanceState !== undefined) {
-          await tx
-            .update(conversationAttendances)
-            .set({
-              revision: revision(conversationAttendances.revision),
-              state: patch.attendanceState,
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(conversationAttendances.tenantId, input.tenantId),
-                eq(conversationAttendances.storeId, input.storeId),
-                eq(conversationAttendances.threadId, input.id),
-              ),
-            );
-        }
-        return true;
-      });
+      if (patch.attendanceState !== undefined) {
+        throw new Error(
+          "CRM attendance mutations must use the canonical conversation writer.",
+        );
+      }
+      const rows = await db
+        .update(conversationThreads)
+        .set({
+          ...(patch.threadState !== undefined
+            ? { state: patch.threadState }
+            : {}),
+          ...(patch.unreadCount !== undefined ||
+          patch.pipelineId !== undefined ||
+          patch.pipelineStageId !== undefined
+            ? {
+                metadata: {
+                  ...(patch.unreadCount !== undefined
+                    ? { unreadCount: patch.unreadCount }
+                    : {}),
+                  ...(patch.pipelineId !== undefined
+                    ? { pipelineId: patch.pipelineId }
+                    : {}),
+                  ...(patch.pipelineStageId !== undefined
+                    ? { pipelineStageId: patch.pipelineStageId }
+                    : {}),
+                },
+              }
+            : {}),
+          revision: revision(conversationThreads.revision),
+          updatedAt: new Date(),
+        })
+        .where(scopedRevision(conversationThreads, input))
+        .returning({ id: conversationThreads.id });
+      return rows.length === 1;
     }
     case "connections":
       return updateProjectionRow(db, crmChannelConnections, input);

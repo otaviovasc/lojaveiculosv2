@@ -11,6 +11,7 @@ export type ToastProps = {
   icon?: ReactNode;
   onDismiss?: () => void;
   priority?: "assertive" | "polite";
+  resetKey?: string | number;
   title: ReactNode;
   tone?: ToastTone;
 };
@@ -29,6 +30,7 @@ export function Toast({
   icon,
   onDismiss,
   priority = "polite",
+  resetKey,
   title,
   tone = "info",
 }: ToastProps) {
@@ -45,10 +47,11 @@ export function Toast({
   };
 
   useEffect(() => {
+    setVisible(true);
     if (durationMs === null) return;
     const timeout = window.setTimeout(handleDismiss, durationMs);
     return () => window.clearTimeout(timeout);
-  }, [durationMs]);
+  }, [durationMs, resetKey]);
 
   if (!visible) return null;
 
@@ -79,19 +82,15 @@ export function Toast({
           <div className="text-xs leading-snug text-muted">{children}</div>
         ) : null}
       </div>
-      {onDismiss ? (
-        <button
-          aria-label="Fechar notificação"
-          className="-m-1 inline-flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-app hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-          onClick={handleDismiss}
-          title="Fechar notificação"
-          type="button"
-        >
-          <X aria-hidden="true" className="size-4" />
-        </button>
-      ) : (
-        <span aria-hidden="true" />
-      )}
+      <button
+        aria-label="Fechar notificação"
+        className="-m-1 inline-flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-app hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+        onClick={handleDismiss}
+        title="Fechar notificação"
+        type="button"
+      >
+        <X aria-hidden="true" className="size-4" />
+      </button>
     </aside>
   );
 }

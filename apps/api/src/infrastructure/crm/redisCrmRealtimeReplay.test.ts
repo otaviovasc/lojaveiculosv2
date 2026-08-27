@@ -94,6 +94,54 @@ describe("Redis CRM realtime replay", () => {
       },
     });
   });
+
+  it("does not reveal retained events from before assignment to the user", async () => {
+    const { command } = installRedisClients(redisMocks.createClient);
+    command.sendCommand.mockResolvedValueOnce([
+      streamRow("1-0", sessionEvent(otherUserId, 1)),
+      streamRow("2-0", sessionEvent(actorUserId, 2)),
+    ]);
+    const broker = createRedisCrmRealtimeBroker("redis://available");
+
+    const replay = await broker.replay({
+      queueVisibility: { kind: "assigned", userId: actorUserId },
+      sinceEventId: "0-0",
+      storeId,
+      tenantId,
+    });
+
+    expect(replay).toHaveLength(1);
+    expect(replay[0]).toMatchObject({
+      id: "2-0",
+      event: {
+        conversationCycle: { assignedUserId: actorUserId, revision: 2 },
+      },
+    });
+  });
+
+  it("drops retained assignment events that arrive out of revision order", async () => {
+    const { command } = installRedisClients(redisMocks.createClient);
+    command.sendCommand.mockResolvedValueOnce([
+      streamRow("1-0", sessionEvent(actorUserId, 2)),
+      streamRow("2-0", sessionEvent(otherUserId, 1)),
+    ]);
+    const broker = createRedisCrmRealtimeBroker("redis://available");
+
+    const replay = await broker.replay({
+      queueVisibility: { kind: "assigned", userId: actorUserId },
+      sinceEventId: "0-0",
+      storeId,
+      tenantId,
+    });
+
+    expect(replay).toHaveLength(1);
+    expect(replay[0]).toMatchObject({
+      id: "1-0",
+      event: {
+        conversationCycle: { assignedUserId: actorUserId, revision: 2 },
+      },
+    });
+  });
 });
 
 function presenceEvent(connectionId: string): CrmRealtimeEvent {

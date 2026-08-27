@@ -160,6 +160,34 @@ describe("CRM core state and isolation", () => {
       unreadCount: 1,
     });
   });
+
+  it("rejects attendance changes through the generic core writer", async () => {
+    const repository = createMemoryCrmCoreRepository();
+    const person = await contact(repository);
+    const connectionRow = await repository.create({
+      data: connection("instagram", "meta_cloud"),
+      resource: "connections",
+      scope: scope(),
+    });
+    const started = await startConversation(
+      context(),
+      { connectionId: connectionRow.id, contactId: person.id },
+      repository,
+    );
+
+    await expect(
+      updateCrmCore(
+        context(),
+        {
+          expectedRevision: started.revision,
+          id: started.id,
+          patch: { attendanceState: "human_active" },
+          resource: "conversations",
+        },
+        repository,
+      ),
+    ).rejects.toMatchObject({ code: "CRM_CORE_FIELD_IMMUTABLE" });
+  });
 });
 
 function scope() {

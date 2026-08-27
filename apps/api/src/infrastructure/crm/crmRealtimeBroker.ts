@@ -8,6 +8,8 @@ import type {
   CrmRealtimeTicket,
 } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import {
+  filterCrmRealtimeReplayByHistoricalVisibility,
+  isStaleCrmRealtimeAssignmentEvent,
   matchesCrmRealtimeQueueVisibility,
   readCrmRealtimeConversationCycleBoundary,
   updateCrmRealtimeAssignmentBoundary,
@@ -42,6 +44,10 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
       await broker.publishEnvelope(createEnvelope(event));
     },
     async publishEnvelope(envelope) {
+      const hasStaleAssignment = isStaleCrmRealtimeAssignmentEvent(
+        assignmentBoundaries,
+        envelope.event,
+      );
       updateCrmRealtimeAssignmentBoundary(assignmentBoundaries, envelope.event);
       if (!history.some((event) => event.id === envelope.id)) {
         history.push(envelope);
@@ -53,6 +59,7 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
             subscription,
             envelope.event,
             assignmentBoundaries,
+            hasStaleAssignment,
           )
         )
           continue;
@@ -60,7 +67,7 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
       }
     },
     async replay(input) {
-      return replayFromHistory(history, input, assignmentBoundaries);
+      return replayFromHistory(history, input);
     },
     async resolveTicket(ticket) {
       purgeExpiredTickets(tickets);
@@ -90,9 +97,13 @@ function matchesSubscription(
   subscription: CrmRealtimeSubscription,
   event: CrmRealtimeEvent,
   boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
+  hasStaleAssignment: boolean,
 ) {
   if (subscription.storeId !== event.storeId) return false;
   if (subscription.tenantId !== event.tenantId) return false;
+  if (hasStaleAssignment && subscription.queueVisibility.kind === "assigned") {
+    return false;
+  }
   if (
     !matchesCrmRealtimeQueueVisibility(
       subscription.queueVisibility,
@@ -117,18 +128,18 @@ function createEnvelope(event: CrmRealtimeEvent): CrmRealtimeEventEnvelope {
 function replayFromHistory(
   history: CrmRealtimeEventEnvelope[],
   input: CrmRealtimeReplayInput,
-  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
 ) {
   if (!input.sinceEventId) return [];
   const scoped = history.filter((envelope) =>
-    matchesReplayScope(input, envelope.event, boundaries, false),
+    matchesReplayScope(input, envelope.event),
   );
   const cursorIndex = scoped.findIndex(
     (envelope) => envelope.id === input.sinceEventId,
   );
-  const replay = cursorIndex >= 0 ? scoped.slice(cursorIndex + 1) : scoped;
-  const visible = replay.filter((envelope) =>
-    matchesReplayScope(input, envelope.event, boundaries, true),
+  const visible = filterCrmRealtimeReplayByHistoricalVisibility(
+    scoped,
+    cursorIndex >= 0 ? cursorIndex + 1 : 0,
+    input.queueVisibility,
   );
   return selectReplayWindow(
     visible,
@@ -140,21 +151,9 @@ function replayFromHistory(
 function matchesReplayScope(
   input: CrmRealtimeReplayInput,
   event: CrmRealtimeEvent,
-  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
-  checkVisibility: boolean,
 ) {
   if (input.storeId !== event.storeId) return false;
   if (input.tenantId !== event.tenantId) return false;
-  if (
-    checkVisibility &&
-    !matchesCrmRealtimeQueueVisibility(
-      input.queueVisibility,
-      event,
-      resolveBoundary(boundaries, event),
-    )
-  ) {
-    return false;
-  }
   if (!input.connectionId) return true;
   return input.connectionId === event.connectionId;
 }

@@ -1,6 +1,7 @@
 import {
   crmConversationCycleSchema,
   crmMessageSchema,
+  crmMessageStatuses,
 } from "@lojaveiculosv2/shared";
 import type {
   CrmConnectionId,
@@ -99,13 +100,14 @@ export function subscribeCrmEvents(input: {
     const handleMessage = (event: MessageEvent) => {
       if (closed || eventSource !== source) return;
       try {
+        const parsedEvent = parseRealtimeEvent(JSON.parse(event.data));
         if (event.lastEventId) {
           if (seenEventIds.has(event.lastEventId)) return;
           seenEventIds.add(event.lastEventId);
           trimSeenEventIds(seenEventIds);
           lastEventId = event.lastEventId;
         }
-        input.onEvent(parseRealtimeEvent(JSON.parse(event.data)));
+        input.onEvent(parsedEvent);
       } catch {
         input.onError?.(new Error("Invalid CRM WhatsApp realtime event."));
         scheduleReconnect();
@@ -136,13 +138,12 @@ export function subscribeCrmEvents(input: {
 }
 
 function parseRealtimeEvent(value: unknown): CrmRealtimeEvent {
-  if (!value || typeof value !== "object") {
-    throw new Error("Invalid CRM WhatsApp realtime event.");
-  }
-  const event = value as Record<string, unknown>;
+  const event = readRecord(value);
+  if (event.type === "connected") return { type: "connected" };
   if (event.type === "message") {
     const { conversationCycle, ...messageEvent } = event;
     return Object.assign({}, messageEvent, {
+      connectionId: readString(event.connectionId),
       message: crmMessageSchema.parse(event.message),
       cycle: crmConversationCycleSchema.parse(conversationCycle),
     }) as CrmRealtimeEvent;
@@ -150,11 +151,64 @@ function parseRealtimeEvent(value: unknown): CrmRealtimeEvent {
   if (event.type === "conversationCycle") {
     const { conversationCycle, ...cycleEvent } = event;
     return Object.assign({}, cycleEvent, {
+      connectionId: readString(event.connectionId),
       cycle: crmConversationCycleSchema.parse(conversationCycle),
       type: "cycle",
     }) as CrmRealtimeEvent;
   }
-  return value as CrmRealtimeEvent;
+  if (event.type === "connection_status") {
+    return {
+      connectionId: readString(event.connectionId),
+      phone: readNullableString(event.phone),
+      status: readString(event.status),
+      type: event.type,
+    };
+  }
+  if (event.type === "message_status") {
+    const rawStatus = readString(event.status);
+    const status = crmMessageStatuses.find(
+      (candidate) => candidate === rawStatus,
+    );
+    if (!status) throw invalidRealtimeEvent();
+    return {
+      connectionId: readString(event.connectionId),
+      cycleId: readString(event.cycleId),
+      ...(event.lastCustomerReadAt === undefined
+        ? {}
+        : { lastCustomerReadAt: readString(event.lastCustomerReadAt) }),
+      messageId: readString(event.messageId),
+      status,
+      type: event.type,
+    };
+  }
+  if (event.type === "presence") {
+    return {
+      connectionId: readString(event.connectionId),
+      payload: readRecord(event.payload),
+      type: event.type,
+    };
+  }
+  throw invalidRealtimeEvent();
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw invalidRealtimeEvent();
+  }
+  return value as Record<string, unknown>;
+}
+
+function readString(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) throw invalidRealtimeEvent();
+  return value;
+}
+
+function readNullableString(value: unknown) {
+  return value === null ? null : readString(value);
+}
+
+function invalidRealtimeEvent() {
+  return new Error("Invalid CRM WhatsApp realtime event.");
 }
 
 function trimSeenEventIds(seenEventIds: Set<string>) {
