@@ -70,8 +70,8 @@ export const listLeadBoardQuerySchema = z.object({
 export const crmStatisticsQuerySchema = z
   .object({
     connectionId: z.string().uuid().optional(),
-    from: z.string().datetime(),
-    toExclusive: z.string().datetime(),
+    from: z.string().datetime({ offset: true }),
+    toExclusive: z.string().datetime({ offset: true }),
   })
   .superRefine((value, context) => {
     const from = new Date(value.from);

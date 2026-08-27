@@ -93,6 +93,80 @@ describe("createCrmRealtimeBroker", () => {
     });
     expect(managerReplay).toHaveLength(3);
   });
+
+  it("does not reveal events from before a conversation was assigned to the user", async () => {
+    const broker = createCrmRealtimeBroker();
+    await broker.publish(presenceEvent("baseline"));
+    const [baseline] = await broker.replay({
+      queueVisibility: { kind: "global" },
+      sinceEventId: "0-0",
+      storeId,
+      tenantId,
+    });
+    expect(baseline).toBeDefined();
+
+    await broker.publish(sessionEvent("conversationCycle-1", otherUserId, 1));
+    await broker.publish(sessionEvent("conversationCycle-1", actorUserId, 2));
+
+    const replay = await broker.replay({
+      queueVisibility: { kind: "assigned", userId: actorUserId },
+      sinceEventId: baseline!.id,
+      storeId,
+      tenantId,
+    });
+
+    expect(replay).toHaveLength(1);
+    expect(replay[0]?.event).toMatchObject({
+      conversationCycle: { assignedUserId: actorUserId, revision: 2 },
+    });
+  });
+
+  it("drops stale out-of-order assignment events for assigned users", async () => {
+    const broker = createCrmRealtimeBroker();
+    await broker.publish(presenceEvent("baseline"));
+    const [baseline] = await broker.replay({
+      queueVisibility: { kind: "global" },
+      sinceEventId: "0-0",
+      storeId,
+      tenantId,
+    });
+    const actorEvents = vi.fn();
+    const otherEvents = vi.fn();
+    const managerEvents = vi.fn();
+    broker.subscribe({
+      onEvent: actorEvents,
+      queueVisibility: { kind: "assigned", userId: actorUserId },
+      storeId,
+      tenantId,
+    });
+    broker.subscribe({
+      onEvent: otherEvents,
+      queueVisibility: { kind: "assigned", userId: otherUserId },
+      storeId,
+      tenantId,
+    });
+    broker.subscribe({
+      onEvent: managerEvents,
+      queueVisibility: { kind: "global" },
+      storeId,
+      tenantId,
+    });
+
+    await broker.publish(sessionEvent("conversationCycle-1", actorUserId, 2));
+    await broker.publish(sessionEvent("conversationCycle-1", otherUserId, 1));
+
+    expect(actorEvents).toHaveBeenCalledOnce();
+    expect(otherEvents).not.toHaveBeenCalled();
+    expect(managerEvents).toHaveBeenCalledTimes(2);
+    await expect(
+      broker.replay({
+        queueVisibility: { kind: "assigned", userId: actorUserId },
+        sinceEventId: baseline!.id,
+        storeId,
+        tenantId,
+      }),
+    ).resolves.toHaveLength(1);
+  });
 });
 
 function sessionEvent(

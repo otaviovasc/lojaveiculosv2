@@ -432,9 +432,11 @@ describe("BillingModule v3", () => {
     await screen.findAllByRole("radio");
 
     expect(billingApi.getPlanHire).not.toHaveBeenCalled();
-    expect(
-      window.sessionStorage.getItem("lojaveiculos.billing.active-hire"),
-    ).toBeNull();
+    await waitFor(() =>
+      expect(
+        window.sessionStorage.getItem("lojaveiculos.billing.active-hire"),
+      ).toBeNull(),
+    );
     expect(window.sessionStorage.getItem(scopedHireKey)).toBeNull();
   });
 

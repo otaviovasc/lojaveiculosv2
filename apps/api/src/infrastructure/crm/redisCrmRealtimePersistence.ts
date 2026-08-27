@@ -6,12 +6,7 @@ import type {
   CrmRealtimeReplayInput,
   CrmRealtimeTicket,
 } from "../../domains/crm/ports/crmRealtimePublisher.js";
-import {
-  matchesCrmRealtimeQueueVisibility,
-  readCrmRealtimeConversationCycleBoundary,
-  updateCrmRealtimeAssignmentBoundary,
-  type CrmRealtimeAssignmentBoundary,
-} from "../../domains/crm/messaging/crmQueueVisibility.js";
+import { filterCrmRealtimeReplayByHistoricalVisibility } from "../../domains/crm/messaging/crmQueueVisibility.js";
 
 const channel = "crm:realtime";
 const streamKeyPrefix = "crm:realtime:stream:";
@@ -93,17 +88,16 @@ export function createRedisCrmRealtimePersistence(
           break;
         cursor = nextCursor;
       }
-      const boundaries = new Map<string, CrmRealtimeAssignmentBoundary>();
-      retained.forEach(({ event }) =>
-        updateCrmRealtimeAssignmentBoundary(boundaries, event),
+      const scoped = retained.filter((item) =>
+        matchesReplayScope(input, item.event),
       );
-      const cursorIndex = retained.findIndex(
+      const cursorIndex = scoped.findIndex(
         (item) => item.id === input.sinceEventId,
       );
-      const replay =
-        cursorIndex >= 0 ? retained.slice(cursorIndex + 1) : retained;
-      const visible = replay.filter((item) =>
-        matchesReplayScope(input, item.event, boundaries),
+      const visible = filterCrmRealtimeReplayByHistoricalVisibility(
+        scoped,
+        cursorIndex >= 0 ? cursorIndex + 1 : 0,
+        input.queueVisibility,
       );
       return selectReplayWindow(visible, input.queueVisibility, limit);
     },
@@ -193,20 +187,9 @@ function parseStreamEvent(value: unknown) {
 function matchesReplayScope(
   input: CrmRealtimeReplayInput,
   event: CrmRealtimeEvent,
-  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
 ) {
   if (input.storeId !== event.storeId) return false;
   if (input.tenantId !== event.tenantId) return false;
-  const observed = readCrmRealtimeConversationCycleBoundary(event);
-  if (
-    !matchesCrmRealtimeQueueVisibility(
-      input.queueVisibility,
-      event,
-      observed ? boundaries.get(observed.cycleKey) : undefined,
-    )
-  ) {
-    return false;
-  }
   if (!input.connectionId) return true;
   return input.connectionId === event.connectionId;
 }

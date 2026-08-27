@@ -41,6 +41,18 @@ describe("CrmNotice", () => {
   it("does not render an inert action", () => {
     render(<CrmNotice actionLabel="Tentar novamente" message="Falhou" />);
 
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Tentar novamente" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Fechar notificação" }),
+    ).toBeVisible();
+  });
+
+  it("keeps configuration and permission guidance inline", () => {
+    render(<CrmNotice inline message="Configure seu canal." />);
+
+    expect(screen.getByRole("note")).toHaveClass("crm-note");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

@@ -12,7 +12,6 @@ import {
   createOptimisticMediaMessage,
   createOptimisticTextMessage,
   haveSameMessageSnapshot,
-  mergeMessagesFromServer,
   type CrmMessageView,
 } from "./crmConversationModel";
 import type {
@@ -41,7 +40,10 @@ type UseCrmMessagesOptions = {
   api: CrmConversationApi;
   canLoadMessages: boolean;
   canSendMessages: boolean;
+  hasMessageAccess?: boolean;
+  hasSendPermission?: boolean;
   mergeCycles: (nextSessions: CrmConversationCycle[]) => void;
+  scopeKey?: string | null;
   setError: (error: Error) => void;
 };
 
@@ -50,19 +52,34 @@ type MessagePaginationState = {
   serverMessageIds: Set<string>;
 };
 
+type QueuedTextMessage = {
+  clientId: string;
+  connectionId: string | null;
+  cycleId: CrmConversationCycleId;
+  idempotencyKey: string;
+  optimistic: CrmMessageView;
+  replyToMessageId: string | null;
+  session: CrmConversationCycle;
+  text: string;
+};
+
 export function useCrmMessages({
   activeSession,
   activeCycleId,
   api,
   canLoadMessages,
   canSendMessages,
+  hasMessageAccess = true,
+  hasSendPermission = true,
   mergeCycles,
+  scopeKey = null,
   setError,
 }: UseCrmMessagesOptions) {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [loadedCycleId, setLoadedCycleId] =
     useState<CrmConversationCycleId | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [pendingTextMessageCount, setPendingTextMessageCount] = useState(0);
   const [messages, setMessages] = useState<CrmMessageView[]>([]);
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
@@ -79,12 +96,38 @@ export function useCrmMessages({
     token: symbol;
   } | null>(null);
   const evictedCycleIdsRef = useRef(new Set<CrmConversationCycleId>());
+  const pendingTextClientIdsRef = useRef(new Set<string>());
+  const textQueueRef = useRef<QueuedTextMessage[]>([]);
+  const activeTextItemRef = useRef<QueuedTextMessage | null>(null);
+  const isDrainingTextQueueRef = useRef(false);
+  const mountedRef = useRef(true);
   const messagesRef = useRef<CrmMessageView[]>([]);
   messagesRef.current = messages;
   const activeCycleIdRef = useRef(activeCycleId);
   activeCycleIdRef.current = activeCycleId;
   const previousCycleIdRef = useRef<CrmConversationCycleId | null>(null);
   const requestGenerationRef = useRef(0);
+  const syncPendingTextCount = useCallback(() => {
+    if (mountedRef.current) {
+      setPendingTextMessageCount(pendingTextClientIdsRef.current.size);
+    }
+  }, []);
+  const cancelQueuedText = useCallback(
+    (shouldCancel: (item: QueuedTextMessage) => boolean) => {
+      const queued = textQueueRef.current;
+      textQueueRef.current = queued.filter((item) => {
+        if (!shouldCancel(item)) return true;
+        pendingTextClientIdsRef.current.delete(item.clientId);
+        return false;
+      });
+      const active = activeTextItemRef.current;
+      if (active && shouldCancel(active)) {
+        pendingTextClientIdsRef.current.delete(active.clientId);
+      }
+      syncPendingTextCount();
+    },
+    [syncPendingTextCount],
+  );
   const updateSessionMessages = useCallback(
     (
       cycleId: CrmConversationCycleId,
@@ -101,6 +144,7 @@ export function useCrmMessages({
   );
   const evictSessionMessages = useCallback(
     (cycleId: CrmConversationCycleId) => {
+      cancelQueuedText((item) => item.cycleId === cycleId);
       evictedCycleIdsRef.current.add(cycleId);
       messagesBySessionRef.current.delete(cycleId);
       paginationBySessionRef.current.delete(cycleId);
@@ -116,8 +160,26 @@ export function useCrmMessages({
       setIsLoadingOlderMessages(false);
       setOlderMessagesError(false);
     },
-    [],
+    [cancelQueuedText],
   );
+  const evictAllSessionMessages = useCallback(() => {
+    cancelQueuedText(() => true);
+    requestGenerationRef.current += 1;
+    for (const cycleId of messagesBySessionRef.current.keys()) {
+      evictedCycleIdsRef.current.add(cycleId);
+    }
+    const activeId = activeCycleIdRef.current;
+    if (activeId) evictedCycleIdsRef.current.add(activeId);
+    messagesBySessionRef.current.clear();
+    paginationBySessionRef.current.clear();
+    previousCycleIdRef.current = null;
+    setMessages([]);
+    setLoadedCycleId(null);
+    setIsLoadingMessages(false);
+    setHasOlderMessages(false);
+    setIsLoadingOlderMessages(false);
+    setOlderMessagesError(false);
+  }, [cancelQueuedText]);
   const setStructuredMessages = useCallback(
     (update: SetStateAction<CrmMessageView[]>) => {
       if (activeCycleId) updateSessionMessages(activeCycleId, update);
@@ -135,6 +197,37 @@ export function useCrmMessages({
     setIsSending,
     setMessages: setStructuredMessages,
   });
+
+  const previousScopeKeyRef = useRef(scopeKey);
+  useEffect(() => {
+    if (previousScopeKeyRef.current !== scopeKey) {
+      previousScopeKeyRef.current = scopeKey;
+      evictAllSessionMessages();
+    }
+  }, [evictAllSessionMessages, scopeKey]);
+
+  useEffect(() => {
+    if (!hasMessageAccess) {
+      evictAllSessionMessages();
+      return;
+    }
+    if (!hasSendPermission) cancelQueuedText(() => true);
+  }, [
+    cancelQueuedText,
+    evictAllSessionMessages,
+    hasMessageAccess,
+    hasSendPermission,
+  ]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      pendingTextClientIdsRef.current.clear();
+      textQueueRef.current = [];
+      activeTextItemRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const previousCycleId = previousCycleIdRef.current;
@@ -217,7 +310,7 @@ export function useCrmMessages({
             }
             paginationBySessionRef.current.set(activeCycleId, pagination);
             setMessages((current) =>
-              mergeMessagesFromServer(current, nextMessages),
+              mergeServerMessagesByIdentity(current, nextMessages),
             );
             setLoadedCycleId(activeCycleId);
             setHasOlderMessages(pagination.hasOlderMessages);
@@ -286,7 +379,7 @@ export function useCrmMessages({
           nextMessages.length === MESSAGE_PAGE_SIZE && newMessageCount > 0;
         paginationBySessionRef.current.set(cycleId, pagination);
         updateSessionMessages(cycleId, (current) =>
-          mergeMessagesFromServer(current, nextMessages),
+          mergeServerMessagesByIdentity(current, nextMessages),
         );
         setHasOlderMessages(pagination.hasOlderMessages);
         return newMessageCount > 0;
@@ -324,15 +417,88 @@ export function useCrmMessages({
     );
   }, []);
 
-  const sendText = async (text: string, options: SendTextOptions = {}) => {
+  const drainTextQueue = useCallback(async () => {
+    if (isDrainingTextQueueRef.current) return;
+    isDrainingTextQueueRef.current = true;
+    try {
+      while (textQueueRef.current.length) {
+        const queued = textQueueRef.current.shift();
+        if (!queued || !pendingTextClientIdsRef.current.has(queued.clientId)) {
+          continue;
+        }
+        activeTextItemRef.current = queued;
+        try {
+          const sent = await api.sendText({
+            idempotencyKey: queued.idempotencyKey,
+            ...(queued.replyToMessageId
+              ? { replyToMessageId: queued.replyToMessageId }
+              : {}),
+            cycleId: queued.cycleId,
+            text: queued.text,
+          });
+          if (!pendingTextClientIdsRef.current.has(queued.clientId)) continue;
+          updateSessionMessages(queued.cycleId, (current) =>
+            current
+              .filter(
+                (message) =>
+                  message.clientId === queued.clientId ||
+                  String(message.id) !== String(sent.id),
+              )
+              .map((message) =>
+                message.clientId === queued.clientId
+                  ? { ...sent, clientId: queued.clientId }
+                  : message,
+              ),
+          );
+          mergeCycles([
+            {
+              ...queued.session,
+              lastMessageAt: sent.createdAt,
+              lastMessageContent: formatSentPreview(sent),
+              status: "HUMAN_TAKEOVER",
+            },
+          ]);
+        } catch (caught) {
+          if (!pendingTextClientIdsRef.current.has(queued.clientId)) continue;
+          updateSessionMessages(queued.cycleId, (current) =>
+            current.map((message) =>
+              message.clientId === queued.clientId
+                ? {
+                    ...message,
+                    metadata: {
+                      ...message.metadata,
+                      idempotencyKey: queued.idempotencyKey,
+                    },
+                    status: readFailedSendStatus(caught),
+                  }
+                : message,
+            ),
+          );
+          setError(asError(caught));
+        } finally {
+          pendingTextClientIdsRef.current.delete(queued.clientId);
+          if (activeTextItemRef.current?.clientId === queued.clientId) {
+            activeTextItemRef.current = null;
+          }
+          syncPendingTextCount();
+        }
+      }
+    } finally {
+      isDrainingTextQueueRef.current = false;
+    }
+  }, [api, mergeCycles, setError, syncPendingTextCount, updateSessionMessages]);
+
+  const sendText = (text: string, options: SendTextOptions = {}) => {
     if (
       !activeCycleId ||
       !activeSession ||
       !canLoadMessages ||
       !canSendMessages
     )
-      return false;
-    if (typeof activeCycleId !== "string" || !text.trim()) return false;
+      return Promise.resolve(false);
+    if (typeof activeCycleId !== "string" || !text.trim()) {
+      return Promise.resolve(false);
+    }
     const replyTo = options.replyToMessage;
     const optimistic = createOptimisticTextMessage(text.trim(), {
       ...(activeSession.assignedMember?.name
@@ -353,51 +519,33 @@ export function useCrmMessages({
     });
     const idempotencyKey =
       options.idempotencyKey ?? optimistic.clientId ?? crypto.randomUUID();
-    updateSessionMessages(activeCycleId, (current) => [...current, optimistic]);
-    setIsSending(true);
-    try {
-      const sent = await api.sendText({
-        idempotencyKey,
-        ...(replyTo?.id ? { replyToMessageId: String(replyTo.id) } : {}),
-        cycleId: activeCycleId,
-        text: text.trim(),
-      });
-      const localClientId = optimistic.clientId;
-      updateSessionMessages(activeCycleId, (current) =>
-        current.map((message) =>
-          message.clientId === optimistic.clientId
-            ? { ...sent, ...(localClientId ? { clientId: localClientId } : {}) }
-            : message,
-        ),
-      );
-      if (activeSession) {
-        mergeCycles([
-          {
-            ...activeSession,
-            lastMessageAt: sent.createdAt,
-            lastMessageContent: formatSentPreview(sent),
-            status: "HUMAN_TAKEOVER",
-          },
-        ]);
-      }
-      return true;
-    } catch (caught) {
-      updateSessionMessages(activeCycleId, (current) =>
-        current.map((message) =>
-          message.clientId === optimistic.clientId
-            ? {
-                ...message,
-                metadata: { ...message.metadata, idempotencyKey },
-                status: readFailedSendStatus(caught),
-              }
-            : message,
-        ),
-      );
-      setError(asError(caught));
-      return false;
-    } finally {
-      setIsSending(false);
-    }
+    const clientId = optimistic.clientId ?? idempotencyKey;
+    const queuedOptimistic = {
+      ...optimistic,
+      clientId,
+      metadata: { ...optimistic.metadata, idempotencyKey },
+    };
+    const queued: QueuedTextMessage = {
+      clientId,
+      connectionId: activeSession.connection?.id
+        ? String(activeSession.connection.id)
+        : null,
+      cycleId: activeCycleId,
+      idempotencyKey,
+      optimistic: queuedOptimistic,
+      replyToMessageId: replyTo?.id ? String(replyTo.id) : null,
+      session: activeSession,
+      text: text.trim(),
+    };
+    updateSessionMessages(activeCycleId, (current) => [
+      ...current,
+      queued.optimistic,
+    ]);
+    pendingTextClientIdsRef.current.add(clientId);
+    textQueueRef.current.push(queued);
+    syncPendingTextCount();
+    void drainTextQueue();
+    return Promise.resolve(true);
   };
 
   const sendMedia = async (input: {
@@ -485,7 +633,9 @@ export function useCrmMessages({
   );
   const deleteMessage = useCallback(
     async (message: CrmMessage) => {
-      if (!canSendMessages) return false;
+      if (!canSendMessages || pendingTextClientIdsRef.current.size > 0) {
+        return false;
+      }
       setIsSending(true);
       try {
         const updated = await api.deleteMessage(message.id);
@@ -545,11 +695,14 @@ export function useCrmMessages({
     [updateSessionMessages],
   );
   return {
+    evictAllSessionMessages,
     evictSessionMessages,
+    hasPendingTextMessages: pendingTextMessageCount > 0,
     hasOlderMessages,
     isLoadingMessages,
     isLoadingOlderMessages,
     hasLoadedActiveMessages: loadedCycleId === activeCycleId,
+    isBlockingMutation: isSending || pendingTextMessageCount > 0,
     isSending,
     deleteMessage,
     listCatalogProducts: structuredMessages.listCatalogProducts,
@@ -588,19 +741,29 @@ export function mergeRealtimeMessageIntoHistory(
   const mergedById = new Map<string, CrmMessageView>();
   for (const currentMessage of current) {
     if (String(currentMessage.id) === messageId) continue;
-    if (
-      currentMessage.clientId &&
-      currentMessage.content === message.content &&
-      currentMessage.direction === message.direction &&
-      currentMessage.type === message.type
-    ) {
-      continue;
-    }
     mergedById.set(String(currentMessage.id), currentMessage);
   }
   mergedById.set(messageId, message);
 
   const next = [...mergedById.values()].sort(
+    (left, right) =>
+      new Date(left.providerTimestamp ?? left.createdAt).getTime() -
+      new Date(right.providerTimestamp ?? right.createdAt).getTime(),
+  );
+  return haveSameMessageSnapshot(current, next) ? current : next;
+}
+
+function mergeServerMessagesByIdentity(
+  current: CrmMessageView[],
+  serverMessages: CrmMessage[],
+) {
+  const serverIds = new Set(
+    serverMessages.map((message) => String(message.id)),
+  );
+  const retained = current.filter(
+    (message) => !serverIds.has(String(message.id)),
+  );
+  const next = [...serverMessages, ...retained].sort(
     (left, right) =>
       new Date(left.providerTimestamp ?? left.createdAt).getTime() -
       new Date(right.providerTimestamp ?? right.createdAt).getTime(),

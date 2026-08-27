@@ -20,6 +20,20 @@ describe("Toast", () => {
     expect(toast).toHaveAttribute("aria-atomic", "true");
     expect(toast).toHaveTextContent("Conectando");
     expect(toast).toHaveTextContent("Aguarde a confirmação.");
+    expect(
+      screen.getByRole("button", { name: "Fechar notificação" }),
+    ).toBeVisible();
+  });
+
+  it("can be dismissed even without an external callback", async () => {
+    const user = userEvent.setup();
+    render(<Toast durationMs={null} title="Conectando" />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Fechar notificação" }),
+    );
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("supports assertive errors and an accessible dismiss action", async () => {
@@ -64,5 +78,35 @@ describe("Toast", () => {
     await act(async () => vi.advanceTimersByTime(30_000));
 
     expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("restarts its lifetime when the feedback identity changes", async () => {
+    vi.useFakeTimers();
+    const onDismiss = vi.fn();
+    const rendered = render(
+      <Toast
+        durationMs={10_000}
+        onDismiss={onDismiss}
+        resetKey="first"
+        title="Primeiro"
+      />,
+    );
+
+    await act(async () => vi.advanceTimersByTime(9_000));
+    rendered.rerender(
+      <Toast
+        durationMs={10_000}
+        onDismiss={onDismiss}
+        resetKey="second"
+        title="Segundo"
+      />,
+    );
+    await act(async () => vi.advanceTimersByTime(9_000));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Segundo");
+    expect(onDismiss).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTime(1_000));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(onDismiss).toHaveBeenCalledOnce();
   });
 });

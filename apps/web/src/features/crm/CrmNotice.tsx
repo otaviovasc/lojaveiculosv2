@@ -5,25 +5,27 @@ import { Toast } from "../../components/ui/Toast";
 
 export function CrmNotice({
   actionLabel,
+  durationMs = null,
+  inline = false,
   message,
   onAction,
+  onDismiss,
+  noticeId,
   requestId,
 }: {
   actionLabel?: string;
+  durationMs?: number | null;
+  inline?: boolean;
   message: string;
   onAction?: () => void;
+  onDismiss?: () => void;
+  noticeId?: string;
   requestId?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
-  return (
-    <Toast
-      durationMs={null}
-      icon={<CircleAlert aria-hidden="true" className="size-5" />}
-      priority="assertive"
-      title={message}
-      tone="danger"
-    >
+  const details = (
+    <>
       {requestId ? (
         <details>
           <summary>Detalhes técnicos</summary>
@@ -55,6 +57,30 @@ export function CrmNotice({
           {actionLabel}
         </Button>
       ) : null}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <aside className="crm-note" role="note">
+        <CircleAlert aria-hidden="true" className="size-5" />
+        <strong>{message}</strong>
+        {details}
+      </aside>
+    );
+  }
+
+  return (
+    <Toast
+      durationMs={durationMs}
+      icon={<CircleAlert aria-hidden="true" className="size-5" />}
+      {...(onDismiss ? { onDismiss } : {})}
+      priority="assertive"
+      {...(noticeId ? { resetKey: noticeId } : {})}
+      title={message}
+      tone="danger"
+    >
+      {details}
     </Toast>
   );
 }

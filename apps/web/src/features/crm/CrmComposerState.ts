@@ -110,18 +110,34 @@ export function useMessageComposerState({
     if (effectiveDisabled || !canSend) return;
     const caption = text.trim();
     const submittedFiles = files;
-    setIsSubmitting(true);
     setFiles([]);
     setText("");
     setMenuOpen(false);
 
-    try {
-      if (!submittedFiles.length) {
-        const accepted = await onSend(caption);
-        if (!accepted) setText(caption);
+    if (!submittedFiles.length) {
+      const activeElementAtSubmit = document.activeElement;
+      const shouldRestoreFocus =
+        activeElementAtSubmit === textareaRef.current ||
+        Boolean(activeElementAtSubmit?.closest(".crm-send-action"));
+      const accepted = await onSend(caption);
+      if (!accepted) {
+        setText((current) => current || caption);
         return;
       }
+      const currentActiveElement = document.activeElement;
+      if (
+        shouldRestoreFocus &&
+        (currentActiveElement === document.body ||
+          currentActiveElement === textareaRef.current ||
+          currentActiveElement === activeElementAtSubmit)
+      ) {
+        textareaRef.current?.focus({ preventScroll: true });
+      }
+      return;
+    }
 
+    setIsSubmitting(true);
+    try {
       for (const [index, file] of submittedFiles.entries()) {
         const accepted = await onSendMedia({
           ...(allowMediaCaption && index === 0 && caption ? { caption } : {}),
@@ -163,7 +179,9 @@ export function useMessageComposerState({
     }
     setText(message.content);
     setQuickIndex(0);
-    window.requestAnimationFrame(() => textareaRef.current?.focus());
+    window.requestAnimationFrame(() =>
+      textareaRef.current?.focus({ preventScroll: true }),
+    );
   };
 
   const onTextChange = (value: string) => {

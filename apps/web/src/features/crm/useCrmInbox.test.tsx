@@ -55,7 +55,8 @@ const hookMocks = vi.hoisted(() => {
       ],
       createConnection: resolveFalse,
       disconnectZapiConnection: resolveFalse,
-      error: null,
+      clearError: vi.fn(),
+      error: null as Error | null,
       isLoading: false,
       refreshConnections: vi.fn(async () => undefined),
       repairZapiConnectionCredentials: resolveFalse,
@@ -67,8 +68,11 @@ const hookMocks = vi.hoisted(() => {
     },
     messages: {
       deleteMessage: resolveFalse,
+      evictAllSessionMessages: vi.fn(),
       evictSessionMessages: vi.fn(),
+      hasPendingTextMessages: false,
       hasLoadedActiveMessages: false,
+      isBlockingMutation: false,
       isLoadingMessages: false,
       isSending: false,
       listCatalogProducts: vi.fn(async () => []),
@@ -86,7 +90,8 @@ const hookMocks = vi.hoisted(() => {
       updateRealtimeMessageStatus: noop,
     },
     routing: {
-      error: null,
+      clearError: vi.fn(),
+      error: null as Error | null,
       isLoading: false,
       policy: {
         channels: [
@@ -209,6 +214,10 @@ describe("useCrmInbox realtime queue integration", () => {
   afterEach(() => {
     cleanup();
     hookMocks.useRealLifecycle = false;
+    hookMocks.connections.error = null;
+    hookMocks.connections.clearError.mockClear();
+    hookMocks.routing.error = null;
+    hookMocks.routing.clearError.mockClear();
     localStorage.clear();
     window.location.hash = "";
   });
@@ -402,6 +411,133 @@ describe("useCrmInbox realtime queue integration", () => {
     ).toBe(result.current.conversationCycles.length);
   });
 
+  it("preserves the active conversation when a queue filter hides it", async () => {
+    hookMocks.messages.evictSessionMessages.mockClear();
+    const active = createSession({
+      assignedUserId: "user-current",
+      revision: 1,
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => [active]),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await act(async () => result.current.refreshSessions());
+    await waitFor(() =>
+      expect(result.current.activeSession?.id).toBe(active.id),
+    );
+
+    act(() => result.current.setQuickFilter("fresh"));
+
+    expect(result.current.conversationCycles).toEqual([]);
+    expect(result.current.activeCycleId).toBe(active.id);
+    expect(result.current.activeSession?.id).toBe(active.id);
+    expect(hookMocks.messages.evictSessionMessages).not.toHaveBeenCalledWith(
+      active.id,
+    );
+  });
+
+  it("stops exposing the active conversation when read permission is revoked", async () => {
+    const active = createSession({ assignedUserId: "user-current" });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => [active]),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    let session = createSessionBootstrap();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={session}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result, rerender } = renderHook(
+      ({ revision }: { revision: number }) => {
+        void revision;
+        return useCrmInbox(api);
+      },
+      { initialProps: { revision: 0 }, wrapper },
+    );
+
+    await act(async () => result.current.refreshSessions());
+    await waitFor(() => expect(result.current.activeSession).toEqual(active));
+
+    session = {
+      ...session,
+      defaultStore: session.defaultStore
+        ? { ...session.defaultStore, effectivePermissions: [] }
+        : null,
+    };
+    rerender({ revision: 1 });
+
+    expect(result.current.activeSession).toBeNull();
+    expect(result.current.activeCycleId).toBeNull();
+    expect(result.current.conversationCycles).toEqual([]);
+    expect(result.current.messages).toEqual([]);
+  });
+
+  it("clears only the transient error identified by errorId", async () => {
+    const transient = new Error("falha temporária");
+    const listConversationCycleCounts = vi
+      .fn<CrmConversationApi["listConversationCycleCounts"]>()
+      .mockRejectedValue(transient);
+    const api = {
+      listConversationCycleCounts,
+      listConversationCycles: vi.fn(async () => [createSession({})]),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await act(async () => result.current.refreshSessions());
+    await waitFor(() => expect(result.current.error).toBe(transient));
+    const currentErrorId = result.current.errorId;
+    expect(currentErrorId).toMatch(/^crm-error-/);
+
+    act(() => result.current.clearError("outro-erro"));
+    expect(result.current.error).toBe(transient);
+
+    act(() => result.current.clearError(currentErrorId!));
+    expect(result.current.error).toBeNull();
+    expect(result.current.errorId).toBeNull();
+  });
+
+  it("makes a transient connection error dismissible by its own identity", () => {
+    const transient = new Error("conexão indisponível");
+    hookMocks.connections.error = transient;
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    expect(result.current.error).toBe(transient);
+    expect(result.current.errorId).toMatch(/^crm-error-/);
+    act(() => result.current.clearError(result.current.errorId!));
+    expect(hookMocks.connections.clearError).toHaveBeenCalledOnce();
+  });
+
   it("coerces inaccessible queue filters to Meus", async () => {
     const api = {
       listConversationCycleCounts: vi.fn(
@@ -488,7 +624,7 @@ describe("useCrmInbox realtime queue integration", () => {
     },
   );
 
-  it("keeps the queue stable while SSE reconnects", async () => {
+  it("reconciles a missed access revocation after SSE reconnects", async () => {
     hookMocks.messages.evictSessionMessages.mockClear();
     let onStatus:
       | ((status: "connected" | "connecting" | "degraded" | "offline") => void)
@@ -522,12 +658,16 @@ describe("useCrmInbox realtime queue integration", () => {
     conversationCycles = [];
 
     act(() => onStatus?.("connected"));
+    act(() => onStatus?.("connecting"));
+    act(() => onStatus?.("connected"));
 
     await waitFor(() => {
-      expect(result.current.conversationCycles).toHaveLength(1);
-      expect(result.current.activeSession?.id).toBe("cycle-1");
+      expect(result.current.conversationCycles).toHaveLength(0);
+      expect(result.current.activeSession).toBeNull();
     });
-    expect(hookMocks.messages.evictSessionMessages).not.toHaveBeenCalled();
+    expect(hookMocks.messages.evictSessionMessages).toHaveBeenCalledWith(
+      "cycle-1",
+    );
   });
 
   it("keeps cached pagination while SSE reconnects", async () => {

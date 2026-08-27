@@ -159,6 +159,22 @@ export async function updateConversationCycleIdentity(
   )
     return conversationCycle;
 
+  const [updatedCycle] = await db
+    .update(conversationCycles)
+    .set({
+      revision: sql`${conversationCycles.revision} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(conversationCycles.id, conversationCycle.cycle.id),
+        eq(conversationCycles.storeId, input.storeId),
+        eq(conversationCycles.tenantId, input.tenantId),
+      ),
+    )
+    .returning();
+  if (!updatedCycle)
+    throw new Error("Canonical CRM conversation cycle was not found.");
   const [updated] = await db
     .update(conversationThreads)
     .set({
@@ -182,22 +198,6 @@ export async function updateConversationCycleIdentity(
     .returning();
   if (!updated)
     throw new Error("Canonical CRM conversation context was not found.");
-  const [updatedCycle] = await db
-    .update(conversationCycles)
-    .set({
-      revision: sql`${conversationCycles.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(conversationCycles.id, conversationCycle.cycle.id),
-        eq(conversationCycles.storeId, input.storeId),
-        eq(conversationCycles.tenantId, input.tenantId),
-      ),
-    )
-    .returning();
-  if (!updatedCycle)
-    throw new Error("Canonical CRM conversation cycle was not found.");
   return { ...conversationCycle, cycle: updatedCycle, thread: updated };
 }
 

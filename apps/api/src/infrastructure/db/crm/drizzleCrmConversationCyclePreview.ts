@@ -149,37 +149,6 @@ export async function updateConversationCyclePreview(
   const now = new Date();
   const cycleMetadata = readRecord(conversationCycle.cycle.metadata);
   await db
-    .update(conversationThreads)
-    .set({
-      ...(shouldBackfillCrmMessagingPhone(
-        conversationCycle.thread.customerPhone ?? "",
-        input.customerPhone,
-        Boolean(
-          input.customerChatId &&
-          conversationCycle.thread.customerChatId === input.customerChatId,
-        ),
-      )
-        ? { customerPhone: input.customerPhone }
-        : {}),
-      ...(input.customerChatId ? { customerChatId: input.customerChatId } : {}),
-      ...(!conversationCycle.thread.customerDisplayName &&
-      input.customerDisplayName
-        ? { customerDisplayName: input.customerDisplayName }
-        : {}),
-      ...newerThreadPreview(input),
-      revision: sql`${conversationThreads.revision} + 1`,
-      state: "open",
-      updatedAt: now,
-    })
-    .where(
-      and(
-        eq(conversationThreads.id, conversationCycle.thread.id),
-        eq(conversationThreads.storeId, input.storeId),
-        eq(conversationThreads.tenantId, input.tenantId),
-      ),
-    );
-
-  await db
     .update(conversationCycles)
     .set({
       ...(input.direction === "OUTBOUND" && input.firstHandledAt
@@ -215,6 +184,37 @@ export async function updateConversationCyclePreview(
         eq(conversationCycles.id, conversationCycle.cycle.id),
         eq(conversationCycles.storeId, input.storeId),
         eq(conversationCycles.tenantId, input.tenantId),
+      ),
+    );
+
+  await db
+    .update(conversationThreads)
+    .set({
+      ...(shouldBackfillCrmMessagingPhone(
+        conversationCycle.thread.customerPhone ?? "",
+        input.customerPhone,
+        Boolean(
+          input.customerChatId &&
+          conversationCycle.thread.customerChatId === input.customerChatId,
+        ),
+      )
+        ? { customerPhone: input.customerPhone }
+        : {}),
+      ...(input.customerChatId ? { customerChatId: input.customerChatId } : {}),
+      ...(!conversationCycle.thread.customerDisplayName &&
+      input.customerDisplayName
+        ? { customerDisplayName: input.customerDisplayName }
+        : {}),
+      ...newerThreadPreview(input),
+      revision: sql`${conversationThreads.revision} + 1`,
+      state: "open",
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(conversationThreads.id, conversationCycle.thread.id),
+        eq(conversationThreads.storeId, input.storeId),
+        eq(conversationThreads.tenantId, input.tenantId),
       ),
     );
 }

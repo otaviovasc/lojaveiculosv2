@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 import { loadLocalEnv } from "../../config/loadLocalEnv.js";
+import { seedRawAttendanceCycle } from "./drizzleCrmConversationAttendance.rawDb.testSupport.js";
 import { createDrizzleCrmConversationRepository } from "./drizzleCrmConversationRepository.js";
 
 loadLocalEnv();
@@ -160,6 +161,85 @@ describe.skipIf(process.env.RUN_RAW_CRM_DB_TESTS !== "true")(
         });
       } catch (error) {
         if (error !== rollback) throw error;
+      } finally {
+        await sqlClient.end();
+      }
+    });
+
+    it("serializes concurrent transitions before recording their event", async () => {
+      const sqlClient = postgres(process.env.DATABASE_URL ?? "", { max: 4 });
+      const db = drizzle(sqlClient, { schema });
+      try {
+        const fixture = await seedRawAttendanceCycle(db);
+        const occurredAt = new Date("2026-08-18T13:00:00.000Z");
+        const interventionId = randomUUID();
+        const transition = {
+          actorId: "raw-concurrent-attendance-operator",
+          actorKind: "system" as const,
+          expectedHumanAttendanceStateVersion: null,
+          expectedInterventionId: null,
+          expectedRevision: 0,
+          expectedStatus: "ACTIVE" as const,
+          humanAttendanceChangedAt: occurredAt,
+          humanAttendanceState: "WAITING_HUMAN" as const,
+          humanAttendanceStateVersion: 1,
+          humanTakeoverAt: occurredAt,
+          idempotencyKey: `concurrent-attendance:${interventionId}`,
+          interventionId,
+          interventionIdForLedger: interventionId,
+          nextState: "WAITING_HUMAN" as const,
+          occurredAt,
+          previousState: null,
+          reason: "raw_postgres_concurrency_regression",
+          requestFingerprint: randomUUID().replaceAll("-", ""),
+          cycleId: fixture.cycleId,
+          source: "admin",
+          status: "HUMAN_TAKEOVER" as const,
+          storeId: fixture.storeId as StoreId,
+          tenantId: fixture.tenantId as TenantId,
+        };
+        const attempt = (suffix: string) =>
+          db.transaction(async (transaction) => {
+            await transaction.execute(
+              sql`set constraints "crm_conversation_attendance_event_matches_state_trigger" immediate`,
+            );
+            return createDrizzleCrmConversationRepository(transaction, {
+              disableTransactions: true,
+            }).transitionAttendance({
+              ...transition,
+              idempotencyKey: `${transition.idempotencyKey}:${suffix}`,
+              requestFingerprint: `${transition.requestFingerprint}${suffix}`,
+            });
+          });
+
+        const results = await Promise.all([attempt("a"), attempt("b")]);
+        expect(
+          results.map((result) => result?.transitionCreated ?? null).sort(),
+        ).toEqual([null, true]);
+        const winnerSuffix = results[0]?.transitionCreated ? "a" : "b";
+        const replay = await createDrizzleCrmConversationRepository(
+          db,
+        ).transitionAttendance({
+          ...transition,
+          idempotencyKey: `${transition.idempotencyKey}:${winnerSuffix}`,
+          requestFingerprint: `${transition.requestFingerprint}${winnerSuffix}`,
+        });
+        expect(replay?.transitionCreated).toBe(false);
+        expect(
+          await createDrizzleCrmConversationRepository(db).transitionAttendance(
+            {
+              ...transition,
+              storeId: randomUUID() as StoreId,
+            },
+          ),
+        ).toBeNull();
+        const events = await db
+          .select()
+          .from(schema.conversationAttendanceEvents)
+          .where(
+            eq(schema.conversationAttendanceEvents.cycleId, fixture.cycleId),
+          );
+        expect(events).toHaveLength(1);
       } finally {
         await sqlClient.end();
       }

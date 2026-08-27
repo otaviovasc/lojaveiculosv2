@@ -16,6 +16,7 @@ import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
 import { readMediaType } from "./crmMediaFiles";
 
 export type MessageComposerHandle = {
+  focusInput: () => void;
   openFiles: (files: readonly File[]) => void;
   insertPrompt: (text: string) => void;
 };
@@ -104,12 +105,19 @@ export const MessageComposer = forwardRef<
   const insertPrompt = useCallback(
     (promptText: string) => {
       onTextChange(promptText);
-      window.requestAnimationFrame(() => textareaRef.current?.focus());
+      window.requestAnimationFrame(() =>
+        textareaRef.current?.focus({ preventScroll: true }),
+      );
     },
     [onTextChange, textareaRef],
   );
 
-  useImperativeHandle(ref, () => ({ openFiles, insertPrompt }), [
+  const focusInput = useCallback(() => {
+    textareaRef.current?.focus({ preventScroll: true });
+  }, [textareaRef]);
+
+  useImperativeHandle(ref, () => ({ focusInput, openFiles, insertPrompt }), [
+    focusInput,
     openFiles,
     insertPrompt,
   ]);

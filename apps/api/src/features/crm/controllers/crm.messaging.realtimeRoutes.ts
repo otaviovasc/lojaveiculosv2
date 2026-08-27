@@ -1,16 +1,14 @@
 import type { Context, Hono } from "hono";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type {
-  CrmRealtimeBroker,
-  CrmRealtimeEventEnvelope,
-} from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import { requireCrmScope } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import type { ServiceLogger } from "../../../shared/serviceLogger.js";
 import { assertConversationRead } from "./crm.messaging.controller.support.js";
 import { handleCrmMessaging } from "./crm.messaging.errors.js";
-import { toCrmRealtimeEventDto } from "./crm.messaging.realtime.dto.js";
 import { resolveCrmQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
+import { createCrmSseResponse } from "./crm.messaging.realtimeStream.js";
 
 export type RegisterCrmMessagingRealtimeRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -23,6 +21,10 @@ export function registerCrmMessagingRealtimeRoutes(
 ) {
   const broker = realtimeBroker;
   if (!broker) return;
+  const ticketLoggers = new Map<
+    string,
+    { logger: ServiceLogger; expiryTimer: ReturnType<typeof setTimeout> }
+  >();
 
   crmFeature.post("/events/ticket", async (context) =>
     handleCrmMessaging(context, async () => {
@@ -37,6 +39,24 @@ export function registerCrmMessagingRealtimeRoutes(
         sinceEventId: input.sinceEventId ?? null,
         storeId: scope.storeId as StoreId,
         tenantId: scope.tenantId as TenantId,
+      });
+      const logger =
+        serviceContext.logger.child?.({
+          component: "crm.realtime",
+          connectionId: input.connectionId ?? null,
+          storeId: scope.storeId,
+          tenantId: scope.tenantId,
+        }) ?? serviceContext.logger;
+      const expiryTimer = setTimeout(
+        () => {
+          ticketLoggers.delete(ticket.ticket);
+        },
+        Math.max(0, ticket.expiresAt.getTime() - Date.now()),
+      );
+      expiryTimer.unref?.();
+      ticketLoggers.set(ticket.ticket, { expiryTimer, logger });
+      logger.info("crm.realtime.ticket.issued", {
+        hasLastEventId: Boolean(input.sinceEventId),
       });
       return context.json({
         expiresAt: ticket.expiresAt.toISOString(),
@@ -57,7 +77,35 @@ export function registerCrmMessagingRealtimeRoutes(
           status: 401,
         });
       }
-      return createSseResponse({
+      const authorize = async () => {
+        try {
+          const serviceContext = await createContext(context);
+          assertConversationRead(serviceContext);
+          const currentScope = requireCrmScope(serviceContext);
+          return (
+            currentScope.storeId === scope.storeId &&
+            currentScope.tenantId === scope.tenantId &&
+            haveSameQueueVisibility(
+              resolveCrmQueueVisibility(serviceContext),
+              scope.queueVisibility,
+            )
+          );
+        } catch {
+          return false;
+        }
+      };
+      if (!(await authorize())) {
+        return jsonApiError(context, {
+          code: "CRM_MESSAGING_SSE_ACCESS_REVOKED",
+          message: "SSE access is no longer authorized.",
+          status: 403,
+        });
+      }
+      const logEntry = ticket ? ticketLoggers.get(ticket) : undefined;
+      if (ticket) ticketLoggers.delete(ticket);
+      if (logEntry) clearTimeout(logEntry.expiryTimer);
+      return createCrmSseResponse({
+        authorize,
         broker,
         connectionId: scope.connectionId ?? null,
         queueVisibility: scope.queueVisibility,
@@ -65,8 +113,21 @@ export function registerCrmMessagingRealtimeRoutes(
         signal: context.req.raw.signal,
         storeId: scope.storeId,
         tenantId: scope.tenantId,
+        ...(logEntry ? { logger: logEntry.logger } : {}),
       });
     }),
+  );
+}
+
+function haveSameQueueVisibility(
+  left: ReturnType<typeof resolveCrmQueueVisibility>,
+  right: ReturnType<typeof resolveCrmQueueVisibility>,
+) {
+  if (left.kind !== right.kind) return false;
+  return (
+    left.kind !== "assigned" ||
+    right.kind !== "assigned" ||
+    left.userId === right.userId
   );
 }
 
@@ -88,100 +149,6 @@ async function readTicketInput(context: Context) {
   }
 }
 
-function createSseResponse(input: {
-  broker: CrmRealtimeBroker;
-  connectionId: string | null;
-  queueVisibility: Parameters<
-    CrmRealtimeBroker["replay"]
-  >[0]["queueVisibility"];
-  sinceEventId: string | null;
-  signal: AbortSignal;
-  storeId: StoreId;
-  tenantId: TenantId;
-}) {
-  const encoder = new TextEncoder();
-  let unsubscribe: (() => void) | null = null;
-  let heartbeat: ReturnType<typeof setInterval> | null = null;
-  const pending: CrmRealtimeEventEnvelope[] = [];
-  const sent = new Set<string>();
-  let isReplaying = true;
-
-  const stream = new ReadableStream<Uint8Array>({
-    cancel() {
-      cleanup();
-    },
-    start(controller) {
-      const write = (value: string) => {
-        controller.enqueue(encoder.encode(value));
-      };
-      const writeEnvelope = (envelope: CrmRealtimeEventEnvelope) => {
-        if (sent.has(envelope.id)) return;
-        sent.add(envelope.id);
-        write(formatSseEnvelope(envelope));
-      };
-      const close = () => {
-        cleanup();
-        try {
-          controller.close();
-        } catch {
-          // Stream may already be closed by the browser.
-        }
-      };
-      write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
-      unsubscribe = input.broker.subscribe({
-        connectionId: input.connectionId,
-        onEvent: (envelope) => {
-          if (isReplaying) {
-            pending.push(envelope);
-            return;
-          }
-          writeEnvelope(envelope);
-        },
-        queueVisibility: input.queueVisibility,
-        storeId: input.storeId,
-        tenantId: input.tenantId,
-      });
-      void input.broker
-        .replay({
-          connectionId: input.connectionId,
-          limit: 250,
-          queueVisibility: input.queueVisibility,
-          sinceEventId: input.sinceEventId,
-          storeId: input.storeId,
-          tenantId: input.tenantId,
-        })
-        .then((events) => {
-          for (const envelope of events) writeEnvelope(envelope);
-        })
-        .finally(() => {
-          isReplaying = false;
-          for (const envelope of pending.splice(0)) writeEnvelope(envelope);
-        });
-      heartbeat = setInterval(() => {
-        write(":heartbeat\n\n");
-      }, 15_000);
-      input.signal.addEventListener("abort", close, { once: true });
-    },
-  });
-
-  function cleanup() {
-    if (heartbeat) clearInterval(heartbeat);
-    heartbeat = null;
-    unsubscribe?.();
-    unsubscribe = null;
-  }
-
-  return new Response(stream, {
-    headers: {
-      "Cache-Control": "no-store",
-      Connection: "keep-alive",
-      "Content-Type": "text/event-stream",
-      "Referrer-Policy": "no-referrer",
-      "X-Accel-Buffering": "no",
-    },
-  });
-}
-
 function setRealtimeSecurityHeaders(context: Context) {
   context.header("Cache-Control", "no-store");
   context.header("Referrer-Policy", "no-referrer");
@@ -197,15 +164,4 @@ function readSinceEventId(context: Context) {
 
 function readOptionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function formatSseEnvelope(envelope: CrmRealtimeEventEnvelope) {
-  const event = toCrmRealtimeEventDto(envelope.event);
-  return [
-    `id: ${envelope.id}`,
-    `event: ${event.type}`,
-    `data: ${JSON.stringify(event)}`,
-    "",
-    "",
-  ].join("\n");
 }

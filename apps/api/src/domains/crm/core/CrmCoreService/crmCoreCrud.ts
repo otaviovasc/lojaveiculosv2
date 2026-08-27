@@ -118,7 +118,6 @@ function assertAllowedPatch<R extends CrmCoreResource>(
     "contact-identities": [],
     contacts: ["displayName"],
     conversations: [
-      "attendanceState",
       "pipelineId",
       "pipelineStageId",
       "threadState",

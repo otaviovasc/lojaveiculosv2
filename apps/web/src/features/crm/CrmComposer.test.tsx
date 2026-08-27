@@ -190,6 +190,80 @@ describe("CrmComposer", () => {
     );
   });
 
+  it("exposes focusInput without scrolling the conversation", () => {
+    const composerRef = createRef<MessageComposerHandle>();
+    const focus = vi.spyOn(HTMLTextAreaElement.prototype, "focus");
+    renderComposer({ ref: composerRef });
+
+    act(() => composerRef.current?.focusInput());
+
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(screen.getByLabelText("Mensagem para enviar")).toHaveFocus();
+  });
+
+  it("accepts another text while the previous send callback is pending", async () => {
+    const pending: Array<(accepted: boolean) => void> = [];
+    const onSend = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          pending.push(resolve);
+        }),
+    );
+    const user = userEvent.setup();
+    renderComposer({ onSend });
+    const textarea = screen.getByLabelText("Mensagem para enviar");
+
+    await user.type(textarea, "Primeira{enter}");
+    expect(textarea).toBeEnabled();
+    await user.type(textarea, "Segunda{enter}");
+
+    expect(onSend).toHaveBeenNthCalledWith(1, "Primeira");
+    expect(onSend).toHaveBeenNthCalledWith(2, "Segunda");
+    expect(textarea).toBeEnabled();
+
+    await act(async () => {
+      pending.forEach((resolve) => resolve(true));
+    });
+  });
+
+  it("returns focus without scrolling after a text send is accepted", async () => {
+    const focus = vi.spyOn(HTMLTextAreaElement.prototype, "focus");
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.type(
+      screen.getByLabelText("Mensagem para enviar"),
+      "Mensagem{enter}",
+    );
+
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
+    expect(screen.getByLabelText("Mensagem para enviar")).toHaveFocus();
+  });
+
+  it("does not steal focus when another control opens during send acceptance", async () => {
+    let resolveSend: ((accepted: boolean) => void) | undefined;
+    const onSend = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveSend = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderComposer({ onSend });
+    const search = document.createElement("input");
+    search.setAttribute("aria-label", "Buscar mensagens");
+    container.append(search);
+
+    await user.type(
+      screen.getByLabelText("Mensagem para enviar"),
+      "Mensagem{enter}",
+    );
+    search.focus();
+    await act(async () => resolveSend?.(true));
+
+    expect(search).toHaveFocus();
+  });
+
   it("shows and clears reply context above the composer", async () => {
     const user = userEvent.setup();
     const onCancelReply = vi.fn();

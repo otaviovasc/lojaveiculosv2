@@ -16,7 +16,7 @@ describe("CrmScopedNav", () => {
       tone: "online",
     });
     expect(readSynchronizedChannelStatus(provider, "connecting")).toEqual({
-      label: "Reconciliando",
+      label: "Reconectando",
       tone: "loading",
     });
     expect(readSynchronizedChannelStatus(provider, "degraded")).toEqual({
@@ -35,7 +35,7 @@ describe("CrmScopedNav", () => {
     const rendered = render(
       <CrmScopedNav
         {...props}
-        connectionLabel="Reconciliando"
+        connectionLabel="Reconectando"
         connectionTone="loading"
       />,
     );
@@ -43,7 +43,7 @@ describe("CrmScopedNav", () => {
     const status = screen.getByRole("status");
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveAttribute("aria-atomic", "true");
-    expect(status).toHaveTextContent("Reconciliando");
+    expect(status).toHaveTextContent("Reconectando");
     expect(status.querySelectorAll(":scope > span")).toHaveLength(1);
     expect(screen.getByText("CRM")).toBeVisible();
 
