@@ -31,23 +31,7 @@ export async function upsertProviderPayment(
   if (scope.storeId) {
     await lockEffectivePlanContract(db, scope.tenantId, scope.storeId);
   }
-  const [payment] = await db
-    .insert(payments)
-    .values(paymentValues(input, scope, input.status))
-    .onConflictDoUpdate({
-      set: {
-        ...paymentValues(input, scope, input.status),
-        paidAt: sql`coalesce(${input.paidAt}, ${payments.paidAt})`,
-        status: sql`case
-          when ${payments.status} = 'refunded' then 'refunded'::payment_status
-          when ${payments.status} = 'paid' and ${input.status} <> 'refunded' then 'paid'::payment_status
-          else ${input.status}::payment_status
-        end`,
-        updatedAt: new Date(),
-      },
-      target: [payments.provider, payments.providerPaymentId],
-    })
-    .returning();
+  const [payment] = await billingProviderPaymentUpsertQuery(db, input, scope);
 
   if (payment) {
     await recordBillingProductEvent(db, {
@@ -164,6 +148,30 @@ export async function upsertProviderPayment(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   };
+}
+
+export function billingProviderPaymentUpsertQuery(
+  db: DrizzleBillingClient,
+  input: UpsertBillingProviderPaymentInput,
+  scope: NonNullable<Awaited<ReturnType<typeof resolvePaymentScope>>>,
+) {
+  return db
+    .insert(payments)
+    .values(paymentValues(input, scope, input.status))
+    .onConflictDoUpdate({
+      set: {
+        ...paymentValues(input, scope, input.status),
+        paidAt: sql`coalesce(${sql.param(input.paidAt, payments.paidAt)}, ${payments.paidAt})`,
+        status: sql`case
+          when ${payments.status} = 'refunded' then 'refunded'::payment_status
+          when ${payments.status} = 'paid' and ${input.status} <> 'refunded' then 'paid'::payment_status
+          else ${input.status}::payment_status
+        end`,
+        updatedAt: new Date(),
+      },
+      target: [payments.provider, payments.providerPaymentId],
+    })
+    .returning();
 }
 
 export class BillingContractActivationOrProjectionError extends Error {

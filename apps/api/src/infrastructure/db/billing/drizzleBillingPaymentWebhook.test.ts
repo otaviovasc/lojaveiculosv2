@@ -1,5 +1,10 @@
+import * as productSchema from "@lojaveiculosv2/db";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { describe, expect, it } from "vitest";
-import { nextPaymentStatus } from "./drizzleBillingPaymentWebhook.js";
+import {
+  billingProviderPaymentUpsertQuery,
+  nextPaymentStatus,
+} from "./drizzleBillingPaymentWebhook.js";
 import {
   refundedHireDecision,
   refundAffectsEffectiveContract,
@@ -7,6 +12,39 @@ import {
 } from "./drizzleBillingRefundHandling.js";
 
 describe("billing payment webhook lifecycle", () => {
+  it("encodes provider timestamps in the payment conflict update", () => {
+    const paidAt = new Date("2026-08-27T12:47:13.000Z");
+    const query = billingProviderPaymentUpsertQuery(
+      drizzle.mock({ schema: productSchema }),
+      {
+        amountCents: 19700,
+        dueAt: new Date("2026-09-27T00:00:00.000Z"),
+        externalReference: "hire_1",
+        invoiceUrl: null,
+        paidAt,
+        provider: "asaas",
+        providerCheckoutId: "checkout_1",
+        providerCustomerId: "customer_1",
+        providerEventId: "event_1",
+        providerPaymentId: "payment_1",
+        providerSubscriptionId: "subscription_provider_1",
+        raw: {},
+        status: "paid",
+      },
+      {
+        hireId: "hire_1",
+        storeId: "00000000-0000-4000-8000-000000000002" as never,
+        subscriptionId: "00000000-0000-4000-8000-000000000003",
+        tenantId: "00000000-0000-4000-8000-000000000001" as never,
+      },
+    ).toSQL();
+
+    expect(query.params.some((parameter) => parameter instanceof Date)).toBe(
+      false,
+    );
+    expect(query.params).toContain(paidAt.toISOString());
+  });
+
   it("makes a refund terminal and prevents stale overdue from regressing paid", () => {
     expect(nextPaymentStatus("paid", "overdue")).toBe("paid");
     expect(nextPaymentStatus("paid", "refunded")).toBe("refunded");
