@@ -15,7 +15,7 @@ const tenantId = "tenant-1" as TenantId;
 describe("Redis CRM realtime publishing", () => {
   beforeEach(() => redisMocks.createClient.mockReset());
 
-  it("does not wait for a local subscriber connection", async () => {
+  it("publishes transient presence without appending replay history", async () => {
     const { command, subscriber } = installRedisClients(
       redisMocks.createClient,
       {},
@@ -29,7 +29,7 @@ describe("Redis CRM realtime publishing", () => {
 
     await expect(broker.publish(createEvent())).resolves.toBeUndefined();
 
-    expect(command.sendCommand).toHaveBeenCalledWith(
+    expect(command.sendCommand).not.toHaveBeenCalledWith(
       expect.arrayContaining(["XADD"]),
     );
     expect(command.publish).toHaveBeenCalledOnce();
@@ -39,8 +39,10 @@ describe("Redis CRM realtime publishing", () => {
 
 function createEvent(): CrmRealtimeEvent {
   return {
+    assignedUserId: null,
     connectionId: "connection-1",
-    payload: { state: "composing" },
+    cycleId: "cycle-1",
+    payload: { phone: "5511999999999", state: "composing" },
     storeId,
     tenantId,
     type: "presence",

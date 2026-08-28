@@ -6,6 +6,7 @@ import type {
 } from "./crmConversationTypes";
 
 import { formatCrmPhone } from "./crmPhoneFormat";
+import { formatLastMessagePreview } from "./crmSentPreview";
 
 export type CrmMessageView = CrmMessage & {
   clientId?: string;
@@ -49,7 +50,10 @@ export function formatCycleAvatarInitials(cycle: CrmConversationCycle) {
 }
 
 export function formatCyclePreview(cycle: CrmConversationCycle) {
-  return cycle.lastMessageContent?.trim() || "Sem mensagens recentes";
+  return (
+    formatLastMessagePreview({ content: cycle.lastMessageContent }) ||
+    "Sem mensagens recentes"
+  );
 }
 
 export function formatMessageTime(message: CrmMessage) {
@@ -333,32 +337,31 @@ function mediaMessageType(mediaType: CrmSendMediaType) {
 
 export function getSenderLabel(
   message: CrmMessage,
-  fallbackAssigneeName?: string | null,
+  _fallbackAssigneeName?: string | null,
 ) {
   if (message.direction === "INBOUND") {
     return null;
   }
-  const metadata = message.metadata ?? {};
-  if (typeof metadata.authorName === "string" && metadata.authorName.trim()) {
-    return metadata.authorName.trim();
-  }
-  if (typeof metadata.senderName === "string" && metadata.senderName.trim()) {
-    return metadata.senderName.trim();
-  }
-  if (typeof metadata.userName === "string" && metadata.userName.trim()) {
-    return metadata.userName.trim();
-  }
-  if (typeof metadata.agentName === "string" && metadata.agentName.trim()) {
-    return metadata.agentName.trim();
-  }
-  if (fallbackAssigneeName && fallbackAssigneeName.trim()) {
-    return fallbackAssigneeName.trim();
-  }
   if (message.senderType === "AI") return "IA";
   if (message.senderType === "SYSTEM") return "Sistema";
   if (message.senderOrigin === "external_bot") return "Bot externo";
-  if (message.direction === "OUTBOUND") return "Atendente";
+  if (message.senderOrigin === "human_channel") {
+    return "Enviado diretamente pelo canal";
+  }
+  if (message.senderType === "HUMAN" && message.senderOrigin === "human_crm") {
+    const senderUser = readSenderUser(message);
+    return senderUser?.name.trim() || "Usuário removido";
+  }
   return null;
+}
+
+function readSenderUser(message: CrmMessage) {
+  const value = (
+    message as CrmMessage & {
+      senderUser?: { id: string; name: string } | null;
+    }
+  ).senderUser;
+  return value && typeof value.name === "string" ? value : null;
 }
 
 export function getSenderOriginLabel(message: CrmMessage) {

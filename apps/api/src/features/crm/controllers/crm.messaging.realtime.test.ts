@@ -1,17 +1,110 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { Hono } from "hono";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmMessage } from "../../../domains/crm/ports/crmConversationRepositoryModels.js";
-import { createTestCrmConversationCycle } from "../../../domains/crm/testSupportWhatsapp.js";
 import { createCrmRealtimeBroker } from "../../../infrastructure/crm/crmRealtimeBroker.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
+import { createServiceContext } from "../../../shared/serviceContext.js";
+import { HttpContextAuthenticationError } from "../../../infrastructure/http/createHttpServiceContext.js";
+import { registerCrmMessagingRealtimeRoutes } from "./crm.messaging.realtimeRoutes.js";
+import { readSseUntil } from "./crm.messaging.realtime.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 const connectionId = "24000000-0000-4000-8000-000000000101";
 
 describe("CRM realtime", () => {
+  it("authenticates before consuming a one-use ticket", async () => {
+    const broker = createCrmRealtimeBroker();
+    const resolveTicket = vi.spyOn(broker, "resolveTicket");
+    const feature = new Hono();
+    registerCrmMessagingRealtimeRoutes(feature, {
+      createContext: async (context) => {
+        if (context.req.header("authorization") !== "Bearer fresh-token") {
+          throw new HttpContextAuthenticationError("Authentication required.");
+        }
+        return Object.assign(
+          createServiceContext({
+            actor: { id: "user_1", kind: "user" },
+            permissions: ["crm.conversations.read"],
+            request: { requestId: "req_1" },
+            storeId,
+            tenantId,
+          }),
+          { entitlements: ["crm"] },
+        );
+      },
+      realtimeBroker: broker,
+    });
+    const app = new Hono().route("/api/v1/crm", feature);
+    const ticketResponse = await app.request("/api/v1/crm/events/ticket", {
+      body: "{}",
+      headers: {
+        Authorization: "Bearer fresh-token",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    const ticket = (await ticketResponse.json()) as { ticket: string };
+
+    const staleResponse = await app.request("/api/v1/crm/events", {
+      headers: {
+        Authorization: "Bearer stale-token",
+        "X-CRM-SSE-Ticket": ticket.ticket,
+      },
+    });
+    expect(staleResponse.status).toBe(401);
+    expect(resolveTicket).not.toHaveBeenCalled();
+
+    const streamResponse = await app.request("/api/v1/crm/events", {
+      headers: {
+        Authorization: "Bearer fresh-token",
+        "X-CRM-SSE-Ticket": ticket.ticket,
+      },
+    });
+    expect(streamResponse.status).toBe(200);
+    expect(resolveTicket).toHaveBeenCalledOnce();
+    await streamResponse.body?.cancel();
+  });
+
+  it.each([
+    { label: "missing", ticket: undefined },
+    { label: "malformed", ticket: "not-a-ticket" },
+  ])(
+    "rejects $label ticket headers without broker lookup",
+    async ({ ticket }) => {
+      const broker = createCrmRealtimeBroker();
+      const resolveTicket = vi.spyOn(broker, "resolveTicket");
+      const app = createTestApp({ crmRealtimeBroker: broker });
+
+      const response = await app.request("/api/v1/crm/events", {
+        ...(ticket ? { headers: { "X-CRM-SSE-Ticket": ticket } } : {}),
+      });
+
+      expect(response.status).toBe(401);
+      expect(resolveTicket).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    { connectionId: "not-a-uuid", label: "connection id" },
+    { label: "event cursor", lastEventId: "invalid\nlog-entry" },
+  ])("rejects an invalid $label before issuing a ticket", async (body) => {
+    const broker = createCrmRealtimeBroker();
+    const issueTicket = vi.spyOn(broker, "issueTicket");
+    const app = createTestApp({ crmRealtimeBroker: broker });
+
+    const response = await app.request("/api/v1/crm/events/ticket", {
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(400);
+    expect(issueTicket).not.toHaveBeenCalled();
+  });
+
   it("opens a ticketed realtime stream", async () => {
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
@@ -30,9 +123,9 @@ describe("CRM realtime", () => {
     expect(ticketResponse.headers.get("referrer-policy")).toBe("no-referrer");
     const ticket = (await ticketResponse.json()) as { ticket: string };
 
-    const streamResponse = await app.request(
-      `/api/v1/crm/events?ticket=${ticket.ticket}`,
-    );
+    const streamResponse = await app.request("/api/v1/crm/events", {
+      headers: { "X-CRM-SSE-Ticket": ticket.ticket },
+    });
     expect(streamResponse.status).toBe(200);
     expect(streamResponse.headers.get("content-type")).toContain(
       "text/event-stream",
@@ -47,15 +140,15 @@ describe("CRM realtime", () => {
       '"type":"connected"',
     );
 
-    const reusedResponse = await app.request(
-      `/api/v1/crm/events?ticket=${ticket.ticket}`,
-    );
+    const reusedResponse = await app.request("/api/v1/crm/events", {
+      headers: { "X-CRM-SSE-Ticket": ticket.ticket },
+    });
     expect(reusedResponse.status).toBe(401);
     expect(reusedResponse.headers.get("cache-control")).toBe("no-store");
     expect(reusedResponse.headers.get("referrer-policy")).toBe("no-referrer");
   });
 
-  it("replays missed scoped events after the last received event id", async () => {
+  it("replays from the ticket cursor and ignores GET cursor overrides", async () => {
     const broker = createCrmRealtimeBroker();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
@@ -96,7 +189,13 @@ describe("CRM realtime", () => {
     });
     const ticket = (await ticketResponse.json()) as { ticket: string };
     const streamResponse = await app.request(
-      `/api/v1/crm/events?ticket=${ticket.ticket}`,
+      "/api/v1/crm/events?sinceEventId=0-0",
+      {
+        headers: {
+          "Last-Event-ID": "0-0",
+          "X-CRM-SSE-Ticket": ticket.ticket,
+        },
+      },
     );
     const stream = await readSseUntil(streamResponse, "second");
 
@@ -142,84 +241,4 @@ function createConnectionStatusEvent(
     tenantId,
     type: "connection_status" as const,
   };
-}
-
-function createMessageEvent() {
-  const now = new Date("2026-08-24T12:00:00.000Z");
-  const message: CrmMessage = {
-    channel: "WHATSAPP",
-    channelMessageId: "domain-only-message-id",
-    connectionId,
-    content: "Ola",
-    createdAt: now,
-    cycleId: "cycle-1",
-    deletedAt: null,
-    direction: "INBOUND",
-    externalId: "external-1",
-    id: "message-1",
-    mediaType: null,
-    mediaUrl: null,
-    metadata: {},
-    providerTimestamp: now,
-    senderOrigin: "customer",
-    senderType: "CUSTOMER",
-    status: "DELIVERED",
-    storeId,
-    tenantId,
-    type: "TEXT",
-    updatedAt: now,
-  };
-  return {
-    connectionId,
-    conversationCycle: createTestCrmConversationCycle({
-      channel: "WHATSAPP",
-      connectionId,
-      id: "cycle-1",
-      storeId,
-      tenantId,
-    }),
-    message,
-    storeId,
-    tenantId,
-    type: "message" as const,
-  };
-}
-
-function readSseData(stream: string, eventName: string) {
-  const frame = stream
-    .split("\n\n")
-    .find((candidate) => candidate.includes(`event: ${eventName}\n`));
-  expect(frame).toBeDefined();
-  const data = frame
-    ?.split("\n")
-    .find((line) => line.startsWith("data: "))
-    ?.slice("data: ".length);
-  expect(data).toBeDefined();
-  return JSON.parse(data!) as Record<string, unknown> & {
-    conversationCycle: Record<string, unknown>;
-    message: Record<string, unknown>;
-  };
-}
-
-async function readSseUntil(response: Response, expected: string) {
-  const reader = response.body?.getReader();
-  expect(reader).toBeDefined();
-  const decoder = new TextDecoder();
-  let text = "";
-  for (let attempt = 0; attempt < 4 && !text.includes(expected); attempt += 1) {
-    const chunk = await readChunk(reader!);
-    if (chunk.done) break;
-    text += decoder.decode(chunk.value);
-  }
-  await reader!.cancel();
-  return text;
-}
-
-async function readChunk(reader: ReadableStreamDefaultReader<Uint8Array>) {
-  return Promise.race([
-    reader.read(),
-    new Promise<ReadableStreamReadResult<Uint8Array>>((_, reject) => {
-      setTimeout(() => reject(new Error("Timed out reading SSE.")), 1_000);
-    }),
-  ]);
 }

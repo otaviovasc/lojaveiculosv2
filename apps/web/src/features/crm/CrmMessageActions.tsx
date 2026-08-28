@@ -21,10 +21,14 @@ import type { CrmMessage } from "./crmConversationTypes";
 export type MessageActionHandlers = {
   actionsDisabled?: boolean | undefined;
   onDelete?: ((message: CrmMessage) => Promise<boolean>) | undefined;
+  onReconcileMessage?:
+    ((message: CrmMessage) => Promise<boolean> | boolean) | undefined;
   onReact?:
     ((message: CrmMessage, reaction: string) => Promise<boolean>) | undefined;
   onRemoveReaction?: ((message: CrmMessage) => Promise<boolean>) | undefined;
   onReply?: ((message: CrmMessage) => void) | undefined;
+  onRetryMessage?:
+    ((message: CrmMessage) => Promise<boolean> | boolean) | undefined;
 };
 
 export function MessageActions({

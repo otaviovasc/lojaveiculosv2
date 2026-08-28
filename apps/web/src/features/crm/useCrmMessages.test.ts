@@ -2,6 +2,7 @@
 import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import type { CrmConversationApi } from "./crmConversationApi";
 import {
   mergeRealtimeMessageIntoHistory,
@@ -12,6 +13,7 @@ import type { CrmMessage, CrmConversationCycle } from "./crmConversationTypes";
 describe("useCrmMessages", () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -33,7 +35,7 @@ describe("useCrmMessages", () => {
     ]);
   });
 
-  it("does not reconcile realtime echoes by message content", () => {
+  it("does not reconcile legacy realtime echoes by message content alone", () => {
     const localEcho = {
       ...createMessage({
         content: "Resposta",
@@ -53,6 +55,260 @@ describe("useCrmMessages", () => {
     expect(mergeRealtimeMessageIntoHistory([localEcho], serverMessage)).toEqual(
       [localEcho, serverMessage],
     );
+  });
+
+  it("buffers an early status and never regresses when SSE wins the HTTP race", async () => {
+    const api = createApi();
+    let resolveHttp: ((message: CrmMessage) => void) | undefined;
+    vi.mocked(api.sendText).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveHttp = resolve;
+        }),
+    );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await latest!.sendText("Corrida", { idempotencyKey: "request-1" });
+      latest!.updateRealtimeMessageStatus({
+        messageId: "server-1",
+        status: "DELIVERED",
+      });
+      latest!.mergeRealtimeMessage(
+        createMessage({
+          clientRequestId: "request-1",
+          content: "Corrida",
+          direction: "OUTBOUND",
+          id: "server-1",
+          status: "SENT",
+        }),
+      );
+    });
+
+    expect(
+      latest!.messages.filter((message) => message.content === "Corrida"),
+    ).toEqual([
+      expect.objectContaining({ id: "server-1", status: "DELIVERED" }),
+    ]);
+
+    await act(async () => {
+      resolveHttp?.(
+        createMessage({
+          clientRequestId: "request-1",
+          content: "Corrida",
+          direction: "OUTBOUND",
+          id: "server-1",
+          status: "SENT",
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(
+        latest!.messages.find((message) => message.id === "server-1")?.status,
+      ).toBe("DELIVERED"),
+    );
+  });
+
+  it("retries a known text failure once with a fresh request identity", async () => {
+    const api = createApi();
+    vi.mocked(api.sendText)
+      .mockRejectedValueOnce(
+        Object.assign(new Error("known failure"), { status: 422 }),
+      )
+      .mockImplementationOnce(async (input) => {
+        if (!input.idempotencyKey) throw new Error("missing idempotency key");
+        return createMessage({
+          clientRequestId: input.idempotencyKey,
+          content: "Tentar novamente",
+          direction: "OUTBOUND",
+          id: "server-retry",
+          status: "SENT",
+        });
+      });
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await latest!.sendText("Tentar novamente", {
+        idempotencyKey: "failed-request",
+      });
+    });
+    await waitFor(() => expect(latest!.messages.at(-1)?.status).toBe("FAILED"));
+    act(() => {
+      latest!.mergeRealtimeMessage(
+        createMessage({
+          clientRequestId: "failed-request",
+          content: "Tentar novamente",
+          direction: "OUTBOUND",
+          id: "server-failed-attempt",
+          status: "FAILED",
+        }),
+      );
+    });
+    const failed = latest!.messages.at(-1)!;
+
+    await act(async () => {
+      await expect(latest!.retryMessage(failed)).resolves.toBe(true);
+    });
+
+    expect(api.sendText).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(api.sendText).mock.calls[1]?.[0].idempotencyKey).not.toBe(
+      "failed-request",
+    );
+    expect(
+      latest!.messages.filter(
+        (message) => message.content === "Tentar novamente",
+      ),
+    ).toEqual([
+      expect.objectContaining({ id: "server-retry", status: "SENT" }),
+    ]);
+  });
+
+  it("keeps a failed media file for retry and releases its object URL on success", async () => {
+    const createObjectURL = vi.fn(() => "blob:retry-media");
+    const revokeObjectURL = vi.fn();
+    class TestUrl extends URL {
+      static override createObjectURL = createObjectURL;
+      static override revokeObjectURL = revokeObjectURL;
+    }
+    vi.stubGlobal("URL", TestUrl);
+    const readAsDataURL = vi.spyOn(FileReader.prototype, "readAsDataURL");
+    const api = createApi();
+    vi.mocked(api.sendMedia)
+      .mockRejectedValueOnce(
+        Object.assign(new Error("known upload failure"), { status: 422 }),
+      )
+      .mockImplementationOnce(async (input) => {
+        if (!input.idempotencyKey) throw new Error("missing idempotency key");
+        return createMessage({
+          clientRequestId: input.idempotencyKey,
+          content: "Imagem",
+          direction: "OUTBOUND",
+          id: "server-media",
+          mediaUrl: "https://media.example/image.jpg",
+          status: "SENT",
+          type: "IMAGE",
+        });
+      });
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    const rendered = render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+    const file = new File(["image"], "car.jpg", { type: "image/jpeg" });
+
+    await act(async () => {
+      await expect(
+        latest!.sendMedia({ file, mediaType: "image" }),
+      ).resolves.toBe(false);
+    });
+    await waitFor(() => expect(latest!.messages.at(-1)?.status).toBe("FAILED"));
+    const failed = latest!.messages.at(-1)!;
+    expect(failed.metadata).not.toHaveProperty("localUpload");
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await expect(latest!.retryMessage(failed)).resolves.toBe(true);
+    });
+
+    expect(api.sendMedia).toHaveBeenCalledTimes(2);
+    expect(readAsDataURL).toHaveBeenCalledTimes(1);
+    expect(latest!.messages.at(-1)).toMatchObject({
+      id: "server-media",
+      status: "SENT",
+    });
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:retry-media");
+    rendered.unmount();
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it("reconciles an indeterminate send without resending it", async () => {
+    const api = createApi();
+    vi.mocked(api.sendText).mockRejectedValueOnce(
+      new AppApiError({
+        code: "PROVIDER_RESULT_INDETERMINATE",
+        message: "unknown result",
+        status: 502,
+      }),
+    );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await latest!.sendText("Incerta", { idempotencyKey: "request-unknown" });
+    });
+    await waitFor(() =>
+      expect(latest!.messages.at(-1)?.status).toBe("INDETERMINATE"),
+    );
+    const uncertain = latest!.messages.at(-1)!;
+    vi.mocked(api.listMessages).mockResolvedValueOnce([
+      createMessage({
+        clientRequestId: "request-unknown",
+        content: "Incerta",
+        direction: "OUTBOUND",
+        id: "server-confirmed",
+        status: "SENT",
+      }),
+    ]);
+
+    await act(async () => {
+      await expect(
+        latest!.reconcileMessage({
+          ...uncertain,
+          status: "PROVIDER_UNKNOWN",
+        }),
+      ).resolves.toBe(true);
+    });
+
+    expect(api.sendText).toHaveBeenCalledTimes(1);
+    expect(latest!.messages.at(-1)).toMatchObject({
+      id: "server-confirmed",
+      status: "SENT",
+    });
   });
 
   it("accepts text immediately and drains requests in FIFO order", async () => {
@@ -182,6 +438,136 @@ describe("useCrmMessages", () => {
     expect(
       vi.mocked(api.sendText).mock.calls.map(([input]) => input.idempotencyKey),
     ).toEqual(["key-one", "key-two"]);
+  });
+
+  it("attributes optimistic messages to the authenticated user instead of the assignee", async () => {
+    const api = createApi();
+    vi.mocked(api.sendText).mockImplementation(
+      () => new Promise<CrmMessage>(() => undefined),
+    );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession({
+          assignedMember: {
+            email: "assignee@example.com",
+            id: 99,
+            name: "Pessoa atribuída",
+            role: "MEMBER",
+          },
+        }),
+        api,
+        currentUser: { id: "user-current", name: "  Usuário atual  " },
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await latest!.sendText("Mensagem do usuário");
+    });
+
+    expect(latest!.messages.at(-1)).toMatchObject({
+      senderUser: { id: "user-current", name: "Usuário atual" },
+    });
+  });
+
+  it("attributes structured optimistic messages to the authenticated user", async () => {
+    const api = createApi();
+    vi.mocked(api.sendLocation).mockImplementation(
+      () => new Promise<CrmMessage>(() => undefined),
+    );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        currentUser: { id: "user-current", name: "Usuário atual" },
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    act(() => {
+      void latest!.sendLocation({ latitude: -23.5, longitude: -46.6 });
+    });
+
+    await waitFor(() =>
+      expect(latest!.messages.at(-1)).toMatchObject({
+        senderUser: { id: "user-current", name: "Usuário atual" },
+        type: "LOCATION",
+      }),
+    );
+  });
+
+  it("applies an early status when a structured HTTP response arrives", async () => {
+    const api = createApi();
+    let resolveLocation: ((message: CrmMessage) => void) | undefined;
+    let requestId: string | undefined;
+    vi.mocked(api.sendLocation).mockImplementation(
+      (input) =>
+        new Promise<CrmMessage>((resolve) => {
+          requestId = input.idempotencyKey;
+          resolveLocation = resolve;
+        }),
+    );
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    let sendPromise: Promise<boolean> | undefined;
+    act(() => {
+      sendPromise = latest!.sendLocation({
+        latitude: -23.5,
+        longitude: -46.6,
+      });
+    });
+    await waitFor(() => expect(requestId).toBeTypeOf("string"));
+    if (!requestId) throw new Error("missing structured request id");
+    const clientRequestId = requestId;
+    act(() => {
+      latest!.updateRealtimeMessageStatus({
+        messageId: "server-location",
+        status: "DELIVERED",
+      });
+    });
+
+    await act(async () => {
+      resolveLocation?.(
+        createMessage({
+          clientRequestId,
+          content: "Localização",
+          direction: "OUTBOUND",
+          id: "server-location",
+          status: "SENT",
+          type: "LOCATION",
+        }),
+      );
+      await sendPromise;
+    });
+
+    expect(latest!.messages.at(-1)).toMatchObject({
+      id: "server-location",
+      status: "DELIVERED",
+    });
   });
 
   it("drops queued text for an evicted conversation", async () => {
@@ -508,6 +894,7 @@ function Harness({
   activeSession,
   api,
   canSendMessages = true,
+  currentUser,
   mergeCycles,
   onState,
   setError,
@@ -515,6 +902,7 @@ function Harness({
   activeSession: CrmConversationCycle;
   api: CrmConversationApi;
   canSendMessages?: boolean;
+  currentUser?: { id: string; name: string };
   mergeCycles: (nextSessions: CrmConversationCycle[]) => void;
   onState?: (state: ReturnType<typeof useCrmMessages>) => void;
   setError: (error: Error) => void;
@@ -525,6 +913,7 @@ function Harness({
     api,
     canLoadMessages: true,
     canSendMessages,
+    currentUser,
     mergeCycles,
     setError,
   });
@@ -575,7 +964,9 @@ function createSession(
   };
 }
 
-function createMessage(input: Partial<CrmMessage> = {}): CrmMessage {
+function createMessage(
+  input: Partial<CrmMessage> & { clientRequestId?: string } = {},
+): CrmMessage {
   return {
     content: "Ola",
     createdAt: "2026-07-03T12:00:00.000Z",
@@ -585,5 +976,5 @@ function createMessage(input: Partial<CrmMessage> = {}): CrmMessage {
     status: "DELIVERED",
     type: "TEXT",
     ...input,
-  };
+  } as CrmMessage;
 }

@@ -40,6 +40,10 @@ import { completeStartedConversation } from "../../messaging/completeStartedConv
 import { assertProviderEffectAllowed } from "../../messaging/assertProviderEffectAllowed.js";
 import { prepareStartedConversation } from "../../messaging/prepareStartedConversation.js";
 import { resolveCrmProviderOperation } from "../CrmRoutingService/resolveCrmProviderOperation.js";
+import {
+  fingerprintOutboundIntent,
+  resolveOutboundClientRequestId,
+} from "../../messaging/outboundMessageSupport.js";
 
 const permission = "crm.messages.send";
 type SentWhatsappText = Awaited<
@@ -89,6 +93,11 @@ export async function startConversation(
   const content = conversationContent(input);
   const senderOrigin = input.senderOrigin ?? "human_crm";
   const senderType = input.senderType ?? "HUMAN";
+  const clientRequestId = resolveOutboundClientRequestId(
+    context,
+    input.idempotencyKey,
+    fingerprintOutboundIntent({ payload: input, senderOrigin, senderType }),
+  );
   logCrmServiceEvent(context, "crm.conversation.start.started", {
     connectionId: connection.id,
     leadId: target.lead?.id ?? null,
@@ -114,9 +123,7 @@ export async function startConversation(
         connection,
         content,
         context,
-        ...(input.idempotencyKey
-          ? { idempotencyKey: input.idempotencyKey }
-          : {}),
+        idempotencyKey: clientRequestId,
         messageType: conversationMessageType(input),
         ports,
         scope,
@@ -130,9 +137,7 @@ export async function startConversation(
         context,
         {
           connectionId: connection.id,
-          ...(input.idempotencyKey
-            ? { idempotencyKey: input.idempotencyKey }
-            : {}),
+          idempotencyKey: clientRequestId,
           payload: input,
           senderOrigin,
           senderType,
@@ -155,6 +160,9 @@ export async function startConversation(
           error,
           messageId: pending.ingested.message.id,
           pendingExternalId: pending.pendingExternalId,
+          clientRequestId,
+          senderOrigin,
+          senderType,
         });
         throw error;
       });
@@ -170,9 +178,11 @@ export async function startConversation(
           lead: pending.lead,
           messageId: pending.ingested.message.id,
           pendingExternalId: pending.pendingExternalId,
+          clientRequestId,
           provider: connection.provider,
           providerExternalId: sent.externalId,
           providerTimestamp: sent.providerTimestamp,
+          senderOrigin,
           senderType,
           cycleId: pending.ingested.conversationCycle.id,
         },

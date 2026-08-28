@@ -4,59 +4,76 @@ import userEvent from "@testing-library/user-event";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmScopedNav } from "./CrmScopedNav";
-import { readSynchronizedChannelStatus } from "./CrmInbox";
 
 describe("CrmScopedNav", () => {
   afterEach(cleanup);
 
-  it("maps channel synchronization to the compact indicator", () => {
-    const provider = { label: "Conectado", tone: "online" as const };
-    expect(readSynchronizedChannelStatus(provider, "connected")).toEqual({
-      label: "Sincronizado",
-      tone: "online",
-    });
-    expect(readSynchronizedChannelStatus(provider, "connecting")).toEqual({
-      label: "Reconectando",
-      tone: "loading",
-    });
-    expect(readSynchronizedChannelStatus(provider, "degraded")).toEqual({
-      label: "Sincronização indisponível",
-      tone: "error",
-    });
-  });
-
-  it("announces reconciliation and synchronization in one polite live region", () => {
+  it("announces provider and realtime states separately in one polite live region", () => {
     const props = {
       activeScope: "conversations" as const,
       onChange: vi.fn(),
+      providerStatus: { label: "Z-API: online", tone: "online" as const },
       tagCount: 0,
       unreadCount: 0,
     };
     const rendered = render(
       <CrmScopedNav
         {...props}
-        connectionLabel="Reconectando"
-        connectionTone="loading"
+        realtimeStatus={{
+          label: "Tempo real: reconectando",
+          tone: "loading",
+        }}
       />,
     );
 
     const status = screen.getByRole("status");
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveAttribute("aria-atomic", "true");
-    expect(status).toHaveTextContent("Reconectando");
-    expect(status.querySelectorAll(":scope > span")).toHaveLength(1);
+    expect(status).toHaveAccessibleName(
+      "Z-API: online. Tempo real: reconectando",
+    );
+    expect(status).toHaveTextContent("Z-API: online");
+    expect(status).toHaveTextContent("Tempo real: reconectando");
+    expect(status.querySelectorAll(":scope > span")).toHaveLength(2);
     expect(screen.getByText("CRM")).toBeVisible();
 
     rendered.rerender(
       <CrmScopedNav
         {...props}
-        connectionLabel="Sincronizado"
-        connectionTone="online"
+        realtimeStatus={{
+          label: "Tempo real: sincronizado",
+          tone: "online",
+        }}
       />,
     );
 
     expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveTextContent("Sincronizado");
+    expect(status).toHaveAccessibleName(
+      "Z-API: online. Tempo real: sincronizado",
+    );
+  });
+
+  it("does not hide a disconnected provider behind healthy realtime", () => {
+    render(
+      <CrmScopedNav
+        activeScope="conversations"
+        onChange={vi.fn()}
+        providerStatus={{
+          label: "Z-API: desconectado",
+          tone: "offline",
+        }}
+        realtimeStatus={{
+          label: "Tempo real: sincronizado",
+          tone: "online",
+        }}
+        tagCount={0}
+        unreadCount={0}
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveAccessibleName(
+      "Z-API: desconectado. Tempo real: sincronizado",
+    );
   });
 
   it("moves through WhatsApp areas with tab keyboard navigation", async () => {
@@ -65,9 +82,12 @@ describe("CrmScopedNav", () => {
     render(
       <CrmScopedNav
         activeScope="conversations"
-        connectionLabel="Conectado"
-        connectionTone="online"
         onChange={onChange}
+        providerStatus={{ label: "Z-API: online", tone: "online" }}
+        realtimeStatus={{
+          label: "Tempo real: sincronizado",
+          tone: "online",
+        }}
         tagCount={2}
         unreadCount={3}
       />,
@@ -87,9 +107,12 @@ describe("CrmScopedNav", () => {
     render(
       <CrmScopedNav
         activeScope="campaigns"
-        connectionLabel="Conectado"
-        connectionTone="online"
         onChange={onChange}
+        providerStatus={{ label: "Z-API: online", tone: "online" }}
+        realtimeStatus={{
+          label: "Tempo real: sincronizado",
+          tone: "online",
+        }}
         tagCount={2}
         unreadCount={3}
       />,

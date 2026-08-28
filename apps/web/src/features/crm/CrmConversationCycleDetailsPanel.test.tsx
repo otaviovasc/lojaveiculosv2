@@ -1,10 +1,17 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsPanel";
-import type { CrmConversationCycle } from "./crmConversationTypes";
+import type { CrmConversationCycle, CrmMessage } from "./crmConversationTypes";
 
 describe("CrmConversationCycleDetailsPanel", () => {
   afterEach(cleanup);
@@ -119,7 +126,95 @@ describe("CrmConversationCycleDetailsPanel", () => {
     expect(screen.getByText("Composio")).toBeVisible();
     expect(screen.getByText("Número oficial")).toBeVisible();
   });
+
+  it("opens details media in the viewport gallery and restores thumbnail focus", async () => {
+    const user = userEvent.setup();
+    render(
+      <CrmConversationCycleDetailsPanel
+        assignableMembers={[]}
+        messages={[
+          message({
+            content: "Foto frontal",
+            id: "image-1",
+            mediaUrl: "https://cdn.example.test/front.jpg",
+            type: "IMAGE",
+          }),
+          message({
+            content: "[video]",
+            id: "video-1",
+            mediaUrl: "https://cdn.example.test/walkaround.mp4",
+            type: "VIDEO",
+          }),
+          message({
+            content: "Proposta",
+            id: "document-1",
+            mediaUrl: "https://cdn.example.test/proposta.pdf",
+            metadata: { media: { fileName: "proposta.pdf" } },
+            type: "DOCUMENT",
+          }),
+        ]}
+        onClose={vi.fn()}
+        cycle={cycle()}
+      />,
+    );
+
+    const secondThumbnail = screen.getByRole("button", {
+      name: "Abrir mídia 2",
+    });
+    await user.click(secondThumbnail);
+
+    const dialog = screen.getByRole("dialog", {
+      name: "Visualizador de midia",
+    });
+    expect(
+      screen.getByRole("complementary", { name: "Detalhes da conversa" }),
+    ).not.toContainElement(dialog);
+    expect(screen.getByLabelText("Video da conversa")).toHaveAttribute(
+      "src",
+      "https://cdn.example.test/walkaround.mp4",
+    );
+    expect(screen.getByText("2 / 2")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Midia anterior" }));
+    expect(within(dialog).getByAltText("Foto frontal")).toHaveAttribute(
+      "src",
+      "https://cdn.example.test/front.jpg",
+    );
+    expect(screen.getByText("Contato")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Ampliar imagem" }),
+    ).toBeVisible();
+    expect(screen.getByRole("link", { name: "Baixar midia" })).toHaveAttribute(
+      "href",
+      "https://cdn.example.test/front.jpg",
+    );
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    expect(secondThumbnail).toHaveFocus();
+
+    await user.click(
+      screen.getByRole("button", { name: "Ver documentos: 1 itens" }),
+    );
+    expect(screen.getByRole("link", { name: /proposta.pdf/ })).toHaveAttribute(
+      "href",
+      "https://cdn.example.test/proposta.pdf",
+    );
+  });
 });
+
+function message(overrides: Partial<CrmMessage>): CrmMessage {
+  return {
+    content: "Mensagem",
+    createdAt: "2026-07-03T12:00:00.000Z",
+    direction: "INBOUND",
+    id: "message-1",
+    senderType: "CUSTOMER",
+    status: "DELIVERED",
+    type: "TEXT",
+    ...overrides,
+  };
+}
 
 function cycle(): CrmConversationCycle {
   return {

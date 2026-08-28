@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   formatContactInitials,
+  formatCyclePreview,
   formatMessageTime,
   formatRelativeSessionTime,
   getSenderOriginLabel,
+  getSenderLabel,
   mergeMessagesFromServer,
   mergeCyclesFromServer,
 } from "./crmConversationModel";
@@ -25,6 +27,20 @@ describe("crmModel", () => {
     expect(formatRelativeSessionTime(message.createdAt)).toMatch(
       /^\d{2}\/\d{2}$/,
     );
+  });
+
+  it("formats exact legacy media placeholders in conversation previews", () => {
+    expect(
+      formatCyclePreview(createSession({ lastMessageContent: "[image]" })),
+    ).toBe("🖼️ Imagem");
+    expect(
+      formatCyclePreview(createSession({ lastMessageContent: "Eu: [audio]" })),
+    ).toBe("Eu: 🎵 Áudio");
+    expect(
+      formatCyclePreview(
+        createSession({ lastMessageContent: "Confira [image] aqui" }),
+      ),
+    ).toBe("Confira [image] aqui");
   });
 
   it("preserves local sent echoes until the server returns the message", () => {
@@ -242,6 +258,55 @@ describe("crmModel", () => {
         }),
       ),
     ).toBe("Enviado diretamente pelo canal");
+  });
+
+  it("prefers the canonical sender and never attributes a message to the assignee", () => {
+    expect(
+      getSenderLabel(
+        createMessage({
+          direction: "OUTBOUND",
+          senderOrigin: "human_crm",
+          senderType: "HUMAN",
+          senderUser: { id: "user-1", name: "Otavio Vasconcelos" },
+        }),
+        "Pessoa atribuída",
+      ),
+    ).toBe("Otavio Vasconcelos");
+    expect(
+      getSenderLabel(
+        createMessage({
+          direction: "OUTBOUND",
+          senderOrigin: "human_crm",
+          senderType: "HUMAN",
+        }),
+        "Pessoa atribuída",
+      ),
+    ).toBe("Usuário removido");
+  });
+
+  it("does not imply that a channel-origin sender is a removed CRM user", () => {
+    expect(
+      getSenderLabel(
+        createMessage({
+          direction: "OUTBOUND",
+          senderOrigin: "human_channel",
+          senderType: "HUMAN",
+        }),
+      ),
+    ).toBe("Enviado diretamente pelo canal");
+  });
+
+  it("does not let untrusted metadata impersonate a CRM user", () => {
+    expect(
+      getSenderLabel(
+        createMessage({
+          direction: "OUTBOUND",
+          metadata: { authorName: "Nome injetado" },
+          senderOrigin: "human_crm",
+          senderType: "HUMAN",
+        }),
+      ),
+    ).toBe("Usuário removido");
   });
 });
 

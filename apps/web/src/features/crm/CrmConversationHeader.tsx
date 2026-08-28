@@ -29,6 +29,7 @@ import { TagMenu } from "./CrmTagMenu";
 import type {
   CrmAddConversationCycleTagInput,
   CrmAssignableMember,
+  CrmContactPresence,
   CrmConversationCycle,
   CrmTag,
 } from "./crmConversationTypes";
@@ -44,6 +45,7 @@ export function ChatHeader({
   canScheduleMessages,
   canToggleIntervention,
   currentUserId,
+  contactPresence,
   messages = [],
   onAssign,
   onBack,
@@ -69,6 +71,7 @@ export function ChatHeader({
   canScheduleMessages: boolean;
   canToggleIntervention: boolean;
   currentUserId?: string | null;
+  contactPresence?: CrmContactPresence | null;
   messages?: { id: string; content: string }[];
   onAddTag: (input: CrmAddConversationCycleTagInput) => Promise<boolean>;
   onAssign: (agentId: string | null) => void;
@@ -203,14 +206,21 @@ export function ChatHeader({
             </span>
             <span className="min-w-0">
               <h3>{formatCycleName(cycle)}</h3>
-              <p>
-                {cycle.vehicle?.title ??
-                  (cycle.customerPhone &&
-                  formatCrmPhone(cycle.customerPhone) !== formatCycleName(cycle)
-                    ? formatCrmPhone(cycle.customerPhone)
-                    : null) ??
-                  "Negociação"}
-              </p>
+              {contactPresence ? (
+                <p aria-atomic="true" role="status">
+                  {contactPresence === "typing" ? "digitando…" : "online"}
+                </p>
+              ) : (
+                <p>
+                  {cycle.vehicle?.title ??
+                    (cycle.customerPhone &&
+                    formatCrmPhone(cycle.customerPhone) !==
+                      formatCycleName(cycle)
+                      ? formatCrmPhone(cycle.customerPhone)
+                      : null) ??
+                    "Negociação"}
+                </p>
+              )}
             </span>
           </button>
         </div>

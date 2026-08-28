@@ -1,13 +1,16 @@
-import { randomUUID } from "node:crypto";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmLead } from "../ports/crmRepository.js";
 import type { CrmConnectionProvider } from "../ports/crmConnectionRepository.js";
 import type {
   CrmMessage,
+  CrmMessageSenderOrigin,
+  CrmMessageSenderType,
   CrmConversationCycle,
 } from "../ports/crmConversationRepository.js";
 import { whatsappPhoneDigits } from "../whatsapp/whatsappPhone.js";
 import { CrmMessageActionError } from "./crmMessagingErrors.js";
+import { withHumanCrmSenderSnapshot } from "./crmMessageSender.js";
+import { withOutboundClientRequestId } from "./outboundMessageSupport.js";
 import { findOrCreateCrmMessagingLead } from "./leadLinking.js";
 import {
   getCrmRealtimePublisher,
@@ -32,29 +35,35 @@ export function normalizeWhatsappPhone(value: string) {
   return phone;
 }
 
-export function createLocalCrmMessageExternalId() {
-  return `local-start-${randomUUID()}`;
-}
-
 export async function markStartedConversationMessageFailed(
   context: ServiceContext,
   ports: CrmServicePorts,
   input: {
     connectionProvider: string;
+    clientRequestId: string;
     error: unknown;
     messageId: string;
     pendingExternalId: string;
+    senderOrigin: CrmMessageSenderOrigin;
+    senderType: CrmMessageSenderType;
   },
 ) {
   await updateStartedConversationMessage(context, ports, {
     messageId: input.messageId,
-    metadata: failedMessageMetadata({
-      errorName:
-        input.error instanceof Error ? input.error.name : "UnknownError",
-      pendingExternalId: input.pendingExternalId,
-      provider: input.connectionProvider,
-      sentByActorId: context.actor.id,
-    }),
+    metadata: withOutboundClientRequestId(
+      withHumanCrmSenderSnapshot(context, {
+        metadata: failedMessageMetadata({
+          errorName:
+            input.error instanceof Error ? input.error.name : "UnknownError",
+          pendingExternalId: input.pendingExternalId,
+          provider: input.connectionProvider,
+          sentByActorId: context.actor.id,
+        }),
+        senderOrigin: input.senderOrigin,
+        senderType: input.senderType,
+      }),
+      input.clientRequestId,
+    ),
     status: "FAILED",
   }).catch((updateError) => {
     context.logger.warn("crm.conversation.start.failed_mark_failed", {

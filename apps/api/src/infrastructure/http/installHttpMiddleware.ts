@@ -21,6 +21,7 @@ export function installHttpMiddleware(app: Hono): void {
         "Idempotency-Key",
         "X-API-Key",
         "X-Clerk-User-Id",
+        "X-CRM-SSE-Ticket",
         "X-Idempotency-Key",
         "X-Request-Id",
         "X-Store-Slug",

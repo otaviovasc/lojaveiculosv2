@@ -8,7 +8,7 @@ import {
   fingerprintOutboundIntent,
   outboundIdempotencyConflictError,
   outboundReconciliationPendingError,
-  requireOutboundIdempotencyKey,
+  resolveOutboundClientRequestId,
 } from "./outboundMessageSupport.js";
 import {
   getCrmOutboundIntentRepository,
@@ -44,9 +44,10 @@ export async function executeDurableOutboundProviderCall(
   const claimed = await repository.claim({
     connectionId: input.connectionId,
     fingerprint,
-    idempotencyKey: requireOutboundIdempotencyKey(
-      input.idempotencyKey ??
-        `${context.correlationId ?? context.requestId}:${fingerprint}`,
+    idempotencyKey: resolveOutboundClientRequestId(
+      context,
+      input.idempotencyKey,
+      fingerprint,
     ),
     now,
     cycleId: input.cycleId,

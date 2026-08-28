@@ -79,6 +79,9 @@ describe("CRM outbound idempotency", () => {
     const recovered = await sendMessage(context(), input, ports);
 
     expect(recovered.externalId).toBe("provider_1");
+    expect(recovered.metadata).toMatchObject({
+      crmMessaging: { clientRequestId: "customer-action-1" },
+    });
     expect(sendText).toHaveBeenCalledTimes(1);
   });
 

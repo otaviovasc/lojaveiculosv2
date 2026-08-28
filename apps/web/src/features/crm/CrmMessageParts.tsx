@@ -16,21 +16,11 @@ import {
   messageGroupTimestamp,
   shouldShowMessageDay,
 } from "./crmMessageDates";
-import {
-  formatMessageTime,
-  getSenderLabel,
-  type CrmMessageView,
-} from "./crmConversationModel";
-import {
-  readRecord,
-  readString,
-  sanitizeCrmMessageUrl,
-} from "./crmMessageHelpers";
+import type { CrmMessageView } from "./crmConversationModel";
+import { readRecord, readString } from "./crmMessageHelpers";
 import { MessageListSkeleton } from "./CrmSkeletons";
-import {
-  CrmMediaGalleryViewer,
-  type CrmGalleryMediaItem,
-} from "./CrmMediaGalleryViewer";
+import { CrmMediaGalleryViewer } from "./CrmMediaGalleryViewer";
+import { buildCrmGalleryMediaItems } from "./crmMediaGallery";
 
 export function MessageList({
   actionsDisabled,
@@ -38,9 +28,11 @@ export function MessageList({
   isLoading,
   messages,
   onDelete,
+  onReconcileMessage,
   onReact,
   onRemoveReaction,
   onReply,
+  onRetryMessage,
   onFilesDropped,
   hasOlderMessages = false,
   isLoadingOlderMessages = false,
@@ -120,33 +112,10 @@ export function MessageList({
   }, [messages]);
 
   // Extract all media items for the gallery viewer
-  const galleryItems = useMemo<CrmGalleryMediaItem[]>(() => {
-    const items: CrmGalleryMediaItem[] = [];
-    for (const msg of messages) {
-      const mediaUrl = sanitizeCrmMessageUrl(msg.mediaUrl);
-      if (
-        mediaUrl &&
-        (msg.type === "IMAGE" || msg.type === "VIDEO" || msg.type === "STICKER")
-      ) {
-        const metadata = readRecord(msg.metadata);
-        const media = readRecord(metadata.media);
-        const caption = readString(media.caption) ?? msg.content;
-        const cleanCaption =
-          caption === `[${msg.type.toLowerCase()}]` ? undefined : caption;
-
-        items.push({
-          caption: cleanCaption,
-          sender:
-            getSenderLabel(msg) ||
-            (msg.direction === "OUTBOUND" ? "Você" : "Contato"),
-          time: formatMessageTime(msg),
-          type: msg.type,
-          url: mediaUrl,
-        });
-      }
-    }
-    return items;
-  }, [messages]);
+  const galleryItems = useMemo(
+    () => buildCrmGalleryMediaItems(messages),
+    [messages],
+  );
 
   const handleMediaClick = useCallback(
     (url: string) => {
@@ -271,9 +240,11 @@ export function MessageList({
                   messages={group.messages}
                   onDelete={onDelete}
                   onMediaClick={handleMediaClick}
+                  onReconcileMessage={onReconcileMessage}
                   onReact={onReact}
                   onRemoveReaction={onRemoveReaction}
                   onReply={onReply}
+                  onRetryMessage={onRetryMessage}
                 />
               ) : (
                 <MessageBubble
@@ -291,9 +262,11 @@ export function MessageList({
                       readString(replyTo.id) ?? readString(replyTo.messageId);
                     handleQuoteClick(id);
                   }}
+                  onReconcileMessage={onReconcileMessage}
                   onReact={onReact}
                   onRemoveReaction={onRemoveReaction}
                   onReply={onReply}
+                  onRetryMessage={onRetryMessage}
                 />
               )}
             </Fragment>

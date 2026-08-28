@@ -25,10 +25,10 @@ describe("Redis CRM realtime replay", () => {
   it("pages raw rows until connection-scoped replay reaches its limit", async () => {
     const { command } = installRedisClients(redisMocks.createClient);
     const rowsByCursor = new Map([
-      ["-", streamRow("1-0", presenceEvent("other"))],
-      ["(1-0", streamRow("2-0", presenceEvent("target"))],
-      ["(2-0", streamRow("3-0", presenceEvent("other"))],
-      ["(3-0", streamRow("4-0", presenceEvent("target"))],
+      ["-", streamRow("1-0", connectionEvent("other"))],
+      ["(1-0", streamRow("2-0", connectionEvent("target"))],
+      ["(2-0", streamRow("3-0", connectionEvent("other"))],
+      ["(3-0", streamRow("4-0", connectionEvent("target"))],
     ]);
     command.sendCommand.mockImplementation(async (args) => {
       const row = rowsByCursor.get(args[2] ?? "");
@@ -144,13 +144,14 @@ describe("Redis CRM realtime replay", () => {
   });
 });
 
-function presenceEvent(connectionId: string): CrmRealtimeEvent {
+function connectionEvent(connectionId: string): CrmRealtimeEvent {
   return {
     connectionId,
-    payload: { state: "composing" },
+    phone: null,
+    status: "active",
     storeId,
     tenantId,
-    type: "presence",
+    type: "connection_status",
   };
 }
 

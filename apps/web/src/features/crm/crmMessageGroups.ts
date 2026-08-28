@@ -40,9 +40,34 @@ function canJoinMediaGroup(
     isGroupableMedia(message) &&
     previous.direction === message.direction &&
     previous.senderType === message.senderType &&
+    previous.senderOrigin === message.senderOrigin &&
+    haveCompatibleSenderIdentity(previous, message) &&
     Math.abs(messageTimeMs(message) - messageTimeMs(previous)) <=
       mediaGroupWindowMs
   );
+}
+
+function haveCompatibleSenderIdentity(
+  previous: CrmMessageView,
+  message: CrmMessageView,
+) {
+  const previousSenderId = readSenderUserId(previous);
+  const messageSenderId = readSenderUserId(message);
+
+  if (message.senderOrigin === "human_crm") {
+    return Boolean(
+      previousSenderId &&
+      messageSenderId &&
+      previousSenderId === messageSenderId,
+    );
+  }
+
+  return previousSenderId === messageSenderId;
+}
+
+function readSenderUserId(message: CrmMessageView) {
+  const id = message.senderUser?.id.trim();
+  return id || null;
 }
 
 function isGroupableMedia(message: CrmMessageView) {

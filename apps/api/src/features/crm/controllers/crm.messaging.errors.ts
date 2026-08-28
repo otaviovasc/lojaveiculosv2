@@ -18,6 +18,7 @@ import {
   CrmConnectionNotFoundError,
   CrmCampaignNotFoundError,
   CrmMessageActionError,
+  CrmOutboundReconciliationPendingError,
   CrmMessageDtoNotFoundError,
   CrmScheduledMessageNotFoundError,
   ConversationCycleNotFoundError,
@@ -116,6 +117,14 @@ export async function handleCrmMessaging(
         error,
         message: error.message,
         status: 404,
+      });
+    }
+    if (error instanceof CrmOutboundReconciliationPendingError) {
+      return jsonApiError(context, {
+        code: "CRM_MESSAGING_OUTCOME_INDETERMINATE",
+        error,
+        message: error.message,
+        status: error.status,
       });
     }
     if (error instanceof CrmMessageActionError) {

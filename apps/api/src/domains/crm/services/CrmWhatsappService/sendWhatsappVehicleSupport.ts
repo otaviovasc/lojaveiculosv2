@@ -12,6 +12,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 
 export type SendWhatsappVehicleInput = {
   description?: string;
+  idempotencyKey?: string;
   listingId?: string;
   mediaLimit?: number;
   mileageLabel?: string;
@@ -29,6 +30,7 @@ export type VehicleSummaryMessage = {
   content: string;
   leadActivityContent: string;
   metadata: Record<string, unknown>;
+  idempotencyKey?: string;
   cycleId: string;
   summary: string;
   text: string;
@@ -189,6 +191,7 @@ export function createVehicleSummary(
         year: input.year ?? null,
       },
     },
+    ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
     cycleId: input.cycleId,
     summary: "Sent CRM WhatsApp vehicle message",
     text: formatVehicleText({ ...input, title }),
@@ -210,8 +213,7 @@ export function formatVehicleText(input: SendWhatsappVehicleInput) {
 }
 
 export function clampMediaLimit(value: number | undefined) {
-  if (!value) return 4;
-  return Math.min(Math.max(value, 0), 10);
+  return value ? Math.min(Math.max(value, 0), 10) : 4;
 }
 
 export function fileNameFromUrl(url: string) {
@@ -233,8 +235,7 @@ function formatCurrency(value: number | null) {
 }
 
 function formatMileage(value: number | null) {
-  if (value === null) return undefined;
-  return `${new Intl.NumberFormat("pt-BR").format(value)} km`;
+  return value === null ? undefined : `${value.toLocaleString("pt-BR")} km`;
 }
 
 export function mimeTypeFromUrl(url: string, fallback: "image" | "video") {

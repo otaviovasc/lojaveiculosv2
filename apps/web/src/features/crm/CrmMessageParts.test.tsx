@@ -448,6 +448,43 @@ describe("CrmMessageParts", () => {
     expect(onDelete).toHaveBeenCalledWith(messages[1]);
   });
 
+  it("recovers every failed item in a grouped media send", async () => {
+    const user = userEvent.setup();
+    const messages = [
+      createMessage({
+        direction: "OUTBOUND",
+        id: "failed-media-1",
+        mediaUrl: "https://zapi.test/failed-one.jpg",
+        senderType: "HUMAN",
+        status: "FAILED",
+        type: "IMAGE",
+      }),
+      createMessage({
+        direction: "OUTBOUND",
+        id: "failed-media-2",
+        mediaUrl: "https://zapi.test/failed-two.jpg",
+        senderType: "HUMAN",
+        status: "FAILED",
+        type: "IMAGE",
+      }),
+    ];
+    const onRetryMessage = vi.fn(() => true);
+    render(
+      <MessageList
+        isLoading={false}
+        messages={messages}
+        onRetryMessage={onRetryMessage}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Tentar novamente (2)" }),
+    );
+
+    expect(onRetryMessage).toHaveBeenNthCalledWith(1, messages[0]);
+    expect(onRetryMessage).toHaveBeenNthCalledWith(2, messages[1]);
+  });
+
   it("invokes message action callbacks from the bubble controls", async () => {
     const user = userEvent.setup();
     const message = createMessage();

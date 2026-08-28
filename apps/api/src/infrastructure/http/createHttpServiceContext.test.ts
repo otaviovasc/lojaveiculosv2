@@ -13,15 +13,12 @@ describe("createHttpServiceContext", () => {
   });
 
   it("keeps public routes on the existing placeholder context", async () => {
-    const audit = {
-      record: vi.fn(async (_event: AuditEvent) => undefined),
-    };
+    const audit = { record: vi.fn(async (_event: AuditEvent) => undefined) };
     const context = await captureContext(
       new Request("https://api.local/health", {
         headers: { "x-request-id": "req_public" },
       }),
     );
-
     const serviceContext = await createHttpServiceContext(context, { audit });
 
     expect(serviceContext.actor).toEqual({ id: "public", kind: "public" });
@@ -59,13 +56,12 @@ describe("createHttpServiceContext", () => {
       storeId: "store_1" as never,
       tenantId: "tenant_1" as never,
       userId: "user_1" as never,
+      userName: "  Otavio Vasconcelos  ",
     };
     const repository = {
       findByClerkUserAndStoreSlug: vi.fn(async () => access),
     };
-    const audit = {
-      record: vi.fn(async (_event: AuditEvent) => undefined),
-    };
+    const audit = { record: vi.fn(async (_event: AuditEvent) => undefined) };
     const context = await captureContext(
       new Request("https://api.local/api/v1/inventory/listings", {
         headers: {
@@ -82,6 +78,7 @@ describe("createHttpServiceContext", () => {
     });
 
     expect(serviceContext.actor).toEqual({
+      displayName: "Otavio Vasconcelos",
       externalId: "clerk_1",
       id: "user_1",
       kind: "user",

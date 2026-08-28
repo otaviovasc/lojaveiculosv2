@@ -69,6 +69,9 @@ export function registerCrmMessagingExtraRoutes(
       const serviceContext = await createContext(context);
       assertMessageSend(serviceContext);
       const message = await services.sendWhatsappLocation(serviceContext, {
+        ...(readIdempotencyKey(context)
+          ? { idempotencyKey: readIdempotencyKey(context)! }
+          : {}),
         ...(input.address ? { address: input.address } : {}),
         latitude: input.latitude,
         longitude: input.longitude,
@@ -138,6 +141,9 @@ export function registerCrmMessagingExtraRoutes(
       const serviceContext = await createContext(context);
       assertMessageSend(serviceContext);
       const message = await services.sendWhatsappVehicle(serviceContext, {
+        ...(readIdempotencyKey(context)
+          ? { idempotencyKey: readIdempotencyKey(context)! }
+          : {}),
         ...(input.description ? { description: input.description } : {}),
         ...(input.listingId ? { listingId: input.listingId } : {}),
         ...(input.mediaLimit !== undefined

@@ -20,19 +20,20 @@ import {
 } from "./autoAssignHumanCrmOutbound.js";
 import type { ConversationCycleAssignmentResult } from "./conversationCycleAssignment.js";
 import type { StartConversationTarget } from "./startConversationTarget.js";
-import {
-  createLocalCrmMessageExternalId,
-  findOrCreateLead,
-} from "./startConversationSupport.js";
+import { findOrCreateLead } from "./startConversationSupport.js";
 import { ConversationCycleNotFoundError } from "./crmMessagingErrors.js";
-import { fingerprintOutboundIntent } from "./outboundMessageSupport.js";
+import {
+  fingerprintOutboundIntent,
+  withOutboundClientRequestId,
+} from "./outboundMessageSupport.js";
+import { withHumanCrmSenderSnapshot } from "./crmMessageSender.js";
 
 export async function prepareStartedConversation(input: {
   channel: CrmMessagingChannel;
   connection: CrmConnection;
   content: string;
   context: ServiceContext;
-  idempotencyKey?: string;
+  idempotencyKey: string;
   messageType: CrmMessageType;
   ports: CrmServicePorts;
   scope: { storeId: string; tenantId: string };
@@ -44,9 +45,9 @@ export async function prepareStartedConversation(input: {
   const assignmentEnabled =
     input.context.actor.kind === "user" &&
     shouldAutoAssignHumanCrmOutbound(input);
-  const pendingExternalId = input.idempotencyKey
-    ? `crm-local-${fingerprintOutboundIntent(input.idempotencyKey).slice(0, 40)}`
-    : createLocalCrmMessageExternalId();
+  const pendingExternalId = `crm-local-${fingerprintOutboundIntent(
+    input.idempotencyKey,
+  ).slice(0, 40)}`;
   const pendingAt = new Date();
   let assignmentAuditSessionId: string | null = null;
   let assignmentAuditAttempted = false;
@@ -85,12 +86,19 @@ export async function prepareStartedConversation(input: {
           direction: "OUTBOUND",
           externalId: pendingExternalId,
           leadId: lead.id,
-          metadata: {
-            pendingExternalId,
-            provider: input.connection.provider,
-            sentByActorId: input.context.actor.id,
-            sendState: "PENDING_PROVIDER_SEND",
-          },
+          metadata: withOutboundClientRequestId(
+            withHumanCrmSenderSnapshot(input.context, {
+              metadata: {
+                pendingExternalId,
+                provider: input.connection.provider,
+                sentByActorId: input.context.actor.id,
+                sendState: "PENDING_PROVIDER_SEND",
+              },
+              senderOrigin: input.senderOrigin,
+              senderType: input.senderType,
+            }),
+            input.idempotencyKey,
+          ),
           providerTimestamp: pendingAt,
           senderOrigin: input.senderOrigin,
           senderType: input.senderType,

@@ -35,6 +35,8 @@ import type {
 } from "./crmConversationTypes";
 import { sanitizeCrmMessageUrl } from "./crmMessageHelpers";
 import { Morphicon } from "../../components/ui/Morphicon";
+import { CrmMediaGalleryViewer } from "./CrmMediaGalleryViewer";
+import { buildCrmGalleryMediaItems } from "./crmMediaGallery";
 
 export function CrmConversationCycleDetailsPanel({
   assignableMembers,
@@ -56,7 +58,9 @@ export function CrmConversationCycleDetailsPanel({
   const [galleryTab, setGalleryTab] = useState<"media" | "docs" | "links">(
     "media",
   );
-  const [galleryViewerUrl, setGalleryViewerUrl] = useState<string | null>(null);
+  const [galleryViewerIndex, setGalleryViewerIndex] = useState<number | null>(
+    null,
+  );
   const [muted, setMuted] = useState(false);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
 
@@ -121,33 +125,17 @@ export function CrmConversationCycleDetailsPanel({
         ? `${cycle.unreadCount} mensagens não lidas`
         : "Toque para ver informações do contato";
 
+  const galleryMedia = useMemo(
+    () => buildCrmGalleryMediaItems(messages),
+    [messages],
+  );
   const gallery = useMemo(() => {
-    const media: { url: string; type: string; caption?: string }[] = [];
     const docs: { url: string; name?: string }[] = [];
     const links: { url: string; label: string }[] = [];
     for (const msg of messages) {
       const mediaUrl = sanitizeCrmMessageUrl(msg.mediaUrl);
       if (mediaUrl) {
-        if (
-          msg.type === "IMAGE" ||
-          msg.type === "VIDEO" ||
-          msg.type === "STICKER"
-        ) {
-          const meta = (msg.metadata as Record<string, unknown> | undefined)
-            ?.media as Record<string, unknown> | undefined;
-          const rawCaption =
-            (typeof meta?.caption === "string" ? meta.caption : undefined) ??
-            (typeof msg.content === "string" ? msg.content : undefined);
-          const clean =
-            rawCaption === `[${msg.type.toLowerCase()}]`
-              ? undefined
-              : rawCaption;
-          if (clean === undefined) {
-            media.push({ url: mediaUrl, type: msg.type });
-          } else {
-            media.push({ url: mediaUrl, type: msg.type, caption: clean });
-          }
-        } else if (msg.type === "DOCUMENT") {
+        if (msg.type === "DOCUMENT") {
           const meta = (msg.metadata as Record<string, unknown> | undefined)
             ?.media as Record<string, unknown> | undefined;
           const name =
@@ -157,7 +145,11 @@ export function CrmConversationCycleDetailsPanel({
           } else {
             docs.push({ url: mediaUrl, name });
           }
-        } else {
+        } else if (
+          msg.type !== "IMAGE" &&
+          msg.type !== "VIDEO" &&
+          msg.type !== "STICKER"
+        ) {
           docs.push({ url: mediaUrl });
         }
       }
@@ -190,7 +182,7 @@ export function CrmConversationCycleDetailsPanel({
         }
       }
     }
-    return { media, docs, links };
+    return { docs, links };
   }, [messages]);
 
   return (
@@ -535,10 +527,10 @@ export function CrmConversationCycleDetailsPanel({
               className="crm-details-wa-media-item crm-details-wa-media-item--interactive"
               onClick={() => setGalleryTab("media")}
               type="button"
-              aria-label={`Ver mídia: ${gallery.media.length} itens`}
+              aria-label={`Ver mídia: ${galleryMedia.length} itens`}
             >
               <ImageIcon className="size-4" />
-              <small>{gallery.media.length}</small>
+              <small>{galleryMedia.length}</small>
               <span>mídia</span>
             </button>
             <button
@@ -563,13 +555,14 @@ export function CrmConversationCycleDetailsPanel({
             </button>
           </div>
           {/* Drill-down preview */}
-          {galleryTab === "media" && gallery.media.length > 0 ? (
+          {galleryTab === "media" && galleryMedia.length > 0 ? (
             <div className="crm-details-gallery-preview">
-              {gallery.media.slice(0, 6).map((item) => (
+              {galleryMedia.slice(0, 6).map((item, index) => (
                 <button
-                  key={item.url}
+                  aria-label={`Abrir mídia ${index + 1}`}
+                  key={`${item.url}-${index}`}
                   className="crm-details-gallery-thumb"
-                  onClick={() => setGalleryViewerUrl(item.url)}
+                  onClick={() => setGalleryViewerIndex(index)}
                   type="button"
                 >
                   {item.type === "VIDEO" ? (
@@ -579,9 +572,9 @@ export function CrmConversationCycleDetailsPanel({
                   )}
                 </button>
               ))}
-              {gallery.media.length > 6 ? (
+              {galleryMedia.length > 6 ? (
                 <span className="crm-details-gallery-more">
-                  +{gallery.media.length - 6}
+                  +{galleryMedia.length - 6}
                 </span>
               ) : null}
             </div>
@@ -634,7 +627,7 @@ export function CrmConversationCycleDetailsPanel({
               ) : null}
             </div>
           ) : null}
-          {gallery.media.length === 0 &&
+          {galleryMedia.length === 0 &&
           gallery.docs.length === 0 &&
           gallery.links.length === 0 ? (
             <p className="crm-details-muted text-xs mt-1">
@@ -720,17 +713,12 @@ export function CrmConversationCycleDetailsPanel({
           <img alt={name} src={cycle.profilePhotoUrl} />
         </button>
       ) : null}
-      {/* Gallery viewer */}
-      {galleryViewerUrl ? (
-        <button
-          aria-label="Fechar visualizador"
-          className="crm-pfp-lightbox"
-          onClick={() => setGalleryViewerUrl(null)}
-          type="button"
-        >
-          <img alt="mídia" src={galleryViewerUrl} />
-        </button>
-      ) : null}
+      <CrmMediaGalleryViewer
+        initialIndex={galleryViewerIndex ?? 0}
+        isOpen={galleryViewerIndex !== null}
+        mediaList={galleryMedia}
+        onClose={() => setGalleryViewerIndex(null)}
+      />
     </aside>
   );
 }

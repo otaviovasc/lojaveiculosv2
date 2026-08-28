@@ -49,7 +49,10 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
         envelope.event,
       );
       updateCrmRealtimeAssignmentBoundary(assignmentBoundaries, envelope.event);
-      if (!history.some((event) => event.id === envelope.id)) {
+      if (
+        envelope.event.type !== "presence" &&
+        !history.some((event) => event.id === envelope.id)
+      ) {
         history.push(envelope);
         trimHistory(history);
       }

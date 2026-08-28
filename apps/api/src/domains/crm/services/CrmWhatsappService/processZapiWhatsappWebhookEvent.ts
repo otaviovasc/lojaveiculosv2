@@ -43,6 +43,9 @@ export async function processZapiWhatsappWebhookEvent<
     connectionId: input.connectionId,
     webhookType: type,
   });
+  if (type === "chat_presence") {
+    return process(context, input, ports);
+  }
   const connection = await readZapiConnection(
     context,
     input.connectionId,

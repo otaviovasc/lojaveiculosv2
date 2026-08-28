@@ -41,7 +41,9 @@ describe("CRM realtime logging", () => {
     const ticket = (await ticketResponse.json()) as { ticket: string };
 
     await readSseUntil(
-      await app.request(`/api/v1/crm/events?ticket=${ticket.ticket}`),
+      await app.request("/api/v1/crm/events", {
+        headers: { "X-CRM-SSE-Ticket": ticket.ticket },
+      }),
       "ready",
     );
 
@@ -81,9 +83,9 @@ describe("CRM realtime logging", () => {
       method: "POST",
     });
     const ticket = (await ticketResponse.json()) as { ticket: string };
-    const response = await app.request(
-      `/api/v1/crm/events?ticket=${ticket.ticket}`,
-    );
+    const response = await app.request("/api/v1/crm/events", {
+      headers: { "X-CRM-SSE-Ticket": ticket.ticket },
+    });
     const reader = response.body!.getReader();
     await reader.read();
 

@@ -1,7 +1,10 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmConnectionProvider } from "../ports/crmConnectionRepository.js";
 import type { CrmLead } from "../ports/crmRepository.js";
-import type { CrmMessageSenderType } from "../ports/crmConversationRepository.js";
+import type {
+  CrmMessageSenderOrigin,
+  CrmMessageSenderType,
+} from "../ports/crmConversationRepository.js";
 import type { ConversationCycleAssignmentResult } from "./conversationCycleAssignment.js";
 import {
   getCrmRepository,
@@ -11,6 +14,8 @@ import {
 } from "../services/CrmService/serviceSupport.js";
 import { interventionActorKind } from "./humanAttendanceTransition.js";
 import { transitionConfirmedHumanOutboundAttendance } from "./outboundAttendance.js";
+import { withHumanCrmSenderSnapshot } from "./crmMessageSender.js";
+import { withOutboundClientRequestId } from "./outboundMessageSupport.js";
 import {
   findConversationSession,
   recordLeadInteraction,
@@ -23,6 +28,7 @@ export async function completeStartedConversation(
   input: {
     assignment: ConversationCycleAssignmentResult | null;
     content: string;
+    clientRequestId: string;
     createdMessage: boolean;
     interventionId: string;
     lead: CrmLead;
@@ -31,6 +37,7 @@ export async function completeStartedConversation(
     provider: CrmConnectionProvider;
     providerExternalId: string;
     providerTimestamp: Date;
+    senderOrigin: CrmMessageSenderOrigin;
     senderType: CrmMessageSenderType;
     cycleId: string;
   },
@@ -43,11 +50,18 @@ export async function completeStartedConversation(
       {
         externalId: input.providerExternalId,
         messageId: input.messageId,
-        metadata: sentMessageMetadata({
-          pendingExternalId: input.pendingExternalId,
-          provider: input.provider,
-          sentByActorId: context.actor.id,
-        }),
+        metadata: withOutboundClientRequestId(
+          withHumanCrmSenderSnapshot(context, {
+            metadata: sentMessageMetadata({
+              pendingExternalId: input.pendingExternalId,
+              provider: input.provider,
+              sentByActorId: context.actor.id,
+            }),
+            senderOrigin: input.senderOrigin,
+            senderType: input.senderType,
+          }),
+          input.clientRequestId,
+        ),
         providerTimestamp: input.providerTimestamp,
         status: "SENT",
       },

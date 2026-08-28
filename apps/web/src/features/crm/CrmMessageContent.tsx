@@ -156,9 +156,7 @@ export function QuotedMessage({
   const replyTo = readRecord(readRecord(metadata).replyTo);
   if (!Object.keys(replyTo).length) return null;
   const content = readString(replyTo.content) ?? "Mensagem";
-  const sender =
-    readString(replyTo.senderName) ??
-    (readString(replyTo.direction) === "OUTBOUND" ? "Atendente" : "Contato");
+  const sender = readQuotedSender(replyTo);
 
   const quote = (
     <>
@@ -178,6 +176,22 @@ export function QuotedMessage({
   ) : (
     <div className="crm-quoted-message">{quote}</div>
   );
+}
+
+function readQuotedSender(replyTo: Record<string, unknown>) {
+  if (readString(replyTo.direction) !== "OUTBOUND") {
+    return readString(replyTo.senderName) ?? "Contato";
+  }
+  if (readString(replyTo.senderType) === "AI") return "IA";
+  if (readString(replyTo.senderType) === "SYSTEM") return "Sistema";
+  if (readString(replyTo.senderOrigin) === "human_channel") {
+    return "Enviado diretamente pelo canal";
+  }
+  if (readString(replyTo.senderOrigin) === "human_crm") {
+    const senderUser = readRecord(replyTo.senderUser);
+    return readString(senderUser.name) ?? "Usuário removido";
+  }
+  return "Remetente não identificado";
 }
 
 function MediaPreviewButton({

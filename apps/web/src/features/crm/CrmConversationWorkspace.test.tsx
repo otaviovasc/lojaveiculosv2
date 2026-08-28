@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   forwardRef,
@@ -13,15 +19,19 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CrmConversationWorkspace } from "./CrmConversationWorkspace";
 import type { ChatHeader, MessageComposer } from "./CrmConversationParts";
+import type { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsPanel";
 import type { useCrmInbox } from "./useCrmInbox";
 
 vi.mock("./CrmConversationParts", () => ({
   ChatHeader: ({
     actionsDisabled,
+    contactPresence,
     onBack,
     onClose,
+    onOpenDetails,
   }: ComponentProps<typeof ChatHeader>) => (
     <>
+      {contactPresence ? <output>{contactPresence}</output> : null}
       <input aria-label="Buscar mensagens" />
       <input aria-label="Prompt IA" />
       <button onClick={onBack} type="button">
@@ -29,6 +39,9 @@ vi.mock("./CrmConversationParts", () => ({
       </button>
       <button disabled={actionsDisabled} onClick={onClose} type="button">
         Concluir
+      </button>
+      <button onClick={onOpenDetails} type="button">
+        Abrir detalhes
       </button>
     </>
   ),
@@ -113,7 +126,10 @@ vi.mock("./CrmNewConversationDialog", () => ({
   CrmNewConversationDialog: () => null,
 }));
 vi.mock("./CrmConversationCycleDetailsPanel", () => ({
-  CrmConversationCycleDetailsPanel: () => null,
+  CrmConversationCycleDetailsPanel: ({
+    isOpen,
+  }: ComponentProps<typeof CrmConversationCycleDetailsPanel>) =>
+    isOpen ? <div data-testid="details-panel" /> : null,
 }));
 
 describe("CrmConversationWorkspace conclusion", () => {
@@ -150,6 +166,35 @@ describe("CrmConversationWorkspace conclusion", () => {
       commandId: "command-workspace",
       outcome: "follow_up",
     });
+  });
+
+  it("keeps details open when Escape belongs to a viewport dialog", async () => {
+    const user = userEvent.setup();
+    render(
+      <CrmConversationWorkspace
+        inbox={createInbox({
+          closeCycle: vi.fn(async () => true),
+          concludeCycle: vi.fn(async () => true),
+        })}
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Abrir detalhes" }));
+    expect(screen.getByTestId("details-panel")).toBeInTheDocument();
+
+    const dialog = document.createElement("div");
+    dialog.setAttribute("aria-modal", "true");
+    dialog.setAttribute("role", "dialog");
+    document.body.append(dialog);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByTestId("details-panel")).toBeInTheDocument();
+
+    dialog.remove();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("details-panel")).not.toBeInTheDocument();
   });
 
   it("remounts the composer when the view connection changes", async () => {
@@ -235,6 +280,27 @@ describe("CrmConversationWorkspace conclusion", () => {
       screen.getByRole("button", { name: "Voltar para conversas" }),
     );
     expect(onCycleChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it("passes verified active-contact presence to the conversation header", () => {
+    render(
+      <CrmConversationWorkspace
+        inbox={
+          {
+            ...createInbox({
+              closeCycle: vi.fn(async () => true),
+              concludeCycle: vi.fn(async () => true),
+            }),
+            activeContactPresence: "typing",
+          } as unknown as ReturnType<typeof useCrmInbox>
+        }
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
+    );
+
+    expect(screen.getByText("typing")).toBeInTheDocument();
   });
 
   it("keeps header search and Prompt IA focused across conversation updates", async () => {

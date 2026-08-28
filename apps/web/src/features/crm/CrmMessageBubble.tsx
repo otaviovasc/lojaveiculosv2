@@ -5,6 +5,7 @@ import {
   CircleHelp,
   Clock3,
 } from "lucide-react";
+import { useState } from "react";
 import {
   MessageActions,
   type MessageActionHandlers,
@@ -15,7 +16,7 @@ import {
   getSenderLabel,
   getSenderOriginLabel,
 } from "./crmConversationModel";
-import { readReaction } from "./crmMessageHelpers";
+import { readReaction, readRecord } from "./crmMessageHelpers";
 import type { CrmMessage } from "./crmConversationTypes";
 
 export function MessageBubble({
@@ -26,8 +27,10 @@ export function MessageBubble({
   onMediaClick,
   onQuoteClick,
   onReact,
+  onReconcileMessage,
   onRemoveReaction,
   onReply,
+  onRetryMessage,
 }: MessageActionHandlers & {
   fallbackAssigneeName?: string | null;
   message: CrmMessage;
@@ -73,6 +76,12 @@ export function MessageBubble({
         onClick={onQuoteClick ? () => onQuoteClick() : undefined}
       />
       <MessageContent message={message} onMediaClick={onMediaClick} />
+      <MessageRecoveryActions
+        actionsDisabled={actionsDisabled}
+        messages={[message]}
+        onReconcileMessage={onReconcileMessage}
+        onRetryMessage={onRetryMessage}
+      />
       {reaction ? (
         <button
           aria-label={`Reacao ${reaction}`}
@@ -89,7 +98,12 @@ export function MessageBubble({
       ) : null}
       <footer>
         <span>{formatMessageTime(message)}</span>
-        {outgoing ? <MessageDeliveryStatus delivery={delivery} /> : null}
+        {outgoing ? (
+          <MessageDeliveryStatus
+            delivery={delivery}
+            pendingLabel={readPendingMessageLabel(message)}
+          />
+        ) : null}
       </footer>
     </article>
   );
@@ -121,8 +135,10 @@ export function readDeliveryPresentation(
 
 export function MessageDeliveryStatus({
   delivery,
+  pendingLabel,
 }: {
   delivery: MessageDeliveryPresentation;
+  pendingLabel?: string | undefined;
 }) {
   if (delivery.status === "failed") {
     return (
@@ -138,10 +154,11 @@ export function MessageDeliveryStatus({
   }
 
   if (delivery.status === "pending") {
+    const label = pendingLabel ?? "Envio pendente";
     return (
-      <span className="crm-delivery-pending" role="status" title="Enviando...">
+      <span className="crm-delivery-pending" role="status" title={label}>
         <Clock3 className="size-3 animate-spin" aria-hidden="true" />
-        <span>Envio pendente</span>
+        <span>{label}</span>
       </span>
     );
   }
@@ -182,5 +199,126 @@ export function MessageDeliveryStatus({
       <CircleHelp className="size-3 text-muted" />
       <span>Envio não confirmado</span>
     </span>
+  );
+}
+
+type RecoveryMessageAction = NonNullable<
+  MessageActionHandlers["onRetryMessage"]
+>;
+
+export function MessageRecoveryActions({
+  actionsDisabled,
+  messages,
+  onReconcileMessage,
+  onRetryMessage,
+}: Pick<
+  MessageActionHandlers,
+  "actionsDisabled" | "onReconcileMessage" | "onRetryMessage"
+> & {
+  messages: CrmMessage[];
+}) {
+  const failed = messages.filter(
+    (message) =>
+      message.direction === "OUTBOUND" && message.status === "FAILED",
+  );
+  const indeterminate = messages.filter(
+    (message) =>
+      message.direction === "OUTBOUND" &&
+      (message.status === "INDETERMINATE" ||
+        message.status === "PROVIDER_UNKNOWN"),
+  );
+
+  if (
+    (!failed.length || !onRetryMessage) &&
+    (!indeterminate.length || !onReconcileMessage)
+  ) {
+    return null;
+  }
+
+  return (
+    <div aria-live="polite" className="crm-message-recovery-actions">
+      {failed.length > 0 && onRetryMessage ? (
+        <RecoveryActionButton
+          actionsDisabled={actionsDisabled}
+          action={onRetryMessage}
+          idleLabel={recoveryLabel("Tentar novamente", failed.length)}
+          messages={failed}
+          pendingLabel="Tentando novamente…"
+        />
+      ) : null}
+      {indeterminate.length > 0 && onReconcileMessage ? (
+        <RecoveryActionButton
+          actionsDisabled={actionsDisabled}
+          action={onReconcileMessage}
+          idleLabel={recoveryLabel("Verificar envio", indeterminate.length)}
+          messages={indeterminate}
+          pendingLabel="Verificando envio…"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function RecoveryActionButton({
+  actionsDisabled,
+  action,
+  idleLabel,
+  messages,
+  pendingLabel,
+}: {
+  actionsDisabled?: boolean | undefined;
+  action: RecoveryMessageAction;
+  idleLabel: string;
+  messages: CrmMessage[];
+  pendingLabel: string;
+}) {
+  const [inFlight, setInFlight] = useState(false);
+
+  return (
+    <button
+      aria-label={idleLabel}
+      className="crm-message-recovery-action"
+      disabled={actionsDisabled || inFlight}
+      onClick={() => {
+        if (inFlight) return;
+        setInFlight(true);
+        void runRecoveryAction(messages, action)
+          .catch(() => undefined)
+          .finally(() => setInFlight(false));
+      }}
+      title={idleLabel}
+      type="button"
+    >
+      {inFlight ? pendingLabel : idleLabel}
+    </button>
+  );
+}
+
+async function runRecoveryAction(
+  messages: CrmMessage[],
+  action: RecoveryMessageAction,
+) {
+  for (const message of messages) {
+    const accepted = await action(message);
+    if (!accepted) return;
+  }
+}
+
+function recoveryLabel(label: string, count: number) {
+  return count > 1 ? `${label} (${count})` : label;
+}
+
+function readPendingMessageLabel(message: CrmMessage) {
+  if (!isMediaMessage(message)) return undefined;
+  const metadata = readRecord(message.metadata);
+  const localUpload = readRecord(metadata.localUpload);
+  if (localUpload.phase === "preparing") return "Preparando mídia…";
+  if (localUpload.phase === "uploading") return "Enviando mídia…";
+  return undefined;
+}
+
+function isMediaMessage(message: CrmMessage) {
+  return ["AUDIO", "DOCUMENT", "IMAGE", "STICKER", "VIDEO"].includes(
+    message.type,
   );
 }

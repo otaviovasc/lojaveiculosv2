@@ -25,6 +25,7 @@ import type { CrmPushRepository } from "../../../domains/crm/ports/crmPushReposi
 import type { CrmPushPublicConfig } from "./crm.push.routes.js";
 
 export type CreateCrmTestAppOptions = {
+  actorDisplayName?: string;
   audit?: AuditSink;
   composioChannelOnboardingProvider?: CrmServicePorts["composioChannelOnboardingProvider"];
   crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;

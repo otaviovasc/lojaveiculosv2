@@ -54,12 +54,16 @@ describe("CRM WhatsApp extras", () => {
         name: "Loja Veiculos",
         cycleId: inbound.conversationCycle.id,
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "structured-location-1",
+      },
       method: "POST",
     });
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
+      clientRequestId: "structured-location-1",
       content: "Loja Veiculos",
       direction: "OUTBOUND",
       externalId: "zapi-location-outbound-1",

@@ -52,8 +52,11 @@ export async function resolveStoreContext(
     billingManagedBy: access.billingManagedBy,
     role: access.role,
   });
+  const { displayName: _untrustedDisplayName, ...authenticatedActor } =
+    input.actor;
   const actor: ServiceActor = {
-    ...input.actor,
+    ...authenticatedActor,
+    ...(access.userName?.trim() ? { displayName: access.userName.trim() } : {}),
     externalId: input.actor.externalId ?? input.clerkUserId,
     id: access.userId,
   };

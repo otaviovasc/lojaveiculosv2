@@ -9,6 +9,7 @@ import type {
   CrmRealtimeEvent,
   CrmRealtimeStatus,
 } from "./crmConversationTypes";
+import { readCrmSseStream } from "./crmSseParser";
 
 type JsonBody = Record<string, unknown>;
 
@@ -25,13 +26,15 @@ export function subscribeCrmEvents(input: {
   connectionId?: CrmConnectionId | null | undefined;
   eventsRoute: string;
   eventsTicketRoute: string;
+  fetch: typeof fetch;
+  headers?: HeadersInit | undefined;
   onError?: ((error: Error) => void) | undefined;
   onEvent: (event: CrmRealtimeEvent) => void;
   onStatus?: (status: CrmRealtimeStatus) => void;
   postJson: <T>(route: string, body?: JsonBody) => Promise<T>;
 }) {
   let closed = false;
-  let eventSource: EventSource | null = null;
+  let streamController: AbortController | null = null;
   let lastEventId: string | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -39,9 +42,9 @@ export function subscribeCrmEvents(input: {
   let connectGeneration = 0;
   const seenEventIds = new Set<string>();
 
-  const closeEventSource = () => {
-    eventSource?.close();
-    eventSource = null;
+  const closeStream = () => {
+    streamController?.abort();
+    streamController = null;
   };
 
   const clearReconnect = () => {
@@ -56,7 +59,7 @@ export function subscribeCrmEvents(input: {
 
   const scheduleReconnect = () => {
     clearStableConnectionTimer();
-    closeEventSource();
+    closeStream();
     if (reconnectTimer || closed) return;
     input.onStatus?.("degraded");
     reconnectAttempts += 1;
@@ -64,7 +67,8 @@ export function subscribeCrmEvents(input: {
     reconnectTimer = globalThis.setTimeout(() => {
       reconnectTimer = null;
       void connect().catch((error) => {
-        input.onError?.(asError(error));
+        if (isAbortError(error)) return;
+        input.onError?.(normalizeRealtimeError(error));
         scheduleReconnect();
       });
     }, delay);
@@ -74,7 +78,7 @@ export function subscribeCrmEvents(input: {
     const generation = ++connectGeneration;
     input.onStatus?.("connecting");
     clearReconnect();
-    closeEventSource();
+    closeStream();
     const ticket = await input.postJson<CrmEventsTicket>(
       input.eventsTicketRoute,
       {
@@ -83,47 +87,58 @@ export function subscribeCrmEvents(input: {
       },
     );
     if (closed || generation !== connectGeneration) return;
-    const source = new EventSource(
-      withTicket(input.eventsRoute, ticket.ticket),
-    );
-    eventSource = source;
-    source.onopen = () => {
-      if (closed || eventSource !== source) return;
-      clearStableConnectionTimer();
-      stableConnectionTimer = globalThis.setTimeout(() => {
-        if (eventSource !== source || closed) return;
-        reconnectAttempts = 0;
-        stableConnectionTimer = null;
-      }, 5_000);
-      input.onStatus?.("connected");
-    };
-    const handleMessage = (event: MessageEvent) => {
-      if (closed || eventSource !== source) return;
+    const controller = new AbortController();
+    streamController = controller;
+    const response = await input.fetch(input.eventsRoute, {
+      headers: createSseHeaders(input.headers, ticket.ticket),
+      method: "GET",
+      signal: controller.signal,
+    });
+    if (closed || generation !== connectGeneration) {
+      controller.abort();
+      return;
+    }
+    if (!response.ok) {
+      throw new Error(
+        `CRM realtime stream failed with HTTP ${response.status}.`,
+      );
+    }
+    if (!response.body) throw new Error("CRM realtime stream has no body.");
+
+    clearStableConnectionTimer();
+    stableConnectionTimer = globalThis.setTimeout(() => {
+      if (streamController !== controller || closed) return;
+      reconnectAttempts = 0;
+      stableConnectionTimer = null;
+    }, 5_000);
+    input.onStatus?.("connected");
+
+    await readCrmSseStream(response.body, (frame) => {
+      if (closed || streamController !== controller) return;
+      if (!isCrmSseEventName(frame.event)) return;
       try {
-        const parsedEvent = parseRealtimeEvent(JSON.parse(event.data));
-        if (event.lastEventId) {
-          if (seenEventIds.has(event.lastEventId)) return;
-          seenEventIds.add(event.lastEventId);
-          trimSeenEventIds(seenEventIds);
-          lastEventId = event.lastEventId;
+        const parsedEvent = parseRealtimeEvent(JSON.parse(frame.data));
+        if (frame.id) {
+          if (seenEventIds.has(frame.id)) return;
         }
         input.onEvent(parsedEvent);
+        if (frame.id) {
+          seenEventIds.add(frame.id);
+          trimSeenEventIds(seenEventIds);
+          lastEventId = frame.id;
+        }
       } catch {
-        input.onError?.(new Error("Invalid CRM WhatsApp realtime event."));
-        scheduleReconnect();
+        throw invalidRealtimeEvent();
       }
-    };
-    crmSseEventNames.forEach((eventName) => {
-      source.addEventListener(eventName, handleMessage as EventListener);
     });
-    source.onerror = () => {
-      if (closed || eventSource !== source) return;
-      scheduleReconnect();
-    };
+    if (!closed && generation === connectGeneration) {
+      throw new Error("CRM realtime stream ended.");
+    }
   };
 
   void connect().catch((error) => {
-    input.onError?.(asError(error));
+    if (isAbortError(error)) return;
+    input.onError?.(normalizeRealtimeError(error));
     scheduleReconnect();
   });
 
@@ -133,7 +148,7 @@ export function subscribeCrmEvents(input: {
     input.onStatus?.("offline");
     clearReconnect();
     clearStableConnectionTimer();
-    closeEventSource();
+    closeStream();
   };
 }
 
@@ -184,6 +199,7 @@ function parseRealtimeEvent(value: unknown): CrmRealtimeEvent {
   if (event.type === "presence") {
     return {
       connectionId: readString(event.connectionId),
+      cycleId: readString(event.cycleId),
       payload: readRecord(event.payload),
       type: event.type,
     };
@@ -217,12 +233,21 @@ function trimSeenEventIds(seenEventIds: Set<string>) {
   if (first) seenEventIds.delete(first);
 }
 
-function withTicket(route: string, ticket: string) {
-  const params = new URLSearchParams();
-  params.set("ticket", ticket);
-  return `${route}?${params.toString()}`;
+function createSseHeaders(headers: HeadersInit | undefined, ticket: string) {
+  const result = new Headers(headers);
+  result.set("Accept", "text/event-stream");
+  result.set("X-CRM-SSE-Ticket", ticket);
+  return result;
 }
 
-function asError(error: unknown) {
+function isCrmSseEventName(value: string) {
+  return crmSseEventNames.some((eventName) => eventName === value);
+}
+
+function normalizeRealtimeError(error: unknown) {
   return error instanceof Error ? error : new Error(String(error));
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
 }

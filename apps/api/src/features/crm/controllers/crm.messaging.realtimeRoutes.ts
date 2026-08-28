@@ -6,7 +6,10 @@ import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { ServiceLogger } from "../../../shared/serviceLogger.js";
 import { assertConversationRead } from "./crm.messaging.controller.support.js";
-import { handleCrmMessaging } from "./crm.messaging.errors.js";
+import {
+  CrmMessagingValidationError,
+  handleCrmMessaging,
+} from "./crm.messaging.errors.js";
 import { resolveCrmQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
 import { createCrmSseResponse } from "./crm.messaging.realtimeStream.js";
 
@@ -68,7 +71,10 @@ export function registerCrmMessagingRealtimeRoutes(
   crmFeature.get("/events", async (context) =>
     handleCrmMessaging(context, async () => {
       setRealtimeSecurityHeaders(context);
-      const ticket = context.req.query("ticket");
+      const serviceContext = await createContext(context);
+      assertConversationRead(serviceContext);
+      const currentScope = requireCrmScope(serviceContext);
+      const ticket = readTicket(context.req.header("x-crm-sse-ticket"));
       const scope = ticket ? await broker.resolveTicket(ticket) : null;
       if (!scope) {
         return jsonApiError(context, {
@@ -77,18 +83,21 @@ export function registerCrmMessagingRealtimeRoutes(
           status: 401,
         });
       }
+      if (!matchesTicketScope(currentScope, serviceContext, scope)) {
+        return jsonApiError(context, {
+          code: "CRM_MESSAGING_SSE_ACCESS_REVOKED",
+          message: "SSE access is no longer authorized.",
+          status: 403,
+        });
+      }
       const authorize = async () => {
         try {
-          const serviceContext = await createContext(context);
-          assertConversationRead(serviceContext);
-          const currentScope = requireCrmScope(serviceContext);
-          return (
-            currentScope.storeId === scope.storeId &&
-            currentScope.tenantId === scope.tenantId &&
-            haveSameQueueVisibility(
-              resolveCrmQueueVisibility(serviceContext),
-              scope.queueVisibility,
-            )
+          const refreshedContext = await createContext(context);
+          assertConversationRead(refreshedContext);
+          return matchesTicketScope(
+            requireCrmScope(refreshedContext),
+            refreshedContext,
+            scope,
           );
         } catch {
           return false;
@@ -109,13 +118,30 @@ export function registerCrmMessagingRealtimeRoutes(
         broker,
         connectionId: scope.connectionId ?? null,
         queueVisibility: scope.queueVisibility,
-        sinceEventId: readSinceEventId(context) ?? scope.sinceEventId ?? null,
+        sinceEventId: scope.sinceEventId ?? null,
         signal: context.req.raw.signal,
         storeId: scope.storeId,
         tenantId: scope.tenantId,
         ...(logEntry ? { logger: logEntry.logger } : {}),
       });
     }),
+  );
+}
+
+function matchesTicketScope(
+  currentScope: ReturnType<typeof requireCrmScope>,
+  serviceContext: ServiceContext,
+  ticketScope: NonNullable<
+    Awaited<ReturnType<CrmRealtimeBroker["resolveTicket"]>>
+  >,
+) {
+  return (
+    currentScope.storeId === ticketScope.storeId &&
+    currentScope.tenantId === ticketScope.tenantId &&
+    haveSameQueueVisibility(
+      resolveCrmQueueVisibility(serviceContext),
+      ticketScope.queueVisibility,
+    )
   );
 }
 
@@ -132,21 +158,24 @@ function haveSameQueueVisibility(
 }
 
 async function readTicketInput(context: Context) {
+  let rawBody: unknown;
   try {
-    const body = (await context.req.json()) as {
-      connectionId?: unknown;
-      lastEventId?: unknown;
-      sinceEventId?: unknown;
-    };
-    return {
-      connectionId: readOptionalString(body.connectionId),
-      sinceEventId:
-        readOptionalString(body.sinceEventId) ??
-        readOptionalString(body.lastEventId),
-    };
+    rawBody = await context.req.json();
   } catch {
-    return { connectionId: null, sinceEventId: null };
+    throw new CrmMessagingValidationError("Request body must be valid JSON.");
   }
+  if (!rawBody || typeof rawBody !== "object" || Array.isArray(rawBody)) {
+    throw new CrmMessagingValidationError("Request body must be an object.");
+  }
+  const body = rawBody as {
+    connectionId?: unknown;
+    lastEventId?: unknown;
+    sinceEventId?: unknown;
+  };
+  return {
+    connectionId: readConnectionId(body.connectionId),
+    sinceEventId: readEventCursor(body.sinceEventId ?? body.lastEventId),
+  };
 }
 
 function setRealtimeSecurityHeaders(context: Context) {
@@ -154,14 +183,38 @@ function setRealtimeSecurityHeaders(context: Context) {
   context.header("Referrer-Policy", "no-referrer");
 }
 
-function readSinceEventId(context: Context) {
-  return (
-    readOptionalString(context.req.query("afterId")) ??
-    readOptionalString(context.req.query("sinceEventId")) ??
-    readOptionalString(context.req.header("last-event-id"))
+function readOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function readConnectionId(value: unknown) {
+  const connectionId = readOptionalString(value);
+  if (!connectionId) return null;
+  if (isUuid(connectionId)) return connectionId;
+  throw new CrmMessagingValidationError("connectionId is invalid.");
+}
+
+function readEventCursor(value: unknown) {
+  const cursor = readOptionalString(value);
+  if (!cursor) return null;
+  if (
+    cursor.length <= 128 &&
+    /^\d{1,20}-(?:\d{1,20}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(
+      cursor,
+    )
+  ) {
+    return cursor;
+  }
+  throw new CrmMessagingValidationError("lastEventId is invalid.");
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
   );
 }
 
-function readOptionalString(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+function readTicket(value: string | undefined) {
+  const ticket = readOptionalString(value);
+  return ticket && isUuid(ticket) ? ticket : null;
 }

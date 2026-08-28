@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { CrmRealtimePublisher } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import { createZapiWebhookSetupIntent } from "../../../domains/crm/whatsapp/zapiWebhookSetupState.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
@@ -15,6 +16,7 @@ export async function createWebhookTestApp(
     connectionRepository?: ReturnType<
       typeof createMemoryCrmConnectionRepository
     >;
+    crmRealtimePublisher?: CrmRealtimePublisher;
     resolveBotEntitlements?: ResolveCrmBotEntitlements;
   } = {},
 ) {
@@ -44,6 +46,9 @@ export async function createWebhookTestApp(
       input.connectionRepository ??
       createMemoryCrmConnectionRepository([createZapiConnection()]),
     crmConversationRepository: whatsappRepository,
+    ...(input.crmRealtimePublisher
+      ? { crmRealtimePublisher: input.crmRealtimePublisher }
+      : {}),
     ...(input.resolveBotEntitlements
       ? { resolveBotEntitlements: input.resolveBotEntitlements }
       : {}),

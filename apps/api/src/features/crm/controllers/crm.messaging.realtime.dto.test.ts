@@ -41,9 +41,9 @@ describe("CRM realtime DTO", () => {
       method: "POST",
     });
     const ticket = (await ticketResponse.json()) as { ticket: string };
-    const streamResponse = await app.request(
-      `/api/v1/crm/events?ticket=${ticket.ticket}`,
-    );
+    const streamResponse = await app.request("/api/v1/crm/events", {
+      headers: { "X-CRM-SSE-Ticket": ticket.ticket },
+    });
     const stream = await readSseUntil(streamResponse, "message-1");
     const event = readSseData(stream, "message");
 

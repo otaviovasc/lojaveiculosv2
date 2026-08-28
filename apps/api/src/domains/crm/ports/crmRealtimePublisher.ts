@@ -5,6 +5,11 @@ import type {
   CrmConversationCycle,
 } from "../ports/crmConversationRepository.js";
 
+export type CrmPresencePayload = {
+  phone: string;
+  state: "available" | "composing" | "paused" | "unavailable";
+};
+
 export type CrmRealtimeEvent =
   | {
       connectionId: string;
@@ -42,8 +47,10 @@ export type CrmRealtimeEvent =
       type: "connection_status";
     }
   | {
+      assignedUserId: UserId | null;
       connectionId: string;
-      payload: Record<string, unknown>;
+      cycleId: string;
+      payload: CrmPresencePayload;
       storeId: StoreId;
       tenantId: TenantId;
       type: "presence";

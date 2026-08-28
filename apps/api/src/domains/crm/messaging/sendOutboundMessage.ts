@@ -17,7 +17,8 @@ import {
   outboundReconciliationPendingError,
   readPreparedOutboundResult,
   recordOutboundLeadInteraction,
-  requireOutboundIdempotencyKey,
+  resolveOutboundClientRequestId,
+  withOutboundClientRequestId,
   writePreparedOutboundResult,
 } from "./outboundMessageSupport.js";
 import type {
@@ -35,12 +36,7 @@ import {
 import { claimOutboundIntentWithHumanAssignment } from "./claimOutboundIntentWithHumanAssignment.js";
 import { findOutboundConversationCycle } from "../services/CrmMessagingService/conversationCycleMutationSupport.js";
 import { resolveOutboundConnection } from "./resolveOutboundConnection.js";
-
-export type {
-  PreparedOutboundCrmMessage,
-  ProviderSentMessage,
-  SendOutboundMessageInput,
-} from "./outboundMessageTypes.js";
+import { withHumanCrmSenderSnapshot } from "./crmMessageSender.js";
 
 export async function sendOutboundMessage(
   context: ServiceContext,
@@ -69,14 +65,16 @@ export async function sendOutboundMessage(
     senderOrigin: input.senderOrigin,
     senderType,
   });
+  const clientRequestId = resolveOutboundClientRequestId(
+    context,
+    input.idempotencyKey,
+    intentFingerprint,
+  );
   const outbound = await claimOutboundIntentWithHumanAssignment({
     claim: {
       connectionId: connection.id,
       fingerprint: intentFingerprint,
-      idempotencyKey: requireOutboundIdempotencyKey(
-        input.idempotencyKey ??
-          `${context.correlationId ?? context.requestId}:${intentFingerprint}`,
-      ),
+      idempotencyKey: clientRequestId,
       now,
       cycleId: initialSession.id,
       staleBefore: new Date(now.getTime() - 2 * 60_000),
@@ -126,6 +124,14 @@ export async function sendOutboundMessage(
         scope,
         conversationCycle,
       });
+      prepared = {
+        ...prepared,
+        metadata: withHumanCrmSenderSnapshot(context, {
+          metadata: prepared.metadata,
+          senderOrigin: input.senderOrigin,
+          senderType,
+        }),
+      };
       await intents.recordProviderSuccess({
         claimToken: claimed.intent.claimToken,
         id: claimed.intent.id,
@@ -136,6 +142,10 @@ export async function sendOutboundMessage(
       throw error;
     }
   }
+  prepared = {
+    ...prepared,
+    metadata: withOutboundClientRequestId(prepared.metadata, clientRequestId),
+  };
   const result = await whatsappRepository.ingestMessage({
     ...(conversationCycle.customerChatId
       ? { customerChatId: conversationCycle.customerChatId }
@@ -178,7 +188,6 @@ export async function sendOutboundMessage(
     },
   );
   const currentSession = attendanceTransition.conversationCycle;
-
   if (conversationCycle.leadId && result.createdMessage) {
     await recordOutboundLeadInteraction(
       context,
@@ -236,6 +245,5 @@ export async function sendOutboundMessage(
     },
     ports,
   );
-
   return message;
 }

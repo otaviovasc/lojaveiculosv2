@@ -31,15 +31,20 @@ vi.mock("./useCrmInbox", () => ({
 vi.mock("./CrmScopedNav", () => ({
   CrmScopedNav: ({
     activeScope,
-    connectionLabel,
     onChange,
+    providerStatus,
+    realtimeStatus,
   }: {
     activeScope: string;
-    connectionLabel: string;
     onChange: (scope: "statistics") => void;
+    providerStatus: { label: string };
+    realtimeStatus: { label: string };
   }) => (
     <>
-      <output aria-label="Status da sincronização">{connectionLabel}</output>
+      <output aria-label="Status do provedor">{providerStatus.label}</output>
+      <output aria-label="Status da sincronização">
+        {realtimeStatus.label}
+      </output>
       <output aria-label="Escopo ativo">{activeScope}</output>
       <button onClick={() => onChange("statistics")} type="button">
         Abrir estatísticas
@@ -92,7 +97,10 @@ describe("CrmInbox synchronization status", () => {
     );
 
     expect(screen.getByLabelText("Status da sincronização")).toHaveTextContent(
-      "Reconectando",
+      "Tempo real: reconectando",
+    );
+    expect(screen.getByLabelText("Status do provedor")).toHaveTextContent(
+      "Z-API: online",
     );
 
     inboxMock.current = createInbox("connected");
@@ -101,7 +109,7 @@ describe("CrmInbox synchronization status", () => {
     );
 
     expect(screen.getByLabelText("Status da sincronização")).toHaveTextContent(
-      "Sincronizado",
+      "Tempo real: sincronizado",
     );
   });
 
@@ -122,8 +130,39 @@ describe("CrmInbox synchronization status", () => {
       <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
     );
 
-    expect(screen.getByLabelText("Status da sincronização")).toHaveTextContent(
+    expect(screen.getByLabelText("Status do provedor")).toHaveTextContent(
       "Demonstração · somente leitura",
+    );
+    expect(screen.getByLabelText("Status da sincronização")).toHaveTextContent(
+      "Tempo real: sincronizado",
+    );
+  });
+
+  it("keeps a provider failure visible when realtime is synchronized", () => {
+    inboxMock.current = {
+      ...createInbox("connected"),
+      connectionId: null,
+      hasConnection: false,
+      connections: [
+        {
+          displayName: "Loja",
+          id: "connection-1",
+          isDefault: true,
+          provider: "zapi",
+          state: "error",
+        },
+      ],
+    } as ReturnType<typeof useCrmInbox>;
+
+    render(
+      <CrmInbox api={{} as CrmConversationApi} productApi={{} as never} />,
+    );
+
+    expect(screen.getByLabelText("Status do provedor")).toHaveTextContent(
+      "Z-API: com erro",
+    );
+    expect(screen.getByLabelText("Status da sincronização")).toHaveTextContent(
+      "Tempo real: sincronizado",
     );
   });
 

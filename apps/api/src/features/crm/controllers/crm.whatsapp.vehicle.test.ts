@@ -75,7 +75,10 @@ describe("CRM WhatsApp vehicle sending", () => {
         cycleId: inbound.conversationCycle.id,
         unitId: vehicleUnitId,
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "vehicle-package-1",
+      },
       method: "POST",
     });
 
@@ -108,6 +111,7 @@ describe("CRM WhatsApp vehicle sending", () => {
       readMockInput<CrmMessagingSendTextInput>(sendText, 0, 1).text,
     ).toContain("R$");
     await expect(response.json()).resolves.toMatchObject({
+      clientRequestId: "vehicle-package-1",
       content: "Audi A4 Prestige Plus 2022",
       externalId: "zapi-vehicle-summary-1",
       metadata: {

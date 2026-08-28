@@ -16,6 +16,7 @@ import {
 } from "./CrmMessageActions";
 import {
   MessageDeliveryStatus,
+  MessageRecoveryActions,
   readDeliveryPresentation,
 } from "./CrmMessageBubble";
 
@@ -26,8 +27,10 @@ export function CrmMediaMessageGroup({
   onDelete,
   onMediaClick,
   onReact,
+  onReconcileMessage,
   onRemoveReaction,
   onReply,
+  onRetryMessage,
 }: MessageActionHandlers & {
   fallbackAssigneeName?: string | null;
   messages: CrmMessageView[];
@@ -41,7 +44,7 @@ export function CrmMediaMessageGroup({
     : null;
   const captions = messages.map(readCaption).filter(Boolean);
   const reaction = last ? readReaction(last.metadata) : undefined;
-  const delivery = readDeliveryPresentation(last?.status ?? "unknown");
+  const delivery = readMediaGroupDelivery(messages);
   const channel = (first?.channel ?? "whatsapp").toLowerCase();
 
   return (
@@ -142,6 +145,12 @@ export function CrmMediaMessageGroup({
       {captions.length ? (
         <p className="crm-media-bundle-caption">{captions.join("\n")}</p>
       ) : null}
+      <MessageRecoveryActions
+        actionsDisabled={actionsDisabled}
+        messages={messages}
+        onReconcileMessage={onReconcileMessage}
+        onRetryMessage={onRetryMessage}
+      />
       {reaction && last ? (
         <button
           aria-label={`Reacao ${reaction}`}
@@ -159,11 +168,46 @@ export function CrmMediaMessageGroup({
       {last ? (
         <footer>
           <span>{formatMessageTime(last)}</span>
-          {outgoing ? <MessageDeliveryStatus delivery={delivery} /> : null}
+          {outgoing ? (
+            <MessageDeliveryStatus
+              delivery={delivery}
+              pendingLabel={readMediaGroupPendingLabel(messages)}
+            />
+          ) : null}
         </footer>
       ) : null}
     </article>
   );
+}
+
+function readMediaGroupDelivery(messages: CrmMessageView[]) {
+  if (messages.some((message) => message.status === "FAILED")) {
+    return readDeliveryPresentation("FAILED");
+  }
+  if (
+    messages.some(
+      (message) =>
+        message.status === "INDETERMINATE" ||
+        message.status === "PROVIDER_UNKNOWN",
+    )
+  ) {
+    return readDeliveryPresentation("INDETERMINATE");
+  }
+  if (messages.some((message) => message.status === "PENDING")) {
+    return readDeliveryPresentation("PENDING");
+  }
+  return readDeliveryPresentation(messages.at(-1)?.status ?? "unknown");
+}
+
+function readMediaGroupPendingLabel(messages: CrmMessageView[]) {
+  const pending = messages.filter((message) => message.status === "PENDING");
+  if (!pending.length) return undefined;
+  const phases = pending.map((message) =>
+    readString(readRecord(readRecord(message.metadata).localUpload).phase),
+  );
+  if (phases.includes("preparing")) return "Preparando mídia…";
+  if (phases.includes("uploading")) return "Enviando mídia…";
+  return undefined;
 }
 
 function readCaption(message: CrmMessageView) {

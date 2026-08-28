@@ -46,7 +46,8 @@ describe("CRM theme contracts", () => {
     expect(queue).toContain(".crm-icon-action.crm-new-cycle-action");
     expect(queue).toContain("var(--color-crm-active-emerald)");
     expect(sessions).toContain("var(--color-success-strong) !important");
-    expect(sessions).toContain("var(--color-info) !important");
+    expect(sessions).toContain("var(--color-info) 24%");
+    expect(sessions).not.toMatch(/inset\s+3\.5px\s+0\s+0/);
   });
 
   it("keeps CRM icon and label controls on one readable line", () => {

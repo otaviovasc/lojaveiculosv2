@@ -89,14 +89,21 @@ describe("CRM quick messages", () => {
       title: "Foto do painel",
     });
     const template = (await created.json()) as { id: string };
-    const sent = await postJson(
-      app,
+    const sent = await app.request(
       `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/messages/quick/${template.id}`,
-      {},
+      {
+        body: JSON.stringify({}),
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "quick-image-1",
+        },
+        method: "POST",
+      },
     );
 
     expect(sent.status).toBe(201);
     await expect(sent.json()).resolves.toMatchObject({
+      clientRequestId: "quick-image-1",
       content: "Foto do painel.",
       direction: "OUTBOUND",
       externalId: "zapi-quick-image-outbound",
