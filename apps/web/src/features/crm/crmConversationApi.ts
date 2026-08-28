@@ -324,6 +324,8 @@ export function createCrmConversationApi({
         connectionId: input.connectionId,
         eventsRoute: crmConversationRoutes.events(baseUrl),
         eventsTicketRoute: crmConversationRoutes.eventsTicket(baseUrl),
+        fetch,
+        headers: createProductCrmHeaders(auth),
         onError: input.onError,
         onEvent: input.onEvent,
         ...(input.onStatus ? { onStatus: input.onStatus } : {}),

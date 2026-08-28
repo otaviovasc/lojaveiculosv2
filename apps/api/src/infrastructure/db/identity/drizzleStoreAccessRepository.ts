@@ -115,6 +115,7 @@ export function createDrizzleStoreAccessRepository(
         storeId: access.storeId,
         tenantId: access.tenantId,
         userId: access.userId,
+        userName: access.userName,
       } satisfies StoreAccessRecord;
     },
   };
@@ -137,6 +138,7 @@ async function findDirectStoreAccess(
       storeId: stores.id,
       tenantId: stores.tenantId,
       userId: users.id,
+      userName: users.name,
     })
     .from(users)
     .innerJoin(stores, eq(stores.publicSlug, input.storeSlug))
@@ -183,6 +185,7 @@ async function findAgencyTenantStoreAccess(
       storeId: stores.id,
       tenantId: stores.tenantId,
       userId: users.id,
+      userName: users.name,
     })
     .from(users)
     .innerJoin(

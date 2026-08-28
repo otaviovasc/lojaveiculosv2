@@ -85,6 +85,7 @@ export function createStoreAccessRows(overrides: Partial<StoredRows> = {}) {
         deletedAt: null,
         id: userId,
         isDeleted: false,
+        name: "Otavio Vasconcelos",
       },
     ],
   };

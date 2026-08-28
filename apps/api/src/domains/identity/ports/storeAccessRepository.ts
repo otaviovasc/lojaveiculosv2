@@ -24,6 +24,7 @@ export type StoreAccessRecord = {
   storeId: StoreId;
   tenantId: TenantId;
   userId: UserId;
+  userName?: string | null;
 };
 
 export type StoreAccessRepository = {

@@ -2,47 +2,30 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { subscribeCrmEvents } from "./crmRealtimeApi";
 import type { CrmRealtimeEvent } from "./crmConversationTypes";
 
-class BackendEventSource {
-  static instances: BackendEventSource[] = [];
-
-  private readonly listeners = new Map<string, EventListener[]>();
-
-  constructor(readonly url: string) {
-    BackendEventSource.instances.push(this);
-  }
-
-  onerror: ((event: Event) => void) | null = null;
-
-  close = vi.fn();
-
-  addEventListener(type: string, listener: EventListener) {
-    this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
-  }
-
-  emit(data: unknown, type: string) {
-    const event = {
-      data: JSON.stringify(data),
-      lastEventId: "backend-event-1",
-      type,
-    } as MessageEvent;
-    this.listeners.get(type)?.forEach((listener) => listener(event));
-  }
-}
-
 describe("CRM realtime backend wire contract", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    BackendEventSource.instances = [];
-  });
+  afterEach(() => vi.restoreAllMocks());
 
   it("accepts the complete API realtime message DTO emitted by the SSE route", async () => {
-    vi.stubGlobal("EventSource", BackendEventSource);
+    let streamController:
+      ReadableStreamDefaultController<Uint8Array> | undefined;
+    const fetch = vi.fn<typeof globalThis.fetch>(
+      async () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              streamController = controller;
+            },
+          }),
+          { status: 200 },
+        ),
+    );
     const onEvent = vi.fn<(event: CrmRealtimeEvent) => void>();
     const onError = vi.fn();
 
     const unsubscribe = subscribeCrmEvents({
       eventsRoute: "/api/v1/crm/events",
       eventsTicketRoute: "/api/v1/crm/events/ticket",
+      fetch,
       onError,
       onEvent,
       postJson: vi
@@ -51,15 +34,17 @@ describe("CRM realtime backend wire contract", () => {
     });
     await flushPromises();
 
-    BackendEventSource.instances[0]!.emit(
-      {
-        connectionId: "connection-1",
-        conversationCycle: backendCycleDto(),
-        message: backendMessageDto(),
-        type: "message",
-      },
-      "message",
+    streamController?.enqueue(
+      new TextEncoder().encode(
+        `id: backend-event-1\nevent: message\ndata: ${JSON.stringify({
+          connectionId: "connection-1",
+          conversationCycle: backendCycleDto(),
+          message: backendMessageDto(),
+          type: "message",
+        })}\n\n`,
+      ),
     );
+    await flushPromises();
 
     expect(onError).not.toHaveBeenCalled();
     expect(onEvent).toHaveBeenCalledOnce();

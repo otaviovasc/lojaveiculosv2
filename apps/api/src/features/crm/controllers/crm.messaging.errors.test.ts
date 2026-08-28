@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { ConversationCycleRevisionConflictError } from "../../../domains/crm/messaging/crmMessagingErrors.js";
+import {
+  ConversationCycleRevisionConflictError,
+  CrmOutboundReconciliationPendingError,
+} from "../../../domains/crm/messaging/crmMessagingErrors.js";
 import { HttpContextAuthenticationError } from "../../../infrastructure/http/httpContextErrors.js";
 import { handleCrmMessaging } from "./crm.messaging.errors.js";
 
@@ -36,6 +39,22 @@ describe("CRM error mapping", () => {
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({
       code: "CRM_CONVERSATION_CYCLE_REVISION_CONFLICT",
+    });
+  });
+
+  it("exposes pending outbound reconciliation as an indeterminate outcome", async () => {
+    const app = new Hono();
+    app.get("/pending", (context) =>
+      handleCrmMessaging(context, async () => {
+        throw new CrmOutboundReconciliationPendingError();
+      }),
+    );
+
+    const response = await app.request("/pending");
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_MESSAGING_OUTCOME_INDETERMINATE",
     });
   });
 });

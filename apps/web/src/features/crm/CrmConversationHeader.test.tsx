@@ -11,6 +11,41 @@ describe("CrmConversationHeader", () => {
     vi.unstubAllGlobals();
   });
 
+  it("announces verified typing presence instead of the ordinary subtitle", () => {
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        canAssignSession={false}
+        canCloseSession={false}
+        canMarkRead={false}
+        canScheduleMessages={false}
+        canTagSessions={false}
+        canToggleIntervention={false}
+        contactPresence="typing"
+        onAddTag={vi.fn(async () => false)}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={vi.fn()}
+        onToggleIntervention={vi.fn()}
+        cycle={{
+          customerDisplayName: "Ana Premium",
+          customerPhone: "5511999999999",
+          channel: "whatsapp",
+          id: "cycle-1",
+          status: "ACTIVE",
+          vehicle: { id: "vehicle-1", title: "Civic Touring" },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("digitando…");
+    expect(screen.queryByText("Civic Touring")).not.toBeInTheDocument();
+  });
+
   it("provides explicit mobile navigation back to the conversation list", async () => {
     const user = userEvent.setup();
     const onBack = vi.fn();

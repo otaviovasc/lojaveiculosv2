@@ -12,6 +12,7 @@ const permission = "crm.messages.send";
 
 export type SendWhatsappLocationInput = {
   address?: string;
+  idempotencyKey?: string;
   latitude: number;
   longitude: number;
   name?: string;
@@ -38,6 +39,7 @@ export async function sendWhatsappLocation(
         url: input.url ?? mapsUrl(input.latitude, input.longitude),
       },
     },
+    ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
     cycleId: input.cycleId,
     summary: "Sent CRM WhatsApp location message",
     text: formatLocationText(input),
@@ -53,6 +55,7 @@ async function sendStructuredText(
     content: string;
     leadActivityContent: string;
     metadata: Record<string, unknown>;
+    idempotencyKey?: string;
     cycleId: string;
     summary: string;
     text: string;
@@ -78,6 +81,9 @@ async function sendStructuredText(
       sendOutboundMessage(
         context,
         {
+          ...(input.idempotencyKey
+            ? { idempotencyKey: input.idempotencyKey }
+            : {}),
           idempotencyPayload: input,
           senderOrigin: "human_crm",
           prepare: async ({ connection, gateway, phone }) => {

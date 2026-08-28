@@ -2,82 +2,95 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { subscribeCrmEvents } from "./crmRealtimeApi";
 import type { CrmRealtimeEvent } from "./crmConversationTypes";
 
-class FakeEventSource {
-  static instances: FakeEventSource[] = [];
-
-  onerror: ((event: Event) => void) | null = null;
-  onmessage: ((event: MessageEvent) => void) | null = null;
-  onopen: ((event: Event) => void) | null = null;
-  private readonly listeners = new Map<string, EventListener[]>();
-
-  close = vi.fn();
-
-  constructor(
-    readonly url: string,
-    readonly init?: EventSourceInit,
-  ) {
-    FakeEventSource.instances.push(this);
-  }
-
-  addEventListener(type: string, listener: EventListener) {
-    this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
-  }
-
-  emit(data: unknown, lastEventId = "", type = "message") {
-    const event = {
-      data: JSON.stringify(data),
-      lastEventId,
-      type,
-    } as MessageEvent;
-    this.listeners.get(type)?.forEach((listener) => listener(event));
-    if (type === "message") this.onmessage?.(event);
-  }
-
-  fail() {
-    this.onerror?.({} as Event);
-  }
-}
-
 describe("CRM WhatsApp realtime API", () => {
   afterEach(() => {
     vi.useRealTimers();
-    vi.unstubAllGlobals();
-    FakeEventSource.instances = [];
   });
 
-  it("dedupes replayed SSE frames and reconnects with the last event id", async () => {
+  it("opens the ticketed stream through authenticated fetch", async () => {
+    const streams = createSseFetch();
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "https://api.example.test/events",
+      eventsTicketRoute: "https://api.example.test/events/ticket",
+      fetch: streams.fetch,
+      headers: { Authorization: "Bearer clerk-token" },
+      onEvent: vi.fn(),
+      postJson: vi
+        .fn()
+        .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" }),
+    });
+    await flushPromises();
+
+    expect(streams.fetch).toHaveBeenCalledOnce();
+    const [route, init] = streams.fetch.mock.calls[0] ?? [];
+    const headers = new Headers(init?.headers);
+    expect(route).toBe("https://api.example.test/events");
+    expect(headers.get("Authorization")).toBe("Bearer clerk-token");
+    expect(headers.get("Accept")).toBe("text/event-stream");
+    expect(headers.get("Cache-Control")).toBeNull();
+    expect(headers.get("X-CRM-SSE-Ticket")).toBe("ticket-1");
+    expect(init?.credentials).toBeUndefined();
+
+    unsubscribe();
+    expect(init?.signal?.aborted).toBe(true);
+  });
+
+  it("parses chunked named events, ignores heartbeats, and dedupes replay", async () => {
+    const streams = createSseFetch();
+    const events: CrmRealtimeEvent[] = [];
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "/events",
+      eventsTicketRoute: "/events/ticket",
+      fetch: streams.fetch,
+      onEvent: (event) => events.push(event),
+      postJson: vi
+        .fn()
+        .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" }),
+    });
+    await flushPromises();
+
+    const event = connectionStatusEvent("connected");
+    const frame = createSseFrame(event, "connection_status", "redis-1");
+    streams.push(0, ": heartbeat\r\n\r\n", frame.slice(0, 19), frame.slice(19));
+    streams.push(0, frame);
+    await flushPromises();
+
+    expect(events).toEqual([event]);
+    unsubscribe();
+  });
+
+  it("reconnects with a fresh ticket and the last valid event id", async () => {
     vi.useFakeTimers();
-    vi.stubGlobal("EventSource", FakeEventSource);
+    const streams = createSseFetch();
     const postJson = vi
       .fn()
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-1" })
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-2" });
-    const events: CrmRealtimeEvent[] = [];
     const statuses: string[] = [];
-
     const unsubscribe = subscribeCrmEvents({
       connectionId: "connection-1",
       eventsRoute: "/events",
       eventsTicketRoute: "/events/ticket",
-      onEvent: (event) => events.push(event),
+      fetch: streams.fetch,
+      onEvent: vi.fn(),
       onStatus: (status) => statuses.push(status),
       postJson,
     });
     await flushPromises();
 
-    expect(FakeEventSource.instances[0]?.url).toBe("/events?ticket=ticket-1");
-    FakeEventSource.instances[0]!.onopen?.({} as Event);
-    const event = {
-      connectionId: "connection-1",
-      phone: null,
-      status: "connected",
-      type: "connection_status" as const,
-    };
-    FakeEventSource.instances[0]!.emit(event, "redis-1");
-    FakeEventSource.instances[0]!.emit(event, "redis-1");
-    expect(events).toHaveLength(1);
+    streams.push(
+      0,
+      createSseFrame(
+        connectionStatusEvent("connected"),
+        "connection_status",
+        "redis-1",
+      ),
+    );
+    await flushPromises();
+    streams.end(0);
+    await flushPromises();
 
-    FakeEventSource.instances[0]!.fail();
+    expect(statuses).toContain("degraded");
     await vi.advanceTimersByTimeAsync(1_000);
     await flushPromises();
 
@@ -85,155 +98,82 @@ describe("CRM WhatsApp realtime API", () => {
       connectionId: "connection-1",
       lastEventId: "redis-1",
     });
-    expect(FakeEventSource.instances[1]?.url).toBe("/events?ticket=ticket-2");
-    FakeEventSource.instances[1]!.emit(
-      { ...event, status: "disconnected" },
-      "redis-2",
+    const reconnectHeaders = new Headers(
+      streams.fetch.mock.calls[1]?.[1]?.headers,
     );
-    expect(events.map(readEventStatus)).toEqual(["connected", "disconnected"]);
-
+    expect(streams.fetch.mock.calls[1]?.[0]).toBe("/events");
+    expect(reconnectHeaders.get("X-CRM-SSE-Ticket")).toBe("ticket-2");
     unsubscribe();
-    expect(statuses).toEqual(
-      expect.arrayContaining([
-        "connecting",
-        "connected",
-        "degraded",
-        "offline",
-      ]),
-    );
+    expect(statuses.at(-1)).toBe("offline");
   });
 
-  it("dispatches named SSE events from custom EventSource channels", async () => {
-    vi.stubGlobal("EventSource", FakeEventSource);
-    const postJson = vi
-      .fn()
-      .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" });
-    const events: CrmRealtimeEvent[] = [];
-
-    const unsubscribe = subscribeCrmEvents({
-      eventsRoute: "/events",
-      eventsTicketRoute: "/events/ticket",
-      onEvent: (event) => events.push(event),
-      postJson,
-    });
-    await flushPromises();
-
-    FakeEventSource.instances[0]!.emit(
-      {
-        connectionId: "connection-1",
-        phone: "+5511999999999",
-        status: "connected",
-        type: "connection_status",
-      },
-      "redis-1",
-      "connection_status",
-    );
-
-    expect(events.map(readEventStatus)).toEqual(["connected"]);
-
-    unsubscribe();
-  });
-
-  it("normalizes backend conversation-cycle fields for inbound messages", async () => {
-    vi.stubGlobal("EventSource", FakeEventSource);
-    const postJson = vi
-      .fn()
-      .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" });
-    const events: CrmRealtimeEvent[] = [];
-    const onError = vi.fn();
-
-    const unsubscribe = subscribeCrmEvents({
-      eventsRoute: "/events",
-      eventsTicketRoute: "/events/ticket",
-      onError,
-      onEvent: (event) => events.push(event),
-      postJson,
-    });
-    await flushPromises();
-
-    FakeEventSource.instances[0]!.emit(
-      {
-        connectionId: "connection-1",
-        conversationCycle: createWireCycle(),
-        message: createWireMessage(),
-        type: "message",
-      },
-      "redis-1",
-      "message",
-    );
-
-    expect(events).toHaveLength(1);
-    const [messageEvent] = events;
-    expect(messageEvent?.type).toBe("message");
-    if (!messageEvent || messageEvent.type !== "message") {
-      throw new Error("Expected a CRM message realtime event.");
-    }
-    expect(messageEvent.cycle.id).toBe("cycle-1");
-    expect(messageEvent.message.id).toBe("message-1");
-    expect(onError).not.toHaveBeenCalled();
-
-    unsubscribe();
-  });
-
-  it("reconnects after an invalid realtime event instead of staying degraded", async () => {
+  it("reconnects after an invalid event without advancing the replay cursor", async () => {
     vi.useFakeTimers();
-    vi.stubGlobal("EventSource", FakeEventSource);
-    const onError = vi.fn();
+    const streams = createSseFetch();
     const postJson = vi
       .fn()
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-1" })
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-2" });
-
+    const onError = vi.fn();
     const unsubscribe = subscribeCrmEvents({
       eventsRoute: "/events",
       eventsTicketRoute: "/events/ticket",
+      fetch: streams.fetch,
       onError,
       onEvent: vi.fn(),
       postJson,
     });
     await flushPromises();
 
-    FakeEventSource.instances[0]!.emit(
-      { type: "message", conversationCycle: {}, message: {} },
-      "invalid-1",
-      "message",
+    streams.push(
+      0,
+      createSseFrame(
+        { conversationCycle: {}, message: {}, type: "message" },
+        "message",
+        "invalid-cursor",
+      ),
     );
+    await flushPromises();
 
-    expect(onError).toHaveBeenCalledOnce();
-    expect(FakeEventSource.instances[0]!.close).toHaveBeenCalledOnce();
+    expect(onError).toHaveBeenCalledWith(
+      new Error("Invalid CRM WhatsApp realtime event."),
+    );
     await vi.advanceTimersByTimeAsync(1_000);
     await flushPromises();
-    expect(FakeEventSource.instances[1]?.url).toBe("/events?ticket=ticket-2");
-
     expect(postJson).toHaveBeenLastCalledWith("/events/ticket", {
       connectionId: undefined,
       lastEventId: undefined,
     });
-
     unsubscribe();
   });
 
-  it("does not advance the replay cursor until the complete frame is valid", async () => {
+  it("does not advance the replay cursor when the event consumer fails", async () => {
     vi.useFakeTimers();
-    vi.stubGlobal("EventSource", FakeEventSource);
+    const streams = createSseFetch();
     const postJson = vi
       .fn()
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-1" })
       .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-2" });
-
     const unsubscribe = subscribeCrmEvents({
       eventsRoute: "/events",
       eventsTicketRoute: "/events/ticket",
-      onEvent: vi.fn(),
+      fetch: streams.fetch,
+      onEvent: () => {
+        throw new Error("consumer failed");
+      },
       postJson,
     });
     await flushPromises();
 
-    FakeEventSource.instances[0]!.emit(
-      { type: "message", conversationCycle: {}, message: {} },
-      "invalid-cursor",
-      "message",
+    streams.push(
+      0,
+      createSseFrame(
+        connectionStatusEvent("connected"),
+        "connection_status",
+        "redis-consumer-failure",
+      ),
     );
+    await flushPromises();
     await vi.advanceTimersByTimeAsync(1_000);
     await flushPromises();
 
@@ -241,12 +181,62 @@ describe("CRM WhatsApp realtime API", () => {
       connectionId: undefined,
       lastEventId: undefined,
     });
-
     unsubscribe();
   });
 
-  it("cancels obsolete ticket requests without opening a stale event source", async () => {
-    vi.stubGlobal("EventSource", FakeEventSource);
+  it("recovers from the authenticated stream returning 403", async () => {
+    vi.useFakeTimers();
+    const controllers: ReadableStreamDefaultController<Uint8Array>[] = [];
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 403 }))
+      .mockImplementationOnce(async () =>
+        Promise.resolve(
+          new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                controllers.push(controller);
+              },
+            }),
+            { status: 200 },
+          ),
+        ),
+      );
+    const postJson = vi
+      .fn()
+      .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-1" })
+      .mockResolvedValueOnce({ expiresAt: "2030-01-01", ticket: "ticket-2" });
+    const statuses: string[] = [];
+    const unsubscribe = subscribeCrmEvents({
+      eventsRoute: "/events",
+      eventsTicketRoute: "/events/ticket",
+      fetch,
+      headers: { Authorization: "Bearer clerk-token" },
+      onEvent: vi.fn(),
+      onStatus: (status) => statuses.push(status),
+      postJson,
+    });
+    await flushPromises();
+
+    expect(statuses).toContain("degraded");
+    await vi.advanceTimersByTimeAsync(1_000);
+    await flushPromises();
+
+    expect(postJson).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(statuses.at(-1)).toBe("connected");
+    expect(
+      new Headers(fetch.mock.calls[1]?.[1]?.headers).get("Authorization"),
+    ).toBe("Bearer clerk-token");
+    expect(
+      new Headers(fetch.mock.calls[1]?.[1]?.headers).get("X-CRM-SSE-Ticket"),
+    ).toBe("ticket-2");
+    unsubscribe();
+    expect(controllers[0]).toBeDefined();
+  });
+
+  it("does not open a stream after an obsolete ticket request resolves", async () => {
+    const streams = createSseFetch();
     let resolveTicket:
       ((ticket: { expiresAt: string; ticket: string }) => void) | undefined;
     const postJson = vi.fn(
@@ -255,28 +245,30 @@ describe("CRM WhatsApp realtime API", () => {
           resolveTicket = resolve;
         }),
     );
-
     const unsubscribe = subscribeCrmEvents({
       eventsRoute: "/events",
       eventsTicketRoute: "/events/ticket",
+      fetch: streams.fetch,
       onEvent: vi.fn(),
-      postJson: postJson as unknown as Parameters<
+      postJson: postJson as Parameters<
         typeof subscribeCrmEvents
       >[0]["postJson"],
     });
+
     unsubscribe();
     resolveTicket?.({ expiresAt: "2030-01-01", ticket: "stale-ticket" });
     await flushPromises();
 
-    expect(FakeEventSource.instances).toHaveLength(0);
+    expect(streams.fetch).not.toHaveBeenCalled();
   });
 
-  it("dispatches backend conversation-cycle event names", async () => {
-    vi.stubGlobal("EventSource", FakeEventSource);
+  it("normalizes backend message and conversation-cycle event payloads", async () => {
+    const streams = createSseFetch();
     const events: CrmRealtimeEvent[] = [];
     const unsubscribe = subscribeCrmEvents({
       eventsRoute: "/events",
       eventsTicketRoute: "/events/ticket",
+      fetch: streams.fetch,
       onEvent: (event) => events.push(event),
       postJson: vi
         .fn()
@@ -284,54 +276,81 @@ describe("CRM WhatsApp realtime API", () => {
     });
     await flushPromises();
 
-    FakeEventSource.instances[0]!.emit(
-      {
-        connectionId: "connection-1",
-        conversationCycle: createWireCycle(),
-        type: "conversationCycle",
-      },
-      "redis-2",
-      "conversationCycle",
+    streams.push(
+      0,
+      createSseFrame(
+        {
+          connectionId: "connection-1",
+          conversationCycle: createWireCycle(),
+          message: createWireMessage(),
+          type: "message",
+        },
+        "message",
+        "redis-1",
+      ),
+      createSseFrame(
+        {
+          connectionId: "connection-1",
+          conversationCycle: createWireCycle(),
+          type: "conversationCycle",
+        },
+        "conversationCycle",
+        "redis-2",
+      ),
     );
-
-    expect(events).toHaveLength(1);
-    const [cycleEvent] = events;
-    expect(cycleEvent?.type).toBe("cycle");
-    if (!cycleEvent || cycleEvent.type !== "cycle") {
-      throw new Error("Expected a CRM conversation-cycle realtime event.");
-    }
-    expect(cycleEvent.cycle.id).toBe("cycle-1");
-
-    unsubscribe();
-  });
-
-  it("opens ticket-authenticated SSE without credentialed CORS mode", async () => {
-    vi.stubGlobal("EventSource", FakeEventSource);
-    const postJson = vi
-      .fn()
-      .mockResolvedValue({ expiresAt: "2030-01-01", ticket: "ticket-1" });
-
-    const unsubscribe = subscribeCrmEvents({
-      eventsRoute: "https://api.example.test/events",
-      eventsTicketRoute: "https://api.example.test/events/ticket",
-      onEvent: vi.fn(),
-      postJson,
-    });
     await flushPromises();
 
-    expect(FakeEventSource.instances[0]?.init?.withCredentials).not.toBe(true);
-
+    expect(events.map((event) => event.type)).toEqual(["message", "cycle"]);
+    expect(events[0]).toMatchObject({
+      cycle: { id: "cycle-1" },
+      message: { id: "message-1" },
+    });
     unsubscribe();
   });
 });
 
-async function flushPromises() {
-  await Promise.resolve();
-  await Promise.resolve();
+function createSseFetch() {
+  const controllers: ReadableStreamDefaultController<Uint8Array>[] = [];
+  const encoder = new TextEncoder();
+  const fetch = vi.fn<typeof globalThis.fetch>(async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controllers.push(controller);
+      },
+    });
+    return new Response(body, {
+      headers: { "Content-Type": "text/event-stream" },
+      status: 200,
+    });
+  });
+  return {
+    end(index: number) {
+      controllers[index]?.close();
+    },
+    fetch,
+    push(index: number, ...chunks: string[]) {
+      chunks.forEach((chunk) =>
+        controllers[index]?.enqueue(encoder.encode(chunk)),
+      );
+    },
+  };
 }
 
-function readEventStatus(event: CrmRealtimeEvent) {
-  return event.type === "connection_status" ? event.status : event.type;
+function createSseFrame(data: unknown, event: string, id: string) {
+  return `id: ${id}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+function connectionStatusEvent(status: string) {
+  return {
+    connectionId: "connection-1",
+    phone: null,
+    status,
+    type: "connection_status" as const,
+  };
+}
+
+async function flushPromises() {
+  for (let index = 0; index < 8; index += 1) await Promise.resolve();
 }
 
 function createWireCycle() {

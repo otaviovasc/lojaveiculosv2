@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CrmConversationApi } from "./crmConversationApi";
@@ -14,6 +14,161 @@ describe("useCrmRealtime", () => {
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  it("shows typing only for the active contact and expires it after a short TTL", () => {
+    vi.useFakeTimers();
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+
+    render(
+      <Harness
+        activeCustomerPhone="+55 (11) 99999-9999"
+        api={api}
+        mergeCycles={vi.fn()}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycleId: "cycle-1",
+        payload: { phone: "5511999999999", state: "composing" },
+        type: "presence",
+      });
+    });
+    expect(screen.getByTestId("contact-presence").textContent).toBe("typing");
+
+    act(() => {
+      vi.advanceTimersByTime(5_999);
+    });
+    expect(screen.getByTestId("contact-presence").textContent).toBe("typing");
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByTestId("contact-presence").textContent).toBe("none");
+  });
+
+  it("ignores ambiguous and other-contact presence, and clears explicit pauses", () => {
+    vi.useFakeTimers();
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    render(
+      <Harness
+        activeCustomerPhone="5511999999999"
+        api={api}
+        mergeCycles={vi.fn()}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycleId: "cycle-1",
+        payload: { received: true },
+        type: "presence",
+      });
+      onEvent?.({
+        connectionId: "connection-1",
+        cycleId: "cycle-other",
+        payload: { phone: "5511888888888", state: "composing" },
+        type: "presence",
+      });
+    });
+    expect(screen.getByTestId("contact-presence").textContent).toBe("none");
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycleId: "cycle-1",
+        payload: { phone: "5511999999999", state: "available" },
+        type: "presence",
+      });
+    });
+    expect(screen.getByTestId("contact-presence").textContent).toBe("online");
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycleId: "cycle-1",
+        payload: { phone: "5511999999999", state: "paused" },
+        type: "presence",
+      });
+    });
+    expect(screen.getByTestId("contact-presence").textContent).toBe("none");
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycleId: "cycle-1",
+        payload: { phone: "5511999999999", state: "available" },
+        type: "presence",
+      });
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByTestId("contact-presence").textContent).toBe("none");
+  });
+
+  it("clears presence on reconnect and active-cycle changes", () => {
+    vi.useFakeTimers();
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    let onRealtimeStatus: ((status: CrmRealtimeStatus) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          onRealtimeStatus = input.onStatus;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    const rendered = render(
+      <Harness
+        activeCustomerPhone="5511999999999"
+        api={api}
+        mergeCycles={vi.fn()}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+    const showTyping = () => {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycleId: "cycle-1",
+        payload: { phone: "5511999999999", state: "composing" },
+        type: "presence",
+      });
+    };
+
+    act(showTyping);
+    act(() => onRealtimeStatus?.("connecting"));
+    expect(screen.getByTestId("contact-presence").textContent).toBe("none");
+
+    act(showTyping);
+    rendered.rerender(
+      <Harness
+        activeCycleId="cycle-2"
+        activeCustomerPhone="5511888888888"
+        api={api}
+        mergeCycles={vi.fn()}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+    expect(screen.getByTestId("contact-presence").textContent).toBe("none");
   });
 
   it("merges the full cycle and refreshes attendance counters immediately", async () => {
@@ -493,6 +648,9 @@ describe("useCrmRealtime", () => {
 });
 
 function Harness({
+  activeConversationConnectionId = "connection-1",
+  activeCycleId = "cycle-1",
+  activeCustomerPhone,
   api,
   canAccessSessionSnapshot,
   connectionId = "connection-1",
@@ -505,6 +663,9 @@ function Harness({
   refreshSessionCounts,
   removeSession = vi.fn(),
 }: {
+  activeConversationConnectionId?: string | null;
+  activeCycleId?: string;
+  activeCustomerPhone?: string | null;
   api: CrmConversationApi;
   canAccessSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
   connectionId?: string | null;
@@ -519,8 +680,10 @@ function Harness({
   refreshSessionCounts: () => Promise<void>;
   removeSession?: (cycleId: CrmConversationCycle["id"]) => void;
 }) {
-  useCrmRealtime({
-    activeCycleId: "cycle-1",
+  const { contactPresence } = useCrmRealtime({
+    activeConversationConnectionId,
+    activeCycleId,
+    ...(activeCustomerPhone !== undefined ? { activeCustomerPhone } : {}),
     api,
     ...(canAccessSessionSnapshot ? { canAccessSessionSnapshot } : {}),
     connectionId,
@@ -534,7 +697,9 @@ function Harness({
     refreshSessionCounts,
     updateRealtimeMessageStatus: vi.fn(),
   });
-  return null;
+  return (
+    <output data-testid="contact-presence">{contactPresence ?? "none"}</output>
+  );
 }
 
 function createSession(

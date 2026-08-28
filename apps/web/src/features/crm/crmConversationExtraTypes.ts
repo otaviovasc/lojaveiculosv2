@@ -296,6 +296,7 @@ export type CrmRealtimeEvent =
     }
   | {
       connectionId: string;
+      cycleId: CrmConversationCycleId;
       payload: Record<string, unknown>;
       type: "presence";
     };

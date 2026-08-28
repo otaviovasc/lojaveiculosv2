@@ -25,10 +25,11 @@ const tenantId = "tenant-1" as TenantId;
 function createEvent(connectionId = "connection-1"): CrmRealtimeEvent {
   return {
     connectionId,
-    payload: { state: "composing" },
+    phone: null,
+    status: "active",
     storeId,
     tenantId,
-    type: "presence",
+    type: "connection_status",
   };
 }
 

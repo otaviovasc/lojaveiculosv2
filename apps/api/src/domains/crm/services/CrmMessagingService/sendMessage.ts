@@ -24,6 +24,7 @@ import type {
   CrmMessageSenderOrigin,
   CrmMessageSenderType,
 } from "../../ports/crmConversationRepository.js";
+import { readHumanCrmMessageSenderUser } from "../../messaging/crmMessageSender.js";
 
 const permission = "crm.messages.send";
 
@@ -135,12 +136,15 @@ async function resolveReplyTarget(
 }
 
 function replyMetadata(message: CrmMessage) {
+  const senderUser = readHumanCrmMessageSenderUser(message);
   return {
     content: truncate(message.content, 280),
     direction: message.direction,
     externalId: message.externalId,
     id: message.id,
+    senderOrigin: message.senderOrigin,
     senderType: message.senderType,
+    ...(senderUser ? { senderUser } : {}),
     type: message.type,
   };
 }

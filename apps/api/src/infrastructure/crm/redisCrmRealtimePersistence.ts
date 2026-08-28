@@ -88,8 +88,10 @@ export function createRedisCrmRealtimePersistence(
           break;
         cursor = nextCursor;
       }
-      const scoped = retained.filter((item) =>
-        matchesReplayScope(input, item.event),
+      const scoped = retained.filter(
+        (item) =>
+          item.event.type !== "presence" &&
+          matchesReplayScope(input, item.event),
       );
       const cursorIndex = scoped.findIndex(
         (item) => item.id === input.sinceEventId,

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MessageBubble } from "./CrmMessageBubble";
 import type { CrmMessage } from "./crmConversationTypes";
 
@@ -33,6 +34,85 @@ describe("CRM message delivery presentation", () => {
 
     expect(screen.getByLabelText("Mensagem enviada")).toBeVisible();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("offers an explicit retry only for a definitely failed message", async () => {
+    const user = userEvent.setup();
+    const failed = message("FAILED");
+    const onRetryMessage = vi.fn(() => true);
+    const onReconcileMessage = vi.fn(() => true);
+    render(
+      <MessageBubble
+        actionsDisabled={false}
+        message={failed}
+        onReconcileMessage={onReconcileMessage}
+        onRetryMessage={onRetryMessage}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+
+    expect(onRetryMessage).toHaveBeenCalledWith(failed);
+    expect(onReconcileMessage).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: "Verificar envio" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("reconciles an indeterminate message without offering a blind resend", async () => {
+    const user = userEvent.setup();
+    const uncertain = message("INDETERMINATE");
+    const onRetryMessage = vi.fn(() => true);
+    const onReconcileMessage = vi.fn(() => true);
+    render(
+      <MessageBubble
+        actionsDisabled={false}
+        message={uncertain}
+        onReconcileMessage={onReconcileMessage}
+        onRetryMessage={onRetryMessage}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Verificar envio" }));
+
+    expect(onReconcileMessage).toHaveBeenCalledWith(uncertain);
+    expect(onRetryMessage).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: "Tentar novamente" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["preparing", "Preparando mídia…"],
+    ["uploading", "Enviando mídia…"],
+  ] as const)("announces the honest local media %s phase", (phase, label) => {
+    render(
+      <MessageBubble
+        actionsDisabled={false}
+        message={{
+          ...message("PENDING"),
+          mediaUrl: "blob:local-preview",
+          metadata: { localUpload: { phase } },
+          type: "IMAGE",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(label);
+  });
+
+  it("disables recovery while conversation actions are unavailable", () => {
+    render(
+      <MessageBubble
+        actionsDisabled
+        message={message("FAILED")}
+        onRetryMessage={() => true}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Tentar novamente" }),
+    ).toBeDisabled();
   });
 });
 

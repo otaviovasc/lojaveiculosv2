@@ -54,7 +54,8 @@ describe("API middleware", () => {
 
     const response = await app.request("/api/v1/inventory/listings", {
       headers: {
-        "Access-Control-Request-Headers": "Authorization,X-Request-Id",
+        "Access-Control-Request-Headers":
+          "Authorization,X-CRM-SSE-Ticket,X-Request-Id",
         "Access-Control-Request-Method": "GET",
         Origin: "https://app.lojaveiculos.local",
       },
@@ -66,7 +67,7 @@ describe("API middleware", () => {
       "GET,HEAD,POST,PUT,PATCH,DELETE",
     );
     expect(response.headers.get("access-control-allow-headers")).toBe(
-      "Authorization,Content-Type,Idempotency-Key,X-API-Key,X-Clerk-User-Id,X-Idempotency-Key,X-Request-Id,X-Store-Slug,X-Store-Id,X-User-Email,X-User-Name",
+      "Authorization,Content-Type,Idempotency-Key,X-API-Key,X-Clerk-User-Id,X-CRM-SSE-Ticket,X-Idempotency-Key,X-Request-Id,X-Store-Slug,X-Store-Id,X-User-Email,X-User-Name",
     );
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   });

@@ -90,6 +90,9 @@ export async function sendWhatsappVehicle(
 
       return sendVehicleText(context, ports, {
         ...createVehicleSummary(packageData.summary),
+        ...(input.idempotencyKey
+          ? { idempotencyKey: input.idempotencyKey }
+          : {}),
         metadata: {
           fallbackTransport: "text",
           mediaSentCount: media.length,
@@ -133,6 +136,7 @@ async function sendVehicleText(
   return sendOutboundMessage(
     context,
     {
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
       idempotencyPayload: input,
       senderOrigin: "human_crm",
       prepare: async ({ connection, gateway, phone }) => {

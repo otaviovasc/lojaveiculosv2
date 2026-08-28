@@ -2,7 +2,10 @@ import type {
   CrmConversationCycleDto,
   CrmMessageDto,
 } from "@lojaveiculosv2/shared";
-import type { CrmRealtimeEvent } from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type {
+  CrmPresencePayload,
+  CrmRealtimeEvent,
+} from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import { toConversationCycleDto } from "./crm.conversationCycle.dto.js";
 import { toCrmMessageDto } from "./crm.message.dto.js";
 
@@ -34,7 +37,8 @@ type CrmRealtimeEventDto =
     }
   | {
       connectionId: string;
-      payload: Record<string, unknown>;
+      cycleId: string;
+      payload: Pick<CrmPresencePayload, "state">;
       type: "presence";
     };
 
@@ -76,7 +80,8 @@ export function toCrmRealtimeEventDto(
     case "presence":
       return {
         connectionId: event.connectionId,
-        payload: event.payload,
+        cycleId: event.cycleId,
+        payload: { state: event.payload.state },
         type: event.type,
       };
   }

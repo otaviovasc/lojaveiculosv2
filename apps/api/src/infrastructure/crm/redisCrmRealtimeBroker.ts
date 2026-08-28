@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createClient } from "redis";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import type { CrmOlxWebhookSecurity } from "../../domains/crm/ports/crmOlxWebhookSecurity.js";
@@ -73,7 +74,14 @@ export function createRedisCrmRealtimeBroker(
       ensureCommandClient,
     ),
     async publish(event) {
-      const envelope = await persistence.appendEvent(event);
+      const envelope =
+        event.type === "presence"
+          ? {
+              createdAt: new Date().toISOString(),
+              event,
+              id: `presence-${Date.now()}-${randomUUID()}`,
+            }
+          : await persistence.appendEvent(event);
       await persistence.publishEnvelope(envelope);
     },
     async replay(input) {

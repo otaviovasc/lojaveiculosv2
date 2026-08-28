@@ -14,6 +14,7 @@ import {
   handleCrmMessaging,
 } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
+import { toCrmMessageDto } from "./crm.message.dto.js";
 
 type RegisterCrmQuickMessageRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -88,7 +89,7 @@ export function registerCrmQuickMessageRoutes(
           quickMessageId: readQuickMessageId(context),
           cycleId: context.req.param("cycleId"),
         });
-        return context.json(message, 201);
+        return context.json(toCrmMessageDto(message), 201);
       }),
   );
 }

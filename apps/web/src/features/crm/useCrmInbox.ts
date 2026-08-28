@@ -102,6 +102,10 @@ export function useCrmInbox(
   const sessionsRef = useRef(conversationCycles);
   sessionsRef.current = conversationCycles;
   const currentUserId = accountSession?.user.id ?? null;
+  const currentUser = useMemo(() => {
+    const name = accountSession?.user.name?.trim();
+    return accountSession && name ? { id: accountSession.user.id, name } : null;
+  }, [accountSession]);
   const activeStore = readSessionActiveStore(accountSession);
   const permissions = useMemo(
     () => readCrmCapabilities(accountSession),
@@ -132,6 +136,21 @@ export function useCrmInbox(
         : null,
     [activeCycleId, conversationCycles, hasCurrentScopeAccess],
   );
+  const activePresenceScopeRef = useRef<{
+    connectionId: string | null;
+    cycleId: CrmConversationCycleId | null;
+  }>({ connectionId: null, cycleId: null });
+  const activeSessionConnectionId = activeSession?.connection?.id
+    ? String(activeSession.connection.id)
+    : null;
+  if (activePresenceScopeRef.current.cycleId !== (activeSession?.id ?? null)) {
+    activePresenceScopeRef.current = {
+      connectionId: activeSessionConnectionId,
+      cycleId: activeSession?.id ?? null,
+    };
+  } else if (activeSessionConnectionId) {
+    activePresenceScopeRef.current.connectionId = activeSessionConnectionId;
+  }
   const connections = useCrmConnections(api);
   const routing = useCrmRoutingPolicy(api, permissions.canList);
   const displayedError = error ?? connections.error ?? routing.error;
@@ -298,6 +317,7 @@ export function useCrmInbox(
     api,
     canLoadMessages,
     canSendMessages,
+    currentUser,
     hasMessageAccess: permissions.canRead,
     hasSendPermission: permissions.canSend,
     mergeCycles,
@@ -637,8 +657,10 @@ export function useCrmInbox(
     [markCycleReadOnce],
   );
 
-  useCrmRealtime({
+  const { contactPresence } = useCrmRealtime({
+    activeConversationConnectionId: activePresenceScopeRef.current.connectionId,
     activeCycleId: hasCurrentScopeAccess ? activeCycleId : null,
+    activeCustomerPhone: activeSession?.customerPhone ?? null,
     api,
     canAccessSessionSnapshot,
     connectionId: operationalConnectionId,
@@ -678,6 +700,7 @@ export function useCrmInbox(
 
   return {
     activeSession,
+    activeContactPresence: contactPresence,
     activeCycleId: hasCurrentScopeAccess ? activeCycleId : null,
     assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
@@ -753,7 +776,9 @@ export function useCrmInbox(
     processDueScheduledMessages: scheduledMessages.processDueScheduledMessages,
     quickFilter,
     quickMessages: quickMessageState.quickMessages,
+    reconcileMessage: messageState.reconcileMessage,
     retryLastSessionAction: sessionActions.retryLastSessionAction,
+    retryMessage: messageState.retryMessage,
     refreshSessions,
     refreshTags: tagState.refreshTags,
     reorderTags: tagState.reorderTags,

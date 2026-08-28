@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import {
   connectionId,
@@ -196,18 +196,6 @@ describe("CRM WhatsApp ZAPI webhooks", () => {
             "provider_connection_evidence_missing",
       ),
     ).toBe(true);
-  });
-
-  it("acknowledges chat presence callbacks", async () => {
-    const { app } = await createWebhookTestApp();
-
-    const response = await postWebhook(app, "chat-presence", {
-      phone: "5511999999999",
-      status: "composing",
-    });
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ status: "accepted" });
   });
 
   it("never processes a Z-API callback through an official connection id", async () => {

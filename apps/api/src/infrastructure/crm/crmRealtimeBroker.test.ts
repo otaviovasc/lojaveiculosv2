@@ -30,7 +30,7 @@ describe("createCrmRealtimeBroker", () => {
 
   it("revokes a previous assignee live and does not replay stale ownership", async () => {
     const broker = createCrmRealtimeBroker();
-    await broker.publish(presenceEvent("baseline"));
+    await broker.publish(baselineEvent());
     const [baseline] = await broker.replay({
       queueVisibility: { kind: "global" },
       sinceEventId: "0-0",
@@ -96,7 +96,7 @@ describe("createCrmRealtimeBroker", () => {
 
   it("does not reveal events from before a conversation was assigned to the user", async () => {
     const broker = createCrmRealtimeBroker();
-    await broker.publish(presenceEvent("baseline"));
+    await broker.publish(baselineEvent());
     const [baseline] = await broker.replay({
       queueVisibility: { kind: "global" },
       sinceEventId: "0-0",
@@ -123,7 +123,7 @@ describe("createCrmRealtimeBroker", () => {
 
   it("drops stale out-of-order assignment events for assigned users", async () => {
     const broker = createCrmRealtimeBroker();
-    await broker.publish(presenceEvent("baseline"));
+    await broker.publish(baselineEvent());
     const [baseline] = await broker.replay({
       queueVisibility: { kind: "global" },
       sinceEventId: "0-0",
@@ -192,13 +192,14 @@ function sessionEvent(
   };
 }
 
-function presenceEvent(state: string) {
+function baselineEvent() {
   return {
     connectionId: connection.id,
-    payload: { state },
+    phone: null,
+    status: "active",
     storeId,
     tenantId,
-    type: "presence" as const,
+    type: "connection_status" as const,
   };
 }
 

@@ -13,6 +13,7 @@ export type AccessRow = {
   storeId: StoreId;
   tenantId: TenantId;
   userId: UserId;
+  userName: string | null;
 };
 
 export type AgencyTenantAccessRow = Omit<AccessRow, "membershipId">;
@@ -50,12 +51,14 @@ export type DrizzleStoreAccessClient = {
       storeId: unknown;
       tenantId: unknown;
       userId: unknown;
+      userName: unknown;
     }): SelectFromBuilder<AccessRow>;
     (selection: {
       role: unknown;
       storeId: unknown;
       tenantId: unknown;
       userId: unknown;
+      userName: unknown;
     }): SelectFromBuilder<AgencyTenantAccessRow>;
     (selection: {
       allowed: unknown;

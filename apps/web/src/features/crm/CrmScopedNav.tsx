@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { CrmConversationMobileNav } from "./CrmConversationMobileNav";
+import type { CrmConnectionStatus } from "./crmConnectionStatus";
 export type CrmScope =
   | "campaigns"
   | "connection"
@@ -19,9 +20,6 @@ export type CrmScope =
   | "statistics"
   | "tags"
   | "visits";
-
-export type CrmConnectionTone =
-  "error" | "loading" | "neutral" | "offline" | "online";
 
 export type CrmScopeOption = {
   icon: typeof MessageSquareText;
@@ -74,16 +72,16 @@ const scopes: CrmScopeOption[] = [
 
 export function CrmScopedNav({
   activeScope,
-  connectionLabel,
-  connectionTone,
   onChange,
+  providerStatus,
+  realtimeStatus,
   tagCount,
   unreadCount,
 }: {
   activeScope: CrmScope;
-  connectionLabel: string;
-  connectionTone: CrmConnectionTone;
   onChange: (scope: CrmScope) => void;
+  providerStatus: CrmConnectionStatus;
+  realtimeStatus: CrmConnectionStatus;
   tagCount: number;
   unreadCount: number;
 }) {
@@ -108,15 +106,26 @@ export function CrmScopedNav({
           })}
           value={activeScope}
         />
-        <div className="crm-scope-trailing">
+        <div
+          aria-atomic="true"
+          aria-label={`${providerStatus.label}. ${realtimeStatus.label}`}
+          aria-live="polite"
+          className="crm-scope-trailing"
+          role="status"
+        >
           <span
-            aria-atomic="true"
-            aria-live="polite"
-            className={`crm-status crm-scope-status crm-status-${connectionTone}`}
-            role="status"
+            aria-hidden="true"
+            className={`crm-status crm-scope-status crm-status-${providerStatus.tone}`}
           >
             <span aria-hidden="true" />
-            {connectionLabel}
+            {providerStatus.label}
+          </span>{" "}
+          <span
+            aria-hidden="true"
+            className={`crm-status crm-scope-status crm-status-${realtimeStatus.tone}`}
+          >
+            <span aria-hidden="true" />
+            {realtimeStatus.label}
           </span>
         </div>
       </nav>

@@ -80,6 +80,9 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
         Object.assign(
           createServiceContext({
             actor: {
+              ...(options.actorDisplayName
+                ? { displayName: options.actorDisplayName }
+                : {}),
               id: "02020202-0202-4202-8202-020202020202",
               kind: "user",
             },

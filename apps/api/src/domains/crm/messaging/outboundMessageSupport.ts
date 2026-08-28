@@ -1,13 +1,19 @@
 import { createHash } from "node:crypto";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import type { CrmMessageSenderType } from "../ports/crmConversationRepository.js";
+import type {
+  CrmMessage,
+  CrmMessageSenderType,
+} from "../ports/crmConversationRepository.js";
 import {
   getCrmRepository,
   requireCrmScope,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 import type { PreparedOutboundCrmMessage } from "./outboundMessageTypes.js";
-import { CrmMessageActionError } from "./crmMessagingErrors.js";
+import {
+  CrmMessageActionError,
+  CrmOutboundReconciliationPendingError,
+} from "./crmMessagingErrors.js";
 
 const terminalLeadStatuses = new Set(["archived", "lost", "won"]);
 
@@ -19,10 +25,7 @@ export function outboundIdempotencyConflictError() {
 }
 
 export function outboundReconciliationPendingError() {
-  return new CrmMessageActionError(
-    "CRM WhatsApp delivery outcome is pending reconciliation.",
-    409,
-  );
+  return new CrmOutboundReconciliationPendingError();
 }
 
 export function requireOutboundIdempotencyKey(value: string) {
@@ -30,6 +33,52 @@ export function requireOutboundIdempotencyKey(value: string) {
   if (!key || key.length > 191)
     throw new Error("A valid idempotency key is required.");
   return key;
+}
+
+export function resolveOutboundClientRequestId(
+  context: ServiceContext,
+  idempotencyKey: string | undefined,
+  fingerprint: string,
+) {
+  return requireOutboundIdempotencyKey(
+    idempotencyKey ??
+      `${context.correlationId ?? context.requestId}:${fingerprint}`,
+  );
+}
+
+export function withOutboundClientRequestId(
+  metadata: Record<string, unknown>,
+  clientRequestId: string,
+): Record<string, unknown> {
+  const crmMessaging = readRecord(metadata.crmMessaging);
+  return {
+    ...metadata,
+    crmMessaging: {
+      ...crmMessaging,
+      clientRequestId,
+    },
+  };
+}
+
+export function readOutboundClientRequestId(
+  message: Pick<CrmMessage, "direction" | "metadata" | "senderOrigin">,
+): string | null {
+  if (
+    message.direction !== "OUTBOUND" ||
+    !["external_bot", "human_crm", "system"].includes(message.senderOrigin)
+  ) {
+    return null;
+  }
+  const value = readRecord(message.metadata.crmMessaging).clientRequestId;
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized && normalized.length <= 191 ? normalized : null;
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 export function fingerprintOutboundIntent(value: unknown) {

@@ -97,7 +97,10 @@ export function CrmConversationWorkspace({
   useEffect(() => {
     if (!detailsOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (
+        event.key === "Escape" &&
+        !document.querySelector('[role="dialog"][aria-modal="true"]')
+      ) {
         setDetailsOpen(false);
         focusPane("chat");
       }
@@ -352,6 +355,7 @@ export function CrmConversationWorkspace({
               canTagSessions={inbox.permissions.canTagAssign}
               canToggleIntervention={inbox.permissions.canToggleIntervention}
               currentUserId={inbox.currentUserId}
+              contactPresence={inbox.activeContactPresence}
               onBack={() => {
                 onCycleChange(null);
                 focusPane("list");
@@ -408,6 +412,7 @@ export function CrmConversationWorkspace({
                   ? inbox.deleteMessage
                   : undefined
               }
+              onReconcileMessage={inbox.reconcileMessage}
               onReact={
                 inbox.permissions.canSend && providerCapabilities.allowReactions
                   ? inbox.sendReaction
@@ -423,6 +428,7 @@ export function CrmConversationWorkspace({
                   ? setReplyToMessage
                   : undefined
               }
+              onRetryMessage={inbox.retryMessage}
               onFilesDropped={
                 inbox.canSendText
                   ? (files) => composerRef.current?.openFiles(files)

@@ -230,6 +230,7 @@ export const crmMessageTypes = [
 export const crmMessageSchema = z
   .object({
     channel: z.enum(crmChannels),
+    clientRequestId: nonEmptyString.max(191).optional(),
     content: z.string(),
     createdAt: nonEmptyString,
     deletedAt: optionalNullableString,
@@ -242,6 +243,10 @@ export const crmMessageSchema = z
     providerTimestamp: optionalNullableString,
     senderOrigin: crmMessageSenderOriginSchema,
     senderType: z.enum(crmMessageSenderTypes),
+    senderUser: z
+      .object({ id: nonEmptyString, name: nonEmptyString })
+      .strict()
+      .optional(),
     status: z.enum(crmMessageStatuses),
     type: z.enum(crmMessageTypes),
   })

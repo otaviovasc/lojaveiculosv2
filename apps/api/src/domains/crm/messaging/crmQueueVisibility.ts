@@ -64,8 +64,12 @@ export function matchesCrmRealtimeQueueVisibility(
         visibility,
         boundary ? boundary.assignedUserId : event.assignedUserId,
       );
-    case "connection_status":
     case "presence":
+      return matchesCrmQueueVisibility(
+        visibility,
+        boundary ? boundary.assignedUserId : event.assignedUserId,
+      );
+    case "connection_status":
       return true;
   }
 }
@@ -90,7 +94,7 @@ export function readCrmRealtimeConversationCycleBoundary(
       ),
     };
   }
-  if (event.type === "message_status") {
+  if (event.type === "message_status" || event.type === "presence") {
     return {
       boundary: { assignedUserId: event.assignedUserId, revision: null },
       cycleKey: assignmentBoundaryKey(event, event.cycleId),

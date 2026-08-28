@@ -55,6 +55,7 @@ describe("CRM conversation media messages", () => {
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
+      clientRequestId: "media-upload-1",
       content: "Foto do Civic",
       direction: "OUTBOUND",
       externalId: "zapi-image-outbound-1",

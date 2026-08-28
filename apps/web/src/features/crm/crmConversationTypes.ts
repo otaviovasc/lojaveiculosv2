@@ -46,6 +46,7 @@ export type CrmConversationCycleId = string;
 
 export type CrmRealtimeStatus =
   "connecting" | "connected" | "degraded" | "offline";
+export type CrmContactPresence = "online" | "typing";
 export type CrmConversationCycleFilter =
   "all" | "fresh" | "mine" | "others" | "unassigned";
 

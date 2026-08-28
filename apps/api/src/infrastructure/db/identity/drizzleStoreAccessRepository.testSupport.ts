@@ -135,6 +135,7 @@ function findAccessRows(rows: StoredRows, enforceActiveTenant = false) {
       storeId: store.id,
       tenantId: store.tenantId,
       userId: user.id,
+      userName: user.name,
     };
   });
 }
@@ -182,6 +183,7 @@ function findAgencyTenantAccessRows(
       storeId: store.id,
       tenantId: store.tenantId,
       userId: user.id,
+      userName: user.name,
     };
   });
 }

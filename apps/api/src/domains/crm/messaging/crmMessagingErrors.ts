@@ -57,6 +57,13 @@ export class CrmMessageActionError extends Error {
   }
 }
 
+export class CrmOutboundReconciliationPendingError extends CrmMessageActionError {
+  constructor() {
+    super("CRM WhatsApp delivery outcome is pending reconciliation.", 409);
+    this.name = "CrmOutboundReconciliationPendingError";
+  }
+}
+
 export class CrmConnectionNotFoundError extends Error {
   constructor(connectionId: string) {
     super(`CRM connection not found: ${connectionId}`);

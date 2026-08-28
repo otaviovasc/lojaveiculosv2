@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CrmConversationApi } from "./crmConversationApi";
 import type {
   CrmMessage,
+  CrmContactPresence,
   CrmRealtimeEvent,
   CrmRealtimeStatus,
   CrmConversationCycle,
@@ -9,7 +10,9 @@ import type {
 } from "./crmConversationTypes";
 
 type RealtimeOptions = {
+  activeConversationConnectionId?: string | null;
   activeCycleId: CrmConversationCycleId | null;
+  activeCustomerPhone?: string | null;
   api: CrmConversationApi;
   canAccessSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
   canMergeSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
@@ -35,7 +38,9 @@ type RealtimeOptions = {
 };
 
 export function useCrmRealtime({
+  activeConversationConnectionId,
   activeCycleId,
+  activeCustomerPhone,
   api,
   canAccessSessionSnapshot,
   canMergeSessionSnapshot,
@@ -52,9 +57,32 @@ export function useCrmRealtime({
   updateRealtimeMessageStatus,
 }: RealtimeOptions) {
   const [status, setStatus] = useState<CrmRealtimeStatus>("offline");
+  const [contactPresence, setContactPresence] =
+    useState<CrmContactPresence | null>(null);
+  const presenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearContactPresence = useCallback(() => {
+    if (presenceTimerRef.current) {
+      globalThis.clearTimeout(presenceTimerRef.current);
+      presenceTimerRef.current = null;
+    }
+    setContactPresence(null);
+  }, []);
+  const publishContactPresence = useCallback(
+    (presence: CrmContactPresence, ttlMs: number) => {
+      clearContactPresence();
+      setContactPresence(presence);
+      presenceTimerRef.current = globalThis.setTimeout(() => {
+        presenceTimerRef.current = null;
+        setContactPresence(null);
+      }, ttlMs);
+    },
+    [clearContactPresence],
+  );
   const hasConnectionsError = connectionsError !== null;
   const latestHandlersRef = useRef({
+    activeConversationConnectionId,
     activeCycleId,
+    activeCustomerPhone,
     canAccessSessionSnapshot,
     canMergeSessionSnapshot,
     mergeRealtimeMessage,
@@ -68,7 +96,9 @@ export function useCrmRealtime({
     updateRealtimeMessageStatus,
   });
   latestHandlersRef.current = {
+    activeConversationConnectionId,
     activeCycleId,
+    activeCustomerPhone,
     canAccessSessionSnapshot,
     canMergeSessionSnapshot,
     mergeRealtimeMessage,
@@ -83,11 +113,22 @@ export function useCrmRealtime({
   };
 
   useEffect(() => {
+    clearContactPresence();
+  }, [
+    activeConversationConnectionId,
+    activeCycleId,
+    activeCustomerPhone,
+    clearContactPresence,
+    connectionId,
+  ]);
+
+  useEffect(() => {
     const publishStatus = (nextStatus: CrmRealtimeStatus) => {
       setStatus(nextStatus);
       latestHandlersRef.current.onStatus?.(nextStatus);
     };
     if (hasConnectionsError || !connectionId) {
+      clearContactPresence();
       publishStatus("offline");
       return;
     }
@@ -159,6 +200,9 @@ export function useCrmRealtime({
         });
         void latest.refreshSessionCounts().catch(() => undefined);
         if (String(event.cycle.id) === String(latest.activeCycleId)) {
+          if (event.message.direction === "INBOUND") {
+            clearContactPresence();
+          }
           latest.mergeRealtimeMessage(event.message);
           if (
             event.message.direction === "INBOUND" &&
@@ -177,6 +221,26 @@ export function useCrmRealtime({
       }
       if (event.type === "connection_status") {
         void latest.refreshConnections().catch(() => undefined);
+        return;
+      }
+      if (event.type === "presence") {
+        if (
+          !latest.activeCycleId ||
+          !latest.activeConversationConnectionId ||
+          String(event.cycleId) !== String(latest.activeCycleId) ||
+          String(event.connectionId) !==
+            String(latest.activeConversationConnectionId)
+        ) {
+          return;
+        }
+        const presence = readCorrelatedContactPresence(event.payload);
+        if (presence === "typing") {
+          publishContactPresence("typing", 6_000);
+        } else if (presence === "online") {
+          publishContactPresence("online", 30_000);
+        } else if (presence === "clear") {
+          clearContactPresence();
+        }
       }
     };
     const unsubscribe = api.subscribeEvents({
@@ -184,6 +248,7 @@ export function useCrmRealtime({
       onError: (caught) => {
         void caught;
         if (!active) return;
+        clearContactPresence();
         publishStatus("connecting");
         scheduleDegradedStatus();
       },
@@ -201,6 +266,7 @@ export function useCrmRealtime({
           hasConnected = true;
           return;
         }
+        clearContactPresence();
         publishStatus("connecting");
         scheduleDegradedStatus();
       },
@@ -208,9 +274,33 @@ export function useCrmRealtime({
     return () => {
       active = false;
       clearDegradedTimer();
+      clearContactPresence();
       unsubscribe();
     };
-  }, [api, connectionId, hasConnectionsError]);
+  }, [
+    api,
+    clearContactPresence,
+    connectionId,
+    hasConnectionsError,
+    publishContactPresence,
+  ]);
 
-  return { status };
+  return { contactPresence, status };
+}
+
+function readCorrelatedContactPresence(
+  payload: Record<string, unknown>,
+): CrmContactPresence | "clear" | null {
+  if (typeof payload.state !== "string") return null;
+  switch (payload.state) {
+    case "composing":
+      return "typing";
+    case "available":
+      return "online";
+    case "paused":
+    case "unavailable":
+      return "clear";
+    default:
+      return null;
+  }
 }

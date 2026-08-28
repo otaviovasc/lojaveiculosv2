@@ -57,6 +57,7 @@ describe("CRM start conversation recovery", () => {
     expect(recovered.status).toBe(201);
     await expect(recovered.json()).resolves.toMatchObject({
       message: {
+        clientRequestId: "start-recovery-1",
         providerTimestamp: providerTimestamp.toISOString(),
       },
       cycle: {

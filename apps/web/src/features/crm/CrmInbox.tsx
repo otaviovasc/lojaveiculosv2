@@ -20,13 +20,13 @@ import { useCrmInbox } from "./useCrmInbox";
 import { CrmNotice } from "./CrmNotice";
 import { CrmConnectionAdmin } from "./CrmConnectionAdmin";
 import { CrmTagManager } from "./CrmTagManager";
-import { readCrmConnectionStatus } from "./crmConnectionStatus";
-import { totalUnreadCycles } from "./crmQueueState";
 import {
-  CrmScopedNav,
-  type CrmConnectionTone,
-  type CrmScope,
-} from "./CrmScopedNav";
+  findCrmStatusConnection,
+  readCrmConnectionStatus,
+  readCrmRealtimeStatus,
+} from "./crmConnectionStatus";
+import { totalUnreadCycles } from "./crmQueueState";
+import { CrmScopedNav, type CrmScope } from "./CrmScopedNav";
 import { CrmConversationWorkspace } from "./CrmConversationWorkspace";
 import {
   CrmCampaignsSection,
@@ -81,21 +81,20 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
     typeof document === "undefined" ? "CRM" : document.title,
   );
   const unreadCount = totalUnreadCycles(inbox.conversationCycles);
-  const selectedConnection = inbox.connectionId
-    ? inbox.connections.find(
-        (connection) => String(connection.id) === String(inbox.connectionId),
-      )
-    : null;
+  const selectedConnection = findCrmStatusConnection(
+    inbox.connections,
+    inbox.connectionId ? String(inbox.connectionId) : null,
+  );
   const providerStatus = readCrmConnectionStatus({
     hasConnection: inbox.hasConnection,
     isLoading: inbox.connectionIsLoading,
     connectionError: inbox.connectionError,
+    ...(selectedConnection?.provider
+      ? { provider: selectedConnection.provider }
+      : {}),
     ...(selectedConnection?.state ? { state: selectedConnection.state } : {}),
   });
-  const status = readSynchronizedChannelStatus(
-    providerStatus,
-    inbox.realtimeStatus,
-  );
+  const realtimeStatus = readCrmRealtimeStatus(inbox.realtimeStatus);
   const errorRecovery = getApiErrorRecovery(inbox.error);
   const errorDisplay = getApiErrorDisplay(
     inbox.error,
@@ -237,9 +236,9 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
         <>
           <CrmScopedNav
             activeScope={activeScope}
-            connectionLabel={status.label}
-            connectionTone={status.tone}
             onChange={setActiveScope}
+            providerStatus={providerStatus}
+            realtimeStatus={realtimeStatus}
             tagCount={inbox.availableTags.length}
             unreadCount={unreadCount}
           />
@@ -440,26 +439,6 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
       ) : null}
     </main>
   );
-}
-
-export function readSynchronizedChannelStatus(
-  providerStatus: { label: string; tone: CrmConnectionTone },
-  realtimeStatus: "connected" | "connecting" | "degraded" | "offline",
-) {
-  if (providerStatus.tone !== "online") return providerStatus;
-  if (realtimeStatus === "connected") {
-    return { label: "Sincronizado", tone: "online" as const };
-  }
-  if (realtimeStatus === "connecting") {
-    return { label: "Reconectando", tone: "loading" as const };
-  }
-  return {
-    label:
-      realtimeStatus === "degraded"
-        ? "Sincronização indisponível"
-        : "Rede indisponível",
-    tone: "error" as const,
-  };
 }
 
 function CrmDisconnectedState({

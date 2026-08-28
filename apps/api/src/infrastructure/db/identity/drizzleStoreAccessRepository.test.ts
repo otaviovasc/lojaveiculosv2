@@ -37,6 +37,7 @@ describe("Drizzle store access repository", () => {
       storeId: "store_1",
       tenantId: "tenant_1",
       userId: "user_1",
+      userName: "Otavio Vasconcelos",
     });
     expect(db.queriedTables).toEqual(
       expect.arrayContaining([
