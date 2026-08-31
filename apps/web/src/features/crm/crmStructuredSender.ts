@@ -9,7 +9,13 @@ import { readCrmFailedSendStatus } from "./crmSendOutcome";
 
 type StructuredSendInput = {
   activeSession: CrmConversationCycle;
-  mergeCycles: (nextSessions: CrmConversationCycle[]) => void;
+  mergeCycles: (
+    nextSessions: CrmConversationCycle[],
+    options?: {
+      preserveLocalOnly?: boolean;
+      snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
+    },
+  ) => void;
   optimistic: CrmMessageView;
   request: (idempotencyKey: string) => Promise<CrmMessage>;
   setError: (error: Error) => void;
@@ -73,14 +79,17 @@ async function executeStructuredSend(
       (current) => reconcileCrmMessages(current, sent).messages,
     );
     if (optimistic.clientId) structuredRetries.delete(optimistic.clientId);
-    input.mergeCycles([
-      {
-        ...input.activeSession,
-        lastMessageAt: sent.createdAt,
-        lastMessageContent: formatSentPreview(sent),
-        status: "HUMAN_TAKEOVER",
-      },
-    ]);
+    input.mergeCycles(
+      [
+        {
+          ...input.activeSession,
+          lastMessageAt: sent.createdAt,
+          lastMessageContent: formatSentPreview(sent),
+          status: "HUMAN_TAKEOVER",
+        },
+      ],
+      { preserveLocalOnly: true, snapshotKind: "mutation" },
+    );
     return true;
   } catch (caught) {
     let confirmed = false;

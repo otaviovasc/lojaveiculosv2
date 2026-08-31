@@ -38,6 +38,7 @@ import {
 import { useCrmWhatsappStructuredMessages } from "./useCrmWhatsappStructuredMessages";
 
 const MESSAGE_PAGE_SIZE = 50;
+const MESSAGE_LOAD_TIMEOUT_MS = 10_000;
 const MAX_BUFFERED_STATUS_UPDATES = 200;
 
 type SendTextOptions = {
@@ -54,7 +55,13 @@ type UseCrmMessagesOptions = {
   currentUser?: { id: string; name: string } | null | undefined;
   hasMessageAccess?: boolean;
   hasSendPermission?: boolean;
-  mergeCycles: (nextSessions: CrmConversationCycle[]) => void;
+  mergeCycles: (
+    nextSessions: CrmConversationCycle[],
+    options?: {
+      preserveLocalOnly?: boolean;
+      snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
+    },
+  ) => void;
   scopeKey?: string | null;
   setError: (error: Error) => void;
 };
@@ -354,11 +361,7 @@ export function useCrmMessages({
 
   useEffect(() => {
     const requestGeneration = ++requestGenerationRef.current;
-    if (
-      !activeCycleId ||
-      !canLoadMessages ||
-      typeof activeCycleId !== "string"
-    ) {
+    if (!activeCycleId || typeof activeCycleId !== "string") {
       setMessages([]);
       setLoadedCycleId(null);
       setIsLoadingMessages(false);
@@ -367,9 +370,16 @@ export function useCrmMessages({
       setOlderMessagesError(false);
       return;
     }
+    if (!canLoadMessages) {
+      setIsLoadingMessages(false);
+      setIsLoadingOlderMessages(false);
+      setOlderMessagesError(false);
+      return;
+    }
     let active = true;
     let inFlight: Promise<void> | null = null;
     let inFlightToken: symbol | null = null;
+    let inFlightController: AbortController | null = null;
     const hasCachedMessages =
       (messagesBySessionRef.current.get(activeCycleId)?.length ?? 0) > 0;
     if (!hasCachedMessages) {
@@ -378,12 +388,29 @@ export function useCrmMessages({
     const loadMessages = () => {
       if (inFlight) return inFlight;
       const requestToken = Symbol("crm-message-poll");
+      const controller = new AbortController();
+      inFlightController = controller;
       const request = (async () => {
+        let timeout: number | null = null;
         try {
-          const nextMessages = await api.listMessages(activeCycleId, {
-            limit: MESSAGE_PAGE_SIZE,
-            offset: 0,
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            timeout = window.setTimeout(() => {
+              reject(
+                new Error(
+                  "O histórico de mensagens demorou para carregar. Tente novamente.",
+                ),
+              );
+              controller.abort();
+            }, MESSAGE_LOAD_TIMEOUT_MS);
           });
+          const nextMessages = await Promise.race([
+            api.listMessages(
+              activeCycleId,
+              { limit: MESSAGE_PAGE_SIZE, offset: 0 },
+              { signal: controller.signal },
+            ),
+            timeoutPromise,
+          ]);
           if (active && requestGeneration === requestGenerationRef.current) {
             evictedCycleIdsRef.current.delete(activeCycleId);
             const existingPagination =
@@ -404,9 +431,11 @@ export function useCrmMessages({
             setHasOlderMessages(pagination.hasOlderMessages);
           }
         } finally {
+          if (timeout !== null) window.clearTimeout(timeout);
           if (inFlightToken === requestToken) {
             inFlight = null;
             inFlightToken = null;
+            inFlightController = null;
           }
         }
       })();
@@ -429,6 +458,7 @@ export function useCrmMessages({
     }, 5_000);
     return () => {
       active = false;
+      inFlightController?.abort();
       window.clearInterval(interval);
     };
   }, [activeCycleId, api, canLoadMessages, reconcileSessionMessages, setError]);
@@ -529,14 +559,17 @@ export function useCrmMessages({
           });
           if (!pendingTextClientIdsRef.current.has(queued.clientId)) continue;
           reconcileSessionMessages(queued.cycleId, sent);
-          mergeCycles([
-            {
-              ...queued.session,
-              lastMessageAt: sent.createdAt,
-              lastMessageContent: formatSentPreview(sent),
-              status: "HUMAN_TAKEOVER",
-            },
-          ]);
+          mergeCycles(
+            [
+              {
+                ...queued.session,
+                lastMessageAt: sent.createdAt,
+                lastMessageContent: formatSentPreview(sent),
+                status: "HUMAN_TAKEOVER",
+              },
+            ],
+            { preserveLocalOnly: true, snapshotKind: "mutation" },
+          );
         } catch (caught) {
           if (!pendingTextClientIdsRef.current.has(queued.clientId)) continue;
           let confirmed = false;
@@ -677,14 +710,17 @@ export function useCrmMessages({
           cycleId: retry.cycleId,
         });
         reconcileSessionMessages(retry.cycleId, sent);
-        mergeCycles([
-          {
-            ...retry.session,
-            lastMessageAt: sent.createdAt,
-            lastMessageContent: formatSentPreview(sent),
-            status: "HUMAN_TAKEOVER",
-          },
-        ]);
+        mergeCycles(
+          [
+            {
+              ...retry.session,
+              lastMessageAt: sent.createdAt,
+              lastMessageContent: formatSentPreview(sent),
+              status: "HUMAN_TAKEOVER",
+            },
+          ],
+          { preserveLocalOnly: true, snapshotKind: "mutation" },
+        );
         return true;
       } catch (caught) {
         let confirmed = false;
@@ -980,7 +1016,9 @@ export function useCrmMessages({
     hasOlderMessages,
     isLoadingMessages,
     isLoadingOlderMessages,
-    hasLoadedActiveMessages: loadedCycleId === activeCycleId,
+    hasLoadedActiveMessages:
+      loadedCycleId === activeCycleId ||
+      Boolean(activeCycleId && messagesBySessionRef.current.has(activeCycleId)),
     isBlockingMutation: isSending || pendingTextMessageCount > 0,
     isSending,
     deleteMessage,

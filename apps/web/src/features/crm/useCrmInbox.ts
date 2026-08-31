@@ -226,7 +226,7 @@ export function useCrmInbox(
         ? (connections.connections.find(
             (connection) =>
               String(connection.id) === String(activeSession.connection?.id),
-          ) ?? null)
+          ) ?? activeSession.connection)
         : null,
     [activeSession, connections.connections],
   );
@@ -305,9 +305,7 @@ export function useCrmInbox(
     if (currentRevision === null) return incomingRevision === null;
     return incomingRevision !== null && incomingRevision >= currentRevision;
   }, []);
-  const canLoadMessages = Boolean(
-    operationalConnectionId && activeSession && permissions.canRead,
-  );
+  const canLoadMessages = Boolean(activeSession && permissions.canRead);
   const canSendMessages = Boolean(
     operationalConnectionId && permissions.canSend && sendReadiness.canSend,
   );

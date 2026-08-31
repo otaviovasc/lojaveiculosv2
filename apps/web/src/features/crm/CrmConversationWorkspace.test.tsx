@@ -282,6 +282,44 @@ describe("CrmConversationWorkspace conclusion", () => {
     expect(onCycleChange).toHaveBeenLastCalledWith(null);
   });
 
+  it("keeps the mobile pane shortcuts available after focus leaves the workspace", async () => {
+    const connection = createConnection("connection-1");
+    const inbox = {
+      ...createInbox({
+        closeCycle: vi.fn(async () => true),
+        concludeCycle: vi.fn(async () => true),
+      }),
+      activeSessionConnection: connection,
+      canSendText: true,
+      connections: [connection],
+    } as unknown as ReturnType<typeof useCrmInbox>;
+    render(
+      <CrmConversationWorkspace
+        inbox={inbox}
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveFocus(),
+    );
+
+    const outsideButton = document.createElement("button");
+    document.body.append(outsideButton);
+    outsideButton.focus();
+    fireEvent.keyDown(window, { altKey: true, key: "1" });
+    await actAnimationFrame();
+    expect(
+      screen.getByRole("complementary", { name: "Fila de conversas" }),
+    ).toHaveFocus();
+
+    fireEvent.keyDown(window, { altKey: true, key: "2" });
+    await actAnimationFrame();
+    expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveFocus();
+    outsideButton.remove();
+  });
+
   it("passes verified active-contact presence to the conversation header", () => {
     render(
       <CrmConversationWorkspace

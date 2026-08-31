@@ -41,7 +41,7 @@ describe("QuotedMessage", () => {
       />,
     );
 
-    expect(screen.getByText("Usuário removido")).toBeVisible();
+    expect(screen.getByText("Atendente removido")).toBeVisible();
     expect(screen.queryByText("Atendente")).not.toBeInTheDocument();
   });
 });

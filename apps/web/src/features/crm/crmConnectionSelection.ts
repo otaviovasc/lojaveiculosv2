@@ -62,14 +62,8 @@ export function resolveCrmInboxConnectionSelection(input: {
     };
   }
   const activeSessionConnectionId = input.activeSessionConnectionId;
-  const activeConnectionExists = input.connections.some(
-    (connection) => String(connection.id) === activeSessionConnectionId,
-  );
   return {
-    operationalConnectionId:
-      activeSessionConnectionId && activeConnectionExists
-        ? activeSessionConnectionId
-        : null,
+    operationalConnectionId: activeSessionConnectionId,
     viewConnectionId,
   };
 }

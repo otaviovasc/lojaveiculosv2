@@ -115,6 +115,9 @@ export function mergeCyclesFromServer(
       (serverCycle.humanAttendanceStateVersion ?? 0);
     return {
       ...serverCycle,
+      ...(localCycle.connection && !serverCycle.connection
+        ? { connection: localCycle.connection }
+        : {}),
       ...(localIsNewer
         ? {
             lastMessageAt: localCycle.lastMessageAt,
@@ -350,7 +353,8 @@ export function getSenderLabel(
   }
   if (message.senderType === "HUMAN" && message.senderOrigin === "human_crm") {
     const senderUser = readSenderUser(message);
-    return senderUser?.name.trim() || "Usuário removido";
+    const senderName = senderUser?.name.trim();
+    return senderName ? `Atendente · ${senderName}` : "Atendente removido";
   }
   return null;
 }

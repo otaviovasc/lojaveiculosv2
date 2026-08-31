@@ -189,7 +189,7 @@ function readQuotedSender(replyTo: Record<string, unknown>) {
   }
   if (readString(replyTo.senderOrigin) === "human_crm") {
     const senderUser = readRecord(replyTo.senderUser);
-    return readString(senderUser.name) ?? "Usuário removido";
+    return readString(senderUser.name) ?? "Atendente removido";
   }
   return "Remetente não identificado";
 }
