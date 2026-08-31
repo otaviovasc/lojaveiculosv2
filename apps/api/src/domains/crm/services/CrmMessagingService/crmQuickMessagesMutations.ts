@@ -18,6 +18,10 @@ import {
   deleteQuickMessageMedia,
   storeQuickMessageMedia,
 } from "./crmQuickMessageMedia.js";
+import {
+  assertCrmAudioIsNormalized,
+  requireCrmAudioNormalizer,
+} from "../../messaging/crmAudioNormalization.js";
 import type { UpdateCrmQuickMessageInput as RepositoryQuickMessageUpdate } from "../../ports/crmConversationRepository.js";
 import {
   actorUserId,
@@ -72,6 +76,7 @@ export async function createCrmQuickMessage(
           ? { mediaType: input.mediaType }
           : {}),
         scope,
+        normalizer: kind === "AUDIO" ? requireCrmAudioNormalizer(ports) : null,
         storage: getCrmMediaStorage(ports),
       });
       const created = await repository.createQuickMessage({
@@ -146,6 +151,9 @@ export async function updateCrmQuickMessage(
     ? normalizeRequiredShortcut(input.shortcut)
     : current.shortcut;
   const kind = input.kind ?? current.kind;
+  if (kind === "AUDIO" && current.kind === "AUDIO" && !input.mediaBase64) {
+    assertCrmAudioIsNormalized(current.mediaType);
+  }
   const reusableMedia =
     kind === current.kind ? (current.mediaUrl ?? undefined) : undefined;
   validateQuickMessageInput({
@@ -182,6 +190,8 @@ export async function updateCrmQuickMessage(
               ? { mediaType: input.mediaType }
               : {}),
             scope,
+            normalizer:
+              kind === "AUDIO" ? requireCrmAudioNormalizer(ports) : null,
             storage: getCrmMediaStorage(ports),
           })
         : null;

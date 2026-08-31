@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import type { CrmAudioNormalizer } from "../../../domains/crm/ports/crmAudioNormalizer.js";
 import { createNoopServiceLogger } from "../../../shared/serviceContext.js";
 import type { AuthorizedExternalBotEffect } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
 import { createExternalBotProviderEffectExecutor } from "./externalBotProviderEffectExecutor.js";
@@ -6,6 +7,7 @@ import { createExternalBotProviderEffectExecutor } from "./externalBotProviderEf
 export function createExternalBotEffectExecutor(
   sendText: ReturnType<typeof vi.fn>,
   overrides: {
+    audioNormalizer?: CrmAudioNormalizer;
     mediaFetcher?: {
       fetchMedia: ReturnType<typeof vi.fn>;
       validateUrl: ReturnType<typeof vi.fn>;
@@ -19,6 +21,7 @@ export function createExternalBotEffectExecutor(
   } = {},
 ) {
   return createExternalBotProviderEffectExecutor({
+    audioNormalizer: overrides.audioNormalizer,
     db: {} as never,
     gateway: {
       sendMedia: overrides.sendMedia ?? vi.fn(),

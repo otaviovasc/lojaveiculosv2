@@ -32,6 +32,7 @@ environment variables for public smoke-test URLs.
 | `LOG_HTTP_REQUESTS`                  | No       | local, staging, production | No     | Structured HTTP request logs default on outside tests; set `false` only for an approved noise reduction. |
 | `RAILWAY_GIT_COMMIT_SHA`             | No       | staging, production        | No     | Railway-injected commit used by the API/web build-contract handshake. Do not configure manually.         |
 | `BUILD_COMMIT_SHA`                   | No       | local, staging, production | No     | Optional non-Railway commit override used by the same build-contract handshake.                          |
+| `RAILPACK_DEPLOY_APT_PACKAGES`       | Yes      | staging, production        | No     | API build setting. Keep `... ffmpeg` so every outbound CRM audio is normalized to WhatsApp OGG/Opus.     |
 
 Railway injects `RAILWAY_PROJECT_ID`, `RAILWAY_ENVIRONMENT_ID`, and
 `RAILWAY_ENVIRONMENT_NAME`; deployments also expose

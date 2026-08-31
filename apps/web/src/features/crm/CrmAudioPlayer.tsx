@@ -1,4 +1,4 @@
-import { Volume2, RotateCcw } from "lucide-react";
+import { Download, Volume2, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Morphicon } from "../../components/ui/Morphicon";
 
@@ -56,20 +56,45 @@ export function CrmAudioPlayer({
     if (!audio) return;
     const current = audio.currentTime;
     const total = audio.duration;
-    if (total && !isNaN(total)) {
+    if (
+      Number.isFinite(current) &&
+      current >= 0 &&
+      Number.isFinite(total) &&
+      total > 0
+    ) {
       setProgress((current / total) * 100);
       setCurrentTime(formatTime(current));
+    }
+  }, []);
+
+  const syncFiniteDuration = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const total = audio.duration;
+    if (!Number.isFinite(total) || total <= 0) return;
+    setDuration(formatTime(total));
+    if (!Number.isFinite(audio.currentTime) || audio.currentTime > total) {
+      audio.currentTime = 0;
     }
   }, []);
 
   const handleLoadedMetadata = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const total = audio.duration;
-    if (total && !isNaN(total)) {
-      setDuration(formatTime(total));
+    if (Number.isFinite(audio.duration)) {
+      syncFiniteDuration();
+      return;
     }
-  }, []);
+    if (audio.duration === Number.POSITIVE_INFINITY) {
+      try {
+        // MediaRecorder WebM blobs may omit a duration cue. Seeking once makes
+        // Chromium inspect the final cluster and emit a finite durationchange.
+        audio.currentTime = Number.MAX_SAFE_INTEGER;
+      } catch {
+        audio.currentTime = 0;
+      }
+    }
+  }, [syncFiniteDuration]);
 
   const handleEnded = useCallback(() => {
     setIsPlaying(false);
@@ -79,7 +104,8 @@ export function CrmAudioPlayer({
 
   const handleSeek = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const audio = audioRef.current;
-    if (!audio || !audio.duration) return;
+    if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0)
+      return;
     const rect = event.currentTarget.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const ratio = Math.max(0, Math.min(1, clickX / rect.width));
@@ -134,6 +160,7 @@ export function CrmAudioPlayer({
     setIsPlaying(false);
     setProgress(0);
     setCurrentTime("0:00");
+    setDuration("0:00");
     setHasError(false);
   }, [src]);
 
@@ -150,6 +177,7 @@ export function CrmAudioPlayer({
         className="sr-only"
         onEnded={handleEnded}
         onError={() => setHasError(true)}
+        onDurationChange={syncFiniteDuration}
         onLoadedMetadata={handleLoadedMetadata}
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
@@ -225,6 +253,15 @@ export function CrmAudioPlayer({
                 : currentTime}
           </span>
           <div className="crm-audio-actions">
+            <a
+              aria-label="Baixar audio"
+              className="crm-audio-speed-btn"
+              download
+              href={src}
+              title="Baixar audio"
+            >
+              <Download aria-hidden="true" className="size-3" />
+            </a>
             <button
               aria-label={`Velocidade de reproducao ${playbackRate}x`}
               className="crm-audio-speed-btn"
@@ -243,7 +280,7 @@ export function CrmAudioPlayer({
 }
 
 function formatTime(seconds: number): string {
-  if (isNaN(seconds) || seconds < 0) return "0:00";
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;

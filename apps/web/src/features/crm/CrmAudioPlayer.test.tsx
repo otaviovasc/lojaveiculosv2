@@ -11,7 +11,8 @@ describe("CrmAudioPlayer", () => {
   });
 
   it("renders the audio player with play button and waveform", () => {
-    render(<CrmAudioPlayer src="https://audio.local/test.ogg" />);
+    const src = "https://audio.local/test.ogg";
+    render(<CrmAudioPlayer src={src} />);
 
     expect(
       screen.getByRole("region", { name: "Audio player" }),
@@ -23,6 +24,10 @@ describe("CrmAudioPlayer", () => {
     expect(
       screen.getByRole("button", { name: /Velocidade de reproducao/ }),
     ).toHaveTextContent("1x");
+    expect(screen.getByRole("link", { name: "Baixar audio" })).toHaveAttribute(
+      "href",
+      src,
+    );
   });
 
   it("cycles playback speed on speed button click", async () => {
@@ -95,5 +100,24 @@ describe("CrmAudioPlayer", () => {
 
     expect(audio.currentTime).toBe(15);
     expect(screen.getByRole("slider")).toHaveAttribute("aria-valuenow", "15");
+  });
+
+  it("recovers a finite duration from MediaRecorder WebM metadata", () => {
+    render(<CrmAudioPlayer src="https://audio.local/recording.webm" />);
+    const audio = screen.getByLabelText<HTMLAudioElement>("Mensagem de audio");
+    let duration = Number.POSITIVE_INFINITY;
+    Object.defineProperties(audio, {
+      currentTime: { configurable: true, value: 0, writable: true },
+      duration: { configurable: true, get: () => duration },
+    });
+
+    fireEvent.loadedMetadata(audio);
+    expect(screen.queryByText(/Infinity|NaN/)).not.toBeInTheDocument();
+
+    duration = 65;
+    fireEvent.durationChange(audio);
+
+    expect(screen.getByText("1:05")).toBeInTheDocument();
+    expect(audio.currentTime).toBe(0);
   });
 });

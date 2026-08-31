@@ -2,8 +2,10 @@ import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
+import type { CrmAudioNormalizer } from "../../ports/crmAudioNormalizer.js";
 import { CrmMessagingGatewayError } from "../../ports/crmMessagingGateway.js";
 import type { CrmQuickMessageKind } from "../../ports/crmConversationRepository.js";
+import { normalizeCrmAudio } from "../../messaging/crmAudioNormalization.js";
 
 const mediaPolicy = {
   AUDIO: {
@@ -46,13 +48,14 @@ export async function storeQuickMessageMedia(input: {
   fileName?: string;
   kind: CrmQuickMessageKind;
   mediaType?: string;
+  normalizer: CrmAudioNormalizer | null;
   scope: { storeId: string; tenantId: string };
   storage: ObjectStorage | null;
 }) {
   if (input.kind === "TEXT") return null;
   const policy = mediaPolicy[input.kind];
-  const mediaType = input.mediaType?.split(";")[0]?.trim() ?? "";
-  if (!mediaType.startsWith(policy.mimePrefix)) {
+  const sourceMimeType = input.mediaType?.trim() ?? "";
+  if (!sourceMimeType.split(";")[0]?.trim().startsWith(policy.mimePrefix)) {
     throw new CrmMessagingGatewayError(
       `CRM WhatsApp quick message ${input.kind.toLowerCase()} media type is invalid.`,
     );
@@ -68,10 +71,33 @@ export async function storeQuickMessageMedia(input: {
       `CRM WhatsApp quick message ${input.kind.toLowerCase()} media exceeds ${policy.maxBytes} bytes.`,
     );
   }
+  const sourceFileName = input.fileName?.trim() || policy.fallbackFileName;
+  if (input.kind === "AUDIO" && !input.normalizer) {
+    throw new CrmMessagingGatewayError(
+      "A normalizacao de audio esta indisponivel. Nenhuma mensagem foi salva.",
+      502,
+      undefined,
+      "configuration_error",
+    );
+  }
+  const media =
+    input.kind === "AUDIO"
+      ? await normalizeCrmAudio({
+          body,
+          fileName: sourceFileName,
+          maxBytes: policy.maxBytes,
+          normalizer: input.normalizer!,
+          sourceMimeType,
+        })
+      : {
+          body,
+          fileName: sourceFileName,
+          mimeType: sourceMimeType.split(";")[0]!.trim(),
+        };
   const stored = await input.storage.putObject({
-    body,
-    contentType: mediaType,
-    fileName: input.fileName?.trim() || policy.fallbackFileName,
+    body: media.body,
+    contentType: media.mimeType,
+    fileName: media.fileName,
     scopeSegments: [
       "crm",
       "whatsapp",
@@ -83,7 +109,7 @@ export async function storeQuickMessageMedia(input: {
     ],
   });
   return {
-    mediaType,
+    mediaType: media.mimeType,
     mediaUrl: stored.publicUrl,
     storageKey: stored.storageKey,
   } satisfies StoredQuickMessageMedia;

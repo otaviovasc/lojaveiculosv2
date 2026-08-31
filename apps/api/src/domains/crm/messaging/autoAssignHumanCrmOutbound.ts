@@ -12,6 +12,7 @@ import {
 import { applyConversationCycleAssignment } from "./conversationCycleAssignment.js";
 import { auditCrmServiceEvent } from "../services/CrmMessagingService/serviceSupport.js";
 import { ConversationCycleNotFoundError } from "./crmMessagingErrors.js";
+import { interventionActorKind } from "./humanAttendanceTransition.js";
 
 export function shouldAutoAssignHumanCrmOutbound(input: {
   senderOrigin: CrmMessageSenderOrigin;
@@ -117,6 +118,11 @@ export async function applyHumanOutboundAssignment(input: {
   conversationCycle: CrmConversationCycle;
 }) {
   const assignment = await applyConversationCycleAssignment({
+    actorId: input.context.actor.id,
+    actorKind: interventionActorKind(
+      input.context.actor.kind,
+      "human_outbound_message",
+    ),
     allowReassignment: false,
     assignedAt: input.providerTimestamp,
     assignedUserId: input.context.actor.id,

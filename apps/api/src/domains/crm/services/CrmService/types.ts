@@ -5,6 +5,7 @@ import type {
   VehicleUnitRepository,
 } from "../../../vehicle/ports/vehicleInventoryRepository.js";
 import type { CrmExternalBotIntegrationRepository } from "../../ports/crmExternalBotIntegrationRepository.js";
+import type { CrmAudioNormalizer } from "../../ports/crmAudioNormalizer.js";
 import type { CrmAssigneeMembershipRepository } from "../../ports/crmAssigneeMembershipRepository.js";
 import type { CrmCanonicalInboundRepository } from "../../ports/crmCanonicalInboundRepository.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
@@ -35,6 +36,7 @@ import type { ExternalBotManagerPorts } from "../../bot/ports/externalBotPorts.j
 import type { CrmStatisticsReadModel } from "../../readModels/crmStatisticsReadModel.js";
 
 export type CrmServicePorts = {
+  crmAudioNormalizer?: CrmAudioNormalizer;
   crmAssigneeMembershipRepository?: CrmAssigneeMembershipRepository;
   crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
   externalBotManager?: ExternalBotManagerPorts;

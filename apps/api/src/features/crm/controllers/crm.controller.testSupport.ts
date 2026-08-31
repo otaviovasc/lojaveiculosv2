@@ -209,6 +209,9 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
           ...(options.crmMediaStorage
             ? { crmMediaStorage: options.crmMediaStorage }
             : {}),
+          ...(options.crmAudioNormalizer
+            ? { crmAudioNormalizer: options.crmAudioNormalizer }
+            : {}),
           ...(options.crmMediaFetcher
             ? { crmMediaFetcher: options.crmMediaFetcher }
             : {}),

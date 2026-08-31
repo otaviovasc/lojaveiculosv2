@@ -2,6 +2,7 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmMessage } from "../../ports/crmConversationRepository.js";
 import { sendOutboundMessage } from "../../messaging/sendOutboundMessage.js";
+import { assertCrmAudioIsNormalized } from "../../messaging/crmAudioNormalization.js";
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import {
   logCrmServiceEvent,
@@ -50,6 +51,9 @@ export async function sendCrmQuickMessage(
           idempotencyPayload: input,
           senderOrigin: "human_crm",
           prepare: async ({ connection, gateway, phone }) => {
+            if (quick.kind === "AUDIO") {
+              assertCrmAudioIsNormalized(quick.mediaType);
+            }
             const sent =
               quick.kind === "TEXT"
                 ? await gateway.sendText(connection, {
@@ -62,6 +66,7 @@ export async function sendCrmQuickMessage(
                       : {}),
                     mediaType: quick.kind.toLowerCase() as "audio" | "image",
                     mediaUrl: requireQuickMediaUrl(quick),
+                    ...(quick.mediaType ? { mimeType: quick.mediaType } : {}),
                     phone,
                   });
             return {

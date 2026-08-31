@@ -18,6 +18,27 @@ const imageInput = {
 };
 
 describe("sendZapiMedia rate limit handling", () => {
+  it("sends normalized audio as a WhatsApp voice message", async () => {
+    const fetchImpl = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ messageId: "audio-message" }), {
+        status: 200,
+      }),
+    );
+
+    await sendZapiMedia(credentials, fetchImpl, {
+      mediaType: "audio",
+      mediaUrl: "https://cdn.example.test/recording.ogg",
+      mimeType: "audio/ogg; codecs=opus",
+      phone: "5511999999999",
+    });
+
+    expect(JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body))).toEqual({
+      audio: "https://cdn.example.test/recording.ogg",
+      phone: "5511999999999",
+      waveform: true,
+    });
+  });
+
   it("retries HTTP 429 using Retry-After before returning success", async () => {
     const fetchImpl = vi
       .fn<typeof globalThis.fetch>()

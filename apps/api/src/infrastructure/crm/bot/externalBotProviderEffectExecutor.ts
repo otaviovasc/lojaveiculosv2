@@ -2,6 +2,7 @@ import type { AuditSink } from "@lojaveiculosv2/audit";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { CrmMessagingGateway } from "../../../domains/crm/ports/crmMessagingGateway.js";
+import type { CrmAudioNormalizer } from "../../../domains/crm/ports/crmAudioNormalizer.js";
 import type { CrmRemoteMediaFetcher } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
 import {
   resolveCrmProviderOperation,
@@ -33,6 +34,7 @@ type Db = PostgresJsDatabase<typeof schema>;
 
 export function createExternalBotProviderEffectExecutor(input: {
   audit?: AuditSink;
+  audioNormalizer?: CrmAudioNormalizer;
   db: Db;
   gateway: Pick<CrmMessagingGateway, "sendMedia" | "sendTemplate" | "sendText">;
   logger: ServiceLogger;
@@ -60,6 +62,9 @@ export function createExternalBotProviderEffectExecutor(input: {
       try {
         await auditEffect(context, preview, "attempted");
         await prepareExternalBotMedia({
+          ...(input.audioNormalizer
+            ? { audioNormalizer: input.audioNormalizer }
+            : {}),
           db: input.db,
           effect: preview,
           logger: input.logger,

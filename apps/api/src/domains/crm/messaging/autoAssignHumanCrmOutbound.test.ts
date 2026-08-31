@@ -51,6 +51,8 @@ describe("CRM automatic outbound assignment", () => {
     };
 
     const result = await applyConversationCycleAssignment({
+      actorId: "sending-user",
+      actorKind: "user",
       allowReassignment: false,
       assignedAt: new Date("2026-08-17T12:00:00.000Z"),
       assignedUserId: "sending-user",

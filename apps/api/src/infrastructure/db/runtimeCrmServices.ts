@@ -18,6 +18,7 @@ import {
   createShadowCrmPushDeliveryProvider,
 } from "../crm/onesignalHttpClient.js";
 import { readCrmPushRuntimeConfig } from "../crm/push/crmPushRuntimeConfig.js";
+import { createFfmpegCrmAudioNormalizer } from "../crm/ffmpegCrmAudioNormalizer.js";
 
 export function createRuntimeCrmServices(
   db: unknown,
@@ -43,6 +44,7 @@ export function createRuntimeCrmServices(
     drizzleClient: db as DrizzleCrmClient,
     environment: env.APP_ENV ?? env.NODE_ENV ?? "local",
     ports: {
+      crmAudioNormalizer: createFfmpegCrmAudioNormalizer(),
       ...(olxWebhookSecurity
         ? { crmOlxWebhookSecurity: olxWebhookSecurity }
         : {}),

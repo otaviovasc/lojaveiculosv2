@@ -108,6 +108,10 @@ separate because audit isolation is a product invariant, not optional capacity.
   new revision can activate a catalog, trading a short deploy interruption for
   a guarantee that two binary versions cannot serve different active-catalog
   contracts concurrently.
+- The API final image installs FFmpeg through
+  `RAILPACK_DEPLOY_APT_PACKAGES="... ffmpeg"`. CRM audio delivery fails
+  explicitly before provider submission when normalization is unavailable;
+  browser WebM is never forwarded to WhatsApp as a successful media send.
 - Web deployment healthcheck path: `/health`.
 - CRM schedule worker: `*/5 * * * *` UTC; no HTTP healthcheck because each run
   must terminate.

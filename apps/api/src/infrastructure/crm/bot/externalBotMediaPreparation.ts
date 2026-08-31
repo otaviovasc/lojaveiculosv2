@@ -1,5 +1,7 @@
 import type { CrmRemoteMediaFetcher } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
 import { UnsafeCrmRemoteMediaUrlError } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
+import type { CrmAudioNormalizer } from "../../../domains/crm/ports/crmAudioNormalizer.js";
+import { normalizeCrmAudio } from "../../../domains/crm/messaging/crmAudioNormalization.js";
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import type { ServiceLogger } from "../../../shared/serviceLogger.js";
 import {
@@ -24,6 +26,7 @@ const fallbackContentTypes: Record<string, string> = {
 type PreparationDb = Parameters<typeof persistPreparedExternalBotMedia>[0];
 
 export async function prepareExternalBotMedia(input: {
+  audioNormalizer?: CrmAudioNormalizer;
   db: PreparationDb;
   effect: AuthorizedExternalBotEffect;
   logger: ServiceLogger;
@@ -31,9 +34,10 @@ export async function prepareExternalBotMedia(input: {
   mediaStorage?: ObjectStorage;
 }) {
   const { effect } = input;
-  if (effect.command.action !== "message.send_media" || effect.preparedMedia) {
+  if (effect.command.action !== "message.send_media") {
     return;
   }
+  if (effect.preparedMedia) return;
   if (!input.mediaFetcher || !input.mediaStorage) {
     throw preparationError(
       "configuration_error",
@@ -49,14 +53,36 @@ export async function prepareExternalBotMedia(input: {
         25 * 1024 * 1024,
       url: effect.command.payload.mediaUrl,
     });
-    const contentType =
+    const sourceContentType =
       media.contentType?.split(";")[0]?.trim() ||
       fallbackContentTypes[effect.command.payload.mediaType] ||
       "application/octet-stream";
+    const prepared =
+      effect.command.payload.mediaType === "audio"
+        ? await normalizeCrmAudio({
+            body: media.body,
+            fileName: mediaFileName(
+              media.finalUrl,
+              sourceContentType,
+              effect.effectId,
+            ),
+            maxBytes: maxBytesByMediaType.audio!,
+            normalizer: requireAudioNormalizer(input.audioNormalizer),
+            sourceMimeType: sourceContentType,
+          })
+        : {
+            body: media.body,
+            fileName: mediaFileName(
+              media.finalUrl,
+              sourceContentType,
+              effect.effectId,
+            ),
+            mimeType: sourceContentType,
+          };
     const stored = await input.mediaStorage.putObject({
-      body: media.body,
-      contentType,
-      fileName: mediaFileName(media.finalUrl, contentType, effect.effectId),
+      body: prepared.body,
+      contentType: prepared.mimeType,
+      fileName: prepared.fileName,
       idempotencyKey: effect.effectId,
       scopeSegments: [
         "crm",
@@ -72,11 +98,11 @@ export async function prepareExternalBotMedia(input: {
     });
     storageKey = stored.storageKey;
     await persistPreparedExternalBotMedia(input.db, {
-      contentType,
+      contentType: prepared.mimeType,
       effectId: effect.effectId,
       originalUrl: effect.command.payload.mediaUrl,
       publicUrl: stored.publicUrl,
-      sizeBytes: media.body.byteLength,
+      sizeBytes: prepared.body.byteLength,
       storageKey: stored.storageKey,
       storeId: effect.storeId,
       tenantId: effect.tenantId,
@@ -87,6 +113,14 @@ export async function prepareExternalBotMedia(input: {
     }
     throw classifyPreparationError(error);
   }
+}
+
+function requireAudioNormalizer(normalizer: CrmAudioNormalizer | undefined) {
+  if (normalizer) return normalizer;
+  throw preparationError(
+    "configuration_error",
+    "External bot audio normalization is not configured.",
+  );
 }
 
 function failureCode(error: unknown) {

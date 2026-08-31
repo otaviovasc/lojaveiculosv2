@@ -13,9 +13,8 @@ import {
   logCrmServiceEvent,
   recordCrmServiceMutation,
 } from "../CrmMessagingService/serviceSupport.js";
-
+import { prepareCrmOutboundMedia } from "../../messaging/crmOutboundMediaPreparation.js";
 export type SendCrmMediaMessageType = "audio" | "document" | "image" | "video";
-
 export type SendCrmMediaMessageInput = {
   base64: string;
   caption?: string;
@@ -25,7 +24,6 @@ export type SendCrmMediaMessageInput = {
   mimeType?: string;
   cycleId: string;
 };
-
 const mediaConfig = {
   audio: {
     content: "[audio]",
@@ -65,9 +63,7 @@ const mediaConfig = {
     messageType: "AUDIO" | "DOCUMENT" | "IMAGE" | "VIDEO";
   }
 >;
-
 const permission = "crm.messages.send";
-
 export async function sendCrmMediaMessage(
   context: ServiceContext,
   input: SendCrmMediaMessageInput,
@@ -125,12 +121,20 @@ export async function sendCrmMediaMessage(
               );
             }
             const config = mediaConfig[input.mediaType];
-            const fileName = input.fileName?.trim() || config.fallbackFileName;
-            const mimeType = input.mimeType?.trim() || config.fallbackMimeType;
-            const stored = await storage.putObject({
+            const media = await prepareCrmOutboundMedia({
               body,
-              contentType: mimeType,
-              fileName,
+              fallbackFileName: config.fallbackFileName,
+              fallbackMimeType: config.fallbackMimeType,
+              fileName: input.fileName,
+              maxBytes: config.maxBytes,
+              mediaType: input.mediaType,
+              mimeType: input.mimeType,
+              ports,
+            });
+            const stored = await storage.putObject({
+              body: media.body,
+              contentType: media.mimeType,
+              fileName: media.fileName,
               scopeSegments: [
                 "crm",
                 connection.channel,
@@ -149,15 +153,15 @@ export async function sendCrmMediaMessage(
                 ...(input.caption?.trim()
                   ? { caption: input.caption.trim() }
                   : {}),
-                fileName,
+                fileName: media.fileName,
                 mediaType: input.mediaType,
                 mediaUrl: stored.publicUrl,
-                mimeType,
+                mimeType: media.mimeType,
                 phone,
               });
               return {
-                content: contentForMedia(input, fileName),
-                leadActivityContent: leadActivityContent(input, fileName),
+                content: contentForMedia(input, media.fileName),
+                leadActivityContent: leadActivityContent(input, media.fileName),
                 mediaType: input.mediaType,
                 mediaUrl: stored.publicUrl,
                 metadata: {
@@ -171,9 +175,12 @@ export async function sendCrmMediaMessage(
                     ...(input.caption?.trim()
                       ? { caption: input.caption.trim() }
                       : {}),
-                    fileName,
-                    mimeType,
-                    sizeBytes: body.byteLength,
+                    fileName: media.fileName,
+                    mimeType: media.mimeType,
+                    normalizedForWhatsapp: input.mediaType === "audio",
+                    originalMimeType:
+                      input.mimeType?.trim() || config.fallbackMimeType,
+                    sizeBytes: media.body.byteLength,
                     storageKey: stored.storageKey,
                   },
                   provider: connection.provider,

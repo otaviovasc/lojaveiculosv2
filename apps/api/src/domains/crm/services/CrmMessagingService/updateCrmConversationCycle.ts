@@ -11,6 +11,7 @@ import {
   type ConversationCycleCommandResponse,
 } from "./executeCrmConversationCycleCommand.js";
 import { applyConversationCycleAssignment } from "../../messaging/conversationCycleAssignment.js";
+import { interventionActorKind } from "../../messaging/humanAttendanceTransition.js";
 export {
   setConversationAttendance,
   type SetConversationAttendanceInput,
@@ -68,6 +69,11 @@ export async function assignConversationCycle(
         fingerprintInput: { assignedUserId: input.assignedUserId },
         mutate: async (current, transactionPorts, scope) => {
           const assignment = await applyConversationCycleAssignment({
+            actorId: context.actor.id,
+            actorKind: interventionActorKind(
+              context.actor.kind,
+              "crm_assignment",
+            ),
             allowReassignment: context.permissions.includes(
               "crm.pipeline.manage",
             ),
