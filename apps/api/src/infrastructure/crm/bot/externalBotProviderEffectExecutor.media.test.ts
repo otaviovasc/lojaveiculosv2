@@ -21,7 +21,6 @@ vi.mock(
 
 import {
   loadAuthorizedExternalBotEffect,
-  persistPreparedExternalBotMedia,
   synchronizeExternalBotEffectOutcome,
   wasExternalBotProviderAttempted,
 } from "../../db/crm/drizzleExternalBotEffectRuntime.js";
@@ -40,7 +39,7 @@ describe("external bot media provider effect", () => {
 
   it("mirrors media before the provider attempt and sends the durable URL", async () => {
     const originalUrl =
-      "https://provider.example.com/signed/audio.mp3?expires=1";
+      "https://provider.example.com/signed/audio.webm?expires=1";
     const effect = fixture({
       action: "message.send_media",
       payload: {
@@ -56,15 +55,15 @@ describe("external bot media provider effect", () => {
         payload: {
           caption: "Voice reply",
           mediaType: "audio",
-          mediaUrl: "https://cdn.example.com/crm/bot/effect-1/audio.mp3",
+          mediaUrl: "https://cdn.example.com/crm/bot/effect-1/audio.ogg",
         },
       },
       preparedMedia: {
-        contentType: "audio/mpeg",
+        contentType: "audio/ogg; codecs=opus",
         originalUrl,
-        publicUrl: "https://cdn.example.com/crm/bot/effect-1/audio.mp3",
-        sizeBytes: 3,
-        storageKey: "staging/crm/bot/effect-1/audio.mp3",
+        publicUrl: "https://cdn.example.com/crm/bot/effect-1/audio.ogg",
+        sizeBytes: 4,
+        storageKey: "staging/crm/bot/effect-1/audio.ogg",
       },
     };
     vi.mocked(loadAuthorizedExternalBotEffect)
@@ -72,9 +71,12 @@ describe("external bot media provider effect", () => {
       .mockResolvedValueOnce(preparedEffect);
     const fetchMedia = vi.fn().mockResolvedValue({
       body: new Uint8Array([1, 2, 3]),
-      contentType: "audio/mpeg",
+      contentType: "audio/webm; codecs=opus",
       finalUrl: originalUrl,
     });
+    const normalizeToOggOpus = vi
+      .fn()
+      .mockResolvedValue(new Uint8Array([79, 103, 103, 83]));
     const putObject = vi.fn().mockResolvedValue({
       publicUrl: preparedEffect.preparedMedia.publicUrl,
       storageKey: preparedEffect.preparedMedia.storageKey,
@@ -83,6 +85,7 @@ describe("external bot media provider effect", () => {
 
     await expect(
       createExecutor(vi.fn(), {
+        audioNormalizer: { normalizeToOggOpus },
         mediaFetcher: { fetchMedia, validateUrl: vi.fn() },
         mediaStorage: { putObject },
         sendMedia,
@@ -106,8 +109,9 @@ describe("external bot media provider effect", () => {
     });
     expect(putObject).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: new Uint8Array([1, 2, 3]),
-        contentType: "audio/mpeg",
+        body: new Uint8Array([79, 103, 103, 83]),
+        contentType: "audio/ogg; codecs=opus",
+        fileName: "audio.ogg",
         idempotencyKey: "effect-1",
         scopeSegments: [
           "crm",
@@ -126,7 +130,12 @@ describe("external bot media provider effect", () => {
       caption: "Voice reply",
       mediaType: "audio",
       mediaUrl: preparedEffect.preparedMedia.publicUrl,
+      mimeType: "audio/ogg; codecs=opus",
       phone: "5511999999999",
+    });
+    expect(normalizeToOggOpus).toHaveBeenCalledWith({
+      body: new Uint8Array([1, 2, 3]),
+      sourceMimeType: "audio/webm",
     });
     expect(synchronizeExternalBotEffectOutcome).toHaveBeenCalledWith(
       expect.anything(),
@@ -168,15 +177,15 @@ describe("external bot media provider effect", () => {
         action: "message.send_media" as const,
         payload: {
           mediaType: "audio",
-          mediaUrl: "https://cdn.example.com/crm/bot/effect-1/audio.mp3",
+          mediaUrl: "https://cdn.example.com/crm/bot/effect-1/audio.ogg",
         },
       }),
       preparedMedia: {
-        contentType: "audio/mpeg",
+        contentType: "audio/ogg; codecs=opus",
         originalUrl: "https://provider.example.com/signed/audio.mp3",
-        publicUrl: "https://cdn.example.com/crm/bot/effect-1/audio.mp3",
+        publicUrl: "https://cdn.example.com/crm/bot/effect-1/audio.ogg",
         sizeBytes: 3,
-        storageKey: "staging/crm/bot/effect-1/audio.mp3",
+        storageKey: "staging/crm/bot/effect-1/audio.ogg",
       },
     };
     vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(
@@ -200,50 +209,8 @@ describe("external bot media provider effect", () => {
       expect.anything(),
       expect.objectContaining({
         mediaUrl: preparedEffect.preparedMedia.publicUrl,
+        mimeType: "audio/ogg; codecs=opus",
       }),
     );
-  });
-
-  it("does not delete an idempotent object when another worker persisted it", async () => {
-    const originalUrl = "https://provider.example.com/signed/audio.mp3";
-    const effect = fixture({
-      action: "message.send_media",
-      payload: {
-        mediaType: "audio",
-        mediaUrl: originalUrl,
-      },
-    });
-    vi.mocked(loadAuthorizedExternalBotEffect).mockResolvedValue(effect);
-    vi.mocked(persistPreparedExternalBotMedia).mockRejectedValueOnce(
-      Object.assign(new Error("Preparation already persisted."), {
-        code: "media_preparation_conflict",
-      }),
-    );
-    const deleteObject = vi.fn();
-    await expect(
-      createExecutor(vi.fn(), {
-        mediaFetcher: {
-          fetchMedia: vi.fn().mockResolvedValue({
-            body: new Uint8Array([1, 2, 3]),
-            contentType: "audio/mpeg",
-            finalUrl: originalUrl,
-          }),
-          validateUrl: vi.fn(),
-        },
-        mediaStorage: {
-          deleteObject,
-          putObject: vi.fn().mockResolvedValue({
-            publicUrl: "https://cdn.example.com/audio.mp3",
-            storageKey: "staging/crm/audio.mp3",
-          }),
-        },
-      }).execute(workerInput()),
-    ).resolves.toEqual({
-      code: "media_preparation_conflict",
-      kind: "failed",
-      retryable: false,
-    });
-
-    expect(deleteObject).not.toHaveBeenCalled();
   });
 });

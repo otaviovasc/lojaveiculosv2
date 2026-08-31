@@ -10,6 +10,7 @@ import {
 import { createExternalBotProviderEffectExecutor } from "../infrastructure/crm/bot/externalBotProviderEffectExecutor.js";
 import { createRuntimeCrmMessagingProviderGateway } from "../infrastructure/crm/crmMessagingProviderRouter.js";
 import { createSafeCrmRemoteMediaFetcher } from "../infrastructure/crm/safeCrmRemoteMediaFetcher.js";
+import { createFfmpegCrmAudioNormalizer } from "../infrastructure/crm/ffmpegCrmAudioNormalizer.js";
 import { runExternalBotEffectWorkerOnce } from "../infrastructure/crm/bot/runExternalBotEffectWorker.js";
 import { loadAuthorizedExternalBotEffect } from "../infrastructure/db/crm/drizzleExternalBotEffectRuntime.js";
 import { createConsoleServiceLogger } from "../shared/serviceContext.js";
@@ -40,6 +41,7 @@ async function main() {
     );
     const executor = createExternalBotProviderEffectExecutor({
       audit,
+      audioNormalizer: createFfmpegCrmAudioNormalizer(),
       db,
       gateway: createRuntimeCrmMessagingProviderGateway(process.env),
       logger,

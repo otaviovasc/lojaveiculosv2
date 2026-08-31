@@ -66,6 +66,30 @@ describe("CRM messaging provider router", () => {
     expect(olx.sendText).not.toHaveBeenCalled();
   });
 
+  it("blocks non-normalized WhatsApp audio at the provider boundary", async () => {
+    const zapi = createGateway("zapi");
+    const composio = createGateway("composio");
+    const olx = createGateway("olx");
+    const router = createCrmMessagingProviderRouter(zapi, composio, olx);
+
+    await expect(
+      router.sendMedia(
+        createConnection({
+          broker: "direct",
+          channel: "whatsapp",
+          provider: "zapi",
+        }),
+        {
+          mediaType: "audio",
+          mediaUrl: "https://cdn.example.com/legacy.webm",
+          mimeType: "audio/webm",
+          phone: "5511999999999",
+        },
+      ),
+    ).rejects.toMatchObject({ code: "provider_rejected", status: 409 });
+    expect(zapi.sendMedia).not.toHaveBeenCalled();
+  });
+
   it("fails closed for OLX without calling its gateway by default", () => {
     const zapi = createGateway("zapi");
     const composio = createGateway("composio");

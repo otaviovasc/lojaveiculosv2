@@ -20,8 +20,14 @@ export type HumanAttendanceClear = {
   status: CrmConversationCycleStatus;
 };
 
+export type HumanAttendanceRelease = {
+  kind: "release";
+  reason: string;
+  source: string;
+};
+
 export type HumanAttendanceCommand =
-  HumanAttendanceClear | HumanAttendanceStart;
+  HumanAttendanceClear | HumanAttendanceRelease | HumanAttendanceStart;
 
 export function humanAttendanceUpdate(
   conversationCycle: CrmConversationCycle,
@@ -38,6 +44,7 @@ export function humanAttendanceUpdate(
 > | null {
   if (command.kind === "clear")
     return clearUpdate(conversationCycle, command, now);
+  if (command.kind === "release") return releaseUpdate(conversationCycle, now);
   const attendanceMetadata = readHumanAttendanceMetadata(conversationCycle);
   if (
     command.interventionId &&
@@ -98,6 +105,24 @@ export function humanAttendanceUpdate(
             },
     },
     status: "HUMAN_TAKEOVER",
+  };
+}
+
+function releaseUpdate(conversationCycle: CrmConversationCycle, now: Date) {
+  if (conversationCycle.humanAttendanceState !== "IN_HUMAN_SERVICE") {
+    return null;
+  }
+  return {
+    assignedUserId: null,
+    humanAttendanceChangedAt: now,
+    humanAttendanceState: "WAITING_HUMAN" as const,
+    humanAttendanceStateVersion:
+      (conversationCycle.humanAttendanceStateVersion ?? 0) + 1,
+    humanHandlingStartedAt: null,
+    humanTakeoverAt: conversationCycle.humanTakeoverAt,
+    interventionId: conversationCycle.interventionId,
+    metadata: conversationCycle.metadata,
+    status: "HUMAN_TAKEOVER" as const,
   };
 }
 

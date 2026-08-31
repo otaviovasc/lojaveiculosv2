@@ -104,6 +104,7 @@ export default defineRailway((context) => {
         context.shared.PUBLIC_STOREFRONT_CUSTOM_DOMAIN_CNAME_TARGET,
       PUBLIC_STOREFRONT_ROOT_DOMAIN:
         context.shared.PUBLIC_STOREFRONT_ROOT_DOMAIN,
+      RAILPACK_DEPLOY_APT_PACKAGES: "... ffmpeg",
       R2_ACCESS_KEY_ID: context.shared.R2_ACCESS_KEY_ID,
       R2_BUCKET_NAME: context.shared.R2_BUCKET_NAME,
       R2_DOWNLOAD_URL_EXPIRES_SECONDS: "300",

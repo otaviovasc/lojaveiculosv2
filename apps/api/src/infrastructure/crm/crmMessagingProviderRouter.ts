@@ -7,6 +7,7 @@ import {
 import { createComposioCrmMessagingGateway } from "./composioCrmMessagingGateway.js";
 import { createZapiCrmWhatsappGateway } from "./zapiCrmWhatsappGateway.js";
 import { createOlxCrmChatGateway } from "./olxCrmChatGateway.js";
+import { assertCrmAudioIsNormalized } from "../../domains/crm/messaging/crmAudioNormalization.js";
 
 export function createCrmMessagingProviderRouter(
   zapiGateway: CrmMessagingGateway,
@@ -54,8 +55,12 @@ export function createCrmMessagingProviderRouter(
       gatewayFor(connection).removeReaction(connection, input),
     sendCatalog: (connection, input) =>
       gatewayFor(connection).sendCatalog(connection, input),
-    sendMedia: (connection, input) =>
-      gatewayFor(connection).sendMedia(connection, input),
+    sendMedia: async (connection, input) => {
+      if (connection.channel === "whatsapp" && input.mediaType === "audio") {
+        assertCrmAudioIsNormalized(input.mimeType ?? null);
+      }
+      return gatewayFor(connection).sendMedia(connection, input);
+    },
     sendProduct: (connection, input) =>
       gatewayFor(connection).sendProduct(connection, input),
     sendReaction: (connection, input) =>

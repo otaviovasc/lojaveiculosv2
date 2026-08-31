@@ -20,6 +20,7 @@ export { humanAttendanceReason, humanAttendanceSource, humanAttendanceUpdate };
 export type {
   HumanAttendanceClear,
   HumanAttendanceCommand,
+  HumanAttendanceRelease,
   HumanAttendanceStart,
 } from "./humanAttendanceStateUpdate.js";
 
@@ -56,14 +57,14 @@ export async function transitionHumanAttendance(input: {
       current,
       now,
       reason:
-        input.command.kind === "start"
-          ? input.command.reason
-          : (humanAttendanceReason(current) ?? "attendance_cleared"),
+        input.command.kind === "clear"
+          ? (humanAttendanceReason(current) ?? "attendance_cleared")
+          : input.command.reason,
       repository: input.repository,
       source:
-        input.command.kind === "start"
-          ? input.command.source
-          : (humanAttendanceSource(current) ?? "unknown"),
+        input.command.kind === "clear"
+          ? (humanAttendanceSource(current) ?? "unknown")
+          : input.command.source,
       update,
     });
     if (persisted) {

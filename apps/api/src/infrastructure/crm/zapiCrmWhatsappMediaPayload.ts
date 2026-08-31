@@ -24,6 +24,7 @@ export function createZapiMediaBody(
         ? {}
         : { async: input.asyncProcessing }),
       audio: input.mediaUrl,
+      waveform: true,
     };
   }
   if (input.mediaType === "video") {

@@ -1,4 +1,5 @@
 import type { CrmMessagingGateway } from "../../../domains/crm/ports/crmMessagingGateway.js";
+import { assertCrmAudioIsNormalized } from "../../../domains/crm/messaging/crmAudioNormalization.js";
 import {
   ExternalBotCanonicalSyncIndeterminateError,
   type AuthorizedExternalBotEffect,
@@ -22,6 +23,9 @@ export function sendProviderCommand(
     });
   }
   if (effect.command.action === "message.send_media") {
+    if (effect.command.payload.mediaType === "audio") {
+      assertCrmAudioIsNormalized(effect.preparedMedia?.contentType ?? null);
+    }
     return gateway.sendMedia(connection, {
       ...(effect.command.payload.caption
         ? { caption: effect.command.payload.caption }
@@ -29,6 +33,9 @@ export function sendProviderCommand(
       mediaType: effect.command.payload.mediaType as
         "audio" | "document" | "image" | "video",
       mediaUrl: effect.command.payload.mediaUrl,
+      ...(effect.preparedMedia?.contentType
+        ? { mimeType: effect.preparedMedia.contentType }
+        : {}),
       phone: effect.providerAddress,
     });
   }

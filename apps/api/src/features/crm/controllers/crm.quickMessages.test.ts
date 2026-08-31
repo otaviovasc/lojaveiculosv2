@@ -10,6 +10,7 @@ import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConne
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
+import { createTestCrmAudioNormalizer } from "./crm.messages.sendMedia.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -26,7 +27,9 @@ describe("CRM quick messages", () => {
   });
 
   it("creates text and audio dealership templates", async () => {
+    const { normalizer } = createTestCrmAudioNormalizer();
     const app = createTestApp({
+      crmAudioNormalizer: normalizer,
       crmMediaStorage: createTestObjectStorage().storage,
     });
 
@@ -46,15 +49,15 @@ describe("CRM quick messages", () => {
     const audio = await postJson(app, "/api/v1/crm/quick-messages", {
       kind: "AUDIO",
       mediaBase64: Buffer.from("audio-bytes").toString("base64"),
-      mediaFileName: "boas-vindas.ogg",
-      mediaType: "audio/ogg",
+      mediaFileName: "boas-vindas.webm",
+      mediaType: "audio/webm; codecs=opus",
       shortcut: "/audio",
       title: "Audio de boas-vindas",
     });
     expect(audio.status).toBe(201);
     await expect(audio.json()).resolves.toMatchObject({
       kind: "AUDIO",
-      mediaType: "audio/ogg",
+      mediaType: "audio/ogg; codecs=opus",
       mediaUrl: "https://cdn.local/boas-vindas.ogg",
       shortcut: "/audio",
     });
@@ -116,9 +119,51 @@ describe("CRM quick messages", () => {
         caption: "Foto do painel.",
         mediaType: "image",
         mediaUrl: "https://cdn.local/painel.jpg",
+        mimeType: "image/jpeg",
         phone: "5511999999999",
       },
     );
+  });
+
+  it("blocks legacy WebM audio templates before provider submission", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const inbound = await seedCycle(conversationRepository);
+    const legacy = await conversationRepository.createQuickMessage({
+      content: "",
+      createdByUserId: "legacy-user" as never,
+      kind: "AUDIO",
+      mediaType: "audio/webm",
+      mediaUrl: "https://cdn.local/legacy.webm",
+      shortcut: "/legacy-audio",
+      sortOrder: 1,
+      storageKey: "crm-whatsapp/legacy.webm",
+      storeId,
+      tenantId,
+      title: "Legacy audio",
+    });
+    const sendMedia = vi.fn();
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmConversationRepository: conversationRepository,
+      crmMessagingGateway: { sendMedia },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/messages/quick/${legacy.id}`,
+      {
+        body: JSON.stringify({}),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_MESSAGING_PROVIDER_ERROR",
+    });
+    expect(sendMedia).not.toHaveBeenCalled();
   });
 });
 

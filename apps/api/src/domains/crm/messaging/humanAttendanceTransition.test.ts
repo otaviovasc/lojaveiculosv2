@@ -73,6 +73,41 @@ describe("human attendance transitions", () => {
     ).toBeNull();
   });
 
+  it("releases an active human conversation back to the waiting queue", () => {
+    const active = {
+      ...conversationCycle(),
+      assignedUserId: "assignee-1" as never,
+      humanAttendanceChangedAt: new Date("2026-08-10T14:30:00.000Z"),
+      humanAttendanceState: "IN_HUMAN_SERVICE" as const,
+      humanAttendanceStateVersion: 3,
+      humanHandlingStartedAt: new Date("2026-08-10T14:35:00.000Z"),
+      humanTakeoverAt: new Date("2026-08-10T14:30:00.000Z"),
+      interventionId: "00000000-0000-4000-8000-000000000001",
+      status: "HUMAN_TAKEOVER" as const,
+    };
+
+    expect(
+      humanAttendanceUpdate(
+        active,
+        {
+          kind: "release",
+          reason: "assignee_removed",
+          source: "crm_assignment",
+        },
+        now,
+      ),
+    ).toMatchObject({
+      assignedUserId: null,
+      humanAttendanceChangedAt: now,
+      humanAttendanceState: "WAITING_HUMAN",
+      humanAttendanceStateVersion: 4,
+      humanHandlingStartedAt: null,
+      humanTakeoverAt: active.humanTakeoverAt,
+      interventionId: active.interventionId,
+      status: "HUMAN_TAKEOVER",
+    });
+  });
+
   it("ignores a stale intervention id and clears the active generation", () => {
     const active = {
       ...conversationCycle(),

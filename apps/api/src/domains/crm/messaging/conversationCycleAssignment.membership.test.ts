@@ -37,6 +37,8 @@ describe("CRM WhatsApp assignee membership", () => {
 
       await expect(
         applyConversationCycleAssignment({
+          actorId: "actor-1",
+          actorKind: "user",
           allowReassignment: true,
           assignedAt: new Date("2026-08-18T12:00:00.000Z"),
           assignedUserId: "assignee-1",
@@ -63,6 +65,8 @@ describe("CRM WhatsApp assignee membership", () => {
 
     await expect(
       applyConversationCycleAssignment({
+        actorId: "actor-1",
+        actorKind: "user",
         allowReassignment: true,
         assignedAt: new Date("2026-08-18T12:00:00.000Z"),
         assignedUserId: "assignee-1",
@@ -83,6 +87,76 @@ describe("CRM WhatsApp assignee membership", () => {
     expect(updateConversationCycle).toHaveBeenCalledTimes(1);
     expect(updateLead).toHaveBeenCalledTimes(1);
   });
+
+  it("returns an active human conversation to the waiting queue when unassigned", async () => {
+    const assignedAt = new Date("2026-08-18T12:00:00.000Z");
+    const initial = createTestCrmConversationCycle({
+      assignedUserId: "assignee-1" as never,
+      humanAttendanceChangedAt: new Date("2026-08-18T11:59:00.000Z"),
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceStateVersion: 1,
+      humanHandlingStartedAt: new Date("2026-08-18T11:59:00.000Z"),
+      humanTakeoverAt: new Date("2026-08-18T11:58:00.000Z"),
+      interventionId: "intervention-1",
+      status: "HUMAN_TAKEOVER",
+    });
+    const waiting = createTestCrmConversationCycle({
+      ...initial,
+      assignedUserId: null,
+      humanAttendanceChangedAt: assignedAt,
+      humanAttendanceState: "WAITING_HUMAN",
+      humanAttendanceStateVersion: 2,
+      humanHandlingStartedAt: null,
+      revision: initial.revision + 1,
+    });
+    const updateConversationCycle = vi.fn();
+    const transitionAttendance = vi.fn(async () => ({
+      conversationCycle: waiting,
+      transitionCreated: true,
+    }));
+
+    await expect(
+      applyConversationCycleAssignment({
+        actorId: "actor-1",
+        actorKind: "user",
+        allowReassignment: true,
+        assignedAt,
+        assignedUserId: null,
+        initialSession: initial,
+        ports: assignmentPorts({
+          isActiveStoreMember: vi.fn(),
+          transitionAttendance,
+          updateLead: vi.fn(),
+          updateConversationCycle,
+        }),
+        scope: { storeId: "store-1", tenantId: "tenant-1" },
+      }),
+    ).resolves.toMatchObject({
+      result: "applied",
+      conversationCycle: {
+        assignedUserId: null,
+        humanAttendanceState: "WAITING_HUMAN",
+      },
+    });
+    expect(updateConversationCycle).not.toHaveBeenCalled();
+    expect(transitionAttendance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: "actor-1",
+        actorKind: "user",
+        assignedUserId: null,
+        cycleId: initial.id,
+        expectedRevision: initial.revision,
+        humanAttendanceState: "WAITING_HUMAN",
+        humanAttendanceStateVersion: 2,
+        nextState: "WAITING_HUMAN",
+        previousState: "IN_HUMAN_SERVICE",
+        reason: "assignee_removed",
+        source: "crm_assignment",
+        storeId: "store-1",
+        tenantId: "tenant-1",
+      }),
+    );
+  });
 });
 
 function assignmentPorts(input: {
@@ -91,6 +165,7 @@ function assignmentPorts(input: {
   >["isActiveStoreMember"];
   updateLead: ReturnType<typeof vi.fn>;
   updateConversationCycle: ReturnType<typeof vi.fn>;
+  transitionAttendance?: ReturnType<typeof vi.fn>;
 }): CrmServicePorts {
   return {
     crmAssigneeMembershipRepository: {
@@ -98,6 +173,7 @@ function assignmentPorts(input: {
     },
     crmRepository: { updateLead: input.updateLead } as never,
     crmConversationRepository: {
+      transitionAttendance: input.transitionAttendance,
       updateConversationCycle: input.updateConversationCycle,
     } as never,
   };

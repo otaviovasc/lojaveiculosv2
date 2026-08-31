@@ -126,6 +126,74 @@ describe("CRM cycle actions", () => {
     expect(conflictingReuse.status).toBe(409);
   });
 
+  it("unassigns an active human attendance back to the waiting queue", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const inbound = await conversationRepository.ingestMessage({
+      customerPhone: "5511666666666",
+      channel: "WHATSAPP",
+      connectionId,
+      content: "Preciso de atendimento",
+      direction: "INBOUND",
+      externalId: "inbound-active-unassign-1",
+      metadata: {},
+      providerTimestamp: new Date("2026-07-02T18:00:00.000Z"),
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
+      status: "DELIVERED",
+      storeId,
+      tenantId,
+      type: "TEXT",
+    });
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmConversationRepository: conversationRepository,
+    });
+    const cyclePath = `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}`;
+    expect(
+      (
+        await app.request(
+          `${cyclePath}/actions/assign`,
+          jsonPost({
+            assignedUserId: actorUserId,
+            commandId: "10000000-0000-4000-8000-000000000005",
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request(
+          `${cyclePath}/attendance`,
+          jsonPost({
+            commandId: "10000000-0000-4000-8000-000000000006",
+            enabled: true,
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    const response = await app.request(
+      `${cyclePath}/actions/assign`,
+      jsonPost({
+        assignedUserId: null,
+        commandId: "10000000-0000-4000-8000-000000000007",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      result: "applied",
+      cycle: {
+        assignedUserId: null,
+        humanAttendanceState: "WAITING_HUMAN",
+        humanAttendanceStateVersion: 2,
+        humanHandlingStartedAt: null,
+        status: "HUMAN_TAKEOVER",
+      },
+    });
+  });
+
   it("returns superseded when a seller loses an ordinary claim race", async () => {
     const conversationRepository = createMemoryCrmConversationRepository();
     const inbound = await conversationRepository.ingestMessage({

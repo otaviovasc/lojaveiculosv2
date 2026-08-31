@@ -1,4 +1,6 @@
 import { vi } from "vitest";
+import { Buffer } from "node:buffer";
+import type { CrmAudioNormalizer } from "../../../domains/crm/ports/crmAudioNormalizer.js";
 import type {
   ObjectStorage,
   PutStorageObjectInput,
@@ -27,5 +29,20 @@ export function createTestObjectStorage(): {
       getPublicUrl: (storageKey) => `https://cdn.local/${storageKey}`,
       putObject,
     },
+  };
+}
+
+export function createTestCrmAudioNormalizer(): {
+  normalizer: CrmAudioNormalizer;
+  normalizeToOggOpus: ReturnType<
+    typeof vi.fn<CrmAudioNormalizer["normalizeToOggOpus"]>
+  >;
+} {
+  const normalizeToOggOpus = vi.fn(
+    async () => new Uint8Array(Buffer.from("OggS-normalized-audio")),
+  );
+  return {
+    normalizer: { normalizeToOggOpus },
+    normalizeToOggOpus,
   };
 }
