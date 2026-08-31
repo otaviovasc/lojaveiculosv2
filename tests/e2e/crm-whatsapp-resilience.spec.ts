@@ -31,11 +31,34 @@ for (const viewport of ["desktop", "mobile"] satisfies QaViewport[]) {
 
     const composer = page.getByPlaceholder("Digite uma mensagem...");
     await expect(composer).toBeFocused();
+    const existingHistory = page
+      .getByLabel("Detalhe da conversa")
+      .getByText("Tenho interesse no Civic.", { exact: true });
+    await expect(existingHistory).toBeVisible();
+    if (viewport === "desktop") {
+      await expect(
+        page.getByRole("status", {
+          name: /Z-API: online.*Tempo real: sincronizado/i,
+        }),
+      ).toBeVisible();
+    }
 
     await composer.fill("Primeira mensagem em espera");
     await page.getByRole("button", { name: "Enviar mensagem" }).click();
     await expect(composer).toBeEnabled();
     await expect(composer).toBeFocused();
+    const pendingMessage = page
+      .getByLabel("Detalhe da conversa")
+      .getByText("Primeira mensagem em espera", { exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(pendingMessage).toHaveAttribute(
+      "data-message-status",
+      "pending",
+    );
+    await expect(pendingMessage.getByRole("status")).toContainText(
+      "Envio pendente",
+    );
+    await expect(existingHistory).toBeVisible();
     await expect
       .poll(() => sends.requestBodies)
       .toEqual(["Primeira mensagem em espera"]);
@@ -72,6 +95,13 @@ for (const viewport of ["desktop", "mobile"] satisfies QaViewport[]) {
       firstRequest!.serverMessageId,
       "delivered",
     );
+    const firstMessage = page.locator(
+      `[data-message-id="${firstRequest!.serverMessageId}"]`,
+    );
+    await expect(firstMessage).toHaveAttribute("data-channel", "whatsapp");
+    await expect(firstMessage).toContainText("Atendente · Seed Owner");
+    await expect(firstMessage.getByText("Ana Premium")).toHaveCount(0);
+    await expect(existingHistory).toBeVisible();
 
     const sourceCountBeforeFailure = await failLatestRealtimeStream(page);
     if (viewport === "desktop") {
@@ -125,6 +155,45 @@ for (const viewport of ["desktop", "mobile"] satisfies QaViewport[]) {
     });
     await expectMessageDelivery(page, secondRequest!.serverMessageId, "read");
     await expectMessageCount(page, "Segunda mensagem na fila", 1);
+
+    sends.failNextPermanently();
+    await composer.fill("Mensagem com falha recuperável");
+    await page.getByRole("button", { name: "Enviar mensagem" }).click();
+    const failedMessage = page
+      .getByLabel("Detalhe da conversa")
+      .getByText("Mensagem com falha recuperável", { exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(failedMessage).toHaveAttribute(
+      "data-message-status",
+      "failed",
+    );
+    await expect(failedMessage.getByRole("status")).toContainText(
+      "Falha no envio",
+    );
+    await expect(existingHistory).toBeVisible();
+    await expect(composer).toBeEnabled();
+    await expect(
+      page.getByText("Somente leitura", { exact: false }),
+    ).toHaveCount(0);
+    await failedMessage
+      .getByRole("button", { name: "Tentar novamente" })
+      .click();
+    await expect
+      .poll(() => sends.requestBodies)
+      .toEqual([
+        "Primeira mensagem em espera",
+        "Segunda mensagem na fila",
+        "Mensagem com falha recuperável",
+        "Mensagem com falha recuperável",
+      ]);
+    const retryRequest = sends.requests[3];
+    expect(retryRequest).toBeDefined();
+    await expectMessageCount(page, "Mensagem com falha recuperável", 1);
+    await expectMessageDelivery(page, retryRequest!.serverMessageId, "sent");
+    await expect(
+      page.locator(`[data-message-id="${retryRequest!.serverMessageId}"]`),
+    ).toHaveAttribute("data-channel", "whatsapp");
+    await expect(existingHistory).toBeVisible();
 
     if (viewport === "mobile") {
       await page.keyboard.press("Alt+1");
@@ -250,6 +319,7 @@ async function installQueuedSendRoute(page: Page) {
     serverMessageId: string;
   }> = [];
   let releaseFirstRequest = () => undefined;
+  let failNextPermanently = false;
   const firstRequestGate = new Promise<void>((resolve) => {
     releaseFirstRequest = resolve;
   });
@@ -274,6 +344,19 @@ async function installQueuedSendRoute(page: Page) {
       if (requestBodies.length === 1) {
         await firstRequestGate;
       }
+      if (failNextPermanently) {
+        failNextPermanently = false;
+        await route.fulfill({
+          body: JSON.stringify({
+            code: "CRM_MESSAGE_REJECTED",
+            message: "Mensagem rejeitada para o cenário de resiliência.",
+            requestId: `crm-resilience-rejected-${sequence}`,
+          }),
+          headers: { "content-type": "application/json" },
+          status: 422,
+        });
+        return;
+      }
       await route.fulfill({
         body: JSON.stringify(
           createServerMessage({
@@ -290,6 +373,9 @@ async function installQueuedSendRoute(page: Page) {
   );
 
   return {
+    failNextPermanently: () => {
+      failNextPermanently = true;
+    },
     releaseFirst: () => releaseFirstRequest(),
     requestBodies,
     requests,

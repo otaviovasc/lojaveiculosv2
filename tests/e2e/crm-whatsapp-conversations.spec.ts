@@ -154,7 +154,7 @@ test.describe("CRM WhatsApp conversations", () => {
       .getByRole("button", { name: "Abrir detalhes da conversa" })
       .click();
     await expect(detailsPanel).toBeVisible();
-    await page.getByRole("button", { name: "Fechar detalhes" }).click();
+    await detailsPanel.getByRole("button", { name: "Fechar detalhes" }).click();
     await expect(detailsPanel).toHaveCount(0);
     await page.getByRole("button", { name: "Adicionar etiqueta" }).click();
     await expect(page.getByPlaceholder("Buscar etiqueta")).toBeVisible();

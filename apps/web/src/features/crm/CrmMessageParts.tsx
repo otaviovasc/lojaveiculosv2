@@ -158,7 +158,7 @@ export function MessageList({
     }
   }, [isLoadingOlderMessages, onLoadOlder]);
 
-  if (isLoading) {
+  if (isLoading && messages.length === 0) {
     return <MessageListSkeleton />;
   }
 

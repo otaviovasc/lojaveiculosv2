@@ -25,7 +25,13 @@ type StructuredOptions = {
   api: CrmConversationApi;
   canLoadMessages: boolean;
   canSendMessages: boolean;
-  mergeCycles: (nextSessions: CrmConversationCycle[]) => void;
+  mergeCycles: (
+    nextSessions: CrmConversationCycle[],
+    options?: {
+      preserveLocalOnly?: boolean;
+      snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
+    },
+  ) => void;
   setError: (error: Error) => void;
   setIsSending: Dispatch<SetStateAction<boolean>>;
   setMessages: Dispatch<SetStateAction<CrmMessageView[]>>;

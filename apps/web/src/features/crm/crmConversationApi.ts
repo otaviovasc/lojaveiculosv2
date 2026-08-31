@@ -50,10 +50,11 @@ export function createCrmConversationApi({
   baseUrl,
   fetch,
 }: CreateCrmConversationApiOptions): CrmConversationApi {
-  const getJson = <T>(route: string) =>
+  const getJson = <T>(route: string, options?: { signal?: AbortSignal }) =>
     fetch(route, {
       headers: createProductCrmHeaders(auth),
       method: "GET",
+      ...(options?.signal ? { signal: options.signal } : {}),
     }).then(readJson<T>);
   const postJson = <T>(
     route: string,
@@ -193,11 +194,12 @@ export function createCrmConversationApi({
       ),
     listProviderEventIssues: () =>
       getJson(crmConversationRoutes.providerEventIssues(baseUrl)),
-    listMessages: (cycleId, query) =>
+    listMessages: (cycleId, query, options) =>
       getJson<unknown>(
         withQuery(crmConversationRoutes.messages(cycleId, baseUrl), [
           createCrmMessageQuery(query),
         ]),
+        options,
       ).then((payload) => crmMessageListResponseSchema.parse(payload)),
     listQuickMessages: () =>
       getJson(crmConversationRoutes.quickMessages(baseUrl)),

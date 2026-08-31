@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquareText } from "lucide-react";
 import { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import { MessageList } from "./CrmMessageParts";
@@ -180,29 +180,44 @@ export function CrmConversationWorkspace({
     return () => window.cancelAnimationFrame(frame);
   }, [activeSession?.id, detailsOpen, inbox.canSendText, routeCycleId]);
 
-  const focusPane = (pane: "chat" | "context" | "list") => {
-    setMobilePane(pane);
-    window.requestAnimationFrame(() => {
-      if (
-        pane === "chat" &&
-        activeSession &&
-        inbox.canSendText &&
-        !detailsOpen
-      ) {
-        composerRef.current?.focusInput();
-        return;
-      }
-      const selector =
-        pane === "list"
-          ? ".crm-list"
-          : pane === "chat"
-            ? ".crm-chat"
-            : ".crm-details-panel";
-      shellRef.current
-        ?.querySelector<HTMLElement>(selector)
-        ?.focus({ preventScroll: true });
-    });
-  };
+  const focusPane = useCallback(
+    (pane: "chat" | "context" | "list") => {
+      setMobilePane(pane);
+      window.requestAnimationFrame(() => {
+        if (
+          pane === "chat" &&
+          activeSession &&
+          inbox.canSendText &&
+          !detailsOpen
+        ) {
+          composerRef.current?.focusInput();
+          return;
+        }
+        const selector =
+          pane === "list"
+            ? ".crm-list"
+            : pane === "chat"
+              ? ".crm-chat"
+              : ".crm-details-panel";
+        shellRef.current
+          ?.querySelector<HTMLElement>(selector)
+          ?.focus({ preventScroll: true });
+      });
+    },
+    [activeSession, detailsOpen, inbox.canSendText],
+  );
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.altKey || !["1", "2"].includes(event.key)) return;
+      if (shellRef.current?.closest("[hidden], .hidden")) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      event.preventDefault();
+      focusPane(event.key === "1" ? "list" : "chat");
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [focusPane]);
 
   return (
     <section
@@ -210,11 +225,6 @@ export function CrmConversationWorkspace({
       className="crm-shell"
       data-details-open={detailsOpen ? "true" : "false"}
       data-mobile-pane={mobilePane}
-      onKeyDown={(event) => {
-        if (!event.altKey || !["1", "2"].includes(event.key)) return;
-        event.preventDefault();
-        focusPane(event.key === "1" ? "list" : "chat");
-      }}
       ref={shellRef}
     >
       <aside className="crm-list" aria-label="Fila de conversas" tabIndex={-1}>

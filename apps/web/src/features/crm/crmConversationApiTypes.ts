@@ -144,6 +144,7 @@ export type CrmConversationApi = {
   listMessages: (
     cycleId: CrmConversationCycleId,
     query?: Omit<CrmMessageQuery, "connectionId">,
+    options?: { signal?: AbortSignal },
   ) => Promise<CrmMessage[]>;
   listConversationCycleCounts: (
     query?: CrmConversationCycleCountsQuery,

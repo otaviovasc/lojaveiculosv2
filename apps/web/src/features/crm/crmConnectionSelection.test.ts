@@ -46,7 +46,7 @@ describe("CRM messaging connection selection", () => {
     });
   });
 
-  it("fails closed when the route is blocked or the cycle connection is missing", () => {
+  it("fails closed for a blocked route but preserves a bound active cycle", () => {
     const zapi = createConnection("zapi", "zapi");
     const blockedPolicy = policyWithChannelDefault(zapi);
     const route = blockedPolicy.channels[0];
@@ -76,7 +76,7 @@ describe("CRM messaging connection selection", () => {
         hasActiveSession: true,
         routingPolicy: policyWithChannelDefault(zapi),
       }).operationalConnectionId,
-    ).toBeNull();
+    ).toBe("missing");
   });
 
   it("selects a lone sandbox connection for read-only conversation browsing", () => {

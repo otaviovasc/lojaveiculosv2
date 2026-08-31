@@ -137,7 +137,7 @@
 .crm-status-loading,
 .crm-status-neutral {
   background: color-mix(in srgb, #f59e0b 12%, transparent);
-  color: #d97706;
+  color: var(--color-warning-soft-foreground);
   border: 1px solid color-mix(in srgb, #f59e0b 25%, transparent);
 }
 

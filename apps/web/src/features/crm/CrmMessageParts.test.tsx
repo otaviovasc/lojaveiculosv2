@@ -22,6 +22,22 @@ describe("CrmMessageParts", () => {
     }
   });
 
+  it("keeps rendered history visible during a silent refresh", () => {
+    render(
+      <MessageList
+        isLoading
+        messages={[
+          createMessage({ content: "Histórico preservado", id: "history-1" }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Histórico preservado")).toBeVisible();
+    expect(
+      screen.queryByRole("status", { name: "Carregando mensagens" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("keeps the reader's position unless they are near the end or send a message", () => {
     const scrollIntoView = vi.fn();
     Object.defineProperty(Element.prototype, "scrollIntoView", {

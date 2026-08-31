@@ -129,6 +129,27 @@ describe("crmModel", () => {
     ]);
   });
 
+  it("preserves the bound connection across incomplete cycle snapshots", () => {
+    const connection = {
+      channel: "whatsapp" as const,
+      displayName: "Z-API principal",
+      id: "connection-1",
+      provider: "zapi" as const,
+      readiness: { ready: true, reason: null, reasonCode: "ready" as const },
+      state: "active" as const,
+    };
+    const current = createSession({ connection, revision: 1 });
+    const incoming = createSession({ revision: 2 });
+    delete incoming.connection;
+
+    expect(
+      mergeCyclesFromServer([current], [incoming], {
+        preserveLocalOnly: true,
+        snapshotKind: "realtime",
+      })[0]?.connection,
+    ).toEqual(connection);
+  });
+
   it("does not regress attendance when an older realtime cycle arrives", () => {
     const current = createSession({
       humanAttendanceChangedAt: "2026-07-03T12:05:00.000Z",
@@ -271,7 +292,7 @@ describe("crmModel", () => {
         }),
         "Pessoa atribuída",
       ),
-    ).toBe("Otavio Vasconcelos");
+    ).toBe("Atendente · Otavio Vasconcelos");
     expect(
       getSenderLabel(
         createMessage({
@@ -281,7 +302,7 @@ describe("crmModel", () => {
         }),
         "Pessoa atribuída",
       ),
-    ).toBe("Usuário removido");
+    ).toBe("Atendente removido");
   });
 
   it("does not imply that a channel-origin sender is a removed CRM user", () => {
@@ -306,7 +327,7 @@ describe("crmModel", () => {
           senderType: "HUMAN",
         }),
       ),
-    ).toBe("Usuário removido");
+    ).toBe("Atendente removido");
   });
 });
 

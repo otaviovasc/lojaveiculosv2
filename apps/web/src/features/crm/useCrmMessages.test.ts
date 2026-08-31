@@ -35,6 +35,74 @@ describe("useCrmMessages", () => {
     ]);
   });
 
+  it("preserves loaded history while channel availability changes", async () => {
+    const api = createApi();
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    const props = {
+      activeSession: createSession(),
+      api,
+      mergeCycles: vi.fn(),
+      onState: (state: ReturnType<typeof useCrmMessages>) => {
+        latest = state;
+      },
+      setError: vi.fn(),
+    };
+    const rendered = render(createElement(Harness, props));
+
+    await waitFor(() =>
+      expect(latest?.messages).toEqual([
+        expect.objectContaining({ id: "message-loaded" }),
+      ]),
+    );
+
+    rendered.rerender(
+      createElement(Harness, { ...props, canLoadMessages: false }),
+    );
+
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)?.messages,
+    ).toEqual([expect.objectContaining({ id: "message-loaded" })]);
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)
+        ?.hasLoadedActiveMessages,
+    ).toBe(true);
+  });
+
+  it("ends the initial skeleton when message history times out", async () => {
+    vi.useFakeTimers();
+    const api = createApi();
+    vi.mocked(api.listMessages).mockImplementation(
+      () => new Promise<CrmMessage[]>(() => undefined),
+    );
+    const setError = vi.fn<(error: Error) => void>();
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError,
+      }),
+    );
+
+    await act(async () => Promise.resolve());
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)?.isLoadingMessages,
+    ).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_001);
+    });
+
+    expect(
+      (latest as ReturnType<typeof useCrmMessages> | null)?.isLoadingMessages,
+    ).toBe(false);
+    expect(setError.mock.calls[0]?.[0].message).toMatch(/hist.rico.*demorou/i);
+  });
+
   it("does not reconcile legacy realtime echoes by message content alone", () => {
     const localEcho = {
       ...createMessage({
@@ -663,10 +731,11 @@ describe("useCrmMessages", () => {
     });
 
     expect(api.listMessages).toHaveBeenCalledTimes(2);
-    expect(api.listMessages).toHaveBeenLastCalledWith("session_1", {
-      limit: 50,
-      offset: 0,
-    });
+    const [sessionId, pagination, options] =
+      vi.mocked(api.listMessages).mock.calls.at(-1) ?? [];
+    expect(sessionId).toBe("session_1");
+    expect(pagination).toEqual({ limit: 50, offset: 0 });
+    expect(options?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it("loads more than 50 messages and retries an older-page failure", async () => {
@@ -893,6 +962,7 @@ describe("useCrmMessages", () => {
 function Harness({
   activeSession,
   api,
+  canLoadMessages = true,
   canSendMessages = true,
   currentUser,
   mergeCycles,
@@ -901,6 +971,7 @@ function Harness({
 }: {
   activeSession: CrmConversationCycle;
   api: CrmConversationApi;
+  canLoadMessages?: boolean;
   canSendMessages?: boolean;
   currentUser?: { id: string; name: string };
   mergeCycles: (nextSessions: CrmConversationCycle[]) => void;
@@ -911,7 +982,7 @@ function Harness({
     activeSession,
     activeCycleId: activeSession.id,
     api,
-    canLoadMessages: true,
+    canLoadMessages,
     canSendMessages,
     currentUser,
     mergeCycles,

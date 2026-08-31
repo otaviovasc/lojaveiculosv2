@@ -433,7 +433,7 @@
   display: block;
   height: min(21rem, 58vw);
   max-height: 22rem;
-  object-fit: cover;
+  object-fit: contain;
   overflow: hidden;
   width: 100%;
 }
