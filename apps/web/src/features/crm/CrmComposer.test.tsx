@@ -170,6 +170,19 @@ describe("CrmComposer", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("shows an error when the recording send is rejected without throwing", async () => {
+    installMediaRecorderMock();
+    const user = userEvent.setup();
+    renderComposer({ onSendMedia: vi.fn(async () => false) });
+
+    await user.click(screen.getByRole("button", { name: "Gravar audio" }));
+    await user.click(screen.getByRole("button", { name: "Enviar audio" }));
+
+    expect(
+      await screen.findByText("Nao foi possivel enviar o audio."),
+    ).toBeVisible();
+  });
+
   it("opens dropped media in the attachment preview flow", () => {
     vi.stubGlobal("URL", {
       createObjectURL: vi.fn(() => "blob:crm-dropped-preview"),

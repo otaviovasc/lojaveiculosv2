@@ -163,4 +163,63 @@ describe("human CRM audio messages", () => {
     expect(putObject).not.toHaveBeenCalled();
     expect(sendMedia).not.toHaveBeenCalled();
   });
+
+  it("reports an unavailable audio runtime as a deterministic configuration error", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const inbound = await conversationRepository.ingestMessage({
+      customerPhone: "5511999999999",
+      channel: "WHATSAPP",
+      connectionId,
+      content: "Ola",
+      direction: "INBOUND",
+      externalId: "inbound-unavailable-audio-runtime",
+      metadata: {},
+      providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
+      status: "DELIVERED",
+      storeId,
+      tenantId,
+      type: "TEXT",
+    });
+    const sendMedia = vi.fn();
+    const app = createTestApp({
+      crmAudioNormalizer: {
+        normalizeToOggOpus: vi.fn(async () => {
+          throw new CrmAudioNormalizationError("runtime_unavailable");
+        }),
+      },
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createConfiguredZapiTestConnection({
+          id: connectionId,
+          storeId,
+          tenantId,
+        }),
+      ]),
+      crmConversationRepository: conversationRepository,
+      crmMediaStorage: createTestObjectStorage().storage,
+      crmMessagingGateway: { sendMedia },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/messages/media`,
+      {
+        body: JSON.stringify({
+          base64: Buffer.from("recorded-audio").toString("base64"),
+          fileName: "gravacao.webm",
+          mediaType: "audio",
+          mimeType: "audio/webm",
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_MESSAGING_CONFIGURATION_ERROR",
+      retryable: false,
+    });
+    expect(sendMedia).not.toHaveBeenCalled();
+  });
 });

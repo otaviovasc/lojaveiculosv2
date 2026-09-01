@@ -85,7 +85,9 @@ export function CrmComposerAudioRecorderButton({
     setIsSending(true);
     setError("");
     try {
-      await onSend(file);
+      if (!(await onSend(file))) {
+        setError("Nao foi possivel enviar o audio.");
+      }
     } catch {
       setError("Nao foi possivel enviar o audio.");
     } finally {

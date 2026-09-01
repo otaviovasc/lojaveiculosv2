@@ -4,6 +4,9 @@ export function readCrmFailedSendStatus(
   error: unknown,
 ): Extract<CrmMessage["status"], "FAILED" | "INDETERMINATE"> {
   const code = readErrorString(error, "code").toLowerCase();
+  if (code.includes("configuration_error")) {
+    return "FAILED";
+  }
   if (
     code.includes("indeterminate") ||
     code.includes("unconfirmed") ||

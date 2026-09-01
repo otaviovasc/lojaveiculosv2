@@ -39,7 +39,9 @@ export function MessageContent({
   const metadata = readRecord(message.metadata);
   const media = readRecord(metadata.media);
   const caption = readString(media.caption) ?? message.content;
-  const mediaUrl = sanitizeCrmMessageUrl(message.mediaUrl);
+  const mediaUrl =
+    sanitizeCrmMessageUrl(message.mediaUrl) ??
+    readLocalOptimisticMediaUrl(message);
   const outgoing = message.direction === "OUTBOUND";
 
   if (mediaUrl && message.type === "IMAGE") {
@@ -169,6 +171,17 @@ export function MessageContent({
   }
 
   return <p>{message.content}</p>;
+}
+
+function readLocalOptimisticMediaUrl(message: CrmMessage) {
+  const mediaUrl = readString(message.mediaUrl);
+  if (
+    !String(message.id).startsWith("local-") ||
+    !mediaUrl?.startsWith("blob:")
+  ) {
+    return undefined;
+  }
+  return mediaUrl;
 }
 
 export function QuotedMessage({

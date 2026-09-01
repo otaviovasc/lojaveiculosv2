@@ -136,23 +136,46 @@ describe("CrmMessageParts rendering", () => {
     expect(container.querySelector("#crm-msg-media-2")).toBeInTheDocument();
   });
 
-  it.each(["javascript:alert(1)", "data:text/html,unsafe"])(
-    "renders an unsafe media URL as inert content: %s",
-    (mediaUrl) => {
-      const onMediaClick = vi.fn();
-      const { container } = render(
-        <MessageContent
-          message={createMessage({ mediaUrl, type: "IMAGE" })}
-          onMediaClick={onMediaClick}
-        />,
-      );
+  it.each([
+    "javascript:alert(1)",
+    "data:text/html,unsafe",
+    "blob:untrusted-server-media",
+  ])("renders an unsafe media URL as inert content: %s", (mediaUrl) => {
+    const onMediaClick = vi.fn();
+    const { container } = render(
+      <MessageContent
+        message={createMessage({ mediaUrl, type: "IMAGE" })}
+        onMediaClick={onMediaClick}
+      />,
+    );
 
-      expect(container.querySelector("a")).toBeNull();
-      expect(container.querySelector("img")).toBeNull();
-      expect(screen.getByText("Abrir anexo")).toBeInTheDocument();
-      expect(onMediaClick).not.toHaveBeenCalled();
-    },
-  );
+    expect(container.querySelector("a")).toBeNull();
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("Abrir anexo")).toBeInTheDocument();
+    expect(onMediaClick).not.toHaveBeenCalled();
+  });
+
+  it("renders a local optimistic audio object URL as playable media", () => {
+    render(
+      <MessageContent
+        message={createMessage({
+          direction: "OUTBOUND",
+          id: "local-audio-1",
+          mediaUrl: "blob:local-audio-preview",
+          status: "PENDING",
+          type: "AUDIO",
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Reproduzir audio" }),
+    ).toBeVisible();
+    expect(document.querySelector("audio")).toHaveAttribute(
+      "src",
+      "blob:local-audio-preview",
+    );
+  });
 
   it("excludes unsafe sibling media from gallery navigation", async () => {
     const user = userEvent.setup();
