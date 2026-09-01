@@ -14,15 +14,15 @@ export function LandingAuthActions({
 }) {
   const config = useClerkAuthConfiguration();
   const primaryClass =
-    "inline-flex h-12 items-center justify-center gap-2 rounded-md bg-accent px-5 text-sm font-black text-accent-foreground shadow-lg transition hover:bg-accent-strong hover:text-accent-strong-foreground";
+    "inline-flex h-12 items-center justify-center gap-2 rounded-md bg-red-600 px-7 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-red-700 active:translate-y-px";
   const secondaryClass =
-    "inline-flex h-12 items-center justify-center rounded-md border border-white/18 px-4 text-sm font-black text-white transition hover:bg-white/10";
+    "inline-flex h-12 items-center justify-center rounded-md border border-white/20 bg-transparent px-5 text-xs font-semibold uppercase tracking-wider text-white transition hover:border-white/40 hover:bg-white/5 active:translate-y-px";
 
   if (!config.configured) {
     return (
       <>
         <Link className={primaryClass} to={config.signUpPath}>
-          {primaryLabel}
+          <span>{primaryLabel}</span>
           <ArrowRight className="size-4" />
         </Link>
         {!compact ? (
@@ -81,7 +81,7 @@ function LocalLandingAuthActions({
     return (
       <>
         <Link className={primaryClass} to={sessionPath}>
-          Abrir painel
+          <span>Abrir painel</span>
           <ArrowRight className="size-4" />
         </Link>
         {!compact ? (
@@ -96,7 +96,7 @@ function LocalLandingAuthActions({
   return (
     <>
       <Link className={primaryClass} to={signUpPath}>
-        {primaryLabel}
+        <span>{primaryLabel}</span>
         <ArrowRight className="size-4" />
       </Link>
       {!compact ? (
@@ -127,7 +127,7 @@ function ConfiguredLandingAuthActions({
     return (
       <>
         <Link className={primaryClass} to={sessionPath}>
-          Abrir painel
+          <span>Abrir painel</span>
           <ArrowRight className="size-4" />
         </Link>
         <UserAccountButton compact />
@@ -139,7 +139,7 @@ function ConfiguredLandingAuthActions({
     <>
       <SignInButton fallbackRedirectUrl={sessionPath} mode="modal" withSignUp>
         <button className={primaryClass} type="button">
-          {primaryLabel}
+          <span>{primaryLabel}</span>
           <ArrowRight className="size-4" />
         </button>
       </SignInButton>

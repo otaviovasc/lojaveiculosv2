@@ -1,48 +1,63 @@
-/* Aurora marketing identity: cinematic dark surfaces derived from the LV
-   accent. The landing is always dark, so semantic tokens are re-scoped here
-   instead of following the app theme. The warm-black base is the brand
-   carvão (#151515, approved palette) deepened with color-mix. */
-.landing-page {
-  --color-app: color-mix(in srgb, var(--color-accent) 5%, #151515);
-  --color-app-elevated: color-mix(in srgb, var(--color-accent) 9%, #2a2424);
-  --color-panel: color-mix(in srgb, var(--color-accent) 6%, #2a2424);
-  --color-text: #f4efee;
-  --color-muted: #a09898;
-  /* @theme aliases resolve var() where declared, so re-declare the ones the
-     landing utilities use to keep them on the dark palette. */
+/* Aurora marketing identity: tactile theme-aware surfaces. */
+
+/* Default / Dark theme tokens */
+.landing-page,
+:root[data-theme="dark"] .landing-page {
+  --color-app: #111111;
+  --color-app-elevated: #181818;
+  --color-panel: #1b1b1b;
+  --color-text: #f5f5f5;
+  --color-muted: #9c9c9c;
   --color-app-text: var(--color-text);
   --color-muted-foreground: var(--color-muted);
   --color-caption: var(--color-muted);
-  --color-line: color-mix(in srgb, var(--color-warm-white) 14%, transparent);
-  --color-line-strong: color-mix(
-    in srgb,
-    var(--color-warm-white) 32%,
-    transparent
-  );
-  --color-accent-soft: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  --color-accent-readable: color-mix(
-    in srgb,
-    var(--color-accent) 30%,
-    var(--color-warm-white)
-  );
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+  --color-accent-soft: rgba(220, 38, 38, 0.12);
+  --color-accent-readable: #ff5252;
   --color-accent-text: var(--color-accent-readable);
+  background-color: var(--color-app);
+  color: var(--color-text);
+  overflow-x: clip;
+  position: relative;
+}
+
+/* Light theme tokens */
+:root[data-theme="light"] .landing-page {
+  --color-app: #fbfbfb;
+  --color-app-elevated: #ffffff;
+  --color-panel: #f3f4f6;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-app-text: var(--color-text);
+  --color-muted-foreground: var(--color-muted);
+  --color-caption: var(--color-muted);
+  --color-line: rgba(0, 0, 0, 0.08);
+  --color-line-strong: rgba(0, 0, 0, 0.16);
+  --color-accent-soft: rgba(220, 38, 38, 0.08);
+  --color-accent-readable: #dc2626;
+  --color-accent-text: #dc2626;
   background-color: var(--color-app);
   color: var(--color-text);
 }
 
-.landing-glass {
-  backdrop-filter: blur(14px);
-  background: color-mix(in srgb, var(--color-warm-white) 6%, transparent);
-  border: 1px solid var(--color-line);
+/* High-Quality Resolution-Independent SVG Noise & Micro-Grid Texture */
+.landing-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(var(--color-line) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='highResNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23highResNoise)'/%3E%3C/svg%3E");
+  background-size:
+    28px 28px,
+    160px 160px;
 }
 
 .landing-hero-scrim {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-app) 24%, transparent) 0%,
-    color-mix(in srgb, var(--color-app) 62%, transparent) 52%,
-    var(--color-app) 100%
-  );
+  background: linear-gradient(180deg, transparent 0%, var(--color-app) 95%);
   inset: 0;
   pointer-events: none;
   position: absolute;
@@ -50,30 +65,12 @@
 }
 
 .landing-hero-shader {
-  background:
-    radial-gradient(
-      circle at 18% 24%,
-      color-mix(in srgb, var(--color-accent) 72%, transparent),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 72% 18%,
-      color-mix(in srgb, var(--color-blue-start) 62%, transparent),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at 78% 76%,
-      color-mix(in srgb, var(--color-green-start) 46%, transparent),
-      transparent 35%
-    ),
-    radial-gradient(
-      circle at 38% 82%,
-      color-mix(in srgb, var(--color-warning) 42%, transparent),
-      transparent 30%
-    );
+  background: radial-gradient(
+    circle at 50% 15%,
+    rgba(220, 38, 38, 0.14),
+    transparent 65%
+  );
   inset: 0;
-  mix-blend-mode: screen;
-  opacity: 0.52;
   pointer-events: none;
   position: absolute;
   z-index: -15;
@@ -89,10 +86,4 @@
 .landing-hero-shader-canvas {
   inset: 0;
   position: absolute;
-}
-
-@media (max-width: 767px) {
-  .landing-hero-shader {
-    opacity: 0.42;
-  }
 }
