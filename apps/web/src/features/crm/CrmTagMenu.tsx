@@ -1,5 +1,5 @@
 import { Check, Plus, Search, Tag, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type {
   CrmAddConversationCycleTagInput,
   CrmTag,
@@ -18,30 +18,60 @@ export function TagMenu({
   availableTags,
   disabled,
   onAdd,
+  onRemove,
 }: {
   activeTags: CrmTag[];
   availableTags: CrmTag[];
   disabled?: boolean;
   onAdd: (input: CrmAddConversationCycleTagInput) => Promise<boolean>;
+  onRemove?: (tagId: string) => Promise<boolean>;
 }) {
   const [customName, setCustomName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const activeTagIds = new Set(activeTags.map((tag) => tag.id));
-  const assignedNames = new Set(
-    activeTags.map((tag) => tag.name.toLocaleLowerCase("pt-BR")),
-  );
-  const filteredTags = availableTags.filter((tag) =>
-    tag.name
-      .toLocaleLowerCase("pt-BR")
-      .includes(search.trim().toLocaleLowerCase("pt-BR")),
-  );
+  const activeTagMap = useMemo(() => {
+    const map = new Map<string, CrmTag>();
+    for (const tag of activeTags) {
+      map.set(tag.id, tag);
+      map.set(tag.name.toLocaleLowerCase("pt-BR"), tag);
+    }
+    return map;
+  }, [activeTags]);
 
-  const addTag = async (input: CrmAddConversationCycleTagInput) => {
+  const filteredTags = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase("pt-BR");
+    if (!term) return availableTags;
+    return availableTags.filter((tag) =>
+      tag.name.toLocaleLowerCase("pt-BR").includes(term),
+    );
+  }, [availableTags, search]);
+
+  const handleToggleTag = async (tag: {
+    color?: string | null | undefined;
+    emoji?: string | null | undefined;
+    id?: string | undefined;
+    name: string;
+  }) => {
     if (disabled || isSaving) return;
+    const activeMatch =
+      (tag.id ? activeTagMap.get(tag.id) : undefined) ??
+      activeTagMap.get(tag.name.toLocaleLowerCase("pt-BR"));
+
     setIsSaving(true);
     try {
-      await onAdd(input);
+      if (activeMatch && onRemove) {
+        await onRemove(activeMatch.id);
+      } else if (!activeMatch) {
+        await onAdd({
+          ...(tag.color === undefined || tag.color === null
+            ? {}
+            : { color: tag.color }),
+          ...(tag.emoji === undefined || tag.emoji === null
+            ? {}
+            : { emoji: tag.emoji }),
+          name: tag.name,
+        });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -86,8 +116,8 @@ export function TagMenu({
         <div className="crm-tag-list" aria-label="Etiquetas">
           {filteredTags.map((tag) => {
             const assigned =
-              activeTagIds.has(tag.id) ||
-              assignedNames.has(tag.name.toLocaleLowerCase("pt-BR"));
+              activeTagMap.has(tag.id) ||
+              activeTagMap.has(tag.name.toLocaleLowerCase("pt-BR"));
             const tagColor = tag.color ?? "var(--color-muted)";
             return (
               <button
@@ -95,15 +125,7 @@ export function TagMenu({
                 className={`crm-tag-list-item${assigned ? " crm-tag-item-active" : ""}`}
                 disabled={disabled || isSaving}
                 key={tag.id}
-                onClick={() => {
-                  if (!assigned) {
-                    void addTag({
-                      ...(tag.color === undefined ? {} : { color: tag.color }),
-                      ...(tag.emoji === undefined ? {} : { emoji: tag.emoji }),
-                      name: tag.name,
-                    });
-                  }
-                }}
+                onClick={() => void handleToggleTag(tag)}
                 type="button"
               >
                 <span
@@ -139,16 +161,16 @@ export function TagMenu({
           <span className="crm-tag-section-subtitle">Sugestões rápidas</span>
           <div className="crm-tag-presets">
             {DEFAULT_TAG_OPTIONS.map((tag) => {
-              const assigned = assignedNames.has(
+              const assigned = activeTagMap.has(
                 tag.name.toLocaleLowerCase("pt-BR"),
               );
               return (
                 <button
                   aria-pressed={assigned}
                   className={`crm-tag-preset-chip${assigned ? " crm-tag-chip-active" : ""}`}
-                  disabled={disabled || isSaving || assigned}
+                  disabled={disabled || isSaving}
                   key={tag.name}
-                  onClick={() => void addTag(tag)}
+                  onClick={() => void handleToggleTag(tag)}
                   type="button"
                 >
                   <span
@@ -176,7 +198,7 @@ export function TagMenu({
           event.preventDefault();
           const name = customName.trim();
           if (!name) return;
-          void addTag({ name });
+          void handleToggleTag({ name });
           setCustomName("");
         }}
       >

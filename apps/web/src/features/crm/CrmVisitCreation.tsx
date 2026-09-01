@@ -27,13 +27,6 @@ export const visitCreationSteps = [
   { description: "Confira antes de criar", label: "Revisao" },
 ] as const;
 
-const visitPresets = [
-  { dayOffset: 0, h: 10, label: "Hoje às 10h", m: 0 },
-  { dayOffset: 0, h: 14, label: "Hoje às 14:30", m: 30 },
-  { dayOffset: 1, h: 10, label: "Amanhã às 10h", m: 0 },
-  { dayOffset: 1, h: 15, label: "Amanhã às 15h", m: 0 },
-] as const;
-
 export function VisitCreationStep({
   activeSession,
   notes,
@@ -213,7 +206,6 @@ export function VisitCreationStep({
               activeTime={timeString}
               onApplyPreset={applyQuickTime}
               onApplyTime={applyTimeOnly}
-              presets={visitPresets}
             />
 
             {/* Hidden input for programmatic accessibility / tests */}

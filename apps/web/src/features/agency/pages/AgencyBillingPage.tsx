@@ -91,11 +91,24 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
       const nextOverview = await billingApi.getOverview(agencyTenant.tenantId);
       if (generation !== requestGeneration.current) return;
       setOverview(nextOverview);
-      setSelectedStoreId((current) =>
-        nextOverview.stores.some((store) => store.storeId === current)
+      setSelectedStoreId((current) => {
+        const nextStoreId = nextOverview.stores.some(
+          (store) => store.storeId === current,
+        )
           ? current
-          : (nextOverview.stores[0]?.storeId ?? null),
-      );
+          : (nextOverview.stores[0]?.storeId ?? null);
+        const currentStore = nextOverview.stores.find(
+          (candidate) => candidate.storeId === nextStoreId,
+        );
+        setSelectedPlanId(
+          nextOverview.plans.find(
+            (plan) => plan.code === currentStore?.planCode,
+          )?.id ??
+            nextOverview.plans.find((plan) => plan.code === "free")?.id ??
+            null,
+        );
+        return nextStoreId;
+      });
     } catch (cause) {
       if (generation === requestGeneration.current)
         setError(agencyBillingErrorMessage(cause));
@@ -123,18 +136,6 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   );
 
   useEffect(() => {
-    if (!overview || !selectedStoreId) return;
-    const store = overview.stores.find(
-      (candidate) => candidate.storeId === selectedStoreId,
-    );
-    setSelectedPlanId(
-      overview.plans.find((plan) => plan.code === store?.planCode)?.id ??
-        overview.plans.find((plan) => plan.code === "free")?.id ??
-        null,
-    );
-  }, [overview, selectedStoreId]);
-
-  useEffect(() => {
     actionGeneration.current += 1;
     setHire(null);
     setPollingIndeterminate(false);
@@ -151,6 +152,16 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const selectStore = (storeId: string) => {
     actionGeneration.current += 1;
     setSelectedStoreId(storeId);
+    if (overview) {
+      const store = overview.stores.find(
+        (candidate) => candidate.storeId === storeId,
+      );
+      setSelectedPlanId(
+        overview.plans.find((plan) => plan.code === store?.planCode)?.id ??
+          overview.plans.find((plan) => plan.code === "free")?.id ??
+          null,
+      );
+    }
     const next = new URLSearchParams(searchParams);
     next.set("storeId", storeId);
     setSearchParams(next, { replace: true });

@@ -107,6 +107,8 @@ export function CrmComposerAudioRecorderButton({
           <span className="crm-rec-bar" />
           <span className="crm-rec-bar" />
           <span className="crm-rec-bar" />
+          <span className="crm-rec-bar" />
+          <span className="crm-rec-bar" />
         </div>
         <button
           aria-label="Descartar gravacao"
@@ -115,17 +117,17 @@ export function CrmComposerAudioRecorderButton({
           title="Descartar gravacao"
           type="button"
         >
-          <Trash2 />
+          <Trash2 className="size-4" />
         </button>
         <button
           aria-label="Enviar audio"
-          className="crm-icon-action crm-icon-action-active crm-send-action"
+          className="crm-icon-action crm-icon-action-active crm-send-action crm-recording-send-btn"
           onClick={stopRecording}
           title="Enviar audio"
           type="button"
         >
           <AnimatedIconSwap stateKey={isRecording} variant="pop">
-            <Send />
+            <Send className="size-4" />
           </AnimatedIconSwap>
         </button>
       </span>

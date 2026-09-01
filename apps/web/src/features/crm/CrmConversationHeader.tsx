@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   Bot,
+  CalendarCheck,
   CalendarClock,
   CheckCheck,
   ChevronDown,
@@ -20,6 +21,7 @@ import {
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { ChatAssignmentSelect } from "./CrmConversationHeaderAssignment";
+import { SessionTagRow } from "./CrmConversationHeaderTags";
 import {
   formatCycleAvatarInitials,
   formatCycleName,
@@ -43,6 +45,7 @@ export function ChatHeader({
   canMarkRead,
   canTagSessions,
   canScheduleMessages,
+  canScheduleVisits = true,
   canToggleIntervention,
   currentUserId,
   contactPresence,
@@ -57,6 +60,7 @@ export function ChatHeader({
   onOpenDetails,
   onRemoveTag,
   onScheduleMessage,
+  onScheduleVisit,
   onToggleIntervention,
   pendingActions,
   cycle,
@@ -69,6 +73,7 @@ export function ChatHeader({
   canMarkRead: boolean;
   canTagSessions: boolean;
   canScheduleMessages: boolean;
+  canScheduleVisits?: boolean;
   canToggleIntervention: boolean;
   currentUserId?: string | null;
   contactPresence?: CrmContactPresence | null;
@@ -83,6 +88,7 @@ export function ChatHeader({
   onOpenDetails: () => void;
   onRemoveTag: (tagId: string) => Promise<boolean>;
   onScheduleMessage: () => void;
+  onScheduleVisit?: () => void;
   onToggleIntervention: () => void;
   pendingActions?: Partial<
     Record<"assign" | "intervention" | "read" | "tag", boolean>
@@ -131,7 +137,11 @@ export function ChatHeader({
   const assignedToCurrentUser =
     Boolean(currentUserId) && cycle.assignedUserId === currentUserId;
   const hasSecondaryActions = Boolean(
-    canMarkRead || canTagSessions || canScheduleMessages || cycle.leadId,
+    canMarkRead ||
+    canTagSessions ||
+    canScheduleMessages ||
+    canScheduleVisits ||
+    cycle.leadId,
   );
   const tagAnchorRef =
     tagMenuSource === "mobile" ? moreActionsButtonRef : tagButtonRef;
@@ -223,6 +233,13 @@ export function ChatHeader({
               )}
             </span>
           </button>
+          {cycle.tags && cycle.tags.length > 0 ? (
+            <SessionTagRow
+              disabled={disabled || Boolean(pendingActions?.tag)}
+              onRemoveTag={onRemoveTag}
+              tags={cycle.tags}
+            />
+          ) : null}
         </div>
       </div>
       <div className="crm-header-actions">
@@ -363,7 +380,21 @@ export function ChatHeader({
                   type="button"
                 >
                   <CalendarClock />
-                  Abrir agendamentos
+                  Agendar mensagem WhatsApp
+                </button>
+              ) : null}
+              {canScheduleVisits && onScheduleVisit ? (
+                <button
+                  disabled={disabled}
+                  onClick={() => {
+                    setMoreActionsOpen(false);
+                    onScheduleVisit();
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <CalendarCheck />
+                  Agendar visita & test drive
                 </button>
               ) : null}
               {cycle.leadId ? (
@@ -394,7 +425,10 @@ export function ChatHeader({
             </FeatureAnchoredPopover>
           </div>
         ) : null}
-        {canScheduleMessages || cycle.leadId || canToggleIntervention ? (
+        {canScheduleMessages ||
+        (canScheduleVisits && onScheduleVisit) ||
+        cycle.leadId ||
+        canToggleIntervention ? (
           <div
             aria-label="Ferramentas do atendimento"
             className={
@@ -406,14 +440,26 @@ export function ChatHeader({
           >
             {canScheduleMessages ? (
               <button
-                aria-label="Abrir agendamentos"
+                aria-label="Agendar mensagem WhatsApp"
                 className="crm-icon-action crm-header-action-secondary"
                 disabled={disabled}
                 onClick={onScheduleMessage}
-                title="Agendamentos"
+                title="Agendar mensagem WhatsApp"
                 type="button"
               >
                 <CalendarClock />
+              </button>
+            ) : null}
+            {canScheduleVisits && onScheduleVisit ? (
+              <button
+                aria-label="Agendar visita ou test drive"
+                className="crm-icon-action crm-header-action-secondary"
+                disabled={disabled}
+                onClick={onScheduleVisit}
+                title="Agendar visita / test drive"
+                type="button"
+              >
+                <CalendarCheck />
               </button>
             ) : null}
             {cycle.leadId ? (
@@ -666,6 +712,7 @@ export function ChatHeader({
             if (accepted) setTagMenuOpen(false);
             return accepted;
           }}
+          onRemove={onRemoveTag}
         />
       </FeatureAnchoredPopover>
     </header>

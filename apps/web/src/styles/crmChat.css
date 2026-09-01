@@ -447,11 +447,12 @@
 }
 
 /* Tag popover menu */
-.crm-shell .crm-tag-menu-anchor {
+/* Tag popover menu */
+.crm-tag-menu-anchor {
   position: relative;
 }
 
-.crm-shell .crm-tag-popover {
+.crm-tag-popover {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 1rem;
@@ -460,11 +461,11 @@
     0 0 0 1px var(--color-line);
   padding: 0.75rem;
   width: min(21rem, calc(100vw - 1.5rem));
-  z-index: 50;
+  z-index: 1000;
   backdrop-filter: blur(16px);
 }
 
-.crm-shell .crm-tag-menu {
+.crm-tag-menu {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
@@ -498,7 +499,7 @@
   padding: 0.1rem 0.45rem;
 }
 
-.crm-shell .crm-tag-search {
+.crm-tag-search {
   align-items: center;
   background: linear-gradient(
     180deg,
@@ -519,13 +520,13 @@
     background-color 0.18s ease;
 }
 
-.crm-shell .crm-tag-search:focus-within {
+.crm-tag-search:focus-within {
   border-color: var(--color-accent);
   background: var(--color-panel);
   box-shadow: var(--shadow-focus);
 }
 
-.crm-shell .crm-tag-search input {
+.crm-tag-search input {
   background: transparent;
   border: 0;
   color: var(--color-text);
@@ -536,7 +537,7 @@
   outline: 0;
 }
 
-.crm-shell .crm-tag-search input::placeholder {
+.crm-tag-search input::placeholder {
   color: var(--color-muted);
   opacity: 0.8;
 }
@@ -561,7 +562,7 @@
   color: var(--color-text);
 }
 
-.crm-shell .crm-tag-list {
+.crm-tag-list {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -601,7 +602,7 @@
   border-color: color-mix(in srgb, var(--color-success) 25%, var(--color-line));
 }
 
-.crm-shell .crm-tag-check {
+.crm-tag-check {
   align-items: center;
   border: 1.5px solid var(--color-line);
   border-radius: 0.375rem;
@@ -615,7 +616,7 @@
   transition: all 0.15s ease;
 }
 
-.crm-shell .crm-tag-check-active {
+.crm-tag-check-active {
   background: var(--color-success-strong);
   border-color: var(--color-success-strong);
   box-shadow: 0 1px 4px
@@ -727,11 +728,10 @@
   background: color-mix(in srgb, var(--color-success) 12%, var(--color-panel));
   border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-line));
   color: var(--color-text);
-  cursor: default;
-  opacity: 0.75;
+  cursor: pointer;
 }
 
-.crm-shell .crm-tag-custom {
+.crm-tag-custom {
   border-top: 1px solid var(--color-line);
   display: flex;
   align-items: center;

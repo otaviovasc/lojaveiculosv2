@@ -9,6 +9,8 @@ import {
 import { useRef, useState } from "react";
 import { CrmSelect } from "./CrmFormControls";
 import { CrmActionDialogShell } from "./CrmActionDialogFrame";
+import { DatePickerField } from "../../components/ui/DatePickerField";
+import { TimePickerField } from "../../components/ui/TimePickerField";
 import { readCrmChannelLabel } from "./crmConnectionStatus";
 import { formatCycleName } from "./crmConversationModel";
 import type {
@@ -61,6 +63,36 @@ export function CrmAttendanceConclusionDialog({
   const [note, setNote] = useState("");
   const [attempted, setAttempted] = useState(false);
   const commandIdRef = useRef<string | null>(null);
+
+  const parsedDate =
+    customDueAt && !Number.isNaN(new Date(customDueAt).getTime())
+      ? new Date(customDueAt)
+      : null;
+
+  const timeString =
+    customDueAt && customDueAt.includes("T")
+      ? (customDueAt.split("T")[1]?.slice(0, 5) ?? "09:00")
+      : "09:00";
+
+  const handleDateChange = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const time = timeString || "09:00";
+    setCustomDueAt(`${year}-${month}-${day}T${time}`);
+    setAttempted(false);
+    commandIdRef.current = null;
+  };
+
+  const handleTimeChange = (newTime: string) => {
+    const datePart =
+      customDueAt && customDueAt.includes("T")
+        ? customDueAt.split("T")[0]
+        : new Date().toISOString().slice(0, 10);
+    setCustomDueAt(`${datePart}T${newTime}`);
+    setAttempted(false);
+    commandIdRef.current = null;
+  };
   const owner =
     cycle.assignedMember?.name ??
     assignableMembers.find(
@@ -205,20 +237,29 @@ export function CrmAttendanceConclusionDialog({
                   />
                 </label>
                 {reminderPreset === "custom" ? (
-                  <label>
-                    Data e hora do lembrete
-                    <input
-                      disabled={disabled}
-                      min={toLocalDateTimeValue(new Date())}
-                      onChange={(event) => {
-                        setCustomDueAt(event.target.value);
-                        setAttempted(false);
-                        commandIdRef.current = null;
-                      }}
-                      type="datetime-local"
-                      value={customDueAt}
-                    />
-                  </label>
+                  <div className="crm-visit-datetime-field-group">
+                    <div className="crm-visit-datepicker-block">
+                      <span className="crm-visit-field-label">
+                        Data do lembrete
+                      </span>
+                      <DatePickerField
+                        isDisabled={disabled}
+                        label="Data"
+                        minDate={new Date()}
+                        onChange={handleDateChange}
+                        value={parsedDate}
+                      />
+                    </div>
+                    <div className="crm-visit-timepicker-block">
+                      <span className="crm-visit-field-label">Horário</span>
+                      <TimePickerField
+                        isDisabled={disabled}
+                        label="Horário"
+                        onChange={handleTimeChange}
+                        value={timeString}
+                      />
+                    </div>
+                  </div>
                 ) : null}
               </div>
             ) : null}

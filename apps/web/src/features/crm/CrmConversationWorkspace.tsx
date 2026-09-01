@@ -17,6 +17,8 @@ import { CrmReadOnlyComposer } from "./CrmReadOnlyComposer";
 import { CrmNewConversationDialog } from "./CrmNewConversationDialog";
 import { CrmAttendanceConclusionDialog } from "./CrmAttendanceConclusionDialog";
 import { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsPanel";
+import { CrmScheduleMessageDialog } from "./CrmScheduleMessageDialog";
+import { CrmVisitSessionDialog } from "./CrmVisitSessionDialog";
 import type { useCrmInbox } from "./useCrmInbox";
 import type {
   CrmConversationCycleId,
@@ -47,6 +49,8 @@ export function CrmConversationWorkspace({
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [scheduleMessageOpen, setScheduleMessageOpen] = useState(false);
+  const [scheduleVisitOpen, setScheduleVisitOpen] = useState(false);
   const [newConversationOpen, setNewConversationOpen] = useState(false);
   const [newConversationDraft, setNewConversationDraft] = useState<{
     buyerName?: string;
@@ -99,6 +103,8 @@ export function CrmConversationWorkspace({
     setReplyToMessage(null);
     setDetailsOpen(false);
     setConclusionOpen(false);
+    setScheduleMessageOpen(false);
+    setScheduleVisitOpen(false);
   }, [inbox.activeCycleId, inbox.connectionFilterId]);
 
   useEffect(() => {
@@ -405,7 +411,8 @@ export function CrmConversationWorkspace({
               onRemoveTag={(tagId) =>
                 inbox.actions.removeCycleTag(activeSession.id, tagId)
               }
-              onScheduleMessage={() => onScopeChange("schedules")}
+              onScheduleMessage={() => setScheduleMessageOpen(true)}
+              onScheduleVisit={() => setScheduleVisitOpen(true)}
               onToggleIntervention={() => {
                 void inbox.actions.toggleIntervention(
                   activeSession.id,
@@ -691,6 +698,35 @@ export function CrmConversationWorkspace({
             inbox.actions.concludeCycle(activeSession.id, input)
           }
           cycle={activeSession}
+        />
+      ) : null}
+      {activeSession && scheduleMessageOpen ? (
+        <CrmScheduleMessageDialog
+          canCancel={true}
+          canCreate={inbox.permissions.canScheduleCreate}
+          canProcess={true}
+          canRead={true}
+          onCancel={(scheduledMessageId) =>
+            inbox.cancelScheduledMessage(scheduledMessageId)
+          }
+          onClose={() => setScheduleMessageOpen(false)}
+          onList={() =>
+            inbox.listScheduledMessages({ cycleId: activeSession.id })
+          }
+          onProcessDue={() => inbox.processDueScheduledMessages()}
+          onSchedule={(input) =>
+            inbox.createScheduledMessage({
+              cycleId: activeSession.id,
+              ...input,
+            })
+          }
+        />
+      ) : null}
+      {activeSession && scheduleVisitOpen ? (
+        <CrmVisitSessionDialog
+          cycle={activeSession}
+          listVehicles={inbox.listVehicles}
+          onClose={() => setScheduleVisitOpen(false)}
         />
       ) : null}
     </section>
