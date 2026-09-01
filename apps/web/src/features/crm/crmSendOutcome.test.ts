@@ -30,4 +30,13 @@ describe("CRM send outcome", () => {
       readCrmFailedSendStatus({ code: "PROVIDER_RESULT_INDETERMINATE" }),
     ).toBe("INDETERMINATE");
   });
+
+  it("treats a local messaging configuration error as failed", () => {
+    expect(
+      readCrmFailedSendStatus({
+        code: "CRM_MESSAGING_CONFIGURATION_ERROR",
+        status: 502,
+      }),
+    ).toBe("FAILED");
+  });
 });

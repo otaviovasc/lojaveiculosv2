@@ -160,6 +160,15 @@ export async function handleCrmMessaging(
       });
     }
     if (error instanceof CrmMessagingGatewayError) {
+      if (error.code === "configuration_error") {
+        return jsonApiError(context, {
+          code: "CRM_MESSAGING_CONFIGURATION_ERROR",
+          error,
+          message: error.message,
+          retryable: false,
+          status: error.status,
+        });
+      }
       if (error.status === 429) {
         const retryAfterSeconds = error.retryAfterSeconds ?? 1;
         context.header("Retry-After", String(retryAfterSeconds));

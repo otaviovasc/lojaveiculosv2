@@ -1001,13 +1001,25 @@ export function useCrmMessages({
           }
           return result.messages;
         });
-        return reconciled;
+        if (reconciled) return true;
+        const mediaRetry = message.clientId
+          ? retryableMediaRef.current.get(message.clientId)
+          : undefined;
+        if (!mediaRetry || !canSendMessages) return false;
+        return executeMediaSend(mediaRetry);
       } catch (caught) {
         setError(asError(caught));
         return false;
       }
     },
-    [api, releaseMedia, setError, updateSessionMessages],
+    [
+      api,
+      canSendMessages,
+      executeMediaSend,
+      releaseMedia,
+      setError,
+      updateSessionMessages,
+    ],
   );
   return {
     evictAllSessionMessages,

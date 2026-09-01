@@ -379,6 +379,73 @@ describe("useCrmMessages", () => {
     });
   });
 
+  it("resumes an indeterminate media send with the same idempotency key after reconciliation", async () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:uncertain-media"),
+      revokeObjectURL: vi.fn(),
+    });
+    const api = createApi();
+    vi.mocked(api.sendMedia)
+      .mockRejectedValueOnce(
+        new AppApiError({
+          code: "CRM_MESSAGING_PROVIDER_ERROR",
+          message: "unknown provider result",
+          status: 502,
+        }),
+      )
+      .mockImplementationOnce(async (input) => {
+        if (!input.idempotencyKey) throw new Error("missing idempotency key");
+        return createMessage({
+          clientRequestId: input.idempotencyKey,
+          content: "Audio",
+          direction: "OUTBOUND",
+          id: "server-resumed-media",
+          mediaUrl: "https://media.example/audio.ogg",
+          status: "SENT",
+          type: "AUDIO",
+        });
+      });
+    vi.mocked(api.listMessages).mockResolvedValueOnce([]);
+    let latest: ReturnType<typeof useCrmMessages> | null = null;
+    render(
+      createElement(Harness, {
+        activeSession: createSession(),
+        api,
+        mergeCycles: vi.fn(),
+        onState: (state) => {
+          latest = state;
+        },
+        setError: vi.fn(),
+      }),
+    );
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    await act(async () => {
+      await latest!.sendMedia({
+        file: new File(["audio"], "recording.webm", { type: "audio/webm" }),
+        mediaType: "audio",
+      });
+    });
+    await waitFor(() =>
+      expect(latest!.messages.at(-1)?.status).toBe("INDETERMINATE"),
+    );
+    const uncertain = latest!.messages.at(-1)!;
+    const firstKey = vi.mocked(api.sendMedia).mock.calls[0]?.[0].idempotencyKey;
+
+    await act(async () => {
+      await expect(latest!.reconcileMessage(uncertain)).resolves.toBe(true);
+    });
+
+    expect(api.sendMedia).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(api.sendMedia).mock.calls[1]?.[0].idempotencyKey).toBe(
+      firstKey,
+    );
+    expect(latest!.messages.at(-1)).toMatchObject({
+      id: "server-resumed-media",
+      status: "SENT",
+    });
+  });
+
   it("accepts text immediately and drains requests in FIFO order", async () => {
     const api = createApi();
     let resolveFirst: ((message: CrmMessage) => void) | undefined;

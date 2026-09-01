@@ -9,6 +9,7 @@ import {
 } from "./crm-whatsapp-test-helpers";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
+const mediaSendRoute = "**/api/v1/crm/conversation-cycles/*/messages/media";
 
 test.describe("CRM WhatsApp media", () => {
   test("previews and sends image media from the composer", async ({
@@ -34,7 +35,7 @@ test.describe("CRM WhatsApp media", () => {
     );
     expect(response.status()).toBe(201);
 
-    await page.route("**/api/v1/crm/whatsapp/send/media", async (route) => {
+    await page.route(mediaSendRoute, async (route) => {
       const body = route.request().postDataJSON() as {
         base64?: string;
         caption?: string;
@@ -124,7 +125,7 @@ test.describe("CRM WhatsApp media", () => {
     );
     expect(response.status()).toBe(201);
 
-    await page.route("**/api/v1/crm/whatsapp/send/media", async (route) => {
+    await page.route(mediaSendRoute, async (route) => {
       const body = route.request().postDataJSON() as {
         base64?: string;
         caption?: string;
