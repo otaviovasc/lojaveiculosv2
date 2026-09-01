@@ -95,7 +95,7 @@ describe("LandingAuthActions", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("link", { name: "Abrir painel" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Painel" })).toHaveAttribute(
       "href",
       "/auth/session",
     );

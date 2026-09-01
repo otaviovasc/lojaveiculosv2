@@ -101,9 +101,11 @@ describe("CrmModule", () => {
     expect(archive).toBeVisible();
     fireEvent.click(archive);
     await waitFor(() => expect(archiveLead).toHaveBeenCalledWith(lead.id));
-    expect(
-      screen.getByRole("button", { name: "Restaurar lead" }),
-    ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Restaurar lead" }),
+      ).toBeVisible(),
+    );
   });
 
   it("sends one request for each settled board search term", async () => {

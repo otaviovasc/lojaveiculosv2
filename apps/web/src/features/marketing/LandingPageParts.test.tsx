@@ -68,7 +68,7 @@ describe("public landing copy", () => {
   it("renders a product preview image instead of a background video", () => {
     const { container } = render(
       <MemoryRouter>
-        <ProductSection />
+        <HeroSection />
       </MemoryRouter>,
     );
 
