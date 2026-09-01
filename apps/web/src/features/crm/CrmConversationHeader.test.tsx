@@ -257,7 +257,7 @@ describe("CrmConversationHeader", () => {
       screen.getByRole("menuitem", { name: "Marcar como não lida" }),
     );
     expect(menu).toContainElement(
-      screen.getByRole("menuitem", { name: "Abrir agendamentos" }),
+      screen.getByRole("menuitem", { name: "Agendar mensagem WhatsApp" }),
     );
     expect(menu).toContainElement(
       screen.getByRole("menuitem", { name: "Abrir lead vinculado" }),
@@ -267,7 +267,7 @@ describe("CrmConversationHeader", () => {
     );
 
     await user.click(
-      screen.getByRole("menuitem", { name: "Abrir agendamentos" }),
+      screen.getByRole("menuitem", { name: "Agendar mensagem WhatsApp" }),
     );
     expect(onScheduleMessage).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menu")).toBeNull();
