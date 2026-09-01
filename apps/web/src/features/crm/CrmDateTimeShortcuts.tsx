@@ -7,6 +7,13 @@ export type CrmDateTimePreset = {
   m: number;
 };
 
+export const crmVisitPresets = [
+  { dayOffset: 0, h: 10, label: "Hoje às 10h", m: 0 },
+  { dayOffset: 0, h: 14, label: "Hoje às 14:30", m: 30 },
+  { dayOffset: 1, h: 10, label: "Amanhã às 10h", m: 0 },
+  { dayOffset: 1, h: 15, label: "Amanhã às 15h", m: 0 },
+] as const satisfies readonly CrmDateTimePreset[];
+
 const frequentTimeSlots = [
   { h: 9, label: "09:00", m: 0 },
   { h: 10, label: "10:30", m: 30 },
@@ -20,12 +27,12 @@ export function CrmDateTimeShortcuts({
   activeTime,
   onApplyPreset,
   onApplyTime,
-  presets,
+  presets = crmVisitPresets,
 }: {
   activeTime: string;
   onApplyPreset: (dayOffset: number, h: number, m: number) => void;
   onApplyTime: (h: number, m: number) => void;
-  presets: readonly CrmDateTimePreset[];
+  presets?: readonly CrmDateTimePreset[];
 }) {
   return (
     <>

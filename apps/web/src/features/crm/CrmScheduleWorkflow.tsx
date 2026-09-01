@@ -9,6 +9,8 @@ import {
   User,
   Zap,
 } from "lucide-react";
+import { DatePickerField } from "../../components/ui/DatePickerField";
+import { TimePickerField } from "../../components/ui/TimePickerField";
 import { CrmSelect } from "./CrmFormControls";
 import {
   CrmWorkflowFooter,
@@ -243,6 +245,30 @@ function DateTimeStep({
     onChange(adjusted.toISOString().slice(0, 16));
   };
 
+  const parsedDate =
+    value && !Number.isNaN(new Date(value).getTime()) ? new Date(value) : null;
+
+  const timeString =
+    value && value.includes("T")
+      ? (value.split("T")[1]?.slice(0, 5) ?? "09:00")
+      : "09:00";
+
+  const handleDateChange = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const time = timeString || "09:00";
+    onChange(`${year}-${month}-${day}T${time}`);
+  };
+
+  const handleTimeChange = (newTime: string) => {
+    const datePart =
+      value && value.includes("T")
+        ? value.split("T")[0]
+        : new Date().toISOString().slice(0, 10);
+    onChange(`${datePart}T${newTime}`);
+  };
+
   return (
     <CrmWorkflowPanel
       description={`Programe a data e o horário para o envio automático para ${
@@ -263,16 +289,35 @@ function DateTimeStep({
             </div>
           </div>
 
-          <label className="crm-schedule-field">
-            Data e Hora
-            <input
-              aria-label="Quando enviar"
-              min={readMinScheduleDateTime()}
-              onChange={(event) => onChange(event.target.value)}
-              type="datetime-local"
-              value={value}
-            />
-          </label>
+          <div className="crm-visit-datetime-field-group">
+            <div className="crm-visit-datepicker-block">
+              <span className="crm-visit-field-label">Data de envio</span>
+              <DatePickerField
+                label="Data"
+                minDate={new Date()}
+                onChange={handleDateChange}
+                value={parsedDate}
+              />
+            </div>
+            <div className="crm-visit-timepicker-block">
+              <span className="crm-visit-field-label">Horário</span>
+              <TimePickerField
+                label="Horário"
+                onChange={handleTimeChange}
+                value={timeString}
+              />
+            </div>
+          </div>
+
+          <input
+            aria-label="Quando enviar"
+            className="sr-only"
+            min={readMinScheduleDateTime()}
+            onChange={(event) => onChange(event.target.value)}
+            tabIndex={-1}
+            type="datetime-local"
+            value={value}
+          />
 
           <div className="crm-visit-quick-group">
             <span className="crm-visit-quick-group-label">

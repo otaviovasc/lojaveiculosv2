@@ -168,7 +168,7 @@ export function TimePickerField({
         aria-label={`${label}: ${formattedDisplay}`}
         aria-required={isRequired || undefined}
         className={cn(
-          "datepicker-field-trigger group flex min-h-11 w-full items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.98] select-none touch-target whitespace-nowrap",
+          "datepicker-field-trigger group flex min-h-11 w-full items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.98] select-none touch-target whitespace-nowrap outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:border-accent",
           "disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-card/60 disabled:active:scale-100",
           invalid && "!border-danger !bg-danger/5",
         )}
