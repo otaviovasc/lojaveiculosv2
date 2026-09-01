@@ -5,18 +5,18 @@ import { Logo } from "../../components/ui";
 import { LandingAuthActions } from "./LandingAuthActions";
 import { FeatureSection } from "./LandingFeatureSection";
 import {
-  MemphisCarBadge,
+  MemphisCarIcon,
   MemphisCheckered,
   MemphisConcentric,
   MemphisCrosshair,
   MemphisDotMatrix,
-  MemphisGaugeBadge,
-  MemphisGearBadge,
+  MemphisGaugeIcon,
+  MemphisGearIcon,
   MemphisHatch,
   MemphisPlusGrid,
   MemphisSquiggle,
   MemphisStarburst,
-  MemphisTurboBadge,
+  MemphisTurboIcon,
   MemphisZigZag,
 } from "./LandingMemphisGraphics";
 import {
@@ -32,10 +32,16 @@ export { FeatureSection };
 export function MetricsSection() {
   return (
     <section className="relative border-y border-line/60 bg-panel/30 overflow-hidden">
+      {/* Branded LV Logo Outline Pattern from logged-in shell */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-logo-pattern-subtle select-none"
+      />
+
       {/* Memphis Accent Background Graphics */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 select-none opacity-25"
+        className="pointer-events-none absolute inset-0 -z-10 select-none opacity-20"
       >
         <MemphisPlusGrid
           cols={6}
@@ -49,7 +55,7 @@ export function MetricsSection() {
         />
       </div>
 
-      <div className="mx-auto grid max-w-7xl divide-y divide-line/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="relative z-10 mx-auto grid max-w-7xl divide-y divide-line/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {landingMetrics.slice(0, 3).map(({ metric, label, text }, index) => (
           <AnimatedContent delay={0.06 * index} key={label}>
             <div className="relative flex flex-col items-center px-6 py-12 text-center sm:py-16">
@@ -169,7 +175,6 @@ export function WorkflowSection() {
               <div className="relative flex h-full flex-col justify-between border-t border-line/80 pt-6">
                 <div>
                   <div className="flex items-center justify-between">
-                    {/* Memphis Solid Red Number Badge */}
                     <span className="flex size-8 items-center justify-center rounded-sm bg-red-600 font-mono text-xs font-black text-white">
                       {step}
                     </span>
@@ -224,7 +229,7 @@ export function TestimonialsSection() {
                     <div className="relative mb-6 aspect-[16/9] w-full overflow-hidden rounded-lg border border-line bg-app">
                       <img
                         alt={`Fachada da loja parceira ${name}`}
-                        className="size-full object-contain p-2 opacity-95"
+                        className="size-full object-cover"
                         src={image}
                         loading="lazy"
                       />
@@ -254,32 +259,38 @@ export function TestimonialsSection() {
 export function FinalCta() {
   return (
     <section className="relative bg-gradient-to-b from-red-600 to-red-700 px-5 pt-4 pb-28 text-white sm:px-8 sm:pb-36 lg:px-10 overflow-hidden -mt-1">
-      {/* Automotive & Gearhead Memphis Vectors from Lucide on Solid Red */}
+      {/* Branded LV Logo Outline Pattern overlay on red */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-logo-pattern opacity-10 select-none mix-blend-overlay"
+      />
+
+      {/* Automotive & Gearhead Memphis Vectors from Lucide on Solid Red (NO card background) */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 select-none overflow-hidden"
       >
-        {/* Top Left: Car Badge & Plus Grid */}
+        {/* Top Left: Car Icon & Plus Grid */}
         <div className="absolute left-8 top-8 opacity-30">
-          <MemphisCarBadge className="size-14 text-white" />
+          <MemphisCarIcon className="size-10 text-white" />
           <MemphisPlusGrid cols={4} rows={2} className="mt-3 text-white/40" />
         </div>
 
-        {/* Top Right: Gear Badge & Concentric */}
+        {/* Top Right: Gear Icon & Concentric */}
         <div className="absolute right-10 top-6 opacity-30">
-          <MemphisGearBadge className="size-14 text-white" />
+          <MemphisGearIcon className="size-10 text-white" />
           <MemphisConcentric className="mt-2 size-36 text-white/25" />
         </div>
 
         {/* Bottom Left: Gauge & Checkered Track */}
         <div className="absolute left-10 bottom-8 opacity-35">
-          <MemphisGaugeBadge className="size-14 text-white" />
+          <MemphisGaugeIcon className="size-10 text-white" />
           <MemphisCheckered className="mt-2 text-white/40" />
         </div>
 
         {/* Bottom Right: Turbo Flame & Starburst */}
         <div className="absolute right-12 bottom-10 opacity-35">
-          <MemphisTurboBadge className="size-14 text-white" />
+          <MemphisTurboIcon className="size-10 text-white" />
           <MemphisStarburst className="mt-2 size-10 text-white/60" />
         </div>
       </div>
@@ -319,7 +330,7 @@ export function FinalCta() {
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-line/60 bg-app px-5 py-12 sm:px-8 lg:px-10">
+    <footer className="relative z-20 border-t border-line/60 bg-app px-5 py-12 sm:px-8 lg:px-10">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 md:flex-row">
         <Link
           aria-label="Loja Veículos — início"
@@ -331,9 +342,6 @@ export function LandingFooter() {
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted">
           <a className="transition hover:text-app-text" href="#funcionalidades">
             Plataforma
-          </a>
-          <a className="transition hover:text-app-text" href="#como-funciona">
-            Como Funciona
           </a>
           <a className="transition hover:text-app-text" href="#portais">
             Portais

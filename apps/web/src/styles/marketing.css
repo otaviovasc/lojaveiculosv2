@@ -3,11 +3,12 @@
 /* Default / Dark theme tokens */
 .landing-page,
 :root[data-theme="dark"] .landing-page {
-  --color-app: #111111;
-  --color-app-elevated: #181818;
-  --color-panel: #1b1b1b;
+  --color-app: #0e0e0e;
+  --color-app-elevated: #151515;
+  --color-panel: #181818;
+  --color-panel-card: #202020;
   --color-text: #f5f5f5;
-  --color-muted: #9c9c9c;
+  --color-muted: #9ca3af;
   --color-app-text: var(--color-text);
   --color-muted-foreground: var(--color-muted);
   --color-caption: var(--color-muted);
@@ -24,36 +25,105 @@
 
 /* Light theme tokens */
 :root[data-theme="light"] .landing-page {
-  --color-app: #fbfbfb;
-  --color-app-elevated: #ffffff;
+  --color-app: #ffffff;
+  --color-app-elevated: #f9fafb;
   --color-panel: #f3f4f6;
-  --color-text: #111827;
-  --color-muted: #6b7280;
+  --color-panel-card: #e5e7eb;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
   --color-app-text: var(--color-text);
   --color-muted-foreground: var(--color-muted);
   --color-caption: var(--color-muted);
-  --color-line: rgba(0, 0, 0, 0.08);
-  --color-line-strong: rgba(0, 0, 0, 0.16);
+  --color-line: rgba(15, 23, 42, 0.08);
+  --color-line-strong: rgba(15, 23, 42, 0.16);
   --color-accent-soft: rgba(220, 38, 38, 0.08);
   --color-accent-readable: #dc2626;
   --color-accent-text: #dc2626;
-  background-color: var(--color-app);
-  color: var(--color-text);
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
-/* High-Quality Resolution-Independent SVG Noise & Micro-Grid Texture */
+/* Resolution-Independent SVG Noise & Micro-Grid Texture — STRICTLY UNDER header/footer */
 .landing-page::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
   background-image:
     radial-gradient(var(--color-line) 1px, transparent 1px),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='highResNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23highResNoise)'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='highResNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23highResNoise)'/%3E%3C/svg%3E");
   background-size:
     28px 28px,
     160px 160px;
+}
+
+:root[data-theme="light"] .landing-page::before {
+  opacity: 0.4;
+}
+
+/* Atmospheric Top Ambient Beam for Hero */
+.landing-hero-ambient {
+  background: radial-gradient(
+    ellipse 85% 60% at 50% -10%,
+    rgba(220, 38, 38, 0.22) 0%,
+    rgba(220, 38, 38, 0.05) 50%,
+    transparent 80%
+  );
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: -10;
+}
+
+:root[data-theme="light"] .landing-hero-ambient {
+  background: radial-gradient(
+    ellipse 80% 50% at 50% -10%,
+    rgba(220, 38, 38, 0.08) 0%,
+    transparent 75%
+  );
+}
+
+/* Branded LV Logo Outline Pattern (from logged-in dashboard shell) */
+.bg-logo-pattern {
+  background-image: url("/icons/lv-logo-outline-dark.svg");
+  background-repeat: repeat;
+  background-size: 280px 116px;
+  background-position: -80px 0;
+  opacity: 0.04;
+}
+
+:root[data-theme="dark"] .bg-logo-pattern {
+  background-image: url("/icons/lv-logo-outline-light.svg");
+  opacity: 0.025;
+}
+
+.bg-logo-pattern-subtle {
+  background-image: url("/icons/lv-logo-outline-dark.svg");
+  background-repeat: repeat;
+  background-size: 180px 75px;
+  background-position: -50px 0;
+  opacity: 0.035;
+}
+
+:root[data-theme="dark"] .bg-logo-pattern-subtle {
+  background-image: url("/icons/lv-logo-outline-light.svg");
+  opacity: 0.02;
+}
+
+/* Authentic Full-Width Racing Stripe Livery Kerb */
+.racing-stripe-kerb {
+  height: 12px;
+  width: 100%;
+  border-top: 1px solid rgba(220, 38, 38, 0.35);
+  border-bottom: 1px solid rgba(220, 38, 38, 0.35);
+  background-image: repeating-linear-gradient(
+    135deg,
+    #dc2626 0px,
+    #dc2626 24px,
+    var(--color-panel) 24px,
+    var(--color-panel) 48px
+  );
 }
 
 .landing-hero-scrim {
@@ -64,26 +134,10 @@
   z-index: -5;
 }
 
+:root[data-theme="light"] .landing-hero-scrim {
+  display: none;
+}
+
 .landing-hero-shader {
-  background: radial-gradient(
-    circle at 50% 15%,
-    rgba(220, 38, 38, 0.14),
-    transparent 65%
-  );
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: -15;
-}
-
-.landing-hero-shader-canvas,
-.landing-hero-shader-canvas canvas {
-  display: block;
-  height: 100%;
-  width: 100%;
-}
-
-.landing-hero-shader-canvas {
-  inset: 0;
-  position: absolute;
+  display: none;
 }

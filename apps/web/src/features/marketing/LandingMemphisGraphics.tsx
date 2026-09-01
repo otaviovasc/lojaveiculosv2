@@ -12,6 +12,7 @@ import {
   Wrench,
   Zap,
 } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 export function MemphisSquiggle({
   className = "w-24 h-6 text-red-500",
@@ -56,7 +57,7 @@ export function MemphisZigZag({
 }
 
 export function MemphisPlusGrid({
-  className = "text-white/20",
+  className = "text-muted/30",
   rows = 3,
   cols = 3,
 }: {
@@ -67,7 +68,10 @@ export function MemphisPlusGrid({
   return (
     <div
       aria-hidden="true"
-      className={`inline-grid select-none gap-x-4 gap-y-3 font-mono text-xs font-bold leading-none ${className}`}
+      className={cn(
+        "inline-grid select-none gap-x-4 gap-y-3 font-mono text-xs font-bold leading-none",
+        className,
+      )}
       style={{
         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
       }}
@@ -82,7 +86,7 @@ export function MemphisPlusGrid({
 }
 
 export function MemphisDotMatrix({
-  className = "text-white/20",
+  className = "text-muted/30",
   rows = 4,
   cols = 5,
 }: {
@@ -93,7 +97,7 @@ export function MemphisDotMatrix({
   return (
     <div
       aria-hidden="true"
-      className={`inline-grid select-none gap-2 ${className}`}
+      className={cn("inline-grid select-none gap-2", className)}
       style={{
         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
       }}
@@ -126,7 +130,7 @@ export function MemphisCrosshair({
 }
 
 export function MemphisHatch({
-  className = "w-16 h-12 text-white/10",
+  className = "w-16 h-12 text-muted/20",
 }: {
   className?: string;
 }) {
@@ -161,7 +165,7 @@ export function MemphisHatch({
 }
 
 export function MemphisConcentric({
-  className = "size-28 text-white/10",
+  className = "size-28 text-muted/20",
 }: {
   className?: string;
 }) {
@@ -198,94 +202,92 @@ export function MemphisStarburst({
   );
 }
 
-/* --- Automotive & Gearhead Vector Badges from Lucide System --- */
+/* --- Pure Lucide Automotive Icons (NO Card/Box wrapper) --- */
 
-export function MemphisCarBadge({
-  className = "size-10 text-red-500",
+export function MemphisCarIcon({
+  className = "size-8 text-red-500",
 }: {
   className?: string;
 }) {
   return (
-    <div
-      aria-hidden="true"
-      className={`inline-flex items-center justify-center rounded-lg border border-current/25 bg-current/5 p-2 ${className}`}
-    >
-      <CarFront className="size-full" strokeWidth={2} />
-    </div>
+    <CarFront aria-hidden="true" className={className} strokeWidth={1.75} />
   );
 }
 
-export function MemphisGearBadge({
-  className = "size-10 text-red-500",
+export function MemphisGearIcon({
+  className = "size-8 text-red-500 animate-[spin_16s_linear_infinite]",
 }: {
   className?: string;
 }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`inline-flex items-center justify-center rounded-lg border border-current/25 bg-current/5 p-2 ${className}`}
-    >
-      <Cog
-        className="size-full animate-[spin_12s_linear_infinite]"
-        strokeWidth={2}
-      />
-    </div>
-  );
+  return <Cog aria-hidden="true" className={className} strokeWidth={1.75} />;
 }
 
-export function MemphisGaugeBadge({
-  className = "size-10 text-red-500",
+export function MemphisGaugeIcon({
+  className = "size-8 text-red-500",
 }: {
   className?: string;
 }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`inline-flex items-center justify-center rounded-lg border border-current/25 bg-current/5 p-2 ${className}`}
-    >
-      <Gauge className="size-full" strokeWidth={2} />
-    </div>
-  );
+  return <Gauge aria-hidden="true" className={className} strokeWidth={1.75} />;
 }
 
-export function MemphisTurboBadge({
-  className = "size-10 text-red-500",
+export function MemphisTurboIcon({
+  className = "size-8 text-red-500",
 }: {
   className?: string;
 }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`inline-flex items-center justify-center rounded-lg border border-current/25 bg-current/5 p-2 ${className}`}
-    >
-      <Flame className="size-full" strokeWidth={2} />
-    </div>
-  );
+  return <Flame aria-hidden="true" className={className} strokeWidth={1.75} />;
 }
 
 export function MemphisCheckered({
-  className = "w-20 h-6 text-white/30",
+  className = "w-20 h-6 text-muted/30",
 }: {
   className?: string;
 }) {
   return (
     <div
       aria-hidden="true"
-      className={`inline-grid grid-cols-6 grid-rows-2 gap-0.5 select-none ${className}`}
+      className={cn(
+        "inline-grid grid-cols-6 grid-rows-2 gap-0.5 select-none",
+        className,
+      )}
     >
       {Array.from({ length: 12 }).map((_, i) => {
         const isFilled = (Math.floor(i / 6) + (i % 6)) % 2 === 0;
         return (
           <span
             key={i}
-            className={
+            className={cn(
+              "size-2.5",
               isFilled
-                ? "size-2.5 bg-current"
-                : "size-2.5 border border-current/20 bg-transparent"
-            }
+                ? "bg-current"
+                : "border border-current/20 bg-transparent",
+            )}
           />
         );
       })}
+    </div>
+  );
+}
+
+/* --- Classic Le Mans Dual Racing Stripe Livery Divider --- */
+
+export function RacingStripeDivider({
+  className = "",
+}: {
+  className?: string;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "flex w-full select-none flex-col gap-1 border-y border-line/40 bg-app-elevated/20 py-1.5",
+        className,
+      )}
+    >
+      {/* Primary Bold Le Mans Racing Stripe */}
+      <div className="h-2 w-full bg-red-600 shadow-sm" />
+      {/* Parallel Secondary Speed Pinstripe */}
+      <div className="h-0.5 w-full bg-red-600/60" />
     </div>
   );
 }

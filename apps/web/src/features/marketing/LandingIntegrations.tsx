@@ -4,10 +4,16 @@ import { landingPortals } from "./landingContent";
 export function IntegrationsSection() {
   return (
     <section
-      className="border-y border-line/60 bg-app-elevated/30 py-12"
+      className="relative border-y border-line/60 bg-app-elevated/30 py-12 overflow-hidden"
       id="portais"
     >
-      <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+      {/* Branded Logo Pattern from logged-in design */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-logo-pattern select-none"
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <AnimatedContent>
           <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted">
             Sincronização em tempo real com os maiores portais automotivos
@@ -16,13 +22,17 @@ export function IntegrationsSection() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-8 sm:gap-14">
           {landingPortals.map((portal) => (
-            <img
+            <div
               key={portal.name}
-              alt={`Logo ${portal.name}`}
-              className="h-7 w-auto max-w-[120px] object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
-              src={portal.logo}
-              loading="lazy"
-            />
+              className="flex h-8 items-center justify-center"
+            >
+              <img
+                alt={`Logo ${portal.name}`}
+                className="h-6 sm:h-7 w-auto max-w-[130px] object-contain opacity-60 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
+                src={portal.logo}
+                loading="lazy"
+              />
+            </div>
           ))}
         </div>
       </div>

@@ -13,17 +13,18 @@ export function LandingAuthActions({
   primaryLabel: string;
 }) {
   const config = useClerkAuthConfiguration();
-  const primaryClass =
-    "inline-flex h-12 items-center justify-center gap-2 rounded-md bg-red-600 px-7 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-red-700 active:translate-y-px";
+  const primaryClass = compact
+    ? "inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-red-600 px-4 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-red-700 active:translate-y-px"
+    : "inline-flex h-12 items-center justify-center gap-2 rounded-md bg-red-600 px-7 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-red-700 active:translate-y-px";
   const secondaryClass =
-    "inline-flex h-12 items-center justify-center rounded-md border border-white/20 bg-transparent px-5 text-xs font-semibold uppercase tracking-wider text-white transition hover:border-white/40 hover:bg-white/5 active:translate-y-px";
+    "inline-flex h-12 items-center justify-center rounded-md border border-line bg-panel/40 px-5 text-xs font-semibold uppercase tracking-wider text-app-text transition hover:border-line-strong hover:bg-panel active:translate-y-px";
 
   if (!config.configured) {
     return (
       <>
         <Link className={primaryClass} to={config.signUpPath}>
           <span>{primaryLabel}</span>
-          <ArrowRight className="size-4" />
+          <ArrowRight className={compact ? "size-3.5" : "size-4"} />
         </Link>
         {!compact ? (
           <Link className={secondaryClass} to={config.signInPath}>
@@ -81,8 +82,8 @@ function LocalLandingAuthActions({
     return (
       <>
         <Link className={primaryClass} to={sessionPath}>
-          <span>Abrir painel</span>
-          <ArrowRight className="size-4" />
+          <span>Painel</span>
+          <ArrowRight className={compact ? "size-3.5" : "size-4"} />
         </Link>
         {!compact ? (
           <Link className={secondaryClass} to={signInPath}>
@@ -97,7 +98,7 @@ function LocalLandingAuthActions({
     <>
       <Link className={primaryClass} to={signUpPath}>
         <span>{primaryLabel}</span>
-        <ArrowRight className="size-4" />
+        <ArrowRight className={compact ? "size-3.5" : "size-4"} />
       </Link>
       {!compact ? (
         <Link className={secondaryClass} to={signInPath}>
@@ -127,8 +128,8 @@ function ConfiguredLandingAuthActions({
     return (
       <>
         <Link className={primaryClass} to={sessionPath}>
-          <span>Abrir painel</span>
-          <ArrowRight className="size-4" />
+          <span>Painel</span>
+          <ArrowRight className={compact ? "size-3.5" : "size-4"} />
         </Link>
         <UserAccountButton compact />
       </>
@@ -140,7 +141,7 @@ function ConfiguredLandingAuthActions({
       <SignInButton fallbackRedirectUrl={sessionPath} mode="modal" withSignUp>
         <button className={primaryClass} type="button">
           <span>{primaryLabel}</span>
-          <ArrowRight className="size-4" />
+          <ArrowRight className={compact ? "size-3.5" : "size-4"} />
         </button>
       </SignInButton>
       {!compact ? (
