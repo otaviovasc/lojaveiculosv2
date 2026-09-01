@@ -1,55 +1,39 @@
 @import "./crmScheduleWorkflow.css";
 
+/* CRM Schedules (Agendar Mensagem) - SOTA Operational Workspace */
+
 .crm-schedules-page {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: 1.25rem;
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text) 5%, transparent);
-  display: block;
+  display: grid;
+  font-family: var(--font-sans);
+  gap: 1.5rem;
   margin: 0 auto;
   max-width: 76rem;
-  overflow: hidden;
-  transition: all 0.25s ease;
+  width: 100%;
+  padding-bottom: 2rem;
 }
 
 .crm-schedules-page--create {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
   display: grid;
   gap: 1.5rem;
-  overflow: visible;
 }
 
-.crm-schedules-page--create > .crm-mode-bar {
+.crm-schedule-workflow-main {
+  min-width: 0;
+}
+
+/* Hero Header & Mode Bar */
+.crm-schedules-header,
+.crm-schedules-page > .crm-mode-bar {
   align-items: center;
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 1.25rem;
-  min-height: 4.25rem;
-  padding: 0.75rem 1.25rem;
-}
-
-.crm-schedules-page--create > .crm-mode-bar .crm-mode-bar-main {
-  flex: 1 1 auto;
-}
-
-.crm-schedules-page--create
-  > .crm-mode-bar
-  .crm-mode-bar-main
-  > span:last-child {
-  align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  color: var(--color-muted);
-  display: inline-flex;
-  font-size: var(--font-size-xs);
-  font-variant-numeric: tabular-nums;
-  min-height: 1.9rem;
-  padding: 0.25rem 0.6rem;
-  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: auto;
+  padding: 1.5rem;
 }
 
 .crm-schedule-mode-title {
@@ -58,9 +42,21 @@
   display: inline-flex;
   font-size: var(--font-size-md);
   font-weight: 800;
-  gap: 0.65rem;
+  gap: 0.75rem;
   min-width: 0;
   letter-spacing: -0.01em;
+}
+
+.crm-schedule-mode-title > svg {
+  color: #059669;
+  flex: 0 0 auto;
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+:root[data-theme="dark"] .crm-schedule-mode-title > svg,
+.dark .crm-schedule-mode-title > svg {
+  color: #34d399;
 }
 
 .crm-schedule-mode-title > span {
@@ -72,20 +68,18 @@
 .crm-schedule-mode-title small {
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 650;
-  letter-spacing: 0;
+  font-weight: 600;
 }
 
-.crm-schedule-mode-title svg {
-  color: var(--color-success-strong);
-  flex: 0 0 auto;
-  height: 1.25rem;
-  width: 1.25rem;
-}
-
-.crm-schedule-queue {
+/* Board & Toolbar */
+.crm-schedules-board {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
+  min-width: 0;
   padding: 1.5rem;
 }
 
@@ -94,66 +88,26 @@
   gap: 1rem;
 }
 
-.crm-schedule-tabs,
-.crm-schedule-toolbar-controls {
-  align-items: center;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.crm-schedule-tabs {
+.crm-schedule-filters,
+.crm-schedules-board .crm-visits-filters {
   align-items: center;
   background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: 1rem;
+  display: flex;
+  gap: 0.35rem;
   overflow-x: auto;
   padding: 0.35rem;
   scrollbar-width: none;
 }
 
-.crm-schedule-tabs::-webkit-scrollbar {
+.crm-schedule-filters::-webkit-scrollbar,
+.crm-schedules-board .crm-visits-filters::-webkit-scrollbar {
   display: none;
 }
 
-.crm-schedule-toolbar-controls {
-  flex-wrap: wrap;
-}
-
-.crm-schedule-toolbar-controls .custom-select {
-  flex: 1 1 16rem;
-  max-width: 24rem;
-  min-width: min(100%, 14rem);
-  width: auto;
-}
-
-.crm-schedule-toolbar-controls .crm-select {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  min-height: 2.5rem;
-  min-width: 0;
-}
-
-.crm-schedule-toolbar-controls .crm-select:focus-visible {
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus);
-}
-
-.crm-schedule-toolbar-controls .crm-action,
-.crm-schedules-page--create > .crm-mode-bar .crm-action {
-  overflow-wrap: normal;
-  white-space: nowrap;
-  word-break: normal;
-}
-
-.crm-schedule-toolbar-controls :is(.crm-action, .crm-icon-action) > svg,
-.crm-schedules-page--create > .crm-mode-bar .crm-action > svg,
-.crm-schedule-tabs .crm-schedule-tab svg {
-  flex: 0 0 auto;
-}
-
-.crm-schedule-tabs .crm-schedule-tab {
+.crm-schedule-filter,
+.crm-schedules-board .crm-visits-filter {
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
@@ -161,91 +115,415 @@
   color: var(--color-muted);
   display: inline-flex;
   flex: 1 1 0;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  gap: 0.55rem;
   justify-content: center;
   min-height: 2.65rem;
   min-width: 0;
   padding: 0 1rem;
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: 800;
-  gap: 0.5rem;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.crm-schedule-tabs .crm-schedule-tab > span {
-  align-items: center;
-  display: inline-flex;
-  gap: 0.5rem;
-}
-
-.crm-schedule-tabs .crm-schedule-tab:hover {
-  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+.crm-schedule-filter:hover:not(.crm-schedule-filter-active):not(
+    .crm-visits-filter-active
+  ):not([aria-selected="true"]),
+.crm-schedules-board
+  .crm-visits-filter:hover:not(.crm-visits-filter-active):not(
+    [aria-selected="true"]
+  ) {
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
   color: var(--color-text);
   transform: translateY(-1px);
 }
 
-.crm-schedule-tabs .crm-schedule-tab-active {
-  background: color-mix(
-    in srgb,
-    var(--color-crm-active-emerald) 12%,
-    var(--color-panel)
-  );
-  border-color: color-mix(
-    in srgb,
-    var(--color-crm-active-emerald) 35%,
-    var(--color-line)
-  );
-  color: var(--color-crm-active-emerald);
+.crm-schedule-filter-active,
+.crm-schedule-filter[aria-selected="true"],
+.crm-schedules-board .crm-visits-filter-active,
+.crm-schedules-board .crm-visits-filter[aria-selected="true"] {
+  background: var(--color-panel);
+  border-color: var(--color-line);
+  color: var(--color-text);
+  font-weight: 800;
 }
 
-.crm-schedule-tab small {
+.crm-schedule-filter span,
+.crm-schedules-board .crm-visits-filter span {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 9999px;
   color: var(--color-muted);
   font-size: var(--font-size-xs);
-  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  min-width: 1.25rem;
-  padding: 0.1rem 0.35rem;
+  font-weight: 800;
+  min-width: 1.5rem;
+  padding: 0.15rem 0.5rem;
   text-align: center;
+  transition: all 0.2s ease;
 }
 
-.crm-schedule-tabs .crm-schedule-tab-active small {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-foreground);
+.crm-schedule-filter-active span,
+.crm-schedule-filter[aria-selected="true"] span,
+.crm-schedules-board .crm-visits-filter-active span,
+.crm-schedules-board .crm-visits-filter[aria-selected="true"] span {
+  background: color-mix(in srgb, #10b981 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 35%, var(--color-line));
+  color: var(--color-success-soft-foreground);
 }
 
-.crm-schedule-list {
-  display: grid;
+:root[data-theme="dark"] .crm-schedule-filter-active span,
+:root[data-theme="dark"] .crm-schedule-filter[aria-selected="true"] span,
+:root[data-theme="dark"] .crm-schedules-board .crm-visits-filter-active span,
+:root[data-theme="dark"]
+  .crm-schedules-board
+  .crm-visits-filter[aria-selected="true"]
+  span,
+.dark .crm-schedule-filter-active span,
+.dark .crm-schedule-filter[aria-selected="true"] span,
+.dark .crm-schedules-board .crm-visits-filter-active span,
+.dark .crm-schedules-board .crm-visits-filter[aria-selected="true"] span {
+  color: #34d399;
+  background: color-mix(in srgb, #10b981 20%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+}
+
+.crm-schedule-tabs-inner {
+  display: flex;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.crm-schedule-toolbar-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  max-height: min(40rem, calc(100dvh - 18rem));
-  overflow-y: auto;
+}
+
+.crm-schedule-toolbar-controls :is(.crm-action, .crm-icon-action) > svg {
+  flex-shrink: 0;
+  height: 0.9375rem;
+  width: 0.9375rem;
+}
+
+.crm-schedule-toolbar-controls .crm-select {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  color: var(--color-text);
+  min-height: 2.5rem;
+  min-width: min(100%, 18rem);
+  flex: 1 1 16rem;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.crm-schedule-filter-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.crm-schedule-filter-row .feature-select {
+  max-width: 24rem;
+  width: 100%;
+}
+
+.crm-schedule-target-tabs {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 0.25rem;
 }
 
-.crm-schedule-row {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: 0.875rem;
-  padding: 1rem 1.25rem;
-  display: grid;
-  gap: 0.75rem;
-  box-shadow: 0 2px 8px -2px
-    color-mix(in srgb, var(--color-text) 6%, transparent);
+.crm-schedule-target-tab {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.45rem;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.75rem;
+  box-shadow: none;
   transition: all 0.18s ease;
 }
 
-.crm-schedule-row:hover {
-  border-color: var(--color-success);
+.crm-schedule-target-tab:hover:not(.is-active):not([aria-selected="true"]) {
+  color: var(--color-text);
+}
+
+.crm-schedule-target-tab.is-active,
+.crm-schedule-target-tab[aria-selected="true"] {
+  background: var(--color-panel);
+  border-color: var(--color-line);
+  color: var(--color-crm-active-emerald);
+  font-weight: 800;
+}
+
+.crm-schedule-target-tab svg {
+  height: 0.95rem;
+  width: 0.95rem;
+  flex-shrink: 0;
+}
+
+.crm-visits-group > header .crm-visit-action-btn.ml-auto {
+  margin-left: auto;
+}
+
+/* Timeline Cards */
+.crm-schedule-row[data-status="pending"] .crm-visit-marker {
+  background: #0081fb;
+  box-shadow:
+    0 0 0 4px var(--color-panel),
+    0 0 0 6px color-mix(in srgb, #0081fb 30%, transparent);
+}
+
+.crm-schedule-row[data-status="sending"] .crm-visit-marker {
+  background: #f59e0b;
+  box-shadow:
+    0 0 0 4px var(--color-panel),
+    0 0 0 6px color-mix(in srgb, #f59e0b 30%, transparent);
+}
+
+.crm-schedule-row[data-status="sent"] .crm-visit-marker {
+  background: #10b981;
+  box-shadow:
+    0 0 0 4px var(--color-panel),
+    0 0 0 6px color-mix(in srgb, #10b981 30%, transparent);
+}
+
+.crm-schedule-row[data-status="failed"] .crm-visit-marker,
+.crm-schedule-row[data-status="cancelled"] .crm-visit-marker {
+  background: #ef4444;
+  box-shadow:
+    0 0 0 4px var(--color-panel),
+    0 0 0 6px color-mix(in srgb, #ef4444 30%, transparent);
+}
+
+.crm-schedule-status-badge[data-status="pending"] {
+  background: color-mix(in srgb, #0081fb 12%, transparent);
+  border: 1px solid color-mix(in srgb, #0081fb 28%, transparent);
+  color: #0081fb;
+}
+
+.crm-schedule-status-badge[data-status="sending"] {
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  border: 1px solid color-mix(in srgb, #f59e0b 32%, transparent);
+  color: #d97706;
+}
+
+:root[data-theme="dark"] .crm-schedule-status-badge[data-status="sending"],
+.dark .crm-schedule-status-badge[data-status="sending"] {
+  color: #fbbf24;
+}
+
+.crm-schedule-status-badge[data-status="sent"] {
+  background: color-mix(in srgb, #10b981 14%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 32%, transparent);
+  color: #059669;
+}
+
+:root[data-theme="dark"] .crm-schedule-status-badge[data-status="sent"],
+.dark .crm-schedule-status-badge[data-status="sent"] {
+  color: #34d399;
+}
+
+.crm-schedule-status-badge[data-status="failed"] {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border: 1px solid color-mix(in srgb, #ef4444 28%, transparent);
+  color: #ef4444;
+}
+
+.crm-schedule-status-badge[data-status="cancelled"] {
+  background: color-mix(in srgb, var(--color-line) 60%, transparent);
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+
+.crm-schedule-recipients-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.2rem 0;
+}
+
+.crm-schedule-session-chip,
+.crm-schedule-phone-chip {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.crm-schedule-session-chip svg,
+.crm-schedule-phone-chip svg {
+  color: #059669;
+  height: 0.85rem;
+  width: 0.85rem;
+  flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .crm-schedule-session-chip svg,
+:root[data-theme="dark"] .crm-schedule-phone-chip svg,
+.dark .crm-schedule-session-chip svg,
+.dark .crm-schedule-phone-chip svg {
+  color: #34d399;
+}
+
+.crm-schedule-lead-link {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.625rem;
+  color: #059669;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+:root[data-theme="dark"] .crm-schedule-lead-link,
+.dark .crm-schedule-lead-link {
+  color: #34d399;
+}
+
+.crm-schedule-lead-link:hover {
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  color: var(--color-crm-active-emerald);
   transform: translateY(-1px);
 }
 
+.crm-schedule-message-box {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-left: 3px solid #10b981;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+  line-height: 1.55;
+  margin: 0.35rem 0 0;
+  padding: 0.75rem 1rem;
+}
+
+.crm-schedule-message-box p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.crm-schedule-error-box {
+  background: color-mix(in srgb, #ef4444 10%, var(--color-app));
+  border: 1px solid color-mix(in srgb, #ef4444 30%, var(--color-line));
+  border-radius: 0.5rem;
+  color: #ef4444;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.crm-schedule-confirm {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.crm-schedule-confirm span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+}
+
+/* Week Grid Schedule Card */
+.crm-week-schedule-card .crm-week-schedule-recipient {
+  align-items: center;
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.35rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-week-schedule-card .crm-week-schedule-recipient svg {
+  color: #059669;
+  height: 0.85rem;
+  width: 0.85rem;
+  flex-shrink: 0;
+}
+
+:root[data-theme="dark"]
+  .crm-week-schedule-card
+  .crm-week-schedule-recipient
+  svg,
+.dark .crm-week-schedule-card .crm-week-schedule-recipient svg {
+  color: #34d399;
+}
+
 @media (max-width: 640px) {
-  .crm-schedule-tabs .crm-schedule-tab {
-    flex: 0 0 auto;
-    min-width: max-content;
+  .crm-schedules-header,
+  .crm-schedules-page > .crm-mode-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-schedule-toolbar-controls .crm-select {
+    min-width: 100%;
+  }
+
+  .crm-schedule-confirm {
+    width: 100%;
+    justify-content: space-between;
   }
 }

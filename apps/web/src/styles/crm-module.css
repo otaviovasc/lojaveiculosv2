@@ -19,6 +19,7 @@
 @import "./crmConnectionAdminResponsive.css";
 @import "./crmVisits.css";
 @import "./crmVisitsTimeline.css";
+@import "./crmVisitsCalendar.css";
 @import "./crmIntegrations.css";
 @import "./crmBotForm.css";
 @import "./crmIntegrationActions.css";

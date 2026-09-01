@@ -90,15 +90,70 @@
   background: var(--color-muted);
 }
 
-.crm-search input,
-.crm-composer textarea {
-  background: transparent;
-  border: 0;
+:root {
+  --crm-input-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  --crm-input-border: 1px solid
+    color-mix(in srgb, var(--color-line) 92%, transparent);
+  --crm-input-shadow: 0 1px 2px 0
+    color-mix(in srgb, var(--color-text) 5%, transparent) inset;
+}
+
+.crm-page
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input),
+.crm-page textarea:not(.crm-raw-input),
+.crm-page select:not(.crm-raw-input),
+.crm-shell
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input),
+.crm-shell textarea:not(.crm-raw-input),
+.crm-shell select:not(.crm-raw-input),
+.crm-input,
+.crm-select,
+.crm-textarea {
+  background: var(--crm-input-bg);
+  border: var(--crm-input-border);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: none;
   color: var(--color-text);
-  font: inherit;
-  min-width: 0;
-  outline: 0;
-  width: 100%;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-page
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input):focus,
+.crm-page textarea:not(.crm-raw-input):focus,
+.crm-page select:not(.crm-raw-input):focus,
+.crm-shell
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input):focus,
+.crm-shell textarea:not(.crm-raw-input):focus,
+.crm-shell select:not(.crm-raw-input):focus,
+.crm-input:focus,
+.crm-select:focus,
+.crm-textarea:focus {
+  background: var(--color-panel);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.crm-search-field input,
+.crm-bot-input-wrap input,
+.crm-tag-custom-input-wrap input,
+.crm-tag-search input,
+.crm-campaign-search input {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 .crm-page :is(.crm-cycle-chip, .crm-cycle-status) {

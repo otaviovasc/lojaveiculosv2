@@ -1,5 +1,13 @@
-import type { ReactNode } from "react";
-import { CarFront, Check, Clock, Link2, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import {
+  CalendarCheck,
+  CarFront,
+  Check,
+  CheckCircle2,
+  Clock,
+  Link2,
+  X,
+} from "lucide-react";
 import type { CrmVehicleOption } from "./crmConversationExtraTypes";
 import type { CrmConversationCycle } from "./crmConversationTypes";
 import type {
@@ -21,10 +29,10 @@ export type CrmVisitsPageProps = {
 
 export const visitViewLabels: Record<VisitView, string> = {
   today: "Hoje",
-  tomorrow: "Amanha",
-  upcoming: "Proximas",
+  tomorrow: "Amanhã",
+  upcoming: "Próximas",
   overdue: "Atrasadas",
-  completed: "Concluidas",
+  completed: "Finalizadas",
 };
 
 export const visitViewOrder = Object.keys(visitViewLabels) as VisitView[];
@@ -53,10 +61,10 @@ export function VisitBoard({
   return (
     <section className="crm-visits-board">
       {error ? <p className="crm-visits-error">{error}</p> : null}
-      <div className="crm-visits-filters">
+      <div className="crm-visits-filters" role="tablist">
         {visitViewOrder.map((view) => (
           <button
-            aria-pressed={activeView === view}
+            aria-selected={activeView === view}
             className={
               activeView === view
                 ? "crm-visits-filter crm-visits-filter-active"
@@ -64,6 +72,7 @@ export function VisitBoard({
             }
             key={view}
             onClick={() => onViewChange(view)}
+            role="tab"
             type="button"
           >
             {visitViewLabels[view]}
@@ -105,13 +114,13 @@ export function VisitBoard({
 
 function VisitSkeleton() {
   return (
-    <div className="crm-visit-row crm-visit-skeleton flex flex-col gap-3">
-      <div className="flex justify-between items-center">
-        <div className="crm-skeleton h-5 w-28 rounded-md" />
-        <div className="crm-skeleton h-5 w-20 rounded-md" />
+    <div className="crm-visit-skeleton">
+      <div className="flex justify-between items-center gap-2">
+        <div className="crm-skeleton-bar h-5 w-28" />
+        <div className="crm-skeleton-bar h-5 w-20 rounded-full" />
       </div>
-      <div className="crm-skeleton h-5 w-48 rounded-md" />
-      <div className="crm-skeleton h-4 w-32 rounded-md" />
+      <div className="crm-skeleton-bar h-6 w-44" />
+      <div className="crm-skeleton-bar h-4 w-32" />
     </div>
   );
 }
@@ -140,17 +149,22 @@ export function VisitRow({
   onStatus: (visit: CrmLeadVisit, status: LeadVisitStatus) => void;
   visit: CrmLeadVisit;
 }) {
+  const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
+  const isOpen = visit.status === "scheduled" || visit.status === "confirmed";
+
   return (
-    <article className="crm-visit-row">
+    <article className="crm-visit-row" data-status={visit.status}>
       <span aria-hidden="true" className="crm-visit-marker" />
       <div className="crm-visit-row-main">
         <div className="crm-visit-row-copy">
           <div className="crm-visit-badges">
-            <span>
-              <Clock aria-hidden="true" className="size-3" />
+            <span className="crm-visit-time-pill">
+              <Clock aria-hidden="true" />
               {formatTime(visit.scheduledAt)}
             </span>
-            <span>{statusLabel(visit.status)}</span>
+            <span className="crm-visit-status-badge" data-status={visit.status}>
+              {statusLabel(visit.status)}
+            </span>
           </div>
           <strong>{formatDate(visit.scheduledAt)}</strong>
           <a href={`#/crm?surface=leads&leadId=${visit.leadId}`}>
@@ -158,32 +172,97 @@ export function VisitRow({
             Lead vinculado
           </a>
           {visit.vehicleTitle ? (
-            <p>
-              <CarFront aria-hidden="true" className="mr-1 inline size-3.5" />
-              {visit.vehicleTitle}
-            </p>
+            <div className="crm-visit-vehicle-chip">
+              <CarFront aria-hidden="true" />
+              <span>{visit.vehicleTitle}</span>
+            </div>
           ) : null}
-          {visit.notes ? <p>{visit.notes}</p> : null}
+          {visit.notes ? (
+            <p className="crm-visit-notes-box">{visit.notes}</p>
+          ) : null}
         </div>
         <div className="crm-visit-actions">
-          <IconStatusButton
-            disabled={!canManage || isSaving}
-            icon={<Check aria-hidden="true" className="size-4" />}
-            label="Confirmar visita"
-            onClick={() => onStatus(visit, "confirmed")}
-          />
-          <IconStatusButton
-            disabled={!canManage || isSaving}
-            icon={<Clock aria-hidden="true" className="size-4" />}
-            label="Concluir visita"
-            onClick={() => onStatus(visit, "completed")}
-          />
-          <IconStatusButton
-            disabled={!canManage || isSaving}
-            icon={<X aria-hidden="true" className="size-4" />}
-            label="Cancelar visita"
-            onClick={() => onStatus(visit, "cancelled")}
-          />
+          {visit.status === "scheduled" ? (
+            <button
+              aria-label="Confirmar visita"
+              className="crm-visit-action-btn"
+              data-action="confirm"
+              disabled={!canManage || isSaving}
+              onClick={() => onStatus(visit, "confirmed")}
+              title="Confirmar visita"
+              type="button"
+            >
+              <Check aria-hidden="true" />
+              <span>Confirmar</span>
+            </button>
+          ) : null}
+          {visit.status === "confirmed" ? (
+            <>
+              <button
+                aria-label="Concluir visita"
+                className="crm-visit-action-btn"
+                data-action="complete"
+                disabled={!canManage || isSaving}
+                onClick={() => onStatus(visit, "completed")}
+                title="Concluir visita"
+                type="button"
+              >
+                <CheckCircle2 aria-hidden="true" />
+                <span>Concluir</span>
+              </button>
+              <button
+                aria-label="Marcar ausência"
+                className="crm-visit-action-btn"
+                disabled={!canManage || isSaving}
+                onClick={() => onStatus(visit, "no_show")}
+                title="Cliente não compareceu"
+                type="button"
+              >
+                <X aria-hidden="true" />
+                <span>Não compareceu</span>
+              </button>
+            </>
+          ) : null}
+          {isOpen ? (
+            isConfirmingCancel ? (
+              <>
+                <button
+                  aria-label="Confirmar cancelamento da visita"
+                  className="crm-visit-action-btn"
+                  data-action="cancel"
+                  disabled={!canManage || isSaving}
+                  onClick={() => onStatus(visit, "cancelled")}
+                  type="button"
+                >
+                  <Check aria-hidden="true" />
+                  <span>Confirmar cancelamento</span>
+                </button>
+                <button
+                  aria-label="Manter visita"
+                  className="crm-visit-action-btn"
+                  disabled={isSaving}
+                  onClick={() => setIsConfirmingCancel(false)}
+                  type="button"
+                >
+                  <X aria-hidden="true" />
+                  <span>Voltar</span>
+                </button>
+              </>
+            ) : (
+              <button
+                aria-label="Cancelar visita"
+                className="crm-visit-action-btn"
+                data-action="cancel"
+                disabled={!canManage || isSaving}
+                onClick={() => setIsConfirmingCancel(true)}
+                title="Cancelar visita"
+                type="button"
+              >
+                <X aria-hidden="true" />
+                <span>Cancelar</span>
+              </button>
+            )
+          ) : null}
         </div>
       </div>
     </article>
@@ -191,35 +270,25 @@ export function VisitRow({
 }
 
 export function VisitEmpty({ label }: { label: string }) {
-  return <div className="crm-visit-empty">{label}</div>;
-}
-
-function IconStatusButton(props: {
-  disabled: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
   return (
-    <button
-      aria-label={props.label}
-      className="crm-action crm-action-secondary"
-      disabled={props.disabled}
-      onClick={props.onClick}
-      title={props.label}
-      type="button"
-    >
-      {props.icon}
-    </button>
+    <div className="crm-visit-empty">
+      <span aria-hidden="true" className="crm-visit-empty-icon">
+        <CalendarCheck />
+      </span>
+      <strong>{label}</strong>
+      <p>
+        Agendamentos presenciais criados ou vinculados a leads aparecerão aqui.
+      </p>
+    </div>
   );
 }
 
 function statusLabel(status: LeadVisitStatus) {
   const labels: Record<LeadVisitStatus, string> = {
     cancelled: "Cancelada",
-    completed: "Concluida",
+    completed: "Concluída",
     confirmed: "Confirmada",
-    no_show: "Nao compareceu",
+    no_show: "Não compareceu",
     scheduled: "Agendada",
   };
   return labels[status];

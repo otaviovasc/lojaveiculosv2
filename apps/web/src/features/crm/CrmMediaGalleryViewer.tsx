@@ -132,7 +132,22 @@ export function CrmMediaGalleryViewer({
             </div>
           </header>
 
-          <main className="crm-gallery-stage">
+          <main
+            className="crm-gallery-stage"
+            onClick={(e) => {
+              if (
+                e.target === e.currentTarget ||
+                (e.target as HTMLElement).classList.contains(
+                  "crm-gallery-stage",
+                ) ||
+                (e.target as HTMLElement).classList.contains(
+                  "crm-gallery-content",
+                )
+              ) {
+                onClose();
+              }
+            }}
+          >
             {mediaList.length > 1 ? (
               <button
                 aria-label="Midia anterior"
@@ -151,6 +166,11 @@ export function CrmMediaGalleryViewer({
                   ? "crm-gallery-content crm-gallery-content-zoomed"
                   : "crm-gallery-content"
               }
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  onClose();
+                }
+              }}
             >
               {isVideo ? (
                 <video
@@ -159,6 +179,7 @@ export function CrmMediaGalleryViewer({
                   className="crm-gallery-video"
                   controls
                   key={currentMedia.url}
+                  onClick={(e) => e.stopPropagation()}
                   playsInline
                   src={currentMedia.url}
                 />
@@ -167,13 +188,21 @@ export function CrmMediaGalleryViewer({
                   alt={currentMedia.caption || "Imagem da conversa"}
                   className="crm-gallery-image"
                   key={currentMedia.url}
-                  onClick={() => setIsZoomed((z) => !z)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsZoomed((z) => !z);
+                  }}
                   src={currentMedia.url}
                 />
               )}
 
               {currentMedia.caption ? (
-                <p className="crm-gallery-caption">{currentMedia.caption}</p>
+                <p
+                  className="crm-gallery-caption"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {currentMedia.caption}
+                </p>
               ) : null}
             </div>
 

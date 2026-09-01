@@ -594,7 +594,30 @@ export function ChatHeader({
             onClick={() => {
               setPromptOpen(false);
               onInsertPrompt?.(
-                `Resumo: ${cycle.vehicle?.title ?? "Negociação"} — ${cycle.unreadCount ? `${cycle.unreadCount} não lidas` : "em andamento"}. Próximo passo: confirmar visita/test drive.`,
+                `Olá! Gostaria de convidar você para conhecer de perto o ${cycle.vehicle?.title ?? "veículo"} e fazer um test drive exclusivo aqui na loja. Qual período fica melhor para você: manhã ou tarde?`,
+              );
+            }}
+          >
+            <CalendarClock className="size-4" /> Convite para visita & test
+            drive
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPromptOpen(false);
+              onInsertPrompt?.(
+                `Consigo simular condições especiais para o ${cycle.vehicle?.title ?? "veículo"} com entrada facilitada e parcelas que cabem no seu bolso, além de aceitar seu usado na troca com excelente avaliação. Deseja uma simulação rápida?`,
+              );
+            }}
+          >
+            <Sparkles className="size-4" /> Proposta & financiamento
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPromptOpen(false);
+              onInsertPrompt?.(
+                `Resumo: ${cycle.vehicle?.title ?? "Negociação"} — ${cycle.unreadCount ? `${cycle.unreadCount} não lidas` : "em andamento"}. Próximo passo: confirmar visita/test drive e proposta formal.`,
               );
             }}
           >
@@ -605,22 +628,22 @@ export function ChatHeader({
             onClick={() => {
               setPromptOpen(false);
               onInsertPrompt?.(
-                "Prezados, formalizando nossa proposta com condições e prazos conforme alinhado. Fico à disposição para enviar documentação.",
+                "Prezados, formalizando nossa proposta com condições, documentação e prazos conforme alinhado. Fico à disposição para esclarecer qualquer dúvida.",
               );
             }}
           >
-            <Tag className="size-4" /> Tom formal
+            <Tag className="size-4" /> Tom formal de proposta
           </button>
           <button
             type="button"
             onClick={() => {
               setPromptOpen(false);
               onInsertPrompt?.(
-                "Oi! Que bom falar com você 😊 me conta qual horário funciona melhor para você dar uma olhada no veículo?",
+                "Oi! Passando para saber o que achou das informações do veículo. Surgiu alguma dúvida ou quer que eu reserve para você dar uma olhada?",
               );
             }}
           >
-            <Sparkles className="size-4" /> Tom descontraído
+            <Sparkles className="size-4" /> Follow-up descontraído
           </button>
         </div>
       </FeatureAnchoredPopover>

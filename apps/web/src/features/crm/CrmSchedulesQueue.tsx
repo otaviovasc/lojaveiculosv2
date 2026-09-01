@@ -1,21 +1,22 @@
-import { ScheduleList } from "./CrmScheduleMessageList";
 import {
-  ScheduleToolbar,
+  countSchedulesByView,
+  ScheduleBoard,
   type ScheduleStatusCounts,
   type ScheduleStatusFilter,
+  type ScheduleView,
 } from "./CrmSchedulesPageParts";
 import type {
-  CrmScheduledMessage,
   CrmConversationCycle,
+  CrmScheduledMessage,
 } from "./crmConversationTypes";
 
 export function CrmSchedulesQueue({
-  activeSession,
   canCancel,
   canProcess,
   canRead,
   cancellingId,
   confirmingCancelId,
+  conversationCycles,
   error,
   isLoading,
   isProcessing,
@@ -24,12 +25,9 @@ export function CrmSchedulesQueue({
   onCancelRequest,
   onDismissCancel,
   onProcessDue,
-  onRefresh,
   onSessionFilterChange,
   onStatusFilterChange,
   sessionFilter,
-  conversationCycles,
-  statusCounts,
   statusFilter,
   successMessage,
 }: {
@@ -39,6 +37,7 @@ export function CrmSchedulesQueue({
   canRead: boolean;
   cancellingId: string | null;
   confirmingCancelId: string | null;
+  conversationCycles: CrmConversationCycle[];
   error: string | null;
   isLoading: boolean;
   isProcessing: boolean;
@@ -51,56 +50,48 @@ export function CrmSchedulesQueue({
   onSessionFilterChange: (value: string) => void;
   onStatusFilterChange: (value: ScheduleStatusFilter) => void;
   sessionFilter: string;
-  conversationCycles: CrmConversationCycle[];
   statusCounts: ScheduleStatusCounts;
   statusFilter: ScheduleStatusFilter;
   successMessage: string | null;
 }) {
   return (
-    <section aria-label="Agenda de mensagens" className="crm-schedule-queue">
-      <ScheduleToolbar
-        activeSession={activeSession}
+    <div
+      aria-label="Agenda de mensagens"
+      className="crm-schedule-queue-wrapper"
+    >
+      <ScheduleBoard
+        activeView={scheduleViewFromStatus(statusFilter)}
+        canCancel={canCancel}
+        canEdit={false}
         canProcess={canProcess}
         canRead={canRead}
+        cancellingId={cancellingId}
+        confirmingCancelId={confirmingCancelId}
+        conversationCycles={conversationCycles}
+        error={error}
         isLoading={isLoading}
         isProcessing={isProcessing}
+        messages={messages}
+        onCancel={onCancel}
+        onCancelRequest={onCancelRequest}
+        onDismissCancel={onDismissCancel}
+        onEdit={() => undefined}
         onProcessDue={onProcessDue}
-        onRefresh={onRefresh}
         onSessionFilterChange={onSessionFilterChange}
-        onStatusFilterChange={onStatusFilterChange}
+        onViewChange={(view) => {
+          if (view === "today" || view === "tomorrow" || view === "upcoming")
+            return;
+          onStatusFilterChange(view === "pending" ? "pending" : view);
+        }}
         sessionFilter={sessionFilter}
-        conversationCycles={conversationCycles}
-        statusCounts={statusCounts}
-        statusFilter={statusFilter}
+        successMessage={successMessage}
+        viewCounts={countSchedulesByView(messages)}
       />
-      {successMessage ? (
-        <p className="crm-schedule-success" role="status">
-          {successMessage}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="crm-schedule-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {canRead ? (
-        <ScheduleList
-          canCancel={canCancel}
-          cancellingId={cancellingId}
-          confirmingCancelId={confirmingCancelId}
-          emptyLabel="Nenhum agendamento encontrado para os filtros."
-          isLoading={isLoading}
-          messages={messages}
-          onCancel={onCancel}
-          onCancelRequest={onCancelRequest}
-          onDismissCancel={onDismissCancel}
-          conversationCycles={conversationCycles}
-        />
-      ) : (
-        <p className="crm-schedule-empty">
-          Sem permissao para listar agendamentos.
-        </p>
-      )}
-    </section>
+    </div>
   );
+}
+
+function scheduleViewFromStatus(status: ScheduleStatusFilter): ScheduleView {
+  if (status === "sending") return "pending";
+  return status;
 }

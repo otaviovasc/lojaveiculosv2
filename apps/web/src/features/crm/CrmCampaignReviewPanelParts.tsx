@@ -15,21 +15,23 @@ export function ReviewStat({
 }) {
   if (!onClick) {
     return (
-      <div>
+      <div className="crm-campaign-review-stat">
         <dt>{label}</dt>
         <dd>{value}</dd>
       </div>
     );
   }
   return (
-    <div className={active ? "crm-campaign-review-stat-active" : ""}>
+    <button
+      aria-label={`Filtrar ${label}`}
+      className="crm-campaign-review-stat"
+      data-active={active ? "true" : undefined}
+      onClick={onClick}
+      type="button"
+    >
       <dt>{label}</dt>
-      <dd>
-        <button aria-label={`Filtrar ${label}`} onClick={onClick} type="button">
-          {value}
-        </button>
-      </dd>
-    </div>
+      <dd>{value}</dd>
+    </button>
   );
 }
 

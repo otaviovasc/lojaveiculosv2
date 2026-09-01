@@ -97,9 +97,15 @@
 }
 
 .crm-shell .crm-composer-textbox textarea {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 1.25rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   color: var(--color-text);
   display: block;
   font-family: var(--font-sans);
@@ -285,6 +291,48 @@
 .crm-attach-color-location {
   background: rgba(244, 63, 94, 0.15);
   color: #e11d48;
+}
+
+:root[data-theme="dark"] .crm-attach-color-image,
+.dark .crm-attach-color-image {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+:root[data-theme="dark"] .crm-attach-color-doc,
+.dark .crm-attach-color-doc {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+:root[data-theme="dark"] .crm-attach-color-audio,
+.dark .crm-attach-color-audio {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+:root[data-theme="dark"] .crm-attach-color-quick,
+.dark .crm-attach-color-quick {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+:root[data-theme="dark"] .crm-attach-color-catalog,
+.dark .crm-attach-color-catalog {
+  background: rgba(20, 184, 166, 0.2);
+  color: #2dd4bf;
+}
+
+:root[data-theme="dark"] .crm-attach-color-vehicle,
+.dark .crm-attach-color-vehicle {
+  background: rgba(6, 182, 212, 0.2);
+  color: #22d3ee;
+}
+
+:root[data-theme="dark"] .crm-attach-color-location,
+.dark .crm-attach-color-location {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
 }
 
 .crm-attach-label {

@@ -46,15 +46,22 @@ export function CrmMediaMessageGroup({
   const reaction = last ? readReaction(last.metadata) : undefined;
   const delivery = readMediaGroupDelivery(messages);
   const channel = (first?.channel ?? "whatsapp").toLowerCase();
+  const isFlushMedia = captions.length === 0;
+
+  const bubbleClasses = [
+    "crm-bubble",
+    outgoing ? "crm-bubble-out" : "",
+    "crm-media-bundle",
+    isFlushMedia ? "crm-bubble-media-flush" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <article
-      className={
-        outgoing
-          ? "crm-bubble crm-bubble-out crm-media-bundle"
-          : "crm-bubble crm-media-bundle"
-      }
+      className={bubbleClasses}
       data-channel={channel}
+      data-media-flush={isFlushMedia ? "true" : undefined}
       data-message-status={delivery.status}
     >
       {last ? (

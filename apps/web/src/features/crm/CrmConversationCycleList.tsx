@@ -17,6 +17,7 @@ import {
   Phone,
   Pin,
   PinOff,
+  Plus,
   Radio,
   RotateCw,
   Trash2,
@@ -82,7 +83,27 @@ export function SessionList({
   if (conversationCycles.length === 0) {
     return (
       <div className="crm-empty crm-empty-list">
-        Nenhuma conversa encontrada.
+        <div className="crm-empty-list-card">
+          <span aria-hidden="true" className="crm-empty-list-icon">
+            <MessageCircle className="size-6 text-muted opacity-60" />
+          </span>
+          <strong>Nenhuma conversa encontrada</strong>
+          <p>Nenhum atendimento corresponde aos filtros ou à pesquisa atual.</p>
+          <button
+            className="crm-empty-list-btn"
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent("crm:start-conversation", {
+                  detail: { buyerName: "", phone: "" },
+                }),
+              );
+            }}
+            type="button"
+          >
+            <Plus className="size-3.5" />
+            <span>Iniciar nova conversa</span>
+          </button>
+        </div>
       </div>
     );
   }

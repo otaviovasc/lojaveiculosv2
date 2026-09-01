@@ -6,6 +6,11 @@ import {
   Send,
   Users,
 } from "lucide-react";
+import {
+  FeatureInput,
+  FeatureTextarea,
+} from "../../components/ui/FeatureControls";
+import { FeatureField } from "../../components/ui/FeatureForms";
 import type { CrmCampaign } from "./crmCampaignTypes";
 
 export function CampaignStats({ campaigns }: { campaigns: CrmCampaign[] }) {
@@ -45,28 +50,31 @@ export function CampaignMessagePanel({
   return (
     <section className="crm-campaign-panel">
       <h3>Mensagem e ritmo</h3>
-      <label>
-        Nome da campanha
-        <input
+      <FeatureField label="Nome da campanha">
+        <FeatureInput
+          aria-label="Nome da campanha"
           disabled={!canCreate || isSaving}
           maxLength={191}
           onChange={(event) => onCampaignNameChange(event.target.value)}
           value={campaignName}
         />
-      </label>
-      <label>
-        Mensagem inicial
-        <textarea
+      </FeatureField>
+      <FeatureField
+        hint={`${text.length}/4000 caracteres · Use {nome} para personalizar.`}
+        label="Mensagem inicial"
+      >
+        <FeatureTextarea
+          aria-label="Mensagem inicial"
           disabled={!canCreate || isSaving}
           maxLength={4000}
           onChange={(event) => onTextChange(event.target.value)}
           rows={7}
           value={text}
         />
-      </label>
+      </FeatureField>
       <p>
-        Variavel disponivel: <code>{"{nome}"}</code>. Ela usa o nome da conversa
-        ou "cliente" quando estiver vazio.
+        A variável <code>{"{nome}"}</code> usa o nome da conversa ou “cliente”
+        quando essa informação não estiver disponível.
       </p>
     </section>
   );

@@ -4,6 +4,7 @@ import {
   crmCreateScheduledMessageSchema,
   crmProcessDueScheduledMessagesSchema,
   crmScheduledMessagesQuerySchema,
+  crmUpdateScheduledMessageSchema,
 } from "./crm.controller.schemas.js";
 import {
   CrmMessagingValidationError,
@@ -47,12 +48,49 @@ export function registerCrmScheduledRoutes(
         crmCreateScheduledMessageSchema,
       );
       const serviceContext = await createContext(context);
-      const message = await services.createCrmScheduledMessage(serviceContext, {
-        scheduledAt: new Date(input.scheduledAt),
-        cycleId: input.cycleId,
-        content: input.content,
-      });
+      const message = await services.createCrmScheduledMessage(
+        serviceContext,
+        "cycleId" in input
+          ? {
+              scheduledAt: new Date(input.scheduledAt),
+              content: input.content,
+              cycleId: input.cycleId,
+            }
+          : {
+              scheduledAt: new Date(input.scheduledAt),
+              content: input.content,
+              connectionId: input.connectionId,
+              ...(input.customerDisplayName
+                ? { customerDisplayName: input.customerDisplayName }
+                : {}),
+              phone: input.phone,
+            },
+      );
       return context.json(message, 201);
+    }),
+  );
+
+  crmFeature.patch("/scheduled-messages/:scheduledMessageId", async (context) =>
+    handleCrmMessaging(context, async () => {
+      const scheduledMessageId = context.req.param("scheduledMessageId");
+      if (!scheduledMessageId) {
+        throw new CrmMessagingValidationError(
+          "Route param scheduledMessageId is invalid.",
+        );
+      }
+      const input = await parseCrmMessagingJson(
+        context,
+        crmUpdateScheduledMessageSchema,
+      );
+      const serviceContext = await createContext(context);
+      const message = await services.updateCrmScheduledMessage(serviceContext, {
+        ...(input.content !== undefined ? { content: input.content } : {}),
+        ...(input.scheduledAt
+          ? { scheduledAt: new Date(input.scheduledAt) }
+          : {}),
+        scheduledMessageId,
+      });
+      return context.json(message);
     }),
   );
 

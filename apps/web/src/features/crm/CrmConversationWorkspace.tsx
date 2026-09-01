@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquareText } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarClock,
+  Megaphone,
+  MessageSquareText,
+  Plus,
+  Search,
+} from "lucide-react";
 import { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import { MessageList } from "./CrmMessageParts";
 import { CrmQueueToolbar } from "./CrmQueueToolbar";
@@ -525,6 +532,66 @@ export function CrmConversationWorkspace({
                   ? "Histórico fictício para explorar o CRM. Escolha um contato na fila ao lado para navegar nas conversas de demonstração."
                   : "Escolha um contato na fila ao lado para visualizar o histórico de mensagens, negociações de veículos, propostas e agendamentos."}
               </p>
+
+              <div className="crm-empty-conversation-grid">
+                <button
+                  className="crm-empty-quick-action"
+                  disabled={!inbox.canStartConversation}
+                  onClick={() => setNewConversationOpen(true)}
+                  type="button"
+                >
+                  <span className="crm-empty-action-icon crm-empty-action-emerald">
+                    <Plus className="size-4" />
+                  </span>
+                  <div className="crm-empty-action-text">
+                    <strong>Nova conversa</strong>
+                    <small>Iniciar contato por telefone</small>
+                  </div>
+                </button>
+
+                <button
+                  className="crm-empty-quick-action"
+                  onClick={() => onScopeChange("visits")}
+                  type="button"
+                >
+                  <span className="crm-empty-action-icon crm-empty-action-blue">
+                    <CalendarCheck className="size-4" />
+                  </span>
+                  <div className="crm-empty-action-text">
+                    <strong>Visitas & Test Drives</strong>
+                    <small>Agenda presencial na loja</small>
+                  </div>
+                </button>
+
+                <button
+                  className="crm-empty-quick-action"
+                  onClick={() => onScopeChange("schedules")}
+                  type="button"
+                >
+                  <span className="crm-empty-action-icon crm-empty-action-purple">
+                    <CalendarClock className="size-4" />
+                  </span>
+                  <div className="crm-empty-action-text">
+                    <strong>Mensagens agendadas</strong>
+                    <small>Disparos programados</small>
+                  </div>
+                </button>
+
+                <button
+                  className="crm-empty-quick-action"
+                  onClick={() => onScopeChange("campaigns")}
+                  type="button"
+                >
+                  <span className="crm-empty-action-icon crm-empty-action-amber">
+                    <Megaphone className="size-4" />
+                  </span>
+                  <div className="crm-empty-action-text">
+                    <strong>Campanhas & Disparos</strong>
+                    <small>Transmissões para clientes</small>
+                  </div>
+                </button>
+              </div>
+
               {isDemoView && inbox.permissions.canConnectionSetup ? (
                 <div className="crm-empty-conversation-action">
                   <button
@@ -536,13 +603,29 @@ export function CrmConversationWorkspace({
                   </button>
                 </div>
               ) : null}
+
               <div className="crm-empty-conversation-shortcuts">
-                <span>
-                  <kbd>Alt</kbd> + <kbd>1</kbd> Focar lista
-                </span>
-                <span>
-                  <kbd>Alt</kbd> + <kbd>2</kbd> Focar conversa
-                </span>
+                <button
+                  className="crm-empty-shortcut-btn"
+                  onClick={() => focusPane("list")}
+                  type="button"
+                >
+                  <kbd>Alt</kbd> + <kbd>1</kbd> <span>Focar lista</span>
+                </button>
+                <button
+                  className="crm-empty-shortcut-btn"
+                  onClick={() => {
+                    const searchInput =
+                      shellRef.current?.querySelector<HTMLInputElement>(
+                        ".crm-search input",
+                      );
+                    searchInput?.focus();
+                  }}
+                  type="button"
+                >
+                  <Search className="size-3" />
+                  <span>Pesquisar conversas</span>
+                </button>
               </div>
             </div>
           </div>

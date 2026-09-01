@@ -141,7 +141,10 @@ export function CrmStatsPage({
       aria-label="Estatísticas do CRM"
     >
       <header className="crm-stats-header">
-        <div>
+        <span aria-hidden="true" className="crm-stats-header-icon">
+          <BarChart3 />
+        </span>
+        <div className="crm-stats-header-text">
           <span className="crm-stats-eyebrow">
             <BarChart3 aria-hidden="true" /> Operação em tempo real
           </span>
@@ -157,7 +160,10 @@ export function CrmStatsPage({
           onClick={() => void load()}
           type="button"
         >
-          <RefreshCw aria-hidden="true" />{" "}
+          <RefreshCw
+            aria-hidden="true"
+            className={loading ? "animate-spin" : undefined}
+          />{" "}
           {loading ? "Atualizando…" : "Atualizar"}
         </button>
       </header>
@@ -179,25 +185,31 @@ export function CrmStatsPage({
             value={preset}
           />
         </div>
-        <DatePickerField
-          label="De"
-          maxDate={parseCrmStatisticsInputDate(toDate)}
-          onChange={(date) => {
-            setPreset("custom");
-            setFromDate(formatCrmStatisticsInputDate(date));
-          }}
-          value={parseCrmStatisticsInputDate(fromDate)}
-        />
-        <DatePickerField
-          align="right"
-          label="Até"
-          minDate={parseCrmStatisticsInputDate(fromDate)}
-          onChange={(date) => {
-            setPreset("custom");
-            setToDate(formatCrmStatisticsInputDate(date));
-          }}
-          value={parseCrmStatisticsInputDate(toDate)}
-        />
+        <div className="crm-stats-filter-field">
+          <span>De</span>
+          <DatePickerField
+            label="De"
+            maxDate={parseCrmStatisticsInputDate(toDate)}
+            onChange={(date) => {
+              setPreset("custom");
+              setFromDate(formatCrmStatisticsInputDate(date));
+            }}
+            value={parseCrmStatisticsInputDate(fromDate)}
+          />
+        </div>
+        <div className="crm-stats-filter-field">
+          <span>Até</span>
+          <DatePickerField
+            align="right"
+            label="Até"
+            minDate={parseCrmStatisticsInputDate(fromDate)}
+            onChange={(date) => {
+              setPreset("custom");
+              setToDate(formatCrmStatisticsInputDate(date));
+            }}
+            value={parseCrmStatisticsInputDate(toDate)}
+          />
+        </div>
         <div className="crm-stats-filter-field">
           <span>Canal</span>
           <CrmSelect

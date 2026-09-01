@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import {
   Fragment,
   useCallback,
@@ -59,12 +60,14 @@ export function MessageList({
   } | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
 
   useEffect(() => {
     if (!messages.length) {
       previousMessagesRef.current = messages;
       hasInitialPositionRef.current = false;
       isNearBottomRef.current = true;
+      setShowScrollBottom(false);
       return;
     }
     const previousMessages = previousMessagesRef.current;
@@ -99,6 +102,7 @@ export function MessageList({
     if (!shouldScroll) return;
     endRef.current?.scrollIntoView?.({ block: "end" });
     isNearBottomRef.current = true;
+    setShowScrollBottom(false);
   }, [messages]);
 
   useLayoutEffect(() => {
@@ -158,6 +162,12 @@ export function MessageList({
     }
   }, [isLoadingOlderMessages, onLoadOlder]);
 
+  const handleScrollToBottom = useCallback(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    isNearBottomRef.current = true;
+    setShowScrollBottom(false);
+  }, []);
+
   if (isLoading && messages.length === 0) {
     return <MessageListSkeleton />;
   }
@@ -168,9 +178,9 @@ export function MessageList({
       <div
         className="crm-messages"
         onScroll={(event) => {
-          isNearBottomRef.current = isNearMessageListBottom(
-            event.currentTarget,
-          );
+          const isNear = isNearMessageListBottom(event.currentTarget);
+          isNearBottomRef.current = isNear;
+          setShowScrollBottom(!isNear && messages.length > 3);
         }}
         onDragOver={(event) => {
           if (!onFilesDropped || !hasDraggedFiles(event.dataTransfer)) return;
@@ -274,6 +284,18 @@ export function MessageList({
         })}
         <div ref={endRef} />
       </div>
+
+      {showScrollBottom ? (
+        <button
+          aria-label="Ir para a última mensagem"
+          className="crm-scroll-bottom-btn"
+          onClick={handleScrollToBottom}
+          title="Ir para a última mensagem"
+          type="button"
+        >
+          <ChevronDown aria-hidden="true" className="size-4" />
+        </button>
+      ) : null}
 
       <CrmMediaGalleryViewer
         initialIndex={galleryIndex}

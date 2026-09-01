@@ -60,9 +60,13 @@
 /* General Icon Actions */
 .crm-icon-action {
   align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 0.45rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.5rem;
   color: var(--color-muted);
   display: inline-flex;
   height: 1.875rem;
@@ -70,13 +74,12 @@
   position: relative;
   width: 1.875rem;
   cursor: pointer;
-  box-shadow: none;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .crm-icon-action:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-text) 6%, transparent);
-  border-color: transparent;
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, var(--color-text) 22%, var(--color-line));
   color: var(--color-text);
   transform: translateY(-0.5px);
 }
@@ -203,10 +206,15 @@
 }
 
 .crm-search input {
-  background: var(--color-surface-subtle);
-  border: 1px solid
-    color-mix(in srgb, var(--color-line) 92%, var(--color-line-strong));
-  border-radius: 0.75rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   color: var(--color-text);
   font-size: var(--font-size-xs);
   font-weight: 550;
@@ -223,9 +231,19 @@
 }
 
 .crm-search input:focus {
-  background: var(--color-panel);
-  border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-line));
-  box-shadow: var(--shadow-focus);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  ) !important;
+  border-color: color-mix(in srgb, var(--color-success) 65%, var(--color-line));
+  box-shadow:
+    0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent) inset,
+    0 0 0 2.5px color-mix(in srgb, var(--color-success) 16%, transparent);
+}
+
+.crm-search:focus-within .crm-search-icon {
+  color: var(--color-text);
 }
 
 .crm-search-row-selection-active .crm-search input {
@@ -429,7 +447,7 @@
 .crm-queue-dropdown {
   align-items: center;
   background: transparent;
-  border: 1px solid var(--color-line);
+  border: 1px solid transparent;
   border-radius: 9999px;
   color: var(--color-muted);
   display: inline-flex;
@@ -447,9 +465,10 @@
 
 .crm-smart-filter:hover:not(:disabled),
 .crm-queue-dropdown:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--color-text) 22%, var(--color-line));
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  border-color: transparent;
   color: var(--color-text);
-  transform: translateY(-1px);
+  transform: translateY(-0.5px);
 }
 
 .crm-smart-filter > svg,
@@ -470,25 +489,44 @@
 
 .crm-smart-filter > span,
 .crm-queue-dropdown strong {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  border-radius: 9999px;
   color: inherit;
   font-size: var(--font-size-xs);
   font-variant-numeric: tabular-nums;
   font-weight: 750;
+  line-height: 1;
+  padding: 0.1rem 0.375rem;
 }
 
 .crm-smart-filter.crm-smart-filter-active,
 .crm-queue-dropdown.crm-queue-dropdown-active {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-foreground);
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+  color: var(--color-text);
+  font-weight: 750;
+}
+
+.crm-smart-filter.crm-smart-filter-active > span,
+.crm-queue-dropdown.crm-queue-dropdown-active strong {
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
+  color: var(--color-success-strong);
 }
 
 .crm-smart-filter.crm-smart-filter-unread.crm-smart-filter-active,
 .crm-smart-filter.crm-smart-filter-waiting-human.crm-smart-filter-active {
-  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-line));
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger) 40%, var(--color-line));
   color: var(--color-crm-active-red);
-  box-shadow: none;
+  font-weight: 750;
+}
+
+.crm-smart-filter.crm-smart-filter-unread.crm-smart-filter-active > span,
+.crm-smart-filter.crm-smart-filter-waiting-human.crm-smart-filter-active
+  > span {
+  background: color-mix(in srgb, var(--color-danger) 22%, transparent);
+  color: var(--color-crm-active-red);
 }
 
 .crm-smart-filter-waiting-human {
@@ -500,10 +538,16 @@
 }
 
 .crm-smart-filter.crm-smart-filter-in-human-service.crm-smart-filter-active {
-  background: color-mix(in srgb, var(--color-info) 12%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-info) 40%, var(--color-line));
+  background: color-mix(in srgb, var(--color-info) 14%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--color-info) 40%, var(--color-line));
   color: var(--color-crm-active-blue);
-  box-shadow: none;
+  font-weight: 750;
+}
+
+.crm-smart-filter.crm-smart-filter-in-human-service.crm-smart-filter-active
+  > span {
+  background: color-mix(in srgb, var(--color-info) 22%, transparent);
+  color: var(--color-crm-active-blue);
 }
 
 /* Anchors & Popover Menus */
@@ -873,8 +917,12 @@
 
 .crm-bulk-actions button {
   align-items: center;
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 0.5rem;
   color: var(--color-text);
   display: inline-flex;
@@ -885,12 +933,12 @@
   min-height: 2.15rem;
   padding: 0 0.375rem;
   cursor: pointer;
-  box-shadow: none;
-  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
 }
 
 .crm-bulk-actions button:hover:not(:disabled) {
+  background: var(--color-panel);
   border-color: color-mix(in srgb, var(--color-text) 22%, var(--color-line));
   transform: translateY(-1px);
 }

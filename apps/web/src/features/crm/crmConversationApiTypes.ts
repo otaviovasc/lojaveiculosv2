@@ -84,6 +84,7 @@ import type {
   CrmTag,
   CrmUpdateTagInput,
   CrmUpdateQuickMessageInput,
+  CrmUpdateScheduledMessageInput,
   CrmWhatsappZapiPairingCode,
   CrmWhatsappZapiPairingQr,
   CrmZapiCredentialsInput,
@@ -242,6 +243,10 @@ export type CrmConversationExtrasApi = {
   processDueScheduledMessages: (
     input?: CrmProcessDueScheduledMessagesInput,
   ) => Promise<CrmProcessDueScheduledMessagesResult>;
+  updateScheduledMessage: (
+    scheduledMessageId: string,
+    input: CrmUpdateScheduledMessageInput,
+  ) => Promise<CrmScheduledMessage>;
   cancelCampaign: (campaignId: string) => Promise<CrmCampaign>;
   pauseCampaign: (campaignId: string) => Promise<CrmCampaign>;
   removeCycleTag: (

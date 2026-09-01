@@ -8,7 +8,7 @@ import { CrmScopedNav } from "./CrmScopedNav";
 describe("CrmScopedNav", () => {
   afterEach(cleanup);
 
-  it("announces provider and realtime states separately in one polite live region", () => {
+  it("displays a single unified status badge in a polite live region", () => {
     const props = {
       activeScope: "conversations" as const,
       onChange: vi.fn(),
@@ -29,12 +29,9 @@ describe("CrmScopedNav", () => {
     const status = screen.getByRole("status");
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveAttribute("aria-atomic", "true");
-    expect(status).toHaveAccessibleName(
-      "Z-API: online. Tempo real: reconectando",
-    );
-    expect(status).toHaveTextContent("Z-API: online");
+    expect(status).toHaveAccessibleName("Tempo real: reconectando");
     expect(status).toHaveTextContent("Tempo real: reconectando");
-    expect(status.querySelectorAll(":scope > span")).toHaveLength(2);
+    expect(status.querySelectorAll(":scope > span")).toHaveLength(1);
     expect(screen.getByText("CRM")).toBeVisible();
 
     rendered.rerender(
@@ -48,9 +45,8 @@ describe("CrmScopedNav", () => {
     );
 
     expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveAccessibleName(
-      "Z-API: online. Tempo real: sincronizado",
-    );
+    expect(status).toHaveAccessibleName("Z-API: online");
+    expect(status).toHaveTextContent("Z-API: online");
   });
 
   it("does not hide a disconnected provider behind healthy realtime", () => {
@@ -72,7 +68,7 @@ describe("CrmScopedNav", () => {
     );
 
     expect(screen.getByRole("status")).toHaveAccessibleName(
-      "Z-API: desconectado. Tempo real: sincronizado",
+      "Z-API: desconectado",
     );
   });
 

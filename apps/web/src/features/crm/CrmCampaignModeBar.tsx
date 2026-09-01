@@ -15,23 +15,23 @@ export function CampaignModeBar({
 }) {
   return (
     <header className="crm-campaign-hero-card">
-      <span aria-hidden="true" className="crm-campaign-hero-watermark">
+      <span aria-hidden="true" className="crm-campaign-hero-icon">
         <Megaphone />
       </span>
       <div className="crm-campaign-hero-content">
         <div className="crm-campaign-hero-main">
           <span className="crm-campaign-hero-eyebrow">
             {mode === "overview"
-              ? "Marketing & Disparos em Massa"
-              : "Assistente de Criação"}
+              ? "Marketing e relacionamento"
+              : "Assistente de criação"}
           </span>
           <h2>
-            {mode === "overview" ? "Campanhas de Mensagens" : "Nova Campanha"}
+            {mode === "overview" ? "Campanhas de mensagens" : "Nova campanha"}
           </h2>
           <p>
             {mode === "overview"
-              ? "Dispare mensagens automatizadas e sequenciais para listas de leads e clientes com métricas de entrega e resposta em tempo real."
-              : "Configure o público-alvo, mensagem inicial, ritmo de disparo e revise a lista de destinatários antes do agendamento."}
+              ? "Organize disparos em massa, acompanhe entregas e identifique respostas em um só lugar."
+              : "Defina o público, a mensagem e o ritmo antes de confirmar o agendamento."}
           </p>
         </div>
         <div className="crm-campaign-hero-actions">

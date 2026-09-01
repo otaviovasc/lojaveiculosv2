@@ -231,10 +231,17 @@
 }
 
 .crm-action-fields input,
-.crm-action-fields textarea {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
+.crm-action-fields textarea,
+.crm-action-fields select {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 0.625rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -244,9 +251,9 @@
   resize: vertical;
   text-transform: none;
   transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    background-color 0.15s ease;
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
   width: 100%;
 }
 
@@ -257,14 +264,16 @@
 }
 
 .crm-action-fields input:focus,
-.crm-action-fields textarea:focus {
+.crm-action-fields textarea:focus,
+.crm-action-fields select:focus {
   background: var(--color-panel);
   border-color: #10b981;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
 }
 
 .crm-action-fields input[aria-invalid="true"],
-.crm-action-fields textarea[aria-invalid="true"] {
+.crm-action-fields textarea[aria-invalid="true"],
+.crm-action-fields select[aria-invalid="true"] {
   border-color: color-mix(in srgb, #ef4444 55%, var(--color-line));
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
 }

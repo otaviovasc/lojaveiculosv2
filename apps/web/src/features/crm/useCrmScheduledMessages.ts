@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import type { CrmConversationApi } from "./crmConversationApi";
 import type {
+  CrmCreateScheduledMessageInput,
   CrmListScheduledMessagesInput,
   CrmScheduledMessage,
 } from "./crmConversationTypes";
@@ -22,11 +23,7 @@ export function useCrmScheduledMessages(
   );
 
   const createScheduledMessage = useCallback(
-    async (input: {
-      content: string;
-      scheduledAt: string;
-      cycleId: string;
-    }) => {
+    async (input: CrmCreateScheduledMessageInput) => {
       try {
         await api.createScheduledMessage(input);
         setScheduleError(null);
@@ -69,6 +66,23 @@ export function useCrmScheduledMessages(
     [api, fail],
   );
 
+  const updateScheduledMessage = useCallback(
+    async (
+      scheduledMessageId: string,
+      input: { content: string; scheduledAt: string },
+    ) => {
+      try {
+        await api.updateScheduledMessage(scheduledMessageId, input);
+        setScheduleError(null);
+        return true;
+      } catch (caught) {
+        fail(caught);
+        return false;
+      }
+    },
+    [api, fail],
+  );
+
   const processDueScheduledMessages = useCallback(async () => {
     try {
       await api.processDueScheduledMessages();
@@ -86,5 +100,6 @@ export function useCrmScheduledMessages(
     error,
     listScheduledMessages,
     processDueScheduledMessages,
+    updateScheduledMessage,
   };
 }

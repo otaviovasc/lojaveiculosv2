@@ -152,17 +152,21 @@
 }
 
 .crm-action-secondary {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.5rem);
   color: var(--color-text);
-  box-shadow: none;
 }
 
 .crm-action-secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-text) 5%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-text) 20%, var(--color-line));
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, var(--color-text) 22%, var(--color-line));
   color: var(--color-text);
-  box-shadow: none;
+  transform: translateY(-0.5px);
 }
 
 .crm-action:disabled {

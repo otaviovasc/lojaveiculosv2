@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarCheck, Plus, RefreshCw } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  CalendarCheck,
+  List,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmVehicleOption } from "./crmConversationExtraTypes";
 import type { CrmLeadVisit, LeadVisitStatus } from "./crmVisitsApi";
@@ -22,6 +28,7 @@ import {
   visitsForView,
   visitViewOrder,
 } from "./CrmVisitsPageParts";
+import { CrmVisitsCalendar } from "./CrmVisitsCalendar";
 import {
   CrmModeBar,
   CrmWorkflowFooter,
@@ -40,6 +47,7 @@ export function CrmVisitsPage({
     peekCrmScopedCache<CrmLeadVisit[]>(visitsApi, CRM_VISITS_CACHE_KEY),
   );
   const [activeView, setActiveView] = useState<VisitView>("today");
+  const [displayMode, setDisplayMode] = useState<"board" | "calendar">("board");
   const [error, setError] = useState<string | null>(null);
   const hasVisitsDataRef = useRef(initialVisits !== undefined);
   const [isLoading, setIsLoading] = useState(initialVisits === undefined);
@@ -109,10 +117,20 @@ export function CrmVisitsPage({
     setError(null);
   };
 
-  const startCreation = () => {
+  const startCreation = (presetDate?: Date) => {
     setMode("create");
     setNotes("");
-    setScheduledAt("");
+    if (presetDate) {
+      const local = new Date(presetDate);
+      if (local.getHours() === 0 && local.getMinutes() === 0) {
+        local.setHours(14, 0, 0, 0);
+      }
+      const offset = local.getTimezoneOffset();
+      const adjusted = new Date(local.getTime() - offset * 60_000);
+      setScheduledAt(adjusted.toISOString().slice(0, 16));
+    } else {
+      setScheduledAt("");
+    }
     setSelectedListingId("");
     setStep(0);
     setError(null);
@@ -195,43 +213,76 @@ export function CrmVisitsPage({
   return (
     <section className="crm-section">
       <div className="crm-visits-page">
-        <CrmModeBar
-          actions={
-            mode === "list" ? (
-              <>
+        {mode === "list" ? (
+          <header className="crm-visits-header">
+            <span aria-hidden="true" className="crm-visits-header-icon">
+              <CalendarCheck />
+            </span>
+            <div className="crm-visits-header-text">
+              <span className="crm-visits-eyebrow">
+                <CalendarCheck aria-hidden="true" />
+                Agenda Operacional
+              </span>
+              <h2>Visitas & Test Drives</h2>
+              <p>
+                Controle de visitas presenciais, test drives e atendimentos
+                agendados na loja.
+              </p>
+            </div>
+            <div className="crm-visits-header-actions">
+              <div className="crm-visits-view-type-toggle">
                 <button
-                  aria-label="Atualizar visitas"
-                  className="crm-icon-action"
-                  disabled={isLoading}
-                  onClick={() => void refresh()}
-                  title="Atualizar visitas"
+                  className={`crm-visits-view-btn${displayMode === "board" ? " active" : ""}`}
+                  onClick={() => setDisplayMode("board")}
                   type="button"
                 >
-                  <RefreshCw aria-hidden="true" />
+                  <List aria-hidden="true" />
+                  <span>Lista</span>
                 </button>
                 <button
-                  className="crm-action"
-                  disabled={!canManage}
-                  onClick={startCreation}
+                  className={`crm-visits-view-btn${displayMode === "calendar" ? " active" : ""}`}
+                  onClick={() => setDisplayMode("calendar")}
                   type="button"
                 >
-                  <Plus aria-hidden="true" />
-                  Nova visita
+                  <CalendarIcon aria-hidden="true" />
+                  <span>Calendário</span>
                 </button>
-              </>
-            ) : null
-          }
-          summary={
-            mode === "list"
-              ? `${visits.length} visitas carregadas`
-              : `Passo ${step + 1} de ${visitCreationSteps.length}`
-          }
-        >
-          <span className="crm-mode-label">
-            <CalendarCheck aria-hidden="true" />
-            {mode === "list" ? "Agenda operacional" : "Novo agendamento"}
-          </span>
-        </CrmModeBar>
+              </div>
+              <button
+                aria-label="Atualizar visitas"
+                className="crm-visits-refresh"
+                disabled={isLoading}
+                onClick={() => void refresh()}
+                title="Atualizar visitas"
+                type="button"
+              >
+                <RefreshCw
+                  aria-hidden="true"
+                  className={isLoading ? "animate-spin" : undefined}
+                />
+              </button>
+              <button
+                className="crm-action"
+                disabled={!canManage}
+                onClick={() => startCreation()}
+                type="button"
+              >
+                <Plus aria-hidden="true" />
+                Nova visita
+              </button>
+            </div>
+          </header>
+        ) : (
+          <CrmModeBar
+            actions={null}
+            summary={`Passo ${step + 1} de ${visitCreationSteps.length}`}
+          >
+            <span className="crm-mode-label">
+              <CalendarCheck aria-hidden="true" />
+              Novo agendamento
+            </span>
+          </CrmModeBar>
+        )}
 
         {mode === "create" ? (
           <div className="crm-workflow crm-workflow--connection">
@@ -275,7 +326,7 @@ export function CrmVisitsPage({
               }
             />
           </div>
-        ) : (
+        ) : displayMode === "board" ? (
           <VisitBoard
             activeView={activeView}
             canManage={canManage}
@@ -286,6 +337,14 @@ export function CrmVisitsPage({
             onViewChange={setActiveView}
             viewCounts={viewCounts}
             visits={viewVisits}
+          />
+        ) : (
+          <CrmVisitsCalendar
+            canManage={canManage}
+            isSaving={isSaving}
+            onStartCreation={(date) => startCreation(date)}
+            onStatus={(visit, status) => void changeStatus(visit, status)}
+            visits={visits}
           />
         )}
       </div>

@@ -183,12 +183,16 @@ export async function updateCrmScheduledMessage(
       ...(input.cancelledAt !== undefined
         ? { cancelledAt: input.cancelledAt }
         : {}),
+      ...(input.content !== undefined ? { content: input.content } : {}),
       ...(input.errorMessage !== undefined
         ? { errorMessage: input.errorMessage }
         : {}),
       ...(input.sentAt !== undefined ? { sentAt: input.sentAt } : {}),
       ...(input.sentMessageId !== undefined
         ? { sentMessageId: input.sentMessageId }
+        : {}),
+      ...(input.scheduledAt !== undefined
+        ? { scheduledAt: input.scheduledAt }
         : {}),
       status: input.status,
       updatedAt: new Date(),
