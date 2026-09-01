@@ -427,11 +427,13 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                 className={scopePanelClassName("statistics")}
                 key="statistics"
               >
-                <CrmStatsPage
-                  api={conversationApi}
-                  canRead={inbox.permissions.canList}
-                  connections={inbox.connections}
-                />
+                <section className="crm-section">
+                  <CrmStatsPage
+                    api={conversationApi}
+                    canRead={inbox.permissions.canList}
+                    connections={inbox.connections}
+                  />
+                </section>
               </div>
             ) : null}
           </div>

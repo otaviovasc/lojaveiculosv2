@@ -772,6 +772,7 @@ export function useCrmInbox(
     otherAssigneeId,
     permissions,
     processDueScheduledMessages: scheduledMessages.processDueScheduledMessages,
+    updateScheduledMessage: scheduledMessages.updateScheduledMessage,
     quickFilter,
     quickMessages: quickMessageState.quickMessages,
     reconcileMessage: messageState.reconcileMessage,

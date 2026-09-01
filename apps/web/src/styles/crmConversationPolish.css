@@ -145,6 +145,8 @@
 :root[data-theme="dark"] .crm-chat-channel-pill,
 .dark .crm-chat-channel-pill {
   color: #34d399;
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(52, 211, 153, 0.28);
 }
 
 .crm-header-actions {
@@ -173,9 +175,9 @@
 
 .crm-header-actions > .crm-action:last-child,
 .crm-send-action:not(.crm-audio-action) {
-  background: #10b981;
-  border-color: #10b981;
-  color: #ffffff;
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-success-foreground);
 }
 
 .crm-mobile-back {
@@ -247,6 +249,10 @@
 .crm-bubble:has(.crm-media-grid) {
   padding: 0.5rem 0.5rem 0.45rem;
   max-width: min(26rem, 84%);
+}
+
+.crm-bubble.crm-bubble-media-flush {
+  padding: 3px;
 }
 
 .crm-bubble-out {

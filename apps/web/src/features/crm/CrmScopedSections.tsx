@@ -116,6 +116,7 @@ export function CrmSchedulesSection({
       onList={listScheduledMessages}
       onProcessDue={inbox.processDueScheduledMessages}
       onSchedule={inbox.createScheduledMessage}
+      onUpdate={inbox.updateScheduledMessage}
       conversationCycles={inbox.conversationCycles}
     />
   );

@@ -169,14 +169,25 @@ describe("CrmVisitsPage", () => {
       ...visit,
       status: "completed" as const,
     }));
+    const updateVisit = vi.fn(async () => ({
+      ...visit,
+      status: "confirmed" as const,
+    }));
     const api = createVisitsApi({
       completeVisit,
       listVisits: vi.fn(async () => [visit]),
+      updateVisit,
     });
 
     renderPage(api);
 
     expect(await screen.findByText("Receber cliente")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Confirmar visita" }));
+    await waitFor(() =>
+      expect(updateVisit).toHaveBeenCalledWith(visit.id, {
+        status: "confirmed",
+      }),
+    );
     await user.click(screen.getByRole("button", { name: "Concluir visita" }));
 
     await waitFor(() => expect(completeVisit).toHaveBeenCalledWith(visit.id));
@@ -200,15 +211,15 @@ describe("CrmVisitsPage", () => {
 
     renderPage(api);
 
-    const tomorrowButton = await screen.findByRole("button", {
-      name: /Amanha/i,
+    const tomorrowButton = await screen.findByRole("tab", {
+      name: /Amanhã/i,
     });
     await waitFor(() => expect(tomorrowButton).toHaveTextContent("1"));
     await user.click(tomorrowButton);
     expect(screen.getByText("Visita de amanha")).toBeVisible();
     expect(screen.queryByText("Visita futura")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Proximas/i }));
+    await user.click(screen.getByRole("tab", { name: /Próximas/i }));
     expect(screen.getByText("Visita futura")).toBeVisible();
     expect(screen.queryByText("Visita de amanha")).not.toBeInTheDocument();
   });
@@ -223,7 +234,7 @@ describe("CrmVisitsPage", () => {
     expect(await screen.findByText("Receber cliente")).toBeVisible();
     expect(screen.getByRole("button", { name: "Nova visita" })).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "Concluir visita" }),
+      screen.getByRole("button", { name: "Confirmar visita" }),
     ).toBeDisabled();
   });
 });

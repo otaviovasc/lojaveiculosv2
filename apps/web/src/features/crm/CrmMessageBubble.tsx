@@ -4,6 +4,7 @@ import {
   CheckCheck,
   CircleHelp,
   Clock3,
+  RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -16,7 +17,7 @@ import {
   getSenderLabel,
   getSenderOriginLabel,
 } from "./crmConversationModel";
-import { readReaction, readRecord } from "./crmMessageHelpers";
+import { readReaction, readRecord, readString } from "./crmMessageHelpers";
 import type { CrmMessage } from "./crmConversationTypes";
 
 export function MessageBubble({
@@ -46,10 +47,29 @@ export function MessageBubble({
   const elementId = `crm-msg-${message.id}`;
   const showAttribution = Boolean(senderLabel || senderOrigin);
 
+  const isMedia = ["IMAGE", "VIDEO"].includes(message.type);
+  const metadata = readRecord(message.metadata);
+  const media = readRecord(metadata.media);
+  const caption = (readString(media.caption) ?? message.content)?.trim();
+  const hasCaption = Boolean(
+    caption && caption !== `[${message.type.toLowerCase()}]`,
+  );
+  const isFlushMedia = isMedia && !hasCaption && !message.deletedAt;
+
+  const bubbleClasses = [
+    "crm-bubble",
+    outgoing ? "crm-bubble-out" : "",
+    isFlushMedia ? "crm-bubble-media-flush" : "",
+    isMedia ? "crm-bubble-media" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <article
-      className={outgoing ? "crm-bubble crm-bubble-out" : "crm-bubble"}
+      className={bubbleClasses}
       data-channel={channel}
+      data-media-flush={isFlushMedia ? "true" : undefined}
       data-message-id={String(message.id)}
       data-message-status={delivery.status}
       id={elementId}
@@ -289,7 +309,11 @@ function RecoveryActionButton({
       title={idleLabel}
       type="button"
     >
-      {inFlight ? pendingLabel : idleLabel}
+      <RotateCcw
+        className={`size-3.5 flex-shrink-0 ${inFlight ? "animate-spin" : ""}`}
+        aria-hidden="true"
+      />
+      <span>{inFlight ? pendingLabel : idleLabel}</span>
     </button>
   );
 }

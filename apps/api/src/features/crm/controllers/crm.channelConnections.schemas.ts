@@ -71,13 +71,36 @@ export const crmScheduledMessagesQuerySchema = z.object({
   status: crmScheduledMessageStatusSchema.optional(),
 });
 
-export const crmCreateScheduledMessageSchema = z
+const crmScheduledMessageContentSchema = z.string().trim().min(1).max(4000);
+
+export const crmCreateScheduledMessageSchema = z.union([
+  z
+    .object({
+      content: crmScheduledMessageContentSchema,
+      scheduledAt: z.string().datetime(),
+      cycleId: z.string().uuid(),
+    })
+    .strict(),
+  z
+    .object({
+      connectionId: z.string().uuid(),
+      content: crmScheduledMessageContentSchema,
+      customerDisplayName: z.string().trim().min(1).max(160).optional(),
+      phone: z.string().trim().min(8).max(30),
+      scheduledAt: z.string().datetime(),
+    })
+    .strict(),
+]);
+
+export const crmUpdateScheduledMessageSchema = z
   .object({
-    content: z.string().trim().min(1).max(4000),
-    scheduledAt: z.string().datetime(),
-    cycleId: z.string().uuid(),
+    content: crmScheduledMessageContentSchema.optional(),
+    scheduledAt: z.string().datetime().optional(),
   })
-  .strict();
+  .strict()
+  .refine((input) => Object.keys(input).length > 0, {
+    message: "At least one scheduled-message field is required.",
+  });
 
 export const crmProcessDueScheduledMessagesSchema = z
   .object({

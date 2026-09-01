@@ -240,6 +240,11 @@ export function createCrmConversationApi({
         crmConversationRoutes.scheduledMessagesProcessDue(baseUrl),
         input,
       ),
+    updateScheduledMessage: (scheduledMessageId, input) =>
+      patchJson(
+        crmConversationRoutes.scheduledMessage(scheduledMessageId, baseUrl),
+        input,
+      ),
     pauseCampaign: (campaignId) =>
       postJson(crmCampaignRoutes.campaignAction(campaignId, "pause", baseUrl)),
     removeReaction: (messageId) =>

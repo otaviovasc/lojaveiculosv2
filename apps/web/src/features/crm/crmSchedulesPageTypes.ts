@@ -1,4 +1,5 @@
 import type {
+  CrmCreateScheduledMessageInput,
   CrmListScheduledMessagesInput,
   CrmScheduledMessage,
   CrmConversationCycle,
@@ -18,10 +19,10 @@ export type CrmSchedulesPageProps = {
     input?: CrmListScheduledMessagesInput,
   ) => Promise<CrmScheduledMessage[]>;
   onProcessDue: () => Promise<boolean>;
-  onSchedule: (input: {
-    content: string;
-    scheduledAt: string;
-    cycleId: string;
-  }) => Promise<boolean>;
+  onSchedule: (input: CrmCreateScheduledMessageInput) => Promise<boolean>;
+  onUpdate: (
+    scheduledMessageId: string,
+    input: { content: string; scheduledAt: string },
+  ) => Promise<boolean>;
   conversationCycles: CrmConversationCycle[];
 };

@@ -17,7 +17,7 @@
   transition:
     opacity 120ms ease,
     transform 120ms ease;
-  z-index: 3;
+  z-index: 15;
 }
 
 .crm-bubble:hover .crm-message-actions,

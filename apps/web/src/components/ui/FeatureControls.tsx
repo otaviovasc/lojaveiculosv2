@@ -2,8 +2,11 @@ import type { ComponentProps, ReactNode } from "react";
 import { Search, X } from "lucide-react";
 import { CustomSelect, type CustomSelectOption } from "./CustomSelect";
 import { DatePickerField } from "./DatePickerField";
+import { TimePickerField } from "./TimePickerField";
 import { cx, type FeatureIcon } from "./featureShared";
 
+export { DatePickerField } from "./DatePickerField";
+export { TimePickerField } from "./TimePickerField";
 export { FeatureTabs } from "./FeatureTabs";
 
 export function FeatureInput({

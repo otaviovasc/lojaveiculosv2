@@ -127,6 +127,11 @@ export function CrmAudioPlayer({
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       const audio = audioRef.current;
       if (!audio) return;
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        togglePlay();
+        return;
+      }
       const nextTime =
         event.key === "ArrowRight"
           ? audio.currentTime + 5
@@ -141,7 +146,7 @@ export function CrmAudioPlayer({
       event.preventDefault();
       updatePosition(nextTime);
     },
-    [updatePosition],
+    [togglePlay, updatePosition],
   );
 
   const retryLoad = useCallback(() => {
@@ -166,9 +171,7 @@ export function CrmAudioPlayer({
 
   return (
     <div
-      className={
-        outgoing ? "crm-audio-player crm-audio-player-out" : "crm-audio-player"
-      }
+      className={`crm-audio-player ${outgoing ? "crm-audio-player-out" : "crm-audio-player-in"} ${isPlaying ? "crm-audio-playing" : ""}`}
       role="region"
       aria-label="Audio player"
     >
@@ -187,32 +190,34 @@ export function CrmAudioPlayer({
         src={src}
       />
 
-      <button
-        aria-label={
-          hasError
-            ? "Tentar carregar audio novamente"
-            : isPlaying
-              ? "Pausar audio"
-              : "Reproduzir audio"
-        }
-        className="crm-audio-play-btn"
-        onClick={hasError ? retryLoad : togglePlay}
-        title={
-          hasError ? "Tentar novamente" : isPlaying ? "Pausar" : "Reproduzir"
-        }
-        type="button"
-      >
-        {hasError ? (
-          <RotateCcw className="size-4" />
-        ) : (
-          <Morphicon
-            active={isPlaying}
-            className={`size-4 fill-current ${!isPlaying ? "ml-0.5" : ""}`}
-            name="play-pause"
-            size={16}
-          />
-        )}
-      </button>
+      <div className="crm-audio-ctrl-wrap">
+        <button
+          aria-label={
+            hasError
+              ? "Tentar carregar audio novamente"
+              : isPlaying
+                ? "Pausar audio"
+                : "Reproduzir audio"
+          }
+          className="crm-audio-play-btn"
+          onClick={hasError ? retryLoad : togglePlay}
+          title={
+            hasError ? "Tentar novamente" : isPlaying ? "Pausar" : "Reproduzir"
+          }
+          type="button"
+        >
+          {hasError ? (
+            <RotateCcw className="size-4" />
+          ) : (
+            <Morphicon
+              active={isPlaying}
+              className={`size-4 fill-current ${!isPlaying ? "ml-0.5" : ""}`}
+              name="play-pause"
+              size={16}
+            />
+          )}
+        </button>
+      </div>
 
       <div className="crm-audio-body">
         <div
@@ -227,27 +232,36 @@ export function CrmAudioPlayer({
           role="slider"
           tabIndex={0}
         >
-          {waveBars.map((height, index) => {
-            const barProgress = (index / waveBars.length) * 100;
-            const isPlayed = barProgress <= progress;
-            return (
-              <span
-                className={
-                  isPlayed
-                    ? "crm-audio-bar crm-audio-bar-played"
-                    : "crm-audio-bar"
-                }
-                key={index}
-                style={{ height: `${height}%` }}
-              />
-            );
-          })}
+          <div className="crm-audio-bars">
+            {waveBars.map((height, index) => {
+              const barProgress = (index / waveBars.length) * 100;
+              const isPlayed = barProgress <= progress;
+              return (
+                <span
+                  className={
+                    isPlayed
+                      ? "crm-audio-bar crm-audio-bar-played"
+                      : "crm-audio-bar"
+                  }
+                  key={index}
+                  style={{ height: `${height}%` }}
+                />
+              );
+            })}
+          </div>
+          {progress > 0 && progress < 100 ? (
+            <span
+              aria-hidden="true"
+              className="crm-audio-scrubber-thumb"
+              style={{ left: `${progress}%` }}
+            />
+          ) : null}
         </div>
 
         <div className="crm-audio-meta">
           <span className="crm-audio-time">
             {isPlaying
-              ? currentTime
+              ? `${currentTime} / ${duration !== "0:00" ? duration : currentTime}`
               : duration !== "0:00"
                 ? duration
                 : currentTime}
@@ -264,14 +278,14 @@ export function CrmAudioPlayer({
             </a>
             <button
               aria-label={`Velocidade de reproducao ${playbackRate}x`}
-              className="crm-audio-speed-btn"
+              className={`crm-audio-speed-btn ${playbackRate > 1 ? "crm-audio-speed-active" : ""}`}
               onClick={cycleSpeed}
               title="Velocidade"
               type="button"
             >
               {playbackRate}x
             </button>
-            <Volume2 aria-hidden="true" className="size-3 opacity-60" />
+            <Volume2 aria-hidden="true" className="size-3.5 opacity-60" />
           </div>
         </div>
       </div>

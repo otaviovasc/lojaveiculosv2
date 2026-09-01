@@ -124,6 +124,8 @@ export function updateMemoryScheduledMessage(
   }
   message.cancelledAt =
     input.cancelledAt !== undefined ? input.cancelledAt : message.cancelledAt;
+  message.content =
+    input.content !== undefined ? input.content : message.content;
   message.errorMessage =
     input.errorMessage !== undefined
       ? input.errorMessage
@@ -133,6 +135,8 @@ export function updateMemoryScheduledMessage(
     input.sentMessageId !== undefined
       ? input.sentMessageId
       : message.sentMessageId;
+  message.scheduledAt =
+    input.scheduledAt !== undefined ? input.scheduledAt : message.scheduledAt;
   message.status = input.status;
   message.updatedAt = new Date();
   return message;

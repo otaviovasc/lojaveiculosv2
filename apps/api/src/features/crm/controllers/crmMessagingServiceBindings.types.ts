@@ -37,6 +37,7 @@ import type {
   ListCrmScheduledMessagesInput,
   ProcessDueCrmScheduledMessagesInput,
   ProcessDueCrmScheduledMessagesResult,
+  UpdateCrmScheduledMessageInput,
 } from "../../../domains/crm/services/CrmMessagingService/crmScheduledMessages.js";
 import type {
   AddConversationCycleTagInput,
@@ -141,6 +142,10 @@ export type CrmMessagingServices = CrmQuickMessageServices &
     processDueCrmScheduledMessages: CrmContextService<
       ProcessDueCrmScheduledMessagesInput,
       ProcessDueCrmScheduledMessagesResult
+    >;
+    updateCrmScheduledMessage: CrmContextService<
+      UpdateCrmScheduledMessageInput,
+      CrmScheduledMessage
     >;
     recoverOlxWebhookEffects: CrmContextService<
       RecoverOlxWebhookEffectsInput,

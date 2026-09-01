@@ -7,11 +7,13 @@ import {
   FileText,
   Mail,
   MapPin,
+  Maximize2,
   MessageSquarePlus,
   PackageSearch,
   Phone,
   Play,
   User,
+  Video,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { formatCrmPhone } from "./crmPhoneFormat";
@@ -42,17 +44,27 @@ export function MessageContent({
 
   if (mediaUrl && message.type === "IMAGE") {
     return (
-      <figure className="crm-media">
+      <figure className="crm-media crm-media-image-container">
         <MediaPreviewButton
           label={`Abrir ${caption || "imagem enviada"}`}
           onClick={onMediaClick ? () => onMediaClick(mediaUrl) : undefined}
         >
-          <img
-            alt={caption || "Imagem enviada"}
-            className="crm-media-img"
-            loading="lazy"
-            src={mediaUrl}
-          />
+          <div className="crm-media-img-wrapper">
+            <img
+              alt={caption || "Imagem enviada"}
+              className="crm-media-img"
+              loading="lazy"
+              src={mediaUrl}
+            />
+            <span className="crm-media-hover-overlay">
+              <span
+                className="crm-media-hover-btn"
+                title="Visualizar em tela cheia"
+              >
+                <Maximize2 className="size-4" />
+              </span>
+            </span>
+          </div>
         </MediaPreviewButton>
         <MessageCaption message={message} value={caption} />
       </figure>
@@ -66,7 +78,11 @@ export function MessageContent({
           label={`Abrir ${caption || "figurinha enviada"}`}
           onClick={onMediaClick ? () => onMediaClick(mediaUrl) : undefined}
         >
-          <img alt={caption || "Figurinha enviada"} src={mediaUrl} />
+          <img
+            alt={caption || "Figurinha enviada"}
+            className="crm-sticker-img"
+            src={mediaUrl}
+          />
         </MediaPreviewButton>
       </figure>
     );
@@ -91,9 +107,18 @@ export function MessageContent({
             <span className="crm-video-play-overlay">
               <Play className="size-6 fill-white text-white ml-0.5" />
             </span>
+            <span className="crm-media-video-chip">
+              <Video className="size-3" />
+              <span>Vídeo</span>
+            </span>
           </button>
         ) : (
-          <video controls preload="metadata" src={mediaUrl} />
+          <video
+            className="crm-media-video-preview"
+            controls
+            preload="metadata"
+            src={mediaUrl}
+          />
         )}
         <MessageCaption message={message} value={caption} />
       </figure>

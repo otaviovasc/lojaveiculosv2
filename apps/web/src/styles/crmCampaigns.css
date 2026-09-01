@@ -16,36 +16,37 @@
    -------------------------------------------------------------------------- */
 .crm-campaign-hero-card {
   align-items: center;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, #10b981 6%, var(--color-panel)),
-    var(--color-panel) 75%
-  );
+  background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 1.25rem;
   box-shadow: none;
   display: grid;
+  gap: 1.25rem;
+  grid-template-columns: auto minmax(0, 1fr);
   padding: 1.5rem;
-  position: relative;
-  overflow: hidden;
   width: 100%;
 }
 
-.crm-campaign-hero-watermark {
+.crm-campaign-hero-icon {
+  align-items: center;
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 30%, var(--color-line));
+  border-radius: 1rem;
   color: #059669;
-  height: 8.5rem;
-  opacity: 0.05;
-  pointer-events: none;
-  position: absolute;
-  right: -1.25rem;
-  bottom: -1.5rem;
-  transform: rotate(-10deg);
-  width: 8.5rem;
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
 }
 
-:root[data-theme="dark"] .crm-campaign-hero-watermark,
-.dark .crm-campaign-hero-watermark {
+:root[data-theme="dark"] .crm-campaign-hero-icon,
+.dark .crm-campaign-hero-icon {
   color: #34d399;
+}
+
+.crm-campaign-hero-icon svg {
+  height: 1.85rem;
+  width: 1.85rem;
 }
 
 .crm-campaign-hero-content {
@@ -54,9 +55,7 @@
   flex-wrap: wrap;
   gap: 1.25rem;
   justify-content: space-between;
-  position: relative;
   width: 100%;
-  z-index: 1;
 }
 
 .crm-campaign-hero-main {
@@ -262,37 +261,56 @@
 }
 
 .crm-campaign-panel input,
-.crm-campaign-panel textarea {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: 0.75rem;
+.crm-campaign-panel textarea,
+.crm-campaign-panel select {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 600;
   padding: 0.75rem 0.85rem;
-  transition: border-color 0.15s ease;
+  transition: all 0.18s ease;
 }
 
 .crm-campaign-panel input:focus,
-.crm-campaign-panel textarea:focus {
+.crm-campaign-panel textarea:focus,
+.crm-campaign-panel select:focus {
+  background: var(--color-panel);
   border-color: #10b981;
-  outline: 2px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+  outline: none;
 }
 
 .crm-campaign-search {
   align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   color: var(--color-text);
   display: flex;
   gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0 0.85rem;
+  transition: all 0.18s ease;
 }
 
 .crm-campaign-search:focus-within {
+  background: var(--color-panel);
   border-color: #10b981;
-  outline: 2px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
 }
 
 .crm-campaign-search svg {
@@ -314,4 +332,47 @@
 .crm-campaign-search input:focus {
   border: 0;
   outline: 0;
+}
+
+@media (min-width: 48rem) {
+  .crm-campaign-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75rem) {
+  .crm-campaign-stats {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .crm-campaign-hero-card {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .crm-campaign-hero-content,
+  .crm-campaign-hero-actions {
+    align-items: stretch;
+  }
+
+  .crm-campaign-hero-actions,
+  .crm-campaign-create-btn,
+  .crm-campaign-count-badge {
+    width: 100%;
+  }
+
+  .crm-campaign-hero-actions {
+    display: grid;
+  }
+
+  .crm-campaign-create-btn,
+  .crm-campaign-count-badge {
+    justify-content: center;
+  }
+
+  .crm-campaign-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

@@ -170,9 +170,15 @@
 
 .crm-bot-input-wrap {
   align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: 0.75rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   display: flex;
   gap: 0.65rem;
   min-height: 2.85rem;
@@ -181,8 +187,9 @@
 }
 
 .crm-bot-input-wrap:focus-within {
+  background: var(--color-panel);
   border-color: #10b981;
-  outline: 2px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
 }
 
 .crm-bot-input-wrap svg {
@@ -207,9 +214,15 @@
 /* Modern Switch Card */
 .crm-bot-form-switch-card {
   align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 0.875rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   cursor: pointer;
   display: grid;
   gap: 1rem;
@@ -340,8 +353,12 @@
 
 .crm-bot-channel-tab {
   align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 0.75rem;
   color: var(--color-muted);
   cursor: pointer;
@@ -355,6 +372,7 @@
 }
 
 .crm-bot-channel-tab:hover {
+  background: var(--color-panel);
   border-color: color-mix(in srgb, var(--color-text) 25%, var(--color-line));
   color: var(--color-text);
 }
@@ -387,9 +405,15 @@
 }
 
 .crm-bot-action-card {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -399,6 +423,7 @@
 }
 
 .crm-bot-action-card:hover {
+  background: var(--color-panel);
   border-color: color-mix(in srgb, #10b981 35%, var(--color-line));
 }
 

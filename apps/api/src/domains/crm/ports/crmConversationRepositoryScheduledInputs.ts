@@ -42,9 +42,11 @@ export type FindDueCrmScheduledMessageScopesInput = {
 
 export type UpdateCrmScheduledMessageInput = {
   cancelledAt?: Date | null;
+  content?: string;
   errorMessage?: string | null;
   expectedStatus?: CrmScheduledMessageStatus;
   id: string;
+  scheduledAt?: Date;
   sentAt?: Date | null;
   sentMessageId?: string | null;
   status: CrmScheduledMessageStatus;

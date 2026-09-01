@@ -140,6 +140,10 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).createScheduledMessage(input),
+    updateScheduledMessage: async (scheduledMessageId, input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).updateScheduledMessage(scheduledMessageId, input),
     createTag: async (input) =>
       createCrmConversationApi(await createProductCrmApiOptions()).createTag(
         input,

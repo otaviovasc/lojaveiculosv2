@@ -81,10 +81,14 @@ export function CrmScopedNav({
   activeScope: CrmScope;
   onChange: (scope: CrmScope) => void;
   providerStatus: CrmConnectionStatus;
-  realtimeStatus: CrmConnectionStatus;
+  realtimeStatus?: CrmConnectionStatus | undefined;
   tagCount: number;
   unreadCount: number;
 }) {
+  const effectiveStatus = resolveSingleCrmStatus(
+    providerStatus,
+    realtimeStatus,
+  );
   return (
     <>
       <nav className="crm-scope-nav" aria-label="WhatsApp CRM">
@@ -108,24 +112,17 @@ export function CrmScopedNav({
         />
         <div
           aria-atomic="true"
-          aria-label={`${providerStatus.label}. ${realtimeStatus.label}`}
+          aria-label={effectiveStatus.label}
           aria-live="polite"
           className="crm-scope-trailing"
           role="status"
         >
           <span
             aria-hidden="true"
-            className={`crm-status crm-scope-status crm-status-${providerStatus.tone}`}
+            className={`crm-status crm-scope-status crm-status-${effectiveStatus.tone}`}
           >
             <span aria-hidden="true" />
-            {providerStatus.label}
-          </span>{" "}
-          <span
-            aria-hidden="true"
-            className={`crm-status crm-scope-status crm-status-${realtimeStatus.tone}`}
-          >
-            <span aria-hidden="true" />
-            {realtimeStatus.label}
+            {effectiveStatus.label}
           </span>
         </div>
       </nav>
@@ -139,25 +136,33 @@ export function CrmScopedNav({
   );
 }
 
+function resolveSingleCrmStatus(
+  providerStatus: CrmConnectionStatus,
+  realtimeStatus?: CrmConnectionStatus | undefined,
+): CrmConnectionStatus {
+  if (providerStatus.tone === "error" || providerStatus.tone === "offline") {
+    return providerStatus;
+  }
+  if (
+    realtimeStatus &&
+    (realtimeStatus.tone === "error" || realtimeStatus.tone === "loading")
+  ) {
+    return realtimeStatus;
+  }
+  if (providerStatus.tone === "loading") {
+    return providerStatus;
+  }
+  return providerStatus;
+}
+
 function createScopeLabel(
   scope: (typeof scopes)[number],
   counts: { tagCount: number; unreadCount: number },
 ) {
   const badge = readBadge(scope.id, counts);
-  const label =
-    scope.id === "schedules" ? (
-      <>
-        <span className="crm-scope-tab-label-full">{scope.label}</span>
-        <span aria-hidden="true" className="crm-scope-tab-label-compact">
-          Agendar Msg
-        </span>
-      </>
-    ) : (
-      scope.label
-    );
   return (
     <>
-      <strong>{label}</strong>
+      <strong>{scope.label}</strong>
       {badge ? (
         <>
           {" "}

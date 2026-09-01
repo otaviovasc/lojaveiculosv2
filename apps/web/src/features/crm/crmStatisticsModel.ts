@@ -46,3 +46,40 @@ export function parseCrmStatisticsInputDate(value: string) {
   if (!year || !month || !day) return null;
   return new Date(year, month - 1, day);
 }
+
+const knownSourceLabels: Record<string, string> = {
+  campaign: "Campanha",
+  crm: "CRM",
+  csv_import: "Importação",
+  direct: "Direto",
+  external_api: "API externa",
+  facebook: "Facebook",
+  import: "Importação",
+  instagram: "Instagram",
+  manual: "Manual",
+  olx: "OLX",
+  olx_chat: "OLX Chat",
+  other: "Outros",
+  others: "Outros",
+  public_site: "Site da loja",
+  site: "Site da loja",
+  system: "Sistema",
+  web: "Site da loja",
+  whatsapp: "WhatsApp",
+  zapi: "WhatsApp (Z-API)",
+};
+
+export function formatCrmStatisticsSourceLabel(keyOrLabel: string): string {
+  if (!keyOrLabel) return "Outros";
+  const normalized = keyOrLabel.trim().toLowerCase();
+  if (knownSourceLabels[normalized]) {
+    return knownSourceLabels[normalized];
+  }
+  if (normalized.includes("_")) {
+    return normalized
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }
+  return keyOrLabel;
+}

@@ -62,11 +62,28 @@ export type CrmScheduledMessage = {
   updatedAt: string;
 };
 
-export type CrmCreateScheduledMessageInput = {
+type CrmScheduledMessageDraft = {
   content: string;
   scheduledAt: string;
-  cycleId: string;
 };
+
+export type CrmCreateScheduledMessageInput = CrmScheduledMessageDraft &
+  (
+    | {
+        connectionId?: never;
+        customerDisplayName?: never;
+        phone?: never;
+        cycleId: string;
+      }
+    | {
+        connectionId: CrmConnectionId;
+        customerDisplayName?: string;
+        phone: string;
+        cycleId?: never;
+      }
+  );
+
+export type CrmUpdateScheduledMessageInput = Partial<CrmScheduledMessageDraft>;
 
 export type CrmListScheduledMessagesInput = {
   connectionId?: CrmConnectionId;

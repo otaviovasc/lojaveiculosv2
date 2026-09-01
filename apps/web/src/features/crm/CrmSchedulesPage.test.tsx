@@ -16,6 +16,8 @@ describe("CrmSchedulesPage", () => {
     const user = userEvent.setup();
     const callbacks = renderPage({ activeSession: null });
 
+    // Switch to board view
+    await user.click(screen.getByRole("button", { name: "Lista" }));
     expect(await screen.findByText("Ola futuro")).toBeInTheDocument();
     expect(callbacks.onList).toHaveBeenLastCalledWith({
       connectionId: "24000000-0000-4000-8000-000000000101",
@@ -54,16 +56,16 @@ describe("CrmSchedulesPage", () => {
       conversationCycles: [activeSession],
     });
 
-    await screen.findByText("Ola futuro");
+    await screen.findByText("Novo agendamento");
     await user.click(screen.getByRole("button", { name: "Novo agendamento" }));
 
     expect(
       document.querySelector(".crm-workflow--connection"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Etapa 1 de 3 · Escolha a conversa")).toBeVisible();
+    expect(screen.getByText("Passo 1 de 3")).toBeVisible();
     expect(screen.getByLabelText("Conversa")).toHaveTextContent("Ana");
     expect(
-      screen.getByRole("button", { current: "step", name: /Conversa/i }),
+      screen.getByRole("button", { current: "step", name: /Destinatário/i }),
     ).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Continuar" }));
     await user.type(screen.getByLabelText("Quando enviar"), "2099-01-01T10:00");
@@ -82,7 +84,6 @@ describe("CrmSchedulesPage", () => {
     expect(
       await screen.findByText("Mensagem agendada com sucesso."),
     ).toBeVisible();
-    expect(screen.getByLabelText("Agenda de mensagens")).toBeVisible();
   });
 
   it("validates each creation step and resets a cancelled draft", async () => {
@@ -114,6 +115,52 @@ describe("CrmSchedulesPage", () => {
     );
   });
 
+  it("schedules a first message for a new phone number", async () => {
+    const user = userEvent.setup();
+    const callbacks = renderPage({ activeSession: null });
+
+    await screen.findByText("Ola futuro");
+    await user.click(screen.getByRole("button", { name: "Novo agendamento" }));
+    await user.click(screen.getByRole("tab", { name: "Novo número" }));
+    await user.type(screen.getByLabelText("Telefone"), "11987654321");
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.type(screen.getByLabelText("Quando enviar"), "2099-02-01T14:00");
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.type(screen.getByLabelText("Mensagem"), "Primeiro contato");
+    await user.click(screen.getByRole("button", { name: "Agendar mensagem" }));
+
+    expect(callbacks.onSchedule).toHaveBeenCalledWith({
+      connectionId: "24000000-0000-4000-8000-000000000101",
+      content: "Primeiro contato",
+      phone: "11987654321",
+      scheduledAt: new Date("2099-02-01T14:00").toISOString(),
+    });
+  });
+
+  it("edits a pending message and exposes cancelled schedules", async () => {
+    const user = userEvent.setup();
+    const callbacks = renderPage();
+
+    await screen.findByText("Ola futuro");
+    expect(screen.getByRole("tab", { name: /Canceladas/i })).toBeVisible();
+    await user.click(
+      screen.getByRole("button", { name: /Editar agendamento/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.clear(screen.getByLabelText("Mensagem"));
+    await user.type(screen.getByLabelText("Mensagem"), "Texto atualizado");
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(callbacks.onUpdate).toHaveBeenCalledWith("schedule_1", {
+      content: "Texto atualizado",
+      scheduledAt: new Date("2099-01-07T10:00:00.000Z").toISOString(),
+    });
+    expect(
+      await screen.findByText("Agendamento atualizado com sucesso."),
+    ).toBeVisible();
+  });
+
   it("confirms pending cancellation and exposes process due action", async () => {
     const user = userEvent.setup();
     const callbacks = renderPage();
@@ -122,7 +169,9 @@ describe("CrmSchedulesPage", () => {
     await user.click(screen.getByRole("button", { name: /Cancelar/ }));
     expect(callbacks.onCancel).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Confirmar" }));
+    await user.click(
+      screen.getByRole("button", { name: "Confirmar cancelamento" }),
+    );
     expect(callbacks.onCancel).toHaveBeenCalledWith("schedule_1");
 
     await user.click(
@@ -138,7 +187,7 @@ describe("CrmSchedulesPage", () => {
       screen.getByRole("button", { name: "Novo agendamento" }),
     ).toBeDisabled();
     expect(
-      screen.getByText("Sem permissao para listar agendamentos."),
+      screen.getByText("Sem permissão para listar agendamentos."),
     ).toBeInTheDocument();
   });
 });
@@ -160,6 +209,7 @@ function renderPage(
     ]),
     onProcessDue: vi.fn(async () => true),
     onSchedule: vi.fn(async () => true),
+    onUpdate: vi.fn(async () => true),
   };
   render(
     <CrmSchedulesPage
@@ -203,7 +253,7 @@ function createScheduledMessage(
     id: input.id ?? "schedule_1",
     metadata: {},
     recipientAddress: "5511999990000",
-    scheduledAt: input.scheduledAt ?? "2026-07-07T10:00:00.000Z",
+    scheduledAt: input.scheduledAt ?? "2099-01-07T10:00:00.000Z",
     sentAt: null,
     sentMessageId: null,
     cycleId: input.cycleId ?? "34000000-0000-4000-8000-000000000001",

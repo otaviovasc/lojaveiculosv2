@@ -27,6 +27,7 @@ import {
   listDueCrmScheduledMessageScopes,
   listCrmScheduledMessages,
   processDueCrmScheduledMessages,
+  updateCrmScheduledMessage,
 } from "../../../domains/crm/services/CrmMessagingService/crmScheduledMessages.js";
 import {
   addConversationCycleTag,
@@ -86,6 +87,7 @@ type CycleActionBindings = Pick<
   | "processDueCrmScheduledMessages"
   | "startConversation"
   | "setConversationAttendance"
+  | "updateCrmScheduledMessage"
 >;
 
 type TagBindings = Pick<
@@ -166,6 +168,8 @@ const buildCycleActionBindings = (
     markConversationCycleReadState(context, input, ports),
   processDueCrmScheduledMessages: (context, input) =>
     processDueCrmScheduledMessages(context, input, ports),
+  updateCrmScheduledMessage: (context, input) =>
+    updateCrmScheduledMessage(context, input, ports),
   startConversation: (context, input) => {
     const { action: _action, recipientAddress, ...rest } = input;
     return startConversation(

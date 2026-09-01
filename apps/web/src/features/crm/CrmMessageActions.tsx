@@ -51,6 +51,8 @@ export function MessageActions({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reactionOpen, setReactionOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [starred, setStarred] = useState(false);
+  const [forwarded, setForwarded] = useState(false);
 
   const hasActions = Boolean(onReply || onReact || onDelete || message.content);
   if (!hasActions) return null;
@@ -62,6 +64,20 @@ export function MessageActions({
       setTimeout(() => setCopied(false), 1800);
       setMenuOpen(false);
     }
+  };
+
+  const handleForward = () => {
+    if (message.content) {
+      void navigator.clipboard.writeText(message.content);
+      setForwarded(true);
+      setTimeout(() => setForwarded(false), 1800);
+      setMenuOpen(false);
+    }
+  };
+
+  const handleStar = () => {
+    setStarred((prev) => !prev);
+    setMenuOpen(false);
   };
 
   return (
@@ -236,27 +252,34 @@ export function MessageActions({
 
             <button
               className="crm-context-menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                if (message.content) {
-                  void navigator.clipboard.writeText(message.content);
-                }
-              }}
+              onClick={handleForward}
               role="menuitem"
               type="button"
             >
-              <Share2 className="size-4 text-muted shrink-0" />
-              <span>Encaminhar</span>
+              {forwarded ? (
+                <Check className="size-4 text-emerald-500 shrink-0" />
+              ) : (
+                <Share2 className="size-4 text-muted shrink-0" />
+              )}
+              <span>
+                {forwarded ? "Copiado para encaminhar!" : "Encaminhar"}
+              </span>
             </button>
 
             <button
               className="crm-context-menu-item"
-              onClick={() => setMenuOpen(false)}
+              onClick={handleStar}
               role="menuitem"
               type="button"
             >
-              <Star className="size-4 text-muted shrink-0" />
-              <span>Favoritar</span>
+              <Star
+                className={
+                  starred
+                    ? "size-4 text-amber-500 fill-amber-500 shrink-0"
+                    : "size-4 text-muted shrink-0"
+                }
+              />
+              <span>{starred ? "Favoritada" : "Favoritar"}</span>
             </button>
 
             {onDelete ? (
