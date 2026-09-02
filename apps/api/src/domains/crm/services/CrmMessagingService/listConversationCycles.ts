@@ -11,7 +11,7 @@ import {
 } from "../CrmService/serviceSupport.js";
 import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
 import { auditCrmServiceEvent, logCrmServiceEvent } from "./serviceSupport.js";
-import { resolveCrmQueueVisibility } from "../../messaging/crmQueueVisibility.js";
+import { resolveCrmConnectionScopedQueueVisibility } from "../../messaging/crmQueueVisibility.js";
 
 const permission = "crm.conversations.read";
 
@@ -53,7 +53,10 @@ export async function listConversationCycles(
     ...(context.actor.kind === "user"
       ? { assignedUserId: context.actor.id as never }
       : {}),
-    queueVisibility: resolveCrmQueueVisibility(context),
+    queueVisibility: await resolveCrmConnectionScopedQueueVisibility(
+      context,
+      ports,
+    ),
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });

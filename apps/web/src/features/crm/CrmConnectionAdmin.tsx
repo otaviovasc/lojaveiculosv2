@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, type ReactNode } from "react";
+import type { CrmConnectionAllowance } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 import type {
@@ -53,6 +54,7 @@ type ConnectionAdminProps = {
     canPair: boolean;
     canRepairCredentials?: boolean;
     canSetup: boolean;
+    connectionAllowance?: CrmConnectionAllowance | null;
     handlers: CrmConnectionSelfServiceHandlers;
     isCrmEntitled: boolean;
   };
@@ -101,6 +103,7 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
             canPair={selfService.canPair}
             canRepairCredentials={selfService.canRepairCredentials ?? false}
             canSetup={selfService.canSetup}
+            connectionAllowance={selfService.connectionAllowance ?? null}
             connections={connections}
             existingConnection={readInitialConnection(connections)}
             handlers={selfService.handlers}

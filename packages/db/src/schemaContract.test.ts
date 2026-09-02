@@ -87,6 +87,7 @@ describe("product database schema contract", () => {
       "meta_cloud",
       "zapi",
       "olx",
+      "uazapi",
     ]);
     expect(schema.messagingChannel.enumValues).toEqual([
       "whatsapp",

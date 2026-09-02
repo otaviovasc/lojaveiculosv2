@@ -199,6 +199,7 @@ function formatProvider(provider: CrmProviderEvent["provider"]) {
   const labels: Record<CrmProviderEvent["provider"], string> = {
     meta_cloud: "WhatsApp oficial",
     olx: "OLX Chat",
+    uazapi: "UAZAPI",
     zapi: "Z-API",
   };
   return labels[provider];

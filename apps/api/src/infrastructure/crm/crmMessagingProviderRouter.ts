@@ -6,6 +6,7 @@ import {
 } from "../../domains/crm/ports/crmMessagingGateway.js";
 import { createComposioCrmMessagingGateway } from "./composioCrmMessagingGateway.js";
 import { createZapiCrmWhatsappGateway } from "./zapiCrmWhatsappGateway.js";
+import { createUazapiCrmWhatsappGateway } from "./uazapiCrmWhatsappGateway.js";
 import { createOlxCrmChatGateway } from "./olxCrmChatGateway.js";
 import { assertCrmAudioIsNormalized } from "../../domains/crm/messaging/crmAudioNormalization.js";
 
@@ -14,10 +15,23 @@ export function createCrmMessagingProviderRouter(
   composioGateway: CrmMessagingGateway,
   olxGateway: CrmMessagingGateway,
   options: { olxChatEnabled: boolean } = { olxChatEnabled: false },
+  uazapiGateway?: CrmMessagingGateway,
 ): CrmMessagingGateway {
   const gatewayFor = (connection: CrmConnection) => {
     const provider = connection.provider;
     if (provider === "zapi") return zapiGateway;
+    if (
+      provider === "uazapi" &&
+      connection.channel === "whatsapp" &&
+      connection.broker === "direct"
+    ) {
+      if (!uazapiGateway) {
+        throw new CrmMessagingCapabilityError(
+          "UAZAPI is not configured in the server runtime.",
+        );
+      }
+      return uazapiGateway;
+    }
     if (provider === "olx" && connection.channel === "olx_chat") {
       if (!options.olxChatEnabled) {
         throw new CrmMessagingCapabilityError(
@@ -45,6 +59,11 @@ export function createCrmMessagingProviderRouter(
       gatewayFor(connection).deleteMessage(connection, input),
     disconnectConnection: (connection) =>
       gatewayFor(connection).disconnectConnection(connection),
+    downloadInboundMedia: async (connection, input) =>
+      gatewayFor(connection).downloadInboundMedia?.(connection, input) ?? {
+        mediaUrl: null,
+        mimeType: null,
+      },
     getConnectionStatus: (connection) =>
       gatewayFor(connection).getConnectionStatus(connection),
     getProfilePhotoUrl: async (connection, input) =>
@@ -81,6 +100,7 @@ export function createRuntimeCrmMessagingProviderGateway(
     createComposioCrmMessagingGateway(env, fetchImpl),
     createOlxCrmChatGateway(env, fetchImpl),
     { olxChatEnabled: isOlxChatRuntimeEnabled(env) },
+    createUazapiCrmWhatsappGateway(env, fetchImpl),
   );
 }
 

@@ -59,13 +59,30 @@ export function registerCrmChannelConnectionRoutes(
               provider: "zapi",
               webhookSetupTarget: readWebhookRequestBase(context),
             }
-          : {
-              channel: input.channel,
-              displayName:
-                input.displayName ??
-                (input.channel === "instagram" ? "Instagram" : "WhatsApp"),
-              provider: "meta_cloud",
-            },
+          : input.provider === "uazapi"
+            ? {
+                adminToken: input.adminToken,
+                channel: "whatsapp",
+                ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
+                displayName: input.displayName ?? "WhatsApp",
+                provider: "uazapi",
+                webhookSetupTarget: readWebhookRequestBase(context),
+                ...(input.mode === "attach"
+                  ? { instanceId: input.instanceId, mode: "attach" as const }
+                  : {
+                      mode: "create" as const,
+                      ...(input.connectionPhoneNumber
+                        ? { connectionPhoneNumber: input.connectionPhoneNumber }
+                        : {}),
+                    }),
+              }
+            : {
+                channel: input.channel,
+                displayName:
+                  input.displayName ??
+                  (input.channel === "instagram" ? "Instagram" : "WhatsApp"),
+                provider: "meta_cloud",
+              },
       );
       return context.json(toChannelConnectionOverviewItem(connection), 201);
     }),
@@ -100,8 +117,76 @@ export function registerCrmChannelConnectionRoutes(
     }),
   );
 
+  crmFeature.get(
+    "/channel-connections/:connectionId/members",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const serviceContext = await createContext(context);
+        const members = await services.listConnectionMembers(serviceContext, {
+          connectionId: readConnectionRouteParam(context),
+        });
+        return context.json(members.map(toConnectionMemberDto));
+      }),
+  );
+
+  crmFeature.put(
+    "/channel-connections/:connectionId/members/:userId",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const serviceContext = await createContext(context);
+        await services.grantConnectionMember(serviceContext, {
+          connectionId: readConnectionRouteParam(context),
+          userId: readMemberUserIdRouteParam(context),
+        });
+        return context.body(null, 204);
+      }),
+  );
+
+  crmFeature.delete(
+    "/channel-connections/:connectionId/members/:userId",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const serviceContext = await createContext(context);
+        const result = await services.revokeConnectionMember(serviceContext, {
+          connectionId: readConnectionRouteParam(context),
+          userId: readMemberUserIdRouteParam(context),
+        });
+        return context.json(result);
+      }),
+  );
+
   registerCrmChannelConnectionSetupRoutes(crmFeature, {
     createContext,
     services,
   });
+}
+
+function readConnectionRouteParam(context: Context) {
+  const connectionId = context.req.param("connectionId");
+  if (!connectionId) {
+    throw new CrmMessagingValidationError(
+      "Route param connectionId is invalid.",
+    );
+  }
+  return connectionId;
+}
+
+function readMemberUserIdRouteParam(context: Context) {
+  const userId = context.req.param("userId");
+  if (!userId) {
+    throw new CrmMessagingValidationError("Route param userId is invalid.");
+  }
+  return userId;
+}
+
+function toConnectionMemberDto(member: {
+  createdAt: Date;
+  grantedBy: string | null;
+  userId: string;
+}) {
+  return {
+    createdAt: member.createdAt.toISOString(),
+    grantedBy: member.grantedBy,
+    userId: member.userId,
+  };
 }

@@ -17,6 +17,7 @@ export function useCrmConversationCycleCounts({
   searchRef,
   selectedTagIds,
   statusFilter,
+  storeWide = false,
   unreadOnly,
 }: {
   api: CrmConversationApi;
@@ -27,6 +28,8 @@ export function useCrmConversationCycleCounts({
   searchRef: MutableRefObject<string>;
   selectedTagIds: string[];
   statusFilter: CrmConversationCycleStatus | "";
+  /** Store-wide counts (aggregate connection filter): omit connectionId. */
+  storeWide?: boolean;
   unreadOnly: boolean;
 }) {
   const [conversationCycleCounts, setSessionCounts] = useState(
@@ -35,12 +38,12 @@ export function useCrmConversationCycleCounts({
   const requestGenerationRef = useRef(0);
   const refreshSessionCounts = useCallback(async () => {
     const requestGeneration = ++requestGenerationRef.current;
-    if (!connectionId || !canList) {
+    if ((!connectionId && !storeWide) || !canList) {
       setSessionCounts(defaultConversationCycleCounts);
       return;
     }
     const counts = await api.listConversationCycleCounts({
-      connectionId,
+      ...(connectionId ? { connectionId } : {}),
       filter: quickFilter,
       ...(humanAttendanceFilter
         ? { humanAttendanceState: humanAttendanceFilter }
@@ -61,6 +64,7 @@ export function useCrmConversationCycleCounts({
     searchRef,
     selectedTagIds,
     statusFilter,
+    storeWide,
     unreadOnly,
   ]);
 

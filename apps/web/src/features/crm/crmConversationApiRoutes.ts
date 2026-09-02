@@ -83,6 +83,52 @@ export const crmConversationRoutes = {
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/code`,
       baseUrl,
     ),
+  // UAZAPI routes mirror the Z-API setup contract exactly; the difference is
+  // server-side provisioning, not the pairing/lifecycle surface.
+  uazapiListInstances: (baseUrl?: string) =>
+    createCrmEndpoint(
+      "/crm/channel-connections/uazapi/list-instances",
+      baseUrl,
+    ),
+  uazapiPairingCode: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/pairing/code`,
+      baseUrl,
+    ),
+  uazapiPairingQr: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/pairing/qr`,
+      baseUrl,
+    ),
+  uazapiDisconnect: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/disconnect`,
+      baseUrl,
+    ),
+  uazapiStatusRefresh: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/status/refresh`,
+      baseUrl,
+    ),
+  uazapiWebhooksConfigure: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/webhooks/configure`,
+      baseUrl,
+    ),
+  connectionMembers: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/members`,
+      baseUrl,
+    ),
+  connectionMember: (
+    connectionId: CrmConnectionId,
+    userId: string,
+    baseUrl?: string,
+  ) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/members/${encodeURIComponent(userId)}`,
+      baseUrl,
+    ),
   zapiPairingQr: (connectionId: CrmConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/zapi/pairing/qr`,

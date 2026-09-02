@@ -46,6 +46,7 @@ import {
 } from "../../../domains/crm/services/CrmMessagingService/updateCrmConversationCycle.js";
 import { setConversationAttendance } from "../../../domains/crm/services/CrmMessagingService/setConversationAttendance.js";
 import { markConversationCycleReadState } from "../../../domains/crm/services/CrmMessagingService/markCrmConversationCycleRead.js";
+import { resolveCrmConnectionScopedQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
 import { startConversation } from "../../../domains/crm/services/CrmMessagingService/startConversation.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createCrmQuickMessageBindings } from "./crmQuickMessageBindings.js";
@@ -224,6 +225,8 @@ export function createCrmMessagingServiceBindings(
     ...buildTagBindings(ports),
     ...buildWebhookBindings(ports),
     ...buildWebhookEventBindings(ports),
+    resolveCrmQueueVisibility: (context) =>
+      resolveCrmConnectionScopedQueueVisibility(context, ports),
     ...createCrmQuickMessageBindings(ports),
     ...createCrmPushBindings(ports),
   };

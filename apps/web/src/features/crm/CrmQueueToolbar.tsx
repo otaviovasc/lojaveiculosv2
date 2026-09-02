@@ -32,6 +32,7 @@ export function CrmQueueToolbar({
   canAssign,
   canManageConnections,
   canManageTags,
+  canReadUnassigned = false,
   connectionId,
   connectionFilterId,
   connections,
@@ -68,6 +69,7 @@ export function CrmQueueToolbar({
   canAssign: boolean;
   canManageConnections: boolean;
   canManageTags: boolean;
+  canReadUnassigned?: boolean;
   canStartConversation: boolean;
   connectionId: string | number | null;
   connectionFilterId: string | null;
@@ -109,8 +111,11 @@ export function CrmQueueToolbar({
         </div>
         <div className="crm-toolbar-actions">
           <CrmConnectionFilter
+            canAssign={canAssign}
+            canReadUnassigned={canReadUnassigned}
             connectionFilterId={connectionFilterId}
             connections={connections}
+            currentUserId={currentUserId}
             fallbackConnectionId={connectionId}
             onChange={onConnectionFilterChange}
             onSetup={onManageConnections}
@@ -219,6 +224,7 @@ export function CrmQueueToolbar({
       <QueueQuickFilterRow
         assignableMembers={assignableMembers}
         canAssign={canAssign}
+        canReadUnassigned={canReadUnassigned}
         currentUserId={currentUserId}
         onOtherAssigneeChange={onOtherAssigneeChange}
         onQuickFilterChange={onQuickFilterChange}

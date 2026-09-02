@@ -9,6 +9,7 @@ export const transportProvider = pgEnum("transport_provider", [
   "meta_cloud",
   "zapi",
   "olx",
+  "uazapi",
 ]);
 export const credentialBroker = pgEnum("credential_broker", [
   "composio",

@@ -83,6 +83,26 @@ export function providerCapabilities(input: {
       video: true,
     };
   }
+  if (input.provider === "uazapi") {
+    return {
+      audio: true,
+      catalog: false,
+      conversationStart: true,
+      delete: true,
+      documents: true,
+      imageCaption: true,
+      images: true,
+      location: true,
+      quickMessages: true,
+      reactions: true,
+      reply: true,
+      scheduling: true,
+      templates: false,
+      text: true,
+      vehicle: true,
+      video: true,
+    };
+  }
   return {
     audio: true,
     catalog: true,

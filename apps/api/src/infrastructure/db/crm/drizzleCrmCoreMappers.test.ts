@@ -15,6 +15,7 @@ const baseRow: typeof crmChannelConnections.$inferSelect = {
   externalInstanceId: null,
   id: "00000000-0000-4000-8000-000000000001",
   metadata: {},
+  phoneNumber: null,
   provider: "zapi",
   revision: 0,
   state: "active",

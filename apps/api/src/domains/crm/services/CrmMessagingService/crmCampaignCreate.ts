@@ -34,7 +34,7 @@ import {
   resolveCampaignSessions,
   singleCampaignConnectionId,
 } from "../../messaging/crmCampaignSupport.js";
-import { resolveCrmQueueVisibility } from "../../messaging/crmQueueVisibility.js";
+import { resolveCrmConnectionScopedQueueVisibility } from "../../messaging/crmQueueVisibility.js";
 
 export async function listCrmCampaigns(
   context: ServiceContext,
@@ -127,7 +127,7 @@ async function createCampaignRecords(
     repository,
     scope,
     input.recipients,
-    resolveCrmQueueVisibility(context),
+    await resolveCrmConnectionScopedQueueVisibility(context, ports),
   );
   const campaign = await repository.createCampaign({
     content: input.content,

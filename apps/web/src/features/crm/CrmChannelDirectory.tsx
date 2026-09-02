@@ -1,4 +1,5 @@
-import { ArrowRight, QrCode } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import type { CrmConnectionAllowance } from "@lojaveiculosv2/shared";
 import { InstagramLogo, MetaLogo, WhatsAppLogo } from "./CrmChannelLogos";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
 import { groupCrmConnectionsByChannel } from "./crmChannelPresentation";
@@ -17,6 +18,7 @@ import { isComposioConnectionForProvider } from "./crmComposioOAuth";
 
 export function CrmChannelDirectory({
   availableSetups,
+  connectionAllowance = null,
   connections = [],
   crmApi,
   marketplaceApi,
@@ -30,6 +32,7 @@ export function CrmChannelDirectory({
   showZapiSetupActions = showSetupActions,
 }: {
   availableSetups: readonly CrmAvailableSetup[];
+  connectionAllowance?: CrmConnectionAllowance | null;
   connections?: readonly CrmProviderConnection[];
   crmApi?: Pick<CrmConversationApi, "retryOlxChatSetup">;
   marketplaceApi?: MarketplaceApi;
@@ -68,13 +71,30 @@ export function CrmChannelDirectory({
       (connection.state ?? connection.status) !== "archived",
   );
   // A configured Z-API connection is already represented by its connected
-  // row below. Do not render the catalog/setup row as a second card for the
-  // same provider, including while the provider is reconnecting or pending.
+  // row below. The setup rows follow the server-owned WhatsApp allowance:
+  // while it is reported, creation stays available only when remaining > 0.
+  // Without the allowance payload, keep the previous singleton behavior.
   const hasExistingZapiConnection = connections.some(
     (connection) =>
       connection.provider === "zapi" &&
       (connection.state ?? connection.status) !== "archived",
   );
+  const hasExistingUazapiConnection = connections.some(
+    (connection) =>
+      connection.provider === "uazapi" &&
+      (connection.state ?? connection.status) !== "archived",
+  );
+  const whatsappAllowanceRemaining = connectionAllowance?.remaining ?? null;
+  const showZapiSetupRow =
+    showZapiSetupActions &&
+    (whatsappAllowanceRemaining !== null
+      ? whatsappAllowanceRemaining > 0
+      : !hasExistingZapiConnection);
+  const showUazapiSetupRow =
+    showZapiSetupActions &&
+    (whatsappAllowanceRemaining !== null
+      ? whatsappAllowanceRemaining > 0
+      : !hasExistingUazapiConnection);
   const groups = groupCrmConnectionsByChannel(connections);
   const connectionsFor = (channel: "instagram" | "olx_chat" | "whatsapp") =>
     groups.find((group) => group.channel === channel)?.connections ?? [];
@@ -99,7 +119,7 @@ export function CrmChannelDirectory({
               />
             </li>
           ))}
-          {showZapiSetupActions && !hasExistingZapiConnection ? (
+          {showZapiSetupRow ? (
             <li>
               <button
                 className="crm-channel-row"
@@ -137,6 +157,57 @@ export function CrmChannelDirectory({
                   className="crm-channel-chevron"
                 />
               </button>
+            </li>
+          ) : null}
+          {showUazapiSetupRow ? (
+            <li>
+              <button
+                className="crm-channel-row"
+                data-actionable="true"
+                data-channel="whatsapp"
+                data-provider="uazapi"
+                onClick={() => onChoose("uazapi")}
+                type="button"
+              >
+                <span aria-hidden="true" className="crm-channel-card-watermark">
+                  <WhatsAppLogo />
+                </span>
+                <span aria-hidden="true" className="crm-channel-icon">
+                  <WhatsAppLogo />
+                </span>
+                <span className="crm-channel-body">
+                  <span className="crm-channel-title">
+                    <strong>UAZAPI</strong>
+                    <span className="crm-channel-badge" data-tone="muted">
+                      Provisionado pelo workspace
+                    </span>
+                  </span>
+                  <span className="crm-channel-description">
+                    A instância é criada automaticamente pelo servidor; depois
+                    pareie o telefone por QR Code ou código.
+                  </span>
+                  <ChannelIdentity
+                    broker="Provisionamento automático"
+                    channel="WhatsApp"
+                    transport="UAZAPI"
+                  />
+                </span>
+                <ArrowRight
+                  aria-hidden="true"
+                  className="crm-channel-chevron"
+                />
+              </button>
+            </li>
+          ) : null}
+          {showZapiSetupActions &&
+          whatsappAllowanceRemaining === 0 &&
+          connectionAllowance ? (
+            <li>
+              <p className="crm-channel-empty" role="note">
+                Limite de conexões WhatsApp desta loja atingido (
+                {connectionAllowance.used} de {connectionAllowance.limit}).
+                Nenhuma nova conexão foi criada.
+              </p>
             </li>
           ) : null}
           {showSetupActions ? (

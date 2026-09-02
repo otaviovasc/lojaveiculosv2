@@ -29,11 +29,13 @@ import {
   withZapiWebhookSetupState,
 } from "../../whatsapp/zapiWebhookSetupState.js";
 import { runZapiWebhookSetupAttempt } from "../CrmWhatsappService/runZapiWebhookSetupAttempt.js";
+import { runUazapiWebhookSetupAttempt } from "../CrmWhatsappService/runUazapiWebhookSetupAttempt.js";
 import { sealZapiCredentials } from "../../whatsapp/zapiInitialCredentials.js";
 import { readConnectionLiveStatus } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
 import { persistInitialReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
+import { provisionUazapiWhatsappConnection } from "./provisionUazapiConnection.js";
 
-const connectionPermission = "crm.messaging.connection.setup";
+export const connectionPermission = "crm.messaging.connection.setup";
 
 export async function createCrmChannelConnection(
   context: ServiceContext,
@@ -64,92 +66,104 @@ export async function createCrmChannelConnection(
       summary: "Created or initially configured CRM channel connection",
     },
     async () => {
-      const created = await runCrmTransaction(
-        ports,
-        async (transactionPorts) => {
-          const repository = getCrmConnectionRepository(transactionPorts);
-          const current = await repository.listConnections({
-            channels: [input.channel],
-            providers: [input.provider],
-            storeId: scope.storeId as never,
-            tenantId: scope.tenantId as never,
-          });
-          const existing = current.find(
-            (connection) => connection.status !== "archived",
-          );
-          if (existing) {
-            if (input.provider === "zapi")
-              return existingZapiConflict(existing, input);
-            throw new CrmChannelConnectionProviderAlreadyExistsError(input);
-          }
-          const credentialsRef =
-            input.provider === "zapi"
-              ? await sealZapiCredentials(input, scope, transactionPorts)
-              : {};
-          const setupIdentity =
-            input.provider === "zapi"
-              ? ({
-                  broker: "direct",
-                  channel: "whatsapp",
-                  provider: "zapi",
-                } as const)
-              : ({
-                  broker: "composio",
-                  channel: input.channel,
-                  provider: "meta_cloud",
-                } as const);
-          let connection;
-          try {
-            connection = await repository.createConnection({
-              broker: setupIdentity.broker,
-              channel: input.channel,
-              credentialsRef,
-              displayName: input.displayName,
-              externalInstanceId: null,
-              metadata: {
-                capabilities:
-                  crmChannelConnectionCapabilityFacts(setupIdentity),
-                connected: false,
-                degraded: false,
-                errorCode: null,
-                routingStatus: "preserved",
-              },
-              provider: input.provider,
-              status: "sandbox",
-              storeId: scope.storeId as never,
-              tenantId: scope.tenantId as never,
-            });
-          } catch (error) {
-            if (input.provider !== "zapi") throw error;
-            const raced = (
-              await repository.listConnections({
-                channels: ["whatsapp"],
-                providers: ["zapi"],
+      const created =
+        input.provider === "uazapi"
+          ? await provisionUazapiWhatsappConnection(
+              context,
+              input,
+              scope,
+              ports,
+            )
+          : await runCrmTransaction(ports, async (transactionPorts) => {
+              const repository = getCrmConnectionRepository(transactionPorts);
+              const current = await repository.listConnections({
+                channels: [input.channel],
+                providers: [input.provider],
                 storeId: scope.storeId as never,
                 tenantId: scope.tenantId as never,
-              })
-            ).find((candidate) => candidate.status !== "archived");
-            if (!raced) throw error;
-            return existingZapiConflict(raced, input);
-          }
-          if (input.provider === "zapi") {
-            const metadata = withZapiWebhookSetupState(
-              connection.metadata,
-              createZapiWebhookSetupIntent(connection.id),
-            );
-            connection =
-              (await repository.updateConnection({
-                connectionId: connection.id,
-                metadata,
-                storeId: connection.storeId,
-                tenantId: connection.tenantId,
-              })) ?? connection;
-          }
-          return connection;
-        },
-      );
+              });
+              const existing = current.find(
+                (connection) => connection.status !== "archived",
+              );
+              if (existing) {
+                if (input.provider === "zapi")
+                  return existingZapiConflict(existing, input);
+                throw new CrmChannelConnectionProviderAlreadyExistsError(input);
+              }
+              const credentialsRef =
+                input.provider === "zapi"
+                  ? await sealZapiCredentials(input, scope, transactionPorts)
+                  : {};
+              const setupIdentity =
+                input.provider === "zapi"
+                  ? ({
+                      broker: "direct",
+                      channel: "whatsapp",
+                      provider: "zapi",
+                    } as const)
+                  : ({
+                      broker: "composio",
+                      channel: input.channel,
+                      provider: "meta_cloud",
+                    } as const);
+              let connection;
+              try {
+                connection = await repository.createConnection({
+                  broker: setupIdentity.broker,
+                  channel: input.channel,
+                  credentialsRef,
+                  displayName: input.displayName,
+                  externalInstanceId: null,
+                  metadata: {
+                    capabilities:
+                      crmChannelConnectionCapabilityFacts(setupIdentity),
+                    connected: false,
+                    degraded: false,
+                    errorCode: null,
+                    routingStatus: "preserved",
+                  },
+                  provider: input.provider,
+                  status: "sandbox",
+                  storeId: scope.storeId as never,
+                  tenantId: scope.tenantId as never,
+                });
+              } catch (error) {
+                if (input.provider !== "zapi") throw error;
+                const raced = (
+                  await repository.listConnections({
+                    channels: ["whatsapp"],
+                    providers: ["zapi"],
+                    storeId: scope.storeId as never,
+                    tenantId: scope.tenantId as never,
+                  })
+                ).find((candidate) => candidate.status !== "archived");
+                if (!raced) throw error;
+                return existingZapiConflict(raced, input);
+              }
+              if (input.provider === "zapi") {
+                const metadata = withZapiWebhookSetupState(
+                  connection.metadata,
+                  createZapiWebhookSetupIntent(connection.id),
+                );
+                connection =
+                  (await repository.updateConnection({
+                    connectionId: connection.id,
+                    metadata,
+                    storeId: connection.storeId,
+                    tenantId: connection.tenantId,
+                  })) ?? connection;
+              }
+              return connection;
+            });
       if (input.provider === "zapi" && input.webhookSetupTarget) {
         await runZapiWebhookSetupAttempt(
+          context,
+          { connectionId: created.id, ...input.webhookSetupTarget },
+          ports,
+        );
+      }
+      if (input.provider === "uazapi" && input.webhookSetupTarget) {
+        await runUazapiWebhookSetupAttempt(
           context,
           { connectionId: created.id, ...input.webhookSetupTarget },
           ports,

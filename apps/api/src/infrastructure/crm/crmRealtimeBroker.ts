@@ -14,7 +14,7 @@ import {
   readCrmRealtimeConversationCycleBoundary,
   updateCrmRealtimeAssignmentBoundary,
   type CrmRealtimeAssignmentBoundary,
-} from "../../domains/crm/messaging/crmQueueVisibility.js";
+} from "../../domains/crm/messaging/crmQueueVisibilityRealtime.js";
 
 const ticketTtlMs = 60_000;
 const maxBufferedEvents = 500;

@@ -75,6 +75,18 @@ const nonEntrypointFiles = new Set([
   "resolveCrmProviderOperation.ts",
   "onboardOlxCrmConnectionValidation.ts",
   "applyWonCrmLeadOutcome.testSupport.ts",
+  "provisionUazapiConnection.ts",
+  "attachUazapiConnection.ts",
+  "uazapiConnectionPersistence.ts",
+  "createCrmChannelConnection.uazapi.testSupport.ts",
+  "uazapiInitialCredentials.ts",
+  "connectionMemberSupport.ts",
+  "crmConnectionMemberErrors.ts",
+  "uazapiConnectionSetup.testSupport.ts",
+  "updateReadSessionState.ts",
+  "uazapiConnectionSetupSupport.ts",
+  "uazapiWebhookSupport.ts",
+  "whatsappConnectionSetupShared.ts",
 ]);
 
 function walk(dir, files = []) {
@@ -122,6 +134,92 @@ const delegatedContractHelpers = new Map([
         "input.context.audit.record(",
         "input.context.logger.",
       ],
+    },
+  ],
+  [
+    "authorizeWhatsappWebhook(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/authorizeWhatsappWebhookSupport.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "auditCrmServiceEvent(",
+        "logCrmServiceEvent(",
+      ],
+    },
+  ],
+  [
+    "reconcileWhatsappConnectionStatus(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/reconcileWhatsappConnectionStatus.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "auditCrmServiceEvent(",
+        "logCrmServiceEvent(",
+      ],
+    },
+  ],
+  [
+    "disconnectWhatsappConnection(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionLifecycleSupport.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "recordCrmServiceMutation(",
+        "logCrmServiceEvent(",
+      ],
+    },
+  ],
+  [
+    "refreshWhatsappConnectionStatus(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionLifecycleSupport.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "recordCrmServiceMutation(",
+        "logCrmServiceEvent(",
+      ],
+    },
+  ],
+  [
+    "loadWhatsappSetupTarget(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionSetupShared.ts",
+      ),
+      requiredContracts: ["assertPermission(", "logCrmServiceEvent("],
+    },
+  ],
+  [
+    "runUazapiProviderOperation(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionSetupShared.ts",
+      ),
+      requiredContracts: ["assertPermission(", "logCrmServiceEvent("],
+    },
+  ],
+  [
+    "auditUazapiWebhook(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/uazapiWebhookSupport.ts",
+      ),
+      requiredContracts: ["auditCrmServiceEvent(", "logCrmServiceEvent("],
     },
   ],
 ]);

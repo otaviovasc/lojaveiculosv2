@@ -133,6 +133,17 @@ export function conversationCycleFilters(
       filters.push(sql`false`);
       break;
   }
+  if (input.queueVisibility?.connectionIds != null) {
+    if (input.queueVisibility.connectionIds.length === 0) {
+      filters.push(sql`false`);
+    } else {
+      filters.push(
+        inArray(conversationThreads.providerConnectionId, [
+          ...input.queueVisibility.connectionIds,
+        ]),
+      );
+    }
+  }
   if (input.connectionId)
     filters.push(
       eq(conversationThreads.providerConnectionId, input.connectionId),

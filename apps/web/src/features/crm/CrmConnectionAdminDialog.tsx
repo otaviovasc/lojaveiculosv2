@@ -4,6 +4,10 @@ import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { isConnectedConnection } from "./crmConnectionSelection";
 import { readCrmChannelLabel } from "./crmConnectionStatus";
+import {
+  CrmConnectionMembersSection,
+  type CrmConnectionMembersHandlers,
+} from "./CrmConnectionMembersSection";
 import { ConnectionDashboard, ConnectionSetupFlow } from "./CrmConnectionViews";
 import type {
   CrmConnectionId,
@@ -21,10 +25,13 @@ export function CrmConnectionManageDialog({
   disabled = false,
   isRefreshing = false,
   onClose,
+  onGrantConnectionMember,
+  onListConnectionMembers,
   onRefresh,
   onRefreshStatus,
   onRepair,
   onReplace,
+  onRevokeConnectionMember,
   onSetConnectionPaused,
 }: {
   canManage?: boolean;
@@ -40,7 +47,7 @@ export function CrmConnectionManageDialog({
     connectionId: CrmConnectionId,
     paused: boolean,
   ) => Promise<void>;
-}) {
+} & CrmConnectionMembersHandlers) {
   const [lifecycleBusy, setLifecycleBusy] = useState(false);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
@@ -153,6 +160,17 @@ export function CrmConnectionManageDialog({
                 verificadas.
               </small>
             </div>
+          ) : null}
+          {connection.channel === "whatsapp" ? (
+            <CrmConnectionMembersSection
+              canManage={canManage && !disabled}
+              connection={connection}
+              {...(onGrantConnectionMember ? { onGrantConnectionMember } : {})}
+              {...(onListConnectionMembers ? { onListConnectionMembers } : {})}
+              {...(onRevokeConnectionMember
+                ? { onRevokeConnectionMember }
+                : {})}
+            />
           ) : null}
           {onSetConnectionPaused ? (
             <div className="crm-connection-management-actions">

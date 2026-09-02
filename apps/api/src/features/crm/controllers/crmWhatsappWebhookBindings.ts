@@ -13,6 +13,11 @@ import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/s
 import type { CrmMessagingServices } from "./crmMessagingServiceBindings.types.js";
 import { processMetaMessagingWebhook } from "../../../domains/crm/services/CrmMessagingService/processMetaMessagingWebhook.js";
 import { authorizeZapiWebhook } from "../../../domains/crm/services/CrmWhatsappService/authorizeZapiWebhook.js";
+import { authorizeUazapiWebhook } from "../../../domains/crm/services/CrmWhatsappService/authorizeUazapiWebhook.js";
+import { ingestUazapiWhatsappWebhook } from "../../../domains/crm/services/CrmWhatsappService/ingestUazapiWhatsappWebhook.js";
+import { processUazapiWhatsappConnection } from "../../../domains/crm/services/CrmWhatsappService/processUazapiWhatsappConnection.js";
+import { processUazapiWhatsappMessage } from "../../../domains/crm/services/CrmWhatsappService/processUazapiWhatsappMessage.js";
+import { processUazapiWhatsappWebhookEvent } from "../../../domains/crm/services/CrmWhatsappService/processUazapiWhatsappWebhookEvent.js";
 import { authorizeOlxChatWebhook } from "../../../domains/crm/services/CrmMessagingService/authorizeOlxChatWebhook.js";
 import { ingestOlxChatWebhook } from "../../../domains/crm/services/CrmMessagingService/ingestOlxChatWebhook.js";
 import { ingestOlxLeadWebhook } from "../../../domains/crm/services/CrmMessagingService/ingestOlxLeadWebhook.js";
@@ -22,9 +27,13 @@ type WebhookBindings = Pick<
   | "ingestZapiWhatsappWebhook"
   | "ingestOlxChatWebhook"
   | "ingestOlxLeadWebhook"
+  | "ingestUazapiWhatsappWebhook"
   | "authorizeOlxChatWebhook"
+  | "authorizeUazapiWebhook"
   | "authorizeZapiWebhook"
   | "processMetaMessagingWebhook"
+  | "processUazapiWhatsappConnectionWebhook"
+  | "processUazapiWhatsappStatusWebhook"
   | "processZapiWhatsappChatPresenceWebhook"
   | "processZapiWhatsappConnectedWebhook"
   | "processZapiWhatsappDeliveryWebhook"
@@ -39,6 +48,32 @@ export const buildWebhookBindings = (
     authorizeOlxChatWebhook(context, input, ports),
   authorizeZapiWebhook: (context, input) =>
     authorizeZapiWebhook(context, input, ports),
+  authorizeUazapiWebhook: (context, input) =>
+    authorizeUazapiWebhook(context, input, ports),
+  ingestUazapiWhatsappWebhook: (context, input) =>
+    processUazapiWhatsappWebhookEvent(
+      context,
+      input,
+      "received",
+      ingestUazapiWhatsappWebhook,
+      ports,
+    ),
+  processUazapiWhatsappConnectionWebhook: (context, input) =>
+    processUazapiWhatsappWebhookEvent(
+      context,
+      input,
+      "connection",
+      processUazapiWhatsappConnection,
+      ports,
+    ),
+  processUazapiWhatsappStatusWebhook: (context, input) =>
+    processUazapiWhatsappWebhookEvent(
+      context,
+      input,
+      "status",
+      processUazapiWhatsappMessage,
+      ports,
+    ),
   processMetaMessagingWebhook: (context, input) =>
     processMetaMessagingWebhook(context, input, ports),
   ingestOlxChatWebhook: (context, input) =>

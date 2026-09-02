@@ -2,6 +2,7 @@ import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/s
 import { createDrizzleCrmExternalBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmExternalBotIntegrationRepository.js";
 import { createDrizzleCrmAssigneeMembershipRepository } from "../../../infrastructure/db/crm/drizzleCrmAssigneeMembershipRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
+import { createDrizzleCrmConnectionMemberRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionMemberRepository.js";
 import {
   createDrizzleCrmRoutingConnectionRepository,
   createDrizzleCrmRoutingPolicyRepository,
@@ -29,6 +30,7 @@ import { createMemoryCrmExternalBotIntegrationRepository } from "../adapters/mem
 import { createMemoryCrmAssigneeMembershipRepository } from "../adapters/memory/crmAssigneeMembershipRepository.js";
 import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmConnectionMemberRepository } from "../adapters/memory/crmConnectionMemberRepository.js";
 import { createMemoryCrmRoutingRepositories } from "../adapters/memory/crmRoutingRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createMemoryCrmOutcomeRepository } from "../adapters/memory/crmOutcomeRepository.js";
@@ -70,6 +72,8 @@ export function resolveCrmPorts(
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
           options.drizzleClient,
         ),
+        crmConnectionMemberRepository:
+          createDrizzleCrmConnectionMemberRepository(options.drizzleClient),
         crmRoutingConnectionRepository:
           createDrizzleCrmRoutingConnectionRepository(options.drizzleClient),
         crmRoutingPolicyRepository: createDrizzleCrmRoutingPolicyRepository(
@@ -121,6 +125,8 @@ export function resolveCrmPorts(
             memoryConversationRepository,
           ),
         crmConnectionRepository: memoryConnections,
+        crmConnectionMemberRepository:
+          createMemoryCrmConnectionMemberRepository(),
         crmRoutingConnectionRepository:
           memoryConnections.routingConnectionRepository,
         crmRoutingPolicyRepository: memoryRouting.policyRepository,
@@ -157,6 +163,8 @@ export function resolveCrmPorts(
           crmConnectionRepository: createDrizzleCrmConnectionRepository(
             tx as DrizzleCrmClient,
           ),
+          crmConnectionMemberRepository:
+            createDrizzleCrmConnectionMemberRepository(tx as DrizzleCrmClient),
           crmRoutingConnectionRepository:
             createDrizzleCrmRoutingConnectionRepository(tx as DrizzleCrmClient),
           crmRoutingPolicyRepository: createDrizzleCrmRoutingPolicyRepository(

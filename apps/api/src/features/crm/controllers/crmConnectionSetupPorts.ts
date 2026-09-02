@@ -3,12 +3,16 @@ import type {
   CrmConnectionCredentialVault,
   CrmZapiSupportAuthorizer,
   OlxCrmWebhookSetupProvider,
+  UazapiConnectionSetupProvider,
   ZapiConnectionSetupProvider,
 } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import { CrmZapiSetupNotEligibleError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
+import type { CrmUazapiProvisioningProvider } from "../../../domains/crm/ports/crmUazapiProvisioningProvider.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createComposioCrmConnectionSetupProvider } from "../../../infrastructure/crm/composioCrmConnectionSetupProvider.js";
 import { createCrmConnectionCredentialVault } from "../../../infrastructure/crm/crmConnectionCredentialVault.js";
+import { createUazapiCrmConnectionSetupProvider } from "../../../infrastructure/crm/uazapiCrmConnectionSetupProvider.js";
+import { createUazapiCrmProvisioningProvider } from "../../../infrastructure/crm/uazapiCrmProvisioningProvider.js";
 import { createZapiCrmConnectionSetupProvider } from "../../../infrastructure/crm/zapiCrmConnectionSetupProvider.js";
 import { createOlxCrmWebhookSetupProvider } from "../../../infrastructure/crm/olxCrmWebhookSetupProvider.js";
 import { createDrizzleBillingRepository } from "../../../infrastructure/db/billing/drizzleBillingRepository.js";
@@ -18,8 +22,10 @@ type ConnectionSetupPorts = Pick<
   CrmServicePorts,
   | "composioChannelOnboardingProvider"
   | "crmConnectionCredentialVault"
+  | "crmUazapiProvisioningProvider"
   | "crmZapiSupportAuthorizer"
   | "olxCrmWebhookSetupProvider"
+  | "uazapiConnectionSetupProvider"
   | "zapiConnectionSetupProvider"
 >;
 
@@ -58,6 +64,25 @@ export function createCrmConnectionSetupPorts(
     validateStatus: (credentials) =>
       createZapiCrmConnectionSetupProvider().validateStatus(credentials),
   };
+  const uazapi: UazapiConnectionSetupProvider = {
+    getPairingCode: (credentials, phone) =>
+      createUazapiCrmConnectionSetupProvider().getPairingCode(
+        credentials,
+        phone,
+      ),
+    getQrCode: (credentials) =>
+      createUazapiCrmConnectionSetupProvider().getQrCode(credentials),
+    validateStatus: (credentials) =>
+      createUazapiCrmConnectionSetupProvider().validateStatus(credentials),
+  };
+  const uazapiProvisioning: CrmUazapiProvisioningProvider = {
+    createInstance: (input) =>
+      createUazapiCrmProvisioningProvider().createInstance(input),
+    deleteInstance: (input) =>
+      createUazapiCrmProvisioningProvider().deleteInstance(input),
+    listInstances: (input) =>
+      createUazapiCrmProvisioningProvider().listInstances(input),
+  };
   const olx: OlxCrmWebhookSetupProvider = {
     configureChat: (input) =>
       createOlxCrmWebhookSetupProvider().configureChat(input),
@@ -89,10 +114,12 @@ export function createCrmConnectionSetupPorts(
   return {
     composioChannelOnboardingProvider: composio,
     crmConnectionCredentialVault: credentialVault,
+    crmUazapiProvisioningProvider: uazapiProvisioning,
     olxCrmWebhookSetupProvider: olx,
     ...(supportAuthorizer
       ? { crmZapiSupportAuthorizer: supportAuthorizer }
       : {}),
+    uazapiConnectionSetupProvider: uazapi,
     zapiConnectionSetupProvider: zapi,
   };
 }

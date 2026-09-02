@@ -221,6 +221,56 @@ describe("CrmQueueToolbar", () => {
     expect(quickFilters).not.toHaveTextContent("Outros");
     expect(quickFilters).not.toHaveTextContent("Todos");
   });
+
+  it("offers the full quick filters to actors with read_unassigned but no assign", () => {
+    render(
+      <CrmQueueToolbar
+        assignableMembers={createAssignableMembers()}
+        availableTags={[]}
+        canAssign={false}
+        canManageConnections={false}
+        canManageTags={false}
+        canReadUnassigned
+        canStartConversation={false}
+        connectionFilterId={null}
+        connectionId="connection_1"
+        connections={createConnections()}
+        currentUserId="user_current"
+        humanAttendanceFilter=""
+        onConnectionFilterChange={vi.fn()}
+        onHumanAttendanceFilterChange={vi.fn()}
+        onManageConnections={vi.fn()}
+        onManageTags={vi.fn()}
+        onOtherAssigneeChange={vi.fn()}
+        onQuickFilterChange={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectionModeChange={vi.fn()}
+        onStartConversation={vi.fn()}
+        onStatusFilterChange={vi.fn()}
+        onTagFilterToggle={vi.fn()}
+        onUnreadOnlyChange={vi.fn()}
+        otherAssigneeId={null}
+        quickFilter="fresh"
+        search=""
+        selectedCount={0}
+        selectedTagIds={[]}
+        selectionMode={false}
+        sessionCount={2}
+        conversationCycleCounts={createCounts()}
+        statusFilter=""
+        unreadOnly={false}
+      />,
+    );
+
+    const quickFilters = screen.getByRole("group", {
+      name: "Filtros rápidos",
+    });
+    expect(quickFilters).toHaveTextContent("Novos");
+    expect(quickFilters).toHaveTextContent("Sem atendente");
+    expect(quickFilters).toHaveTextContent("Meus");
+    expect(quickFilters).toHaveTextContent("Outros");
+    expect(quickFilters).toHaveTextContent("Todos");
+  });
 });
 
 function createCounts(): CrmConversationCycleCounts {

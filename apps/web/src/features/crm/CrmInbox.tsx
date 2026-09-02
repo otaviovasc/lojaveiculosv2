@@ -284,6 +284,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                       canRepairCredentials:
                         inbox.permissions.canConnectionCredentialsManage,
                       canSetup: inbox.permissions.canConnectionSetup,
+                      connectionAllowance: inbox.connectionAllowance,
                       handlers: {
                         onAuthorizeComposio: inbox.authorizeComposioConnection,
                         onCompleteComposio: async (connectionId) => {
@@ -308,6 +309,17 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                           return result;
                         },
                         onDisconnectZapi: inbox.disconnectZapiConnection,
+                        onDisconnectUazapi: inbox.disconnectUazapiConnection,
+                        onConfigureUazapiWebhooks: async (connectionId) => {
+                          const result =
+                            await inbox.configureUazapiWebhooks(connectionId);
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onGrantConnectionMember: inbox.grantConnectionMember,
+                        onListConnectionMembers: inbox.listConnectionMembers,
+                        onListUazapiInstances: inbox.listUazapiInstances,
+                        onRevokeConnectionMember: inbox.revokeConnectionMember,
                         onRefreshConnections: inbox.refreshConnections,
                         onRefreshConnectionsWithPayload:
                           inbox.refreshConnectionsAndRead,
@@ -340,6 +352,17 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         },
                         onRequestZapiPairingCode: inbox.requestZapiPairingCode,
                         onRequestZapiPairingQr: inbox.requestZapiPairingQr,
+                        onRequestUazapiPairingCode:
+                          inbox.requestUazapiPairingCode,
+                        onRequestUazapiPairingQr: inbox.requestUazapiPairingQr,
+                        onRefreshUazapiStatus: async (connectionId) => {
+                          const result =
+                            await inbox.refreshUazapiConnectionStatus(
+                              connectionId,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
                         onRefreshZapiStatus: async (connectionId) => {
                           const result =
                             await inbox.refreshZapiConnectionStatus(

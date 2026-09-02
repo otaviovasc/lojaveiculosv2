@@ -85,6 +85,27 @@ describe("CRM conversation API routes", () => {
     expect(crmConversationRoutes.zapiWebhooksConfigure("connection-1")).toBe(
       "/api/v1/crm/channel-connections/connection-1/zapi/webhooks/configure",
     );
+    expect(crmConversationRoutes.uazapiDisconnect("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/uazapi/disconnect",
+    );
+    expect(crmConversationRoutes.uazapiPairingCode("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/uazapi/pairing/code",
+    );
+    expect(crmConversationRoutes.uazapiPairingQr("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/uazapi/pairing/qr",
+    );
+    expect(crmConversationRoutes.uazapiStatusRefresh("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/uazapi/status/refresh",
+    );
+    expect(crmConversationRoutes.uazapiWebhooksConfigure("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/uazapi/webhooks/configure",
+    );
+    expect(crmConversationRoutes.connectionMembers("connection-1")).toBe(
+      "/api/v1/crm/channel-connections/connection-1/members",
+    );
+    expect(
+      crmConversationRoutes.connectionMember("connection-1", "user 1"),
+    ).toBe("/api/v1/crm/channel-connections/connection-1/members/user%201");
     expect(crmConversationRoutes.quickMessage("quick_1")).toBe(
       "/api/v1/crm/quick-messages/quick_1",
     );

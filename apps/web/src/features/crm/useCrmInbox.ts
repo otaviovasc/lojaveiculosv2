@@ -11,6 +11,7 @@ import {
   resolveCrmInboxConnectionSelection,
 } from "./crmConnectionSelection";
 import { readCrmCapabilities } from "./crmPermissions";
+import { filterConnectionsBrowsableByUser } from "./crmQueueState";
 import {
   mergeCyclesFromServer,
   readCycleRevision,
@@ -116,6 +117,7 @@ export function useCrmInbox(
   const hasCurrentScopeAccess = permissions.canList && permissions.canRead;
   const queueAccess = useCrmQueueAccess({
     canAssign: permissions.canAssign,
+    canReadUnassigned: permissions.canReadUnassigned,
     currentUserId,
     conversationCycles,
   });
@@ -201,18 +203,42 @@ export function useCrmInbox(
   );
   const connectionId = connectionSelection.viewConnectionId;
   const operationalConnectionId = connectionSelection.operationalConnectionId;
+  const browsableConnections = useMemo(
+    () =>
+      filterConnectionsBrowsableByUser(
+        connections.connections.filter(isInboxBrowsableConnection),
+        {
+          canAssign: permissions.canAssign,
+          canReadUnassigned: permissions.canReadUnassigned,
+          currentUserId,
+        },
+      ),
+    [
+      connections.connections,
+      currentUserId,
+      permissions.canAssign,
+      permissions.canReadUnassigned,
+    ],
+  );
+  // Aggregate "Todas as conexões" filter: queries and the realtime
+  // subscription run store-wide (the server still scopes both to the
+  // connections the user is allowed to see).
+  const aggregateConnectionFilter =
+    connectionFilterId === null && browsableConnections.length > 1;
+  const queueConnectionId = aggregateConnectionFilter ? null : connectionId;
+  const realtimeConnectionId = aggregateConnectionFilter
+    ? undefined
+    : operationalConnectionId;
   useEffect(() => {
     if (
       connectionFilterId &&
-      !connections.connections.some(
-        (connection) =>
-          String(connection.id) === connectionFilterId &&
-          isInboxBrowsableConnection(connection),
+      !browsableConnections.some(
+        (connection) => String(connection.id) === connectionFilterId,
       )
     ) {
       setConnectionFilterId(null);
     }
-  }, [connectionFilterId, connections.connections]);
+  }, [browsableConnections, connectionFilterId]);
   const activeConnection = useMemo(
     () =>
       connections.connections.find(
@@ -233,7 +259,7 @@ export function useCrmInbox(
   const sessionListConnectionId =
     initialCycleId && activeSession?.id === initialCycleId
       ? operationalConnectionId
-      : connectionId;
+      : queueConnectionId;
   const conversationStartCapability = useMemo(
     () => readConversationStartCapability(activeConnection),
     [activeConnection],
@@ -268,8 +294,9 @@ export function useCrmInbox(
   const canAccessSessionSnapshot = useCallback(
     (cycle: CrmConversationCycle) =>
       permissions.canAssign ||
+      permissions.canReadUnassigned ||
       Boolean(currentUserId && cycle.assignedUserId === String(currentUserId)),
-    [currentUserId, permissions.canAssign],
+    [currentUserId, permissions.canAssign, permissions.canReadUnassigned],
   );
   const mergeCycles = useCallback(
     (
@@ -357,12 +384,13 @@ export function useCrmInbox(
     useCrmConversationCycleCounts({
       api,
       canList: permissions.canList,
-      connectionId,
+      connectionId: queueConnectionId,
       humanAttendanceFilter,
       quickFilter,
       searchRef,
       selectedTagIds,
       statusFilter,
+      storeWide: aggregateConnectionFilter,
       unreadOnly,
     });
 
@@ -447,7 +475,12 @@ export function useCrmInbox(
         snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
       } = {},
     ) => {
-      if (!sessionListConnectionId || !permissions.canList) return;
+      if (
+        !permissions.canList ||
+        (!sessionListConnectionId && !aggregateConnectionFilter)
+      ) {
+        return;
+      }
       const requestGeneration = ++sessionRequestGenerationRef.current;
       const connectionQuery = createConnectionQuery(sessionListConnectionId);
       const nextSessions = await api.listConversationCycles(
@@ -456,7 +489,11 @@ export function useCrmInbox(
       let resolved = nextSessions;
       let authorizedCycleIds: Set<CrmConversationCycleId> | null = null;
       let isCompleteAuthorizationSnapshot = false;
-      if (options.snapshotKind === "reconciled" && !permissions.canAssign) {
+      if (
+        options.snapshotKind === "reconciled" &&
+        !permissions.canAssign &&
+        !permissions.canReadUnassigned
+      ) {
         const hasNarrowingFilter = Boolean(
           humanAttendanceFilter ||
           searchRef.current ||
@@ -532,13 +569,16 @@ export function useCrmInbox(
     },
     [
       api,
+      aggregateConnectionFilter,
       canAccessSessionSnapshot,
       createSessionQuery,
       initialCycleId,
       mergeCycles,
       sessionListConnectionId,
       humanAttendanceFilter,
+      permissions.canAssign,
       permissions.canList,
+      permissions.canReadUnassigned,
       otherAssigneeId,
       quickFilter,
       refreshSessionCounts,
@@ -551,7 +591,7 @@ export function useCrmInbox(
 
   const loadMoreSessions = useCallback(async () => {
     if (
-      !sessionListConnectionId ||
+      (!sessionListConnectionId && !aggregateConnectionFilter) ||
       !permissions.canList ||
       !hasMoreSessions ||
       isLoadingMoreSessions
@@ -580,6 +620,7 @@ export function useCrmInbox(
     }
   }, [
     api,
+    aggregateConnectionFilter,
     createSessionQuery,
     hasMoreSessions,
     isLoadingMoreSessions,
@@ -661,7 +702,7 @@ export function useCrmInbox(
     activeCustomerPhone: activeSession?.customerPhone ?? null,
     api,
     canAccessSessionSnapshot,
-    connectionId: operationalConnectionId,
+    connectionId: realtimeConnectionId,
     connectionsError: connections.error ?? routing.error,
     canMergeSessionSnapshot,
     mergeRealtimeMessage,
@@ -694,6 +735,7 @@ export function useCrmInbox(
     setError,
     setSessions,
     setIsLoadingSessions,
+    storeWide: aggregateConnectionFilter,
   });
 
   return {
@@ -722,7 +764,14 @@ export function useCrmInbox(
     authorizeComposioConnection: connections.authorizeComposio,
     completeComposioConnection: connections.completeComposio,
     configureZapiWebhooks: connections.configureZapiWebhooks,
+    configureUazapiWebhooks: connections.configureUazapiWebhooks,
+    connectionAllowance: connections.connectionAllowance,
     disconnectZapiConnection: connections.disconnectZapiConnection,
+    disconnectUazapiConnection: connections.disconnectUazapiConnection,
+    grantConnectionMember: connections.grantConnectionMember,
+    listConnectionMembers: connections.listConnectionMembers,
+    listUazapiInstances: connections.listUazapiInstances,
+    revokeConnectionMember: connections.revokeConnectionMember,
     refreshConnections: connections.refreshConnections,
     refreshConnectionsAndRead: connections.refreshConnectionsAndRead,
     repairZapiConnectionCredentials:
@@ -731,7 +780,10 @@ export function useCrmInbox(
     refreshRoutingPolicy: routing.refresh,
     requestZapiPairingCode: connections.requestZapiPairingCode,
     requestZapiPairingQr: connections.requestZapiPairingQr,
+    requestUazapiPairingCode: connections.requestUazapiPairingCode,
+    requestUazapiPairingQr: connections.requestUazapiPairingQr,
     refreshZapiConnectionStatus: connections.refreshZapiConnectionStatus,
+    refreshUazapiConnectionStatus: connections.refreshUazapiConnectionStatus,
     selectComposioConnectionSender: connections.selectComposioSender,
     setConnectionPaused: connections.setConnectionPaused,
     createTag: tagState.createTag,

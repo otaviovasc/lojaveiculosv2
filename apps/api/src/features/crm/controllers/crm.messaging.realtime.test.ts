@@ -1,18 +1,26 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createCrmRealtimeBroker } from "../../../infrastructure/crm/crmRealtimeBroker.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { HttpContextAuthenticationError } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { registerCrmMessagingRealtimeRoutes } from "./crm.messaging.realtimeRoutes.js";
-import { readSseUntil } from "./crm.messaging.realtime.testSupport.js";
+import { resolveCrmQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
+import {
+  createConnectionStatusEvent,
+  createZapiConnection,
+  readSseUntil,
+  realtimeConnectionId as connectionId,
+  realtimeStoreId as storeId,
+  realtimeTenantId as tenantId,
+} from "./crm.messaging.realtime.testSupport.js";
 
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
-const connectionId = "24000000-0000-4000-8000-000000000101";
+const realtimeServices = {
+  resolveCrmQueueVisibility: async (
+    context: Parameters<typeof resolveCrmQueueVisibility>[0],
+  ) => resolveCrmQueueVisibility(context),
+};
 
 describe("CRM realtime", () => {
   it("authenticates before consuming a one-use ticket", async () => {
@@ -36,6 +44,7 @@ describe("CRM realtime", () => {
         );
       },
       realtimeBroker: broker,
+      services: realtimeServices,
     });
     const app = new Hono().route("/api/v1/crm", feature);
     const ticketResponse = await app.request("/api/v1/crm/events/ticket", {
@@ -206,39 +215,3 @@ describe("CRM realtime", () => {
     expect(stream).not.toContain('"status":"other"');
   });
 });
-
-function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    broker: "direct",
-    channel: "whatsapp",
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
-}
-
-function createConnectionStatusEvent(
-  status: string,
-  eventConnectionId = connectionId,
-) {
-  return {
-    connectionId: eventConnectionId,
-    phone: null,
-    status,
-    storeId,
-    tenantId,
-    type: "connection_status" as const,
-  };
-}

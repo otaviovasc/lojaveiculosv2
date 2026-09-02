@@ -214,6 +214,7 @@ describe("useCrmInbox realtime queue integration", () => {
   afterEach(() => {
     cleanup();
     hookMocks.useRealLifecycle = false;
+    hookMocks.connections.connections = [createConnection()];
     hookMocks.connections.error = null;
     hookMocks.connections.clearError.mockClear();
     hookMocks.routing.error = null;
@@ -887,7 +888,164 @@ describe("useCrmInbox realtime queue integration", () => {
     await act(async () => pending.get("cycle-old")?.([stale]));
     expect(result.current.activeSession?.id).toBe("cycle-new");
   });
+
+  it("queries and subscribes store-wide while the aggregate connection filter is active", async () => {
+    hookMocks.connections.connections = [
+      createConnection({ id: "connection-1", isDefault: true }),
+      createConnection({ displayName: "Secundária", id: "connection-2" }),
+    ];
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => []),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await act(async () => result.current.refreshSessions());
+
+    const lastListQuery = vi
+      .mocked(api.listConversationCycles)
+      .mock.calls.at(-1)?.[0];
+    expect(lastListQuery).not.toHaveProperty("connectionId");
+    const lastCountsQuery = vi
+      .mocked(api.listConversationCycleCounts)
+      .mock.calls.at(-1)?.[0];
+    expect(lastCountsQuery).not.toHaveProperty("connectionId");
+    expect(api.subscribeEvents).toHaveBeenCalledTimes(1);
+    expect(
+      vi.mocked(api.subscribeEvents).mock.calls[0]?.[0],
+    ).not.toHaveProperty("connectionId");
+  });
+
+  it("scopes queries and the subscription to the selected connection", async () => {
+    hookMocks.connections.connections = [
+      createConnection({ id: "connection-1", isDefault: true }),
+      createConnection({ displayName: "Secundária", id: "connection-2" }),
+    ];
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => []),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    act(() => result.current.setConnectionFilterId("connection-2"));
+    await act(async () => result.current.refreshSessions());
+
+    expect(result.current.connectionFilterId).toBe("connection-2");
+    expect(api.listConversationCycles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectionId: "connection-2" }),
+    );
+    expect(api.listConversationCycleCounts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectionId: "connection-2" }),
+    );
+    expect(api.subscribeEvents).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectionId: "connection-2" }),
+    );
+  });
+
+  it("keeps global queue filters for read_unassigned actors without assign", async () => {
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => []),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const session = createSessionBootstrap(false);
+    session.defaultStore = {
+      ...session.defaultStore!,
+      effectivePermissions: [
+        "crm.conversations.read",
+        "crm.conversations.read_unassigned",
+      ],
+    };
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={session}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    act(() => {
+      result.current.setQuickFilter("all");
+      result.current.setOtherAssigneeId("user-other");
+    });
+
+    expect(result.current.quickFilter).toBe("all");
+    expect(result.current.otherAssigneeId).toBe("user-other");
+    await act(async () => result.current.refreshSessions());
+    expect(api.listConversationCycles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ filter: "all" }),
+    );
+  });
+
+  it("resets a connection filter the member-restricted agent cannot browse", async () => {
+    hookMocks.connections.connections = [
+      createConnection({ id: "connection-1", memberUserIds: ["user-current"] }),
+      createConnection({
+        displayName: "Restrita",
+        id: "connection-2",
+        isDefault: false,
+        memberUserIds: ["user-other"],
+      }),
+    ];
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => []),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap(false)}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    act(() => result.current.setConnectionFilterId("connection-2"));
+
+    await waitFor(() => expect(result.current.connectionFilterId).toBeNull());
+  });
 });
+
+function createConnection(
+  overrides: Record<string, unknown> = {},
+): (typeof hookMocks.connections.connections)[number] {
+  return {
+    channel: "whatsapp",
+    displayName: "Loja",
+    id: "connection-1",
+    isDefault: true,
+    live: {
+      checkedAt: "2026-08-17T12:00:00.000Z",
+      connected: true,
+      connectedPhone: "5511999999999",
+      providerStatus: "connected",
+      smartphoneConnected: true,
+    },
+    provider: "zapi",
+    readiness: { ready: true, reason: null, reasonCode: null },
+    state: "active",
+    status: "active",
+    ...overrides,
+  } as (typeof hookMocks.connections.connections)[number];
+}
 
 function createSession(
   input: Partial<CrmConversationCycle>,

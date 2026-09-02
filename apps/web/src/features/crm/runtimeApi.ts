@@ -116,6 +116,22 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).disconnectZapiConnection(connectionId),
+    disconnectUazapiConnection: async (connectionId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).disconnectUazapiConnection(connectionId),
+    listUazapiInstances: async (input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listUazapiInstances(input),
+    grantConnectionMember: async (connectionId, userId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).grantConnectionMember(connectionId, userId),
+    listConnectionMembers: async (connectionId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listConnectionMembers(connectionId),
     repairZapiConnectionCredentials: async (connectionId, input) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -132,6 +148,10 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).configureZapiWebhooks(connectionId),
+    configureUazapiWebhooks: async (connectionId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).configureUazapiWebhooks(connectionId),
     createQuickMessage: async (input) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -273,6 +293,22 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).refreshZapiConnectionStatus(connectionId),
+    refreshUazapiConnectionStatus: async (connectionId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).refreshUazapiConnectionStatus(connectionId),
+    requestUazapiPairingCode: async (connectionId, phone) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).requestUazapiPairingCode(connectionId, phone),
+    requestUazapiPairingQr: async (connectionId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).requestUazapiPairingQr(connectionId),
+    revokeConnectionMember: async (connectionId, userId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).revokeConnectionMember(connectionId, userId),
     retryOlxChatSetup: async (connectionId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

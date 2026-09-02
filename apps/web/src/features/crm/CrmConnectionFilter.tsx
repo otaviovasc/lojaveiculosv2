@@ -3,38 +3,76 @@ import { useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import type { CrmProviderConnection } from "./crmConversationTypes";
 import { isInboxBrowsableConnection } from "./crmConnectionSelection";
+import { filterConnectionsBrowsableByUser } from "./crmQueueState";
 import {
   readCrmChannelLabel,
   readCrmProviderLabel,
 } from "./crmConnectionStatus";
 
+const aggregateFilterValue = null;
+
 export function CrmConnectionFilter({
+  canAssign = true,
+  canReadUnassigned = false,
   connectionFilterId,
   connections,
+  currentUserId = null,
   fallbackConnectionId,
   onChange,
   onSetup,
 }: {
+  canAssign?: boolean;
+  canReadUnassigned?: boolean;
   connectionFilterId: string | null;
   connections: readonly CrmProviderConnection[];
+  currentUserId?: string | null;
   fallbackConnectionId: string | number | null;
-  onChange: (connectionId: string) => void;
+  onChange: (connectionId: string | null) => void;
   onSetup?: () => void;
 }) {
-  const browsableConnections = connections.filter(isInboxBrowsableConnection);
-  const selectedId = String(connectionFilterId ?? fallbackConnectionId ?? "");
+  const browsableConnections = filterConnectionsBrowsableByUser(
+    connections.filter(isInboxBrowsableConnection),
+    { canAssign, canReadUnassigned, currentUserId },
+  );
+  const showAggregateOption = browsableConnections.length > 1;
+  const selectedId =
+    connectionFilterId === null && showAggregateOption
+      ? aggregateFilterValue
+      : String(connectionFilterId ?? fallbackConnectionId ?? "");
   const selectedConnection =
-    browsableConnections.find(
-      (connection) => String(connection.id) === selectedId,
-    ) ??
-    browsableConnections.find((connection) => connection.isDefault) ??
-    null;
+    selectedId === aggregateFilterValue
+      ? null
+      : (browsableConnections.find(
+          (connection) => String(connection.id) === selectedId,
+        ) ??
+        browsableConnections.find((connection) => connection.isDefault) ??
+        null);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
 
-  const selectedLabel = selectedConnection
-    ? readCrmChannelLabel(selectedConnection.channel ?? "")
-    : "Nenhum canal pronto";
+  const selectedLabel =
+    selectedId === aggregateFilterValue
+      ? "Todas as conexões"
+      : selectedConnection
+        ? readCrmChannelLabel(selectedConnection.channel ?? "")
+        : "Nenhum canal pronto";
+  const keyboardOptions: Array<string | null> = showAggregateOption
+    ? [
+        aggregateFilterValue,
+        ...browsableConnections.map((connection) => String(connection.id)),
+      ]
+    : browsableConnections.map((connection) => String(connection.id));
+  const moveSelection = (currentValue: string | null, offset: number) => {
+    const currentIndex = keyboardOptions.findIndex(
+      (value) => value === currentValue,
+    );
+    const next =
+      keyboardOptions[
+        (currentIndex + offset + keyboardOptions.length) %
+          keyboardOptions.length
+      ];
+    if (next !== undefined) onChange(next);
+  };
   return (
     <div className="crm-connection-filter-anchor">
       <button
@@ -75,6 +113,37 @@ export function CrmConnectionFilter({
         onClose={() => setOpen(false)}
       >
         <div aria-label="Canais disponíveis" role="listbox">
+          {showAggregateOption ? (
+            <button
+              aria-selected={selectedId === aggregateFilterValue}
+              className="crm-connection-filter-option"
+              onClick={() => {
+                onChange(aggregateFilterValue);
+                setOpen(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+                  return;
+                }
+                event.preventDefault();
+                moveSelection(
+                  aggregateFilterValue,
+                  event.key === "ArrowDown" ? 1 : -1,
+                );
+              }}
+              role="option"
+              type="button"
+            >
+              <Plug aria-hidden="true" className="crm-connection-filter-icon" />
+              <span>
+                <strong>Todas as conexões</strong>
+                <small>Fila combinada dos canais prontos</small>
+              </span>
+              {selectedId === aggregateFilterValue ? (
+                <Check aria-hidden="true" />
+              ) : null}
+            </button>
+          ) : null}
           {browsableConnections.map((connection) => {
             const selected = String(connection.id) === selectedId;
             return (
@@ -91,16 +160,10 @@ export function CrmConnectionFilter({
                     return;
                   }
                   event.preventDefault();
-                  const currentIndex = browsableConnections.findIndex(
-                    (item) => String(item.id) === String(connection.id),
+                  moveSelection(
+                    String(connection.id),
+                    event.key === "ArrowDown" ? 1 : -1,
                   );
-                  const offset = event.key === "ArrowDown" ? 1 : -1;
-                  const next =
-                    browsableConnections[
-                      (currentIndex + offset + browsableConnections.length) %
-                        browsableConnections.length
-                    ];
-                  if (next) onChange(String(next.id));
                 }}
                 role="option"
                 type="button"
@@ -112,7 +175,8 @@ export function CrmConnectionFilter({
                   </strong>
                   <small>
                     {readCrmProviderLabel(connection.provider)} ·{" "}
-                    {connection.displayName}
+                    {readConnectionPhoneNumber(connection) ??
+                      connection.displayName}
                   </small>
                 </span>
                 {selected ? <Check aria-hidden="true" /> : null}
@@ -132,6 +196,13 @@ export function CrmConnectionFilter({
       ) : null}
     </div>
   );
+}
+
+function readConnectionPhoneNumber(connection: CrmProviderConnection) {
+  const phoneNumber = connection.phoneNumber;
+  return typeof phoneNumber === "string" && phoneNumber.trim()
+    ? phoneNumber
+    : null;
 }
 
 function ConnectionIcon({ channel }: { channel: string }) {

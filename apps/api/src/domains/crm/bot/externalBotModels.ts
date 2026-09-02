@@ -11,7 +11,7 @@ export type ExternalBotScope = {
   integrationId: string;
   connectionId: string;
   threadId: string;
-  provider: "meta_cloud" | "olx" | "zapi";
+  provider: "meta_cloud" | "olx" | "uazapi" | "zapi";
   modelVersion: string;
 };
 

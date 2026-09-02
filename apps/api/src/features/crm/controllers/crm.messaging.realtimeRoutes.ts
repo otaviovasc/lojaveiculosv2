@@ -6,21 +6,29 @@ import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { ServiceLogger } from "../../../shared/serviceLogger.js";
 import { assertConversationRead } from "./crm.messaging.controller.support.js";
-import {
-  CrmMessagingValidationError,
-  handleCrmMessaging,
-} from "./crm.messaging.errors.js";
-import { resolveCrmQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
+import { handleCrmMessaging } from "./crm.messaging.errors.js";
 import { createCrmSseResponse } from "./crm.messaging.realtimeStream.js";
+import {
+  matchesTicketScope,
+  readTicket,
+  readTicketInput,
+  setRealtimeSecurityHeaders,
+} from "./crm.messaging.realtimeRouteSupport.js";
+import type { CrmServices } from "./crmServices.js";
 
 export type RegisterCrmMessagingRealtimeRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
   realtimeBroker?: CrmRealtimeBroker;
+  services: Pick<CrmServices, "resolveCrmQueueVisibility">;
 };
 
 export function registerCrmMessagingRealtimeRoutes(
   crmFeature: Hono,
-  { createContext, realtimeBroker }: RegisterCrmMessagingRealtimeRoutesOptions,
+  {
+    createContext,
+    realtimeBroker,
+    services,
+  }: RegisterCrmMessagingRealtimeRoutesOptions,
 ) {
   const broker = realtimeBroker;
   if (!broker) return;
@@ -38,7 +46,8 @@ export function registerCrmMessagingRealtimeRoutes(
       const input = await readTicketInput(context);
       const ticket = await broker.issueTicket({
         connectionId: input.connectionId ?? null,
-        queueVisibility: resolveCrmQueueVisibility(serviceContext),
+        queueVisibility:
+          await services.resolveCrmQueueVisibility(serviceContext),
         sinceEventId: input.sinceEventId ?? null,
         storeId: scope.storeId as StoreId,
         tenantId: scope.tenantId as TenantId,
@@ -83,7 +92,14 @@ export function registerCrmMessagingRealtimeRoutes(
           status: 401,
         });
       }
-      if (!matchesTicketScope(currentScope, serviceContext, scope)) {
+      if (
+        !(await matchesTicketScope(
+          currentScope,
+          serviceContext,
+          scope,
+          services,
+        ))
+      ) {
         return jsonApiError(context, {
           code: "CRM_MESSAGING_SSE_ACCESS_REVOKED",
           message: "SSE access is no longer authorized.",
@@ -98,6 +114,7 @@ export function registerCrmMessagingRealtimeRoutes(
             requireCrmScope(refreshedContext),
             refreshedContext,
             scope,
+            services,
           );
         } catch {
           return false;
@@ -126,95 +143,4 @@ export function registerCrmMessagingRealtimeRoutes(
       });
     }),
   );
-}
-
-function matchesTicketScope(
-  currentScope: ReturnType<typeof requireCrmScope>,
-  serviceContext: ServiceContext,
-  ticketScope: NonNullable<
-    Awaited<ReturnType<CrmRealtimeBroker["resolveTicket"]>>
-  >,
-) {
-  return (
-    currentScope.storeId === ticketScope.storeId &&
-    currentScope.tenantId === ticketScope.tenantId &&
-    haveSameQueueVisibility(
-      resolveCrmQueueVisibility(serviceContext),
-      ticketScope.queueVisibility,
-    )
-  );
-}
-
-function haveSameQueueVisibility(
-  left: ReturnType<typeof resolveCrmQueueVisibility>,
-  right: ReturnType<typeof resolveCrmQueueVisibility>,
-) {
-  if (left.kind !== right.kind) return false;
-  return (
-    left.kind !== "assigned" ||
-    right.kind !== "assigned" ||
-    left.userId === right.userId
-  );
-}
-
-async function readTicketInput(context: Context) {
-  let rawBody: unknown;
-  try {
-    rawBody = await context.req.json();
-  } catch {
-    throw new CrmMessagingValidationError("Request body must be valid JSON.");
-  }
-  if (!rawBody || typeof rawBody !== "object" || Array.isArray(rawBody)) {
-    throw new CrmMessagingValidationError("Request body must be an object.");
-  }
-  const body = rawBody as {
-    connectionId?: unknown;
-    lastEventId?: unknown;
-    sinceEventId?: unknown;
-  };
-  return {
-    connectionId: readConnectionId(body.connectionId),
-    sinceEventId: readEventCursor(body.sinceEventId ?? body.lastEventId),
-  };
-}
-
-function setRealtimeSecurityHeaders(context: Context) {
-  context.header("Cache-Control", "no-store");
-  context.header("Referrer-Policy", "no-referrer");
-}
-
-function readOptionalString(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function readConnectionId(value: unknown) {
-  const connectionId = readOptionalString(value);
-  if (!connectionId) return null;
-  if (isUuid(connectionId)) return connectionId;
-  throw new CrmMessagingValidationError("connectionId is invalid.");
-}
-
-function readEventCursor(value: unknown) {
-  const cursor = readOptionalString(value);
-  if (!cursor) return null;
-  if (
-    cursor.length <= 128 &&
-    /^\d{1,20}-(?:\d{1,20}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(
-      cursor,
-    )
-  ) {
-    return cursor;
-  }
-  throw new CrmMessagingValidationError("lastEventId is invalid.");
-}
-
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
-}
-
-function readTicket(value: string | undefined) {
-  const ticket = readOptionalString(value);
-  return ticket && isUuid(ticket) ? ticket : null;
 }

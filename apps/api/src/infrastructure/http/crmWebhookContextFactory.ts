@@ -26,6 +26,9 @@ export function resolveCrmWebhookActor(pathname: string) {
   if (pathname.includes("/whatsapp/webhooks/zapi/")) {
     return { actorId: "zapi", displayName: "Z-API" };
   }
+  if (pathname.includes("/whatsapp/webhooks/uazapi/")) {
+    return { actorId: "uazapi", displayName: "UAZAPI" };
+  }
   if (pathname.includes("/crm/webhooks/olx/")) {
     return { actorId: "olx_chat", displayName: "OLX Chat" };
   }

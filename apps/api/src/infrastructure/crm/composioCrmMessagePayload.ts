@@ -1,8 +1,8 @@
 import type {
   CrmMessagingSendMediaInput,
-  CrmWhatsappSendTemplateInput,
   CrmMessagingSendTextInput,
 } from "../../domains/crm/ports/crmMessagingGateway.js";
+import type { CrmWhatsappSendTemplateInput } from "../../domains/crm/ports/crmMessagingGatewayTypes.js";
 import {
   createMetaMessagesEndpoint,
   unsupportedComposioCapability,

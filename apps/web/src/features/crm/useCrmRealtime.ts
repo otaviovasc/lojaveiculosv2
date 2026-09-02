@@ -16,7 +16,12 @@ type RealtimeOptions = {
   api: CrmConversationApi;
   canAccessSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
   canMergeSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
-  connectionId: string | null;
+  /**
+   * Connection to subscribe to. `undefined` subscribes store-wide (the server
+   * still scopes delivery to the subscriber's visible connections); `null`
+   * keeps the hook offline.
+   */
+  connectionId: string | null | undefined;
   connectionsError: Error | null;
   mergeRealtimeMessage: (message: CrmMessage) => void;
   mergeCycles: (
@@ -127,7 +132,7 @@ export function useCrmRealtime({
       setStatus(nextStatus);
       latestHandlersRef.current.onStatus?.(nextStatus);
     };
-    if (hasConnectionsError || !connectionId) {
+    if (hasConnectionsError || connectionId === null) {
       clearContactPresence();
       publishStatus("offline");
       return;
@@ -244,7 +249,7 @@ export function useCrmRealtime({
       }
     };
     const unsubscribe = api.subscribeEvents({
-      connectionId,
+      ...(connectionId !== undefined ? { connectionId } : {}),
       onError: (caught) => {
         void caught;
         if (!active) return;

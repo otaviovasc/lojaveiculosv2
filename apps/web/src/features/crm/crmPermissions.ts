@@ -13,6 +13,7 @@ const permissions = {
   botRead: "crm.bot.read",
   list: "crm.conversations.read",
   read: "crm.conversations.read",
+  readUnassigned: "crm.conversations.read_unassigned",
   routingDefaultManage: "crm.routing.default.manage",
   scheduleCancel: "crm.scheduled_messages.cancel",
   scheduleCreate: "crm.scheduled_messages.create",
@@ -37,6 +38,7 @@ export type CrmCapabilities = {
   canIntegrationsManage: boolean;
   canList: boolean;
   canRead: boolean;
+  canReadUnassigned: boolean;
   canRoutingDefaultManage: boolean;
   canScheduleCancel: boolean;
   canScheduleCreate: boolean;
@@ -68,6 +70,7 @@ export function readCrmCapabilities(
       hasCrmPermission(cycle, permissions.botManage),
     canList: hasCrmPermission(cycle, permissions.list),
     canRead: hasCrmPermission(cycle, permissions.read),
+    canReadUnassigned: hasCrmPermission(cycle, permissions.readUnassigned),
     canRoutingDefaultManage: hasCrmPermission(
       cycle,
       permissions.routingDefaultManage,

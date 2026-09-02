@@ -86,6 +86,32 @@ export type CrmWhatsappZapiSetupState = z.infer<
   typeof crmWhatsappZapiSetupStateSchema
 >;
 
+/**
+ * POST /crm/channel-connections/uazapi/list-instances validates a store-owned
+ * uazapi admin token and answers the instances visible to it. Tokens are
+ * write-only credentials and are never part of the response.
+ */
+export const crmUazapiInstanceSummarySchema = z
+  .object({
+    connectedPhone: nullableString,
+    id: nonEmptyString,
+    name: nonEmptyString,
+    status: nonEmptyString,
+  })
+  .strict();
+export type CrmUazapiInstanceSummary = z.infer<
+  typeof crmUazapiInstanceSummarySchema
+>;
+
+export const crmUazapiInstanceListResponseSchema = z
+  .object({
+    instances: z.array(crmUazapiInstanceSummarySchema),
+  })
+  .strict();
+export type CrmUazapiInstanceListResponse = z.infer<
+  typeof crmUazapiInstanceListResponseSchema
+>;
+
 export const crmConnectionOverviewItemSchema = crmChannelConnectionSchema
   .extend({
     live: crmConnectionLiveStatusSchema.optional(),
@@ -105,6 +131,32 @@ export const crmConnectionOverviewSchema = z
   })
   .strict();
 export type CrmConnectionOverview = z.infer<typeof crmConnectionOverviewSchema>;
+
+export const crmConnectionMemberSchema = z
+  .object({
+    createdAt: nonEmptyString,
+    grantedBy: nullableString,
+    userId: nonEmptyString,
+  })
+  .strict();
+export type CrmConnectionMemberDto = z.infer<typeof crmConnectionMemberSchema>;
+
+export const crmConnectionMemberListResponseSchema = z.array(
+  crmConnectionMemberSchema,
+);
+export type CrmConnectionMemberListResponse = z.infer<
+  typeof crmConnectionMemberListResponseSchema
+>;
+
+export const crmConnectionMemberRevokeResultSchema = z
+  .object({
+    activeAssignedConversationCount: nonNegativeInteger,
+    revoked: z.boolean(),
+  })
+  .strict();
+export type CrmConnectionMemberRevokeResult = z.infer<
+  typeof crmConnectionMemberRevokeResultSchema
+>;
 
 export const crmConversationCycleStatuses = [
   "ACTIVE",

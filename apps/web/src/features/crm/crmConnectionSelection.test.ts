@@ -261,6 +261,14 @@ describe("CRM messaging connection selection", () => {
       mode: "text",
       provider: "zapi",
     });
+    // UAZAPI is a free-text WhatsApp sender when the capability DTO allows it.
+    expect(
+      readConversationStartCapability(createConnection("uazapi", "uazapi")),
+    ).toMatchObject({
+      canStart: true,
+      mode: "text",
+      provider: "uazapi",
+    });
   });
 });
 

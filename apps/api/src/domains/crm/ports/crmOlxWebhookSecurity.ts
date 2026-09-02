@@ -5,7 +5,7 @@ export type CrmOlxWebhookSecurity = {
       | {
           connectionId: string;
           now: Date;
-          provider: "olx" | "zapi";
+          provider: "olx" | "uazapi" | "zapi";
           scope: "connection";
           storeId: string;
           tenantId: string;

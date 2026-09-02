@@ -309,6 +309,103 @@ describe("CrmChannelDirectory", () => {
     expect(screen.queryByText("Já conectado")).not.toBeInTheDocument();
   });
 
+  it("offers the UAZAPI setup row while the WhatsApp allowance has room", () => {
+    const onChoose = vi.fn();
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        connectionAllowance={{ limit: 3, remaining: 2, used: 1 }}
+        connections={[createZapiConnection()]}
+        onChoose={onChoose}
+      />,
+    );
+
+    // With the allowance model, both setup rows coexist with the connected row.
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /UAZAPI.*Provisionado pelo workspace/i,
+      }),
+    );
+    expect(onChoose).toHaveBeenCalledWith("uazapi");
+    expect(
+      screen.getByRole("button", { name: /Z-API.*Credencial da loja/i }),
+    ).toBeEnabled();
+  });
+
+  it("hides setup rows and explains the limit when the allowance is exhausted", () => {
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        connectionAllowance={{ limit: 3, remaining: 0, used: 3 }}
+        connections={[createZapiConnection()]}
+        onChoose={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /UAZAPI.*Provisionado/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Z-API.*Credencial da loja/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Limite de conexões WhatsApp desta loja atingido/i),
+    ).toHaveTextContent(/3 de 3/);
+    expect(screen.getByText(/Nenhuma nova conexão foi criada/i)).toBeVisible();
+  });
+
+  it("keeps the singleton fallback when the server does not report an allowance", () => {
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+        ]}
+        connections={[createZapiConnection()]}
+        onChoose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText("Z-API principal")).toHaveLength(1);
+    expect(
+      screen.queryByRole("button", { name: /Z-API.*Credencial da loja/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /UAZAPI.*Provisionado pelo workspace/i,
+      }),
+    ).toBeEnabled();
+  });
+
+  it("hides the UAZAPI setup row when one is already active and no allowance is reported", () => {
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        connections={[
+          {
+            ...createZapiConnection(),
+            displayName: "UAZAPI principal",
+            id: "connection-uazapi",
+            provider: "uazapi" as const,
+          },
+        ]}
+        onChoose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText("UAZAPI principal")).toHaveLength(1);
+    expect(
+      screen.queryByRole("button", { name: /UAZAPI.*Provisionado/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("localizes provider requirement copy instead of exposing raw English", async () => {
     const state = createOlxState();
     state.connectionStatus = "reconnect_required";

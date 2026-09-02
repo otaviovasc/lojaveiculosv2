@@ -28,6 +28,7 @@ describe("CRM WhatsApp permissions", () => {
       canIntegrationsManage: false,
       canList: true,
       canRead: true,
+      canReadUnassigned: false,
       canRoutingDefaultManage: false,
       canScheduleCancel: false,
       canScheduleCreate: false,
@@ -110,6 +111,21 @@ describe("CRM WhatsApp permissions", () => {
     expect(
       readCrmCapabilities(createSession(["crm.messaging.connection.setup"])),
     ).toMatchObject({ canConnectionCredentialsManage: false });
+  });
+
+  it("maps read_unassigned independently from assign", () => {
+    expect(
+      readCrmCapabilities(createSession(["crm.conversations.read_unassigned"])),
+    ).toMatchObject({
+      canAssign: false,
+      canReadUnassigned: true,
+    });
+    expect(
+      readCrmCapabilities(createSession(["crm.conversations.assign"])),
+    ).toMatchObject({
+      canAssign: true,
+      canReadUnassigned: false,
+    });
   });
 
   it("maps default routing independently from connection setup", () => {

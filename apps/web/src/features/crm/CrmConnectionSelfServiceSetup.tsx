@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, MessageCircle, QrCode } from "lucide-react";
+import type { CrmConnectionAllowance } from "@lojaveiculosv2/shared";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
@@ -7,17 +8,22 @@ import type {
   CrmComposioAuthorization,
   CrmComposioCompleteResult,
   CrmAvailableSetup,
+  CrmConnectionMember,
+  CrmConnectionMemberRevokeResult,
   CrmCreateConnectionInput,
   CrmConnectionId,
   CrmOfficialChannelSetupProvider,
   CrmProviderConnection,
   CrmSetupProvider,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmUazapiInstanceSummary,
+  CrmUazapiListInstancesInput,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
 } from "./crmConversationTypes";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
+import { CrmWhatsappUazapiSetup } from "./CrmWhatsappUazapiSetup";
 import { CrmChannelDirectory } from "./CrmChannelDirectory";
 import { CrmConnectionManageDialog } from "./CrmConnectionAdminDialog";
 import { CrmOfficialChannelSetup } from "./CrmOfficialChannelSetup";
@@ -42,6 +48,28 @@ export type CrmConnectionSelfServiceHandlers = {
   onDisconnectZapi?: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmProviderConnection>;
+  onDisconnectUazapi?: (
+    connectionId: CrmConnectionId,
+  ) => Promise<CrmProviderConnection>;
+  onConfigureUazapiWebhooks?: (connectionId: CrmConnectionId) => Promise<
+    CrmWhatsappZapiWebhookSetupResult & {
+      connection?: CrmProviderConnection;
+    }
+  >;
+  onGrantConnectionMember?: (
+    connectionId: CrmConnectionId,
+    userId: string,
+  ) => Promise<void>;
+  onListConnectionMembers?: (
+    connectionId: CrmConnectionId,
+  ) => Promise<readonly CrmConnectionMember[]>;
+  onListUazapiInstances?: (
+    input: CrmUazapiListInstancesInput,
+  ) => Promise<readonly CrmUazapiInstanceSummary[]>;
+  onRevokeConnectionMember?: (
+    connectionId: CrmConnectionId,
+    userId: string,
+  ) => Promise<CrmConnectionMemberRevokeResult>;
   onConfigureZapiWebhooks: (connectionId: CrmConnectionId) => Promise<
     CrmWhatsappZapiWebhookSetupResult & {
       connection?: CrmProviderConnection;
@@ -73,6 +101,20 @@ export type CrmConnectionSelfServiceHandlers = {
   onRefreshZapiStatus?: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmProviderConnection>;
+  onRefreshUazapiStatus?: (
+    connectionId: CrmConnectionId,
+  ) => Promise<CrmProviderConnection>;
+  onRequestUazapiPairingCode?: (
+    connectionId: CrmConnectionId,
+    phone: string,
+  ) => Promise<{
+    code?: string;
+    expiresAt?: string;
+    requested: boolean;
+  }>;
+  onRequestUazapiPairingQr?: (
+    connectionId: CrmConnectionId,
+  ) => Promise<{ expiresAt: string; qrCode: string }>;
   onSetConnectionPaused?: (
     connectionId: CrmConnectionId,
     paused: boolean,
@@ -88,6 +130,7 @@ export function CrmConnectionSelfServiceSetup({
   canPair,
   canSetup,
   canRepairCredentials = false,
+  connectionAllowance = null,
   connections = [],
   existingConnection = null,
   handlers,
@@ -100,6 +143,7 @@ export function CrmConnectionSelfServiceSetup({
   canPair: boolean;
   canRepairCredentials?: boolean;
   canSetup: boolean;
+  connectionAllowance?: CrmConnectionAllowance | null;
   connections?: readonly CrmProviderConnection[];
   existingConnection?: CrmProviderConnection | null;
   handlers: CrmConnectionSelfServiceHandlers;
@@ -302,6 +346,7 @@ export function CrmConnectionSelfServiceSetup({
       ) : null}
       <CrmChannelDirectory
         availableSetups={[...availableSetups]}
+        connectionAllowance={connectionAllowance}
         connections={connections}
         {...(marketplaceApi ? { marketplaceApi } : {})}
         onChoose={chooseProvider}
@@ -332,13 +377,17 @@ export function CrmConnectionSelfServiceSetup({
         }
         isOpen={provider !== null}
         onClose={closeSetup}
-        {...(provider === "zapi" ? { hideHeading: true } : {})}
+        {...(provider === "zapi" || provider === "uazapi"
+          ? { hideHeading: true }
+          : {})}
         title={
           provider === "zapi"
             ? "Conectar WhatsApp · Z-API"
-            : officialChannel === "instagram"
-              ? "Configurar Instagram Oficial"
-              : "Configurar WhatsApp Oficial"
+            : provider === "uazapi"
+              ? "Conectar WhatsApp · UAZAPI"
+              : officialChannel === "instagram"
+                ? "Configurar Instagram Oficial"
+                : "Configurar WhatsApp Oficial"
         }
       >
         {provider === "zapi" ? (
@@ -351,6 +400,15 @@ export function CrmConnectionSelfServiceSetup({
             {...(initialZapiCredentialMode
               ? { initialCredentialMode: initialZapiCredentialMode }
               : {})}
+            onBack={closeSetup}
+            onConnection={setConnection}
+          />
+        ) : provider === "uazapi" ? (
+          <CrmWhatsappUazapiSetup
+            canPair={canPair}
+            canSetup={setupAllowed}
+            connection={connection?.provider === "uazapi" ? connection : null}
+            handlers={handlers}
             onBack={closeSetup}
             onConnection={setConnection}
           />
@@ -391,6 +449,15 @@ export function CrmConnectionSelfServiceSetup({
         isRefreshing={isBusy}
         onClose={() => setManagedConnectionId(null)}
         onRefresh={handlers.onRefreshConnections}
+        {...(handlers.onListConnectionMembers
+          ? { onListConnectionMembers: handlers.onListConnectionMembers }
+          : {})}
+        {...(handlers.onGrantConnectionMember
+          ? { onGrantConnectionMember: handlers.onGrantConnectionMember }
+          : {})}
+        {...(handlers.onRevokeConnectionMember
+          ? { onRevokeConnectionMember: handlers.onRevokeConnectionMember }
+          : {})}
         {...(managedConnection?.provider === "zapi" &&
         canRepairCredentials &&
         needsConnectionRepair(managedConnection)
@@ -419,6 +486,14 @@ export function CrmConnectionSelfServiceSetup({
               },
             }
           : {})}
+        {...(managedConnection?.provider === "uazapi" &&
+        handlers.onRefreshUazapiStatus
+          ? {
+              onRefreshStatus: async () => {
+                await handlers.onRefreshUazapiStatus!(managedConnection.id);
+              },
+            }
+          : {})}
         {...(handlers.onSetConnectionPaused
           ? { onSetConnectionPaused: handlers.onSetConnectionPaused }
           : {})}
@@ -438,16 +513,17 @@ function isConnectionForSetupProvider(
   provider: CrmSetupProvider,
   channel: "instagram" | "whatsapp",
 ) {
-  return provider === "zapi"
-    ? connection.provider === "zapi"
-    : isComposioConnectionForProvider(connection, channel);
+  if (provider === "zapi") return connection.provider === "zapi";
+  if (provider === "uazapi") return connection.provider === "uazapi";
+  return isComposioConnectionForProvider(connection, channel);
 }
 
 function readSetupProvider(
   connection: CrmProviderConnection | null | undefined,
 ): CrmSetupProvider | null {
   if (!connection) return null;
-  if (connection?.provider === "zapi") return "zapi";
+  if (connection.provider === "zapi") return "zapi";
+  if (connection.provider === "uazapi") return "uazapi";
   if (connection.provider === "meta_cloud") return "meta_cloud";
   return null;
 }

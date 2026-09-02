@@ -3,6 +3,7 @@ import type { CrmWhatsappCatalogProductsPage } from "../../../domains/crm/ports/
 import type {
   CrmConversationCycle,
   CrmMessage,
+  CrmQueueVisibility,
   CrmScheduledMessage,
   CrmScheduledMessageScope,
   CrmTag,
@@ -156,6 +157,9 @@ export type CrmMessagingServices = CrmQuickMessageServices &
       RecoverOlxLeadWebhooksResult
     >;
     removeCrmReaction: CrmContextService<RemoveCrmReactionInput, CrmMessage>;
+    resolveCrmQueueVisibility: (
+      context: ServiceContext,
+    ) => Promise<CrmQueueVisibility>;
     removeConversationCycleTag: CrmContextService<
       RemoveConversationCycleTagInput,
       CrmConversationCycle

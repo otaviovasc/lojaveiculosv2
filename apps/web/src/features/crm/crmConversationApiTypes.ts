@@ -47,6 +47,8 @@ import type {
   CrmListScheduledMessagesInput,
   CrmListTagsInput,
   CrmConnectionId,
+  CrmConnectionMember,
+  CrmConnectionMemberRevokeResult,
   CrmInterventionInput,
   CrmMessageQuery,
   CrmMessage,
@@ -91,6 +93,8 @@ import type {
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmUazapiInstanceSummary,
+  CrmUazapiListInstancesInput,
 } from "./crmConversationTypes";
 
 export type CrmConversationApi = {
@@ -122,6 +126,19 @@ export type CrmConversationApi = {
   disconnectZapiConnection: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmProviderConnection>;
+  disconnectUazapiConnection: (
+    connectionId: CrmConnectionId,
+  ) => Promise<CrmProviderConnection>;
+  listUazapiInstances: (
+    input: CrmUazapiListInstancesInput,
+  ) => Promise<readonly CrmUazapiInstanceSummary[]>;
+  grantConnectionMember: (
+    connectionId: CrmConnectionId,
+    userId: string,
+  ) => Promise<void>;
+  listConnectionMembers: (
+    connectionId: CrmConnectionId,
+  ) => Promise<CrmConnectionMember[]>;
   repairZapiConnectionCredentials: (
     connectionId: CrmConnectionId,
     input: CrmZapiCredentialsInput,
@@ -172,6 +189,20 @@ export type CrmConversationApi = {
   refreshZapiConnectionStatus: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmProviderConnection>;
+  refreshUazapiConnectionStatus: (
+    connectionId: CrmConnectionId,
+  ) => Promise<CrmProviderConnection>;
+  requestUazapiPairingCode: (
+    connectionId: CrmConnectionId,
+    phone: string,
+  ) => Promise<CrmWhatsappZapiPairingCode>;
+  requestUazapiPairingQr: (
+    connectionId: CrmConnectionId,
+  ) => Promise<CrmWhatsappZapiPairingQr>;
+  revokeConnectionMember: (
+    connectionId: CrmConnectionId,
+    userId: string,
+  ) => Promise<CrmConnectionMemberRevokeResult>;
   retryOlxChatSetup: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmOlxChatSetupRetryResult>;
@@ -180,6 +211,9 @@ export type CrmConversationApi = {
     paused: boolean,
   ) => Promise<CrmProviderConnection>;
   configureZapiWebhooks: (
+    connectionId: CrmConnectionId,
+  ) => Promise<CrmWhatsappZapiWebhookSetupResult>;
+  configureUazapiWebhooks: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmWhatsappZapiWebhookSetupResult>;
   selectComposioSender: (

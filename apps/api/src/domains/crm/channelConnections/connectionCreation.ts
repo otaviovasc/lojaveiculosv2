@@ -3,6 +3,7 @@ import type { CrmChannelConnection } from "./channelConnectionModels.js";
 
 export type CrmChannelConnectionSetupIdentity =
   | { broker: "direct"; channel: "olx_chat"; provider: "olx" }
+  | { broker: "direct"; channel: "whatsapp"; provider: "uazapi" }
   | { broker: "direct"; channel: "whatsapp"; provider: "zapi" }
   | {
       broker: "composio";
@@ -18,6 +19,36 @@ export type CreateCrmChannelConnectionInput =
       instanceId: string;
       instanceToken: string;
       provider: "zapi";
+      webhookSetupTarget?: {
+        basePath: string;
+        canonicalApiOrigin: string;
+      };
+    }
+  | {
+      channel: "whatsapp";
+      displayName: string;
+      /** Write-only BYOK admin token, sealed per connection. */
+      adminToken: string;
+      baseUrl?: string;
+      /** Optional phone used for the pair-code connection flow. */
+      connectionPhoneNumber?: string;
+      mode: "create";
+      provider: "uazapi";
+      webhookSetupTarget?: {
+        basePath: string;
+        canonicalApiOrigin: string;
+      };
+    }
+  | {
+      channel: "whatsapp";
+      displayName: string;
+      /** Write-only BYOK admin token, sealed per connection. */
+      adminToken: string;
+      baseUrl?: string;
+      /** Existing instance id; its token is resolved server-side. */
+      instanceId: string;
+      mode: "attach";
+      provider: "uazapi";
       webhookSetupTarget?: {
         basePath: string;
         canonicalApiOrigin: string;
@@ -66,6 +97,19 @@ export function crmChannelConnectionCapabilityFacts(
     };
   }
   if (
+    identity.broker === "direct" &&
+    identity.channel === "whatsapp" &&
+    identity.provider === "uazapi"
+  ) {
+    return {
+      ...common,
+      conversation_start: true,
+      delete: true,
+      media: true,
+      reactions: true,
+    };
+  }
+  if (
     identity.broker === "composio" &&
     identity.channel === "whatsapp" &&
     identity.provider === "meta_cloud"
@@ -107,6 +151,38 @@ export class CrmChannelConnectionProviderAlreadyExistsError extends Error {
     this.name = "CrmChannelConnectionProviderAlreadyExistsError";
     this.channel = input.channel;
     this.provider = input.provider;
+  }
+}
+
+export const CRM_WHATSAPP_CONNECTION_LIMIT = 3;
+
+export class CrmWhatsappConnectionLimitError extends Error {
+  readonly code = "CRM_WHATSAPP_CONNECTION_LIMIT_REACHED" as const;
+  constructor(readonly limit: number = CRM_WHATSAPP_CONNECTION_LIMIT) {
+    super(
+      `The store already has ${limit} active WhatsApp connections. Archive one before creating another.`,
+    );
+    this.name = "CrmWhatsappConnectionLimitError";
+  }
+}
+
+export class CrmUazapiInstanceNotFoundError extends Error {
+  readonly code = "CRM_UAZAPI_INSTANCE_NOT_FOUND" as const;
+  constructor(readonly instanceId: string) {
+    super(
+      "The uazapi instance was not found in the account behind the supplied admin token.",
+    );
+    this.name = "CrmUazapiInstanceNotFoundError";
+  }
+}
+
+export class CrmUazapiConnectionPhoneConflictError extends Error {
+  readonly code = "CRM_UAZAPI_CONNECTION_PHONE_CONFLICT" as const;
+  constructor() {
+    super(
+      "Another connection in this store already uses the phone number exposed by the attached uazapi instance.",
+    );
+    this.name = "CrmUazapiConnectionPhoneConflictError";
   }
 }
 

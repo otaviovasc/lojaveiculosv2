@@ -1,4 +1,5 @@
 import type { CrmConnection } from "./crmConnectionRepository.js";
+import type { CrmWhatsappSendTemplateInput } from "./crmMessagingGatewayTypes.js";
 export type CrmMessagingProviderConnectionStatus =
   "connected" | "disconnected" | "unknown";
 export type CrmMessagingProviderStatus = {
@@ -29,62 +30,6 @@ export type CrmMessagingSendMediaInput = {
   phone: string;
 };
 export type CrmMessagingSendMediaResult = CrmMessagingSendTextResult;
-
-export type CrmWhatsappTemplateParameter =
-  | {
-      currency: {
-        amount_1000: number;
-        code: string;
-        fallback_value: string;
-      };
-      type: "currency";
-    }
-  | {
-      date_time: {
-        calendar?: "GREGORIAN" | undefined;
-        day_of_month?: number | undefined;
-        day_of_week?: number | undefined;
-        fallback_value: string;
-        hour?: number | undefined;
-        minute?: number | undefined;
-        month?: number | undefined;
-        year?: number | undefined;
-      };
-      type: "date_time";
-    }
-  | {
-      document: { id: string } | { link: string };
-      type: "document";
-    }
-  | {
-      image: { id: string } | { link: string };
-      type: "image";
-    }
-  | { payload: string; type: "payload" }
-  | { text: string; type: "text" }
-  | {
-      type: "video";
-      video: { id: string } | { link: string };
-    };
-
-export type CrmWhatsappTemplateComponent =
-  | {
-      parameters: readonly CrmWhatsappTemplateParameter[];
-      type: "body" | "header";
-    }
-  | {
-      index: string;
-      parameters: readonly CrmWhatsappTemplateParameter[];
-      sub_type: "quick_reply" | "url";
-      type: "button";
-    };
-
-export type CrmWhatsappSendTemplateInput = {
-  components?: readonly CrmWhatsappTemplateComponent[];
-  languageCode: string;
-  name: string;
-  phone: string;
-};
 
 export type CrmWhatsappCatalogProduct = {
   availability: string | null;
@@ -183,6 +128,15 @@ export type CrmMessagingGateway = {
   disconnectConnection: (connection: CrmConnection) => Promise<{
     disconnected: true;
   }>;
+  /**
+   * Optional inbound-media hydration seam: providers whose webhook payloads do
+   * not carry a downloadable file URL (uazapi) resolve it through a provider
+   * download endpoint. Absent for providers that do not need it.
+   */
+  downloadInboundMedia?: (
+    connection: CrmConnection,
+    input: { messageId: string },
+  ) => Promise<{ mediaUrl: string | null; mimeType: string | null }>;
   getConnectionStatus: (
     connection: CrmConnection,
   ) => Promise<CrmMessagingProviderStatus>;

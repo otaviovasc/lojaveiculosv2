@@ -12,11 +12,12 @@ import {
   ZapiSetupProgress,
   ZapiWebhookSetupStatus,
 } from "./CrmWhatsappZapiSetupParts";
+import { isProviderDisconnected } from "./crmZapiPairingState";
 import {
-  isProviderDisconnected,
-  requiresPhonePairing,
-  requiresProviderDisconnect,
-} from "./crmZapiPairingState";
+  refreshWhatsappSetupChannel,
+  requestWhatsappPairingCode,
+  requestWhatsappPairingQr,
+} from "./crmWhatsappSetupActions";
 import {
   buildZapiConnectionInput,
   type BusyState,
@@ -367,36 +368,18 @@ export function CrmWhatsappZapiSetup({
   };
 
   const refresh = async () => {
-    if (busy) return;
-    const currentConnection = connection;
-    const actionGeneration = beginAction();
-    const connectionId = currentConnection?.id;
-    const refreshStatus = currentConnection
-      ? handlers.onRefreshZapiStatus
-      : undefined;
-    if (refreshStatus && currentConnection) {
-      const result = await runAction({
-        action: () => refreshStatus(currentConnection.id),
-        busy: "refresh",
-        fallbackError: "Não foi possível atualizar o canal.",
-        isCurrent: () => isCurrentAction(actionGeneration, connectionId),
-        setBusy,
-        setError,
-      });
-      if (result && isCurrentAction(actionGeneration, connectionId)) {
-        if (isProviderDisconnected(result)) setPairingBlock(null);
-        onConnection(result);
-      }
-    } else {
-      await runAction({
-        action: handlers.onRefreshConnections,
-        busy: "refresh",
-        fallbackError: "Não foi possível atualizar o canal.",
-        isCurrent: () => isCurrentAction(actionGeneration),
-        setBusy,
-        setError,
-      });
-    }
+    await refreshWhatsappSetupChannel({
+      beginAction,
+      busy,
+      connection,
+      isCurrentAction,
+      onConnection,
+      refreshConnections: handlers.onRefreshConnections,
+      refreshStatus: handlers.onRefreshZapiStatus,
+      setBusy,
+      setError,
+      setPairingBlock,
+    });
   };
 
   const disconnect = async () => {
@@ -456,33 +439,18 @@ export function CrmWhatsappZapiSetup({
   };
 
   const requestQr = useCallback(async () => {
-    const requestPairingQr = handlers.onRequestZapiPairingQr;
-    const connectionId = connection?.id;
-    if (!connectionId || !canPair || !requestPairingQr) return;
-    const actionGeneration = beginAction();
-    setQr(null);
-    setBusy("qr");
-    setError(null);
-    try {
-      const payload = await requestPairingQr(connectionId);
-      if (isCurrentAction(actionGeneration, connectionId)) setQr(payload);
-    } catch (caught) {
-      if (!isCurrentAction(actionGeneration, connectionId)) return;
-      if (requiresPhonePairing(caught)) {
-        setPairingMethod("code");
-        setError(
-          "Este aparelho exige uma verificação adicional. Continue pelo telefone para concluir o pareamento com segurança.",
-        );
-      } else if (requiresProviderDisconnect(caught)) {
-        setPairingBlock("disconnect_required");
-      } else {
-        setError(
-          formatApiErrorDisplay(caught, "Não foi possível gerar o QR Code."),
-        );
-      }
-    } finally {
-      if (isCurrentAction(actionGeneration, connectionId)) setBusy(null);
-    }
+    await requestWhatsappPairingQr({
+      beginAction,
+      canPair,
+      connectionId: connection?.id,
+      isCurrentAction,
+      requestPairingQr: handlers.onRequestZapiPairingQr,
+      setBusy,
+      setError,
+      setPairingBlock,
+      setPairingMethod,
+      setQr,
+    });
   }, [
     beginAction,
     canPair,
@@ -517,38 +485,18 @@ export function CrmWhatsappZapiSetup({
   ]);
 
   const requestCode = async () => {
-    const requestPairingCode = handlers.onRequestZapiPairingCode;
-    const connectionId = connection?.id;
-    if (!connectionId || !canPair || !requestPairingCode) return;
-    const normalizedPhone = phone.replace(/\D/g, "");
-    if (normalizedPhone.length < 8 || normalizedPhone.length > 15) {
-      setError("Informe um telefone válido com DDI, DDD e número.");
-      return;
-    }
-    const actionGeneration = beginAction();
-    setPairingCode(null);
-    setBusy("code");
-    setError(null);
-    try {
-      const payload = await requestPairingCode(connectionId, normalizedPhone);
-      if (isCurrentAction(actionGeneration, connectionId)) {
-        setPairingCode(payload);
-      }
-    } catch (caught) {
-      if (!isCurrentAction(actionGeneration, connectionId)) return;
-      if (requiresProviderDisconnect(caught)) {
-        setPairingBlock("disconnect_required");
-      } else {
-        setError(
-          formatApiErrorDisplay(
-            caught,
-            "Não foi possível solicitar o código de pareamento.",
-          ),
-        );
-      }
-    } finally {
-      if (isCurrentAction(actionGeneration, connectionId)) setBusy(null);
-    }
+    await requestWhatsappPairingCode({
+      beginAction,
+      canPair,
+      connectionId: connection?.id,
+      isCurrentAction,
+      phone,
+      requestPairingCode: handlers.onRequestZapiPairingCode,
+      setBusy,
+      setError,
+      setPairingBlock,
+      setPairingCode,
+    });
   };
 
   return (

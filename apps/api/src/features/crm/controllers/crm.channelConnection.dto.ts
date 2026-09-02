@@ -13,6 +13,12 @@ export function toChannelConnectionDto(
     displayName: connection.displayName,
     id: connection.id,
     isDefault: connection.isDefault,
+    ...(connection.memberUserIds
+      ? { memberUserIds: connection.memberUserIds }
+      : {}),
+    ...(connection.phoneNumber !== undefined
+      ? { phoneNumber: connection.phoneNumber }
+      : {}),
     provider: connection.provider,
     ...(connection.state === "sandbox" &&
     connection.metadata.purpose === "crm_ui_demo"

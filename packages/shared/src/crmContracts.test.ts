@@ -12,7 +12,7 @@ import {
 describe("canonical CRM contracts", () => {
   it("publishes the supported channels and providers", () => {
     expect(crmChannels).toEqual(["whatsapp", "instagram", "olx_chat"]);
-    expect(crmProviders).toEqual(["meta_cloud", "zapi", "olx"]);
+    expect(crmProviders).toEqual(["meta_cloud", "zapi", "uazapi", "olx"]);
   });
 
   it("publishes connection states and capabilities", () => {

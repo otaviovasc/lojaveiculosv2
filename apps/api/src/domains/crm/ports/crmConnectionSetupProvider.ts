@@ -59,6 +59,31 @@ export type ZapiPairingResult =
       kind: "challenge";
     };
 
+export const UAZAPI_ADMIN_TOKEN_CREDENTIAL_PURPOSE = "uazapi.admin-token";
+export const UAZAPI_BASE_URL_CREDENTIAL_PURPOSE = "uazapi.base-url";
+export const UAZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE = "uazapi.instance-id";
+export const UAZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE = "uazapi.instance-token";
+export const UAZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE = "uazapi.webhook-secret";
+
+export type UazapiSetupCredentials = {
+  apiBaseUrl: string;
+  instanceId: string;
+  instanceToken: string;
+};
+
+export type UazapiConnectionSetupProvider = {
+  getPairingCode: (
+    credentials: UazapiSetupCredentials,
+    phone: string,
+  ) => Promise<ZapiPairingResult>;
+  getQrCode: (
+    credentials: UazapiSetupCredentials,
+  ) => Promise<{ dataUri: string; expiresInSeconds: number }>;
+  validateStatus: (
+    credentials: UazapiSetupCredentials,
+  ) => Promise<ZapiSetupStatus>;
+};
+
 export type ZapiConnectionSetupProvider = {
   getPairingCode: (
     credentials: ZapiSetupCredentials,
