@@ -31,6 +31,8 @@ export function toConversationCycleDto(
     id: cycle.id,
     interventionHistoryStartedAt: toIsoString(cycle.humanTakeoverAt),
     interventionId: cycle.interventionId,
+    isArchived: cycle.archivedAt !== null,
+    isPinned: cycle.pinnedAt !== null,
     lastCustomerReadAt: toIsoString(cycle.lastCustomerReadAt),
     lastMessageAt: toIsoString(cycle.lastMessageAt),
     lastMessageContent: cycle.lastMessageContent,

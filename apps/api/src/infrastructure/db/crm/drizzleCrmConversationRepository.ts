@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   conversationAttendances,
   conversationCycles,
@@ -172,7 +172,12 @@ export function createDrizzleCrmConversationRepository(
           eq(conversationAttendances.cycleId, conversationCycles.id),
         )
         .where(and(...filters))
-        .orderBy(desc(conversationCycles.lastMessageAt))
+        .orderBy(
+          // Postgres DESC defaults to NULLS FIRST; pinned cycles must lead.
+          sql`${conversationCycles.pinnedAt} desc nulls last`,
+          desc(conversationCycles.lastMessageAt),
+          asc(conversationCycles.id),
+        )
         .offset(input.offset)
         .limit(input.limit);
       return Promise.all(

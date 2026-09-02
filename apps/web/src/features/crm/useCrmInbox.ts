@@ -95,6 +95,7 @@ export function useCrmInbox(
     CrmHumanAttendanceState | ""
   >("");
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [archivedOnly, setArchivedOnly] = useState(false);
   const [realtimeStatus, setRealtimeStatus] =
     useState<CrmRealtimeStatus>("offline");
   const [conversationCycles, setSessions] = useState<CrmConversationCycle[]>(
@@ -383,6 +384,7 @@ export function useCrmInbox(
   const { refreshSessionCounts, conversationCycleCounts } =
     useCrmConversationCycleCounts({
       api,
+      archivedOnly,
       canList: permissions.canList,
       connectionId: queueConnectionId,
       humanAttendanceFilter,
@@ -397,6 +399,7 @@ export function useCrmInbox(
   const createSessionQuery = useCallback(
     (offset: number) => ({
       ...createConnectionQuery(sessionListConnectionId!),
+      ...(archivedOnly ? { archived: true } : {}),
       ...(quickFilter === "others" && otherAssigneeId
         ? { assigneeId: otherAssigneeId }
         : {}),
@@ -412,6 +415,7 @@ export function useCrmInbox(
       ...(unreadOnly ? { unreadOnly } : {}),
     }),
     [
+      archivedOnly,
       humanAttendanceFilter,
       otherAssigneeId,
       quickFilter,
@@ -641,6 +645,7 @@ export function useCrmInbox(
     api,
     patchSession,
     refreshSessions,
+    removeSession,
     conversationCycles,
     setError,
   });
@@ -742,6 +747,7 @@ export function useCrmInbox(
     activeSession,
     activeContactPresence: contactPresence,
     activeCycleId: hasCurrentScopeAccess ? activeCycleId : null,
+    archivedOnly,
     assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
     availableConnectionSetups: connections.availableSetups,
@@ -851,6 +857,7 @@ export function useCrmInbox(
     conversationCycleCounts,
     conversationCycles: hasCurrentScopeAccess ? visibleSessions : [],
     setActiveCycleId: selectSession,
+    setArchivedOnly,
     setConnectionFilterId,
     setHumanAttendanceFilter,
     setOtherAssigneeId,

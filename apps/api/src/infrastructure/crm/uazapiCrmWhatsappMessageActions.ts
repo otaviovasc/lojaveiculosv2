@@ -107,6 +107,7 @@ async function postUazapiMessageAction(
       response.status,
       label,
       credentials.instanceToken,
+      payload,
     );
   }
   ensureUazapiOk(payload, label, credentials.instanceToken);

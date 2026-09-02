@@ -69,6 +69,14 @@ function filterMemoryCycles(input: {
   return input.cycles
     .filter((cycle) => cycle.storeId === input.query.storeId)
     .filter((cycle) => cycle.tenantId === input.query.tenantId)
+    .filter((cycle) => input.query.includeDeleted || !cycle.deletedAt)
+    .filter((cycle) =>
+      input.query.includeArchived
+        ? true
+        : input.query.archived
+          ? Boolean(cycle.archivedAt)
+          : !cycle.archivedAt,
+    )
     .filter((cycle) => matchesQueueVisibility(cycle, input.query))
     .filter(
       (cycle) =>

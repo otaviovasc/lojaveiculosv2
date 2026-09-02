@@ -123,6 +123,14 @@ export async function ingestMemoryCrmMessage(input: {
     input.cycles.push(cycle);
   } else {
     cycle = upsertMemoryCycleContext(input.cycles, input.message);
+    // Mirror the drizzle ingest path: inbound messages resurface archived
+    // cycles and restore soft-deleted ones instead of black-holing.
+    if (cycle.deletedAt || cycle.archivedAt) {
+      cycle.deletedAt = null;
+      cycle.archivedAt = null;
+      cycle.revision += 1;
+      cycle.updatedAt = now;
+    }
   }
 
   const existing = input.messages.find(

@@ -12,7 +12,7 @@ const adminToken = uazapiTestAdminToken;
 
 describe("createCrmChannelConnection uazapi create mode", () => {
   it("provisions and seals a server-created uazapi connection", async () => {
-    const { ports, provisioning } = createUazapiPorts();
+    const { members, ports, provisioning } = createUazapiPorts();
 
     const result = await createCrmChannelConnection(
       createContext(),
@@ -63,6 +63,13 @@ describe("createCrmChannelConnection uazapi create mode", () => {
     expect(stored.baseUrl).toBe("sealed:https://free.uazapi.com");
     expect(stored.instanceToken).toBe("sealed:instance-token-1");
     expect(stored.webhookSecret).toMatch(/^sealed:/);
+    expect(members.grants).toEqual([
+      expect.objectContaining({
+        connectionId: result.id,
+        grantedBy: "user_1",
+        userId: "user_1",
+      }),
+    ]);
   });
 
   it("rejects creation when the store already has 3 active whatsapp connections", async () => {

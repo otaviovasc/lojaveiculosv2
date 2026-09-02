@@ -18,7 +18,13 @@ import {
   shouldShowMessageDay,
 } from "./crmMessageDates";
 import type { CrmMessageView } from "./crmConversationModel";
-import { readRecord, readString } from "./crmMessageHelpers";
+import {
+  isStandaloneReactionMessage,
+  isUnresolvedFallbackReactionMessage,
+  readFallbackReactionValue,
+  readRecord,
+  readString,
+} from "./crmMessageHelpers";
 import { MessageListSkeleton } from "./CrmSkeletons";
 import { CrmMediaGalleryViewer } from "./CrmMediaGalleryViewer";
 import { buildCrmGalleryMediaItems } from "./crmMediaGallery";
@@ -115,10 +121,24 @@ export function MessageList({
     isNearBottomRef.current = isNearMessageListBottom(list);
   }, [messages]);
 
+  // Legacy standalone reaction rows (persisted before reactions were attached
+  // to the target message) stay in the database but are hidden from the
+  // thread. Fallback rows whose target could not be resolved are stamped with
+  // metadata.interactive.unresolved and stay visible as compact system lines.
+  const displayMessages = useMemo(
+    () =>
+      messages.filter(
+        (message) =>
+          !isStandaloneReactionMessage(message.metadata) ||
+          isUnresolvedFallbackReactionMessage(message.metadata),
+      ),
+    [messages],
+  );
+
   // Extract all media items for the gallery viewer
   const galleryItems = useMemo(
-    () => buildCrmGalleryMediaItems(messages),
-    [messages],
+    () => buildCrmGalleryMediaItems(displayMessages),
+    [displayMessages],
   );
 
   const handleMediaClick = useCallback(
@@ -172,7 +192,7 @@ export function MessageList({
     return <MessageListSkeleton />;
   }
 
-  const groups = groupMessagesForDisplay(messages);
+  const groups = groupMessagesForDisplay(displayMessages);
   return (
     <>
       <div
@@ -223,7 +243,7 @@ export function MessageList({
             ) : null}
           </div>
         ) : null}
-        {!messages.length ? (
+        {!displayMessages.length ? (
           <div className="crm-message-empty" role="status">
             <strong>Nenhuma mensagem ainda</strong>
             <span>As mensagens desta conversa aparecerão aqui.</span>
@@ -241,7 +261,10 @@ export function MessageList({
                   {formatCrmMessageDay(messageGroupTimestamp(group))}
                 </time>
               ) : null}
-              {group.kind === "media" ? (
+              {group.kind === "single" &&
+              isUnresolvedFallbackReactionMessage(group.message.metadata) ? (
+                <UnresolvedFallbackReactionLine message={group.message} />
+              ) : group.kind === "media" ? (
                 <CrmMediaMessageGroup
                   actionsDisabled={actionsDisabled}
                   {...(fallbackAssigneeName !== undefined
@@ -304,6 +327,21 @@ export function MessageList({
         onClose={() => setGalleryOpen(false)}
       />
     </>
+  );
+}
+
+function UnresolvedFallbackReactionLine({
+  message,
+}: {
+  message: CrmMessageView;
+}) {
+  const reaction = readFallbackReactionValue(message.metadata);
+  return (
+    <span className="self-center text-xs font-bold text-muted" role="status">
+      {reaction
+        ? `Reagiu ${reaction} a uma mensagem anterior`
+        : "Reagiu a uma mensagem anterior"}
+    </span>
   );
 }
 

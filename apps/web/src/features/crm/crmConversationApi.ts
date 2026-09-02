@@ -108,6 +108,12 @@ export function createCrmConversationApi({
       postMaybeJson(crmConversationRoutes.cycleTags(cycleId, baseUrl), input),
     assignCycle: (cycleId, input) =>
       postJson(crmConversationRoutes.assignCycle(cycleId, baseUrl), input),
+    archiveCycle: (cycleId, input) =>
+      postJson(crmConversationRoutes.archiveCycle(cycleId, baseUrl), input),
+    pinCycle: (cycleId, input) =>
+      postJson(crmConversationRoutes.pinCycle(cycleId, baseUrl), input),
+    deleteCycle: (cycleId, input) =>
+      postJson(crmConversationRoutes.deleteCycle(cycleId, baseUrl), input),
     authorizeComposioConnection: (connectionId) =>
       postJson(crmConversationRoutes.composioAuthorize(connectionId, baseUrl)),
     cancelScheduledMessage: (scheduledMessageId) =>

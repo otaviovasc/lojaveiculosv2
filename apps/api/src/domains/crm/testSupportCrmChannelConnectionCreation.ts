@@ -26,21 +26,30 @@ export function createContext(
 export function createPorts(
   _legacyLimit = 1,
   repository = createTestCrmConnectionRepository(),
+  memberRepository?: CrmServicePorts["crmConnectionMemberRepository"],
 ): CrmServicePorts {
   return {
     crmConnectionCredentialVault: createCredentialVault(),
     crmConnectionRepository: repository,
+    ...(memberRepository
+      ? { crmConnectionMemberRepository: memberRepository }
+      : {}),
     crmRepository: {} as never,
-    transaction: (action) => action(createPortsForTransaction(repository)),
+    transaction: (action) =>
+      action(createPortsForTransaction(repository, memberRepository)),
   };
 }
 
 function createPortsForTransaction(
   repository: ReturnType<typeof createTestCrmConnectionRepository>,
+  memberRepository?: CrmServicePorts["crmConnectionMemberRepository"],
 ): CrmServicePorts {
   return {
     crmConnectionCredentialVault: createCredentialVault(),
     crmConnectionRepository: repository,
+    ...(memberRepository
+      ? { crmConnectionMemberRepository: memberRepository }
+      : {}),
     crmRepository: {} as never,
   };
 }

@@ -55,7 +55,12 @@ export async function handleCrmMessaging(
         details: { reason: error.code },
         error,
         message: error.message,
-        status: error.code === "connection_not_found" ? 404 : 400,
+        status:
+          error.code === "connection_not_found"
+            ? 404
+            : error.code === "connection_last_member"
+              ? 409
+              : 400,
       });
     }
     if (error instanceof CrmRoutingPolicyValidationError) {

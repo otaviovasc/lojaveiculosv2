@@ -46,6 +46,11 @@ import {
 } from "../../../domains/crm/services/CrmMessagingService/updateCrmConversationCycle.js";
 import { setConversationAttendance } from "../../../domains/crm/services/CrmMessagingService/setConversationAttendance.js";
 import { markConversationCycleReadState } from "../../../domains/crm/services/CrmMessagingService/markCrmConversationCycleRead.js";
+import {
+  archiveConversationCycle,
+  deleteConversationCycle,
+  pinConversationCycle,
+} from "../../../domains/crm/services/CrmMessagingService/conversationCycleLifecycle.js";
 import { resolveCrmConnectionScopedQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
 import { startConversation } from "../../../domains/crm/services/CrmMessagingService/startConversation.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
@@ -77,14 +82,17 @@ type MessageBindings = Pick<
 type CycleActionBindings = Pick<
   CrmMessagingServices,
   | "cancelCrmScheduledMessage"
+  | "archiveConversationCycle"
   | "assignConversationCycle"
   | "closeConversationCycle"
   | "countConversationCycles"
   | "createCrmScheduledMessage"
+  | "deleteConversationCycle"
   | "listDueCrmScheduledMessageScopes"
   | "listConversationCycles"
   | "listCrmScheduledMessages"
   | "markConversationCycleReadState"
+  | "pinConversationCycle"
   | "processDueCrmScheduledMessages"
   | "startConversation"
   | "setConversationAttendance"
@@ -151,6 +159,8 @@ const buildCycleActionBindings = (
 ): CycleActionBindings => ({
   cancelCrmScheduledMessage: (context, input) =>
     cancelCrmScheduledMessage(context, input, ports),
+  archiveConversationCycle: (context, input) =>
+    archiveConversationCycle(context, input, ports),
   assignConversationCycle: (context, input) =>
     assignConversationCycle(context, input, ports),
   closeConversationCycle: (context, input) =>
@@ -159,6 +169,8 @@ const buildCycleActionBindings = (
     countConversationCycles(context, input, ports),
   createCrmScheduledMessage: (context, input) =>
     createCrmScheduledMessage(context, input, ports),
+  deleteConversationCycle: (context, input) =>
+    deleteConversationCycle(context, input, ports),
   listDueCrmScheduledMessageScopes: (context, input) =>
     listDueCrmScheduledMessageScopes(context, input, ports),
   listConversationCycles: (context, input) =>
@@ -167,6 +179,8 @@ const buildCycleActionBindings = (
     listCrmScheduledMessages(context, input, ports),
   markConversationCycleReadState: (context, input) =>
     markConversationCycleReadState(context, input, ports),
+  pinConversationCycle: (context, input) =>
+    pinConversationCycle(context, input, ports),
   processDueCrmScheduledMessages: (context, input) =>
     processDueCrmScheduledMessages(context, input, ports),
   updateCrmScheduledMessage: (context, input) =>

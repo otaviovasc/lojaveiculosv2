@@ -136,6 +136,8 @@ export function cleanSessionUpdate(
     ...(input.assignedUserId !== undefined
       ? { assignedUserId: input.assignedUserId }
       : {}),
+    ...(input.archivedAt !== undefined ? { archivedAt: input.archivedAt } : {}),
+    ...(input.deletedAt !== undefined ? { deletedAt: input.deletedAt } : {}),
     ...(input.firstHandledAt !== undefined
       ? { firstHandledAt: input.firstHandledAt }
       : {}),
@@ -146,6 +148,7 @@ export function cleanSessionUpdate(
       ? { lastCustomerReadAt: input.lastCustomerReadAt }
       : {}),
     ...(input.lastReadAt !== undefined ? { lastReadAt: input.lastReadAt } : {}),
+    ...(input.pinnedAt !== undefined ? { pinnedAt: input.pinnedAt } : {}),
     ...(input.incrementPushNotificationGeneration
       ? {
           pushNotificationGeneration: sql`${conversationCycles.pushNotificationGeneration} + 1`,

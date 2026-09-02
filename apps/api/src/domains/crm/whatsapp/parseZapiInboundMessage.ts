@@ -101,27 +101,33 @@ function resolvePhone(
   let resolved = normalizePhone(rawPhone);
   const ctwaPhone = readCtwaPhone(payload);
   const participantPhone = normalizePhone(readString(payload.participantPhone));
-  const connectedPhone = normalizePhone(readString(payload.connectedPhone));
+  const chatPhone = normalizePhone(readString(payload.chatPhone));
 
   if (isLid(rawPhone) || isLikelyLidNumber(resolved, chatLid)) {
-    const chatPhone = normalizePhone(readString(payload.chatPhone));
     if (chatPhone && !isLid(readString(payload.chatPhone))) {
       resolved = chatPhone;
     } else {
       const chatNamePhone = normalizeChatNamePhone(
         readString(payload.chatName),
       );
+      // The connected account's own number is never a customer identity
+      // fallback: on fromMe payloads it is the sender, so keying the
+      // conversation by it hides phone-direct messages from the customer
+      // thread (repasses backend behavior).
       resolved =
-        participantPhone ??
-        chatNamePhone ??
-        ctwaPhone ??
-        connectedPhone ??
-        chatLid ??
-        null;
+        participantPhone ?? chatNamePhone ?? ctwaPhone ?? chatLid ?? null;
     }
   }
 
-  return resolved || participantPhone || ctwaPhone || connectedPhone || null;
+  return (
+    resolved ||
+    participantPhone ||
+    ctwaPhone ||
+    // LID-only identity: key the conversation by the stable chat LID so
+    // phone-direct messages still land in the customer thread.
+    chatLid ||
+    null
+  );
 }
 
 function normalizePhone(value?: string) {

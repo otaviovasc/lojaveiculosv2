@@ -73,16 +73,21 @@ export function parseUazapiContactIdentity(
 
   const chatLid = isUazapiLid(chatid)
     ? stripUazapiLidDigits(chatid)
-    : senderLid
+    : !fromMe && senderLid
       ? stripUazapiLidDigits(senderLid)
       : undefined;
-  // For outbound app messages the connected account is the sender, so the
-  // recipient chatid carries the customer identity.
-  const phone =
-    stripUazapiJid(chatid) ||
-    stripUazapiJid(senderPn) ||
-    stripUazapiJid(sender) ||
-    chatLid;
+  // For outbound messages the connected account is the sender, so the
+  // recipient chatid carries the customer identity. The connected account's
+  // own sender/sender_pn/sender_lid must never become the customer identity.
+  const phone = fromMe
+    ? stripUazapiJid(chatid) ||
+      readUazapiChatNamePhone(readString(data.chatName)) ||
+      chatLid
+    : stripUazapiJid(chatid) ||
+      stripUazapiJid(senderPn) ||
+      stripUazapiJid(sender) ||
+      readUazapiChatNamePhone(readString(data.chatName)) ||
+      chatLid;
   if (!phone) return null;
 
   const customerDisplayName = readUsableUazapiContactName(
@@ -101,6 +106,12 @@ export function parseUazapiContactIdentity(
 function readUsableUazapiContactName(value?: string) {
   if (!value || /^\+?[\d\s().-]+$/u.test(value)) return undefined;
   return readUsableZapiContactName(value);
+}
+
+function readUazapiChatNamePhone(value?: string) {
+  if (!value || !/^\s*\+?[\d\s().-]+\s*$/u.test(value)) return undefined;
+  const digits = value.replace(/\D/g, "");
+  return /^\d{7,15}$/u.test(digits) ? digits : undefined;
 }
 
 function stripUazapiLidDigits(value?: string) {

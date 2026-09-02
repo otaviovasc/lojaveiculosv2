@@ -64,7 +64,7 @@ export async function attachExistingUazapiInstance(
     ports,
   );
   // Attach never compensation-deletes: the instance belongs to the store.
-  return persistUazapiConnection(input, scope, ports, {
+  return persistUazapiConnection(context, input, scope, ports, {
     connected: instance.status === "connected",
     credentialsRef,
     externalInstanceId: instance.id,

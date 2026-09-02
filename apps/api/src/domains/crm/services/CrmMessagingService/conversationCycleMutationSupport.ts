@@ -16,6 +16,7 @@ export async function resolveScopedConversationCycle(
   context: ServiceContext,
   input: { cycleId: string },
   ports: CrmServicePorts,
+  options: { includeArchived?: boolean; includeDeleted?: boolean } = {},
 ) {
   const scope = requireCrmMessagingScope(context);
   const [conversationCycle] = await getCrmConversationRepository(
@@ -27,6 +28,8 @@ export async function resolveScopedConversationCycle(
       context,
       ports,
     ),
+    ...(options.includeArchived ? { includeArchived: true } : {}),
+    ...(options.includeDeleted ? { includeDeleted: true } : {}),
     cycleId: input.cycleId,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
@@ -38,11 +41,13 @@ export async function findScopedConversationCycle(
   context: ServiceContext,
   input: { cycleId: string },
   ports: CrmServicePorts,
+  options: { includeArchived?: boolean; includeDeleted?: boolean } = {},
 ) {
   const { scope, conversationCycle } = await resolveScopedConversationCycle(
     context,
     input,
     ports,
+    options,
   );
   if (!conversationCycle)
     throw new ConversationCycleNotFoundError(input.cycleId);

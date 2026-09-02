@@ -1,24 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  CalendarCheck,
-  CalendarClock,
-  Megaphone,
-  MessageSquareText,
-  Plus,
-  Search,
-} from "lucide-react";
 import { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import { MessageList } from "./CrmMessageParts";
 import { CrmQueueToolbar } from "./CrmQueueToolbar";
-import { SessionList } from "./CrmConversationCycleList";
-import { SessionListSkeleton } from "./CrmSkeletons";
 import { CrmQueueBulkBar } from "./CrmQueueBulkBar";
 import { CrmReadOnlyComposer } from "./CrmReadOnlyComposer";
-import { CrmNewConversationDialog } from "./CrmNewConversationDialog";
-import { CrmAttendanceConclusionDialog } from "./CrmAttendanceConclusionDialog";
 import { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsPanel";
-import { CrmScheduleMessageDialog } from "./CrmScheduleMessageDialog";
-import { CrmVisitSessionDialog } from "./CrmVisitSessionDialog";
+import {
+  CrmEmptyConversationPane,
+  CrmQueueListPane,
+  CrmWorkspaceOverlays,
+  useCrmWorkspaceShellEvents,
+} from "./CrmConversationWorkspaceParts";
 import type { useCrmInbox } from "./useCrmInbox";
 import type {
   CrmConversationCycleId,
@@ -57,6 +49,8 @@ export function CrmConversationWorkspace({
     phone?: string;
   } | null>(null);
   const [conclusionOpen, setConclusionOpen] = useState(false);
+  const [deleteCycleId, setDeleteCycleId] =
+    useState<CrmConversationCycleId | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<CrmMessage | null>(null);
   const selectedCount = inbox.selectedSessions.length;
   const showSelectionMode = selectionMode || selectedCount > 0;
@@ -122,58 +116,7 @@ export function CrmConversationWorkspace({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [detailsOpen]);
 
-  useEffect(() => {
-    const onJump = (event: Event) => {
-      const { messageId } = (event as CustomEvent<{ messageId: string }>)
-        .detail;
-      if (!messageId) return;
-      const el =
-        shellRef.current?.querySelector<HTMLElement>(
-          `[data-message-id="${String(messageId)}"]`,
-        ) ??
-        shellRef.current?.querySelector<HTMLElement>(
-          `#crm-msg-${String(messageId).replace(/"/g, "")}`,
-        );
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("crm-message-highlight");
-        setTimeout(() => el.classList.remove("crm-message-highlight"), 1800);
-      } else {
-        // fallback: smooth scroll messages container toward bottom where hit likely is
-        const scroller =
-          shellRef.current?.querySelector<HTMLElement>(".crm-messages");
-        scroller?.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
-      }
-    };
-    const onToggleTag = (event: Event) => {
-      const { tagId, cycleId } = (
-        event as CustomEvent<{ tagId: string; cycleId: string }>
-      ).detail;
-      if (!tagId || !cycleId) return;
-      const target = inbox.conversationCycles.find(
-        (c) => String(c.id) === String(cycleId),
-      );
-      const hasTag = target?.tags?.some((t) => String(t.id) === String(tagId));
-      if (hasTag)
-        void inbox.actions.removeCycleTag(
-          cycleId as CrmConversationCycleId,
-          tagId,
-        );
-      else
-        void inbox.actions.addCycleTag(
-          cycleId as CrmConversationCycleId,
-          { tagId } as unknown as Parameters<
-            typeof inbox.actions.addCycleTag
-          >[1],
-        );
-    };
-    window.addEventListener("crm:jump-to-message", onJump);
-    window.addEventListener("crm:toggle-tag", onToggleTag);
-    return () => {
-      window.removeEventListener("crm:jump-to-message", onJump);
-      window.removeEventListener("crm:toggle-tag", onToggleTag);
-    };
-  }, [inbox]);
+  useCrmWorkspaceShellEvents(shellRef, inbox);
 
   useEffect(() => {
     setMobilePane(routeCycleId ? "chat" : "list");
@@ -242,6 +185,7 @@ export function CrmConversationWorkspace({
     >
       <aside className="crm-list" aria-label="Fila de conversas" tabIndex={-1}>
         <CrmQueueToolbar
+          archivedOnly={inbox.archivedOnly}
           assignableMembers={inbox.assignableMembers}
           availableTags={inbox.availableTags}
           canAssign={inbox.permissions.canAssign}
@@ -257,6 +201,7 @@ export function CrmConversationWorkspace({
           connections={inbox.connections}
           currentUserId={inbox.currentUserId}
           onConnectionFilterChange={inbox.setConnectionFilterId}
+          onArchivedOnlyChange={inbox.setArchivedOnly}
           onHumanAttendanceFilterChange={inbox.setHumanAttendanceFilter}
           onManageConnections={() => onScopeChange("connection")}
           onManageTags={() => onScopeChange("tags")}
@@ -305,35 +250,16 @@ export function CrmConversationWorkspace({
             visible={showSelectionMode}
           />
         </CrmQueueToolbar>
-        {inbox.isLoading && !inbox.conversationCycles.length ? (
-          <SessionListSkeleton />
-        ) : (
-          <SessionList
-            activeCycleId={inbox.activeCycleId}
-            hasMore={inbox.hasMoreSessions}
-            isLoadingMore={inbox.isLoadingMoreSessions}
-            onLoadMore={() => void inbox.loadMoreSessions()}
-            onRefresh={() =>
-              void inbox.refreshSessions({ preserveLocalOnly: true })
-            }
-            onSelect={(cycleId) => {
-              setDetailsOpen(false);
-              onCycleChange(cycleId);
-              focusPane("chat");
-            }}
-            onToggleRead={(cycle) => {
-              if (cycle.unreadCount) {
-                void inbox.actions.markCycleRead(cycle.id);
-              } else {
-                void inbox.actions.markCycleUnread(cycle.id);
-              }
-            }}
-            onToggleSelected={inbox.toggleSelectedSession}
-            selectedCycleIds={inbox.selectedCycleIds}
-            selectionMode={showSelectionMode}
-            conversationCycles={inbox.conversationCycles}
-          />
-        )}
+        <CrmQueueListPane
+          inbox={inbox}
+          onRequestDelete={(cycleId) => setDeleteCycleId(cycleId)}
+          onSelect={(cycleId) => {
+            setDetailsOpen(false);
+            onCycleChange(cycleId);
+            focusPane("chat");
+          }}
+          selectionMode={showSelectionMode}
+        />
       </aside>
 
       <section
@@ -526,117 +452,21 @@ export function CrmConversationWorkspace({
             )}
           </>
         ) : (
-          <div className="crm-empty crm-empty-conversation-state">
-            <div className="crm-empty-conversation-card">
-              <span aria-hidden="true" className="crm-empty-conversation-icon">
-                <MessageSquareText />
-              </span>
-              <span className="crm-empty-conversation-tag">
-                {isDemoView ? "Demonstração" : "WhatsApp CRM"}
-              </span>
-              <h2>Selecione uma conversa</h2>
-              <p>
-                {isDemoView
-                  ? "Histórico fictício para explorar o CRM. Escolha um contato na fila ao lado para navegar nas conversas de demonstração."
-                  : "Escolha um contato na fila ao lado para visualizar o histórico de mensagens, negociações de veículos, propostas e agendamentos."}
-              </p>
-
-              <div className="crm-empty-conversation-grid">
-                <button
-                  className="crm-empty-quick-action"
-                  disabled={!inbox.canStartConversation}
-                  onClick={() => setNewConversationOpen(true)}
-                  type="button"
-                >
-                  <span className="crm-empty-action-icon crm-empty-action-emerald">
-                    <Plus className="size-4" />
-                  </span>
-                  <div className="crm-empty-action-text">
-                    <strong>Nova conversa</strong>
-                    <small>Iniciar contato por telefone</small>
-                  </div>
-                </button>
-
-                <button
-                  className="crm-empty-quick-action"
-                  onClick={() => onScopeChange("visits")}
-                  type="button"
-                >
-                  <span className="crm-empty-action-icon crm-empty-action-blue">
-                    <CalendarCheck className="size-4" />
-                  </span>
-                  <div className="crm-empty-action-text">
-                    <strong>Visitas & Test Drives</strong>
-                    <small>Agenda presencial na loja</small>
-                  </div>
-                </button>
-
-                <button
-                  className="crm-empty-quick-action"
-                  onClick={() => onScopeChange("schedules")}
-                  type="button"
-                >
-                  <span className="crm-empty-action-icon crm-empty-action-purple">
-                    <CalendarClock className="size-4" />
-                  </span>
-                  <div className="crm-empty-action-text">
-                    <strong>Mensagens agendadas</strong>
-                    <small>Disparos programados</small>
-                  </div>
-                </button>
-
-                <button
-                  className="crm-empty-quick-action"
-                  onClick={() => onScopeChange("campaigns")}
-                  type="button"
-                >
-                  <span className="crm-empty-action-icon crm-empty-action-amber">
-                    <Megaphone className="size-4" />
-                  </span>
-                  <div className="crm-empty-action-text">
-                    <strong>Campanhas & Disparos</strong>
-                    <small>Transmissões para clientes</small>
-                  </div>
-                </button>
-              </div>
-
-              {isDemoView && inbox.permissions.canConnectionSetup ? (
-                <div className="crm-empty-conversation-action">
-                  <button
-                    className="crm-action"
-                    onClick={() => onScopeChange("connection")}
-                    type="button"
-                  >
-                    Configurar canal
-                  </button>
-                </div>
-              ) : null}
-
-              <div className="crm-empty-conversation-shortcuts">
-                <button
-                  className="crm-empty-shortcut-btn"
-                  onClick={() => focusPane("list")}
-                  type="button"
-                >
-                  <kbd>Alt</kbd> + <kbd>1</kbd> <span>Focar lista</span>
-                </button>
-                <button
-                  className="crm-empty-shortcut-btn"
-                  onClick={() => {
-                    const searchInput =
-                      shellRef.current?.querySelector<HTMLInputElement>(
-                        ".crm-search input",
-                      );
-                    searchInput?.focus();
-                  }}
-                  type="button"
-                >
-                  <Search className="size-3" />
-                  <span>Pesquisar conversas</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          <CrmEmptyConversationPane
+            canSetupConnection={inbox.permissions.canConnectionSetup}
+            canStartConversation={inbox.canStartConversation}
+            isDemoView={isDemoView}
+            onFocusList={() => focusPane("list")}
+            onFocusSearch={() => {
+              const searchInput =
+                shellRef.current?.querySelector<HTMLInputElement>(
+                  ".crm-search input",
+                );
+              searchInput?.focus();
+            }}
+            onScopeChange={onScopeChange}
+            onStartConversation={() => setNewConversationOpen(true)}
+          />
         )}
       </section>
       {activeSession && detailsOpen ? (
@@ -662,74 +492,38 @@ export function CrmConversationWorkspace({
           cycle={activeSession}
         />
       ) : null}
-      {newConversationOpen ? (
-        <CrmNewConversationDialog
-          disabled={inbox.isStartingConversation || !inbox.canStartConversation}
-          initialBuyerName={newConversationDraft?.buyerName ?? ""}
-          initialPhone={newConversationDraft?.phone ?? ""}
-          onClose={() => {
-            setNewConversationOpen(false);
-            setNewConversationDraft(null);
-          }}
-          onStart={async (input) => {
-            const accepted = await inbox.startConversation(input);
-            if (accepted) {
-              focusPane("chat");
-              setNewConversationDraft(null);
-            }
-            return accepted;
-          }}
-          provider={
-            inbox.startConversationProvider === "meta_cloud"
-              ? "meta_cloud"
-              : "zapi"
+      <CrmWorkspaceOverlays
+        activeSession={activeSession ?? null}
+        conclusionOpen={conclusionOpen}
+        deleteCycleId={deleteCycleId}
+        inbox={inbox}
+        newConversationDraft={newConversationDraft}
+        newConversationOpen={newConversationOpen}
+        onCloseConclusion={() => setConclusionOpen(false)}
+        onCloseDelete={() => setDeleteCycleId(null)}
+        onCloseNewConversation={() => {
+          setNewConversationOpen(false);
+          setNewConversationDraft(null);
+        }}
+        onConfirmDelete={() => {
+          const cycleId = deleteCycleId;
+          setDeleteCycleId(null);
+          if (!cycleId) return;
+          void inbox.actions.deleteCycle(cycleId);
+          if (cycleId === inbox.activeCycleId) {
+            onCycleChange(null);
+            focusPane("list");
           }
-        />
-      ) : null}
-      {activeSession && conclusionOpen ? (
-        <CrmAttendanceConclusionDialog
-          assignableMembers={inbox.assignableMembers}
-          disabled={
-            inbox.isConcludingSession ||
-            inbox.isMutatingSession ||
-            !inbox.permissions.canClose
-          }
-          onClose={() => setConclusionOpen(false)}
-          onConclude={(input) =>
-            inbox.actions.concludeCycle(activeSession.id, input)
-          }
-          cycle={activeSession}
-        />
-      ) : null}
-      {activeSession && scheduleMessageOpen ? (
-        <CrmScheduleMessageDialog
-          canCancel={true}
-          canCreate={inbox.permissions.canScheduleCreate}
-          canProcess={true}
-          canRead={true}
-          onCancel={(scheduledMessageId) =>
-            inbox.cancelScheduledMessage(scheduledMessageId)
-          }
-          onClose={() => setScheduleMessageOpen(false)}
-          onList={() =>
-            inbox.listScheduledMessages({ cycleId: activeSession.id })
-          }
-          onProcessDue={() => inbox.processDueScheduledMessages()}
-          onSchedule={(input) =>
-            inbox.createScheduledMessage({
-              cycleId: activeSession.id,
-              ...input,
-            })
-          }
-        />
-      ) : null}
-      {activeSession && scheduleVisitOpen ? (
-        <CrmVisitSessionDialog
-          cycle={activeSession}
-          listVehicles={inbox.listVehicles}
-          onClose={() => setScheduleVisitOpen(false)}
-        />
-      ) : null}
+        }}
+        scheduleMessageOpen={scheduleMessageOpen}
+        scheduleVisitOpen={scheduleVisitOpen}
+        onCloseScheduleMessage={() => setScheduleMessageOpen(false)}
+        onCloseScheduleVisit={() => setScheduleVisitOpen(false)}
+        onStartedConversation={() => {
+          focusPane("chat");
+          setNewConversationDraft(null);
+        }}
+      />
     </section>
   );
 }

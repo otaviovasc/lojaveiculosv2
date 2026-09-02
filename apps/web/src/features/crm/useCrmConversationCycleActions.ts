@@ -14,6 +14,7 @@ import type { CrmBulkActionDraft } from "./crmQueueState";
 type UseCrmConversationCycleActionsOptions = {
   api: CrmConversationApi;
   patchSession: (nextSession: CrmConversationCycle) => void;
+  removeSession: (cycleId: CrmConversationCycleId) => void;
   refreshSessions: (options?: {
     preserveLocalOnly?: boolean;
     snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
@@ -25,6 +26,7 @@ type UseCrmConversationCycleActionsOptions = {
 export function useCrmConversationCycleActions({
   api,
   patchSession,
+  removeSession,
   refreshSessions,
   conversationCycles,
   setError,
@@ -132,6 +134,21 @@ export function useCrmConversationCycleActions({
 
   const retryLastSessionAction = useCallback(
     () => retryActionRef.current?.() ?? Promise.resolve(false),
+    [],
+  );
+
+  // Archive/pin are server-side toggles and delete is destructive: a rapid
+  // second click on any of them for the same cycle must not issue a second
+  // command while one is still in flight.
+  const isCycleLifecycleActionInFlight = useCallback(
+    (cycleId: CrmConversationCycleId) => {
+      const prefix = `${cycleId}:`;
+      return [...inFlightRef.current.keys()].some(
+        (key) =>
+          key.startsWith(prefix) &&
+          guardedCycleActions.includes(key.slice(prefix.length)),
+      );
+    },
     [],
   );
   const isSessionActionPending = useCallback(
@@ -274,6 +291,66 @@ export function useCrmConversationCycleActions({
       );
     },
     [api, runSessionAction, conversationCycles],
+  );
+
+  const archiveCycle = useCallback(
+    (cycleId: CrmConversationCycleId) => {
+      const cycle = conversationCycles.find((item) => item.id === cycleId);
+      if (!cycle || isCycleLifecycleActionInFlight(cycleId)) {
+        return Promise.resolve(false);
+      }
+      const commandId = createCommandId();
+      return runSessionAction(
+        cycleId,
+        "archive",
+        () => api.archiveCycle(cycleId, { commandId }),
+        { ...cycle, isArchived: !cycle.isArchived },
+      );
+    },
+    [api, isCycleLifecycleActionInFlight, runSessionAction, conversationCycles],
+  );
+
+  const pinCycle = useCallback(
+    (cycleId: CrmConversationCycleId) => {
+      const cycle = conversationCycles.find((item) => item.id === cycleId);
+      if (!cycle || isCycleLifecycleActionInFlight(cycleId)) {
+        return Promise.resolve(false);
+      }
+      const commandId = createCommandId();
+      return runSessionAction(
+        cycleId,
+        "pin",
+        () => api.pinCycle(cycleId, { commandId }),
+        { ...cycle, isPinned: !cycle.isPinned },
+      );
+    },
+    [api, isCycleLifecycleActionInFlight, runSessionAction, conversationCycles],
+  );
+
+  const deleteCycle = useCallback(
+    (cycleId: CrmConversationCycleId) => {
+      const cycle = conversationCycles.find((item) => item.id === cycleId);
+      if (!cycle || isCycleLifecycleActionInFlight(cycleId)) {
+        return Promise.resolve(false);
+      }
+      const commandId = createCommandId();
+      const flightKey = `${cycleId}:delete`;
+      const promise = runBulkSessionAction(async () => {
+        await api.deleteCycle(cycleId, { commandId });
+        removeSession(cycleId);
+      }).finally(() => {
+        inFlightRef.current.delete(flightKey);
+      });
+      inFlightRef.current.set(flightKey, promise);
+      return promise;
+    },
+    [
+      api,
+      isCycleLifecycleActionInFlight,
+      removeSession,
+      runBulkSessionAction,
+      conversationCycles,
+    ],
   );
 
   const addCycleTag = useCallback(
@@ -433,6 +510,7 @@ export function useCrmConversationCycleActions({
   return {
     actions: {
       addCycleTag,
+      archiveCycle,
       assignCycle,
       bulkAssignSessions,
       bulkApplySessions,
@@ -441,8 +519,10 @@ export function useCrmConversationCycleActions({
       bulkMarkSessionsUnread,
       closeCycle,
       concludeCycle,
+      deleteCycle,
       markCycleRead,
       markCycleUnread,
+      pinCycle,
       removeCycleTag,
       toggleIntervention,
     },
@@ -460,3 +540,5 @@ export function useCrmConversationCycleActions({
 function createCommandId() {
   return crypto.randomUUID();
 }
+
+const guardedCycleActions = ["archive", "delete", "pin"];

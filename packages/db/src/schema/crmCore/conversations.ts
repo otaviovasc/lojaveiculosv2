@@ -107,8 +107,10 @@ export const conversationCycles = pgTable(
   "crm_conversation_cycles",
   {
     ...lifecycleColumns,
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     assignedUserId: uuid("assigned_user_id").references(() => users.id),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     externalCycleId: varchar("external_cycle_id", { length: 191 }),
     firstHandledAt: timestamp("first_handled_at", { withTimezone: true }),
     freshLeadAt: timestamp("fresh_lead_at", { withTimezone: true }),
@@ -121,6 +123,7 @@ export const conversationCycles = pgTable(
     messageCount: integer("message_count").notNull().default(0),
     metadata: jsonb("metadata").notNull().default({}),
     opportunityId: uuid("opportunity_id").references(() => opportunities.id),
+    pinnedAt: timestamp("pinned_at", { withTimezone: true }),
     pushNotificationGeneration: integer("push_notification_generation")
       .notNull()
       .default(0),

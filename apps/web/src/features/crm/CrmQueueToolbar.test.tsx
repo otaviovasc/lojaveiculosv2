@@ -222,6 +222,96 @@ describe("CrmQueueToolbar", () => {
     expect(quickFilters).not.toHaveTextContent("Todos");
   });
 
+  it("shows the archived count only while the archived view is active", () => {
+    const { rerender } = render(
+      <CrmQueueToolbar
+        archivedOnly
+        assignableMembers={[]}
+        availableTags={[]}
+        canAssign={false}
+        canManageConnections={false}
+        canManageTags={false}
+        canStartConversation={false}
+        connectionFilterId={null}
+        connectionId="connection_1"
+        connections={[]}
+        currentUserId="user_current"
+        humanAttendanceFilter=""
+        onArchivedOnlyChange={vi.fn()}
+        onConnectionFilterChange={vi.fn()}
+        onHumanAttendanceFilterChange={vi.fn()}
+        onManageConnections={vi.fn()}
+        onManageTags={vi.fn()}
+        onOtherAssigneeChange={vi.fn()}
+        onQuickFilterChange={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectionModeChange={vi.fn()}
+        onStartConversation={vi.fn()}
+        onStatusFilterChange={vi.fn()}
+        onTagFilterToggle={vi.fn()}
+        onUnreadOnlyChange={vi.fn()}
+        otherAssigneeId={null}
+        quickFilter="mine"
+        search=""
+        selectedCount={0}
+        selectedTagIds={[]}
+        selectionMode={false}
+        sessionCount={2}
+        conversationCycleCounts={createCounts()}
+        statusFilter=""
+        unreadOnly={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /Arquivadas/ }),
+    ).toHaveTextContent("12");
+
+    rerender(
+      <CrmQueueToolbar
+        archivedOnly={false}
+        assignableMembers={[]}
+        availableTags={[]}
+        canAssign={false}
+        canManageConnections={false}
+        canManageTags={false}
+        canStartConversation={false}
+        connectionFilterId={null}
+        connectionId="connection_1"
+        connections={[]}
+        currentUserId="user_current"
+        humanAttendanceFilter=""
+        onArchivedOnlyChange={vi.fn()}
+        onConnectionFilterChange={vi.fn()}
+        onHumanAttendanceFilterChange={vi.fn()}
+        onManageConnections={vi.fn()}
+        onManageTags={vi.fn()}
+        onOtherAssigneeChange={vi.fn()}
+        onQuickFilterChange={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectionModeChange={vi.fn()}
+        onStartConversation={vi.fn()}
+        onStatusFilterChange={vi.fn()}
+        onTagFilterToggle={vi.fn()}
+        onUnreadOnlyChange={vi.fn()}
+        otherAssigneeId={null}
+        quickFilter="mine"
+        search=""
+        selectedCount={0}
+        selectedTagIds={[]}
+        selectionMode={false}
+        sessionCount={2}
+        conversationCycleCounts={createCounts()}
+        statusFilter=""
+        unreadOnly={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Arquivadas" }),
+    ).toBeInTheDocument();
+  });
+
   it("offers the full quick filters to actors with read_unassigned but no assign", () => {
     render(
       <CrmQueueToolbar

@@ -102,6 +102,18 @@ export type CrmConversationApi = {
     input: CrmStatisticsQuery,
     options?: { signal?: AbortSignal },
   ) => Promise<CrmStatisticsResponse>;
+  archiveCycle: (
+    cycleId: CrmConversationCycleId,
+    input: CrmConversationCycleCommandInput,
+  ) => Promise<CrmConversationCycleCommandResult>;
+  pinCycle: (
+    cycleId: CrmConversationCycleId,
+    input: CrmConversationCycleCommandInput,
+  ) => Promise<CrmConversationCycleCommandResult>;
+  deleteCycle: (
+    cycleId: CrmConversationCycleId,
+    input: CrmConversationCycleCommandInput,
+  ) => Promise<CrmConversationCycleCommandResult>;
   assignCycle: (
     cycleId: CrmConversationCycleId,
     input: CrmAssignConversationCycleInput,

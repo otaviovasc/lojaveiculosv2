@@ -92,6 +92,7 @@ function createCrmConversationCycle(
 ): CrmConversationCycle {
   const now = new Date("2026-07-06T10:00:00.000Z");
   return {
+    archivedAt: null,
     assignedUserId: null,
     customerChatId: null,
     customerDisplayName: "Ana",
@@ -101,6 +102,7 @@ function createCrmConversationCycle(
     channelMetadata: {},
     connectionId,
     createdAt: now,
+    deletedAt: null,
     externalCycleId: null,
     firstHandledAt: null,
     freshLeadAt: now,
@@ -119,6 +121,7 @@ function createCrmConversationCycle(
     leadId: null,
     messageCount: 1,
     metadata: {},
+    pinnedAt: null,
     profilePhotoUrl: null,
     revision: 0,
     tags: [],

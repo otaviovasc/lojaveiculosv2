@@ -50,6 +50,7 @@ export function toConversationCycle(
   const cycleMetadata = readRecord(cycle.metadata);
   return {
     assignedUserId: cycle.assignedUserId as UserId | null,
+    archivedAt: cycle.archivedAt,
     customerChatId: thread.customerChatId,
     customerDisplayName: thread.customerDisplayName,
     customerPhone: thread.customerPhone ?? "",
@@ -58,6 +59,7 @@ export function toConversationCycle(
     channelMetadata: readRecord(thread.channelMetadata),
     connectionId: thread.providerConnectionId,
     createdAt: cycle.createdAt,
+    deletedAt: cycle.deletedAt,
     externalCycleId: cycle.externalCycleId,
     firstHandledAt: cycle.firstHandledAt,
     freshLeadAt: cycle.freshLeadAt,
@@ -82,6 +84,7 @@ export function toConversationCycle(
       ...readRecord(cycleMetadata.cycleMetadata),
     },
     profilePhotoUrl: thread.profilePhotoUrl,
+    pinnedAt: cycle.pinnedAt,
     revision: cycle.revision,
     tags: [],
     threadId: thread.id,

@@ -152,6 +152,7 @@ function toMemoryMessageType(messageType: string): CrmMessageType {
     "CONTACT",
     "DOCUMENT",
     "IMAGE",
+    "INTERACTIVE",
     "LOCATION",
     "STICKER",
     "TEXT",

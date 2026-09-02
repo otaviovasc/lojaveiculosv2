@@ -87,6 +87,21 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
         cycleId,
         input,
       ),
+    archiveCycle: async (cycleId, input) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).archiveCycle(
+        cycleId,
+        input,
+      ),
+    pinCycle: async (cycleId, input) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).pinCycle(
+        cycleId,
+        input,
+      ),
+    deleteCycle: async (cycleId, input) =>
+      createCrmConversationApi(await createProductCrmApiOptions()).deleteCycle(
+        cycleId,
+        input,
+      ),
     authorizeComposioConnection: async (connectionId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

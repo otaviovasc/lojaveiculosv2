@@ -82,6 +82,30 @@ export function registerCrmConversationCycleRoutes(
       ),
   );
 
+  crmFeature.post(
+    "/conversation-cycles/:cycleId/actions/archive",
+    async (context) =>
+      handleCrmMessaging(context, async () =>
+        runLifecycleAction(context, createContext, services, "archive"),
+      ),
+  );
+
+  crmFeature.post(
+    "/conversation-cycles/:cycleId/actions/pin",
+    async (context) =>
+      handleCrmMessaging(context, async () =>
+        runLifecycleAction(context, createContext, services, "pin"),
+      ),
+  );
+
+  crmFeature.post(
+    "/conversation-cycles/:cycleId/actions/delete",
+    async (context) =>
+      handleCrmMessaging(context, async () =>
+        runLifecycleAction(context, createContext, services, "delete"),
+      ),
+  );
+
   crmFeature.post("/conversation-cycles/:cycleId/attendance", async (context) =>
     handleCrmMessaging(context, async () => {
       const input = await parseCrmMessagingJson(
@@ -98,6 +122,30 @@ export function registerCrmConversationCycleRoutes(
       return context.json(toConversationCycleCommandDto(command));
     }),
   );
+}
+
+async function runLifecycleAction(
+  context: Context,
+  createContext: (context: Context) => Promise<ServiceContext>,
+  services: CrmServices,
+  action: "archive" | "delete" | "pin",
+) {
+  const serviceContext = await createContext(context);
+  assertConversationManage(serviceContext);
+  const input = await parseCrmMessagingJson(
+    context,
+    crmConversationCycleCommandSchema,
+  );
+  const cycleId = context.req.param("cycleId");
+  if (!cycleId) throw new CrmMessagingValidationError();
+  const commandInput = { commandId: input.commandId, cycleId };
+  const command =
+    action === "archive"
+      ? await services.archiveConversationCycle(serviceContext, commandInput)
+      : action === "pin"
+        ? await services.pinConversationCycle(serviceContext, commandInput)
+        : await services.deleteConversationCycle(serviceContext, commandInput);
+  return context.json(toConversationCycleCommandDto(command));
 }
 
 async function setReadState(

@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { CrmRealtimeEvent } from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 import {
-  actorUserId,
   connectionId,
   createZapiConnection,
   jsonPost,
@@ -13,32 +11,19 @@ import {
   tenantId,
 } from "./crm.conversationCycleActions.testSupport.js";
 
-const otherUserId = "03030303-0303-4303-8303-030303030303";
-
-describe("CRM cycle lifecycle", () => {
-  it("assigns, toggles intervention, closes, and updates linked leads", async () => {
-    const realtimeEvents: CrmRealtimeEvent[] = [];
-    const crmRepository = createMemoryCrmRepository();
-    const lead = await crmRepository.createLead({
-      buyerName: "Ana",
-      buyerPhone: "5511999999999",
-      source: "whatsapp",
-      storeId,
-      tenantId,
-    });
+describe("CRM conversation cycle lifecycle actions", () => {
+  it("archives and unarchives cycles and filters the default list", async () => {
     const conversationRepository = createMemoryCrmConversationRepository();
     const inbound = await conversationRepository.ingestMessage({
-      customerDisplayName: "Ana",
-      customerPhone: "5511999999999",
+      customerDisplayName: "Caio",
+      customerPhone: "5511555555555",
       channel: "WHATSAPP",
       connectionId,
-      content: "Ola, tenho interesse",
+      content: "Tem desconto?",
       direction: "INBOUND",
-      externalId: "inbound-action-1",
-      freshLeadAt: new Date("2026-07-02T19:00:00.000Z"),
-      leadId: lead.id,
+      externalId: "inbound-archive-1",
       metadata: {},
-      providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+      providerTimestamp: new Date("2026-07-02T18:00:00.000Z"),
       senderOrigin: "customer",
       senderType: "CUSTOMER",
       status: "DELIVERED",
@@ -50,154 +35,214 @@ describe("CRM cycle lifecycle", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
-      crmRepository,
-      crmRealtimePublisher: {
-        publish: async (event) => {
-          realtimeEvents.push(event);
-        },
-      },
+      crmConversationRepository: conversationRepository,
+    });
+    const cyclePath = `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}`;
+
+    const archived = await app.request(
+      `${cyclePath}/actions/archive`,
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000010" }),
+    );
+    expect(archived.status).toBe(200);
+    await expect(archived.json()).resolves.toMatchObject({
+      result: "applied",
+      cycle: { isArchived: true },
+    });
+
+    const defaultList = await app.request("/api/v1/crm/conversation-cycles");
+    await expect(defaultList.json()).resolves.toHaveLength(0);
+
+    const archivedList = await app.request(
+      "/api/v1/crm/conversation-cycles?archived=true",
+    );
+    const archivedCycles = (await archivedList.json()) as {
+      id: string;
+      isArchived: boolean;
+    }[];
+    expect(archivedCycles).toHaveLength(1);
+    expect(archivedCycles[0]).toMatchObject({
+      id: inbound.conversationCycle.id,
+      isArchived: true,
+    });
+
+    const unarchived = await app.request(
+      `${cyclePath}/actions/archive`,
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000011" }),
+    );
+    expect(unarchived.status).toBe(200);
+    await expect(unarchived.json()).resolves.toMatchObject({
+      result: "applied",
+      cycle: { isArchived: false },
+    });
+    const restoredList = await app.request("/api/v1/crm/conversation-cycles");
+    await expect(restoredList.json()).resolves.toHaveLength(1);
+  });
+
+  it("pins and unpins cycles and sorts pinned first", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const oldest = await conversationRepository.ingestMessage({
+      customerDisplayName: "Antiga",
+      customerPhone: "5511444444444",
+      channel: "WHATSAPP",
+      connectionId,
+      content: "Oi",
+      direction: "INBOUND",
+      externalId: "inbound-pin-1",
+      metadata: {},
+      providerTimestamp: new Date("2026-07-02T10:00:00.000Z"),
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
+      status: "DELIVERED",
+      storeId,
+      tenantId,
+      type: "TEXT",
+    });
+    await conversationRepository.ingestMessage({
+      customerDisplayName: "Recente",
+      customerPhone: "5511333333333",
+      channel: "WHATSAPP",
+      connectionId,
+      content: "Ola",
+      direction: "INBOUND",
+      externalId: "inbound-pin-2",
+      metadata: {},
+      providerTimestamp: new Date("2026-07-02T18:00:00.000Z"),
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
+      status: "DELIVERED",
+      storeId,
+      tenantId,
+      type: "TEXT",
+    });
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
       crmConversationRepository: conversationRepository,
     });
 
-    const freshResponse = await app.request(
-      "/api/v1/crm/conversation-cycles?filter=fresh",
+    const pinned = await app.request(
+      `/api/v1/crm/conversation-cycles/${oldest.conversationCycle.id}/actions/pin`,
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000012" }),
     );
-    expect(freshResponse.status).toBe(200);
-    await expect(freshResponse.json()).resolves.toHaveLength(1);
-
-    const assignResponse = await app.request(
-      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/actions/assign`,
-      jsonPost({
-        assignedUserId: actorUserId,
-        commandId: "20000000-0000-4000-8000-000000000001",
-      }),
-    );
-    expect(assignResponse.status).toBe(200);
-    const assigned = (await assignResponse.json()) as {
-      cycle: { revision: number };
-    };
-    expect(assigned).toMatchObject({
+    expect(pinned.status).toBe(200);
+    await expect(pinned.json()).resolves.toMatchObject({
       result: "applied",
-      cycle: { assignedUserId: actorUserId },
+      cycle: { isPinned: true },
     });
 
-    const reassignResponse = await app.request(
-      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/actions/assign`,
-      jsonPost({
-        assignedUserId: otherUserId,
-        commandId: "20000000-0000-4000-8000-000000000004",
-      }),
+    const list = await app.request("/api/v1/crm/conversation-cycles");
+    const cycles = (await list.json()) as {
+      id: string;
+      isPinned: boolean;
+    }[];
+    expect(cycles[0]).toMatchObject({
+      id: oldest.conversationCycle.id,
+      isPinned: true,
+    });
+    expect(cycles[1]?.isPinned).toBe(false);
+
+    const unpinned = await app.request(
+      `/api/v1/crm/conversation-cycles/${oldest.conversationCycle.id}/actions/pin`,
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000013" }),
     );
-    expect(reassignResponse.status).toBe(200);
-    expect(realtimeEvents.at(-1)).toMatchObject({
-      revokedUserId: actorUserId,
-      conversationCycle: { assignedUserId: otherUserId },
-      type: "conversationCycle",
+    expect(unpinned.status).toBe(200);
+    await expect(unpinned.json()).resolves.toMatchObject({
+      result: "applied",
+      cycle: { isPinned: false },
+    });
+  });
+
+  it("soft deletes cycles without deleting messages", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const inbound = await conversationRepository.ingestMessage({
+      customerDisplayName: "Dora",
+      customerPhone: "5511222222222",
+      channel: "WHATSAPP",
+      connectionId,
+      content: "Quero excluir",
+      direction: "INBOUND",
+      externalId: "inbound-delete-1",
+      metadata: {},
+      providerTimestamp: new Date("2026-07-02T18:00:00.000Z"),
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
+      status: "DELIVERED",
+      storeId,
+      tenantId,
+      type: "TEXT",
+    });
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmConversationRepository: conversationRepository,
+    });
+    const cyclePath = `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}`;
+
+    const deleted = await app.request(
+      `${cyclePath}/actions/delete`,
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000014" }),
+    );
+    expect(deleted.status).toBe(200);
+    await expect(deleted.json()).resolves.toMatchObject({
+      result: "applied",
     });
 
-    const reassignBackResponse = await app.request(
-      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/actions/assign`,
-      jsonPost({
-        assignedUserId: actorUserId,
-        commandId: "20000000-0000-4000-8000-000000000005",
-      }),
-    );
-    expect(reassignBackResponse.status).toBe(200);
+    const list = await app.request("/api/v1/crm/conversation-cycles");
+    await expect(list.json()).resolves.toHaveLength(0);
 
-    const mineResponse = await app.request(
-      "/api/v1/crm/conversation-cycles?filter=mine",
+    const replay = await app.request(
+      `${cyclePath}/actions/delete`,
+      jsonPost({ commandId: "10000000-0000-4000-8000-000000000014" }),
     );
-    expect(mineResponse.status).toBe(200);
-    await expect(mineResponse.json()).resolves.toHaveLength(1);
-
-    const interventionResponse = await app.request(
-      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/attendance`,
-      jsonPost({
-        commandId: "20000000-0000-4000-8000-000000000002",
-        enabled: true,
-      }),
-    );
-    expect(interventionResponse.status).toBe(200);
-    const interventionCommand = (await interventionResponse.json()) as {
-      cycle: { revision: number };
-    };
-    const intervention = interventionCommand.cycle;
-    expect(intervention).toMatchObject({
-      humanAttendanceState: "IN_HUMAN_SERVICE",
-      humanAttendanceStateVersion: 1,
-      status: "HUMAN_TAKEOVER",
-    });
-    expect(realtimeEvents.at(-1)).toMatchObject({
-      conversationCycle: {
-        humanAttendanceState: "IN_HUMAN_SERVICE",
-        humanAttendanceStateVersion: 1,
-      },
-      type: "conversationCycle",
+    expect(replay.status).toBe(200);
+    await expect(replay.json()).resolves.toMatchObject({
+      result: "already_applied",
     });
 
-    const attendanceFilterResponse = await app.request(
-      "/api/v1/crm/conversation-cycles?humanAttendanceState=IN_HUMAN_SERVICE",
-    );
-    expect(attendanceFilterResponse.status).toBe(200);
-    await expect(attendanceFilterResponse.json()).resolves.toHaveLength(1);
-    const countsResponse = await app.request(
-      "/api/v1/crm/conversation-cycles/counts?humanAttendanceState=IN_HUMAN_SERVICE",
-    );
-    expect(countsResponse.status).toBe(200);
-    await expect(countsResponse.json()).resolves.toMatchObject({
-      inHumanService: 1,
-      total: 1,
-      waitingHuman: 0,
-    });
-
-    const closeResponse = await app.request(
-      `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/actions/close`,
-      jsonPost({ commandId: "20000000-0000-4000-8000-000000000003" }),
-    );
-    expect(closeResponse.status).toBe(200);
-    const closedCommand = (await closeResponse.json()) as {
-      result: string;
-      cycle: {
-        humanAttendanceChangedAt: unknown;
-        revision: number;
-      };
-    };
-    expect(closedCommand.result).toBe("applied");
-    const closed = closedCommand.cycle;
-    expect(closed).toMatchObject({
-      assignedUserId: null,
-      humanAttendanceState: null,
-      humanAttendanceStateVersion: 2,
-      humanHandlingStartedAt: null,
-      interventionId: null,
-      status: "COMPLETED",
-    });
-    expect(typeof closed.humanAttendanceChangedAt).toBe("string");
-    expect(closed.revision).toBe(intervention.revision + 1);
-
-    const [updatedLead] = await crmRepository.listLeads({
+    const messages = await conversationRepository.listMessages({
+      cycleId: inbound.conversationCycle.id,
       limit: 10,
+      offset: 0,
       storeId,
       tenantId,
     });
-    expect(updatedLead).toMatchObject({
-      assignedUserId: actorUserId,
-      status: "contacted",
+    expect(messages).toHaveLength(1);
+  });
+
+  it("rejects lifecycle actions without the manage permission", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const inbound = await conversationRepository.ingestMessage({
+      customerPhone: "5511111111111",
+      channel: "WHATSAPP",
+      connectionId,
+      content: "Sem permissao",
+      direction: "INBOUND",
+      externalId: "inbound-lifecycle-denied-1",
+      metadata: {},
+      providerTimestamp: new Date("2026-07-02T18:00:00.000Z"),
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
+      status: "DELIVERED",
+      storeId,
+      tenantId,
+      type: "TEXT",
     });
-    await expect(
-      crmRepository.listActivities({
-        leadId: lead.id,
-        limit: 10,
-        storeId,
-        tenantId,
-      }),
-    ).resolves.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          activityType: "status_change",
-          content: "Atendimento CRM concluido.",
-        }),
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
       ]),
-    );
+      crmConversationRepository: conversationRepository,
+      permissions: ["crm.conversations.read"] satisfies PermissionKey[],
+    });
+
+    for (const action of ["archive", "pin", "delete"]) {
+      const response = await app.request(
+        `/api/v1/crm/conversation-cycles/${inbound.conversationCycle.id}/actions/${action}`,
+        jsonPost({ commandId: "10000000-0000-4000-8000-000000000015" }),
+      );
+      expect(response.status).toBe(403);
+    }
   });
 });

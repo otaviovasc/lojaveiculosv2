@@ -27,6 +27,11 @@ describe("CRM channel connection members", () => {
       method: "PUT",
     });
     expect(grant.status).toBe(204);
+    // A second member keeps the connection visible after the revocation.
+    const secondGrant = await app.request(`${membersBase}/user_member_2`, {
+      method: "PUT",
+    });
+    expect(secondGrant.status).toBe(204);
 
     const list = await app.request(membersBase);
     expect(list.status).toBe(200);
@@ -34,7 +39,7 @@ describe("CRM channel connection members", () => {
       grantedBy: string | null;
       userId: string;
     }[];
-    expect(members).toHaveLength(1);
+    expect(members).toHaveLength(2);
     expect(members[0]).toMatchObject({
       grantedBy: "02020202-0202-4202-8202-020202020202",
       userId: memberUserId,
@@ -47,7 +52,28 @@ describe("CRM channel connection members", () => {
     await expect(revoke.json()).resolves.toMatchObject({ revoked: true });
 
     const after = (await (await app.request(membersBase)).json()) as unknown[];
-    expect(after).toHaveLength(0);
+    expect(after).toHaveLength(1);
+  });
+
+  it("refuses to revoke the last remaining member", async () => {
+    const app = createMembersTestApp();
+
+    const grant = await app.request(`${membersBase}/${memberUserId}`, {
+      method: "PUT",
+    });
+    expect(grant.status).toBe(204);
+
+    const revoke = await app.request(`${membersBase}/${memberUserId}`, {
+      method: "DELETE",
+    });
+    expect(revoke.status).toBe(409);
+    await expect(revoke.json()).resolves.toMatchObject({
+      code: "CRM_CONNECTION_MEMBER_VALIDATION_ERROR",
+      details: { reason: "connection_last_member" },
+    });
+
+    const after = (await (await app.request(membersBase)).json()) as unknown[];
+    expect(after).toHaveLength(1);
   });
 
   it("surfaces memberUserIds on the connection overview", async () => {

@@ -16,6 +16,7 @@ export type CrmAssigneeConversationCycleCount = {
 };
 
 export type CrmConversationCycle = {
+  archivedAt: Date | null;
   assignedUserId: UserId | null;
   customerChatId: string | null;
   customerDisplayName: string | null;
@@ -25,6 +26,7 @@ export type CrmConversationCycle = {
   channelMetadata: Record<string, unknown>;
   connectionId: string;
   createdAt: Date;
+  deletedAt: Date | null;
   externalCycleId: string | null;
   firstHandledAt: Date | null;
   freshLeadAt: Date | null;
@@ -43,6 +45,7 @@ export type CrmConversationCycle = {
   leadId: string | null;
   messageCount: number;
   metadata: Record<string, unknown>;
+  pinnedAt: Date | null;
   profilePhotoUrl: string | null;
   revision: number;
   tags: CrmTag[];

@@ -81,6 +81,7 @@ function createConnection(): CrmConnection {
 function createCycle(id: string, leadId: string): CrmConversationCycle {
   const now = new Date("2026-08-13T12:00:00.000Z");
   return {
+    archivedAt: null,
     assignedUserId: "seller_1" as UserId,
     customerChatId: null,
     customerDisplayName: "Lead",
@@ -90,6 +91,7 @@ function createCycle(id: string, leadId: string): CrmConversationCycle {
     channelMetadata: {},
     connectionId,
     createdAt: now,
+    deletedAt: null,
     externalCycleId: null,
     firstHandledAt: now,
     freshLeadAt: now,
@@ -108,6 +110,7 @@ function createCycle(id: string, leadId: string): CrmConversationCycle {
     leadId,
     messageCount: 0,
     metadata: {},
+    pinnedAt: null,
     profilePhotoUrl: null,
     revision: 0,
     tags: [],

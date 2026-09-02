@@ -115,7 +115,7 @@ async function createNewUazapiInstance(
     ports,
   );
   try {
-    return await persistUazapiConnection(input, scope, ports, {
+    return await persistUazapiConnection(context, input, scope, ports, {
       credentialsRef,
       externalInstanceId: provisioned.instanceId,
       phone: input.connectionPhoneNumber?.trim() || null,

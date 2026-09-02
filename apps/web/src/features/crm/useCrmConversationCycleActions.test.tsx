@@ -144,6 +144,67 @@ describe("useCrmConversationCycleActions", () => {
 
     expect(api.concludeCycle).toHaveBeenCalledWith(cycle.id, input);
   });
+
+  it("runs archive, pin and delete as command-id based cycle actions", async () => {
+    const cycle = createSession(3);
+    const api = createApi();
+    const { result } = renderActions(api, cycle);
+
+    await act(async () => {
+      await result.current.actions.archiveCycle(cycle.id);
+      await result.current.actions.pinCycle(cycle.id);
+      await result.current.actions.deleteCycle(cycle.id);
+    });
+
+    const assertCommandCall = (
+      mock: CrmConversationApi["archiveCycle"],
+    ): void => {
+      const [calledCycleId, input] = vi.mocked(mock).mock.calls[0] ?? [];
+      expect(calledCycleId).toBe(cycle.id);
+      expect(typeof input?.commandId).toBe("string");
+    };
+    assertCommandCall(api.archiveCycle);
+    assertCommandCall(api.pinCycle);
+    assertCommandCall(api.deleteCycle);
+  });
+
+  it("blocks a second lifecycle action for the same cycle while one is in flight", async () => {
+    const cycle = createSession(3);
+    const api = createApi();
+    let resolveArchive!: (value: {
+      result: "applied";
+      cycle: CrmConversationCycle;
+    }) => void;
+    vi.mocked(api.archiveCycle).mockReturnValue(
+      new Promise((resolve) => {
+        resolveArchive = resolve;
+      }),
+    );
+    const { result } = renderActions(api, cycle);
+
+    let blockedPin!: Promise<boolean>;
+    let blockedDelete!: Promise<boolean>;
+    act(() => {
+      void result.current.actions.archiveCycle(cycle.id);
+      blockedPin = result.current.actions.pinCycle(cycle.id);
+      blockedDelete = result.current.actions.deleteCycle(cycle.id);
+    });
+
+    expect(api.archiveCycle).toHaveBeenCalledTimes(1);
+    expect(api.pinCycle).not.toHaveBeenCalled();
+    expect(api.deleteCycle).not.toHaveBeenCalled();
+    await expect(blockedPin).resolves.toBe(false);
+    await expect(blockedDelete).resolves.toBe(false);
+
+    await act(async () => {
+      resolveArchive({ result: "applied", cycle: createSession(4) });
+    });
+
+    await act(async () => {
+      await result.current.actions.pinCycle(cycle.id);
+    });
+    expect(api.pinCycle).toHaveBeenCalledTimes(1);
+  });
 });
 
 function renderActions(api: CrmConversationApi, cycle: CrmConversationCycle) {
@@ -151,6 +212,7 @@ function renderActions(api: CrmConversationApi, cycle: CrmConversationCycle) {
     useCrmConversationCycleActions({
       api,
       patchSession: vi.fn(),
+      removeSession: vi.fn(),
       refreshSessions: vi.fn(async () => undefined),
       conversationCycles: [cycle],
       setError: vi.fn(),
@@ -164,6 +226,9 @@ function createApi() {
     cycle: createSession(4),
   };
   return {
+    archiveCycle: vi.fn(async () => result),
+    pinCycle: vi.fn(async () => result),
+    deleteCycle: vi.fn(async () => result),
     assignCycle: vi.fn(async () => result),
     closeCycle: vi.fn(async () => result),
     concludeCycle: vi.fn(async () => result),

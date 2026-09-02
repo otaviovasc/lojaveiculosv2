@@ -18,6 +18,21 @@ export const crmConversationRoutes = {
       `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/actions/assign`,
       baseUrl,
     ),
+  archiveCycle: (cycleId: CrmConversationCycleId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/actions/archive`,
+      baseUrl,
+    ),
+  pinCycle: (cycleId: CrmConversationCycleId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/actions/pin`,
+      baseUrl,
+    ),
+  deleteCycle: (cycleId: CrmConversationCycleId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/actions/delete`,
+      baseUrl,
+    ),
   closeCycle: (cycleId: CrmConversationCycleId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/actions/close`,
@@ -271,6 +286,7 @@ export function createCrmConversationCyclesQuery(
   query: CrmConversationCycleQuery = {},
 ) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "archived", query.archived);
   addOptionalParam(params, "assigneeId", query.assigneeId);
   addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "filter", query.filter);
@@ -290,6 +306,7 @@ export function createCrmConversationCycleCountsQuery(
   query: CrmConversationCycleCountsQuery = {},
 ) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "archived", query.archived);
   addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "filter", query.filter);
   addOptionalParam(params, "humanAttendanceState", query.humanAttendanceState);

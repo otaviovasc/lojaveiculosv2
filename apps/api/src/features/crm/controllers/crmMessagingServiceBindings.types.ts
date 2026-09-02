@@ -53,6 +53,7 @@ import type { AssignConversationCycleInput } from "../../../domains/crm/services
 import type { CloseConversationCycleInput } from "../../../domains/crm/services/CrmMessagingService/closeConversationCycle.js";
 import type { SetConversationAttendanceInput } from "../../../domains/crm/services/CrmMessagingService/setConversationAttendance.js";
 import type { MarkConversationCycleReadInput } from "../../../domains/crm/services/CrmMessagingService/markCrmConversationCycleRead.js";
+import type { ConversationCycleLifecycleInput } from "../../../domains/crm/services/CrmMessagingService/conversationCycleLifecycle.js";
 import type { ConversationCycleCommandResponse } from "../../../domains/crm/services/CrmMessagingService/executeCrmConversationCycleCommand.js";
 import type { CrmCampaignServices } from "./crmCampaignBindings.js";
 import type { CrmQuickMessageServices } from "./crmQuickMessageBindings.js";
@@ -95,6 +96,10 @@ export type CrmMessagingServices = CrmQuickMessageServices &
       AddConversationCycleTagInput,
       CrmConversationCycle
     >;
+    archiveConversationCycle: CrmContextService<
+      ConversationCycleLifecycleInput,
+      ConversationCycleCommandResponse
+    >;
     assignConversationCycle: CrmContextService<
       AssignConversationCycleInput,
       ConversationCycleCommandResponse
@@ -117,6 +122,10 @@ export type CrmMessagingServices = CrmQuickMessageServices &
     >;
     createCrmTag: CrmContextService<CreateCrmTagInput, CrmTag>;
     deleteCrmTag: CrmContextService<DeleteCrmTagInput, CrmTag>;
+    deleteConversationCycle: CrmContextService<
+      ConversationCycleLifecycleInput,
+      ConversationCycleCommandResponse
+    >;
     deleteMessage: CrmContextService<DeleteCrmMessageDtoInput, CrmMessage>;
     listWhatsappCatalogProducts: CrmContextService<
       ListWhatsappCatalogProductsInput,
@@ -138,6 +147,10 @@ export type CrmMessagingServices = CrmQuickMessageServices &
     listCrmTags: CrmContextService<ListCrmTagsInput, readonly CrmTag[]>;
     markConversationCycleReadState: CrmContextService<
       MarkConversationCycleReadInput,
+      ConversationCycleCommandResponse
+    >;
+    pinConversationCycle: CrmContextService<
+      ConversationCycleLifecycleInput,
       ConversationCycleCommandResponse
     >;
     processDueCrmScheduledMessages: CrmContextService<

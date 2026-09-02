@@ -28,6 +28,11 @@ import {
 } from "../../whatsapp/publishZapiWhatsappAttendance.js";
 import { ingestUazapiProfilePhoto } from "../../whatsapp/uazapiProfilePhotoIngestion.js";
 import { persistUazapiWhatsappWebhook } from "../../whatsapp/persistUazapiWhatsappWebhook.js";
+import {
+  applyInboundWhatsappReactionIfTargeted,
+  markUnresolvedInboundReaction,
+} from "../../whatsapp/applyInboundWhatsappReaction.js";
+import { pendingInboundMediaMetadata } from "../../whatsapp/pendingInboundMedia.js";
 import { readUazapiConnection } from "./uazapiWebhookSupport.js";
 import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
@@ -65,7 +70,14 @@ export async function ingestUazapiWhatsappWebhook(
   if (!parsed) {
     return { reason: "not_processable", status: "ignored" };
   }
-  const media = pendingUazapiMedia(parsed);
+  const reaction = await applyInboundWhatsappReactionIfTargeted(
+    context,
+    { connection, parsed, provider: "uazapi" },
+    ports,
+  );
+  if (reaction) return reaction;
+  markUnresolvedInboundReaction(parsed.metadata);
+  const media = pendingInboundMediaMetadata(parsed, { requireMediaUrl: false });
   const profilePhoto = { status: "unavailable" as const };
   const auditInput: CrmServiceAuditInput = {
     action: "crm.provider.uazapi.webhook.received",
@@ -135,24 +147,6 @@ export async function ingestUazapiWhatsappWebhook(
     message,
     conversationCycle,
     status: result.createdMessage ? "stored" : "duplicate",
-  };
-}
-
-function pendingUazapiMedia(message: ParsedUazapiInboundMessage) {
-  if (!message.mediaType) {
-    return { metadata: message.metadata };
-  }
-  const current = message.metadata.media;
-  return {
-    metadata: {
-      ...message.metadata,
-      media: {
-        ...(current && typeof current === "object" && !Array.isArray(current)
-          ? current
-          : {}),
-        mirrorStatus: "pending",
-      },
-    },
   };
 }
 

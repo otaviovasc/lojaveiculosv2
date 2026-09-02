@@ -1,4 +1,3 @@
-import { Buffer } from "node:buffer";
 import { assertPermission } from "../../../../shared/authorization.js";
 import { createHash } from "node:crypto";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
@@ -14,6 +13,14 @@ import {
   recordCrmServiceMutation,
 } from "../CrmMessagingService/serviceSupport.js";
 import { prepareCrmOutboundMedia } from "../../messaging/crmOutboundMediaPreparation.js";
+import { replyMetadata, resolveReplyTarget } from "./sendMessage.js";
+import {
+  contentForCrmMedia,
+  crmMediaMessageConfig,
+  decodeCrmMediaBase64,
+  leadActivityContentForCrmMedia,
+} from "./sendCrmMediaMessageSupport.js";
+
 export type SendCrmMediaMessageType = "audio" | "document" | "image" | "video";
 export type SendCrmMediaMessageInput = {
   base64: string;
@@ -22,47 +29,10 @@ export type SendCrmMediaMessageInput = {
   idempotencyKey?: string;
   mediaType: SendCrmMediaMessageType;
   mimeType?: string;
+  /** CRM message id of the quoted message, when replying. */
+  replyToMessageId?: string;
   cycleId: string;
 };
-const mediaConfig = {
-  audio: {
-    content: "[audio]",
-    fallbackFileName: "crm-audio.ogg",
-    fallbackMimeType: "audio/ogg",
-    maxBytes: 25 * 1024 * 1024,
-    messageType: "AUDIO",
-  },
-  document: {
-    content: "Documento",
-    fallbackFileName: "documento.pdf",
-    fallbackMimeType: "application/octet-stream",
-    maxBytes: 25 * 1024 * 1024,
-    messageType: "DOCUMENT",
-  },
-  image: {
-    content: "[image]",
-    fallbackFileName: "crm-image.jpg",
-    fallbackMimeType: "image/jpeg",
-    maxBytes: 15 * 1024 * 1024,
-    messageType: "IMAGE",
-  },
-  video: {
-    content: "[video]",
-    fallbackFileName: "crm-video.mp4",
-    fallbackMimeType: "video/mp4",
-    maxBytes: 100 * 1024 * 1024,
-    messageType: "VIDEO",
-  },
-} as const satisfies Record<
-  SendCrmMediaMessageType,
-  {
-    content: string;
-    fallbackFileName: string;
-    fallbackMimeType: string;
-    maxBytes: number;
-    messageType: "AUDIO" | "DOCUMENT" | "IMAGE" | "VIDEO";
-  }
->;
 const permission = "crm.messages.send";
 export async function sendCrmMediaMessage(
   context: ServiceContext,
@@ -70,7 +40,7 @@ export async function sendCrmMediaMessage(
   ports: CrmServicePorts,
 ): Promise<CrmMessage> {
   assertPermission(context, permission);
-  const body = decodeMediaBase64(input);
+  const body = decodeCrmMediaBase64(input);
   logCrmServiceEvent(context, "crm.message.send_media.started", {
     mediaType: input.mediaType,
     cycleId: input.cycleId,
@@ -104,6 +74,7 @@ export async function sendCrmMediaMessage(
             mediaType: input.mediaType,
             payloadDigest: createHash("sha256").update(body).digest("hex"),
             mimeType: input.mimeType ?? null,
+            replyToMessageId: input.replyToMessageId ?? null,
             cycleId: input.cycleId,
           },
           senderOrigin: "human_crm",
@@ -120,7 +91,14 @@ export async function sendCrmMediaMessage(
                 "CRM media storage is not configured.",
               );
             }
-            const config = mediaConfig[input.mediaType];
+            const config = crmMediaMessageConfig[input.mediaType];
+            const replyTo = input.replyToMessageId
+              ? await resolveReplyTarget(context, {
+                  messageId: input.replyToMessageId,
+                  ports,
+                  cycleId: input.cycleId,
+                })
+              : null;
             const media = await prepareCrmOutboundMedia({
               body,
               fallbackFileName: config.fallbackFileName,
@@ -153,6 +131,9 @@ export async function sendCrmMediaMessage(
                 ...(input.caption?.trim()
                   ? { caption: input.caption.trim() }
                   : {}),
+                ...(replyTo?.externalId
+                  ? { replyToMessageId: replyTo.externalId }
+                  : {}),
                 fileName: media.fileName,
                 mediaType: input.mediaType,
                 mediaUrl: stored.publicUrl,
@@ -160,8 +141,11 @@ export async function sendCrmMediaMessage(
                 phone,
               });
               return {
-                content: contentForMedia(input, media.fileName),
-                leadActivityContent: leadActivityContent(input, media.fileName),
+                content: contentForCrmMedia(input, media.fileName),
+                leadActivityContent: leadActivityContentForCrmMedia(
+                  input,
+                  media.fileName,
+                ),
                 mediaType: input.mediaType,
                 mediaUrl: stored.publicUrl,
                 metadata: {
@@ -184,6 +168,7 @@ export async function sendCrmMediaMessage(
                     storageKey: stored.storageKey,
                   },
                   provider: connection.provider,
+                  ...(replyTo ? { replyTo: replyMetadata(replyTo) } : {}),
                   sentByActorId: context.actor.id,
                 },
                 sent,
@@ -211,38 +196,4 @@ export async function sendCrmMediaMessage(
         ports,
       ),
   );
-}
-
-function decodeMediaBase64(input: SendCrmMediaMessageInput): Uint8Array {
-  const normalized = input.base64.includes(",")
-    ? (input.base64.split(",").pop() ?? "")
-    : input.base64;
-  if (!normalized.trim()) {
-    throw new CrmMessagingGatewayError("CRM media payload is empty.");
-  }
-  const buffer = Buffer.from(normalized, "base64");
-  const maxBytes = mediaConfig[input.mediaType].maxBytes;
-  if (buffer.byteLength > maxBytes) {
-    throw new CrmMessagingGatewayError(
-      `CRM ${input.mediaType} media exceeds ${maxBytes} bytes.`,
-    );
-  }
-  return new Uint8Array(buffer);
-}
-
-function contentForMedia(input: SendCrmMediaMessageInput, fileName: string) {
-  const caption = input.caption?.trim();
-  if (caption) return caption;
-  if (input.mediaType === "document") return fileName;
-  return mediaConfig[input.mediaType].content;
-}
-
-function leadActivityContent(
-  input: SendCrmMediaMessageInput,
-  fileName: string,
-) {
-  if (input.mediaType === "document") return `Documento: ${fileName}`;
-  if (input.mediaType === "image") return input.caption?.trim() || "Imagem";
-  if (input.mediaType === "video") return input.caption?.trim() || "Video";
-  return "Audio";
 }

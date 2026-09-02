@@ -28,6 +28,8 @@ export type CrmMessagingSendMediaInput = {
   mediaUrl: string;
   mimeType?: string;
   phone: string;
+  /** Provider (WhatsApp) message id of the quoted message, when replying. */
+  replyToMessageId?: string;
 };
 export type CrmMessagingSendMediaResult = CrmMessagingSendTextResult;
 
